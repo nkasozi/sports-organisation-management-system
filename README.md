@@ -1,6 +1,6 @@
-# SportsOrganisationManagementSystem
+# Sports Organisation Management System
 
-**Architectural Design Document (ADD): Sport Management PWA**
+**Architectural Design Document (ADD): Sports Organisation Management System**
 
 **Version:** 0.1
 **Date:** April 17, 2025
