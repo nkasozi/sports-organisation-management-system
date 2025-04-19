@@ -1,0 +1,14 @@
+{
+  "name": "sport-management-pwa-root",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start:backend": "docker compose up --build",
+    "stop:backend": "docker compose down",
+    "start:frontend": "cd FE && npm run dev",
+    "dev": "concurrently \"npm:start:backend\" \"npm:start:frontend\""
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}

@@ -1,0 +1,66 @@
+# Dependencies
+node_modules/
+/.pnp
+.pnp.js
+
+# Testing
+/coverage
+
+# Production
+/build
+/dist
+.strapi-updater.json
+
+# Strapi
+BE/strapi/license.txt
+BE/strapi/exports
+BE/.strapi
+BE/strapi/.cache
+BE/strapi/.tmp
+BE/strapi/dist
+BE/strapi/build
+BE/strapi/.env
+BE/strapi/public/uploads/*
+!BE/strapi/public/uploads/.gitkeep
+
+# Frontend
+FE/.next/
+FE/out/
+FE/build
+FE/dist
+
+# IDE - VSCode
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# misc
+.DS_Store
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.pem
+
+# Debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Docker
+BE/postgres-data/
+BE/strapi-data/
+
+# Cache
+.cache/
+.temp/
+.tmp/
+.eslintcache
+
+# System Files
+.DS_Store
+Thumbs.db

@@ -1,0 +1,31 @@
+# BE/Dockerfile
+
+# Use Node.js v20 which is within Strapi's supported range (18-22)
+FROM node:20-slim
+
+# Install required build dependencies including Python and build tools for pg
+RUN apt-get update && apt-get install -y \
+    python3 \
+    build-essential \
+    python-is-python3 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set the working directory inside the container
+WORKDIR /opt/app
+
+# Copy package files
+COPY ./strapi/package.json ./
+COPY ./strapi/package-lock.json ./
+
+# Clean install dependencies
+RUN rm -rf node_modules && npm cache clean --force && npm install
+
+# Copy the rest of the application
+COPY ./strapi/ .
+
+# Build the Strapi admin panel
+RUN npm run build
+
+EXPOSE 1337
+
+CMD ["npm", "run", "develop"]
