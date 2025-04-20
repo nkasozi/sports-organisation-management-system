@@ -51,6 +51,9 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
+# GitHub
+.github/
+
 # Docker
 BE/postgres-data/
 BE/strapi-data/
