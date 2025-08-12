@@ -338,35 +338,58 @@ class TestDataFactory:
     def create_organization(organization_id: str = "test-org",
                           name: str = "Test Organization") -> Organization:
         """Create a test organization."""
-        return Organization(
+        from datetime import datetime
+        from api.core.domain.entities.enums import OrganizationType
+        organization = Organization(
             organization_id=organization_id,
-            name=name,
-            description=f"Description for {name}"
+            organization_name=name,
+            organization_type=OrganizationType.CLUB,
+            creation_date=datetime.now(),
+            is_active=True
         )
+        # Add compatibility attributes for tests
+        organization.name = name
+        organization.description = f"Organization {name}"
+        return organization
 
     @staticmethod
     def create_competition(competition_id: str = "test-comp",
                           organization_id: str = "test-org",
                           sport_id: str = "test-sport") -> Competition:
         """Create a test competition."""
+        from datetime import datetime, date
+        from api.core.domain.entities.enums import CompetitionType, CompetitionStatus
         return Competition(
             competition_id=competition_id,
-            name="Test Competition",
-            description="A test competition",
-            sport_id=sport_id,
             organization_id=organization_id,
-            status=CompetitionStatus.PLANNED
+            sport_id=sport_id,
+            competition_name="Test Competition",
+            competition_type=CompetitionType.LEAGUE,
+            start_date=date.today(),
+            end_date=date.today(),
+            competition_status=CompetitionStatus.DRAFT,
+            registration_deadline=None,
+            max_teams=None
         )
 
     @staticmethod
     def create_game(game_id: str = "test-game",
                    competition_id: str = "test-comp") -> Game:
         """Create a test game."""
+        from datetime import datetime
+        from api.core.domain.entities.enums import GameStatus
         return Game(
             game_id=game_id,
             competition_id=competition_id,
-            home_team="Home Team",
-            away_team="Away Team",
-            status=GameStatus.SCHEDULED,
-            venue="Test Stadium"
+            game_format_id="format-1",
+            home_team_id="home-team",
+            away_team_id="away-team",
+            scheduled_datetime=datetime.now(),
+            game_status=GameStatus.SCHEDULED,
+            home_team_score=0,
+            away_team_score=0,
+            home_lineup_submitted=False,
+            away_lineup_submitted=False,
+            venue_name="Test Stadium",
+            pitch_number="1"
         )

@@ -26,7 +26,9 @@ class CompetitionType(Enum):
 class CompetitionStatus(Enum):
     """Competition lifecycle status."""
     DRAFT = "draft"
+    PLANNED = "planned"
     PUBLISHED = "published"
+    ACTIVE = "active"
     IN_PROGRESS = "in_progress"
     COMPLETED = "completed"
     CANCELLED = "cancelled"
@@ -36,6 +38,7 @@ class GameStatus(Enum):
     """Game lifecycle status."""
     SCHEDULED = "scheduled"
     LINEUPS_SUBMITTED = "lineups_submitted"
+    IN_PROGRESS = "in_progress"
     LIVE = "live"
     FINISHED = "finished"
     CANCELLED = "cancelled"
