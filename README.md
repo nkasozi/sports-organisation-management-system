@@ -1,25 +1,27 @@
 # Sports Organisation Management System
 
-A comprehensive web application for managing sports organizations, competitions, teams, players, and games. Built with Python/Flask backend using onion architecture and SvelteKit frontend, optimized for deployment on Vercel.
+A comprehensive web application for managing sports organizations, competitions, teams, players, and games. Built with Python/Flask backend using onion architecture with dependency injection and SvelteKit frontend, optimized for deployment on Vercel.
 
 ## 🏗️ Architecture Overview
 
-This project follows the **Onion Architecture** (Clean Architecture) pattern, ensuring:
+This project follows the **Onion Architecture** (Clean Architecture) pattern with **Dependency Injection**, ensuring:
 
 - **Separation of Concerns**: Business logic is independent of external frameworks
-- **Testability**: Core logic can be tested in isolation
+- **Testability**: Core logic can be tested in isolation with mocked dependencies
 - **Maintainability**: Easy to modify and extend
 - **Flexibility**: External dependencies can be swapped without affecting core logic
+- **Dependency Inversion**: High-level modules don't depend on low-level modules
 
 ### Project Structure
 
-````
+```
 ├── api/                          # Backend API (Vercel Functions)
 │   ├── core/                     # Core business logic (inner layer)
 │   │   ├── domain/
 │   │   │   ├── entities/         # Business entities (Organization, Game, etc.)
 │   │   │   └── repositories/     # Repository interfaces
-│   │   └── use_cases/           # Business use cases and orchestration
+│   │   ├── services/            # Business services and orchestration
+│   │   └── container/           # Dependency injection container
 │   ├── adapters/                # External adapters (outer layer)
 │   │   ├── database/            # Database implementations
 │   │   ├── web/                 # Flask routes and controllers
@@ -34,21 +36,35 @@ This project follows the **Onion Architecture** (Clean Architecture) pattern, en
 │   │   └── routes/             # SvelteKit pages and components
 │   ├── package.json
 │   └── svelte.config.js
+├── tests/                       # Comprehensive test suite
+│   ├── conftest.py             # Test configuration and fixtures
+│   ├── test_*_service.py       # Unit tests for services
+│   ├── test_api_routes.py      # Integration tests for API
+│   ├── test_dependency_injection.py # DI container tests
+│   └── README.md               # Testing documentation
 ├── requirements.txt             # Python dependencies
+├── pytest.ini                 # pytest configuration
+├── run_tests.py               # Test runner script
 ├── vercel.json                 # Vercel deployment configuration
 ├── BACKEND_PLAN.md             # Detailed backend implementation plan
 └── FRONTEND_PLAN.md            # Frontend implementation plan
+```
+
 ## 🛠️ Technology Stack
 
 ### Backend
+
 - **Framework**: Flask (Python)
+- **Architecture**: Onion/Clean Architecture with Dependency Injection
 - **Database**: PostgreSQL with SQLAlchemy ORM
 - **Authentication**: Auth0
 - **Real-time**: WebSockets
+- **Testing**: pytest with mocked dependencies and 80%+ coverage
 - **Deployment**: Vercel Functions (Serverless)
 - **Type Safety**: Full Python type annotations
 
 ### Frontend
+
 - **Framework**: SvelteKit (Svelte 5)
 - **Styling**: Tailwind CSS
 - **Build Tool**: Vite
@@ -57,29 +73,51 @@ This project follows the **Onion Architecture** (Clean Architecture) pattern, en
 ## 🚀 Getting Started
 
 ### Prerequisites
-- Python 3.9+
-- Node.js 18+
-- PostgreSQL (for production)
+
+- **Python 3.8+**
+- **Node.js 18+** (for frontend)
+- **PostgreSQL** (for production)
+- **uv** (recommended) or pip for Python package management
+
+### Package Management
+
+This project uses [uv](https://github.com/astral-sh/uv) for fast Python package management. See [UV_SETUP.md](UV_SETUP.md) for installation instructions.
 
 ### Backend Development
 
-1. **Install Python dependencies**:
-   ```bash
-   pip install -r requirements.txt
-````
+1. **Install uv** (if not already installed):
 
-2. **Set up environment variables**:
+   ```bash
+   curl -LsSf https://astral.sh/uv/install.sh | sh
+   ```
+
+2. **Install Python dependencies**:
+
+   ```bash
+   # Install all dependencies (recommended for development)
+   uv pip install -e .[all]
+
+   # Or install specific groups
+   uv pip install -e .[dev,test]  # Dev and test dependencies
+   uv pip install -e .            # Main dependencies only
+
+   # Alternative: use traditional pip
+   pip install -r requirements.txt
+   ```
+
+3. **Set up environment variables**:
 
    ```bash
    cp .env.example .env
    # Edit .env with your configuration
    ```
 
-3. **Run the development server**:
+4. **Run the development server**:
 
    ```bash
-   cd api
-   python index.py
+   uv run python api/index.py
+   # Or with traditional Python
+   cd api && python index.py
    ```
 
    The API will be available at `http://localhost:5000`
@@ -172,6 +210,67 @@ FRONTEND_URL=http://localhost:5173
 ```
 
 ## 🧪 Testing
+
+This project includes a comprehensive test suite with unit tests, integration tests, and mocked dependencies following clean architecture principles.
+
+### Quick Testing with uv
+
+Use the test runner script for common tasks:
+
+```bash
+# Install test dependencies with uv
+python run_tests.py --install-deps
+
+# Install just main dependencies
+python run_tests.py --install-main
+
+# Run all tests with coverage
+python run_tests.py --all
+
+# Run only unit tests
+python run_tests.py --unit
+
+# Run only integration tests
+python run_tests.py --integration
+
+# Run code quality checks (black, isort, mypy, flake8)
+python run_tests.py --quality
+
+# Run specific test file
+python run_tests.py --test tests/test_organization_service.py
+```
+
+### Manual Testing
+
+```bash
+# Using uv (recommended)
+uv run pytest tests/
+uv run pytest tests/ --cov=api --cov-report=html
+
+# Traditional approach
+pytest tests/
+pytest tests/ --cov=api --cov-report=html
+
+# Run specific test categories
+uv run pytest tests/ -m unit          # Unit tests only
+pytest tests/ -m integration   # Integration tests only
+
+# Run specific test file
+pytest tests/test_organization_service.py
+
+# Verbose output
+pytest tests/ -v
+```
+
+### Test Features
+
+- **Dependency Injection Testing**: All tests use mocked dependencies through DI container
+- **Mock Repositories**: Track method calls and provide test data isolation
+- **Test Data Factory**: Consistent test entity creation
+- **Coverage Reporting**: 80%+ coverage requirement with HTML reports
+- **Type Safety**: Full type checking in tests
+
+See [tests/README.md](tests/README.md) for detailed testing documentation.
 
 ### Backend Tests
 
@@ -341,3 +440,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
   - **Result:** Public website/PWA fetches via Strapi API to display.
 
 ---
+
+```
+
+```

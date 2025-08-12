@@ -1,7 +1,20 @@
 """
-Use cases for the Sports Organisation Management System.
+Services for the Sports Organisation Management System.
 
-Use cases represent the business operations that can be performed in the system.
+Services represent the business operations that can be performed in tclass CompetitionManagementService:
+    """Service for managing competitions."""
+
+    def _class GameManagementService:
+    """Service for managing games and game events."""
+
+    def __init__(self, game_repository: GameRepository, game_event_repository: GameEventRepository):
+        self._game_repository = game_repository
+        self._game_event_repository = game_event_repository_(self, competition_repository: CompetitionRepository,
+                 organization_repository: OrganizationRepository):
+        self._competition_repository = competition_repository
+        self._organization_repository = organization_repository
+
+    async def create_new_competition(self, competition_data: Dict[str, Any]) -> ServiceResult:.
 They orchestrate the interaction between entities and repositories to fulfill
 specific business requirements while maintaining independence from external concerns.
 """
@@ -16,21 +29,21 @@ from api.core.domain.repositories import (
 
 
 @dataclass
-class UseCaseResult:
-    """Standard result structure for use case operations."""
+class ServiceResult:
+    """Standard result structure for service operations."""
     is_successful: bool
     result_data: Optional[Dict[str, Any]] = None
     error_message: Optional[str] = None
     error_code: Optional[str] = None
 
 
-class OrganizationManagementUseCase:
-    """Use cases for managing organizations."""
+class OrganizationManagementService:
+    """Service for managing organizations."""
 
     def __init__(self, organization_repository: OrganizationRepository):
         self._organization_repository = organization_repository
 
-    async def create_new_organization(self, organization_name: str, organization_type: str) -> UseCaseResult:
+    async def create_new_organization(self, organization_name: str, organization_type: str) -> ServiceResult:
         """
         Create a new sports organization.
 
@@ -39,10 +52,10 @@ class OrganizationManagementUseCase:
             organization_type: Type of organization (league, club, etc.)
 
         Returns:
-            UseCaseResult: Result of the operation with organization ID or error
+            ServiceResult: Result of the operation with organization ID or error
         """
         if not organization_name or not organization_name.strip():
-            return UseCaseResult(
+            return ServiceResult(
                 is_successful=False,
                 error_message="Organization name cannot be empty",
                 error_code="INVALID_NAME"
@@ -56,18 +69,18 @@ class OrganizationManagementUseCase:
 
         try:
             organization_id = await self._organization_repository.create_entity(organization_data)
-            return UseCaseResult(
+            return ServiceResult(
                 is_successful=True,
                 result_data={"organization_id": organization_id}
             )
         except Exception as exception_details:
-            return UseCaseResult(
+            return ServiceResult(
                 is_successful=False,
                 error_message=f"Failed to create organization: {str(exception_details)}",
                 error_code="CREATION_FAILED"
             )
 
-    async def get_organization_details(self, organization_id: str) -> UseCaseResult:
+    async def get_organization_details(self, organization_id: str) -> ServiceResult:
         """
         Retrieve details of a specific organization.
 
@@ -75,10 +88,10 @@ class OrganizationManagementUseCase:
             organization_id: Unique identifier of the organization
 
         Returns:
-            UseCaseResult: Result containing organization details or error
+            ServiceResult: Result containing organization details or error
         """
         if not organization_id or not organization_id.strip():
-            return UseCaseResult(
+            return ServiceResult(
                 is_successful=False,
                 error_message="Organization ID cannot be empty",
                 error_code="INVALID_ID"
@@ -87,24 +100,24 @@ class OrganizationManagementUseCase:
         try:
             organization_data = await self._organization_repository.get_entity_by_id(organization_id)
             if organization_data is None:
-                return UseCaseResult(
+                return ServiceResult(
                     is_successful=False,
                     error_message="Organization not found",
                     error_code="NOT_FOUND"
                 )
 
-            return UseCaseResult(
+            return ServiceResult(
                 is_successful=True,
                 result_data=organization_data
             )
         except Exception as exception_details:
-            return UseCaseResult(
+            return ServiceResult(
                 is_successful=False,
                 error_message=f"Failed to retrieve organization: {str(exception_details)}",
                 error_code="RETRIEVAL_FAILED"
             )
 
-    async def list_organizations_by_type(self, organization_type: str) -> UseCaseResult:
+    async def list_organizations_by_type(self, organization_type: str) -> ServiceResult:
         """
         List all organizations of a specific type.
 
@@ -112,23 +125,23 @@ class OrganizationManagementUseCase:
             organization_type: Type of organizations to retrieve
 
         Returns:
-            UseCaseResult: Result containing list of organizations or error
+            ServiceResult: Result containing list of organizations or error
         """
         try:
             organizations_list = await self._organization_repository.find_organizations_by_type(organization_type)
-            return UseCaseResult(
+            return ServiceResult(
                 is_successful=True,
                 result_data={"organizations": organizations_list}
             )
         except Exception as exception_details:
-            return UseCaseResult(
+            return ServiceResult(
                 is_successful=False,
                 error_message=f"Failed to list organizations: {str(exception_details)}",
                 error_code="LISTING_FAILED"
             )
 
 
-class CompetitionManagementUseCase:
+class CompetitionManagementService:
     """Use cases for managing competitions."""
 
     def __init__(self, competition_repository: CompetitionRepository,
@@ -136,7 +149,7 @@ class CompetitionManagementUseCase:
         self._competition_repository = competition_repository
         self._organization_repository = organization_repository
 
-    async def create_new_competition(self, competition_data: Dict[str, Any]) -> UseCaseResult:
+    async def create_new_competition(self, competition_data: Dict[str, Any]) -> ServiceResult:
         """
         Create a new competition within an organization.
 
@@ -144,13 +157,13 @@ class CompetitionManagementUseCase:
             competition_data: Dictionary containing competition details
 
         Returns:
-            UseCaseResult: Result of the operation with competition ID or error
+            ServiceResult: Result of the operation with competition ID or error
         """
         required_fields = ["competition_name", "organization_id", "sport_id", "competition_type"]
 
         for required_field in required_fields:
             if required_field not in competition_data or not competition_data[required_field]:
-                return UseCaseResult(
+                return ServiceResult(
                     is_successful=False,
                     error_message=f"Required field '{required_field}' is missing or empty",
                     error_code="MISSING_REQUIRED_FIELD"
@@ -161,7 +174,7 @@ class CompetitionManagementUseCase:
             competition_data["organization_id"]
         )
         if organization_exists is None:
-            return UseCaseResult(
+            return ServiceResult(
                 is_successful=False,
                 error_message="Organization not found",
                 error_code="ORGANIZATION_NOT_FOUND"
@@ -169,18 +182,18 @@ class CompetitionManagementUseCase:
 
         try:
             competition_id = await self._competition_repository.create_entity(competition_data)
-            return UseCaseResult(
+            return ServiceResult(
                 is_successful=True,
                 result_data={"competition_id": competition_id}
             )
         except Exception as exception_details:
-            return UseCaseResult(
+            return ServiceResult(
                 is_successful=False,
                 error_message=f"Failed to create competition: {str(exception_details)}",
                 error_code="CREATION_FAILED"
             )
 
-    async def get_competitions_for_organization(self, organization_id: str) -> UseCaseResult:
+    async def get_competitions_for_organization(self, organization_id: str) -> ServiceResult:
         """
         Retrieve all competitions for a specific organization.
 
@@ -188,10 +201,10 @@ class CompetitionManagementUseCase:
             organization_id: ID of the organization
 
         Returns:
-            UseCaseResult: Result containing list of competitions or error
+            ServiceResult: Result containing list of competitions or error
         """
         if not organization_id or not organization_id.strip():
-            return UseCaseResult(
+            return ServiceResult(
                 is_successful=False,
                 error_message="Organization ID cannot be empty",
                 error_code="INVALID_ID"
@@ -199,26 +212,26 @@ class CompetitionManagementUseCase:
 
         try:
             competitions_list = await self._competition_repository.find_competitions_by_organization(organization_id)
-            return UseCaseResult(
+            return ServiceResult(
                 is_successful=True,
                 result_data={"competitions": competitions_list}
             )
         except Exception as exception_details:
-            return UseCaseResult(
+            return ServiceResult(
                 is_successful=False,
                 error_message=f"Failed to retrieve competitions: {str(exception_details)}",
                 error_code="RETRIEVAL_FAILED"
             )
 
 
-class GameManagementUseCase:
+class GameManagementService:
     """Use cases for managing games and game events."""
 
     def __init__(self, game_repository: GameRepository, game_event_repository: GameEventRepository):
         self._game_repository = game_repository
         self._game_event_repository = game_event_repository
 
-    async def create_new_game(self, game_data: Dict[str, Any]) -> UseCaseResult:
+    async def create_new_game(self, game_data: Dict[str, Any]) -> ServiceResult:
         """
         Create a new game between two teams.
 
@@ -226,13 +239,13 @@ class GameManagementUseCase:
             game_data: Dictionary containing game details
 
         Returns:
-            UseCaseResult: Result of the operation with game ID or error
+            ServiceResult: Result of the operation with game ID or error
         """
         required_fields = ["competition_id", "home_team_id", "away_team_id", "scheduled_datetime"]
 
         for required_field in required_fields:
             if required_field not in game_data or not game_data[required_field]:
-                return UseCaseResult(
+                return ServiceResult(
                     is_successful=False,
                     error_message=f"Required field '{required_field}' is missing or empty",
                     error_code="MISSING_REQUIRED_FIELD"
@@ -240,7 +253,7 @@ class GameManagementUseCase:
 
         # Ensure teams are different
         if game_data["home_team_id"] == game_data["away_team_id"]:
-            return UseCaseResult(
+            return ServiceResult(
                 is_successful=False,
                 error_message="Home team and away team cannot be the same",
                 error_code="INVALID_TEAM_ASSIGNMENT"
@@ -248,18 +261,18 @@ class GameManagementUseCase:
 
         try:
             game_id = await self._game_repository.create_entity(game_data)
-            return UseCaseResult(
+            return ServiceResult(
                 is_successful=True,
                 result_data={"game_id": game_id}
             )
         except Exception as exception_details:
-            return UseCaseResult(
+            return ServiceResult(
                 is_successful=False,
                 error_message=f"Failed to create game: {str(exception_details)}",
                 error_code="CREATION_FAILED"
             )
 
-    async def record_game_event(self, event_data: Dict[str, Any]) -> UseCaseResult:
+    async def record_game_event(self, event_data: Dict[str, Any]) -> ServiceResult:
         """
         Record a new event during a game (goal, card, etc.).
 
@@ -267,13 +280,13 @@ class GameManagementUseCase:
             event_data: Dictionary containing event details
 
         Returns:
-            UseCaseResult: Result of the operation with event ID or error
+            ServiceResult: Result of the operation with event ID or error
         """
         required_fields = ["game_id", "player_id", "team_id", "event_type", "game_minute"]
 
         for required_field in required_fields:
             if required_field not in event_data or event_data[required_field] is None:
-                return UseCaseResult(
+                return ServiceResult(
                     is_successful=False,
                     error_message=f"Required field '{required_field}' is missing",
                     error_code="MISSING_REQUIRED_FIELD"
@@ -287,12 +300,12 @@ class GameManagementUseCase:
             if event_data["event_type"] == "goal":
                 await self._update_game_score_after_goal(event_data["game_id"], event_data["team_id"])
 
-            return UseCaseResult(
+            return ServiceResult(
                 is_successful=True,
                 result_data={"event_id": event_id}
             )
         except Exception as exception_details:
-            return UseCaseResult(
+            return ServiceResult(
                 is_successful=False,
                 error_message=f"Failed to record game event: {str(exception_details)}",
                 error_code="EVENT_RECORDING_FAILED"

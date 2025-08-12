@@ -1,14 +1,358 @@
 """
-Web adapter routes for the Sports Organisation Management System API.
+Web adapter for handling HTTP requests and responses.
 
-This module defines the Flask routes and blueprints that expose the API endpoints.
-Following the onion architecture pattern, these routes handle HTTP concerns and
-delegate business logic to the use cases in the core domain.
+This module defines the REST API endpoints for the Sports Organisation
+Management System using Flask blueprints with dependency injection.
 """
+
+from typing import Dict, Any, List
+from flask import Blueprint, request, jsonify
+from api.core.domain.entities import Organization, Competition, Game, GameEvent, CompetitionStatus, GameStatus
+from api.core.services import OrganizationManagementService, CompetitionManagementService, GameManagementService
+from api.core.container import DependencyContainer
+from api.shared.logger import get_logger
+
+logger = get_logger(__name__)
+
+
+def create_api_blueprint(container: DependencyContainer) -> Blueprint:
+    """
+    Create the API blueprint with dependency injection.
+
+    Args:
+        container: Dependency injection container
+
+    Returns:
+        Blueprint: Configured Flask blueprint
+    """
+    api_blueprint = Blueprint('api', __name__)
+
+    # Organization endpoints
+    @api_blueprint.route('/organizations', methods=['GET'])
+    def list_organizations():
+        """Get all organizations."""
+        try:
+            organization_service = container.resolve(OrganizationManagementService)
+            organizations_result = organization_service.get_all_organizations()
+
+            if organizations_result.is_success:
+                organizations_data = [
+                    {
+                        'id': org.organization_id,
+                        'name': org.name,
+                        'description': org.description,
+                        'created_at': org.created_at.isoformat(),
+                        'updated_at': org.updated_at.isoformat()
+                    }
+                    for org in organizations_result.data
+                ]
+                return jsonify({
+                    'success': True,
+                    'data': organizations_data,
+                    'message': 'Organizations retrieved successfully'
+                }), 200
+            else:
+                return jsonify({
+                    'success': False,
+                    'error': organizations_result.error_message,
+                    'message': 'Failed to retrieve organizations'
+                }), 500
+        except Exception as e:
+            logger.error(f"Error in list_organizations: {str(e)}")
+            return jsonify({
+                'success': False,
+                'error': str(e),
+                'message': 'Internal server error'
+            }), 500
+
+    @api_blueprint.route('/organizations/<organization_id>', methods=['GET'])
+    def get_organization(organization_id: str):
+        """Get organization by ID."""
+        try:
+            organization_service = container.resolve(OrganizationManagementService)
+            organization_result = organization_service.get_organization_by_id(organization_id)
+
+            if organization_result.is_success:
+                org = organization_result.data
+                organization_data = {
+                    'id': org.organization_id,
+                    'name': org.name,
+                    'description': org.description,
+                    'created_at': org.created_at.isoformat(),
+                    'updated_at': org.updated_at.isoformat()
+                }
+                return jsonify({
+                    'success': True,
+                    'data': organization_data,
+                    'message': 'Organization retrieved successfully'
+                }), 200
+            else:
+                return jsonify({
+                    'success': False,
+                    'error': organization_result.error_message,
+                    'message': 'Organization not found'
+                }), 404
+        except Exception as e:
+            logger.error(f"Error in get_organization: {str(e)}")
+            return jsonify({
+                'success': False,
+                'error': str(e),
+                'message': 'Internal server error'
+            }), 500
+
+    @api_blueprint.route('/organizations', methods=['POST'])
+    def create_organization():
+        """Create a new organization."""
+        try:
+            data = request.get_json()
+
+            if not data or 'name' not in data:
+                return jsonify({
+                    'success': False,
+                    'error': 'Name is required',
+                    'message': 'Invalid request data'
+                }), 400
+
+            organization_service = container.resolve(OrganizationManagementService)
+            create_organization_result = organization_service.create_organization(
+                name=data['name'],
+                description=data.get('description', '')
+            )
+
+            if create_organization_result.is_success:
+                org = create_organization_result.data
+                organization_data = {
+                    'id': org.organization_id,
+                    'name': org.name,
+                    'description': org.description,
+                    'created_at': org.created_at.isoformat(),
+                    'updated_at': org.updated_at.isoformat()
+                }
+                return jsonify({
+                    'success': True,
+                    'data': organization_data,
+                    'message': 'Organization created successfully'
+                }), 201
+            else:
+                return jsonify({
+                    'success': False,
+                    'error': create_organization_result.error_message,
+                    'message': 'Failed to create organization'
+                }), 500
+        except Exception as e:
+            logger.error(f"Error in create_organization: {str(e)}")
+            return jsonify({
+                'success': False,
+                'error': str(e),
+                'message': 'Internal server error'
+            }), 500
+
+    # Competition endpoints
+    @api_blueprint.route('/competitions', methods=['GET'])
+    def list_competitions():
+        """Get all competitions."""
+        try:
+            competition_service = container.resolve(CompetitionManagementService)
+            competitions_result = competition_service.get_all_competitions()
+
+            if competitions_result.is_success:
+                competitions_data = [
+                    {
+                        'id': comp.competition_id,
+                        'name': comp.name,
+                        'description': comp.description,
+                        'sport_id': comp.sport_id,
+                        'organization_id': comp.organization_id,
+                        'start_date': comp.start_date.isoformat() if comp.start_date else None,
+                        'end_date': comp.end_date.isoformat() if comp.end_date else None,
+                        'status': comp.status.value,
+                        'created_at': comp.created_at.isoformat(),
+                        'updated_at': comp.updated_at.isoformat()
+                    }
+                    for comp in competitions_result.data
+                ]
+                return jsonify({
+                    'success': True,
+                    'data': competitions_data,
+                    'message': 'Competitions retrieved successfully'
+                }), 200
+            else:
+                return jsonify({
+                    'success': False,
+                    'error': competitions_result.error_message,
+                    'message': 'Failed to retrieve competitions'
+                }), 500
+        except Exception as e:
+            logger.error(f"Error in list_competitions: {str(e)}")
+            return jsonify({
+                'success': False,
+                'error': str(e),
+                'message': 'Internal server error'
+            }), 500
+
+    @api_blueprint.route('/competitions', methods=['POST'])
+    def create_competition():
+        """Create a new competition."""
+        try:
+            data = request.get_json()
+
+            required_fields = ['name', 'sport_id', 'organization_id']
+            if not data or not all(field in data for field in required_fields):
+                return jsonify({
+                    'success': False,
+                    'error': f'Required fields: {required_fields}',
+                    'message': 'Invalid request data'
+                }), 400
+
+            competition_service = container.resolve(CompetitionManagementService)
+            create_competition_result = competition_service.create_competition(
+                name=data['name'],
+                sport_id=data['sport_id'],
+                organization_id=data['organization_id'],
+                description=data.get('description', ''),
+                start_date=data.get('start_date'),
+                end_date=data.get('end_date')
+            )
+
+            if create_competition_result.is_success:
+                comp = create_competition_result.data
+                competition_data = {
+                    'id': comp.competition_id,
+                    'name': comp.name,
+                    'description': comp.description,
+                    'sport_id': comp.sport_id,
+                    'organization_id': comp.organization_id,
+                    'start_date': comp.start_date.isoformat() if comp.start_date else None,
+                    'end_date': comp.end_date.isoformat() if comp.end_date else None,
+                    'status': comp.status.value,
+                    'created_at': comp.created_at.isoformat(),
+                    'updated_at': comp.updated_at.isoformat()
+                }
+                return jsonify({
+                    'success': True,
+                    'data': competition_data,
+                    'message': 'Competition created successfully'
+                }), 201
+            else:
+                return jsonify({
+                    'success': False,
+                    'error': create_competition_result.error_message,
+                    'message': 'Failed to create competition'
+                }), 500
+        except Exception as e:
+            logger.error(f"Error in create_competition: {str(e)}")
+            return jsonify({
+                'success': False,
+                'error': str(e),
+                'message': 'Internal server error'
+            }), 500
+
+    # Game endpoints
+    @api_blueprint.route('/games', methods=['GET'])
+    def list_games():
+        """Get all games."""
+        try:
+            game_service = container.resolve(GameManagementService)
+            games_result = game_service.get_all_games()
+
+            if games_result.is_success:
+                games_data = [
+                    {
+                        'id': game.game_id,
+                        'competition_id': game.competition_id,
+                        'home_team': game.home_team,
+                        'away_team': game.away_team,
+                        'scheduled_datetime': game.scheduled_datetime.isoformat() if game.scheduled_datetime else None,
+                        'venue': game.venue,
+                        'status': game.status.value,
+                        'score_home': game.score_home,
+                        'score_away': game.score_away,
+                        'created_at': game.created_at.isoformat(),
+                        'updated_at': game.updated_at.isoformat()
+                    }
+                    for game in games_result.data
+                ]
+                return jsonify({
+                    'success': True,
+                    'data': games_data,
+                    'message': 'Games retrieved successfully'
+                }), 200
+            else:
+                return jsonify({
+                    'success': False,
+                    'error': games_result.error_message,
+                    'message': 'Failed to retrieve games'
+                }), 500
+        except Exception as e:
+            logger.error(f"Error in list_games: {str(e)}")
+            return jsonify({
+                'success': False,
+                'error': str(e),
+                'message': 'Internal server error'
+            }), 500
+
+    @api_blueprint.route('/games', methods=['POST'])
+    def create_game():
+        """Create a new game."""
+        try:
+            data = request.get_json()
+
+            required_fields = ['competition_id', 'home_team', 'away_team']
+            if not data or not all(field in data for field in required_fields):
+                return jsonify({
+                    'success': False,
+                    'error': f'Required fields: {required_fields}',
+                    'message': 'Invalid request data'
+                }), 400
+
+            game_service = container.resolve(GameManagementService)
+            create_game_result = game_service.create_game(
+                competition_id=data['competition_id'],
+                home_team=data['home_team'],
+                away_team=data['away_team'],
+                scheduled_datetime=data.get('scheduled_datetime'),
+                venue=data.get('venue')
+            )
+
+            if create_game_result.is_success:
+                game = create_game_result.data
+                game_data = {
+                    'id': game.game_id,
+                    'competition_id': game.competition_id,
+                    'home_team': game.home_team,
+                    'away_team': game.away_team,
+                    'scheduled_datetime': game.scheduled_datetime.isoformat() if game.scheduled_datetime else None,
+                    'venue': game.venue,
+                    'status': game.status.value,
+                    'score_home': game.score_home,
+                    'score_away': game.score_away,
+                    'created_at': game.created_at.isoformat(),
+                    'updated_at': game.updated_at.isoformat()
+                }
+                return jsonify({
+                    'success': True,
+                    'data': game_data,
+                    'message': 'Game created successfully'
+                }), 201
+            else:
+                return jsonify({
+                    'success': False,
+                    'error': create_game_result.error_message,
+                    'message': 'Failed to create game'
+                }), 500
+        except Exception as e:
+            logger.error(f"Error in create_game: {str(e)}")
+            return jsonify({
+                'success': False,
+                'error': str(e),
+                'message': 'Internal server error'
+            }), 500
+
+    return api_blueprint
 
 from flask import Blueprint, request, jsonify
 from typing import Dict, Any, Tuple
-from api.core.use_cases import OrganizationManagementUseCase, CompetitionManagementUseCase, GameManagementUseCase
+from api.core.services import OrganizationManagementService, CompetitionManagementService, GameManagementService
 from api.shared.logger import get_application_logger, APIResponse, log_api_request
 from api.adapters.database.repositories import (
     create_organization_repository, create_competition_repository,
@@ -32,10 +376,10 @@ def create_api_routes() -> Blueprint:
     game_repository = create_game_repository()
     game_event_repository = create_game_event_repository()
 
-    # Initialize use cases
-    organization_use_case = OrganizationManagementUseCase(organization_repository)
-    competition_use_case = CompetitionManagementUseCase(competition_repository, organization_repository)
-    game_use_case = GameManagementUseCase(game_repository, game_event_repository)
+    # Initialize services
+    organization_service = OrganizationManagementService(organization_repository)
+    competition_service = CompetitionManagementService(competition_repository, organization_repository)
+    game_service = GameManagementService(game_repository, game_event_repository)
 
     @api_blueprint.route('/organizations', methods=['POST'])
     async def create_organization_endpoint() -> Tuple[Dict[str, Any], int]:
@@ -62,19 +406,19 @@ def create_api_routes() -> Blueprint:
                     "Organization type is required", "MISSING_TYPE"
                 ), 400
 
-            use_case_result = await organization_use_case.create_new_organization(
+            service_result = await organization_service.create_new_organization(
                 organization_name, organization_type
             )
 
-            if use_case_result.is_successful:
-                application_logger.info(f"Organization created successfully: {use_case_result.result_data}")
+            if service_result.is_successful:
+                application_logger.info(f"Organization created successfully: {service_result.result_data}")
                 return APIResponse.create_success_response(
-                    use_case_result.result_data, "Organization created successfully"
+                    service_result.result_data, "Organization created successfully"
                 ), 201
             else:
-                application_logger.warning(f"Organization creation failed: {use_case_result.error_message}")
+                application_logger.warning(f"Organization creation failed: {service_result.error_message}")
                 return APIResponse.create_error_response(
-                    use_case_result.error_message, use_case_result.error_code
+                    service_result.error_message, service_result.error_code
                 ), 400
 
         except Exception as exception_details:
@@ -89,16 +433,16 @@ def create_api_routes() -> Blueprint:
         try:
             log_api_request(application_logger, 'GET', f'/organizations/{organization_id}')
 
-            use_case_result = await organization_use_case.get_organization_details(organization_id)
+            service_result = await organization_service.get_organization_details(organization_id)
 
-            if use_case_result.is_successful:
+            if service_result.is_successful:
                 return APIResponse.create_success_response(
-                    use_case_result.result_data, "Organization retrieved successfully"
+                    service_result.result_data, "Organization retrieved successfully"
                 ), 200
             else:
-                status_code = 404 if use_case_result.error_code == "NOT_FOUND" else 400
+                status_code = 404 if service_result.error_code == "NOT_FOUND" else 400
                 return APIResponse.create_error_response(
-                    use_case_result.error_message, use_case_result.error_code
+                    service_result.error_message, service_result.error_code
                 ), status_code
 
         except Exception as exception_details:
@@ -113,15 +457,15 @@ def create_api_routes() -> Blueprint:
         try:
             log_api_request(application_logger, 'GET', f'/organizations/by-type/{organization_type}')
 
-            use_case_result = await organization_use_case.list_organizations_by_type(organization_type)
+            service_result = await organization_service.list_organizations_by_type(organization_type)
 
-            if use_case_result.is_successful:
+            if service_result.is_successful:
                 return APIResponse.create_success_response(
-                    use_case_result.result_data, "Organizations retrieved successfully"
+                    service_result.result_data, "Organizations retrieved successfully"
                 ), 200
             else:
                 return APIResponse.create_error_response(
-                    use_case_result.error_message, use_case_result.error_code
+                    service_result.error_message, service_result.error_code
                 ), 400
 
         except Exception as exception_details:
@@ -142,17 +486,17 @@ def create_api_routes() -> Blueprint:
                     "Request body is required", "MISSING_BODY"
                 ), 400
 
-            use_case_result = await competition_use_case.create_new_competition(request_data)
+            service_result = await competition_service.create_new_competition(request_data)
 
-            if use_case_result.is_successful:
-                application_logger.info(f"Competition created successfully: {use_case_result.result_data}")
+            if service_result.is_successful:
+                application_logger.info(f"Competition created successfully: {service_result.result_data}")
                 return APIResponse.create_success_response(
-                    use_case_result.result_data, "Competition created successfully"
+                    service_result.result_data, "Competition created successfully"
                 ), 201
             else:
-                application_logger.warning(f"Competition creation failed: {use_case_result.error_message}")
+                application_logger.warning(f"Competition creation failed: {service_result.error_message}")
                 return APIResponse.create_error_response(
-                    use_case_result.error_message, use_case_result.error_code
+                    service_result.error_message, service_result.error_code
                 ), 400
 
         except Exception as exception_details:
@@ -167,15 +511,15 @@ def create_api_routes() -> Blueprint:
         try:
             log_api_request(application_logger, 'GET', f'/organizations/{organization_id}/competitions')
 
-            use_case_result = await competition_use_case.get_competitions_for_organization(organization_id)
+            service_result = await competition_service.get_competitions_for_organization(organization_id)
 
-            if use_case_result.is_successful:
+            if service_result.is_successful:
                 return APIResponse.create_success_response(
-                    use_case_result.result_data, "Competitions retrieved successfully"
+                    service_result.result_data, "Competitions retrieved successfully"
                 ), 200
             else:
                 return APIResponse.create_error_response(
-                    use_case_result.error_message, use_case_result.error_code
+                    service_result.error_message, service_result.error_code
                 ), 400
 
         except Exception as exception_details:
@@ -196,17 +540,17 @@ def create_api_routes() -> Blueprint:
                     "Request body is required", "MISSING_BODY"
                 ), 400
 
-            use_case_result = await game_use_case.create_new_game(request_data)
+            service_result = await game_service.create_new_game(request_data)
 
-            if use_case_result.is_successful:
-                application_logger.info(f"Game created successfully: {use_case_result.result_data}")
+            if service_result.is_successful:
+                application_logger.info(f"Game created successfully: {service_result.result_data}")
                 return APIResponse.create_success_response(
-                    use_case_result.result_data, "Game created successfully"
+                    service_result.result_data, "Game created successfully"
                 ), 201
             else:
-                application_logger.warning(f"Game creation failed: {use_case_result.error_message}")
+                application_logger.warning(f"Game creation failed: {service_result.error_message}")
                 return APIResponse.create_error_response(
-                    use_case_result.error_message, use_case_result.error_code
+                    service_result.error_message, service_result.error_code
                 ), 400
 
         except Exception as exception_details:
@@ -230,17 +574,17 @@ def create_api_routes() -> Blueprint:
             # Add game_id to the request data
             request_data['game_id'] = game_id
 
-            use_case_result = await game_use_case.record_game_event(request_data)
+            service_result = await game_service.record_game_event(request_data)
 
-            if use_case_result.is_successful:
-                application_logger.info(f"Game event recorded successfully: {use_case_result.result_data}")
+            if service_result.is_successful:
+                application_logger.info(f"Game event recorded successfully: {service_result.result_data}")
                 return APIResponse.create_success_response(
-                    use_case_result.result_data, "Game event recorded successfully"
+                    service_result.result_data, "Game event recorded successfully"
                 ), 201
             else:
-                application_logger.warning(f"Game event recording failed: {use_case_result.error_message}")
+                application_logger.warning(f"Game event recording failed: {service_result.error_message}")
                 return APIResponse.create_error_response(
-                    use_case_result.error_message, use_case_result.error_code
+                    service_result.error_message, service_result.error_code
                 ), 400
 
         except Exception as exception_details:

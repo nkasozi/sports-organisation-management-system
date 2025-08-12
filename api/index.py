@@ -1,62 +1,61 @@
 """
-Main Flask application entry point for Vercel deployment.
+Main application entry point for the Sports Organisation Management System.
 
-This file serves as the WSGI application entry point that Vercel will use
-to serve the Flask application.
+This file configures and creates the Flask application instance for deployment
+on Vercel Functions with dependency injection support.
 """
 
 from flask import Flask
 from flask_cors import CORS
-from api.adapters.web.routes import create_api_routes
-from api.config.settings import get_application_settings
-from api.shared.logger import get_application_logger
-from typing import Dict, Any
-import os
+from api.config.settings import Settings
+from api.adapters.web.routes import create_api_blueprint
+from api.shared.logger import get_logger
+from api.core.container import get_container, ServiceProvider
+
+logger = get_logger(__name__)
 
 
-def create_flask_application() -> Flask:
+def create_app(config: Settings = None) -> Flask:
     """
-    Create and configure the Flask application instance.
+    Create and configure the Flask application with dependency injection.
+
+    Args:
+        config: Configuration settings. If None, loads from environment.
 
     Returns:
         Flask: Configured Flask application instance
     """
-    application_instance = Flask(__name__)
+    app = Flask(__name__)
 
-    # Enable CORS for all routes to support frontend requests
-    CORS(application_instance)
+    # Load configuration
+    if config is None:
+        config = Settings()
 
-    # Load application configuration
-    application_settings = get_application_settings()
-    application_instance.config.from_object(application_settings)
+    app.config.update(
+        SECRET_KEY=config.secret_key,
+        DEBUG=config.debug,
+        CORS_ORIGINS=config.cors_origins
+    )
 
-    # Setup logging
-    application_logger = get_application_logger()
-    application_logger.info("Initializing Sports Organisation Management System API")
+    # Enable CORS
+    CORS(app, origins=config.cors_origins)
 
-    # Register API routes
-    api_routes_blueprint = create_api_routes()
-    application_instance.register_blueprint(api_routes_blueprint, url_prefix='/api/v1')
+    # Initialize dependency injection container
+    container = ServiceProvider.create_container()
 
-    # Add health check endpoint for Vercel
-    @application_instance.route('/health')
-    def check_application_health() -> Dict[str, Any]:
-        """Health check endpoint for monitoring application status."""
-        return {
-            'status': 'healthy',
-            'version': '1.0.0',
-            'service': 'sports-organisation-management-api'
-        }
+    # Create and register blueprint with dependency injection
+    api_blueprint = create_api_blueprint(container)
+    app.register_blueprint(api_blueprint, url_prefix='/api')
 
-    application_logger.info("Flask application initialization completed successfully")
-    return application_instance
+    # Health check endpoint
+    @app.route('/health')
+    def health_check():
+        return {'status': 'healthy', 'service': 'sports-org-management'}, 200
+
+    logger.info("Sports Organisation Management System API initialized with dependency injection")
+
+    return app
 
 
 # Create the application instance for Vercel
-app = create_flask_application()
-
-
-if __name__ == '__main__':
-    # Development server (not used in Vercel deployment)
-    debug_mode = os.getenv('FLASK_ENV') == 'development'
-    app.run(debug=debug_mode, host='0.0.0.0', port=5000)
+app = create_app()

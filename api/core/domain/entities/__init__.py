@@ -135,11 +135,11 @@ class Team:
     team_id: str
     organization_id: str
     team_name: str
+    creation_date: datetime
+    is_active: bool = True
     logo_url: Optional[str] = None
     primary_color: Optional[str] = None
     secondary_color: Optional[str] = None
-    creation_date: datetime
-    is_active: bool = True
 
 
 @dataclass
@@ -151,13 +151,13 @@ class Game:
     home_team_id: str
     away_team_id: str
     scheduled_datetime: datetime
-    venue_name: Optional[str] = None
-    pitch_number: Optional[str] = None
     game_status: GameStatus
     home_team_score: int = 0
     away_team_score: int = 0
     home_lineup_submitted: bool = False
     away_lineup_submitted: bool = False
+    venue_name: Optional[str] = None
+    pitch_number: Optional[str] = None
 
 
 @dataclass
