@@ -10,9 +10,9 @@ from flask import Blueprint, request, jsonify
 from api.core.domain.entities import Organization, Competition, Game, GameEvent, CompetitionStatus, GameStatus
 from api.core.services import OrganizationManagementService, CompetitionManagementService, GameManagementService
 from api.core.container import DependencyContainer
-from api.shared.logger import get_logger
+from api.shared.logger import get_application_logger
 
-logger = get_logger(__name__)
+logger = get_application_logger(__name__)
 
 
 def create_api_blueprint(container: DependencyContainer) -> Blueprint:
