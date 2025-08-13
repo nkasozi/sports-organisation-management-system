@@ -43,21 +43,21 @@ class TestAPIRoutesErrorHandling:
     def test_invalid_json_in_requests_returns_consistent_error(self, client):
         """Test that all endpoints handle invalid JSON consistently."""
         invalid_json = '{"invalid": json missing closing brace'
-        
+
         # Test only existing POST endpoints with invalid JSON
         endpoints = [
             '/api/organizations',
             '/api/competitions'
         ]
-        
+
         for endpoint in endpoints:
             response = client.post(endpoint,
                                  data=invalid_json,
                                  content_type='application/json')
-            
+
             # All should return 500 with consistent error structure for JSON parse errors
             assert response.status_code == 500
-            
+
             response_data = json.loads(response.data)
             assert response_data['success'] is False
             assert 'error' in response_data
@@ -66,10 +66,10 @@ class TestAPIRoutesErrorHandling:
     def test_missing_content_type_header_returns_bad_request(self, client):
         """Test that endpoints require proper content-type header."""
         valid_data = json.dumps({'name': 'Test Organization'})
-        
+
         # Test without content-type header
         response = client.post('/api/organizations', data=valid_data)
-        
+
         # Should return 500 (server error) when content-type is missing
         assert response.status_code == 500
 
@@ -91,15 +91,15 @@ class TestAPIRoutesErrorHandling:
     def test_invalid_json_in_requests_returns_consistent_error(self, client):
         """Test that endpoints handle invalid JSON consistently."""
         invalid_json = '{"invalid": json missing closing brace'
-        
+
         # Test only the organization endpoint which exists
         response = client.post('/api/organizations',
                              data=invalid_json,
                              content_type='application/json')
-        
+
         # Should return 500 with consistent error structure for JSON parse errors
         assert response.status_code == 500
-        
+
         response_data = json.loads(response.data)
         assert response_data['success'] is False
         assert 'error' in response_data
@@ -108,10 +108,10 @@ class TestAPIRoutesErrorHandling:
     def test_missing_content_type_header_returns_bad_request(self, client):
         """Test that endpoints require proper content-type header."""
         valid_data = json.dumps({'name': 'Test Organization'})
-        
+
         # Test without content-type header
         response = client.post('/api/organizations', data=valid_data)
-        
+
         # Should return 500 (server error) when content-type is missing
         assert response.status_code == 500
 
@@ -165,7 +165,7 @@ class TestAPIRoutesPerformanceAndLimits:
         # Assert - Should either be rejected with 400 or processed successfully
         # depending on business requirements
         assert response.status_code in [201, 400, 413]  # 413 = Payload Too Large
-        
+
         response_data = json.loads(response.data)
         if response.status_code != 201:
             assert response_data['success'] is False
@@ -225,18 +225,18 @@ class TestAPIRoutesAdditionalScenarios:
     def test_multiple_organizations_can_be_created(self, client):
         """Test that multiple organizations can be created successfully."""
         org_names = ['Org One', 'Org Two', 'Org Three']
-        
+
         for name in org_names:
             org_data = {
                 'name': name,
                 'description': f'Description for {name}'
             }
-            
+
             response = client.post('/api/organizations',
                                  data=json.dumps(org_data),
                                  content_type='application/json')
             response_data = json.loads(response.data)
-            
+
             assert response.status_code == 201
             assert response_data['success'] is True
             assert response_data['data']['name'] == name
@@ -244,7 +244,7 @@ class TestAPIRoutesAdditionalScenarios:
         # Verify all organizations exist by listing them
         list_response = client.get('/api/organizations')
         list_data = json.loads(list_response.data)
-        
+
         assert list_response.status_code == 200
         assert list_data['success'] is True
         assert len(list_data['data']) >= 3  # At least the 3 we created
@@ -255,15 +255,15 @@ class TestAPIRoutesErrorHandling:
     def test_invalid_json_in_requests_returns_consistent_error(self, client):
         """Test that endpoints handle invalid JSON consistently."""
         invalid_json = '{"invalid": json missing closing brace'
-        
+
         # Test only the organization endpoint which exists
         response = client.post('/api/organizations',
                              data=invalid_json,
                              content_type='application/json')
-        
+
         # Should return 500 with consistent error structure for JSON parse errors
         assert response.status_code == 500
-        
+
         response_data = json.loads(response.data)
         assert response_data['success'] is False
         assert 'error' in response_data
@@ -329,7 +329,7 @@ class TestAPIRoutesPerformanceAndLimits:
         # Assert - Should either be rejected with 400 or processed successfully
         # depending on business requirements
         assert response.status_code in [201, 400, 413]  # 413 = Payload Too Large
-        
+
         response_data = json.loads(response.data)
         if response.status_code != 201:
             assert response_data['success'] is False
