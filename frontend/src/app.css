@@ -45,6 +45,10 @@
     @apply bg-secondary-500 text-white hover:bg-secondary-600 focus:ring-secondary-500;
   }
 
+  .btn-action {
+    @apply bg-action-500 text-white hover:bg-action-600 focus:ring-action-500;
+  }
+
   .btn-outline {
     @apply bg-transparent border-accent-300 text-accent-700 hover:bg-accent-50 dark:border-accent-600 dark:text-accent-300 dark:hover:bg-accent-800;
   }

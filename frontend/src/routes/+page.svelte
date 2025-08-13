@@ -41,7 +41,7 @@
         <h1
           class="text-2xl sm:text-3xl font-bold text-accent-900 dark:text-accent-100 mb-2"
         >
-          Welcome to Sports<span class="text-primary-500">Org</span>
+          Welcome to Sports<span class="text-secondary-600">Org</span>
         </h1>
         <p class="text-accent-600 dark:text-accent-300 text-mobile">
           Manage your sports organization with ease. Track competitions, teams,
@@ -49,7 +49,7 @@
         </p>
       </div>
       <div class="mt-4 sm:mt-0">
-        <button class="btn btn-primary mobile-touch">
+        <button class="btn btn-secondary mobile-touch">
           <svg
             class="h-5 w-5 mr-2"
             fill="none"
@@ -469,10 +469,10 @@
         class="flex flex-col items-center p-4 text-center hover:bg-accent-50 dark:hover:bg-accent-700 rounded-lg transition-colors duration-200 mobile-touch"
       >
         <div
-          class="h-12 w-12 bg-primary-100 dark:bg-primary-900 rounded-lg flex items-center justify-center mb-3"
+          class="h-12 w-12 bg-secondary-500 rounded-lg flex items-center justify-center mb-3"
         >
           <svg
-            class="h-6 w-6 text-primary-500"
+            class="h-6 w-6 text-white"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -495,10 +495,10 @@
         class="flex flex-col items-center p-4 text-center hover:bg-accent-50 dark:hover:bg-accent-700 rounded-lg transition-colors duration-200 mobile-touch"
       >
         <div
-          class="h-12 w-12 bg-secondary-100 dark:bg-secondary-900 rounded-lg flex items-center justify-center mb-3"
+          class="h-12 w-12 bg-secondary-600 rounded-lg flex items-center justify-center mb-3"
         >
           <svg
-            class="h-6 w-6 text-secondary-500"
+            class="h-6 w-6 text-white"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -521,10 +521,10 @@
         class="flex flex-col items-center p-4 text-center hover:bg-accent-50 dark:hover:bg-accent-700 rounded-lg transition-colors duration-200 mobile-touch"
       >
         <div
-          class="h-12 w-12 bg-green-100 dark:bg-green-900 rounded-lg flex items-center justify-center mb-3"
+          class="h-12 w-12 bg-secondary-700 rounded-lg flex items-center justify-center mb-3"
         >
           <svg
-            class="h-6 w-6 text-green-500"
+            class="h-6 w-6 text-white"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -547,10 +547,10 @@
         class="flex flex-col items-center p-4 text-center hover:bg-accent-50 dark:hover:bg-accent-700 rounded-lg transition-colors duration-200 mobile-touch"
       >
         <div
-          class="h-12 w-12 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center mb-3"
+          class="h-12 w-12 bg-secondary-800 rounded-lg flex items-center justify-center mb-3"
         >
           <svg
-            class="h-6 w-6 text-blue-500"
+            class="h-6 w-6 text-white"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
