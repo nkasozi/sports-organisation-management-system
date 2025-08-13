@@ -19,7 +19,7 @@
 
   /* Dark mode overrides */
   .dark body {
-    background-color: theme("colors.accent.900");
+    background-color: theme("colors.accent.800");
     color: theme("colors.accent.100");
   }
 

@@ -25,12 +25,12 @@ export default {
           200: "#fecaca",
           300: "#fca5a5",
           400: "#f87171",
-          500: "#ef4444", // Main red
-          600: "#dc2626",
-          700: "#b91c1c",
-          800: "#991b1b",
-          900: "#7f1d1d",
-          950: "#450a0a",
+          500: "#dc2626", // Deeper main red
+          600: "#b91c1c",
+          700: "#991b1b",
+          800: "#7f1d1d",
+          900: "#5f1a1a",
+          950: "#3c0a0a",
         },
         accent: {
           50: "#fafafa",
@@ -41,8 +41,8 @@ export default {
           500: "#71717a",
           600: "#52525b",
           700: "#3f3f46",
-          800: "#27272a",
-          900: "#18181b", // Main black
+          800: "#1c1c1e", // Darker for better contrast
+          900: "#000000", // Pure black
           950: "#09090b",
         },
         // Semantic colors for different contexts
