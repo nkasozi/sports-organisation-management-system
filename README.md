@@ -56,7 +56,7 @@ This project follows the **Onion Architecture** (Clean Architecture) pattern wit
 
 - **Framework**: Flask (Python)
 - **Architecture**: Onion/Clean Architecture with Dependency Injection
-- **Database**: PostgreSQL with SQLAlchemy ORM
+- **Database**: PostgreSQL with Prisma ORM (Python client)
 - **Authentication**: Auth0
 - **Real-time**: WebSockets
 - **Testing**: pytest with mocked dependencies and 80%+ coverage
@@ -149,17 +149,23 @@ This project uses [uv](https://github.com/astral-sh/uv) for fast Python package 
    GRANT ALL PRIVILEGES ON DATABASE sports_org_development TO sports_user;
    ```
 
-2. **Run database migrations**:
+2. **Set up Prisma and run migrations**:
 
    ```bash
-   # Initialize Alembic (first time only)
-   alembic init alembic
+   # Install Prisma CLI
+   npm install -g prisma
 
-   # Create migration
-   alembic revision --autogenerate -m "Initial migration"
+   # Generate Prisma client
+   prisma generate
 
-   # Apply migration
-   alembic upgrade head
+   # Push schema to database (development)
+   prisma db push
+
+   # Or create and apply migrations (production)
+   prisma migrate dev --name "Initial migration"
+
+   # Deploy migrations to production
+   prisma migrate deploy
    ```
 
 ## 📦 Deployment
@@ -322,17 +328,26 @@ npm run lint
 ### Database Management
 
 ```bash
-# Create new migration
-alembic revision --autogenerate -m "Description of changes"
+# Generate Prisma client after schema changes
+prisma generate
 
-# Apply migrations
-alembic upgrade head
+# Push schema changes to database (development)
+prisma db push
 
-# Rollback migration
-alembic downgrade -1
+# Create and apply migrations (production)
+prisma migrate dev --name "Description of changes"
 
-# View migration history
-alembic history
+# Deploy migrations to production
+prisma migrate deploy
+
+# Reset database (development only)
+prisma migrate reset
+
+# View migration status
+prisma migrate status
+
+# Open Prisma Studio (database GUI)
+prisma studio
 ```
 
 ## 📚 API Documentation

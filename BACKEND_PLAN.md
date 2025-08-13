@@ -29,7 +29,7 @@
 
 - **Framework:** Flask (Python)
 - **Language:** Python with full type annotations
-- **Database:** PostgreSQL with SQLAlchemy ORM
+- **Database:** PostgreSQL with Prisma ORM (Python client)
 - **Authentication:** Auth0 integration
 - **Real-time:** WebSockets for live game updates
 - **Architecture:** Onion Architecture (Clean Architecture) with clear separation of concerns:
@@ -80,7 +80,7 @@ _(Note: This is a high-level breakdown. Each task implies defining entities, imp
 - `[X]` Configure Vercel deployment (`vercel.json`).
 - `[X]` Set up core domain structure (entities, repositories, use cases).
 - `[ ]` Configure PostgreSQL database connection.
-- `[ ]` Set up database migrations with Alembic.
+- `[ ]` Set up Prisma schema and database migrations.
 
 ### Core Data Management
 
@@ -89,7 +89,7 @@ _(Note: This is a high-level breakdown. Each task implies defining entities, imp
   - `[X]` Define Repository interface.
   - `[X]` Implement Use Case for organization management.
   - `[X]` Implement in-memory repository (for development).
-  - `[ ]` Implement PostgreSQL repository.
+  - `[ ]` Implement Prisma repository.
 - **Sport:**
   - `[ ]` Define Entity class (`name`, `description`).
   - `[ ]` Define Repository interface.
@@ -123,7 +123,7 @@ _(Note: This is a high-level breakdown. Each task implies defining entities, imp
 - **Player:**
   - `[X]` Define Entity class (`person` relation, `registration_number`).
   - `[X]` Define Repository interface.
-  - `[ ]` Implement PostgreSQL repository and API endpoints.
+  - `[ ]` Implement Prisma repository and API endpoints.
 - **TeamStaff:**
   - `[ ]` Define Entity class (`person` relation, `staff_role_type`).
   - `[ ]` Implement Repository and API.
@@ -188,9 +188,9 @@ _(Note: This is a high-level breakdown. Each task implies defining entities, imp
 
 ### Database & Persistence
 
-- `[ ]` Set up PostgreSQL database schema with SQLAlchemy.
-- `[ ]` Implement concrete repository classes using SQLAlchemy.
-- `[ ]` Set up database migrations with Alembic.
+- `[ ]` Set up PostgreSQL database schema with Prisma.
+- `[ ]` Implement concrete repository classes using Prisma client.
+- `[ ]` Set up database migrations with Prisma.
 - `[ ]` Configure connection pooling for Vercel Functions.
 - `[ ]` Add database indexing for performance.
 
@@ -231,7 +231,7 @@ _(Note: This is a high-level breakdown. Each task implies defining entities, imp
   - In-memory repositories for development
   - Core API endpoints for organizations
 - **M2: Database Integration & Core Entities:**
-  - PostgreSQL integration with SQLAlchemy
+  - PostgreSQL integration with Prisma
   - Database migrations setup
   - Complete core entities (Organization, Sport, GameFormat, Competition)
 - **M3: Team & Personnel Management:**
@@ -272,8 +272,9 @@ cd api && python index.py
 pytest
 
 # Database migrations
-alembic revision --autogenerate -m "Description"
-alembic upgrade head
+prisma db push
+prisma migrate dev --name "Description"
+prisma generate
 
 # Type checking
 mypy api/

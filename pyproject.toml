@@ -35,7 +35,7 @@ dependencies = [
     "flask>=3.0.0",
     "flask-cors>=4.0.0",
 
-    # Database ORM
+    # Database ORM (TODO: Replace with Prisma client in future)
     "sqlalchemy>=2.0.23",
     "psycopg2-binary>=2.9.9",
     "alembic>=1.13.1",

@@ -3,6 +3,9 @@ Database repository implementations for the Sports Organisation Management Syste
 
 These implementations provide concrete database operations following the repository
 pattern, implementing the interfaces defined in the core domain layer.
+
+Currently using in-memory implementations for development.
+Future: Will be migrated to Prisma ORM with PostgreSQL for production.
 """
 
 # Import all repository implementations
