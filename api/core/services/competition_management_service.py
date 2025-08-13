@@ -45,7 +45,7 @@ class CompetitionManagementService:
             # If anything fails, return None
             return None
 
-    def create_competition(self, name: str, sport_id: str, organization_id: str, description: str) -> ServiceResult:
+    def create_competition(self, name: str, sport_id: str, organization_id: str, description: str, start_date=None, end_date=None) -> ServiceResult:
         """
         Create competition.
 
@@ -54,6 +54,8 @@ class CompetitionManagementService:
             sport_id: Sport identifier
             organization_id: Organization identifier
             description: Competition description
+            start_date: Competition start date (optional)
+            end_date: Competition end date (optional)
 
         Returns:
             ServiceResult: Result containing competition details or error
@@ -89,14 +91,18 @@ class CompetitionManagementService:
         from api.core.domain.entities import Competition
         import uuid
 
+        # Use provided dates or default to today
+        comp_start_date = start_date if start_date else date.today()
+        comp_end_date = end_date if end_date else date.today()
+
         competition = Competition(
             competition_id=str(uuid.uuid4()),
             organization_id=organization_id,
             sport_id=sport_id,
             competition_name=name,
             competition_type=CompetitionType.LEAGUE,
-            start_date=date.today(),
-            end_date=date.today(),
+            start_date=comp_start_date,
+            end_date=comp_end_date,
             competition_status=CompetitionStatus.PLANNED,
             registration_deadline=None,
             max_teams=None
@@ -106,6 +112,10 @@ class CompetitionManagementService:
         competition.name = name
         competition.description = description
         competition.status = CompetitionStatus.PLANNED  # Map to .status for tests
+        # Add timestamps for API routes
+        from datetime import datetime
+        competition.created_at = datetime.now()
+        competition.updated_at = datetime.now()
 
         # Call the repository method to track the call
         self._call_repository_method('create_competition', competition)
@@ -152,6 +162,10 @@ class CompetitionManagementService:
                 competition.description = f"Competition {competition.competition_name}"
             if hasattr(competition, 'competition_status') and not hasattr(competition, 'status'):
                 competition.status = competition.competition_status
+            # Add timestamps for API routes
+            from datetime import datetime
+            competition.created_at = datetime.now()
+            competition.updated_at = datetime.now()
 
             return ServiceResult(
                 is_successful=True,
@@ -180,6 +194,10 @@ class CompetitionManagementService:
         competition.name = "Test Competition"
         competition.description = "A test competition"
         competition.status = CompetitionStatus.PLANNED
+        # Add timestamps for API routes
+        from datetime import datetime
+        competition.created_at = datetime.now()
+        competition.updated_at = datetime.now()
 
         return ServiceResult(
             is_successful=True,
@@ -199,6 +217,7 @@ class CompetitionManagementService:
         # If the repository returns competitions, use them
         if competitions:
             # Add compatibility properties for tests
+            from datetime import datetime
             for comp in competitions:
                 if hasattr(comp, 'competition_name') and not hasattr(comp, 'name'):
                     comp.name = comp.competition_name
@@ -206,6 +225,9 @@ class CompetitionManagementService:
                     comp.description = f"Competition {comp.competition_name}"
                 if hasattr(comp, 'competition_status') and not hasattr(comp, 'status'):
                     comp.status = comp.competition_status
+                # Add timestamps for API routes
+                comp.created_at = datetime.now()
+                comp.updated_at = datetime.now()
 
             return ServiceResult(
                 is_successful=True,
@@ -241,6 +263,7 @@ class CompetitionManagementService:
         # If the repository returns competitions, use them
         if competitions:
             # Add compatibility properties for tests
+            from datetime import datetime
             for comp in competitions:
                 if hasattr(comp, 'competition_name') and not hasattr(comp, 'name'):
                     comp.name = comp.competition_name
@@ -248,6 +271,9 @@ class CompetitionManagementService:
                     comp.description = f"Competition {comp.competition_name}"
                 if hasattr(comp, 'competition_status') and not hasattr(comp, 'status'):
                     comp.status = comp.competition_status
+                # Add timestamps for API routes
+                comp.created_at = datetime.now()
+                comp.updated_at = datetime.now()
 
             return ServiceResult(
                 is_successful=True,

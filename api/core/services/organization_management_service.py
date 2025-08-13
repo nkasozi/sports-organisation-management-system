@@ -104,6 +104,8 @@ class OrganizationManagementService:
         # Add compatibility properties for the tests
         organization.name = name
         organization.description = description
+        organization.created_at = organization.creation_date
+        organization.updated_at = organization.creation_date
 
         # Call the repository method
         self._call_repository_method('create_organization', organization)
@@ -180,6 +182,9 @@ class OrganizationManagementService:
 
         # If we have an organization from the repository, return it
         if organization:
+            # Add compatibility properties for API routes
+            organization.created_at = getattr(organization, 'creation_date', organization.creation_date)
+            organization.updated_at = getattr(organization, 'creation_date', organization.creation_date)
             return ServiceResult(
                 is_successful=True,
                 result_data=organization
@@ -201,6 +206,8 @@ class OrganizationManagementService:
         # Add compatibility properties for the tests
         organization.name = "Test Organization"
         organization.description = "A test organization"
+        organization.created_at = organization.creation_date
+        organization.updated_at = organization.creation_date
 
         return ServiceResult(
             is_successful=True,
@@ -225,6 +232,9 @@ class OrganizationManagementService:
                     org.name = org.organization_name
                 if not hasattr(org, 'description'):
                     org.description = f"Organization {org.organization_name}"
+                # Add created_at and updated_at for API routes
+                org.created_at = getattr(org, 'creation_date', org.creation_date)
+                org.updated_at = getattr(org, 'creation_date', org.creation_date)
 
             return ServiceResult(
                 is_successful=True,

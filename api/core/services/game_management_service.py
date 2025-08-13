@@ -45,7 +45,7 @@ class GameManagementService:
             # If anything fails, return None
             return None
 
-    def create_game(self, competition_id: str, home_team: str, away_team: str, venue: str) -> ServiceResult:
+    def create_game(self, competition_id: str, home_team: str, away_team: str, venue: str, scheduled_datetime=None) -> ServiceResult:
         """
         Create game.
 
@@ -54,6 +54,7 @@ class GameManagementService:
             home_team: Home team name
             away_team: Away team name
             venue: Game venue
+            scheduled_datetime: Scheduled game datetime (optional)
 
         Returns:
             ServiceResult: Result containing game details or error
@@ -96,13 +97,16 @@ class GameManagementService:
         from api.core.domain.entities import Game
         import uuid
 
+        # Use provided scheduled datetime or default to now
+        game_datetime = scheduled_datetime if scheduled_datetime else datetime.now()
+
         game = Game(
             game_id=str(uuid.uuid4()),
             competition_id=competition_id,
             game_format_id="format-1",
             home_team_id=home_team,
             away_team_id=away_team,
-            scheduled_datetime=datetime.now(),
+            scheduled_datetime=game_datetime,
             game_status=GameStatus.SCHEDULED,
             home_team_score=0,
             away_team_score=0,
@@ -119,6 +123,9 @@ class GameManagementService:
         game.status = GameStatus.SCHEDULED
         game.score_home = 0
         game.score_away = 0
+        # Add timestamps for API routes
+        game.created_at = datetime.now()
+        game.updated_at = datetime.now()
 
         # Call the repository method to track the call
         self._call_repository_method('create_game', game)
@@ -171,6 +178,10 @@ class GameManagementService:
                 game.score_home = game.home_team_score
             if hasattr(game, 'away_team_score') and not hasattr(game, 'score_away'):
                 game.score_away = game.away_team_score
+            # Add timestamps for API routes
+            from datetime import datetime
+            game.created_at = datetime.now()
+            game.updated_at = datetime.now()
 
             return ServiceResult(
                 is_successful=True,
@@ -205,6 +216,9 @@ class GameManagementService:
         game.status = GameStatus.SCHEDULED
         game.score_home = 0
         game.score_away = 0
+        # Add timestamps for API routes
+        game.created_at = datetime.now()
+        game.updated_at = datetime.now()
 
         return ServiceResult(
             is_successful=True,
@@ -224,6 +238,7 @@ class GameManagementService:
         # If the repository returns games, use them
         if games:
             # Add compatibility properties for tests
+            from datetime import datetime
             for game in games:
                 if hasattr(game, 'home_team_id') and not hasattr(game, 'home_team'):
                     game.home_team = game.home_team_id
@@ -237,6 +252,9 @@ class GameManagementService:
                     game.score_home = game.home_team_score
                 if hasattr(game, 'away_team_score') and not hasattr(game, 'score_away'):
                     game.score_away = game.away_team_score
+                # Add timestamps for API routes
+                game.created_at = datetime.now()
+                game.updated_at = datetime.now()
 
             return ServiceResult(
                 is_successful=True,
@@ -422,7 +440,7 @@ class GameManagementService:
         updated_game.score_away = 0
 
         # Call the repository method to track the call
-        self._call_repository_method('update_game_status', updated_game)
+        self._call_repository_method('update_game', updated_game)
 
         return ServiceResult(
             is_successful=True,
