@@ -1,10 +1,12 @@
 {
 	"/": [],
+	"/crud-test": [],
 	"/organizations": [
 		"src/routes/organizations/+page.ts"
 	],
 	"/organizations/create": [],
 	"/organizations/[id]": [
 		"src/routes/organizations/[id]/+page.ts"
-	]
+	],
+	"/workflow": []
 }
