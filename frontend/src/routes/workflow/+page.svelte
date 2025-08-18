@@ -2,269 +2,228 @@
   import { onMount } from "svelte";
   import UiWizardStepper from "$lib/components/UiWizardStepper.svelte";
   import EntityCrudWrapper from "$lib/components/EntityCrudWrapper.svelte";
+  import DynamicEntityList from "$lib/components/DynamicEntityList.svelte";
+  import DynamicEntityForm from "$lib/components/DynamicEntityForm.svelte";
   import type { BaseEntity } from "$lib/core/BaseEntity";
-  import { unifiedApiService } from "$lib/core/UnifiedApiService";
+  import {
+    WorkflowStateMachine,
+    type WorkflowMachineState,
+  } from "$lib/core/WorkflowStateMachine";
 
-  // Wizard step configuration
-  interface WizardStep {
-    step_key: string;
-    step_title: string;
-    step_description?: string;
-    is_completed: boolean;
-    is_optional: boolean;
-    entity_type: string;
-  }
-
-  let wizard_steps: WizardStep[] = [
-    {
-      step_key: "organization",
-      step_title: "Organization",
-      step_description: "Create your sports organization",
-      is_completed: false,
-      is_optional: false,
-      entity_type: "organization",
-    },
-    {
-      step_key: "competition",
-      step_title: "Competition",
-      step_description: "Set up competition details",
-      is_completed: false,
-      is_optional: false,
-      entity_type: "competition",
-    },
-    {
-      step_key: "constraints",
-      step_title: "Constraints",
-      step_description: "Define game rules and constraints",
-      is_completed: false,
-      is_optional: true,
-      entity_type: "competition_constraint",
-    },
-    {
-      step_key: "teams",
-      step_title: "Teams",
-      step_description: "Add participating teams",
-      is_completed: false,
-      is_optional: false,
-      entity_type: "team",
-    },
-    {
-      step_key: "players",
-      step_title: "Players",
-      step_description: "Register team players",
-      is_completed: false,
-      is_optional: true,
-      entity_type: "player",
-    },
-    {
-      step_key: "officials",
-      step_title: "Officials",
-      step_description: "Add referees and officials",
-      is_completed: false,
-      is_optional: false,
-      entity_type: "official",
-    },
-    {
-      step_key: "games",
-      step_title: "Games",
-      step_description: "Schedule and manage games",
-      is_completed: false,
-      is_optional: false,
-      entity_type: "game",
-    },
-    {
-      step_key: "review",
-      step_title: "Review",
-      step_description: "Final review and completion",
-      is_completed: false,
-      is_optional: false,
-      entity_type: "",
-    },
-  ];
-
-  let current_step_index: number = 0;
-  let workflow_entities: Record<string, BaseEntity[]> = {};
+  // Initialize the workflow state machine
+  const workflow_state_machine = new WorkflowStateMachine();
+  let current_workflow_state: WorkflowMachineState =
+    workflow_state_machine.create_initial_workflow_state();
   let is_mobile_view: boolean = true;
 
   // References to components
   let wizard_stepper_component: UiWizardStepper;
+  let current_crud_wrapper_component: EntityCrudWrapper;
 
-  $: current_step = get_current_step_info(wizard_steps, current_step_index);
-  $: should_show_crud_wrapper = determine_if_crud_wrapper_needed(
-    current_step?.step_key
+  // Computed values
+  $: current_step_definition =
+    workflow_state_machine.get_current_step_definition(current_workflow_state);
+  $: current_step_state = workflow_state_machine.get_current_step_state(
+    current_workflow_state
   );
+  $: progress_percentage =
+    workflow_state_machine.get_workflow_progress_percentage(
+      current_workflow_state
+    );
+  $: is_workflow_complete = workflow_state_machine.is_workflow_complete(
+    current_workflow_state
+  );
+
+  // Create wizard step format for UiWizardStepper component
+  $: wizard_steps = workflow_state_machine.get_wizard_steps_for_ui(
+    current_workflow_state
+  );
+
+  // Debug information (can be removed later)
+  $: console.log("Current step definition:", current_step_definition);
+  $: console.log("Current step state:", current_step_state);
+  $: console.log("Wizard steps for UI:", wizard_steps);
+
+  $: current_step_index = workflow_state_machine
+    .get_step_order()
+    .indexOf(current_workflow_state.current_step_id);
 
   onMount(() => {
     detect_mobile_view();
-    load_existing_workflow_data();
+    console.log("Workflow initialized with state machine");
   });
 
   function detect_mobile_view(): void {
     if (typeof window !== "undefined") {
       is_mobile_view = window.innerWidth < 768;
-      window.addEventListener("resize", () => {
-        is_mobile_view = window.innerWidth < 768;
-      });
     }
   }
 
-  function get_current_step_info(
-    steps: WizardStep[],
-    index: number
-  ): WizardStep | null {
-    if (index < 0 || index >= steps.length) return null;
-    return steps[index];
-  }
+  function handle_entity_selection_changed(
+    event: CustomEvent<{ selected_entities: BaseEntity[] }>
+  ): void {
+    const selected_entities = event.detail.selected_entities;
+    console.log(
+      `Selection changed: ${selected_entities.length} entities selected for step ${current_step_definition.step_id}`
+    );
 
-  function determine_if_crud_wrapper_needed(
-    step_key: string | undefined
-  ): boolean {
-    return step_key !== "review" && step_key !== undefined;
-  }
+    // Update the workflow state with new selection
+    const transition_result = workflow_state_machine.update_step_selection(
+      current_workflow_state,
+      current_step_definition.step_id,
+      selected_entities
+    );
 
-  async function load_existing_workflow_data(): Promise<void> {
-    // Load any existing entities to check completion status
-    for (const step of wizard_steps) {
-      if (step.entity_type) {
-        const result = await unifiedApiService.get_all_entities<BaseEntity>(
-          step.entity_type
+    if (transition_result.success) {
+      current_workflow_state = transition_result.new_state;
+      const updated_step_state = workflow_state_machine.get_current_step_state(
+        current_workflow_state
+      );
+      console.log(
+        `Step ${current_step_definition.step_id} validation: ${updated_step_state.is_selection_valid ? "VALID" : "INVALID"}`
+      );
+      console.log(
+        `Can proceed to next step: ${current_workflow_state.can_proceed_to_next_step}`
+      );
+      console.log(`Updated wizard steps:`, wizard_steps);
+
+      if (!updated_step_state.is_selection_valid) {
+        console.log(
+          `Validation error: ${updated_step_state.validation_error_message}`
         );
-        if (result.success) {
-          workflow_entities[step.entity_type] = result.data;
-          // Mark step as completed if entities exist
-          if (result.data.length > 0) {
-            step.is_completed = true;
-          }
-        }
       }
+    } else {
+      console.error(
+        `Failed to update selection: ${transition_result.error_message}`
+      );
     }
-    wizard_steps = wizard_steps; // Trigger reactivity
   }
 
   function handle_step_changed(
     event: CustomEvent<{
       previous_index: number;
       new_index: number;
-      step: WizardStep;
+      step: any;
     }>
   ): void {
-    current_step_index = event.detail.new_index;
     console.log(
-      `Workflow step changed from ${event.detail.previous_index} to ${event.detail.new_index}`
+      `Step navigation requested: ${event.detail.previous_index} -> ${event.detail.new_index}`
     );
+
+    // Determine if this is forward or backward navigation
+    if (event.detail.new_index > event.detail.previous_index) {
+      // Forward navigation - use state machine transition
+      const transition_result = workflow_state_machine.transition_to_next_step(
+        current_workflow_state
+      );
+      if (transition_result.success) {
+        current_workflow_state = transition_result.new_state;
+        console.log(`Advanced to step: ${current_step_definition.step_id}`);
+      } else {
+        console.error(
+          `Cannot advance to next step: ${transition_result.error_message}`
+        );
+        // Keep current step and show error
+      }
+    } else {
+      // Backward navigation
+      const transition_result =
+        workflow_state_machine.transition_to_previous_step(
+          current_workflow_state
+        );
+      if (transition_result.success) {
+        current_workflow_state = transition_result.new_state;
+        console.log(`Moved back to step: ${current_step_definition.step_id}`);
+      } else {
+        console.error(`Cannot go back: ${transition_result.error_message}`);
+      }
+    }
   }
 
   function handle_step_completed(
-    event: CustomEvent<{ step_index: number; step: WizardStep }>
+    event: CustomEvent<{ step_index: number; step: any }>
   ): void {
-    console.log(`Workflow step completed: ${event.detail.step.step_title}`);
+    console.log(`Step completion event: ${current_step_definition.step_id}`);
   }
 
   function handle_wizard_completed(
-    event: CustomEvent<{ completed_steps: WizardStep[] }>
+    event: CustomEvent<{ completed_steps: any[] }>
   ): void {
-    console.log("Workflow wizard completed successfully");
-    // Could navigate to dashboard or show success message
+    console.log("Workflow completed successfully");
+    if (is_workflow_complete) {
+      console.log(
+        "All workflow selections:",
+        current_workflow_state.workflow_entities
+      );
+    }
   }
 
   function handle_wizard_cancelled(): void {
-    console.log("Workflow wizard cancelled");
-    // Could show confirmation dialog or navigate away
+    console.log("Workflow cancelled");
   }
 
+  // Legacy entity event handlers - these will trigger state updates
   function handle_entity_created(
     event: CustomEvent<{ entity: BaseEntity }>
   ): void {
-    const created_entity = event.detail.entity;
-    const current_entity_type = current_step?.entity_type;
-
-    if (current_entity_type) {
-      if (!workflow_entities[current_entity_type]) {
-        workflow_entities[current_entity_type] = [];
-      }
-      workflow_entities[current_entity_type].push(created_entity);
-
-      // Mark current step as completed
-      if (current_step) {
-        current_step.is_completed = true;
-        wizard_steps = wizard_steps; // Trigger reactivity
-      }
-    }
-
-    console.log(`Entity created in workflow: ${created_entity.id}`);
+    console.log(
+      `Entity created: ${event.detail.entity.id} for ${current_step_definition.entity_type}`
+    );
+    // When an entity is created, automatically select it
+    const new_selection = [
+      ...current_step_state.selected_entities,
+      event.detail.entity,
+    ];
+    handle_entity_selection_changed({
+      detail: { selected_entities: new_selection },
+    } as CustomEvent<{ selected_entities: BaseEntity[] }>);
   }
 
   function handle_entity_updated(
     event: CustomEvent<{ entity: BaseEntity }>
   ): void {
-    const updated_entity = event.detail.entity;
-    const current_entity_type = current_step?.entity_type;
-
-    if (current_entity_type && workflow_entities[current_entity_type]) {
-      const entity_index = workflow_entities[current_entity_type].findIndex(
-        (e) => e.id === updated_entity.id
-      );
-      if (entity_index !== -1) {
-        workflow_entities[current_entity_type][entity_index] = updated_entity;
-      }
-    }
-
-    console.log(`Entity updated in workflow: ${updated_entity.id}`);
+    console.log(`Entity updated: ${event.detail.entity.id}`);
+    // Update the entity in current selection if it exists
+    const updated_selection = current_step_state.selected_entities.map(
+      (entity) =>
+        entity.id === event.detail.entity.id ? event.detail.entity : entity
+    );
+    handle_entity_selection_changed({
+      detail: { selected_entities: updated_selection },
+    } as CustomEvent<{ selected_entities: BaseEntity[] }>);
   }
 
   function handle_entity_deleted(
     event: CustomEvent<{ entity: BaseEntity }>
   ): void {
-    const deleted_entity = event.detail.entity;
-    const current_entity_type = current_step?.entity_type;
-
-    if (current_entity_type && workflow_entities[current_entity_type]) {
-      workflow_entities[current_entity_type] = workflow_entities[
-        current_entity_type
-      ].filter((e) => e.id !== deleted_entity.id);
-
-      // Update completion status based on remaining entities
-      if (current_step) {
-        current_step.is_completed =
-          workflow_entities[current_entity_type].length > 0;
-        wizard_steps = wizard_steps; // Trigger reactivity
-      }
-    }
-
-    console.log(`Entity deleted in workflow: ${deleted_entity.id}`);
+    console.log(`Entity deleted: ${event.detail.entity.id}`);
+    // Remove from current selection if it exists
+    const updated_selection = current_step_state.selected_entities.filter(
+      (entity) => entity.id !== event.detail.entity.id
+    );
+    handle_entity_selection_changed({
+      detail: { selected_entities: updated_selection },
+    } as CustomEvent<{ selected_entities: BaseEntity[] }>);
   }
 
   function handle_entities_deleted(
     event: CustomEvent<{ entities: BaseEntity[] }>
   ): void {
-    const deleted_entities = event.detail.entities;
-    const current_entity_type = current_step?.entity_type;
-
-    if (current_entity_type && workflow_entities[current_entity_type]) {
-      const deleted_ids = deleted_entities.map((e) => e.id);
-      workflow_entities[current_entity_type] = workflow_entities[
-        current_entity_type
-      ].filter((e) => !deleted_ids.includes(e.id));
-
-      // Update completion status
-      if (current_step) {
-        current_step.is_completed =
-          workflow_entities[current_entity_type].length > 0;
-        wizard_steps = wizard_steps; // Trigger reactivity
-      }
-    }
-
-    console.log(
-      `Multiple entities deleted in workflow: ${deleted_entities.length} items`
+    const deleted_ids = event.detail.entities.map((e) => e.id);
+    console.log(`Multiple entities deleted: ${deleted_ids.length} items`);
+    // Remove all deleted entities from current selection
+    const updated_selection = current_step_state.selected_entities.filter(
+      (entity) => !deleted_ids.includes(entity.id)
     );
+    handle_entity_selection_changed({
+      detail: { selected_entities: updated_selection },
+    } as CustomEvent<{ selected_entities: BaseEntity[] }>);
   }
 
-  function get_workflow_summary(): Record<string, number> {
-    const summary: Record<string, number> = {};
-    for (const [entity_type, entities] of Object.entries(workflow_entities)) {
-      summary[entity_type] = entities.length;
-    }
-    return summary;
+  function should_show_crud_wrapper(): boolean {
+    return (
+      current_step_definition && current_step_definition.entity_type !== ""
+    );
   }
 </script>
 
@@ -290,13 +249,25 @@
       </p>
     </div>
 
+    <!-- Display validation error if current step is invalid -->
+    {#if !current_step_state.is_selection_valid && current_step_state.validation_error_message}
+      <div
+        class="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded"
+      >
+        <strong>Selection Required:</strong>
+        {current_step_state.validation_error_message}
+      </div>
+    {/if}
+
     <!-- Main Wizard Container -->
     <UiWizardStepper
       bind:this={wizard_stepper_component}
       steps={wizard_steps}
-      {current_step_index}
+      current_step_index={workflow_state_machine.get_current_step_index(
+        current_workflow_state
+      )}
       {is_mobile_view}
-      allow_skip_steps={true}
+      allow_skip_steps={false}
       on:step_changed={handle_step_changed}
       on:step_completed={handle_step_completed}
       on:wizard_completed={handle_wizard_completed}
@@ -308,34 +279,61 @@
       let:is_final
     >
       <!-- Dynamic step content based on current step -->
-      {#if should_show_crud_wrapper && current_step?.entity_type}
+      {#if should_show_crud_wrapper()}
         <!-- CRUD wrapper for entity management -->
         <div class="step-content-wrapper">
           <div class="mb-6 text-center">
             <h2
               class="text-xl font-semibold text-accent-900 dark:text-accent-100 mb-2"
             >
-              {current_step.step_title}
+              {current_step_definition.step_title}
             </h2>
-            {#if current_step.step_description}
+            {#if current_step_definition.step_description}
               <p class="text-accent-600 dark:text-accent-400">
-                {current_step.step_description}
+                {current_step_definition.step_description}
               </p>
             {/if}
           </div>
 
-          <EntityCrudWrapper
-            entity_type={current_step.entity_type}
-            initial_view="list"
-            {is_mobile_view}
-            show_list_actions={true}
-            on:entity_created={handle_entity_created}
-            on:entity_updated={handle_entity_updated}
-            on:entity_deleted={handle_entity_deleted}
-            on:entities_deleted={handle_entities_deleted}
-          />
+          {#key current_step_definition.step_id}
+            <EntityCrudWrapper
+              bind:this={current_crud_wrapper_component}
+              entity_type={current_step_definition.entity_type}
+              initial_view="list"
+              {is_mobile_view}
+              show_list_actions={true}
+              on:entity_created={handle_entity_created}
+              on:entity_updated={handle_entity_updated}
+              on:entity_deleted={handle_entity_deleted}
+              on:entities_deleted={handle_entities_deleted}
+              on:selection_changed={handle_entity_selection_changed}
+            >
+              <div slot="entity-list" let:entities let:loading let:error>
+                <DynamicEntityList
+                  entity_type={current_step_definition.entity_type}
+                  {entities}
+                  {loading}
+                  {error}
+                  allow_multiple_selection={current_step_definition.allow_multiple_selection}
+                  selected_entity_ids={current_step_state.selected_entities.map(
+                    (e) => e.id
+                  )}
+                  on:entity_selection_changed={handle_entity_selection_changed}
+                  {is_mobile_view}
+                />
+              </div>
+
+              <div slot="entity-form" let:form_mode let:selected_entity>
+                <DynamicEntityForm
+                  entity_type={current_step_definition.entity_type}
+                  {form_mode}
+                  {selected_entity}
+                />
+              </div>
+            </EntityCrudWrapper>
+          {/key}
         </div>
-      {:else if current_step?.step_key === "review"}
+      {:else}
         <!-- Final review step -->
         <div class="review-step-content">
           <div class="text-center mb-8">
@@ -357,23 +355,134 @@
               Setup Summary
             </h3>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {#each Object.entries(get_workflow_summary()) as [entity_type, count]}
-                <div
-                  class="stat-card bg-accent-50 dark:bg-accent-900/20 p-4 rounded-lg"
-                >
-                  <div
-                    class="text-2xl font-bold text-accent-600 dark:text-accent-400"
-                  >
-                    {count}
-                  </div>
-                  <div
-                    class="text-sm text-accent-700 dark:text-accent-300 capitalize"
-                  >
-                    {entity_type.replace("_", " ")}
-                  </div>
+            <!-- Debug info (can be removed later) -->
+            <div class="bg-gray-100 p-2 text-xs">
+              <p><strong>Debug - Workflow Entities:</strong></p>
+              <pre>{JSON.stringify(
+                  current_workflow_state.workflow_entities,
+                  null,
+                  2
+                )}</pre>
+            </div>
+
+            <div class="space-y-4">
+              <div class="border rounded-lg p-4">
+                <h4 class="font-semibold text-lg mb-2">
+                  Selected Organization
+                </h4>
+                {#if current_workflow_state.workflow_entities.organization}
+                  {#each current_workflow_state.workflow_entities.organization as org}
+                    <p class="text-gray-700">
+                      {org.attributes?.name || org.id}
+                    </p>
+                  {/each}
+                {:else}
+                  <p class="text-gray-500">No organization selected</p>
+                {/if}
+              </div>
+
+              <div class="border rounded-lg p-4">
+                <h4 class="font-semibold text-lg mb-2">Selected Competition</h4>
+                {#if current_workflow_state.workflow_entities.competition}
+                  {#each current_workflow_state.workflow_entities.competition as comp}
+                    <p class="text-gray-700">
+                      {comp.attributes?.name || comp.id}
+                    </p>
+                  {/each}
+                {:else}
+                  <p class="text-gray-500">No competition selected</p>
+                {/if}
+              </div>
+
+              <div class="border rounded-lg p-4">
+                <h4 class="font-semibold text-lg mb-2">
+                  Selected Teams ({current_workflow_state.workflow_entities.team
+                    ?.length || 0})
+                </h4>
+                {#if current_workflow_state.workflow_entities.team && current_workflow_state.workflow_entities.team.length > 0}
+                  {#each current_workflow_state.workflow_entities.team as team}
+                    <p class="text-gray-700">
+                      • {team.attributes?.name || team.id}
+                    </p>
+                  {/each}
+                {:else}
+                  <p class="text-gray-500">No teams selected</p>
+                {/if}
+              </div>
+
+              {#if current_workflow_state.workflow_entities.player && current_workflow_state.workflow_entities.player.length > 0}
+                <div class="border rounded-lg p-4">
+                  <h4 class="font-semibold text-lg mb-2">
+                    Selected Players ({current_workflow_state.workflow_entities
+                      .player.length})
+                  </h4>
+                  {#each current_workflow_state.workflow_entities.player as player}
+                    <p class="text-gray-700">
+                      • {player.attributes?.name || player.id}
+                    </p>
+                  {/each}
                 </div>
-              {/each}
+              {/if}
+
+              <div class="border rounded-lg p-4">
+                <h4 class="font-semibold text-lg mb-2">
+                  Selected Officials ({current_workflow_state.workflow_entities
+                    .official?.length || 0})
+                </h4>
+                {#if current_workflow_state.workflow_entities.official && current_workflow_state.workflow_entities.official.length > 0}
+                  {#each current_workflow_state.workflow_entities.official as official}
+                    <p class="text-gray-700">
+                      • {official.attributes?.name || official.id}
+                    </p>
+                  {/each}
+                {:else}
+                  <p class="text-gray-500">No officials selected</p>
+                {/if}
+              </div>
+
+              {#if current_workflow_state.workflow_entities.game && current_workflow_state.workflow_entities.game.length > 0}
+                <div class="border rounded-lg p-4">
+                  <h4 class="font-semibold text-lg mb-2">
+                    Created Games ({current_workflow_state.workflow_entities
+                      .game.length})
+                  </h4>
+                  {#each current_workflow_state.workflow_entities.game as game}
+                    <p class="text-gray-700">
+                      • {game.attributes?.name || `Game ${game.id}`}
+                    </p>
+                  {/each}
+                </div>
+              {/if}
+
+              {#if current_workflow_state.workflow_entities.game_assignment && current_workflow_state.workflow_entities.game_assignment.length > 0}
+                <div class="border rounded-lg p-4">
+                  <h4 class="font-semibold text-lg mb-2">
+                    Game Assignments ({current_workflow_state.workflow_entities
+                      .game_assignment.length})
+                  </h4>
+                  {#each current_workflow_state.workflow_entities.game_assignment as assignment}
+                    <p class="text-gray-700">
+                      • {assignment.attributes?.description ||
+                        `Assignment ${assignment.id}`}
+                    </p>
+                  {/each}
+                </div>
+              {/if}
+
+              {#if current_workflow_state.workflow_entities.active_game && current_workflow_state.workflow_entities.active_game.length > 0}
+                <div class="border rounded-lg p-4">
+                  <h4 class="font-semibold text-lg mb-2">
+                    Active Games ({current_workflow_state.workflow_entities
+                      .active_game.length})
+                  </h4>
+                  {#each current_workflow_state.workflow_entities.active_game as active_game}
+                    <p class="text-gray-700">
+                      • {active_game.attributes?.name ||
+                        `Active Game ${active_game.id}`}
+                    </p>
+                  {/each}
+                </div>
+              {/if}
             </div>
 
             <div

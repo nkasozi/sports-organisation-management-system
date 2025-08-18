@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="192" height="192" viewBox="0 0 192 192" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="192" height="192" rx="24" fill="#f59e0b"/>
+  <path d="M48 96L96 48L144 96L96 144L48 96Z" fill="#ffffff" stroke="#1f2937" stroke-width="4"/>
+  <circle cx="96" cy="96" r="16" fill="#dc2626"/>
+  <text x="96" y="164" text-anchor="middle" fill="#1f2937" font-family="Inter, sans-serif" font-size="20" font-weight="600">Sports</text>
+</svg>
