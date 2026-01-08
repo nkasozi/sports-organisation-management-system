@@ -2,13 +2,37 @@
   import { onMount } from "svelte";
   import UiWizardStepper from "$lib/components/UiWizardStepper.svelte";
   import EntityCrudWrapper from "$lib/components/EntityCrudWrapper.svelte";
-  import DynamicEntityList from "$lib/components/DynamicEntityList.svelte";
-  import DynamicEntityForm from "$lib/components/DynamicEntityForm.svelte";
+  import LiveGameManagement from "$lib/components/LiveGameManagement.svelte";
   import type { BaseEntity } from "$lib/core/BaseEntity";
   import {
     WorkflowStateMachine,
     type WorkflowMachineState,
   } from "$lib/core/WorkflowStateMachine";
+  import type { Game, ActiveGame, GameEvent } from "$lib/core/GameEntities";
+
+  interface EntityWithAttributes extends BaseEntity {
+    attributes?: Record<string, unknown>;
+  }
+
+  function get_entity_display_name(
+    entity: BaseEntity,
+    fallback: string
+  ): string {
+    const entity_with_attrs = entity as EntityWithAttributes;
+    if (
+      entity_with_attrs.attributes &&
+      typeof entity_with_attrs.attributes.name === "string"
+    ) {
+      return entity_with_attrs.attributes.name;
+    }
+    if (
+      entity_with_attrs.attributes &&
+      typeof entity_with_attrs.attributes.description === "string"
+    ) {
+      return entity_with_attrs.attributes.description;
+    }
+    return fallback;
+  }
 
   // Initialize the workflow state machine
   const workflow_state_machine = new WorkflowStateMachine();
@@ -225,6 +249,58 @@
       current_step_definition && current_step_definition.entity_type !== ""
     );
   }
+
+  function should_show_live_game_management(): boolean {
+    return (
+      current_step_definition &&
+      current_step_definition.step_id === "game_management"
+    );
+  }
+
+  // Game management state
+  let is_in_live_mode: boolean = false;
+  let selected_game_for_live_management: Game | null = null;
+
+  function enter_live_game_management(game: Game): void {
+    console.log("Entering live management for game:", game);
+    selected_game_for_live_management = game;
+    is_in_live_mode = true;
+  }
+
+  function exit_live_game_management(): void {
+    console.log("Exiting live management mode");
+    is_in_live_mode = false;
+    selected_game_for_live_management = null;
+  }
+
+  // Game management event handlers
+  function handle_game_started(event: CustomEvent<{ game: Game }>): void {
+    console.log("Game started:", event.detail.game);
+  }
+
+  function handle_game_paused(
+    event: CustomEvent<{ active_game: ActiveGame }>
+  ): void {
+    console.log("Game paused:", event.detail.active_game);
+  }
+
+  function handle_game_resumed(
+    event: CustomEvent<{ active_game: ActiveGame }>
+  ): void {
+    console.log("Game resumed:", event.detail.active_game);
+  }
+
+  function handle_game_ended(
+    event: CustomEvent<{ active_game: ActiveGame }>
+  ): void {
+    console.log("Game ended:", event.detail.active_game);
+  }
+
+  function handle_event_recorded(
+    event: CustomEvent<{ active_game: ActiveGame; event: Partial<GameEvent> }>
+  ): void {
+    console.log("Game event recorded:", event.detail.event);
+  }
 </script>
 
 <svelte:head>
@@ -279,14 +355,38 @@
       let:is_final
     >
       <!-- Dynamic step content based on current step -->
-      {#if should_show_crud_wrapper()}
+      {#if should_show_live_game_management() && is_in_live_mode}
+        <!-- Live Game Management Interface -->
+        <div class="live-game-step-wrapper">
+          <div class="mb-4">
+            <button
+              class="btn btn-outline"
+              on:click={exit_live_game_management}
+            >
+              ← Back to Game List
+            </button>
+          </div>
+
+          <LiveGameManagement
+            selected_games={selected_game_for_live_management
+              ? [selected_game_for_live_management]
+              : []}
+            {is_mobile_view}
+            on:game_started={handle_game_started}
+            on:game_paused={handle_game_paused}
+            on:game_resumed={handle_game_resumed}
+            on:game_ended={handle_game_ended}
+            on:event_recorded={handle_event_recorded}
+          />
+        </div>
+      {:else if should_show_crud_wrapper()}
         <!-- CRUD wrapper for entity management -->
         <div class="step-content-wrapper">
           <div class="mb-6 text-center">
             <h2
               class="text-xl font-semibold text-accent-900 dark:text-accent-100 mb-2"
             >
-              {current_step_definition.step_title}
+              {current_step_definition.step_name}
             </h2>
             {#if current_step_definition.step_description}
               <p class="text-accent-600 dark:text-accent-400">
@@ -307,30 +407,7 @@
               on:entity_deleted={handle_entity_deleted}
               on:entities_deleted={handle_entities_deleted}
               on:selection_changed={handle_entity_selection_changed}
-            >
-              <div slot="entity-list" let:entities let:loading let:error>
-                <DynamicEntityList
-                  entity_type={current_step_definition.entity_type}
-                  {entities}
-                  {loading}
-                  {error}
-                  allow_multiple_selection={current_step_definition.allow_multiple_selection}
-                  selected_entity_ids={current_step_state.selected_entities.map(
-                    (e) => e.id
-                  )}
-                  on:entity_selection_changed={handle_entity_selection_changed}
-                  {is_mobile_view}
-                />
-              </div>
-
-              <div slot="entity-form" let:form_mode let:selected_entity>
-                <DynamicEntityForm
-                  entity_type={current_step_definition.entity_type}
-                  {form_mode}
-                  {selected_entity}
-                />
-              </div>
-            </EntityCrudWrapper>
+            />
           {/key}
         </div>
       {:else}
@@ -373,7 +450,7 @@
                 {#if current_workflow_state.workflow_entities.organization}
                   {#each current_workflow_state.workflow_entities.organization as org}
                     <p class="text-gray-700">
-                      {org.attributes?.name || org.id}
+                      {get_entity_display_name(org, org.id)}
                     </p>
                   {/each}
                 {:else}
@@ -386,7 +463,7 @@
                 {#if current_workflow_state.workflow_entities.competition}
                   {#each current_workflow_state.workflow_entities.competition as comp}
                     <p class="text-gray-700">
-                      {comp.attributes?.name || comp.id}
+                      {get_entity_display_name(comp, comp.id)}
                     </p>
                   {/each}
                 {:else}
@@ -402,7 +479,7 @@
                 {#if current_workflow_state.workflow_entities.team && current_workflow_state.workflow_entities.team.length > 0}
                   {#each current_workflow_state.workflow_entities.team as team}
                     <p class="text-gray-700">
-                      • {team.attributes?.name || team.id}
+                      • {get_entity_display_name(team, team.id)}
                     </p>
                   {/each}
                 {:else}
@@ -418,7 +495,7 @@
                   </h4>
                   {#each current_workflow_state.workflow_entities.player as player}
                     <p class="text-gray-700">
-                      • {player.attributes?.name || player.id}
+                      • {get_entity_display_name(player, player.id)}
                     </p>
                   {/each}
                 </div>
@@ -432,7 +509,7 @@
                 {#if current_workflow_state.workflow_entities.official && current_workflow_state.workflow_entities.official.length > 0}
                   {#each current_workflow_state.workflow_entities.official as official}
                     <p class="text-gray-700">
-                      • {official.attributes?.name || official.id}
+                      • {get_entity_display_name(official, official.id)}
                     </p>
                   {/each}
                 {:else}
@@ -448,7 +525,7 @@
                   </h4>
                   {#each current_workflow_state.workflow_entities.game as game}
                     <p class="text-gray-700">
-                      • {game.attributes?.name || `Game ${game.id}`}
+                      • {get_entity_display_name(game, `Game ${game.id}`)}
                     </p>
                   {/each}
                 </div>
@@ -462,8 +539,10 @@
                   </h4>
                   {#each current_workflow_state.workflow_entities.game_assignment as assignment}
                     <p class="text-gray-700">
-                      • {assignment.attributes?.description ||
-                        `Assignment ${assignment.id}`}
+                      • {get_entity_display_name(
+                        assignment,
+                        `Assignment ${assignment.id}`
+                      )}
                     </p>
                   {/each}
                 </div>
@@ -477,8 +556,10 @@
                   </h4>
                   {#each current_workflow_state.workflow_entities.active_game as active_game}
                     <p class="text-gray-700">
-                      • {active_game.attributes?.name ||
-                        `Active Game ${active_game.id}`}
+                      • {get_entity_display_name(
+                        active_game,
+                        `Active Game ${active_game.id}`
+                      )}
                     </p>
                   {/each}
                 </div>
@@ -524,16 +605,6 @@
     min-height: 400px;
   }
 
-  .stat-card {
-    text-align: center;
-    transition: transform 0.2s ease-in-out;
-  }
-
-  .stat-card:hover {
-    transform: translateY(-1px);
-  }
-
-  /* Mobile-first responsive adjustments */
   @media (max-width: 640px) {
     .workflow-page {
       padding: 1rem 0;

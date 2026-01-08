@@ -1,12 +1,80 @@
 {
-	"/": [],
-	"/crud-test": [],
+	"/": [
+		"src/routes/+layout.ts",
+		"src/routes/+layout.ts"
+	],
+	"/competitions": [
+		"src/routes/+layout.ts"
+	],
+	"/competitions/create": [
+		"src/routes/+layout.ts"
+	],
+	"/competitions/[id]": [
+		"src/routes/+layout.ts"
+	],
+	"/competitions/[id]/constraints": [
+		"src/routes/+layout.ts"
+	],
+	"/crud-test": [
+		"src/routes/+layout.ts"
+	],
+	"/games": [
+		"src/routes/+layout.ts"
+	],
+	"/games/create": [
+		"src/routes/+layout.ts"
+	],
+	"/games/[id]/manage": [
+		"src/routes/+layout.ts"
+	],
+	"/help": [
+		"src/routes/+layout.ts"
+	],
+	"/officials": [
+		"src/routes/+layout.ts"
+	],
+	"/officials/create": [
+		"src/routes/+layout.ts"
+	],
+	"/officials/[id]": [
+		"src/routes/+layout.ts"
+	],
 	"/organizations": [
-		"src/routes/organizations/+page.ts"
+		"src/routes/organizations/+page.ts",
+		"src/routes/+layout.ts"
 	],
-	"/organizations/create": [],
+	"/organizations/create": [
+		"src/routes/+layout.ts"
+	],
 	"/organizations/[id]": [
-		"src/routes/organizations/[id]/+page.ts"
+		"src/routes/organizations/[id]/+page.ts",
+		"src/routes/+layout.ts"
 	],
-	"/workflow": []
+	"/players": [
+		"src/routes/+layout.ts"
+	],
+	"/players/create": [
+		"src/routes/+layout.ts"
+	],
+	"/players/[id]": [
+		"src/routes/+layout.ts"
+	],
+	"/settings": [
+		"src/routes/+layout.ts"
+	],
+	"/teams": [
+		"src/routes/+layout.ts"
+	],
+	"/teams/create": [
+		"src/routes/+layout.ts"
+	],
+	"/teams/[id]": [
+		"src/routes/+layout.ts"
+	],
+	"/workflow-test": [
+		"src/routes/+layout.ts"
+	],
+	"/workflow": [
+		"src/routes/+layout.ts"
+	]
 }

@@ -1,25 +1,39 @@
 <script lang="ts">
   import { onMount } from "svelte";
+  import { get_organization_use_cases } from "$lib/usecases/OrganizationUseCases";
+  import { get_competition_use_cases } from "$lib/usecases/CompetitionUseCases";
+  import { get_team_use_cases } from "$lib/usecases/TeamUseCases";
+  import { get_player_use_cases } from "$lib/usecases/PlayerUseCases";
+
+  const organization_use_cases = get_organization_use_cases();
+  const competition_use_cases = get_competition_use_cases();
+  const team_use_cases = get_team_use_cases();
+  const player_use_cases = get_player_use_cases();
 
   let loading = true;
   let stats = {
     organizations: 0,
     competitions: 0,
     teams: 0,
-    games: 0,
+    players: 0,
   };
 
   onMount(async () => {
-    // Simulate loading data
-    setTimeout(() => {
-      stats = {
-        organizations: 12,
-        competitions: 8,
-        teams: 45,
-        games: 23,
-      };
-      loading = false;
-    }, 1000);
+    const [org_result, comp_result, team_result, player_result] =
+      await Promise.all([
+        organization_use_cases.list_organizations(undefined, { page_size: 1 }),
+        competition_use_cases.list_competitions(undefined, { page_size: 1 }),
+        team_use_cases.list_teams(undefined, { page_size: 1 }),
+        player_use_cases.list_players(undefined, { page_size: 1 }),
+      ]);
+
+    stats = {
+      organizations: org_result.success ? org_result.data.total_count : 0,
+      competitions: comp_result.success ? comp_result.data.total_count : 0,
+      teams: team_result.success ? team_result.data.total_count : 0,
+      players: player_result.success ? player_result.data.total_count : 0,
+    };
+    loading = false;
   });
 </script>
 
@@ -188,7 +202,7 @@
       </div>
     </div>
 
-    <!-- Games card -->
+    <!-- Players card -->
     <div class="card p-6">
       <div class="flex items-center">
         <div class="flex-shrink-0">
@@ -208,7 +222,7 @@
                   stroke-linecap="round"
                   stroke-linejoin="round"
                   stroke-width="2"
-                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                  d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
                 />
               </svg>
             {/if}
@@ -218,10 +232,10 @@
           <p
             class="text-sm font-medium text-accent-500 dark:text-accent-400 truncate"
           >
-            Games
+            Players
           </p>
           <p class="text-2xl font-bold text-accent-900 dark:text-accent-100">
-            {loading ? "---" : stats.games}
+            {loading ? "---" : stats.players}
           </p>
         </div>
       </div>

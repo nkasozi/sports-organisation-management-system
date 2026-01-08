@@ -35,14 +35,16 @@ declare module '$env/static/private' {
 	export const HOMEBREW_REPOSITORY: string;
 	export const TMPDIR: string;
 	export const npm_config_global_prefix: string;
+	export const VSCODE_PYTHON_AUTOACTIVATE_GUARD: string;
 	export const TERM_PROGRAM_VERSION: string;
+	export const MallocSpaceEfficient: string;
 	export const ZDOTDIR: string;
-	export const ORIGINAL_XDG_CURRENT_DESKTOP: string;
 	export const MallocNanoZone: string;
 	export const COLOR: string;
 	export const npm_config_noproxy: string;
 	export const npm_config_local_prefix: string;
 	export const ZSH: string;
+	export const EXTENSION_KIT_EXTENSION_TYPE: string;
 	export const USER: string;
 	export const LS_COLORS: string;
 	export const COMMAND_MODE: string;
@@ -71,6 +73,7 @@ declare module '$env/static/private' {
 	export const P9K_TTY: string;
 	export const LANG: string;
 	export const BUNDLED_DEBUGPY_PATH: string;
+	export const PYTHONSTARTUP: string;
 	export const npm_config_npm_version: string;
 	export const VSCODE_GIT_ASKPASS_EXTRA_ARGS: string;
 	export const XPC_FLAGS: string;
@@ -82,6 +85,7 @@ declare module '$env/static/private' {
 	export const SHLVL: string;
 	export const HOME: string;
 	export const VSCODE_GIT_ASKPASS_MAIN: string;
+	export const PYTHON_BASIC_REPL: string;
 	export const HOMEBREW_PREFIX: string;
 	export const npm_config_cache: string;
 	export const LESS: string;
@@ -94,7 +98,6 @@ declare module '$env/static/private' {
 	export const INFOPATH: string;
 	export const HOMEBREW_CELLAR: string;
 	export const _P9K_SSH_TTY: string;
-	export const GIT_PAGER: string;
 	export const npm_node_execpath: string;
 	export const npm_config_prefix: string;
 	export const COLORTERM: string;
@@ -139,14 +142,16 @@ declare module '$env/dynamic/private' {
 		HOMEBREW_REPOSITORY: string;
 		TMPDIR: string;
 		npm_config_global_prefix: string;
+		VSCODE_PYTHON_AUTOACTIVATE_GUARD: string;
 		TERM_PROGRAM_VERSION: string;
+		MallocSpaceEfficient: string;
 		ZDOTDIR: string;
-		ORIGINAL_XDG_CURRENT_DESKTOP: string;
 		MallocNanoZone: string;
 		COLOR: string;
 		npm_config_noproxy: string;
 		npm_config_local_prefix: string;
 		ZSH: string;
+		EXTENSION_KIT_EXTENSION_TYPE: string;
 		USER: string;
 		LS_COLORS: string;
 		COMMAND_MODE: string;
@@ -175,6 +180,7 @@ declare module '$env/dynamic/private' {
 		P9K_TTY: string;
 		LANG: string;
 		BUNDLED_DEBUGPY_PATH: string;
+		PYTHONSTARTUP: string;
 		npm_config_npm_version: string;
 		VSCODE_GIT_ASKPASS_EXTRA_ARGS: string;
 		XPC_FLAGS: string;
@@ -186,6 +192,7 @@ declare module '$env/dynamic/private' {
 		SHLVL: string;
 		HOME: string;
 		VSCODE_GIT_ASKPASS_MAIN: string;
+		PYTHON_BASIC_REPL: string;
 		HOMEBREW_PREFIX: string;
 		npm_config_cache: string;
 		LESS: string;
@@ -198,7 +205,6 @@ declare module '$env/dynamic/private' {
 		INFOPATH: string;
 		HOMEBREW_CELLAR: string;
 		_P9K_SSH_TTY: string;
-		GIT_PAGER: string;
 		npm_node_execpath: string;
 		npm_config_prefix: string;
 		COLORTERM: string;

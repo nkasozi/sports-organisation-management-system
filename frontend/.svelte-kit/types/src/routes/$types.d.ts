@@ -12,7 +12,7 @@ type EnsureDefined<T> = T extends null | undefined ? {} : T;
 type OptionalUnion<U extends Record<string, any>, A extends keyof U = U extends U ? keyof U : never> = U extends unknown ? { [P in Exclude<A, keyof U>]?: never } & U : never;
 export type Snapshot<T = any> = Kit.Snapshot<T>;
 type PageParentData = EnsureDefined<LayoutData>;
-type LayoutRouteId = RouteId | "/" | "/crud-test" | "/organizations" | "/organizations/[id]" | "/organizations/create" | "/workflow" | null
+type LayoutRouteId = RouteId | "/" | "/competitions" | "/competitions/[id]" | "/competitions/[id]/constraints" | "/competitions/create" | "/crud-test" | "/games" | "/games/[id]/manage" | "/games/create" | "/help" | "/officials" | "/officials/[id]" | "/officials/create" | "/organizations" | "/organizations/[id]" | "/organizations/create" | "/players" | "/players/[id]" | "/players/create" | "/settings" | "/teams" | "/teams/[id]" | "/teams/create" | "/workflow" | "/workflow-test" | null
 type LayoutParams = RouteParams & { id?: string }
 type LayoutParentData = EnsureDefined<{}>;
 
@@ -20,5 +20,7 @@ export type PageServerData = null;
 export type PageData = Expand<PageParentData>;
 export type PageProps = { params: RouteParams; data: PageData }
 export type LayoutServerData = null;
-export type LayoutData = Expand<LayoutParentData>;
+export type LayoutLoad<OutputData extends OutputDataShape<LayoutParentData> = OutputDataShape<LayoutParentData>> = Kit.Load<LayoutParams, LayoutServerData, LayoutParentData, OutputData, LayoutRouteId>;
+export type LayoutLoadEvent = Parameters<LayoutLoad>[0];
+export type LayoutData = Expand<Omit<LayoutParentData, keyof LayoutParentData & EnsureDefined<LayoutServerData>> & OptionalUnion<EnsureDefined<LayoutParentData & EnsureDefined<LayoutServerData>>>>;
 export type LayoutProps = { params: LayoutParams; data: LayoutData; children: import("svelte").Snippet }
