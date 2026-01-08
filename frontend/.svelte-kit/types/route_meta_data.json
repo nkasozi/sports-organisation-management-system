@@ -62,6 +62,15 @@
 	"/settings": [
 		"src/routes/+layout.ts"
 	],
+	"/sports": [
+		"src/routes/+layout.ts"
+	],
+	"/sports/create": [
+		"src/routes/+layout.ts"
+	],
+	"/sports/[id]": [
+		"src/routes/+layout.ts"
+	],
 	"/teams": [
 		"src/routes/+layout.ts"
 	],

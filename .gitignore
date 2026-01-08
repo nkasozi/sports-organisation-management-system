@@ -109,3 +109,4 @@ BE/strapi-data/
 # System Files
 .DS_Store
 Thumbs.db
+/frontend/.svelte-kit

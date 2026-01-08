@@ -1,18 +1,43 @@
 /** @type {import('tailwindcss').Config} */
 export default {
   content: ["./src/**/*.{html,js,svelte,ts}"],
-  darkMode: "class", // Enable class-based dark mode
+  darkMode: "class",
   theme: {
     extend: {
       colors: {
-        // Primary theme colors - easily configurable
+        "theme-primary": {
+          50: "var(--color-primary-50)",
+          100: "var(--color-primary-100)",
+          200: "var(--color-primary-200)",
+          300: "var(--color-primary-300)",
+          400: "var(--color-primary-400)",
+          500: "var(--color-primary-500)",
+          600: "var(--color-primary-600)",
+          700: "var(--color-primary-700)",
+          800: "var(--color-primary-800)",
+          900: "var(--color-primary-900)",
+          950: "var(--color-primary-950)",
+        },
+        "theme-secondary": {
+          50: "var(--color-secondary-50)",
+          100: "var(--color-secondary-100)",
+          200: "var(--color-secondary-200)",
+          300: "var(--color-secondary-300)",
+          400: "var(--color-secondary-400)",
+          500: "var(--color-secondary-500)",
+          600: "var(--color-secondary-600)",
+          700: "var(--color-secondary-700)",
+          800: "var(--color-secondary-800)",
+          900: "var(--color-secondary-900)",
+          950: "var(--color-secondary-950)",
+        },
         primary: {
           50: "#fffbeb",
           100: "#fef3c7",
           200: "#fde68a",
           300: "#fcd34d",
           400: "#fbbf24",
-          500: "#f59e0b", // Main yellow
+          500: "#f59e0b",
           600: "#d97706",
           700: "#b45309",
           800: "#92400e",
@@ -25,7 +50,7 @@ export default {
           200: "#fecaca",
           300: "#fca5a5",
           400: "#f87171",
-          500: "#dc2626", // Deeper main red
+          500: "#dc2626",
           600: "#b91c1c",
           700: "#991b1b",
           800: "#7f1d1d",
@@ -41,25 +66,23 @@ export default {
           500: "#71717a",
           600: "#52525b",
           700: "#3f3f46",
-          800: "#1c1c1e", // Darker for better contrast
-          900: "#000000", // Pure black
+          800: "#1c1c1e",
+          900: "#000000",
           950: "#09090b",
         },
-        // Action colors - purple for actions and buttons
         action: {
           50: "#faf5ff",
           100: "#f3e8ff",
           200: "#e9d5ff",
           300: "#d8b4fe",
           400: "#c084fc",
-          500: "#a855f7", // Main purple
+          500: "#a855f7",
           600: "#9333ea",
           700: "#7c3aed",
           800: "#6b21a8",
           900: "#581c87",
           950: "#3b0764",
         },
-        // Semantic colors for different contexts
         success: {
           500: "#10b981",
           600: "#059669",

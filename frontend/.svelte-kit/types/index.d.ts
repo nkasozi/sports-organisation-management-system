@@ -6,6 +6,7 @@ type DynamicRoutes = {
 	"/officials/[id]": { id: string };
 	"/organizations/[id]": { id: string };
 	"/players/[id]": { id: string };
+	"/sports/[id]": { id: string };
 	"/teams/[id]": { id: string }
 };
 
@@ -31,6 +32,9 @@ type Layouts = {
 	"/players/create": undefined;
 	"/players/[id]": { id: string };
 	"/settings": undefined;
+	"/sports": { id?: string };
+	"/sports/create": undefined;
+	"/sports/[id]": { id: string };
 	"/teams": { id?: string };
 	"/teams/create": undefined;
 	"/teams/[id]": { id: string };
@@ -38,13 +42,13 @@ type Layouts = {
 	"/workflow": undefined
 };
 
-export type RouteId = "/" | "/competitions" | "/competitions/create" | "/competitions/[id]" | "/competitions/[id]/constraints" | "/crud-test" | "/games" | "/games/create" | "/games/[id]" | "/games/[id]/manage" | "/help" | "/officials" | "/officials/create" | "/officials/[id]" | "/organizations" | "/organizations/create" | "/organizations/[id]" | "/players" | "/players/create" | "/players/[id]" | "/settings" | "/teams" | "/teams/create" | "/teams/[id]" | "/workflow-test" | "/workflow";
+export type RouteId = "/" | "/competitions" | "/competitions/create" | "/competitions/[id]" | "/competitions/[id]/constraints" | "/crud-test" | "/games" | "/games/create" | "/games/[id]" | "/games/[id]/manage" | "/help" | "/officials" | "/officials/create" | "/officials/[id]" | "/organizations" | "/organizations/create" | "/organizations/[id]" | "/players" | "/players/create" | "/players/[id]" | "/settings" | "/sports" | "/sports/create" | "/sports/[id]" | "/teams" | "/teams/create" | "/teams/[id]" | "/workflow-test" | "/workflow";
 
 export type RouteParams<T extends RouteId> = T extends keyof DynamicRoutes ? DynamicRoutes[T] : Record<string, never>;
 
 export type LayoutParams<T extends RouteId> = Layouts[T] | Record<string, never>;
 
-export type Pathname = "/" | "/competitions" | "/competitions/create" | `/competitions/${string}` & {} | `/competitions/${string}/constraints` & {} | "/crud-test" | "/games" | "/games/create" | `/games/${string}` & {} | `/games/${string}/manage` & {} | "/help" | "/officials" | "/officials/create" | `/officials/${string}` & {} | "/organizations" | "/organizations/create" | `/organizations/${string}` & {} | "/players" | "/players/create" | `/players/${string}` & {} | "/settings" | "/teams" | "/teams/create" | `/teams/${string}` & {} | "/workflow-test" | "/workflow";
+export type Pathname = "/" | "/competitions" | "/competitions/create" | `/competitions/${string}` & {} | `/competitions/${string}/constraints` & {} | "/crud-test" | "/games" | "/games/create" | `/games/${string}` & {} | `/games/${string}/manage` & {} | "/help" | "/officials" | "/officials/create" | `/officials/${string}` & {} | "/organizations" | "/organizations/create" | `/organizations/${string}` & {} | "/players" | "/players/create" | `/players/${string}` & {} | "/settings" | "/sports" | "/sports/create" | `/sports/${string}` & {} | "/teams" | "/teams/create" | `/teams/${string}` & {} | "/workflow-test" | "/workflow";
 
 export type ResolvedPathname = `${"" | `/${string}`}${Pathname}`;
 

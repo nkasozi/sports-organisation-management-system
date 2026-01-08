@@ -27,7 +27,10 @@ export const nodes = [
 	() => import('./nodes/23'),
 	() => import('./nodes/24'),
 	() => import('./nodes/25'),
-	() => import('./nodes/26')
+	() => import('./nodes/26'),
+	() => import('./nodes/27'),
+	() => import('./nodes/28'),
+	() => import('./nodes/29')
 ];
 
 export const server_loads = [];
@@ -53,11 +56,14 @@ export const dictionary = {
 		"/players/create": [20],
 		"/players/[id]": [19],
 		"/settings": [21],
-		"/teams": [22],
-		"/teams/create": [24],
-		"/teams/[id]": [23],
-		"/workflow-test": [26],
-		"/workflow": [25]
+		"/sports": [22],
+		"/sports/create": [24],
+		"/sports/[id]": [23],
+		"/teams": [25],
+		"/teams/create": [27],
+		"/teams/[id]": [26],
+		"/workflow-test": [29],
+		"/workflow": [28]
 	};
 
 export const hooks = {

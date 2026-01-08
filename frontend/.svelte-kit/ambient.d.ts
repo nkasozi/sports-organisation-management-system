@@ -98,6 +98,7 @@ declare module '$env/static/private' {
 	export const INFOPATH: string;
 	export const HOMEBREW_CELLAR: string;
 	export const _P9K_SSH_TTY: string;
+	export const GIT_PAGER: string;
 	export const npm_node_execpath: string;
 	export const npm_config_prefix: string;
 	export const COLORTERM: string;
@@ -205,6 +206,7 @@ declare module '$env/dynamic/private' {
 		INFOPATH: string;
 		HOMEBREW_CELLAR: string;
 		_P9K_SSH_TTY: string;
+		GIT_PAGER: string;
 		npm_node_execpath: string;
 		npm_config_prefix: string;
 		COLORTERM: string;
