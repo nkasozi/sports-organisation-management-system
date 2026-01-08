@@ -11,7 +11,9 @@
   import FormField from "$lib/components/ui/FormField.svelte";
   import SelectField from "$lib/components/ui/SelectField.svelte";
   import EnumSelectField from "$lib/components/ui/EnumSelectField.svelte";
+  import ImageUpload from "$lib/components/ui/ImageUpload.svelte";
   import Toast from "$lib/components/ui/Toast.svelte";
+  import { DEFAULT_PLAYER_AVATAR } from "$lib/domain/entities/Player";
 
   const player_use_cases = get_player_use_cases();
   const team_use_cases = get_team_use_cases();
@@ -38,6 +40,7 @@
     height_cm: null,
     weight_kg: null,
     preferred_foot: "right",
+    profile_image_url: "",
     email: "",
     phone: "",
     status: "active",
@@ -253,6 +256,14 @@
           Personal Information
         </h2>
       </div>
+
+      <ImageUpload
+        current_image_url={form_data.profile_image_url || ""}
+        default_image_url={DEFAULT_PLAYER_AVATAR}
+        label="Player Photo"
+        disabled={is_submitting}
+        on:change={(e) => (form_data.profile_image_url = e.detail.url)}
+      />
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <FormField

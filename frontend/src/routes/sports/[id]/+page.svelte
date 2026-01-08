@@ -469,6 +469,7 @@
                     </label>
                     <button
                       type="button"
+                      aria-label="Remove game period"
                       class="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded"
                       on:click={() => remove_game_period(index)}
                     >
@@ -540,6 +541,7 @@
                       </select>
                       <button
                         type="button"
+                        aria-label="Remove card type"
                         class="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded"
                         on:click={() => remove_card_type(index)}
                       >
@@ -622,6 +624,7 @@
                       </select>
                       <button
                         type="button"
+                        aria-label="Remove foul category"
                         class="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded"
                         on:click={() => remove_foul_category(index)}
                       >
@@ -734,6 +737,7 @@
                       </label>
                       <button
                         type="button"
+                        aria-label="Remove official requirement"
                         class="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded"
                         on:click={() => remove_official_requirement(index)}
                       >
@@ -817,6 +821,7 @@
                     />
                     <button
                       type="button"
+                      aria-label="Remove scoring rule"
                       class="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded"
                       on:click={() => remove_scoring_rule(index)}
                     >
@@ -866,11 +871,13 @@
                   <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                       <label
+                        for="edit-overtime-trigger"
                         class="block text-sm font-medium text-accent-700 dark:text-accent-300 mb-2"
                       >
                         Trigger Condition
                       </label>
                       <select
+                        id="edit-overtime-trigger"
                         class="input w-full"
                         bind:value={form_data.overtime_rules.trigger_condition}
                       >
@@ -882,11 +889,13 @@
 
                     <div>
                       <label
+                        for="edit-overtime-type"
                         class="block text-sm font-medium text-accent-700 dark:text-accent-300 mb-2"
                       >
                         Overtime Type
                       </label>
                       <select
+                        id="edit-overtime-type"
                         class="input w-full"
                         bind:value={form_data.overtime_rules.overtime_type}
                       >
@@ -910,10 +919,12 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div>
                             <label
+                              for="edit-initial-rounds"
                               class="block text-sm text-accent-600 dark:text-accent-400 mb-1"
                               >Initial Rounds</label
                             >
                             <input
+                              id="edit-initial-rounds"
                               type="number"
                               class="input w-full"
                               bind:value={

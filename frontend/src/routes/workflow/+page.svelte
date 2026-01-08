@@ -371,7 +371,6 @@
             selected_games={selected_game_for_live_management
               ? [selected_game_for_live_management]
               : []}
-            {is_mobile_view}
             on:game_started={handle_game_started}
             on:game_paused={handle_game_paused}
             on:game_resumed={handle_game_resumed}

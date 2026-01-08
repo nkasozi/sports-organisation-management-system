@@ -3,12 +3,14 @@
   import { goto } from "$app/navigation";
   import type { Competition } from "$lib/domain/entities/Competition";
   import type { Team } from "$lib/domain/entities/Team";
+  import type { CompetitionTeam } from "$lib/domain/entities/CompetitionTeam";
   import type { CreateFixtureInput } from "$lib/domain/entities/Fixture";
   import type { SelectOption } from "$lib/components/ui/SelectField.svelte";
   import { create_empty_fixture_input } from "$lib/domain/entities/Fixture";
   import { get_fixture_use_cases } from "$lib/usecases/FixtureUseCases";
   import { get_competition_use_cases } from "$lib/usecases/CompetitionUseCases";
   import { get_team_use_cases } from "$lib/usecases/TeamUseCases";
+  import { get_competition_team_use_cases } from "$lib/usecases/CompetitionTeamUseCases";
   import FormField from "$lib/components/ui/FormField.svelte";
   import SelectField from "$lib/components/ui/SelectField.svelte";
   import Toast from "$lib/components/ui/Toast.svelte";
@@ -16,10 +18,12 @@
   const fixture_use_cases = get_fixture_use_cases();
   const competition_use_cases = get_competition_use_cases();
   const team_use_cases = get_team_use_cases();
+  const competition_team_use_cases = get_competition_team_use_cases();
 
   let form_data: CreateFixtureInput = create_empty_fixture_input();
   let competitions: Competition[] = [];
   let teams: Team[] = [];
+  let competition_teams: CompetitionTeam[] = [];
   let competition_options: SelectOption[] = [];
   let team_options: SelectOption[] = [];
   let is_loading: boolean = true;
@@ -63,19 +67,36 @@
     is_loading = false;
   }
 
-  function update_team_options(): void {
-    let filtered_teams = teams;
-
-    if (form_data.competition_id) {
-      const competition = competitions.find(
-        (c) => c.id === form_data.competition_id
-      );
-      if (competition) {
-        filtered_teams = teams.filter(
-          (t) => t.competition_id === competition.id
-        );
-      }
+  async function update_team_options(): Promise<void> {
+    if (!form_data.competition_id) {
+      team_options = teams.map((t) => ({
+        value: t.id,
+        label: t.name,
+      }));
+      return;
     }
+
+    const comp_teams_result =
+      await competition_team_use_cases.list_teams_in_competition(
+        form_data.competition_id,
+        { page_size: 100 }
+      );
+
+    if (!comp_teams_result.success) {
+      team_options = teams.map((t) => ({
+        value: t.id,
+        label: t.name,
+      }));
+      return;
+    }
+
+    competition_teams = comp_teams_result.data.items;
+    const team_ids_in_competition = new Set(
+      competition_teams.map((ct) => ct.team_id)
+    );
+    const filtered_teams = teams.filter((t) =>
+      team_ids_in_competition.has(t.id)
+    );
 
     team_options = filtered_teams.map((t) => ({
       value: t.id,
@@ -83,13 +104,13 @@
     }));
   }
 
-  function handle_competition_change(
+  async function handle_competition_change(
     event: CustomEvent<{ value: string }>
-  ): void {
+  ): Promise<void> {
     form_data.competition_id = event.detail.value;
     form_data.home_team_id = "";
     form_data.away_team_id = "";
-    update_team_options();
+    await update_team_options();
   }
 
   function handle_home_team_change(

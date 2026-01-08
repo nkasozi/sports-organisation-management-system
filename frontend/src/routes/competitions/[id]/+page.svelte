@@ -8,11 +8,13 @@
   } from "$lib/domain/entities/Competition";
   import type { Organization } from "$lib/domain/entities/Organization";
   import type { Team } from "$lib/domain/entities/Team";
+  import type { CompetitionTeam } from "$lib/domain/entities/CompetitionTeam";
   import type { LoadingState } from "$lib/components/ui/LoadingStateWrapper.svelte";
   import type { SelectOption } from "$lib/components/ui/SelectField.svelte";
   import { get_competition_use_cases } from "$lib/usecases/CompetitionUseCases";
   import { get_organization_use_cases } from "$lib/usecases/OrganizationUseCases";
   import { get_team_use_cases } from "$lib/usecases/TeamUseCases";
+  import { get_competition_team_use_cases } from "$lib/usecases/CompetitionTeamUseCases";
   import LoadingStateWrapper from "$lib/components/ui/LoadingStateWrapper.svelte";
   import FormField from "$lib/components/ui/FormField.svelte";
   import SelectField from "$lib/components/ui/SelectField.svelte";
@@ -22,10 +24,12 @@
   const competition_use_cases = get_competition_use_cases();
   const organization_use_cases = get_organization_use_cases();
   const team_use_cases = get_team_use_cases();
+  const competition_team_use_cases = get_competition_team_use_cases();
 
   let competition: Competition | null = null;
   let organizations: Organization[] = [];
   let teams_in_competition: Team[] = [];
+  let competition_team_entries: CompetitionTeam[] = [];
   let available_teams: Team[] = [];
   let form_data: UpdateCompetitionInput = {};
   let loading_state: LoadingState = "idle";
@@ -83,11 +87,17 @@
   async function load_competition_data(): Promise<void> {
     loading_state = "loading";
 
-    const [competition_result, org_result, teams_result] = await Promise.all([
-      competition_use_cases.get_competition(competition_id),
-      organization_use_cases.list_organizations(undefined, { page_size: 100 }),
-      team_use_cases.list_teams(undefined, { page_size: 100 }),
-    ]);
+    const [competition_result, org_result, teams_result, comp_teams_result] =
+      await Promise.all([
+        competition_use_cases.get_competition(competition_id),
+        organization_use_cases.list_organizations(undefined, {
+          page_size: 100,
+        }),
+        team_use_cases.list_teams(undefined, { page_size: 100 }),
+        competition_team_use_cases.list_teams_in_competition(competition_id, {
+          page_size: 100,
+        }),
+      ]);
 
     if (!competition_result.success) {
       loading_state = "error";
@@ -99,13 +109,20 @@
     organizations = org_result.success ? org_result.data.items : [];
 
     const all_teams = teams_result.success ? teams_result.data.items : [];
-    teams_in_competition = all_teams.filter(
-      (team) => team.competition_id === competition_id
+    competition_team_entries = comp_teams_result.success
+      ? comp_teams_result.data.items
+      : [];
+
+    const team_ids_in_competition = new Set(
+      competition_team_entries.map((ct) => ct.team_id)
+    );
+    teams_in_competition = all_teams.filter((team) =>
+      team_ids_in_competition.has(team.id)
     );
     available_teams = all_teams.filter(
       (team) =>
         team.organization_id === competition?.organization_id &&
-        team.competition_id !== competition_id
+        !team_ids_in_competition.has(team.id)
     );
 
     form_data = {
@@ -156,8 +173,14 @@
   }
 
   async function handle_add_team_to_competition(team: Team): Promise<void> {
-    const result = await team_use_cases.update_team(team.id, {
+    const result = await competition_team_use_cases.add_team_to_competition({
       competition_id: competition_id,
+      team_id: team.id,
+      registration_date: new Date().toISOString().split("T")[0],
+      seed_number: null,
+      group_name: null,
+      notes: "",
+      status: "registered",
     });
 
     if (!result.success) {
@@ -165,6 +188,7 @@
       return;
     }
 
+    competition_team_entries = [...competition_team_entries, result.data];
     teams_in_competition = [...teams_in_competition, team];
     available_teams = available_teams.filter((t) => t.id !== team.id);
     show_toast(`${team.name} added to competition`, "success");
@@ -173,15 +197,20 @@
   async function handle_remove_team_from_competition(
     team: Team
   ): Promise<void> {
-    const result = await team_use_cases.update_team(team.id, {
-      competition_id: null,
-    });
+    const result =
+      await competition_team_use_cases.remove_team_from_competition(
+        competition_id,
+        team.id
+      );
 
     if (!result.success) {
       show_toast(`Failed to remove team: ${result.error}`, "error");
       return;
     }
 
+    competition_team_entries = competition_team_entries.filter(
+      (ct) => ct.team_id !== team.id
+    );
     available_teams = [...available_teams, team];
     teams_in_competition = teams_in_competition.filter((t) => t.id !== team.id);
     show_toast(`${team.name} removed from competition`, "success");
@@ -455,7 +484,7 @@
                       <div class="flex items-center gap-3">
                         <div
                           class="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold"
-                          style="background-color: {team.team_color}"
+                          style="background-color: {team.primary_color}"
                         >
                           {team.name.charAt(0)}
                         </div>
@@ -510,7 +539,7 @@
                       <div class="flex items-center gap-3">
                         <div
                           class="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold"
-                          style="background-color: {team.team_color}"
+                          style="background-color: {team.primary_color}"
                         >
                           {team.name.charAt(0)}
                         </div>

@@ -3,11 +3,9 @@
   import { goto } from "$app/navigation";
   import type { Team } from "$lib/domain/entities/Team";
   import type { Organization } from "$lib/domain/entities/Organization";
-  import type { Competition } from "$lib/domain/entities/Competition";
   import type { LoadingState } from "$lib/components/ui/LoadingStateWrapper.svelte";
   import { get_team_use_cases } from "$lib/usecases/TeamUseCases";
   import { get_organization_use_cases } from "$lib/usecases/OrganizationUseCases";
-  import { get_competition_use_cases } from "$lib/usecases/CompetitionUseCases";
   import LoadingStateWrapper from "$lib/components/ui/LoadingStateWrapper.svelte";
   import SearchInput from "$lib/components/ui/SearchInput.svelte";
   import Pagination from "$lib/components/ui/Pagination.svelte";
@@ -16,11 +14,9 @@
 
   const team_use_cases = get_team_use_cases();
   const organization_use_cases = get_organization_use_cases();
-  const competition_use_cases = get_competition_use_cases();
 
   let teams: Team[] = [];
   let organizations_map: Map<string, Organization> = new Map();
-  let competitions_map: Map<string, Competition> = new Map();
   let loading_state: LoadingState = "idle";
   let error_message: string = "";
   let search_query: string = "";
@@ -38,7 +34,7 @@
   let toast_type: "success" | "error" | "info" = "info";
 
   onMount(async () => {
-    await Promise.all([load_organizations(), load_competitions()]);
+    await load_organizations();
     await load_teams();
   });
 
@@ -49,17 +45,6 @@
     if (result.success) {
       organizations_map = new Map(
         result.data.items.map((org) => [org.id, org])
-      );
-    }
-  }
-
-  async function load_competitions(): Promise<void> {
-    const result = await competition_use_cases.list_competitions(undefined, {
-      page_size: 100,
-    });
-    if (result.success) {
-      competitions_map = new Map(
-        result.data.items.map((comp) => [comp.id, comp])
       );
     }
   }
@@ -88,11 +73,6 @@
 
   function get_organization_name(organization_id: string): string {
     return organizations_map.get(organization_id)?.name || "Unknown";
-  }
-
-  function get_competition_name(competition_id: string | null): string {
-    if (!competition_id) return "—";
-    return competitions_map.get(competition_id)?.name || "Unknown";
   }
 
   function handle_search(event: CustomEvent<{ query: string }>): void {
@@ -279,11 +259,11 @@
                 >
                 <th
                   class="px-6 py-3 text-left text-xs font-medium text-accent-500 dark:text-accent-400 uppercase tracking-wider"
-                  >Competition</th
+                  >Short Name</th
                 >
                 <th
                   class="px-6 py-3 text-left text-xs font-medium text-accent-500 dark:text-accent-400 uppercase tracking-wider"
-                  >Coach</th
+                  >Squad Size</th
                 >
                 <th
                   class="px-6 py-3 text-left text-xs font-medium text-accent-500 dark:text-accent-400 uppercase tracking-wider"
@@ -304,11 +284,11 @@
                     <div class="flex items-center">
                       <div
                         class="h-10 w-10 rounded-lg flex items-center justify-center"
-                        style="background-color: {team.team_color}20;"
+                        style="background-color: {team.primary_color}20;"
                       >
                         <span
                           class="text-sm font-bold"
-                          style="color: {team.team_color};"
+                          style="color: {team.primary_color};"
                         >
                           {team.name.charAt(0).toUpperCase()}
                         </span>
@@ -335,12 +315,12 @@
                   <td
                     class="px-6 py-4 whitespace-nowrap text-sm text-accent-600 dark:text-accent-300"
                   >
-                    {get_competition_name(team.competition_id)}
+                    {team.short_name || "—"}
                   </td>
                   <td
                     class="px-6 py-4 whitespace-nowrap text-sm text-accent-600 dark:text-accent-300"
                   >
-                    {team.coach_name || "—"}
+                    {team.max_squad_size || "—"}
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap">
                     <span class={get_status_badge_classes(team.status)}>
@@ -380,11 +360,11 @@
                 <div class="flex items-center">
                   <div
                     class="h-10 w-10 rounded-lg flex items-center justify-center flex-shrink-0"
-                    style="background-color: {team.team_color}20;"
+                    style="background-color: {team.primary_color}20;"
                   >
                     <span
                       class="text-sm font-bold"
-                      style="color: {team.team_color};"
+                      style="color: {team.primary_color};"
                     >
                       {team.name.charAt(0).toUpperCase()}
                     </span>
@@ -407,7 +387,9 @@
 
               <div class="mt-2 text-sm text-accent-600 dark:text-accent-400">
                 <div>{get_organization_name(team.organization_id)}</div>
-                <div class="text-xs mt-1">Coach: {team.coach_name || "—"}</div>
+                <div class="text-xs mt-1">
+                  Squad size: {team.max_squad_size || "—"}
+                </div>
               </div>
 
               <div class="mt-3 flex gap-2">

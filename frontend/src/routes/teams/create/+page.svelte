@@ -3,24 +3,26 @@
   import { goto } from "$app/navigation";
   import type { CreateTeamInput } from "$lib/domain/entities/Team";
   import type { Organization } from "$lib/domain/entities/Organization";
-  import type { Competition } from "$lib/domain/entities/Competition";
+  import type { TeamStaff } from "$lib/domain/entities/TeamStaff";
+  import type { TeamStaffRole } from "$lib/domain/entities/TeamStaffRole";
   import type { LoadingState } from "$lib/components/ui/LoadingStateWrapper.svelte";
   import { get_team_use_cases } from "$lib/usecases/TeamUseCases";
   import { get_organization_use_cases } from "$lib/usecases/OrganizationUseCases";
-  import { get_competition_use_cases } from "$lib/usecases/CompetitionUseCases";
+  import { get_team_staff_use_cases } from "$lib/usecases/TeamStaffUseCases";
   import LoadingStateWrapper from "$lib/components/ui/LoadingStateWrapper.svelte";
   import FormField from "$lib/components/ui/FormField.svelte";
   import SelectField from "$lib/components/ui/SelectField.svelte";
   import EnumSelectField from "$lib/components/ui/EnumSelectField.svelte";
+  import TeamStaffForm from "$lib/components/ui/TeamStaffForm.svelte";
   import Toast from "$lib/components/ui/Toast.svelte";
 
   const team_use_cases = get_team_use_cases();
   const organization_use_cases = get_organization_use_cases();
-  const competition_use_cases = get_competition_use_cases();
+  const team_staff_use_cases = get_team_staff_use_cases();
 
   let organizations: Organization[] = [];
-  let competitions: Competition[] = [];
-  let filtered_competitions: Competition[] = [];
+  let pending_staff_members: TeamStaff[] = [];
+  let available_staff_roles: TeamStaffRole[] = [];
   let loading_state: LoadingState = "loading";
   let is_submitting: boolean = false;
   let validation_errors: Map<string, string> = new Map();
@@ -31,19 +33,19 @@
 
   let form_data: CreateTeamInput = {
     name: "",
+    short_name: "",
     organization_id: "",
-    competition_id: null,
     sport_type: "Football",
-    team_color: "#3B82F6",
-    coach_name: "",
-    assistant_coach_name: "",
+    primary_color: "#3B82F6",
+    secondary_color: "#FFFFFF",
     description: "",
-    coach_email: "",
-    coach_phone: "",
     logo_url: "",
-    established_year: new Date().getFullYear(),
     home_venue: "",
-    max_players: 25,
+    max_squad_size: 25,
+    website: "",
+    founded_year: new Date().getFullYear(),
+    captain_player_id: null,
+    vice_captain_player_id: null,
     status: "active",
   };
 
@@ -71,9 +73,9 @@
   ];
 
   onMount(async () => {
-    const [org_result, comp_result] = await Promise.all([
+    const [org_result, roles_result] = await Promise.all([
       organization_use_cases.list_organizations(undefined, { page_size: 100 }),
-      competition_use_cases.list_competitions(undefined, { page_size: 100 }),
+      team_staff_use_cases.list_staff_roles(),
     ]);
 
     if (!org_result.success) {
@@ -82,7 +84,7 @@
     }
 
     organizations = org_result.data.items;
-    competitions = comp_result.success ? comp_result.data.items : [];
+    available_staff_roles = roles_result.success ? roles_result.data : [];
     loading_state = "success";
   });
 
@@ -90,22 +92,12 @@
     event: CustomEvent<{ value: string }>
   ): void {
     form_data.organization_id = event.detail.value;
-    form_data.competition_id = null;
-    filtered_competitions = competitions.filter(
-      (comp) => comp.organization_id === form_data.organization_id
-    );
   }
 
   function handle_sport_type_change(
     event: CustomEvent<{ value: string }>
   ): void {
     form_data.sport_type = event.detail.value as CreateTeamInput["sport_type"];
-  }
-
-  function handle_competition_change(
-    event: CustomEvent<{ value: string }>
-  ): void {
-    form_data.competition_id = event.detail.value || null;
   }
 
   function handle_status_change(event: CustomEvent<{ value: string }>): void {
@@ -121,10 +113,10 @@
     if (!form_data.organization_id) {
       validation_errors.set("organization_id", "Organization is required");
     }
-    if (form_data.max_players < 1 || form_data.max_players > 100) {
+    if (form_data.max_squad_size < 1 || form_data.max_squad_size > 100) {
       validation_errors.set(
-        "max_players",
-        "Max players must be between 1 and 100"
+        "max_squad_size",
+        "Max squad size must be between 1 and 100"
       );
     }
 
@@ -142,6 +134,33 @@
       show_toast(result.error, "error");
       return;
     }
+
+    const created_team = result.data;
+
+    const staff_create_promises = pending_staff_members.map((staff) =>
+      team_staff_use_cases.create_team_staff({
+        first_name: staff.first_name,
+        last_name: staff.last_name,
+        email: staff.email,
+        phone: staff.phone,
+        date_of_birth: staff.date_of_birth,
+        team_id: created_team.id,
+        role_id: staff.role_id,
+        nationality: staff.nationality,
+        profile_image_url: staff.profile_image_url,
+        qualifications: staff.qualifications,
+        license_number: staff.license_number,
+        license_expiry: staff.license_expiry,
+        employment_start_date: staff.employment_start_date,
+        employment_end_date: staff.employment_end_date,
+        emergency_contact_name: staff.emergency_contact_name,
+        emergency_contact_phone: staff.emergency_contact_phone,
+        notes: staff.notes,
+        status: staff.status,
+      })
+    );
+
+    await Promise.all(staff_create_promises);
 
     show_toast("Team created successfully", "success");
     setTimeout(() => goto("/teams"), 1500);
@@ -164,14 +183,6 @@
     value: org.id,
     label: org.name,
   }));
-
-  $: competition_options = [
-    { value: "", label: "None" },
-    ...filtered_competitions.map((comp) => ({
-      value: comp.id,
-      label: comp.name,
-    })),
-  ];
 </script>
 
 <svelte:head>
@@ -231,6 +242,13 @@
           />
         </div>
 
+        <FormField
+          label="Short Name"
+          name="short_name"
+          bind:value={form_data.short_name}
+          placeholder="Enter short name (e.g., MUN)"
+        />
+
         <SelectField
           label="Organization"
           name="organization_id"
@@ -240,16 +258,6 @@
           required={true}
           error={validation_errors.get("organization_id")}
           on:change={handle_organization_change}
-        />
-
-        <SelectField
-          label="Competition"
-          name="competition_id"
-          value={form_data.competition_id || ""}
-          options={competition_options}
-          placeholder="Select competition (optional)"
-          disabled={!form_data.organization_id}
-          on:change={handle_competition_change}
         />
 
         <EnumSelectField
@@ -263,37 +271,43 @@
 
         <div>
           <label
-            for="team_color"
+            for="primary_color"
             class="block text-sm font-medium text-accent-700 dark:text-accent-300 mb-1"
           >
-            Team Color
+            Primary Color
           </label>
           <div class="flex items-center gap-3">
             <input
               type="color"
-              id="team_color"
-              bind:value={form_data.team_color}
+              id="primary_color"
+              bind:value={form_data.primary_color}
               class="h-10 w-20 rounded border border-accent-300 dark:border-accent-600 cursor-pointer"
             />
             <span class="text-sm text-accent-600 dark:text-accent-400"
-              >{form_data.team_color}</span
+              >{form_data.primary_color}</span
             >
           </div>
         </div>
 
-        <FormField
-          label="Coach Name"
-          name="coach_name"
-          bind:value={form_data.coach_name}
-          placeholder="Enter head coach name"
-        />
-
-        <FormField
-          label="Assistant Coach"
-          name="assistant_coach_name"
-          bind:value={form_data.assistant_coach_name}
-          placeholder="Enter assistant coach name"
-        />
+        <div>
+          <label
+            for="secondary_color"
+            class="block text-sm font-medium text-accent-700 dark:text-accent-300 mb-1"
+          >
+            Secondary Color
+          </label>
+          <div class="flex items-center gap-3">
+            <input
+              type="color"
+              id="secondary_color"
+              bind:value={form_data.secondary_color}
+              class="h-10 w-20 rounded border border-accent-300 dark:border-accent-600 cursor-pointer"
+            />
+            <span class="text-sm text-accent-600 dark:text-accent-400"
+              >{form_data.secondary_color}</span
+            >
+          </div>
+        </div>
 
         <FormField
           label="Home Venue"
@@ -303,14 +317,32 @@
         />
 
         <FormField
-          label="Max Players"
-          name="max_players"
+          label="Max Squad Size"
+          name="max_squad_size"
           type="number"
-          bind:value={form_data.max_players}
+          bind:value={form_data.max_squad_size}
           placeholder="25"
           min={1}
           max={100}
-          error={validation_errors.get("max_players")}
+          error={validation_errors.get("max_squad_size")}
+        />
+
+        <FormField
+          label="Website"
+          name="website"
+          type="url"
+          bind:value={form_data.website}
+          placeholder="https://team-website.com"
+        />
+
+        <FormField
+          label="Founded Year"
+          name="founded_year"
+          type="number"
+          bind:value={form_data.founded_year}
+          placeholder="1990"
+          min={1800}
+          max={new Date().getFullYear()}
         />
 
         <EnumSelectField
@@ -321,6 +353,20 @@
           required={true}
           on:change={handle_status_change}
         />
+      </div>
+
+      <div class="border-t border-accent-200 dark:border-accent-700 pt-6">
+        <TeamStaffForm
+          bind:staff_members={pending_staff_members}
+          available_roles={available_staff_roles}
+          team_id=""
+          disabled={is_submitting}
+        />
+        {#if pending_staff_members.length > 0}
+          <p class="mt-2 text-sm text-accent-500 dark:text-accent-400">
+            Staff members will be added after the team is created
+          </p>
+        {/if}
       </div>
 
       <div

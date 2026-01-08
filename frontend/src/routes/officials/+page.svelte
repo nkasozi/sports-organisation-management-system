@@ -3,14 +3,16 @@
   import { goto } from "$app/navigation";
   import type { Official } from "$lib/domain/entities/Official";
   import type { Organization } from "$lib/domain/entities/Organization";
+  import type { GameOfficialRole } from "$lib/domain/entities/GameOfficialRole";
   import type { LoadingState } from "$lib/components/ui/LoadingStateWrapper.svelte";
   import { get_official_use_cases } from "$lib/usecases/OfficialUseCases";
   import { get_organization_use_cases } from "$lib/usecases/OrganizationUseCases";
   import {
     get_official_full_name,
-    OFFICIAL_ROLE_OPTIONS,
+    get_primary_qualification,
     CERTIFICATION_LEVEL_OPTIONS,
   } from "$lib/domain/entities/Official";
+  import { get_default_football_official_roles_with_ids } from "$lib/domain/entities/GameOfficialRole";
   import LoadingStateWrapper from "$lib/components/ui/LoadingStateWrapper.svelte";
   import SearchInput from "$lib/components/ui/SearchInput.svelte";
   import Pagination from "$lib/components/ui/Pagination.svelte";
@@ -22,6 +24,7 @@
 
   let officials: Official[] = [];
   let organizations_map: Map<string, Organization> = new Map();
+  let roles_map: Map<string, GameOfficialRole> = new Map();
   let loading_state: LoadingState = "idle";
   let error_message: string = "";
   let search_query: string = "";
@@ -39,9 +42,15 @@
   let toast_type: "success" | "error" | "info" = "info";
 
   onMount(async () => {
+    load_roles();
     await load_organizations();
     await load_officials();
   });
+
+  function load_roles(): void {
+    const default_roles = get_default_football_official_roles_with_ids();
+    roles_map = new Map(default_roles.map((role) => [role.id, role]));
+  }
 
   async function load_organizations(): Promise<void> {
     const result = await organization_use_cases.list_organizations(undefined, {
@@ -80,10 +89,10 @@
     return organizations_map.get(organization_id)?.name || "Unknown";
   }
 
-  function get_role_label(role: string): string {
-    return (
-      OFFICIAL_ROLE_OPTIONS.find((opt) => opt.value === role)?.label || role
-    );
+  function get_role_label(official: Official): string {
+    const primary_qual = get_primary_qualification(official);
+    if (!primary_qual) return "No Role";
+    return roles_map.get(primary_qual.role_id)?.name || "Unknown Role";
   }
 
   function get_certification_label(level: string): string {
@@ -91,6 +100,11 @@
       CERTIFICATION_LEVEL_OPTIONS.find((opt) => opt.value === level)?.label ||
       level
     );
+  }
+
+  function get_certification_level(official: Official): string {
+    const primary_qual = get_primary_qualification(official);
+    return primary_qual?.certification_level || "none";
   }
 
   function handle_search(event: CustomEvent<{ query: string }>): void {
@@ -350,15 +364,17 @@
                   <td
                     class="px-6 py-4 whitespace-nowrap text-sm text-accent-600 dark:text-accent-300"
                   >
-                    {get_role_label(official.role)}
+                    {get_role_label(official)}
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap">
                     <span
                       class={get_certification_badge_classes(
-                        official.certification_level
+                        get_certification_level(official)
                       )}
                     >
-                      {get_certification_label(official.certification_level)}
+                      {get_certification_label(
+                        get_certification_level(official)
+                      )}
                     </span>
                   </td>
                   <td
@@ -422,7 +438,7 @@
                     <div
                       class="text-xs text-accent-500 dark:text-accent-400 mt-0.5"
                     >
-                      {get_role_label(official.role)}
+                      {get_role_label(official)}
                     </div>
                   </div>
                 </div>
@@ -434,10 +450,10 @@
               <div class="mt-3 flex flex-wrap gap-2">
                 <span
                   class={get_certification_badge_classes(
-                    official.certification_level
+                    get_certification_level(official)
                   )}
                 >
-                  {get_certification_label(official.certification_level)}
+                  {get_certification_label(get_certification_level(official))}
                 </span>
               </div>
 

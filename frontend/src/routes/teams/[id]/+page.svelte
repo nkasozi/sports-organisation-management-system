@@ -4,25 +4,27 @@
   import { page } from "$app/stores";
   import type { Team, UpdateTeamInput } from "$lib/domain/entities/Team";
   import type { Organization } from "$lib/domain/entities/Organization";
-  import type { Competition } from "$lib/domain/entities/Competition";
+  import type { TeamStaff } from "$lib/domain/entities/TeamStaff";
+  import type { TeamStaffRole } from "$lib/domain/entities/TeamStaffRole";
   import type { LoadingState } from "$lib/components/ui/LoadingStateWrapper.svelte";
   import { get_team_use_cases } from "$lib/usecases/TeamUseCases";
   import { get_organization_use_cases } from "$lib/usecases/OrganizationUseCases";
-  import { get_competition_use_cases } from "$lib/usecases/CompetitionUseCases";
+  import { get_team_staff_use_cases } from "$lib/usecases/TeamStaffUseCases";
   import LoadingStateWrapper from "$lib/components/ui/LoadingStateWrapper.svelte";
   import FormField from "$lib/components/ui/FormField.svelte";
   import SelectField from "$lib/components/ui/SelectField.svelte";
   import EnumSelectField from "$lib/components/ui/EnumSelectField.svelte";
+  import TeamStaffForm from "$lib/components/ui/TeamStaffForm.svelte";
   import Toast from "$lib/components/ui/Toast.svelte";
 
   const team_use_cases = get_team_use_cases();
   const organization_use_cases = get_organization_use_cases();
-  const competition_use_cases = get_competition_use_cases();
+  const team_staff_use_cases = get_team_staff_use_cases();
 
   let team: Team | null = null;
   let organizations: Organization[] = [];
-  let competitions: Competition[] = [];
-  let filtered_competitions: Competition[] = [];
+  let staff_members: TeamStaff[] = [];
+  let available_staff_roles: TeamStaffRole[] = [];
   let loading_state: LoadingState = "loading";
   let error_message: string = "";
   let is_submitting: boolean = false;
@@ -34,14 +36,15 @@
 
   let form_data: UpdateTeamInput = {
     name: "",
+    short_name: "",
     organization_id: "",
-    competition_id: null,
     sport_type: "Football",
-    team_color: "#3B82F6",
-    coach_name: "",
-    assistant_coach_name: "",
+    primary_color: "#3B82F6",
+    secondary_color: "#FFFFFF",
     home_venue: "",
-    max_players: 25,
+    max_squad_size: 25,
+    website: "",
+    founded_year: undefined,
     status: "active",
   };
 
@@ -71,11 +74,15 @@
       return;
     }
 
-    const [team_result, org_result, comp_result] = await Promise.all([
-      team_use_cases.get_team_by_id(team_id),
-      organization_use_cases.list_organizations(undefined, { page_size: 100 }),
-      competition_use_cases.list_competitions(undefined, { page_size: 100 }),
-    ]);
+    const [team_result, org_result, staff_result, roles_result] =
+      await Promise.all([
+        team_use_cases.get_team_by_id(team_id),
+        organization_use_cases.list_organizations(undefined, {
+          page_size: 100,
+        }),
+        team_staff_use_cases.list_staff_by_team(team_id),
+        team_staff_use_cases.list_staff_roles(),
+      ]);
 
     if (!team_result.success) {
       loading_state = "error";
@@ -86,24 +93,22 @@
     const loaded_team = team_result.data;
     team = loaded_team;
     organizations = org_result.success ? org_result.data.items : [];
-    competitions = comp_result.success ? comp_result.data.items : [];
+    staff_members = staff_result.success ? staff_result.data.items : [];
+    available_staff_roles = roles_result.success ? roles_result.data : [];
 
     form_data = {
       name: loaded_team.name,
+      short_name: loaded_team.short_name || "",
       organization_id: loaded_team.organization_id,
-      competition_id: loaded_team.competition_id,
       sport_type: loaded_team.sport_type,
-      team_color: loaded_team.team_color,
-      coach_name: loaded_team.coach_name,
-      assistant_coach_name: loaded_team.assistant_coach_name,
-      home_venue: loaded_team.home_venue,
-      max_players: loaded_team.max_players,
+      primary_color: loaded_team.primary_color || "#3B82F6",
+      secondary_color: loaded_team.secondary_color || "#FFFFFF",
+      home_venue: loaded_team.home_venue || "",
+      max_squad_size: loaded_team.max_squad_size || 25,
+      website: loaded_team.website || "",
+      founded_year: loaded_team.founded_year,
       status: loaded_team.status,
     };
-
-    filtered_competitions = competitions.filter(
-      (comp) => comp.organization_id === form_data.organization_id
-    );
 
     loading_state = "success";
   });
@@ -112,22 +117,12 @@
     event: CustomEvent<{ value: string }>
   ): void {
     form_data.organization_id = event.detail.value;
-    form_data.competition_id = null;
-    filtered_competitions = competitions.filter(
-      (comp) => comp.organization_id === form_data.organization_id
-    );
   }
 
   function handle_sport_type_change(
     event: CustomEvent<{ value: string }>
   ): void {
     form_data.sport_type = event.detail.value as UpdateTeamInput["sport_type"];
-  }
-
-  function handle_competition_change(
-    event: CustomEvent<{ value: string }>
-  ): void {
-    form_data.competition_id = event.detail.value || null;
   }
 
   function handle_status_change(event: CustomEvent<{ value: string }>): void {
@@ -146,12 +141,12 @@
       validation_errors.set("organization_id", "Organization is required");
     }
     if (
-      form_data.max_players &&
-      (form_data.max_players < 1 || form_data.max_players > 100)
+      form_data.max_squad_size &&
+      (form_data.max_squad_size < 1 || form_data.max_squad_size > 100)
     ) {
       validation_errors.set(
-        "max_players",
-        "Max players must be between 1 and 100"
+        "max_squad_size",
+        "Max squad size must be between 1 and 100"
       );
     }
 
@@ -187,18 +182,74 @@
     goto("/teams");
   }
 
+  async function handle_staff_add(
+    event: CustomEvent<{ staff: TeamStaff }>
+  ): Promise<void> {
+    if (!team) return;
+
+    const staff_input = {
+      first_name: event.detail.staff.first_name,
+      last_name: event.detail.staff.last_name,
+      email: event.detail.staff.email,
+      phone: event.detail.staff.phone,
+      date_of_birth: event.detail.staff.date_of_birth,
+      team_id: team.id,
+      role_id: event.detail.staff.role_id,
+      nationality: event.detail.staff.nationality,
+      profile_image_url: event.detail.staff.profile_image_url,
+      qualifications: event.detail.staff.qualifications,
+      license_number: event.detail.staff.license_number,
+      license_expiry: event.detail.staff.license_expiry,
+      employment_start_date: event.detail.staff.employment_start_date,
+      employment_end_date: event.detail.staff.employment_end_date,
+      emergency_contact_name: event.detail.staff.emergency_contact_name,
+      emergency_contact_phone: event.detail.staff.emergency_contact_phone,
+      notes: event.detail.staff.notes,
+      status: event.detail.staff.status,
+    };
+
+    const result = await team_staff_use_cases.create_team_staff(staff_input);
+
+    if (result.success) {
+      const temp_id = event.detail.staff.id;
+      staff_members = staff_members.map((s) =>
+        s.id === temp_id ? result.data : s
+      );
+      show_toast("Staff member added", "success");
+    } else {
+      staff_members = staff_members.filter(
+        (s) => s.id !== event.detail.staff.id
+      );
+      show_toast(result.error, "error");
+    }
+  }
+
+  async function handle_staff_remove(
+    event: CustomEvent<{ staff_id: string }>
+  ): Promise<void> {
+    const staff_id = event.detail.staff_id;
+
+    if (staff_id.startsWith("temp-")) return;
+
+    const result = await team_staff_use_cases.delete_team_staff(staff_id);
+
+    if (result.success) {
+      show_toast("Staff member removed", "success");
+    } else {
+      const staff_result = await team_staff_use_cases.list_staff_by_team(
+        team?.id || ""
+      );
+      if (staff_result.success) {
+        staff_members = staff_result.data.items;
+      }
+      show_toast(result.error, "error");
+    }
+  }
+
   $: organization_options = organizations.map((org) => ({
     value: org.id,
     label: org.name,
   }));
-
-  $: competition_options = [
-    { value: "", label: "None" },
-    ...filtered_competitions.map((comp) => ({
-      value: comp.id,
-      label: comp.name,
-    })),
-  ];
 </script>
 
 <svelte:head>
@@ -258,6 +309,13 @@
           />
         </div>
 
+        <FormField
+          label="Short Name"
+          name="short_name"
+          bind:value={form_data.short_name}
+          placeholder="Enter short name (e.g., MUN)"
+        />
+
         <SelectField
           label="Organization"
           name="organization_id"
@@ -267,16 +325,6 @@
           required={true}
           error={validation_errors.get("organization_id")}
           on:change={handle_organization_change}
-        />
-
-        <SelectField
-          label="Competition"
-          name="competition_id"
-          value={form_data.competition_id || ""}
-          options={competition_options}
-          placeholder="Select competition (optional)"
-          disabled={!form_data.organization_id}
-          on:change={handle_competition_change}
         />
 
         <EnumSelectField
@@ -290,37 +338,43 @@
 
         <div>
           <label
-            for="team_color"
+            for="primary_color"
             class="block text-sm font-medium text-accent-700 dark:text-accent-300 mb-1"
           >
-            Team Color
+            Primary Color
           </label>
           <div class="flex items-center gap-3">
             <input
               type="color"
-              id="team_color"
-              bind:value={form_data.team_color}
+              id="primary_color"
+              bind:value={form_data.primary_color}
               class="h-10 w-20 rounded border border-accent-300 dark:border-accent-600 cursor-pointer"
             />
             <span class="text-sm text-accent-600 dark:text-accent-400"
-              >{form_data.team_color}</span
+              >{form_data.primary_color}</span
             >
           </div>
         </div>
 
-        <FormField
-          label="Coach Name"
-          name="coach_name"
-          bind:value={form_data.coach_name}
-          placeholder="Enter head coach name"
-        />
-
-        <FormField
-          label="Assistant Coach"
-          name="assistant_coach_name"
-          bind:value={form_data.assistant_coach_name}
-          placeholder="Enter assistant coach name"
-        />
+        <div>
+          <label
+            for="secondary_color"
+            class="block text-sm font-medium text-accent-700 dark:text-accent-300 mb-1"
+          >
+            Secondary Color
+          </label>
+          <div class="flex items-center gap-3">
+            <input
+              type="color"
+              id="secondary_color"
+              bind:value={form_data.secondary_color}
+              class="h-10 w-20 rounded border border-accent-300 dark:border-accent-600 cursor-pointer"
+            />
+            <span class="text-sm text-accent-600 dark:text-accent-400"
+              >{form_data.secondary_color}</span
+            >
+          </div>
+        </div>
 
         <FormField
           label="Home Venue"
@@ -330,14 +384,32 @@
         />
 
         <FormField
-          label="Max Players"
-          name="max_players"
+          label="Max Squad Size"
+          name="max_squad_size"
           type="number"
-          bind:value={form_data.max_players}
+          bind:value={form_data.max_squad_size}
           placeholder="25"
           min={1}
           max={100}
-          error={validation_errors.get("max_players")}
+          error={validation_errors.get("max_squad_size")}
+        />
+
+        <FormField
+          label="Website"
+          name="website"
+          type="url"
+          bind:value={form_data.website}
+          placeholder="https://team-website.com"
+        />
+
+        <FormField
+          label="Founded Year"
+          name="founded_year"
+          type="number"
+          bind:value={form_data.founded_year}
+          placeholder="1990"
+          min={1800}
+          max={new Date().getFullYear()}
         />
 
         <EnumSelectField
@@ -347,6 +419,17 @@
           options={status_options}
           required={true}
           on:change={handle_status_change}
+        />
+      </div>
+
+      <div class="border-t border-accent-200 dark:border-accent-700 pt-6">
+        <TeamStaffForm
+          bind:staff_members
+          available_roles={available_staff_roles}
+          team_id={team?.id || ""}
+          disabled={is_submitting}
+          on:add={handle_staff_add}
+          on:remove={handle_staff_remove}
         />
       </div>
 

@@ -2,25 +2,33 @@
   import { onMount } from "svelte";
   import { goto } from "$app/navigation";
   import type { Organization } from "$lib/domain/entities/Organization";
-  import type { CreateOfficialInput } from "$lib/domain/entities/Official";
+  import type {
+    CreateOfficialInput,
+    OfficialQualification,
+  } from "$lib/domain/entities/Official";
+  import type { GameOfficialRole } from "$lib/domain/entities/GameOfficialRole";
   import type { SelectOption } from "$lib/components/ui/SelectField.svelte";
   import {
     create_empty_official_input,
-    OFFICIAL_ROLE_OPTIONS,
     CERTIFICATION_LEVEL_OPTIONS,
   } from "$lib/domain/entities/Official";
+  import { get_default_football_official_roles_with_ids } from "$lib/domain/entities/GameOfficialRole";
   import { get_official_use_cases } from "$lib/usecases/OfficialUseCases";
   import { get_organization_use_cases } from "$lib/usecases/OrganizationUseCases";
   import FormField from "$lib/components/ui/FormField.svelte";
   import SelectField from "$lib/components/ui/SelectField.svelte";
   import EnumSelectField from "$lib/components/ui/EnumSelectField.svelte";
+  import ImageUpload from "$lib/components/ui/ImageUpload.svelte";
+  import QualificationForm from "$lib/components/ui/QualificationForm.svelte";
   import Toast from "$lib/components/ui/Toast.svelte";
+  import { DEFAULT_OFFICIAL_AVATAR } from "$lib/domain/entities/Official";
 
   const official_use_cases = get_official_use_cases();
   const organization_use_cases = get_organization_use_cases();
 
   let form_data: CreateOfficialInput = create_empty_official_input();
   let organizations: Organization[] = [];
+  let available_roles: GameOfficialRole[] = [];
   let organization_options: SelectOption[] = [];
   let is_loading_organizations: boolean = true;
   let is_saving: boolean = false;
@@ -37,18 +45,8 @@
     { value: "retired", label: "Retired" },
   ];
 
-  const sport_type_options = [
-    { value: "Football", label: "Football" },
-    { value: "Basketball", label: "Basketball" },
-    { value: "Cricket", label: "Cricket" },
-    { value: "Rugby", label: "Rugby" },
-    { value: "Tennis", label: "Tennis" },
-    { value: "Hockey", label: "Hockey" },
-    { value: "Volleyball", label: "Volleyball" },
-    { value: "Other", label: "Other" },
-  ];
-
   onMount(async () => {
+    available_roles = get_default_football_official_roles_with_ids();
     await load_organizations();
   });
 
@@ -72,12 +70,14 @@
     event: CustomEvent<{ value: string }>
   ): void {
     form_data.organization_id = event.detail.value;
-    const selected_org = organizations.find(
-      (org) => org.id === event.detail.value
-    );
-    if (selected_org && !form_data.sport_type) {
-      form_data.sport_type = selected_org.sport_type;
-    }
+  }
+
+  function handle_qualifications_change(
+    event: CustomEvent<OfficialQualification[]>
+  ): void {
+    form_data.qualifications = event.detail;
+    const primary_qual = form_data.qualifications.find((q) => q.is_primary);
+    form_data.primary_role_id = primary_qual?.role_id || null;
   }
 
   async function handle_submit(): Promise<void> {
@@ -161,6 +161,14 @@
         </h2>
       </div>
 
+      <ImageUpload
+        current_image_url={form_data.profile_image_url}
+        default_image_url={DEFAULT_OFFICIAL_AVATAR}
+        label="Official Photo"
+        disabled={is_saving}
+        on:change={(e) => (form_data.profile_image_url = e.detail.url)}
+      />
+
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <FormField
           label="First Name"
@@ -231,44 +239,6 @@
           on:change={handle_organization_change}
         />
 
-        <EnumSelectField
-          label="Role"
-          name="role"
-          bind:value={form_data.role}
-          options={OFFICIAL_ROLE_OPTIONS}
-          required={true}
-        />
-
-        <EnumSelectField
-          label="Sport Type"
-          name="sport_type"
-          bind:value={form_data.sport_type}
-          options={sport_type_options}
-          required={true}
-        />
-
-        <EnumSelectField
-          label="Certification Level"
-          name="certification_level"
-          bind:value={form_data.certification_level}
-          options={CERTIFICATION_LEVEL_OPTIONS}
-          required={true}
-        />
-
-        <FormField
-          label="Certification Number"
-          name="certification_number"
-          bind:value={form_data.certification_number}
-          placeholder="Enter certification number"
-        />
-
-        <FormField
-          label="Certification Expiry"
-          name="certification_expiry"
-          type="date"
-          bind:value={form_data.certification_expiry}
-        />
-
         <FormField
           label="Years of Experience"
           name="years_of_experience"
@@ -284,6 +254,18 @@
           options={status_options}
         />
       </div>
+
+      <div class="border-b border-accent-200 dark:border-accent-700 pb-4 pt-4">
+        <h2 class="text-lg font-medium text-accent-900 dark:text-accent-100">
+          Qualifications & Certifications
+        </h2>
+      </div>
+
+      <QualificationForm
+        qualifications={form_data.qualifications}
+        {available_roles}
+        on:change={handle_qualifications_change}
+      />
 
       <div class="border-b border-accent-200 dark:border-accent-700 pb-4 pt-4">
         <h2 class="text-lg font-medium text-accent-900 dark:text-accent-100">
