@@ -109,4 +109,9 @@ BE/strapi-data/
 # System Files
 .DS_Store
 Thumbs.db
-/frontend/.svelte-kit
+frontend/.svelte-kit/
+.svelte-kit/
+.vercel/
+.vscode/
+node_modules/
+dist/
