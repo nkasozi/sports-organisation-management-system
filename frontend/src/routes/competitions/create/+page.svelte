@@ -370,17 +370,6 @@
             rows={3}
           />
         </div>
-
-        <div class="md:col-span-2">
-          <FormField
-            label="Rules"
-            name="rules"
-            type="textarea"
-            bind:value={form_data.rules}
-            placeholder="Enter competition rules and regulations"
-            rows={4}
-          />
-        </div>
       </div>
 
       <div class="border-t border-accent-200 dark:border-accent-700 pt-6">

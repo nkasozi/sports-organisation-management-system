@@ -92,8 +92,6 @@
         ? { ...format.knockout_stage_config }
         : null,
       league_config: format.league_config ? { ...format.league_config } : null,
-      auto_generate_fixtures: format.auto_generate_fixtures,
-      auto_assign_officials: format.auto_assign_officials,
       min_teams_required: format.min_teams_required,
       max_teams_allowed: format.max_teams_allowed,
       status: format.status,

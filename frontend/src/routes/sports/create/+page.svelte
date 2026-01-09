@@ -12,6 +12,7 @@
     create_empty_sport_input,
     create_football_sport_preset,
     create_basketball_sport_preset,
+    create_field_hockey_sport_preset,
   } from "$lib/domain/entities/Sport";
   import { sportService } from "$lib/services/sportService";
   import FormField from "$lib/components/ui/FormField.svelte";
@@ -71,14 +72,18 @@
     { id: "substitutions", label: "Substitutions" },
   ];
 
-  function apply_preset(preset_type: "football" | "basketball"): void {
+  function apply_preset(
+    preset_type: "football" | "basketball" | "field_hockey"
+  ): void {
     const preset =
       preset_type === "football"
         ? create_football_sport_preset()
-        : create_basketball_sport_preset();
+        : preset_type === "basketball"
+          ? create_basketball_sport_preset()
+          : create_field_hockey_sport_preset();
 
     form_data = { ...preset };
-    show_toast(`Applied ${preset_type} preset`, "success");
+    show_toast(`Applied ${preset_type.replace("_", " ")} preset`, "success");
   }
 
   function generate_id(name: string): string {
@@ -260,10 +265,17 @@
       >
         🏀 Basketball Preset
       </button>
+      <button
+        type="button"
+        class="btn btn-outline text-sm"
+        on:click={() => apply_preset("field_hockey")}
+      >
+        🏑 Field Hockey Preset
+      </button>
     </div>
   </div>
 
-  <div class="sm:hidden flex gap-2">
+  <div class="sm:hidden flex gap-2 flex-wrap">
     <button
       type="button"
       class="flex-1 btn btn-outline text-sm"
@@ -277,6 +289,13 @@
       on:click={() => apply_preset("basketball")}
     >
       🏀 Basketball
+    </button>
+    <button
+      type="button"
+      class="flex-1 btn btn-outline text-sm"
+      on:click={() => apply_preset("field_hockey")}
+    >
+      🏑 Hockey
     </button>
   </div>
 

@@ -164,7 +164,7 @@
       entry_fee: competition.entry_fee,
       prize_pool: competition.prize_pool,
       location: competition.location,
-      rules: competition.rules,
+      rule_overrides: competition.rule_overrides || {},
       status: competition.status,
     };
     loading_state = "success";
@@ -639,17 +639,6 @@
                   bind:value={form_data.prize_pool}
                   min={0}
                 />
-
-                <div class="md:col-span-2">
-                  <FormField
-                    label="Rules & Regulations"
-                    name="rules"
-                    type="textarea"
-                    bind:value={form_data.rules}
-                    placeholder="Enter competition rules and regulations"
-                    rows={6}
-                  />
-                </div>
 
                 <div
                   class="md:col-span-2 border-t border-accent-200 dark:border-accent-700 pt-6"

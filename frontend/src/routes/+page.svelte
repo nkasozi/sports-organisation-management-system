@@ -4,6 +4,7 @@
   import { get_competition_use_cases } from "$lib/usecases/CompetitionUseCases";
   import { get_team_use_cases } from "$lib/usecases/TeamUseCases";
   import { get_player_use_cases } from "$lib/usecases/PlayerUseCases";
+  import { reset_all_data } from "$lib/services/dataResetService";
 
   const organization_use_cases = get_organization_use_cases();
   const competition_use_cases = get_competition_use_cases();
@@ -11,6 +12,7 @@
   const player_use_cases = get_player_use_cases();
 
   let loading = true;
+  let is_resetting = false;
   let stats = {
     organizations: 0,
     competitions: 0,
@@ -35,6 +37,18 @@
     };
     loading = false;
   });
+
+  async function handle_reset_data(): Promise<boolean> {
+    if (is_resetting) return false;
+    is_resetting = true;
+    const reset_result = await reset_all_data();
+    if (!reset_result) {
+      is_resetting = false;
+      return false;
+    }
+    window.location.reload();
+    return true;
+  }
 </script>
 
 <svelte:head>
@@ -63,21 +77,16 @@
         </p>
       </div>
       <div class="mt-4 sm:mt-0">
-        <button class="btn btn-secondary mobile-touch">
-          <svg
-            class="h-5 w-5 mr-2"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-            />
-          </svg>
-          Quick Action
+        <button
+          class="btn btn-secondary mobile-touch"
+          on:click={handle_reset_data}
+          disabled={is_resetting}
+        >
+          {#if is_resetting}
+            Resetting...
+          {:else}
+            Reset Demo Data
+          {/if}
         </button>
       </div>
     </div>
