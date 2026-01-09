@@ -49,14 +49,31 @@
   let selected_team_side: "home" | "away" = "home";
   let event_player_name: string = "";
   let event_description: string = "";
+  let event_minute: number = 0;
 
   let toast_visible: boolean = false;
   let toast_message: string = "";
   let toast_type: "success" | "error" | "info" = "info";
 
+  const PERIOD_DURATION_MINUTES = 45;
+  const PERIOD_DURATION_SECONDS = PERIOD_DURATION_MINUTES * 60;
+
   $: fixture_id = $page.params.id ?? "";
-  $: current_minute = Math.floor(game_clock_seconds / 60);
-  $: current_seconds = game_clock_seconds % 60;
+  $: elapsed_minutes = Math.floor(game_clock_seconds / 60);
+  $: elapsed_seconds_in_minute = game_clock_seconds % 60;
+  $: current_period_duration = get_current_period_duration_seconds(
+    fixture?.current_period ?? "first_half"
+  );
+  $: period_elapsed_seconds =
+    game_clock_seconds -
+    get_period_start_seconds(fixture?.current_period ?? "first_half");
+  $: remaining_seconds_in_period = Math.max(
+    0,
+    current_period_duration - period_elapsed_seconds
+  );
+  $: countdown_minutes = Math.floor(remaining_seconds_in_period / 60);
+  $: countdown_seconds = remaining_seconds_in_period % 60;
+  $: clock_display = `${countdown_minutes.toString().padStart(2, "0")}:${countdown_seconds.toString().padStart(2, "0")}`;
   $: home_score = fixture?.home_team_score ?? 0;
   $: away_score = fixture?.away_team_score ?? 0;
   $: game_events = fixture?.game_events ?? [];
@@ -122,12 +139,42 @@
     is_loading = false;
   }
 
+  function get_period_start_seconds(period: GamePeriod): number {
+    switch (period) {
+      case "first_half":
+        return 0;
+      case "second_half":
+        return PERIOD_DURATION_SECONDS;
+      case "extra_time_first":
+        return PERIOD_DURATION_SECONDS * 2;
+      case "extra_time_second":
+        return PERIOD_DURATION_SECONDS * 2 + 15 * 60;
+      default:
+        return 0;
+    }
+  }
+
+  function get_current_period_duration_seconds(period: GamePeriod): number {
+    switch (period) {
+      case "first_half":
+      case "second_half":
+        return PERIOD_DURATION_SECONDS;
+      case "extra_time_first":
+      case "extra_time_second":
+        return 15 * 60;
+      default:
+        return PERIOD_DURATION_SECONDS;
+    }
+  }
+
   function start_clock(): void {
     if (clock_interval) return;
     is_clock_running = true;
-    clock_interval = setInterval(() => {
-      game_clock_seconds++;
-    }, 1000);
+    clock_interval = setInterval(tick_clock, 1000);
+  }
+
+  function tick_clock(): void {
+    game_clock_seconds += 1;
   }
 
   function stop_clock(): void {
@@ -144,12 +191,6 @@
     } else {
       start_clock();
     }
-  }
-
-  function format_clock_display(): string {
-    const min = current_minute.toString().padStart(2, "0");
-    const sec = current_seconds.toString().padStart(2, "0");
-    return `${min}:${sec}`;
   }
 
   async function start_game(): Promise<void> {
@@ -202,6 +243,7 @@
     selected_team_side = team;
     event_player_name = "";
     event_description = "";
+    event_minute = Math.floor(game_clock_seconds / 60);
     show_event_modal = true;
   }
 
@@ -210,6 +252,7 @@
     selected_event_type = null;
     event_player_name = "";
     event_description = "";
+    event_minute = 0;
   }
 
   async function record_event(): Promise<void> {
@@ -219,7 +262,7 @@
 
     const new_event = create_game_event(
       selected_event_type.id,
-      current_minute,
+      event_minute,
       selected_team_side,
       event_player_name,
       event_description || selected_event_type.label
@@ -247,7 +290,7 @@
 
     is_updating = true;
 
-    let new_minute = current_minute;
+    let new_minute = elapsed_minutes;
     if (new_period === "second_half") {
       new_minute = 45;
       game_clock_seconds = 45 * 60;
@@ -291,7 +334,7 @@
 
     const period_event = create_game_event(
       "period_end",
-      current_minute,
+      elapsed_minutes,
       "match",
       "",
       `${get_period_display_name(fixture.current_period)} ended`
@@ -323,7 +366,7 @@
     };
 
     const next = next_period_map[fixture.current_period];
-    await fixture_use_cases.update_period(fixture.id, next, current_minute);
+    await fixture_use_cases.update_period(fixture.id, next, elapsed_minutes);
     fixture = { ...fixture, current_period: next };
 
     show_toast(
@@ -448,7 +491,7 @@
               </div>
               {#if fixture.status === "in_progress"}
                 <div class="text-2xl font-mono font-bold text-primary-400">
-                  {format_clock_display()}
+                  {clock_display}
                 </div>
                 {#if is_clock_running}
                   <div
@@ -603,12 +646,26 @@
       {/if}
 
       <div class="flex-1 overflow-y-auto px-4 py-6">
-        <div class="max-w-2xl mx-auto">
-          <h3
-            class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-4"
-          >
-            Match Timeline
-          </h3>
+        <div class="max-w-3xl mx-auto">
+          <div class="flex items-center justify-between mb-6">
+            <div class="flex items-center gap-2">
+              <span class="w-3 h-3 rounded-full bg-blue-500"></span>
+              <span class="text-sm font-medium text-gray-600 dark:text-gray-400"
+                >{home_team?.name ?? "Home"}</span
+              >
+            </div>
+            <h3
+              class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+            >
+              Match Timeline
+            </h3>
+            <div class="flex items-center gap-2">
+              <span class="text-sm font-medium text-gray-600 dark:text-gray-400"
+                >{away_team?.name ?? "Away"}</span
+              >
+              <span class="w-3 h-3 rounded-full bg-red-500"></span>
+            </div>
+          </div>
 
           {#if sorted_events.length === 0}
             <div class="text-center py-16">
@@ -635,68 +692,134 @@
           {:else}
             <div class="relative">
               <div
-                class="absolute left-8 top-0 bottom-0 w-0.5 bg-gray-300 dark:bg-gray-600"
+                class="absolute left-1/2 top-0 bottom-0 w-0.5 bg-gray-300 dark:bg-gray-600 transform -translate-x-1/2"
               ></div>
 
-              <div class="space-y-3">
+              <div class="space-y-4">
                 {#each sorted_events as event}
-                  <div class="relative flex items-start gap-4 pl-2">
-                    <div class="flex-shrink-0 w-14 text-right">
-                      <span
-                        class="text-sm font-bold text-gray-900 dark:text-white"
-                      >
-                        {format_event_time(
-                          event.minute,
-                          event.stoppage_time_minute
-                        )}
-                      </span>
-                    </div>
+                  {@const is_home_event = event.team_side === "home"}
+                  {@const is_away_event = event.team_side === "away"}
+                  {@const is_match_event = event.team_side === "match"}
 
-                    <div
-                      class="flex-shrink-0 w-10 h-10 rounded-full bg-white dark:bg-gray-800 border-4 border-gray-300 dark:border-gray-600 flex items-center justify-center text-lg z-10 shadow-sm"
-                    >
-                      {get_event_icon(event.event_type)}
-                    </div>
-
-                    <div class="flex-1 min-w-0">
+                  {#if is_match_event}
+                    <div class="relative flex items-center justify-center">
                       <div
-                        class="rounded-lg border-l-4 p-3 shadow-sm {get_event_bg_class(
-                          event
-                        )}"
+                        class="absolute left-1/2 transform -translate-x-1/2 z-10 w-12 h-12 rounded-full bg-purple-100 dark:bg-purple-900/50 border-4 border-purple-400 dark:border-purple-600 flex items-center justify-center text-xl"
                       >
+                        {get_event_icon(event.event_type)}
+                      </div>
+                      <div class="w-full flex items-center">
+                        <div class="flex-1"></div>
                         <div
-                          class="flex items-center justify-between gap-2 mb-1"
+                          class="w-48 mx-auto text-center py-3 px-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800"
                         >
-                          <span
-                            class="font-semibold text-gray-900 dark:text-white text-sm"
+                          <div
+                            class="text-xs font-bold text-purple-700 dark:text-purple-300 mb-1"
+                          >
+                            {format_event_time(
+                              event.minute,
+                              event.stoppage_time_minute
+                            )}
+                          </div>
+                          <div
+                            class="text-sm font-medium text-purple-800 dark:text-purple-200"
                           >
                             {event.description ||
                               get_event_label(event.event_type)}
-                          </span>
-                          {#if event.team_side !== "match"}
-                            <span
-                              class="text-xs px-2 py-0.5 rounded-full {event.team_side ===
-                              'home'
-                                ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
-                                : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300'}"
-                            >
-                              {event.team_side === "home"
-                                ? (home_team?.name ?? "HOME")
-                                : (away_team?.name ?? "AWAY")}
-                            </span>
-                          {/if}
+                          </div>
                         </div>
-                        {#if event.player_name}
-                          <p class="text-xs text-gray-500 dark:text-gray-400">
-                            {event.player_name}
-                            {#if event.secondary_player_name}
-                              → {event.secondary_player_name}
-                            {/if}
-                          </p>
-                        {/if}
+                        <div class="flex-1"></div>
                       </div>
                     </div>
-                  </div>
+                  {:else}
+                    <div class="relative flex items-center">
+                      <div
+                        class="absolute left-1/2 transform -translate-x-1/2 z-10 w-10 h-10 rounded-full bg-white dark:bg-gray-800 border-4 {is_home_event
+                          ? 'border-blue-400'
+                          : 'border-red-400'} flex items-center justify-center text-lg shadow-sm"
+                      >
+                        {get_event_icon(event.event_type)}
+                      </div>
+
+                      {#if is_home_event}
+                        <div class="flex-1 pr-8 flex justify-end">
+                          <div
+                            class="max-w-xs w-full rounded-lg border-r-4 p-3 shadow-sm text-right {get_event_bg_class(
+                              event
+                            ).replace('border-l-', 'border-r-')}"
+                          >
+                            <div
+                              class="flex items-center justify-end gap-2 mb-1"
+                            >
+                              <span
+                                class="font-semibold text-gray-900 dark:text-white text-sm"
+                              >
+                                {event.description ||
+                                  get_event_label(event.event_type)}
+                              </span>
+                              <span
+                                class="text-sm font-bold text-blue-600 dark:text-blue-400"
+                              >
+                                {format_event_time(
+                                  event.minute,
+                                  event.stoppage_time_minute
+                                )}
+                              </span>
+                            </div>
+                            {#if event.player_name}
+                              <p
+                                class="text-xs text-gray-500 dark:text-gray-400"
+                              >
+                                {event.player_name}
+                                {#if event.secondary_player_name}
+                                  → {event.secondary_player_name}
+                                {/if}
+                              </p>
+                            {/if}
+                          </div>
+                        </div>
+                        <div class="flex-1 pl-8"></div>
+                      {:else}
+                        <div class="flex-1 pr-8"></div>
+                        <div class="flex-1 pl-8 flex justify-start">
+                          <div
+                            class="max-w-xs w-full rounded-lg border-l-4 p-3 shadow-sm text-left {get_event_bg_class(
+                              event
+                            )}"
+                          >
+                            <div
+                              class="flex items-center justify-start gap-2 mb-1"
+                            >
+                              <span
+                                class="text-sm font-bold text-red-600 dark:text-red-400"
+                              >
+                                {format_event_time(
+                                  event.minute,
+                                  event.stoppage_time_minute
+                                )}
+                              </span>
+                              <span
+                                class="font-semibold text-gray-900 dark:text-white text-sm"
+                              >
+                                {event.description ||
+                                  get_event_label(event.event_type)}
+                              </span>
+                            </div>
+                            {#if event.player_name}
+                              <p
+                                class="text-xs text-gray-500 dark:text-gray-400"
+                              >
+                                {event.player_name}
+                                {#if event.secondary_player_name}
+                                  → {event.secondary_player_name}
+                                {/if}
+                              </p>
+                            {/if}
+                          </div>
+                        </div>
+                      {/if}
+                    </div>
+                  {/if}
                 {/each}
               </div>
             </div>
@@ -777,11 +900,31 @@
       </div>
 
       <div class="p-4 space-y-4">
-        <div class="text-center">
-          <span
-            class="text-3xl font-mono font-bold text-gray-900 dark:text-white"
-            >{current_minute}'</span
+        <div>
+          <label
+            for="event_minute"
+            class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+            >Game Minute</label
           >
+          <div class="flex items-center gap-2">
+            <input
+              id="event_minute"
+              type="number"
+              min="0"
+              max="120"
+              bind:value={event_minute}
+              class="w-24 px-3 py-2 text-center text-2xl font-mono font-bold border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+            />
+            <span class="text-2xl font-bold text-gray-500">'</span>
+            <button
+              type="button"
+              class="px-3 py-2 text-sm bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg text-gray-700 dark:text-gray-300"
+              on:click={() =>
+                (event_minute = Math.floor(game_clock_seconds / 60))}
+            >
+              Reset to {Math.floor(game_clock_seconds / 60)}'
+            </button>
+          </div>
         </div>
 
         {#if selected_event_type.requires_player}
