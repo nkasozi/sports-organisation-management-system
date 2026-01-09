@@ -5,18 +5,24 @@
     update_theme_colors,
     reset_theme_to_default,
   } from "$lib/stores/theme";
+  import { branding_store } from "$lib/stores/branding";
   import Toast from "$lib/components/ui/Toast.svelte";
 
   let toast_visible: boolean = false;
   let toast_message: string = "";
   let toast_type: "success" | "error" | "info" = "info";
 
-  let organization_name: string = "My Sports Organization";
+  let organization_name: string = "";
   let organization_logo_url: string = "";
   let selected_primary_color: string = "yellow";
   let selected_secondary_color: string = "red";
   let notifications_enabled: boolean = true;
   let email_notifications: boolean = true;
+
+  $: {
+    organization_name = $branding_store.organization_name;
+    organization_logo_url = $branding_store.organization_logo_url;
+  }
 
   const color_options = [
     {
@@ -78,6 +84,10 @@
   }
 
   function handle_save_organization_settings(): void {
+    branding_store.set({
+      organization_name: organization_name,
+      organization_logo_url: organization_logo_url,
+    });
     show_toast("Organization settings saved", "success");
   }
 
