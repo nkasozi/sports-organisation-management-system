@@ -3,6 +3,7 @@
   import { goto } from "$app/navigation";
   import { onMount } from "svelte";
   import type { TeamStaffRole } from "$lib/domain/entities/TeamStaffRole";
+  import type { EntityStatus } from "$lib/domain/entities/BaseEntity";
   import type { LoadingState } from "$lib/components/ui/LoadingStateWrapper.svelte";
   import { get_team_staff_role_use_cases } from "$lib/usecases/TeamStaffRoleUseCases";
   import LoadingStateWrapper from "$lib/components/ui/LoadingStateWrapper.svelte";
@@ -25,7 +26,7 @@
     | "other" = "coaching";
   let display_order: number = 0;
   let is_primary_contact: boolean = false;
-  let status: "active" | "inactive" = "active";
+  let status: EntityStatus = "active";
 
   let is_submitting: boolean = false;
   let toast_visible: boolean = false;
@@ -39,6 +40,12 @@
   });
 
   async function load_role(): Promise<void> {
+    if (!role_id) {
+      error_message = "Role ID is required";
+      loading_state = "error";
+      return;
+    }
+
     loading_state = "loading";
 
     const result = await use_cases.get_role(role_id);
@@ -70,6 +77,11 @@
 
     if (!code.trim()) {
       show_toast("Please enter a role code", "error");
+      return;
+    }
+
+    if (!role_id) {
+      show_toast("Role ID is required", "error");
       return;
     }
 

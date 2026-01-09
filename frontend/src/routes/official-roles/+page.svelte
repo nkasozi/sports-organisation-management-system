@@ -312,8 +312,8 @@
             <Pagination
               {current_page}
               {total_pages}
-              {total_count}
-              {page_size}
+              total_items={total_count}
+              items_per_page={page_size}
               on:page-change={handle_page_change}
             />
           </div>

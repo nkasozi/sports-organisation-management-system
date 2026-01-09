@@ -62,6 +62,12 @@
   });
 
   async function load_format(): Promise<void> {
+    if (!format_id) {
+      error_message = "Format ID is required";
+      loading_state = "error";
+      return;
+    }
+
     loading_state = "loading";
 
     const result = await use_cases.get_format(format_id);
@@ -136,6 +142,11 @@
 
     if (validation_errors.size > 0) {
       validation_errors = new Map(validation_errors);
+      return;
+    }
+
+    if (!format_id) {
+      show_toast("Format ID is required", "error");
       return;
     }
 

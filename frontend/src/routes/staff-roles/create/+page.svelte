@@ -55,8 +55,13 @@
     const result = await use_cases.create_role({
       name: name.trim(),
       code: code.trim(),
-      description: description.trim() || undefined,
-      category,
+      description: description.trim() || "",
+      category: category as
+        | "coaching"
+        | "technical"
+        | "medical"
+        | "administrative"
+        | "other",
       display_order,
       is_primary_contact,
       status,
