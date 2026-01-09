@@ -118,3 +118,4 @@ dist/
 .idea/
 .trunk/
 .vite/
+/frontend/.vercel

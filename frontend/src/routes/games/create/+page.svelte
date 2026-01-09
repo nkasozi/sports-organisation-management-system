@@ -4,26 +4,38 @@
   import type { Competition } from "$lib/domain/entities/Competition";
   import type { Team } from "$lib/domain/entities/Team";
   import type { CompetitionTeam } from "$lib/domain/entities/CompetitionTeam";
-  import type { CreateFixtureInput } from "$lib/domain/entities/Fixture";
+  import type { Official } from "$lib/domain/entities/Official";
+  import type { GameOfficialRole } from "$lib/domain/entities/GameOfficialRole";
+  import type {
+    CreateFixtureInput,
+    AssignedOfficial,
+  } from "$lib/domain/entities/Fixture";
   import type { SelectOption } from "$lib/components/ui/SelectField.svelte";
   import { create_empty_fixture_input } from "$lib/domain/entities/Fixture";
   import { get_fixture_use_cases } from "$lib/usecases/FixtureUseCases";
   import { get_competition_use_cases } from "$lib/usecases/CompetitionUseCases";
   import { get_team_use_cases } from "$lib/usecases/TeamUseCases";
   import { get_competition_team_use_cases } from "$lib/usecases/CompetitionTeamUseCases";
+  import { get_official_use_cases } from "$lib/usecases/OfficialUseCases";
+  import { get_game_official_role_use_cases } from "$lib/usecases/GameOfficialRoleUseCases";
   import FormField from "$lib/components/ui/FormField.svelte";
   import SelectField from "$lib/components/ui/SelectField.svelte";
+  import FixtureOfficialAssignment from "$lib/components/ui/FixtureOfficialAssignment.svelte";
   import Toast from "$lib/components/ui/Toast.svelte";
 
   const fixture_use_cases = get_fixture_use_cases();
   const competition_use_cases = get_competition_use_cases();
   const team_use_cases = get_team_use_cases();
   const competition_team_use_cases = get_competition_team_use_cases();
+  const official_use_cases = get_official_use_cases();
+  const official_role_use_cases = get_game_official_role_use_cases();
 
   let form_data: CreateFixtureInput = create_empty_fixture_input();
   let competitions: Competition[] = [];
   let teams: Team[] = [];
   let competition_teams: CompetitionTeam[] = [];
+  let available_officials: Official[] = [];
+  let available_roles: GameOfficialRole[] = [];
   let competition_options: SelectOption[] = [];
   let team_options: SelectOption[] = [];
   let is_loading: boolean = true;
@@ -46,10 +58,13 @@
   async function load_reference_data(): Promise<void> {
     is_loading = true;
 
-    const [comp_result, teams_result] = await Promise.all([
-      competition_use_cases.list_competitions(undefined, { page_size: 100 }),
-      team_use_cases.list_teams(undefined, { page_size: 200 }),
-    ]);
+    const [comp_result, teams_result, officials_result, roles_result] =
+      await Promise.all([
+        competition_use_cases.list_competitions(undefined, { page_size: 100 }),
+        team_use_cases.list_teams(undefined, { page_size: 200 }),
+        official_use_cases.list_officials(undefined, { page_size: 200 }),
+        official_role_use_cases.list_roles(undefined, { page_size: 100 }),
+      ]);
 
     if (comp_result.success) {
       competitions = comp_result.data.items;
@@ -62,6 +77,18 @@
     if (teams_result.success) {
       teams = teams_result.data.items;
       update_team_options();
+    }
+
+    if (officials_result.success) {
+      available_officials = officials_result.data.items.filter(
+        (o) => o.status === "active"
+      );
+    }
+
+    if (roles_result.success) {
+      available_roles = roles_result.data.items.filter(
+        (r) => r.status === "active"
+      );
     }
 
     is_loading = false;
@@ -127,6 +154,12 @@
 
   function handle_status_change(event: CustomEvent<{ value: string }>): void {
     form_data.status = event.detail.value as "scheduled" | "postponed";
+  }
+
+  function handle_officials_change(
+    event: CustomEvent<AssignedOfficial[]>
+  ): void {
+    form_data.assigned_officials = event.detail;
   }
 
   async function handle_submit(): Promise<void> {
@@ -321,6 +354,25 @@
           options={status_options}
           value={form_data.status}
           on:change={handle_status_change}
+        />
+
+        <div
+          class="border-b border-accent-200 dark:border-accent-700 pb-4 pt-4"
+        >
+          <h2 class="text-lg font-medium text-accent-900 dark:text-accent-100">
+            Match Officials
+          </h2>
+          <p class="text-sm text-accent-500 dark:text-accent-400 mt-1">
+            Assign referees and other officials to this fixture
+          </p>
+        </div>
+
+        <FixtureOfficialAssignment
+          assigned_officials={form_data.assigned_officials}
+          {available_officials}
+          {available_roles}
+          disabled={is_saving}
+          on:change={handle_officials_change}
         />
 
         <FormField
