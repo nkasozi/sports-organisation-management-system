@@ -491,46 +491,6 @@
       </div>
     {/if}
 
-    <div class="space-y-4">
-      <h3
-        class="text-lg font-semibold text-accent-900 dark:text-accent-100 border-b border-accent-200 dark:border-accent-700 pb-2"
-      >
-        Automation Options
-      </h3>
-
-      <div class="flex flex-col gap-3">
-        <div class="flex items-center gap-3">
-          <input
-            type="checkbox"
-            id="auto_generate_fixtures"
-            bind:checked={form_data.auto_generate_fixtures}
-            class="w-4 h-4 text-primary-600 rounded border-accent-300"
-          />
-          <label
-            for="auto_generate_fixtures"
-            class="text-sm text-accent-700 dark:text-accent-300"
-          >
-            Auto-generate fixtures when competition starts
-          </label>
-        </div>
-
-        <div class="flex items-center gap-3">
-          <input
-            type="checkbox"
-            id="auto_assign_officials"
-            bind:checked={form_data.auto_assign_officials}
-            class="w-4 h-4 text-primary-600 rounded border-accent-300"
-          />
-          <label
-            for="auto_assign_officials"
-            class="text-sm text-accent-700 dark:text-accent-300"
-          >
-            Auto-assign officials to fixtures
-          </label>
-        </div>
-      </div>
-    </div>
-
     <div
       class="flex justify-end gap-3 pt-4 border-t border-accent-200 dark:border-accent-700"
     >

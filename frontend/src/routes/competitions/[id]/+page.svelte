@@ -9,12 +9,14 @@
   import type { Organization } from "$lib/domain/entities/Organization";
   import type { Team } from "$lib/domain/entities/Team";
   import type { CompetitionTeam } from "$lib/domain/entities/CompetitionTeam";
+  import type { CompetitionFormat } from "$lib/domain/entities/CompetitionFormat";
   import type { LoadingState } from "$lib/components/ui/LoadingStateWrapper.svelte";
   import type { SelectOption } from "$lib/components/ui/SelectField.svelte";
   import { get_competition_use_cases } from "$lib/usecases/CompetitionUseCases";
   import { get_organization_use_cases } from "$lib/usecases/OrganizationUseCases";
   import { get_team_use_cases } from "$lib/usecases/TeamUseCases";
   import { get_competition_team_use_cases } from "$lib/usecases/CompetitionTeamUseCases";
+  import { get_competition_format_use_cases } from "$lib/usecases/CompetitionFormatUseCases";
   import LoadingStateWrapper from "$lib/components/ui/LoadingStateWrapper.svelte";
   import FormField from "$lib/components/ui/FormField.svelte";
   import SelectField from "$lib/components/ui/SelectField.svelte";
@@ -25,12 +27,15 @@
   const organization_use_cases = get_organization_use_cases();
   const team_use_cases = get_team_use_cases();
   const competition_team_use_cases = get_competition_team_use_cases();
+  const competition_format_use_cases = get_competition_format_use_cases();
 
   let competition: Competition | null = null;
   let organizations: Organization[] = [];
+  let competition_formats: CompetitionFormat[] = [];
   let teams_in_competition: Team[] = [];
   let competition_team_entries: CompetitionTeam[] = [];
   let available_teams: Team[] = [];
+  let selected_format: CompetitionFormat | null = null;
   let form_data: UpdateCompetitionInput = {};
   let loading_state: LoadingState = "idle";
   let error_message: string = "";
@@ -49,19 +54,17 @@
     label: org.name,
   }));
 
+  let competition_format_options: SelectOption[] = [];
+  $: competition_format_options = competition_formats.map((format) => ({
+    value: format.id,
+    label: format.name,
+  }));
+
   const status_options = [
     { value: "upcoming", label: "Upcoming" },
     { value: "active", label: "Active" },
     { value: "completed", label: "Completed" },
     { value: "cancelled", label: "Cancelled" },
-  ];
-
-  const competition_type_options = [
-    { value: "league", label: "League" },
-    { value: "tournament", label: "Tournament" },
-    { value: "championship", label: "Championship" },
-    { value: "cup", label: "Cup" },
-    { value: "friendly", label: "Friendly" },
   ];
 
   const sport_type_options = [
@@ -87,17 +90,25 @@
   async function load_competition_data(): Promise<void> {
     loading_state = "loading";
 
-    const [competition_result, org_result, teams_result, comp_teams_result] =
-      await Promise.all([
-        competition_use_cases.get_competition(competition_id),
-        organization_use_cases.list_organizations(undefined, {
-          page_size: 100,
-        }),
-        team_use_cases.list_teams(undefined, { page_size: 100 }),
-        competition_team_use_cases.list_teams_in_competition(competition_id, {
-          page_size: 100,
-        }),
-      ]);
+    const [
+      competition_result,
+      org_result,
+      teams_result,
+      comp_teams_result,
+      formats_result,
+    ] = await Promise.all([
+      competition_use_cases.get_competition(competition_id),
+      organization_use_cases.list_organizations(undefined, {
+        page_size: 100,
+      }),
+      team_use_cases.list_teams(undefined, { page_size: 100 }),
+      competition_team_use_cases.list_teams_in_competition(competition_id, {
+        page_size: 100,
+      }),
+      competition_format_use_cases.list_formats(undefined, {
+        page_size: 100,
+      }),
+    ]);
 
     if (!competition_result.success) {
       loading_state = "error";
@@ -107,6 +118,18 @@
 
     competition = competition_result.data;
     organizations = org_result.success ? org_result.data.items : [];
+    competition_formats = formats_result.success
+      ? formats_result.data.items.filter(
+          (format: CompetitionFormat) => format.status === "active"
+        )
+      : [];
+
+    if (competition) {
+      selected_format =
+        competition_formats.find(
+          (format) => format.id === competition?.competition_format_id
+        ) || null;
+    }
 
     const all_teams = teams_result.success ? teams_result.data.items : [];
     competition_team_entries = comp_teams_result.success
@@ -116,11 +139,11 @@
     const team_ids_in_competition = new Set(
       competition_team_entries.map((ct) => ct.team_id)
     );
-    teams_in_competition = all_teams.filter((team) =>
+    teams_in_competition = all_teams.filter((team: Team) =>
       team_ids_in_competition.has(team.id)
     );
     available_teams = all_teams.filter(
-      (team) =>
+      (team: Team) =>
         team.organization_id === competition?.organization_id &&
         !team_ids_in_competition.has(team.id)
     );
@@ -130,7 +153,10 @@
       description: competition.description,
       organization_id: competition.organization_id,
       sport_type: competition.sport_type,
-      competition_type: competition.competition_type,
+      competition_format_id: competition.competition_format_id,
+      team_ids: competition.team_ids || [],
+      auto_generate_fixtures_and_assign_officials:
+        competition.auto_generate_fixtures_and_assign_officials || false,
       start_date: competition.start_date,
       end_date: competition.end_date,
       registration_deadline: competition.registration_deadline,
@@ -356,12 +382,14 @@
                   on:change={handle_organization_change}
                 />
 
-                <EnumSelectField
-                  label="Competition Type"
-                  name="competition_type"
-                  bind:value={form_data.competition_type}
-                  options={competition_type_options}
+                <SelectField
+                  label="Competition Format"
+                  name="competition_format_id"
+                  value={form_data.competition_format_id ?? ""}
+                  options={competition_format_options}
+                  placeholder="Select a format..."
                   required={true}
+                  disabled={true}
                 />
 
                 <EnumSelectField
@@ -621,6 +649,31 @@
                     placeholder="Enter competition rules and regulations"
                     rows={6}
                   />
+                </div>
+
+                <div
+                  class="md:col-span-2 border-t border-accent-200 dark:border-accent-700 pt-6"
+                >
+                  <label class="flex items-center gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      bind:checked={
+                        form_data.auto_generate_fixtures_and_assign_officials
+                      }
+                      class="w-5 h-5 text-primary-600 rounded border-accent-300"
+                    />
+                    <div>
+                      <span
+                        class="text-sm font-medium text-accent-900 dark:text-accent-100"
+                      >
+                        Auto-generate fixtures and assign officials
+                      </span>
+                      <p class="text-xs text-accent-500 dark:text-accent-400">
+                        Automatically create fixtures and assign available
+                        officials when the competition starts
+                      </p>
+                    </div>
+                  </label>
                 </div>
               </div>
             </div>

@@ -276,20 +276,6 @@
             </p>
 
             <div class="mt-3 flex flex-wrap gap-2">
-              {#if format.auto_generate_fixtures}
-                <span
-                  class="px-2 py-0.5 text-xs bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300 rounded"
-                >
-                  Auto Fixtures
-                </span>
-              {/if}
-              {#if format.auto_assign_officials}
-                <span
-                  class="px-2 py-0.5 text-xs bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300 rounded"
-                >
-                  Auto Officials
-                </span>
-              {/if}
               <span
                 class="px-2 py-0.5 text-xs bg-gray-100 text-gray-700 dark:bg-gray-900/50 dark:text-gray-300 rounded"
               >

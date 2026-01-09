@@ -317,7 +317,7 @@
                         <div
                           class="text-sm text-accent-500 dark:text-accent-400"
                         >
-                          {competition.competition_type} • {competition.sport_type}
+                          {competition.sport_type}
                         </div>
                       </div>
                     </div>
@@ -378,7 +378,7 @@
                   <div
                     class="text-xs text-accent-500 dark:text-accent-400 mt-1"
                   >
-                    {competition.competition_type} • {competition.sport_type}
+                    {competition.sport_type}
                   </div>
                 </div>
                 <span class={get_status_badge_classes(competition.status)}>

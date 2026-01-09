@@ -2,11 +2,15 @@
   import { onMount } from "svelte";
   import { goto } from "$app/navigation";
   import type { Organization } from "$lib/domain/entities/Organization";
+  import type { CompetitionFormat } from "$lib/domain/entities/CompetitionFormat";
+  import type { Team } from "$lib/domain/entities/Team";
   import type { CreateCompetitionInput } from "$lib/domain/entities/Competition";
   import type { SelectOption } from "$lib/components/ui/SelectField.svelte";
   import { create_empty_competition_input } from "$lib/domain/entities/Competition";
   import { get_competition_use_cases } from "$lib/usecases/CompetitionUseCases";
   import { get_organization_use_cases } from "$lib/usecases/OrganizationUseCases";
+  import { get_competition_format_use_cases } from "$lib/usecases/CompetitionFormatUseCases";
+  import { get_team_use_cases } from "$lib/usecases/TeamUseCases";
   import FormField from "$lib/components/ui/FormField.svelte";
   import SelectField from "$lib/components/ui/SelectField.svelte";
   import EnumSelectField from "$lib/components/ui/EnumSelectField.svelte";
@@ -14,11 +18,21 @@
 
   const competition_use_cases = get_competition_use_cases();
   const organization_use_cases = get_organization_use_cases();
+  const competition_format_use_cases = get_competition_format_use_cases();
+  const team_use_cases = get_team_use_cases();
 
   let form_data: CreateCompetitionInput = create_empty_competition_input();
   let organizations: Organization[] = [];
+  let competition_formats: CompetitionFormat[] = [];
+  let all_teams: Team[] = [];
   let organization_options: SelectOption[] = [];
+  let competition_format_options: SelectOption[] = [];
+  let team_options: SelectOption[] = [];
+  let selected_team_ids: Set<string> = new Set();
+  let selected_format: CompetitionFormat | null = null;
   let is_loading_organizations: boolean = true;
+  let is_loading_formats: boolean = true;
+  let is_loading_teams: boolean = true;
   let is_saving: boolean = false;
   let errors: Record<string, string> = {};
 
@@ -33,14 +47,6 @@
     { value: "cancelled", label: "Cancelled" },
   ];
 
-  const competition_type_options = [
-    { value: "league", label: "League" },
-    { value: "tournament", label: "Tournament" },
-    { value: "championship", label: "Championship" },
-    { value: "cup", label: "Cup" },
-    { value: "friendly", label: "Friendly" },
-  ];
-
   const sport_type_options = [
     { value: "Football", label: "Football" },
     { value: "Basketball", label: "Basketball" },
@@ -52,8 +58,25 @@
     { value: "Other", label: "Other" },
   ];
 
+  $: {
+    form_data.team_ids = Array.from(selected_team_ids);
+  }
+
+  $: format_team_requirements = selected_format
+    ? `Requires ${selected_format.min_teams_required} to ${selected_format.max_teams_allowed} teams`
+    : "";
+
+  $: is_team_count_valid =
+    !selected_format ||
+    (selected_team_ids.size >= selected_format.min_teams_required &&
+      selected_team_ids.size <= selected_format.max_teams_allowed);
+
   onMount(async () => {
-    await load_organizations();
+    await Promise.all([
+      load_organizations(),
+      load_competition_formats(),
+      load_teams(),
+    ]);
   });
 
   async function load_organizations(): Promise<void> {
@@ -72,14 +95,90 @@
     is_loading_organizations = false;
   }
 
+  async function load_competition_formats(): Promise<void> {
+    is_loading_formats = true;
+    const result = await competition_format_use_cases.list_formats(undefined, {
+      page_size: 100,
+    });
+
+    if (result.success) {
+      competition_formats = result.data.items.filter(
+        (format: CompetitionFormat) => format.status === "active"
+      );
+      competition_format_options = competition_formats.map((format) => ({
+        value: format.id,
+        label: format.name,
+      }));
+    }
+    is_loading_formats = false;
+  }
+
+  async function load_teams(): Promise<void> {
+    is_loading_teams = true;
+    const result = await team_use_cases.list_teams(undefined, {
+      page_size: 200,
+    });
+
+    if (result.success) {
+      all_teams = result.data.items;
+      update_team_options();
+    }
+    is_loading_teams = false;
+  }
+
+  function update_team_options(): void {
+    team_options = all_teams
+      .filter((team) =>
+        form_data.organization_id
+          ? team.organization_id === form_data.organization_id
+          : true
+      )
+      .map((team) => ({
+        value: team.id,
+        label: team.name,
+      }));
+  }
+
   function handle_organization_change(
     event: CustomEvent<{ value: string }>
   ): void {
     form_data.organization_id = event.detail.value;
+    selected_team_ids.clear();
+    update_team_options();
+  }
+
+  function handle_format_change(event: CustomEvent<{ value: string }>): void {
+    form_data.competition_format_id = event.detail.value;
+    selected_format =
+      competition_formats.find(
+        (format) => format.id === form_data.competition_format_id
+      ) || null;
+  }
+
+  function handle_team_toggle(team_id: string): boolean {
+    const new_set = new Set(selected_team_ids);
+
+    if (new_set.has(team_id)) {
+      new_set.delete(team_id);
+    } else {
+      new_set.add(team_id);
+    }
+
+    selected_team_ids = new_set;
+    return true;
   }
 
   async function handle_submit(): Promise<void> {
     errors = {};
+
+    if (!is_team_count_valid) {
+      show_toast(
+        `Please select between ${selected_format?.min_teams_required} and ${selected_format?.max_teams_allowed} teams`,
+        "error"
+      );
+      return;
+    }
+
     is_saving = true;
 
     const result = await competition_use_cases.create_competition(form_data);
@@ -177,12 +276,16 @@
           on:change={handle_organization_change}
         />
 
-        <EnumSelectField
-          label="Competition Type"
-          name="competition_type"
-          bind:value={form_data.competition_type}
-          options={competition_type_options}
+        <SelectField
+          label="Competition Format"
+          name="competition_format_id"
+          value={form_data.competition_format_id}
+          options={competition_format_options}
+          placeholder="Select a format..."
           required={true}
+          is_loading={is_loading_formats}
+          error={errors.competition_format_id || ""}
+          on:change={handle_format_change}
         />
 
         <EnumSelectField
@@ -278,6 +381,73 @@
             rows={4}
           />
         </div>
+      </div>
+
+      <div class="border-t border-accent-200 dark:border-accent-700 pt-6">
+        <h3
+          class="text-lg font-semibold text-accent-900 dark:text-accent-100 mb-4"
+        >
+          Select Teams
+        </h3>
+        {#if format_team_requirements}
+          <p
+            class="text-sm text-accent-600 dark:text-accent-400 mb-4"
+            class:text-red-600={!is_team_count_valid}
+            class:dark:text-red-400={!is_team_count_valid}
+          >
+            {format_team_requirements} •
+            {selected_team_ids.size} selected
+          </p>
+        {/if}
+
+        {#if is_loading_teams}
+          <div class="text-center py-8 text-accent-500">Loading teams...</div>
+        {:else if team_options.length === 0}
+          <div class="text-center py-8 text-accent-500">
+            No teams available for the selected organization
+          </div>
+        {:else}
+          <div
+            class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 max-h-64 overflow-y-auto p-4 bg-accent-50 dark:bg-accent-900/30 rounded-lg"
+          >
+            {#each team_options as team_option}
+              <label
+                class="flex items-center gap-2 p-2 rounded cursor-pointer hover:bg-accent-100 dark:hover:bg-accent-700 transition-colors"
+              >
+                <input
+                  type="checkbox"
+                  checked={selected_team_ids.has(team_option.value)}
+                  on:change={() => handle_team_toggle(team_option.value)}
+                  class="w-4 h-4 text-primary-600 rounded border-accent-300"
+                />
+                <span class="text-sm text-accent-700 dark:text-accent-300">
+                  {team_option.label}
+                </span>
+              </label>
+            {/each}
+          </div>
+        {/if}
+      </div>
+
+      <div class="border-t border-accent-200 dark:border-accent-700 pt-6">
+        <label class="flex items-center gap-3 cursor-pointer">
+          <input
+            type="checkbox"
+            bind:checked={form_data.auto_generate_fixtures_and_assign_officials}
+            class="w-5 h-5 text-primary-600 rounded border-accent-300"
+          />
+          <div>
+            <span
+              class="text-sm font-medium text-accent-900 dark:text-accent-100"
+            >
+              Auto-generate fixtures and assign officials
+            </span>
+            <p class="text-xs text-accent-500 dark:text-accent-400">
+              Automatically create fixtures and assign available officials when
+              the competition starts
+            </p>
+          </div>
+        </label>
       </div>
     </div>
 
