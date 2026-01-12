@@ -4,9 +4,11 @@
   import { page } from "$app/stores";
   import type { Player, UpdatePlayerInput } from "$lib/domain/entities/Player";
   import type { Team } from "$lib/domain/entities/Team";
+  import type { PlayerPosition } from "$lib/domain/ports/PlayerPositionRepository";
   import type { LoadingState } from "$lib/components/ui/LoadingStateWrapper.svelte";
   import { get_player_use_cases } from "$lib/usecases/PlayerUseCases";
   import { get_team_use_cases } from "$lib/usecases/TeamUseCases";
+  import { get_player_position_use_cases } from "$lib/usecases/PlayerPositionUseCases";
   import LoadingStateWrapper from "$lib/components/ui/LoadingStateWrapper.svelte";
   import FormField from "$lib/components/ui/FormField.svelte";
   import SelectField from "$lib/components/ui/SelectField.svelte";
@@ -17,13 +19,17 @@
 
   const player_use_cases = get_player_use_cases();
   const team_use_cases = get_team_use_cases();
+  const position_use_cases = get_player_position_use_cases();
 
   let player: Player | null = null;
   let teams: Team[] = [];
+  let positions: PlayerPosition[] = [];
+  let all_players: any[] = [];
   let loading_state: LoadingState = "loading";
   let error_message: string = "";
   let is_submitting: boolean = false;
   let validation_errors: Map<string, string> = new Map();
+  let jersey_conflict_player: any = null;
 
   let toast_visible: boolean = false;
   let toast_message: string = "";
@@ -68,20 +74,31 @@
       return;
     }
 
-    const [player_result, teams_result] = await Promise.all([
-      player_use_cases.get_player_by_id(player_id),
-      team_use_cases.list_teams(undefined, { page_size: 100 }),
-    ]);
+    const [player_result, teams_result, players_result, positions_result] =
+      await Promise.all([
+        player_use_cases.get_by_id(player_id),
+        team_use_cases.list(undefined, { page: 1, page_size: 100 }),
+        player_use_cases.list(undefined, { page: 1, page_size: 1000 }),
+        position_use_cases.list(undefined, { page: 1, page_size: 100 }),
+      ]);
 
     if (!player_result.success) {
       loading_state = "error";
-      error_message = player_result.error;
+      error_message = player_result.error_message || "Failed to load player";
+      return;
+    }
+
+    if (!player_result.data) {
+      loading_state = "error";
+      error_message = "Player not found";
       return;
     }
 
     const loaded_player = player_result.data;
     player = loaded_player;
-    teams = teams_result.success ? teams_result.data.items : [];
+    teams = teams_result.success ? teams_result.data : [];
+    positions = positions_result.success ? positions_result.data : [];
+    all_players = players_result.success ? players_result.data : [];
 
     form_data = {
       first_name: loaded_player.first_name,
@@ -117,6 +134,19 @@
     form_data.status = event.detail.value as UpdatePlayerInput["status"];
   }
 
+  function check_jersey_conflict(): void {
+    jersey_conflict_player = null;
+    if (form_data.jersey_number && player) {
+      const conflicting_player = all_players.find(
+        (p) =>
+          p.jersey_number === form_data.jersey_number && p.id !== player?.id
+      );
+      if (conflicting_player) {
+        jersey_conflict_player = conflicting_player;
+      }
+    }
+  }
+
   async function handle_submit(): Promise<void> {
     if (!player) return;
 
@@ -146,6 +176,12 @@
         "Jersey number must be between 0 and 99"
       );
     }
+    if (form_data.jersey_number && jersey_conflict_player) {
+      validation_errors.set(
+        "jersey_number",
+        `Jersey number ${form_data.jersey_number} is already taken by ${jersey_conflict_player.first_name} ${jersey_conflict_player.last_name}`
+      );
+    }
     if (
       form_data.height_cm &&
       (form_data.height_cm < 100 || form_data.height_cm > 250)
@@ -172,11 +208,11 @@
 
     is_submitting = true;
 
-    const result = await player_use_cases.update_player(player.id, form_data);
+    const result = await player_use_cases.update(player.id, form_data);
 
     if (!result.success) {
       is_submitting = false;
-      show_toast(result.error, "error");
+      show_toast(result.error_message || "Failed to update player", "error");
       return;
     }
 
@@ -202,6 +238,14 @@
     ...teams.map((team) => ({
       value: team.id,
       label: team.name,
+    })),
+  ];
+
+  $: position_options = [
+    { value: "", label: "Select a position" },
+    ...positions.map((pos) => ({
+      value: pos.id,
+      label: pos.name,
     })),
   ];
 </script>
@@ -337,25 +381,69 @@
           on:change={handle_team_change}
         />
 
-        <FormField
+        {#if teams.length === 0}
+          <div
+            class="md:col-span-2 flex items-start gap-2 rounded-md border border-yellow-300 bg-yellow-50 px-3 py-2 text-yellow-900"
+          >
+            <svg
+              class="h-5 w-5 flex-shrink-0 text-yellow-600"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              aria-hidden="true"
+              ><path
+                fill-rule="evenodd"
+                d="M8.257 3.099c.765-1.36 2.72-1.36 3.485 0l6.518 11.596c.75 1.336-.213 3.005-1.742 3.005H3.48c-1.53 0-2.492-1.669-1.743-3.005L8.257 3.1zM11 14a1 1 0 10-2 0 1 1 0 002 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V7a1 1 0 00-1-1z"
+                clip-rule="evenodd"
+              /></svg
+            >
+            <div>
+              <p class="text-sm font-medium">No teams found.</p>
+              <p class="text-sm text-yellow-800">
+                You can keep the player unassigned or create a team first.
+              </p>
+            </div>
+          </div>
+        {/if}
+
+        <SelectField
           label="Position"
           name="position"
-          bind:value={form_data.position}
-          placeholder="e.g., Forward, Midfielder"
-          required={true}
-          error={validation_errors.get("position")}
+          value={form_data.position || ""}
+          options={position_options}
+          placeholder="Select a position"
+          on:change={(e) => (form_data.position = e.detail.value)}
         />
 
-        <FormField
-          label="Jersey Number"
-          name="jersey_number"
-          type="number"
-          bind:value={form_data.jersey_number}
-          placeholder="0-99"
-          min={0}
-          max={99}
-          error={validation_errors.get("jersey_number")}
-        />
+        <div>
+          <FormField
+            label="Jersey Number"
+            name="jersey_number"
+            type="number"
+            bind:value={form_data.jersey_number}
+            placeholder="0-99"
+            min={0}
+            max={99}
+            error={validation_errors.get("jersey_number")}
+            on:change={check_jersey_conflict}
+          />
+          {#if jersey_conflict_player}
+            <div
+              class="mt-2 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg"
+            >
+              <p class="text-sm text-red-700 dark:text-red-400">
+                <strong>Jersey #{form_data.jersey_number} is taken by:</strong>
+              </p>
+              <p class="text-sm text-red-600 dark:text-red-300 mt-1">
+                {jersey_conflict_player.first_name}
+                {jersey_conflict_player.last_name}
+                {#if jersey_conflict_player.team_id}
+                  • {teams.find((t) => t.id === jersey_conflict_player.team_id)
+                    ?.name || "Unknown Team"}
+                {/if}
+              </p>
+            </div>
+          {/if}
+        </div>
 
         <EnumSelectField
           label="Status"

@@ -31,6 +31,9 @@
   let toast_message: string = "";
   let toast_type: "success" | "error" | "info" = "info";
 
+  let logo_preview: string = "";
+  let logo_file_input: HTMLInputElement | undefined;
+
   let form_data: CreateTeamInput = {
     name: "",
     short_name: "",
@@ -74,7 +77,7 @@
 
   onMount(async () => {
     const [org_result, roles_result] = await Promise.all([
-      organization_use_cases.list_organizations(undefined, { page_size: 100 }),
+      organization_use_cases.list(undefined, { page: 1, page_size: 100 }),
       team_staff_use_cases.list_staff_roles(),
     ]);
 
@@ -83,7 +86,7 @@
       return;
     }
 
-    organizations = org_result.data.items;
+    organizations = org_result.data;
     available_staff_roles = roles_result.success ? roles_result.data : [];
     loading_state = "success";
   });
@@ -102,6 +105,30 @@
 
   function handle_status_change(event: CustomEvent<{ value: string }>): void {
     form_data.status = event.detail.value as CreateTeamInput["status"];
+  }
+
+  function handle_logo_file_select(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const result = e.target?.result;
+      if (typeof result === "string") {
+        logo_preview = result;
+        form_data.logo_url = result;
+      }
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function clear_logo_preview(): void {
+    logo_preview = "";
+    form_data.logo_url = "";
+    if (logo_file_input) {
+      logo_file_input.value = "";
+    }
   }
 
   async function handle_submit(): Promise<void> {
@@ -127,18 +154,24 @@
 
     is_submitting = true;
 
-    const result = await team_use_cases.create_team(form_data);
+    const result = await team_use_cases.create(form_data);
 
     if (!result.success) {
       is_submitting = false;
-      show_toast(result.error, "error");
+      show_toast(result.error_message || "Failed to create team", "error");
+      return;
+    }
+
+    if (!result.data) {
+      is_submitting = false;
+      show_toast("Failed to create team", "error");
       return;
     }
 
     const created_team = result.data;
 
     const staff_create_promises = pending_staff_members.map((staff) =>
-      team_staff_use_cases.create_team_staff({
+      team_staff_use_cases.create({
         first_name: staff.first_name,
         last_name: staff.last_name,
         email: staff.email,
@@ -179,9 +212,9 @@
     goto("/teams");
   }
 
-  $: organization_options = organizations.map((org) => ({
+  $: organization_options = (organizations || []).map((org) => ({
     value: org.id,
-    label: org.name,
+    label: org.name || "Unknown",
   }));
 </script>
 
@@ -226,136 +259,292 @@
     loading_text="Loading form data..."
     error_message="Failed to load organizations"
   >
-    <form
-      class="bg-white dark:bg-accent-800 rounded-lg shadow-sm border border-accent-200 dark:border-accent-700 p-6 space-y-6"
-      on:submit|preventDefault={handle_submit}
-    >
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div class="md:col-span-2">
+    <form class="space-y-8" on:submit|preventDefault={handle_submit}>
+      <div
+        class="bg-white dark:bg-accent-800 rounded-lg shadow-sm border border-accent-200 dark:border-accent-700 p-8 space-y-8"
+      >
+        <div>
+          <h2
+            class="text-lg font-semibold text-accent-900 dark:text-accent-100 mb-6"
+          >
+            Basic Information
+          </h2>
+
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="lg:col-span-2 space-y-6">
+              <FormField
+                label="Team Name"
+                name="name"
+                bind:value={form_data.name}
+                placeholder="Enter full team name"
+                required={true}
+                error={validation_errors.get("name")}
+              />
+
+              <FormField
+                label="Short Name"
+                name="short_name"
+                bind:value={form_data.short_name}
+                placeholder="e.g., MUN, LIV, MCI"
+              />
+
+              <SelectField
+                label="Organization"
+                name="organization_id"
+                value={form_data.organization_id}
+                options={organization_options}
+                placeholder="Select organization"
+                required={true}
+                error={validation_errors.get("organization_id")}
+                disabled={organization_options.length === 0}
+                on:change={handle_organization_change}
+              />
+
+              {#if organization_options.length === 0}
+                <div
+                  class="flex items-start gap-2 rounded-md border border-yellow-300 bg-yellow-50 dark:bg-yellow-900/20 px-3 py-2 text-yellow-900 dark:text-yellow-100"
+                >
+                  <svg
+                    class="h-5 w-5 flex-shrink-0 text-yellow-600 dark:text-yellow-400 mt-0.5"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fill-rule="evenodd"
+                      d="M8.257 3.099c.765-1.36 2.72-1.36 3.485 0l6.518 11.596c.75 1.336-.213 3.005-1.742 3.005H3.48c-1.53 0-2.492-1.669-1.743-3.005L8.257 3.1zM11 14a1 1 0 10-2 0 1 1 0 002 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V7a1 1 0 00-1-1z"
+                      clip-rule="evenodd"
+                    />
+                  </svg>
+                  <div>
+                    <p class="text-sm font-medium">No organizations found</p>
+                    <p class="text-sm">
+                      Create an organization first to attach this team
+                    </p>
+                  </div>
+                </div>
+              {/if}
+
+              <EnumSelectField
+                label="Sport Type"
+                name="sport_type"
+                value={form_data.sport_type}
+                options={sport_type_options}
+                required={true}
+                on:change={handle_sport_type_change}
+              />
+            </div>
+
+            <div class="space-y-6">
+              <div>
+                <label
+                  for="logo_upload"
+                  class="block text-sm font-medium text-accent-700 dark:text-accent-300 mb-3"
+                >
+                  Team Logo
+                </label>
+                <div
+                  id="logo_upload"
+                  class="relative rounded-lg border-2 border-dashed border-accent-300 dark:border-accent-600 p-6 hover:border-primary-400 dark:hover:border-primary-500 transition-colors cursor-pointer bg-accent-50 dark:bg-accent-700/50"
+                  on:click={() => logo_file_input?.click()}
+                  role="button"
+                  tabindex="0"
+                  on:keydown={(e) => {
+                    if (e.key === "Enter" || e.key === " ")
+                      logo_file_input?.click();
+                  }}
+                >
+                  <input
+                    type="file"
+                    accept="image/*"
+                    bind:this={logo_file_input}
+                    on:change={handle_logo_file_select}
+                    class="hidden"
+                  />
+
+                  {#if logo_preview}
+                    <div class="space-y-3">
+                      <img
+                        src={logo_preview}
+                        alt="Logo preview"
+                        class="h-32 w-32 object-contain mx-auto rounded"
+                      />
+                      <button
+                        type="button"
+                        on:click|stopPropagation={clear_logo_preview}
+                        class="w-full text-sm text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 font-medium"
+                      >
+                        Remove Logo
+                      </button>
+                    </div>
+                  {:else}
+                    <div class="text-center">
+                      <svg
+                        class="h-12 w-12 text-accent-400 dark:text-accent-500 mx-auto mb-2"
+                        stroke="currentColor"
+                        fill="none"
+                        viewBox="0 0 48 48"
+                      >
+                        <path
+                          d="M28 8H12a4 4 0 00-4 4v20a4 4 0 004 4h24a4 4 0 004-4V20"
+                          stroke-width="2"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                        />
+                        <path
+                          d="M4 20h40M32 4v16"
+                          stroke-width="2"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                        />
+                        <circle cx="20" cy="28" r="4" stroke-width="2" />
+                      </svg>
+                      <p
+                        class="text-sm font-medium text-accent-900 dark:text-accent-100"
+                      >
+                        Click to upload logo
+                      </p>
+                      <p
+                        class="text-xs text-accent-600 dark:text-accent-400 mt-1"
+                      >
+                        PNG, JPG up to 10MB
+                      </p>
+                    </div>
+                  {/if}
+                </div>
+              </div>
+
+              <div>
+                <label
+                  for="primary_color"
+                  class="block text-sm font-medium text-accent-700 dark:text-accent-300 mb-2"
+                >
+                  Primary Color
+                </label>
+                <div class="flex items-center gap-3">
+                  <input
+                    type="color"
+                    id="primary_color"
+                    bind:value={form_data.primary_color}
+                    class="h-12 w-16 rounded-lg border border-accent-300 dark:border-accent-600 cursor-pointer hover:opacity-90"
+                  />
+                  <span
+                    class="text-sm font-mono text-accent-600 dark:text-accent-400"
+                  >
+                    {form_data.primary_color}
+                  </span>
+                </div>
+              </div>
+
+              <div>
+                <label
+                  for="secondary_color"
+                  class="block text-sm font-medium text-accent-700 dark:text-accent-300 mb-2"
+                >
+                  Secondary Color
+                </label>
+                <div class="flex items-center gap-3">
+                  <input
+                    type="color"
+                    id="secondary_color"
+                    bind:value={form_data.secondary_color}
+                    class="h-12 w-16 rounded-lg border border-accent-300 dark:border-accent-600 cursor-pointer hover:opacity-90"
+                  />
+                  <span
+                    class="text-sm font-mono text-accent-600 dark:text-accent-400"
+                  >
+                    {form_data.secondary_color}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div
+        class="bg-white dark:bg-accent-800 rounded-lg shadow-sm border border-accent-200 dark:border-accent-700 p-8"
+      >
+        <h2
+          class="text-lg font-semibold text-accent-900 dark:text-accent-100 mb-6"
+        >
+          Team Details
+        </h2>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
           <FormField
-            label="Team Name"
-            name="name"
-            bind:value={form_data.name}
-            placeholder="Enter team name"
+            label="Home Venue"
+            name="home_venue"
+            bind:value={form_data.home_venue}
+            placeholder="e.g., Old Trafford"
+          />
+
+          <FormField
+            label="Website"
+            name="website"
+            type="url"
+            bind:value={form_data.website}
+            placeholder="https://team-website.com"
+          />
+
+          <FormField
+            label="Max Squad Size"
+            name="max_squad_size"
+            type="number"
+            bind:value={form_data.max_squad_size}
+            placeholder="25"
+            min={1}
+            max={100}
+            error={validation_errors.get("max_squad_size")}
+          />
+
+          <FormField
+            label="Founded Year"
+            name="founded_year"
+            type="number"
+            bind:value={form_data.founded_year}
+            placeholder={new Date().getFullYear().toString()}
+            min={1800}
+            max={new Date().getFullYear()}
+          />
+
+          <EnumSelectField
+            label="Status"
+            name="status"
+            value={form_data.status}
+            options={status_options}
             required={true}
-            error={validation_errors.get("name")}
+            on:change={handle_status_change}
           />
         </div>
 
-        <FormField
-          label="Short Name"
-          name="short_name"
-          bind:value={form_data.short_name}
-          placeholder="Enter short name (e.g., MUN)"
-        />
-
-        <SelectField
-          label="Organization"
-          name="organization_id"
-          value={form_data.organization_id}
-          options={organization_options}
-          placeholder="Select organization"
-          required={true}
-          error={validation_errors.get("organization_id")}
-          on:change={handle_organization_change}
-        />
-
-        <EnumSelectField
-          label="Sport Type"
-          name="sport_type"
-          value={form_data.sport_type}
-          options={sport_type_options}
-          required={true}
-          on:change={handle_sport_type_change}
-        />
-
-        <div>
+        <div class="mt-6">
           <label
-            for="primary_color"
-            class="block text-sm font-medium text-accent-700 dark:text-accent-300 mb-1"
+            for="description"
+            class="block text-sm font-medium text-accent-700 dark:text-accent-300 mb-2"
           >
-            Primary Color
+            Description
           </label>
-          <div class="flex items-center gap-3">
-            <input
-              type="color"
-              id="primary_color"
-              bind:value={form_data.primary_color}
-              class="h-10 w-20 rounded border border-accent-300 dark:border-accent-600 cursor-pointer"
-            />
-            <span class="text-sm text-accent-600 dark:text-accent-400"
-              >{form_data.primary_color}</span
-            >
-          </div>
+          <textarea
+            id="description"
+            bind:value={form_data.description}
+            placeholder="Team history, achievements, and other information"
+            rows="4"
+            class="w-full px-4 py-2 rounded-lg border border-accent-300 dark:border-accent-600 bg-white dark:bg-accent-700 text-accent-900 dark:text-accent-100 placeholder-accent-400 dark:placeholder-accent-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+          ></textarea>
         </div>
-
-        <div>
-          <label
-            for="secondary_color"
-            class="block text-sm font-medium text-accent-700 dark:text-accent-300 mb-1"
-          >
-            Secondary Color
-          </label>
-          <div class="flex items-center gap-3">
-            <input
-              type="color"
-              id="secondary_color"
-              bind:value={form_data.secondary_color}
-              class="h-10 w-20 rounded border border-accent-300 dark:border-accent-600 cursor-pointer"
-            />
-            <span class="text-sm text-accent-600 dark:text-accent-400"
-              >{form_data.secondary_color}</span
-            >
-          </div>
-        </div>
-
-        <FormField
-          label="Home Venue"
-          name="home_venue"
-          bind:value={form_data.home_venue}
-          placeholder="Enter home venue/stadium"
-        />
-
-        <FormField
-          label="Max Squad Size"
-          name="max_squad_size"
-          type="number"
-          bind:value={form_data.max_squad_size}
-          placeholder="25"
-          min={1}
-          max={100}
-          error={validation_errors.get("max_squad_size")}
-        />
-
-        <FormField
-          label="Website"
-          name="website"
-          type="url"
-          bind:value={form_data.website}
-          placeholder="https://team-website.com"
-        />
-
-        <FormField
-          label="Founded Year"
-          name="founded_year"
-          type="number"
-          bind:value={form_data.founded_year}
-          placeholder="1990"
-          min={1800}
-          max={new Date().getFullYear()}
-        />
-
-        <EnumSelectField
-          label="Status"
-          name="status"
-          value={form_data.status}
-          options={status_options}
-          required={true}
-          on:change={handle_status_change}
-        />
       </div>
 
-      <div class="border-t border-accent-200 dark:border-accent-700 pt-6">
+      <div
+        class="bg-white dark:bg-accent-800 rounded-lg shadow-sm border border-accent-200 dark:border-accent-700 p-8"
+      >
+        <h2
+          class="text-lg font-semibold text-accent-900 dark:text-accent-100 mb-6"
+        >
+          Staff Members <span
+            class="text-sm font-normal text-accent-600 dark:text-accent-400"
+            >(Optional)</span
+          >
+        </h2>
         <TeamStaffForm
           bind:staff_members={pending_staff_members}
           available_roles={available_staff_roles}
@@ -363,15 +552,26 @@
           disabled={is_submitting}
         />
         {#if pending_staff_members.length > 0}
-          <p class="mt-2 text-sm text-accent-500 dark:text-accent-400">
+          <p
+            class="mt-4 text-sm text-accent-600 dark:text-accent-400 flex items-center gap-2"
+          >
+            <svg
+              class="w-4 h-4 text-primary-500"
+              fill="currentColor"
+              viewBox="0 0 20 20"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                clip-rule="evenodd"
+              />
+            </svg>
             Staff members will be added after the team is created
           </p>
         {/if}
       </div>
 
-      <div
-        class="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-4 border-t border-accent-200 dark:border-accent-700"
-      >
+      <div class="flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
         <button
           type="button"
           class="btn btn-outline"

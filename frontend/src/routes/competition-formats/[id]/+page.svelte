@@ -70,11 +70,17 @@
 
     loading_state = "loading";
 
-    const result = await use_cases.get_format(format_id);
+    const result = await use_cases.get_by_id(format_id);
 
     if (!result.success) {
       loading_state = "error";
-      error_message = result.error;
+      error_message = result.error_message || "Failed to load format";
+      return;
+    }
+
+    if (!result.data) {
+      loading_state = "error";
+      error_message = "Format not found";
       return;
     }
 
@@ -154,11 +160,11 @@
 
     is_submitting = true;
 
-    const result = await use_cases.update_format(format_id, form_data);
+    const result = await use_cases.update(format_id, form_data);
 
     if (!result.success) {
       is_submitting = false;
-      show_toast(result.error, "error");
+      show_toast(result.error_message || "Failed to update format", "error");
       return;
     }
 

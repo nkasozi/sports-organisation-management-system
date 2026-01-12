@@ -72,18 +72,25 @@
     loading_state = "loading";
 
     const [official_result, org_result] = await Promise.all([
-      official_use_cases.get_official(official_id),
-      organization_use_cases.list_organizations(undefined, { page_size: 100 }),
+      official_use_cases.get_by_id(official_id),
+      organization_use_cases.list(undefined, { page: 1, page_size: 100 }),
     ]);
 
     if (!official_result.success) {
       loading_state = "error";
-      error_message = official_result.error;
+      error_message =
+        official_result.error_message || "Failed to load official";
+      return;
+    }
+
+    if (!official_result.data) {
+      loading_state = "error";
+      error_message = "Official not found";
       return;
     }
 
     official = official_result.data;
-    organizations = org_result.success ? org_result.data.items : [];
+    organizations = org_result.success ? org_result.data : [];
 
     form_data = {
       first_name: official.first_name,
@@ -122,14 +129,11 @@
     errors = {};
     is_saving = true;
 
-    const result = await official_use_cases.update_official(
-      official_id,
-      form_data
-    );
+    const result = await official_use_cases.update(official_id, form_data);
 
     if (!result.success) {
       is_saving = false;
-      show_toast(result.error, "error");
+      show_toast(result.error_message || "Failed to update official", "error");
       return;
     }
 
@@ -284,9 +288,34 @@
             options={organization_options}
             placeholder="Select an organization..."
             required={true}
+            disabled={organization_options.length === 0}
             error={errors.organization_id || ""}
             on:change={handle_organization_change}
           />
+
+          {#if organization_options.length === 0}
+            <div
+              class="md:col-span-2 flex items-start gap-2 rounded-md border border-yellow-300 bg-yellow-50 px-3 py-2 text-yellow-900"
+            >
+              <svg
+                class="h-5 w-5 flex-shrink-0 text-yellow-600"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+                aria-hidden="true"
+                ><path
+                  fill-rule="evenodd"
+                  d="M8.257 3.099c.765-1.36 2.72-1.36 3.485 0l6.518 11.596c.75 1.336-.213 3.005-1.742 3.005H3.48c-1.53 0-2.492-1.669-1.743-3.005L8.257 3.1zM11 14a1 1 0 10-2 0 1 1 0 002 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V7a1 1 0 00-1-1z"
+                  clip-rule="evenodd"
+                /></svg
+              >
+              <div>
+                <p class="text-sm font-medium">No organizations found.</p>
+                <p class="text-sm text-yellow-800">
+                  Create an organization to assign this official to.
+                </p>
+              </div>
+            </div>
+          {/if}
 
           <FormField
             label="Years of Experience"

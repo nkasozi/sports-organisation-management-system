@@ -60,14 +60,14 @@
 
     const [comp_result, teams_result, officials_result, roles_result] =
       await Promise.all([
-        competition_use_cases.list_competitions(undefined, { page_size: 100 }),
-        team_use_cases.list_teams(undefined, { page_size: 200 }),
-        official_use_cases.list_officials(undefined, { page_size: 200 }),
-        official_role_use_cases.list_roles(undefined, { page_size: 100 }),
+        competition_use_cases.list(undefined, { page: 1, page_size: 100 }),
+        team_use_cases.list(undefined, { page: 1, page_size: 200 }),
+        official_use_cases.list(undefined, { page: 1, page_size: 200 }),
+        official_role_use_cases.list(undefined, { page: 1, page_size: 100 }),
       ]);
 
     if (comp_result.success) {
-      competitions = comp_result.data.items;
+      competitions = comp_result.data;
       competition_options = competitions.map((c) => ({
         value: c.id,
         label: c.name,
@@ -75,19 +75,19 @@
     }
 
     if (teams_result.success) {
-      teams = teams_result.data.items;
+      teams = teams_result.data;
       update_team_options();
     }
 
     if (officials_result.success) {
-      available_officials = officials_result.data.items.filter(
-        (o) => o.status === "active"
+      available_officials = officials_result.data.filter(
+        (o: any) => o.status === "active"
       );
     }
 
     if (roles_result.success) {
-      available_roles = roles_result.data.items.filter(
-        (r) => r.status === "active"
+      available_roles = roles_result.data.filter(
+        (r: any) => r.status === "active"
       );
     }
 
@@ -166,11 +166,11 @@
     errors = {};
     is_saving = true;
 
-    const result = await fixture_use_cases.create_fixture(form_data);
+    const result = await fixture_use_cases.create(form_data);
 
     if (!result.success) {
       is_saving = false;
-      show_toast(result.error, "error");
+      show_toast(result.error_message || "Failed to create game", "error");
       return;
     }
 
@@ -178,12 +178,12 @@
     show_toast("Fixture created successfully!", "success");
 
     setTimeout(() => {
-      goto("/games");
+      goto("/fixtures");
     }, 1500);
   }
 
   function handle_cancel(): void {
-    goto("/games");
+    goto("/fixtures");
   }
 
   function show_toast(
@@ -222,11 +222,11 @@
         />
       </svg>
     </button>
-    <div>
+    <div class="flex-1">
       <h1 class="text-2xl font-bold text-accent-900 dark:text-accent-100">
         Create Fixture
       </h1>
-      <p class="text-sm text-accent-600 dark:text-accent-400">
+      <p class="text-sm text-accent-600 dark:text-accent-400 mt-1">
         Schedule a new match between two teams
       </p>
     </div>
@@ -272,7 +272,7 @@
             value={form_data.home_team_id}
             required
             error={errors.home_team_id}
-            disabled={!form_data.competition_id}
+            disabled={!form_data.competition_id || team_options.length === 0}
             on:change={handle_home_team_change}
           />
 
@@ -286,10 +286,36 @@
             value={form_data.away_team_id}
             required
             error={errors.away_team_id}
-            disabled={!form_data.competition_id}
+            disabled={!form_data.competition_id || team_options.length === 0}
             on:change={handle_away_team_change}
           />
         </div>
+
+        {#if form_data.competition_id && team_options.length === 0}
+          <div
+            class="flex items-start gap-2 rounded-md border border-yellow-300 bg-yellow-50 px-3 py-2 text-yellow-900"
+          >
+            <svg
+              class="h-5 w-5 flex-shrink-0 text-yellow-600"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              aria-hidden="true"
+              ><path
+                fill-rule="evenodd"
+                d="M8.257 3.099c.765-1.36 2.72-1.36 3.485 0l6.518 11.596c.75 1.336-.213 3.005-1.742 3.005H3.48c-1.53 0-2.492-1.669-1.743-3.005L8.257 3.1zM11 14a1 1 0 10-2 0 1 1 0 002 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V7a1 1 0 00-1-1z"
+                clip-rule="evenodd"
+              /></svg
+            >
+            <div>
+              <p class="text-sm font-medium">
+                No teams found in this competition.
+              </p>
+              <p class="text-sm text-yellow-800">
+                Add teams to the selected competition to enable team selection.
+              </p>
+            </div>
+          </div>
+        {/if}
 
         <div
           class="border-b border-accent-200 dark:border-accent-700 pb-4 pt-4"
@@ -367,11 +393,35 @@
           </p>
         </div>
 
+        {#if available_officials.length === 0}
+          <div
+            class="flex items-start gap-2 rounded-md border border-yellow-300 bg-yellow-50 px-3 py-2 text-yellow-900"
+          >
+            <svg
+              class="h-5 w-5 flex-shrink-0 text-yellow-600"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              aria-hidden="true"
+              ><path
+                fill-rule="evenodd"
+                d="M8.257 3.099c.765-1.36 2.72-1.36 3.485 0l6.518 11.596c.75 1.336-.213 3.005-1.742 3.005H3.48c-1.53 0-2.492-1.669-1.743-3.005L8.257 3.1zM11 14a1 1 0 10-2 0 1 1 0 002 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V7a1 1 0 00-1-1z"
+                clip-rule="evenodd"
+              /></svg
+            >
+            <div>
+              <p class="text-sm font-medium">No officials available.</p>
+              <p class="text-sm text-yellow-800">
+                Create officials and set them active to assign them here.
+              </p>
+            </div>
+          </div>
+        {/if}
+
         <FixtureOfficialAssignment
           assigned_officials={form_data.assigned_officials}
           {available_officials}
           {available_roles}
-          disabled={is_saving}
+          disabled={is_saving || available_officials.length === 0}
           on:change={handle_officials_change}
         />
 

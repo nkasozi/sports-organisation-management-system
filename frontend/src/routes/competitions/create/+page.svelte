@@ -4,6 +4,7 @@
   import type { Organization } from "$lib/domain/entities/Organization";
   import type { CompetitionFormat } from "$lib/domain/entities/CompetitionFormat";
   import type { Team } from "$lib/domain/entities/Team";
+  import type { Sport } from "$lib/domain/entities/Sport";
   import type { CreateCompetitionInput } from "$lib/domain/entities/Competition";
   import type { SelectOption } from "$lib/components/ui/SelectField.svelte";
   import { create_empty_competition_input } from "$lib/domain/entities/Competition";
@@ -11,10 +12,12 @@
   import { get_organization_use_cases } from "$lib/usecases/OrganizationUseCases";
   import { get_competition_format_use_cases } from "$lib/usecases/CompetitionFormatUseCases";
   import { get_team_use_cases } from "$lib/usecases/TeamUseCases";
+  import { get_sport_by_id } from "$lib/services/sportService";
   import FormField from "$lib/components/ui/FormField.svelte";
   import SelectField from "$lib/components/ui/SelectField.svelte";
   import EnumSelectField from "$lib/components/ui/EnumSelectField.svelte";
   import Toast from "$lib/components/ui/Toast.svelte";
+  import SportRulesCustomizer from "$lib/components/competition/SportRulesCustomizer.svelte";
 
   const competition_use_cases = get_competition_use_cases();
   const organization_use_cases = get_organization_use_cases();
@@ -30,11 +33,13 @@
   let team_options: SelectOption[] = [];
   let selected_team_ids: Set<string> = new Set();
   let selected_format: CompetitionFormat | null = null;
+  let selected_sport: Sport | null = null;
   let is_loading_organizations: boolean = true;
   let is_loading_formats: boolean = true;
   let is_loading_teams: boolean = true;
   let is_saving: boolean = false;
   let errors: Record<string, string> = {};
+  let active_tab: "details" | "rules" = "details";
 
   let toast_visible: boolean = false;
   let toast_message: string = "";
@@ -45,17 +50,6 @@
     { value: "active", label: "Active" },
     { value: "completed", label: "Completed" },
     { value: "cancelled", label: "Cancelled" },
-  ];
-
-  const sport_type_options = [
-    { value: "Football", label: "Football" },
-    { value: "Basketball", label: "Basketball" },
-    { value: "Cricket", label: "Cricket" },
-    { value: "Rugby", label: "Rugby" },
-    { value: "Tennis", label: "Tennis" },
-    { value: "Hockey", label: "Hockey" },
-    { value: "Volleyball", label: "Volleyball" },
-    { value: "Other", label: "Other" },
   ];
 
   $: {
@@ -81,12 +75,13 @@
 
   async function load_organizations(): Promise<void> {
     is_loading_organizations = true;
-    const result = await organization_use_cases.list_organizations(undefined, {
+    const result = await organization_use_cases.list(undefined, {
+      page: 1,
       page_size: 100,
     });
 
     if (result.success) {
-      organizations = result.data.items;
+      organizations = result.data;
       organization_options = organizations.map((org) => ({
         value: org.id,
         label: org.name,
@@ -97,12 +92,13 @@
 
   async function load_competition_formats(): Promise<void> {
     is_loading_formats = true;
-    const result = await competition_format_use_cases.list_formats(undefined, {
+    const result = await competition_format_use_cases.list(undefined, {
+      page: 1,
       page_size: 100,
     });
 
     if (result.success) {
-      competition_formats = result.data.items.filter(
+      competition_formats = result.data.filter(
         (format: CompetitionFormat) => format.status === "active"
       );
       competition_format_options = competition_formats.map((format) => ({
@@ -115,12 +111,13 @@
 
   async function load_teams(): Promise<void> {
     is_loading_teams = true;
-    const result = await team_use_cases.list_teams(undefined, {
+    const result = await team_use_cases.list(undefined, {
+      page: 1,
       page_size: 200,
     });
 
     if (result.success) {
-      all_teams = result.data.items;
+      all_teams = result.data;
       update_team_options();
     }
     is_loading_teams = false;
@@ -139,12 +136,30 @@
       }));
   }
 
-  function handle_organization_change(
+  async function handle_organization_change(
     event: CustomEvent<{ value: string }>
-  ): void {
+  ): Promise<void> {
     form_data.organization_id = event.detail.value;
     selected_team_ids.clear();
     update_team_options();
+
+    form_data.rule_overrides = {};
+    selected_sport = null;
+    form_data.sport_id = "";
+
+    const selected_organization = organizations.find(
+      (org) => org.id === form_data.organization_id
+    );
+
+    if (selected_organization && selected_organization.sport_id) {
+      const sport_result = await get_sport_by_id(
+        selected_organization.sport_id
+      );
+      if (sport_result.success && sport_result.data) {
+        selected_sport = sport_result.data;
+        form_data.sport_id = sport_result.data.id;
+      }
+    }
   }
 
   function handle_format_change(event: CustomEvent<{ value: string }>): void {
@@ -181,11 +196,14 @@
 
     is_saving = true;
 
-    const result = await competition_use_cases.create_competition(form_data);
+    const result = await competition_use_cases.create(form_data);
 
     if (!result.success) {
       is_saving = false;
-      show_toast(result.error, "error");
+      show_toast(
+        result.error_message || "Failed to create competition",
+        "error"
+      );
       return;
     }
 
@@ -237,236 +255,318 @@
         />
       </svg>
     </button>
-    <div>
+    <div class="flex-1">
       <h1 class="text-2xl font-bold text-accent-900 dark:text-accent-100">
         Create Competition
       </h1>
-      <p class="text-sm text-accent-600 dark:text-accent-400">
+      <p class="text-sm text-accent-600 dark:text-accent-400 mt-1">
         Set up a new tournament, league, or championship
       </p>
     </div>
   </div>
 
-  <form
-    class="bg-white dark:bg-accent-800 rounded-lg shadow-sm border border-accent-200 dark:border-accent-700 p-6"
-    on:submit|preventDefault={handle_submit}
+  <div
+    class="bg-white dark:bg-accent-800 rounded-lg shadow-sm border border-accent-200 dark:border-accent-700"
   >
-    <div class="space-y-6">
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div class="md:col-span-2">
-          <FormField
-            label="Competition Name"
-            name="name"
-            bind:value={form_data.name}
-            placeholder="Enter competition name"
-            required={true}
-            error={errors.name || ""}
-          />
-        </div>
-
-        <SelectField
-          label="Organization"
-          name="organization_id"
-          value={form_data.organization_id}
-          options={organization_options}
-          placeholder="Select an organization..."
-          required={true}
-          is_loading={is_loading_organizations}
-          error={errors.organization_id || ""}
-          on:change={handle_organization_change}
-        />
-
-        <SelectField
-          label="Competition Format"
-          name="competition_format_id"
-          value={form_data.competition_format_id}
-          options={competition_format_options}
-          placeholder="Select a format..."
-          required={true}
-          is_loading={is_loading_formats}
-          error={errors.competition_format_id || ""}
-          on:change={handle_format_change}
-        />
-
-        <EnumSelectField
-          label="Sport Type"
-          name="sport_type"
-          bind:value={form_data.sport_type}
-          options={sport_type_options}
-          required={true}
-        />
-
-        <EnumSelectField
-          label="Status"
-          name="status"
-          bind:value={form_data.status}
-          options={status_options}
-        />
-
-        <FormField
-          label="Start Date"
-          name="start_date"
-          type="date"
-          bind:value={form_data.start_date}
-          required={true}
-        />
-
-        <FormField
-          label="End Date"
-          name="end_date"
-          type="date"
-          bind:value={form_data.end_date}
-          required={true}
-        />
-
-        <FormField
-          label="Registration Deadline"
-          name="registration_deadline"
-          type="date"
-          bind:value={form_data.registration_deadline}
-        />
-
-        <FormField
-          label="Max Teams"
-          name="max_teams"
-          type="number"
-          bind:value={form_data.max_teams}
-          min={2}
-          required={true}
-        />
-
-        <FormField
-          label="Entry Fee ($)"
-          name="entry_fee"
-          type="number"
-          bind:value={form_data.entry_fee}
-          min={0}
-        />
-
-        <FormField
-          label="Prize Pool ($)"
-          name="prize_pool"
-          type="number"
-          bind:value={form_data.prize_pool}
-          min={0}
-        />
-
-        <div class="md:col-span-2">
-          <FormField
-            label="Location"
-            name="location"
-            bind:value={form_data.location}
-            placeholder="Enter the competition location"
-          />
-        </div>
-
-        <div class="md:col-span-2">
-          <FormField
-            label="Description"
-            name="description"
-            type="textarea"
-            bind:value={form_data.description}
-            placeholder="Enter a description of the competition"
-            rows={3}
-          />
-        </div>
-      </div>
-
-      <div class="border-t border-accent-200 dark:border-accent-700 pt-6">
-        <h3
-          class="text-lg font-semibold text-accent-900 dark:text-accent-100 mb-4"
+    <div class="border-b border-accent-200 dark:border-accent-700">
+      <nav class="flex -mb-px overflow-x-auto" aria-label="Tabs">
+        <button
+          type="button"
+          class="px-6 py-3 text-sm font-medium border-b-2 whitespace-nowrap {active_tab ===
+          'details'
+            ? 'border-primary-500 text-primary-600 dark:text-primary-400'
+            : 'border-transparent text-accent-500 hover:text-accent-700 hover:border-accent-300 dark:text-accent-400 dark:hover:text-accent-200'}"
+          on:click={() => (active_tab = "details")}
         >
-          Select Teams
-        </h3>
-        {#if format_team_requirements}
-          <p
-            class="text-sm text-accent-600 dark:text-accent-400 mb-4"
-            class:text-red-600={!is_team_count_valid}
-            class:dark:text-red-400={!is_team_count_valid}
-          >
-            {format_team_requirements} •
-            {selected_team_ids.size} selected
-          </p>
-        {/if}
+          Details
+        </button>
+        <button
+          type="button"
+          class="px-6 py-3 text-sm font-medium border-b-2 whitespace-nowrap {active_tab ===
+          'rules'
+            ? 'border-primary-500 text-primary-600 dark:text-primary-400'
+            : 'border-transparent text-accent-500 hover:text-accent-700 hover:border-accent-300 dark:text-accent-400 dark:hover:text-accent-200'}"
+          on:click={() => (active_tab = "rules")}
+        >
+          Rules
+        </button>
+      </nav>
+    </div>
 
-        {#if is_loading_teams}
-          <div class="text-center py-8 text-accent-500">Loading teams...</div>
-        {:else if team_options.length === 0}
-          <div class="text-center py-8 text-accent-500">
-            No teams available for the selected organization
+    <form class="p-6 space-y-6" on:submit|preventDefault={handle_submit}>
+      {#if active_tab === "details"}
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="md:col-span-2">
+            <FormField
+              label="Competition Name"
+              name="name"
+              bind:value={form_data.name}
+              placeholder="Enter competition name"
+              required={true}
+              error={errors.name || ""}
+            />
           </div>
-        {:else}
-          <div
-            class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 max-h-64 overflow-y-auto p-4 bg-accent-50 dark:bg-accent-900/30 rounded-lg"
-          >
-            {#each team_options as team_option}
-              <label
-                class="flex items-center gap-2 p-2 rounded cursor-pointer hover:bg-accent-100 dark:hover:bg-accent-700 transition-colors"
-              >
-                <input
-                  type="checkbox"
-                  checked={selected_team_ids.has(team_option.value)}
-                  on:change={() => handle_team_toggle(team_option.value)}
-                  class="w-4 h-4 text-primary-600 rounded border-accent-300"
-                />
-                <span class="text-sm text-accent-700 dark:text-accent-300">
-                  {team_option.label}
-                </span>
-              </label>
-            {/each}
-          </div>
-        {/if}
-      </div>
 
-      <div class="border-t border-accent-200 dark:border-accent-700 pt-6">
-        <label class="flex items-center gap-3 cursor-pointer">
-          <input
-            type="checkbox"
-            bind:checked={form_data.auto_generate_fixtures_and_assign_officials}
-            class="w-5 h-5 text-primary-600 rounded border-accent-300"
+          <SelectField
+            label="Organization"
+            name="organization_id"
+            value={form_data.organization_id}
+            options={organization_options}
+            placeholder="Select an organization..."
+            required={true}
+            is_loading={is_loading_organizations}
+            error={errors.organization_id || ""}
+            disabled={organization_options.length === 0}
+            on:change={handle_organization_change}
           />
-          <div>
-            <span
-              class="text-sm font-medium text-accent-900 dark:text-accent-100"
+
+          {#if !is_loading_organizations && organization_options.length === 0}
+            <div
+              class="md:col-span-2 flex items-start gap-2 rounded-md border border-yellow-300 bg-yellow-50 px-3 py-2 text-yellow-900"
             >
-              Auto-generate fixtures and assign officials
-            </span>
-            <p class="text-xs text-accent-500 dark:text-accent-400">
-              Automatically create fixtures and assign available officials when
-              the competition starts
+              <svg
+                class="h-5 w-5 flex-shrink-0 text-yellow-600"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+                aria-hidden="true"
+                ><path
+                  fill-rule="evenodd"
+                  d="M8.257 3.099c.765-1.36 2.72-1.36 3.485 0l6.518 11.596c.75 1.336-.213 3.005-1.742 3.005H3.48c-1.53 0-2.492-1.669-1.743-3.005L8.257 3.1zM11 14a1 1 0 10-2 0 1 1 0 002 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V7a1 1 0 00-1-1z"
+                  clip-rule="evenodd"
+                /></svg
+              >
+              <div>
+                <p class="text-sm font-medium">No organizations found.</p>
+                <p class="text-sm text-yellow-800">
+                  Create an organization to continue creating a competition.
+                </p>
+              </div>
+            </div>
+          {/if}
+
+          <SelectField
+            label="Competition Format"
+            name="competition_format_id"
+            value={form_data.competition_format_id}
+            options={competition_format_options}
+            placeholder="Select a format..."
+            required={true}
+            is_loading={is_loading_formats}
+            error={errors.competition_format_id || ""}
+            disabled={competition_format_options.length === 0}
+            on:change={handle_format_change}
+          />
+
+          {#if !is_loading_formats && competition_format_options.length === 0}
+            <div
+              class="md:col-span-2 flex items-start gap-2 rounded-md border border-yellow-300 bg-yellow-50 px-3 py-2 text-yellow-900"
+            >
+              <svg
+                class="h-5 w-5 flex-shrink-0 text-yellow-600"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+                aria-hidden="true"
+                ><path
+                  fill-rule="evenodd"
+                  d="M8.257 3.099c.765-1.36 2.72-1.36 3.485 0l6.518 11.596c.75 1.336-.213 3.005-1.742 3.005H3.48c-1.53 0-2.492-1.669-1.743-3.005L8.257 3.1zM11 14a1 1 0 10-2 0 1 1 0 002 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V7a1 1 0 00-1-1z"
+                  clip-rule="evenodd"
+                /></svg
+              >
+              <div>
+                <p class="text-sm font-medium">
+                  No competition formats available.
+                </p>
+                <p class="text-sm text-yellow-800">
+                  Activate or create a competition format to proceed.
+                </p>
+              </div>
+            </div>
+          {/if}
+
+          <EnumSelectField
+            label="Status"
+            name="status"
+            bind:value={form_data.status}
+            options={status_options}
+          />
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <FormField
+            label="Start Date"
+            name="start_date"
+            type="date"
+            bind:value={form_data.start_date}
+            required={true}
+          />
+
+          <FormField
+            label="End Date"
+            name="end_date"
+            type="date"
+            bind:value={form_data.end_date}
+            required={true}
+          />
+
+          <FormField
+            label="Registration Deadline"
+            name="registration_deadline"
+            type="date"
+            bind:value={form_data.registration_deadline}
+          />
+
+          <FormField
+            label="Max Teams"
+            name="max_teams"
+            type="number"
+            bind:value={form_data.max_teams}
+            min={2}
+            required={true}
+          />
+        </div>
+
+        <div class="border-t border-accent-200 dark:border-accent-700 pt-6">
+          <h3
+            class="text-lg font-semibold text-accent-900 dark:text-accent-100 mb-4"
+          >
+            Select Teams
+          </h3>
+          {#if format_team_requirements}
+            <p
+              class="text-sm text-accent-600 dark:text-accent-400 mb-4"
+              class:text-red-600={!is_team_count_valid}
+              class:dark:text-red-400={!is_team_count_valid}
+            >
+              {format_team_requirements} •
+              {selected_team_ids.size} selected
+            </p>
+          {/if}
+
+          {#if is_loading_teams}
+            <div class="text-center py-8 text-accent-500">Loading teams...</div>
+          {:else if team_options.length === 0}
+            <div
+              class="flex items-start gap-2 rounded-md border border-yellow-300 bg-yellow-50 px-3 py-2 text-yellow-900"
+            >
+              <svg
+                class="h-5 w-5 flex-shrink-0 text-yellow-600"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+                aria-hidden="true"
+                ><path
+                  fill-rule="evenodd"
+                  d="M8.257 3.099c.765-1.36 2.72-1.36 3.485 0l6.518 11.596c.75 1.336-.213 3.005-1.742 3.005H3.48c-1.53 0-2.492-1.669-1.743-3.005L8.257 3.1zM11 14a1 1 0 10-2 0 1 1 0 002 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V7a1 1 0 00-1-1z"
+                  clip-rule="evenodd"
+                /></svg
+              >
+              <div>
+                <p class="text-sm font-medium">
+                  No teams available for the selected organization.
+                </p>
+                <p class="text-sm text-yellow-800">
+                  Create teams under the organization to add them here.
+                </p>
+              </div>
+            </div>
+          {:else}
+            <div
+              class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 max-h-64 overflow-y-auto p-4 bg-accent-50 dark:bg-accent-900/30 rounded-lg"
+            >
+              {#each team_options as team_option}
+                <label
+                  class="flex items-center gap-2 p-2 rounded cursor-pointer hover:bg-accent-100 dark:hover:bg-accent-700 transition-colors"
+                >
+                  <input
+                    type="checkbox"
+                    checked={selected_team_ids.has(team_option.value)}
+                    on:change={() => handle_team_toggle(team_option.value)}
+                    class="w-4 h-4 text-primary-600 rounded border-accent-300"
+                  />
+                  <span class="text-sm text-accent-700 dark:text-accent-300">
+                    {team_option.label}
+                  </span>
+                </label>
+              {/each}
+            </div>
+          {/if}
+        </div>
+
+        <div class="border-t border-accent-200 dark:border-accent-700 pt-6">
+          <label class="flex items-center gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              bind:checked={
+                form_data.auto_generate_fixtures_and_assign_officials
+              }
+              class="w-5 h-5 text-primary-600 rounded border-accent-300"
+            />
+            <div>
+              <span
+                class="text-sm font-medium text-accent-900 dark:text-accent-100"
+              >
+                Auto-generate fixtures and assign officials
+              </span>
+              <p class="text-xs text-accent-500">
+                System will create fixtures and assign referees automatically
+              </p>
+            </div>
+          </label>
+        </div>
+      {:else if active_tab === "rules"}
+        <div class="space-y-6">
+          <div
+            class="border-b border-accent-200 dark:border-accent-700 pb-4 mb-4"
+          >
+            <h2
+              class="text-lg font-medium text-accent-900 dark:text-accent-100"
+            >
+              Sport Rules
+            </h2>
+            <p class="text-sm text-accent-600 dark:text-accent-400 mt-1">
+              Customize competition-specific rules inherited from the sport
             </p>
           </div>
-        </label>
-      </div>
-    </div>
+          {#if form_data.organization_id && selected_sport}
+            <SportRulesCustomizer
+              sport={selected_sport}
+              bind:rule_overrides={form_data.rule_overrides}
+            />
+          {:else}
+            <div
+              class="rounded-lg border border-accent-200 dark:border-accent-700 p-4"
+            >
+              <p class="text-sm text-accent-600 dark:text-accent-400">
+                Select an organization and sport to customize competition rules.
+              </p>
+            </div>
+          {/if}
+        </div>
+      {/if}
 
-    <div class="mt-8 flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
-      <button
-        type="button"
-        class="btn btn-outline w-full sm:w-auto"
-        disabled={is_saving}
-        on:click={handle_cancel}
-      >
-        Cancel
-      </button>
-      <button
-        type="submit"
-        class="btn btn-primary w-full sm:w-auto"
-        disabled={is_saving}
-      >
-        {#if is_saving}
-          <span class="flex items-center justify-center">
-            <span
-              class="animate-spin rounded-full h-4 w-4 border-2 border-white/20 border-t-white mr-2"
-            ></span>
-            Creating...
-          </span>
-        {:else}
-          Create Competition
-        {/if}
-      </button>
-    </div>
-  </form>
+      <div class="flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
+        <button
+          type="button"
+          class="btn btn-outline"
+          on:click={handle_cancel}
+          disabled={is_saving}
+        >
+          Cancel
+        </button>
+        <button type="submit" class="btn btn-primary" disabled={is_saving}>
+          {#if is_saving}
+            <span class="flex items-center justify-center">
+              <span
+                class="animate-spin rounded-full h-4 w-4 border-2 border-white/20 border-t-white mr-2"
+              ></span>
+              Saving...
+            </span>
+          {:else}
+            Create Competition
+          {/if}
+        </button>
+      </div>
+    </form>
+  </div>
 </div>
 
 <Toast

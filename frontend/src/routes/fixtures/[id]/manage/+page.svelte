@@ -8,6 +8,7 @@
     GamePeriod,
     QuickEventButton,
   } from "$lib/domain/entities/Fixture";
+  import type { FixtureLineup } from "$lib/domain/entities/FixtureLineup";
   import type { Team } from "$lib/domain/entities/Team";
   import type { Player } from "$lib/domain/entities/Player";
   import {
@@ -19,12 +20,14 @@
     get_period_display_name,
   } from "$lib/domain/entities/Fixture";
   import { get_fixture_use_cases } from "$lib/usecases/FixtureUseCases";
+  import { get_fixture_lineup_use_cases } from "$lib/usecases/FixtureLineupUseCases";
   import { get_team_use_cases } from "$lib/usecases/TeamUseCases";
   import { get_player_use_cases } from "$lib/usecases/PlayerUseCases";
   import Toast from "$lib/components/ui/Toast.svelte";
   import ConfirmationModal from "$lib/components/ui/ConfirmationModal.svelte";
 
   const fixture_use_cases = get_fixture_use_cases();
+  const fixture_lineup_use_cases = get_fixture_lineup_use_cases();
   const team_use_cases = get_team_use_cases();
   const player_use_cases = get_player_use_cases();
 
@@ -50,6 +53,8 @@
   let event_player_name: string = "";
   let event_description: string = "";
   let event_minute: number = 0;
+  let filtered_players: Player[] = [];
+  let show_player_dropdown: boolean = false;
 
   let toast_visible: boolean = false;
   let toast_message: string = "";
@@ -104,10 +109,16 @@
     is_loading = true;
     error_message = "";
 
-    const result = await fixture_use_cases.get_fixture(fixture_id);
+    const result = await fixture_use_cases.get_by_id(fixture_id);
 
     if (!result.success) {
-      error_message = result.error;
+      error_message = result.error_message || "Failed to load game";
+      is_loading = false;
+      return;
+    }
+
+    if (!result.data) {
+      error_message = "Game not found";
       is_loading = false;
       return;
     }
@@ -119,12 +130,12 @@
     }
 
     const [home_result, away_result] = await Promise.all([
-      team_use_cases.get_team(fixture.home_team_id),
-      team_use_cases.get_team(fixture.away_team_id),
+      team_use_cases.get_by_id(fixture.home_team_id),
+      team_use_cases.get_by_id(fixture.away_team_id),
     ]);
 
-    if (home_result.success) home_team = home_result.data;
-    if (away_result.success) away_team = away_result.data;
+    if (home_result.success && home_result.data) home_team = home_result.data;
+    if (away_result.success && away_result.data) away_team = away_result.data;
 
     const [home_players_result, away_players_result] = await Promise.all([
       player_use_cases.list_players_by_team(fixture.home_team_id),
@@ -191,6 +202,63 @@
     } else {
       start_clock();
     }
+  }
+
+  function is_submitted_lineup_status(
+    status: FixtureLineup["status"]
+  ): boolean {
+    return status === "submitted" || status === "locked";
+  }
+
+  function has_team_submitted_lineup(
+    lineups: FixtureLineup[],
+    team_id: string
+  ): boolean {
+    return lineups.some(
+      (lineup) =>
+        lineup.team_id === team_id && is_submitted_lineup_status(lineup.status)
+    );
+  }
+
+  async function ensure_lineups_submitted(): Promise<boolean> {
+    if (!fixture) return false;
+
+    const lineup_result =
+      await fixture_lineup_use_cases.get_lineups_for_fixture(fixture.id);
+
+    if (!lineup_result.success) {
+      show_toast(
+        `Unable to verify fixture lineups: ${lineup_result.error_message ?? "Unknown error"}`,
+        "error"
+      );
+      return false;
+    }
+
+    const lineups = lineup_result.data ?? [];
+    const home_lineup_ready = has_team_submitted_lineup(
+      lineups,
+      fixture.home_team_id
+    );
+    const away_lineup_ready = has_team_submitted_lineup(
+      lineups,
+      fixture.away_team_id
+    );
+
+    if (home_lineup_ready && away_lineup_ready) return true;
+
+    show_toast("Submit both team lineups before starting the game.", "info");
+    goto(`/fixture-lineups?fixture_id=${fixture.id}`);
+    return false;
+  }
+
+  async function handle_start_click(): Promise<boolean> {
+    if (!fixture) return false;
+
+    const lineups_ready = await ensure_lineups_submitted();
+    if (!lineups_ready) return false;
+
+    show_start_modal = true;
+    return true;
   }
 
   async function start_game(): Promise<void> {
@@ -376,7 +444,7 @@
   }
 
   function navigate_back(): void {
-    goto("/games");
+    goto("/fixtures");
   }
 
   function show_toast(
@@ -412,6 +480,54 @@
 
   function get_players_for_team(team: "home" | "away"): Player[] {
     return team === "home" ? home_players : away_players;
+  }
+
+  function format_player_option(player: Player): string {
+    const jersey = player.jersey_number ?? "?";
+    const name = `${player.first_name} ${player.last_name}`;
+    const position = player.position ? `• ${player.position}` : "";
+    return `#${jersey} ${name} ${position}`.trim();
+  }
+
+  function filter_players(search_text: string): void {
+    const search = search_text.toLowerCase().trim();
+
+    if (!search) {
+      filtered_players = get_players_for_team(selected_team_side);
+    } else {
+      const team_players = get_players_for_team(selected_team_side);
+      filtered_players = team_players.filter((player) => {
+        const jersey_str = (player.jersey_number ?? "").toString();
+        const full_name =
+          `${player.first_name} ${player.last_name}`.toLowerCase();
+        const position = (player.position ?? "").toLowerCase();
+
+        return (
+          jersey_str.includes(search) ||
+          full_name.includes(search) ||
+          position.includes(search)
+        );
+      });
+    }
+  }
+
+  function select_player(player: Player): void {
+    event_player_name = format_player_option(player);
+    show_player_dropdown = false;
+    filtered_players = [];
+  }
+
+  function handle_player_input(event: Event): void {
+    const target = event.target as HTMLInputElement;
+    event_player_name = target.value;
+    filter_players(event_player_name);
+    show_player_dropdown = true;
+  }
+
+  function handle_player_blur(): void {
+    setTimeout(() => {
+      show_player_dropdown = false;
+    }, 200);
   }
 </script>
 
@@ -515,7 +631,7 @@
             {#if fixture.status === "scheduled"}
               <button
                 class="px-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg text-sm font-medium"
-                on:click={() => (show_start_modal = true)}
+                on:click={handle_start_click}
               >
                 ▶️ Start
               </button>
@@ -934,26 +1050,50 @@
               class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
               >Player</label
             >
-            <select
-              id="event_player"
-              bind:value={event_player_name}
-              class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-            >
-              <option value="">Select player (optional)</option>
-              {#each get_players_for_team(selected_team_side) as player}
-                <option value="{player.first_name} {player.last_name}">
-                  #{player.jersey_number ?? "?"}
-                  {player.first_name}
-                  {player.last_name}
-                </option>
-              {/each}
-            </select>
-            <input
-              type="text"
-              bind:value={event_player_name}
-              placeholder="Or type player name"
-              class="mt-2 w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-            />
+            <div class="relative">
+              <input
+                id="event_player"
+                type="text"
+                bind:value={event_player_name}
+                on:input={handle_player_input}
+                on:focus={() => {
+                  filter_players(event_player_name);
+                  show_player_dropdown = true;
+                }}
+                on:blur={handle_player_blur}
+                placeholder="Type name, jersey #, or position"
+                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
+              />
+              {#if show_player_dropdown && filtered_players.length > 0}
+                <div
+                  class="absolute z-10 w-full mt-1 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-64 overflow-y-auto"
+                >
+                  {#each filtered_players as player}
+                    <button
+                      type="button"
+                      class="w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-600 last:border-b-0"
+                      on:click={() => select_player(player)}
+                    >
+                      <div class="flex items-center justify-between">
+                        <div>
+                          <div class="font-medium">
+                            #{player.jersey_number ?? "?"}
+                            {player.first_name}
+                            {player.last_name}
+                          </div>
+                          <div class="text-xs text-gray-500 dark:text-gray-400">
+                            {player.position || "No position"}
+                          </div>
+                        </div>
+                        <div class="text-xs text-gray-400 dark:text-gray-500">
+                          {player.status}
+                        </div>
+                      </div>
+                    </button>
+                  {/each}
+                </div>
+              {/if}
+            </div>
           </div>
         {/if}
 

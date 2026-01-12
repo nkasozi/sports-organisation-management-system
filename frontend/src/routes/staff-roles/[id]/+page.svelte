@@ -48,15 +48,21 @@
 
     loading_state = "loading";
 
-    const result = await use_cases.get_role(role_id);
+    const result = await use_cases.get_by_id(role_id);
 
     if (!result.success) {
       loading_state = "error";
-      error_message = result.error;
+      error_message = result.error_message || "Failed to load role";
       return;
     }
 
-    role = result.data;
+    role = result.data || null;
+    if (!role) {
+      loading_state = "error";
+      error_message = "Role not found";
+      return;
+    }
+
     name = role.name;
     code = role.code;
     description = role.description || "";
@@ -87,7 +93,7 @@
 
     is_submitting = true;
 
-    const result = await use_cases.update_role(role_id, {
+    const result = await use_cases.update(role_id, {
       name: name.trim(),
       code: code.trim(),
       description: description.trim() || undefined,
@@ -98,7 +104,7 @@
     });
 
     if (!result.success) {
-      show_toast(result.error, "error");
+      show_toast(result.error_message || "Failed to update role", "error");
       is_submitting = false;
       return;
     }

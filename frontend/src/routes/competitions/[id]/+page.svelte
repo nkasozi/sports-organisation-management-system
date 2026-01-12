@@ -8,6 +8,7 @@
   } from "$lib/domain/entities/Competition";
   import type { Organization } from "$lib/domain/entities/Organization";
   import type { Team } from "$lib/domain/entities/Team";
+  import type { Sport } from "$lib/domain/entities/Sport";
   import type { CompetitionTeam } from "$lib/domain/entities/CompetitionTeam";
   import type { CompetitionFormat } from "$lib/domain/entities/CompetitionFormat";
   import type { LoadingState } from "$lib/components/ui/LoadingStateWrapper.svelte";
@@ -17,11 +18,13 @@
   import { get_team_use_cases } from "$lib/usecases/TeamUseCases";
   import { get_competition_team_use_cases } from "$lib/usecases/CompetitionTeamUseCases";
   import { get_competition_format_use_cases } from "$lib/usecases/CompetitionFormatUseCases";
+  import { get_sport_by_id } from "$lib/services/sportService";
   import LoadingStateWrapper from "$lib/components/ui/LoadingStateWrapper.svelte";
   import FormField from "$lib/components/ui/FormField.svelte";
   import SelectField from "$lib/components/ui/SelectField.svelte";
   import EnumSelectField from "$lib/components/ui/EnumSelectField.svelte";
   import Toast from "$lib/components/ui/Toast.svelte";
+  import SportRulesCustomizer from "$lib/components/competition/SportRulesCustomizer.svelte";
 
   const competition_use_cases = get_competition_use_cases();
   const organization_use_cases = get_organization_use_cases();
@@ -36,11 +39,12 @@
   let competition_team_entries: CompetitionTeam[] = [];
   let available_teams: Team[] = [];
   let selected_format: CompetitionFormat | null = null;
+  let selected_sport: Sport | null = null;
   let form_data: UpdateCompetitionInput = {};
   let loading_state: LoadingState = "idle";
   let error_message: string = "";
   let is_saving: boolean = false;
-  let active_tab: "details" | "teams" | "settings" = "details";
+  let active_tab: "details" | "teams" | "rules" | "settings" = "details";
 
   let toast_visible: boolean = false;
   let toast_message: string = "";
@@ -67,17 +71,6 @@
     { value: "cancelled", label: "Cancelled" },
   ];
 
-  const sport_type_options = [
-    { value: "Football", label: "Football" },
-    { value: "Basketball", label: "Basketball" },
-    { value: "Cricket", label: "Cricket" },
-    { value: "Rugby", label: "Rugby" },
-    { value: "Tennis", label: "Tennis" },
-    { value: "Hockey", label: "Hockey" },
-    { value: "Volleyball", label: "Volleyball" },
-    { value: "Other", label: "Other" },
-  ];
-
   onMount(async () => {
     if (!competition_id) {
       loading_state = "error";
@@ -97,29 +90,39 @@
       comp_teams_result,
       formats_result,
     ] = await Promise.all([
-      competition_use_cases.get_competition(competition_id),
-      organization_use_cases.list_organizations(undefined, {
+      competition_use_cases.get_by_id(competition_id),
+      organization_use_cases.list(undefined, {
+        page: 1,
         page_size: 100,
       }),
-      team_use_cases.list_teams(undefined, { page_size: 100 }),
+      team_use_cases.list(undefined, { page: 1, page_size: 100 }),
       competition_team_use_cases.list_teams_in_competition(competition_id, {
+        page_number: 1,
         page_size: 100,
       }),
-      competition_format_use_cases.list_formats(undefined, {
+      competition_format_use_cases.list(undefined, {
+        page: 1,
         page_size: 100,
       }),
     ]);
 
     if (!competition_result.success) {
       loading_state = "error";
-      error_message = competition_result.error;
+      error_message =
+        competition_result.error_message || "Failed to load competition";
+      return;
+    }
+
+    if (!competition_result.data) {
+      loading_state = "error";
+      error_message = "Competition not found";
       return;
     }
 
     competition = competition_result.data;
-    organizations = org_result.success ? org_result.data.items : [];
+    organizations = org_result.success ? org_result.data : [];
     competition_formats = formats_result.success
-      ? formats_result.data.items.filter(
+      ? formats_result.data.filter(
           (format: CompetitionFormat) => format.status === "active"
         )
       : [];
@@ -127,11 +130,11 @@
     if (competition) {
       selected_format =
         competition_formats.find(
-          (format) => format.id === competition?.competition_format_id
+          (format) => format.id === competition!.competition_format_id
         ) || null;
     }
 
-    const all_teams = teams_result.success ? teams_result.data.items : [];
+    const all_teams = teams_result.success ? teams_result.data : [];
     competition_team_entries = comp_teams_result.success
       ? comp_teams_result.data.items
       : [];
@@ -144,7 +147,7 @@
     );
     available_teams = all_teams.filter(
       (team: Team) =>
-        team.organization_id === competition?.organization_id &&
+        team.organization_id === competition!.organization_id &&
         !team_ids_in_competition.has(team.id)
     );
 
@@ -152,7 +155,7 @@
       name: competition.name,
       description: competition.description,
       organization_id: competition.organization_id,
-      sport_type: competition.sport_type,
+      sport_id: competition.sport_id,
       competition_format_id: competition.competition_format_id,
       team_ids: competition.team_ids || [],
       auto_generate_fixtures_and_assign_officials:
@@ -167,29 +170,66 @@
       rule_overrides: competition.rule_overrides || {},
       status: competition.status,
     };
+
+    if (competition.sport_id) {
+      const sport_result = await get_sport_by_id(competition.sport_id);
+      if (sport_result.success && sport_result.data) {
+        selected_sport = sport_result.data;
+      }
+    }
+
     loading_state = "success";
   }
 
-  function handle_organization_change(
+  async function handle_organization_change(
     event: CustomEvent<{ value: string }>
-  ): void {
+  ): Promise<void> {
     form_data.organization_id = event.detail.value;
     available_teams = available_teams.filter(
       (team) => team.organization_id === form_data.organization_id
     );
+
+    form_data.rule_overrides = {};
+    selected_sport = null;
+    form_data.sport_id = "";
+
+    const selected_organization = organizations.find(
+      (org) => org.id === form_data.organization_id
+    );
+
+    if (selected_organization && selected_organization.sport_id) {
+      const sport_result = await get_sport_by_id(
+        selected_organization.sport_id
+      );
+      if (sport_result.success && sport_result.data) {
+        selected_sport = sport_result.data;
+        form_data.sport_id = sport_result.data.id;
+      }
+    }
+  }
+
+  function handle_format_change(event: CustomEvent<{ value: string }>): void {
+    form_data.competition_format_id = event.detail.value;
+    selected_format =
+      competition_formats.find(
+        (format) => format.id === form_data.competition_format_id
+      ) || null;
   }
 
   async function handle_submit(): Promise<void> {
     is_saving = true;
 
-    const result = await competition_use_cases.update_competition(
+    const result = await competition_use_cases.update(
       competition_id,
       form_data
     );
 
     if (!result.success) {
       is_saving = false;
-      show_toast(result.error, "error");
+      show_toast(
+        result.error_message || "Failed to update competition",
+        "error"
+      );
       return;
     }
 
@@ -210,7 +250,10 @@
     });
 
     if (!result.success) {
-      show_toast(`Failed to add team: ${result.error}`, "error");
+      show_toast(
+        `Failed to add team: ${result.error || "Unknown error"}`,
+        "error"
+      );
       return;
     }
 
@@ -230,7 +273,10 @@
       );
 
     if (!result.success) {
-      show_toast(`Failed to remove team: ${result.error}`, "error");
+      show_toast(
+        `Failed to remove team: ${result.error || "Unknown error"}`,
+        "error"
+      );
       return;
     }
 
@@ -278,42 +324,29 @@
 </svelte:head>
 
 <div class="max-w-4xl mx-auto space-y-6">
-  <div class="flex items-center gap-4">
-    <button
-      type="button"
-      class="p-2 rounded-lg text-accent-500 hover:bg-accent-100 dark:hover:bg-accent-700"
-      on:click={handle_cancel}
-      aria-label="Go back"
-    >
-      <svg
-        class="h-5 w-5"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
+  <div class="flex flex-col w-full gap-0">
+    <div class="flex items-center gap-4 w-full mb-0">
+      <button
+        type="button"
+        class="btn btn-outline"
+        on:click={handle_cancel}
+        aria-label="Go back"
       >
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          d="M10 19l-7-7m0 0l7-7m-7 7h18"
-        />
-      </svg>
-    </button>
-    <div class="flex-1">
-      <h1 class="text-2xl font-bold text-accent-900 dark:text-accent-100">
+        ← Back
+      </button>
+      <h1
+        class="text-2xl sm:text-2xl font-bold text-accent-900 dark:text-accent-100"
+      >
         {competition?.name || "Edit Competition"}
       </h1>
-      <p class="text-sm text-accent-600 dark:text-accent-400">
-        Manage competition details, teams, and settings
-      </p>
+      {#if competition}
+        <span class={get_status_badge_classes(competition.status)}>
+          {competition.status}
+        </span>
+      {/if}
     </div>
-    {#if competition}
-      <span class={get_status_badge_classes(competition.status)}>
-        {competition.status}
-      </span>
-    {/if}
   </div>
-
+  <div class="border-b border-accent-200 dark:border-accent-700 my-6"></div>
   <LoadingStateWrapper
     state={loading_state}
     {error_message}
@@ -343,6 +376,16 @@
             on:click={() => (active_tab = "teams")}
           >
             Teams ({teams_in_competition.length}/{form_data.max_teams || 0})
+          </button>
+          <button
+            type="button"
+            class="px-6 py-3 text-sm font-medium border-b-2 whitespace-nowrap {active_tab ===
+            'rules'
+              ? 'border-primary-500 text-primary-600 dark:text-primary-400'
+              : 'border-transparent text-accent-500 hover:text-accent-700 hover:border-accent-300 dark:text-accent-400 dark:hover:text-accent-200'}"
+            on:click={() => (active_tab = "rules")}
+          >
+            Rules
           </button>
           <button
             type="button"
@@ -379,8 +422,33 @@
                   options={organization_options}
                   placeholder="Select an organization..."
                   required={true}
+                  disabled={organization_options.length === 0}
                   on:change={handle_organization_change}
                 />
+
+                {#if organization_options.length === 0}
+                  <div
+                    class="md:col-span-2 flex items-start gap-2 rounded-md border border-yellow-300 bg-yellow-50 px-3 py-2 text-yellow-900"
+                  >
+                    <svg
+                      class="h-5 w-5 flex-shrink-0 text-yellow-600"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                      aria-hidden="true"
+                      ><path
+                        fill-rule="evenodd"
+                        d="M8.257 3.099c.765-1.36 2.72-1.36 3.485 0l6.518 11.596c.75 1.336-.213 3.005-1.742 3.005H3.48c-1.53 0-2.492-1.669-1.743-3.005L8.257 3.1zM11 14a1 1 0 10-2 0 1 1 0 002 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V7a1 1 0 00-1-1z"
+                        clip-rule="evenodd"
+                      /></svg
+                    >
+                    <div>
+                      <p class="text-sm font-medium">No organizations found.</p>
+                      <p class="text-sm text-yellow-800">
+                        Create an organization to manage competitions.
+                      </p>
+                    </div>
+                  </div>
+                {/if}
 
                 <SelectField
                   label="Competition Format"
@@ -389,15 +457,14 @@
                   options={competition_format_options}
                   placeholder="Select a format..."
                   required={true}
-                  disabled={true}
-                />
-
-                <EnumSelectField
-                  label="Sport Type"
-                  name="sport_type"
-                  bind:value={form_data.sport_type}
-                  options={sport_type_options}
-                  required={true}
+                  disabled={!!(
+                    competition?.competition_format_id &&
+                    competition.competition_format_id.trim() &&
+                    competition_format_options.some(
+                      (opt) => opt.value === competition?.competition_format_id
+                    )
+                  )}
+                  on:change={handle_format_change}
                 />
 
                 <EnumSelectField
@@ -406,7 +473,9 @@
                   bind:value={form_data.status}
                   options={status_options}
                 />
+              </div>
 
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <FormField
                   label="Start Date"
                   name="start_date"
@@ -602,6 +671,27 @@
                   {/each}
                 </div>
               {/if}
+            </div>
+          </div>
+        {:else if active_tab === "rules"}
+          <div class="space-y-6">
+            <div
+              class="border-b border-accent-200 dark:border-accent-700 pb-4 mb-4"
+            >
+              <h2
+                class="text-lg font-medium text-accent-900 dark:text-accent-100"
+              >
+                Sport Rules
+              </h2>
+              <p class="text-sm text-accent-600 dark:text-accent-400 mt-1">
+                Customize competition-specific rules inherited from the sport
+              </p>
+            </div>
+            <div class="">
+              <SportRulesCustomizer
+                sport={selected_sport}
+                bind:rule_overrides={form_data.rule_overrides}
+              />
             </div>
           </div>
         {:else if active_tab === "settings"}

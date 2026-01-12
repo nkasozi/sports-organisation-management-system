@@ -52,7 +52,7 @@
 
     is_submitting = true;
 
-    const result = await use_cases.create_role({
+    const result = await use_cases.create({
       name: name.trim(),
       code: code.trim(),
       description: description.trim() || "",
@@ -68,7 +68,10 @@
     });
 
     if (!result.success) {
-      show_toast(result.error, "error");
+      show_toast(
+        result.error_message || "Failed to create staff role",
+        "error"
+      );
       is_submitting = false;
       return;
     }

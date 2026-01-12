@@ -113,7 +113,7 @@
     </a>
 
     <a
-      href="/games"
+      href="/fixtures"
       class="bg-white dark:bg-accent-800 rounded-lg shadow-sm border border-accent-200 dark:border-accent-700 p-6 hover:shadow-md transition-shadow"
     >
       <div

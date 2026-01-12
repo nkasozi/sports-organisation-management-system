@@ -275,36 +275,20 @@
     {error_message}
     loading_text="Loading sport..."
   >
-    <div class="flex items-center gap-4">
+    <div class="flex items-center gap-4 w-full mb-0">
       <button
         type="button"
-        class="p-2 rounded-lg text-accent-500 hover:bg-accent-100 dark:hover:bg-accent-700"
+        class="btn btn-outline"
         on:click={handle_cancel}
         aria-label="Go back"
       >
-        <svg
-          class="h-5 w-5"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M10 19l-7-7m0 0l7-7m-7 7h18"
-          />
-        </svg>
+        ← Back
       </button>
-      <div class="flex-1">
-        <h1 class="text-2xl font-bold text-accent-900 dark:text-accent-100">
-          Edit Sport
-        </h1>
-        <p class="text-sm text-accent-600 dark:text-accent-400">
-          {sport?.name || "Loading..."}
-        </p>
-      </div>
+      <h1 class="text-2xl font-bold text-accent-900 dark:text-accent-100">
+        Edit Sport
+      </h1>
     </div>
+    <div class="border-b border-accent-200 dark:border-accent-700 my-6"></div>
 
     <div
       class="bg-white dark:bg-accent-800 rounded-lg shadow-sm border border-accent-200 dark:border-accent-700 overflow-hidden"

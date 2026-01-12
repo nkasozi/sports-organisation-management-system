@@ -67,18 +67,18 @@
   async function load_competitions(): Promise<void> {
     loading_state = "loading";
 
-    const result = await competition_use_cases.list_competitions(
+    const result = await competition_use_cases.list(
       {},
-      { page_size: 100 }
+      { page: 1, page_size: 100 }
     );
 
     if (!result.success) {
       loading_state = "error";
-      error_message = result.error;
+      error_message = result.error_message || "Failed to load competitions";
       return;
     }
 
-    competitions = result.data.items;
+    competitions = result.data;
     loading_state = "success";
 
     if (competitions.length > 0) {
@@ -92,17 +92,17 @@
 
     fixtures_loading = true;
 
-    const comp_result = await competition_use_cases.get_competition(
+    const comp_result = await competition_use_cases.get_by_id(
       selected_competition_id
     );
-    if (comp_result.success) {
+    if (comp_result.success && comp_result.data) {
       selected_competition = comp_result.data;
 
       if (selected_competition.competition_format_id) {
-        const format_result = await format_use_cases.get_format(
+        const format_result = await format_use_cases.get_by_id(
           selected_competition.competition_format_id
         );
-        if (format_result.success) {
+        if (format_result.success && format_result.data) {
           competition_format = format_result.data;
         }
       }
@@ -110,19 +110,20 @@
 
     const comp_teams_result =
       await competition_team_use_cases.list_teams_in_competition(
-        selected_competition_id
+        selected_competition_id,
+        { page_number: 1, page_size: 100 }
       );
     if (comp_teams_result.success) {
       const team_ids = comp_teams_result.data.items.map(
         (ct: { team_id: string }) => ct.team_id
       );
       const teams_promises = team_ids.map((id: string) =>
-        team_use_cases.get_team(id)
+        team_use_cases.get_by_id(id)
       );
       const teams_results = await Promise.all(teams_promises);
       teams = [];
       for (const result of teams_results) {
-        if (result.success) {
+        if (result.success && result.data) {
           teams.push(result.data);
         }
       }

@@ -57,11 +57,17 @@
   async function load_organization(): Promise<void> {
     loading_state = "loading";
 
-    const result = await use_cases.get_organization(organization_id);
+    const result = await use_cases.get_by_id(organization_id);
 
     if (!result.success) {
       loading_state = "error";
-      error_message = result.error;
+      error_message = result.error_message || "Failed to load organization";
+      return;
+    }
+
+    if (!result.data) {
+      loading_state = "error";
+      error_message = "Organization not found";
       return;
     }
 
@@ -69,7 +75,7 @@
     form_data = {
       name: organization.name,
       description: organization.description,
-      sport_type: organization.sport_type,
+      sport_id: organization.sport_id,
       founded_date: organization.founded_date,
       contact_email: organization.contact_email,
       contact_phone: organization.contact_phone,
@@ -84,14 +90,14 @@
     errors = {};
     is_saving = true;
 
-    const result = await use_cases.update_organization(
-      organization_id,
-      form_data
-    );
+    const result = await use_cases.update(organization_id, form_data);
 
     if (!result.success) {
       is_saving = false;
-      show_toast(result.error, "error");
+      show_toast(
+        result.error_message || "Failed to update organization",
+        "error"
+      );
       return;
     }
 
@@ -176,12 +182,12 @@
           </div>
 
           <EnumSelectField
-            label="Sport Type"
-            name="sport_type"
-            bind:value={form_data.sport_type}
+            label="Sport"
+            name="sport_id"
+            bind:value={form_data.sport_id}
             options={sport_type_options}
             required={true}
-            error={errors.sport_type || ""}
+            error={errors.sport_id || ""}
           />
 
           <EnumSelectField

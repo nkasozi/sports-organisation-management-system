@@ -23,17 +23,17 @@
   onMount(async () => {
     const [org_result, comp_result, team_result, player_result] =
       await Promise.all([
-        organization_use_cases.list_organizations(undefined, { page_size: 1 }),
-        competition_use_cases.list_competitions(undefined, { page_size: 1 }),
-        team_use_cases.list_teams(undefined, { page_size: 1 }),
-        player_use_cases.list_players(undefined, { page_size: 1 }),
+        organization_use_cases.list(undefined, { page: 1, page_size: 1 }),
+        competition_use_cases.list(undefined, { page: 1, page_size: 1 }),
+        team_use_cases.list(undefined, { page: 1, page_size: 1 }),
+        player_use_cases.list(undefined, { page: 1, page_size: 1 }),
       ]);
 
     stats = {
-      organizations: org_result.success ? org_result.data.total_count : 0,
-      competitions: comp_result.success ? comp_result.data.total_count : 0,
-      teams: team_result.success ? team_result.data.total_count : 0,
-      players: player_result.success ? player_result.data.total_count : 0,
+      organizations: org_result.success ? org_result.total_count : 0,
+      competitions: comp_result.success ? comp_result.total_count : 0,
+      teams: team_result.success ? team_result.total_count : 0,
+      players: player_result.success ? player_result.total_count : 0,
     };
     loading = false;
   });

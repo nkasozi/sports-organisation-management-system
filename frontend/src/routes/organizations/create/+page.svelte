@@ -43,11 +43,14 @@
     errors = {};
     is_saving = true;
 
-    const result = await use_cases.create_organization(form_data);
+    const result = await use_cases.create(form_data);
 
     if (!result.success) {
       is_saving = false;
-      show_toast(result.error, "error");
+      show_toast(
+        result.error_message || "Failed to create organization",
+        "error"
+      );
       return;
     }
 
@@ -127,12 +130,12 @@
         </div>
 
         <EnumSelectField
-          label="Sport Type"
-          name="sport_type"
-          bind:value={form_data.sport_type}
+          label="Sport"
+          name="sport_id"
+          bind:value={form_data.sport_id}
           options={sport_type_options}
           required={true}
-          error={errors.sport_type || ""}
+          error={errors.sport_id || ""}
         />
 
         <EnumSelectField

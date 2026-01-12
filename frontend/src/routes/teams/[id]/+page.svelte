@@ -76,8 +76,9 @@
 
     const [team_result, org_result, staff_result, roles_result] =
       await Promise.all([
-        team_use_cases.get_team_by_id(team_id),
-        organization_use_cases.list_organizations(undefined, {
+        team_use_cases.get_by_id(team_id),
+        organization_use_cases.list(undefined, {
+          page: 1,
           page_size: 100,
         }),
         team_staff_use_cases.list_staff_by_team(team_id),
@@ -86,13 +87,19 @@
 
     if (!team_result.success) {
       loading_state = "error";
-      error_message = team_result.error;
+      error_message = team_result.error_message || "Failed to load team";
+      return;
+    }
+
+    if (!team_result.data) {
+      loading_state = "error";
+      error_message = "Team not found";
       return;
     }
 
     const loaded_team = team_result.data;
     team = loaded_team;
-    organizations = org_result.success ? org_result.data.items : [];
+    organizations = org_result.success ? org_result.data : [];
     staff_members = staff_result.success ? staff_result.data.items : [];
     available_staff_roles = roles_result.success ? roles_result.data : [];
 
@@ -157,11 +164,11 @@
 
     is_submitting = true;
 
-    const result = await team_use_cases.update_team(team.id, form_data);
+    const result = await team_use_cases.update(team.id, form_data);
 
     if (!result.success) {
       is_submitting = false;
-      show_toast(result.error, "error");
+      show_toast(result.error_message || "Failed to update team", "error");
       return;
     }
 
@@ -208,19 +215,19 @@
       status: event.detail.staff.status,
     };
 
-    const result = await team_staff_use_cases.create_team_staff(staff_input);
+    const result = await team_staff_use_cases.create(staff_input);
 
-    if (result.success) {
+    if (result.success && result.data) {
       const temp_id = event.detail.staff.id;
       staff_members = staff_members.map((s) =>
-        s.id === temp_id ? result.data : s
+        s.id === temp_id ? result.data! : s
       );
       show_toast("Staff member added", "success");
     } else {
       staff_members = staff_members.filter(
         (s) => s.id !== event.detail.staff.id
       );
-      show_toast(result.error, "error");
+      show_toast(result.error_message || "Failed to add staff member", "error");
     }
   }
 
@@ -231,7 +238,7 @@
 
     if (staff_id.startsWith("temp-")) return;
 
-    const result = await team_staff_use_cases.delete_team_staff(staff_id);
+    const result = await team_staff_use_cases.delete(staff_id);
 
     if (result.success) {
       show_toast("Staff member removed", "success");
@@ -242,7 +249,10 @@
       if (staff_result.success) {
         staff_members = staff_result.data.items;
       }
-      show_toast(result.error, "error");
+      show_toast(
+        result.error_message || "Failed to remove staff member",
+        "error"
+      );
     }
   }
 
@@ -323,9 +333,34 @@
           options={organization_options}
           placeholder="Select organization"
           required={true}
+          disabled={organization_options.length === 0}
           error={validation_errors.get("organization_id")}
           on:change={handle_organization_change}
         />
+
+        {#if organization_options.length === 0}
+          <div
+            class="md:col-span-2 flex items-start gap-2 rounded-md border border-yellow-300 bg-yellow-50 px-3 py-2 text-yellow-900"
+          >
+            <svg
+              class="h-5 w-5 flex-shrink-0 text-yellow-600"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              aria-hidden="true"
+              ><path
+                fill-rule="evenodd"
+                d="M8.257 3.099c.765-1.36 2.72-1.36 3.485 0l6.518 11.596c.75 1.336-.213 3.005-1.742 3.005H3.48c-1.53 0-2.492-1.669-1.743-3.005L8.257 3.1zM11 14a1 1 0 10-2 0 1 1 0 002 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V7a1 1 0 00-1-1z"
+                clip-rule="evenodd"
+              /></svg
+            >
+            <div>
+              <p class="text-sm font-medium">No organizations found.</p>
+              <p class="text-sm text-yellow-800">
+                Create an organization to assign this team to.
+              </p>
+            </div>
+          </div>
+        {/if}
 
         <EnumSelectField
           label="Sport Type"

@@ -246,9 +246,6 @@
       <h1 class="text-2xl font-bold text-accent-900 dark:text-accent-100">
         Create Sport
       </h1>
-      <p class="text-sm text-accent-600 dark:text-accent-400">
-        Define a new sport with its rules and requirements
-      </p>
     </div>
     <div class="hidden sm:flex gap-2">
       <button

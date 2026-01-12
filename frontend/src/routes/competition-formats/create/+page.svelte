@@ -96,11 +96,11 @@
 
     is_submitting = true;
 
-    const result = await use_cases.create_format(form_data);
+    const result = await use_cases.create(form_data);
 
     if (!result.success) {
       is_submitting = false;
-      show_toast(result.error, "error");
+      show_toast(result.error_message || "Failed to create format", "error");
       return;
     }
 

@@ -5,7 +5,7 @@
     update_theme_colors,
     reset_theme_to_default,
   } from "$lib/stores/theme";
-  import { branding_store } from "$lib/stores/branding";
+  import { branding_store, type SocialMediaLink } from "$lib/stores/branding";
   import Toast from "$lib/components/ui/Toast.svelte";
 
   let toast_visible: boolean = false;
@@ -18,10 +18,23 @@
   let selected_secondary_color: string = "red";
   let notifications_enabled: boolean = true;
   let email_notifications: boolean = true;
+  let social_media_links: SocialMediaLink[] = [];
+
+  const social_media_options = [
+    { value: "twitter", label: "Twitter", icon: "twitter" },
+    { value: "facebook", label: "Facebook", icon: "facebook" },
+    { value: "instagram", label: "Instagram", icon: "instagram" },
+    { value: "linkedin", label: "LinkedIn", icon: "linkedin" },
+    { value: "github", label: "GitHub", icon: "github" },
+    { value: "youtube", label: "YouTube", icon: "youtube" },
+    { value: "tiktok", label: "TikTok", icon: "tiktok" },
+    { value: "discord", label: "Discord", icon: "discord" },
+  ];
 
   $: {
     organization_name = $branding_store.organization_name;
     organization_logo_url = $branding_store.organization_logo_url;
+    social_media_links = $branding_store.social_media_links || [];
   }
 
   const color_options = [
@@ -87,8 +100,58 @@
     branding_store.set({
       organization_name: organization_name,
       organization_logo_url: organization_logo_url,
+      social_media_links: social_media_links,
     });
     show_toast("Organization settings saved", "success");
+  }
+
+  function add_social_media_link(): void {
+    const available_platforms = social_media_options.filter(
+      (opt) => !social_media_links.some((link) => link.platform === opt.value)
+    );
+    if (available_platforms.length === 0) {
+      show_toast("All social media platforms are already added", "info");
+      return;
+    }
+    social_media_links = [
+      ...social_media_links,
+      { platform: available_platforms[0].value, url: "" },
+    ];
+  }
+
+  function remove_social_media_link(platform: string): void {
+    social_media_links = social_media_links.filter(
+      (link) => link.platform !== platform
+    );
+  }
+
+  function update_social_media_url(platform: string, url: string): void {
+    social_media_links = social_media_links.map((link) =>
+      link.platform === platform ? { ...link, url } : link
+    );
+  }
+
+  function update_social_media_platform(
+    old_platform: string,
+    new_platform: string
+  ): void {
+    if (
+      social_media_links.some((link) => link.platform === new_platform) &&
+      new_platform !== old_platform
+    ) {
+      show_toast("This platform is already added", "error");
+      return;
+    }
+    social_media_links = social_media_links.map((link) =>
+      link.platform === old_platform
+        ? { ...link, platform: new_platform }
+        : link
+    );
+  }
+
+  function save_social_media_settings(): void {
+    branding_store.update_social_media_links(social_media_links);
+    show_toast("Social media settings saved", "success");
   }
 
   function show_toast(
@@ -298,6 +361,157 @@
           Reset to Defaults
         </button>
       </div>
+    </div>
+  </div>
+
+  <div
+    class="bg-white dark:bg-accent-800 rounded-lg shadow-sm border border-accent-200 dark:border-accent-700"
+  >
+    <div class="p-6 border-b border-accent-200 dark:border-accent-700">
+      <h2 class="text-lg font-semibold text-accent-900 dark:text-accent-100">
+        Social Media Links
+      </h2>
+      <p class="text-sm text-accent-500 dark:text-accent-400 mt-1">
+        Configure social media platforms displayed in the footer
+      </p>
+    </div>
+
+    <div class="p-6 space-y-6">
+      {#if social_media_links.length === 0}
+        <div class="text-center py-8">
+          <p class="text-accent-600 dark:text-accent-400 mb-4">
+            No social media links configured yet
+          </p>
+          <button
+            type="button"
+            class="btn btn-secondary"
+            on:click={add_social_media_link}
+          >
+            <svg
+              class="h-4 w-4 mr-2"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+              />
+            </svg>
+            Add Social Media Link
+          </button>
+        </div>
+      {:else}
+        <div class="space-y-4">
+          {#each social_media_links as link, index (link.platform)}
+            <div
+              class="flex flex-col sm:flex-row gap-3 p-4 rounded-lg bg-accent-50 dark:bg-accent-700"
+            >
+              <div class="flex-1 min-w-0">
+                <label
+                  for="platform_{index}"
+                  class="block text-sm font-medium text-accent-700 dark:text-accent-300 mb-2"
+                >
+                  Platform
+                </label>
+                <select
+                  id="platform_{index}"
+                  class="input w-full"
+                  value={link.platform}
+                  on:change={(e) =>
+                    update_social_media_platform(
+                      link.platform,
+                      e.currentTarget.value
+                    )}
+                >
+                  {#each social_media_options as option}
+                    <option value={option.value}>
+                      {option.label}
+                    </option>
+                  {/each}
+                </select>
+              </div>
+
+              <div class="flex-1 min-w-0">
+                <label
+                  for="url_{index}"
+                  class="block text-sm font-medium text-accent-700 dark:text-accent-300 mb-2"
+                >
+                  URL
+                </label>
+                <input
+                  id="url_{index}"
+                  type="url"
+                  class="input w-full"
+                  value={link.url}
+                  placeholder="https://..."
+                  on:input={(e) =>
+                    update_social_media_url(
+                      link.platform,
+                      e.currentTarget.value
+                    )}
+                />
+              </div>
+
+              <div class="flex items-end">
+                <button
+                  type="button"
+                  class="btn btn-outline text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 px-3"
+                  on:click={() => remove_social_media_link(link.platform)}
+                  aria-label="Remove {link.platform}"
+                >
+                  <svg
+                    class="h-4 w-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                    />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          {/each}
+        </div>
+
+        <button
+          type="button"
+          class="btn btn-secondary"
+          on:click={add_social_media_link}
+        >
+          <svg
+            class="h-4 w-4 mr-2"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+            />
+          </svg>
+          Add Another Link
+        </button>
+
+        <div class="pt-4 border-t border-accent-200 dark:border-accent-700">
+          <button
+            type="button"
+            class="btn btn-primary"
+            on:click={save_social_media_settings}
+          >
+            Save Social Media Settings
+          </button>
+        </div>
+      {/if}
     </div>
   </div>
 

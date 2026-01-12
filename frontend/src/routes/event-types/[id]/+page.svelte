@@ -70,15 +70,21 @@
       return;
     }
 
-    const result = await use_cases.get_event_type(event_type_id);
+    const result = await use_cases.get_by_id(event_type_id);
 
     if (!result.success) {
       loading_state = "error";
-      error_message = result.error;
+      error_message = result.error_message || "Failed to load event type";
       return;
     }
 
-    event_type = result.data;
+    event_type = result.data || null;
+    if (!event_type) {
+      loading_state = "error";
+      error_message = "Event type not found";
+      return;
+    }
+
     form_data = {
       name: event_type.name,
       code: event_type.code,
@@ -117,11 +123,14 @@
 
     is_submitting = true;
 
-    const result = await use_cases.update_event_type(event_type.id, form_data);
+    const result = await use_cases.update(event_type.id, form_data);
 
     if (!result.success) {
       is_submitting = false;
-      show_toast(result.error, "error");
+      show_toast(
+        result.error_message || "Failed to update event type",
+        "error"
+      );
       return;
     }
 

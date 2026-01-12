@@ -41,15 +41,21 @@
       return;
     }
 
-    const result = await use_cases.get_role(role_id);
+    const result = await use_cases.get_by_id(role_id);
 
     if (!result.success) {
       loading_state = "error";
-      error_message = result.error;
+      error_message = result.error_message || "Failed to load role";
       return;
     }
 
-    role = result.data;
+    role = result.data || null;
+    if (!role) {
+      loading_state = "error";
+      error_message = "Role not found";
+      return;
+    }
+
     form_data = {
       name: role.name,
       code: role.code,
@@ -82,11 +88,11 @@
 
     is_submitting = true;
 
-    const result = await use_cases.update_role(role.id, form_data);
+    const result = await use_cases.update(role.id, form_data);
 
     if (!result.success) {
       is_submitting = false;
-      show_toast(result.error, "error");
+      show_toast(result.error_message || "Failed to update role", "error");
       return;
     }
 
