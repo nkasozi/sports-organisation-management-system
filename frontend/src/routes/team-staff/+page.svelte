@@ -1,7 +1,9 @@
 <script lang="ts">
   import EntityCrudWrapper from "$lib/components/EntityCrudWrapper.svelte";
-
-  const entity_type = "teamstaff";
 </script>
 
-<EntityCrudWrapper {entity_type} />
+<svelte:head>
+  <title>Team Staff - Sports Management</title>
+</svelte:head>
+
+<EntityCrudWrapper entity_type="teamstaff" />
