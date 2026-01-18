@@ -5,17 +5,11 @@
   import type {
     Official,
     UpdateOfficialInput,
-    OfficialQualification,
   } from "$lib/domain/entities/Official";
   import type { Organization } from "$lib/domain/entities/Organization";
-  import type { GameOfficialRole } from "$lib/domain/entities/GameOfficialRole";
   import type { LoadingState } from "$lib/components/ui/LoadingStateWrapper.svelte";
   import type { SelectOption } from "$lib/components/ui/SelectField.svelte";
-  import {
-    get_official_full_name,
-    CERTIFICATION_LEVEL_OPTIONS,
-  } from "$lib/domain/entities/Official";
-  import { get_default_football_official_roles_with_ids } from "$lib/domain/entities/GameOfficialRole";
+  import { get_official_full_name } from "$lib/domain/entities/Official";
   import { get_official_use_cases } from "$lib/usecases/OfficialUseCases";
   import { get_organization_use_cases } from "$lib/usecases/OrganizationUseCases";
   import LoadingStateWrapper from "$lib/components/ui/LoadingStateWrapper.svelte";
@@ -23,7 +17,7 @@
   import SelectField from "$lib/components/ui/SelectField.svelte";
   import EnumSelectField from "$lib/components/ui/EnumSelectField.svelte";
   import ImageUpload from "$lib/components/ui/ImageUpload.svelte";
-  import QualificationForm from "$lib/components/ui/QualificationForm.svelte";
+  import QualificationManager from "$lib/components/ui/QualificationManager.svelte";
   import Toast from "$lib/components/ui/Toast.svelte";
   import { DEFAULT_OFFICIAL_AVATAR } from "$lib/domain/entities/Official";
   import { build_country_select_options } from "$lib/core/countries";
@@ -33,7 +27,6 @@
 
   let official: Official | null = null;
   let organizations: Organization[] = [];
-  let available_roles: GameOfficialRole[] = [];
   let form_data: UpdateOfficialInput = {};
   let loading_state: LoadingState = "idle";
   let error_message: string = "";
@@ -55,21 +48,18 @@
   const status_options = [
     { value: "active", label: "Active" },
     { value: "inactive", label: "Inactive" },
-    { value: "suspended", label: "Suspended" },
-    { value: "retired", label: "Retired" },
   ];
 
   const country_options = build_country_select_options();
 
   function handle_nationality_change(
-    event: CustomEvent<{ value: string }>
+    event: CustomEvent<{ value: string }>,
   ): boolean {
     form_data.nationality = event.detail.value;
     return true;
   }
 
   onMount(async () => {
-    available_roles = get_default_football_official_roles_with_ids();
     if (!official_id) {
       loading_state = "error";
       error_message = "Official ID is required";
@@ -109,7 +99,6 @@
       phone: official.phone,
       date_of_birth: official.date_of_birth,
       organization_id: official.organization_id,
-      qualifications: [...official.qualifications],
       primary_role_id: official.primary_role_id,
       years_of_experience: official.years_of_experience,
       nationality: official.nationality,
@@ -122,17 +111,9 @@
   }
 
   function handle_organization_change(
-    event: CustomEvent<{ value: string }>
+    event: CustomEvent<{ value: string }>,
   ): void {
     form_data.organization_id = event.detail.value;
-  }
-
-  function handle_qualifications_change(
-    event: CustomEvent<OfficialQualification[]>
-  ): void {
-    form_data.qualifications = event.detail;
-    const primary_qual = form_data.qualifications?.find((q) => q.is_primary);
-    form_data.primary_role_id = primary_qual?.role_id || null;
   }
 
   async function handle_submit(): Promise<void> {
@@ -353,11 +334,7 @@
           </h2>
         </div>
 
-        <QualificationForm
-          qualifications={form_data.qualifications || []}
-          {available_roles}
-          on:change={handle_qualifications_change}
-        />
+        <QualificationManager holder_type="official" holder_id={official_id} />
 
         <div
           class="border-b border-accent-200 dark:border-accent-700 pb-4 pt-4"

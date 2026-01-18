@@ -155,7 +155,6 @@
       name: competition.name,
       description: competition.description,
       organization_id: competition.organization_id,
-      sport_id: competition.sport_id,
       competition_format_id: competition.competition_format_id,
       team_ids: competition.team_ids || [],
       auto_generate_fixtures_and_assign_officials:
@@ -171,8 +170,12 @@
       status: competition.status,
     };
 
-    if (competition.sport_id) {
-      const sport_result = await get_sport_by_id(competition.sport_id);
+    const selected_organization = organizations.find(
+      (org) => org.id === competition!.organization_id
+    );
+
+    if (selected_organization && selected_organization.sport_id) {
+      const sport_result = await get_sport_by_id(selected_organization.sport_id);
       if (sport_result.success && sport_result.data) {
         selected_sport = sport_result.data;
       }
@@ -191,7 +194,6 @@
 
     form_data.rule_overrides = {};
     selected_sport = null;
-    form_data.sport_id = "";
 
     const selected_organization = organizations.find(
       (org) => org.id === form_data.organization_id
@@ -203,7 +205,6 @@
       );
       if (sport_result.success && sport_result.data) {
         selected_sport = sport_result.data;
-        form_data.sport_id = sport_result.data.id;
       }
     }
   }

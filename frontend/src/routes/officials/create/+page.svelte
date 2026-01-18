@@ -2,24 +2,15 @@
   import { onMount } from "svelte";
   import { goto } from "$app/navigation";
   import type { Organization } from "$lib/domain/entities/Organization";
-  import type {
-    CreateOfficialInput,
-    OfficialQualification,
-  } from "$lib/domain/entities/Official";
-  import type { GameOfficialRole } from "$lib/domain/entities/GameOfficialRole";
+  import type { CreateOfficialInput } from "$lib/domain/entities/Official";
   import type { SelectOption } from "$lib/components/ui/SelectField.svelte";
-  import {
-    create_empty_official_input,
-    CERTIFICATION_LEVEL_OPTIONS,
-  } from "$lib/domain/entities/Official";
-  import { get_default_football_official_roles_with_ids } from "$lib/domain/entities/GameOfficialRole";
+  import { create_empty_official_input } from "$lib/domain/entities/Official";
   import { get_official_use_cases } from "$lib/usecases/OfficialUseCases";
   import { get_organization_use_cases } from "$lib/usecases/OrganizationUseCases";
   import FormField from "$lib/components/ui/FormField.svelte";
   import SelectField from "$lib/components/ui/SelectField.svelte";
   import EnumSelectField from "$lib/components/ui/EnumSelectField.svelte";
   import ImageUpload from "$lib/components/ui/ImageUpload.svelte";
-  import QualificationForm from "$lib/components/ui/QualificationForm.svelte";
   import Toast from "$lib/components/ui/Toast.svelte";
   import { DEFAULT_OFFICIAL_AVATAR } from "$lib/domain/entities/Official";
   import { build_country_select_options } from "$lib/core/countries";
@@ -29,7 +20,6 @@
 
   let form_data: CreateOfficialInput = create_empty_official_input();
   let organizations: Organization[] = [];
-  let available_roles: GameOfficialRole[] = [];
   let organization_options: SelectOption[] = [];
   let is_loading_organizations: boolean = true;
   let is_saving: boolean = false;
@@ -42,21 +32,18 @@
   const status_options = [
     { value: "active", label: "Active" },
     { value: "inactive", label: "Inactive" },
-    { value: "suspended", label: "Suspended" },
-    { value: "retired", label: "Retired" },
   ];
 
   const country_options = build_country_select_options();
 
   function handle_nationality_change(
-    event: CustomEvent<{ value: string }>
+    event: CustomEvent<{ value: string }>,
   ): boolean {
     form_data.nationality = event.detail.value;
     return true;
   }
 
   onMount(async () => {
-    available_roles = get_default_football_official_roles_with_ids();
     await load_organizations();
   });
 
@@ -78,17 +65,9 @@
   }
 
   function handle_organization_change(
-    event: CustomEvent<{ value: string }>
+    event: CustomEvent<{ value: string }>,
   ): void {
     form_data.organization_id = event.detail.value;
-  }
-
-  function handle_qualifications_change(
-    event: CustomEvent<OfficialQualification[]>
-  ): void {
-    form_data.qualifications = event.detail;
-    const primary_qual = form_data.qualifications.find((q) => q.is_primary);
-    form_data.primary_role_id = primary_qual?.role_id || null;
   }
 
   async function handle_submit(): Promise<void> {
@@ -104,10 +83,10 @@
     }
 
     is_saving = false;
-    show_toast("Official created successfully!", "success");
+    show_toast("Official created! Redirecting to add qualifications...", "success");
 
     setTimeout(() => {
-      goto("/officials");
+      goto(`/officials/${result.data!.id}`);
     }, 1500);
   }
 
@@ -117,7 +96,7 @@
 
   function show_toast(
     message: string,
-    type: "success" | "error" | "info"
+    type: "success" | "error" | "info",
   ): void {
     toast_message = message;
     toast_type = type;
@@ -293,17 +272,11 @@
         />
       </div>
 
-      <div class="border-b border-accent-200 dark:border-accent-700 pb-4 pt-4">
-        <h2 class="text-lg font-medium text-accent-900 dark:text-accent-100">
-          Qualifications & Certifications
-        </h2>
+      <div class="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+        <p class="text-sm text-blue-700 dark:text-blue-300">
+          <strong>Note:</strong> After creating the official, you'll be redirected to add qualifications and certifications.
+        </p>
       </div>
-
-      <QualificationForm
-        qualifications={form_data.qualifications}
-        {available_roles}
-        on:change={handle_qualifications_change}
-      />
 
       <div class="border-b border-accent-200 dark:border-accent-700 pb-4 pt-4">
         <h2 class="text-lg font-medium text-accent-900 dark:text-accent-100">

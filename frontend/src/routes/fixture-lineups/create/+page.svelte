@@ -15,6 +15,7 @@
   import { get_competition_team_use_cases } from "$lib/usecases/CompetitionTeamUseCases";
   import { get_player_team_membership_use_cases } from "$lib/usecases/PlayerTeamMembershipUseCases";
   import { get_player_position_use_cases } from "$lib/usecases/PlayerPositionUseCases";
+  import { get_organization_use_cases } from "$lib/usecases/OrganizationUseCases";
   import { get_sport_by_id } from "$lib/services/sportService";
   import { create_empty_fixture_lineup_input } from "$lib/domain/entities/FixtureLineup";
   import UiWizardStepper from "$lib/components/UiWizardStepper.svelte";
@@ -39,6 +40,7 @@
   const competition_team_use_cases = get_competition_team_use_cases();
   const membership_use_cases = get_player_team_membership_use_cases();
   const player_position_use_cases = get_player_position_use_cases();
+  const organization_use_cases = get_organization_use_cases();
 
   let form_data: CreateFixtureLineupInput = create_empty_fixture_lineup_input();
   let selected_fixture: Fixture | null = null;
@@ -177,17 +179,20 @@
 
     const competition = competition_result.data;
 
-    const [sport_result, competition_teams_result] = await Promise.all([
-      get_sport_by_id(competition.sport_id),
+    const [organization_result, competition_teams_result] = await Promise.all([
+      organization_use_cases.get_by_id(competition.organization_id),
       competition_team_use_cases.list_teams_in_competition(competition.id, {
         page_number: 1,
         page_size: 2000,
       }),
     ]);
 
-    if (sport_result.success && sport_result.data) {
-      min_players = sport_result.data.min_players_per_fixture || 2;
-      max_players = sport_result.data.max_players_per_fixture || 18;
+    if (organization_result.success && organization_result.data && organization_result.data.sport_id) {
+      const sport_result = await get_sport_by_id(organization_result.data.sport_id);
+      if (sport_result.success && sport_result.data) {
+        min_players = sport_result.data.min_players_per_fixture || 2;
+        max_players = sport_result.data.max_players_per_fixture || 18;
+      }
     }
 
     competition_teams_for_fixture =

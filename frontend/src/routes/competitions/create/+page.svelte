@@ -145,7 +145,6 @@
 
     form_data.rule_overrides = {};
     selected_sport = null;
-    form_data.sport_id = "";
 
     const selected_organization = organizations.find(
       (org) => org.id === form_data.organization_id
@@ -157,7 +156,6 @@
       );
       if (sport_result.success && sport_result.data) {
         selected_sport = sport_result.data;
-        form_data.sport_id = sport_result.data.id;
       }
     }
   }
