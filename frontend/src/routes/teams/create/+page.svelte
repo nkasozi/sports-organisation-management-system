@@ -42,7 +42,6 @@
     name: "",
     short_name: "",
     organization_id: "",
-    sport_type: "Football",
     primary_color: "#3B82F6",
     secondary_color: "#FFFFFF",
     description: "",
@@ -55,20 +54,6 @@
     vice_captain_player_id: null,
     status: "active",
   };
-
-  const sport_type_options: Array<{
-    value: CreateTeamInput["sport_type"];
-    label: string;
-  }> = [
-    { value: "Football", label: "Football" },
-    { value: "Basketball", label: "Basketball" },
-    { value: "Baseball", label: "Baseball" },
-    { value: "Hockey", label: "Hockey" },
-    { value: "Soccer", label: "Soccer" },
-    { value: "Cricket", label: "Cricket" },
-    { value: "Rugby", label: "Rugby" },
-    { value: "Other", label: "Other" },
-  ];
 
   const status_options: Array<{
     value: CreateTeamInput["status"];
@@ -101,12 +86,6 @@
     event: CustomEvent<{ value: string }>
   ): void {
     form_data.organization_id = event.detail.value;
-  }
-
-  function handle_sport_type_change(
-    event: CustomEvent<{ value: string }>
-  ): void {
-    form_data.sport_type = event.detail.value as CreateTeamInput["sport_type"];
   }
 
   function handle_status_change(event: CustomEvent<{ value: string }>): void {
@@ -326,15 +305,6 @@
                   </div>
                 </div>
               {/if}
-
-              <EnumSelectField
-                label="Sport Type"
-                name="sport_type"
-                value={form_data.sport_type}
-                options={sport_type_options}
-                required={true}
-                on:change={handle_sport_type_change}
-              />
             </div>
 
             <div class="space-y-6">

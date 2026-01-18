@@ -42,7 +42,6 @@
     name: "",
     short_name: "",
     organization_id: "",
-    sport_type: "Football",
     primary_color: "#3B82F6",
     secondary_color: "#FFFFFF",
     home_venue_id: "",
@@ -51,17 +50,6 @@
     founded_year: undefined,
     status: "active",
   };
-
-  const sport_type_options: Array<{ value: string; label: string }> = [
-    { value: "Football", label: "Football" },
-    { value: "Basketball", label: "Basketball" },
-    { value: "Baseball", label: "Baseball" },
-    { value: "Hockey", label: "Hockey" },
-    { value: "Soccer", label: "Soccer" },
-    { value: "Cricket", label: "Cricket" },
-    { value: "Rugby", label: "Rugby" },
-    { value: "Other", label: "Other" },
-  ];
 
   const status_options: Array<{ value: string; label: string }> = [
     { value: "active", label: "Active" },
@@ -113,7 +101,6 @@
       name: loaded_team.name,
       short_name: loaded_team.short_name || "",
       organization_id: loaded_team.organization_id,
-      sport_type: loaded_team.sport_type,
       primary_color: loaded_team.primary_color || "#3B82F6",
       secondary_color: loaded_team.secondary_color || "#FFFFFF",
       home_venue_id: (loaded_team as any).home_venue_id || "",
@@ -130,12 +117,6 @@
     event: CustomEvent<{ value: string }>
   ): void {
     form_data.organization_id = event.detail.value;
-  }
-
-  function handle_sport_type_change(
-    event: CustomEvent<{ value: string }>
-  ): void {
-    form_data.sport_type = event.detail.value as UpdateTeamInput["sport_type"];
   }
 
   function handle_status_change(event: CustomEvent<{ value: string }>): void {
@@ -364,15 +345,6 @@
             </div>
           </div>
         {/if}
-
-        <EnumSelectField
-          label="Sport Type"
-          name="sport_type"
-          value={form_data.sport_type || "Football"}
-          options={sport_type_options}
-          required={true}
-          on:change={handle_sport_type_change}
-        />
 
         <div>
           <label
