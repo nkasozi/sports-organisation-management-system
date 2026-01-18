@@ -18,6 +18,7 @@
 
   let organization_name: string = "";
   let organization_logo_url: string = "";
+  let organization_tagline: string = "";
   let selected_primary_color: string = "yellow";
   let selected_secondary_color: string = "red";
   let notifications_enabled: boolean = true;
@@ -38,6 +39,7 @@
   onMount(() => {
     organization_name = $branding_store.organization_name;
     organization_logo_url = $branding_store.organization_logo_url;
+    organization_tagline = $branding_store.organization_tagline || "";
     social_media_links = $branding_store.social_media_links || [];
   });
 
@@ -101,28 +103,17 @@
   }
 
   function handle_save_organization_settings(): void {
-    console.log("[SETTINGS] Saving branding:", {
-      organization_name,
-      organization_logo_url: organization_logo_url ? `${organization_logo_url.substring(0, 50)}...` : "empty",
-      logo_length: organization_logo_url?.length || 0,
-    });
     branding_store.set({
       organization_name: organization_name,
       organization_logo_url: organization_logo_url,
+      organization_tagline: organization_tagline,
       social_media_links: social_media_links,
     });
     show_toast("Organization settings saved", "success");
   }
 
   function handle_logo_change(event: CustomEvent<{ url: string }>): void {
-    console.log("[SETTINGS] Logo changed:", {
-      new_url_length: event.detail.url?.length || 0,
-      new_url_preview: event.detail.url ? `${event.detail.url.substring(0, 50)}...` : "empty",
-    });
     organization_logo_url = event.detail.url;
-    console.log("[SETTINGS] organization_logo_url updated:", {
-      length: organization_logo_url?.length || 0,
-    });
   }
 
   function add_social_media_link(): void {
@@ -236,6 +227,25 @@
             max_size_mb={2}
             on:change={handle_logo_change}
           />
+        </div>
+
+        <div>
+          <label
+            for="org_tagline"
+            class="block text-sm font-medium text-accent-700 dark:text-accent-300 mb-2"
+          >
+            Organization Tagline
+          </label>
+          <textarea
+            id="org_tagline"
+            class="input w-full max-w-md resize-none"
+            rows="3"
+            bind:value={organization_tagline}
+            placeholder="Enter a short description for your organization"
+          ></textarea>
+          <p class="text-xs text-accent-500 dark:text-accent-400 mt-1">
+            This appears in the footer of your application
+          </p>
         </div>
       </div>
 

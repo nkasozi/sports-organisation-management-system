@@ -4,12 +4,18 @@
   import { get_competition_use_cases } from "$lib/usecases/CompetitionUseCases";
   import { get_team_use_cases } from "$lib/usecases/TeamUseCases";
   import { get_player_use_cases } from "$lib/usecases/PlayerUseCases";
+  import { get_fixture_use_cases } from "$lib/usecases/FixtureUseCases";
   import { reset_all_data } from "$lib/services/dataResetService";
+  import { branding_store } from "$lib/stores/branding";
+  import type { Competition } from "$lib/domain/entities/Competition";
+  import type { Fixture } from "$lib/domain/entities/Fixture";
+  import type { Team } from "$lib/domain/entities/Team";
 
   const organization_use_cases = get_organization_use_cases();
   const competition_use_cases = get_competition_use_cases();
   const team_use_cases = get_team_use_cases();
   const player_use_cases = get_player_use_cases();
+  const fixture_use_cases = get_fixture_use_cases();
 
   let loading = true;
   let is_resetting = false;
@@ -19,6 +25,57 @@
     teams: 0,
     players: 0,
   };
+
+  let recent_competitions: Competition[] = [];
+  let upcoming_fixtures: Fixture[] = [];
+  let teams_map: Map<string, Team> = new Map();
+
+  function get_competition_initials(name: string): string {
+    return name
+      .split(" ")
+      .map((word) => word[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
+  }
+
+  function get_status_class(status: string): string {
+    switch (status) {
+      case "active":
+      case "in_progress":
+        return "status-active";
+      case "upcoming":
+      case "scheduled":
+        return "status-warning";
+      case "completed":
+      case "finished":
+        return "status-inactive";
+      default:
+        return "status-inactive";
+    }
+  }
+
+  function format_fixture_date(scheduled_date: string, scheduled_time: string): string {
+    const fixture_date = new Date(scheduled_date);
+    const today = new Date();
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const is_today = fixture_date.toDateString() === today.toDateString();
+    const is_tomorrow = fixture_date.toDateString() === tomorrow.toDateString();
+
+    const time_formatted = scheduled_time || "TBD";
+
+    if (is_today) return `Today, ${time_formatted}`;
+    if (is_tomorrow) return `Tomorrow, ${time_formatted}`;
+
+    return `${fixture_date.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}, ${time_formatted}`;
+  }
+
+  function get_team_name(team_id: string): string {
+    const team = teams_map.get(team_id);
+    return team?.short_name || team?.name || "Unknown";
+  }
 
   onMount(async () => {
     const debug_count = localStorage.getItem("debug_officials_count");
@@ -32,12 +89,13 @@
       localStorage.removeItem("debug_officials_count");
     }
 
-    const [org_result, comp_result, team_result, player_result] =
+    const [org_result, comp_result, team_result, player_result, fixture_result] =
       await Promise.all([
         organization_use_cases.list(undefined, { page: 1, page_size: 1 }),
-        competition_use_cases.list(undefined, { page: 1, page_size: 1 }),
-        team_use_cases.list(undefined, { page: 1, page_size: 1 }),
+        competition_use_cases.list(undefined, { page: 1, page_size: 5 }),
+        team_use_cases.list(undefined, { page: 1, page_size: 100 }),
         player_use_cases.list(undefined, { page: 1, page_size: 1 }),
+        fixture_use_cases.list({ status: "scheduled" }, { page: 1, page_size: 5 }),
       ]);
 
     stats = {
@@ -46,6 +104,23 @@
       teams: team_result.success ? team_result.total_count : 0,
       players: player_result.success ? player_result.total_count : 0,
     };
+
+    if (comp_result.success && comp_result.data) {
+      recent_competitions = comp_result.data.slice(0, 3);
+    }
+
+    if (team_result.success && team_result.data) {
+      teams_map = new Map(team_result.data.map((team: Team) => [team.id, team]));
+    }
+
+    if (fixture_result.success && fixture_result.data) {
+      upcoming_fixtures = fixture_result.data
+        .sort((a: Fixture, b: Fixture) =>
+          new Date(a.scheduled_date).getTime() - new Date(b.scheduled_date).getTime()
+        )
+        .slice(0, 3);
+    }
+
     loading = false;
   });
 
@@ -80,11 +155,10 @@
         <h1
           class="text-2xl sm:text-3xl font-bold text-accent-900 dark:text-accent-100 mb-2"
         >
-          Welcome to Sports<span class="text-secondary-600">Org</span>
+          Welcome to <span class="text-secondary-600">{$branding_store.organization_name}</span>
         </h1>
         <p class="text-accent-600 dark:text-accent-300 text-mobile">
-          Manage your sports organization with ease. Track competitions, teams,
-          and games all in one place.
+          Track competitions, teams, players, officials and fixtures for your sport all in one place.
         </p>
       </div>
       <div class="mt-4 sm:mt-0">
@@ -291,68 +365,38 @@
             </div>
           {/each}
         {:else}
-          <div class="flex items-center space-x-4">
-            <div
-              class="h-10 w-10 bg-primary-100 dark:bg-primary-900 rounded-lg flex items-center justify-center"
-            >
-              <span class="text-primary-500 font-semibold text-sm">FC</span>
-            </div>
-            <div class="flex-1 min-w-0">
-              <p
-                class="text-sm font-medium text-accent-900 dark:text-accent-100 truncate"
-              >
-                Football Championship
-              </p>
-              <p class="text-xs text-accent-500 dark:text-accent-400">
-                Active • 8 teams
+          {#if recent_competitions.length === 0}
+            <div class="text-center py-4">
+              <p class="text-sm text-accent-500 dark:text-accent-400">
+                No competitions yet. <a href="/competitions/create" class="text-primary-500 hover:underline">Create one</a>
               </p>
             </div>
-            <span class="status-active px-2 py-1 text-xs rounded-full"
-              >Active</span
-            >
-          </div>
-
-          <div class="flex items-center space-x-4">
-            <div
-              class="h-10 w-10 bg-secondary-100 dark:bg-secondary-900 rounded-lg flex items-center justify-center"
-            >
-              <span class="text-secondary-500 font-semibold text-sm">BB</span>
-            </div>
-            <div class="flex-1 min-w-0">
-              <p
-                class="text-sm font-medium text-accent-900 dark:text-accent-100 truncate"
-              >
-                Basketball League
-              </p>
-              <p class="text-xs text-accent-500 dark:text-accent-400">
-                Scheduled • 12 teams
-              </p>
-            </div>
-            <span class="status-warning px-2 py-1 text-xs rounded-full"
-              >Scheduled</span
-            >
-          </div>
-
-          <div class="flex items-center space-x-4">
-            <div
-              class="h-10 w-10 bg-green-100 dark:bg-green-900 rounded-lg flex items-center justify-center"
-            >
-              <span class="text-green-500 font-semibold text-sm">VB</span>
-            </div>
-            <div class="flex-1 min-w-0">
-              <p
-                class="text-sm font-medium text-accent-900 dark:text-accent-100 truncate"
-              >
-                Volleyball Tournament
-              </p>
-              <p class="text-xs text-accent-500 dark:text-accent-400">
-                Completed • 6 teams
-              </p>
-            </div>
-            <span class="status-inactive px-2 py-1 text-xs rounded-full"
-              >Completed</span
-            >
-          </div>
+          {:else}
+            {#each recent_competitions as competition, index}
+              <div class="flex items-center space-x-4">
+                <div
+                  class="h-10 w-10 rounded-lg flex items-center justify-center {index === 0 ? 'bg-primary-100 dark:bg-primary-900' : index === 1 ? 'bg-secondary-100 dark:bg-secondary-900' : 'bg-green-100 dark:bg-green-900'}"
+                >
+                  <span class="{index === 0 ? 'text-primary-500' : index === 1 ? 'text-secondary-500' : 'text-green-500'} font-semibold text-sm">
+                    {get_competition_initials(competition.name)}
+                  </span>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <p
+                    class="text-sm font-medium text-accent-900 dark:text-accent-100 truncate"
+                  >
+                    {competition.name}
+                  </p>
+                  <p class="text-xs text-accent-500 dark:text-accent-400">
+                    {competition.status.charAt(0).toUpperCase() + competition.status.slice(1)} • {competition.team_ids?.length || 0} teams
+                  </p>
+                </div>
+                <span class="{get_status_class(competition.status)} px-2 py-1 text-xs rounded-full">
+                  {competition.status.charAt(0).toUpperCase() + competition.status.slice(1)}
+                </span>
+              </div>
+            {/each}
+          {/if}
         {/if}
       </div>
     </div>
@@ -389,104 +433,48 @@
             </div>
           {/each}
         {:else}
-          <div class="flex items-center justify-between">
-            <div class="flex items-center space-x-3">
-              <div
-                class="h-8 w-8 bg-primary-100 dark:bg-primary-900 rounded flex items-center justify-center"
-              >
-                <svg
-                  class="h-4 w-4 text-primary-500"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                >
-                  <path
-                    fill-rule="evenodd"
-                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.293l-3-3a1 1 0 00-1.414 1.414L10.586 9.5H7a1 1 0 100 2h3.586l-1.293 1.293a1 1 0 101.414 1.414l3-3a1 1 0 000-1.414z"
-                    clip-rule="evenodd"
-                  />
-                </svg>
-              </div>
-              <div>
-                <p
-                  class="text-sm font-medium text-accent-900 dark:text-accent-100"
-                >
-                  Lions vs Tigers
-                </p>
-                <p class="text-xs text-accent-500 dark:text-accent-400">
-                  Today, 3:00 PM
-                </p>
-              </div>
+          {#if upcoming_fixtures.length === 0}
+            <div class="text-center py-4">
+              <p class="text-sm text-accent-500 dark:text-accent-400">
+                No upcoming fixtures. <a href="/fixtures?action=create" class="text-primary-500 hover:underline">Schedule one</a>
+              </p>
             </div>
-            <span class="text-xs text-accent-500 dark:text-accent-400"
-              >Stadium A</span
-            >
-          </div>
-
-          <div class="flex items-center justify-between">
-            <div class="flex items-center space-x-3">
-              <div
-                class="h-8 w-8 bg-secondary-100 dark:bg-secondary-900 rounded flex items-center justify-center"
-              >
-                <svg
-                  class="h-4 w-4 text-secondary-500"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                >
-                  <path
-                    fill-rule="evenodd"
-                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.293l-3-3a1 1 0 00-1.414 1.414L10.586 9.5H7a1 1 0 100 2h3.586l-1.293 1.293a1 1 0 101.414 1.414l3-3a1 1 0 000-1.414z"
-                    clip-rule="evenodd"
-                  />
-                </svg>
+          {:else}
+            {#each upcoming_fixtures as fixture, index}
+              <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                  <div
+                    class="h-8 w-8 rounded flex items-center justify-center {index === 0 ? 'bg-primary-100 dark:bg-primary-900' : index === 1 ? 'bg-secondary-100 dark:bg-secondary-900' : 'bg-green-100 dark:bg-green-900'}"
+                  >
+                    <svg
+                      class="h-4 w-4 {index === 0 ? 'text-primary-500' : index === 1 ? 'text-secondary-500' : 'text-green-500'}"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path
+                        fill-rule="evenodd"
+                        d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.293l-3-3a1 1 0 00-1.414 1.414L10.586 9.5H7a1 1 0 100 2h3.586l-1.293 1.293a1 1 0 101.414 1.414l3-3a1 1 0 000-1.414z"
+                        clip-rule="evenodd"
+                      />
+                    </svg>
+                  </div>
+                  <div>
+                    <p
+                      class="text-sm font-medium text-accent-900 dark:text-accent-100"
+                    >
+                      {get_team_name(fixture.home_team_id)} vs {get_team_name(fixture.away_team_id)}
+                    </p>
+                    <p class="text-xs text-accent-500 dark:text-accent-400">
+                      {format_fixture_date(fixture.scheduled_date, fixture.scheduled_time)}
+                    </p>
+                  </div>
+                </div>
+                <span class="text-xs text-accent-500 dark:text-accent-400">
+                  {fixture.venue || "TBD"}
+                </span>
               </div>
-              <div>
-                <p
-                  class="text-sm font-medium text-accent-900 dark:text-accent-100"
-                >
-                  Eagles vs Hawks
-                </p>
-                <p class="text-xs text-accent-500 dark:text-accent-400">
-                  Tomorrow, 2:00 PM
-                </p>
-              </div>
-            </div>
-            <span class="text-xs text-accent-500 dark:text-accent-400"
-              >Stadium B</span
-            >
-          </div>
-
-          <div class="flex items-center justify-between">
-            <div class="flex items-center space-x-3">
-              <div
-                class="h-8 w-8 bg-green-100 dark:bg-green-900 rounded flex items-center justify-center"
-              >
-                <svg
-                  class="h-4 w-4 text-green-500"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                >
-                  <path
-                    fill-rule="evenodd"
-                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.293l-3-3a1 1 0 00-1.414 1.414L10.586 9.5H7a1 1 0 100 2h3.586l-1.293 1.293a1 1 0 101.414 1.414l3-3a1 1 0 000-1.414z"
-                    clip-rule="evenodd"
-                  />
-                </svg>
-              </div>
-              <div>
-                <p
-                  class="text-sm font-medium text-accent-900 dark:text-accent-100"
-                >
-                  Wolves vs Bears
-                </p>
-                <p class="text-xs text-accent-500 dark:text-accent-400">
-                  Friday, 7:00 PM
-                </p>
-              </div>
-            </div>
-            <span class="text-xs text-accent-500 dark:text-accent-400"
-              >Main Field</span
-            >
-          </div>
+            {/each}
+          {/if}
         {/if}
       </div>
     </div>
