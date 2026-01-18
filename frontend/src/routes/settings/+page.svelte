@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { onMount } from "svelte";
   import {
     theme_store,
     toggle_theme_mode,
@@ -7,6 +8,9 @@
   } from "$lib/stores/theme";
   import { branding_store, type SocialMediaLink } from "$lib/stores/branding";
   import Toast from "$lib/components/ui/Toast.svelte";
+  import ImageUpload from "$lib/components/ui/ImageUpload.svelte";
+
+  const DEFAULT_LOGO_SVG = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%23ffffff'%3E%3Cpath fill-rule='evenodd' d='M12.395 2.553a1 1 0 00-1.45-.385c-.345.23-.614.558-.822.88-.214.33-.403.713-.57 1.116-.334.804-.614 1.768-.84 2.734a31.365 31.365 0 00-.613 3.58 2.64 2.64 0 01-.945-1.067c-.328-.68-.398-1.534-.398-2.654A1 1 0 005.05 6.05 6.981 6.981 0 003 11a7 7 0 1011.95-4.95c-.592-.591-.98-.985-1.348-1.467-.363-.476-.724-1.063-1.207-2.03zM12.12 15.12A3 3 0 017 13s.879.5 2.5.5c0-1 .5-4 1.25-4.5.5 1 .786 1.293 1.371 1.879A2.99 2.99 0 0113 13a2.99 2.99 0 01-.879 2.121z' clip-rule='evenodd'/%3E%3C/svg%3E";
 
   let toast_visible: boolean = false;
   let toast_message: string = "";
@@ -31,11 +35,11 @@
     { value: "discord", label: "Discord", icon: "discord" },
   ];
 
-  $: {
+  onMount(() => {
     organization_name = $branding_store.organization_name;
     organization_logo_url = $branding_store.organization_logo_url;
     social_media_links = $branding_store.social_media_links || [];
-  }
+  });
 
   const color_options = [
     {
@@ -97,12 +101,28 @@
   }
 
   function handle_save_organization_settings(): void {
+    console.log("[SETTINGS] Saving branding:", {
+      organization_name,
+      organization_logo_url: organization_logo_url ? `${organization_logo_url.substring(0, 50)}...` : "empty",
+      logo_length: organization_logo_url?.length || 0,
+    });
     branding_store.set({
       organization_name: organization_name,
       organization_logo_url: organization_logo_url,
       social_media_links: social_media_links,
     });
     show_toast("Organization settings saved", "success");
+  }
+
+  function handle_logo_change(event: CustomEvent<{ url: string }>): void {
+    console.log("[SETTINGS] Logo changed:", {
+      new_url_length: event.detail.url?.length || 0,
+      new_url_preview: event.detail.url ? `${event.detail.url.substring(0, 50)}...` : "empty",
+    });
+    organization_logo_url = event.detail.url;
+    console.log("[SETTINGS] organization_logo_url updated:", {
+      length: organization_logo_url?.length || 0,
+    });
   }
 
   function add_social_media_link(): void {
@@ -191,7 +211,7 @@
     </div>
 
     <div class="p-6 space-y-6">
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div class="space-y-6">
         <div>
           <label
             for="org_name"
@@ -202,25 +222,19 @@
           <input
             id="org_name"
             type="text"
-            class="input w-full"
+            class="input w-full max-w-md"
             bind:value={organization_name}
             placeholder="Enter organization name"
           />
         </div>
 
         <div>
-          <label
-            for="org_logo"
-            class="block text-sm font-medium text-accent-700 dark:text-accent-300 mb-2"
-          >
-            Logo URL
-          </label>
-          <input
-            id="org_logo"
-            type="url"
-            class="input w-full"
-            bind:value={organization_logo_url}
-            placeholder="https://example.com/logo.png"
+          <ImageUpload
+            label="Organization Logo"
+            current_image_url={organization_logo_url}
+            default_image_url={DEFAULT_LOGO_SVG}
+            max_size_mb={2}
+            on:change={handle_logo_change}
           />
         </div>
       </div>
