@@ -1,461 +1,84 @@
 # Sports Organisation Management System
 
-A comprehensive web application for managing sports organizations, competitions, teams, players, and games. Built with Python/Flask backend using onion architecture with dependency injection and SvelteKit frontend, optimized for deployment on Vercel.
+A comprehensive web application for managing sports organizations, competitions, teams, players, and games.
 
-## 🏗️ Architecture Overview
-
-This project follows the **Onion Architecture** (Clean Architecture) pattern with **Dependency Injection**, ensuring:
-
-- **Separation of Concerns**: Business logic is independent of external frameworks
-- **Testability**: Core logic can be tested in isolation with mocked dependencies
-- **Maintainability**: Easy to modify and extend
-- **Flexibility**: External dependencies can be swapped without affecting core logic
-- **Dependency Inversion**: High-level modules don't depend on low-level modules
-
-### Project Structure
+## Project Structure
 
 ```
-├── api/                          # Backend API (Vercel Functions)
-│   ├── core/                     # Core business logic (inner layer)
-│   │   ├── domain/
-│   │   │   ├── entities/         # Business entities (Organization, Game, etc.)
-│   │   │   └── repositories/     # Repository interfaces
-│   │   ├── services/            # Business services and orchestration
-│   │   └── container/           # Dependency injection container
-│   ├── adapters/                # External adapters (outer layer)
-│   │   ├── database/            # Database implementations
-│   │   ├── web/                 # Flask routes and controllers
-│   │   └── external_services/   # Auth0, notifications, etc.
-│   ├── config/                  # Configuration management
-│   ├── shared/                  # Common utilities and logging
-│   └── index.py                # Main Flask application (Vercel entry point)
-├── frontend/                    # SvelteKit frontend
-│   ├── src/
-│   │   ├── lib/
-│   │   │   └── services/       # API service clients
-│   │   └── routes/             # SvelteKit pages and components
-│   ├── package.json
-│   └── svelte.config.js
-├── tests/                       # Comprehensive test suite
-│   ├── conftest.py             # Test configuration and fixtures
-│   ├── test_*_service.py       # Unit tests for services
-│   ├── test_api_routes.py      # Integration tests for API
-│   ├── test_dependency_injection.py # DI container tests
-│   └── README.md               # Testing documentation
-├── requirements.txt             # Python dependencies
-├── pytest.ini                 # pytest configuration
-├── run_tests.py               # Test runner script
-├── vercel.json                 # Vercel deployment configuration
-├── BACKEND_PLAN.md             # Detailed backend implementation plan
-└── FRONTEND_PLAN.md            # Frontend implementation plan
+frontend/                    # SvelteKit frontend application
+backend/                     # Backend API (coming soon)
+vercel.json                  # Vercel deployment configuration
 ```
 
-## 🛠️ Technology Stack
+## Documentation
 
-### Backend
+- [Frontend Documentation](./frontend/README.md) - Architecture, CRUD system, and development guide
+- [Backend Documentation](./backend/README.md) - Coming soon
 
-- **Framework**: Flask (Python)
-- **Architecture**: Onion/Clean Architecture with Dependency Injection
-- **Database**: PostgreSQL with Prisma ORM (Python client)
-- **Authentication**: Auth0
-- **Real-time**: WebSockets
-- **Testing**: pytest with mocked dependencies and 80%+ coverage
-- **Deployment**: Vercel Functions (Serverless)
-- **Type Safety**: Full Python type annotations
-
-### Frontend
-
-- **Framework**: SvelteKit (Svelte 5)
-- **Styling**: Tailwind CSS
-- **Build Tool**: Vite
-- **Deployment**: Vercel (Static Site Generation)
-
-## 🚀 Getting Started
-
-### Prerequisites
-
-- **Python 3.8+**
-- **Node.js 18+** (for frontend)
-- **PostgreSQL** (for production)
-- **uv** (recommended) or pip for Python package management
-
-### Package Management
-
-This project uses [uv](https://github.com/astral-sh/uv) for fast Python package management. See [UV_SETUP.md](UV_SETUP.md) for installation instructions.
-
-### Backend Development
-
-1. **Install uv** (if not already installed):
-
-   ```bash
-   curl -LsSf https://astral.sh/uv/install.sh | sh
-   ```
-
-2. **Install Python dependencies**:
-
-   ```bash
-   # Install all dependencies (recommended for development)
-   uv pip install -e .[all]
-
-   # Or install specific groups
-   uv pip install -e .[dev,test]  # Dev and test dependencies
-   uv pip install -e .            # Main dependencies only
-
-   # Alternative: use traditional pip
-   pip install -r requirements.txt
-   ```
-
-3. **Set up environment variables**:
-
-   ```bash
-   cp .env.example .env
-   # Edit .env with your configuration
-   ```
-
-4. **Run the development server**:
-
-   ```bash
-   uv run python api/index.py
-   # Or with traditional Python
-   cd api && python index.py
-   ```
-
-   The API will be available at `http://localhost:5000`
+## Getting Started
 
 ### Frontend Development
 
-1. **Install Node.js dependencies**:
-
-   ```bash
-   cd frontend
-   npm install
-   ```
-
-2. **Run the development server**:
-
-   ```bash
-   npm run dev
-   ```
-
-   The frontend will be available at `http://localhost:5173`
-
-### Database Setup
-
-1. **Create PostgreSQL database**:
-
-   ```sql
-   CREATE DATABASE sports_org_development;
-   CREATE USER sports_user WITH ENCRYPTED PASSWORD 'sports_password';
-   GRANT ALL PRIVILEGES ON DATABASE sports_org_development TO sports_user;
-   ```
-
-2. **Set up Prisma and run migrations**:
-
-   ```bash
-   # Install Prisma CLI
-   npm install -g prisma
-
-   # Generate Prisma client
-   prisma generate
-
-   # Push schema to database (development)
-   prisma db push
-
-   # Or create and apply migrations (production)
-   prisma migrate dev --name "Initial migration"
-
-   # Deploy migrations to production
-   prisma migrate deploy
-   ```
-
-## 📦 Deployment
-
-### Vercel Deployment
-
-1. **Install Vercel CLI**:
-
-   ```bash
-   npm install -g vercel
-   ```
-
-2. **Deploy to Vercel**:
-
-   ```bash
-   vercel --prod
-   ```
-
-3. **Set environment variables**:
-   ```bash
-   vercel env add DATABASE_URL
-   vercel env add AUTH0_DOMAIN
-   vercel env add AUTH0_CLIENT_ID
-   vercel env add AUTH0_CLIENT_SECRET
-   vercel env add SECRET_KEY
-   ```
-
-### Environment Variables
-
-Create a `.env` file in the root directory:
-
-```env
-# Database
-DATABASE_URL=postgresql://username:password@localhost:5432/sports_org_db
-
-# Auth0 Configuration
-AUTH0_DOMAIN=your-auth0-domain.auth0.com
-AUTH0_CLIENT_ID=your-client-id
-AUTH0_CLIENT_SECRET=your-client-secret
-AUTH0_AUDIENCE=your-api-audience
-
-# Flask Configuration
-SECRET_KEY=your-secret-key-here
-FLASK_ENV=development
-
-# Frontend URL (for CORS)
-FRONTEND_URL=http://localhost:5173
-```
-
-## 🧪 Testing
-
-This project includes a comprehensive test suite with unit tests, integration tests, and mocked dependencies following clean architecture principles.
-
-### Quick Testing with uv
-
-Use the test runner script for common tasks:
-
 ```bash
-# Install test dependencies with uv
-python run_tests.py --install-deps
-
-# Install just main dependencies
-python run_tests.py --install-main
-
-# Run all tests with coverage
-python run_tests.py --all
-
-# Run only unit tests
-python run_tests.py --unit
-
-# Run only integration tests
-python run_tests.py --integration
-
-# Run code quality checks (black, isort, mypy, flake8)
-python run_tests.py --quality
-
-# Run specific test file
-python run_tests.py --test tests/test_organization_service.py
+cd frontend
+npm install
+npm run dev
 ```
 
-### Manual Testing
+The frontend will be available at http://localhost:5173
 
-```bash
-# Using uv (recommended)
-uv run pytest tests/
-uv run pytest tests/ --cov=api --cov-report=html
-
-# Traditional approach
-pytest tests/
-pytest tests/ --cov=api --cov-report=html
-
-# Run specific test categories
-uv run pytest tests/ -m unit          # Unit tests only
-pytest tests/ -m integration   # Integration tests only
-
-# Run specific test file
-pytest tests/test_organization_service.py
-
-# Verbose output
-pytest tests/ -v
-```
-
-### Test Features
-
-- **Dependency Injection Testing**: All tests use mocked dependencies through DI container
-- **Mock Repositories**: Track method calls and provide test data isolation
-- **Test Data Factory**: Consistent test entity creation
-- **Coverage Reporting**: 80%+ coverage requirement with HTML reports
-- **Type Safety**: Full type checking in tests
-
-See [tests/README.md](tests/README.md) for detailed testing documentation.
-
-### Backend Tests
-
-```bash
-# Run all tests
-pytest
-
-# Run with coverage
-pytest --cov=api
-
-# Run specific test file
-pytest tests/test_organizations.py
-```
-
-### Frontend Tests
+### Running Tests
 
 ```bash
 cd frontend
-
-# Run unit tests
-npm run test
-
-# Run E2E tests
-npm run test:e2e
+npm test
 ```
 
-## 🔧 Development Commands
+## Technology Stack
 
-### Code Quality
+### Frontend
 
-```bash
-# Format Python code
-black api/
+- Framework: SvelteKit with Svelte 5
+- Language: TypeScript
+- Styling: Tailwind CSS
+- Architecture: Hexagonal (Ports and Adapters)
+- Testing: Vitest
 
-# Lint Python code
-flake8 api/
+### Backend (Planned)
 
-# Type checking
-mypy api/
+- Coming soon
 
-# Format frontend code
-cd frontend
-npm run format
+## Core Features
 
-# Lint frontend code
-npm run lint
-```
-
-### Database Management
-
-```bash
-# Generate Prisma client after schema changes
-prisma generate
-
-# Push schema changes to database (development)
-prisma db push
-
-# Create and apply migrations (production)
-prisma migrate dev --name "Description of changes"
-
-# Deploy migrations to production
-prisma migrate deploy
-
-# Reset database (development only)
-prisma migrate reset
-
-# View migration status
-prisma migrate status
-
-# Open Prisma Studio (database GUI)
-prisma studio
-```
-
-## 📚 API Documentation
-
-### Core Endpoints
-
-#### Organizations
-
-- `POST /api/v1/organizations` - Create new organization
-- `GET /api/v1/organizations/{id}` - Get organization details
-- `GET /api/v1/organizations/by-type/{type}` - List organizations by type
-
-#### Competitions
-
-- `POST /api/v1/competitions` - Create new competition
-- `GET /api/v1/organizations/{id}/competitions` - Get organization competitions
-
-#### Games
-
-- `POST /api/v1/games` - Create new game
-- `POST /api/v1/games/{id}/events` - Record game event
-
-### Response Format
-
-All API responses follow a consistent format:
-
-```json
-{
-  "success": true,
-  "message": "Operation successful",
-  "data": { ... },
-  "timestamp": "2024-01-01T00:00:00Z",
-  "error": null
-}
-```
-
-## 🎯 Core Features
-
-### Implemented
+### Implemented (Frontend)
 
 - ✅ Organization management
-- ✅ Competition creation and management
-- ✅ Game creation and event recording
-- ✅ Real-time score updates
-- ✅ Type-safe Python codebase
-- ✅ Onion architecture implementation
-
-### In Development
-
-- 🚧 Team and player management
-- 🚧 User authentication with Auth0
-- 🚧 Real-time WebSocket updates
-- 🚧 Advanced game statistics
+- ✅ Competition management
+- ✅ Team management with rosters
+- ✅ Player management with positions
+- ✅ Fixture scheduling
+- ✅ Live game event recording
+- ✅ Lineup submission workflow
+- ✅ Official assignment
+- ✅ Generalized CRUD system
+- ✅ Mobile-responsive design
 
 ### Planned
 
-- 📋 Player registration and transfers
-- 📋 Competition brackets and standings
-- 📋 Official assignment and management
-- 📋 Sanctions and suspensions system
-- 📋 Mobile-responsive PWA
-- 📋 Notification system
+- 📋 Backend API
+- 📋 Authentication
+- 📋 Real-time WebSocket updates
+- 📋 Competition standings and brackets
+- 📋 Player statistics
 
-## 🤝 Contributing
+## Contributing
 
 1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
+2. Create a feature branch
+3. Commit your changes
+4. Push to the branch
 5. Open a Pull Request
 
-### Code Style
+## License
 
-- Follow PEP 8 for Python code
-- Use type annotations for all Python functions
-- Follow the established onion architecture patterns
-- Write comprehensive tests for new features
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🔗 Links
-
-- [Backend Implementation Plan](BACKEND_PLAN.md)
-- [Frontend Implementation Plan](FRONTEND_PLAN.md)
-- [API Documentation](https://your-api-docs-url.com)
-- [Live Demo](https://your-app.vercel.app)
-  - **Interaction:** Uses game management UI to assign officials.
-  - **System Action:** Creates `GameOfficial` record.
-  - **Attributes:** `assignment_id`, `official_id` (links to James' `Official`/`Person`), `game_id`, `role` ("Umpire").
-
-**21. `AuditTrail`**
-
-- **Use Case (MVP Context):** This entity was removed from our ERD to rely on Strapi's built-in features for the MVP.
-  - **If using Strapi Enterprise:** Actions like Sarah updating a game score would be automatically logged in Strapi's built-in Audit Log section within the Admin Panel, showing user, action, timestamp, and potentially changed data.
-  - **If using Strapi Community:** There is no built-in audit log. Basic logging for critical actions (like score changes) would need to be manually implemented using Strapi's lifecycle hooks or custom controllers, perhaps logging to the console or a simple custom "Log" content type if absolutely needed for the MVP. The comprehensive tracking originally envisioned in our custom `AuditTrail` entity wouldn't be present without this custom work or upgrading.
-
-**22. `CMSContent`**
-
-- **Use Case:** David (Comms Officer) publishes a match report for the KHC vs WHG game.
-  - **Interaction:** Uses Strapi Admin Panel (or dedicated CMS interface) to create content.
-  - **System Action:** Creates `CMSContent` record.
-  - **Attributes:** `content_id`, `content_type` ("MatchReport"), `title`, `body`, `publish_date`, `status` ("Published").
-  - **Result:** Public website/PWA fetches via Strapi API to display.
-
----
-
-```
-
-```
+This project is licensed under the MIT License.
