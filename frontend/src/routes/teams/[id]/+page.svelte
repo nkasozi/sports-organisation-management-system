@@ -4,11 +4,13 @@
   import { page } from "$app/stores";
   import type { Team, UpdateTeamInput } from "$lib/domain/entities/Team";
   import type { Organization } from "$lib/domain/entities/Organization";
+  import type { Venue } from "$lib/domain/entities/Venue";
   import type { TeamStaff } from "$lib/domain/entities/TeamStaff";
   import type { TeamStaffRole } from "$lib/domain/entities/TeamStaffRole";
   import type { LoadingState } from "$lib/components/ui/LoadingStateWrapper.svelte";
   import { get_team_use_cases } from "$lib/usecases/TeamUseCases";
   import { get_organization_use_cases } from "$lib/usecases/OrganizationUseCases";
+  import { get_venue_use_cases } from "$lib/usecases/VenueUseCases";
   import { get_team_staff_use_cases } from "$lib/usecases/TeamStaffUseCases";
   import LoadingStateWrapper from "$lib/components/ui/LoadingStateWrapper.svelte";
   import FormField from "$lib/components/ui/FormField.svelte";
@@ -19,10 +21,12 @@
 
   const team_use_cases = get_team_use_cases();
   const organization_use_cases = get_organization_use_cases();
+  const venue_use_cases = get_venue_use_cases();
   const team_staff_use_cases = get_team_staff_use_cases();
 
   let team: Team | null = null;
   let organizations: Organization[] = [];
+  let venues: Venue[] = [];
   let staff_members: TeamStaff[] = [];
   let available_staff_roles: TeamStaffRole[] = [];
   let loading_state: LoadingState = "loading";
@@ -41,7 +45,7 @@
     sport_type: "Football",
     primary_color: "#3B82F6",
     secondary_color: "#FFFFFF",
-    home_venue: "",
+    home_venue_id: "",
     max_squad_size: 25,
     website: "",
     founded_year: undefined,
@@ -74,13 +78,14 @@
       return;
     }
 
-    const [team_result, org_result, staff_result, roles_result] =
+    const [team_result, org_result, venues_result, staff_result, roles_result] =
       await Promise.all([
         team_use_cases.get_by_id(team_id),
         organization_use_cases.list(undefined, {
           page: 1,
           page_size: 100,
         }),
+        venue_use_cases.list(undefined, { page: 1, page_size: 200 }),
         team_staff_use_cases.list_staff_by_team(team_id),
         team_staff_use_cases.list_staff_roles(),
       ]);
@@ -100,6 +105,7 @@
     const loaded_team = team_result.data;
     team = loaded_team;
     organizations = org_result.success ? org_result.data : [];
+    venues = venues_result.success ? venues_result.data : [];
     staff_members = staff_result.success ? staff_result.data.items : [];
     available_staff_roles = roles_result.success ? roles_result.data : [];
 
@@ -110,7 +116,7 @@
       sport_type: loaded_team.sport_type,
       primary_color: loaded_team.primary_color || "#3B82F6",
       secondary_color: loaded_team.secondary_color || "#FFFFFF",
-      home_venue: loaded_team.home_venue || "",
+      home_venue_id: (loaded_team as any).home_venue_id || "",
       max_squad_size: loaded_team.max_squad_size || 25,
       website: loaded_team.website || "",
       founded_year: loaded_team.founded_year,
@@ -410,9 +416,9 @@
 
         <FormField
           label="Home Venue"
-          name="home_venue"
-          bind:value={form_data.home_venue}
-          placeholder="Enter home venue/stadium"
+          name="home_venue_id"
+          bind:value={form_data.home_venue_id}
+          placeholder="Enter home venue ID"
         />
 
         <FormField

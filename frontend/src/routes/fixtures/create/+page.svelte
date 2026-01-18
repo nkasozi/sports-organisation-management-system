@@ -6,6 +6,7 @@
   import type { CompetitionTeam } from "$lib/domain/entities/CompetitionTeam";
   import type { Official } from "$lib/domain/entities/Official";
   import type { GameOfficialRole } from "$lib/domain/entities/GameOfficialRole";
+  import type { Venue } from "$lib/domain/entities/Venue";
   import type {
     CreateFixtureInput,
     AssignedOfficial,
@@ -18,6 +19,7 @@
   import { get_competition_team_use_cases } from "$lib/usecases/CompetitionTeamUseCases";
   import { get_official_use_cases } from "$lib/usecases/OfficialUseCases";
   import { get_game_official_role_use_cases } from "$lib/usecases/GameOfficialRoleUseCases";
+  import { get_venue_use_cases } from "$lib/usecases/VenueUseCases";
   import FormField from "$lib/components/ui/FormField.svelte";
   import SelectField from "$lib/components/ui/SelectField.svelte";
   import FixtureOfficialAssignment from "$lib/components/ui/FixtureOfficialAssignment.svelte";
@@ -29,10 +31,12 @@
   const competition_team_use_cases = get_competition_team_use_cases();
   const official_use_cases = get_official_use_cases();
   const official_role_use_cases = get_game_official_role_use_cases();
+  const venue_use_cases = get_venue_use_cases();
 
   let form_data: CreateFixtureInput = create_empty_fixture_input();
   let competitions: Competition[] = [];
   let teams: Team[] = [];
+  let venues: Venue[] = [];
   let competition_teams: CompetitionTeam[] = [];
   let available_officials: Official[] = [];
   let available_roles: GameOfficialRole[] = [];
@@ -58,12 +62,13 @@
   async function load_reference_data(): Promise<void> {
     is_loading = true;
 
-    const [comp_result, teams_result, officials_result, roles_result] =
+    const [comp_result, teams_result, officials_result, roles_result, venues_result] =
       await Promise.all([
         competition_use_cases.list(undefined, { page: 1, page_size: 100 }),
         team_use_cases.list(undefined, { page: 1, page_size: 200 }),
         official_use_cases.list(undefined, { page: 1, page_size: 200 }),
         official_role_use_cases.list(undefined, { page: 1, page_size: 100 }),
+        venue_use_cases.list(undefined, { page: 1, page_size: 200 }),
       ]);
 
     if (comp_result.success) {
@@ -89,6 +94,10 @@
       available_roles = roles_result.data.filter(
         (r: any) => r.status === "active"
       );
+    }
+
+    if (venues_result.success) {
+      venues = venues_result.data;
     }
 
     is_loading = false;
@@ -144,6 +153,18 @@
     event: CustomEvent<{ value: string }>
   ): void {
     form_data.home_team_id = event.detail.value;
+    set_venue_from_home_team(event.detail.value);
+  }
+
+  function set_venue_from_home_team(team_id: string): void {
+    if (!team_id) return;
+    const selected_team = teams.find((t) => t.id === team_id);
+    if (!selected_team) return;
+    const home_venue_id = (selected_team as any).home_venue_id || "";
+    if (!home_venue_id) return;
+    const venue = venues.find((v) => v.id === home_venue_id);
+    if (!venue) return;
+    form_data.venue = venue.name;
   }
 
   function handle_away_team_change(

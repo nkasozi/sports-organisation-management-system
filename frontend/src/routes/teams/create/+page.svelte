@@ -3,11 +3,13 @@
   import { goto } from "$app/navigation";
   import type { CreateTeamInput } from "$lib/domain/entities/Team";
   import type { Organization } from "$lib/domain/entities/Organization";
+  import type { Venue } from "$lib/domain/entities/Venue";
   import type { TeamStaff } from "$lib/domain/entities/TeamStaff";
   import type { TeamStaffRole } from "$lib/domain/entities/TeamStaffRole";
   import type { LoadingState } from "$lib/components/ui/LoadingStateWrapper.svelte";
   import { get_team_use_cases } from "$lib/usecases/TeamUseCases";
   import { get_organization_use_cases } from "$lib/usecases/OrganizationUseCases";
+  import { get_venue_use_cases } from "$lib/usecases/VenueUseCases";
   import { get_team_staff_use_cases } from "$lib/usecases/TeamStaffUseCases";
   import LoadingStateWrapper from "$lib/components/ui/LoadingStateWrapper.svelte";
   import FormField from "$lib/components/ui/FormField.svelte";
@@ -18,9 +20,11 @@
 
   const team_use_cases = get_team_use_cases();
   const organization_use_cases = get_organization_use_cases();
+  const venue_use_cases = get_venue_use_cases();
   const team_staff_use_cases = get_team_staff_use_cases();
 
   let organizations: Organization[] = [];
+  let venues: Venue[] = [];
   let pending_staff_members: TeamStaff[] = [];
   let available_staff_roles: TeamStaffRole[] = [];
   let loading_state: LoadingState = "loading";
@@ -43,7 +47,7 @@
     secondary_color: "#FFFFFF",
     description: "",
     logo_url: "",
-    home_venue: "",
+    home_venue_id: "",
     max_squad_size: 25,
     website: "",
     founded_year: new Date().getFullYear(),
@@ -76,8 +80,9 @@
   ];
 
   onMount(async () => {
-    const [org_result, roles_result] = await Promise.all([
+    const [org_result, venues_result, roles_result] = await Promise.all([
       organization_use_cases.list(undefined, { page: 1, page_size: 100 }),
+      venue_use_cases.list(undefined, { page: 1, page_size: 200 }),
       team_staff_use_cases.list_staff_roles(),
     ]);
 
@@ -87,6 +92,7 @@
     }
 
     organizations = org_result.data;
+    venues = venues_result.success ? venues_result.data : [];
     available_staff_roles = roles_result.success ? roles_result.data : [];
     loading_state = "success";
   });
@@ -468,11 +474,13 @@
         </h2>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <FormField
+          <SelectField
             label="Home Venue"
-            name="home_venue"
-            bind:value={form_data.home_venue}
-            placeholder="e.g., Old Trafford"
+            name="home_venue_id"
+            value={form_data.home_venue_id}
+            options={venues.map((v) => ({ value: v.id, label: v.name }))}
+            placeholder="Select home venue"
+            on:change={(e) => (form_data.home_venue_id = e.detail.value)}
           />
 
           <FormField
