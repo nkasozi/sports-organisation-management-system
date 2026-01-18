@@ -3,11 +3,9 @@
   import { goto } from "$app/navigation";
   import { page } from "$app/stores";
   import type { Player, UpdatePlayerInput } from "$lib/domain/entities/Player";
-  import type { Team } from "$lib/domain/entities/Team";
-  import type { PlayerPosition } from "$lib/domain/ports/PlayerPositionRepository";
+  import type { PlayerPosition } from "$lib/domain/entities/PlayerPosition";
   import type { LoadingState } from "$lib/components/ui/LoadingStateWrapper.svelte";
   import { get_player_use_cases } from "$lib/usecases/PlayerUseCases";
-  import { get_team_use_cases } from "$lib/usecases/TeamUseCases";
   import { get_player_position_use_cases } from "$lib/usecases/PlayerPositionUseCases";
   import LoadingStateWrapper from "$lib/components/ui/LoadingStateWrapper.svelte";
   import FormField from "$lib/components/ui/FormField.svelte";
@@ -16,20 +14,17 @@
   import ImageUpload from "$lib/components/ui/ImageUpload.svelte";
   import Toast from "$lib/components/ui/Toast.svelte";
   import { DEFAULT_PLAYER_AVATAR } from "$lib/domain/entities/Player";
+  import { build_country_select_options } from "$lib/core/countries";
 
   const player_use_cases = get_player_use_cases();
-  const team_use_cases = get_team_use_cases();
   const position_use_cases = get_player_position_use_cases();
 
   let player: Player | null = null;
-  let teams: Team[] = [];
   let positions: PlayerPosition[] = [];
-  let all_players: any[] = [];
   let loading_state: LoadingState = "loading";
   let error_message: string = "";
   let is_submitting: boolean = false;
   let validation_errors: Map<string, string> = new Map();
-  let jersey_conflict_player: any = null;
 
   let toast_visible: boolean = false;
   let toast_message: string = "";
@@ -40,13 +35,14 @@
     last_name: "",
     date_of_birth: "",
     nationality: "",
-    position: "",
-    jersey_number: null,
-    team_id: null,
+    position_id: "",
     height_cm: null,
     weight_kg: null,
     preferred_foot: "right",
     profile_image_url: "",
+    emergency_contact_name: "",
+    emergency_contact_phone: "",
+    medical_notes: "",
     email: "",
     phone: "",
     status: "active",
@@ -65,6 +61,15 @@
     { value: "suspended", label: "Suspended" },
   ];
 
+  const country_options = build_country_select_options();
+
+  function handle_nationality_change(
+    event: CustomEvent<{ value: string }>
+  ): boolean {
+    form_data.nationality = event.detail.value;
+    return true;
+  }
+
   onMount(async () => {
     const player_id = $page.params.id ?? "";
 
@@ -74,13 +79,10 @@
       return;
     }
 
-    const [player_result, teams_result, players_result, positions_result] =
-      await Promise.all([
-        player_use_cases.get_by_id(player_id),
-        team_use_cases.list(undefined, { page: 1, page_size: 100 }),
-        player_use_cases.list(undefined, { page: 1, page_size: 1000 }),
-        position_use_cases.list(undefined, { page: 1, page_size: 100 }),
-      ]);
+    const [player_result, positions_result] = await Promise.all([
+      player_use_cases.get_by_id(player_id),
+      position_use_cases.list(undefined, { page: 1, page_size: 1000 }),
+    ]);
 
     if (!player_result.success) {
       loading_state = "error";
@@ -96,21 +98,21 @@
 
     const loaded_player = player_result.data;
     player = loaded_player;
-    teams = teams_result.success ? teams_result.data : [];
     positions = positions_result.success ? positions_result.data : [];
-    all_players = players_result.success ? players_result.data : [];
 
     form_data = {
       first_name: loaded_player.first_name,
       last_name: loaded_player.last_name,
       date_of_birth: loaded_player.date_of_birth,
       nationality: loaded_player.nationality,
-      position: loaded_player.position,
-      jersey_number: loaded_player.jersey_number,
-      team_id: loaded_player.team_id,
+      position_id: loaded_player.position_id,
       height_cm: loaded_player.height_cm,
       weight_kg: loaded_player.weight_kg,
       preferred_foot: loaded_player.preferred_foot,
+      profile_image_url: loaded_player.profile_image_url,
+      emergency_contact_name: loaded_player.emergency_contact_name,
+      emergency_contact_phone: loaded_player.emergency_contact_phone,
+      medical_notes: loaded_player.medical_notes,
       email: loaded_player.email,
       phone: loaded_player.phone,
       status: loaded_player.status,
@@ -119,8 +121,8 @@
     loading_state = "success";
   });
 
-  function handle_team_change(event: CustomEvent<{ value: string }>): void {
-    form_data.team_id = event.detail.value || null;
+  function handle_position_change(event: CustomEvent<{ value: string }>): void {
+    form_data.position_id = event.detail.value;
   }
 
   function handle_preferred_foot_change(
@@ -132,19 +134,6 @@
 
   function handle_status_change(event: CustomEvent<{ value: string }>): void {
     form_data.status = event.detail.value as UpdatePlayerInput["status"];
-  }
-
-  function check_jersey_conflict(): void {
-    jersey_conflict_player = null;
-    if (form_data.jersey_number && player) {
-      const conflicting_player = all_players.find(
-        (p) =>
-          p.jersey_number === form_data.jersey_number && p.id !== player?.id
-      );
-      if (conflicting_player) {
-        jersey_conflict_player = conflicting_player;
-      }
-    }
   }
 
   async function handle_submit(): Promise<void> {
@@ -164,23 +153,8 @@
     if (!form_data.nationality?.trim()) {
       validation_errors.set("nationality", "Nationality is required");
     }
-    if (!form_data.position?.trim()) {
-      validation_errors.set("position", "Position is required");
-    }
-    if (
-      form_data.jersey_number &&
-      (form_data.jersey_number < 0 || form_data.jersey_number > 99)
-    ) {
-      validation_errors.set(
-        "jersey_number",
-        "Jersey number must be between 0 and 99"
-      );
-    }
-    if (form_data.jersey_number && jersey_conflict_player) {
-      validation_errors.set(
-        "jersey_number",
-        `Jersey number ${form_data.jersey_number} is already taken by ${jersey_conflict_player.first_name} ${jersey_conflict_player.last_name}`
-      );
+    if (!form_data.position_id?.trim()) {
+      validation_errors.set("position_id", "Position is required");
     }
     if (
       form_data.height_cm &&
@@ -232,14 +206,6 @@
   function navigate_back(): void {
     goto("/players");
   }
-
-  $: team_options = [
-    { value: "", label: "Unassigned" },
-    ...teams.map((team) => ({
-      value: team.id,
-      label: team.name,
-    })),
-  ];
 
   $: position_options = [
     { value: "", label: "Select a position" },
@@ -337,13 +303,15 @@
           error={validation_errors.get("date_of_birth")}
         />
 
-        <FormField
+        <SelectField
           label="Nationality"
           name="nationality"
-          bind:value={form_data.nationality}
-          placeholder="e.g., Spanish, Brazilian"
+          value={form_data.nationality}
+          options={country_options}
+          placeholder="Select nationality"
           required={true}
           error={validation_errors.get("nationality")}
+          on:change={handle_nationality_change}
         />
 
         <FormField
@@ -367,83 +335,21 @@
         class="border-b border-accent-200 dark:border-accent-700 pb-4 mb-4 pt-4"
       >
         <h2 class="text-lg font-medium text-accent-900 dark:text-accent-100">
-          Team & Position
+          Position & Status
         </h2>
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <SelectField
-          label="Team"
-          name="team_id"
-          value={form_data.team_id || ""}
-          options={team_options}
-          placeholder="Select team"
-          on:change={handle_team_change}
-        />
-
-        {#if teams.length === 0}
-          <div
-            class="md:col-span-2 flex items-start gap-2 rounded-md border border-yellow-300 bg-yellow-50 px-3 py-2 text-yellow-900"
-          >
-            <svg
-              class="h-5 w-5 flex-shrink-0 text-yellow-600"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-              aria-hidden="true"
-              ><path
-                fill-rule="evenodd"
-                d="M8.257 3.099c.765-1.36 2.72-1.36 3.485 0l6.518 11.596c.75 1.336-.213 3.005-1.742 3.005H3.48c-1.53 0-2.492-1.669-1.743-3.005L8.257 3.1zM11 14a1 1 0 10-2 0 1 1 0 002 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V7a1 1 0 00-1-1z"
-                clip-rule="evenodd"
-              /></svg
-            >
-            <div>
-              <p class="text-sm font-medium">No teams found.</p>
-              <p class="text-sm text-yellow-800">
-                You can keep the player unassigned or create a team first.
-              </p>
-            </div>
-          </div>
-        {/if}
-
-        <SelectField
           label="Position"
-          name="position"
-          value={form_data.position || ""}
+          name="position_id"
+          value={form_data.position_id || ""}
           options={position_options}
           placeholder="Select a position"
-          on:change={(e) => (form_data.position = e.detail.value)}
+          required={true}
+          error={validation_errors.get("position_id")}
+          on:change={handle_position_change}
         />
-
-        <div>
-          <FormField
-            label="Jersey Number"
-            name="jersey_number"
-            type="number"
-            bind:value={form_data.jersey_number}
-            placeholder="0-99"
-            min={0}
-            max={99}
-            error={validation_errors.get("jersey_number")}
-            on:change={check_jersey_conflict}
-          />
-          {#if jersey_conflict_player}
-            <div
-              class="mt-2 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg"
-            >
-              <p class="text-sm text-red-700 dark:text-red-400">
-                <strong>Jersey #{form_data.jersey_number} is taken by:</strong>
-              </p>
-              <p class="text-sm text-red-600 dark:text-red-300 mt-1">
-                {jersey_conflict_player.first_name}
-                {jersey_conflict_player.last_name}
-                {#if jersey_conflict_player.team_id}
-                  • {teams.find((t) => t.id === jersey_conflict_player.team_id)
-                    ?.name || "Unknown Team"}
-                {/if}
-              </p>
-            </div>
-          {/if}
-        </div>
 
         <EnumSelectField
           label="Status"

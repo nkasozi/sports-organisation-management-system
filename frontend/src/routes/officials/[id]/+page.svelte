@@ -26,6 +26,7 @@
   import QualificationForm from "$lib/components/ui/QualificationForm.svelte";
   import Toast from "$lib/components/ui/Toast.svelte";
   import { DEFAULT_OFFICIAL_AVATAR } from "$lib/domain/entities/Official";
+  import { build_country_select_options } from "$lib/core/countries";
 
   const official_use_cases = get_official_use_cases();
   const organization_use_cases = get_organization_use_cases();
@@ -57,6 +58,15 @@
     { value: "suspended", label: "Suspended" },
     { value: "retired", label: "Retired" },
   ];
+
+  const country_options = build_country_select_options();
+
+  function handle_nationality_change(
+    event: CustomEvent<{ value: string }>
+  ): boolean {
+    form_data.nationality = event.detail.value;
+    return true;
+  }
 
   onMount(async () => {
     available_roles = get_default_football_official_roles_with_ids();
@@ -264,11 +274,13 @@
             bind:value={form_data.date_of_birth}
           />
 
-          <FormField
+          <SelectField
             label="Nationality"
             name="nationality"
-            bind:value={form_data.nationality}
-            placeholder="Enter nationality"
+            value={form_data.nationality ?? ""}
+            options={country_options}
+            placeholder="Select nationality"
+            on:change={handle_nationality_change}
           />
         </div>
 

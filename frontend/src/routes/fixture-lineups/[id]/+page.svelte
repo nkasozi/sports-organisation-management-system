@@ -8,11 +8,17 @@
   } from "$lib/domain/entities/FixtureLineup";
   import type { Fixture } from "$lib/domain/entities/Fixture";
   import type { Team } from "$lib/domain/entities/Team";
-  import type { Player } from "$lib/domain/entities/Player";
   import { get_fixture_lineup_use_cases } from "$lib/usecases/FixtureLineupUseCases";
   import { get_fixture_use_cases } from "$lib/usecases/FixtureUseCases";
   import { get_team_use_cases } from "$lib/usecases/TeamUseCases";
   import { get_player_use_cases } from "$lib/usecases/PlayerUseCases";
+  import { get_player_team_membership_use_cases } from "$lib/usecases/PlayerTeamMembershipUseCases";
+  import { get_player_position_use_cases } from "$lib/usecases/PlayerPositionUseCases";
+  import {
+    build_position_name_by_id,
+    build_team_players,
+    type TeamPlayer,
+  } from "$lib/core/teamPlayers";
   import {
     get_fixture_lineup_by_id,
     submit_lineup,
@@ -23,13 +29,15 @@
   const fixture_use_cases = get_fixture_use_cases();
   const team_use_cases = get_team_use_cases();
   const player_use_cases = get_player_use_cases();
+  const membership_use_cases = get_player_team_membership_use_cases();
+  const player_position_use_cases = get_player_position_use_cases();
 
   let lineup_id: string = "";
   let lineup: FixtureLineup | null = null;
   let fixture: Fixture | null = null;
   let team: Team | null = null;
-  let team_players: Player[] = [];
-  let selected_players_map: Map<string, Player> = new Map();
+  let team_players: TeamPlayer[] = [];
+  let selected_players_map: Map<string, TeamPlayer> = new Map();
   let home_team: Team | null = null;
   let away_team: Team | null = null;
 
@@ -56,13 +64,24 @@
 
     lineup = result.data;
 
-    const [fixture_result, team_result, players_result] = await Promise.all([
+    const [
+      fixture_result,
+      team_result,
+      players_result,
+      memberships_result,
+      positions_result,
+    ] = await Promise.all([
       fixture_use_cases.get_by_id(lineup.fixture_id),
       team_use_cases.get_by_id(lineup.team_id),
-      player_use_cases.list(
-        { team_id: lineup.team_id },
-        { page: 1, page_size: 100 }
-      ),
+      player_use_cases.list_players_by_team(lineup.team_id, {
+        page_number: 1,
+        page_size: 500,
+      }),
+      membership_use_cases.list_memberships_by_team(lineup.team_id, {
+        page_number: 1,
+        page_size: 5000,
+      }),
+      player_position_use_cases.list(undefined, { page: 1, page_size: 500 }),
     ]);
 
     if (fixture_result.success && fixture_result.data) {
@@ -80,14 +99,27 @@
     }
 
     if (team_result.success && team_result.data) team = team_result.data;
-    if (players_result.success) {
-      team_players = players_result.data;
-      selected_players_map = new Map(
-        team_players
-          .filter((p) => lineup?.selected_player_ids.includes(p.id))
-          .map((p) => [p.id, p])
-      );
-    }
+    const base_players =
+      players_result.success && players_result.data
+        ? players_result.data.items
+        : [];
+    const memberships =
+      memberships_result.success && memberships_result.data
+        ? memberships_result.data.items
+        : [];
+    const positions = positions_result.success ? positions_result.data : [];
+
+    const position_name_by_id = build_position_name_by_id(positions);
+    team_players = build_team_players(
+      base_players,
+      memberships,
+      position_name_by_id
+    );
+    selected_players_map = new Map(
+      team_players
+        .filter((p) => lineup?.selected_player_ids.includes(p.id))
+        .map((p) => [p.id, p])
+    );
 
     loading = false;
   }
@@ -260,7 +292,8 @@
                       {player.last_name}
                     </p>
                     <p class="text-sm text-accent-600 dark:text-accent-400">
-                      #{player.jersey_number} • {player.position}
+                      #{player.jersey_number ?? "?"} • {player.position ||
+                        "No position"}
                     </p>
                   </div>
                   {#if is_selected}
@@ -298,7 +331,8 @@
                   {player.last_name}
                 </p>
                 <p class="text-sm text-accent-600 dark:text-accent-400">
-                  #{player.jersey_number} • {player.position}
+                  #{player.jersey_number ?? "?"} • {player.position ||
+                    "No position"}
                 </p>
               </div>
             {/each}

@@ -48,6 +48,7 @@ private register_new_entity_metadata(): void {
         field_type: 'string',
         is_required: true,
         is_read_only: false,
+        show_in_list: true,
       },
       // ... other field definitions
     ]
@@ -135,12 +136,6 @@ src/lib/
 5. **No Nested IFs** - Flat conditional logic
 6. **Modular Files** - Each file under 200 lines when possible
 7. **Debug Logging** - Comprehensive logging for troubleshooting
-
-## Testing
-
-Visit `/crud-test` to test the system with any entity type. The interface dynamically adapts based on the selected entity's metadata.
-
-Visit `/workflow` for the complete end-to-end workflow wizard.
 
 ## Next Steps
 

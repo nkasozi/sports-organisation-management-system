@@ -11,6 +11,7 @@
   import type { FixtureLineup } from "$lib/domain/entities/FixtureLineup";
   import type { Team } from "$lib/domain/entities/Team";
   import type { Player } from "$lib/domain/entities/Player";
+  import type { PlayerTeamMembership } from "$lib/domain/entities/PlayerTeamMembership";
   import {
     get_quick_event_buttons,
     create_game_event,
@@ -23,6 +24,8 @@
   import { get_fixture_lineup_use_cases } from "$lib/usecases/FixtureLineupUseCases";
   import { get_team_use_cases } from "$lib/usecases/TeamUseCases";
   import { get_player_use_cases } from "$lib/usecases/PlayerUseCases";
+  import { get_player_team_membership_use_cases } from "$lib/usecases/PlayerTeamMembershipUseCases";
+  import { get_player_position_use_cases } from "$lib/usecases/PlayerPositionUseCases";
   import Toast from "$lib/components/ui/Toast.svelte";
   import ConfirmationModal from "$lib/components/ui/ConfirmationModal.svelte";
 
@@ -30,12 +33,20 @@
   const fixture_lineup_use_cases = get_fixture_lineup_use_cases();
   const team_use_cases = get_team_use_cases();
   const player_use_cases = get_player_use_cases();
+  const player_team_membership_use_cases =
+    get_player_team_membership_use_cases();
+  const player_position_use_cases = get_player_position_use_cases();
+
+  type TeamPlayer = Player & {
+    jersey_number: number | null;
+    position: string | null;
+  };
 
   let fixture: Fixture | null = null;
   let home_team: Team | null = null;
   let away_team: Team | null = null;
-  let home_players: Player[] = [];
-  let away_players: Player[] = [];
+  let home_players: TeamPlayer[] = [];
+  let away_players: TeamPlayer[] = [];
   let is_loading: boolean = true;
   let error_message: string = "";
   let is_updating: boolean = false;
@@ -53,8 +64,50 @@
   let event_player_name: string = "";
   let event_description: string = "";
   let event_minute: number = 0;
-  let filtered_players: Player[] = [];
+  let filtered_players: TeamPlayer[] = [];
   let show_player_dropdown: boolean = false;
+
+  function build_position_name_by_id_map(
+    positions: Array<{ id: string; name: string }>
+  ): Map<string, string> {
+    return new Map(positions.map((position) => [position.id, position.name]));
+  }
+
+  function pick_best_membership_for_player(
+    memberships: PlayerTeamMembership[],
+    player_id: string
+  ): PlayerTeamMembership | null {
+    const candidates = memberships
+      .filter((membership) => membership.player_id === player_id)
+      .sort((a, b) => (a.start_date < b.start_date ? 1 : -1));
+
+    const active = candidates.find(
+      (membership) => membership.status === "active"
+    );
+    return active || candidates[0] || null;
+  }
+
+  function build_team_players(
+    players: Player[],
+    memberships: PlayerTeamMembership[],
+    position_name_by_id: Map<string, string>
+  ): TeamPlayer[] {
+    return players.map((player) => {
+      const membership = pick_best_membership_for_player(
+        memberships,
+        player.id
+      );
+      const position_name = player.position_id
+        ? position_name_by_id.get(player.position_id) || null
+        : null;
+
+      return {
+        ...player,
+        jersey_number: membership?.jersey_number ?? null,
+        position: position_name,
+      };
+    });
+  }
 
   let toast_visible: boolean = false;
   let toast_message: string = "";
@@ -137,15 +190,53 @@
     if (home_result.success && home_result.data) home_team = home_result.data;
     if (away_result.success && away_result.data) away_team = away_result.data;
 
-    const [home_players_result, away_players_result] = await Promise.all([
+    const [
+      home_players_result,
+      away_players_result,
+      home_memberships_result,
+      away_memberships_result,
+      positions_result,
+    ] = await Promise.all([
       player_use_cases.list_players_by_team(fixture.home_team_id),
       player_use_cases.list_players_by_team(fixture.away_team_id),
+      player_team_membership_use_cases.list_memberships_by_team(
+        fixture.home_team_id,
+        { page_number: 1, page_size: 10000 }
+      ),
+      player_team_membership_use_cases.list_memberships_by_team(
+        fixture.away_team_id,
+        { page_number: 1, page_size: 10000 }
+      ),
+      player_position_use_cases.list(undefined, { page: 1, page_size: 1000 }),
     ]);
 
-    if (home_players_result.success)
-      home_players = home_players_result.data.items;
-    if (away_players_result.success)
-      away_players = away_players_result.data.items;
+    const position_name_by_id = build_position_name_by_id_map(
+      positions_result.success ? positions_result.data : []
+    );
+
+    home_players =
+      home_players_result.success &&
+      home_memberships_result.success &&
+      home_players_result.data &&
+      home_memberships_result.data
+        ? build_team_players(
+            home_players_result.data.items,
+            home_memberships_result.data.items,
+            position_name_by_id
+          )
+        : [];
+
+    away_players =
+      away_players_result.success &&
+      away_memberships_result.success &&
+      away_players_result.data &&
+      away_memberships_result.data
+        ? build_team_players(
+            away_players_result.data.items,
+            away_memberships_result.data.items,
+            position_name_by_id
+          )
+        : [];
 
     is_loading = false;
   }
@@ -478,11 +569,11 @@
     }
   }
 
-  function get_players_for_team(team: "home" | "away"): Player[] {
+  function get_players_for_team(team: "home" | "away"): TeamPlayer[] {
     return team === "home" ? home_players : away_players;
   }
 
-  function format_player_option(player: Player): string {
+  function format_player_option(player: TeamPlayer): string {
     const jersey = player.jersey_number ?? "?";
     const name = `${player.first_name} ${player.last_name}`;
     const position = player.position ? `• ${player.position}` : "";
@@ -511,7 +602,7 @@
     }
   }
 
-  function select_player(player: Player): void {
+  function select_player(player: TeamPlayer): void {
     event_player_name = format_player_option(player);
     show_player_dropdown = false;
     filtered_players = [];
