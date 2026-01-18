@@ -1,15 +1,15 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { get_organization_use_cases } from "$lib/usecases/OrganizationUseCases";
-  import { get_competition_use_cases } from "$lib/usecases/CompetitionUseCases";
-  import { get_team_use_cases } from "$lib/usecases/TeamUseCases";
-  import { get_player_use_cases } from "$lib/usecases/PlayerUseCases";
-  import { get_fixture_use_cases } from "$lib/usecases/FixtureUseCases";
-  import { reset_all_data } from "$lib/services/dataResetService";
-  import { branding_store } from "$lib/stores/branding";
-  import type { Competition } from "$lib/domain/entities/Competition";
-  import type { Fixture } from "$lib/domain/entities/Fixture";
-  import type { Team } from "$lib/domain/entities/Team";
+  import { get_organization_use_cases } from "$lib/core/usecases/OrganizationUseCases";
+  import { get_competition_use_cases } from "$lib/core/usecases/CompetitionUseCases";
+  import { get_team_use_cases } from "$lib/core/usecases/TeamUseCases";
+  import { get_player_use_cases } from "$lib/core/usecases/PlayerUseCases";
+  import { get_fixture_use_cases } from "$lib/core/usecases/FixtureUseCases";
+  import { reset_all_data } from "$lib/adapters/services/dataResetService";
+  import { branding_store } from "$lib/presentation/stores/branding";
+  import type { Competition } from "$lib/core/entities/Competition";
+  import type { Fixture } from "$lib/core/entities/Fixture";
+  import type { Team } from "$lib/core/entities/Team";
 
   const organization_use_cases = get_organization_use_cases();
   const competition_use_cases = get_competition_use_cases();

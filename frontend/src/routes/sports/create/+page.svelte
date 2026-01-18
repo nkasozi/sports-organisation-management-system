@@ -7,17 +7,17 @@
     SportGamePeriod,
     OfficialRequirement,
     ScoringRule,
-  } from "$lib/domain/entities/Sport";
+  } from "$lib/core/entities/Sport";
   import {
     create_empty_sport_input,
     create_football_sport_preset,
     create_basketball_sport_preset,
     create_field_hockey_sport_preset,
-  } from "$lib/domain/entities/Sport";
-  import { sportService } from "$lib/services/sportService";
-  import FormField from "$lib/components/ui/FormField.svelte";
-  import EnumSelectField from "$lib/components/ui/EnumSelectField.svelte";
-  import Toast from "$lib/components/ui/Toast.svelte";
+  } from "$lib/core/entities/Sport";
+  import { sportService } from "$lib/adapters/services/sportService";
+  import FormField from "$lib/presentation/components/ui/FormField.svelte";
+  import EnumSelectField from "$lib/presentation/components/ui/EnumSelectField.svelte";
+  import Toast from "$lib/presentation/components/ui/Toast.svelte";
 
   let form_data: CreateSportInput = create_empty_sport_input();
   let is_saving: boolean = false;

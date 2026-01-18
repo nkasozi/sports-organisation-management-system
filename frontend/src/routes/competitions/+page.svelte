@@ -1,7 +1,7 @@
 <script lang="ts">
   import { goto } from "$app/navigation";
-  import DynamicEntityList from "$lib/components/DynamicEntityList.svelte";
-  import type { BaseEntity } from "$lib/core/BaseEntity";
+  import DynamicEntityList from "$lib/presentation/components/DynamicEntityList.svelte";
+  import type { BaseEntity } from "$lib/core/entities/BaseEntity";
 
   function handle_create_new(): void {
     goto("/competitions/create");

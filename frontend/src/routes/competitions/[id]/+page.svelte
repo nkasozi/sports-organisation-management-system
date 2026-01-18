@@ -5,26 +5,26 @@
   import type {
     Competition,
     UpdateCompetitionInput,
-  } from "$lib/domain/entities/Competition";
-  import type { Organization } from "$lib/domain/entities/Organization";
-  import type { Team } from "$lib/domain/entities/Team";
-  import type { Sport } from "$lib/domain/entities/Sport";
-  import type { CompetitionTeam } from "$lib/domain/entities/CompetitionTeam";
-  import type { CompetitionFormat } from "$lib/domain/entities/CompetitionFormat";
-  import type { LoadingState } from "$lib/components/ui/LoadingStateWrapper.svelte";
-  import type { SelectOption } from "$lib/components/ui/SelectField.svelte";
-  import { get_competition_use_cases } from "$lib/usecases/CompetitionUseCases";
-  import { get_organization_use_cases } from "$lib/usecases/OrganizationUseCases";
-  import { get_team_use_cases } from "$lib/usecases/TeamUseCases";
-  import { get_competition_team_use_cases } from "$lib/usecases/CompetitionTeamUseCases";
-  import { get_competition_format_use_cases } from "$lib/usecases/CompetitionFormatUseCases";
-  import { get_sport_by_id } from "$lib/services/sportService";
-  import LoadingStateWrapper from "$lib/components/ui/LoadingStateWrapper.svelte";
-  import FormField from "$lib/components/ui/FormField.svelte";
-  import SelectField from "$lib/components/ui/SelectField.svelte";
-  import EnumSelectField from "$lib/components/ui/EnumSelectField.svelte";
-  import Toast from "$lib/components/ui/Toast.svelte";
-  import SportRulesCustomizer from "$lib/components/competition/SportRulesCustomizer.svelte";
+  } from "$lib/core/entities/Competition";
+  import type { Organization } from "$lib/core/entities/Organization";
+  import type { Team } from "$lib/core/entities/Team";
+  import type { Sport } from "$lib/core/entities/Sport";
+  import type { CompetitionTeam } from "$lib/core/entities/CompetitionTeam";
+  import type { CompetitionFormat } from "$lib/core/entities/CompetitionFormat";
+  import type { LoadingState } from "$lib/presentation/components/ui/LoadingStateWrapper.svelte";
+  import type { SelectOption } from "$lib/presentation/components/ui/SelectField.svelte";
+  import { get_competition_use_cases } from "$lib/core/usecases/CompetitionUseCases";
+  import { get_organization_use_cases } from "$lib/core/usecases/OrganizationUseCases";
+  import { get_team_use_cases } from "$lib/core/usecases/TeamUseCases";
+  import { get_competition_team_use_cases } from "$lib/core/usecases/CompetitionTeamUseCases";
+  import { get_competition_format_use_cases } from "$lib/core/usecases/CompetitionFormatUseCases";
+  import { get_sport_by_id } from "$lib/adapters/services/sportService";
+  import LoadingStateWrapper from "$lib/presentation/components/ui/LoadingStateWrapper.svelte";
+  import FormField from "$lib/presentation/components/ui/FormField.svelte";
+  import SelectField from "$lib/presentation/components/ui/SelectField.svelte";
+  import EnumSelectField from "$lib/presentation/components/ui/EnumSelectField.svelte";
+  import Toast from "$lib/presentation/components/ui/Toast.svelte";
+  import SportRulesCustomizer from "$lib/presentation/components/competition/SportRulesCustomizer.svelte";
 
   const competition_use_cases = get_competition_use_cases();
   const organization_use_cases = get_organization_use_cases();

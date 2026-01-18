@@ -1,5 +1,5 @@
 <script lang="ts">
-  import EntityCrudWrapper from "$lib/components/EntityCrudWrapper.svelte";
+  import EntityCrudWrapper from "$lib/presentation/components/EntityCrudWrapper.svelte";
 </script>
 
 <svelte:head>

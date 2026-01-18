@@ -1,17 +1,17 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { goto } from "$app/navigation";
-  import type { Competition } from "$lib/domain/entities/Competition";
-  import type { Fixture } from "$lib/domain/entities/Fixture";
-  import type { Team } from "$lib/domain/entities/Team";
-  import type { CompetitionFormat } from "$lib/domain/entities/CompetitionFormat";
-  import type { LoadingState } from "$lib/components/ui/LoadingStateWrapper.svelte";
-  import { get_competition_use_cases } from "$lib/usecases/CompetitionUseCases";
-  import { get_fixture_use_cases } from "$lib/usecases/FixtureUseCases";
-  import { get_team_use_cases } from "$lib/usecases/TeamUseCases";
-  import { get_competition_format_use_cases } from "$lib/usecases/CompetitionFormatUseCases";
-  import { get_competition_team_use_cases } from "$lib/usecases/CompetitionTeamUseCases";
-  import LoadingStateWrapper from "$lib/components/ui/LoadingStateWrapper.svelte";
+  import type { Competition } from "$lib/core/entities/Competition";
+  import type { Fixture } from "$lib/core/entities/Fixture";
+  import type { Team } from "$lib/core/entities/Team";
+  import type { CompetitionFormat } from "$lib/core/entities/CompetitionFormat";
+  import type { LoadingState } from "$lib/presentation/components/ui/LoadingStateWrapper.svelte";
+  import { get_competition_use_cases } from "$lib/core/usecases/CompetitionUseCases";
+  import { get_fixture_use_cases } from "$lib/core/usecases/FixtureUseCases";
+  import { get_team_use_cases } from "$lib/core/usecases/TeamUseCases";
+  import { get_competition_format_use_cases } from "$lib/core/usecases/CompetitionFormatUseCases";
+  import { get_competition_team_use_cases } from "$lib/core/usecases/CompetitionTeamUseCases";
+  import LoadingStateWrapper from "$lib/presentation/components/ui/LoadingStateWrapper.svelte";
 
   const competition_use_cases = get_competition_use_cases();
   const fixture_use_cases = get_fixture_use_cases();

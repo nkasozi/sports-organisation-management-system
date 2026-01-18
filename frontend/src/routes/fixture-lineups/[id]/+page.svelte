@@ -5,25 +5,25 @@
   import type {
     FixtureLineup,
     UpdateFixtureLineupInput,
-  } from "$lib/domain/entities/FixtureLineup";
-  import type { Fixture } from "$lib/domain/entities/Fixture";
-  import type { Team } from "$lib/domain/entities/Team";
-  import { get_fixture_lineup_use_cases } from "$lib/usecases/FixtureLineupUseCases";
-  import { get_fixture_use_cases } from "$lib/usecases/FixtureUseCases";
-  import { get_team_use_cases } from "$lib/usecases/TeamUseCases";
-  import { get_player_use_cases } from "$lib/usecases/PlayerUseCases";
-  import { get_player_team_membership_use_cases } from "$lib/usecases/PlayerTeamMembershipUseCases";
-  import { get_player_position_use_cases } from "$lib/usecases/PlayerPositionUseCases";
+  } from "$lib/core/entities/FixtureLineup";
+  import type { Fixture } from "$lib/core/entities/Fixture";
+  import type { Team } from "$lib/core/entities/Team";
+  import { get_fixture_lineup_use_cases } from "$lib/core/usecases/FixtureLineupUseCases";
+  import { get_fixture_use_cases } from "$lib/core/usecases/FixtureUseCases";
+  import { get_team_use_cases } from "$lib/core/usecases/TeamUseCases";
+  import { get_player_use_cases } from "$lib/core/usecases/PlayerUseCases";
+  import { get_player_team_membership_use_cases } from "$lib/core/usecases/PlayerTeamMembershipUseCases";
+  import { get_player_position_use_cases } from "$lib/core/usecases/PlayerPositionUseCases";
   import {
     build_position_name_by_id,
     build_team_players,
     type TeamPlayer,
-  } from "$lib/core/teamPlayers";
+  } from "$lib/core/services/teamPlayers";
   import {
     get_fixture_lineup_by_id,
     submit_lineup,
     lock_lineup,
-  } from "$lib/services/fixtureLineupService";
+  } from "$lib/adapters/services/fixtureLineupService";
 
   const lineup_use_cases = get_fixture_lineup_use_cases();
   const fixture_use_cases = get_fixture_use_cases();

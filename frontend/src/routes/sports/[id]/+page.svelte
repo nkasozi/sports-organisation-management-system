@@ -10,13 +10,13 @@
     SportGamePeriod,
     OfficialRequirement,
     ScoringRule,
-  } from "$lib/domain/entities/Sport";
-  import type { LoadingState } from "$lib/components/ui/LoadingStateWrapper.svelte";
-  import { sportService } from "$lib/services/sportService";
-  import LoadingStateWrapper from "$lib/components/ui/LoadingStateWrapper.svelte";
-  import FormField from "$lib/components/ui/FormField.svelte";
-  import EnumSelectField from "$lib/components/ui/EnumSelectField.svelte";
-  import Toast from "$lib/components/ui/Toast.svelte";
+  } from "$lib/core/entities/Sport";
+  import type { LoadingState } from "$lib/presentation/components/ui/LoadingStateWrapper.svelte";
+  import { sportService } from "$lib/adapters/services/sportService";
+  import LoadingStateWrapper from "$lib/presentation/components/ui/LoadingStateWrapper.svelte";
+  import FormField from "$lib/presentation/components/ui/FormField.svelte";
+  import EnumSelectField from "$lib/presentation/components/ui/EnumSelectField.svelte";
+  import Toast from "$lib/presentation/components/ui/Toast.svelte";
 
   let sport: Sport | null = null;
   let form_data: UpdateSportInput = {};

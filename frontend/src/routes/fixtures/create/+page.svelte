@@ -1,29 +1,29 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { goto } from "$app/navigation";
-  import type { Competition } from "$lib/domain/entities/Competition";
-  import type { Team } from "$lib/domain/entities/Team";
-  import type { CompetitionTeam } from "$lib/domain/entities/CompetitionTeam";
-  import type { Official } from "$lib/domain/entities/Official";
-  import type { GameOfficialRole } from "$lib/domain/entities/GameOfficialRole";
-  import type { Venue } from "$lib/domain/entities/Venue";
+  import type { Competition } from "$lib/core/entities/Competition";
+  import type { Team } from "$lib/core/entities/Team";
+  import type { CompetitionTeam } from "$lib/core/entities/CompetitionTeam";
+  import type { Official } from "$lib/core/entities/Official";
+  import type { GameOfficialRole } from "$lib/core/entities/GameOfficialRole";
+  import type { Venue } from "$lib/core/entities/Venue";
   import type {
     CreateFixtureInput,
     AssignedOfficial,
-  } from "$lib/domain/entities/Fixture";
-  import type { SelectOption } from "$lib/components/ui/SelectField.svelte";
-  import { create_empty_fixture_input } from "$lib/domain/entities/Fixture";
-  import { get_fixture_use_cases } from "$lib/usecases/FixtureUseCases";
-  import { get_competition_use_cases } from "$lib/usecases/CompetitionUseCases";
-  import { get_team_use_cases } from "$lib/usecases/TeamUseCases";
-  import { get_competition_team_use_cases } from "$lib/usecases/CompetitionTeamUseCases";
-  import { get_official_use_cases } from "$lib/usecases/OfficialUseCases";
-  import { get_game_official_role_use_cases } from "$lib/usecases/GameOfficialRoleUseCases";
-  import { get_venue_use_cases } from "$lib/usecases/VenueUseCases";
-  import FormField from "$lib/components/ui/FormField.svelte";
-  import SelectField from "$lib/components/ui/SelectField.svelte";
-  import FixtureOfficialAssignment from "$lib/components/ui/FixtureOfficialAssignment.svelte";
-  import Toast from "$lib/components/ui/Toast.svelte";
+  } from "$lib/core/entities/Fixture";
+  import type { SelectOption } from "$lib/presentation/components/ui/SelectField.svelte";
+  import { create_empty_fixture_input } from "$lib/core/entities/Fixture";
+  import { get_fixture_use_cases } from "$lib/core/usecases/FixtureUseCases";
+  import { get_competition_use_cases } from "$lib/core/usecases/CompetitionUseCases";
+  import { get_team_use_cases } from "$lib/core/usecases/TeamUseCases";
+  import { get_competition_team_use_cases } from "$lib/core/usecases/CompetitionTeamUseCases";
+  import { get_official_use_cases } from "$lib/core/usecases/OfficialUseCases";
+  import { get_game_official_role_use_cases } from "$lib/core/usecases/GameOfficialRoleUseCases";
+  import { get_venue_use_cases } from "$lib/core/usecases/VenueUseCases";
+  import FormField from "$lib/presentation/components/ui/FormField.svelte";
+  import SelectField from "$lib/presentation/components/ui/SelectField.svelte";
+  import FixtureOfficialAssignment from "$lib/presentation/components/ui/FixtureOfficialAssignment.svelte";
+  import Toast from "$lib/presentation/components/ui/Toast.svelte";
 
   const fixture_use_cases = get_fixture_use_cases();
   const competition_use_cases = get_competition_use_cases();

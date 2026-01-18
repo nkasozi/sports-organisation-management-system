@@ -1,36 +1,36 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { goto } from "$app/navigation";
-  import type { CreateFixtureLineupInput } from "$lib/domain/entities/FixtureLineup";
-  import type { Fixture } from "$lib/domain/entities/Fixture";
-  import type { Team } from "$lib/domain/entities/Team";
-  import type { Competition } from "$lib/domain/entities/Competition";
-  import type { Sport } from "$lib/domain/entities/Sport";
-  import type { CompetitionTeam } from "$lib/domain/entities/CompetitionTeam";
-  import { get_fixture_lineup_use_cases } from "$lib/usecases/FixtureLineupUseCases";
-  import { get_fixture_use_cases } from "$lib/usecases/FixtureUseCases";
-  import { get_team_use_cases } from "$lib/usecases/TeamUseCases";
-  import { get_player_use_cases } from "$lib/usecases/PlayerUseCases";
-  import { get_competition_use_cases } from "$lib/usecases/CompetitionUseCases";
-  import { get_competition_team_use_cases } from "$lib/usecases/CompetitionTeamUseCases";
-  import { get_player_team_membership_use_cases } from "$lib/usecases/PlayerTeamMembershipUseCases";
-  import { get_player_position_use_cases } from "$lib/usecases/PlayerPositionUseCases";
-  import { get_organization_use_cases } from "$lib/usecases/OrganizationUseCases";
-  import { get_sport_by_id } from "$lib/services/sportService";
-  import { create_empty_fixture_lineup_input } from "$lib/domain/entities/FixtureLineup";
-  import UiWizardStepper from "$lib/components/UiWizardStepper.svelte";
-  import SelectField from "$lib/components/ui/SelectField.svelte";
+  import type { CreateFixtureLineupInput } from "$lib/core/entities/FixtureLineup";
+  import type { Fixture } from "$lib/core/entities/Fixture";
+  import type { Team } from "$lib/core/entities/Team";
+  import type { Competition } from "$lib/core/entities/Competition";
+  import type { Sport } from "$lib/core/entities/Sport";
+  import type { CompetitionTeam } from "$lib/core/entities/CompetitionTeam";
+  import { get_fixture_lineup_use_cases } from "$lib/core/usecases/FixtureLineupUseCases";
+  import { get_fixture_use_cases } from "$lib/core/usecases/FixtureUseCases";
+  import { get_team_use_cases } from "$lib/core/usecases/TeamUseCases";
+  import { get_player_use_cases } from "$lib/core/usecases/PlayerUseCases";
+  import { get_competition_use_cases } from "$lib/core/usecases/CompetitionUseCases";
+  import { get_competition_team_use_cases } from "$lib/core/usecases/CompetitionTeamUseCases";
+  import { get_player_team_membership_use_cases } from "$lib/core/usecases/PlayerTeamMembershipUseCases";
+  import { get_player_position_use_cases } from "$lib/core/usecases/PlayerPositionUseCases";
+  import { get_organization_use_cases } from "$lib/core/usecases/OrganizationUseCases";
+  import { get_sport_by_id } from "$lib/adapters/services/sportService";
+  import { create_empty_fixture_lineup_input } from "$lib/core/entities/FixtureLineup";
+  import UiWizardStepper from "$lib/presentation/components/UiWizardStepper.svelte";
+  import SelectField from "$lib/presentation/components/ui/SelectField.svelte";
   import {
     build_position_name_by_id,
     build_team_players,
     matches_team_player_search,
     type TeamPlayer,
-  } from "$lib/core/teamPlayers";
+  } from "$lib/core/services/teamPlayers";
   import {
     build_error_message,
     derive_initial_selected_player_ids,
     summarize_selected_team_players,
-  } from "$lib/core/fixtureLineupWizard";
+  } from "$lib/core/services/fixtureLineupWizard";
 
   const lineup_use_cases = get_fixture_lineup_use_cases();
   const fixture_use_cases = get_fixture_use_cases();
