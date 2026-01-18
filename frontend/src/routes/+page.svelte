@@ -21,6 +21,17 @@
   };
 
   onMount(async () => {
+    const debug_count = localStorage.getItem("debug_officials_count");
+    if (debug_count) {
+      console.log("[DEBUG] Officials count after reset:", debug_count);
+      const storage_data = localStorage.getItem("sports_org_officials");
+      if (storage_data) {
+        const officials = JSON.parse(storage_data);
+        console.log("[DEBUG] Officials in localStorage:", officials);
+      }
+      localStorage.removeItem("debug_officials_count");
+    }
+
     const [org_result, comp_result, team_result, player_result] =
       await Promise.all([
         organization_use_cases.list(undefined, { page: 1, page_size: 1 }),
@@ -488,7 +499,7 @@
     </h2>
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
       <a
-        href="/organizations/create"
+        href="/organizations?action=create"
         class="flex flex-col items-center p-4 text-center hover:bg-accent-50 dark:hover:bg-accent-700 rounded-lg transition-colors duration-200 mobile-touch"
       >
         <div
@@ -540,7 +551,7 @@
       </a>
 
       <a
-        href="/teams/create"
+        href="/teams?action=create"
         class="flex flex-col items-center p-4 text-center hover:bg-accent-50 dark:hover:bg-accent-700 rounded-lg transition-colors duration-200 mobile-touch"
       >
         <div

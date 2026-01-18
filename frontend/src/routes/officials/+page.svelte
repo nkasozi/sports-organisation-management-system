@@ -6,4 +6,4 @@
   <title>Officials - Sports Management</title>
 </svelte:head>
 
-<EntityCrudWrapper entity_type="Official" />
+<EntityCrudWrapper entity_type="official" />
