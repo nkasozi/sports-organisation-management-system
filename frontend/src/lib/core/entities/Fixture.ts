@@ -72,6 +72,8 @@ export interface Fixture extends BaseEntity {
   match_day: number;
   notes: string;
   status: FixtureStatus;
+  home_team_name?: string;
+  away_team_name?: string;
 }
 
 export type CreateFixtureInput = Omit<

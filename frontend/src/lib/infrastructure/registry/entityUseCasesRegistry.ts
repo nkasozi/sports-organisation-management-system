@@ -6,6 +6,7 @@ import { get_player_team_membership_use_cases } from "$lib/core/usecases/PlayerT
 import { get_player_position_use_cases } from "$lib/core/usecases/PlayerPositionUseCases";
 import { get_official_use_cases } from "$lib/core/usecases/OfficialUseCases";
 import { get_fixture_use_cases } from "$lib/core/usecases/FixtureUseCases";
+import { get_fixture_official_use_cases } from "$lib/core/usecases/FixtureOfficialUseCases";
 import { get_competition_format_use_cases } from "$lib/core/usecases/CompetitionFormatUseCases";
 import { get_game_event_type_use_cases } from "$lib/core/usecases/GameEventTypeUseCases";
 import { get_game_official_role_use_cases } from "$lib/core/usecases/GameOfficialRoleUseCases";
@@ -31,6 +32,7 @@ const VALID_ENTITY_TYPE_KEYS = [
   "playerteammembership",
   "official",
   "fixture",
+  "fixtureofficial",
   "competitionformat",
   "gameeventtype",
   "gameofficialrole",
@@ -81,6 +83,8 @@ function create_use_cases_registry(): Record<EntityTypeKey, UseCasesGetter> {
       get_official_use_cases as UseCasesGetter,
     ["fixture" satisfies EntityTypeKey]:
       get_fixture_use_cases as UseCasesGetter,
+    ["fixtureofficial" satisfies EntityTypeKey]:
+      get_fixture_official_use_cases as UseCasesGetter,
     ["competitionformat" satisfies EntityTypeKey]:
       get_competition_format_use_cases as UseCasesGetter,
     ["gameeventtype" satisfies EntityTypeKey]:

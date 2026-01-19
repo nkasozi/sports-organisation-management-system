@@ -176,6 +176,41 @@ describe("FixtureLineupUseCases", () => {
       expect(result.success).toBe(false);
       expect(result.error_message).toBe("FixtureLineup ID is required");
     });
+
+    it("should fail when trying to change fixture_id", async () => {
+      vi.mocked(mock_repository.get_fixture_lineup_by_id).mockResolvedValue({
+        success: true,
+        data: create_test_lineup({
+          fixture_id: "fixture-123",
+          status: "draft",
+        }),
+      });
+
+      const result = await use_cases.update("lineup-123", {
+        fixture_id: "fixture-different",
+      });
+
+      expect(result.success).toBe(false);
+      expect(result.error_message).toBe(
+        "Cannot change fixture for an existing lineup. Please create a new lineup instead.",
+      );
+    });
+
+    it("should fail when trying to change team_id", async () => {
+      vi.mocked(mock_repository.get_fixture_lineup_by_id).mockResolvedValue({
+        success: true,
+        data: create_test_lineup({ team_id: "team-123", status: "draft" }),
+      });
+
+      const result = await use_cases.update("lineup-123", {
+        team_id: "team-different",
+      });
+
+      expect(result.success).toBe(false);
+      expect(result.error_message).toBe(
+        "Cannot change team for an existing lineup. Please create a new lineup instead.",
+      );
+    });
   });
 
   describe("delete", () => {

@@ -121,6 +121,11 @@ describe("FixtureOfficialUseCases", () => {
 
   describe("create", () => {
     it("should create with valid input", async () => {
+      vi.mocked(mock_repository.find_by_filter).mockResolvedValue({
+        success: true,
+        data: [],
+        total_count: 0,
+      });
       vi.mocked(
         mock_repository.get_official_assignment_for_fixture,
       ).mockResolvedValue({
@@ -164,7 +169,33 @@ describe("FixtureOfficialUseCases", () => {
       expect(result.error_message).toBe("Role ID is required");
     });
 
+    it("should fail if role is already assigned to another official for this fixture", async () => {
+      vi.mocked(mock_repository.find_by_filter).mockResolvedValue({
+        success: true,
+        data: [
+          create_test_fixture_official({
+            fixture_id: "fixture-456",
+            role_id: "role-456",
+            official_id: "different-official-123",
+          }),
+        ],
+        total_count: 1,
+      });
+
+      const result = await use_cases.create(create_valid_input());
+
+      expect(result.success).toBe(false);
+      expect(result.error_message).toBe(
+        "This role is already assigned to another official for this fixture",
+      );
+    });
+
     it("should fail if official is already assigned to fixture", async () => {
+      vi.mocked(mock_repository.find_by_filter).mockResolvedValue({
+        success: true,
+        data: [],
+        total_count: 0,
+      });
       vi.mocked(
         mock_repository.get_official_assignment_for_fixture,
       ).mockResolvedValue({
@@ -186,6 +217,11 @@ describe("FixtureOfficialUseCases", () => {
       vi.mocked(mock_repository.get_fixture_official_by_id).mockResolvedValue({
         success: true,
         data: create_test_fixture_official(),
+      });
+      vi.mocked(mock_repository.find_by_filter).mockResolvedValue({
+        success: true,
+        data: [],
+        total_count: 0,
       });
       vi.mocked(mock_repository.update_fixture_official).mockResolvedValue({
         success: true,
@@ -219,6 +255,38 @@ describe("FixtureOfficialUseCases", () => {
       expect(result.success).toBe(false);
       expect(result.error_message).toBe(
         "Fixture official assignment not found",
+      );
+    });
+
+    it("should fail if new role is already assigned to another official for this fixture", async () => {
+      vi.mocked(mock_repository.get_fixture_official_by_id).mockResolvedValue({
+        success: true,
+        data: create_test_fixture_official({
+          id: "fixture-official-123",
+          fixture_id: "fixture-456",
+          role_id: "role-old",
+        }),
+      });
+      vi.mocked(mock_repository.find_by_filter).mockResolvedValue({
+        success: true,
+        data: [
+          create_test_fixture_official({
+            id: "different-assignment-789",
+            fixture_id: "fixture-456",
+            role_id: "role-new",
+            official_id: "different-official-999",
+          }),
+        ],
+        total_count: 1,
+      });
+
+      const result = await use_cases.update("fixture-official-123", {
+        role_id: "role-new",
+      });
+
+      expect(result.success).toBe(false);
+      expect(result.error_message).toBe(
+        "This role is already assigned to another official for this fixture",
       );
     });
   });

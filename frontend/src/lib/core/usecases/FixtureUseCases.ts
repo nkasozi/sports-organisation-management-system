@@ -20,8 +20,47 @@ import {
 import { get_repository_container } from "../../infrastructure/container";
 import type { EntityOperationResult, EntityListResult } from "./BaseUseCases";
 import type { FixtureUseCasesPort } from "../interfaces/ports/FixtureUseCasesPort";
+import type { Team } from "../entities/Team";
 
 export type FixtureUseCases = FixtureUseCasesPort;
+
+async function enrich_fixtures_with_team_names(
+  fixtures: Fixture[],
+): Promise<Fixture[]> {
+  if (fixtures.length === 0) return fixtures;
+
+  try {
+    const container = get_repository_container();
+    if (!container.team_repository) {
+      return fixtures;
+    }
+
+    const team_repository = container.team_repository;
+    const teams_result = await team_repository.find_all();
+
+    if (!teams_result.success || !teams_result.data) {
+      return fixtures;
+    }
+
+    const teams_map = new Map<string, Team>();
+    for (const team of teams_result.data.items) {
+      teams_map.set(team.id, team);
+    }
+
+    return fixtures.map((fixture) => {
+      const home_team = teams_map.get(fixture.home_team_id);
+      const away_team = teams_map.get(fixture.away_team_id);
+      return {
+        ...fixture,
+        home_team_name: home_team?.name || fixture.home_team_id,
+        away_team_name: away_team?.name || fixture.away_team_id,
+      } as Fixture;
+    });
+  } catch (error) {
+    console.warn("[DEBUG] Failed to enrich fixtures with team names:", error);
+    return fixtures;
+  }
+}
 
 export function create_fixture_use_cases(
   repository: FixtureRepository,
@@ -42,9 +81,13 @@ export function create_fixture_use_cases(
           error_message: result.error,
         };
       }
+
+      const fixtures = result.data?.items || [];
+      const enriched_fixtures = await enrich_fixtures_with_team_names(fixtures);
+
       return {
         success: true,
-        data: result.data?.items || [],
+        data: enriched_fixtures,
         total_count: result.data?.total_count || 0,
       };
     },

@@ -18,6 +18,10 @@ const config = {
     alias: {
       $lib: "src/lib",
     },
+
+    prerender: {
+      handleUnseenRoutes: "warn",
+    },
   },
 };
 

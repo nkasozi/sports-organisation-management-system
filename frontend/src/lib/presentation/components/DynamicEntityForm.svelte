@@ -20,6 +20,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
   import SearchableSelectField from "./ui/SearchableSelectField.svelte";
   import DynamicEntityList from "./DynamicEntityList.svelte";
   import type { SubEntityFilter } from "$lib/core/types/SubEntityFilter";
+  import { build_entity_display_label } from "../logic/dynamicFormLogic";
 
   // Component props
   export let entity_type: string;
@@ -492,34 +493,6 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
     });
     if (found_option) return build_entity_display_label(found_option);
     return normalized_value;
-  }
-
-  function build_entity_display_label(entity: BaseEntity): string {
-    const record = entity as unknown as Record<string, unknown>;
-
-    const name = record["name"];
-    if (typeof name === "string" && name.trim().length > 0) return name;
-
-    const title = record["title"];
-    if (typeof title === "string" && title.trim().length > 0) return title;
-
-    const display_name = record["display_name"];
-    if (typeof display_name === "string" && display_name.trim().length > 0)
-      return display_name;
-
-    const short_name = record["short_name"];
-    if (typeof short_name === "string" && short_name.trim().length > 0)
-      return short_name;
-
-    const first_name = record["first_name"];
-    const last_name = record["last_name"];
-    const full_name = [first_name, last_name]
-      .filter((part) => typeof part === "string" && part.trim().length > 0)
-      .join(" ")
-      .trim();
-    if (full_name.length > 0) return full_name;
-
-    return String(entity.id ?? "");
   }
 
   function update_form_field_value(field_name: string, value: string): boolean {

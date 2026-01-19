@@ -4,6 +4,7 @@ import type {
   EntityMetadata,
 } from "../../core/entities/BaseEntity";
 import type { SubEntityFilter } from "../../core/types/SubEntityFilter";
+import { build_entity_display_label } from "./dynamicFormLogic";
 
 export function extract_items_from_result_data(
   data:
@@ -156,11 +157,7 @@ export function get_display_value_for_entity_field(
     const options = foreign_key_options[field_name];
     const matched_option = options.find((option) => option.id === raw_value);
     if (matched_option) {
-      return (
-        ((matched_option as unknown as Record<string, unknown>)[
-          "name"
-        ] as string) || String(raw_value)
-      );
+      return build_entity_display_label(matched_option);
     }
   }
 

@@ -69,6 +69,22 @@ export function create_fixture_official_use_cases(
         };
       }
 
+      const role_already_assigned = await repository.find_by_filter({
+        fixture_id: input.fixture_id,
+        role_id: input.role_id,
+      });
+
+      if (
+        role_already_assigned.success &&
+        role_already_assigned.data.length > 0
+      ) {
+        return {
+          success: false,
+          error_message:
+            "This role is already assigned to another official for this fixture",
+        };
+      }
+
       const existing_assignment =
         await repository.get_official_assignment_for_fixture(
           input.fixture_id,
@@ -115,6 +131,28 @@ export function create_fixture_official_use_cases(
           success: false,
           error_message: "Fixture official assignment not found",
         };
+      }
+
+      const existing_assignment = existing_result.data;
+
+      if (input.role_id && input.role_id !== existing_assignment.role_id) {
+        const fixture_id = input.fixture_id || existing_assignment.fixture_id;
+        const role_already_assigned = await repository.find_by_filter({
+          fixture_id,
+          role_id: input.role_id,
+        });
+
+        if (
+          role_already_assigned.success &&
+          role_already_assigned.data.length > 0 &&
+          role_already_assigned.data[0].id !== id
+        ) {
+          return {
+            success: false,
+            error_message:
+              "This role is already assigned to another official for this fixture",
+          };
+        }
       }
 
       return repository.update_fixture_official(id, input);

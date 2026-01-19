@@ -583,6 +583,53 @@ describe("dynamicFormLogic", () => {
       const entity = { ...create_base_entity(), name: "  Test  " } as any;
       expect(build_entity_display_label(entity)).toBe("  Test  ");
     });
+
+    it("returns team names for fixtures when available", () => {
+      const entity = {
+        ...create_base_entity(),
+        home_team_id: "team_1",
+        away_team_id: "team_2",
+        home_team_name: "Manchester United",
+        away_team_name: "Liverpool",
+      } as any;
+      expect(build_entity_display_label(entity)).toBe(
+        "Manchester United vs Liverpool",
+      );
+    });
+
+    it("returns scheduled date for fixtures without team names", () => {
+      const entity = {
+        ...create_base_entity(),
+        home_team_id: "team_1",
+        away_team_id: "team_2",
+        scheduled_date: "2024-03-15",
+      } as any;
+      expect(build_entity_display_label(entity)).toBe("Fixture (2024-03-15)");
+    });
+
+    it("returns round name for fixtures without team names or date", () => {
+      const entity = {
+        ...create_base_entity(),
+        home_team_id: "team_1",
+        away_team_id: "team_2",
+        scheduled_date: "",
+        round_name: "Quarter Finals",
+      } as any;
+      expect(build_entity_display_label(entity)).toBe(
+        "Fixture (Quarter Finals)",
+      );
+    });
+
+    it("returns shortened id for fixtures without any display data", () => {
+      const entity = {
+        ...create_base_entity({ id: "fixture_12345678_extra" }),
+        home_team_id: "team_1",
+        away_team_id: "team_2",
+        scheduled_date: "",
+        round_name: "",
+      } as any;
+      expect(build_entity_display_label(entity)).toBe("Fixture: fixture_");
+    });
   });
 
   describe("get_display_value_for_foreign_key", () => {

@@ -1731,24 +1731,6 @@ class EntityMetadataRegistry {
           is_read_only: false,
           show_in_list: false,
         },
-        {
-          field_name: "confirmation_status" satisfies keyof FixtureOfficial,
-          display_name: "Confirmation Status",
-          field_type: "enum",
-          enum_values: ["pending", "confirmed", "declined", "replaced"],
-          is_required: true,
-          is_read_only: false,
-          show_in_list: true,
-        },
-        {
-          field_name: "status" satisfies keyof FixtureOfficial,
-          display_name: "Status",
-          field_type: "enum",
-          enum_values: ["active", "inactive", "archived"],
-          is_required: true,
-          is_read_only: false,
-          show_in_list: true,
-        },
       ],
     });
   }

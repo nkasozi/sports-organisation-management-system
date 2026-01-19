@@ -14,6 +14,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
   import { get_use_cases_for_entity_type } from "../../infrastructure/registry/entityUseCasesRegistry";
   import type { SubEntityFilter } from "$lib/core/types/SubEntityFilter";
   import DynamicEntityForm from "./DynamicEntityForm.svelte";
+  import { get_display_value_for_entity_field } from "../logic/dynamicListLogic";
 
   // Component props
   export let entity_type: string;
@@ -639,44 +640,6 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
       (f: FieldMetadata) =>
         !f.is_read_only || f.field_name === "id" || f.field_name === "status"
     );
-  }
-
-  function get_display_value_for_entity_field(
-    entity: BaseEntity,
-    field_name: string,
-    fk_options: Record<string, any[]>
-  ): string {
-    const value = (entity as any)[field_name];
-    if (value === null || value === undefined) return "";
-    if (typeof value === "boolean") return value ? "Yes" : "No";
-
-    if (field_name.endsWith("_id")) {
-      const field_meta = entity_metadata?.fields.find(
-        (f: any) => f.field_name === field_name
-      );
-      if (
-        field_meta &&
-        field_meta.field_type === "foreign_key" &&
-        field_meta.foreign_key_entity
-      ) {
-        const related_entities = fk_options[field_name] || [];
-        const found_entity = related_entities.find(
-          (e: any) => String(e.id) === String(value)
-        );
-        if (found_entity) {
-          return (
-            found_entity.name ||
-            found_entity.display_name ||
-            found_entity.title ||
-            found_entity.short_name ||
-            build_full_name_from_entity(found_entity) ||
-            String(value)
-          );
-        }
-        return String(value);
-      }
-    }
-    return String(value);
   }
 
   function build_full_name_from_entity(entity: any): string {

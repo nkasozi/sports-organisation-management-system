@@ -200,6 +200,28 @@ export function build_entity_display_label(entity: BaseEntity): string {
   const title = record["title"];
   if (typeof title === "string" && title.trim() !== "") return title;
 
+  const home_team_id = record["home_team_id"];
+  const away_team_id = record["away_team_id"];
+  if (typeof home_team_id === "string" && typeof away_team_id === "string") {
+    const home_team_name = record["home_team_name"];
+    const away_team_name = record["away_team_name"];
+    if (
+      typeof home_team_name === "string" &&
+      typeof away_team_name === "string"
+    ) {
+      return `${home_team_name} vs ${away_team_name}`;
+    }
+    const scheduled_date = record["scheduled_date"];
+    const round_name = record["round_name"];
+    if (typeof scheduled_date === "string" && scheduled_date.trim() !== "") {
+      return `Fixture (${scheduled_date})`;
+    }
+    if (typeof round_name === "string" && round_name.trim() !== "") {
+      return `Fixture (${round_name})`;
+    }
+    return `Fixture: ${entity.id.slice(0, 8)}`;
+  }
+
   return entity.id;
 }
 

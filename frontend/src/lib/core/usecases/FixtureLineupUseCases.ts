@@ -90,6 +90,24 @@ export function create_fixture_lineup_use_cases(
         };
       }
 
+      const existing_lineup = existing_result.data;
+
+      if (input.fixture_id && input.fixture_id !== existing_lineup.fixture_id) {
+        return {
+          success: false,
+          error_message:
+            "Cannot change fixture for an existing lineup. Please create a new lineup instead.",
+        };
+      }
+
+      if (input.team_id && input.team_id !== existing_lineup.team_id) {
+        return {
+          success: false,
+          error_message:
+            "Cannot change team for an existing lineup. Please create a new lineup instead.",
+        };
+      }
+
       return repository.update_fixture_lineup(id, input);
     },
 
