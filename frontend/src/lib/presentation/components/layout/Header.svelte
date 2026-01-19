@@ -2,6 +2,11 @@
   import { createEventDispatcher } from "svelte";
   import { theme_store, toggle_theme_mode } from "$lib/presentation/stores/theme";
   import { branding_store } from "$lib/presentation/stores/branding";
+  import {
+    current_user_store,
+    current_user_display_name,
+    current_user_initials
+  } from "$lib/presentation/stores/currentUser";
   import ThemeToggle from "$lib/presentation/components/theme/ThemeToggle.svelte";
 
   export let sidebar_open = false;
@@ -9,6 +14,7 @@
   const dispatch = createEventDispatcher();
 
   $: has_custom_logo = $branding_store.organization_logo_url && $branding_store.organization_logo_url.length > 0;
+  $: has_profile_picture = $current_user_store?.profile_picture_base64 && $current_user_store.profile_picture_base64.length > 0;
 
   function handle_sidebar_toggle(): void {
     dispatch("toggle-sidebar");
@@ -137,29 +143,6 @@
       </div>
 
       <div class="flex items-center space-x-4">
-        <button
-          type="button"
-          class="p-2 rounded-md text-black hover:text-gray-800 hover:bg-theme-primary-400 dark:hover:bg-theme-primary-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-black transition-colors duration-200 relative"
-          aria-label="View notifications"
-        >
-          <svg
-            class="h-6 w-6"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M15 17h5l-5.5-8.5L9 17h6z M16 2v4a4 4 0 01-8 0V2"
-            />
-          </svg>
-          <span
-            class="absolute top-1 right-1 h-2 w-2 bg-theme-secondary-500 rounded-full"
-          ></span>
-        </button>
-
         <ThemeToggle />
 
         <div class="relative">
@@ -169,11 +152,19 @@
             aria-label="User menu"
           >
             <div
-              class="h-8 w-8 bg-theme-secondary-600 rounded-full flex items-center justify-center"
+              class="h-8 w-8 rounded-full flex items-center justify-center overflow-hidden {has_profile_picture ? '' : 'bg-theme-secondary-600'}"
             >
-              <span class="text-white font-medium text-sm">JD</span>
+              {#if has_profile_picture}
+                <img
+                  src={$current_user_store?.profile_picture_base64}
+                  alt="Profile"
+                  class="h-full w-full object-cover"
+                />
+              {:else}
+                <span class="text-white font-medium text-sm">{$current_user_initials}</span>
+              {/if}
             </div>
-            <span class="hidden sm:block text-sm font-medium">John Doe</span>
+            <span class="hidden sm:block text-sm font-medium">{$current_user_display_name}</span>
             <svg
               class="hidden sm:block h-4 w-4"
               fill="none"

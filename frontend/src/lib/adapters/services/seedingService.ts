@@ -56,6 +56,7 @@ import {
   clear_user_context,
 } from "../../infrastructure/events/EventBus";
 import type { SystemUser } from "../../core/entities/SystemUser";
+import { current_user_store } from "../../presentation/stores/currentUser";
 
 const SEEDING_COMPLETE_KEY = "sports_org_seeding_complete_v2";
 
@@ -99,6 +100,33 @@ async function find_competition_format_id_by_code(
 ): Promise<string> {
   const format = formats.find((f) => f.code === code);
   return format?.id ?? "";
+}
+
+async function load_and_set_current_user(): Promise<SystemUser | null> {
+  const container = get_repository_container();
+  const system_user_repository = container.system_user_repository;
+
+  const existing_users_result = await system_user_repository.find_all({
+    page_size: 100,
+  });
+
+  if (!existing_users_result.success) return null;
+
+  const super_admin = existing_users_result.data.items.find(
+    (user) => user.role === "super_admin",
+  );
+
+  if (!super_admin) return null;
+
+  set_user_context({
+    user_id: super_admin.id,
+    user_email: super_admin.email,
+    user_display_name: `${super_admin.first_name} ${super_admin.last_name}`,
+  });
+
+  current_user_store.set_user(super_admin);
+
+  return super_admin;
 }
 
 async function seed_super_admin_user(): Promise<SystemUser | null> {
@@ -153,7 +181,10 @@ function emit_entity_created_events<T extends { id: string }>(
 }
 
 export async function seed_all_data_if_needed(): Promise<boolean> {
-  if (is_seeding_already_complete()) return true;
+  if (is_seeding_already_complete()) {
+    await load_and_set_current_user();
+    return true;
+  }
   if (typeof window === "undefined") return false;
 
   const super_admin = await seed_super_admin_user();
@@ -168,6 +199,8 @@ export async function seed_all_data_if_needed(): Promise<boolean> {
     user_email: super_admin.email,
     user_display_name: `${super_admin.first_name} ${super_admin.last_name}`,
   });
+
+  current_user_store.set_user(super_admin);
 
   EventBus.emit_entity_created(
     "system_user",

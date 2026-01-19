@@ -8,6 +8,7 @@ export interface SystemUser extends BaseEntity {
   last_name: string;
   role: SystemUserRole;
   status: EntityStatus;
+  profile_picture_base64?: string;
 }
 
 export interface CreateSystemUserInput {
@@ -16,6 +17,7 @@ export interface CreateSystemUserInput {
   last_name: string;
   role: SystemUserRole;
   status?: EntityStatus;
+  profile_picture_base64?: string;
 }
 
 export interface UpdateSystemUserInput {
@@ -24,6 +26,7 @@ export interface UpdateSystemUserInput {
   last_name?: string;
   role?: SystemUserRole;
   status?: EntityStatus;
+  profile_picture_base64?: string;
 }
 
 export function validate_system_user_input(

@@ -184,13 +184,13 @@
       <div class="flex items-center">
         <div class="flex-shrink-0">
           <div
-            class="h-12 w-12 bg-primary-100 dark:bg-primary-900 rounded-lg flex items-center justify-center"
+            class="h-12 w-12 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center"
           >
             {#if loading}
               <div class="loading-spinner h-6 w-6"></div>
             {:else}
               <svg
-                class="h-6 w-6 text-primary-500"
+                class="h-6 w-6 text-blue-500"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -223,13 +223,13 @@
       <div class="flex items-center">
         <div class="flex-shrink-0">
           <div
-            class="h-12 w-12 bg-secondary-100 dark:bg-secondary-900 rounded-lg flex items-center justify-center"
+            class="h-12 w-12 bg-action-100 dark:bg-action-900 rounded-lg flex items-center justify-center"
           >
             {#if loading}
               <div class="loading-spinner h-6 w-6"></div>
             {:else}
               <svg
-                class="h-6 w-6 text-secondary-500"
+                class="h-6 w-6 text-action-500"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -262,13 +262,13 @@
       <div class="flex items-center">
         <div class="flex-shrink-0">
           <div
-            class="h-12 w-12 bg-green-100 dark:bg-green-900 rounded-lg flex items-center justify-center"
+            class="h-12 w-12 bg-emerald-100 dark:bg-emerald-900 rounded-lg flex items-center justify-center"
           >
             {#if loading}
               <div class="loading-spinner h-6 w-6"></div>
             {:else}
               <svg
-                class="h-6 w-6 text-green-500"
+                class="h-6 w-6 text-emerald-500"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -301,13 +301,13 @@
       <div class="flex items-center">
         <div class="flex-shrink-0">
           <div
-            class="h-12 w-12 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center"
+            class="h-12 w-12 bg-action-100 dark:bg-action-900 rounded-lg flex items-center justify-center"
           >
             {#if loading}
               <div class="loading-spinner h-6 w-6"></div>
             {:else}
               <svg
-                class="h-6 w-6 text-blue-500"
+                class="h-6 w-6 text-action-500"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -375,9 +375,9 @@
             {#each recent_competitions as competition, index}
               <div class="flex items-center space-x-4">
                 <div
-                  class="h-10 w-10 rounded-lg flex items-center justify-center {index === 0 ? 'bg-primary-100 dark:bg-primary-900' : index === 1 ? 'bg-secondary-100 dark:bg-secondary-900' : 'bg-green-100 dark:bg-green-900'}"
+                  class="h-10 w-10 rounded-lg flex items-center justify-center {index % 2 === 0 ? 'bg-blue-100 dark:bg-blue-900' : 'bg-action-100 dark:bg-action-900'}"
                 >
-                  <span class="{index === 0 ? 'text-primary-500' : index === 1 ? 'text-secondary-500' : 'text-green-500'} font-semibold text-sm">
+                  <span class="{index % 2 === 0 ? 'text-blue-600' : 'text-action-500'} font-semibold text-sm">
                     {get_competition_initials(competition.name)}
                   </span>
                 </div>
@@ -444,10 +444,10 @@
               <div class="flex items-center justify-between">
                 <div class="flex items-center space-x-3">
                   <div
-                    class="h-8 w-8 rounded flex items-center justify-center {index === 0 ? 'bg-primary-100 dark:bg-primary-900' : index === 1 ? 'bg-secondary-100 dark:bg-secondary-900' : 'bg-green-100 dark:bg-green-900'}"
+                    class="h-8 w-8 rounded flex items-center justify-center {index % 2 === 0 ? 'bg-emerald-100 dark:bg-emerald-900' : 'bg-action-100 dark:bg-action-900'}"
                   >
                     <svg
-                      class="h-4 w-4 {index === 0 ? 'text-primary-500' : index === 1 ? 'text-secondary-500' : 'text-green-500'}"
+                      class="h-4 w-4 {index % 2 === 0 ? 'text-emerald-500' : 'text-action-500'}"
                       fill="currentColor"
                       viewBox="0 0 20 20"
                     >
@@ -491,7 +491,7 @@
         class="flex flex-col items-center p-4 text-center hover:bg-accent-50 dark:hover:bg-accent-700 rounded-lg transition-colors duration-200 mobile-touch"
       >
         <div
-          class="h-12 w-12 bg-secondary-500 rounded-lg flex items-center justify-center mb-3"
+          class="h-12 w-12 bg-action-500 rounded-lg flex items-center justify-center mb-3"
         >
           <svg
             class="h-6 w-6 text-white"
@@ -517,7 +517,7 @@
         class="flex flex-col items-center p-4 text-center hover:bg-accent-50 dark:hover:bg-accent-700 rounded-lg transition-colors duration-200 mobile-touch"
       >
         <div
-          class="h-12 w-12 bg-secondary-600 rounded-lg flex items-center justify-center mb-3"
+          class="h-12 w-12 bg-blue-500 rounded-lg flex items-center justify-center mb-3"
         >
           <svg
             class="h-6 w-6 text-white"
@@ -543,7 +543,7 @@
         class="flex flex-col items-center p-4 text-center hover:bg-accent-50 dark:hover:bg-accent-700 rounded-lg transition-colors duration-200 mobile-touch"
       >
         <div
-          class="h-12 w-12 bg-secondary-700 rounded-lg flex items-center justify-center mb-3"
+          class="h-12 w-12 bg-emerald-500 rounded-lg flex items-center justify-center mb-3"
         >
           <svg
             class="h-6 w-6 text-white"
@@ -569,7 +569,7 @@
         class="flex flex-col items-center p-4 text-center hover:bg-accent-50 dark:hover:bg-accent-700 rounded-lg transition-colors duration-200 mobile-touch"
       >
         <div
-          class="h-12 w-12 bg-secondary-800 rounded-lg flex items-center justify-center mb-3"
+          class="h-12 w-12 bg-action-500 rounded-lg flex items-center justify-center mb-3"
         >
           <svg
             class="h-6 w-6 text-white"

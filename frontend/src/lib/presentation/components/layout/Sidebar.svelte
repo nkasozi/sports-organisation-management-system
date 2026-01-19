@@ -2,12 +2,19 @@
   import { createEventDispatcher } from "svelte";
   import { page } from "$app/stores";
   import { branding_store } from "$lib/presentation/stores/branding";
+  import {
+    current_user_store,
+    current_user_display_name,
+    current_user_initials,
+    current_user_role_display
+  } from "$lib/presentation/stores/currentUser";
 
   export let sidebar_open = false;
 
   const dispatch = createEventDispatcher();
 
   $: has_custom_logo = $branding_store.organization_logo_url && $branding_store.organization_logo_url.length > 0;
+  $: has_profile_picture = $current_user_store?.profile_picture_base64 && $current_user_store.profile_picture_base64.length > 0;
 
   function split_organization_name(name: string): {
     prefix: string;
@@ -362,28 +369,44 @@
       {#if sidebar_open}
         <div class="flex items-center space-x-3">
           <div
-            class="h-8 w-8 rounded-full flex items-center justify-center"
-            style="background-color: var(--color-secondary-600);"
+            class="h-8 w-8 rounded-full flex items-center justify-center overflow-hidden {has_profile_picture ? '' : ''}"
+            style="background-color: {has_profile_picture ? 'transparent' : 'var(--color-secondary-600)'};"
           >
-            <span class="text-white font-medium text-sm">JD</span>
+            {#if has_profile_picture}
+              <img
+                src={$current_user_store?.profile_picture_base64}
+                alt="Profile"
+                class="h-full w-full object-cover"
+              />
+            {:else}
+              <span class="text-white font-medium text-sm">{$current_user_initials}</span>
+            {/if}
           </div>
           <div class="flex-1 min-w-0">
             <p
               class="text-sm font-medium text-accent-900 dark:text-accent-100 truncate"
             >
-              John Doe
+              {$current_user_display_name}
             </p>
             <p class="text-xs text-accent-500 dark:text-accent-400 truncate">
-              Administrator
+              {$current_user_role_display}
             </p>
           </div>
         </div>
       {:else}
         <div
-          class="h-8 w-8 rounded-full flex items-center justify-center mx-auto"
-          style="background-color: var(--color-secondary-600);"
+          class="h-8 w-8 rounded-full flex items-center justify-center mx-auto overflow-hidden"
+          style="background-color: {has_profile_picture ? 'transparent' : 'var(--color-secondary-600)'};"
         >
-          <span class="text-white font-medium text-sm">JD</span>
+          {#if has_profile_picture}
+            <img
+              src={$current_user_store?.profile_picture_base64}
+              alt="Profile"
+              class="h-full w-full object-cover"
+            />
+          {:else}
+            <span class="text-white font-medium text-sm">{$current_user_initials}</span>
+          {/if}
         </div>
       {/if}
     </div>
