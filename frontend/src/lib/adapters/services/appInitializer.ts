@@ -13,12 +13,15 @@ import { get_team_staff_role_use_cases } from "$lib/core/usecases/TeamStaffRoleU
 import { get_competition_format_use_cases } from "$lib/core/usecases/CompetitionFormatUseCases";
 import { get_game_official_role_use_cases } from "$lib/core/usecases/GameOfficialRoleUseCases";
 import { seed_all_data_if_needed } from "./seedingService";
+import { initialize_audit_event_handlers } from "$lib/infrastructure/handlers/AuditEventHandler";
 
 let initialized = false;
 
 export async function initialize_app_data(): Promise<boolean> {
   if (initialized) return true;
   if (typeof window === "undefined") return false;
+
+  initialize_audit_event_handlers();
 
   get_repository_container();
 

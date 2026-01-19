@@ -136,7 +136,7 @@ export function create_fixture_official_use_cases(
       const existing_assignment = existing_result.data;
 
       if (input.role_id && input.role_id !== existing_assignment.role_id) {
-        const fixture_id = input.fixture_id || existing_assignment.fixture_id;
+        const fixture_id = existing_assignment.fixture_id;
         const role_already_assigned = await repository.find_by_filter({
           fixture_id,
           role_id: input.role_id,

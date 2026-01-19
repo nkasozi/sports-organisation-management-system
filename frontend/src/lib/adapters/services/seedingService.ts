@@ -34,6 +34,7 @@ import {
   get_venue_repository,
   InMemoryVenueRepository,
 } from "../repositories/InMemoryVenueRepository";
+import { get_repository_container } from "../../infrastructure/container";
 import {
   create_seed_players,
   create_seed_teams,
@@ -49,6 +50,12 @@ import type { PlayerPosition } from "../../core/entities/PlayerPosition";
 import type { TeamStaffRole } from "../../core/entities/TeamStaffRole";
 import type { GameOfficialRole } from "../../core/entities/GameOfficialRole";
 import type { CompetitionFormat } from "../../core/entities/CompetitionFormat";
+import {
+  EventBus,
+  set_user_context,
+  clear_user_context,
+} from "../../infrastructure/events/EventBus";
+import type { SystemUser } from "../../core/entities/SystemUser";
 
 const SEEDING_COMPLETE_KEY = "sports_org_seeding_complete_v2";
 
@@ -94,9 +101,80 @@ async function find_competition_format_id_by_code(
   return format?.id ?? "";
 }
 
+async function seed_super_admin_user(): Promise<SystemUser | null> {
+  const container = get_repository_container();
+  const system_user_repository = container.system_user_repository;
+
+  const existing_users_result = await system_user_repository.find_all({
+    page_size: 1,
+  });
+
+  if (
+    existing_users_result.success &&
+    existing_users_result.data.items.length > 0
+  ) {
+    const existing_admin = existing_users_result.data.items.find(
+      (user) => user.role === "super_admin",
+    );
+    if (existing_admin) {
+      return existing_admin;
+    }
+  }
+
+  const super_admin_result = await system_user_repository.create({
+    email: "superadmin@sportsorg.local",
+    first_name: "System",
+    last_name: "Administrator",
+    role: "super_admin",
+    status: "active",
+  });
+
+  if (!super_admin_result.success || !super_admin_result.data) {
+    console.error("Failed to seed super admin user");
+    return null;
+  }
+
+  return super_admin_result.data;
+}
+
+function emit_entity_created_events<T extends { id: string }>(
+  entity_type: string,
+  entities: T[],
+  get_display_name: (entity: T) => string,
+): void {
+  for (const entity of entities) {
+    EventBus.emit_entity_created(
+      entity_type,
+      entity.id,
+      get_display_name(entity),
+      entity as unknown as Record<string, unknown>,
+    );
+  }
+}
+
 export async function seed_all_data_if_needed(): Promise<boolean> {
   if (is_seeding_already_complete()) return true;
   if (typeof window === "undefined") return false;
+
+  const super_admin = await seed_super_admin_user();
+
+  if (!super_admin) {
+    console.error("[SEED] Failed to create super admin, aborting seeding");
+    return false;
+  }
+
+  set_user_context({
+    user_id: super_admin.id,
+    user_email: super_admin.email,
+    user_display_name: `${super_admin.first_name} ${super_admin.last_name}`,
+  });
+
+  EventBus.emit_entity_created(
+    "system_user",
+    super_admin.id,
+    `${super_admin.first_name} ${super_admin.last_name}`,
+    super_admin as unknown as Record<string, unknown>,
+  );
 
   const player_position_repository = get_player_position_repository();
   const team_staff_role_repository = get_team_staff_role_repository();
@@ -196,18 +274,31 @@ export async function seed_all_data_if_needed(): Promise<boolean> {
     for (const player of seed_players) {
       player_repository.seed_with_data([player]);
     }
+    emit_entity_created_events(
+      "player",
+      seed_players,
+      (p) => `${p.first_name} ${p.last_name}`,
+    );
   }
 
   const existing_venues = await venue_repository.find_all({ page_size: 1 });
   let venue_ids: string[] = [];
+  let seeded_venues: {
+    id: string;
+    name: string;
+    created_at: string;
+    updated_at: string;
+  }[] = [];
   if (!existing_venues.success || existing_venues.data.total_count === 0) {
     const seed_venues = create_seed_venues();
     for (const venue_input of seed_venues) {
       const create_result = await venue_repository.create(venue_input);
       if (create_result.success && create_result.data) {
         venue_ids.push(create_result.data.id);
+        seeded_venues.push(create_result.data);
       }
     }
+    emit_entity_created_events("venue", seeded_venues, (v) => v.name);
   } else {
     const all_venues_result = await venue_repository.find_all({
       page_size: 100,
@@ -233,6 +324,7 @@ export async function seed_all_data_if_needed(): Promise<boolean> {
       international_hockey_arena_id,
     );
     team_repository.seed_with_data(seed_teams);
+    emit_entity_created_events("team", seed_teams, (t) => t.name);
   }
 
   const existing_staff = await team_staff_repository.find_all_with_filter(
@@ -247,14 +339,15 @@ export async function seed_all_data_if_needed(): Promise<boolean> {
       team_manager_role_id,
     );
     team_staff_repository.seed_with_data(seed_staff);
+    emit_entity_created_events(
+      "team_staff",
+      seed_staff,
+      (s) => `${s.first_name} ${s.last_name}`,
+    );
   }
 
   const existing_officials = await official_repository.find_all({
     page_size: 1,
-  });
-  console.log("[SEED] Checking officials:", {
-    success: existing_officials.success,
-    count: existing_officials.success ? existing_officials.data.total_count : 0,
   });
   if (
     !existing_officials.success ||
@@ -264,15 +357,12 @@ export async function seed_all_data_if_needed(): Promise<boolean> {
       SEED_ORGANIZATION_IDS.CITY_FOOTBALL_LEAGUE,
       referee_role_id,
     );
-    console.log(
-      "[SEED] Seeding officials:",
-      seed_officials.length,
-      "officials",
-    );
     official_repository.seed_with_data(seed_officials);
-    console.log("[SEED] Officials seeded successfully");
-  } else {
-    console.log("[SEED] Officials already exist, skipping seeding");
+    emit_entity_created_events(
+      "official",
+      seed_officials,
+      (o) => `${o.first_name} ${o.last_name}`,
+    );
   }
 
   const existing_competitions = await competition_repository.find_all({
@@ -284,6 +374,7 @@ export async function seed_all_data_if_needed(): Promise<boolean> {
   ) {
     const seed_competitions = create_seed_competitions(league_format_id);
     competition_repository.seed_with_data(seed_competitions);
+    emit_entity_created_events("competition", seed_competitions, (c) => c.name);
   }
 
   const existing_memberships = await player_team_membership_repository.find_all(
@@ -295,6 +386,11 @@ export async function seed_all_data_if_needed(): Promise<boolean> {
   ) {
     const seed_memberships = create_seed_player_team_memberships();
     player_team_membership_repository.seed_with_data(seed_memberships);
+    emit_entity_created_events(
+      "player_team_membership",
+      seed_memberships,
+      (m) => `Player ${m.player_id} -> Team ${m.team_id}`,
+    );
   }
 
   const existing_fixtures = await fixture_repository.find_all({ page_size: 1 });
@@ -304,26 +400,15 @@ export async function seed_all_data_if_needed(): Promise<boolean> {
       assistant_referee_role_id,
     );
     fixture_repository.seed_with_data(seed_fixtures);
+    emit_entity_created_events(
+      "fixture",
+      seed_fixtures,
+      (f) => `${f.venue} - Round ${f.round_number}`,
+    );
   }
 
+  clear_user_context();
   mark_seeding_complete();
-
-  const officials_in_storage = localStorage.getItem("sports_org_officials");
-  if (officials_in_storage) {
-    const officials_data = JSON.parse(officials_in_storage);
-    console.log(
-      "[SEED] ✅ Officials in localStorage:",
-      Object.keys(officials_data).length,
-      "officials",
-    );
-    localStorage.setItem(
-      "debug_officials_count",
-      Object.keys(officials_data).length.toString(),
-    );
-  } else {
-    console.log("[SEED] ❌ NO officials in localStorage!");
-    localStorage.setItem("debug_officials_count", "0");
-  }
 
   return true;
 }

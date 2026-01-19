@@ -25,6 +25,8 @@ import type { Qualification } from "../../core/entities/Qualification";
 import type { IdentificationType } from "../../core/entities/IdentificationType";
 import type { Identification } from "../../core/entities/Identification";
 import type { FixtureOfficial } from "../../core/entities/FixtureOfficial";
+import type { SystemUser } from "../../core/entities/SystemUser";
+import type { AuditLog } from "../../core/entities/AuditLog";
 
 function generate_30_minute_time_intervals(): string[] {
   const intervals: string[] = [];
@@ -559,6 +561,8 @@ class EntityMetadataRegistry {
     this.register_venue_metadata();
     this.register_identification_type_metadata();
     this.register_identification_metadata();
+    this.register_system_user_metadata();
+    this.register_audit_log_metadata();
   }
 
   private register_organization_metadata(): void {
@@ -2172,6 +2176,139 @@ class EntityMetadataRegistry {
           is_read_only: false,
           enum_values: ["active", "inactive"],
           show_in_list: true,
+        },
+      ],
+    });
+  }
+
+  private register_system_user_metadata(): void {
+    this.metadata_map.set("systemuser", {
+      entity_name: "systemuser",
+      display_name: "System User",
+      fields: [
+        {
+          field_name: "email" satisfies keyof SystemUser,
+          display_name: "Email",
+          field_type: "string",
+          is_required: true,
+          is_read_only: false,
+          show_in_list: true,
+        },
+        {
+          field_name: "first_name" satisfies keyof SystemUser,
+          display_name: "First Name",
+          field_type: "string",
+          is_required: true,
+          is_read_only: false,
+          show_in_list: true,
+        },
+        {
+          field_name: "last_name" satisfies keyof SystemUser,
+          display_name: "Last Name",
+          field_type: "string",
+          is_required: true,
+          is_read_only: false,
+          show_in_list: true,
+        },
+        {
+          field_name: "role" satisfies keyof SystemUser,
+          display_name: "Role",
+          field_type: "enum",
+          is_required: true,
+          is_read_only: false,
+          enum_values: ["super_admin", "admin", "manager", "user"],
+          show_in_list: true,
+        },
+        {
+          field_name: "status" satisfies keyof SystemUser,
+          display_name: "Status",
+          field_type: "enum",
+          is_required: true,
+          is_read_only: false,
+          enum_values: ["active", "inactive", "pending"],
+          show_in_list: true,
+        },
+      ],
+    });
+  }
+
+  private register_audit_log_metadata(): void {
+    this.metadata_map.set("auditlog", {
+      entity_name: "auditlog",
+      display_name: "Audit Log",
+      fields: [
+        {
+          field_name: "timestamp" satisfies keyof AuditLog,
+          display_name: "Timestamp",
+          field_type: "date",
+          is_required: true,
+          is_read_only: true,
+          show_in_list: true,
+        },
+        {
+          field_name: "entity_type" satisfies keyof AuditLog,
+          display_name: "Entity Type",
+          field_type: "string",
+          is_required: true,
+          is_read_only: true,
+          show_in_list: true,
+        },
+        {
+          field_name: "entity_display_name" satisfies keyof AuditLog,
+          display_name: "Entity Name",
+          field_type: "string",
+          is_required: true,
+          is_read_only: true,
+          show_in_list: true,
+        },
+        {
+          field_name: "action" satisfies keyof AuditLog,
+          display_name: "Action",
+          field_type: "enum",
+          is_required: true,
+          is_read_only: true,
+          enum_values: ["create", "update", "delete"],
+          show_in_list: true,
+        },
+        {
+          field_name: "user_display_name" satisfies keyof AuditLog,
+          display_name: "User",
+          field_type: "string",
+          is_required: true,
+          is_read_only: true,
+          show_in_list: true,
+        },
+        {
+          field_name: "user_email" satisfies keyof AuditLog,
+          display_name: "User Email",
+          field_type: "string",
+          is_required: true,
+          is_read_only: true,
+          show_in_list: false,
+        },
+        {
+          field_name: "entity_id" satisfies keyof AuditLog,
+          display_name: "Entity ID",
+          field_type: "string",
+          is_required: true,
+          is_read_only: true,
+          show_in_list: false,
+        },
+        {
+          field_name: "user_id" satisfies keyof AuditLog,
+          display_name: "User ID",
+          field_type: "string",
+          is_required: true,
+          is_read_only: true,
+          show_in_list: false,
+        },
+        {
+          field_name: "ip_address" satisfies keyof AuditLog,
+          display_name: "IP Address",
+          field_type: "string",
+          is_required: false,
+          is_read_only: true,
+          show_in_list: false,
         },
       ],
     });

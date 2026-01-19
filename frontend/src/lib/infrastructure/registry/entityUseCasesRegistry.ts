@@ -18,6 +18,9 @@ import { get_qualification_use_cases } from "$lib/core/usecases/QualificationUse
 import { get_venue_use_cases } from "$lib/core/usecases/VenueUseCases";
 import { get_identification_type_use_cases } from "$lib/core/usecases/IdentificationTypeUseCases";
 import { get_identification_use_cases } from "$lib/core/usecases/IdentificationUseCases";
+import { get_system_user_use_cases } from "$lib/core/usecases/SystemUserUseCases";
+import { get_audit_log_use_cases } from "$lib/core/usecases/AuditLogUseCases";
+import { EventBus } from "$lib/infrastructure/events/EventBus";
 import type {
   BaseEntity,
   EntityListResult,
@@ -45,6 +48,8 @@ const VALID_ENTITY_TYPE_KEYS = [
   "venue",
   "identificationtype",
   "identification",
+  "systemuser",
+  "auditlog",
 ] as const;
 
 export type EntityTypeKey = (typeof VALID_ENTITY_TYPE_KEYS)[number];
@@ -107,12 +112,157 @@ function create_use_cases_registry(): Record<EntityTypeKey, UseCasesGetter> {
       get_identification_type_use_cases as UseCasesGetter,
     ["identification" satisfies EntityTypeKey]:
       get_identification_use_cases as UseCasesGetter,
+    ["systemuser" satisfies EntityTypeKey]:
+      get_system_user_use_cases as unknown as UseCasesGetter,
+    ["auditlog" satisfies EntityTypeKey]:
+      get_audit_log_use_cases as unknown as UseCasesGetter,
   } satisfies Record<EntityTypeKey, UseCasesGetter>;
 
   return registry_definition;
 }
 
 const USE_CASES_REGISTRY = create_use_cases_registry();
+
+function to_record(entity: BaseEntity): Record<string, unknown> {
+  return entity as unknown as Record<string, unknown>;
+}
+
+const ENTITY_DISPLAY_NAME_GETTERS: Record<
+  string,
+  (entity: BaseEntity) => string
+> = {
+  organization: (e) => (to_record(e).name as string) || e.id,
+  competition: (e) => (to_record(e).name as string) || e.id,
+  team: (e) => (to_record(e).name as string) || e.id,
+  player: (e) => {
+    const p = to_record(e);
+    return `${p.first_name || ""} ${p.last_name || ""}`.trim() || e.id;
+  },
+  playerteammembership: (e) => e.id,
+  official: (e) => {
+    const o = to_record(e);
+    return `${o.first_name || ""} ${o.last_name || ""}`.trim() || e.id;
+  },
+  fixture: (e) => {
+    const f = to_record(e);
+    return (
+      `${f.venue || "Fixture"} - Round ${f.round_number || ""}`.trim() || e.id
+    );
+  },
+  fixtureofficial: (e) => e.id,
+  competitionformat: (e) => (to_record(e).name as string) || e.id,
+  gameeventtype: (e) => (to_record(e).name as string) || e.id,
+  gameofficialrole: (e) => (to_record(e).name as string) || e.id,
+  teamstaffrole: (e) => (to_record(e).name as string) || e.id,
+  teamstaff: (e) => {
+    const s = to_record(e);
+    return `${s.first_name || ""} ${s.last_name || ""}`.trim() || e.id;
+  },
+  fixturelineup: (e) => e.id,
+  sport: (e) => (to_record(e).name as string) || e.id,
+  playerposition: (e) => (to_record(e).name as string) || e.id,
+  qualification: (e) => (to_record(e).name as string) || e.id,
+  venue: (e) => (to_record(e).name as string) || e.id,
+  identificationtype: (e) => (to_record(e).name as string) || e.id,
+  identification: (e) => e.id,
+  systemuser: (e) => {
+    const u = to_record(e);
+    return `${u.first_name || ""} ${u.last_name || ""}`.trim() || e.id;
+  },
+  auditlog: (e) => e.id,
+};
+
+const ENTITIES_TO_SKIP_AUDIT = ["auditlog"];
+
+function get_entity_display_name(
+  entity_type: string,
+  entity: BaseEntity,
+): string {
+  const getter = ENTITY_DISPLAY_NAME_GETTERS[entity_type];
+  return getter ? getter(entity) : entity.id;
+}
+
+function wrap_use_cases_with_events(
+  entity_type: string,
+  use_cases: GenericEntityUseCases,
+): GenericEntityUseCases {
+  if (ENTITIES_TO_SKIP_AUDIT.includes(entity_type)) {
+    return use_cases;
+  }
+
+  const original_create = use_cases.create.bind(use_cases);
+  const original_update = use_cases.update.bind(use_cases);
+  const original_delete = use_cases.delete.bind(use_cases);
+  const original_get_by_id = use_cases.get_by_id.bind(use_cases);
+
+  return {
+    ...use_cases,
+
+    async create(
+      input: Record<string, unknown>,
+    ): Promise<EntityOperationResult<BaseEntity>> {
+      const result = await original_create(input);
+      if (result.success && result.data) {
+        EventBus.emit_entity_created(
+          entity_type,
+          result.data.id,
+          get_entity_display_name(entity_type, result.data),
+          result.data as unknown as Record<string, unknown>,
+        );
+      }
+      return result;
+    },
+
+    async update(
+      id: string,
+      input: Record<string, unknown>,
+    ): Promise<EntityOperationResult<BaseEntity>> {
+      const old_entity_result = await original_get_by_id(id);
+      const old_entity = old_entity_result.success
+        ? old_entity_result.data
+        : undefined;
+
+      const result = await original_update(id, input);
+
+      if (result.success && result.data && old_entity) {
+        const old_data = old_entity as unknown as Record<string, unknown>;
+        const new_data = result.data as unknown as Record<string, unknown>;
+        const changed_fields = Object.keys(input).filter(
+          (field) => old_data[field] !== new_data[field],
+        );
+
+        if (changed_fields.length > 0) {
+          EventBus.emit_entity_updated(
+            entity_type,
+            result.data.id,
+            get_entity_display_name(entity_type, result.data),
+            old_data,
+            new_data,
+            changed_fields,
+          );
+        }
+      }
+      return result;
+    },
+
+    async delete(id: string): Promise<EntityOperationResult<boolean>> {
+      const entity_result = await original_get_by_id(id);
+      const entity = entity_result.success ? entity_result.data : undefined;
+
+      const result = await original_delete(id);
+
+      if (result.success && result.data && entity) {
+        EventBus.emit_entity_deleted(
+          entity_type,
+          id,
+          get_entity_display_name(entity_type, entity),
+          entity as unknown as Record<string, unknown>,
+        );
+      }
+      return result;
+    },
+  };
+}
 
 export function get_use_cases_for_entity_type(
   entity_type: string,
@@ -133,7 +283,8 @@ export function get_use_cases_for_entity_type(
   }
 
   const getter = USE_CASES_REGISTRY[normalized_type];
-  return getter();
+  const use_cases = getter();
+  return wrap_use_cases_with_events(normalized_type, use_cases);
 }
 
 export function get_all_registered_entity_types(): EntityTypeKey[] {
