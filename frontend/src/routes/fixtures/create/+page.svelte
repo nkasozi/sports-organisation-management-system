@@ -64,11 +64,11 @@
 
     const [comp_result, teams_result, officials_result, roles_result, venues_result] =
       await Promise.all([
-        competition_use_cases.list(undefined, { page: 1, page_size: 100 }),
-        team_use_cases.list(undefined, { page: 1, page_size: 200 }),
-        official_use_cases.list(undefined, { page: 1, page_size: 200 }),
-        official_role_use_cases.list(undefined, { page: 1, page_size: 100 }),
-        venue_use_cases.list(undefined, { page: 1, page_size: 200 }),
+        competition_use_cases.list(undefined, { page_number: 1, page_size: 100 }),
+        team_use_cases.list(undefined, { page_number: 1, page_size: 200 }),
+        official_use_cases.list(undefined, { page_number: 1, page_size: 200 }),
+        official_role_use_cases.list(undefined, { page_number: 1, page_size: 100 }),
+        venue_use_cases.list(undefined, { page_number: 1, page_size: 200 }),
       ]);
 
     if (comp_result.success) {

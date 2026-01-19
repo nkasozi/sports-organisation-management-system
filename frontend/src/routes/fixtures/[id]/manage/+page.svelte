@@ -207,7 +207,7 @@
         fixture.away_team_id,
         { page_number: 1, page_size: 10000 }
       ),
-      player_position_use_cases.list(undefined, { page: 1, page_size: 1000 }),
+      player_position_use_cases.list(undefined, { page_number: 1, page_size: 1000 }),
     ]);
 
     const position_name_by_id = build_position_name_by_id_map(

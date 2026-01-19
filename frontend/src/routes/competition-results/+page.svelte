@@ -69,7 +69,7 @@
 
     const result = await competition_use_cases.list(
       {},
-      { page: 1, page_size: 100 }
+      { page_number: 1, page_size: 100 }
     );
 
     if (!result.success) {

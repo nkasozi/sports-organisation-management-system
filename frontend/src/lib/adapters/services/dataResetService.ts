@@ -1,0 +1,41 @@
+import { reset_organization_repository } from "../repositories/InMemoryOrganizationRepository";
+import { reset_team_repository } from "../repositories/InMemoryTeamRepository";
+import { reset_competition_repository } from "../repositories/InMemoryCompetitionRepository";
+import { reset_player_repository } from "../repositories/InMemoryPlayerRepository";
+import { reset_player_team_membership_repository } from "../repositories/InMemoryPlayerTeamMembershipRepository";
+import { reset_official_repository } from "../repositories/InMemoryOfficialRepository";
+import { reset_sport_repository } from "../repositories/InMemorySportRepository";
+import { reset_fixture_repository } from "../repositories/InMemoryFixtureRepository";
+import { reset_team_staff_repository } from "../repositories/InMemoryTeamStaffRepository";
+import { get_organization_repository } from "../repositories/InMemoryOrganizationRepository";
+import { get_team_repository } from "../repositories/InMemoryTeamRepository";
+import { get_competition_repository } from "../repositories/InMemoryCompetitionRepository";
+import { get_player_repository } from "../repositories/InMemoryPlayerRepository";
+import { get_player_team_membership_repository } from "../repositories/InMemoryPlayerTeamMembershipRepository";
+import { get_official_repository } from "../repositories/InMemoryOfficialRepository";
+import { get_all_sports } from "./sportService";
+import { reset_seeding_flag, seed_all_data_if_needed } from "./seedingService";
+
+export async function reset_all_data(): Promise<boolean> {
+  if (typeof window === "undefined") return false;
+  localStorage.clear();
+  reset_seeding_flag();
+  reset_sport_repository();
+  reset_organization_repository();
+  reset_team_repository();
+  reset_competition_repository();
+  reset_player_repository();
+  reset_player_team_membership_repository();
+  reset_official_repository();
+  reset_fixture_repository();
+  reset_team_staff_repository();
+  await get_all_sports();
+  get_organization_repository();
+  get_team_repository();
+  get_competition_repository();
+  get_player_repository();
+  get_player_team_membership_repository();
+  get_official_repository();
+  await seed_all_data_if_needed();
+  return true;
+}

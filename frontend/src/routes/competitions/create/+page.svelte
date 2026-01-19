@@ -76,7 +76,7 @@
   async function load_organizations(): Promise<void> {
     is_loading_organizations = true;
     const result = await organization_use_cases.list(undefined, {
-      page: 1,
+      page_number: 1,
       page_size: 100,
     });
 
@@ -93,7 +93,7 @@
   async function load_competition_formats(): Promise<void> {
     is_loading_formats = true;
     const result = await competition_format_use_cases.list(undefined, {
-      page: 1,
+      page_number: 1,
       page_size: 100,
     });
 
@@ -112,7 +112,7 @@
   async function load_teams(): Promise<void> {
     is_loading_teams = true;
     const result = await team_use_cases.list(undefined, {
-      page: 1,
+      page_number: 1,
       page_size: 200,
     });
 

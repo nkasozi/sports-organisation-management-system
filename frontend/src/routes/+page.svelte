@@ -91,11 +91,11 @@
 
     const [org_result, comp_result, team_result, player_result, fixture_result] =
       await Promise.all([
-        organization_use_cases.list(undefined, { page: 1, page_size: 1 }),
-        competition_use_cases.list(undefined, { page: 1, page_size: 5 }),
-        team_use_cases.list(undefined, { page: 1, page_size: 100 }),
-        player_use_cases.list(undefined, { page: 1, page_size: 1 }),
-        fixture_use_cases.list({ status: "scheduled" }, { page: 1, page_size: 5 }),
+        organization_use_cases.list(undefined, { page_number: 1, page_size: 1 }),
+        competition_use_cases.list(undefined, { page_number: 1, page_size: 5 }),
+        team_use_cases.list(undefined, { page_number: 1, page_size: 100 }),
+        player_use_cases.list(undefined, { page_number: 1, page_size: 1 }),
+        fixture_use_cases.list({ status: "scheduled" }, { page_number: 1, page_size: 5 }),
       ]);
 
     stats = {

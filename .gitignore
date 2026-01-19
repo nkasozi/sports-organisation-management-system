@@ -3,73 +3,10 @@ node_modules/
 /.pnp
 .pnp.js
 
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
-
-# Virtual environments
-.env
-.venv
-env/
-venv/
-ENV/
-env.bak/
-venv.bak/
 
 # uv
 .uv
 uv.lock
-
-# Testing
-/coverage
-.coverage
-.coverage.*
-htmlcov/
-.pytest_cache/
-.cache
-.tox/
-
-# Production
-/build
-/dist
-.strapi-updater.json
-
-# Strapi
-BE/strapi/license.txt
-BE/strapi/exports
-BE/.strapi
-BE/strapi/.cache
-BE/strapi/.tmp
-BE/strapi/dist
-BE/strapi/build
-BE/strapi/.env
-BE/strapi/public/uploads/*
-!BE/strapi/public/uploads/.gitkeep
-
-# Frontend
-FE/.next/
-FE/out/
-FE/build
-FE/dist
 
 # IDE - VSCode
 .vscode/*
@@ -95,10 +32,6 @@ yarn-error.log*
 
 # GitHub
 .github/
-
-# Docker
-BE/postgres-data/
-BE/strapi-data/
 
 # Cache
 .cache/

@@ -104,10 +104,10 @@
   async function load_reference_data(): Promise<void> {
     const [fixtures_result, teams_result] = await Promise.all([
       fixture_use_cases.list(undefined, {
-        page: 1,
+        page_number: 1,
         page_size: 200,
       }),
-      team_use_cases.list(undefined, { page: 1, page_size: 200 }),
+      team_use_cases.list(undefined, { page_number: 1, page_size: 200 }),
     ]);
 
     if (fixtures_result.success) {
@@ -268,7 +268,7 @@
           page_number: 1,
           page_size: 5000,
         }),
-        player_position_use_cases.list(undefined, { page: 1, page_size: 500 }),
+        player_position_use_cases.list(undefined, { page_number: 1, page_size: 500 }),
       ]);
 
     selected_team = team_result.success ? (team_result.data ?? null) : null;

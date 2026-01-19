@@ -92,16 +92,16 @@
     ] = await Promise.all([
       competition_use_cases.get_by_id(competition_id),
       organization_use_cases.list(undefined, {
-        page: 1,
+        page_number: 1,
         page_size: 100,
       }),
-      team_use_cases.list(undefined, { page: 1, page_size: 100 }),
+      team_use_cases.list(undefined, { page_number: 1, page_size: 100 }),
       competition_team_use_cases.list_teams_in_competition(competition_id, {
         page_number: 1,
         page_size: 100,
       }),
       competition_format_use_cases.list(undefined, {
-        page: 1,
+        page_number: 1,
         page_size: 100,
       }),
     ]);

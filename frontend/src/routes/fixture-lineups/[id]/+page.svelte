@@ -81,7 +81,7 @@
         page_number: 1,
         page_size: 5000,
       }),
-      player_position_use_cases.list(undefined, { page: 1, page_size: 500 }),
+      player_position_use_cases.list(undefined, { page_number: 1, page_size: 500 }),
     ]);
 
     if (fixture_result.success && fixture_result.data) {

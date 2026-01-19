@@ -1,2 +1,2 @@
-import '@tailwindcss/forms';
-import './app.css';
+import "@tailwindcss/forms";
+import "./app.css";
