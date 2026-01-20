@@ -202,3 +202,7 @@ export function get_game_event_type_repository(): InMemoryGameEventTypeRepositor
   }
   return repository_instance;
 }
+
+export function reset_game_event_type_repository(): void {
+  repository_instance = null;
+}

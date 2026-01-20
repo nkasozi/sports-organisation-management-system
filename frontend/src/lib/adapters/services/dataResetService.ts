@@ -7,6 +7,10 @@ import { reset_official_repository } from "../repositories/InMemoryOfficialRepos
 import { reset_sport_repository } from "../repositories/InMemorySportRepository";
 import { reset_fixture_repository } from "../repositories/InMemoryFixtureRepository";
 import { reset_team_staff_repository } from "../repositories/InMemoryTeamStaffRepository";
+import {
+  reset_game_event_type_repository,
+  get_game_event_type_repository,
+} from "../repositories/InMemoryGameEventTypeRepository";
 import { get_organization_repository } from "../repositories/InMemoryOrganizationRepository";
 import { get_team_repository } from "../repositories/InMemoryTeamRepository";
 import { get_competition_repository } from "../repositories/InMemoryCompetitionRepository";
@@ -29,6 +33,7 @@ export async function reset_all_data(): Promise<boolean> {
   reset_official_repository();
   reset_fixture_repository();
   reset_team_staff_repository();
+  reset_game_event_type_repository();
   await get_all_sports();
   get_organization_repository();
   get_team_repository();
@@ -36,6 +41,8 @@ export async function reset_all_data(): Promise<boolean> {
   get_player_repository();
   get_player_team_membership_repository();
   get_official_repository();
+  const game_event_repo = get_game_event_type_repository();
+  await game_event_repo.find_all_with_filter();
   await seed_all_data_if_needed();
   return true;
 }

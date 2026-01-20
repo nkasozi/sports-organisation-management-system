@@ -661,16 +661,16 @@
   }
 </script>
 
-<div class="live-game-management min-h-screen bg-gray-100 dark:bg-gray-900">
+<div class="live-game-management min-h-screen bg-accent-100 dark:bg-accent-900">
   {#if !current_active_game}
     <div class="p-4 sm:p-6">
       <div class="text-center mb-6">
         <h2
-          class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mb-2"
+          class="text-xl sm:text-2xl font-bold text-accent-900 dark:text-accent-100 mb-2"
         >
           🏟️ Live Game Management
         </h2>
-        <p class="text-sm text-gray-600 dark:text-gray-400">
+        <p class="text-sm text-accent-600 dark:text-accent-400">
           Select a scheduled game to begin officiating
         </p>
       </div>
@@ -680,7 +680,7 @@
       >
         {#each selected_games as game}
           <div
-            class="bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-200 dark:border-gray-700 overflow-hidden"
+            class="bg-white dark:bg-accent-800 rounded-xl shadow-md border border-accent-200 dark:border-accent-700 overflow-hidden"
           >
             <div
               class="bg-theme-primary-500 dark:bg-theme-primary-600 px-4 py-2"
@@ -702,30 +702,30 @@
                     >
                   </div>
                   <span
-                    class="text-sm font-medium text-gray-900 dark:text-white"
+                    class="text-sm font-medium text-accent-900 dark:text-accent-100"
                     >Home</span
                   >
                 </div>
                 <div class="px-4">
-                  <span class="text-2xl font-bold text-gray-400">VS</span>
+                  <span class="text-2xl font-bold text-accent-400">VS</span>
                 </div>
                 <div class="text-center flex-1">
                   <div
-                    class="w-12 h-12 bg-red-100 dark:bg-red-900/30 rounded-full mx-auto mb-2 flex items-center justify-center"
+                    class="w-12 h-12 bg-emerald-100 dark:bg-emerald-900/30 rounded-full mx-auto mb-2 flex items-center justify-center"
                   >
                     <span
-                      class="text-lg font-bold text-red-600 dark:text-red-400"
+                      class="text-lg font-bold text-emerald-600 dark:text-emerald-400"
                       >A</span
                     >
                   </div>
                   <span
-                    class="text-sm font-medium text-gray-900 dark:text-white"
+                    class="text-sm font-medium text-accent-900 dark:text-accent-100"
                     >Away</span
                   >
                 </div>
               </div>
               <div
-                class="text-xs text-gray-500 dark:text-gray-400 text-center mb-4"
+                class="text-xs text-accent-500 dark:text-accent-400 text-center mb-4"
               >
                 📍 {game.attributes?.venue || "Venue TBD"}
               </div>
@@ -743,14 +743,14 @@
       {#if selected_games.length === 0}
         <div class="text-center py-16">
           <div
-            class="w-20 h-20 bg-gray-200 dark:bg-gray-700 rounded-full mx-auto mb-4 flex items-center justify-center"
+            class="w-20 h-20 bg-accent-200 dark:bg-accent-700 rounded-full mx-auto mb-4 flex items-center justify-center"
           >
             <span class="text-4xl">🏟️</span>
           </div>
-          <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">
+          <h3 class="text-lg font-medium text-accent-900 dark:text-accent-100 mb-2">
             No Games Scheduled
           </h3>
-          <p class="text-gray-500 dark:text-gray-400">
+          <p class="text-accent-500 dark:text-accent-400">
             There are no games available for live management
           </p>
         </div>
@@ -758,16 +758,16 @@
     </div>
   {:else}
     <div class="flex flex-col h-screen">
-      <div class="bg-gray-900 text-white px-4 py-3 sticky top-0 z-40">
+      <div class="bg-accent-800 dark:bg-accent-900 text-white px-4 py-3 sticky top-0 z-40">
         <div class="flex items-center justify-between max-w-4xl mx-auto">
           <div class="flex items-center gap-6">
             <div class="text-center">
-              <div class="text-xs text-gray-400 mb-1">HOME</div>
+              <div class="text-xs text-accent-400 mb-1">HOME</div>
               <div class="text-4xl font-bold tabular-nums">{home_score}</div>
             </div>
 
             <div class="text-center">
-              <div class="text-xs text-gray-400 mb-1">
+              <div class="text-xs text-accent-400 mb-1">
                 {current_period?.name || "Pre-Game"}
               </div>
               <div class="text-2xl font-mono font-bold text-theme-primary-400">
@@ -781,7 +781,7 @@
             </div>
 
             <div class="text-center">
-              <div class="text-xs text-gray-400 mb-1">AWAY</div>
+              <div class="text-xs text-accent-400 mb-1">AWAY</div>
               <div class="text-4xl font-bold tabular-nums">{away_score}</div>
             </div>
           </div>
@@ -808,7 +808,7 @@
       </div>
 
       {#if lineups_confirmed}
-        <div class="bg-gray-800 text-white px-4 py-2 border-b border-gray-700">
+        <div class="bg-accent-700 dark:bg-accent-800 text-white px-4 py-2 border-b border-accent-600 dark:border-accent-700">
           <div class="flex justify-center gap-4 max-w-4xl mx-auto">
             {#if !is_clock_running && current_period}
               {#if current_period.is_break}
@@ -847,7 +847,7 @@
 
         {#if can_record_events}
           <div
-            class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-3"
+            class="bg-white dark:bg-accent-800 border-b border-accent-200 dark:border-accent-700 px-4 py-3"
           >
             <div class="max-w-4xl mx-auto">
               <div class="grid grid-cols-2 gap-4">
@@ -871,7 +871,7 @@
                 </div>
                 <div>
                   <div
-                    class="text-xs font-medium text-red-600 dark:text-red-400 mb-2 text-center"
+                    class="text-xs font-medium text-emerald-600 dark:text-emerald-400 mb-2 text-center"
                   >
                     ✈️ AWAY TEAM
                   </div>
@@ -890,10 +890,10 @@
               </div>
 
               <div
-                class="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700"
+                class="mt-3 pt-3 border-t border-accent-200 dark:border-accent-700"
               >
                 <div
-                  class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2 text-center"
+                  class="text-xs font-medium text-accent-500 dark:text-accent-400 mb-2 text-center"
                 >
                   MORE EVENTS
                 </div>
@@ -917,10 +917,10 @@
         {/if}
       {/if}
 
-      <div class="flex-1 overflow-y-auto px-4 py-4">
+      <div class="flex-1 overflow-y-auto px-4 py-4 bg-accent-50 dark:bg-accent-900">
         <div class="max-w-2xl mx-auto">
           <h3
-            class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-4"
+            class="text-sm font-semibold text-accent-500 dark:text-accent-400 uppercase tracking-wider mb-4"
           >
             Match Timeline
           </h3>
@@ -928,14 +928,14 @@
           {#if sorted_events.length === 0}
             <div class="text-center py-12">
               <div
-                class="w-16 h-16 bg-gray-200 dark:bg-gray-700 rounded-full mx-auto mb-4 flex items-center justify-center"
+                class="w-16 h-16 bg-accent-200 dark:bg-accent-700 rounded-full mx-auto mb-4 flex items-center justify-center"
               >
                 <span class="text-3xl">📋</span>
               </div>
-              <p class="text-gray-500 dark:text-gray-400 text-sm">
+              <p class="text-accent-500 dark:text-accent-400 text-sm">
                 No events recorded yet
               </p>
-              <p class="text-gray-400 dark:text-gray-500 text-xs mt-1">
+              <p class="text-accent-400 dark:text-accent-500 text-xs mt-1">
                 {lineups_confirmed
                   ? "Use the quick buttons above to record events"
                   : "Confirm lineups to start recording"}
@@ -944,7 +944,7 @@
           {:else}
             <div class="relative">
               <div
-                class="absolute left-8 top-0 bottom-0 w-0.5 bg-gray-300 dark:bg-gray-600"
+                class="absolute left-8 top-0 bottom-0 w-0.5 bg-accent-300 dark:bg-accent-600"
               ></div>
 
               <div class="space-y-3">
@@ -952,14 +952,14 @@
                   <div class="relative flex items-start gap-4 pl-2">
                     <div class="flex-shrink-0 w-14 text-right">
                       <span
-                        class="text-sm font-bold text-gray-900 dark:text-white"
+                        class="text-sm font-bold text-accent-900 dark:text-accent-100"
                       >
                         {format_event_time(event)}
                       </span>
                     </div>
 
                     <div
-                      class="flex-shrink-0 w-10 h-10 rounded-full bg-white dark:bg-gray-800 border-4 border-gray-300 dark:border-gray-600 flex items-center justify-center text-lg z-10 shadow-sm"
+                      class="flex-shrink-0 w-10 h-10 rounded-full bg-white dark:bg-accent-800 border-4 border-accent-300 dark:border-accent-600 flex items-center justify-center text-lg z-10 shadow-sm"
                     >
                       {get_event_icon(event)}
                     </div>
@@ -974,7 +974,7 @@
                           class="flex items-center justify-between gap-2 mb-1"
                         >
                           <span
-                            class="font-semibold text-gray-900 dark:text-white text-sm"
+                            class="font-semibold text-accent-900 dark:text-accent-100 text-sm"
                           >
                             {event.attributes.description}
                           </span>
@@ -983,7 +983,7 @@
                               class="text-xs px-2 py-0.5 rounded-full {event
                                 .attributes.team_id === 'home_team'
                                 ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
-                                : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300'}"
+                                : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300'}"
                             >
                               {event.attributes.team_id === "home_team"
                                 ? "HOME"
@@ -992,7 +992,7 @@
                           {/if}
                         </div>
                         {#if event.attributes.player_id}
-                          <p class="text-xs text-gray-500 dark:text-gray-400">
+                          <p class="text-xs text-accent-500 dark:text-accent-400">
                             Player: {event.attributes.player_id}
                           </p>
                         {/if}
@@ -1020,7 +1020,7 @@
       class="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4"
     >
       <div
-        class="bg-white dark:bg-gray-800 w-full max-w-4xl max-h-[90vh] rounded-xl shadow-2xl overflow-hidden flex flex-col"
+        class="bg-white dark:bg-accent-800 w-full max-w-4xl max-h-[90vh] rounded-xl shadow-2xl overflow-hidden flex flex-col"
       >
         <div class="bg-theme-primary-500 px-6 py-4">
           <h3 class="text-xl font-bold text-white">
@@ -1039,7 +1039,7 @@
                   🏠 Home Team
                 </h4>
                 <button
-                  class="text-xs px-3 py-1 bg-blue-500 text-white rounded-lg"
+                  class="text-xs px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded-lg"
                   on:click={() => add_player_to_lineup("home")}
                 >
                   + Add Player
@@ -1054,19 +1054,19 @@
                       type="number"
                       bind:value={player.jersey_number}
                       placeholder="#"
-                      class="w-12 px-2 py-1 text-center text-sm border rounded"
+                      class="w-12 px-2 py-1 text-center text-sm border border-accent-300 dark:border-accent-600 rounded bg-white dark:bg-accent-700 text-accent-900 dark:text-accent-100"
                     />
                     <input
                       type="text"
                       bind:value={player.player_name}
                       placeholder="Player Name"
-                      class="flex-1 px-2 py-1 text-sm border rounded"
+                      class="flex-1 px-2 py-1 text-sm border border-accent-300 dark:border-accent-600 rounded bg-white dark:bg-accent-700 text-accent-900 dark:text-accent-100"
                     />
                     <input
                       type="text"
                       bind:value={player.position}
                       placeholder="Pos"
-                      class="w-16 px-2 py-1 text-sm border rounded"
+                      class="w-16 px-2 py-1 text-sm border border-accent-300 dark:border-accent-600 rounded bg-white dark:bg-accent-700 text-accent-900 dark:text-accent-100"
                     />
                     <button
                       class="text-red-500 hover:text-red-700"
@@ -1081,11 +1081,11 @@
 
             <div>
               <div class="flex items-center justify-between mb-4">
-                <h4 class="font-semibold text-red-600 dark:text-red-400">
+                <h4 class="font-semibold text-emerald-600 dark:text-emerald-400">
                   ✈️ Away Team
                 </h4>
                 <button
-                  class="text-xs px-3 py-1 bg-red-500 text-white rounded-lg"
+                  class="text-xs px-3 py-1 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg"
                   on:click={() => add_player_to_lineup("away")}
                 >
                   + Add Player
@@ -1094,25 +1094,25 @@
               <div class="space-y-2">
                 {#each away_lineup as player, index}
                   <div
-                    class="flex items-center gap-2 bg-red-50 dark:bg-red-900/20 p-2 rounded-lg"
+                    class="flex items-center gap-2 bg-emerald-50 dark:bg-emerald-900/20 p-2 rounded-lg"
                   >
                     <input
                       type="number"
                       bind:value={player.jersey_number}
                       placeholder="#"
-                      class="w-12 px-2 py-1 text-center text-sm border rounded"
+                      class="w-12 px-2 py-1 text-center text-sm border border-accent-300 dark:border-accent-600 rounded bg-white dark:bg-accent-700 text-accent-900 dark:text-accent-100"
                     />
                     <input
                       type="text"
                       bind:value={player.player_name}
                       placeholder="Player Name"
-                      class="flex-1 px-2 py-1 text-sm border rounded"
+                      class="flex-1 px-2 py-1 text-sm border border-accent-300 dark:border-accent-600 rounded bg-white dark:bg-accent-700 text-accent-900 dark:text-accent-100"
                     />
                     <input
                       type="text"
                       bind:value={player.position}
                       placeholder="Pos"
-                      class="w-16 px-2 py-1 text-sm border rounded"
+                      class="w-16 px-2 py-1 text-sm border border-accent-300 dark:border-accent-600 rounded bg-white dark:bg-accent-700 text-accent-900 dark:text-accent-100"
                     />
                     <button
                       class="text-red-500 hover:text-red-700"
@@ -1128,10 +1128,10 @@
         </div>
 
         <div
-          class="border-t border-gray-200 dark:border-gray-700 px-6 py-4 flex justify-end gap-3"
+          class="border-t border-accent-200 dark:border-accent-700 px-6 py-4 flex justify-end gap-3"
         >
           <button
-            class="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
+            class="px-4 py-2 text-accent-600 dark:text-accent-400 hover:text-accent-800 dark:hover:text-accent-200"
             on:click={() => {
               current_active_game = null;
               show_lineup_modal = false;
@@ -1156,21 +1156,21 @@
       class="fixed inset-0 bg-black/60 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4"
     >
       <div
-        class="bg-white dark:bg-gray-800 w-full sm:max-w-md sm:rounded-xl shadow-2xl"
+        class="bg-white dark:bg-accent-800 w-full sm:max-w-md sm:rounded-xl shadow-2xl"
       >
         <div
-          class="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between"
+          class="p-4 border-b border-accent-200 dark:border-accent-700 flex items-center justify-between"
         >
           <div class="flex items-center gap-3">
             <span class="text-2xl">{selected_event_type.icon}</span>
             <div>
-              <h3 class="font-semibold text-gray-900 dark:text-white">
+              <h3 class="font-semibold text-accent-900 dark:text-accent-100">
                 {selected_event_type.label}
               </h3>
               <span
                 class="text-xs {selected_team_side === 'home'
                   ? 'text-blue-600'
-                  : 'text-red-600'}"
+                  : 'text-emerald-600'}"
               >
                 {selected_team_side === "home"
                   ? "🏠 Home Team"
@@ -1180,11 +1180,11 @@
           </div>
           <button
             aria-label="Close event form"
-            class="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
+            class="p-1 hover:bg-accent-100 dark:hover:bg-accent-700 rounded"
             on:click={cancel_event}
           >
             <svg
-              class="w-5 h-5 text-gray-500"
+              class="w-5 h-5 text-accent-500"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -1200,9 +1200,9 @@
         </div>
 
         <form on:submit|preventDefault={record_event} class="p-4 space-y-4">
-          <div class="bg-gray-100 dark:bg-gray-700 rounded-lg p-3 text-center">
+          <div class="bg-accent-100 dark:bg-accent-700 rounded-lg p-3 text-center">
             <span
-              class="text-2xl font-mono font-bold text-gray-900 dark:text-white"
+              class="text-2xl font-mono font-bold text-accent-900 dark:text-accent-100"
             >
               {format_clock_display()}
             </span>
@@ -1212,14 +1212,14 @@
             <div>
               <label
                 for="player-select"
-                class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                class="block text-sm font-medium text-accent-700 dark:text-accent-300 mb-1"
               >
                 Player
               </label>
               <select
                 id="player-select"
                 bind:value={event_form.player_id}
-                class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
+                class="w-full px-3 py-2 border border-accent-300 dark:border-accent-600 rounded-lg bg-white dark:bg-accent-700 text-accent-900 dark:text-accent-100"
               >
                 <option value="">Select player...</option>
                 {#each get_team_players(selected_team_side) as player}
@@ -1235,14 +1235,14 @@
             <div>
               <label
                 for="sub-player-select"
-                class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                class="block text-sm font-medium text-accent-700 dark:text-accent-300 mb-1"
               >
                 Player Coming On
               </label>
               <select
                 id="sub-player-select"
                 bind:value={event_form.secondary_player_id}
-                class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
+                class="w-full px-3 py-2 border border-accent-300 dark:border-accent-600 rounded-lg bg-white dark:bg-accent-700 text-accent-900 dark:text-accent-100"
               >
                 <option value="">Select player...</option>
                 {#each get_team_players(selected_team_side).filter((p) => !p.is_starter) as player}
@@ -1257,7 +1257,7 @@
           {#if selected_event_type.category === "card"}
             <div>
               <span
-                class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                class="block text-sm font-medium text-accent-700 dark:text-accent-300 mb-1"
                 >Card Type</span
               >
               <div
@@ -1289,7 +1289,7 @@
           <div>
             <label
               for="event-notes"
-              class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+              class="block text-sm font-medium text-accent-700 dark:text-accent-300 mb-1"
             >
               Notes (Optional)
             </label>
@@ -1297,14 +1297,14 @@
               id="event-notes"
               bind:value={event_form.description}
               placeholder="Additional details..."
-              class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 h-16 resize-none"
+              class="w-full px-3 py-2 border border-accent-300 dark:border-accent-600 rounded-lg bg-white dark:bg-accent-700 text-accent-900 dark:text-accent-100 h-16 resize-none"
             ></textarea>
           </div>
 
           <div class="flex gap-3 pt-2">
             <button
               type="button"
-              class="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg font-medium"
+              class="flex-1 px-4 py-3 border border-accent-300 dark:border-accent-600 rounded-lg font-medium text-accent-700 dark:text-accent-300"
               on:click={cancel_event}
             >
               Cancel

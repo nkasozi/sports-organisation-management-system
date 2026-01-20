@@ -1832,7 +1832,7 @@ class EntityMetadataRegistry {
           field_type: "string",
           is_required: true,
           is_read_only: false,
-          show_in_list: true,
+          show_in_list: false,
         },
         {
           field_name: "description" satisfies keyof GameEventType,
@@ -1848,7 +1848,7 @@ class EntityMetadataRegistry {
           field_type: "string",
           is_required: false,
           is_read_only: false,
-          show_in_list: false,
+          show_in_list: true,
         },
         {
           field_name: "color" satisfies keyof GameEventType,

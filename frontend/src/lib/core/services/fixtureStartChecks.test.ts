@@ -168,12 +168,17 @@ describe("fixtureStartChecks", () => {
         create_mock_membership_use_cases(team_players);
       const lineup_use_cases = create_mock_lineup_use_cases([]);
       const sport_use_cases = create_mock_sport_use_cases(3, 3);
+      const competition_use_cases = create_mock_competition_use_cases();
+      const organization_use_cases = create_mock_organization_use_cases();
 
       const result = await auto_generate_lineups_if_possible(
         fixture,
         "team-1",
+        "Test Team",
         membership_use_cases,
         lineup_use_cases,
+        competition_use_cases,
+        organization_use_cases,
         sport_use_cases,
       );
 
@@ -198,12 +203,17 @@ describe("fixtureStartChecks", () => {
         create_mock_membership_use_cases(team_players);
       const lineup_use_cases = create_mock_lineup_use_cases([]);
       const sport_use_cases = create_mock_sport_use_cases(2, 5);
+      const competition_use_cases = create_mock_competition_use_cases();
+      const organization_use_cases = create_mock_organization_use_cases();
 
       const result = await auto_generate_lineups_if_possible(
         fixture,
         "team-1",
+        "Test Team",
         membership_use_cases,
         lineup_use_cases,
+        competition_use_cases,
+        organization_use_cases,
         sport_use_cases,
       );
 
@@ -225,19 +235,26 @@ describe("fixtureStartChecks", () => {
         create_mock_membership_use_cases(team_players);
       const lineup_use_cases = create_mock_lineup_use_cases([]);
       const sport_use_cases = create_mock_sport_use_cases(3, 5);
+      const competition_use_cases = create_mock_competition_use_cases();
+      const organization_use_cases = create_mock_organization_use_cases();
 
       const result = await auto_generate_lineups_if_possible(
         fixture,
         "team-1",
+        "Test Team",
         membership_use_cases,
         lineup_use_cases,
+        competition_use_cases,
+        organization_use_cases,
         sport_use_cases,
       );
 
       expect(result.success).toBe(false);
+      expect(result.error_message).toContain("Test Team");
       expect(result.error_message).toContain("only 2 active player(s)");
       expect(result.error_message).toContain("minimum is 3");
       expect(result.fix_suggestion).toContain("Player Team Memberships");
+      expect(result.fix_suggestion).toContain("Test Team");
     });
 
     it("should fail when player count above maximum", async () => {
@@ -258,12 +275,17 @@ describe("fixtureStartChecks", () => {
         create_mock_membership_use_cases(team_players);
       const lineup_use_cases = create_mock_lineup_use_cases([]);
       const sport_use_cases = create_mock_sport_use_cases(2, 5);
+      const competition_use_cases = create_mock_competition_use_cases();
+      const organization_use_cases = create_mock_organization_use_cases();
 
       const result = await auto_generate_lineups_if_possible(
         fixture,
         "team-1",
+        "Test Team",
         membership_use_cases,
         lineup_use_cases,
+        competition_use_cases,
+        organization_use_cases,
         sport_use_cases,
       );
 
@@ -288,18 +310,96 @@ describe("fixtureStartChecks", () => {
         create_mock_membership_use_cases(team_players);
       const lineup_use_cases = create_mock_lineup_use_cases([]);
       const sport_use_cases = create_mock_sport_use_cases(2, 3);
+      const competition_use_cases = create_mock_competition_use_cases();
+      const organization_use_cases = create_mock_organization_use_cases();
 
       const result = await auto_generate_lineups_if_possible(
         fixture,
         "team-1",
+        "Test Team",
         membership_use_cases,
         lineup_use_cases,
+        competition_use_cases,
+        organization_use_cases,
         sport_use_cases,
       );
 
       expect(result.success).toBe(true);
       expect(result.lineup?.selected_player_ids).toHaveLength(2);
       expect(result.lineup?.selected_player_ids).not.toContain("player-2");
+    });
+
+    it("should use competition rule overrides instead of sport defaults", async () => {
+      const fixture = create_test_fixture({
+        id: "fixture-1",
+        competition_id: "comp-1",
+      });
+      const team_players = [
+        create_test_player_membership("player-1", "team-1"),
+        create_test_player_membership("player-2", "team-1"),
+        create_test_player_membership("player-3", "team-1"),
+        create_test_player_membership("player-4", "team-1"),
+      ];
+
+      const membership_use_cases =
+        create_mock_membership_use_cases(team_players);
+      const lineup_use_cases = create_mock_lineup_use_cases([]);
+      const sport_use_cases = create_mock_sport_use_cases(11, 11);
+      const competition_use_cases = create_mock_competition_use_cases({
+        min_players_on_field: 3,
+        max_players_on_field: 5,
+      });
+      const organization_use_cases = create_mock_organization_use_cases();
+
+      const result = await auto_generate_lineups_if_possible(
+        fixture,
+        "team-1",
+        "Test Team",
+        membership_use_cases,
+        lineup_use_cases,
+        competition_use_cases,
+        organization_use_cases,
+        sport_use_cases,
+      );
+
+      expect(result.success).toBe(true);
+      expect(result.lineup?.selected_player_ids).toHaveLength(4);
+    });
+
+    it("should fail with competition rule overrides when player count below minimum", async () => {
+      const fixture = create_test_fixture({
+        id: "fixture-1",
+        competition_id: "comp-1",
+      });
+      const team_players = [
+        create_test_player_membership("player-1", "team-1"),
+        create_test_player_membership("player-2", "team-1"),
+      ];
+
+      const membership_use_cases =
+        create_mock_membership_use_cases(team_players);
+      const lineup_use_cases = create_mock_lineup_use_cases([]);
+      const sport_use_cases = create_mock_sport_use_cases(1, 99);
+      const competition_use_cases = create_mock_competition_use_cases({
+        min_players_on_field: 5,
+        max_players_on_field: 10,
+      });
+      const organization_use_cases = create_mock_organization_use_cases();
+
+      const result = await auto_generate_lineups_if_possible(
+        fixture,
+        "team-1",
+        "Test Team",
+        membership_use_cases,
+        lineup_use_cases,
+        competition_use_cases,
+        organization_use_cases,
+        sport_use_cases,
+      );
+
+      expect(result.success).toBe(false);
+      expect(result.error_message).toContain("only 2 active player(s)");
+      expect(result.error_message).toContain("minimum is 5");
     });
   });
 });
@@ -421,6 +521,33 @@ function create_mock_sport_use_cases(min_players: number, max_players: number) {
         name: "Test Sport",
         min_players_per_fixture: min_players,
         max_players_per_fixture: max_players,
+      },
+    }),
+  } as any;
+}
+
+function create_mock_competition_use_cases(rule_overrides: any = {}) {
+  return {
+    get_by_id: async () => ({
+      success: true,
+      data: {
+        id: "comp-1",
+        name: "Test Competition",
+        organization_id: "org-1",
+        rule_overrides,
+      },
+    }),
+  } as any;
+}
+
+function create_mock_organization_use_cases(sport_id: string = "sport-1") {
+  return {
+    get_by_id: async () => ({
+      success: true,
+      data: {
+        id: "org-1",
+        name: "Test Organization",
+        sport_id,
       },
     }),
   } as any;

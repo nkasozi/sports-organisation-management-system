@@ -5,6 +5,7 @@
   import { get_team_use_cases } from "$lib/core/usecases/TeamUseCases";
   import { get_player_use_cases } from "$lib/core/usecases/PlayerUseCases";
   import { get_fixture_use_cases } from "$lib/core/usecases/FixtureUseCases";
+  import { get_sport_use_cases } from "$lib/core/usecases/SportUseCases";
   import { reset_all_data } from "$lib/adapters/services/dataResetService";
   import { branding_store } from "$lib/presentation/stores/branding";
   import type { Competition } from "$lib/core/entities/Competition";
@@ -16,6 +17,7 @@
   const team_use_cases = get_team_use_cases();
   const player_use_cases = get_player_use_cases();
   const fixture_use_cases = get_fixture_use_cases();
+  const sport_use_cases = get_sport_use_cases();
 
   let loading = true;
   let is_resetting = false;
@@ -29,6 +31,9 @@
   let recent_competitions: Competition[] = [];
   let upcoming_fixtures: Fixture[] = [];
   let teams_map: Map<string, Team> = new Map();
+  let competition_names: Record<string, string> = {};
+  let sport_names: Record<string, string> = {};
+  let competition_sport_names: Record<string, string> = {};
 
   function get_competition_initials(name: string): string {
     return name
@@ -37,6 +42,18 @@
       .join("")
       .toUpperCase()
       .slice(0, 2);
+  }
+
+  function split_organization_name(name: string): {
+    prefix: string;
+    suffix: string;
+  } {
+    const parts = name.trim().split(/\s+/);
+    if (parts.length === 1) {
+      return { prefix: "", suffix: parts[0] };
+    }
+    const suffix = parts.pop() || "";
+    return { prefix: parts.join(" "), suffix };
   }
 
   function get_status_class(status: string): string {
@@ -77,6 +94,70 @@
     return team?.short_name || team?.name || "Unknown";
   }
 
+  function get_competition_name(competition_id: string): string {
+    return competition_names[competition_id] || "Unknown Competition";
+  }
+
+  function get_sport_name(competition_id: string): string {
+    return sport_names[competition_id] || "Unknown Sport";
+  }
+
+  function get_sport_name_for_competition(competition_id: string): string {
+    return competition_sport_names[competition_id] || "Unknown Sport";
+  }
+
+  async function load_sport_names_for_competitions(competitions: Competition[]): Promise<void> {
+    for (const competition of competitions) {
+      if (!competition.id) continue;
+
+      const org_result = await organization_use_cases.get_by_id(competition.organization_id);
+      if (!org_result.success || !org_result.data) {
+        competition_sport_names[competition.id] = "Unknown Sport";
+        continue;
+      }
+
+      const sport_result = await sport_use_cases.get_by_id(org_result.data.sport_id);
+      if (sport_result.success && sport_result.data) {
+        competition_sport_names[competition.id] = sport_result.data.name;
+      } else {
+        competition_sport_names[competition.id] = "Unknown Sport";
+      }
+    }
+
+    competition_sport_names = { ...competition_sport_names };
+  }
+
+  async function load_competition_and_sport_names(fixtures: Fixture[]): Promise<void> {
+    const competition_ids = [...new Set(fixtures.map(f => f.competition_id).filter(Boolean))];
+
+    for (const competition_id of competition_ids) {
+      const comp_result = await competition_use_cases.get_by_id(competition_id);
+      if (!comp_result.success || !comp_result.data) {
+        competition_names[competition_id] = "Unknown Competition";
+        sport_names[competition_id] = "Unknown Sport";
+        continue;
+      }
+
+      competition_names[competition_id] = comp_result.data.name;
+
+      const org_result = await organization_use_cases.get_by_id(comp_result.data.organization_id);
+      if (!org_result.success || !org_result.data) {
+        sport_names[competition_id] = "Unknown Sport";
+        continue;
+      }
+
+      const sport_result = await sport_use_cases.get_by_id(org_result.data.sport_id);
+      if (sport_result.success && sport_result.data) {
+        sport_names[competition_id] = sport_result.data.name;
+      } else {
+        sport_names[competition_id] = "Unknown Sport";
+      }
+    }
+
+    competition_names = { ...competition_names };
+    sport_names = { ...sport_names };
+  }
+
   onMount(async () => {
     const debug_count = localStorage.getItem("debug_officials_count");
     if (debug_count) {
@@ -107,6 +188,7 @@
 
     if (comp_result.success && comp_result.data) {
       recent_competitions = comp_result.data.slice(0, 3);
+      await load_sport_names_for_competitions(recent_competitions);
     }
 
     if (team_result.success && team_result.data) {
@@ -119,6 +201,8 @@
           new Date(a.scheduled_date).getTime() - new Date(b.scheduled_date).getTime()
         )
         .slice(0, 3);
+
+      await load_competition_and_sport_names(upcoming_fixtures);
     }
 
     loading = false;
@@ -155,7 +239,7 @@
         <h1
           class="text-2xl sm:text-3xl font-bold text-accent-900 dark:text-accent-100 mb-2"
         >
-          Welcome to <span class="text-secondary-600">{$branding_store.organization_name}</span>
+          Welcome to {#if split_organization_name($branding_store.organization_name).prefix}{split_organization_name($branding_store.organization_name).prefix} {/if}<span class="text-theme-secondary-600">{split_organization_name($branding_store.organization_name).suffix}</span>
         </h1>
         <p class="text-accent-600 dark:text-accent-300 text-mobile">
           Track competitions, teams, players, officials and fixtures for your sport all in one place.
@@ -184,13 +268,13 @@
       <div class="flex items-center">
         <div class="flex-shrink-0">
           <div
-            class="h-12 w-12 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center"
+            class="h-12 w-12 bg-sky-100 dark:bg-sky-900/60 rounded-lg flex items-center justify-center"
           >
             {#if loading}
               <div class="loading-spinner h-6 w-6"></div>
             {:else}
               <svg
-                class="h-6 w-6 text-blue-500"
+                class="h-6 w-6 text-sky-500"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -223,13 +307,13 @@
       <div class="flex items-center">
         <div class="flex-shrink-0">
           <div
-            class="h-12 w-12 bg-action-100 dark:bg-action-900 rounded-lg flex items-center justify-center"
+            class="h-12 w-12 bg-teal-100 dark:bg-teal-900/60 rounded-lg flex items-center justify-center"
           >
             {#if loading}
               <div class="loading-spinner h-6 w-6"></div>
             {:else}
               <svg
-                class="h-6 w-6 text-action-500"
+                class="h-6 w-6 text-teal-500"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -262,13 +346,13 @@
       <div class="flex items-center">
         <div class="flex-shrink-0">
           <div
-            class="h-12 w-12 bg-emerald-100 dark:bg-emerald-900 rounded-lg flex items-center justify-center"
+            class="h-12 w-12 bg-fuchsia-100 dark:bg-fuchsia-900/60 rounded-lg flex items-center justify-center"
           >
             {#if loading}
               <div class="loading-spinner h-6 w-6"></div>
             {:else}
               <svg
-                class="h-6 w-6 text-emerald-500"
+                class="h-6 w-6 text-fuchsia-500"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -301,13 +385,13 @@
       <div class="flex items-center">
         <div class="flex-shrink-0">
           <div
-            class="h-12 w-12 bg-action-100 dark:bg-action-900 rounded-lg flex items-center justify-center"
+            class="h-12 w-12 bg-sky-100 dark:bg-sky-900/60 rounded-lg flex items-center justify-center"
           >
             {#if loading}
               <div class="loading-spinner h-6 w-6"></div>
             {:else}
               <svg
-                class="h-6 w-6 text-action-500"
+                class="h-6 w-6 text-sky-500"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -375,9 +459,9 @@
             {#each recent_competitions as competition, index}
               <div class="flex items-center space-x-4">
                 <div
-                  class="h-10 w-10 rounded-lg flex items-center justify-center {index % 2 === 0 ? 'bg-blue-100 dark:bg-blue-900' : 'bg-action-100 dark:bg-action-900'}"
+                  class="h-10 w-10 rounded-lg flex items-center justify-center {index % 3 === 0 ? 'bg-sky-100 dark:bg-sky-900/60' : index % 3 === 1 ? 'bg-teal-100 dark:bg-teal-900/60' : 'bg-fuchsia-100 dark:bg-fuchsia-900/60'}"
                 >
-                  <span class="{index % 2 === 0 ? 'text-blue-600' : 'text-action-500'} font-semibold text-sm">
+                  <span class="{index % 3 === 0 ? 'text-sky-600' : index % 3 === 1 ? 'text-teal-500' : 'text-fuchsia-500'} font-semibold text-sm">
                     {get_competition_initials(competition.name)}
                   </span>
                 </div>
@@ -387,9 +471,14 @@
                   >
                     {competition.name}
                   </p>
-                  <p class="text-xs text-accent-500 dark:text-accent-400">
-                    {competition.status.charAt(0).toUpperCase() + competition.status.slice(1)} • {competition.team_ids?.length || 0} teams
-                  </p>
+                  <div class="flex flex-wrap items-center gap-1 mt-0.5">
+                    <span class="inline-flex items-center px-1.5 py-0.5 bg-sky-100 dark:bg-sky-900/40 text-sky-700 dark:text-sky-300 rounded text-xs">
+                      {get_sport_name_for_competition(competition.id)}
+                    </span>
+                    <span class="text-xs text-accent-500 dark:text-accent-400">
+                      {competition.team_ids?.length || 0} teams
+                    </span>
+                  </div>
                 </div>
                 <span class="{get_status_class(competition.status)} px-2 py-1 text-xs rounded-full">
                   {competition.status.charAt(0).toUpperCase() + competition.status.slice(1)}
@@ -444,10 +533,10 @@
               <div class="flex items-center justify-between">
                 <div class="flex items-center space-x-3">
                   <div
-                    class="h-8 w-8 rounded flex items-center justify-center {index % 2 === 0 ? 'bg-emerald-100 dark:bg-emerald-900' : 'bg-action-100 dark:bg-action-900'}"
+                    class="h-8 w-8 rounded flex items-center justify-center {index % 3 === 0 ? 'bg-sky-100 dark:bg-sky-900/60' : index % 3 === 1 ? 'bg-teal-100 dark:bg-teal-900/60' : 'bg-fuchsia-100 dark:bg-fuchsia-900/60'}"
                   >
                     <svg
-                      class="h-4 w-4 {index % 2 === 0 ? 'text-emerald-500' : 'text-action-500'}"
+                      class="h-4 w-4 {index % 3 === 0 ? 'text-sky-500' : index % 3 === 1 ? 'text-teal-500' : 'text-fuchsia-500'}"
                       fill="currentColor"
                       viewBox="0 0 20 20"
                     >
@@ -464,7 +553,15 @@
                     >
                       {get_team_name(fixture.home_team_id)} vs {get_team_name(fixture.away_team_id)}
                     </p>
-                    <p class="text-xs text-accent-500 dark:text-accent-400">
+                    <div class="flex flex-wrap items-center gap-1 mt-0.5">
+                      <span class="inline-flex items-center px-1.5 py-0.5 bg-teal-100 dark:bg-teal-900/40 text-teal-700 dark:text-teal-300 rounded text-xs">
+                        {get_competition_name(fixture.competition_id)}
+                      </span>
+                      <span class="inline-flex items-center px-1.5 py-0.5 bg-sky-100 dark:bg-sky-900/40 text-sky-700 dark:text-sky-300 rounded text-xs">
+                        {get_sport_name(fixture.competition_id)}
+                      </span>
+                    </div>
+                    <p class="text-xs text-accent-500 dark:text-accent-400 mt-0.5">
                       {format_fixture_date(fixture.scheduled_date, fixture.scheduled_time)}
                     </p>
                   </div>
@@ -491,7 +588,7 @@
         class="flex flex-col items-center p-4 text-center hover:bg-accent-50 dark:hover:bg-accent-700 rounded-lg transition-colors duration-200 mobile-touch"
       >
         <div
-          class="h-12 w-12 bg-action-500 rounded-lg flex items-center justify-center mb-3"
+          class="h-12 w-12 bg-fuchsia-700 rounded-lg flex items-center justify-center mb-3"
         >
           <svg
             class="h-6 w-6 text-white"
@@ -517,7 +614,7 @@
         class="flex flex-col items-center p-4 text-center hover:bg-accent-50 dark:hover:bg-accent-700 rounded-lg transition-colors duration-200 mobile-touch"
       >
         <div
-          class="h-12 w-12 bg-blue-500 rounded-lg flex items-center justify-center mb-3"
+          class="h-12 w-12 bg-sky-600 rounded-lg flex items-center justify-center mb-3"
         >
           <svg
             class="h-6 w-6 text-white"
@@ -543,7 +640,7 @@
         class="flex flex-col items-center p-4 text-center hover:bg-accent-50 dark:hover:bg-accent-700 rounded-lg transition-colors duration-200 mobile-touch"
       >
         <div
-          class="h-12 w-12 bg-emerald-500 rounded-lg flex items-center justify-center mb-3"
+          class="h-12 w-12 bg-teal-700 rounded-lg flex items-center justify-center mb-3"
         >
           <svg
             class="h-6 w-6 text-white"
@@ -569,7 +666,7 @@
         class="flex flex-col items-center p-4 text-center hover:bg-accent-50 dark:hover:bg-accent-700 rounded-lg transition-colors duration-200 mobile-touch"
       >
         <div
-          class="h-12 w-12 bg-action-500 rounded-lg flex items-center justify-center mb-3"
+          class="h-12 w-12 bg-sky-600 rounded-lg flex items-center justify-center mb-3"
         >
           <svg
             class="h-6 w-6 text-white"
