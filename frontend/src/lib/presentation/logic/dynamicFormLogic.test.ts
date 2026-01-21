@@ -350,6 +350,14 @@ describe("dynamicFormLogic", () => {
       expect(get_input_type_for_field(field)).toBe("url");
     });
 
+    it("returns text for icon fields even if name contains url", () => {
+      const field = create_field_metadata({
+        field_name: "icon_url",
+        field_type: "string",
+      });
+      expect(get_input_type_for_field(field)).toBe("text");
+    });
+
     it("returns text for other string fields", () => {
       const field = create_field_metadata({
         field_name: "name",

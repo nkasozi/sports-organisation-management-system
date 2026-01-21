@@ -53,7 +53,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
   $: is_edit_mode = determine_if_edit_mode(entity_data);
   $: form_title = build_form_title(
     entity_metadata?.display_name || "",
-    is_edit_mode
+    is_edit_mode,
   );
   $: sub_entity_fields = get_sub_entity_fields(entity_metadata);
 
@@ -73,7 +73,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
       entityMetadataRegistry.get_entity_metadata(normalized_type);
     if (!metadata) {
       console.error(
-        `No metadata found for entity type: ${type} (normalized: ${normalized_type})`
+        `No metadata found for entity type: ${type} (normalized: ${normalized_type})`,
       );
     }
     return metadata;
@@ -88,14 +88,16 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
     return `${action} ${display_name}`;
   }
 
-  function get_sub_entity_fields(metadata: EntityMetadata | null): FieldMetadata[] {
+  function get_sub_entity_fields(
+    metadata: EntityMetadata | null,
+  ): FieldMetadata[] {
     if (!metadata) return [];
     return metadata.fields.filter((field) => field.field_type === "sub_entity");
   }
 
   function build_sub_entity_filter(
     field: FieldMetadata,
-    parent_entity: Partial<BaseEntity> | null
+    parent_entity: Partial<BaseEntity> | null,
   ): SubEntityFilter | null {
     if (!field.sub_entity_config || !parent_entity?.id) return null;
 
@@ -110,7 +112,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
 
   function initialize_form_data_for_entity(
     metadata: EntityMetadata,
-    existing_data: Partial<BaseEntity> | null
+    existing_data: Partial<BaseEntity> | null,
   ): void {
     const new_form_data: Record<string, any> = {};
 
@@ -150,9 +152,11 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
 
   function get_sorted_fields_for_display(
     fields: FieldMetadata[],
-    in_edit_mode: boolean
+    in_edit_mode: boolean,
   ): FieldMetadata[] {
-    const renderable_fields = fields.filter((f) => f.field_type !== "sub_entity");
+    const renderable_fields = fields.filter(
+      (f) => f.field_type !== "sub_entity",
+    );
     const visible_fields = renderable_fields.filter((f) => {
       if (!in_edit_mode && f.hide_on_create) return false;
       return true;
@@ -169,6 +173,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
     if (field.field_name.includes("email")) return "email";
     if (field.field_name.includes("phone") || field.field_name.includes("tel"))
       return "tel";
+    if (field.field_name.includes("icon")) return "text";
     if (
       field.field_name.includes("url") ||
       field.field_name.includes("website") ||
@@ -180,7 +185,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
 
   async function handle_file_input_change(
     event: Event,
-    field_name: string
+    field_name: string,
   ): Promise<void> {
     const input = event.target as HTMLInputElement;
     if (!input.files || input.files.length === 0) return;
@@ -218,7 +223,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
   }
 
   async function load_foreign_key_options_for_all_fields(
-    fields: FieldMetadata[]
+    fields: FieldMetadata[],
   ): Promise<void> {
     is_loading = true;
     const new_options: Record<string, BaseEntity[]> = {};
@@ -226,7 +231,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
     for (const field of fields) {
       if (field.field_type === "foreign_key" && field.foreign_key_entity) {
         const options_result = await load_foreign_key_options_for_field(
-          field.foreign_key_entity
+          field.foreign_key_entity,
         );
         if (options_result.success) {
           console.debug("[DEBUG] Loaded options_result.data", {
@@ -239,29 +244,34 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
 
     foreign_key_options = new_options;
     console.debug("[DEBUG] Loaded foreign_key_options", {
-            options: foreign_key_options,
-          });
+      options: foreign_key_options,
+    });
     is_loading = false;
   }
 
   async function load_foreign_key_options_for_field(
-    foreign_entity_type: string
+    foreign_entity_type: string,
   ): Promise<{ success: boolean; data: BaseEntity[] }> {
     try {
       const normalized_type = foreign_entity_type.toLowerCase();
       const use_cases = get_use_cases_for_entity_type(normalized_type);
       if (!use_cases || typeof use_cases.list !== "function") {
         console.warn(
-          `No usable list method found for entity type: ${foreign_entity_type}`
+          `No usable list method found for entity type: ${foreign_entity_type}`,
         );
         return { success: false, data: [] };
       }
       const result = await use_cases.list();
       if (!result.success) {
-        const error_msg = "error_message" in result ? result.error_message : ("error" in result ? result.error : "Unknown error");
+        const error_msg =
+          "error_message" in result
+            ? result.error_message
+            : "error" in result
+              ? result.error
+              : "Unknown error";
         console.warn(
           `Failed to load options for ${foreign_entity_type}:`,
-          error_msg
+          error_msg,
         );
         return { success: false, data: [] };
       }
@@ -281,7 +291,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
     } catch (error) {
       console.error(
         `Error loading foreign key options for ${foreign_entity_type}:`,
-        error
+        error,
       );
       return { success: false, data: [] };
     }
@@ -295,7 +305,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
 
     const validation_result = validate_form_data_against_metadata(
       form_data,
-      entity_metadata
+      entity_metadata,
     );
     if (!validation_result.is_valid) {
       validation_errors = validation_result.errors;
@@ -318,7 +328,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
       if (is_edit_mode && entity_data?.id) {
         if (typeof use_cases.update !== "function") {
           console.error(
-            `Method update not found on use cases for ${entity_type}`
+            `Method update not found on use cases for ${entity_type}`,
           );
           is_save_in_progress = false;
           return;
@@ -327,7 +337,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
       } else {
         if (typeof use_cases.create !== "function") {
           console.error(
-            `Method create not found on use cases for ${entity_type}`
+            `Method create not found on use cases for ${entity_type}`,
           );
           is_save_in_progress = false;
           return;
@@ -338,7 +348,9 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
       is_save_in_progress = false;
 
       if (save_result.success && save_result.data) {
-        const event_name = is_inline_mode ? "inline_save_success" : "save_success";
+        const event_name = is_inline_mode
+          ? "inline_save_success"
+          : "save_success";
         dispatch(event_name, { entity: save_result.data });
       } else {
         dispatch("save_error", {
@@ -356,7 +368,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
 
   function validate_form_data_against_metadata(
     data: Record<string, any>,
-    metadata: EntityMetadata
+    metadata: EntityMetadata,
   ): { is_valid: boolean; errors: Record<string, string> } {
     const errors: Record<string, string> = {};
 
@@ -383,7 +395,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
       ) {
         const rule_validation_result = validate_field_against_rules(
           field_value,
-          field.validation_rules
+          field.validation_rules,
         );
         if (!rule_validation_result.is_valid) {
           errors[field.field_name] = rule_validation_result.error_message;
@@ -399,7 +411,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
 
   function validate_field_against_rules(
     value: any,
-    rules: any[]
+    rules: any[],
   ): { is_valid: boolean; error_message: string } {
     for (const rule of rules) {
       if (
@@ -451,7 +463,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
 
     const fake_data_result =
       fakeDataGenerator.generate_fake_data_for_entity_fields(
-        entity_metadata.fields
+        entity_metadata.fields,
       );
 
     if (fake_data_result.success) {
@@ -468,7 +480,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
     } else {
       console.error(
         "Failed to generate fake data:",
-        fake_data_result.error_message
+        fake_data_result.error_message,
       );
     }
   }
@@ -483,7 +495,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
 
   function get_display_value_for_foreign_key(
     field_name: string,
-    value: string
+    value: string,
   ): string {
     const options = foreign_key_options[field_name] || [];
     const normalized_value = String(value ?? "").trim();
@@ -501,7 +513,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
   }
 
   function build_enum_select_options(
-    field: FieldMetadata
+    field: FieldMetadata,
   ): { value: string; label: string }[] {
     if (!field.enum_values) return [];
     return field.enum_values.map((option) => ({
@@ -512,7 +524,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
 
   function build_foreign_key_select_options(
     field: FieldMetadata,
-    options_map: Record<string, BaseEntity[]>
+    options_map: Record<string, BaseEntity[]>,
   ): { value: string; label: string }[] {
     const entities = options_map[field.field_name] || [];
 
@@ -526,7 +538,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
         };
       })
       .filter((option): option is { value: string; label: string } =>
-        Boolean(option)
+        Boolean(option),
       );
 
     return options;
@@ -550,7 +562,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
   }
 
   function build_foreign_entity_cta_label(
-    entity_type: string | undefined
+    entity_type: string | undefined,
   ): string {
     const normalized =
       typeof entity_type === "string" ? entity_type.toLowerCase() : "";
@@ -565,7 +577,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
   }
 
   function navigate_to_foreign_entity(
-    entity_type: string | undefined
+    entity_type: string | undefined,
   ): boolean {
     const route = build_foreign_entity_route(entity_type);
     if (!route) return false;
@@ -724,7 +736,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
                     id={`field_${field.field_name}`}
                     class="input min-h-[100px]"
                     bind:value={form_data[field.field_name]}
-                    placeholder={field.display_name}
+                    placeholder={field.placeholder || field.display_name}
                     readonly={field.is_read_only}
                     rows="4"
                   ></textarea>
@@ -759,7 +771,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
                       type="text"
                       class="input"
                       bind:value={form_data[field.field_name]}
-                      placeholder={field.display_name}
+                      placeholder={field.placeholder || field.display_name}
                       readonly={field.is_read_only}
                     />
                     {#if form_data[field.field_name]}
@@ -777,7 +789,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
                     type={get_input_type_for_field(field)}
                     class="input"
                     bind:value={form_data[field.field_name]}
-                    placeholder={field.display_name}
+                    placeholder={field.placeholder || field.display_name}
                     readonly={field.is_read_only}
                   />
                 {/if}
@@ -789,7 +801,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
                   type="number"
                   class="input"
                   bind:value={form_data[field.field_name]}
-                  placeholder={field.display_name}
+                  placeholder={field.placeholder || field.display_name}
                   readonly={field.is_read_only}
                   min={field.field_name.includes("age") ||
                   field.field_name.includes("number") ||
@@ -846,7 +858,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
                   on:change={(event) =>
                     update_form_field_value(
                       field.field_name,
-                      event.detail.value
+                      event.detail.value,
                     )}
                 />
 
@@ -856,7 +868,10 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
                   label=""
                   name={field.field_name}
                   value={form_data[field.field_name]}
-                  options={build_foreign_key_select_options(field, foreign_key_options)}
+                  options={build_foreign_key_select_options(
+                    field,
+                    foreign_key_options,
+                  )}
                   placeholder={`Select ${field.display_name}`}
                   required={field.is_required}
                   disabled={field.is_read_only}
@@ -865,7 +880,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
                   on:change={(event) =>
                     update_form_field_value(
                       field.field_name,
-                      event.detail.value
+                      event.detail.value,
                     )}
                 />
 
@@ -889,11 +904,11 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
                           class="btn btn-outline"
                           on:click={() =>
                             navigate_to_foreign_entity(
-                              field.foreign_key_entity
+                              field.foreign_key_entity,
                             )}
                         >
                           {build_foreign_entity_cta_label(
-                            field.foreign_key_entity
+                            field.foreign_key_entity,
                           )}
                         </button>
                       </div>
@@ -915,14 +930,22 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
         <!-- Sub-Entity Sections (rendered dynamically based on metadata) -->
         {#each sub_entity_fields as sub_entity_field}
           {#if is_edit_mode && entity_data?.id}
-            {@const sub_filter = build_sub_entity_filter(sub_entity_field, entity_data)}
-            <div class="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
-              <h3 class="text-lg font-medium text-accent-900 dark:text-accent-100 mb-4">
+            {@const sub_filter = build_sub_entity_filter(
+              sub_entity_field,
+              entity_data,
+            )}
+            <div
+              class="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700"
+            >
+              <h3
+                class="text-lg font-medium text-accent-900 dark:text-accent-100 mb-4"
+              >
                 {sub_entity_field.display_name}
               </h3>
               {#if sub_filter && sub_entity_field.sub_entity_config}
                 <DynamicEntityList
-                  entity_type={sub_entity_field.sub_entity_config.child_entity_type}
+                  entity_type={sub_entity_field.sub_entity_config
+                    .child_entity_type}
                   sub_entity_filter={sub_filter}
                   compact_mode={true}
                   show_actions={true}
@@ -930,9 +953,12 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
               {/if}
             </div>
           {:else}
-            <div class="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+            <div
+              class="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg"
+            >
               <p class="text-sm text-blue-700 dark:text-blue-300">
-                <strong>Note:</strong> After saving this record, you'll be able to manage {sub_entity_field.display_name.toLowerCase()}.
+                <strong>Note:</strong> After saving this record, you'll be able
+                to manage {sub_entity_field.display_name.toLowerCase()}.
               </p>
             </div>
           {/if}

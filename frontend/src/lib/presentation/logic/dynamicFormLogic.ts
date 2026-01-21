@@ -79,6 +79,7 @@ export function get_input_type_for_field(field: FieldMetadata): string {
   if (field.field_name.includes("email")) return "email";
   if (field.field_name.includes("phone") || field.field_name.includes("tel"))
     return "tel";
+  if (field.field_name.includes("icon")) return "text";
   if (
     field.field_name.includes("url") ||
     field.field_name.includes("website") ||

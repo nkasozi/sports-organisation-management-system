@@ -1587,10 +1587,11 @@ class EntityMetadataRegistry {
         },
         {
           field_name: "icon_url" satisfies keyof Sport,
-          display_name: "Icon URL",
+          display_name: "Icon (Emoji)",
           field_type: "string",
           is_required: false,
           is_read_only: false,
+          placeholder: "e.g., ⚽ 🏀 🏈",
         },
         {
           field_name: "standard_game_duration_minutes" satisfies keyof Sport,

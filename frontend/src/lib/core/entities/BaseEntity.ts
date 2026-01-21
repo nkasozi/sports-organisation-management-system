@@ -37,6 +37,7 @@ export interface FieldMetadata<T extends BaseEntity = any> {
   show_in_list?: boolean;
   show_in_form?: boolean;
   hide_on_create?: boolean;
+  placeholder?: string;
   enum_values?: string[];
   foreign_key_entity?: string;
   validation_rules?: ValidationRule[];
