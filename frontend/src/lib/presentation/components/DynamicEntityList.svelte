@@ -70,26 +70,26 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
         : "Entity";
   $: all_selected = check_if_all_entities_selected(
     filtered_entities,
-    selected_entity_ids
+    selected_entity_ids,
   );
   $: some_selected = check_if_some_entities_selected(selected_entity_ids);
   $: can_show_bulk_actions = determine_if_bulk_actions_available(
     some_selected,
-    show_actions
+    show_actions,
   );
   $: filtered_entities = apply_filters_and_sorting(
     entities,
     filter_values,
     sort_column,
-    sort_direction
+    sort_direction,
   );
   $: visible_column_list = get_visible_column_list(
     visible_columns,
-    entity_metadata
+    entity_metadata,
   );
 
   function extract_items_from_result_data(
-    data: BaseEntity[] | { items: BaseEntity[]; total_count: number }
+    data: BaseEntity[] | { items: BaseEntity[]; total_count: number },
   ): BaseEntity[] {
     if (Array.isArray(data)) {
       return data;
@@ -101,7 +101,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
   }
 
   function extract_total_count_from_result_data(
-    data: BaseEntity[] | { items: BaseEntity[]; total_count: number }
+    data: BaseEntity[] | { items: BaseEntity[]; total_count: number },
   ): number {
     if (Array.isArray(data)) {
       return data.length;
@@ -112,9 +112,11 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
     return 0;
   }
 
-  function extract_error_message_from_result(
-    result: { success: boolean; error?: string; error_message?: string }
-  ): string {
+  function extract_error_message_from_result(result: {
+    success: boolean;
+    error?: string;
+    error_message?: string;
+  }): string {
     if (!result.success) {
       if ("error_message" in result && result.error_message) {
         return result.error_message;
@@ -141,12 +143,14 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
     for (const field of fields) {
       if (field.field_type === "foreign_key" && field.foreign_key_entity) {
         const use_cases = get_use_cases_for_entity_type(
-          field.foreign_key_entity
+          field.foreign_key_entity,
         );
         if (use_cases && typeof use_cases.list === "function") {
           const result = await use_cases.list(undefined, { page_size: 100 });
           if (result.success && result.data) {
-            new_options[field.field_name] = extract_items_from_result_data(result.data);
+            new_options[field.field_name] = extract_items_from_result_data(
+              result.data,
+            );
           } else {
             new_options[field.field_name] = [];
           }
@@ -160,16 +164,18 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
 
   function build_default_visible_column_names(
     fields: FieldMetadata[],
-    max_columns: number
+    max_columns: number,
   ): string[] {
     const displayable_fields = fields.filter(
-      (f: FieldMetadata) => f.field_type !== "sub_entity"
+      (f: FieldMetadata) => f.field_type !== "sub_entity",
     );
     const explicitly_enabled_fields = displayable_fields.filter(
-      (f: FieldMetadata) => f.show_in_list === true
+      (f: FieldMetadata) => f.show_in_list === true,
     );
     const preferred_fields =
-      explicitly_enabled_fields.length > 0 ? explicitly_enabled_fields : displayable_fields;
+      explicitly_enabled_fields.length > 0
+        ? explicitly_enabled_fields
+        : displayable_fields;
     return preferred_fields
       .slice(0, Math.max(0, max_columns))
       .map((f: FieldMetadata) => f.field_name);
@@ -179,35 +185,45 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
     if (!entity_metadata) return;
     const default_field_names = build_default_visible_column_names(
       entity_metadata.fields,
-      5
+      5,
     );
     visible_columns = new Set(default_field_names);
   }
 
   function get_visible_column_list(
     columns: Set<string>,
-    metadata: any
+    metadata: any,
   ): string[] {
     return Array.from(columns);
+  }
+
+  function get_column_responsive_class(
+    column_index: number,
+    total_columns: number,
+  ): string {
+    if (column_index === 0) return "";
+    if (column_index === 1) return "hidden sm:table-cell";
+    if (column_index === 2) return "hidden md:table-cell";
+    return "hidden lg:table-cell";
   }
 
   function apply_filters_and_sorting(
     entity_list: BaseEntity[],
     filters: Record<string, string>,
     sort_col: string,
-    sort_dir: "asc" | "desc"
+    sort_dir: "asc" | "desc",
   ): BaseEntity[] {
     let result = [...entity_list];
 
     const active_filters = Object.entries(filters).filter(
-      ([_, value]) => value.trim() !== ""
+      ([_, value]) => value.trim() !== "",
     );
 
     if (active_filters.length > 0) {
       result = result.filter((entity) => {
         return active_filters.every(([field, filter_value]) => {
           const field_meta = entity_metadata?.fields.find(
-            (f: { field_name: string }) => f.field_name === field
+            (f: { field_name: string }) => f.field_name === field,
           );
           if (
             field_meta &&
@@ -223,7 +239,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
             const entity_value = get_display_value_for_entity_field(
               entity,
               field,
-              foreign_key_options
+              foreign_key_options,
             ).toLowerCase();
             return entity_value.includes(filter_value.toLowerCase());
           }
@@ -233,8 +249,16 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
 
     if (sort_col) {
       result.sort((a, b) => {
-        const a_value = get_display_value_for_entity_field(a, sort_col, foreign_key_options);
-        const b_value = get_display_value_for_entity_field(b, sort_col, foreign_key_options);
+        const a_value = get_display_value_for_entity_field(
+          a,
+          sort_col,
+          foreign_key_options,
+        );
+        const b_value = get_display_value_for_entity_field(
+          b,
+          sort_col,
+          foreign_key_options,
+        );
 
         const comparison = a_value.localeCompare(b_value, undefined, {
           numeric: true,
@@ -269,7 +293,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
       return (
         entity_metadata?.fields.find(
           (f: { field_name: string; display_name: string }) =>
-            f.field_name === field_name
+            f.field_name === field_name,
         )?.display_name || field_name
       );
     });
@@ -278,7 +302,11 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
 
     filtered_entities.forEach((entity) => {
       const row = visible_column_list.map((field_name) => {
-        const value = get_display_value_for_entity_field(entity, field_name, foreign_key_options);
+        const value = get_display_value_for_entity_field(
+          entity,
+          field_name,
+          foreign_key_options,
+        );
         return `"${value.replace(/"/g, '""')}"`;
       });
       csv_rows.push(row.join(","));
@@ -292,7 +320,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
     link.setAttribute("href", url);
     link.setAttribute(
       "download",
-      `${entity_type}_export_${new Date().toISOString().split("T")[0]}.csv`
+      `${entity_type}_export_${new Date().toISOString().split("T")[0]}.csv`,
     );
     link.style.visibility = "hidden";
     document.body.appendChild(link);
@@ -318,7 +346,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
       entityMetadataRegistry.get_entity_metadata(normalized_type);
     if (!metadata) {
       console.error(
-        `No metadata found for entity type: ${type} (normalized: ${normalized_type})`
+        `No metadata found for entity type: ${type} (normalized: ${normalized_type})`,
       );
     }
     return metadata;
@@ -326,7 +354,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
 
   function check_if_all_entities_selected(
     entity_list: BaseEntity[],
-    selected_ids: Set<string>
+    selected_ids: Set<string>,
   ): boolean {
     if (entity_list.length === 0) return false;
     return entity_list.every((entity) => selected_ids.has(entity.id));
@@ -338,13 +366,13 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
 
   function determine_if_bulk_actions_available(
     has_selection: boolean,
-    actions_enabled: boolean
+    actions_enabled: boolean,
   ): boolean {
     return has_selection && actions_enabled;
   }
 
   function build_filter_from_sub_entity_config(
-    filter_config: SubEntityFilter | null
+    filter_config: SubEntityFilter | null,
   ): Record<string, string> | undefined {
     if (!filter_config) return undefined;
 
@@ -365,7 +393,10 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
 
     try {
       const use_cases = get_use_cases_for_entity_type(entity_type);
-      console.log(`[ENTITY_LIST] Use cases for "${entity_type}":`, use_cases ? "Found" : "NOT FOUND");
+      console.log(
+        `[ENTITY_LIST] Use cases for "${entity_type}":`,
+        use_cases ? "Found" : "NOT FOUND",
+      );
 
       if (!use_cases) {
         error_message = `No use cases found for entity type: ${entity_type}`;
@@ -376,49 +407,70 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
       if (typeof use_cases.list !== "function") {
         error_message = `Use cases for ${entity_type} must implement the list() method`;
         console.error(
-          `[ENTITY_LIST] ERROR:`, error_message,
+          `[ENTITY_LIST] ERROR:`,
+          error_message,
           "Available methods:",
-          Object.keys(use_cases)
+          Object.keys(use_cases),
         );
         return;
       }
 
       const filter = build_filter_from_sub_entity_config(sub_entity_filter);
-      console.log(`[ENTITY_LIST] Calling list() for "${entity_type}" with filter:`, filter);
+      console.log(
+        `[ENTITY_LIST] Calling list() for "${entity_type}" with filter:`,
+        filter,
+      );
       const result = await use_cases.list(filter, { page_size: 1000 });
       console.log(`[ENTITY_LIST] List result for "${entity_type}":`, {
         success: result.success,
-        itemCount: result.success ? extract_items_from_result_data(result.data).length : 0,
-        error: result.success ? null : extract_error_message_from_result(result)
+        itemCount: result.success
+          ? extract_items_from_result_data(result.data).length
+          : 0,
+        error: result.success
+          ? null
+          : extract_error_message_from_result(result),
       });
 
       if (result.success) {
         entities = extract_items_from_result_data(result.data);
-        console.log(`[ENTITY_LIST] ✅ Loaded ${entities.length} ${entity_type} entities`, entities);
+        console.log(
+          `[ENTITY_LIST] ✅ Loaded ${entities.length} ${entity_type} entities`,
+          entities,
+        );
         const total = extract_total_count_from_result_data(result.data);
         dispatch("refresh_completed", { total_count: total });
       } else {
         error_message = extract_error_message_from_result(result);
         console.error(
           `[ENTITY_LIST] ❌ Failed to load ${entity_type} entities:`,
-          error_message
+          error_message,
         );
       }
     } catch (error) {
       error_message = `Error loading ${display_name} list: ${error}`;
-      console.error(`[ENTITY_LIST] ❌ Exception loading ${entity_type} entities:`, error);
+      console.error(
+        `[ENTITY_LIST] ❌ Exception loading ${entity_type} entities:`,
+        error,
+      );
     } finally {
       is_loading = false;
-      console.log(`[ENTITY_LIST] Finished loading "${entity_type}" - is_loading: false`);
+      console.log(
+        `[ENTITY_LIST] Finished loading "${entity_type}" - is_loading: false`,
+      );
     }
   }
 
   function create_new_entity_with_sub_entity_defaults(): Partial<BaseEntity> {
     const new_entity: Record<string, any> = { id: "" };
     if (sub_entity_filter) {
-      new_entity[sub_entity_filter.foreign_key_field] = sub_entity_filter.foreign_key_value;
-      if (sub_entity_filter.holder_type_field && sub_entity_filter.holder_type_value) {
-        new_entity[sub_entity_filter.holder_type_field] = sub_entity_filter.holder_type_value;
+      new_entity[sub_entity_filter.foreign_key_field] =
+        sub_entity_filter.foreign_key_value;
+      if (
+        sub_entity_filter.holder_type_field &&
+        sub_entity_filter.holder_type_value
+      ) {
+        new_entity[sub_entity_filter.holder_type_field] =
+          sub_entity_filter.holder_type_value;
       }
     }
     return new_entity as Partial<BaseEntity>;
@@ -427,7 +479,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
   function handle_create_new_entity(): boolean {
     console.debug(
       "[DEBUG] handle_create_new_entity called for entity_type:",
-      entity_type
+      entity_type,
     );
 
     if (is_sub_entity_mode) {
@@ -450,7 +502,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
       "[DEBUG] handle_edit_entity called for entity_type:",
       entity_type,
       "entity:",
-      entity
+      entity,
     );
 
     if (is_sub_entity_mode) {
@@ -477,7 +529,9 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
     return true;
   }
 
-  async function handle_inline_form_save(event: CustomEvent<{ entity: BaseEntity }>): Promise<boolean> {
+  async function handle_inline_form_save(
+    event: CustomEvent<{ entity: BaseEntity }>,
+  ): Promise<boolean> {
     const saved_entity = event.detail?.entity;
     console.debug("[DEBUG] handle_inline_form_save called", { saved_entity });
 
@@ -493,7 +547,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
       "[DEBUG] handle_delete_single_entity called for entity_type:",
       entity_type,
       "entity:",
-      entity
+      entity,
     );
     console.debug("[DEBUG] handle_delete_single_entity event dispatched", {
       event_type: "delete_single",
@@ -507,13 +561,13 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
 
   function handle_delete_multiple_entities(): boolean {
     const selected_entities = entities.filter((entity) =>
-      selected_entity_ids.has(entity.id)
+      selected_entity_ids.has(entity.id),
     );
     console.debug(
       "[DEBUG] handle_delete_multiple_entities called for entity_type:",
       entity_type,
       "selected_entities:",
-      selected_entities
+      selected_entities,
     );
     console.debug("[DEBUG] handle_delete_multiple_entities event dispatched", {
       event_type: "delete_multiple",
@@ -559,7 +613,9 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
       } else {
         const ids_to_delete = entities_to_delete.map((e) => e.id);
         const use_cases_with_extras = use_cases as typeof use_cases & {
-          delete_multiple?: (ids: string[]) => Promise<{ success: boolean; error_message?: string }>;
+          delete_multiple?: (
+            ids: string[],
+          ) => Promise<{ success: boolean; error_message?: string }>;
         };
         const delete_multiple_method = use_cases_with_extras.delete_multiple;
 
@@ -578,7 +634,8 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
             const result = await use_cases.delete(entity_id);
             if (!result.success) {
               all_success = false;
-              error_message = result.error_message || `Failed to delete entity ${entity_id}`;
+              error_message =
+                result.error_message || `Failed to delete entity ${entity_id}`;
               break;
             }
           }
@@ -638,7 +695,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
     if (!entity_metadata) return [];
     return entity_metadata.fields.filter(
       (f: FieldMetadata) =>
-        !f.is_read_only || f.field_name === "id" || f.field_name === "status"
+        !f.is_read_only || f.field_name === "id" || f.field_name === "status",
     );
   }
 
@@ -872,10 +929,15 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
 
     <!-- Inline Form for Sub-Entity Create/Edit -->
     {#if show_inline_form && inline_form_entity && is_sub_entity_mode}
-      <div class="border-2 border-primary-300 dark:border-primary-600 rounded-lg p-4 bg-gray-50 dark:bg-gray-800">
+      <div
+        class="border-2 border-primary-300 dark:border-primary-600 rounded-lg p-4 bg-gray-50 dark:bg-gray-800"
+      >
         <div class="flex justify-between items-center mb-4">
-          <h3 class="text-lg font-semibold text-accent-900 dark:text-accent-100">
-            {inline_form_entity.id ? "Edit" : "Add New"} {display_name}
+          <h3
+            class="text-lg font-semibold text-accent-900 dark:text-accent-100"
+          >
+            {inline_form_entity.id ? "Edit" : "Add New"}
+            {display_name}
           </h3>
           <button
             type="button"
@@ -883,8 +945,18 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
             title="Close form"
             on:click={handle_inline_form_cancel}
           >
-            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            <svg
+              class="w-5 h-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M6 18L18 6M6 6l12 12"
+              />
             </svg>
           </button>
         </div>
@@ -945,16 +1017,19 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
                 </th>
               {/if}
 
-              {#each visible_column_list as field_name}
+              {#each visible_column_list as field_name, column_index}
                 <th
-                  class="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
+                  class="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 {get_column_responsive_class(
+                    column_index,
+                    visible_column_list.length,
+                  )}"
                   on:click={() => toggle_sort_by_column(field_name)}
                 >
                   <div class="flex items-center gap-1">
                     <span>
                       {entity_metadata?.fields.find(
                         (f: { field_name: string; display_name: string }) =>
-                          f.field_name === field_name
+                          f.field_name === field_name,
                       )?.display_name || field_name}
                     </span>
                     {#if sort_column === field_name}
@@ -1009,12 +1084,19 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
                   </td>
                 {/if}
 
-                {#each visible_column_list as field_name}
+                {#each visible_column_list as field_name, column_index}
                   <td
-                    class="px-3 py-4 text-sm text-accent-900 dark:text-accent-100"
+                    class="px-3 py-4 text-sm text-accent-900 dark:text-accent-100 {get_column_responsive_class(
+                      column_index,
+                      visible_column_list.length,
+                    )}"
                   >
                     <div class="max-w-xs truncate">
-                      {get_display_value_for_entity_field(entity, field_name, foreign_key_options)}
+                      {get_display_value_for_entity_field(
+                        entity,
+                        field_name,
+                        foreign_key_options,
+                      )}
                     </div>
                   </td>
                 {/each}
