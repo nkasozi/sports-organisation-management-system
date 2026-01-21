@@ -297,9 +297,20 @@ export function create_fixture_use_cases(
         return create_failure_result("Fixture ID is required");
       }
 
+      const fixture_result = await repository.find_by_id(id);
+      if (!fixture_result.success || !fixture_result.data) {
+        return create_failure_result("Fixture not found");
+      }
+
+      const fixture = fixture_result.data;
+      const final_home_score = fixture.home_team_score ?? 0;
+      const final_away_score = fixture.away_team_score ?? 0;
+
       return repository.update(id, {
         status: "completed",
         current_period: "finished",
+        home_team_score: final_home_score,
+        away_team_score: final_away_score,
       });
     },
   };
