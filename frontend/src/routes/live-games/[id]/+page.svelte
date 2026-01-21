@@ -10,9 +10,7 @@
   } from "$lib/core/entities/Fixture";
   import type { Team } from "$lib/core/entities/Team";
   import type { LineupPlayer } from "$lib/core/entities/FixtureLineup";
-  import {
-    get_lineup_player_display_name,
-  } from "$lib/core/entities/FixtureLineup";
+  import { get_lineup_player_display_name } from "$lib/core/entities/FixtureLineup";
   import {
     get_quick_event_buttons,
     create_game_event,
@@ -66,14 +64,14 @@
   $: fixture_id = $page.params.id ?? "";
   $: elapsed_minutes = Math.floor(game_clock_seconds / 60);
   $: current_period_duration = get_current_period_duration_seconds(
-    fixture?.current_period ?? "first_half"
+    fixture?.current_period ?? "first_half",
   );
   $: period_elapsed_seconds =
     game_clock_seconds -
     get_period_start_seconds(fixture?.current_period ?? "first_half");
   $: remaining_seconds_in_period = Math.max(
     0,
-    current_period_duration - period_elapsed_seconds
+    current_period_duration - period_elapsed_seconds,
   );
   $: countdown_minutes = Math.floor(remaining_seconds_in_period / 60);
   $: countdown_seconds = remaining_seconds_in_period % 60;
@@ -84,12 +82,10 @@
   $: sorted_events = [...game_events].sort(
     (a, b) =>
       b.minute - a.minute ||
-      new Date(b.recorded_at).getTime() - new Date(a.recorded_at).getTime()
+      new Date(b.recorded_at).getTime() - new Date(a.recorded_at).getTime(),
   );
   $: is_game_active = fixture?.status === "in_progress";
-  $: quick_events = get_quick_event_buttons();
-  $: primary_events = quick_events.slice(0, 8);
-  $: secondary_events = quick_events.slice(8);
+  $: all_event_buttons = get_quick_event_buttons();
 
   onMount(async () => {
     if (!fixture_id) {
@@ -151,40 +147,59 @@
     if (home_result.success && home_result.data) home_team = home_result.data;
     if (away_result.success && away_result.data) away_team = away_result.data;
 
-    console.log("[LiveGame] Fetching lineups for home_team_id:", fixture.home_team_id, "away_team_id:", fixture.away_team_id);
+    console.log(
+      "[LiveGame] Fetching lineups for home_team_id:",
+      fixture.home_team_id,
+      "away_team_id:",
+      fixture.away_team_id,
+    );
 
     const [home_lineup_result, away_lineup_result] = await Promise.all([
-      fixture_lineup_use_cases.get_lineup_for_team_in_fixture(fixture_id, fixture.home_team_id),
-      fixture_lineup_use_cases.get_lineup_for_team_in_fixture(fixture_id, fixture.away_team_id),
+      fixture_lineup_use_cases.get_lineup_for_team_in_fixture(
+        fixture_id,
+        fixture.home_team_id,
+      ),
+      fixture_lineup_use_cases.get_lineup_for_team_in_fixture(
+        fixture_id,
+        fixture.away_team_id,
+      ),
     ]);
 
     console.log("[LiveGame] Home lineup result:", {
       success: home_lineup_result.success,
       has_data: !!home_lineup_result.data,
       error: home_lineup_result.error_message,
-      selected_players_count: home_lineup_result.data?.selected_players?.length ?? 0,
+      selected_players_count:
+        home_lineup_result.data?.selected_players?.length ?? 0,
     });
 
     console.log("[LiveGame] Away lineup result:", {
       success: away_lineup_result.success,
       has_data: !!away_lineup_result.data,
       error: away_lineup_result.error_message,
-      selected_players_count: away_lineup_result.data?.selected_players?.length ?? 0,
+      selected_players_count:
+        away_lineup_result.data?.selected_players?.length ?? 0,
     });
 
-    home_players = home_lineup_result.success && home_lineup_result.data
-      ? home_lineup_result.data.selected_players
-      : [];
+    home_players =
+      home_lineup_result.success && home_lineup_result.data
+        ? home_lineup_result.data.selected_players
+        : [];
 
-    away_players = away_lineup_result.success && away_lineup_result.data
-      ? away_lineup_result.data.selected_players
-      : [];
+    away_players =
+      away_lineup_result.success && away_lineup_result.data
+        ? away_lineup_result.data.selected_players
+        : [];
 
     console.log("[LiveGame] Final players loaded:", {
       home_players_count: home_players.length,
       away_players_count: away_players.length,
-      home_players_sample: home_players.slice(0, 2).map(p => ({ id: p.id, name: `${p.first_name} ${p.last_name}` })),
-      away_players_sample: away_players.slice(0, 2).map(p => ({ id: p.id, name: `${p.first_name} ${p.last_name}` })),
+      home_players_sample: home_players
+        .slice(0, 2)
+        .map((p) => ({ id: p.id, name: `${p.first_name} ${p.last_name}` })),
+      away_players_sample: away_players
+        .slice(0, 2)
+        .map((p) => ({ id: p.id, name: `${p.first_name} ${p.last_name}` })),
     });
 
     is_loading = false;
@@ -287,7 +302,7 @@
 
   function open_event_modal(
     event_type: QuickEventButton,
-    team: "home" | "away"
+    team: "home" | "away",
   ): void {
     if (!is_game_active) return;
     selected_event_type = event_type;
@@ -313,17 +328,19 @@
 
     is_updating = true;
 
+    const event_label = selected_event_type.label;
+
     const new_event = create_game_event(
       selected_event_type.id,
       event_minute,
       selected_team_side,
       event_player_name,
-      event_description || selected_event_type.label
+      event_description || selected_event_type.label,
     );
 
     const result = await fixture_use_cases.record_game_event(
       fixture.id,
-      new_event
+      new_event,
     );
 
     is_updating = false;
@@ -335,7 +352,7 @@
 
     fixture = result.data;
     cancel_event();
-    show_toast(`${selected_event_type.label} recorded!`, "success");
+    show_toast(`${event_label} recorded!`, "success");
   }
 
   async function change_period(new_period: GamePeriod): Promise<void> {
@@ -357,14 +374,14 @@
       new_minute,
       "match",
       "",
-      `${get_period_display_name(new_period)} started`
+      `${get_period_display_name(new_period)} started`,
     );
 
     await fixture_use_cases.record_game_event(fixture.id, period_event);
     const result = await fixture_use_cases.update_period(
       fixture.id,
       new_period,
-      new_minute
+      new_minute,
     );
 
     is_updating = false;
@@ -390,12 +407,12 @@
       elapsed_minutes,
       "match",
       "",
-      `${get_period_display_name(fixture.current_period)} ended`
+      `${get_period_display_name(fixture.current_period)} ended`,
     );
 
     const result = await fixture_use_cases.record_game_event(
       fixture.id,
-      period_event
+      period_event,
     );
 
     is_updating = false;
@@ -424,7 +441,7 @@
 
     show_toast(
       `${get_period_display_name(fixture.current_period)} ended`,
-      "info"
+      "info",
     );
   }
 
@@ -434,7 +451,7 @@
 
   function show_toast(
     message: string,
-    type: "success" | "error" | "info"
+    type: "success" | "error" | "info",
   ): void {
     toast_message = message;
     toast_type = type;
@@ -466,24 +483,32 @@
   function build_player_select_options_for_team(
     team_side: "home" | "away",
     home_lineup_players: LineupPlayer[],
-    away_lineup_players: LineupPlayer[]
-  ): Array<{value: string; label: string}> {
-    const players = team_side === "home" ? home_lineup_players : away_lineup_players;
-    const options = players.map(player => ({
+    away_lineup_players: LineupPlayer[],
+  ): Array<{ value: string; label: string }> {
+    const players =
+      team_side === "home" ? home_lineup_players : away_lineup_players;
+    const options = players.map((player) => ({
       value: player.id,
       label: get_lineup_player_display_name(player),
     }));
-    console.log(`[LiveGame] build_player_select_options_for_team(${team_side}):`, {
-      home_players_count: home_lineup_players.length,
-      away_players_count: away_lineup_players.length,
-      selected_team_players_count: players.length,
-      options_count: options.length,
-      options: options.slice(0, 3),
-    });
+    console.log(
+      `[LiveGame] build_player_select_options_for_team(${team_side}):`,
+      {
+        home_players_count: home_lineup_players.length,
+        away_players_count: away_lineup_players.length,
+        selected_team_players_count: players.length,
+        options_count: options.length,
+        options: options.slice(0, 3),
+      },
+    );
     return options;
   }
 
-  $: player_select_options = build_player_select_options_for_team(selected_team_side, home_players, away_players);
+  $: player_select_options = build_player_select_options_for_team(
+    selected_team_side,
+    home_players,
+    away_players,
+  );
 </script>
 
 <svelte:head>
@@ -520,10 +545,12 @@
   {:else if fixture}
     <div class="flex flex-col h-screen">
       <div class="bg-gray-900 text-white px-4 py-3 sticky top-0 z-40">
-        <div class="flex items-center justify-between max-w-4xl mx-auto">
+        <div
+          class="flex items-center justify-between max-w-4xl mx-auto relative"
+        >
           <button
             type="button"
-            class="p-2 hover:bg-gray-800 rounded-lg"
+            class="p-2 hover:bg-gray-800 rounded-lg absolute left-4 top-1/2 -translate-y-1/2 md:static md:translate-y-0"
             on:click={navigate_back}
             aria-label="Go back"
           >
@@ -542,47 +569,85 @@
             </svg>
           </button>
 
-          <div class="flex items-center gap-6 flex-1 justify-center">
-            <div class="text-center">
-              <div class="text-xs text-gray-400 mb-1">
-                {home_team?.name ?? "HOME"}
-              </div>
-              <div class="text-4xl font-bold tabular-nums">{home_score}</div>
-            </div>
-
-            <div class="text-center min-w-32">
-              <div class="text-xs text-gray-400 mb-1">
-                {#if fixture.status === "in_progress"}
-                  {get_period_display_name(fixture.current_period)}
-                {:else if fixture.status === "completed"}
-                  Full Time
-                {:else}
-                  {fixture.scheduled_time}
-                {/if}
-              </div>
-              {#if fixture.status === "in_progress"}
-                <div class="text-2xl font-mono font-bold text-primary-400">
-                  {clock_display}
+          <div class="flex flex-col items-center flex-1">
+            <div class="flex items-center gap-4 sm:gap-6 justify-center">
+              <div class="text-center">
+                <div
+                  class="text-xs text-gray-400 mb-1 truncate max-w-20 sm:max-w-none"
+                >
+                  {home_team?.name ?? "HOME"}
                 </div>
-                {#if is_clock_running}
+                <div class="text-3xl sm:text-4xl font-bold tabular-nums">
+                  {home_score}
+                </div>
+              </div>
+
+              <div class="text-center min-w-24 sm:min-w-32">
+                <div class="text-xs text-gray-400 mb-1">
+                  {#if fixture.status === "in_progress"}
+                    {get_period_display_name(fixture.current_period)}
+                  {:else if fixture.status === "completed"}
+                    Full Time
+                  {:else}
+                    {fixture.scheduled_time}
+                  {/if}
+                </div>
+                {#if fixture.status === "in_progress"}
                   <div
-                    class="w-2 h-2 bg-green-500 rounded-full mx-auto mt-1 animate-pulse"
-                  ></div>
+                    class="text-xl sm:text-2xl font-mono font-bold text-primary-400"
+                  >
+                    {clock_display}
+                  </div>
+                  {#if is_clock_running}
+                    <div
+                      class="w-2 h-2 bg-green-500 rounded-full mx-auto mt-1 animate-pulse"
+                    ></div>
+                  {/if}
+                {:else}
+                  <div class="text-xl font-semibold text-gray-400">VS</div>
                 {/if}
-              {:else}
-                <div class="text-xl font-semibold text-gray-400">VS</div>
-              {/if}
+              </div>
+
+              <div class="text-center">
+                <div
+                  class="text-xs text-gray-400 mb-1 truncate max-w-20 sm:max-w-none"
+                >
+                  {away_team?.name ?? "AWAY"}
+                </div>
+                <div class="text-3xl sm:text-4xl font-bold tabular-nums">
+                  {away_score}
+                </div>
+              </div>
             </div>
 
-            <div class="text-center">
-              <div class="text-xs text-gray-400 mb-1">
-                {away_team?.name ?? "AWAY"}
-              </div>
-              <div class="text-4xl font-bold tabular-nums">{away_score}</div>
+            <div class="flex gap-2 mt-3 md:hidden">
+              {#if fixture.status === "scheduled"}
+                <button
+                  class="px-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg text-sm font-medium"
+                  on:click={() => (show_start_modal = true)}
+                >
+                  ▶️ Start
+                </button>
+              {:else if is_game_active}
+                <button
+                  class="px-3 py-2 rounded-lg text-sm font-medium {is_clock_running
+                    ? 'bg-yellow-500 text-black'
+                    : 'bg-green-500 text-white'}"
+                  on:click={toggle_clock}
+                >
+                  {is_clock_running ? "⏸️ Pause" : "▶️ Resume"}
+                </button>
+                <button
+                  class="px-3 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-sm font-medium"
+                  on:click={() => (show_end_modal = true)}
+                >
+                  🏁 End
+                </button>
+              {/if}
             </div>
           </div>
 
-          <div class="flex gap-2">
+          <div class="hidden md:flex gap-2">
             {#if fixture.status === "scheduled"}
               <button
                 class="px-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg text-sm font-medium"
@@ -647,71 +712,59 @@
         <div
           class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-4"
         >
-          <div class="max-w-4xl mx-auto">
-            <div class="grid grid-cols-2 gap-6">
-              <div>
+          <div class="max-w-5xl mx-auto">
+            <div class="flex flex-col md:flex-row">
+              <div class="flex-1 md:pr-4">
                 <div
                   class="text-xs font-medium text-blue-600 dark:text-blue-400 mb-3 text-center uppercase tracking-wider"
                 >
                   🏠 {home_team?.name ?? "Home"}
                 </div>
                 <div class="grid grid-cols-4 gap-2">
-                  {#each primary_events as event_btn}
+                  {#each all_event_buttons as event_btn}
                     <button
                       class="flex flex-col items-center justify-center p-2 rounded-lg text-white transition-all active:scale-95 {event_btn.color}"
                       on:click={() => open_event_modal(event_btn, "home")}
                       disabled={!is_clock_running}
                     >
                       <span class="text-lg">{event_btn.icon}</span>
-                      <span class="text-xs mt-1">{event_btn.label}</span>
+                      <span class="text-xs mt-1 truncate w-full text-center"
+                        >{event_btn.label}</span
+                      >
                     </button>
                   {/each}
                 </div>
               </div>
-              <div>
+
+              <div
+                class="hidden md:block w-px bg-gray-300 dark:bg-gray-600 mx-2 self-stretch"
+              ></div>
+              <div
+                class="md:hidden h-px bg-gray-300 dark:bg-gray-600 my-4 w-full"
+              ></div>
+
+              <div class="flex-1 md:pl-4">
                 <div
                   class="text-xs font-medium text-red-600 dark:text-red-400 mb-3 text-center uppercase tracking-wider"
                 >
                   ✈️ {away_team?.name ?? "Away"}
                 </div>
                 <div class="grid grid-cols-4 gap-2">
-                  {#each primary_events as event_btn}
+                  {#each all_event_buttons as event_btn}
                     <button
                       class="flex flex-col items-center justify-center p-2 rounded-lg text-white transition-all active:scale-95 {event_btn.color}"
                       on:click={() => open_event_modal(event_btn, "away")}
                       disabled={!is_clock_running}
                     >
                       <span class="text-lg">{event_btn.icon}</span>
-                      <span class="text-xs mt-1">{event_btn.label}</span>
+                      <span class="text-xs mt-1 truncate w-full text-center"
+                        >{event_btn.label}</span
+                      >
                     </button>
                   {/each}
                 </div>
               </div>
             </div>
-
-            {#if secondary_events.length > 0}
-              <div
-                class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700"
-              >
-                <div
-                  class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2 text-center"
-                >
-                  More Events
-                </div>
-                <div class="flex flex-wrap justify-center gap-2">
-                  {#each secondary_events as event_btn}
-                    <button
-                      class="px-3 py-1.5 rounded-lg text-xs font-medium text-white flex items-center gap-1 {event_btn.color}"
-                      on:click={() => open_event_modal(event_btn, "home")}
-                      disabled={!is_clock_running}
-                    >
-                      {event_btn.icon}
-                      {event_btn.label}
-                    </button>
-                  {/each}
-                </div>
-              </div>
-            {/if}
           </div>
         </div>
       {/if}
@@ -789,7 +842,7 @@
                           >
                             {format_event_time(
                               event.minute,
-                              event.stoppage_time_minute
+                              event.stoppage_time_minute,
                             )}
                           </div>
                           <div
@@ -816,7 +869,7 @@
                         <div class="flex-1 pr-8 flex justify-end">
                           <div
                             class="max-w-xs w-full rounded-lg border-r-4 p-3 shadow-sm text-right {get_event_bg_class(
-                              event
+                              event,
                             ).replace('border-l-', 'border-r-')}"
                           >
                             <div
@@ -833,7 +886,7 @@
                               >
                                 {format_event_time(
                                   event.minute,
-                                  event.stoppage_time_minute
+                                  event.stoppage_time_minute,
                                 )}
                               </span>
                             </div>
@@ -855,7 +908,7 @@
                         <div class="flex-1 pl-8 flex justify-start">
                           <div
                             class="max-w-xs w-full rounded-lg border-l-4 p-3 shadow-sm text-left {get_event_bg_class(
-                              event
+                              event,
                             )}"
                           >
                             <div
@@ -866,7 +919,7 @@
                               >
                                 {format_event_time(
                                   event.minute,
-                                  event.stoppage_time_minute
+                                  event.stoppage_time_minute,
                                 )}
                               </span>
                               <span
@@ -1007,9 +1060,14 @@
               options={player_select_options}
               placeholder="Search for a player..."
               on:change={(e) => {
-                const players = selected_team_side === "home" ? home_players : away_players;
-                const player = players.find((p: LineupPlayer) => p.id === e.detail.value);
-                event_player_name = player ? `${player.first_name} ${player.last_name}` : "";
+                const players =
+                  selected_team_side === "home" ? home_players : away_players;
+                const player = players.find(
+                  (p: LineupPlayer) => p.id === e.detail.value,
+                );
+                event_player_name = player
+                  ? `${player.first_name} ${player.last_name}`
+                  : "";
               }}
             />
           </div>
