@@ -745,8 +745,8 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
 
   <div
     class={is_mobile_view
-      ? "card p-4 sm:p-6 space-y-4"
-      : "card p-4 sm:p-6 space-y-6"}
+      ? "card p-4 sm:p-6 space-y-4 overflow-x-auto"
+      : "card p-4 sm:p-6 space-y-6 overflow-x-auto"}
   >
     <!-- Header with title and actions -->
     <div
@@ -1007,7 +1007,9 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
           <thead class="bg-gray-50 dark:bg-gray-800">
             <tr>
               {#if show_actions}
-                <th class="px-3 py-3 text-left">
+                <th
+                  class="px-3 py-3 text-left sticky left-0 bg-gray-50 dark:bg-gray-800 z-10"
+                >
                   <input
                     type="checkbox"
                     class="w-4 h-4 text-accent-600 dark:text-accent-400 border-gray-300 dark:border-gray-600 rounded focus:ring-accent-500 dark:focus:ring-accent-400"
@@ -1059,7 +1061,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
 
               {#if show_actions}
                 <th
-                  class="px-3 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+                  class="px-3 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider sticky right-0 bg-gray-50 dark:bg-gray-800 z-10"
                 >
                   Actions
                 </th>
@@ -1073,7 +1075,9 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
             {#each filtered_entities as entity}
               <tr class="hover:bg-gray-50 dark:hover:bg-gray-800">
                 {#if show_actions}
-                  <td class="px-3 py-4">
+                  <td
+                    class="px-3 py-4 sticky left-0 bg-white dark:bg-gray-900 z-10"
+                  >
                     <input
                       type="checkbox"
                       class="w-4 h-4 text-accent-600 dark:text-accent-400 border-gray-300 dark:border-gray-600 rounded focus:ring-accent-500 dark:focus:ring-accent-400"
@@ -1102,10 +1106,10 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
                 {/each}
 
                 {#if show_actions}
-                  <td class="px-3 py-4 text-right text-sm">
-                    <div
-                      class="flex flex-row gap-2 justify-end items-center flex-wrap sm:flex-nowrap"
-                    >
+                  <td
+                    class="px-3 py-4 text-right text-sm sticky right-0 bg-white dark:bg-gray-900 z-10"
+                  >
+                    <div class="flex flex-row gap-2 justify-end items-center">
                       <button
                         class="btn btn-outline btn-sm"
                         on:click={() => handle_edit_entity(entity)}

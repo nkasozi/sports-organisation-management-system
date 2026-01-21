@@ -1,6 +1,9 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { theme_store, get_theme_classes } from "$lib/presentation/stores/theme";
+  import {
+    theme_store,
+    get_theme_classes,
+  } from "$lib/presentation/stores/theme";
   import Header from "$lib/presentation/components/layout/Header.svelte";
   import Sidebar from "$lib/presentation/components/layout/Sidebar.svelte";
   import Footer from "$lib/presentation/components/layout/Footer.svelte";
@@ -20,7 +23,7 @@
   $: theme_classes = get_theme_classes(theme_config);
 
   function handle_resize(): void {
-    is_mobile = window.innerWidth < 768;
+    is_mobile = window.innerWidth < 1024;
     if (!is_mobile) {
       sidebar_open = true;
     } else {
@@ -47,9 +50,7 @@
   }
 
   function close_sidebar(): void {
-    if (is_mobile) {
-      sidebar_open = false;
-    }
+    sidebar_open = false;
   }
 </script>
 
