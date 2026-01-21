@@ -203,7 +203,7 @@ export function create_fixture_lineup_use_cases(
         };
       }
 
-      const player_count = existing_result.data.selected_player_ids.length;
+      const player_count = existing_result.data.selected_players.length;
       if (player_count === 0) {
         return {
           success: false,
@@ -235,7 +235,7 @@ export function create_fixture_lineup_use_cases(
         };
       }
 
-      const player_count = existing_result.data.selected_player_ids.length;
+      const player_count = existing_result.data.selected_players.length;
       if (player_count === 0) {
         return {
           success: false,

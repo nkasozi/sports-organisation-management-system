@@ -9,6 +9,8 @@
   import { get_fixture_official_use_cases } from '$lib/core/usecases/FixtureOfficialUseCases';
   import { get_fixture_lineup_use_cases } from '$lib/core/usecases/FixtureLineupUseCases';
   import { get_player_team_membership_use_cases } from '$lib/core/usecases/PlayerTeamMembershipUseCases';
+  import { get_player_use_cases } from '$lib/core/usecases/PlayerUseCases';
+  import { get_player_position_use_cases } from '$lib/core/usecases/PlayerPositionUseCases';
   import { get_team_use_cases } from '$lib/core/usecases/TeamUseCases';
   import { get_sport_use_cases } from '$lib/core/usecases/SportUseCases';
   import { get_competition_use_cases } from '$lib/core/usecases/CompetitionUseCases';
@@ -18,6 +20,8 @@
   const fixture_official_use_cases = get_fixture_official_use_cases();
   const fixture_lineup_use_cases = get_fixture_lineup_use_cases();
   const membership_use_cases = get_player_team_membership_use_cases();
+  const player_use_cases = get_player_use_cases();
+  const player_position_use_cases = get_player_position_use_cases();
   const team_use_cases = get_team_use_cases();
   const sport_use_cases = get_sport_use_cases();
   const competition_use_cases = get_competition_use_cases();
@@ -201,6 +205,8 @@
         fixture.home_team_id,
         team_name,
         membership_use_cases,
+        player_use_cases,
+        player_position_use_cases,
         fixture_lineup_use_cases,
         competition_use_cases,
         organization_use_cases,
@@ -255,6 +261,8 @@
         fixture.away_team_id,
         team_name,
         membership_use_cases,
+        player_use_cases,
+        player_position_use_cases,
         fixture_lineup_use_cases,
         competition_use_cases,
         organization_use_cases,

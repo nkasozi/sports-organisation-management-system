@@ -5,6 +5,10 @@
   import type {
     FixtureLineup,
     UpdateFixtureLineupInput,
+    LineupPlayer,
+  } from "$lib/core/entities/FixtureLineup";
+  import {
+    get_lineup_player_display_name,
   } from "$lib/core/entities/FixtureLineup";
   import type { Fixture } from "$lib/core/entities/Fixture";
   import type { Team } from "$lib/core/entities/Team";
@@ -19,6 +23,9 @@
     build_team_players,
     type TeamPlayer,
   } from "$lib/core/services/teamPlayers";
+  import {
+    convert_team_player_to_lineup_player,
+  } from "$lib/core/services/fixtureLineupWizard";
   import {
     get_fixture_lineup_by_id,
     submit_lineup,
@@ -37,7 +44,6 @@
   let fixture: Fixture | null = null;
   let team: Team | null = null;
   let team_players: TeamPlayer[] = [];
-  let selected_players_map: Map<string, TeamPlayer> = new Map();
   let home_team: Team | null = null;
   let away_team: Team | null = null;
 
@@ -46,6 +52,7 @@
   let error_message: string = "";
 
   $: lineup_id = $page.params.id || "";
+  $: selected_player_ids_set = new Set(lineup?.selected_players.map(p => p.id) ?? []);
 
   onMount(async () => {
     await load_lineup();
@@ -115,11 +122,6 @@
       memberships,
       position_name_by_id
     );
-    selected_players_map = new Map(
-      team_players
-        .filter((p) => lineup?.selected_player_ids.includes(p.id))
-        .map((p) => [p.id, p])
-    );
 
     loading = false;
   }
@@ -127,17 +129,19 @@
   function toggle_player_selection(player_id: string): void {
     if (!lineup || lineup.status === "locked") return;
 
-    const is_selected = lineup.selected_player_ids.includes(player_id);
-    const updated_ids = is_selected
-      ? lineup.selected_player_ids.filter((id) => id !== player_id)
-      : [...lineup.selected_player_ids, player_id];
+    const is_selected = selected_player_ids_set.has(player_id);
 
-    lineup.selected_player_ids = updated_ids;
-    selected_players_map = new Map(
-      team_players
-        .filter((p) => updated_ids.includes(p.id))
-        .map((p) => [p.id, p])
-    );
+    if (is_selected) {
+      lineup.selected_players = lineup.selected_players.filter((p) => p.id !== player_id);
+    } else {
+      const team_player = team_players.find(p => p.id === player_id);
+      if (!team_player) return;
+      lineup.selected_players = [
+        ...lineup.selected_players,
+        convert_team_player_to_lineup_player(team_player),
+      ];
+    }
+    lineup = lineup;
   }
 
   async function handle_save(): Promise<void> {
@@ -147,7 +151,7 @@
     error_message = "";
 
     const update_data: UpdateFixtureLineupInput = {
-      selected_player_ids: lineup.selected_player_ids,
+      selected_players: lineup.selected_players,
       notes: lineup.notes,
     };
 
@@ -243,7 +247,7 @@
             Players Selected
           </p>
           <p class="text-2xl font-bold text-accent-900 dark:text-accent-100">
-            {lineup.selected_player_ids.length}
+            {lineup.selected_players.length}
           </p>
         </div>
         <div class="card p-4">
@@ -275,9 +279,7 @@
           </h2>
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {#each team_players as player}
-              {@const is_selected = lineup.selected_player_ids.includes(
-                player.id
-              )}
+              {@const is_selected = selected_player_ids_set.has(player.id)}
               <button
                 type="button"
                 class="p-4 rounded-lg border-2 transition-all {is_selected
@@ -322,7 +324,7 @@
             Selected Players
           </h2>
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {#each Array.from(selected_players_map.values()) as player}
+            {#each lineup.selected_players as player}
               <div
                 class="p-4 rounded-lg border-2 border-secondary-500 bg-secondary-50 dark:bg-secondary-900/20"
               >

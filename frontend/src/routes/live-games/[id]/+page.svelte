@@ -9,7 +9,10 @@
     QuickEventButton,
   } from "$lib/core/entities/Fixture";
   import type { Team } from "$lib/core/entities/Team";
-  import type { Player } from "$lib/core/entities/Player";
+  import type { LineupPlayer } from "$lib/core/entities/FixtureLineup";
+  import {
+    get_lineup_player_display_name,
+  } from "$lib/core/entities/FixtureLineup";
   import {
     get_quick_event_buttons,
     create_game_event,
@@ -20,19 +23,20 @@
   } from "$lib/core/entities/Fixture";
   import { get_fixture_use_cases } from "$lib/core/usecases/FixtureUseCases";
   import { get_team_use_cases } from "$lib/core/usecases/TeamUseCases";
-  import { get_player_use_cases } from "$lib/core/usecases/PlayerUseCases";
+  import { get_fixture_lineup_use_cases } from "$lib/core/usecases/FixtureLineupUseCases";
   import Toast from "$lib/presentation/components/ui/Toast.svelte";
   import ConfirmationModal from "$lib/presentation/components/ui/ConfirmationModal.svelte";
+  import SearchableSelectField from "$lib/presentation/components/ui/SearchableSelectField.svelte";
 
   const fixture_use_cases = get_fixture_use_cases();
   const team_use_cases = get_team_use_cases();
-  const player_use_cases = get_player_use_cases();
+  const fixture_lineup_use_cases = get_fixture_lineup_use_cases();
 
   let fixture: Fixture | null = null;
   let home_team: Team | null = null;
   let away_team: Team | null = null;
-  let home_players: Player[] = [];
-  let away_players: Player[] = [];
+  let home_players: LineupPlayer[] = [];
+  let away_players: LineupPlayer[] = [];
   let is_loading: boolean = true;
   let error_message: string = "";
   let is_updating: boolean = false;
@@ -47,6 +51,7 @@
 
   let selected_event_type: QuickEventButton | null = null;
   let selected_team_side: "home" | "away" = "home";
+  let selected_player_id: string = "";
   let event_player_name: string = "";
   let event_description: string = "";
   let event_minute: number = 0;
@@ -100,18 +105,31 @@
   });
 
   async function load_fixture(): Promise<void> {
+    console.log("[LiveGame] load_fixture() starting, fixture_id:", fixture_id);
     is_loading = true;
     error_message = "";
 
     const result = await fixture_use_cases.get_by_id(fixture_id);
+    console.log("[LiveGame] fixture_use_cases.get_by_id result:", {
+      success: result.success,
+      has_data: !!result.data,
+      error: result.error_message,
+    });
 
     if (!result.success || !result.data) {
       error_message = result.error_message || "Failed to load fixture";
       is_loading = false;
+      console.log("[LiveGame] Failed to load fixture:", error_message);
       return;
     }
 
     fixture = result.data;
+    console.log("[LiveGame] Fixture loaded:", {
+      id: fixture.id,
+      home_team_id: fixture.home_team_id,
+      away_team_id: fixture.away_team_id,
+      status: fixture.status,
+    });
 
     if (fixture.status === "in_progress") {
       game_clock_seconds = (fixture.current_minute || 0) * 60;
@@ -123,18 +141,51 @@
       team_use_cases.get_by_id(fixture.away_team_id),
     ]);
 
+    console.log("[LiveGame] Teams loaded:", {
+      home_success: home_result.success,
+      home_name: home_result.data?.name,
+      away_success: away_result.success,
+      away_name: away_result.data?.name,
+    });
+
     if (home_result.success && home_result.data) home_team = home_result.data;
     if (away_result.success && away_result.data) away_team = away_result.data;
 
-    const [home_players_result, away_players_result] = await Promise.all([
-      player_use_cases.list_players_by_team(fixture.home_team_id),
-      player_use_cases.list_players_by_team(fixture.away_team_id),
+    console.log("[LiveGame] Fetching lineups for home_team_id:", fixture.home_team_id, "away_team_id:", fixture.away_team_id);
+
+    const [home_lineup_result, away_lineup_result] = await Promise.all([
+      fixture_lineup_use_cases.get_lineup_for_team_in_fixture(fixture_id, fixture.home_team_id),
+      fixture_lineup_use_cases.get_lineup_for_team_in_fixture(fixture_id, fixture.away_team_id),
     ]);
 
-    if (home_players_result.success && home_players_result.data)
-      home_players = home_players_result.data;
-    if (away_players_result.success && away_players_result.data)
-      away_players = away_players_result.data;
+    console.log("[LiveGame] Home lineup result:", {
+      success: home_lineup_result.success,
+      has_data: !!home_lineup_result.data,
+      error: home_lineup_result.error_message,
+      selected_players_count: home_lineup_result.data?.selected_players?.length ?? 0,
+    });
+
+    console.log("[LiveGame] Away lineup result:", {
+      success: away_lineup_result.success,
+      has_data: !!away_lineup_result.data,
+      error: away_lineup_result.error_message,
+      selected_players_count: away_lineup_result.data?.selected_players?.length ?? 0,
+    });
+
+    home_players = home_lineup_result.success && home_lineup_result.data
+      ? home_lineup_result.data.selected_players
+      : [];
+
+    away_players = away_lineup_result.success && away_lineup_result.data
+      ? away_lineup_result.data.selected_players
+      : [];
+
+    console.log("[LiveGame] Final players loaded:", {
+      home_players_count: home_players.length,
+      away_players_count: away_players.length,
+      home_players_sample: home_players.slice(0, 2).map(p => ({ id: p.id, name: `${p.first_name} ${p.last_name}` })),
+      away_players_sample: away_players.slice(0, 2).map(p => ({ id: p.id, name: `${p.first_name} ${p.last_name}` })),
+    });
 
     is_loading = false;
   }
@@ -203,8 +254,8 @@
     is_updating = false;
     show_start_modal = false;
 
-    if (!result.success || !result.data) {
-      show_toast(`Failed to start game: ${result.error_message}`, "error");
+    if (!result.success) {
+      show_toast(`Failed to start game: ${result.error}`, "error");
       return;
     }
 
@@ -225,8 +276,8 @@
     is_updating = false;
     show_end_modal = false;
 
-    if (!result.success || !result.data) {
-      show_toast(`Failed to end game: ${result.error_message}`, "error");
+    if (!result.success) {
+      show_toast(`Failed to end game: ${result.error}`, "error");
       return;
     }
 
@@ -241,6 +292,7 @@
     if (!is_game_active) return;
     selected_event_type = event_type;
     selected_team_side = team;
+    selected_player_id = "";
     event_player_name = "";
     event_description = "";
     event_minute = Math.floor(game_clock_seconds / 60);
@@ -250,6 +302,7 @@
   function cancel_event(): void {
     show_event_modal = false;
     selected_event_type = null;
+    selected_player_id = "";
     event_player_name = "";
     event_description = "";
     event_minute = 0;
@@ -275,8 +328,8 @@
 
     is_updating = false;
 
-    if (!result.success || !result.data) {
-      show_toast(`Failed to record event: ${result.error_message}`, "error");
+    if (!result.success) {
+      show_toast(`Failed to record event: ${result.error}`, "error");
       return;
     }
 
@@ -316,8 +369,8 @@
 
     is_updating = false;
 
-    if (!result.success || !result.data) {
-      show_toast(`Failed to change period: ${result.error_message}`, "error");
+    if (!result.success) {
+      show_toast(`Failed to change period: ${result.error}`, "error");
       return;
     }
 
@@ -347,8 +400,8 @@
 
     is_updating = false;
 
-    if (!result.success || !result.data) {
-      show_toast(`Failed to end period: ${result.error_message}`, "error");
+    if (!result.success) {
+      show_toast(`Failed to end period: ${result.error}`, "error");
       return;
     }
 
@@ -410,9 +463,27 @@
     }
   }
 
-  function get_players_for_team(team: "home" | "away"): Player[] {
-    return team === "home" ? home_players : away_players;
+  function build_player_select_options_for_team(
+    team_side: "home" | "away",
+    home_lineup_players: LineupPlayer[],
+    away_lineup_players: LineupPlayer[]
+  ): Array<{value: string; label: string}> {
+    const players = team_side === "home" ? home_lineup_players : away_lineup_players;
+    const options = players.map(player => ({
+      value: player.id,
+      label: get_lineup_player_display_name(player),
+    }));
+    console.log(`[LiveGame] build_player_select_options_for_team(${team_side}):`, {
+      home_players_count: home_lineup_players.length,
+      away_players_count: away_lineup_players.length,
+      selected_team_players_count: players.length,
+      options_count: options.length,
+      options: options.slice(0, 3),
+    });
+    return options;
   }
+
+  $: player_select_options = build_player_select_options_for_team(selected_team_side, home_players, away_players);
 </script>
 
 <svelte:head>
@@ -929,30 +1000,17 @@
 
         {#if selected_event_type.requires_player}
           <div>
-            <label
-              for="event_player"
-              class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-              >Player</label
-            >
-            <select
-              id="event_player"
-              bind:value={event_player_name}
-              class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-            >
-              <option value="">Select player (optional)</option>
-              {#each get_players_for_team(selected_team_side) as player}
-                <option value="{player.first_name} {player.last_name}">
-                  #{player.jersey_number ?? "?"}
-                  {player.first_name}
-                  {player.last_name}
-                </option>
-              {/each}
-            </select>
-            <input
-              type="text"
-              bind:value={event_player_name}
-              placeholder="Or type player name"
-              class="mt-2 w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+            <SearchableSelectField
+              label="Player"
+              name="event_player"
+              bind:value={selected_player_id}
+              options={player_select_options}
+              placeholder="Search for a player..."
+              on:change={(e) => {
+                const players = selected_team_side === "home" ? home_players : away_players;
+                const player = players.find((p: LineupPlayer) => p.id === e.detail.value);
+                event_player_name = player ? `${player.first_name} ${player.last_name}` : "";
+              }}
             />
           </div>
         {/if}

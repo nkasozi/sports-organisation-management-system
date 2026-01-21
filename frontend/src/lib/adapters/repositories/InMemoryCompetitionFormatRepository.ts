@@ -187,6 +187,11 @@ export class InMemoryCompetitionFormatRepository
   ): PaginatedAsyncResult<CompetitionFormat> {
     return this.find_all_with_filter(filter, options);
   }
+
+  reset(): void {
+    this.entity_cache.clear();
+    this.seeded = false;
+  }
 }
 
 let repository_instance: InMemoryCompetitionFormatRepository | null = null;
@@ -196,4 +201,11 @@ export function get_competition_format_repository(): CompetitionFormatRepository
     repository_instance = new InMemoryCompetitionFormatRepository();
   }
   return repository_instance;
+}
+
+export function reset_competition_format_repository(): void {
+  if (repository_instance) {
+    repository_instance.reset();
+  }
+  repository_instance = null;
 }

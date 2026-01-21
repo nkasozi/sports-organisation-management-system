@@ -4,6 +4,7 @@ import type { FixtureLineupRepository } from "../interfaces/adapters/FixtureLine
 import type {
   FixtureLineup,
   CreateFixtureLineupInput,
+  LineupPlayer,
 } from "../entities/FixtureLineup";
 
 function create_mock_repository(): FixtureLineupRepository {
@@ -20,6 +21,21 @@ function create_mock_repository(): FixtureLineupRepository {
   };
 }
 
+function create_test_lineup_player(
+  overrides: Partial<LineupPlayer> = {},
+): LineupPlayer {
+  return {
+    id: "player-123",
+    first_name: "Test",
+    last_name: "Player",
+    jersey_number: 10,
+    position: "Forward",
+    is_captain: false,
+    is_substitute: false,
+    ...overrides,
+  };
+}
+
 function create_test_lineup(
   overrides: Partial<FixtureLineup> = {},
 ): FixtureLineup {
@@ -27,7 +43,7 @@ function create_test_lineup(
     id: "lineup-123",
     fixture_id: "fixture-123",
     team_id: "team-123",
-    selected_player_ids: ["player-123"],
+    selected_players: [create_test_lineup_player()],
     status: "draft",
     submitted_by: "",
     submitted_at: "",
@@ -44,7 +60,7 @@ function create_valid_input(
   return {
     fixture_id: "fixture-123",
     team_id: "team-123",
-    selected_player_ids: ["player-456"],
+    selected_players: [create_test_lineup_player({ id: "player-456" })],
     submitted_by: "coach-123",
     notes: "",
     ...overrides,
@@ -105,7 +121,9 @@ describe("FixtureLineupUseCases", () => {
       const result = await use_cases.get_by_id("lineup-123");
 
       expect(result.success).toBe(true);
-      expect(result.data?.selected_player_ids).toContain("player-123");
+      expect(
+        result.data?.selected_players.some((p) => p.id === "player-123"),
+      ).toBe(true);
     });
 
     it("should fail for empty id", async () => {

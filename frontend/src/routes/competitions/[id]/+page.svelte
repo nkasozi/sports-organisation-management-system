@@ -673,28 +673,81 @@
                 </div>
               {/if}
             </div>
+
+            <div
+              class="mt-8 flex flex-col-reverse sm:flex-row sm:justify-end gap-3 border-t border-accent-200 dark:border-accent-700 pt-6"
+            >
+              <button
+                type="button"
+                class="btn btn-outline w-full sm:w-auto"
+                on:click={handle_cancel}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                class="btn btn-primary w-full sm:w-auto"
+                on:click={() => {
+                  show_toast("Team changes saved!", "success");
+                  goto("/competitions");
+                }}
+              >
+                Done
+              </button>
+            </div>
           </div>
         {:else if active_tab === "rules"}
-          <div class="space-y-6">
-            <div
-              class="border-b border-accent-200 dark:border-accent-700 pb-4 mb-4"
-            >
-              <h2
-                class="text-lg font-medium text-accent-900 dark:text-accent-100"
+          <form on:submit|preventDefault={handle_submit}>
+            <div class="space-y-6">
+              <div
+                class="border-b border-accent-200 dark:border-accent-700 pb-4 mb-4"
               >
-                Sport Rules
-              </h2>
-              <p class="text-sm text-accent-600 dark:text-accent-400 mt-1">
-                Customize competition-specific rules inherited from the sport
-              </p>
+                <h2
+                  class="text-lg font-medium text-accent-900 dark:text-accent-100"
+                >
+                  Sport Rules
+                </h2>
+                <p class="text-sm text-accent-600 dark:text-accent-400 mt-1">
+                  Customize competition-specific rules inherited from the sport
+                </p>
+              </div>
+              <div class="">
+                <SportRulesCustomizer
+                  sport={selected_sport}
+                  bind:rule_overrides={form_data.rule_overrides}
+                />
+              </div>
             </div>
-            <div class="">
-              <SportRulesCustomizer
-                sport={selected_sport}
-                bind:rule_overrides={form_data.rule_overrides}
-              />
+
+            <div
+              class="mt-8 flex flex-col-reverse sm:flex-row sm:justify-end gap-3 border-t border-accent-200 dark:border-accent-700 pt-6"
+            >
+              <button
+                type="button"
+                class="btn btn-outline w-full sm:w-auto"
+                disabled={is_saving}
+                on:click={handle_cancel}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                class="btn btn-primary w-full sm:w-auto"
+                disabled={is_saving}
+              >
+                {#if is_saving}
+                  <span class="flex items-center justify-center">
+                    <span
+                      class="animate-spin rounded-full h-4 w-4 border-2 border-white/20 border-t-white mr-2"
+                    ></span>
+                    Saving...
+                  </span>
+                {:else}
+                  Save Rules
+                {/if}
+              </button>
             </div>
-          </div>
+          </form>
         {:else if active_tab === "settings"}
           <form on:submit|preventDefault={handle_submit}>
             <div class="space-y-6">

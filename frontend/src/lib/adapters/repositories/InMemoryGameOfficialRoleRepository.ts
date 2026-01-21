@@ -151,6 +151,11 @@ export class InMemoryGameOfficialRoleRepository
       .filter((role) => role.is_head_official)
       .sort((a, b) => a.display_order - b.display_order);
   }
+
+  reset(): void {
+    this.entity_cache.clear();
+    this.seeded = false;
+  }
 }
 
 let repository_instance: InMemoryGameOfficialRoleRepository | null = null;
@@ -160,4 +165,11 @@ export function get_game_official_role_repository(): InMemoryGameOfficialRoleRep
     repository_instance = new InMemoryGameOfficialRoleRepository();
   }
   return repository_instance;
+}
+
+export function reset_game_official_role_repository(): void {
+  if (repository_instance) {
+    repository_instance.reset();
+  }
+  repository_instance = null;
 }

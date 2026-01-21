@@ -41,7 +41,7 @@ export class InMemoryFixtureLineupRepository
       ...timestamps,
       fixture_id: input.fixture_id,
       team_id: input.team_id,
-      selected_player_ids: input.selected_player_ids || [],
+      selected_players: input.selected_players || [],
       status: input.status || "draft",
       submitted_by: input.submitted_by || "",
       submitted_at:

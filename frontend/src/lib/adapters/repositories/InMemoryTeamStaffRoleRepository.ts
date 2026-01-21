@@ -131,6 +131,11 @@ export class InMemoryTeamStaffRoleRepository
       .filter((role) => role.category === category)
       .sort((a, b) => a.display_order - b.display_order);
   }
+
+  reset(): void {
+    this.entity_cache.clear();
+    this.seeded = false;
+  }
 }
 
 let team_staff_role_repository_instance: InMemoryTeamStaffRoleRepository | null =
@@ -141,4 +146,11 @@ export function get_team_staff_role_repository(): InMemoryTeamStaffRoleRepositor
     team_staff_role_repository_instance = new InMemoryTeamStaffRoleRepository();
   }
   return team_staff_role_repository_instance;
+}
+
+export function reset_team_staff_role_repository(): void {
+  if (team_staff_role_repository_instance) {
+    team_staff_role_repository_instance.reset();
+  }
+  team_staff_role_repository_instance = null;
 }

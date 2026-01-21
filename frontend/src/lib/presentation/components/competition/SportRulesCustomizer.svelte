@@ -174,17 +174,27 @@
             >
               Game Duration
             </div>
-            <span class="text-xs text-accent-500">
-              {#if rule_overrides.game_duration_minutes !== undefined}
-                <span class="text-primary-600 font-semibold">
-                  Customized: {rule_overrides.game_duration_minutes} min
-                </span>
-              {:else}
-                <span class="text-accent-600">
-                  Using default: {sport?.standard_game_duration_minutes || 90} min
-                </span>
-              {/if}
-            </span>
+            {#if rule_overrides.game_duration_minutes !== undefined}
+              <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary-100 text-primary-700 dark:bg-primary-900 dark:text-primary-300">
+                Custom
+              </span>
+            {/if}
+          </div>
+
+          <div class="flex items-center gap-6 mb-3 p-3 bg-accent-50 dark:bg-accent-800 rounded-md">
+            <div class="flex items-center gap-2">
+              <span class="text-sm text-accent-500 dark:text-accent-400">Current:</span>
+              <span class="text-lg font-semibold text-accent-900 dark:text-accent-100">
+                {get_game_duration()} min
+              </span>
+            </div>
+            <div class="text-accent-300 dark:text-accent-600">|</div>
+            <div class="flex items-center gap-2">
+              <span class="text-sm text-accent-500 dark:text-accent-400">Default:</span>
+              <span class="text-sm text-accent-600 dark:text-accent-400">
+                {sport?.standard_game_duration_minutes || 90} min
+              </span>
+            </div>
           </div>
 
           {#if !is_customizing_duration}
@@ -235,13 +245,27 @@
             >
               Squad Size Limits
             </div>
-            <span class="text-xs text-accent-500">
-              {#if rule_overrides.max_players_on_field !== undefined || rule_overrides.min_players_on_field !== undefined || rule_overrides.max_squad_size !== undefined}
-                <span class="text-primary-600 font-semibold">Customized</span>
-              {:else}
-                <span class="text-accent-600">Using defaults</span>
-              {/if}
-            </span>
+            {#if rule_overrides.max_players_on_field !== undefined || rule_overrides.min_players_on_field !== undefined || rule_overrides.max_squad_size !== undefined}
+              <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary-100 text-primary-700 dark:bg-primary-900 dark:text-primary-300">
+                Custom
+              </span>
+            {/if}
+          </div>
+
+          <div class="flex flex-wrap items-center gap-4 mb-3 p-3 bg-accent-50 dark:bg-accent-800 rounded-md">
+            <div class="flex items-center gap-2">
+              <span class="text-sm text-accent-500 dark:text-accent-400">Current:</span>
+              <span class="text-lg font-semibold text-accent-900 dark:text-accent-100">
+                Max {get_max_players_on_field()} / Min {get_min_players_on_field()} / Squad {get_max_squad_size()}
+              </span>
+            </div>
+            <div class="text-accent-300 dark:text-accent-600">|</div>
+            <div class="flex items-center gap-2">
+              <span class="text-sm text-accent-500 dark:text-accent-400">Default:</span>
+              <span class="text-sm text-accent-600 dark:text-accent-400">
+                Max {sport?.max_players_on_field} / Min {sport?.min_players_on_field} / Squad {sport?.max_squad_size}
+              </span>
+            </div>
           </div>
 
           {#if !is_customizing_squad_limits}
@@ -253,7 +277,7 @@
               Customize
             </button>
           {:else}
-            <div class="space-y-3 mt-3 grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div class="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
                 <label
                   class="block text-sm font-medium text-accent-900 dark:text-accent-100 mb-1"
@@ -320,15 +344,6 @@
               Reset to Default
             </button>
           {/if}
-
-          <div
-            class="text-xs text-accent-600 dark:text-accent-400 mt-3 space-y-1"
-          >
-            <p>
-              Default: Max {sport?.max_players_on_field} / Min {sport?.min_players_on_field}
-              / Squad {sport?.max_squad_size}
-            </p>
-          </div>
         </div>
 
         <div class="border-b border-accent-200 dark:border-accent-700 pb-6">
@@ -338,13 +353,35 @@
             >
               Substitution Rules
             </div>
-            <span class="text-xs text-accent-500">
-              {#if rule_overrides.substitution_rules}
-                <span class="text-primary-600 font-semibold">Customized</span>
-              {:else}
-                <span class="text-accent-600">Using defaults</span>
-              {/if}
-            </span>
+            {#if rule_overrides.substitution_rules}
+              <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary-100 text-primary-700 dark:bg-primary-900 dark:text-primary-300">
+                Custom
+              </span>
+            {/if}
+          </div>
+
+          <div class="flex flex-wrap items-center gap-4 mb-3 p-3 bg-accent-50 dark:bg-accent-800 rounded-md">
+            <div class="flex flex-col gap-1">
+              <div class="flex items-center gap-2">
+                <span class="text-sm text-accent-500 dark:text-accent-400">Current:</span>
+                <span class="text-lg font-semibold text-accent-900 dark:text-accent-100">
+                  {get_max_substitutions()} subs
+                </span>
+                {#if get_rolling_substitutions()}
+                  <span class="text-xs px-2 py-0.5 rounded bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300">Rolling</span>
+                {/if}
+                {#if get_return_after_substitution()}
+                  <span class="text-xs px-2 py-0.5 rounded bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300">Re-entry</span>
+                {/if}
+              </div>
+            </div>
+            <div class="text-accent-300 dark:text-accent-600">|</div>
+            <div class="flex items-center gap-2">
+              <span class="text-sm text-accent-500 dark:text-accent-400">Default:</span>
+              <span class="text-sm text-accent-600 dark:text-accent-400">
+                {sport?.substitution_rules.max_substitutions_per_game} subs
+              </span>
+            </div>
           </div>
 
           {#if !is_customizing_substitutions}
@@ -412,13 +449,6 @@
               Reset to Default
             </button>
           {/if}
-
-          <div class="text-xs text-accent-600 dark:text-accent-400 mt-3">
-            <p>
-              Default: {sport?.substitution_rules.max_substitutions_per_game} substitutions
-              per game
-            </p>
-          </div>
         </div>
 
         <div>
@@ -428,13 +458,27 @@
             >
               Overtime Rules
             </div>
-            <span class="text-xs text-accent-500">
-              {#if rule_overrides.overtime_rules}
-                <span class="text-primary-600 font-semibold">Customized</span>
-              {:else}
-                <span class="text-accent-600">Using defaults</span>
-              {/if}
-            </span>
+            {#if rule_overrides.overtime_rules}
+              <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary-100 text-primary-700 dark:bg-primary-900 dark:text-primary-300">
+                Custom
+              </span>
+            {/if}
+          </div>
+
+          <div class="flex flex-wrap items-center gap-4 mb-3 p-3 bg-accent-50 dark:bg-accent-800 rounded-md">
+            <div class="flex items-center gap-2">
+              <span class="text-sm text-accent-500 dark:text-accent-400">Current:</span>
+              <span class="text-lg font-semibold text-accent-900 dark:text-accent-100">
+                {get_overtime_enabled() ? "Enabled" : "Disabled"}
+              </span>
+            </div>
+            <div class="text-accent-300 dark:text-accent-600">|</div>
+            <div class="flex items-center gap-2">
+              <span class="text-sm text-accent-500 dark:text-accent-400">Default:</span>
+              <span class="text-sm text-accent-600 dark:text-accent-400">
+                {sport?.overtime_rules.is_enabled ? "Enabled" : "Disabled"} ({sport?.overtime_rules.overtime_type})
+              </span>
+            </div>
           </div>
 
           {#if !is_customizing_overtime}
@@ -468,15 +512,6 @@
               Reset to Default
             </button>
           {/if}
-
-          <div class="text-xs text-accent-600 dark:text-accent-400 mt-3">
-            <p>
-              Default: Overtime {sport?.overtime_rules.is_enabled
-                ? "enabled"
-                : "disabled"}
-              ({sport?.overtime_rules.overtime_type})
-            </p>
-          </div>
         </div>
       </div>
     </div>

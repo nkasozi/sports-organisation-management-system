@@ -7,9 +7,9 @@
     GameEvent,
     GamePeriod,
     QuickEventButton,
-  } from "$lib/domain/entities/Fixture";
-  import type { Team } from "$lib/domain/entities/Team";
-  import type { Player } from "$lib/domain/entities/Player";
+  } from "$lib/core/entities/Fixture";
+  import type { Team } from "$lib/core/entities/Team";
+  import type { Player } from "$lib/core/entities/Player";
   import {
     get_quick_event_buttons,
     create_game_event,
@@ -17,12 +17,12 @@
     get_event_label,
     format_event_time,
     get_period_display_name,
-  } from "$lib/domain/entities/Fixture";
-  import { get_fixture_use_cases } from "$lib/usecases/FixtureUseCases";
-  import { get_team_use_cases } from "$lib/usecases/TeamUseCases";
-  import { get_player_use_cases } from "$lib/usecases/PlayerUseCases";
-  import Toast from "$lib/components/ui/Toast.svelte";
-  import ConfirmationModal from "$lib/components/ui/ConfirmationModal.svelte";
+  } from "$lib/core/entities/Fixture";
+  import { get_fixture_use_cases } from "$lib/core/usecases/FixtureUseCases";
+  import { get_team_use_cases } from "$lib/core/usecases/TeamUseCases";
+  import { get_player_use_cases } from "$lib/core/usecases/PlayerUseCases";
+  import Toast from "$lib/presentation/components/ui/Toast.svelte";
+  import ConfirmationModal from "$lib/presentation/components/ui/ConfirmationModal.svelte";
 
   const fixture_use_cases = get_fixture_use_cases();
   const team_use_cases = get_team_use_cases();
@@ -104,10 +104,10 @@
     is_loading = true;
     error_message = "";
 
-    const result = await fixture_use_cases.get_fixture(fixture_id);
+    const result = await fixture_use_cases.get_by_id(fixture_id);
 
-    if (!result.success) {
-      error_message = result.error;
+    if (!result.success || !result.data) {
+      error_message = result.error_message || "Failed to load fixture";
       is_loading = false;
       return;
     }
@@ -119,12 +119,12 @@
     }
 
     const [home_result, away_result] = await Promise.all([
-      team_use_cases.get_team(fixture.home_team_id),
-      team_use_cases.get_team(fixture.away_team_id),
+      team_use_cases.get_by_id(fixture.home_team_id),
+      team_use_cases.get_by_id(fixture.away_team_id),
     ]);
 
-    if (home_result.success) home_team = home_result.data;
-    if (away_result.success) away_team = away_result.data;
+    if (home_result.success && home_result.data) home_team = home_result.data;
+    if (away_result.success && away_result.data) away_team = away_result.data;
 
     const [home_players_result, away_players_result] = await Promise.all([
       player_use_cases.list_players_by_team(fixture.home_team_id),
@@ -942,7 +942,6 @@
               <option value="">Select player (optional)</option>
               {#each get_players_for_team(selected_team_side) as player}
                 <option value="{player.first_name} {player.last_name}">
-                  #{player.jersey_number ?? "?"}
                   {player.first_name}
                   {player.last_name}
                 </option>

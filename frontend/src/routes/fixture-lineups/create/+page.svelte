@@ -28,8 +28,9 @@
   } from "$lib/core/services/teamPlayers";
   import {
     build_error_message,
-    derive_initial_selected_player_ids,
-    summarize_selected_team_players,
+    derive_initial_selected_players,
+    convert_team_player_to_lineup_player,
+    sort_lineup_players,
   } from "$lib/core/services/fixtureLineupWizard";
 
   const lineup_use_cases = get_fixture_lineup_use_cases();
@@ -90,7 +91,7 @@
   $: wizard_steps = build_wizard_steps(
     selected_fixture,
     selected_team,
-    form_data.selected_player_ids.length,
+    form_data.selected_players.length,
     min_players,
     max_players,
     confirm_lock_understood
@@ -296,12 +297,12 @@
         "A team must have players assigned via Player-Team Memberships.",
         "Create Player-Team Memberships for this team, then retry."
       );
-      form_data.selected_player_ids = [];
+      form_data.selected_players = [];
       current_step_index = 2;
       return;
     }
 
-    form_data.selected_player_ids = derive_initial_selected_player_ids(
+    form_data.selected_players = derive_initial_selected_players(
       team_players,
       max_players
     );
@@ -309,36 +310,40 @@
   }
 
   function toggle_player_selection(player_id: string): boolean {
-    const is_selected = form_data.selected_player_ids.includes(player_id);
+    const selected_player_ids = form_data.selected_players.map(p => p.id);
+    const is_selected = selected_player_ids.includes(player_id);
 
     if (is_selected) {
-      form_data.selected_player_ids = form_data.selected_player_ids.filter(
-        (id) => id !== player_id
+      form_data.selected_players = form_data.selected_players.filter(
+        (p) => p.id !== player_id
       );
       return true;
     }
 
-    if (form_data.selected_player_ids.length >= max_players) {
+    if (form_data.selected_players.length >= max_players) {
       error_message = `Maximum ${max_players} players can be selected`;
       setTimeout(() => (error_message = ""), 3000);
       return false;
     }
 
-    form_data.selected_player_ids = [
-      ...form_data.selected_player_ids,
-      player_id,
+    const team_player = team_players.find(p => p.id === player_id);
+    if (!team_player) return false;
+
+    form_data.selected_players = [
+      ...form_data.selected_players,
+      convert_team_player_to_lineup_player(team_player),
     ];
     return true;
   }
 
   function select_all_players(): void {
-    form_data.selected_player_ids = team_players
+    form_data.selected_players = team_players
       .slice(0, max_players)
-      .map((p) => p.id);
+      .map((p) => convert_team_player_to_lineup_player(p));
   }
 
   function deselect_all_players(): void {
-    form_data.selected_player_ids = [];
+    form_data.selected_players = [];
   }
 
   async function handle_submit_locked_lineup(): Promise<void> {
@@ -366,7 +371,7 @@
       return;
     }
 
-    const count = form_data.selected_player_ids.length;
+    const count = form_data.selected_players.length;
     if (count < min_players || count > max_players) {
       validation_errors.players = build_error_message(
         "Invalid squad size.",
@@ -441,7 +446,7 @@
 
   function reset_team_and_roster(): boolean {
     form_data.team_id = "";
-    form_data.selected_player_ids = [];
+    form_data.selected_players = [];
     selected_team = null;
     team_players = [];
     return true;
@@ -638,7 +643,7 @@
                 <div
                   class="text-sm font-medium text-accent-700 dark:text-accent-300"
                 >
-                  Selected {form_data.selected_player_ids.length} of {max_players}
+                  Selected {form_data.selected_players.length} of {max_players}
                   (min {min_players})
                 </div>
                 <div class="flex gap-2">
@@ -696,10 +701,10 @@
                 >
                   {#each filtered_team_players as player}
                     {@const is_selected =
-                      form_data.selected_player_ids.includes(player.id)}
+                      form_data.selected_players.some(p => p.id === player.id)}
                     {@const selection_disabled =
                       !is_selected &&
-                      form_data.selected_player_ids.length >= max_players}
+                      form_data.selected_players.length >= max_players}
                     <button
                       type="button"
                       class="flex items-center p-4 rounded-lg border-2 transition-all cursor-pointer select-none text-left {is_selected
@@ -761,15 +766,15 @@
                     <div>Team: {selected_team.name}</div>
                   {/if}
                   <div>
-                    Squad size: {form_data.selected_player_ids.length}
+                    Squad size: {form_data.selected_players.length}
                     (min {min_players}, max {max_players})
                   </div>
                 </div>
               </div>
 
-              {#if form_data.selected_player_ids.length > 0}
+              {#if form_data.selected_players.length > 0}
                 <div class="space-y-2">
-                  {#each summarize_selected_team_players(team_players, form_data.selected_player_ids) as player}
+                  {#each sort_lineup_players(form_data.selected_players) as player}
                     <div
                       class="p-3 rounded-lg border border-accent-200 dark:border-accent-700 bg-white dark:bg-accent-800"
                     >

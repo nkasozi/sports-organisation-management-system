@@ -203,6 +203,11 @@ export class InMemoryPlayerPositionRepository
     await this.seed_default_positions_if_needed();
     return super.find_all(options);
   }
+
+  reset(): void {
+    this.entity_cache.clear();
+    this.seeded = false;
+  }
 }
 
 let repository_instance: InMemoryPlayerPositionRepository | null = null;
@@ -212,4 +217,11 @@ export function get_player_position_repository(): PlayerPositionRepository {
     repository_instance = new InMemoryPlayerPositionRepository();
   }
   return repository_instance;
+}
+
+export function reset_player_position_repository(): void {
+  if (repository_instance) {
+    repository_instance.reset();
+  }
+  repository_instance = null;
 }
