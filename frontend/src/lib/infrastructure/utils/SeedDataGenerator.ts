@@ -107,6 +107,12 @@ export const SEED_PLAYER_PROFILE_IDS = {
   YUKI_TANAKA_PROFILE: "profile_default_3",
 };
 
+export const SEED_TEAM_PROFILE_IDS = {
+  RED_DRAGONS_FC_PROFILE: "team_profile_default_1",
+  BLUE_THUNDER_UNITED_PROFILE: "team_profile_default_2",
+  GOLDEN_EAGLES_PROFILE: "team_profile_default_3",
+};
+
 function generate_current_timestamp(): string {
   return new Date().toISOString();
 }
@@ -1372,6 +1378,131 @@ export function create_seed_profile_links(): import("../../core/entities/Profile
       title: "Best Saves Compilation",
       url: "https://youtube.com/watch?v=def456",
       display_order: 1,
+      status: "active",
+      created_at: now,
+      updated_at: now,
+    },
+  ];
+}
+
+export function create_seed_team_profiles(): import("../../core/entities/TeamProfile").TeamProfile[] {
+  const now = generate_current_timestamp();
+
+  return [
+    {
+      id: SEED_TEAM_PROFILE_IDS.RED_DRAGONS_FC_PROFILE,
+      team_id: SEED_TEAM_IDS.RED_DRAGONS_FC,
+      profile_summary:
+        "The Red Dragons FC is a premier football club known for its attacking style of play and passionate fan base. Founded in 1980, the club has won multiple league titles and continues to develop young talent while competing at the highest level.",
+      visibility: "public",
+      profile_slug: "red-dragons-fc",
+      featured_image_url: "",
+      status: "active",
+      created_at: now,
+      updated_at: now,
+    },
+    {
+      id: SEED_TEAM_PROFILE_IDS.BLUE_THUNDER_UNITED_PROFILE,
+      team_id: SEED_TEAM_IDS.BLUE_THUNDER_UNITED,
+      profile_summary:
+        "Blue Thunder United represents excellence in women's football. With a strong focus on teamwork and technical development, the club has become a powerhouse in the league, inspiring the next generation of female athletes.",
+      visibility: "public",
+      profile_slug: "blue-thunder-united",
+      featured_image_url: "",
+      status: "active",
+      created_at: now,
+      updated_at: now,
+    },
+    {
+      id: SEED_TEAM_PROFILE_IDS.GOLDEN_EAGLES_PROFILE,
+      team_id: SEED_TEAM_IDS.GOLDEN_EAGLES,
+      profile_summary:
+        "The Golden Eagles bring speed and precision to every match. Known for their disciplined defensive structure and quick counter-attacks, the team has built a reputation as fierce competitors who never give up.",
+      visibility: "private",
+      profile_slug: "golden-eagles",
+      featured_image_url: "",
+      status: "active",
+      created_at: now,
+      updated_at: now,
+    },
+  ];
+}
+
+export const SEED_TEAM_PROFILE_LINK_IDS = {
+  RED_DRAGONS_TWITTER: "team_link_001",
+  RED_DRAGONS_INSTAGRAM: "team_link_002",
+  RED_DRAGONS_WEBSITE: "team_link_003",
+  RED_DRAGONS_VIDEO: "team_link_004",
+  BLUE_THUNDER_FACEBOOK: "team_link_005",
+  BLUE_THUNDER_WEBSITE: "team_link_006",
+};
+
+export function create_seed_team_profile_links(): import("../../core/entities/ProfileLink").ProfileLink[] {
+  const now = generate_current_timestamp();
+
+  return [
+    {
+      id: SEED_TEAM_PROFILE_LINK_IDS.RED_DRAGONS_TWITTER,
+      profile_id: SEED_TEAM_PROFILE_IDS.RED_DRAGONS_FC_PROFILE,
+      platform: "twitter",
+      title: "@RedDragonsFC",
+      url: "https://twitter.com/reddragonsfc",
+      display_order: 1,
+      status: "active",
+      created_at: now,
+      updated_at: now,
+    },
+    {
+      id: SEED_TEAM_PROFILE_LINK_IDS.RED_DRAGONS_INSTAGRAM,
+      profile_id: SEED_TEAM_PROFILE_IDS.RED_DRAGONS_FC_PROFILE,
+      platform: "instagram",
+      title: "@reddragonsfc",
+      url: "https://instagram.com/reddragonsfc",
+      display_order: 2,
+      status: "active",
+      created_at: now,
+      updated_at: now,
+    },
+    {
+      id: SEED_TEAM_PROFILE_LINK_IDS.RED_DRAGONS_WEBSITE,
+      profile_id: SEED_TEAM_PROFILE_IDS.RED_DRAGONS_FC_PROFILE,
+      platform: "website",
+      title: "Official Website",
+      url: "https://reddragonsfc.com",
+      display_order: 3,
+      status: "active",
+      created_at: now,
+      updated_at: now,
+    },
+    {
+      id: SEED_TEAM_PROFILE_LINK_IDS.RED_DRAGONS_VIDEO,
+      profile_id: SEED_TEAM_PROFILE_IDS.RED_DRAGONS_FC_PROFILE,
+      platform: "youtube",
+      title: "Team Highlights 2025",
+      url: "https://youtube.com/watch?v=xyz789",
+      display_order: 4,
+      status: "active",
+      created_at: now,
+      updated_at: now,
+    },
+    {
+      id: SEED_TEAM_PROFILE_LINK_IDS.BLUE_THUNDER_FACEBOOK,
+      profile_id: SEED_TEAM_PROFILE_IDS.BLUE_THUNDER_UNITED_PROFILE,
+      platform: "facebook",
+      title: "Blue Thunder United",
+      url: "https://facebook.com/bluethunderunited",
+      display_order: 1,
+      status: "active",
+      created_at: now,
+      updated_at: now,
+    },
+    {
+      id: SEED_TEAM_PROFILE_LINK_IDS.BLUE_THUNDER_WEBSITE,
+      profile_id: SEED_TEAM_PROFILE_IDS.BLUE_THUNDER_UNITED_PROFILE,
+      platform: "website",
+      title: "Official Site",
+      url: "https://bluethunderunited.com",
+      display_order: 2,
       status: "active",
       created_at: now,
       updated_at: now,

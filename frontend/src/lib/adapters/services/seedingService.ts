@@ -46,6 +46,10 @@ import {
   get_profile_link_repository,
   InMemoryProfileLinkRepository,
 } from "../repositories/InMemoryProfileLinkRepository";
+import {
+  get_team_profile_repository,
+  InMemoryTeamProfileRepository,
+} from "../repositories/InMemoryTeamProfileRepository";
 import { get_repository_container } from "../../infrastructure/container";
 import {
   create_seed_players,
@@ -59,6 +63,8 @@ import {
   create_seed_jersey_colors,
   create_seed_player_profiles,
   create_seed_profile_links,
+  create_seed_team_profiles,
+  create_seed_team_profile_links,
   SEED_ORGANIZATION_IDS,
 } from "../../infrastructure/utils/SeedDataGenerator";
 import type { PlayerPosition } from "../../core/entities/PlayerPosition";
@@ -491,6 +497,24 @@ export async function seed_all_data_if_needed(): Promise<boolean> {
     );
   }
 
+  const team_profile_repository =
+    get_team_profile_repository() as InMemoryTeamProfileRepository;
+  const existing_team_profiles = await team_profile_repository.find_all({
+    page_size: 1,
+  });
+  if (
+    !existing_team_profiles.success ||
+    existing_team_profiles.data.total_count === 0
+  ) {
+    const seed_team_profiles = create_seed_team_profiles();
+    team_profile_repository.seed_with_data(seed_team_profiles);
+    emit_entity_created_events(
+      "team_profile",
+      seed_team_profiles,
+      (p) => `Team Profile: ${p.profile_slug}`,
+    );
+  }
+
   const profile_link_repository =
     get_profile_link_repository() as InMemoryProfileLinkRepository;
   const existing_profile_links = await profile_link_repository.find_all({
@@ -500,11 +524,16 @@ export async function seed_all_data_if_needed(): Promise<boolean> {
     !existing_profile_links.success ||
     existing_profile_links.data.total_count === 0
   ) {
-    const seed_profile_links = create_seed_profile_links();
-    profile_link_repository.seed_with_data(seed_profile_links);
+    const seed_player_profile_links = create_seed_profile_links();
+    const seed_team_profile_links = create_seed_team_profile_links();
+    const all_profile_links = [
+      ...seed_player_profile_links,
+      ...seed_team_profile_links,
+    ];
+    profile_link_repository.seed_with_data(all_profile_links);
     emit_entity_created_events(
       "profile_link",
-      seed_profile_links,
+      all_profile_links,
       (l) => `Link: ${l.title}`,
     );
   }

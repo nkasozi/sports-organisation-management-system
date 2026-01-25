@@ -22,6 +22,7 @@ import { get_jersey_color_use_cases } from "$lib/core/usecases/JerseyColorUseCas
 import { get_system_user_use_cases } from "$lib/core/usecases/SystemUserUseCases";
 import { get_audit_log_use_cases } from "$lib/core/usecases/AuditLogUseCases";
 import { get_player_profile_use_cases } from "$lib/core/usecases/PlayerProfileUseCases";
+import { get_team_profile_use_cases } from "$lib/core/usecases/TeamProfileUseCases";
 import { get_profile_link_use_cases } from "$lib/core/usecases/ProfileLinkUseCases";
 import { EventBus } from "$lib/infrastructure/events/EventBus";
 import type {
@@ -55,6 +56,7 @@ const VALID_ENTITY_TYPE_KEYS = [
   "systemuser",
   "auditlog",
   "playerprofile",
+  "teamprofile",
   "profilelink",
 ] as const;
 
@@ -126,6 +128,8 @@ function create_use_cases_registry(): Record<EntityTypeKey, UseCasesGetter> {
       get_audit_log_use_cases as unknown as UseCasesGetter,
     ["playerprofile" satisfies EntityTypeKey]:
       get_player_profile_use_cases as UseCasesGetter,
+    ["teamprofile" satisfies EntityTypeKey]:
+      get_team_profile_use_cases as UseCasesGetter,
     ["profilelink" satisfies EntityTypeKey]:
       get_profile_link_use_cases as UseCasesGetter,
   } satisfies Record<EntityTypeKey, UseCasesGetter>;
