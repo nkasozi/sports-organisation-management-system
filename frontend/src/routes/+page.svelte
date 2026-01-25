@@ -661,11 +661,11 @@
     </h2>
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
       <a
-        href="/organizations?action=create"
+        href="/organizations"
         class="flex flex-col items-center p-4 text-center hover:bg-accent-50 dark:hover:bg-accent-700 rounded-lg transition-colors duration-200 mobile-touch"
       >
         <div
-          class="h-12 w-12 bg-fuchsia-700 rounded-lg flex items-center justify-center mb-3"
+          class="h-12 w-12 bg-sky-600 rounded-lg flex items-center justify-center mb-3"
         >
           <svg
             class="h-6 w-6 text-white"
@@ -682,7 +682,7 @@
           </svg>
         </div>
         <span class="text-sm font-medium text-accent-900 dark:text-accent-100"
-          >Add Organization</span
+          >Organizations</span
         >
       </a>
 
@@ -691,7 +691,7 @@
         class="flex flex-col items-center p-4 text-center hover:bg-accent-50 dark:hover:bg-accent-700 rounded-lg transition-colors duration-200 mobile-touch"
       >
         <div
-          class="h-12 w-12 bg-sky-600 rounded-lg flex items-center justify-center mb-3"
+          class="h-12 w-12 bg-teal-700 rounded-lg flex items-center justify-center mb-3"
         >
           <svg
             class="h-6 w-6 text-white"
@@ -713,11 +713,11 @@
       </a>
 
       <a
-        href="/teams?action=create"
+        href="/teams"
         class="flex flex-col items-center p-4 text-center hover:bg-accent-50 dark:hover:bg-accent-700 rounded-lg transition-colors duration-200 mobile-touch"
       >
         <div
-          class="h-12 w-12 bg-teal-700 rounded-lg flex items-center justify-center mb-3"
+          class="h-12 w-12 bg-fuchsia-700 rounded-lg flex items-center justify-center mb-3"
         >
           <svg
             class="h-6 w-6 text-white"
@@ -734,12 +734,12 @@
           </svg>
         </div>
         <span class="text-sm font-medium text-accent-900 dark:text-accent-100"
-          >Add Team</span
+          >Teams</span
         >
       </a>
 
       <a
-        href="/games/create"
+        href="/fixtures/create"
         class="flex flex-col items-center p-4 text-center hover:bg-accent-50 dark:hover:bg-accent-700 rounded-lg transition-colors duration-200 mobile-touch"
       >
         <div
@@ -760,7 +760,7 @@
           </svg>
         </div>
         <span class="text-sm font-medium text-accent-900 dark:text-accent-100"
-          >Schedule Game</span
+          >Create Fixture</span
         >
       </a>
     </div>
