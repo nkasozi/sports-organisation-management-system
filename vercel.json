@@ -1,5 +1,5 @@
 {
-  "buildCommand": "cd frontend && npm run build",
-  "outputDirectory": "frontend/.svelte-kit",
+  "buildCommand": "npm run build",
+  "outputDirectory": ".svelte-kit",
   "framework": "sveltekit"
 }
