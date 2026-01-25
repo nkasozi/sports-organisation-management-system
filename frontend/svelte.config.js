@@ -8,11 +8,7 @@ const config = {
   preprocess: vitePreprocess(),
 
   kit: {
-    // Vercel adapter for deployment
-    adapter: adapter({
-      // Optional: configure the adapter
-      runtime: "nodejs18.x",
-    }),
+    adapter: adapter(),
 
     // API proxy for development
     alias: {
