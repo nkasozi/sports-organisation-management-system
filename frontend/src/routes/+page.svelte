@@ -271,7 +271,8 @@
           Welcome to {#if split_organization_name($branding_store.organization_name).prefix}{split_organization_name(
               $branding_store.organization_name,
             ).prefix}
-          {/if}<span class="text-theme-secondary-600"
+          {/if}
+          <span class="text-theme-secondary-600"
             >{split_organization_name($branding_store.organization_name)
               .suffix}</span
           >
