@@ -419,78 +419,98 @@
           </h2>
           <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div
-              class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 text-center"
+              class="bg-indigo-50 dark:bg-indigo-900/30 rounded-xl p-4 text-center"
             >
-              <div class="text-2xl font-bold text-gray-900 dark:text-white">
+              <div
+                class="text-3xl sm:text-4xl font-bold text-indigo-600 dark:text-indigo-400"
+              >
                 {overall_stats.total_matches}
               </div>
-              <div class="text-sm text-gray-600 dark:text-gray-400">
+              <div class="text-sm text-gray-600 dark:text-gray-400 mt-1">
                 Matches
               </div>
             </div>
             <div
-              class="bg-green-50 dark:bg-green-900/20 rounded-lg p-4 text-center"
+              class="bg-green-50 dark:bg-green-900/30 rounded-xl p-4 text-center"
             >
-              <div class="text-2xl font-bold text-green-900 dark:text-white">
+              <div
+                class="text-3xl sm:text-4xl font-bold text-green-600 dark:text-green-400"
+              >
                 {overall_stats.wins}
               </div>
-              <div class="text-sm text-green-600 dark:text-green-400">Wins</div>
+              <div class="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                Wins
+              </div>
             </div>
             <div
-              class="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg p-4 text-center"
+              class="bg-amber-50 dark:bg-amber-900/30 rounded-xl p-4 text-center"
             >
-              <div class="text-2xl font-bold text-yellow-900 dark:text-white">
+              <div
+                class="text-3xl sm:text-4xl font-bold text-amber-600 dark:text-amber-400"
+              >
                 {overall_stats.draws}
               </div>
-              <div class="text-sm text-yellow-600 dark:text-yellow-400">
+              <div class="text-sm text-gray-600 dark:text-gray-400 mt-1">
                 Draws
               </div>
             </div>
             <div
-              class="bg-red-50 dark:bg-red-900/20 rounded-lg p-4 text-center"
+              class="bg-red-50 dark:bg-red-900/30 rounded-xl p-4 text-center"
             >
-              <div class="text-2xl font-bold text-red-900 dark:text-white">
+              <div
+                class="text-3xl sm:text-4xl font-bold text-red-600 dark:text-red-400"
+              >
                 {overall_stats.losses}
               </div>
-              <div class="text-sm text-red-600 dark:text-red-400">Losses</div>
+              <div class="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                Losses
+              </div>
             </div>
             <div
-              class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 text-center"
+              class="bg-blue-50 dark:bg-blue-900/30 rounded-xl p-4 text-center"
             >
-              <div class="text-2xl font-bold text-gray-900 dark:text-white">
+              <div
+                class="text-3xl sm:text-4xl font-bold text-blue-600 dark:text-blue-400"
+              >
                 {overall_stats.goals_for}
               </div>
-              <div class="text-sm text-gray-600 dark:text-gray-400">
+              <div class="text-sm text-gray-600 dark:text-gray-400 mt-1">
                 Goals For
               </div>
             </div>
             <div
-              class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 text-center"
+              class="bg-purple-50 dark:bg-purple-900/30 rounded-xl p-4 text-center"
             >
-              <div class="text-2xl font-bold text-gray-900 dark:text-white">
+              <div
+                class="text-3xl sm:text-4xl font-bold text-purple-600 dark:text-purple-400"
+              >
                 {overall_stats.goals_against}
               </div>
-              <div class="text-sm text-gray-600 dark:text-gray-400">
+              <div class="text-sm text-gray-600 dark:text-gray-400 mt-1">
                 Goals Against
               </div>
             </div>
             <div
-              class="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg p-4 text-center"
+              class="bg-amber-50 dark:bg-amber-900/30 rounded-xl p-4 text-center"
             >
-              <div class="text-2xl font-bold text-yellow-900 dark:text-white">
+              <div
+                class="text-3xl sm:text-4xl font-bold text-amber-600 dark:text-amber-400"
+              >
                 {overall_stats.yellow_cards}
               </div>
-              <div class="text-sm text-yellow-600 dark:text-yellow-400">
+              <div class="text-sm text-gray-600 dark:text-gray-400 mt-1">
                 Yellow Cards
               </div>
             </div>
             <div
-              class="bg-red-50 dark:bg-red-900/20 rounded-lg p-4 text-center"
+              class="bg-red-50 dark:bg-red-900/30 rounded-xl p-4 text-center"
             >
-              <div class="text-2xl font-bold text-red-900 dark:text-white">
+              <div
+                class="text-3xl sm:text-4xl font-bold text-red-600 dark:text-red-400"
+              >
                 {overall_stats.red_cards}
               </div>
-              <div class="text-sm text-red-600 dark:text-red-400">
+              <div class="text-sm text-gray-600 dark:text-gray-400 mt-1">
                 Red Cards
               </div>
             </div>
@@ -511,42 +531,52 @@
             <!-- Competition Stats -->
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
               <div
-                class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 text-center"
+                class="bg-indigo-50 dark:bg-indigo-900/30 rounded-xl p-4 text-center"
               >
-                <div class="text-2xl font-bold text-gray-900 dark:text-white">
+                <div
+                  class="text-3xl sm:text-4xl font-bold text-indigo-600 dark:text-indigo-400"
+                >
                   {comp_stat.stats.total_matches}
                 </div>
-                <div class="text-sm text-gray-600 dark:text-gray-400">
+                <div class="text-sm text-gray-600 dark:text-gray-400 mt-1">
                   Matches
                 </div>
               </div>
               <div
-                class="bg-green-50 dark:bg-green-900/20 rounded-lg p-4 text-center"
+                class="bg-green-50 dark:bg-green-900/30 rounded-xl p-4 text-center"
               >
-                <div class="text-2xl font-bold text-green-900 dark:text-white">
+                <div
+                  class="text-3xl sm:text-4xl font-bold text-green-600 dark:text-green-400"
+                >
                   {comp_stat.stats.wins}
                 </div>
-                <div class="text-sm text-green-600 dark:text-green-400">
+                <div class="text-sm text-gray-600 dark:text-gray-400 mt-1">
                   Wins
                 </div>
               </div>
               <div
-                class="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg p-4 text-center"
+                class="bg-amber-50 dark:bg-amber-900/30 rounded-xl p-4 text-center"
               >
-                <div class="text-2xl font-bold text-yellow-900 dark:text-white">
+                <div
+                  class="text-3xl sm:text-4xl font-bold text-amber-600 dark:text-amber-400"
+                >
                   {comp_stat.stats.draws}
                 </div>
-                <div class="text-sm text-yellow-600 dark:text-yellow-400">
+                <div class="text-sm text-gray-600 dark:text-gray-400 mt-1">
                   Draws
                 </div>
               </div>
               <div
-                class="bg-red-50 dark:bg-red-900/20 rounded-lg p-4 text-center"
+                class="bg-red-50 dark:bg-red-900/30 rounded-xl p-4 text-center"
               >
-                <div class="text-2xl font-bold text-red-900 dark:text-white">
+                <div
+                  class="text-3xl sm:text-4xl font-bold text-red-600 dark:text-red-400"
+                >
                   {comp_stat.stats.losses}
                 </div>
-                <div class="text-sm text-red-600 dark:text-red-400">Losses</div>
+                <div class="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                  Losses
+                </div>
               </div>
             </div>
 
