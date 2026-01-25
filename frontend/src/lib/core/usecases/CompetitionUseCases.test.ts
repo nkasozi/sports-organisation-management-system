@@ -19,7 +19,6 @@ function create_mock_repository(): CompetitionRepository {
     count: vi.fn(),
     find_by_organization: vi.fn(),
     find_active_competitions: vi.fn(),
-    find_upcoming_competitions: vi.fn(),
   };
 }
 

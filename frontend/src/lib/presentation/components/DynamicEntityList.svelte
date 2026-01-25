@@ -4,7 +4,7 @@ Displays list of entities with CRUD operations
 Follows coding rules: mobile-first, stateless helpers, explicit return types
 -->
 <script lang="ts">
-  import { createEventDispatcher, onMount } from "svelte";
+  import { onMount } from "svelte";
   import type {
     BaseEntity,
     EntityListResult,
@@ -15,28 +15,28 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
   import type { SubEntityFilter } from "$lib/core/types/SubEntityFilter";
   import DynamicEntityForm from "./DynamicEntityForm.svelte";
   import { get_display_value_for_entity_field } from "../logic/dynamicListLogic";
+  import type {
+    EntityCrudHandlers,
+    EntityViewCallbacks,
+  } from "$lib/core/types/EntityHandlers";
 
-  // Component props
   export let entity_type: string;
   export let show_actions: boolean = true;
   export let is_mobile_view: boolean = true;
   export let sub_entity_filter: SubEntityFilter | null = null;
-  export const compact_mode: boolean = false;
+  export let crud_handlers: EntityCrudHandlers | null = null;
+  export let view_callbacks: EntityViewCallbacks | null = null;
 
-  // Computed - is this a sub-entity list that should handle CRUD inline?
+  export let on_total_count_changed: ((count: number) => void) | null = null;
+  export let on_selection_changed: ((selected: BaseEntity[]) => void) | null =
+    null;
+  export let on_entities_batch_deleted:
+    | ((entities: BaseEntity[]) => void)
+    | null = null;
+
+  $: has_custom_handlers = crud_handlers !== null;
   $: is_sub_entity_mode = sub_entity_filter !== null;
 
-  // Event dispatcher for parent communication
-  const dispatch = createEventDispatcher<{
-    edit_entity: { entity: BaseEntity };
-    create_new: { entity_id?: undefined };
-    delete_single: { entity: BaseEntity };
-    delete_multiple: { entities: BaseEntity[] };
-    refresh_completed: { total_count: number };
-    selection_changed: { selected_entities: BaseEntity[] };
-  }>();
-
-  // Component state
   let entities: BaseEntity[] = [];
   let filtered_entities: BaseEntity[] = [];
   let is_loading: boolean = false;
@@ -46,7 +46,6 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
   let entities_to_delete: BaseEntity[] = [];
   let is_deleting: boolean = false;
 
-  // Inline form state for sub-entity mode
   let show_inline_form: boolean = false;
   let inline_form_entity: Partial<BaseEntity> | null = null;
 
@@ -392,6 +391,31 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
     error_message = "";
 
     try {
+      const filter = build_filter_from_sub_entity_config(sub_entity_filter);
+
+      if (crud_handlers?.list) {
+        console.debug(
+          `[DynamicEntityList] Using custom list handler for "${entity_type}"`,
+        );
+        const result = await crud_handlers.list(filter, { page_size: 1000 });
+
+        if (result.success && result.data) {
+          entities = extract_items_from_result_data(result.data);
+          console.debug(
+            `[DynamicEntityList] ✅ Custom handler loaded ${entities.length} ${entity_type} entities`,
+          );
+          const total = extract_total_count_from_result_data(result.data);
+          on_total_count_changed?.(total);
+        } else {
+          error_message = extract_error_message_from_result(result);
+          console.error(
+            `[ENTITY_LIST] ❌ Custom handler failed:`,
+            error_message,
+          );
+        }
+        return;
+      }
+
       const use_cases = get_use_cases_for_entity_type(entity_type);
       console.log(
         `[ENTITY_LIST] Use cases for "${entity_type}":`,
@@ -415,7 +439,6 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
         return;
       }
 
-      const filter = build_filter_from_sub_entity_config(sub_entity_filter);
       console.log(
         `[ENTITY_LIST] Calling list() for "${entity_type}" with filter:`,
         filter,
@@ -433,12 +456,11 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
 
       if (result.success) {
         entities = extract_items_from_result_data(result.data);
-        console.log(
-          `[ENTITY_LIST] ✅ Loaded ${entities.length} ${entity_type} entities`,
-          entities,
+        console.debug(
+          `[DynamicEntityList] ✅ Loaded ${entities.length} ${entity_type} entities`,
         );
         const total = extract_total_count_from_result_data(result.data);
-        dispatch("refresh_completed", { total_count: total });
+        on_total_count_changed?.(total);
       } else {
         error_message = extract_error_message_from_result(result);
         console.error(
@@ -477,53 +499,60 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
   }
 
   function handle_create_new_entity(): boolean {
-    console.debug(
-      "[DEBUG] handle_create_new_entity called for entity_type:",
+    console.debug("[DynamicEntityList] handle_create_new_entity called:", {
       entity_type,
-    );
+      is_sub_entity_mode,
+      has_view_callbacks: view_callbacks !== null,
+    });
 
     if (is_sub_entity_mode) {
-      console.debug("[DEBUG] Sub-entity mode - showing inline form");
+      console.debug(
+        "[DynamicEntityList] Sub-entity mode - showing inline form",
+      );
       inline_form_entity = create_new_entity_with_sub_entity_defaults();
       show_inline_form = true;
       return true;
     }
 
-    console.debug("[DEBUG] handle_create_new_entity event dispatched", {
-      event_type: "create_new",
-      entity_type,
-    });
-    dispatch("create_new", { entity_id: undefined });
-    return true;
+    if (view_callbacks?.on_create_requested) {
+      console.debug("[DynamicEntityList] Calling on_create_requested callback");
+      view_callbacks.on_create_requested();
+      return true;
+    }
+
+    console.warn("[DynamicEntityList] No create handler available");
+    return false;
   }
 
   function handle_edit_entity(entity: BaseEntity): boolean {
-    console.debug(
-      "[DEBUG] handle_edit_entity called for entity_type:",
+    console.debug("[DynamicEntityList] handle_edit_entity called:", {
       entity_type,
-      "entity:",
-      entity,
-    );
+      entity_id: entity.id,
+      is_sub_entity_mode,
+      has_view_callbacks: view_callbacks !== null,
+    });
 
     if (is_sub_entity_mode) {
-      console.debug("[DEBUG] Sub-entity mode - showing inline edit form");
+      console.debug(
+        "[DynamicEntityList] Sub-entity mode - showing inline edit form",
+      );
       inline_form_entity = { ...entity };
       show_inline_form = true;
       return true;
     }
 
-    console.debug("[DEBUG] handle_edit_entity event dispatched", {
-      event_type: "edit_entity",
-      entity_type,
-      entity_id: entity.id,
-      entity,
-    });
-    dispatch("edit_entity", { entity });
-    return true;
+    if (view_callbacks?.on_edit_requested) {
+      console.debug("[DynamicEntityList] Calling on_edit_requested callback");
+      view_callbacks.on_edit_requested(entity);
+      return true;
+    }
+
+    console.warn("[DynamicEntityList] No edit handler available");
+    return false;
   }
 
   function handle_inline_form_cancel(): boolean {
-    console.debug("[DEBUG] handle_inline_form_cancel called");
+    console.debug("[DynamicEntityList] handle_inline_form_cancel called");
     show_inline_form = false;
     inline_form_entity = null;
     return true;
@@ -533,7 +562,9 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
     event: CustomEvent<{ entity: BaseEntity }>,
   ): Promise<boolean> {
     const saved_entity = event.detail?.entity;
-    console.debug("[DEBUG] handle_inline_form_save called", { saved_entity });
+    console.debug("[DynamicEntityList] handle_inline_form_save called", {
+      saved_entity,
+    });
 
     show_inline_form = false;
     inline_form_entity = null;
@@ -543,14 +574,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
   }
 
   function handle_delete_single_entity(entity: BaseEntity): boolean {
-    console.debug(
-      "[DEBUG] handle_delete_single_entity called for entity_type:",
-      entity_type,
-      "entity:",
-      entity,
-    );
-    console.debug("[DEBUG] handle_delete_single_entity event dispatched", {
-      event_type: "delete_single",
+    console.debug("[DynamicEntityList] handle_delete_single_entity called:", {
       entity_type,
       entity_id: entity.id,
     });
@@ -564,16 +588,12 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
       selected_entity_ids.has(entity.id),
     );
     console.debug(
-      "[DEBUG] handle_delete_multiple_entities called for entity_type:",
-      entity_type,
-      "selected_entities:",
-      selected_entities,
+      "[DynamicEntityList] handle_delete_multiple_entities called:",
+      {
+        entity_type,
+        count: selected_entities.length,
+      },
     );
-    console.debug("[DEBUG] handle_delete_multiple_entities event dispatched", {
-      event_type: "delete_multiple",
-      entity_type,
-      entity_ids: selected_entities.map((e) => e.id),
-    });
     entities_to_delete = selected_entities;
     show_delete_confirmation = true;
     return true;
@@ -585,33 +605,74 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
     is_deleting = true;
 
     try {
-      const use_cases = get_use_cases_for_entity_type(entity_type);
-
-      if (!use_cases) {
-        error_message = `No use cases found for entity type: ${entity_type}`;
-        return;
-      }
-
       if (entities_to_delete.length === 1) {
         const entity = entities_to_delete[0];
-        const delete_method = use_cases.delete;
 
+        if (crud_handlers?.delete) {
+          console.debug("[DynamicEntityList] Using custom delete handler");
+          const result = await crud_handlers.delete(entity.id);
+          if (result.success) {
+            entities = entities.filter((e) => e.id !== entity.id);
+            selected_entity_ids.delete(entity.id);
+            view_callbacks?.on_delete_completed?.(entity);
+          } else {
+            error_message = result.error_message || "Failed to delete entity";
+          }
+          return;
+        }
+
+        const use_cases = get_use_cases_for_entity_type(entity_type);
+        if (!use_cases) {
+          error_message = `No use cases found for entity type: ${entity_type}`;
+          return;
+        }
+
+        const delete_method = use_cases.delete;
         if (!delete_method) {
           error_message = `No delete method found for entity type: ${entity_type}`;
           return;
         }
 
         const result = await delete_method(entity.id);
-
         if (result.success) {
           entities = entities.filter((e) => e.id !== entity.id);
           selected_entity_ids.delete(entity.id);
-          dispatch("delete_single", { entity });
+          view_callbacks?.on_delete_completed?.(entity);
         } else {
           error_message = result.error_message || "Failed to delete entity";
         }
       } else {
         const ids_to_delete = entities_to_delete.map((e) => e.id);
+        const deleted_entities = [...entities_to_delete];
+
+        if (crud_handlers?.delete) {
+          console.debug(
+            "[DynamicEntityList] Using custom delete handler for batch",
+          );
+          let all_success = true;
+          for (const entity_id of ids_to_delete) {
+            const result = await crud_handlers.delete(entity_id);
+            if (!result.success) {
+              all_success = false;
+              error_message =
+                result.error_message || `Failed to delete entity ${entity_id}`;
+              break;
+            }
+          }
+          if (all_success) {
+            entities = entities.filter((e) => !ids_to_delete.includes(e.id));
+            selected_entity_ids.clear();
+            on_entities_batch_deleted?.(deleted_entities);
+          }
+          return;
+        }
+
+        const use_cases = get_use_cases_for_entity_type(entity_type);
+        if (!use_cases) {
+          error_message = `No use cases found for entity type: ${entity_type}`;
+          return;
+        }
+
         const use_cases_with_extras = use_cases as typeof use_cases & {
           delete_multiple?: (
             ids: string[],
@@ -624,7 +685,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
           if (result.success) {
             entities = entities.filter((e) => !ids_to_delete.includes(e.id));
             selected_entity_ids.clear();
-            dispatch("delete_multiple", { entities: entities_to_delete });
+            on_entities_batch_deleted?.(deleted_entities);
           } else {
             error_message = result.error_message || "Failed to delete entities";
           }
@@ -642,7 +703,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
           if (all_success) {
             entities = entities.filter((e) => !ids_to_delete.includes(e.id));
             selected_entity_ids.clear();
-            dispatch("delete_multiple", { entities: entities_to_delete });
+            on_entities_batch_deleted?.(deleted_entities);
           }
         }
       }
@@ -653,7 +714,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
       is_deleting = false;
       show_delete_confirmation = false;
       entities_to_delete = [];
-      selected_entity_ids = new Set(); // Clear selection
+      selected_entity_ids = new Set();
     }
   }
 
@@ -688,14 +749,30 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
 
   function dispatch_selection_changed(): void {
     const selected_entities = get_selected_entities_list();
-    dispatch("selection_changed", { selected_entities });
+    on_selection_changed?.(selected_entities);
+  }
+
+  function is_field_controlled_by_sub_entity_filter(
+    field_name: string,
+  ): boolean {
+    if (!sub_entity_filter) return false;
+    if (field_name === sub_entity_filter.foreign_key_field) return true;
+    if (
+      sub_entity_filter.holder_type_field &&
+      field_name === sub_entity_filter.holder_type_field
+    )
+      return true;
+    return false;
   }
 
   function get_all_available_fields(): FieldMetadata[] {
     if (!entity_metadata) return [];
     return entity_metadata.fields.filter(
       (f: FieldMetadata) =>
-        !f.is_read_only || f.field_name === "id" || f.field_name === "status",
+        (!f.is_read_only ||
+          f.field_name === "id" ||
+          f.field_name === "status") &&
+        !is_field_controlled_by_sub_entity_filter(f.field_name),
     );
   }
 
@@ -737,7 +814,11 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
       class="alert bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 p-4 rounded-lg mb-4"
     >
       <p>{error_message}</p>
-      <button class="btn btn-outline mt-2" on:click={refresh_entity_list}>
+      <button
+        type="button"
+        class="btn btn-outline mt-2"
+        on:click={refresh_entity_list}
+      >
         Retry
       </button>
     </div>
@@ -766,6 +847,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
 
       <div class="flex flex-wrap gap-2 w-full sm:w-auto">
         <button
+          type="button"
           class="btn btn-outline w-auto"
           on:click={() => (show_advanced_filter = !show_advanced_filter)}
           title="Advanced Filter"
@@ -787,6 +869,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
         </button>
 
         <button
+          type="button"
           class="btn btn-outline w-auto"
           on:click={() => (show_column_selector = !show_column_selector)}
           title="Manage Columns"
@@ -808,6 +891,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
         </button>
 
         <button
+          type="button"
           class="btn btn-outline w-auto"
           on:click={() => (show_export_modal = true)}
           title="Export Data"
@@ -830,6 +914,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
 
         {#if can_show_bulk_actions}
           <button
+            type="button"
             class="btn btn-outline w-auto"
             on:click={handle_delete_multiple_entities}
             disabled={is_deleting}
@@ -840,6 +925,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
 
         {#if show_actions}
           <button
+            type="button"
             class="btn btn-secondary w-auto"
             on:click={handle_create_new_entity}
           >
@@ -858,6 +944,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
             Advanced Filters
           </h3>
           <button
+            type="button"
             class="text-sm text-primary-600 hover:text-primary-700 dark:text-primary-400"
             on:click={clear_all_filters}
           >
@@ -965,6 +1052,8 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
           entity_data={inline_form_entity}
           {is_mobile_view}
           is_inline_mode={true}
+          {crud_handlers}
+          {sub_entity_filter}
           on:inline_save_success={handle_inline_form_save}
           on:inline_cancel={handle_inline_form_cancel}
         />
@@ -990,11 +1079,19 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
             : "No items match your filters."}
         </p>
         {#if entities.length > 0}
-          <button class="btn btn-outline" on:click={clear_all_filters}>
+          <button
+            type="button"
+            class="btn btn-outline"
+            on:click={clear_all_filters}
+          >
             Clear Filters
           </button>
         {:else if show_actions}
-          <button class="btn btn-secondary" on:click={handle_create_new_entity}>
+          <button
+            type="button"
+            class="btn btn-secondary"
+            on:click={handle_create_new_entity}
+          >
             Create First {display_name}
           </button>
         {/if}
@@ -1111,12 +1208,14 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
                   >
                     <div class="flex flex-row gap-2 justify-end items-center">
                       <button
+                        type="button"
                         class="btn btn-outline btn-sm"
                         on:click={() => handle_edit_entity(entity)}
                       >
                         Edit
                       </button>
                       <button
+                        type="button"
                         class="btn btn-outline btn-sm text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
                         on:click={() => handle_delete_single_entity(entity)}
                       >
@@ -1205,6 +1304,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
           class="flex justify-end pt-4 border-t border-accent-200 dark:border-accent-700"
         >
           <button
+            type="button"
             class="btn btn-secondary"
             on:click={() => (show_column_selector = false)}
           >
@@ -1280,7 +1380,11 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
                   Comma-separated values, compatible with Excel
                 </p>
               </div>
-              <button class="btn btn-secondary" on:click={export_to_csv}>
+              <button
+                type="button"
+                class="btn btn-secondary"
+                on:click={export_to_csv}
+              >
                 Export CSV
               </button>
             </div>
@@ -1298,7 +1402,9 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
                   Coming soon
                 </p>
               </div>
-              <button class="btn btn-outline" disabled> Export JSON </button>
+              <button type="button" class="btn btn-outline" disabled>
+                Export JSON
+              </button>
             </div>
           </div>
         </div>
@@ -1307,6 +1413,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
           class="flex justify-end pt-4 border-t border-accent-200 dark:border-accent-700"
         >
           <button
+            type="button"
             class="btn btn-outline"
             on:click={() => (show_export_modal = false)}
           >
@@ -1339,6 +1446,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
 
         <div class="flex flex-col sm:flex-row gap-3 pt-4">
           <button
+            type="button"
             class="btn btn-outline w-full sm:w-auto"
             on:click={cancel_deletion_action}
             disabled={is_deleting}
@@ -1346,6 +1454,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
             Cancel
           </button>
           <button
+            type="button"
             class="btn bg-red-600 hover:bg-red-700 text-white w-full sm:w-auto"
             on:click={confirm_deletion_action}
             disabled={is_deleting}

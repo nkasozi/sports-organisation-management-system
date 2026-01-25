@@ -2,16 +2,13 @@
   import { goto } from "$app/navigation";
   import DynamicEntityList from "$lib/presentation/components/DynamicEntityList.svelte";
   import type { BaseEntity } from "$lib/core/entities/BaseEntity";
+  import type { EntityViewCallbacks } from "$lib/core/types/EntityHandlers";
 
-  function handle_create_new(): void {
-    goto("/competitions/create");
-  }
-
-  function handle_edit_entity(
-    event: CustomEvent<{ entity: BaseEntity }>
-  ): void {
-    goto(`/competitions/${event.detail.entity.id}`);
-  }
+  const view_callbacks: EntityViewCallbacks = {
+    on_create_requested: () => goto("/competitions/create"),
+    on_edit_requested: (entity: BaseEntity) =>
+      goto(`/competitions/${entity.id}`),
+  };
 </script>
 
 <svelte:head>
@@ -34,7 +31,6 @@
     entity_type="Competition"
     show_actions={true}
     is_mobile_view={true}
-    on:create_new={handle_create_new}
-    on:edit_entity={handle_edit_entity}
+    {view_callbacks}
   />
 </div>

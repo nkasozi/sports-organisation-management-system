@@ -503,6 +503,10 @@ describe("FixtureUseCases", () => {
 
   describe("end_fixture", () => {
     it("should end fixture", async () => {
+      vi.mocked(mock_repository.find_by_id).mockResolvedValue({
+        success: true,
+        data: create_test_fixture({ status: "in_progress" }),
+      });
       vi.mocked(mock_repository.update).mockResolvedValue({
         success: true,
         data: create_test_fixture({ status: "completed" }),

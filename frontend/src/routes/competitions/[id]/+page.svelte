@@ -6,6 +6,10 @@
     Competition,
     UpdateCompetitionInput,
   } from "$lib/core/entities/Competition";
+  import {
+    derive_competition_status,
+    get_competition_status_display,
+  } from "$lib/core/entities/Competition";
   import type { Organization } from "$lib/core/entities/Organization";
   import type { Team } from "$lib/core/entities/Team";
   import type { Sport } from "$lib/core/entities/Sport";
@@ -13,6 +17,7 @@
   import type { CompetitionFormat } from "$lib/core/entities/CompetitionFormat";
   import type { LoadingState } from "$lib/presentation/components/ui/LoadingStateWrapper.svelte";
   import type { SelectOption } from "$lib/presentation/components/ui/SelectField.svelte";
+  import type { SubEntityFilter } from "$lib/core/types/SubEntityFilter";
   import { get_competition_use_cases } from "$lib/core/usecases/CompetitionUseCases";
   import { get_organization_use_cases } from "$lib/core/usecases/OrganizationUseCases";
   import { get_team_use_cases } from "$lib/core/usecases/TeamUseCases";
@@ -22,9 +27,9 @@
   import LoadingStateWrapper from "$lib/presentation/components/ui/LoadingStateWrapper.svelte";
   import FormField from "$lib/presentation/components/ui/FormField.svelte";
   import SelectField from "$lib/presentation/components/ui/SelectField.svelte";
-  import EnumSelectField from "$lib/presentation/components/ui/EnumSelectField.svelte";
   import Toast from "$lib/presentation/components/ui/Toast.svelte";
   import SportRulesCustomizer from "$lib/presentation/components/competition/SportRulesCustomizer.svelte";
+  import DynamicEntityList from "$lib/presentation/components/DynamicEntityList.svelte";
 
   const competition_use_cases = get_competition_use_cases();
   const organization_use_cases = get_organization_use_cases();
@@ -44,7 +49,12 @@
   let loading_state: LoadingState = "idle";
   let error_message: string = "";
   let is_saving: boolean = false;
-  let active_tab: "details" | "teams" | "rules" | "settings" = "details";
+  let active_tab:
+    | "details"
+    | "teams"
+    | "rules"
+    | "settings"
+    | "official_jerseys" = "details";
 
   let toast_visible: boolean = false;
   let toast_message: string = "";
@@ -64,12 +74,19 @@
     label: format.name,
   }));
 
-  const status_options = [
-    { value: "upcoming", label: "Upcoming" },
-    { value: "active", label: "Active" },
-    { value: "completed", label: "Completed" },
-    { value: "cancelled", label: "Cancelled" },
-  ];
+  $: derived_status =
+    form_data.start_date && form_data.end_date
+      ? derive_competition_status(form_data.start_date, form_data.end_date)
+      : "upcoming";
+
+  $: status_display = get_competition_status_display(derived_status);
+
+  $: official_jersey_filter = {
+    foreign_key_field: "holder_id",
+    foreign_key_value: competition_id,
+    holder_type_field: "holder_type",
+    holder_type_value: "competition_official",
+  } as SubEntityFilter;
 
   onMount(async () => {
     if (!competition_id) {
@@ -123,14 +140,14 @@
     organizations = org_result.success ? org_result.data : [];
     competition_formats = formats_result.success
       ? formats_result.data.filter(
-          (format: CompetitionFormat) => format.status === "active"
+          (format: CompetitionFormat) => format.status === "active",
         )
       : [];
 
     if (competition) {
       selected_format =
         competition_formats.find(
-          (format) => format.id === competition!.competition_format_id
+          (format) => format.id === competition!.competition_format_id,
         ) || null;
     }
 
@@ -140,15 +157,15 @@
       : [];
 
     const team_ids_in_competition = new Set(
-      competition_team_entries.map((ct) => ct.team_id)
+      competition_team_entries.map((ct) => ct.team_id),
     );
     teams_in_competition = all_teams.filter((team: Team) =>
-      team_ids_in_competition.has(team.id)
+      team_ids_in_competition.has(team.id),
     );
     available_teams = all_teams.filter(
       (team: Team) =>
         team.organization_id === competition!.organization_id &&
-        !team_ids_in_competition.has(team.id)
+        !team_ids_in_competition.has(team.id),
     );
 
     form_data = {
@@ -167,15 +184,16 @@
       prize_pool: competition.prize_pool,
       location: competition.location,
       rule_overrides: competition.rule_overrides || {},
-      status: competition.status,
     };
 
     const selected_organization = organizations.find(
-      (org) => org.id === competition!.organization_id
+      (org) => org.id === competition!.organization_id,
     );
 
     if (selected_organization && selected_organization.sport_id) {
-      const sport_result = await get_sport_by_id(selected_organization.sport_id);
+      const sport_result = await get_sport_by_id(
+        selected_organization.sport_id,
+      );
       if (sport_result.success && sport_result.data) {
         selected_sport = sport_result.data;
       }
@@ -185,23 +203,23 @@
   }
 
   async function handle_organization_change(
-    event: CustomEvent<{ value: string }>
+    event: CustomEvent<{ value: string }>,
   ): Promise<void> {
     form_data.organization_id = event.detail.value;
     available_teams = available_teams.filter(
-      (team) => team.organization_id === form_data.organization_id
+      (team) => team.organization_id === form_data.organization_id,
     );
 
     form_data.rule_overrides = {};
     selected_sport = null;
 
     const selected_organization = organizations.find(
-      (org) => org.id === form_data.organization_id
+      (org) => org.id === form_data.organization_id,
     );
 
     if (selected_organization && selected_organization.sport_id) {
       const sport_result = await get_sport_by_id(
-        selected_organization.sport_id
+        selected_organization.sport_id,
       );
       if (sport_result.success && sport_result.data) {
         selected_sport = sport_result.data;
@@ -213,7 +231,7 @@
     form_data.competition_format_id = event.detail.value;
     selected_format =
       competition_formats.find(
-        (format) => format.id === form_data.competition_format_id
+        (format) => format.id === form_data.competition_format_id,
       ) || null;
   }
 
@@ -222,14 +240,14 @@
 
     const result = await competition_use_cases.update(
       competition_id,
-      form_data
+      form_data,
     );
 
     if (!result.success) {
       is_saving = false;
       show_toast(
         result.error_message || "Failed to update competition",
-        "error"
+        "error",
       );
       return;
     }
@@ -253,7 +271,7 @@
     if (!result.success) {
       show_toast(
         `Failed to add team: ${result.error || "Unknown error"}`,
-        "error"
+        "error",
       );
       return;
     }
@@ -265,24 +283,24 @@
   }
 
   async function handle_remove_team_from_competition(
-    team: Team
+    team: Team,
   ): Promise<void> {
     const result =
       await competition_team_use_cases.remove_team_from_competition(
         competition_id,
-        team.id
+        team.id,
       );
 
     if (!result.success) {
       show_toast(
         `Failed to remove team: ${result.error || "Unknown error"}`,
-        "error"
+        "error",
       );
       return;
     }
 
     competition_team_entries = competition_team_entries.filter(
-      (ct) => ct.team_id !== team.id
+      (ct) => ct.team_id !== team.id,
     );
     available_teams = [...available_teams, team];
     teams_in_competition = teams_in_competition.filter((t) => t.id !== team.id);
@@ -295,7 +313,7 @@
 
   function show_toast(
     message: string,
-    type: "success" | "error" | "info"
+    type: "success" | "error" | "info",
   ): void {
     toast_message = message;
     toast_type = type;
@@ -341,8 +359,8 @@
         {competition?.name || "Edit Competition"}
       </h1>
       {#if competition}
-        <span class={get_status_badge_classes(competition.status)}>
-          {competition.status}
+        <span class={get_status_badge_classes(derived_status)}>
+          {status_display.label}
         </span>
       {/if}
     </div>
@@ -377,6 +395,16 @@
             on:click={() => (active_tab = "teams")}
           >
             Teams ({teams_in_competition.length}/{form_data.max_teams || 0})
+          </button>
+          <button
+            type="button"
+            class="px-6 py-3 text-sm font-medium border-b-2 whitespace-nowrap {active_tab ===
+            'official_jerseys'
+              ? 'border-primary-500 text-primary-600 dark:text-primary-400'
+              : 'border-transparent text-accent-500 hover:text-accent-700 hover:border-accent-300 dark:text-accent-400 dark:hover:text-accent-200'}"
+            on:click={() => (active_tab = "official_jerseys")}
+          >
+            Official Jerseys
           </button>
           <button
             type="button"
@@ -462,17 +490,10 @@
                     competition?.competition_format_id &&
                     competition.competition_format_id.trim() &&
                     competition_format_options.some(
-                      (opt) => opt.value === competition?.competition_format_id
+                      (opt) => opt.value === competition?.competition_format_id,
                     )
                   )}
                   on:change={handle_format_change}
-                />
-
-                <EnumSelectField
-                  label="Status"
-                  name="status"
-                  bind:value={form_data.status}
-                  options={status_options}
                 />
               </div>
 
@@ -840,6 +861,27 @@
               </button>
             </div>
           </form>
+        {:else if active_tab === "official_jerseys"}
+          <div class="space-y-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <h3
+                  class="text-lg font-medium text-accent-900 dark:text-accent-100"
+                >
+                  Official Jersey Colors
+                </h3>
+                <p class="text-sm text-accent-500 dark:text-accent-400">
+                  Configure the jersey color options for officials in this
+                  competition
+                </p>
+              </div>
+            </div>
+            <DynamicEntityList
+              entity_type="jerseycolor"
+              sub_entity_filter={official_jersey_filter}
+              show_actions={true}
+            />
+          </div>
         {/if}
       </div>
     </div>

@@ -6,7 +6,7 @@ import { get_player_team_membership_use_cases } from "$lib/core/usecases/PlayerT
 import { get_player_position_use_cases } from "$lib/core/usecases/PlayerPositionUseCases";
 import { get_official_use_cases } from "$lib/core/usecases/OfficialUseCases";
 import { get_fixture_use_cases } from "$lib/core/usecases/FixtureUseCases";
-import { get_fixture_official_use_cases } from "$lib/core/usecases/FixtureOfficialUseCases";
+import { get_fixture_management_use_cases } from "$lib/core/usecases/FixtureManagementUseCases";
 import { get_competition_format_use_cases } from "$lib/core/usecases/CompetitionFormatUseCases";
 import { get_game_event_type_use_cases } from "$lib/core/usecases/GameEventTypeUseCases";
 import { get_game_official_role_use_cases } from "$lib/core/usecases/GameOfficialRoleUseCases";
@@ -18,6 +18,7 @@ import { get_qualification_use_cases } from "$lib/core/usecases/QualificationUse
 import { get_venue_use_cases } from "$lib/core/usecases/VenueUseCases";
 import { get_identification_type_use_cases } from "$lib/core/usecases/IdentificationTypeUseCases";
 import { get_identification_use_cases } from "$lib/core/usecases/IdentificationUseCases";
+import { get_jersey_color_use_cases } from "$lib/core/usecases/JerseyColorUseCases";
 import { get_system_user_use_cases } from "$lib/core/usecases/SystemUserUseCases";
 import { get_audit_log_use_cases } from "$lib/core/usecases/AuditLogUseCases";
 import { EventBus } from "$lib/infrastructure/events/EventBus";
@@ -35,7 +36,7 @@ const VALID_ENTITY_TYPE_KEYS = [
   "playerteammembership",
   "official",
   "fixture",
-  "fixtureofficial",
+  "fixturemanagement",
   "competitionformat",
   "gameeventtype",
   "gameofficialrole",
@@ -48,6 +49,7 @@ const VALID_ENTITY_TYPE_KEYS = [
   "venue",
   "identificationtype",
   "identification",
+  "jerseycolor",
   "systemuser",
   "auditlog",
 ] as const;
@@ -88,8 +90,8 @@ function create_use_cases_registry(): Record<EntityTypeKey, UseCasesGetter> {
       get_official_use_cases as UseCasesGetter,
     ["fixture" satisfies EntityTypeKey]:
       get_fixture_use_cases as UseCasesGetter,
-    ["fixtureofficial" satisfies EntityTypeKey]:
-      get_fixture_official_use_cases as UseCasesGetter,
+    ["fixturemanagement" satisfies EntityTypeKey]:
+      get_fixture_management_use_cases as UseCasesGetter,
     ["competitionformat" satisfies EntityTypeKey]:
       get_competition_format_use_cases as UseCasesGetter,
     ["gameeventtype" satisfies EntityTypeKey]:
@@ -112,6 +114,8 @@ function create_use_cases_registry(): Record<EntityTypeKey, UseCasesGetter> {
       get_identification_type_use_cases as UseCasesGetter,
     ["identification" satisfies EntityTypeKey]:
       get_identification_use_cases as UseCasesGetter,
+    ["jerseycolor" satisfies EntityTypeKey]:
+      get_jersey_color_use_cases as UseCasesGetter,
     ["systemuser" satisfies EntityTypeKey]:
       get_system_user_use_cases as unknown as UseCasesGetter,
     ["auditlog" satisfies EntityTypeKey]:
@@ -149,7 +153,7 @@ const ENTITY_DISPLAY_NAME_GETTERS: Record<
       `${f.venue || "Fixture"} - Round ${f.round_number || ""}`.trim() || e.id
     );
   },
-  fixtureofficial: (e) => e.id,
+  fixturemanagement: (e) => e.id,
   competitionformat: (e) => (to_record(e).name as string) || e.id,
   gameeventtype: (e) => (to_record(e).name as string) || e.id,
   gameofficialrole: (e) => (to_record(e).name as string) || e.id,
@@ -165,6 +169,7 @@ const ENTITY_DISPLAY_NAME_GETTERS: Record<
   venue: (e) => (to_record(e).name as string) || e.id,
   identificationtype: (e) => (to_record(e).name as string) || e.id,
   identification: (e) => e.id,
+  jerseycolor: (e) => (to_record(e).nickname as string) || e.id,
   systemuser: (e) => {
     const u = to_record(e);
     return `${u.first_name || ""} ${u.last_name || ""}`.trim() || e.id;

@@ -2,6 +2,10 @@
   import { onMount } from "svelte";
   import { goto } from "$app/navigation";
   import type { Competition } from "$lib/core/entities/Competition";
+  import {
+    derive_competition_status,
+    get_competition_status_display,
+  } from "$lib/core/entities/Competition";
   import type { Fixture } from "$lib/core/entities/Fixture";
   import type { Team } from "$lib/core/entities/Team";
   import type { CompetitionFormat } from "$lib/core/entities/CompetitionFormat";
@@ -31,6 +35,17 @@
   let error_message: string = "";
 
   let active_tab: "standings" | "fixtures" | "results" | "stats" = "standings";
+
+  $: selected_competition_derived_status = selected_competition
+    ? derive_competition_status(
+        selected_competition.start_date,
+        selected_competition.end_date,
+      )
+    : null;
+
+  $: selected_competition_status_display = selected_competition_derived_status
+    ? get_competition_status_display(selected_competition_derived_status)
+    : null;
 
   interface TeamStanding {
     team_id: string;
@@ -69,7 +84,7 @@
 
     const result = await competition_use_cases.list(
       {},
-      { page_number: 1, page_size: 100 }
+      { page_number: 1, page_size: 100 },
     );
 
     if (!result.success) {
@@ -93,14 +108,14 @@
     fixtures_loading = true;
 
     const comp_result = await competition_use_cases.get_by_id(
-      selected_competition_id
+      selected_competition_id,
     );
     if (comp_result.success && comp_result.data) {
       selected_competition = comp_result.data;
 
       if (selected_competition.competition_format_id) {
         const format_result = await format_use_cases.get_by_id(
-          selected_competition.competition_format_id
+          selected_competition.competition_format_id,
         );
         if (format_result.success && format_result.data) {
           competition_format = format_result.data;
@@ -111,14 +126,14 @@
     const comp_teams_result =
       await competition_team_use_cases.list_teams_in_competition(
         selected_competition_id,
-        { page_number: 1, page_size: 100 }
+        { page_number: 1, page_size: 100 },
       );
     if (comp_teams_result.success) {
       const team_ids = comp_teams_result.data.items.map(
-        (ct: { team_id: string }) => ct.team_id
+        (ct: { team_id: string }) => ct.team_id,
       );
       const teams_promises = team_ids.map((id: string) =>
-        team_use_cases.get_by_id(id)
+        team_use_cases.get_by_id(id),
       );
       const teams_results = await Promise.all(teams_promises);
       teams = [];
@@ -132,7 +147,7 @@
 
     const fixtures_result =
       await fixture_use_cases.list_fixtures_by_competition(
-        selected_competition_id
+        selected_competition_id,
       );
     if (fixtures_result.success) {
       fixtures = fixtures_result.data.items;
@@ -147,7 +162,7 @@
 
   function calculate_standings(
     fixtures: Fixture[],
-    teams: Team[]
+    teams: Team[],
   ): TeamStanding[] {
     const standings_map = new Map<string, TeamStanding>();
 
@@ -352,17 +367,12 @@
             {/each}
           </select>
 
-          {#if selected_competition}
+          {#if selected_competition && selected_competition_status_display}
             <div class="flex items-center gap-2">
               <span
-                class="px-2 py-1 text-xs font-medium rounded-full {selected_competition.status ===
-                'active'
-                  ? 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300'
-                  : selected_competition.status === 'completed'
-                    ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300'
-                    : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/50 dark:text-yellow-300'}"
+                class="px-2 py-1 text-xs font-medium rounded-full {selected_competition_status_display.color}"
               >
-                {selected_competition.status}
+                {selected_competition_status_display.label}
               </span>
               {#if competition_format}
                 <span

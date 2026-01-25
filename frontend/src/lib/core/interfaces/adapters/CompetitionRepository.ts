@@ -1,5 +1,5 @@
 import type { FilterableRepository, QueryOptions } from "./Repository";
-import type { AsyncResult, PaginatedAsyncResult } from "../../types/Result";
+import type { PaginatedAsyncResult } from "../../types/Result";
 import type {
   Competition,
   CreateCompetitionInput,
@@ -25,9 +25,6 @@ export interface CompetitionRepository extends FilterableRepository<
     options?: QueryOptions,
   ): PaginatedAsyncResult<Competition>;
   find_active_competitions(
-    options?: QueryOptions,
-  ): PaginatedAsyncResult<Competition>;
-  find_upcoming_competitions(
     options?: QueryOptions,
   ): PaginatedAsyncResult<Competition>;
 }

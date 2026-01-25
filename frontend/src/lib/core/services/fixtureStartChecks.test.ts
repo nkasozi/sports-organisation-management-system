@@ -544,10 +544,9 @@ function create_test_player(player_id: string) {
 
 function create_mock_official_use_cases(officials: any[]) {
   return {
-    list_officials_for_fixture: async () => ({
+    list_by_fixture: async () => ({
       success: true,
-      data: officials,
-      total_count: officials.length,
+      data: { items: officials, total_count: officials.length },
     }),
   } as any;
 }

@@ -21,34 +21,37 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
   import DynamicEntityList from "./DynamicEntityList.svelte";
   import type { SubEntityFilter } from "$lib/core/types/SubEntityFilter";
   import { build_entity_display_label } from "../logic/dynamicFormLogic";
+  import { detect_jersey_color_clashes } from "../../core/entities/Fixture";
+  import type { JerseyColor } from "../../core/entities/JerseyColor";
+  import type {
+    EntityCrudHandlers,
+    EntityViewCallbacks,
+  } from "$lib/core/types/EntityHandlers";
 
-  // Component props
   export let entity_type: string;
   export let entity_data: Partial<BaseEntity> | null = null;
   export let show_fake_data_button: boolean = true;
   export let is_mobile_view: boolean = true;
   export let is_inline_mode: boolean = false;
+  export let crud_handlers: EntityCrudHandlers | null = null;
+  export let view_callbacks: EntityViewCallbacks | null = null;
+  export let sub_entity_filter: SubEntityFilter | null = null;
 
-  // Event dispatcher for parent communication
+  $: has_custom_handlers = crud_handlers !== null;
+
   const dispatch = createEventDispatcher<{
-    save_success: { entity: BaseEntity };
-    save_error: {
-      error_message: string;
-      validation_errors?: Record<string, string>;
-    };
-    cancel: void;
     inline_save_success: { entity: BaseEntity };
     inline_cancel: void;
   }>();
 
-  // Component state
   let form_data: Record<string, any> = {};
   let validation_errors: Record<string, string> = {};
   let is_loading: boolean = false;
   let is_save_in_progress: boolean = false;
   let foreign_key_options: Record<string, BaseEntity[]> = {};
+  let filtered_fields_loading: Record<string, boolean> = {};
+  let color_clash_warnings: string[] = [];
 
-  // Computed values
   $: entity_metadata = get_entity_metadata_for_type(entity_type);
   $: is_edit_mode = determine_if_edit_mode(entity_data);
   $: form_title = build_form_title(
@@ -57,12 +60,12 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
   );
   $: sub_entity_fields = get_sub_entity_fields(entity_metadata);
 
-  // Initialize form when component mounts or entity changes
   $: {
     if (entity_metadata) {
       initialize_form_data_for_entity(entity_metadata, entity_data);
       if (browser) {
         void load_foreign_key_options_for_all_fields(entity_metadata.fields);
+        void load_filtered_options_for_edit_mode(entity_metadata, entity_data);
       }
     }
   }
@@ -107,6 +110,64 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
       foreign_key_value: parent_entity.id,
       holder_type_field: config.holder_type_field,
       holder_type_value: config.holder_type_value,
+    };
+  }
+
+  function build_sub_entity_crud_handlers(
+    child_entity_type: string,
+    sub_filter: SubEntityFilter,
+  ): EntityCrudHandlers {
+    const child_use_cases = get_use_cases_for_entity_type(child_entity_type);
+
+    if (!child_use_cases) {
+      console.error(
+        `[SUB_ENTITY] No use cases found for child entity type: ${child_entity_type}`,
+      );
+      return {};
+    }
+
+    return {
+      create: async (input: Record<string, unknown>) => {
+        const enriched_input = {
+          ...input,
+          [sub_filter.foreign_key_field]: sub_filter.foreign_key_value,
+        };
+        if (sub_filter.holder_type_field && sub_filter.holder_type_value) {
+          enriched_input[sub_filter.holder_type_field] =
+            sub_filter.holder_type_value;
+        }
+        console.log(
+          `[SUB_ENTITY] Creating ${child_entity_type} with enriched input:`,
+          enriched_input,
+        );
+        return child_use_cases.create(enriched_input);
+      },
+      update: async (id: string, input: Record<string, unknown>) => {
+        console.log(`[SUB_ENTITY] Updating ${child_entity_type} id=${id}`);
+        return child_use_cases.update(id, input);
+      },
+      delete: async (id: string) => {
+        console.log(`[SUB_ENTITY] Deleting ${child_entity_type} id=${id}`);
+        return child_use_cases.delete(id);
+      },
+      list: async (
+        filter?: Record<string, string>,
+        options?: { page_number?: number; page_size?: number },
+      ) => {
+        const merged_filter = {
+          ...filter,
+          [sub_filter.foreign_key_field]: sub_filter.foreign_key_value,
+        };
+        if (sub_filter.holder_type_field && sub_filter.holder_type_value) {
+          merged_filter[sub_filter.holder_type_field] =
+            sub_filter.holder_type_value;
+        }
+        console.log(
+          `[SUB_ENTITY] Listing ${child_entity_type} with filter:`,
+          merged_filter,
+        );
+        return child_use_cases.list(merged_filter, options);
+      },
     };
   }
 
@@ -159,11 +220,38 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
     );
     const visible_fields = renderable_fields.filter((f) => {
       if (!in_edit_mode && f.hide_on_create) return false;
+      if (
+        is_field_controlled_by_sub_entity_filter(
+          f.field_name,
+          sub_entity_filter,
+        )
+      )
+        return false;
       return true;
     });
     const file_fields = visible_fields.filter((f) => f.field_type === "file");
     const other_fields = visible_fields.filter((f) => f.field_type !== "file");
     return [...file_fields, ...other_fields];
+  }
+
+  function is_field_controlled_by_sub_entity_filter(
+    field_name: string,
+    filter: SubEntityFilter | null,
+  ): boolean {
+    if (!filter) return false;
+    if (field_name === filter.foreign_key_field) return true;
+    if (filter.holder_type_field && field_name === filter.holder_type_field)
+      return true;
+    return false;
+  }
+
+  function should_field_be_read_only(field: FieldMetadata): boolean {
+    if (field.is_read_only) return true;
+    if (field.is_read_only_on_edit && is_edit_mode) return true;
+    return is_field_controlled_by_sub_entity_filter(
+      field.field_name,
+      sub_entity_filter,
+    );
   }
 
   function get_input_type_for_field(field: FieldMetadata): string {
@@ -230,6 +318,9 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
 
     for (const field of fields) {
       if (field.field_type === "foreign_key" && field.foreign_key_entity) {
+        if (field.foreign_key_filter) {
+          continue;
+        }
         const options_result = await load_foreign_key_options_for_field(
           field.foreign_key_entity,
         );
@@ -242,7 +333,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
       }
     }
 
-    foreign_key_options = new_options;
+    foreign_key_options = { ...foreign_key_options, ...new_options };
     console.debug("[DEBUG] Loaded foreign_key_options", {
       options: foreign_key_options,
     });
@@ -297,6 +388,205 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
     }
   }
 
+  async function load_filtered_jersey_options(
+    field: FieldMetadata,
+    fixture_id: string,
+  ): Promise<void> {
+    if (!field.foreign_key_filter || !fixture_id) {
+      foreign_key_options[field.field_name] = [];
+      filtered_fields_loading = {
+        ...filtered_fields_loading,
+        [field.field_name]: false,
+      };
+      return;
+    }
+
+    filtered_fields_loading = {
+      ...filtered_fields_loading,
+      [field.field_name]: true,
+    };
+
+    const filter_config = field.foreign_key_filter;
+    const fixture_use_cases = get_use_cases_for_entity_type("fixture");
+    const jersey_use_cases = get_use_cases_for_entity_type("jerseycolor");
+
+    if (!fixture_use_cases || !jersey_use_cases) {
+      console.warn("[FILTERED_FK] Missing use cases for filtered foreign key");
+      filtered_fields_loading = {
+        ...filtered_fields_loading,
+        [field.field_name]: false,
+      };
+      return;
+    }
+
+    const fixture_result = await fixture_use_cases.get_by_id(fixture_id);
+    if (!fixture_result.success || !fixture_result.data) {
+      console.warn("[FILTERED_FK] Could not load fixture:", fixture_id);
+      filtered_fields_loading = {
+        ...filtered_fields_loading,
+        [field.field_name]: false,
+      };
+      return;
+    }
+
+    const fixture = fixture_result.data as any;
+    let filter_holder_id = "";
+    let filter_holder_type = "";
+
+    if (filter_config.filter_type === "team_jersey_from_fixture") {
+      filter_holder_type = "team";
+      filter_holder_id =
+        filter_config.team_side === "home"
+          ? fixture.home_team_id
+          : fixture.away_team_id;
+    } else if (
+      filter_config.filter_type === "official_jersey_from_competition"
+    ) {
+      filter_holder_type = "competition_official";
+      filter_holder_id = fixture.competition_id;
+    }
+
+    if (!filter_holder_id) {
+      console.warn("[FILTERED_FK] No holder ID found for filter");
+      foreign_key_options[field.field_name] = [];
+      filtered_fields_loading = {
+        ...filtered_fields_loading,
+        [field.field_name]: false,
+      };
+      return;
+    }
+
+    const jersey_result = await jersey_use_cases.list({
+      holder_type: filter_holder_type,
+      holder_id: filter_holder_id,
+    });
+
+    if (jersey_result.success) {
+      const data = jersey_result.data as unknown;
+      const jerseys: BaseEntity[] = Array.isArray(data)
+        ? (data as BaseEntity[])
+        : Array.isArray((data as { items?: unknown })?.items)
+          ? ((data as { items: unknown[] }).items as unknown as BaseEntity[])
+          : [];
+
+      console.debug("[FILTERED_FK] Loaded filtered jersey options", {
+        field: field.field_name,
+        filter_type: filter_config.filter_type,
+        holder_type: filter_holder_type,
+        holder_id: filter_holder_id,
+        count: jerseys.length,
+      });
+
+      foreign_key_options = {
+        ...foreign_key_options,
+        [field.field_name]: jerseys,
+      };
+    }
+
+    filtered_fields_loading = {
+      ...filtered_fields_loading,
+      [field.field_name]: false,
+    };
+    check_jersey_color_clashes();
+  }
+
+  async function handle_dependency_field_change(
+    changed_field_name: string,
+    new_value: string,
+  ): Promise<void> {
+    if (!entity_metadata) return;
+
+    for (const field of entity_metadata.fields) {
+      if (
+        field.foreign_key_filter &&
+        field.foreign_key_filter.depends_on_field === changed_field_name
+      ) {
+        form_data[field.field_name] = "";
+        await load_filtered_jersey_options(field, new_value);
+      }
+    }
+
+    if (changed_field_name.includes("jersey")) {
+      check_jersey_color_clashes();
+    }
+  }
+
+  async function load_filtered_options_for_edit_mode(
+    metadata: EntityMetadata,
+    data: Partial<BaseEntity> | null,
+  ): Promise<void> {
+    if (!data || !data.id) return;
+
+    for (const field of metadata.fields) {
+      if (field.foreign_key_filter) {
+        const dependency_field = field.foreign_key_filter.depends_on_field;
+        const dependency_value = (data as Record<string, unknown>)[
+          dependency_field
+        ];
+        if (dependency_value && typeof dependency_value === "string") {
+          await load_filtered_jersey_options(field, dependency_value);
+        }
+      }
+    }
+  }
+
+  function check_jersey_color_clashes(): void {
+    if (entity_type.toLowerCase() !== "fixturemanagement") {
+      color_clash_warnings = [];
+      return;
+    }
+
+    const home_jersey_id = form_data["home_team_jersey_id"];
+    const away_jersey_id = form_data["away_team_jersey_id"];
+    const official_jersey_id = form_data["official_jersey_id"];
+
+    const home_jerseys = foreign_key_options["home_team_jersey_id"] || [];
+    const away_jerseys = foreign_key_options["away_team_jersey_id"] || [];
+    const official_jerseys = foreign_key_options["official_jersey_id"] || [];
+
+    const home_jersey = home_jerseys.find((j) => j.id === home_jersey_id) as
+      | JerseyColor
+      | undefined;
+    const away_jersey = away_jerseys.find((j) => j.id === away_jersey_id) as
+      | JerseyColor
+      | undefined;
+    const official_jersey = official_jerseys.find(
+      (j) => j.id === official_jersey_id,
+    ) as JerseyColor | undefined;
+
+    const home_assignment = home_jersey
+      ? {
+          jersey_color_id: home_jersey.id,
+          nickname: home_jersey.nickname,
+          main_color: home_jersey.main_color,
+        }
+      : undefined;
+    const away_assignment = away_jersey
+      ? {
+          jersey_color_id: away_jersey.id,
+          nickname: away_jersey.nickname,
+          main_color: away_jersey.main_color,
+        }
+      : undefined;
+    const official_assignment = official_jersey
+      ? {
+          jersey_color_id: official_jersey.id,
+          nickname: official_jersey.nickname,
+          main_color: official_jersey.main_color,
+        }
+      : undefined;
+
+    const warnings = detect_jersey_color_clashes(
+      home_assignment,
+      away_assignment,
+      official_assignment,
+      "Home Team",
+      "Away Team",
+    );
+
+    color_clash_warnings = warnings.map((w) => w.message);
+  }
+
   async function handle_form_submission(): Promise<void> {
     if (!entity_metadata) return;
 
@@ -316,53 +606,79 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
     try {
       let save_result: EntityOperationResult<BaseEntity>;
 
-      const normalized_type = entity_type.toLowerCase();
-      const use_cases = get_use_cases_for_entity_type(normalized_type);
-
-      if (!use_cases) {
-        console.error(`No use cases found for entity type: ${entity_type}`);
-        is_save_in_progress = false;
-        return;
-      }
-
       if (is_edit_mode && entity_data?.id) {
-        if (typeof use_cases.update !== "function") {
-          console.error(
-            `Method update not found on use cases for ${entity_type}`,
+        if (crud_handlers?.update) {
+          console.log(
+            `[ENTITY_FORM] Using custom update handler for "${entity_type}"`,
           );
-          is_save_in_progress = false;
-          return;
+          save_result = await crud_handlers.update(entity_data.id, form_data);
+        } else {
+          const normalized_type = entity_type.toLowerCase();
+          const use_cases = get_use_cases_for_entity_type(normalized_type);
+          if (!use_cases) {
+            console.error(`No use cases found for entity type: ${entity_type}`);
+            is_save_in_progress = false;
+            return;
+          }
+          if (typeof use_cases.update !== "function") {
+            console.error(
+              `Method update not found on use cases for ${entity_type}`,
+            );
+            is_save_in_progress = false;
+            return;
+          }
+          save_result = await use_cases.update(entity_data.id, form_data);
         }
-        save_result = await use_cases.update(entity_data.id, form_data);
       } else {
-        if (typeof use_cases.create !== "function") {
-          console.error(
-            `Method create not found on use cases for ${entity_type}`,
+        if (crud_handlers?.create) {
+          console.log(
+            `[ENTITY_FORM] Using custom create handler for "${entity_type}"`,
           );
-          is_save_in_progress = false;
-          return;
+          save_result = await crud_handlers.create(form_data);
+        } else {
+          const normalized_type = entity_type.toLowerCase();
+          const use_cases = get_use_cases_for_entity_type(normalized_type);
+          if (!use_cases) {
+            console.error(`No use cases found for entity type: ${entity_type}`);
+            is_save_in_progress = false;
+            return;
+          }
+          if (typeof use_cases.create !== "function") {
+            console.error(
+              `Method create not found on use cases for ${entity_type}`,
+            );
+            is_save_in_progress = false;
+            return;
+          }
+          save_result = await use_cases.create(form_data);
         }
-        save_result = await use_cases.create(form_data);
       }
 
       is_save_in_progress = false;
 
       if (save_result.success && save_result.data) {
-        const event_name = is_inline_mode
-          ? "inline_save_success"
-          : "save_success";
-        dispatch(event_name, { entity: save_result.data });
+        const saved_entity = save_result.data;
+        const was_new_entity = !is_edit_mode;
+
+        if (is_inline_mode) {
+          dispatch("inline_save_success", { entity: saved_entity });
+        } else if (view_callbacks?.on_save_completed) {
+          console.debug(
+            "[DynamicEntityForm] Calling on_save_completed callback",
+          );
+          view_callbacks.on_save_completed(saved_entity, was_new_entity);
+        }
       } else {
-        dispatch("save_error", {
-          error_message: save_result.error_message || "Unknown error occurred",
-          validation_errors: save_result.validation_errors,
-        });
+        const error_msg = save_result.error_message || "Unknown error occurred";
+        console.error("[DynamicEntityForm] Save failed:", error_msg);
+        validation_errors = save_result.validation_errors || {};
       }
     } catch (error) {
       is_save_in_progress = false;
-      dispatch("save_error", {
-        error_message: `Failed to save ${entity_metadata.display_name}: ${error}`,
-      });
+      console.error(
+        `[DynamicEntityForm] Failed to save ${entity_metadata.display_name}:`,
+        error,
+      );
     }
   }
 
@@ -454,8 +770,12 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
   }
 
   function handle_cancel_action(): void {
-    const event_name = is_inline_mode ? "inline_cancel" : "cancel";
-    dispatch(event_name);
+    if (is_inline_mode) {
+      dispatch("inline_cancel");
+    } else if (view_callbacks?.on_cancel) {
+      console.debug("[DynamicEntityForm] Calling on_cancel callback");
+      view_callbacks.on_cancel();
+    }
   }
 
   function handle_generate_fake_data(): void {
@@ -694,7 +1014,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
                       class="hidden"
                       on:change={(e) =>
                         handle_file_input_change(e, field.field_name)}
-                      disabled={field.is_read_only}
+                      disabled={should_field_be_read_only(field)}
                     />
                   </div>
                   <span class="text-xs text-accent-500 dark:text-accent-300"
@@ -717,7 +1037,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
                       file:cursor-pointer cursor-pointer file:transition-colors"
                     on:change={(e) =>
                       handle_file_input_change(e, field.field_name)}
-                    disabled={field.is_read_only}
+                    disabled={should_field_be_read_only(field)}
                   />
                   {#if form_data[field.field_name]}
                     <img
@@ -737,7 +1057,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
                     class="input min-h-[100px]"
                     bind:value={form_data[field.field_name]}
                     placeholder={field.placeholder || field.display_name}
-                    readonly={field.is_read_only}
+                    readonly={should_field_be_read_only(field)}
                     rows="4"
                   ></textarea>
                 {:else if field.field_name.toLowerCase().includes("color")}
@@ -747,7 +1067,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
                       type="color"
                       class="w-10 h-10 p-0 border-0 bg-transparent cursor-pointer rounded shadow"
                       bind:value={form_data[field.field_name]}
-                      disabled={field.is_read_only}
+                      disabled={should_field_be_read_only(field)}
                     />
                     <input
                       id={`field_${field.field_name}`}
@@ -755,7 +1075,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
                       class="input w-32"
                       bind:value={form_data[field.field_name]}
                       placeholder="#RRGGBB or rgb()"
-                      readonly={field.is_read_only}
+                      readonly={should_field_be_read_only(field)}
                     />
                     <span
                       class="inline-block w-8 h-8 rounded border border-gray-300 dark:border-gray-600 shadow-sm"
@@ -772,7 +1092,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
                       class="input"
                       bind:value={form_data[field.field_name]}
                       placeholder={field.placeholder || field.display_name}
-                      readonly={field.is_read_only}
+                      readonly={should_field_be_read_only(field)}
                     />
                     {#if form_data[field.field_name]}
                       <img
@@ -790,7 +1110,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
                     class="input"
                     bind:value={form_data[field.field_name]}
                     placeholder={field.placeholder || field.display_name}
-                    readonly={field.is_read_only}
+                    readonly={should_field_be_read_only(field)}
                   />
                 {/if}
 
@@ -802,7 +1122,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
                   class="input"
                   bind:value={form_data[field.field_name]}
                   placeholder={field.placeholder || field.display_name}
-                  readonly={field.is_read_only}
+                  readonly={should_field_be_read_only(field)}
                   min={field.field_name.includes("age") ||
                   field.field_name.includes("number") ||
                   field.field_name.includes("order")
@@ -824,7 +1144,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
                     type="checkbox"
                     class="w-5 h-5 text-secondary-600 dark:text-secondary-400 border-gray-300 dark:border-gray-600 rounded focus:ring-secondary-500 dark:focus:ring-secondary-400 cursor-pointer"
                     bind:checked={form_data[field.field_name]}
-                    disabled={field.is_read_only}
+                    disabled={should_field_be_read_only(field)}
                   />
                   <label
                     for={`field_${field.field_name}`}
@@ -841,7 +1161,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
                   type="date"
                   class="input"
                   bind:value={form_data[field.field_name]}
-                  readonly={field.is_read_only}
+                  readonly={should_field_be_read_only(field)}
                 />
 
                 <!-- Enum field (dropdown) -->
@@ -853,7 +1173,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
                   options={build_enum_select_options(field)}
                   placeholder={`Select ${field.display_name}`}
                   required={field.is_required}
-                  disabled={field.is_read_only}
+                  disabled={should_field_be_read_only(field)}
                   error={validation_errors[field.field_name] || ""}
                   on:change={(event) =>
                     update_form_field_value(
@@ -872,19 +1192,29 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
                     field,
                     foreign_key_options,
                   )}
-                  placeholder={`Select ${field.display_name}`}
+                  placeholder={field.foreign_key_filter &&
+                  !form_data[field.foreign_key_filter.depends_on_field]
+                    ? `First select ${field.foreign_key_filter.depends_on_field.replace("_id", "")}`
+                    : `Select ${field.display_name}`}
                   required={field.is_required}
-                  disabled={field.is_read_only}
+                  disabled={should_field_be_read_only(field) ||
+                    (field.foreign_key_filter &&
+                      !form_data[field.foreign_key_filter.depends_on_field])}
                   error={validation_errors[field.field_name] || ""}
                   {is_loading}
-                  on:change={(event) =>
+                  on:change={(event) => {
                     update_form_field_value(
                       field.field_name,
                       event.detail.value,
-                    )}
+                    );
+                    handle_dependency_field_change(
+                      field.field_name,
+                      event.detail.value,
+                    );
+                  }}
                 />
 
-                {#if !is_loading && get_foreign_key_option_count(field.field_name) === 0}
+                {#if !is_loading && get_foreign_key_option_count(field.field_name) === 0 && !field.foreign_key_filter}
                   <div
                     class="mt-2 p-3 rounded-lg border border-yellow-200 dark:border-yellow-800 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-900 dark:text-yellow-100"
                   >
@@ -914,6 +1244,18 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
                       </div>
                     {/if}
                   </div>
+                {:else if !is_loading && !filtered_fields_loading[field.field_name] && get_foreign_key_option_count(field.field_name) === 0 && field.foreign_key_filter && form_data[field.foreign_key_filter.depends_on_field]}
+                  <div
+                    class="mt-2 p-3 rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20 text-blue-900 dark:text-blue-100"
+                  >
+                    <div class="text-sm">
+                      No {field.display_name.toLowerCase()} found for the selected
+                      {field.foreign_key_filter.depends_on_field.replace(
+                        "_id",
+                        "",
+                      )}.
+                    </div>
+                  </div>
                 {/if}
               {/if}
 
@@ -934,6 +1276,13 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
               sub_entity_field,
               entity_data,
             )}
+            {@const sub_entity_handlers =
+              sub_filter && sub_entity_field.sub_entity_config
+                ? build_sub_entity_crud_handlers(
+                    sub_entity_field.sub_entity_config.child_entity_type,
+                    sub_filter,
+                  )
+                : null}
             <div
               class="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700"
             >
@@ -947,7 +1296,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
                   entity_type={sub_entity_field.sub_entity_config
                     .child_entity_type}
                   sub_entity_filter={sub_filter}
-                  compact_mode={true}
+                  crud_handlers={sub_entity_handlers}
                   show_actions={true}
                 />
               {/if}
@@ -963,6 +1312,43 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
             </div>
           {/if}
         {/each}
+
+        <!-- Jersey Color Clash Warnings -->
+        {#if color_clash_warnings.length > 0}
+          <div
+            class="mt-4 p-4 rounded-lg border border-orange-300 dark:border-orange-600 bg-orange-50 dark:bg-orange-900/30"
+          >
+            <div class="flex items-start gap-3">
+              <svg
+                class="w-5 h-5 text-orange-600 dark:text-orange-400 flex-shrink-0 mt-0.5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                />
+              </svg>
+              <div>
+                <div
+                  class="text-sm font-semibold text-orange-800 dark:text-orange-200"
+                >
+                  Jersey Color Clash Detected
+                </div>
+                <ul
+                  class="mt-1 text-sm text-orange-700 dark:text-orange-300 list-disc list-inside"
+                >
+                  {#each color_clash_warnings as warning}
+                    <li>{warning}</li>
+                  {/each}
+                </ul>
+              </div>
+            </div>
+          </div>
+        {/if}
 
         <!-- Form action buttons with secondary color theme -->
         <div

@@ -54,6 +54,12 @@ export interface AssignedOfficial {
   role_name: string;
 }
 
+export interface JerseyColorAssignment {
+  jersey_color_id: string;
+  main_color: string;
+  nickname: string;
+}
+
 export interface Fixture extends BaseEntity {
   competition_id: string;
   round_number: number;
@@ -74,6 +80,9 @@ export interface Fixture extends BaseEntity {
   status: FixtureStatus;
   home_team_name?: string;
   away_team_name?: string;
+  home_team_jersey?: JerseyColorAssignment;
+  away_team_jersey?: JerseyColorAssignment;
+  officials_jersey?: JerseyColorAssignment;
 }
 
 export type CreateFixtureInput = Omit<
@@ -510,4 +519,91 @@ export function get_period_display_name(period: GamePeriod): string {
     finished: "Full Time",
   };
   return names[period];
+}
+
+export interface ColorClashWarning {
+  party_a: string;
+  party_b: string;
+  color: string;
+  message: string;
+}
+
+export function detect_jersey_color_clashes(
+  home_team_jersey: JerseyColorAssignment | undefined,
+  away_team_jersey: JerseyColorAssignment | undefined,
+  officials_jersey: JerseyColorAssignment | undefined,
+  home_team_name: string,
+  away_team_name: string,
+): ColorClashWarning[] {
+  const warnings: ColorClashWarning[] = [];
+
+  function normalize_color(color: string): string {
+    return color.toLowerCase().trim().replace(/\s+/g, "");
+  }
+
+  function colors_match(
+    color_a: string | undefined,
+    color_b: string | undefined,
+  ): boolean {
+    if (!color_a || !color_b) return false;
+    return normalize_color(color_a) === normalize_color(color_b);
+  }
+
+  if (home_team_jersey && away_team_jersey) {
+    if (
+      colors_match(home_team_jersey.main_color, away_team_jersey.main_color)
+    ) {
+      warnings.push({
+        party_a: home_team_name,
+        party_b: away_team_name,
+        color: home_team_jersey.main_color,
+        message: `${home_team_name} and ${away_team_name} have the same main jersey color (${home_team_jersey.main_color})`,
+      });
+    }
+  }
+
+  if (home_team_jersey && officials_jersey) {
+    if (
+      colors_match(home_team_jersey.main_color, officials_jersey.main_color)
+    ) {
+      warnings.push({
+        party_a: home_team_name,
+        party_b: "Officials",
+        color: home_team_jersey.main_color,
+        message: `${home_team_name} and Officials have the same main jersey color (${home_team_jersey.main_color})`,
+      });
+    }
+  }
+
+  if (away_team_jersey && officials_jersey) {
+    if (
+      colors_match(away_team_jersey.main_color, officials_jersey.main_color)
+    ) {
+      warnings.push({
+        party_a: away_team_name,
+        party_b: "Officials",
+        color: away_team_jersey.main_color,
+        message: `${away_team_name} and Officials have the same main jersey color (${away_team_jersey.main_color})`,
+      });
+    }
+  }
+
+  return warnings;
+}
+
+export function has_color_clashes(
+  home_team_jersey: JerseyColorAssignment | undefined,
+  away_team_jersey: JerseyColorAssignment | undefined,
+  officials_jersey: JerseyColorAssignment | undefined,
+  home_team_name: string,
+  away_team_name: string,
+): boolean {
+  const warnings = detect_jersey_color_clashes(
+    home_team_jersey,
+    away_team_jersey,
+    officials_jersey,
+    home_team_name,
+    away_team_name,
+  );
+  return warnings.length > 0;
 }

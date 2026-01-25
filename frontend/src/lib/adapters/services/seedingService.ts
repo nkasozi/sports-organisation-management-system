@@ -34,6 +34,10 @@ import {
   get_venue_repository,
   InMemoryVenueRepository,
 } from "../repositories/InMemoryVenueRepository";
+import {
+  get_jersey_color_repository,
+  InMemoryJerseyColorRepository,
+} from "../repositories/InMemoryJerseyColorRepository";
 import { get_repository_container } from "../../infrastructure/container";
 import {
   create_seed_players,
@@ -44,6 +48,7 @@ import {
   create_seed_officials,
   create_seed_fixtures,
   create_seed_venues,
+  create_seed_jersey_colors,
   SEED_ORGANIZATION_IDS,
 } from "../../infrastructure/utils/SeedDataGenerator";
 import type { PlayerPosition } from "../../core/entities/PlayerPosition";
@@ -437,6 +442,24 @@ export async function seed_all_data_if_needed(): Promise<boolean> {
       "fixture",
       seed_fixtures,
       (f) => `${f.venue} - Round ${f.round_number}`,
+    );
+  }
+
+  const jersey_color_repository =
+    get_jersey_color_repository() as InMemoryJerseyColorRepository;
+  const existing_jersey_colors = await jersey_color_repository.find_all({
+    page_size: 1,
+  });
+  if (
+    !existing_jersey_colors.success ||
+    existing_jersey_colors.data.total_count === 0
+  ) {
+    const seed_jersey_colors = create_seed_jersey_colors();
+    jersey_color_repository.seed_with_data(seed_jersey_colors);
+    emit_entity_created_events(
+      "jersey_color",
+      seed_jersey_colors,
+      (j) => `${j.nickname} (${j.main_color})`,
     );
   }
 

@@ -1,5 +1,5 @@
 import type { Fixture } from "../entities/Fixture";
-import type { FixtureOfficialUseCases } from "../usecases/FixtureOfficialUseCases";
+import type { FixtureManagementUseCases } from "../usecases/FixtureManagementUseCases";
 import type { FixtureLineupUseCases } from "../usecases/FixtureLineupUseCases";
 import type { PlayerTeamMembershipUseCases } from "../usecases/PlayerTeamMembershipUseCases";
 import type { PlayerUseCases } from "../usecases/PlayerUseCases";
@@ -40,17 +40,18 @@ export interface LineupGenerationResult {
 
 export async function check_fixture_can_start(
   fixture: Fixture,
-  official_use_cases: FixtureOfficialUseCases,
+  official_use_cases: FixtureManagementUseCases,
   lineup_use_cases: FixtureLineupUseCases,
 ): Promise<FixtureCanStartResult> {
   if (!fixture.id) {
     throw new Error("Fixture must have an ID");
   }
 
-  const officials_result = await official_use_cases.list_officials_for_fixture(
-    fixture.id,
-  );
-  const officials = officials_result.data || [];
+  const officials_result = await official_use_cases.list_by_fixture(fixture.id);
+  const officials =
+    officials_result.success && officials_result.data
+      ? officials_result.data.items
+      : [];
 
   const officials_check: PreFlightCheck = {
     check_name: "officials",

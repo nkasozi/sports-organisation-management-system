@@ -6,15 +6,19 @@
     current_user_store,
     current_user_display_name,
     current_user_initials,
-    current_user_role_display
+    current_user_role_display,
   } from "$lib/presentation/stores/currentUser";
 
   export let sidebar_open = false;
 
   const dispatch = createEventDispatcher();
 
-  $: has_custom_logo = $branding_store.organization_logo_url && $branding_store.organization_logo_url.length > 0;
-  $: has_profile_picture = $current_user_store?.profile_picture_base64 && $current_user_store.profile_picture_base64.length > 0;
+  $: has_custom_logo =
+    $branding_store.organization_logo_url &&
+    $branding_store.organization_logo_url.length > 0;
+  $: has_profile_picture =
+    $current_user_store?.profile_picture_base64 &&
+    $current_user_store.profile_picture_base64.length > 0;
 
   function split_organization_name(name: string): {
     prefix: string;
@@ -159,8 +163,8 @@
           icon: "M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01",
         },
         {
-          name: "Match Officials",
-          href: "/fixture-officials",
+          name: "Fixture Management",
+          href: "/fixture-management",
           icon: "M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z",
         },
         {
@@ -197,7 +201,7 @@
     },
   ];
 
-  const navigation_items = navigation_groups.flatMap(group => group.items);
+  const navigation_items = navigation_groups.flatMap((group) => group.items);
 
   // Settings items
   const settings_items = [
@@ -253,7 +257,9 @@
       {#if sidebar_open}
         <div class="flex items-center space-x-3">
           <div
-            class="h-8 w-8 rounded-lg flex items-center justify-center overflow-hidden {has_custom_logo ? '' : 'bg-theme-secondary-600'}"
+            class="h-8 w-8 rounded-lg flex items-center justify-center overflow-hidden {has_custom_logo
+              ? ''
+              : 'bg-theme-secondary-600'}"
           >
             {#if has_custom_logo}
               <img
@@ -340,7 +346,9 @@
 
         {#if sidebar_open && group.group_name !== "Home"}
           <div class="px-2 pt-2 pb-1">
-            <span class="text-xs font-semibold uppercase tracking-wider text-accent-400 dark:text-accent-500">
+            <span
+              class="text-xs font-semibold uppercase tracking-wider text-accent-400 dark:text-accent-500"
+            >
               {group.group_name}
             </span>
           </div>
@@ -435,8 +443,12 @@
       {#if sidebar_open}
         <div class="flex items-center space-x-3">
           <div
-            class="h-8 w-8 rounded-full flex items-center justify-center overflow-hidden {has_profile_picture ? '' : ''}"
-            style="background-color: {has_profile_picture ? 'transparent' : 'var(--color-secondary-600)'};"
+            class="h-8 w-8 rounded-full flex items-center justify-center overflow-hidden {has_profile_picture
+              ? ''
+              : ''}"
+            style="background-color: {has_profile_picture
+              ? 'transparent'
+              : 'var(--color-secondary-600)'};"
           >
             {#if has_profile_picture}
               <img
@@ -445,7 +457,9 @@
                 class="h-full w-full object-cover"
               />
             {:else}
-              <span class="text-white font-medium text-sm">{$current_user_initials}</span>
+              <span class="text-white font-medium text-sm"
+                >{$current_user_initials}</span
+              >
             {/if}
           </div>
           <div class="flex-1 min-w-0">
@@ -462,7 +476,9 @@
       {:else}
         <div
           class="h-8 w-8 rounded-full flex items-center justify-center mx-auto overflow-hidden"
-          style="background-color: {has_profile_picture ? 'transparent' : 'var(--color-secondary-600)'};"
+          style="background-color: {has_profile_picture
+            ? 'transparent'
+            : 'var(--color-secondary-600)'};"
         >
           {#if has_profile_picture}
             <img
@@ -471,7 +487,9 @@
               class="h-full w-full object-cover"
             />
           {:else}
-            <span class="text-white font-medium text-sm">{$current_user_initials}</span>
+            <span class="text-white font-medium text-sm"
+              >{$current_user_initials}</span
+            >
           {/if}
         </div>
       {/if}

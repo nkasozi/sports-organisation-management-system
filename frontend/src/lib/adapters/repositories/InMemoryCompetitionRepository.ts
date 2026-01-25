@@ -128,12 +128,6 @@ export class InMemoryCompetitionRepository
   ): PaginatedAsyncResult<Competition> {
     return this.find_by_filter({ status: "active" }, options);
   }
-
-  async find_upcoming_competitions(
-    options?: QueryOptions,
-  ): PaginatedAsyncResult<Competition> {
-    return this.find_by_filter({ status: "upcoming" }, options);
-  }
 }
 
 function create_default_competitions(): Competition[] {
@@ -158,7 +152,7 @@ function create_default_competitions(): Competition[] {
       entry_fee: 500,
       prize_pool: 10000,
       location: "City Stadium",
-      status: "upcoming",
+      status: "active",
       rule_overrides: {},
       competition_format_id: "format_standard_league",
       created_at: now,
@@ -198,7 +192,7 @@ function create_default_competitions(): Competition[] {
       entry_fee: 750,
       prize_pool: 15000,
       location: "Arena Sports Complex",
-      status: "upcoming",
+      status: "active",
       rule_overrides: {},
       competition_format_id: "format_standard_league",
       created_at: now,
@@ -218,7 +212,7 @@ function create_default_competitions(): Competition[] {
       entry_fee: 2500,
       prize_pool: 50000,
       location: "International Hockey Stadium",
-      status: "upcoming",
+      status: "active",
       rule_overrides: {},
       competition_format_id: "format_standard_league",
       created_at: now,

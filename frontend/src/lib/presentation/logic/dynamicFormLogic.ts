@@ -185,6 +185,17 @@ export function validate_field_against_rules(
 export function build_entity_display_label(entity: BaseEntity): string {
   const record = entity as unknown as Record<string, unknown>;
 
+  const nickname = record["nickname"];
+  const main_color = record["main_color"];
+  if (
+    typeof nickname === "string" &&
+    nickname.trim() !== "" &&
+    typeof main_color === "string" &&
+    main_color.trim() !== ""
+  ) {
+    return `${nickname} - ${main_color}`;
+  }
+
   const name = record["name"];
   if (typeof name === "string" && name.trim() !== "") return name;
 

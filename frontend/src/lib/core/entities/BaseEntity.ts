@@ -34,14 +34,26 @@ export interface FieldMetadata<T extends BaseEntity = any> {
     | "sub_entity";
   is_required: boolean;
   is_read_only: boolean;
+  is_read_only_on_edit?: boolean;
   show_in_list?: boolean;
   show_in_form?: boolean;
   hide_on_create?: boolean;
   placeholder?: string;
   enum_values?: string[];
   foreign_key_entity?: string;
+  foreign_key_filter?: ForeignKeyFilterConfig;
   validation_rules?: ValidationRule[];
   sub_entity_config?: SubEntityConfig;
+}
+
+export interface ForeignKeyFilterConfig {
+  depends_on_field: string;
+  filter_type:
+    | "team_jersey_from_fixture"
+    | "official_jersey_from_competition"
+    | "holder_type_filter";
+  holder_type?: string;
+  team_side?: "home" | "away";
 }
 
 export interface SubEntityConfig {

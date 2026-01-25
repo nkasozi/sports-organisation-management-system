@@ -1,4 +1,4 @@
-import type { BaseEntity } from "./BaseEntity";
+import type { BaseEntity, EntityStatus } from "./BaseEntity";
 import type {
   CardType,
   FoulCategory,
@@ -9,11 +9,7 @@ import type {
   SubstitutionRule,
 } from "./Sport";
 
-export type CompetitionStatus =
-  | "upcoming"
-  | "active"
-  | "completed"
-  | "cancelled";
+export type CompetitionDerivedStatus = "upcoming" | "active" | "completed";
 
 export interface CompetitionRuleOverrides {
   game_duration_minutes?: number;
@@ -45,7 +41,48 @@ export interface Competition extends BaseEntity {
   prize_pool: number;
   location: string;
   rule_overrides: CompetitionRuleOverrides;
-  status: CompetitionStatus;
+  status: EntityStatus;
+}
+
+export function derive_competition_status(
+  start_date: string,
+  end_date: string,
+  reference_date: Date = new Date(),
+): CompetitionDerivedStatus {
+  const start = new Date(start_date);
+  const end = new Date(end_date);
+  const today = new Date(reference_date.toISOString().split("T")[0]);
+
+  if (today < start) {
+    return "upcoming";
+  }
+  if (today > end) {
+    return "completed";
+  }
+  return "active";
+}
+
+export function get_competition_status_display(
+  status: CompetitionDerivedStatus,
+): { label: string; color: string } {
+  switch (status) {
+    case "upcoming":
+      return {
+        label: "Upcoming",
+        color: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300",
+      };
+    case "active":
+      return {
+        label: "Active",
+        color:
+          "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300",
+      };
+    case "completed":
+      return {
+        label: "Completed",
+        color: "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300",
+      };
+  }
 }
 
 export type CreateCompetitionInput = Omit<
@@ -84,7 +121,7 @@ export function create_empty_competition_input(
     prize_pool: 0,
     location: "",
     rule_overrides: {},
-    status: "upcoming",
+    status: "active",
   };
 }
 

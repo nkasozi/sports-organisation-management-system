@@ -24,9 +24,10 @@ import type { Venue } from "../../core/entities/Venue";
 import type { Qualification } from "../../core/entities/Qualification";
 import type { IdentificationType } from "../../core/entities/IdentificationType";
 import type { Identification } from "../../core/entities/Identification";
-import type { FixtureOfficial } from "../../core/entities/FixtureOfficial";
+import type { FixtureManagement } from "../../core/entities/FixtureManagement";
 import type { SystemUser } from "../../core/entities/SystemUser";
 import type { AuditLog } from "../../core/entities/AuditLog";
+import type { JerseyColor } from "../../core/entities/JerseyColor";
 
 function generate_30_minute_time_intervals(): string[] {
   const intervals: string[] = [];
@@ -552,7 +553,7 @@ class EntityMetadataRegistry {
     this.register_active_game_metadata();
     this.register_sport_metadata();
     this.register_fixture_lineup_metadata();
-    this.register_fixture_official_metadata();
+    this.register_fixture_management_metadata();
     this.register_competition_format_metadata();
     this.register_game_event_type_metadata();
     this.register_game_official_role_metadata();
@@ -561,6 +562,7 @@ class EntityMetadataRegistry {
     this.register_venue_metadata();
     this.register_identification_type_metadata();
     this.register_identification_metadata();
+    this.register_jersey_color_metadata();
     this.register_system_user_metadata();
     this.register_audit_log_metadata();
   }
@@ -710,15 +712,6 @@ class EntityMetadataRegistry {
           show_in_list: true,
         },
         {
-          field_name: "status" satisfies keyof Competition,
-          display_name: "Status",
-          field_type: "enum",
-          is_required: true,
-          is_read_only: false,
-          enum_values: ["upcoming", "active", "completed", "cancelled"],
-          show_in_list: true,
-        },
-        {
           field_name: "max_teams" satisfies keyof Competition,
           display_name: "Maximum Teams",
           field_type: "number",
@@ -738,6 +731,20 @@ class EntityMetadataRegistry {
           field_type: "date",
           is_required: true,
           is_read_only: false,
+        },
+        {
+          field_name: "official_jersey_colors",
+          display_name: "Official Jersey Colors",
+          field_type: "sub_entity",
+          is_required: false,
+          is_read_only: false,
+          show_in_list: false,
+          sub_entity_config: {
+            child_entity_type: "jerseycolor",
+            foreign_key_field: "holder_id",
+            holder_type_field: "holder_type",
+            holder_type_value: "competition_official",
+          },
         },
       ],
     });
@@ -906,6 +913,20 @@ class EntityMetadataRegistry {
           is_read_only: false,
           enum_values: ["active", "inactive", "disqualified"],
           show_in_list: true,
+        },
+        {
+          field_name: "jersey_colors",
+          display_name: "Jersey Colors",
+          field_type: "sub_entity",
+          is_required: false,
+          is_read_only: false,
+          show_in_list: false,
+          sub_entity_config: {
+            child_entity_type: "jerseycolor",
+            foreign_key_field: "holder_id",
+            holder_type_field: "holder_type",
+            holder_type_value: "team",
+          },
         },
       ],
     });
@@ -1696,22 +1717,23 @@ class EntityMetadataRegistry {
     });
   }
 
-  private register_fixture_official_metadata(): void {
-    this.metadata_map.set("fixtureofficial", {
-      entity_name: "fixtureofficial",
-      display_name: "Fixture Official",
+  private register_fixture_management_metadata(): void {
+    this.metadata_map.set("fixturemanagement", {
+      entity_name: "fixturemanagement",
+      display_name: "Fixture Management",
       fields: [
         {
-          field_name: "fixture_id" satisfies keyof FixtureOfficial,
+          field_name: "fixture_id" satisfies keyof FixtureManagement,
           display_name: "Fixture",
           field_type: "foreign_key",
           foreign_key_entity: "fixture",
           is_required: true,
           is_read_only: false,
+          is_read_only_on_edit: true,
           show_in_list: true,
         },
         {
-          field_name: "official_id" satisfies keyof FixtureOfficial,
+          field_name: "official_id" satisfies keyof FixtureManagement,
           display_name: "Official",
           field_type: "foreign_key",
           foreign_key_entity: "official",
@@ -1720,7 +1742,7 @@ class EntityMetadataRegistry {
           show_in_list: true,
         },
         {
-          field_name: "role_id" satisfies keyof FixtureOfficial,
+          field_name: "role_id" satisfies keyof FixtureManagement,
           display_name: "Official Role",
           field_type: "foreign_key",
           foreign_key_entity: "gameofficialrole",
@@ -1729,7 +1751,48 @@ class EntityMetadataRegistry {
           show_in_list: true,
         },
         {
-          field_name: "assignment_notes" satisfies keyof FixtureOfficial,
+          field_name: "home_team_jersey_id" satisfies keyof FixtureManagement,
+          display_name: "Home Team Jersey",
+          field_type: "foreign_key",
+          foreign_key_entity: "jerseycolor",
+          is_required: false,
+          is_read_only: false,
+          show_in_list: false,
+          foreign_key_filter: {
+            depends_on_field: "fixture_id",
+            filter_type: "team_jersey_from_fixture",
+            team_side: "home",
+          },
+        },
+        {
+          field_name: "away_team_jersey_id" satisfies keyof FixtureManagement,
+          display_name: "Away Team Jersey",
+          field_type: "foreign_key",
+          foreign_key_entity: "jerseycolor",
+          is_required: false,
+          is_read_only: false,
+          show_in_list: false,
+          foreign_key_filter: {
+            depends_on_field: "fixture_id",
+            filter_type: "team_jersey_from_fixture",
+            team_side: "away",
+          },
+        },
+        {
+          field_name: "official_jersey_id" satisfies keyof FixtureManagement,
+          display_name: "Official Jersey",
+          field_type: "foreign_key",
+          foreign_key_entity: "jerseycolor",
+          is_required: false,
+          is_read_only: false,
+          show_in_list: false,
+          foreign_key_filter: {
+            depends_on_field: "fixture_id",
+            filter_type: "official_jersey_from_competition",
+          },
+        },
+        {
+          field_name: "assignment_notes" satisfies keyof FixtureManagement,
           display_name: "Assignment Notes",
           field_type: "string",
           is_required: false,
@@ -2310,6 +2373,73 @@ class EntityMetadataRegistry {
           is_required: false,
           is_read_only: true,
           show_in_list: false,
+        },
+      ],
+    });
+  }
+
+  private register_jersey_color_metadata(): void {
+    this.metadata_map.set("jerseycolor", {
+      entity_name: "jerseycolor",
+      display_name: "Jersey Color",
+      fields: [
+        {
+          field_name: "holder_type" satisfies keyof JerseyColor,
+          display_name: "Holder Type",
+          field_type: "enum",
+          is_required: true,
+          is_read_only: false,
+          show_in_list: false,
+          enum_values: ["team", "official"],
+        },
+        {
+          field_name: "holder_id" satisfies keyof JerseyColor,
+          display_name: "Holder ID",
+          field_type: "string",
+          is_required: true,
+          is_read_only: false,
+          show_in_list: false,
+        },
+        {
+          field_name: "nickname" satisfies keyof JerseyColor,
+          display_name: "Jersey Name",
+          field_type: "string",
+          is_required: true,
+          is_read_only: false,
+          show_in_list: true,
+        },
+        {
+          field_name: "main_color" satisfies keyof JerseyColor,
+          display_name: "Main Color",
+          field_type: "string",
+          is_required: true,
+          is_read_only: false,
+          show_in_list: true,
+        },
+        {
+          field_name: "secondary_color" satisfies keyof JerseyColor,
+          display_name: "Secondary Color",
+          field_type: "string",
+          is_required: false,
+          is_read_only: false,
+          show_in_list: true,
+        },
+        {
+          field_name: "tertiary_color" satisfies keyof JerseyColor,
+          display_name: "Tertiary Color",
+          field_type: "string",
+          is_required: false,
+          is_read_only: false,
+          show_in_list: false,
+        },
+        {
+          field_name: "status" satisfies keyof JerseyColor,
+          display_name: "Status",
+          field_type: "enum",
+          is_required: true,
+          is_read_only: false,
+          enum_values: ["active", "inactive"],
+          show_in_list: true,
         },
       ],
     });
