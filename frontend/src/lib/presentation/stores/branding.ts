@@ -10,6 +10,8 @@ export interface BrandingConfig {
   organization_name: string;
   organization_logo_url: string;
   organization_tagline: string;
+  organization_email: string;
+  organization_address: string;
   social_media_links: SocialMediaLink[];
 }
 
@@ -18,6 +20,8 @@ const default_branding: BrandingConfig = {
   organization_logo_url: "",
   organization_tagline:
     "Track competitions, teams, players, officials and fixtures for your sport all in one place.",
+  organization_email: "contact@sportsorg.example",
+  organization_address: "123 Sports Avenue, Stadium City, SC 12345",
   social_media_links: [
     { platform: "twitter", url: "" },
     { platform: "github", url: "" },

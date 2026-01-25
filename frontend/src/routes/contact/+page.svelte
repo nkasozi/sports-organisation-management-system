@@ -1,6 +1,13 @@
+<script lang="ts">
+  import { branding_store } from "$lib/presentation/stores/branding";
+</script>
+
 <svelte:head>
-  <title>Contact Us - Sports Organisation Management</title>
-  <meta name="description" content="Get in touch with the SportsOrg team" />
+  <title>Contact Us - {$branding_store.organization_name}</title>
+  <meta
+    name="description"
+    content="Get in touch with {$branding_store.organization_name}"
+  />
 </svelte:head>
 
 <div class="space-y-6">
@@ -96,20 +103,19 @@
               Email
             </h3>
             <a
-              href="mailto:support@sportsorg.example"
+              href="mailto:{$branding_store.organization_email}"
               class="text-primary-600 dark:text-primary-400 hover:underline"
             >
-              support@sportsorg.example
+              {$branding_store.organization_email}
             </a>
           </div>
 
           <div>
             <h3 class="font-medium text-accent-900 dark:text-accent-100 mb-1">
-              Support Hours
+              Address
             </h3>
             <p class="text-accent-600 dark:text-accent-300">
-              Monday - Friday: 9:00 AM - 6:00 PM<br />
-              Saturday - Sunday: Closed
+              {$branding_store.organization_address}
             </p>
           </div>
 

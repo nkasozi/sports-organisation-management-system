@@ -6,11 +6,15 @@
     update_theme_colors,
     reset_theme_to_default,
   } from "$lib/presentation/stores/theme";
-  import { branding_store, type SocialMediaLink } from "$lib/presentation/stores/branding";
+  import {
+    branding_store,
+    type SocialMediaLink,
+  } from "$lib/presentation/stores/branding";
   import Toast from "$lib/presentation/components/ui/Toast.svelte";
   import ImageUpload from "$lib/presentation/components/ui/ImageUpload.svelte";
 
-  const DEFAULT_LOGO_SVG = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%23ffffff'%3E%3Cpath fill-rule='evenodd' d='M12.395 2.553a1 1 0 00-1.45-.385c-.345.23-.614.558-.822.88-.214.33-.403.713-.57 1.116-.334.804-.614 1.768-.84 2.734a31.365 31.365 0 00-.613 3.58 2.64 2.64 0 01-.945-1.067c-.328-.68-.398-1.534-.398-2.654A1 1 0 005.05 6.05 6.981 6.981 0 003 11a7 7 0 1011.95-4.95c-.592-.591-.98-.985-1.348-1.467-.363-.476-.724-1.063-1.207-2.03zM12.12 15.12A3 3 0 017 13s.879.5 2.5.5c0-1 .5-4 1.25-4.5.5 1 .786 1.293 1.371 1.879A2.99 2.99 0 0113 13a2.99 2.99 0 01-.879 2.121z' clip-rule='evenodd'/%3E%3C/svg%3E";
+  const DEFAULT_LOGO_SVG =
+    "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%23ffffff'%3E%3Cpath fill-rule='evenodd' d='M12.395 2.553a1 1 0 00-1.45-.385c-.345.23-.614.558-.822.88-.214.33-.403.713-.57 1.116-.334.804-.614 1.768-.84 2.734a31.365 31.365 0 00-.613 3.58 2.64 2.64 0 01-.945-1.067c-.328-.68-.398-1.534-.398-2.654A1 1 0 005.05 6.05 6.981 6.981 0 003 11a7 7 0 1011.95-4.95c-.592-.591-.98-.985-1.348-1.467-.363-.476-.724-1.063-1.207-2.03zM12.12 15.12A3 3 0 017 13s.879.5 2.5.5c0-1 .5-4 1.25-4.5.5 1 .786 1.293 1.371 1.879A2.99 2.99 0 0113 13a2.99 2.99 0 01-.879 2.121z' clip-rule='evenodd'/%3E%3C/svg%3E";
 
   let toast_visible: boolean = false;
   let toast_message: string = "";
@@ -19,6 +23,8 @@
   let organization_name: string = "";
   let organization_logo_url: string = "";
   let organization_tagline: string = "";
+  let organization_email: string = "";
+  let organization_address: string = "";
   let selected_primary_color: string = "yellow";
   let selected_secondary_color: string = "red";
   let notifications_enabled: boolean = true;
@@ -40,6 +46,8 @@
     organization_name = $branding_store.organization_name;
     organization_logo_url = $branding_store.organization_logo_url;
     organization_tagline = $branding_store.organization_tagline || "";
+    organization_email = $branding_store.organization_email || "";
+    organization_address = $branding_store.organization_address || "";
     social_media_links = $branding_store.social_media_links || [];
   });
 
@@ -107,6 +115,8 @@
       organization_name: organization_name,
       organization_logo_url: organization_logo_url,
       organization_tagline: organization_tagline,
+      organization_email: organization_email,
+      organization_address: organization_address,
       social_media_links: social_media_links,
     });
     show_toast("Organization settings saved", "success");
@@ -118,7 +128,7 @@
 
   function add_social_media_link(): void {
     const available_platforms = social_media_options.filter(
-      (opt) => !social_media_links.some((link) => link.platform === opt.value)
+      (opt) => !social_media_links.some((link) => link.platform === opt.value),
     );
     if (available_platforms.length === 0) {
       show_toast("All social media platforms are already added", "info");
@@ -132,19 +142,19 @@
 
   function remove_social_media_link(platform: string): void {
     social_media_links = social_media_links.filter(
-      (link) => link.platform !== platform
+      (link) => link.platform !== platform,
     );
   }
 
   function update_social_media_url(platform: string, url: string): void {
     social_media_links = social_media_links.map((link) =>
-      link.platform === platform ? { ...link, url } : link
+      link.platform === platform ? { ...link, url } : link,
     );
   }
 
   function update_social_media_platform(
     old_platform: string,
-    new_platform: string
+    new_platform: string,
   ): void {
     if (
       social_media_links.some((link) => link.platform === new_platform) &&
@@ -156,7 +166,7 @@
     social_media_links = social_media_links.map((link) =>
       link.platform === old_platform
         ? { ...link, platform: new_platform }
-        : link
+        : link,
     );
   }
 
@@ -167,7 +177,7 @@
 
   function show_toast(
     message: string,
-    type: "success" | "error" | "info"
+    type: "success" | "error" | "info",
   ): void {
     toast_message = message;
     toast_type = type;
@@ -244,7 +254,45 @@
             placeholder="Enter a short description for your organization"
           ></textarea>
           <p class="text-xs text-accent-500 dark:text-accent-400 mt-1">
-            This appears in the footer of your application
+            This appears on the dashboard and footer of your application
+          </p>
+        </div>
+
+        <div>
+          <label
+            for="org_email"
+            class="block text-sm font-medium text-accent-700 dark:text-accent-300 mb-2"
+          >
+            Contact Email
+          </label>
+          <input
+            id="org_email"
+            type="email"
+            class="input w-full max-w-md"
+            bind:value={organization_email}
+            placeholder="contact@yourorganization.com"
+          />
+          <p class="text-xs text-accent-500 dark:text-accent-400 mt-1">
+            Displayed on contact, privacy, and terms pages
+          </p>
+        </div>
+
+        <div>
+          <label
+            for="org_address"
+            class="block text-sm font-medium text-accent-700 dark:text-accent-300 mb-2"
+          >
+            Organization Address
+          </label>
+          <textarea
+            id="org_address"
+            class="input w-full max-w-md resize-none"
+            rows="2"
+            bind:value={organization_address}
+            placeholder="123 Sports Avenue, Stadium City, SC 12345"
+          ></textarea>
+          <p class="text-xs text-accent-500 dark:text-accent-400 mt-1">
+            Your organization's physical address for official correspondence
           </p>
         </div>
       </div>
@@ -447,7 +495,7 @@
                   on:change={(e) =>
                     update_social_media_platform(
                       link.platform,
-                      e.currentTarget.value
+                      e.currentTarget.value,
                     )}
                 >
                   {#each social_media_options as option}
@@ -474,7 +522,7 @@
                   on:input={(e) =>
                     update_social_media_url(
                       link.platform,
-                      e.currentTarget.value
+                      e.currentTarget.value,
                     )}
                 />
               </div>

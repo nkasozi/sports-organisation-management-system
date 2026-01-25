@@ -1,6 +1,13 @@
+<script lang="ts">
+  import { branding_store } from "$lib/presentation/stores/branding";
+</script>
+
 <svelte:head>
-  <title>Privacy Policy - Sports Organisation Management</title>
-  <meta name="description" content="Privacy policy for SportsOrg application" />
+  <title>Privacy Policy - {$branding_store.organization_name}</title>
+  <meta
+    name="description"
+    content="Privacy policy for {$branding_store.organization_name}"
+  />
 </svelte:head>
 
 <div class="space-y-6">
@@ -23,10 +30,10 @@
         Introduction
       </h2>
       <p class="text-accent-700 dark:text-accent-300 leading-relaxed">
-        SportsOrg ("we" or "us" or "our") operates the application. This page
-        informs you of our policies regarding the collection, use, and
-        disclosure of personal data when you use our application and the choices
-        you have associated with that data.
+        {$branding_store.organization_name} ("we" or "us" or "our") operates the application.
+        This page informs you of our policies regarding the collection, use, and disclosure
+        of personal data when you use our application and the choices you have associated
+        with that data.
       </p>
     </section>
 
@@ -60,7 +67,7 @@
         Use of Data
       </h2>
       <p class="text-accent-700 dark:text-accent-300 leading-relaxed mb-3">
-        SportsOrg uses the collected data for various purposes:
+        {$branding_store.organization_name} uses the collected data for various purposes:
       </p>
 
       <ul
@@ -98,10 +105,18 @@
         Contact Us
       </h2>
       <p class="text-accent-700 dark:text-accent-300 leading-relaxed">
-        If you have any questions about this Privacy Policy, please <a
+        If you have any questions about this Privacy Policy, please contact us
+        at
+        <a
+          href="mailto:{$branding_store.organization_email}"
+          class="text-primary-600 dark:text-primary-400 hover:underline"
+          >{$branding_store.organization_email}</a
+        >
+        or visit our
+        <a
           href="/contact"
           class="text-primary-600 dark:text-primary-400 hover:underline"
-          >contact us</a
+          >contact page</a
         >.
       </p>
     </section>

@@ -1,6 +1,9 @@
 <script lang="ts">
   import { theme_store } from "$lib/presentation/stores/theme";
-  import { branding_store, type SocialMediaLink } from "$lib/presentation/stores/branding";
+  import {
+    branding_store,
+    type SocialMediaLink,
+  } from "$lib/presentation/stores/branding";
 
   let current_year = new Date().getFullYear();
   let theme_config: any = { mode: "light" };
@@ -14,7 +17,9 @@
     social_media_links = config.social_media_links || [];
   });
 
-  $: has_custom_logo = $branding_store.organization_logo_url && $branding_store.organization_logo_url.length > 0;
+  $: has_custom_logo =
+    $branding_store.organization_logo_url &&
+    $branding_store.organization_logo_url.length > 0;
 
   function split_organization_name(name: string): {
     prefix: string;
@@ -73,7 +78,9 @@
       <div class="col-span-1 md:col-span-2">
         <div class="flex items-center space-x-3 mb-4">
           <div
-            class="h-8 w-8 rounded-lg flex items-center justify-center overflow-hidden {has_custom_logo ? '' : 'bg-theme-secondary-600'}"
+            class="h-8 w-8 rounded-lg flex items-center justify-center overflow-hidden {has_custom_logo
+              ? ''
+              : 'bg-theme-secondary-600'}"
           >
             {#if has_custom_logo}
               <img
@@ -112,7 +119,8 @@
           </span>
         </div>
         <p class="text-sm text-gray-800 mb-4 max-w-md">
-          {$branding_store.organization_tagline || "Track competitions, teams, players, officials and fixtures for your sport all in one place."}
+          {$branding_store.organization_tagline ||
+            "Track competitions, teams, players, officials and fixtures for your sport all in one place."}
         </p>
         <div class="flex space-x-4">
           {#if social_media_links.length > 0}
@@ -207,10 +215,10 @@
           </li>
           <li>
             <a
-              href="/games"
+              href="/fixtures"
               class="text-sm text-gray-800 hover:text-theme-secondary-600 transition-colors duration-200"
             >
-              Games
+              Fixtures
             </a>
           </li>
         </ul>
@@ -287,7 +295,7 @@
                 clip-rule="evenodd"
               />
             </svg>
-            <span>by the kasozy</span>
+            <span>by Stream</span>
           </div>
         </div>
       </div>
