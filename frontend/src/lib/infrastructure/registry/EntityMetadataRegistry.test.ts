@@ -279,7 +279,7 @@ describe("EntityMetadataRegistry", () => {
       }
     });
 
-    it("all enum fields have enum_values defined", () => {
+    it("all enum fields have enum_values or enum_options or enum_dependency defined", () => {
       const entity_types = entityMetadataRegistry.get_all_entity_types();
 
       for (const entity_type of entity_types) {
@@ -290,8 +290,15 @@ describe("EntityMetadataRegistry", () => {
         );
 
         for (const field of enum_fields || []) {
-          expect(field.enum_values).toBeDefined();
-          expect(field.enum_values?.length).toBeGreaterThan(0);
+          const has_enum_values =
+            field.enum_values && field.enum_values.length > 0;
+          const has_enum_options =
+            field.enum_options && field.enum_options.length > 0;
+          const has_enum_dependency = field.enum_dependency !== undefined;
+
+          expect(
+            has_enum_values || has_enum_options || has_enum_dependency,
+          ).toBe(true);
         }
       }
     });

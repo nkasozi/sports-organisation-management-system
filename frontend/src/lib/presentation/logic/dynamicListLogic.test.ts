@@ -487,7 +487,7 @@ describe("get_display_value_for_entity_field", () => {
     expect(result).toBe("Manchester United");
   });
 
-  it("should return raw value when foreign key option not found", () => {
+  it("should return formatted value when foreign key option not found", () => {
     const entity = {
       id: "1",
       team_id: "unknown-team",
@@ -502,7 +502,7 @@ describe("get_display_value_for_entity_field", () => {
       "team_id",
       foreign_key_options,
     );
-    expect(result).toBe("unknown-team");
+    expect(result).toBe("Unknown-team");
   });
 });
 

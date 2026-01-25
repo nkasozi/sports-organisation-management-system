@@ -28,6 +28,10 @@ import type { FixtureManagement } from "../../core/entities/FixtureManagement";
 import type { SystemUser } from "../../core/entities/SystemUser";
 import type { AuditLog } from "../../core/entities/AuditLog";
 import type { JerseyColor } from "../../core/entities/JerseyColor";
+import type { PlayerProfile } from "../../core/entities/PlayerProfile";
+import { PROFILE_VISIBILITY_OPTIONS } from "../../core/entities/PlayerProfile";
+import type { ProfileLink } from "../../core/entities/ProfileLink";
+import { PROFILE_LINK_PLATFORM_OPTIONS } from "../../core/entities/ProfileLink";
 
 function generate_30_minute_time_intervals(): string[] {
   const intervals: string[] = [];
@@ -565,6 +569,8 @@ class EntityMetadataRegistry {
     this.register_jersey_color_metadata();
     this.register_system_user_metadata();
     this.register_audit_log_metadata();
+    this.register_player_profile_metadata();
+    this.register_profile_link_metadata();
   }
 
   private register_organization_metadata(): void {
@@ -2434,6 +2440,144 @@ class EntityMetadataRegistry {
         },
         {
           field_name: "status" satisfies keyof JerseyColor,
+          display_name: "Status",
+          field_type: "enum",
+          is_required: true,
+          is_read_only: false,
+          enum_values: ["active", "inactive"],
+          show_in_list: true,
+        },
+      ],
+    });
+  }
+
+  private register_player_profile_metadata(): void {
+    this.metadata_map.set("playerprofile", {
+      entity_name: "playerprofile",
+      display_name: "Player Profile",
+      fields: [
+        {
+          field_name: "player_id" satisfies keyof PlayerProfile,
+          display_name: "Player",
+          field_type: "foreign_key",
+          foreign_key_entity: "player",
+          is_required: true,
+          is_read_only: false,
+          is_read_only_on_edit: true,
+          show_in_list: true,
+        },
+        {
+          field_name: "profile_summary" satisfies keyof PlayerProfile,
+          display_name: "Profile Summary",
+          field_type: "string",
+          is_required: false,
+          is_read_only: false,
+          show_in_list: false,
+          placeholder: "Write a brief bio or introduction about the player...",
+        },
+        {
+          field_name: "visibility" satisfies keyof PlayerProfile,
+          display_name: "Profile Visibility",
+          field_type: "enum",
+          is_required: true,
+          is_read_only: false,
+          show_in_list: true,
+          enum_values: PROFILE_VISIBILITY_OPTIONS.map((o) => o.value),
+        },
+        {
+          field_name: "profile_slug" satisfies keyof PlayerProfile,
+          display_name: "Profile URL Slug",
+          field_type: "string",
+          is_required: false,
+          is_read_only: false,
+          show_in_list: false,
+          placeholder: "Auto-generated from player name",
+        },
+        {
+          field_name: "featured_image_url" satisfies keyof PlayerProfile,
+          display_name: "Featured Image URL",
+          field_type: "string",
+          is_required: false,
+          is_read_only: false,
+          show_in_list: false,
+          placeholder: "https://example.com/image.jpg",
+        },
+        {
+          field_name: "links",
+          display_name: "Links & Media",
+          field_type: "sub_entity",
+          is_required: false,
+          is_read_only: false,
+          show_in_list: false,
+          sub_entity_config: {
+            child_entity_type: "profilelink",
+            foreign_key_field: "profile_id",
+          },
+        },
+        {
+          field_name: "status" satisfies keyof PlayerProfile,
+          display_name: "Status",
+          field_type: "enum",
+          is_required: true,
+          is_read_only: false,
+          enum_values: ["active", "inactive"],
+          show_in_list: true,
+        },
+      ],
+    });
+  }
+
+  private register_profile_link_metadata(): void {
+    this.metadata_map.set("profilelink", {
+      entity_name: "profilelink",
+      display_name: "Profile Link",
+      fields: [
+        {
+          field_name: "profile_id" satisfies keyof ProfileLink,
+          display_name: "Profile",
+          field_type: "foreign_key",
+          foreign_key_entity: "playerprofile",
+          is_required: true,
+          is_read_only: false,
+          show_in_list: false,
+        },
+        {
+          field_name: "platform" satisfies keyof ProfileLink,
+          display_name: "Platform",
+          field_type: "enum",
+          is_required: true,
+          is_read_only: false,
+          show_in_list: true,
+          enum_options: PROFILE_LINK_PLATFORM_OPTIONS,
+        },
+        {
+          field_name: "title" satisfies keyof ProfileLink,
+          display_name: "Title",
+          field_type: "string",
+          is_required: true,
+          is_read_only: false,
+          show_in_list: true,
+          placeholder: "Link title or description",
+        },
+        {
+          field_name: "url" satisfies keyof ProfileLink,
+          display_name: "URL",
+          field_type: "string",
+          is_required: true,
+          is_read_only: false,
+          show_in_list: true,
+          placeholder: "https://...",
+        },
+        {
+          field_name: "display_order" satisfies keyof ProfileLink,
+          display_name: "Display Order",
+          field_type: "number",
+          is_required: false,
+          is_read_only: false,
+          show_in_list: false,
+        },
+        {
+          field_name: "status" satisfies keyof ProfileLink,
           display_name: "Status",
           field_type: "enum",
           is_required: true,

@@ -21,6 +21,8 @@ import { get_identification_use_cases } from "$lib/core/usecases/IdentificationU
 import { get_jersey_color_use_cases } from "$lib/core/usecases/JerseyColorUseCases";
 import { get_system_user_use_cases } from "$lib/core/usecases/SystemUserUseCases";
 import { get_audit_log_use_cases } from "$lib/core/usecases/AuditLogUseCases";
+import { get_player_profile_use_cases } from "$lib/core/usecases/PlayerProfileUseCases";
+import { get_profile_link_use_cases } from "$lib/core/usecases/ProfileLinkUseCases";
 import { EventBus } from "$lib/infrastructure/events/EventBus";
 import type {
   BaseEntity,
@@ -52,6 +54,8 @@ const VALID_ENTITY_TYPE_KEYS = [
   "jerseycolor",
   "systemuser",
   "auditlog",
+  "playerprofile",
+  "profilelink",
 ] as const;
 
 export type EntityTypeKey = (typeof VALID_ENTITY_TYPE_KEYS)[number];
@@ -120,6 +124,10 @@ function create_use_cases_registry(): Record<EntityTypeKey, UseCasesGetter> {
       get_system_user_use_cases as unknown as UseCasesGetter,
     ["auditlog" satisfies EntityTypeKey]:
       get_audit_log_use_cases as unknown as UseCasesGetter,
+    ["playerprofile" satisfies EntityTypeKey]:
+      get_player_profile_use_cases as UseCasesGetter,
+    ["profilelink" satisfies EntityTypeKey]:
+      get_profile_link_use_cases as UseCasesGetter,
   } satisfies Record<EntityTypeKey, UseCasesGetter>;
 
   return registry_definition;
@@ -175,6 +183,14 @@ const ENTITY_DISPLAY_NAME_GETTERS: Record<
     return `${u.first_name || ""} ${u.last_name || ""}`.trim() || e.id;
   },
   auditlog: (e) => e.id,
+  playerprofile: (e) => {
+    const p = to_record(e);
+    return (p.profile_slug as string) || e.id;
+  },
+  profilelink: (e) => {
+    const l = to_record(e);
+    return (l.title as string) || (l.platform as string) || e.id;
+  },
 };
 
 const ENTITIES_TO_SKIP_AUDIT = ["auditlog"];

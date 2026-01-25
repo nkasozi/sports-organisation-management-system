@@ -13,3 +13,5 @@ export * from "./InMemoryTeamStaffRoleRepository";
 export * from "./InMemoryGameOfficialRoleRepository";
 export * from "./InMemoryVenueRepository";
 export * from "./InMemoryJerseyColorRepository";
+export * from "./InMemoryPlayerProfileRepository";
+export * from "./InMemoryProfileLinkRepository";

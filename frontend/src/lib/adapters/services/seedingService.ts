@@ -38,6 +38,14 @@ import {
   get_jersey_color_repository,
   InMemoryJerseyColorRepository,
 } from "../repositories/InMemoryJerseyColorRepository";
+import {
+  get_player_profile_repository,
+  InMemoryPlayerProfileRepository,
+} from "../repositories/InMemoryPlayerProfileRepository";
+import {
+  get_profile_link_repository,
+  InMemoryProfileLinkRepository,
+} from "../repositories/InMemoryProfileLinkRepository";
 import { get_repository_container } from "../../infrastructure/container";
 import {
   create_seed_players,
@@ -49,6 +57,8 @@ import {
   create_seed_fixtures,
   create_seed_venues,
   create_seed_jersey_colors,
+  create_seed_player_profiles,
+  create_seed_profile_links,
   SEED_ORGANIZATION_IDS,
 } from "../../infrastructure/utils/SeedDataGenerator";
 import type { PlayerPosition } from "../../core/entities/PlayerPosition";
@@ -460,6 +470,42 @@ export async function seed_all_data_if_needed(): Promise<boolean> {
       "jersey_color",
       seed_jersey_colors,
       (j) => `${j.nickname} (${j.main_color})`,
+    );
+  }
+
+  const player_profile_repository =
+    get_player_profile_repository() as InMemoryPlayerProfileRepository;
+  const existing_player_profiles = await player_profile_repository.find_all({
+    page_size: 1,
+  });
+  if (
+    !existing_player_profiles.success ||
+    existing_player_profiles.data.total_count === 0
+  ) {
+    const seed_player_profiles = create_seed_player_profiles();
+    player_profile_repository.seed_with_data(seed_player_profiles);
+    emit_entity_created_events(
+      "player_profile",
+      seed_player_profiles,
+      (p) => `Profile: ${p.profile_slug}`,
+    );
+  }
+
+  const profile_link_repository =
+    get_profile_link_repository() as InMemoryProfileLinkRepository;
+  const existing_profile_links = await profile_link_repository.find_all({
+    page_size: 1,
+  });
+  if (
+    !existing_profile_links.success ||
+    existing_profile_links.data.total_count === 0
+  ) {
+    const seed_profile_links = create_seed_profile_links();
+    profile_link_repository.seed_with_data(seed_profile_links);
+    emit_entity_created_events(
+      "profile_link",
+      seed_profile_links,
+      (l) => `Link: ${l.title}`,
     );
   }
 

@@ -101,6 +101,12 @@ export const SEED_JERSEY_COLOR_IDS = {
   FIELD_HOCKEY_OFFICIAL_ORANGE: "jersey_default_14",
 };
 
+export const SEED_PLAYER_PROFILE_IDS = {
+  CARLOS_MARTINEZ_PROFILE: "profile_default_1",
+  JOHN_SMITH_PROFILE: "profile_default_2",
+  YUKI_TANAKA_PROFILE: "profile_default_3",
+};
+
 function generate_current_timestamp(): string {
   return new Date().toISOString();
 }
@@ -1235,6 +1241,137 @@ export function create_seed_jersey_colors(): JerseyColor[] {
       main_color: "Orange",
       secondary_color: "Black",
       tertiary_color: "White",
+      status: "active",
+      created_at: now,
+      updated_at: now,
+    },
+  ];
+}
+
+export function create_seed_player_profiles(): import("../../core/entities/PlayerProfile").PlayerProfile[] {
+  const now = generate_current_timestamp();
+
+  return [
+    {
+      id: SEED_PLAYER_PROFILE_IDS.CARLOS_MARTINEZ_PROFILE,
+      player_id: SEED_PLAYER_IDS.CARLOS_MARTINEZ,
+      profile_summary:
+        "A dynamic midfielder known for exceptional ball control and creative playmaking. Carlos has been a key figure in the team's success over the past three seasons, contributing both goals and assists consistently.",
+      visibility: "public",
+      profile_slug: "carlos-martinez-player",
+      featured_image_url: "",
+      status: "active",
+      created_at: now,
+      updated_at: now,
+    },
+    {
+      id: SEED_PLAYER_PROFILE_IDS.JOHN_SMITH_PROFILE,
+      player_id: SEED_PLAYER_IDS.JOHN_SMITH,
+      profile_summary:
+        "An experienced goalkeeper with over 200 career clean sheets. John's leadership and shot-stopping abilities make him one of the most reliable keepers in the league.",
+      visibility: "public",
+      profile_slug: "john-smith-player",
+      featured_image_url: "",
+      status: "active",
+      created_at: now,
+      updated_at: now,
+    },
+    {
+      id: SEED_PLAYER_PROFILE_IDS.YUKI_TANAKA_PROFILE,
+      player_id: SEED_PLAYER_IDS.YUKI_TANAKA,
+      profile_summary:
+        "A technical forward with exceptional finishing ability. Yuki's pace and precision have made her a fan favorite since joining the team.",
+      visibility: "private",
+      profile_slug: "yuki-tanaka-player",
+      featured_image_url: "",
+      status: "active",
+      created_at: now,
+      updated_at: now,
+    },
+  ];
+}
+
+export const SEED_PROFILE_LINK_IDS = {
+  CARLOS_TWITTER: "profile-link-001",
+  CARLOS_INSTAGRAM: "profile-link-002",
+  CARLOS_WEBSITE: "profile-link-003",
+  CARLOS_VIDEO: "profile-link-004",
+  JOHN_INSTAGRAM: "profile-link-005",
+  JOHN_VIDEO: "profile-link-006",
+};
+
+export function create_seed_profile_links(): import("../../core/entities/ProfileLink").ProfileLink[] {
+  const now = generate_current_timestamp();
+
+  return [
+    {
+      id: SEED_PROFILE_LINK_IDS.CARLOS_TWITTER,
+      profile_id: SEED_PLAYER_PROFILE_IDS.CARLOS_MARTINEZ_PROFILE,
+      category: "social_media",
+      platform: "twitter",
+      title: "@carlosmartinez",
+      url: "https://twitter.com/carlosmartinez",
+      display_order: 1,
+      status: "active",
+      created_at: now,
+      updated_at: now,
+    },
+    {
+      id: SEED_PROFILE_LINK_IDS.CARLOS_INSTAGRAM,
+      profile_id: SEED_PLAYER_PROFILE_IDS.CARLOS_MARTINEZ_PROFILE,
+      category: "social_media",
+      platform: "instagram",
+      title: "@carlos_m10",
+      url: "https://instagram.com/carlos_m10",
+      display_order: 2,
+      status: "active",
+      created_at: now,
+      updated_at: now,
+    },
+    {
+      id: SEED_PROFILE_LINK_IDS.CARLOS_WEBSITE,
+      profile_id: SEED_PLAYER_PROFILE_IDS.CARLOS_MARTINEZ_PROFILE,
+      category: "website",
+      platform: "other",
+      title: "Official Website",
+      url: "https://carlosmartinez.com",
+      display_order: 1,
+      status: "active",
+      created_at: now,
+      updated_at: now,
+    },
+    {
+      id: SEED_PROFILE_LINK_IDS.CARLOS_VIDEO,
+      profile_id: SEED_PLAYER_PROFILE_IDS.CARLOS_MARTINEZ_PROFILE,
+      category: "video",
+      platform: "youtube",
+      title: "Season Highlights 2025",
+      url: "https://youtube.com/watch?v=abc123",
+      display_order: 1,
+      status: "active",
+      created_at: now,
+      updated_at: now,
+    },
+    {
+      id: SEED_PROFILE_LINK_IDS.JOHN_INSTAGRAM,
+      profile_id: SEED_PLAYER_PROFILE_IDS.JOHN_SMITH_PROFILE,
+      category: "social_media",
+      platform: "instagram",
+      title: "@johnsmith_gk",
+      url: "https://instagram.com/johnsmith_gk",
+      display_order: 1,
+      status: "active",
+      created_at: now,
+      updated_at: now,
+    },
+    {
+      id: SEED_PROFILE_LINK_IDS.JOHN_VIDEO,
+      profile_id: SEED_PLAYER_PROFILE_IDS.JOHN_SMITH_PROFILE,
+      category: "video",
+      platform: "youtube",
+      title: "Best Saves Compilation",
+      url: "https://youtube.com/watch?v=def456",
+      display_order: 1,
       status: "active",
       created_at: now,
       updated_at: now,

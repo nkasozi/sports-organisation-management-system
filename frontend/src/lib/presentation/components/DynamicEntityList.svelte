@@ -196,6 +196,15 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
     return Array.from(columns);
   }
 
+  function get_field_metadata_by_name(
+    field_name: string,
+  ): FieldMetadata | undefined {
+    if (!entity_metadata) return undefined;
+    return entity_metadata.fields.find(
+      (f: FieldMetadata) => f.field_name === field_name,
+    );
+  }
+
   function get_column_responsive_class(
     column_index: number,
     total_columns: number,
@@ -1197,6 +1206,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
                         entity,
                         field_name,
                         foreign_key_options,
+                        get_field_metadata_by_name(field_name),
                       )}
                     </div>
                   </td>

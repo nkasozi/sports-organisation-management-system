@@ -20,6 +20,11 @@ export interface EntityMetadata<T extends BaseEntity = any> {
   fields: FieldMetadata<T>[];
 }
 
+export interface EnumDependencyConfig {
+  depends_on_field: string;
+  options_map: Record<string, { value: string; label: string }[]>;
+}
+
 export interface FieldMetadata<T extends BaseEntity = any> {
   field_name: Extract<keyof T, string> | string;
   display_name: string;
@@ -40,6 +45,8 @@ export interface FieldMetadata<T extends BaseEntity = any> {
   hide_on_create?: boolean;
   placeholder?: string;
   enum_values?: string[];
+  enum_options?: { value: string; label: string }[];
+  enum_dependency?: EnumDependencyConfig;
   foreign_key_entity?: string;
   foreign_key_filter?: ForeignKeyFilterConfig;
   validation_rules?: ValidationRule[];

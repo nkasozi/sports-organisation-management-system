@@ -138,10 +138,51 @@ export function build_filter_from_sub_entity_config(
   return filter;
 }
 
+export function format_enum_style_string(value: string): string {
+  return value
+    .split("_")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(" ");
+}
+
+function is_enum_style_string(value: string): boolean {
+  if (typeof value !== "string") return false;
+  if (value.includes("_")) return true;
+  const all_lowercase = value === value.toLowerCase();
+  const is_single_word = !value.includes(" ");
+  return all_lowercase && is_single_word && value.length > 0;
+}
+
+function find_enum_option_label(
+  field_metadata: FieldMetadata | undefined,
+  raw_value: string,
+): string | null {
+  if (!field_metadata) return null;
+
+  if (field_metadata.enum_options) {
+    const option = field_metadata.enum_options.find(
+      (opt) => opt.value === raw_value,
+    );
+    if (option) return option.label;
+  }
+
+  if (field_metadata.enum_dependency) {
+    for (const options of Object.values(
+      field_metadata.enum_dependency.options_map,
+    )) {
+      const option = options.find((opt) => opt.value === raw_value);
+      if (option) return option.label;
+    }
+  }
+
+  return null;
+}
+
 export function get_display_value_for_entity_field(
   entity: BaseEntity,
   field_name: string,
   foreign_key_options: Record<string, BaseEntity[]>,
+  field_metadata?: FieldMetadata,
 ): string {
   if (!entity || !field_name) {
     return "";
@@ -169,7 +210,16 @@ export function get_display_value_for_entity_field(
     return raw_value.toLocaleDateString();
   }
 
-  return String(raw_value);
+  const string_value = String(raw_value);
+
+  const enum_label = find_enum_option_label(field_metadata, string_value);
+  if (enum_label) return enum_label;
+
+  if (is_enum_style_string(string_value)) {
+    return format_enum_style_string(string_value);
+  }
+
+  return string_value;
 }
 
 export function toggle_sort_direction(

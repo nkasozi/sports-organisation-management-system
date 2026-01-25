@@ -827,19 +827,64 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
     return normalized_value;
   }
 
+  function find_dependent_enum_fields(
+    parent_field_name: string,
+  ): FieldMetadata[] {
+    if (!entity_metadata) return [];
+    return entity_metadata.fields.filter(
+      (field) =>
+        field.enum_dependency &&
+        field.enum_dependency.depends_on_field === parent_field_name,
+    );
+  }
+
+  function clear_dependent_enum_values(parent_field_name: string): void {
+    const dependent_fields = find_dependent_enum_fields(parent_field_name);
+    for (const field of dependent_fields) {
+      form_data[field.field_name] = "";
+    }
+  }
+
   function update_form_field_value(field_name: string, value: string): boolean {
     form_data[field_name] = value;
+    clear_dependent_enum_values(field_name);
     return true;
+  }
+
+  function format_enum_label(value: string): string {
+    return value
+      .split("_")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(" ");
   }
 
   function build_enum_select_options(
     field: FieldMetadata,
   ): { value: string; label: string }[] {
+    if (field.enum_dependency) {
+      const dependency_value =
+        form_data[field.enum_dependency.depends_on_field];
+      if (!dependency_value) return [];
+      const options = field.enum_dependency.options_map[dependency_value];
+      return options || [];
+    }
+
+    if (field.enum_options) {
+      return field.enum_options;
+    }
+
     if (!field.enum_values) return [];
     return field.enum_values.map((option) => ({
       value: option,
-      label: option,
+      label: format_enum_label(option),
     }));
+  }
+
+  function has_enum_options(field: FieldMetadata): boolean {
+    if (field.enum_options && field.enum_options.length > 0) return true;
+    if (field.enum_values && field.enum_values.length > 0) return true;
+    if (field.enum_dependency) return true;
+    return false;
   }
 
   function build_foreign_key_select_options(
@@ -1165,15 +1210,20 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
                 />
 
                 <!-- Enum field (dropdown) -->
-              {:else if field.field_type === "enum" && field.enum_values}
+              {:else if field.field_type === "enum" && has_enum_options(field)}
                 <SearchableSelectField
                   label=""
                   name={field.field_name}
                   value={form_data[field.field_name]}
                   options={build_enum_select_options(field)}
-                  placeholder={`Select ${field.display_name}`}
+                  placeholder={field.enum_dependency &&
+                  !form_data[field.enum_dependency.depends_on_field]
+                    ? `First select ${field.enum_dependency.depends_on_field.replace("_", " ")}`
+                    : `Select ${field.display_name}`}
                   required={field.is_required}
-                  disabled={should_field_be_read_only(field)}
+                  disabled={should_field_be_read_only(field) ||
+                    (field.enum_dependency &&
+                      !form_data[field.enum_dependency.depends_on_field])}
                   error={validation_errors[field.field_name] || ""}
                   on:change={(event) =>
                     update_form_field_value(
