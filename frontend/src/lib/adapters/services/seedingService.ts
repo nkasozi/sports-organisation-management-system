@@ -409,7 +409,6 @@ export async function seed_all_data_if_needed(): Promise<boolean> {
   ) {
     const seed_officials = create_seed_officials(
       SEED_ORGANIZATION_IDS.CITY_FOOTBALL_LEAGUE,
-      referee_role_id,
     );
     official_repository.seed_with_data(seed_officials);
     emit_entity_created_events(

@@ -780,10 +780,7 @@ export function create_seed_player_team_memberships(): PlayerTeamMembership[] {
   ];
 }
 
-export function create_seed_officials(
-  organization_id: string,
-  referee_role_id: string | null,
-): Official[] {
+export function create_seed_officials(organization_id: string): Official[] {
   const now = generate_current_timestamp();
 
   return [
@@ -795,7 +792,6 @@ export function create_seed_officials(
       phone: "+1-555-4001",
       date_of_birth: "1978-06-15",
       organization_id: organization_id,
-      primary_role_id: referee_role_id,
       years_of_experience: 15,
       nationality: "United States",
       profile_image_url: DEFAULT_OFFICIAL_AVATAR,
@@ -814,7 +810,6 @@ export function create_seed_officials(
       phone: "+1-555-4002",
       date_of_birth: "1985-02-20",
       organization_id: organization_id,
-      primary_role_id: referee_role_id,
       years_of_experience: 10,
       nationality: "Canada",
       profile_image_url: DEFAULT_OFFICIAL_AVATAR,
@@ -833,7 +828,6 @@ export function create_seed_officials(
       phone: "+1-555-4003",
       date_of_birth: "1982-09-10",
       organization_id: organization_id,
-      primary_role_id: referee_role_id,
       years_of_experience: 12,
       nationality: "England",
       profile_image_url: DEFAULT_OFFICIAL_AVATAR,
@@ -852,7 +846,6 @@ export function create_seed_officials(
       phone: "+1-555-4004",
       date_of_birth: "1990-11-28",
       organization_id: organization_id,
-      primary_role_id: referee_role_id,
       years_of_experience: 7,
       nationality: "Australia",
       profile_image_url: DEFAULT_OFFICIAL_AVATAR,

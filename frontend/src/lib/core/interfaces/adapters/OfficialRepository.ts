@@ -9,7 +9,6 @@ import type {
 export interface OfficialFilter {
   name_contains?: string;
   organization_id?: string;
-  primary_role_id?: string;
   status?: Official["status"];
 }
 
@@ -21,10 +20,6 @@ export interface OfficialRepository extends FilterableRepository<
 > {
   find_by_organization(
     organization_id: string,
-    options?: QueryOptions,
-  ): PaginatedAsyncResult<Official>;
-  find_by_role_id(
-    role_id: string,
     options?: QueryOptions,
   ): PaginatedAsyncResult<Official>;
   find_active_officials(options?: QueryOptions): PaginatedAsyncResult<Official>;

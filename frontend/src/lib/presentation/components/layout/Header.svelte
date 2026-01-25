@@ -1,11 +1,15 @@
 <script lang="ts">
   import { createEventDispatcher } from "svelte";
-  import { theme_store, toggle_theme_mode } from "$lib/presentation/stores/theme";
+  import { goto } from "$app/navigation";
+  import {
+    theme_store,
+    toggle_theme_mode,
+  } from "$lib/presentation/stores/theme";
   import { branding_store } from "$lib/presentation/stores/branding";
   import {
     current_user_store,
     current_user_display_name,
-    current_user_initials
+    current_user_initials,
   } from "$lib/presentation/stores/currentUser";
   import ThemeToggle from "$lib/presentation/components/theme/ThemeToggle.svelte";
 
@@ -13,8 +17,14 @@
 
   const dispatch = createEventDispatcher();
 
-  $: has_custom_logo = $branding_store.organization_logo_url && $branding_store.organization_logo_url.length > 0;
-  $: has_profile_picture = $current_user_store?.profile_picture_base64 && $current_user_store.profile_picture_base64.length > 0;
+  let user_menu_open = false;
+
+  $: has_custom_logo =
+    $branding_store.organization_logo_url &&
+    $branding_store.organization_logo_url.length > 0;
+  $: has_profile_picture =
+    $current_user_store?.profile_picture_base64 &&
+    $current_user_store.profile_picture_base64.length > 0;
 
   function handle_sidebar_toggle(): void {
     dispatch("toggle-sidebar");
@@ -22,6 +32,24 @@
 
   function handle_theme_toggle(): void {
     toggle_theme_mode();
+  }
+
+  function toggle_user_menu(): void {
+    user_menu_open = !user_menu_open;
+  }
+
+  function close_user_menu(): void {
+    user_menu_open = false;
+  }
+
+  function handle_settings_click(): void {
+    close_user_menu();
+    goto("/settings");
+  }
+
+  function handle_logout_click(): void {
+    close_user_menu();
+    goto("/");
   }
 
   function split_organization_name(name: string): {
@@ -36,6 +64,8 @@
     return { prefix: parts.join(" "), suffix };
   }
 </script>
+
+<svelte:window on:click={close_user_menu} />
 
 <header
   class="bg-theme-primary-500 dark:bg-theme-primary-600 shadow-sm border-b border-theme-primary-600 dark:border-theme-primary-700 sticky top-0 z-50"
@@ -98,7 +128,9 @@
         <div class="flex items-center space-x-3">
           <div class="flex-shrink-0">
             <div
-              class="h-8 w-8 rounded-lg flex items-center justify-center overflow-hidden {has_custom_logo ? '' : 'bg-theme-secondary-600'}"
+              class="h-8 w-8 rounded-lg flex items-center justify-center overflow-hidden {has_custom_logo
+                ? ''
+                : 'bg-theme-secondary-600'}"
             >
               {#if has_custom_logo}
                 <img
@@ -150,9 +182,13 @@
             type="button"
             class="flex items-center space-x-2 p-2 rounded-md text-black hover:bg-theme-primary-400 dark:hover:bg-theme-primary-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-black transition-colors duration-200"
             aria-label="User menu"
+            aria-expanded={user_menu_open}
+            on:click|stopPropagation={toggle_user_menu}
           >
             <div
-              class="h-8 w-8 rounded-full flex items-center justify-center overflow-hidden {has_profile_picture ? '' : 'bg-theme-secondary-600'}"
+              class="h-8 w-8 rounded-full flex items-center justify-center overflow-hidden {has_profile_picture
+                ? ''
+                : 'bg-theme-secondary-600'}"
             >
               {#if has_profile_picture}
                 <img
@@ -161,12 +197,18 @@
                   class="h-full w-full object-cover"
                 />
               {:else}
-                <span class="text-white font-medium text-sm">{$current_user_initials}</span>
+                <span class="text-white font-medium text-sm"
+                  >{$current_user_initials}</span
+                >
               {/if}
             </div>
-            <span class="hidden sm:block text-sm font-medium">{$current_user_display_name}</span>
+            <span class="hidden sm:block text-sm font-medium"
+              >{$current_user_display_name}</span
+            >
             <svg
-              class="hidden sm:block h-4 w-4"
+              class="hidden sm:block h-4 w-4 transition-transform duration-200 {user_menu_open
+                ? 'rotate-180'
+                : ''}"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -179,6 +221,65 @@
               />
             </svg>
           </button>
+
+          {#if user_menu_open}
+            <div
+              class="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white dark:bg-accent-800 ring-1 ring-black ring-opacity-5 z-50"
+              on:click|stopPropagation
+            >
+              <div class="py-1">
+                <button
+                  type="button"
+                  class="w-full flex items-center px-4 py-2 text-sm text-accent-700 dark:text-accent-200 hover:bg-accent-100 dark:hover:bg-accent-700 transition-colors duration-150"
+                  on:click={handle_settings_click}
+                >
+                  <svg
+                    class="mr-3 h-5 w-5 text-accent-500 dark:text-accent-400"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+                    />
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                    />
+                  </svg>
+                  Settings
+                </button>
+                <div
+                  class="border-t border-accent-200 dark:border-accent-700 my-1"
+                ></div>
+                <button
+                  type="button"
+                  class="w-full flex items-center px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-accent-100 dark:hover:bg-accent-700 transition-colors duration-150"
+                  on:click={handle_logout_click}
+                >
+                  <svg
+                    class="mr-3 h-5 w-5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                    />
+                  </svg>
+                  Logout
+                </button>
+              </div>
+            </div>
+          {/if}
         </div>
       </div>
     </div>

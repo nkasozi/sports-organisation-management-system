@@ -1237,15 +1237,6 @@ class EntityMetadataRegistry {
           is_read_only: false,
         },
         {
-          field_name: "primary_role_id" satisfies keyof Official,
-          display_name: "Official Type",
-          field_type: "foreign_key",
-          is_required: true,
-          is_read_only: false,
-          show_in_list: true,
-          foreign_key_entity: "gameofficialrole",
-        },
-        {
           field_name: "years_of_experience" satisfies keyof Official,
           display_name: "Years Experience",
           field_type: "number",

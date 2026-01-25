@@ -12,7 +12,6 @@ export interface Official extends BaseEntity {
   phone: string;
   date_of_birth: string;
   organization_id: string;
-  primary_role_id: string | null;
   years_of_experience: number;
   nationality: string;
   profile_image_url: string;
@@ -58,7 +57,6 @@ export function create_empty_official_input(
     phone: "",
     date_of_birth: "",
     organization_id,
-    primary_role_id: null,
     years_of_experience: 0,
     nationality: "",
     profile_image_url: "",

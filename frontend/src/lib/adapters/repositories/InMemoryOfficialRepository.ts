@@ -43,7 +43,6 @@ export class InMemoryOfficialRepository
       phone: input.phone,
       date_of_birth: input.date_of_birth,
       organization_id: input.organization_id,
-      primary_role_id: input.primary_role_id,
       years_of_experience: input.years_of_experience,
       nationality: input.nationality,
       profile_image_url: input.profile_image_url || DEFAULT_OFFICIAL_AVATAR,
@@ -88,12 +87,6 @@ export class InMemoryOfficialRepository
       );
     }
 
-    if (filter.primary_role_id) {
-      filtered_entities = filtered_entities.filter(
-        (official) => official.primary_role_id === filter.primary_role_id,
-      );
-    }
-
     if (filter.status) {
       filtered_entities = filtered_entities.filter(
         (official) => official.status === filter.status,
@@ -116,13 +109,6 @@ export class InMemoryOfficialRepository
     options?: QueryOptions,
   ): PaginatedAsyncResult<Official> {
     return this.find_by_filter({ organization_id }, options);
-  }
-
-  async find_by_role_id(
-    role_id: string,
-    options?: QueryOptions,
-  ): PaginatedAsyncResult<Official> {
-    return this.find_by_filter({ primary_role_id: role_id }, options);
   }
 
   async find_active_officials(

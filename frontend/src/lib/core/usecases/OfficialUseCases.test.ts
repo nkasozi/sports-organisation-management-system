@@ -30,7 +30,6 @@ function create_test_official(overrides: Partial<Official> = {}): Official {
     phone: "+256700123456",
     date_of_birth: "1985-05-15",
     organization_id: "org-123",
-    primary_role_id: "role-123",
     years_of_experience: 5,
     nationality: "Uganda",
     profile_image_url: "",
@@ -54,7 +53,6 @@ function create_valid_input(
     phone: "+256700123456",
     date_of_birth: "1985-05-15",
     organization_id: "org-123",
-    primary_role_id: "role-123",
     years_of_experience: 5,
     nationality: "Uganda",
     profile_image_url: "",
@@ -99,7 +97,7 @@ describe("OfficialUseCases", () => {
     });
 
     it("should apply filter when provided", async () => {
-      const filter = { primary_role_id: "role-123" };
+      const filter = { organization_id: "org-123" };
       vi.mocked(mock_repository.find_by_filter).mockResolvedValue({
         success: true,
         data: {

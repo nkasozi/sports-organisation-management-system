@@ -343,15 +343,10 @@ export function generate_team_staff(
   };
 }
 
-export function generate_official(
-  organization_id: string,
-  role_ids: string[],
-): Official {
+export function generate_official(organization_id: string): Official {
   const first_name = random_element(FIRST_NAMES);
   const last_name = random_element(LAST_NAMES);
   const now = new Date().toISOString();
-
-  const primary_role_id = random_element(role_ids);
 
   return {
     id: `official_${generate_id()}`,
@@ -364,7 +359,6 @@ export function generate_official(
       new Date(1995, 0, 1),
     ),
     organization_id,
-    primary_role_id,
     years_of_experience: faker.number.int({ min: 1, max: 25 }),
     nationality: random_element(NATIONALITIES),
     profile_image_url: "",
@@ -643,10 +637,9 @@ export async function generate_field_hockey_dataset(
     }
   }
 
-  const role_ids = game_official_roles.map((r) => r.id);
   const officials: Official[] = [];
   for (let i = 0; i < 12; i++) {
-    officials.push(generate_official(fh_organization.id, role_ids));
+    officials.push(generate_official(fh_organization.id));
   }
 
   const competition: Competition = {
@@ -771,10 +764,9 @@ export async function generate_complete_fake_dataset(
     }
   }
 
-  const role_ids = game_official_roles.map((r) => r.id);
   const officials: Official[] = [];
   for (let i = 0; i < 15; i++) {
-    officials.push(generate_official(organization.id, role_ids));
+    officials.push(generate_official(organization.id));
   }
 
   const competition = generate_competition(organization.id, league_format.id);
