@@ -72,7 +72,10 @@
     }
   }
 
-  function format_fixture_date(scheduled_date: string, scheduled_time: string): string {
+  function format_fixture_date(
+    scheduled_date: string,
+    scheduled_time: string,
+  ): string {
     const fixture_date = new Date(scheduled_date);
     const today = new Date();
     const tomorrow = new Date(today);
@@ -106,17 +109,23 @@
     return competition_sport_names[competition_id] || "Unknown Sport";
   }
 
-  async function load_sport_names_for_competitions(competitions: Competition[]): Promise<void> {
+  async function load_sport_names_for_competitions(
+    competitions: Competition[],
+  ): Promise<void> {
     for (const competition of competitions) {
       if (!competition.id) continue;
 
-      const org_result = await organization_use_cases.get_by_id(competition.organization_id);
+      const org_result = await organization_use_cases.get_by_id(
+        competition.organization_id,
+      );
       if (!org_result.success || !org_result.data) {
         competition_sport_names[competition.id] = "Unknown Sport";
         continue;
       }
 
-      const sport_result = await sport_use_cases.get_by_id(org_result.data.sport_id);
+      const sport_result = await sport_use_cases.get_by_id(
+        org_result.data.sport_id,
+      );
       if (sport_result.success && sport_result.data) {
         competition_sport_names[competition.id] = sport_result.data.name;
       } else {
@@ -127,8 +136,12 @@
     competition_sport_names = { ...competition_sport_names };
   }
 
-  async function load_competition_and_sport_names(fixtures: Fixture[]): Promise<void> {
-    const competition_ids = [...new Set(fixtures.map(f => f.competition_id).filter(Boolean))];
+  async function load_competition_and_sport_names(
+    fixtures: Fixture[],
+  ): Promise<void> {
+    const competition_ids = [
+      ...new Set(fixtures.map((f) => f.competition_id).filter(Boolean)),
+    ];
 
     for (const competition_id of competition_ids) {
       const comp_result = await competition_use_cases.get_by_id(competition_id);
@@ -140,13 +153,17 @@
 
       competition_names[competition_id] = comp_result.data.name;
 
-      const org_result = await organization_use_cases.get_by_id(comp_result.data.organization_id);
+      const org_result = await organization_use_cases.get_by_id(
+        comp_result.data.organization_id,
+      );
       if (!org_result.success || !org_result.data) {
         sport_names[competition_id] = "Unknown Sport";
         continue;
       }
 
-      const sport_result = await sport_use_cases.get_by_id(org_result.data.sport_id);
+      const sport_result = await sport_use_cases.get_by_id(
+        org_result.data.sport_id,
+      );
       if (sport_result.success && sport_result.data) {
         sport_names[competition_id] = sport_result.data.name;
       } else {
@@ -170,14 +187,22 @@
       localStorage.removeItem("debug_officials_count");
     }
 
-    const [org_result, comp_result, team_result, player_result, fixture_result] =
-      await Promise.all([
-        organization_use_cases.list(undefined, { page_number: 1, page_size: 1 }),
-        competition_use_cases.list(undefined, { page_number: 1, page_size: 5 }),
-        team_use_cases.list(undefined, { page_number: 1, page_size: 100 }),
-        player_use_cases.list(undefined, { page_number: 1, page_size: 1 }),
-        fixture_use_cases.list({ status: "scheduled" }, { page_number: 1, page_size: 5 }),
-      ]);
+    const [
+      org_result,
+      comp_result,
+      team_result,
+      player_result,
+      fixture_result,
+    ] = await Promise.all([
+      organization_use_cases.list(undefined, { page_number: 1, page_size: 1 }),
+      competition_use_cases.list(undefined, { page_number: 1, page_size: 5 }),
+      team_use_cases.list(undefined, { page_number: 1, page_size: 100 }),
+      player_use_cases.list(undefined, { page_number: 1, page_size: 1 }),
+      fixture_use_cases.list(
+        { status: "scheduled" },
+        { page_number: 1, page_size: 5 },
+      ),
+    ]);
 
     stats = {
       organizations: org_result.success ? org_result.total_count : 0,
@@ -192,13 +217,17 @@
     }
 
     if (team_result.success && team_result.data) {
-      teams_map = new Map(team_result.data.map((team: Team) => [team.id, team]));
+      teams_map = new Map(
+        team_result.data.map((team: Team) => [team.id, team]),
+      );
     }
 
     if (fixture_result.success && fixture_result.data) {
       upcoming_fixtures = fixture_result.data
-        .sort((a: Fixture, b: Fixture) =>
-          new Date(a.scheduled_date).getTime() - new Date(b.scheduled_date).getTime()
+        .sort(
+          (a: Fixture, b: Fixture) =>
+            new Date(a.scheduled_date).getTime() -
+            new Date(b.scheduled_date).getTime(),
         )
         .slice(0, 3);
 
@@ -239,10 +268,16 @@
         <h1
           class="text-2xl sm:text-3xl font-bold text-accent-900 dark:text-accent-100 mb-2"
         >
-          Welcome to {#if split_organization_name($branding_store.organization_name).prefix}{split_organization_name($branding_store.organization_name).prefix} {/if}<span class="text-theme-secondary-600">{split_organization_name($branding_store.organization_name).suffix}</span>
+          Welcome to {#if split_organization_name($branding_store.organization_name).prefix}{split_organization_name(
+              $branding_store.organization_name,
+            ).prefix}
+          {/if}<span class="text-theme-secondary-600"
+            >{split_organization_name($branding_store.organization_name)
+              .suffix}</span
+          >
         </h1>
         <p class="text-accent-600 dark:text-accent-300 text-mobile">
-          Track competitions, teams, players, officials and fixtures for your sport all in one place.
+          {$branding_store.organization_tagline}
         </p>
       </div>
       <div class="mt-4 sm:mt-0">
@@ -448,44 +483,64 @@
               </div>
             </div>
           {/each}
+        {:else if recent_competitions.length === 0}
+          <div class="text-center py-4">
+            <p class="text-sm text-accent-500 dark:text-accent-400">
+              No competitions yet. <a
+                href="/competitions/create"
+                class="text-primary-500 hover:underline">Create one</a
+              >
+            </p>
+          </div>
         {:else}
-          {#if recent_competitions.length === 0}
-            <div class="text-center py-4">
-              <p class="text-sm text-accent-500 dark:text-accent-400">
-                No competitions yet. <a href="/competitions/create" class="text-primary-500 hover:underline">Create one</a>
-              </p>
-            </div>
-          {:else}
-            {#each recent_competitions as competition, index}
-              <div class="flex items-center space-x-4">
-                <div
-                  class="h-10 w-10 rounded-lg flex items-center justify-center {index % 3 === 0 ? 'bg-sky-100 dark:bg-sky-900/60' : index % 3 === 1 ? 'bg-teal-100 dark:bg-teal-900/60' : 'bg-fuchsia-100 dark:bg-fuchsia-900/60'}"
+          {#each recent_competitions as competition, index}
+            <div class="flex items-center space-x-4">
+              <div
+                class="h-10 w-10 rounded-lg flex items-center justify-center {index %
+                  3 ===
+                0
+                  ? 'bg-sky-100 dark:bg-sky-900/60'
+                  : index % 3 === 1
+                    ? 'bg-teal-100 dark:bg-teal-900/60'
+                    : 'bg-fuchsia-100 dark:bg-fuchsia-900/60'}"
+              >
+                <span
+                  class="{index % 3 === 0
+                    ? 'text-sky-600'
+                    : index % 3 === 1
+                      ? 'text-teal-500'
+                      : 'text-fuchsia-500'} font-semibold text-sm"
                 >
-                  <span class="{index % 3 === 0 ? 'text-sky-600' : index % 3 === 1 ? 'text-teal-500' : 'text-fuchsia-500'} font-semibold text-sm">
-                    {get_competition_initials(competition.name)}
-                  </span>
-                </div>
-                <div class="flex-1 min-w-0">
-                  <p
-                    class="text-sm font-medium text-accent-900 dark:text-accent-100 truncate"
-                  >
-                    {competition.name}
-                  </p>
-                  <div class="flex flex-wrap items-center gap-1 mt-0.5">
-                    <span class="inline-flex items-center px-1.5 py-0.5 bg-sky-100 dark:bg-sky-900/40 text-sky-700 dark:text-sky-300 rounded text-xs">
-                      {get_sport_name_for_competition(competition.id)}
-                    </span>
-                    <span class="text-xs text-accent-500 dark:text-accent-400">
-                      {competition.team_ids?.length || 0} teams
-                    </span>
-                  </div>
-                </div>
-                <span class="{get_status_class(competition.status)} px-2 py-1 text-xs rounded-full">
-                  {competition.status.charAt(0).toUpperCase() + competition.status.slice(1)}
+                  {get_competition_initials(competition.name)}
                 </span>
               </div>
-            {/each}
-          {/if}
+              <div class="flex-1 min-w-0">
+                <p
+                  class="text-sm font-medium text-accent-900 dark:text-accent-100 truncate"
+                >
+                  {competition.name}
+                </p>
+                <div class="flex flex-wrap items-center gap-1 mt-0.5">
+                  <span
+                    class="inline-flex items-center px-1.5 py-0.5 bg-sky-100 dark:bg-sky-900/40 text-sky-700 dark:text-sky-300 rounded text-xs"
+                  >
+                    {get_sport_name_for_competition(competition.id)}
+                  </span>
+                  <span class="text-xs text-accent-500 dark:text-accent-400">
+                    {competition.team_ids?.length || 0} teams
+                  </span>
+                </div>
+              </div>
+              <span
+                class="{get_status_class(
+                  competition.status,
+                )} px-2 py-1 text-xs rounded-full"
+              >
+                {competition.status.charAt(0).toUpperCase() +
+                  competition.status.slice(1)}
+              </span>
+            </div>
+          {/each}
         {/if}
       </div>
     </div>
@@ -521,57 +576,79 @@
               </div>
             </div>
           {/each}
+        {:else if upcoming_fixtures.length === 0}
+          <div class="text-center py-4">
+            <p class="text-sm text-accent-500 dark:text-accent-400">
+              No upcoming fixtures. <a
+                href="/fixtures?action=create"
+                class="text-primary-500 hover:underline">Schedule one</a
+              >
+            </p>
+          </div>
         {:else}
-          {#if upcoming_fixtures.length === 0}
-            <div class="text-center py-4">
-              <p class="text-sm text-accent-500 dark:text-accent-400">
-                No upcoming fixtures. <a href="/fixtures?action=create" class="text-primary-500 hover:underline">Schedule one</a>
-              </p>
-            </div>
-          {:else}
-            {#each upcoming_fixtures as fixture, index}
-              <div class="flex items-center justify-between">
-                <div class="flex items-center space-x-3">
-                  <div
-                    class="h-8 w-8 rounded flex items-center justify-center {index % 3 === 0 ? 'bg-sky-100 dark:bg-sky-900/60' : index % 3 === 1 ? 'bg-teal-100 dark:bg-teal-900/60' : 'bg-fuchsia-100 dark:bg-fuchsia-900/60'}"
+          {#each upcoming_fixtures as fixture, index}
+            <div class="flex items-center justify-between">
+              <div class="flex items-center space-x-3">
+                <div
+                  class="h-8 w-8 rounded flex items-center justify-center {index %
+                    3 ===
+                  0
+                    ? 'bg-sky-100 dark:bg-sky-900/60'
+                    : index % 3 === 1
+                      ? 'bg-teal-100 dark:bg-teal-900/60'
+                      : 'bg-fuchsia-100 dark:bg-fuchsia-900/60'}"
+                >
+                  <svg
+                    class="h-4 w-4 {index % 3 === 0
+                      ? 'text-sky-500'
+                      : index % 3 === 1
+                        ? 'text-teal-500'
+                        : 'text-fuchsia-500'}"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
                   >
-                    <svg
-                      class="h-4 w-4 {index % 3 === 0 ? 'text-sky-500' : index % 3 === 1 ? 'text-teal-500' : 'text-fuchsia-500'}"
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                    >
-                      <path
-                        fill-rule="evenodd"
-                        d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.293l-3-3a1 1 0 00-1.414 1.414L10.586 9.5H7a1 1 0 100 2h3.586l-1.293 1.293a1 1 0 101.414 1.414l3-3a1 1 0 000-1.414z"
-                        clip-rule="evenodd"
-                      />
-                    </svg>
-                  </div>
-                  <div>
-                    <p
-                      class="text-sm font-medium text-accent-900 dark:text-accent-100"
-                    >
-                      {get_team_name(fixture.home_team_id)} vs {get_team_name(fixture.away_team_id)}
-                    </p>
-                    <div class="flex flex-wrap items-center gap-1 mt-0.5">
-                      <span class="inline-flex items-center px-1.5 py-0.5 bg-teal-100 dark:bg-teal-900/40 text-teal-700 dark:text-teal-300 rounded text-xs">
-                        {get_competition_name(fixture.competition_id)}
-                      </span>
-                      <span class="inline-flex items-center px-1.5 py-0.5 bg-sky-100 dark:bg-sky-900/40 text-sky-700 dark:text-sky-300 rounded text-xs">
-                        {get_sport_name(fixture.competition_id)}
-                      </span>
-                    </div>
-                    <p class="text-xs text-accent-500 dark:text-accent-400 mt-0.5">
-                      {format_fixture_date(fixture.scheduled_date, fixture.scheduled_time)}
-                    </p>
-                  </div>
+                    <path
+                      fill-rule="evenodd"
+                      d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.293l-3-3a1 1 0 00-1.414 1.414L10.586 9.5H7a1 1 0 100 2h3.586l-1.293 1.293a1 1 0 101.414 1.414l3-3a1 1 0 000-1.414z"
+                      clip-rule="evenodd"
+                    />
+                  </svg>
                 </div>
-                <span class="text-xs text-accent-500 dark:text-accent-400">
-                  {fixture.venue || "TBD"}
-                </span>
+                <div>
+                  <p
+                    class="text-sm font-medium text-accent-900 dark:text-accent-100"
+                  >
+                    {get_team_name(fixture.home_team_id)} vs {get_team_name(
+                      fixture.away_team_id,
+                    )}
+                  </p>
+                  <div class="flex flex-wrap items-center gap-1 mt-0.5">
+                    <span
+                      class="inline-flex items-center px-1.5 py-0.5 bg-teal-100 dark:bg-teal-900/40 text-teal-700 dark:text-teal-300 rounded text-xs"
+                    >
+                      {get_competition_name(fixture.competition_id)}
+                    </span>
+                    <span
+                      class="inline-flex items-center px-1.5 py-0.5 bg-sky-100 dark:bg-sky-900/40 text-sky-700 dark:text-sky-300 rounded text-xs"
+                    >
+                      {get_sport_name(fixture.competition_id)}
+                    </span>
+                  </div>
+                  <p
+                    class="text-xs text-accent-500 dark:text-accent-400 mt-0.5"
+                  >
+                    {format_fixture_date(
+                      fixture.scheduled_date,
+                      fixture.scheduled_time,
+                    )}
+                  </p>
+                </div>
               </div>
-            {/each}
-          {/if}
+              <span class="text-xs text-accent-500 dark:text-accent-400">
+                {fixture.venue || "TBD"}
+              </span>
+            </div>
+          {/each}
         {/if}
       </div>
     </div>
