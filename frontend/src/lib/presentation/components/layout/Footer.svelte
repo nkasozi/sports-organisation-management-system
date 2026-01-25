@@ -295,7 +295,7 @@
                 clip-rule="evenodd"
               />
             </svg>
-            <span>by Stream</span>
+            <span>by KasozyN</span>
           </div>
         </div>
       </div>
