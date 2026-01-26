@@ -174,8 +174,8 @@
       organization_id: competition.organization_id,
       competition_format_id: competition.competition_format_id,
       team_ids: competition.team_ids || [],
-      auto_generate_fixtures_and_assign_officials:
-        competition.auto_generate_fixtures_and_assign_officials || false,
+      allow_auto_squad_submission:
+        competition.allow_auto_squad_submission || false,
       start_date: competition.start_date,
       end_date: competition.end_date,
       registration_deadline: competition.registration_deadline,
@@ -811,20 +811,19 @@
                   <label class="flex items-center gap-3 cursor-pointer">
                     <input
                       type="checkbox"
-                      bind:checked={
-                        form_data.auto_generate_fixtures_and_assign_officials
-                      }
+                      bind:checked={form_data.allow_auto_squad_submission}
                       class="w-5 h-5 text-primary-600 rounded border-accent-300"
                     />
                     <div>
                       <span
                         class="text-sm font-medium text-accent-900 dark:text-accent-100"
                       >
-                        Auto-generate fixtures and assign officials
+                        Allow auto squad submission
                       </span>
                       <p class="text-xs text-accent-500 dark:text-accent-400">
-                        Automatically create fixtures and assign available
-                        officials when the competition starts
+                        When enabled, starting a live game will automatically
+                        generate squads from team rosters. When disabled, teams
+                        must submit their squads before starting a game.
                       </p>
                     </div>
                   </label>

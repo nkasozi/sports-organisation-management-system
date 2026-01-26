@@ -58,9 +58,12 @@ export interface ForeignKeyFilterConfig {
   filter_type:
     | "team_jersey_from_fixture"
     | "official_jersey_from_competition"
-    | "holder_type_filter";
+    | "holder_type_filter"
+    | "teams_from_competition"
+    | "exclude_selected_field";
   holder_type?: string;
   team_side?: "home" | "away";
+  exclude_field?: string;
 }
 
 export interface SubEntityConfig {

@@ -40,10 +40,12 @@ function create_valid_profile_link_input(
   };
 }
 
+import type { Result, PaginatedResult } from "../types/Result";
+
 function create_paginated_result<T>(
   items: T[],
   total_count?: number,
-): PaginatedAsyncResult<T> {
+): Result<PaginatedResult<T>, string> {
   return create_success_result({
     items,
     total_count: total_count ?? items.length,
@@ -65,7 +67,6 @@ function create_mock_repository(): ProfileLinkRepository {
     count: vi.fn(),
     find_by_filter: vi.fn(),
     find_by_profile_id: vi.fn(),
-    delete_by_profile_id: vi.fn(),
   };
 }
 
@@ -165,7 +166,7 @@ describe("ProfileLinkUseCases", () => {
 
       expect(result.success).toBe(true);
       if (result.success) {
-        expect(result.data.id).toBe("pl_123");
+        expect(result.data!.id).toBe("pl_123");
       }
       expect(mock_repository.find_by_id).toHaveBeenCalledWith("pl_123");
     });
@@ -240,7 +241,7 @@ describe("ProfileLinkUseCases", () => {
 
       expect(result.success).toBe(true);
       if (result.success) {
-        expect(result.data.profile_id).toBe("profile_1");
+        expect(result.data!.profile_id).toBe("profile_1");
       }
       expect(mock_repository.create).toHaveBeenCalledWith(input);
     });
@@ -320,7 +321,7 @@ describe("ProfileLinkUseCases", () => {
 
       expect(result.success).toBe(true);
       if (result.success) {
-        expect(result.data.title).toBe("Updated title");
+        expect(result.data!.title).toBe("Updated title");
       }
       expect(mock_repository.update).toHaveBeenCalledWith("pl_123", updates);
     });

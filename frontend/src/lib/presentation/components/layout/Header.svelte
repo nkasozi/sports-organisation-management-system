@@ -225,7 +225,10 @@
           {#if user_menu_open}
             <div
               class="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white dark:bg-accent-800 ring-1 ring-black ring-opacity-5 z-50"
+              role="menu"
+              tabindex="-1"
               on:click|stopPropagation
+              on:keydown|stopPropagation
             >
               <div class="py-1">
                 <button

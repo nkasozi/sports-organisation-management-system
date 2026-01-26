@@ -17,6 +17,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
   import { entityMetadataRegistry } from "../../infrastructure/registry/EntityMetadataRegistry";
   import { fakeDataGenerator } from "../../infrastructure/utils/FakeDataGenerator";
   import { get_use_cases_for_entity_type } from "../../infrastructure/registry/entityUseCasesRegistry";
+  import { get_competition_team_use_cases } from "../../core/usecases/CompetitionTeamUseCases";
   import SearchableSelectField from "./ui/SearchableSelectField.svelte";
   import DynamicEntityList from "./DynamicEntityList.svelte";
   import type { SubEntityFilter } from "$lib/core/types/SubEntityFilter";
@@ -44,6 +45,8 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
     inline_cancel: void;
   }>();
 
+  const competition_team_use_cases = get_competition_team_use_cases();
+
   let form_data: Record<string, any> = {};
   let validation_errors: Record<string, string> = {};
   let is_loading: boolean = false;
@@ -51,6 +54,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
   let foreign_key_options: Record<string, BaseEntity[]> = {};
   let filtered_fields_loading: Record<string, boolean> = {};
   let color_clash_warnings: string[] = [];
+  let competition_team_ids: Set<string> = new Set();
 
   $: entity_metadata = get_entity_metadata_for_type(entity_type);
   $: is_edit_mode = determine_if_edit_mode(entity_data);
@@ -86,9 +90,24 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
     return data !== null && data.id !== undefined;
   }
 
+  function format_entity_display_name(raw_name: string): string {
+    if (typeof raw_name !== "string" || raw_name.length === 0) return "Entity";
+    const with_spaces = raw_name
+      .replace(/([a-z])([A-Z])/g, "$1 $2")
+      .replace(/_/g, " ");
+    return with_spaces
+      .split(" ")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(" ");
+  }
+
   function build_form_title(display_name: string, edit_mode: boolean): string {
     const action = edit_mode ? "Edit" : "Create";
-    return `${action} ${display_name}`;
+    const formatted_name =
+      display_name.length > 0
+        ? display_name
+        : format_entity_display_name(entity_type);
+    return `${action} ${formatted_name}`;
   }
 
   function get_sub_entity_fields(
@@ -388,11 +407,11 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
     }
   }
 
-  async function load_filtered_jersey_options(
+  async function load_filtered_foreign_key_options(
     field: FieldMetadata,
-    fixture_id: string,
+    dependency_value: string,
   ): Promise<void> {
-    if (!field.foreign_key_filter || !fixture_id) {
+    if (!field.foreign_key_filter || !dependency_value) {
       foreign_key_options[field.field_name] = [];
       filtered_fields_loading = {
         ...filtered_fields_loading,
@@ -407,6 +426,112 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
     };
 
     const filter_config = field.foreign_key_filter;
+
+    if (filter_config.filter_type === "teams_from_competition") {
+      await load_teams_from_competition(field, dependency_value);
+      return;
+    }
+
+    await load_filtered_jersey_options_internal(field, dependency_value);
+  }
+
+  async function load_teams_from_competition(
+    field: FieldMetadata,
+    competition_id: string,
+  ): Promise<void> {
+    const comp_teams_result =
+      await competition_team_use_cases.list_teams_in_competition(
+        competition_id,
+        { page_size: 100 },
+      );
+
+    if (!comp_teams_result.success) {
+      console.warn(
+        "[FILTERED_FK] Failed to load competition teams:",
+        competition_id,
+      );
+      foreign_key_options[field.field_name] = [];
+      all_competition_teams_cache = [];
+      filtered_fields_loading = {
+        ...filtered_fields_loading,
+        [field.field_name]: false,
+      };
+      return;
+    }
+
+    const competition_teams = comp_teams_result.data.items;
+    competition_team_ids = new Set(competition_teams.map((ct) => ct.team_id));
+
+    const team_use_cases = get_use_cases_for_entity_type("team");
+    if (!team_use_cases) {
+      console.warn("[FILTERED_FK] Missing team use cases");
+      all_competition_teams_cache = [];
+      filtered_fields_loading = {
+        ...filtered_fields_loading,
+        [field.field_name]: false,
+      };
+      return;
+    }
+
+    const all_teams_result = await team_use_cases.list();
+    if (!all_teams_result.success) {
+      console.warn("[FILTERED_FK] Failed to load teams");
+      all_competition_teams_cache = [];
+      filtered_fields_loading = {
+        ...filtered_fields_loading,
+        [field.field_name]: false,
+      };
+      return;
+    }
+
+    const all_teams_data = all_teams_result.data as unknown;
+    const all_teams: BaseEntity[] = Array.isArray(all_teams_data)
+      ? (all_teams_data as BaseEntity[])
+      : Array.isArray((all_teams_data as { items?: unknown })?.items)
+        ? ((all_teams_data as { items: unknown[] })
+            .items as unknown as BaseEntity[])
+        : [];
+
+    const filtered_teams = all_teams.filter((team) =>
+      competition_team_ids.has(team.id),
+    );
+
+    all_competition_teams_cache = [...filtered_teams];
+
+    const exclude_field = field.foreign_key_filter?.exclude_field;
+    const exclude_value = exclude_field ? form_data[exclude_field] : null;
+
+    const final_teams = exclude_value
+      ? filtered_teams.filter((team) => team.id !== exclude_value)
+      : filtered_teams;
+
+    console.debug("[FILTERED_FK] Loaded competition teams", {
+      field: field.field_name,
+      competition_id,
+      total_competition_teams: competition_teams.length,
+      filtered_count: final_teams.length,
+      exclude_field,
+      exclude_value,
+    });
+
+    foreign_key_options = {
+      ...foreign_key_options,
+      [field.field_name]: final_teams,
+    };
+
+    filtered_fields_loading = {
+      ...filtered_fields_loading,
+      [field.field_name]: false,
+    };
+  }
+
+  async function load_filtered_jersey_options_internal(
+    field: FieldMetadata,
+    fixture_id: string,
+  ): Promise<void> {
+    const filter_config = field.foreign_key_filter;
+    if (!filter_config) return;
+
     const fixture_use_cases = get_use_cases_for_entity_type("fixture");
     const jersey_use_cases = get_use_cases_for_entity_type("jerseycolor");
 
@@ -490,6 +615,71 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
     check_jersey_color_clashes();
   }
 
+  let all_competition_teams_cache: BaseEntity[] = [];
+
+  function update_team_exclusion_filter(changed_field_name: string): void {
+    if (!entity_metadata) return;
+    if (all_competition_teams_cache.length === 0) return;
+
+    for (const field of entity_metadata.fields) {
+      if (
+        field.foreign_key_filter?.filter_type === "teams_from_competition" &&
+        field.foreign_key_filter?.exclude_field === changed_field_name
+      ) {
+        const exclude_value = form_data[changed_field_name];
+        const filtered_teams = exclude_value
+          ? all_competition_teams_cache.filter(
+              (team) => team.id !== exclude_value,
+            )
+          : [...all_competition_teams_cache];
+
+        foreign_key_options = {
+          ...foreign_key_options,
+          [field.field_name]: filtered_teams,
+        };
+      }
+    }
+  }
+
+  async function auto_set_venue_from_home_team(
+    home_team_id: string,
+  ): Promise<void> {
+    if (!home_team_id) return;
+    if (entity_type.toLowerCase() !== "fixture") return;
+
+    const selected_team = all_competition_teams_cache.find(
+      (team) => team.id === home_team_id,
+    ) as { home_venue_id?: string } | undefined;
+
+    if (!selected_team?.home_venue_id) {
+      console.debug("[AUTO_VENUE] No home venue found for team:", home_team_id);
+      return;
+    }
+
+    const venue_use_cases = get_use_cases_for_entity_type("venue");
+    if (!venue_use_cases) {
+      console.warn("[AUTO_VENUE] Missing venue use cases");
+      return;
+    }
+
+    const venue_result = await venue_use_cases.get_by_id(
+      selected_team.home_venue_id,
+    );
+    if (!venue_result.success || !venue_result.data) {
+      console.warn(
+        "[AUTO_VENUE] Failed to load venue:",
+        selected_team.home_venue_id,
+      );
+      return;
+    }
+
+    const venue = venue_result.data as { name?: string };
+    if (venue.name) {
+      form_data["venue"] = venue.name;
+      console.debug("[AUTO_VENUE] Set venue to:", venue.name);
+    }
+  }
+
   async function handle_dependency_field_change(
     changed_field_name: string,
     new_value: string,
@@ -502,8 +692,14 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
         field.foreign_key_filter.depends_on_field === changed_field_name
       ) {
         form_data[field.field_name] = "";
-        await load_filtered_jersey_options(field, new_value);
+        await load_filtered_foreign_key_options(field, new_value);
       }
+    }
+
+    update_team_exclusion_filter(changed_field_name);
+
+    if (changed_field_name === "home_team_id") {
+      await auto_set_venue_from_home_team(new_value);
     }
 
     if (changed_field_name.includes("jersey")) {
@@ -524,7 +720,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
           dependency_field
         ];
         if (dependency_value && typeof dependency_value === "string") {
-          await load_filtered_jersey_options(field, dependency_value);
+          await load_filtered_foreign_key_options(field, dependency_value);
         }
       }
     }

@@ -12,6 +12,9 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
   export let is_mobile_view: boolean = true;
   export let allow_skip_steps: boolean = false;
   export let is_busy: boolean = false;
+  export let validate_step_change:
+    | ((from_index: number, to_index: number) => boolean)
+    | null = null;
 
   // Event dispatcher
   const dispatch = createEventDispatcher<{
@@ -19,25 +22,27 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
     step_completed: { step_index: number; step: any };
     wizard_completed: { completed_steps: any[] };
     wizard_cancelled: void;
+    validation_failed: { step_index: number; target_index: number };
   }>();
 
   // Computed values
   $: current_step = get_current_step_from_index(steps, current_step_index);
   $: progress_percentage = calculate_progress_percentage(
     current_step_index,
-    steps.length
+    steps.length,
   );
   $: can_go_to_previous_step =
     determine_if_previous_step_available(current_step_index);
   $: can_go_to_next_step = determine_if_next_step_available(
     current_step_index,
-    steps
+    steps,
+    validate_step_change !== null,
   );
   $: is_final_step = check_if_final_step(current_step_index, steps.length);
 
   function get_current_step_from_index(
     step_list: any[],
-    index: number
+    index: number,
   ): any | null {
     if (index < 0 || index >= step_list.length) return null;
     return step_list[index];
@@ -45,34 +50,36 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
 
   function calculate_progress_percentage(
     current_index: number,
-    total_steps: number
+    total_steps: number,
   ): number {
     if (total_steps === 0) return 0;
     return Math.round(((current_index + 1) / total_steps) * 100);
   }
 
   function determine_if_previous_step_available(
-    current_index: number
+    current_index: number,
   ): boolean {
     return current_index > 0;
   }
 
   function determine_if_next_step_available(
     current_index: number,
-    step_list: any[]
+    step_list: any[],
+    has_custom_validation: boolean,
   ): boolean {
     if (current_index >= step_list.length - 1) return false;
 
     const current = step_list[current_index];
     if (!current) return false;
 
-    // Can proceed if current step is completed or optional/skippable
+    if (has_custom_validation) return true;
+
     return current.is_completed || (allow_skip_steps && current.is_optional);
   }
 
   function check_if_final_step(
     current_index: number,
-    total_steps: number
+    total_steps: number,
   ): boolean {
     return current_index === total_steps - 1;
   }
@@ -81,6 +88,20 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
     if (is_busy) return;
     if (target_step_index < 0 || target_step_index >= steps.length) return;
     if (target_step_index === current_step_index) return;
+
+    if (validate_step_change && target_step_index > current_step_index) {
+      const is_valid = validate_step_change(
+        current_step_index,
+        target_step_index,
+      );
+      if (!is_valid) {
+        dispatch("validation_failed", {
+          step_index: current_step_index,
+          target_index: target_step_index,
+        });
+        return;
+      }
+    }
 
     const previous_index = current_step_index;
     current_step_index = target_step_index;
@@ -214,7 +235,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
               <span
                 class="w-6 h-6 rounded-full {get_step_status_class(
                   steps[current_step_index - 1],
-                  current_step_index - 1
+                  current_step_index - 1,
                 )} flex items-center justify-center text-xs"
               >
                 {current_step_index}
@@ -232,7 +253,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
             <div
               class="w-8 h-8 rounded-full {get_step_status_class(
                 current_step,
-                current_step_index
+                current_step_index,
               )} flex items-center justify-center font-semibold"
             >
               {current_step_index + 1}
@@ -252,7 +273,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
               <span
                 class="w-6 h-6 rounded-full {get_step_status_class(
                   steps[current_step_index + 1],
-                  current_step_index + 1
+                  current_step_index + 1,
                 )} flex items-center justify-center text-xs"
               >
                 {current_step_index + 2}
@@ -274,7 +295,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
               <button
                 class="step-circle w-8 h-8 rounded-full {get_step_status_class(
                   step,
-                  step_index
+                  step_index,
                 )} flex items-center justify-center font-semibold text-sm transition-colors duration-200 hover:opacity-80"
                 on:click={() => navigate_to_step(step_index)}
                 disabled={!allow_skip_steps && step_index > current_step_index}
@@ -290,7 +311,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
               {#if step_index < steps.length - 1}
                 <div
                   class="step-connector flex-1 h-0.5 mx-2 {get_step_connector_class(
-                    step_index
+                    step_index,
                   )}"
                 ></div>
               {/if}

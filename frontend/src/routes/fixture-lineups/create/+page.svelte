@@ -49,6 +49,7 @@
   let team_players: TeamPlayer[] = [];
   let min_players: number = 2;
   let max_players: number = 18;
+  let starters_count: number = 11;
 
   type WizardStep = {
     step_key: "fixture" | "team" | "players" | "confirm";
@@ -68,10 +69,15 @@
   let fixtures: Fixture[] = [];
   let teams: Team[] = [];
   let all_teams: Team[] = [];
+  let all_competitions: Competition[] = [];
   let loading: boolean = true;
   let saving: boolean = false;
   let error_message: string = "";
   let validation_errors: Record<string, string> = {};
+
+  $: current_fixture_title = selected_fixture
+    ? get_fixture_name(selected_fixture)
+    : "";
 
   $: fixture_select_options = fixtures.map((fixture) => ({
     value: fixture.id,
@@ -85,7 +91,7 @@
 
   $: filtered_team_players = build_filtered_team_players(
     team_players,
-    player_search_text
+    player_search_text,
   );
 
   $: wizard_steps = build_wizard_steps(
@@ -94,7 +100,7 @@
     form_data.selected_players.length,
     min_players,
     max_players,
-    confirm_lock_understood
+    confirm_lock_understood,
   );
 
   onMount(async () => {
@@ -103,13 +109,18 @@
   });
 
   async function load_reference_data(): Promise<void> {
-    const [fixtures_result, teams_result] = await Promise.all([
-      fixture_use_cases.list(undefined, {
-        page_number: 1,
-        page_size: 200,
-      }),
-      team_use_cases.list(undefined, { page_number: 1, page_size: 200 }),
-    ]);
+    const [fixtures_result, teams_result, competitions_result] =
+      await Promise.all([
+        fixture_use_cases.list(undefined, {
+          page_number: 1,
+          page_size: 200,
+        }),
+        team_use_cases.list(undefined, { page_number: 1, page_size: 200 }),
+        competition_use_cases.list(undefined, {
+          page_number: 1,
+          page_size: 200,
+        }),
+      ]);
 
     if (fixtures_result.success) {
       fixtures = fixtures_result.data;
@@ -120,11 +131,15 @@
       teams = teams_result.data;
     }
 
+    if (competitions_result.success) {
+      all_competitions = competitions_result.data;
+    }
+
     if (fixtures.length === 0) {
       error_message = build_error_message(
         "No fixtures available.",
         "A fixture is required to submit a team lineup.",
-        "Create fixtures first (Fixtures tab), then come back here to submit a lineup."
+        "Create fixtures first (Fixtures tab), then come back here to submit a lineup.",
       );
     }
   }
@@ -146,13 +161,13 @@
     }
 
     const fixture_result = await fixture_use_cases.get_by_id(
-      form_data.fixture_id
+      form_data.fixture_id,
     );
     if (!fixture_result.success || !fixture_result.data) {
       error_message = build_error_message(
         "Failed to load fixture.",
         "The selected fixture could not be found.",
-        "Refresh the page and try selecting the fixture again."
+        "Refresh the page and try selecting the fixture again.",
       );
       selected_fixture = null;
       teams = [];
@@ -164,13 +179,13 @@
     selected_fixture = fixture_result.data;
 
     const competition_result = await competition_use_cases.get_by_id(
-      selected_fixture.competition_id
+      selected_fixture.competition_id,
     );
     if (!competition_result.success || !competition_result.data) {
       error_message = build_error_message(
         "Failed to load competition for fixture.",
         "Competition data is required to determine lineup rules.",
-        "Ensure the fixture has a valid competition, then retry."
+        "Ensure the fixture has a valid competition, then retry.",
       );
       teams = [];
       reset_team_and_roster();
@@ -188,11 +203,31 @@
       }),
     ]);
 
-    if (organization_result.success && organization_result.data && organization_result.data.sport_id) {
-      const sport_result = await get_sport_by_id(organization_result.data.sport_id);
+    if (
+      organization_result.success &&
+      organization_result.data &&
+      organization_result.data.sport_id
+    ) {
+      const sport_result = await get_sport_by_id(
+        organization_result.data.sport_id,
+      );
       if (sport_result.success && sport_result.data) {
         min_players = sport_result.data.min_players_per_fixture || 2;
         max_players = sport_result.data.max_players_per_fixture || 18;
+        starters_count = sport_result.data.max_players_on_field || 11;
+      }
+    }
+
+    if (competition.rule_overrides) {
+      const overrides = competition.rule_overrides;
+      if (overrides.min_players_on_field !== undefined) {
+        min_players = overrides.min_players_on_field;
+      }
+      if (overrides.max_squad_size !== undefined) {
+        max_players = overrides.max_squad_size;
+      }
+      if (overrides.max_players_on_field !== undefined) {
+        starters_count = overrides.max_players_on_field;
       }
     }
 
@@ -214,7 +249,7 @@
 
     fixture_team_label_by_team_id = build_fixture_team_label_map(
       teams,
-      competition_teams_for_fixture
+      competition_teams_for_fixture,
     );
 
     reset_team_and_roster();
@@ -231,7 +266,7 @@
       validation_errors.fixture_id = build_error_message(
         "No fixture selected.",
         "A fixture is required before you can choose a team.",
-        "Select a fixture in Step 1, then continue."
+        "Select a fixture in Step 1, then continue.",
       );
       reset_team_and_roster();
       return;
@@ -251,7 +286,7 @@
         validation_errors.team_id = build_error_message(
           "Invalid team selection.",
           "Only teams participating in the selected fixture can submit a lineup.",
-          "Choose either the home or away team listed for the fixture."
+          "Choose either the home or away team listed for the fixture.",
         );
         reset_team_and_roster();
         return;
@@ -269,7 +304,10 @@
           page_number: 1,
           page_size: 5000,
         }),
-        player_position_use_cases.list(undefined, { page_number: 1, page_size: 500 }),
+        player_position_use_cases.list(undefined, {
+          page_number: 1,
+          page_size: 500,
+        }),
       ]);
 
     selected_team = team_result.success ? (team_result.data ?? null) : null;
@@ -288,14 +326,14 @@
     team_players = build_team_players(
       base_players,
       memberships,
-      position_name_by_id
+      position_name_by_id,
     );
 
     if (team_players.length === 0) {
       validation_errors.players = build_error_message(
         "No players found for this team.",
         "A team must have players assigned via Player-Team Memberships.",
-        "Create Player-Team Memberships for this team, then retry."
+        "Create Player-Team Memberships for this team, then retry.",
       );
       form_data.selected_players = [];
       current_step_index = 2;
@@ -304,18 +342,60 @@
 
     form_data.selected_players = derive_initial_selected_players(
       team_players,
-      max_players
+      max_players,
     );
     current_step_index = 2;
   }
 
+  function validate_players_step(): boolean {
+    validation_errors = {};
+    const count = form_data.selected_players.length;
+
+    if (count < min_players) {
+      validation_errors.players = build_error_message(
+        `Not enough players selected (${count} of minimum ${min_players}).`,
+        `This fixture requires at least ${min_players} players to be selected.`,
+        `Select ${min_players - count} more player(s) to continue.`,
+      );
+      return false;
+    }
+
+    if (count > max_players) {
+      validation_errors.players = build_error_message(
+        `Too many players selected (${count} of maximum ${max_players}).`,
+        `This fixture allows a maximum of ${max_players} players.`,
+        `Remove ${count - max_players} player(s) to continue.`,
+      );
+      return false;
+    }
+
+    return true;
+  }
+
+  function handle_step_change_attempt(
+    from_step_index: number,
+    to_step_index: number,
+  ): boolean {
+    if (from_step_index === 2 && to_step_index > from_step_index) {
+      return validate_players_step();
+    }
+    return true;
+  }
+
+  function get_player_role_label(player_index: number): string {
+    if (player_index < starters_count) {
+      return "Starter";
+    }
+    return "Substitute";
+  }
+
   function toggle_player_selection(player_id: string): boolean {
-    const selected_player_ids = form_data.selected_players.map(p => p.id);
+    const selected_player_ids = form_data.selected_players.map((p) => p.id);
     const is_selected = selected_player_ids.includes(player_id);
 
     if (is_selected) {
       form_data.selected_players = form_data.selected_players.filter(
-        (p) => p.id !== player_id
+        (p) => p.id !== player_id,
       );
       return true;
     }
@@ -326,7 +406,7 @@
       return false;
     }
 
-    const team_player = team_players.find(p => p.id === player_id);
+    const team_player = team_players.find((p) => p.id === player_id);
     if (!team_player) return false;
 
     form_data.selected_players = [
@@ -355,7 +435,7 @@
       validation_errors.fixture_id = build_error_message(
         "Fixture is required.",
         "A lineup must belong to a fixture.",
-        "Select a fixture in Step 1."
+        "Select a fixture in Step 1.",
       );
       current_step_index = 0;
       return;
@@ -365,7 +445,7 @@
       validation_errors.team_id = build_error_message(
         "Team is required.",
         "A lineup must be submitted by a team participating in the fixture.",
-        "Select a team in Step 2."
+        "Select a team in Step 2.",
       );
       current_step_index = 1;
       return;
@@ -376,7 +456,7 @@
       validation_errors.players = build_error_message(
         "Invalid squad size.",
         `This fixture requires between ${min_players} and ${max_players} players, but ${count} were selected.`,
-        "Adjust the selected players in Step 3, then confirm again."
+        "Adjust the selected players in Step 3, then confirm again.",
       );
       current_step_index = 2;
       return;
@@ -386,7 +466,7 @@
       validation_errors.confirm = build_error_message(
         "Confirmation required.",
         "Submitting a lineup locks it to prevent accidental changes.",
-        "Tick the confirmation checkbox in Step 4 to proceed."
+        "Tick the confirmation checkbox in Step 4 to proceed.",
       );
       current_step_index = 3;
       return;
@@ -396,7 +476,7 @@
 
     const existing = await lineup_use_cases.get_lineup_for_team_in_fixture(
       form_data.fixture_id,
-      form_data.team_id
+      form_data.team_id,
     );
 
     if (existing.success) {
@@ -404,7 +484,7 @@
       error_message = build_error_message(
         "A lineup already exists for this team in this fixture.",
         "Only one locked lineup is allowed per team per fixture.",
-        "Open the existing lineup from the Fixture Lineups list."
+        "Open the existing lineup from the Fixture Lineups list.",
       );
       return;
     }
@@ -425,7 +505,7 @@
         build_error_message(
           "Failed to submit lineup.",
           "The lineup could not be saved.",
-          "Retry. If the problem persists, reset demo data and try again."
+          "Retry. If the problem persists, reset demo data and try again.",
         );
       return;
     }
@@ -441,7 +521,59 @@
   function get_fixture_name(fixture: Fixture): string {
     const home_team = all_teams.find((t) => t.id === fixture.home_team_id);
     const away_team = all_teams.find((t) => t.id === fixture.away_team_id);
-    return `${home_team?.name || "Unknown"} vs ${away_team?.name || "Unknown"}`;
+    const competition = all_competitions.find(
+      (c) => c.id === fixture.competition_id,
+    );
+    const teams_label = `${home_team?.name || "Unknown"} vs ${away_team?.name || "Unknown"}`;
+    const date_time_suffix = format_fixture_date_time(
+      fixture.scheduled_date,
+      fixture.scheduled_time,
+    );
+    const competition_suffix = competition?.name || "";
+
+    let label = teams_label;
+    if (date_time_suffix) {
+      label += ` [${date_time_suffix}]`;
+    }
+    if (competition_suffix) {
+      label += ` [${competition_suffix}]`;
+    }
+    return label;
+  }
+
+  function format_fixture_date_time(
+    scheduled_date: string,
+    scheduled_time: string,
+  ): string {
+    if (!scheduled_date || scheduled_date.trim() === "") return "";
+
+    const date = new Date(scheduled_date);
+    if (isNaN(date.getTime())) return "";
+
+    const day = date.getDate();
+    const month_names = [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
+    ];
+    const month = month_names[date.getMonth()];
+    const year = date.getFullYear();
+    const formatted_date = `${day} ${month} ${year}`;
+
+    if (scheduled_time && scheduled_time.trim() !== "") {
+      return `${formatted_date} - ${scheduled_time}`;
+    }
+
+    return formatted_date;
   }
 
   function reset_team_and_roster(): boolean {
@@ -454,18 +586,18 @@
 
   function build_filtered_team_players(
     players: TeamPlayer[],
-    search_text: string
+    search_text: string,
   ): TeamPlayer[] {
     const search = search_text.trim();
     if (!search) return players;
     return players.filter((player) =>
-      matches_team_player_search(player, search)
+      matches_team_player_search(player, search),
     );
   }
 
   function build_fixture_team_label_map(
     fixture_teams: Team[],
-    competition_teams: CompetitionTeam[]
+    competition_teams: CompetitionTeam[],
   ): Map<string, string> {
     const by_team_id = new Map(competition_teams.map((ct) => [ct.team_id, ct]));
 
@@ -479,7 +611,7 @@
           ? ` • ${competition_team.status}`
           : " • not registered";
         return [team.id, `${team.name}${seed}${status}`];
-      })
+      }),
     );
   }
 
@@ -489,7 +621,7 @@
     selected_player_count: number,
     minimum_players: number,
     maximum_players: number,
-    confirm_lock: boolean
+    confirm_lock: boolean,
   ): WizardStep[] {
     const fixture_completed = Boolean(fixture);
     const team_completed = Boolean(team);
@@ -569,6 +701,7 @@
       bind:current_step_index
       is_mobile_view={true}
       is_busy={saving}
+      validate_step_change={handle_step_change_attempt}
       on:wizard_cancelled={() => goto("/fixture-lineups")}
       on:wizard_completed={handle_submit_locked_lineup}
     >
@@ -637,14 +770,30 @@
 
           {#if step_index === 2}
             <div class="space-y-4">
+              {#if current_fixture_title}
+                <div
+                  class="p-3 rounded-lg bg-secondary-50 dark:bg-secondary-900/20 border border-secondary-200 dark:border-secondary-700"
+                >
+                  <p
+                    class="text-sm font-medium text-secondary-800 dark:text-secondary-200"
+                  >
+                    {current_fixture_title}
+                  </p>
+                </div>
+              {/if}
               <div
                 class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
               >
-                <div
-                  class="text-sm font-medium text-accent-700 dark:text-accent-300"
-                >
-                  Selected {form_data.selected_players.length} of {max_players}
-                  (min {min_players})
+                <div class="text-sm text-accent-700 dark:text-accent-300">
+                  <span class="font-medium">
+                    Selected {form_data.selected_players.length} of {max_players}
+                    (min {min_players})
+                  </span>
+                  <span
+                    class="block sm:inline sm:ml-2 text-xs text-accent-500 dark:text-accent-400"
+                  >
+                    • First {starters_count} = Starters, rest = Substitutes
+                  </span>
                 </div>
                 <div class="flex gap-2">
                   <button
@@ -700,8 +849,14 @@
                   class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
                 >
                   {#each filtered_team_players as player}
-                    {@const is_selected =
-                      form_data.selected_players.some(p => p.id === player.id)}
+                    {@const player_selection_index =
+                      form_data.selected_players.findIndex(
+                        (p) => p.id === player.id,
+                      )}
+                    {@const is_selected = player_selection_index >= 0}
+                    {@const player_role = is_selected
+                      ? get_player_role_label(player_selection_index)
+                      : ""}
                     {@const selection_disabled =
                       !is_selected &&
                       form_data.selected_players.length >= max_players}
@@ -733,6 +888,16 @@
                               #{player.jersey_number ?? "?"} • {player.position ||
                                 "No position"}
                             </p>
+                            {#if is_selected}
+                              <span
+                                class="inline-block mt-1 px-2 py-0.5 text-xs font-medium rounded {player_role ===
+                                'Starter'
+                                  ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
+                                  : 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300'}"
+                              >
+                                {player_role}
+                              </span>
+                            {/if}
                           </div>
                           <div
                             class="h-6 w-6 rounded-full flex items-center justify-center border {is_selected
@@ -752,6 +917,17 @@
 
           {#if step_index === 3}
             <div class="space-y-5">
+              {#if current_fixture_title}
+                <div
+                  class="p-3 rounded-lg bg-secondary-50 dark:bg-secondary-900/20 border border-secondary-200 dark:border-secondary-700"
+                >
+                  <p
+                    class="text-sm font-medium text-secondary-800 dark:text-secondary-200"
+                  >
+                    {current_fixture_title}
+                  </p>
+                </div>
+              {/if}
               <div
                 class="p-4 rounded-lg border border-accent-200 dark:border-accent-700 bg-accent-50 dark:bg-accent-900/20"
               >
@@ -767,33 +943,93 @@
                   {/if}
                   <div>
                     Squad size: {form_data.selected_players.length}
-                    (min {min_players}, max {max_players})
+                    ({Math.min(
+                      starters_count,
+                      form_data.selected_players.length,
+                    )} starters, {Math.max(
+                      0,
+                      form_data.selected_players.length - starters_count,
+                    )} substitutes)
                   </div>
                 </div>
               </div>
 
               {#if form_data.selected_players.length > 0}
-                <div class="space-y-2">
-                  {#each sort_lineup_players(form_data.selected_players) as player}
-                    <div
-                      class="p-3 rounded-lg border border-accent-200 dark:border-accent-700 bg-white dark:bg-accent-800"
+                {@const starters = form_data.selected_players.slice(
+                  0,
+                  starters_count,
+                )}
+                {@const substitutes =
+                  form_data.selected_players.slice(starters_count)}
+
+                <div class="space-y-4">
+                  <div>
+                    <h3
+                      class="text-sm font-semibold text-green-700 dark:text-green-400 mb-2 flex items-center gap-2"
                     >
-                      <div class="flex items-center justify-between">
+                      <span
+                        class="inline-block w-3 h-3 rounded-full bg-green-500"
+                      ></span>
+                      Starters ({starters.length})
+                    </h3>
+                    <div class="space-y-2">
+                      {#each sort_lineup_players(starters) as player}
                         <div
-                          class="font-medium text-accent-900 dark:text-accent-100"
+                          class="p-3 rounded-lg border border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20"
                         >
-                          #{player.jersey_number ?? "?"}
-                          {player.first_name}
-                          {player.last_name}
+                          <div class="flex items-center justify-between">
+                            <div
+                              class="font-medium text-accent-900 dark:text-accent-100"
+                            >
+                              #{player.jersey_number ?? "?"}
+                              {player.first_name}
+                              {player.last_name}
+                            </div>
+                            <div
+                              class="text-sm text-accent-600 dark:text-accent-400"
+                            >
+                              {player.position || "No position"}
+                            </div>
+                          </div>
                         </div>
-                        <div
-                          class="text-sm text-accent-600 dark:text-accent-400"
-                        >
-                          {player.position || "No position"}
-                        </div>
+                      {/each}
+                    </div>
+                  </div>
+
+                  {#if substitutes.length > 0}
+                    <div>
+                      <h3
+                        class="text-sm font-semibold text-amber-700 dark:text-amber-400 mb-2 flex items-center gap-2"
+                      >
+                        <span
+                          class="inline-block w-3 h-3 rounded-full bg-amber-500"
+                        ></span>
+                        Substitutes ({substitutes.length})
+                      </h3>
+                      <div class="space-y-2">
+                        {#each sort_lineup_players(substitutes) as player}
+                          <div
+                            class="p-3 rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20"
+                          >
+                            <div class="flex items-center justify-between">
+                              <div
+                                class="font-medium text-accent-900 dark:text-accent-100"
+                              >
+                                #{player.jersey_number ?? "?"}
+                                {player.first_name}
+                                {player.last_name}
+                              </div>
+                              <div
+                                class="text-sm text-accent-600 dark:text-accent-400"
+                              >
+                                {player.position || "No position"}
+                              </div>
+                            </div>
+                          </div>
+                        {/each}
                       </div>
                     </div>
-                  {/each}
+                  {/if}
                 </div>
               {/if}
 

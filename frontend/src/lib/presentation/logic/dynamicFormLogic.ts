@@ -182,6 +182,44 @@ export function validate_field_against_rules(
   return { is_valid: true, error_message: "" };
 }
 
+function format_fixture_date_time(
+  scheduled_date: unknown,
+  scheduled_time: unknown,
+): string {
+  if (typeof scheduled_date !== "string" || scheduled_date.trim() === "") {
+    return "";
+  }
+
+  const date = new Date(scheduled_date);
+  if (isNaN(date.getTime())) return "";
+
+  const day = date.getDate();
+  const month_names = [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+  ];
+  const month = month_names[date.getMonth()];
+  const year = date.getFullYear();
+
+  const formatted_date = `${day} ${month} ${year}`;
+
+  if (typeof scheduled_time === "string" && scheduled_time.trim() !== "") {
+    return `${formatted_date} - ${scheduled_time}`;
+  }
+
+  return formatted_date;
+}
+
 export function build_entity_display_label(entity: BaseEntity): string {
   const record = entity as unknown as Record<string, unknown>;
 
@@ -217,16 +255,25 @@ export function build_entity_display_label(entity: BaseEntity): string {
   if (typeof home_team_id === "string" && typeof away_team_id === "string") {
     const home_team_name = record["home_team_name"];
     const away_team_name = record["away_team_name"];
+    const scheduled_date = record["scheduled_date"];
+    const scheduled_time = record["scheduled_time"];
+    const date_time_suffix = format_fixture_date_time(
+      scheduled_date,
+      scheduled_time,
+    );
+
     if (
       typeof home_team_name === "string" &&
       typeof away_team_name === "string"
     ) {
-      return `${home_team_name} vs ${away_team_name}`;
+      const base_label = `${home_team_name} vs ${away_team_name}`;
+      return date_time_suffix
+        ? `${base_label} [${date_time_suffix}]`
+        : base_label;
     }
-    const scheduled_date = record["scheduled_date"];
     const round_name = record["round_name"];
-    if (typeof scheduled_date === "string" && scheduled_date.trim() !== "") {
-      return `Fixture (${scheduled_date})`;
+    if (date_time_suffix) {
+      return `Fixture [${date_time_suffix}]`;
     }
     if (typeof round_name === "string" && round_name.trim() !== "") {
       return `Fixture (${round_name})`;

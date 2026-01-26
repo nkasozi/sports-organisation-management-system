@@ -121,10 +121,10 @@ export function create_official_use_cases(
       role_id: string,
       options?: QueryOptions,
     ): Promise<PaginatedAsyncResult<Official>> {
-      if (!role_id) {
+      if (!role_id || role_id.trim().length === 0) {
         return create_failure_result("Role ID is required");
       }
-      return repository.find_by_role_id(role_id, options);
+      return repository.find_by_filter({ role_id }, options);
     },
 
     async list_available_officials(

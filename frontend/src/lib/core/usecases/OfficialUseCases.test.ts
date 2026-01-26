@@ -13,7 +13,6 @@ function create_mock_repository(): OfficialRepository {
     delete_by_id: vi.fn(),
     delete_by_ids: vi.fn(),
     find_by_organization: vi.fn(),
-    find_by_role_id: vi.fn(),
     find_active_officials: vi.fn(),
     find_available_for_date: vi.fn(),
     find_by_ids: vi.fn(),

@@ -40,10 +40,12 @@ function create_valid_player_profile_input(
   };
 }
 
+import type { Result, PaginatedResult } from "../types/Result";
+
 function create_paginated_result<T>(
   items: T[],
   total_count?: number,
-): PaginatedAsyncResult<T> {
+): Result<PaginatedResult<T>, string> {
   return create_success_result({
     items,
     total_count: total_count ?? items.length,
@@ -168,7 +170,7 @@ describe("PlayerProfileUseCases", () => {
 
       expect(result.success).toBe(true);
       if (result.success) {
-        expect(result.data.id).toBe("p_123");
+        expect(result.data!.id).toBe("p_123");
       }
       expect(mock_repository.find_by_id).toHaveBeenCalledWith("p_123");
     });
@@ -210,7 +212,7 @@ describe("PlayerProfileUseCases", () => {
 
       expect(result.success).toBe(true);
       if (result.success) {
-        expect(result.data.player_id).toBe("player_abc");
+        expect(result.data!.player_id).toBe("player_abc");
       }
       expect(mock_repository.find_by_player_id).toHaveBeenCalledWith(
         "player_abc",
@@ -254,7 +256,7 @@ describe("PlayerProfileUseCases", () => {
 
       expect(result.success).toBe(true);
       if (result.success) {
-        expect(result.data.profile_slug).toBe("unique-slug");
+        expect(result.data!.profile_slug).toBe("unique-slug");
       }
       expect(mock_repository.find_by_slug).toHaveBeenCalledWith("unique-slug");
     });
@@ -298,7 +300,7 @@ describe("PlayerProfileUseCases", () => {
 
       expect(result.success).toBe(true);
       if (result.success) {
-        expect(result.data.player_id).toBe("player_1");
+        expect(result.data!.player_id).toBe("player_1");
       }
       expect(mock_repository.create).toHaveBeenCalledWith(input);
     });
@@ -360,7 +362,7 @@ describe("PlayerProfileUseCases", () => {
 
       expect(result.success).toBe(true);
       if (result.success) {
-        expect(result.data.profile_summary).toBe("Updated summary");
+        expect(result.data!.profile_summary).toBe("Updated summary");
       }
       expect(mock_repository.update).toHaveBeenCalledWith("p_123", updates);
     });

@@ -48,13 +48,22 @@ Uses explicit handlers instead of events for predictable data flow
     return type.toLowerCase().replace(/\s+/g, "").trim();
   }
 
+  function format_entity_display_name(raw_name: string): string {
+    if (typeof raw_name !== "string" || raw_name.length === 0) return "Entity";
+    const with_spaces = raw_name
+      .replace(/([a-z])([A-Z])/g, "$1 $2")
+      .replace(/_/g, " ");
+    return with_spaces
+      .split(" ")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(" ");
+  }
+
   function build_page_title_for_current_view(
     view: string,
     type: string | undefined,
   ): string {
-    const safe_type =
-      typeof type === "string" && type.length > 0 ? type : "Entity";
-    const type_display = safe_type.charAt(0).toUpperCase() + safe_type.slice(1);
+    const type_display = format_entity_display_name(type || "");
     if (view === "create") return `Create New ${type_display}`;
     if (view === "edit") return `Edit ${type_display}`;
     return `${type_display} Management`;
@@ -114,6 +123,11 @@ Uses explicit handlers instead of events for predictable data flow
 
     if (normalized_entity_type === "fixturelineup") {
       goto("/fixture-lineups/create");
+      return;
+    }
+
+    if (normalized_entity_type === "sport") {
+      goto("/sports/create");
       return;
     }
 

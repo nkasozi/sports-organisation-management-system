@@ -9,6 +9,7 @@ import type {
 export interface OfficialFilter {
   name_contains?: string;
   organization_id?: string;
+  role_id?: string;
   status?: Official["status"];
 }
 

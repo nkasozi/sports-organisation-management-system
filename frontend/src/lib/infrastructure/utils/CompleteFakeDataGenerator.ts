@@ -401,7 +401,7 @@ export function generate_competition(
     status: "active",
     competition_format_id,
     team_ids: [],
-    auto_generate_fixtures_and_assign_officials: false,
+    allow_auto_squad_submission: false,
     created_at: now,
     updated_at: now,
   };
@@ -658,7 +658,7 @@ export async function generate_field_hockey_dataset(
     status: "active",
     competition_format_id: league_format.id,
     team_ids: teams.map((t) => t.id),
-    auto_generate_fixtures_and_assign_officials: true,
+    allow_auto_squad_submission: true,
     created_at: now,
     updated_at: now,
   };

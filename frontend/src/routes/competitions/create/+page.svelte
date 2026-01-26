@@ -8,7 +8,9 @@
   import type { CreateCompetitionInput } from "$lib/core/entities/Competition";
   import type { SelectOption } from "$lib/presentation/components/ui/SelectField.svelte";
   import { create_empty_competition_input } from "$lib/core/entities/Competition";
+  import { create_empty_competition_team_input } from "$lib/core/entities/CompetitionTeam";
   import { get_competition_use_cases } from "$lib/core/usecases/CompetitionUseCases";
+  import { get_competition_team_use_cases } from "$lib/core/usecases/CompetitionTeamUseCases";
   import { get_organization_use_cases } from "$lib/core/usecases/OrganizationUseCases";
   import { get_competition_format_use_cases } from "$lib/core/usecases/CompetitionFormatUseCases";
   import { get_team_use_cases } from "$lib/core/usecases/TeamUseCases";
@@ -20,6 +22,7 @@
   import SportRulesCustomizer from "$lib/presentation/components/competition/SportRulesCustomizer.svelte";
 
   const competition_use_cases = get_competition_use_cases();
+  const competition_team_use_cases = get_competition_team_use_cases();
   const organization_use_cases = get_organization_use_cases();
   const competition_format_use_cases = get_competition_format_use_cases();
   const team_use_cases = get_team_use_cases();
@@ -99,7 +102,7 @@
 
     if (result.success) {
       competition_formats = result.data.filter(
-        (format: CompetitionFormat) => format.status === "active"
+        (format: CompetitionFormat) => format.status === "active",
       );
       competition_format_options = competition_formats.map((format) => ({
         value: format.id,
@@ -128,7 +131,7 @@
       .filter((team) =>
         form_data.organization_id
           ? team.organization_id === form_data.organization_id
-          : true
+          : true,
       )
       .map((team) => ({
         value: team.id,
@@ -137,7 +140,7 @@
   }
 
   async function handle_organization_change(
-    event: CustomEvent<{ value: string }>
+    event: CustomEvent<{ value: string }>,
   ): Promise<void> {
     form_data.organization_id = event.detail.value;
     selected_team_ids.clear();
@@ -147,12 +150,12 @@
     selected_sport = null;
 
     const selected_organization = organizations.find(
-      (org) => org.id === form_data.organization_id
+      (org) => org.id === form_data.organization_id,
     );
 
     if (selected_organization && selected_organization.sport_id) {
       const sport_result = await get_sport_by_id(
-        selected_organization.sport_id
+        selected_organization.sport_id,
       );
       if (sport_result.success && sport_result.data) {
         selected_sport = sport_result.data;
@@ -164,7 +167,7 @@
     form_data.competition_format_id = event.detail.value;
     selected_format =
       competition_formats.find(
-        (format) => format.id === form_data.competition_format_id
+        (format) => format.id === form_data.competition_format_id,
       ) || null;
   }
 
@@ -181,13 +184,39 @@
     return true;
   }
 
+  async function create_competition_team_records(
+    competition_id: string,
+    team_ids: string[],
+  ): Promise<boolean> {
+    const registration_date = new Date().toISOString().split("T")[0];
+
+    for (const team_id of team_ids) {
+      const competition_team_input = create_empty_competition_team_input(
+        competition_id,
+        team_id,
+      );
+      competition_team_input.registration_date = registration_date;
+
+      const result = await competition_team_use_cases.create(
+        competition_team_input,
+      );
+      if (!result.success) {
+        console.error(
+          `[CompetitionCreate] Failed to create CompetitionTeam for team ${team_id}: ${result.error_message}`,
+        );
+        return false;
+      }
+    }
+    return true;
+  }
+
   async function handle_submit(): Promise<void> {
     errors = {};
 
     if (!is_team_count_valid) {
       show_toast(
         `Please select between ${selected_format?.min_teams_required} and ${selected_format?.max_teams_allowed} teams`,
-        "error"
+        "error",
       );
       return;
     }
@@ -196,11 +225,27 @@
 
     const result = await competition_use_cases.create(form_data);
 
-    if (!result.success) {
+    if (!result.success || !result.data) {
       is_saving = false;
       show_toast(
         result.error_message || "Failed to create competition",
-        "error"
+        "error",
+      );
+      return;
+    }
+
+    const created_competition = result.data;
+
+    const teams_created = await create_competition_team_records(
+      created_competition.id,
+      form_data.team_ids,
+    );
+
+    if (!teams_created) {
+      is_saving = false;
+      show_toast(
+        "Competition created but failed to register some teams. Please add teams manually.",
+        "error",
       );
       return;
     }
@@ -219,7 +264,7 @@
 
   function show_toast(
     message: string,
-    type: "success" | "error" | "info"
+    type: "success" | "error" | "info",
   ): void {
     toast_message = message;
     toast_type = type;
@@ -493,19 +538,19 @@
           <label class="flex items-center gap-3 cursor-pointer">
             <input
               type="checkbox"
-              bind:checked={
-                form_data.auto_generate_fixtures_and_assign_officials
-              }
+              bind:checked={form_data.allow_auto_squad_submission}
               class="w-5 h-5 text-primary-600 rounded border-accent-300"
             />
             <div>
               <span
                 class="text-sm font-medium text-accent-900 dark:text-accent-100"
               >
-                Auto-generate fixtures and assign officials
+                Allow auto squad submission
               </span>
               <p class="text-xs text-accent-500">
-                System will create fixtures and assign referees automatically
+                When enabled, starting a live game will automatically generate
+                squads from team rosters. When disabled, teams must submit their
+                squads before starting a game.
               </p>
             </div>
           </label>

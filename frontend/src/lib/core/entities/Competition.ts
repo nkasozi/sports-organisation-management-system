@@ -32,7 +32,7 @@ export interface Competition extends BaseEntity {
   organization_id: string;
   competition_format_id: string;
   team_ids: string[];
-  auto_generate_fixtures_and_assign_officials: boolean;
+  allow_auto_squad_submission: boolean;
   start_date: string;
   end_date: string;
   registration_deadline: string;
@@ -112,7 +112,7 @@ export function create_empty_competition_input(
     organization_id,
     competition_format_id: "",
     team_ids: [],
-    auto_generate_fixtures_and_assign_officials: false,
+    allow_auto_squad_submission: false,
     start_date: next_month.toISOString().split("T")[0],
     end_date: two_months_later.toISOString().split("T")[0],
     registration_deadline: today.toISOString().split("T")[0],

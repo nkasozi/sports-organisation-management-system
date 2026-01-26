@@ -64,9 +64,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
     typeof entity_metadata?.display_name === "string" &&
     entity_metadata.display_name.length > 0
       ? entity_metadata.display_name
-      : typeof entity_type === "string" && entity_type.length > 0
-        ? entity_type
-        : "Entity";
+      : format_entity_display_name(entity_type);
   $: all_selected = check_if_all_entities_selected(
     filtered_entities,
     selected_entity_ids,
@@ -358,6 +356,17 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
       );
     }
     return metadata;
+  }
+
+  function format_entity_display_name(raw_name: string): string {
+    if (typeof raw_name !== "string" || raw_name.length === 0) return "Entity";
+    const with_spaces = raw_name
+      .replace(/([a-z])([A-Z])/g, "$1 $2")
+      .replace(/_/g, " ");
+    return with_spaces
+      .split(" ")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(" ");
   }
 
   function check_if_all_entities_selected(

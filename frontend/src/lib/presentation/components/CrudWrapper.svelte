@@ -13,6 +13,19 @@
 
   const dispatch = createEventDispatcher();
 
+  function format_entity_display_name(raw_name: string): string {
+    if (typeof raw_name !== "string" || raw_name.length === 0) return "Entity";
+    const with_spaces = raw_name
+      .replace(/([a-z])([A-Z])/g, "$1 $2")
+      .replace(/_/g, " ");
+    return with_spaces
+      .split(" ")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(" ");
+  }
+
+  $: formatted_entity_name = format_entity_display_name(entity_name);
+
   function show_create_form(): void {
     current_view = "create";
     selected_entity = null;
@@ -60,7 +73,7 @@
           class:btn-outline={current_view !== "list"}
           on:click={show_list_view}
         >
-          📋 List {entity_name}s
+          📋 List {formatted_entity_name}s
         </button>
       {/if}
 
@@ -71,7 +84,7 @@
           class:btn-outline={current_view !== "create"}
           on:click={show_create_form}
         >
-          ➕ Create {entity_name}
+          ➕ Create {formatted_entity_name}
         </button>
       {/if}
     </div>

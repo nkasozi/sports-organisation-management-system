@@ -1337,6 +1337,11 @@ class EntityMetadataRegistry {
           is_read_only: false,
           foreign_key_entity: "team",
           show_in_list: true,
+          foreign_key_filter: {
+            depends_on_field: "competition_id",
+            filter_type: "teams_from_competition",
+            exclude_field: "away_team_id",
+          },
         },
         {
           field_name: "away_team_id" satisfies keyof Fixture,
@@ -1346,6 +1351,11 @@ class EntityMetadataRegistry {
           is_read_only: false,
           foreign_key_entity: "team",
           show_in_list: true,
+          foreign_key_filter: {
+            depends_on_field: "competition_id",
+            filter_type: "teams_from_competition",
+            exclude_field: "home_team_id",
+          },
         },
         {
           field_name: "scheduled_date" satisfies keyof Fixture,

@@ -23,6 +23,10 @@ import {
   InMemoryCompetitionRepository,
 } from "../repositories/InMemoryCompetitionRepository";
 import {
+  get_competition_team_repository,
+  InMemoryCompetitionTeamRepository,
+} from "../repositories/InMemoryCompetitionTeamRepository";
+import {
   get_player_team_membership_repository,
   InMemoryPlayerTeamMembershipRepository,
 } from "../repositories/InMemoryPlayerTeamMembershipRepository";
@@ -56,6 +60,7 @@ import {
   create_seed_teams,
   create_seed_team_staff,
   create_seed_competitions,
+  create_seed_competition_teams,
   create_seed_player_team_memberships,
   create_seed_officials,
   create_seed_fixtures,
@@ -428,6 +433,24 @@ export async function seed_all_data_if_needed(): Promise<boolean> {
     const seed_competitions = create_seed_competitions(league_format_id);
     competition_repository.seed_with_data(seed_competitions);
     emit_entity_created_events("competition", seed_competitions, (c) => c.name);
+  }
+
+  const competition_team_repository =
+    get_competition_team_repository() as InMemoryCompetitionTeamRepository;
+  const existing_competition_teams = await competition_team_repository.find_all(
+    { page_size: 1 },
+  );
+  if (
+    !existing_competition_teams.success ||
+    existing_competition_teams.data.total_count === 0
+  ) {
+    const seed_competition_teams = create_seed_competition_teams();
+    competition_team_repository.seed_with_data(seed_competition_teams);
+    emit_entity_created_events(
+      "competition_team",
+      seed_competition_teams,
+      (ct) => `Team ${ct.team_id} in Competition ${ct.competition_id}`,
+    );
   }
 
   const existing_memberships = await player_team_membership_repository.find_all(

@@ -40,10 +40,12 @@ function create_valid_team_profile_input(
   };
 }
 
+import type { Result, PaginatedResult } from "../types/Result";
+
 function create_paginated_result<T>(
   items: T[],
   total_count?: number,
-): PaginatedAsyncResult<T> {
+): Result<PaginatedResult<T>, string> {
   return create_success_result({
     items,
     total_count: total_count ?? items.length,
@@ -166,7 +168,7 @@ describe("TeamProfileUseCases", () => {
 
       expect(result.success).toBe(true);
       if (result.success) {
-        expect(result.data.id).toBe("tp_123");
+        expect(result.data!.id).toBe("tp_123");
       }
       expect(mock_repository.find_by_id).toHaveBeenCalledWith("tp_123");
     });
@@ -215,7 +217,7 @@ describe("TeamProfileUseCases", () => {
 
       expect(result.success).toBe(true);
       if (result.success) {
-        expect(result.data.team_id).toBe("team_abc");
+        expect(result.data!.team_id).toBe("team_abc");
       }
       expect(mock_repository.find_by_team_id).toHaveBeenCalledWith("team_abc");
     });
@@ -257,7 +259,7 @@ describe("TeamProfileUseCases", () => {
 
       expect(result.success).toBe(true);
       if (result.success) {
-        expect(result.data.profile_slug).toBe("unique-slug");
+        expect(result.data!.profile_slug).toBe("unique-slug");
       }
       expect(mock_repository.find_by_slug).toHaveBeenCalledWith("unique-slug");
     });
@@ -298,7 +300,7 @@ describe("TeamProfileUseCases", () => {
 
       expect(result.success).toBe(true);
       if (result.success) {
-        expect(result.data.team_id).toBe("team_1");
+        expect(result.data!.team_id).toBe("team_1");
       }
       expect(mock_repository.create).toHaveBeenCalledWith(input);
     });
@@ -357,7 +359,7 @@ describe("TeamProfileUseCases", () => {
 
       expect(result.success).toBe(true);
       if (result.success) {
-        expect(result.data.profile_summary).toBe("Updated summary");
+        expect(result.data!.profile_summary).toBe("Updated summary");
       }
       expect(mock_repository.update).toHaveBeenCalledWith("tp_123", updates);
     });
