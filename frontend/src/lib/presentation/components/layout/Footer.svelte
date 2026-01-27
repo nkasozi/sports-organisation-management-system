@@ -79,7 +79,7 @@
       style="background-image: url('{$branding_store.background_pattern_url}'); background-size: 200px; background-repeat: repeat;"
     ></div>
     <div
-      class="absolute inset-0 bg-theme-primary-500/60 dark:bg-theme-primary-900/65"
+      class="absolute inset-0 bg-white opacity-40 dark:bg-gray-900 dark:opacity-45"
     ></div>
   {:else}
     <div
