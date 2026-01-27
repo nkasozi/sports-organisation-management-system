@@ -68,16 +68,14 @@
 <svelte:window on:click={close_user_menu} />
 
 <header
-  class="shadow-sm border-b border-theme-primary-600 dark:border-theme-primary-700 sticky top-0 z-50 relative overflow-hidden"
+  class="shadow-sm border-b border-theme-primary-600 dark:border-theme-primary-700 sticky top-0 z-40 relative"
 >
   {#if $branding_store.header_pattern === "pattern" && $branding_store.background_pattern_url}
     <div
       class="absolute inset-0"
       style="background-image: url('{$branding_store.background_pattern_url}'); background-size: 200px; background-repeat: repeat;"
     ></div>
-    <div
-      class="absolute inset-0 bg-white opacity-40 dark:bg-gray-900 dark:opacity-45"
-    ></div>
+    <div class="absolute inset-0 bg-gray-900/30 dark:bg-gray-900/45"></div>
   {:else}
     <div
       class="absolute inset-0 bg-theme-primary-500 dark:bg-theme-primary-600"
@@ -248,7 +246,7 @@
 
           {#if user_menu_open}
             <div
-              class="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white dark:bg-accent-800 ring-1 ring-black ring-opacity-5 z-50"
+              class="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white dark:bg-accent-800 ring-1 ring-black ring-opacity-5 z-[100] dropdown-menu"
               role="menu"
               tabindex="-1"
               on:click|stopPropagation
@@ -257,11 +255,11 @@
               <div class="py-1">
                 <button
                   type="button"
-                  class="w-full flex items-center px-4 py-2 text-sm text-accent-700 dark:text-accent-200 hover:bg-accent-100 dark:hover:bg-accent-700 transition-colors duration-150"
+                  class="w-full flex items-center px-4 py-2 text-sm text-gray-900 dark:text-accent-200 hover:bg-gray-100 dark:hover:bg-accent-700 transition-colors duration-150"
                   on:click={handle_settings_click}
                 >
                   <svg
-                    class="mr-3 h-5 w-5 text-accent-500 dark:text-accent-400"
+                    class="mr-3 h-5 w-5 text-gray-600 dark:text-accent-400"
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
@@ -282,11 +280,11 @@
                   Settings
                 </button>
                 <div
-                  class="border-t border-accent-200 dark:border-accent-700 my-1"
+                  class="border-t border-gray-200 dark:border-accent-700 my-1"
                 ></div>
                 <button
                   type="button"
-                  class="w-full flex items-center px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-accent-100 dark:hover:bg-accent-700 transition-colors duration-150"
+                  class="w-full flex items-center px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-accent-700 transition-colors duration-150"
                   on:click={handle_logout_click}
                 >
                   <svg
@@ -347,5 +345,19 @@
   :global(.header-panel) svg {
     color: white !important;
     stroke: white !important;
+  }
+
+  /* Override header-panel styles for dropdown menu */
+  .dropdown-menu {
+    text-shadow: none !important;
+  }
+  .dropdown-menu span,
+  .dropdown-menu button {
+    color: inherit !important;
+    text-shadow: none !important;
+  }
+  .dropdown-menu svg {
+    color: inherit !important;
+    stroke: currentColor !important;
   }
 </style>
