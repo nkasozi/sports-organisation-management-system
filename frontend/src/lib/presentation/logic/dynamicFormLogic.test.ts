@@ -612,7 +612,7 @@ describe("dynamicFormLogic", () => {
         away_team_id: "team_2",
         scheduled_date: "2024-03-15",
       } as any;
-      expect(build_entity_display_label(entity)).toBe("Fixture (2024-03-15)");
+      expect(build_entity_display_label(entity)).toBe("Fixture [15 Mar 2024]");
     });
 
     it("returns round name for fixtures without team names or date", () => {
