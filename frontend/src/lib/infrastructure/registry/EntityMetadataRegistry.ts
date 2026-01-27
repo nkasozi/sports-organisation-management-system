@@ -2498,12 +2498,11 @@ class EntityMetadataRegistry {
         },
         {
           field_name: "featured_image_url" satisfies keyof PlayerProfile,
-          display_name: "Featured Image URL",
-          field_type: "string",
+          display_name: "Featured Image",
+          field_type: "file",
           is_required: false,
           is_read_only: false,
           show_in_list: false,
-          placeholder: "https://example.com/image.jpg",
         },
         {
           field_name: "links",
@@ -2574,12 +2573,11 @@ class EntityMetadataRegistry {
         },
         {
           field_name: "featured_image_url" satisfies keyof TeamProfile,
-          display_name: "Featured Image URL",
-          field_type: "string",
+          display_name: "Featured Image",
+          field_type: "file",
           is_required: false,
           is_read_only: false,
           show_in_list: false,
-          placeholder: "https://example.com/image.jpg",
         },
         {
           field_name: "links",

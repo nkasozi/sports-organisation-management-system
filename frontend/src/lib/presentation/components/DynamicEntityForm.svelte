@@ -1388,7 +1388,9 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
                   </div>
                 {:else if field.field_name
                   .toLowerCase()
-                  .match(/(logo|profile|avatar|image|pic|photo)/)}
+                  .match(/(logo|avatar|image|pic|photo)/) && !field.field_name
+                    .toLowerCase()
+                    .includes("summary")}
                   <div class="flex items-center gap-3">
                     <input
                       id={`field_${field.field_name}`}
