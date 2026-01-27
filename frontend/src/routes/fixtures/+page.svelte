@@ -6,4 +6,4 @@
   <title>Fixtures - Sports Management</title>
 </svelte:head>
 
-<EntityCrudWrapper entity_type="Fixture" />
+<EntityCrudWrapper entity_type="Fixture" enable_bulk_import={true} />

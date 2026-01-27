@@ -19,6 +19,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
     EntityCrudHandlers,
     EntityViewCallbacks,
   } from "$lib/core/types/EntityHandlers";
+  import BulkImportModal from "./BulkImportModal.svelte";
 
   export let entity_type: string;
   export let show_actions: boolean = true;
@@ -26,6 +27,8 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
   export let sub_entity_filter: SubEntityFilter | null = null;
   export let crud_handlers: EntityCrudHandlers | null = null;
   export let view_callbacks: EntityViewCallbacks | null = null;
+  export let bulk_create_handler: (() => void) | null = null;
+  export let enable_bulk_import: boolean = false;
 
   export let on_total_count_changed: ((count: number) => void) | null = null;
   export let on_selection_changed: ((selected: BaseEntity[]) => void) | null =
@@ -52,6 +55,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
   let show_column_selector: boolean = false;
   let show_export_modal: boolean = false;
   let show_advanced_filter: boolean = false;
+  let show_bulk_import_modal: boolean = false;
   let visible_columns: Set<string> = new Set();
   let sort_column: string = "";
   let sort_direction: "asc" | "desc" = "asc";
@@ -785,13 +789,25 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
 
   function get_all_available_fields(): FieldMetadata[] {
     if (!entity_metadata) return [];
-    return entity_metadata.fields.filter(
+
+    const id_field: FieldMetadata = {
+      field_name: "id",
+      display_name: "ID",
+      field_type: "string",
+      is_required: false,
+      is_read_only: true,
+      show_in_list: false,
+    };
+
+    const metadata_fields = entity_metadata.fields.filter(
       (f: FieldMetadata) =>
         (!f.is_read_only ||
           f.field_name === "id" ||
           f.field_name === "status") &&
         !is_field_controlled_by_sub_entity_filter(f.field_name),
     );
+
+    return [id_field, ...metadata_fields];
   }
 
   function build_full_name_from_entity(entity: any): string {
@@ -938,6 +954,26 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
             disabled={is_deleting}
           >
             Delete ({selected_entity_ids.size})
+          </button>
+        {/if}
+
+        {#if enable_bulk_import}
+          <button
+            type="button"
+            class="btn w-auto bg-purple-600 hover:bg-purple-700 text-white"
+            on:click={() => (show_bulk_import_modal = true)}
+          >
+            Bulk Import
+          </button>
+        {/if}
+
+        {#if bulk_create_handler}
+          <button
+            type="button"
+            class="btn w-auto bg-blue-600 hover:bg-blue-700 text-white"
+            on:click={bulk_create_handler}
+          >
+            Bulk Create
           </button>
         {/if}
 
@@ -1491,3 +1527,17 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
     </div>
   {/if}
 </div>
+
+{#if enable_bulk_import}
+  <BulkImportModal
+    {entity_type}
+    is_visible={show_bulk_import_modal}
+    on:close={() => {
+      show_bulk_import_modal = false;
+      load_all_entities_for_display();
+    }}
+    on:import_complete={() => {
+      load_all_entities_for_display();
+    }}
+  />
+{/if}

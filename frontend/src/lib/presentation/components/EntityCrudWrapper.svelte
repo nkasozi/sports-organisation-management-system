@@ -19,6 +19,8 @@ Uses explicit handlers instead of events for predictable data flow
   export let initial_view: "list" | "create" | "edit" = "list";
   export let is_mobile_view: boolean = true;
   export let show_list_actions: boolean = true;
+  export let bulk_create_handler: (() => void) | null = null;
+  export let enable_bulk_import: boolean = false;
 
   const dispatch = createEventDispatcher<{
     entity_created: { entity: BaseEntity };
@@ -288,6 +290,8 @@ Uses explicit handlers instead of events for predictable data flow
           {is_mobile_view}
           {crud_handlers}
           view_callbacks={list_view_callbacks}
+          {bulk_create_handler}
+          {enable_bulk_import}
           on_total_count_changed={handle_list_count_updated}
           on_selection_changed={handle_selection_changed}
           on_entities_batch_deleted={handle_entities_batch_deleted}

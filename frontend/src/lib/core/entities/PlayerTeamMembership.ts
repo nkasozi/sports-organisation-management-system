@@ -6,7 +6,6 @@ export interface PlayerTeamMembership extends BaseEntity {
   player_id: string;
   team_id: string;
   start_date: string;
-  end_date: string | null;
   jersey_number: number | null;
   status: PlayerTeamMembershipStatus;
 }
@@ -26,8 +25,7 @@ export function create_empty_player_team_membership_input(
     player_id,
     team_id,
     start_date: new Date().toISOString().split("T")[0],
-    end_date: null,
-    jersey_number: null,
+    jersey_number: 1,
     status: "active",
   };
 }
@@ -54,10 +52,6 @@ export function validate_player_team_membership_input(
     (input.jersey_number < 1 || input.jersey_number > 99)
   ) {
     validation_errors.push("Jersey number must be between 1 and 99");
-  }
-
-  if (input.end_date && input.start_date && input.end_date < input.start_date) {
-    validation_errors.push("End date cannot be before start date");
   }
 
   return validation_errors;

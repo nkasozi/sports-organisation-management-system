@@ -31,7 +31,6 @@ function create_test_membership(
     team_id: "team-123",
     jersey_number: 10,
     start_date: "2024-01-01",
-    end_date: null,
     status: "active",
     created_at: "2024-01-01T00:00:00Z",
     updated_at: "2024-01-01T00:00:00Z",
@@ -47,7 +46,6 @@ function create_valid_input(
     team_id: "team-123",
     jersey_number: 7,
     start_date: "2024-01-01",
-    end_date: null,
     status: "active",
     ...overrides,
   };

@@ -6,4 +6,4 @@
   <title>Players - Sports Management</title>
 </svelte:head>
 
-<EntityCrudWrapper entity_type="Player" />
+<EntityCrudWrapper entity_type="Player" enable_bulk_import={true} />

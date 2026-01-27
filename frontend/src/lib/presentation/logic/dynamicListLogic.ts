@@ -194,7 +194,15 @@ export function get_display_value_for_entity_field(
     return "";
   }
 
-  if (foreign_key_options && field_name in foreign_key_options) {
+  const is_entity_id_field = field_name === "id";
+  const is_foreign_key_field = field_metadata?.field_type === "foreign_key";
+
+  if (
+    !is_entity_id_field &&
+    is_foreign_key_field &&
+    foreign_key_options &&
+    field_name in foreign_key_options
+  ) {
     const options = foreign_key_options[field_name];
     const matched_option = options.find((option) => option.id === raw_value);
     if (matched_option) {
@@ -211,6 +219,10 @@ export function get_display_value_for_entity_field(
   }
 
   const string_value = String(raw_value);
+
+  if (is_entity_id_field) {
+    return string_value;
+  }
 
   const enum_label = find_enum_option_label(field_metadata, string_value);
   if (enum_label) return enum_label;

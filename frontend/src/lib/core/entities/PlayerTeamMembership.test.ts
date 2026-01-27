@@ -10,7 +10,6 @@ describe("PlayerTeamMembership", () => {
       player_id: "",
       team_id: "",
       start_date: "2025-01-01",
-      end_date: null,
       jersey_number: null,
       status: "active",
     });
@@ -24,7 +23,6 @@ describe("PlayerTeamMembership", () => {
       player_id: "player_1",
       team_id: "team_1",
       start_date: "2025-01-01",
-      end_date: null,
       jersey_number: 0,
       status: "active",
     });
@@ -33,7 +31,6 @@ describe("PlayerTeamMembership", () => {
       player_id: "player_1",
       team_id: "team_1",
       start_date: "2025-01-01",
-      end_date: null,
       jersey_number: 100,
       status: "active",
     });

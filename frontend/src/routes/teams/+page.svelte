@@ -28,6 +28,7 @@
   <EntityCrudWrapper
     bind:this={entity_wrapper}
     entity_type="Team"
+    enable_bulk_import={true}
     on:selection_changed={handle_selection_changed}
   />
 </div>
