@@ -15,6 +15,13 @@ import { reset_player_position_repository } from "../repositories/InMemoryPlayer
 import { reset_team_staff_role_repository } from "../repositories/InMemoryTeamStaffRoleRepository";
 import { reset_game_official_role_repository } from "../repositories/InMemoryGameOfficialRoleRepository";
 import { reset_competition_format_repository } from "../repositories/InMemoryCompetitionFormatRepository";
+import { reset_venue_repository } from "../repositories/InMemoryVenueRepository";
+import { reset_jersey_color_repository } from "../repositories/InMemoryJerseyColorRepository";
+import { reset_competition_team_repository } from "../repositories/InMemoryCompetitionTeamRepository";
+import { reset_player_profile_repository } from "../repositories/InMemoryPlayerProfileRepository";
+import { reset_team_profile_repository } from "../repositories/InMemoryTeamProfileRepository";
+import { reset_profile_link_repository } from "../repositories/InMemoryProfileLinkRepository";
+import { reset_qualification_repository } from "../repositories/InMemoryQualificationRepository";
 import { get_organization_repository } from "../repositories/InMemoryOrganizationRepository";
 import { get_team_repository } from "../repositories/InMemoryTeamRepository";
 import { get_competition_repository } from "../repositories/InMemoryCompetitionRepository";
@@ -33,9 +40,12 @@ function reset_first_time_flag(): void {
 
 export async function reset_all_data(): Promise<boolean> {
   if (typeof window === "undefined") return false;
+
   localStorage.clear();
+
   reset_seeding_flag();
   reset_first_time_flag();
+
   reset_sport_repository();
   reset_organization_repository();
   reset_team_repository();
@@ -50,6 +60,14 @@ export async function reset_all_data(): Promise<boolean> {
   reset_team_staff_role_repository();
   reset_game_official_role_repository();
   reset_competition_format_repository();
+  reset_venue_repository();
+  reset_jersey_color_repository();
+  reset_competition_team_repository();
+  reset_player_profile_repository();
+  reset_team_profile_repository();
+  reset_profile_link_repository();
+  reset_qualification_repository();
+
   await get_all_sports();
   get_organization_repository();
   get_team_repository();
@@ -59,6 +77,8 @@ export async function reset_all_data(): Promise<boolean> {
   get_official_repository();
   const game_event_repo = get_game_event_type_repository();
   await game_event_repo.find_all_with_filter();
+
   await seed_all_data_if_needed();
+
   return true;
 }

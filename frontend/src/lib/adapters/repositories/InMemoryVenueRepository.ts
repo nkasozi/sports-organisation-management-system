@@ -119,3 +119,7 @@ export function get_venue_repository(): InMemoryVenueRepository {
   }
   return venue_repository_instance;
 }
+
+export function reset_venue_repository(): void {
+  venue_repository_instance = null;
+}

@@ -140,3 +140,7 @@ export function get_jersey_color_repository(): InMemoryJerseyColorRepository {
   }
   return repository_instance;
 }
+
+export function reset_jersey_color_repository(): void {
+  repository_instance = null;
+}

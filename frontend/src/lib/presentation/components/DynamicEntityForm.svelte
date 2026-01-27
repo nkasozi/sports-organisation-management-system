@@ -28,6 +28,9 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
     EntityCrudHandlers,
     EntityViewCallbacks,
   } from "$lib/core/types/EntityHandlers";
+  import OfficialAssignmentArray from "./OfficialAssignmentArray.svelte";
+  import { create_empty_official_assignment } from "../../core/entities/FixtureDetailsSetup";
+  import type { OfficialAssignment } from "../../core/entities/FixtureDetailsSetup";
 
   export let entity_type: string;
   export let entity_data: Partial<BaseEntity> | null = null;
@@ -227,6 +230,8 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
       return field.enum_values[0];
     }
     if (field.field_type === "foreign_key") return "";
+    if (field.field_type === "official_assignment_array")
+      return [create_empty_official_assignment()];
     return "";
   }
 
@@ -750,6 +755,33 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
       (j) => j.id === official_jersey_id,
     ) as JerseyColor | undefined;
 
+    console.log("[COLOR_CLASH] Checking jersey color clashes:", {
+      home_jersey_id,
+      away_jersey_id,
+      official_jersey_id,
+      home_jersey: home_jersey
+        ? {
+            id: home_jersey.id,
+            nickname: home_jersey.nickname,
+            main_color: home_jersey.main_color,
+          }
+        : null,
+      away_jersey: away_jersey
+        ? {
+            id: away_jersey.id,
+            nickname: away_jersey.nickname,
+            main_color: away_jersey.main_color,
+          }
+        : null,
+      official_jersey: official_jersey
+        ? {
+            id: official_jersey.id,
+            nickname: official_jersey.nickname,
+            main_color: official_jersey.main_color,
+          }
+        : null,
+    });
+
     const home_assignment = home_jersey
       ? {
           jersey_color_id: home_jersey.id,
@@ -772,7 +804,9 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
         }
       : undefined;
 
-    const warnings = detect_jersey_color_clashes(
+    const all_warnings: string[] = [];
+
+    const team_warnings = detect_jersey_color_clashes(
       home_assignment,
       away_assignment,
       official_assignment,
@@ -780,7 +814,14 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
       "Away Team",
     );
 
-    color_clash_warnings = warnings.map((w) => w.message);
+    console.log("[COLOR_CLASH] Detection result:", {
+      warnings_count: team_warnings.length,
+      warnings: team_warnings,
+    });
+
+    all_warnings.push(...team_warnings.map((w) => w.message));
+
+    color_clash_warnings = all_warnings;
   }
 
   async function handle_form_submission(): Promise<void> {
@@ -1041,7 +1082,10 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
     }
   }
 
-  function update_form_field_value(field_name: string, value: string): boolean {
+  function update_form_field_value(
+    field_name: string,
+    value: string | OfficialAssignment[],
+  ): boolean {
     form_data[field_name] = value;
     clear_dependent_enum_values(field_name);
     return true;
@@ -1503,6 +1547,20 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
                     </div>
                   </div>
                 {/if}
+
+                <!-- Official Assignment Array (multiple officials with roles and jerseys) -->
+              {:else if field.field_type === "official_assignment_array"}
+                <OfficialAssignmentArray
+                  assignments={form_data[field.field_name] || []}
+                  disabled={should_field_be_read_only(field)}
+                  errors={validation_errors}
+                  on:change={(e) => {
+                    update_form_field_value(
+                      field.field_name,
+                      e.detail.assignments,
+                    );
+                  }}
+                />
               {/if}
 
               <!-- Field validation error display -->

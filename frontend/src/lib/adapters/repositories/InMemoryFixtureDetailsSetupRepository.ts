@@ -37,13 +37,12 @@ export class InMemoryFixtureDetailsSetupRepository
       id,
       ...timestamps,
       fixture_id: input.fixture_id,
-      official_id: input.official_id,
-      role_id: input.role_id,
-      assignment_notes: input.assignment_notes || "",
-      confirmation_status: input.confirmation_status || "pending",
       home_team_jersey_id: input.home_team_jersey_id || "",
       away_team_jersey_id: input.away_team_jersey_id || "",
       official_jersey_id: input.official_jersey_id || "",
+      assigned_officials: input.assigned_officials || [],
+      assignment_notes: input.assignment_notes || "",
+      confirmation_status: input.confirmation_status || "pending",
       status: input.status || "active",
     };
   }
@@ -74,14 +73,18 @@ export class InMemoryFixtureDetailsSetupRepository
     }
 
     if (filter.official_id) {
-      filtered_entities = filtered_entities.filter(
-        (item) => item.official_id === filter.official_id,
+      filtered_entities = filtered_entities.filter((item) =>
+        item.assigned_officials.some(
+          (assignment) => assignment.official_id === filter.official_id,
+        ),
       );
     }
 
     if (filter.role_id) {
-      filtered_entities = filtered_entities.filter(
-        (item) => item.role_id === filter.role_id,
+      filtered_entities = filtered_entities.filter((item) =>
+        item.assigned_officials.some(
+          (assignment) => assignment.role_id === filter.role_id,
+        ),
       );
     }
 

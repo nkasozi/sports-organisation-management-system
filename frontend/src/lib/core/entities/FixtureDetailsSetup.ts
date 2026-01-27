@@ -1,14 +1,18 @@
 import type { BaseEntity, EntityStatus } from "./BaseEntity";
 
-export interface FixtureDetailsSetup extends BaseEntity {
-  fixture_id: string;
+export interface OfficialAssignment {
   official_id: string;
   role_id: string;
-  assignment_notes: string;
-  confirmation_status: FixtureDetailsSetupConfirmationStatus;
+}
+
+export interface FixtureDetailsSetup extends BaseEntity {
+  fixture_id: string;
   home_team_jersey_id: string;
   away_team_jersey_id: string;
   official_jersey_id: string;
+  assigned_officials: OfficialAssignment[];
+  assignment_notes: string;
+  confirmation_status: FixtureDetailsSetupConfirmationStatus;
   status: EntityStatus;
 }
 
@@ -27,18 +31,24 @@ export type UpdateFixtureDetailsSetupInput = Partial<
   Omit<FixtureDetailsSetup, "id" | "created_at" | "updated_at" | "fixture_id">
 >;
 
+export function create_empty_official_assignment(): OfficialAssignment {
+  return {
+    official_id: "",
+    role_id: "",
+  };
+}
+
 export function create_empty_fixture_details_setup_input(
   fixture_id: string = "",
 ): CreateFixtureDetailsSetupInput {
   return {
     fixture_id,
-    official_id: "",
-    role_id: "",
-    assignment_notes: "",
-    confirmation_status: "pending",
     home_team_jersey_id: "",
     away_team_jersey_id: "",
     official_jersey_id: "",
+    assigned_officials: [create_empty_official_assignment()],
+    assignment_notes: "",
+    confirmation_status: "pending",
     status: "active",
   };
 }
@@ -52,12 +62,22 @@ export function validate_fixture_details_setup_input(
     errors.fixture_id = "Fixture is required";
   }
 
-  if ("official_id" in input && !input.official_id?.trim()) {
-    errors.official_id = "Official is required";
-  }
-
-  if ("role_id" in input && !input.role_id?.trim()) {
-    errors.role_id = "Role is required";
+  if ("assigned_officials" in input) {
+    if (!input.assigned_officials || input.assigned_officials.length === 0) {
+      errors.assigned_officials = "At least one official must be assigned";
+    } else {
+      for (let i = 0; i < input.assigned_officials.length; i++) {
+        const assignment = input.assigned_officials[i];
+        if (!assignment.official_id?.trim()) {
+          errors[`assigned_officials_${i}_official`] =
+            `Official ${i + 1} is required`;
+        }
+        if (!assignment.role_id?.trim()) {
+          errors[`assigned_officials_${i}_role`] =
+            `Role for official ${i + 1} is required`;
+        }
+      }
+    }
   }
 
   if ("confirmation_status" in input && input.confirmation_status) {

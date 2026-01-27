@@ -29,37 +29,16 @@ export function create_fixture_details_setup_use_cases(
         return create_failure_result(first_error || "Validation failed");
       }
 
-      const existing_assignments = await repository.find_by_filter(
+      const existing_setups = await repository.find_by_filter(
         {
           fixture_id: input.fixture_id,
-          role_id: input.role_id,
         },
         { page_number: 1, page_size: 1 },
       );
 
-      if (
-        existing_assignments.success &&
-        existing_assignments.data.items.length > 0
-      ) {
+      if (existing_setups.success && existing_setups.data.items.length > 0) {
         return create_failure_result(
-          "This role is already assigned to another official for this fixture",
-        );
-      }
-
-      const official_existing = await repository.find_by_filter(
-        {
-          fixture_id: input.fixture_id,
-          official_id: input.official_id,
-        },
-        { page_number: 1, page_size: 1 },
-      );
-
-      if (
-        official_existing.success &&
-        official_existing.data.items.length > 0
-      ) {
-        return create_failure_result(
-          "This official is already assigned to this fixture",
+          "A fixture details setup already exists for this fixture. Please edit the existing setup instead.",
         );
       }
 
@@ -86,28 +65,6 @@ export function create_fixture_details_setup_use_cases(
         return create_failure_result(
           "Fixture details setup assignment not found",
         );
-      }
-
-      const existing_assignment = existing_result.data;
-
-      if (input.role_id && input.role_id !== existing_assignment.role_id) {
-        const role_already_assigned = await repository.find_by_filter(
-          {
-            fixture_id: existing_assignment.fixture_id,
-            role_id: input.role_id,
-          },
-          { page_number: 1, page_size: 10 },
-        );
-
-        if (
-          role_already_assigned.success &&
-          role_already_assigned.data.items.length > 0 &&
-          role_already_assigned.data.items[0].id !== id
-        ) {
-          return create_failure_result(
-            "This role is already assigned to another official for this fixture",
-          );
-        }
       }
 
       return repository.update(id, input);

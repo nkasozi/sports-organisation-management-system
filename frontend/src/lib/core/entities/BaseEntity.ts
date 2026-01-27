@@ -36,7 +36,8 @@ export interface FieldMetadata<T extends BaseEntity = any> {
     | "enum"
     | "foreign_key"
     | "file"
-    | "sub_entity";
+    | "sub_entity"
+    | "official_assignment_array";
   is_required: boolean;
   is_read_only: boolean;
   is_read_only_on_edit?: boolean;
