@@ -85,9 +85,8 @@
   <div class="px-4 sm:px-6 lg:px-8 relative z-10">
     <div class="flex justify-between items-center h-20">
       <div
-        class="flex items-center space-x-4 {$branding_store.header_pattern ===
-          'pattern' && $branding_store.background_pattern_url
-          ? `bg-black/25 dark:bg-black/40 backdrop-blur-sm rounded-lg px-3 py-2 header-panel ${$branding_store.show_panel_borders ? 'border-2 border-white/60' : ''}`
+        class="flex items-center space-x-4 bg-black/25 dark:bg-black/40 backdrop-blur-sm rounded-lg pl-3 pr-12 py-2 header-panel {$branding_store.show_panel_borders
+          ? 'border-2 border-white/60'
           : ''}"
       >
         <button
@@ -170,7 +169,7 @@
               {/if}
             </div>
           </div>
-          <div class="hidden sm:block">
+          <div class="hidden md:block">
             <h1 class="text-xl font-bold text-black">
               {#if split_organization_name($branding_store.organization_name).prefix}
                 {split_organization_name($branding_store.organization_name)
@@ -192,9 +191,8 @@
       </div>
 
       <div
-        class="flex items-center space-x-4 {$branding_store.header_pattern ===
-          'pattern' && $branding_store.background_pattern_url
-          ? `bg-black/25 dark:bg-black/40 backdrop-blur-sm rounded-lg px-3 py-2 header-panel ${$branding_store.show_panel_borders ? 'border-2 border-white/60' : ''}`
+        class="flex items-center space-x-4 bg-black/25 dark:bg-black/40 backdrop-blur-sm rounded-lg px-3 py-2 header-panel {$branding_store.show_panel_borders
+          ? 'border-2 border-white/60'
           : ''}"
       >
         <ThemeToggle />
@@ -224,11 +222,11 @@
                 >
               {/if}
             </div>
-            <span class="hidden sm:block text-sm font-medium"
+            <span class="hidden md:block text-sm font-medium"
               >{$current_user_display_name}</span
             >
             <svg
-              class="hidden sm:block h-4 w-4 transition-transform duration-200 {user_menu_open
+              class="hidden md:block h-4 w-4 transition-transform duration-200 {user_menu_open
                 ? 'rotate-180'
                 : ''}"
               fill="none"

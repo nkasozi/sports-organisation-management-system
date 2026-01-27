@@ -259,7 +259,7 @@
   class:-translate-x-full={!sidebar_open}
   class:lg:translate-x-0={true}
 >
-  <div class="flex flex-col h-full">
+  <div class="flex flex-col h-full" style="margin-left: 1rem;">
     <!-- Sidebar header -->
     <div
       class="flex items-center justify-between h-16 px-4 border-b border-accent-200 dark:border-accent-700"

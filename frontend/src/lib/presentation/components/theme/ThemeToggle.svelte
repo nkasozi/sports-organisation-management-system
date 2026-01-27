@@ -18,7 +18,7 @@
 
 <button
   type="button"
-  class="p-2 rounded-md text-current hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white transition-all duration-200"
+  class="p-2 rounded-md text-white hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white transition-all duration-200"
   on:click={handle_toggle}
   aria-label="Toggle {current_theme.mode === 'light' ? 'dark' : 'light'} mode"
   title="Toggle {current_theme.mode === 'light' ? 'dark' : 'light'} mode"

@@ -1,8 +1,10 @@
 <script lang="ts">
   import { onMount } from "svelte";
+  import { page } from "$app/stores";
   import { injectAnalytics } from "@vercel/analytics/sveltekit";
   import "../app.css";
   import Layout from "$lib/presentation/components/layout/Layout.svelte";
+  import PublicLayout from "$lib/presentation/components/layout/PublicLayout.svelte";
   import FirstTimeSetup from "$lib/presentation/components/ui/FirstTimeSetup.svelte";
   import { initialize_app_data } from "$lib/adapters/services/appInitializer";
   import { first_time_setup_store } from "$lib/presentation/stores/firstTimeSetup";
@@ -10,6 +12,10 @@
   injectAnalytics();
 
   let show_first_time_setup = false;
+
+  $: is_public_profile_page =
+    $page.url.pathname.startsWith("/profile/") ||
+    $page.url.pathname.startsWith("/team-profile/");
 
   $: if (
     $first_time_setup_store.is_first_time &&
@@ -34,6 +40,12 @@
   />
 {/if}
 
-<Layout>
-  <slot />
-</Layout>
+{#if is_public_profile_page}
+  <PublicLayout>
+    <slot />
+  </PublicLayout>
+{:else}
+  <Layout>
+    <slot />
+  </Layout>
+{/if}

@@ -88,9 +88,8 @@
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 relative z-10">
     <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
       <div
-        class="col-span-1 md:col-span-2 {$branding_store.footer_pattern ===
-          'pattern' && $branding_store.background_pattern_url
-          ? `bg-black/25 dark:bg-black/40 backdrop-blur-sm rounded-lg p-4 footer-panel ${$branding_store.show_panel_borders ? 'border-2 border-white/60' : ''}`
+        class="col-span-1 md:col-span-2 bg-black/25 dark:bg-black/40 backdrop-blur-sm rounded-lg p-4 footer-panel {$branding_store.show_panel_borders
+          ? 'border-2 border-white/60'
           : ''}"
       >
         <div class="flex items-center space-x-3 mb-4">
@@ -200,10 +199,9 @@
       </div>
 
       <div
-        class={$branding_store.footer_pattern === "pattern" &&
-        $branding_store.background_pattern_url
-          ? `bg-black/25 dark:bg-black/40 backdrop-blur-sm rounded-lg p-4 footer-panel ${$branding_store.show_panel_borders ? "border-2 border-white/60" : ""}`
-          : ""}
+        class="bg-black/25 dark:bg-black/40 backdrop-blur-sm rounded-lg p-4 footer-panel {$branding_store.show_panel_borders
+          ? 'border-2 border-white/60'
+          : ''}"
       >
         <h3
           class="text-sm font-semibold text-white tracking-wider uppercase mb-4 drop-shadow-md"
@@ -247,10 +245,9 @@
       </div>
 
       <div
-        class={$branding_store.footer_pattern === "pattern" &&
-        $branding_store.background_pattern_url
-          ? `bg-black/25 dark:bg-black/40 backdrop-blur-sm rounded-lg p-4 footer-panel ${$branding_store.show_panel_borders ? "border-2 border-white/60" : ""}`
-          : ""}
+        class="bg-black/25 dark:bg-black/40 backdrop-blur-sm rounded-lg p-4 footer-panel {$branding_store.show_panel_borders
+          ? 'border-2 border-white/60'
+          : ''}"
       >
         <h3
           class="text-sm font-semibold text-white tracking-wider uppercase mb-4 drop-shadow-md"
@@ -295,10 +292,9 @@
     </div>
 
     <div
-      class="mt-6 pt-4 {$branding_store.footer_pattern === 'pattern' &&
-      $branding_store.background_pattern_url
-        ? `bg-black/25 dark:bg-black/40 backdrop-blur-sm rounded-lg px-4 py-3 footer-panel ${$branding_store.show_panel_borders ? 'border-2 border-white/60' : ''}`
-        : 'border-t border-primary-600 dark:border-primary-700'}"
+      class="mt-6 pt-4 bg-black/25 dark:bg-black/40 backdrop-blur-sm rounded-lg px-4 py-3 footer-panel {$branding_store.show_panel_borders
+        ? 'border-2 border-white/60'
+        : ''}"
     >
       <div
         class="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0"
