@@ -2497,14 +2497,6 @@ class EntityMetadataRegistry {
           placeholder: "Auto-generated from player name",
         },
         {
-          field_name: "featured_image_url" satisfies keyof PlayerProfile,
-          display_name: "Featured Image",
-          field_type: "file",
-          is_required: false,
-          is_read_only: false,
-          show_in_list: false,
-        },
-        {
           field_name: "links",
           display_name: "Links & Media",
           field_type: "sub_entity",
@@ -2570,14 +2562,6 @@ class EntityMetadataRegistry {
           is_read_only: false,
           show_in_list: false,
           placeholder: "Auto-generated from team name",
-        },
-        {
-          field_name: "featured_image_url" satisfies keyof TeamProfile,
-          display_name: "Featured Image",
-          field_type: "file",
-          is_required: false,
-          is_read_only: false,
-          show_in_list: false,
         },
         {
           field_name: "links",
