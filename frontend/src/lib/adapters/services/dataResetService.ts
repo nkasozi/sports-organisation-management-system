@@ -24,10 +24,18 @@ import { get_official_repository } from "../repositories/InMemoryOfficialReposit
 import { get_all_sports } from "./sportService";
 import { reset_seeding_flag, seed_all_data_if_needed } from "./seedingService";
 
+const FIRST_TIME_DETECTION_KEY = "sports_org_app_initialized";
+
+function reset_first_time_flag(): void {
+  if (typeof window === "undefined") return;
+  localStorage.removeItem(FIRST_TIME_DETECTION_KEY);
+}
+
 export async function reset_all_data(): Promise<boolean> {
   if (typeof window === "undefined") return false;
   localStorage.clear();
   reset_seeding_flag();
+  reset_first_time_flag();
   reset_sport_repository();
   reset_organization_repository();
   reset_team_repository();
