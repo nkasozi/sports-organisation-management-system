@@ -10,6 +10,7 @@
   } from "$lib/core/entities/Fixture";
   import type { Team } from "$lib/core/entities/Team";
   import type { Competition } from "$lib/core/entities/Competition";
+  import type { Sport, SportGamePeriod } from "$lib/core/entities/Sport";
   import type {
     LineupPlayer,
     FixtureLineup,
@@ -31,7 +32,14 @@
   import { get_team_use_cases } from "$lib/core/usecases/TeamUseCases";
   import { get_fixture_lineup_use_cases } from "$lib/core/usecases/FixtureLineupUseCases";
   import { get_competition_use_cases } from "$lib/core/usecases/CompetitionUseCases";
+  import { get_organization_use_cases } from "$lib/core/usecases/OrganizationUseCases";
+  import { get_sport_use_cases } from "$lib/core/usecases/SportUseCases";
   import { get_player_team_membership_use_cases } from "$lib/core/usecases/PlayerTeamMembershipUseCases";
+  import { get_venue_use_cases } from "$lib/core/usecases/VenueUseCases";
+  import { get_official_use_cases } from "$lib/core/usecases/OfficialUseCases";
+  import type { Venue } from "$lib/core/entities/Venue";
+  import type { Official } from "$lib/core/entities/Official";
+  import { get_official_full_name } from "$lib/core/entities/Official";
   import Toast from "$lib/presentation/components/ui/Toast.svelte";
   import ConfirmationModal from "$lib/presentation/components/ui/ConfirmationModal.svelte";
   import SearchableSelectField from "$lib/presentation/components/ui/SearchableSelectField.svelte";
@@ -40,12 +48,22 @@
   const team_use_cases = get_team_use_cases();
   const fixture_lineup_use_cases = get_fixture_lineup_use_cases();
   const competition_use_cases = get_competition_use_cases();
+  const organization_use_cases = get_organization_use_cases();
+  const sport_use_cases = get_sport_use_cases();
   const player_membership_use_cases = get_player_team_membership_use_cases();
+  const venue_use_cases = get_venue_use_cases();
+  const official_use_cases = get_official_use_cases();
 
   let fixture: Fixture | null = null;
   let home_team: Team | null = null;
   let away_team: Team | null = null;
   let competition: Competition | null = null;
+  let sport: Sport | null = null;
+  let venue: Venue | null = null;
+  let assigned_officials_data: Array<{
+    official: Official;
+    role_name: string;
+  }> = [];
   let home_players: LineupPlayer[] = [];
   let away_players: LineupPlayer[] = [];
   let is_loading: boolean = true;
@@ -71,11 +89,40 @@
   let toast_message: string = "";
   let toast_type: "success" | "error" | "info" = "info";
 
-  const PERIOD_DURATION_MINUTES = 45;
-  const PERIOD_DURATION_SECONDS = PERIOD_DURATION_MINUTES * 60;
+  function get_effective_periods(): SportGamePeriod[] {
+    return competition?.rule_overrides?.periods ?? sport?.periods ?? [];
+  }
+
+  function get_playing_periods(): SportGamePeriod[] {
+    return get_effective_periods().filter((p) => !p.is_break);
+  }
+
+  function get_period_duration_seconds_by_index(period_index: number): number {
+    const playing_periods = get_playing_periods();
+    if (period_index < 0 || period_index >= playing_periods.length) {
+      return 45 * 60;
+    }
+    return playing_periods[period_index].duration_minutes * 60;
+  }
+
+  function get_current_period_index(): number {
+    const current_period = fixture?.current_period ?? "first_half";
+    const period_map: Record<string, number> = {
+      first_half: 0,
+      second_half: 1,
+      first_quarter: 0,
+      second_quarter: 1,
+      third_quarter: 2,
+      fourth_quarter: 3,
+      extra_time_first: -1,
+      extra_time_second: -2,
+    };
+    return period_map[current_period] ?? 0;
+  }
 
   $: fixture_id = $page.params.id ?? "";
   $: elapsed_minutes = Math.floor(game_clock_seconds / 60);
+  $: current_period_index = get_current_period_index();
   $: current_period_duration = get_current_period_duration_seconds(
     fixture?.current_period ?? "first_half",
   );
@@ -166,6 +213,24 @@
       );
       if (competition_result.success && competition_result.data) {
         competition = competition_result.data;
+
+        if (competition.organization_id) {
+          const org_result = await organization_use_cases.get_by_id(
+            competition.organization_id,
+          );
+          if (
+            org_result.success &&
+            org_result.data &&
+            org_result.data.sport_id
+          ) {
+            const sport_result = await sport_use_cases.get_by_id(
+              org_result.data.sport_id,
+            );
+            if (sport_result.success && sport_result.data) {
+              sport = sport_result.data;
+            }
+          }
+        }
       }
     }
 
@@ -224,35 +289,103 @@
         .map((p) => ({ id: p.id, name: `${p.first_name} ${p.last_name}` })),
     });
 
+    if (fixture.venue) {
+      const venue_result = await venue_use_cases.get_by_id(fixture.venue);
+      if (venue_result.success && venue_result.data) {
+        venue = venue_result.data;
+      }
+    }
+
+    if (fixture.assigned_officials && fixture.assigned_officials.length > 0) {
+      const officials_promises = fixture.assigned_officials.map(
+        async (assignment) => {
+          const official_result = await official_use_cases.get_by_id(
+            assignment.official_id,
+          );
+          if (official_result.success && official_result.data) {
+            return {
+              official: official_result.data,
+              role_name: assignment.role_name,
+            };
+          }
+          return null;
+        },
+      );
+      const results = await Promise.all(officials_promises);
+      assigned_officials_data = results.filter(
+        (r): r is { official: Official; role_name: string } => r !== null,
+      );
+    }
+
     is_loading = false;
   }
 
   function get_period_start_seconds(period: GamePeriod): number {
-    switch (period) {
-      case "first_half":
-        return 0;
-      case "second_half":
-        return PERIOD_DURATION_SECONDS;
-      case "extra_time_first":
-        return PERIOD_DURATION_SECONDS * 2;
-      case "extra_time_second":
-        return PERIOD_DURATION_SECONDS * 2 + 15 * 60;
-      default:
-        return 0;
+    const playing_periods = get_playing_periods();
+    const period_map: Record<string, number> = {
+      first_half: 0,
+      second_half: 1,
+      first_quarter: 0,
+      second_quarter: 1,
+      third_quarter: 2,
+      fourth_quarter: 3,
+      extra_time_first: -1,
+      extra_time_second: -2,
+    };
+
+    const period_index = period_map[period] ?? 0;
+
+    if (period === "extra_time_first") {
+      const total_regular_time = playing_periods.reduce(
+        (sum, p) => sum + p.duration_minutes * 60,
+        0,
+      );
+      return total_regular_time;
     }
+
+    if (period === "extra_time_second") {
+      const total_regular_time = playing_periods.reduce(
+        (sum, p) => sum + p.duration_minutes * 60,
+        0,
+      );
+      return total_regular_time + 15 * 60;
+    }
+
+    let start_seconds = 0;
+    for (let i = 0; i < period_index && i < playing_periods.length; i++) {
+      start_seconds += playing_periods[i].duration_minutes * 60;
+    }
+    return start_seconds;
   }
 
   function get_current_period_duration_seconds(period: GamePeriod): number {
-    switch (period) {
-      case "first_half":
-      case "second_half":
-        return PERIOD_DURATION_SECONDS;
-      case "extra_time_first":
-      case "extra_time_second":
-        return 15 * 60;
-      default:
-        return PERIOD_DURATION_SECONDS;
+    const playing_periods = get_playing_periods();
+    const period_map: Record<string, number> = {
+      first_half: 0,
+      second_half: 1,
+      first_quarter: 0,
+      second_quarter: 1,
+      third_quarter: 2,
+      fourth_quarter: 3,
+    };
+
+    const period_index = period_map[period];
+
+    if (period === "extra_time_first" || period === "extra_time_second") {
+      return 15 * 60;
     }
+
+    if (
+      period_index !== undefined &&
+      period_index >= 0 &&
+      period_index < playing_periods.length
+    ) {
+      return playing_periods[period_index].duration_minutes * 60;
+    }
+
+    return playing_periods.length > 0
+      ? playing_periods[0].duration_minutes * 60
+      : 45 * 60;
   }
 
   function start_clock(): void {
@@ -932,6 +1065,117 @@
 
       <div class="flex-1 overflow-y-auto px-4 py-6">
         <div class="max-w-3xl mx-auto">
+          <div
+            class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 mb-6"
+          >
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div class="text-center md:text-left">
+                <div
+                  class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1"
+                >
+                  📍 Venue
+                </div>
+                <div class="text-sm font-medium text-gray-900 dark:text-white">
+                  {venue?.name ?? fixture?.venue ?? "TBD"}
+                </div>
+                {#if venue?.city}
+                  <div class="text-xs text-gray-500 dark:text-gray-400">
+                    {venue.city}{venue.country ? `, ${venue.country}` : ""}
+                  </div>
+                {/if}
+              </div>
+
+              <div class="text-center">
+                <div
+                  class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2"
+                >
+                  👕 Team Colors
+                </div>
+                <div class="flex items-center justify-center gap-4">
+                  <div class="flex items-center gap-2">
+                    <span class="text-xs text-gray-600 dark:text-gray-300"
+                      >{home_team?.name?.slice(0, 3).toUpperCase() ??
+                        "HOM"}</span
+                    >
+                    {#if fixture?.home_team_jersey?.main_color}
+                      <div
+                        class="w-6 h-6 rounded-full border-2 border-gray-300 dark:border-gray-600"
+                        style="background-color: {fixture.home_team_jersey
+                          .main_color}"
+                        title={fixture.home_team_jersey.nickname || "Home Kit"}
+                      ></div>
+                    {:else}
+                      <div
+                        class="w-6 h-6 rounded-full bg-blue-500 border-2 border-gray-300 dark:border-gray-600"
+                        title="Home Kit"
+                      ></div>
+                    {/if}
+                  </div>
+                  <span class="text-gray-400">vs</span>
+                  <div class="flex items-center gap-2">
+                    {#if fixture?.away_team_jersey?.main_color}
+                      <div
+                        class="w-6 h-6 rounded-full border-2 border-gray-300 dark:border-gray-600"
+                        style="background-color: {fixture.away_team_jersey
+                          .main_color}"
+                        title={fixture.away_team_jersey.nickname || "Away Kit"}
+                      ></div>
+                    {:else}
+                      <div
+                        class="w-6 h-6 rounded-full bg-red-500 border-2 border-gray-300 dark:border-gray-600"
+                        title="Away Kit"
+                      ></div>
+                    {/if}
+                    <span class="text-xs text-gray-600 dark:text-gray-300"
+                      >{away_team?.name?.slice(0, 3).toUpperCase() ??
+                        "AWY"}</span
+                    >
+                  </div>
+                </div>
+                {#if fixture?.officials_jersey?.main_color}
+                  <div class="mt-2 flex items-center justify-center gap-2">
+                    <span class="text-xs text-gray-500 dark:text-gray-400"
+                      >Officials:</span
+                    >
+                    <div
+                      class="w-4 h-4 rounded-full border border-gray-300 dark:border-gray-600"
+                      style="background-color: {fixture.officials_jersey
+                        .main_color}"
+                      title={fixture.officials_jersey.nickname ||
+                        "Officials Kit"}
+                    ></div>
+                  </div>
+                {/if}
+              </div>
+
+              <div class="text-center md:text-right">
+                <div
+                  class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1"
+                >
+                  🏅 Match Officials
+                </div>
+                {#if assigned_officials_data.length > 0}
+                  <div class="space-y-1">
+                    {#each assigned_officials_data as { official, role_name }}
+                      <div class="text-sm">
+                        <span class="text-gray-600 dark:text-gray-400"
+                          >{role_name}:</span
+                        >
+                        <span class="font-medium text-gray-900 dark:text-white">
+                          {get_official_full_name(official)}
+                        </span>
+                      </div>
+                    {/each}
+                  </div>
+                {:else}
+                  <div class="text-sm text-gray-500 dark:text-gray-400">
+                    Not assigned
+                  </div>
+                {/if}
+              </div>
+            </div>
+          </div>
+
           <div class="flex items-center justify-between mb-6">
             <div class="flex items-center gap-2">
               <span class="w-3 h-3 rounded-full bg-blue-500"></span>

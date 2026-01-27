@@ -24,7 +24,7 @@ import type { Venue } from "../../core/entities/Venue";
 import type { Qualification } from "../../core/entities/Qualification";
 import type { IdentificationType } from "../../core/entities/IdentificationType";
 import type { Identification } from "../../core/entities/Identification";
-import type { FixtureManagement } from "../../core/entities/FixtureManagement";
+import type { FixtureDetailsSetup } from "../../core/entities/FixtureDetailsSetup";
 import type { SystemUser } from "../../core/entities/SystemUser";
 import type { AuditLog } from "../../core/entities/AuditLog";
 import type { JerseyColor } from "../../core/entities/JerseyColor";
@@ -559,7 +559,7 @@ class EntityMetadataRegistry {
     this.register_active_game_metadata();
     this.register_sport_metadata();
     this.register_fixture_lineup_metadata();
-    this.register_fixture_management_metadata();
+    this.register_fixture_details_setup_metadata();
     this.register_competition_format_metadata();
     this.register_game_event_type_metadata();
     this.register_game_official_role_metadata();
@@ -1733,13 +1733,13 @@ class EntityMetadataRegistry {
     });
   }
 
-  private register_fixture_management_metadata(): void {
-    this.metadata_map.set("fixturemanagement", {
-      entity_name: "fixturemanagement",
-      display_name: "Fixture Management",
+  private register_fixture_details_setup_metadata(): void {
+    this.metadata_map.set("fixturedetailssetup", {
+      entity_name: "fixturedetailssetup",
+      display_name: "Fixture Details Setup",
       fields: [
         {
-          field_name: "fixture_id" satisfies keyof FixtureManagement,
+          field_name: "fixture_id" satisfies keyof FixtureDetailsSetup,
           display_name: "Fixture",
           field_type: "foreign_key",
           foreign_key_entity: "fixture",
@@ -1749,7 +1749,7 @@ class EntityMetadataRegistry {
           show_in_list: true,
         },
         {
-          field_name: "official_id" satisfies keyof FixtureManagement,
+          field_name: "official_id" satisfies keyof FixtureDetailsSetup,
           display_name: "Official",
           field_type: "foreign_key",
           foreign_key_entity: "official",
@@ -1758,7 +1758,7 @@ class EntityMetadataRegistry {
           show_in_list: true,
         },
         {
-          field_name: "role_id" satisfies keyof FixtureManagement,
+          field_name: "role_id" satisfies keyof FixtureDetailsSetup,
           display_name: "Official Role",
           field_type: "foreign_key",
           foreign_key_entity: "gameofficialrole",
@@ -1767,7 +1767,7 @@ class EntityMetadataRegistry {
           show_in_list: true,
         },
         {
-          field_name: "home_team_jersey_id" satisfies keyof FixtureManagement,
+          field_name: "home_team_jersey_id" satisfies keyof FixtureDetailsSetup,
           display_name: "Home Team Jersey",
           field_type: "foreign_key",
           foreign_key_entity: "jerseycolor",
@@ -1781,7 +1781,7 @@ class EntityMetadataRegistry {
           },
         },
         {
-          field_name: "away_team_jersey_id" satisfies keyof FixtureManagement,
+          field_name: "away_team_jersey_id" satisfies keyof FixtureDetailsSetup,
           display_name: "Away Team Jersey",
           field_type: "foreign_key",
           foreign_key_entity: "jerseycolor",
@@ -1795,7 +1795,7 @@ class EntityMetadataRegistry {
           },
         },
         {
-          field_name: "official_jersey_id" satisfies keyof FixtureManagement,
+          field_name: "official_jersey_id" satisfies keyof FixtureDetailsSetup,
           display_name: "Official Jersey",
           field_type: "foreign_key",
           foreign_key_entity: "jerseycolor",
@@ -1808,7 +1808,7 @@ class EntityMetadataRegistry {
           },
         },
         {
-          field_name: "assignment_notes" satisfies keyof FixtureManagement,
+          field_name: "assignment_notes" satisfies keyof FixtureDetailsSetup,
           display_name: "Assignment Notes",
           field_type: "string",
           is_required: false,

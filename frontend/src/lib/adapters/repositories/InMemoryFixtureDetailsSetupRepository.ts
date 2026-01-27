@@ -1,38 +1,38 @@
 import type {
-  FixtureManagement,
-  CreateFixtureManagementInput,
-  UpdateFixtureManagementInput,
-} from "../../core/entities/FixtureManagement";
+  FixtureDetailsSetup,
+  CreateFixtureDetailsSetupInput,
+  UpdateFixtureDetailsSetupInput,
+} from "../../core/entities/FixtureDetailsSetup";
 import type { BaseEntity } from "../../core/entities/BaseEntity";
 import type {
-  FixtureManagementRepository,
-  FixtureManagementFilter,
-} from "../../core/interfaces/adapters/FixtureManagementRepository";
+  FixtureDetailsSetupRepository,
+  FixtureDetailsSetupFilter,
+} from "../../core/interfaces/adapters/FixtureDetailsSetupRepository";
 import type { QueryOptions } from "../../core/interfaces/adapters/Repository";
 import type { PaginatedAsyncResult } from "../../core/types/Result";
 import { create_success_result } from "../../core/types/Result";
 import { InMemoryBaseRepository } from "./InMemoryBaseRepository";
 
-const STORAGE_KEY = "sports_org_fixture_management";
-const ENTITY_PREFIX = "fixture-management";
+const STORAGE_KEY = "sports_org_fixture_details_setup";
+const ENTITY_PREFIX = "fixture-details-setup";
 
-export class InMemoryFixtureManagementRepository
+export class InMemoryFixtureDetailsSetupRepository
   extends InMemoryBaseRepository<
-    FixtureManagement,
-    CreateFixtureManagementInput,
-    UpdateFixtureManagementInput
+    FixtureDetailsSetup,
+    CreateFixtureDetailsSetupInput,
+    UpdateFixtureDetailsSetupInput
   >
-  implements FixtureManagementRepository
+  implements FixtureDetailsSetupRepository
 {
   constructor() {
     super(STORAGE_KEY, ENTITY_PREFIX);
   }
 
   protected create_entity_from_input(
-    input: CreateFixtureManagementInput,
+    input: CreateFixtureDetailsSetupInput,
     id: string,
     timestamps: Pick<BaseEntity, "created_at" | "updated_at">,
-  ): FixtureManagement {
+  ): FixtureDetailsSetup {
     return {
       id,
       ...timestamps,
@@ -49,9 +49,9 @@ export class InMemoryFixtureManagementRepository
   }
 
   protected apply_updates_to_entity(
-    entity: FixtureManagement,
-    updates: UpdateFixtureManagementInput,
-  ): FixtureManagement {
+    entity: FixtureDetailsSetup,
+    updates: UpdateFixtureDetailsSetupInput,
+  ): FixtureDetailsSetup {
     return {
       ...entity,
       ...updates,
@@ -59,9 +59,9 @@ export class InMemoryFixtureManagementRepository
   }
 
   async find_by_filter(
-    filter: FixtureManagementFilter,
+    filter: FixtureDetailsSetupFilter,
     options?: QueryOptions,
-  ): PaginatedAsyncResult<FixtureManagement> {
+  ): PaginatedAsyncResult<FixtureDetailsSetup> {
     await this.simulate_network_delay();
     this.ensure_cache_initialized();
 
@@ -117,14 +117,14 @@ export class InMemoryFixtureManagementRepository
   async find_by_fixture(
     fixture_id: string,
     options?: QueryOptions,
-  ): PaginatedAsyncResult<FixtureManagement> {
+  ): PaginatedAsyncResult<FixtureDetailsSetup> {
     return this.find_by_filter({ fixture_id }, options);
   }
 
   async find_by_official(
     official_id: string,
     options?: QueryOptions,
-  ): PaginatedAsyncResult<FixtureManagement> {
+  ): PaginatedAsyncResult<FixtureDetailsSetup> {
     return this.find_by_filter({ official_id }, options);
   }
 
@@ -136,11 +136,11 @@ export class InMemoryFixtureManagementRepository
   }
 }
 
-let repository_instance: InMemoryFixtureManagementRepository | null = null;
+let repository_instance: InMemoryFixtureDetailsSetupRepository | null = null;
 
-export function get_fixture_management_repository(): InMemoryFixtureManagementRepository {
+export function get_fixture_details_setup_repository(): InMemoryFixtureDetailsSetupRepository {
   if (!repository_instance) {
-    repository_instance = new InMemoryFixtureManagementRepository();
+    repository_instance = new InMemoryFixtureDetailsSetupRepository();
   }
   return repository_instance;
 }

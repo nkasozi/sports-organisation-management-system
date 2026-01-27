@@ -1,35 +1,35 @@
 import type { BaseEntity, EntityStatus } from "./BaseEntity";
 
-export interface FixtureManagement extends BaseEntity {
+export interface FixtureDetailsSetup extends BaseEntity {
   fixture_id: string;
   official_id: string;
   role_id: string;
   assignment_notes: string;
-  confirmation_status: FixtureManagementConfirmationStatus;
+  confirmation_status: FixtureDetailsSetupConfirmationStatus;
   home_team_jersey_id: string;
   away_team_jersey_id: string;
   official_jersey_id: string;
   status: EntityStatus;
 }
 
-export type FixtureManagementConfirmationStatus =
+export type FixtureDetailsSetupConfirmationStatus =
   | "pending"
   | "confirmed"
   | "declined"
   | "replaced";
 
-export type CreateFixtureManagementInput = Omit<
-  FixtureManagement,
+export type CreateFixtureDetailsSetupInput = Omit<
+  FixtureDetailsSetup,
   "id" | "created_at" | "updated_at"
 >;
 
-export type UpdateFixtureManagementInput = Partial<
-  Omit<FixtureManagement, "id" | "created_at" | "updated_at" | "fixture_id">
+export type UpdateFixtureDetailsSetupInput = Partial<
+  Omit<FixtureDetailsSetup, "id" | "created_at" | "updated_at" | "fixture_id">
 >;
 
-export function create_empty_fixture_management_input(
+export function create_empty_fixture_details_setup_input(
   fixture_id: string = "",
-): CreateFixtureManagementInput {
+): CreateFixtureDetailsSetupInput {
   return {
     fixture_id,
     official_id: "",
@@ -43,8 +43,8 @@ export function create_empty_fixture_management_input(
   };
 }
 
-export function validate_fixture_management_input(
-  input: CreateFixtureManagementInput | UpdateFixtureManagementInput,
+export function validate_fixture_details_setup_input(
+  input: CreateFixtureDetailsSetupInput | UpdateFixtureDetailsSetupInput,
 ): { is_valid: boolean; errors: Record<string, string> } {
   const errors: Record<string, string> = {};
 
@@ -61,7 +61,7 @@ export function validate_fixture_management_input(
   }
 
   if ("confirmation_status" in input && input.confirmation_status) {
-    const valid_statuses: FixtureManagementConfirmationStatus[] = [
+    const valid_statuses: FixtureDetailsSetupConfirmationStatus[] = [
       "pending",
       "confirmed",
       "declined",
@@ -69,7 +69,7 @@ export function validate_fixture_management_input(
     ];
     if (
       !valid_statuses.includes(
-        input.confirmation_status as FixtureManagementConfirmationStatus,
+        input.confirmation_status as FixtureDetailsSetupConfirmationStatus,
       )
     ) {
       errors.confirmation_status = "Invalid confirmation status";

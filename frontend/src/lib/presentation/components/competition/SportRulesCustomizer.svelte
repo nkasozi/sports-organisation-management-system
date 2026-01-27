@@ -1,22 +1,37 @@
 <script lang="ts">
-  import type { Sport } from "$lib/core/entities/Sport";
+  import type { Sport, SportGamePeriod } from "$lib/core/entities/Sport";
   import type { CompetitionRuleOverrides } from "$lib/core/entities/Competition";
   import FormField from "$lib/presentation/components/ui/FormField.svelte";
+  import GamePeriodsEditor from "$lib/presentation/components/game/GamePeriodsEditor.svelte";
 
   export let sport: Sport | null = null;
   export let rule_overrides: CompetitionRuleOverrides = {};
 
-  let is_customizing_duration: boolean = false;
+  let is_customizing_periods: boolean = false;
   let is_customizing_squad_limits: boolean = false;
   let is_customizing_substitutions: boolean = false;
   let is_customizing_overtime: boolean = false;
 
-  function get_game_duration(): number {
-    return (
-      rule_overrides.game_duration_minutes ??
-      sport?.standard_game_duration_minutes ??
-      90
-    );
+  function get_effective_periods(): SportGamePeriod[] {
+    return rule_overrides.periods ?? sport?.periods ?? [];
+  }
+
+  function get_total_playing_time(periods: SportGamePeriod[]): number {
+    return periods
+      .filter((p) => !p.is_break)
+      .reduce((sum, p) => sum + p.duration_minutes, 0);
+  }
+
+  function format_periods_summary(periods: SportGamePeriod[]): string {
+    const playing_periods = periods.filter((p) => !p.is_break);
+    const total_time = get_total_playing_time(periods);
+    const period_count = playing_periods.length;
+
+    if (period_count === 0) return "No periods defined";
+    if (period_count === 2) return `2 halves (${total_time} min)`;
+    if (period_count === 4) return `4 quarters (${total_time} min)`;
+    if (period_count === 3) return `3 periods (${total_time} min)`;
+    return `${period_count} periods (${total_time} min)`;
   }
 
   function get_max_players_on_field(): number {
@@ -67,8 +82,9 @@
     );
   }
 
-  function update_game_duration(value: number): void {
-    rule_overrides.game_duration_minutes = value;
+  function handle_periods_change(event: CustomEvent<SportGamePeriod[]>): void {
+    rule_overrides.periods = event.detail;
+    rule_overrides.game_duration_minutes = get_total_playing_time(event.detail);
   }
 
   function update_max_players(value: number): void {
@@ -111,9 +127,10 @@
     rule_overrides.overtime_rules.is_enabled = value;
   }
 
-  function reset_game_duration(): void {
+  function reset_game_periods(): void {
+    rule_overrides.periods = undefined;
     rule_overrides.game_duration_minutes = undefined;
-    is_customizing_duration = false;
+    is_customizing_periods = false;
   }
 
   function reset_squad_limits(): void {
@@ -172,68 +189,62 @@
             <div
               class="text-sm font-medium text-accent-900 dark:text-accent-100"
             >
-              Game Duration
+              Game Periods
             </div>
-            {#if rule_overrides.game_duration_minutes !== undefined}
-              <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary-100 text-primary-700 dark:bg-primary-900 dark:text-primary-300">
+            {#if rule_overrides.periods !== undefined}
+              <span
+                class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary-100 text-primary-700 dark:bg-primary-900 dark:text-primary-300"
+              >
                 Custom
               </span>
             {/if}
           </div>
 
-          <div class="flex items-center gap-6 mb-3 p-3 bg-accent-50 dark:bg-accent-800 rounded-md">
+          <div
+            class="flex items-center gap-6 mb-3 p-3 bg-accent-50 dark:bg-accent-800 rounded-md"
+          >
             <div class="flex items-center gap-2">
-              <span class="text-sm text-accent-500 dark:text-accent-400">Current:</span>
-              <span class="text-lg font-semibold text-accent-900 dark:text-accent-100">
-                {get_game_duration()} min
+              <span class="text-sm text-accent-500 dark:text-accent-400"
+                >Current:</span
+              >
+              <span
+                class="text-lg font-semibold text-accent-900 dark:text-accent-100"
+              >
+                {format_periods_summary(get_effective_periods())}
               </span>
             </div>
             <div class="text-accent-300 dark:text-accent-600">|</div>
             <div class="flex items-center gap-2">
-              <span class="text-sm text-accent-500 dark:text-accent-400">Default:</span>
+              <span class="text-sm text-accent-500 dark:text-accent-400"
+                >Default:</span
+              >
               <span class="text-sm text-accent-600 dark:text-accent-400">
-                {sport?.standard_game_duration_minutes || 90} min
+                {format_periods_summary(sport?.periods ?? [])}
               </span>
             </div>
           </div>
 
-          {#if !is_customizing_duration}
+          {#if !is_customizing_periods}
             <button
               type="button"
-              on:click={() => (is_customizing_duration = true)}
+              on:click={() => (is_customizing_periods = true)}
               class="text-sm text-primary-600 hover:text-primary-700 font-medium"
             >
               Customize
             </button>
           {:else}
-            <div class="space-y-3 mt-3">
-              <div>
-                <label
-                  class="block text-sm font-medium text-accent-900 dark:text-accent-100 mb-1"
-                  for="game_duration_input"
-                >
-                  Game Duration (minutes)
-                </label>
-                <input
-                  id="game_duration_input"
-                  type="number"
-                  value={get_game_duration()}
-                  on:change={(e) =>
-                    update_game_duration(parseInt(e.currentTarget.value))}
-                  min={1}
-                  max={300}
-                  class="block w-full px-3 py-2 border border-accent-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 dark:bg-accent-800 dark:border-accent-600 dark:text-white"
-                />
-              </div>
-              <div class="flex gap-2">
-                <button
-                  type="button"
-                  on:click={reset_game_duration}
-                  class="text-sm text-accent-600 hover:text-accent-700 underline"
-                >
-                  Reset to Default
-                </button>
-              </div>
+            <div class="space-y-4 mt-4">
+              <GamePeriodsEditor
+                periods={rule_overrides.periods ?? [...(sport?.periods ?? [])]}
+                on:change={handle_periods_change}
+              />
+              <button
+                type="button"
+                on:click={reset_game_periods}
+                class="text-sm text-accent-600 hover:text-accent-700 underline"
+              >
+                Reset to Default
+              </button>
             </div>
           {/if}
         </div>
@@ -246,24 +257,36 @@
               Squad Size Limits
             </div>
             {#if rule_overrides.max_players_on_field !== undefined || rule_overrides.min_players_on_field !== undefined || rule_overrides.max_squad_size !== undefined}
-              <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary-100 text-primary-700 dark:bg-primary-900 dark:text-primary-300">
+              <span
+                class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary-100 text-primary-700 dark:bg-primary-900 dark:text-primary-300"
+              >
                 Custom
               </span>
             {/if}
           </div>
 
-          <div class="flex flex-wrap items-center gap-4 mb-3 p-3 bg-accent-50 dark:bg-accent-800 rounded-md">
+          <div
+            class="flex flex-wrap items-center gap-4 mb-3 p-3 bg-accent-50 dark:bg-accent-800 rounded-md"
+          >
             <div class="flex items-center gap-2">
-              <span class="text-sm text-accent-500 dark:text-accent-400">Current:</span>
-              <span class="text-lg font-semibold text-accent-900 dark:text-accent-100">
-                Max {get_max_players_on_field()} / Min {get_min_players_on_field()} / Squad {get_max_squad_size()}
+              <span class="text-sm text-accent-500 dark:text-accent-400"
+                >Current:</span
+              >
+              <span
+                class="text-lg font-semibold text-accent-900 dark:text-accent-100"
+              >
+                Max {get_max_players_on_field()} / Min {get_min_players_on_field()}
+                / Squad {get_max_squad_size()}
               </span>
             </div>
             <div class="text-accent-300 dark:text-accent-600">|</div>
             <div class="flex items-center gap-2">
-              <span class="text-sm text-accent-500 dark:text-accent-400">Default:</span>
+              <span class="text-sm text-accent-500 dark:text-accent-400"
+                >Default:</span
+              >
               <span class="text-sm text-accent-600 dark:text-accent-400">
-                Max {sport?.max_players_on_field} / Min {sport?.min_players_on_field} / Squad {sport?.max_squad_size}
+                Max {sport?.max_players_on_field} / Min {sport?.min_players_on_field}
+                / Squad {sport?.max_squad_size}
               </span>
             </div>
           </div>
@@ -354,30 +377,46 @@
               Substitution Rules
             </div>
             {#if rule_overrides.substitution_rules}
-              <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary-100 text-primary-700 dark:bg-primary-900 dark:text-primary-300">
+              <span
+                class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary-100 text-primary-700 dark:bg-primary-900 dark:text-primary-300"
+              >
                 Custom
               </span>
             {/if}
           </div>
 
-          <div class="flex flex-wrap items-center gap-4 mb-3 p-3 bg-accent-50 dark:bg-accent-800 rounded-md">
+          <div
+            class="flex flex-wrap items-center gap-4 mb-3 p-3 bg-accent-50 dark:bg-accent-800 rounded-md"
+          >
             <div class="flex flex-col gap-1">
               <div class="flex items-center gap-2">
-                <span class="text-sm text-accent-500 dark:text-accent-400">Current:</span>
-                <span class="text-lg font-semibold text-accent-900 dark:text-accent-100">
+                <span class="text-sm text-accent-500 dark:text-accent-400"
+                  >Current:</span
+                >
+                <span
+                  class="text-lg font-semibold text-accent-900 dark:text-accent-100"
+                >
                   {get_max_substitutions()} subs
                 </span>
                 {#if get_rolling_substitutions()}
-                  <span class="text-xs px-2 py-0.5 rounded bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300">Rolling</span>
+                  <span
+                    class="text-xs px-2 py-0.5 rounded bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300"
+                    >Rolling</span
+                  >
                 {/if}
                 {#if get_return_after_substitution()}
-                  <span class="text-xs px-2 py-0.5 rounded bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300">Re-entry</span>
+                  <span
+                    class="text-xs px-2 py-0.5 rounded bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300"
+                    >Re-entry</span
+                  >
                 {/if}
               </div>
             </div>
             <div class="text-accent-300 dark:text-accent-600">|</div>
             <div class="flex items-center gap-2">
-              <span class="text-sm text-accent-500 dark:text-accent-400">Default:</span>
+              <span class="text-sm text-accent-500 dark:text-accent-400"
+                >Default:</span
+              >
               <span class="text-sm text-accent-600 dark:text-accent-400">
                 {sport?.substitution_rules.max_substitutions_per_game} subs
               </span>
@@ -459,24 +498,35 @@
               Overtime Rules
             </div>
             {#if rule_overrides.overtime_rules}
-              <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary-100 text-primary-700 dark:bg-primary-900 dark:text-primary-300">
+              <span
+                class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary-100 text-primary-700 dark:bg-primary-900 dark:text-primary-300"
+              >
                 Custom
               </span>
             {/if}
           </div>
 
-          <div class="flex flex-wrap items-center gap-4 mb-3 p-3 bg-accent-50 dark:bg-accent-800 rounded-md">
+          <div
+            class="flex flex-wrap items-center gap-4 mb-3 p-3 bg-accent-50 dark:bg-accent-800 rounded-md"
+          >
             <div class="flex items-center gap-2">
-              <span class="text-sm text-accent-500 dark:text-accent-400">Current:</span>
-              <span class="text-lg font-semibold text-accent-900 dark:text-accent-100">
+              <span class="text-sm text-accent-500 dark:text-accent-400"
+                >Current:</span
+              >
+              <span
+                class="text-lg font-semibold text-accent-900 dark:text-accent-100"
+              >
                 {get_overtime_enabled() ? "Enabled" : "Disabled"}
               </span>
             </div>
             <div class="text-accent-300 dark:text-accent-600">|</div>
             <div class="flex items-center gap-2">
-              <span class="text-sm text-accent-500 dark:text-accent-400">Default:</span>
+              <span class="text-sm text-accent-500 dark:text-accent-400"
+                >Default:</span
+              >
               <span class="text-sm text-accent-600 dark:text-accent-400">
-                {sport?.overtime_rules.is_enabled ? "Enabled" : "Disabled"} ({sport?.overtime_rules.overtime_type})
+                {sport?.overtime_rules.is_enabled ? "Enabled" : "Disabled"} ({sport
+                  ?.overtime_rules.overtime_type})
               </span>
             </div>
           </div>

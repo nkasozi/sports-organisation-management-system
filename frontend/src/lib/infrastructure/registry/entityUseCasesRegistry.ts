@@ -6,7 +6,7 @@ import { get_player_team_membership_use_cases } from "$lib/core/usecases/PlayerT
 import { get_player_position_use_cases } from "$lib/core/usecases/PlayerPositionUseCases";
 import { get_official_use_cases } from "$lib/core/usecases/OfficialUseCases";
 import { get_fixture_use_cases } from "$lib/core/usecases/FixtureUseCases";
-import { get_fixture_management_use_cases } from "$lib/core/usecases/FixtureManagementUseCases";
+import { get_fixture_details_setup_use_cases } from "$lib/core/usecases/FixtureDetailsSetupUseCases";
 import { get_competition_format_use_cases } from "$lib/core/usecases/CompetitionFormatUseCases";
 import { get_game_event_type_use_cases } from "$lib/core/usecases/GameEventTypeUseCases";
 import { get_game_official_role_use_cases } from "$lib/core/usecases/GameOfficialRoleUseCases";
@@ -39,7 +39,7 @@ const VALID_ENTITY_TYPE_KEYS = [
   "playerteammembership",
   "official",
   "fixture",
-  "fixturemanagement",
+  "fixturedetailssetup",
   "competitionformat",
   "gameeventtype",
   "gameofficialrole",
@@ -96,8 +96,8 @@ function create_use_cases_registry(): Record<EntityTypeKey, UseCasesGetter> {
       get_official_use_cases as UseCasesGetter,
     ["fixture" satisfies EntityTypeKey]:
       get_fixture_use_cases as UseCasesGetter,
-    ["fixturemanagement" satisfies EntityTypeKey]:
-      get_fixture_management_use_cases as UseCasesGetter,
+    ["fixturedetailssetup" satisfies EntityTypeKey]:
+      get_fixture_details_setup_use_cases as UseCasesGetter,
     ["competitionformat" satisfies EntityTypeKey]:
       get_competition_format_use_cases as UseCasesGetter,
     ["gameeventtype" satisfies EntityTypeKey]:
@@ -165,7 +165,7 @@ const ENTITY_DISPLAY_NAME_GETTERS: Record<
       `${f.venue || "Fixture"} - Round ${f.round_number || ""}`.trim() || e.id
     );
   },
-  fixturemanagement: (e) => e.id,
+  fixturedetailssetup: (e) => e.id,
   competitionformat: (e) => (to_record(e).name as string) || e.id,
   gameeventtype: (e) => (to_record(e).name as string) || e.id,
   gameofficialrole: (e) => (to_record(e).name as string) || e.id,

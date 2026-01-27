@@ -1,5 +1,5 @@
 import type { Fixture } from "../entities/Fixture";
-import type { FixtureManagementUseCases } from "../usecases/FixtureManagementUseCases";
+import type { FixtureDetailsSetupUseCases } from "../usecases/FixtureDetailsSetupUseCases";
 import type { FixtureLineupUseCases } from "../usecases/FixtureLineupUseCases";
 import type { PlayerTeamMembershipUseCases } from "../usecases/PlayerTeamMembershipUseCases";
 import type { PlayerUseCases } from "../usecases/PlayerUseCases";
@@ -40,7 +40,7 @@ export interface LineupGenerationResult {
 
 export async function check_fixture_can_start(
   fixture: Fixture,
-  official_use_cases: FixtureManagementUseCases,
+  official_use_cases: FixtureDetailsSetupUseCases,
   lineup_use_cases: FixtureLineupUseCases,
 ): Promise<FixtureCanStartResult> {
   if (!fixture.id) {

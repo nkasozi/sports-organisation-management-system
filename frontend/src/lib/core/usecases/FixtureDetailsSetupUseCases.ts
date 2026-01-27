@@ -1,29 +1,29 @@
 import type {
-  FixtureManagement,
-  CreateFixtureManagementInput,
-  UpdateFixtureManagementInput,
-} from "../entities/FixtureManagement";
-import { validate_fixture_management_input } from "../entities/FixtureManagement";
+  FixtureDetailsSetup,
+  CreateFixtureDetailsSetupInput,
+  UpdateFixtureDetailsSetupInput,
+} from "../entities/FixtureDetailsSetup";
+import { validate_fixture_details_setup_input } from "../entities/FixtureDetailsSetup";
 import type {
-  FixtureManagementRepository,
-  FixtureManagementFilter,
-} from "../interfaces/adapters/FixtureManagementRepository";
+  FixtureDetailsSetupRepository,
+  FixtureDetailsSetupFilter,
+} from "../interfaces/adapters/FixtureDetailsSetupRepository";
 import type { QueryOptions } from "../interfaces/adapters/Repository";
 import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
 import { create_success_result, create_failure_result } from "../types/Result";
-import { get_fixture_management_repository } from "../../adapters/repositories/InMemoryFixtureManagementRepository";
-import type { FixtureManagementUseCasesPort } from "../interfaces/ports/FixtureManagementUseCasesPort";
+import { get_fixture_details_setup_repository } from "../../adapters/repositories/InMemoryFixtureDetailsSetupRepository";
+import type { FixtureDetailsSetupUseCasesPort } from "../interfaces/ports/FixtureDetailsSetupUseCasesPort";
 
-export type FixtureManagementUseCases = FixtureManagementUseCasesPort;
+export type FixtureDetailsSetupUseCases = FixtureDetailsSetupUseCasesPort;
 
-export function create_fixture_management_use_cases(
-  repository: FixtureManagementRepository,
-): FixtureManagementUseCases {
+export function create_fixture_details_setup_use_cases(
+  repository: FixtureDetailsSetupRepository,
+): FixtureDetailsSetupUseCases {
   return {
     async create(
-      input: CreateFixtureManagementInput,
-    ): AsyncResult<FixtureManagement> {
-      const validation = validate_fixture_management_input(input);
+      input: CreateFixtureDetailsSetupInput,
+    ): AsyncResult<FixtureDetailsSetup> {
+      const validation = validate_fixture_details_setup_input(input);
       if (!validation.is_valid) {
         const first_error = Object.values(validation.errors)[0];
         return create_failure_result(first_error || "Validation failed");
@@ -66,24 +66,26 @@ export function create_fixture_management_use_cases(
       return repository.create(input);
     },
 
-    async get_by_id(id: string): AsyncResult<FixtureManagement> {
+    async get_by_id(id: string): AsyncResult<FixtureDetailsSetup> {
       if (!id?.trim()) {
-        return create_failure_result("Fixture Management ID is required");
+        return create_failure_result("Fixture Details Setup ID is required");
       }
       return repository.find_by_id(id);
     },
 
     async update(
       id: string,
-      input: UpdateFixtureManagementInput,
-    ): AsyncResult<FixtureManagement> {
+      input: UpdateFixtureDetailsSetupInput,
+    ): AsyncResult<FixtureDetailsSetup> {
       if (!id?.trim()) {
-        return create_failure_result("Fixture Management ID is required");
+        return create_failure_result("Fixture Details Setup ID is required");
       }
 
       const existing_result = await repository.find_by_id(id);
       if (!existing_result.success || !existing_result.data) {
-        return create_failure_result("Fixture management assignment not found");
+        return create_failure_result(
+          "Fixture details setup assignment not found",
+        );
       }
 
       const existing_assignment = existing_result.data;
@@ -113,21 +115,23 @@ export function create_fixture_management_use_cases(
 
     async delete(id: string): AsyncResult<boolean> {
       if (!id?.trim()) {
-        return create_failure_result("Fixture Management ID is required");
+        return create_failure_result("Fixture Details Setup ID is required");
       }
 
       const existing_result = await repository.find_by_id(id);
       if (!existing_result.success || !existing_result.data) {
-        return create_failure_result("Fixture management assignment not found");
+        return create_failure_result(
+          "Fixture details setup assignment not found",
+        );
       }
 
       return repository.delete_by_id(id);
     },
 
     async list(
-      filter?: FixtureManagementFilter,
+      filter?: FixtureDetailsSetupFilter,
       options?: QueryOptions,
-    ): PaginatedAsyncResult<FixtureManagement> {
+    ): PaginatedAsyncResult<FixtureDetailsSetup> {
       return repository.find_by_filter(filter || {}, {
         page_number: options?.page_number || 1,
         page_size: options?.page_size || 50,
@@ -137,7 +141,7 @@ export function create_fixture_management_use_cases(
     async list_by_fixture(
       fixture_id: string,
       options?: QueryOptions,
-    ): PaginatedAsyncResult<FixtureManagement> {
+    ): PaginatedAsyncResult<FixtureDetailsSetup> {
       if (!fixture_id?.trim()) {
         return create_failure_result("Fixture ID is required");
       }
@@ -147,21 +151,23 @@ export function create_fixture_management_use_cases(
     async list_by_official(
       official_id: string,
       options?: QueryOptions,
-    ): PaginatedAsyncResult<FixtureManagement> {
+    ): PaginatedAsyncResult<FixtureDetailsSetup> {
       if (!official_id?.trim()) {
         return create_failure_result("Official ID is required");
       }
       return repository.find_by_official(official_id, options);
     },
 
-    async confirm_assignment(id: string): AsyncResult<FixtureManagement> {
+    async confirm_assignment(id: string): AsyncResult<FixtureDetailsSetup> {
       if (!id?.trim()) {
-        return create_failure_result("Fixture Management ID is required");
+        return create_failure_result("Fixture Details Setup ID is required");
       }
 
       const existing_result = await repository.find_by_id(id);
       if (!existing_result.success || !existing_result.data) {
-        return create_failure_result("Fixture management assignment not found");
+        return create_failure_result(
+          "Fixture details setup assignment not found",
+        );
       }
 
       return repository.update(id, {
@@ -169,14 +175,16 @@ export function create_fixture_management_use_cases(
       });
     },
 
-    async decline_assignment(id: string): AsyncResult<FixtureManagement> {
+    async decline_assignment(id: string): AsyncResult<FixtureDetailsSetup> {
       if (!id?.trim()) {
-        return create_failure_result("Fixture Management ID is required");
+        return create_failure_result("Fixture Details Setup ID is required");
       }
 
       const existing_result = await repository.find_by_id(id);
       if (!existing_result.success || !existing_result.data) {
-        return create_failure_result("Fixture management assignment not found");
+        return create_failure_result(
+          "Fixture details setup assignment not found",
+        );
       }
 
       return repository.update(id, {
@@ -186,12 +194,12 @@ export function create_fixture_management_use_cases(
   };
 }
 
-let use_cases_instance: FixtureManagementUseCases | null = null;
+let use_cases_instance: FixtureDetailsSetupUseCases | null = null;
 
-export function get_fixture_management_use_cases(): FixtureManagementUseCases {
+export function get_fixture_details_setup_use_cases(): FixtureDetailsSetupUseCases {
   if (!use_cases_instance) {
-    const repository = get_fixture_management_repository();
-    use_cases_instance = create_fixture_management_use_cases(repository);
+    const repository = get_fixture_details_setup_repository();
+    use_cases_instance = create_fixture_details_setup_use_cases(repository);
   }
   return use_cases_instance;
 }

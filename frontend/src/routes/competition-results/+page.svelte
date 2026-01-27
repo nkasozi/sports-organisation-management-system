@@ -621,8 +621,10 @@
                 {#each completed_fixtures as fixture}
                   {@const home_score = fixture.home_team_score ?? 0}
                   {@const away_score = fixture.away_team_score ?? 0}
-                  <div
-                    class="flex items-center justify-between p-4 bg-accent-50 dark:bg-accent-700/50 rounded-lg"
+                  <button
+                    type="button"
+                    class="w-full flex items-center justify-between p-4 bg-accent-50 dark:bg-accent-700/50 rounded-lg hover:bg-accent-100 dark:hover:bg-accent-600/50 transition-colors cursor-pointer"
+                    on:click={() => goto(`/live-games/${fixture.id}`)}
                   >
                     <div class="flex-1 text-right">
                       <span
@@ -660,7 +662,7 @@
                         {get_team_name(fixture.away_team_id)}
                       </span>
                     </div>
-                  </div>
+                  </button>
                 {/each}
               </div>
             {/if}

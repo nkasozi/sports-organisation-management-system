@@ -6,7 +6,7 @@ export * from "./InMemoryPlayerRepository";
 export * from "./InMemoryPlayerTeamMembershipRepository";
 export * from "./InMemoryOfficialRepository";
 export * from "./InMemoryFixtureRepository";
-export * from "./InMemoryFixtureManagementRepository";
+export * from "./InMemoryFixtureDetailsSetupRepository";
 export * from "./InMemorySportRepository";
 export * from "./InMemoryTeamStaffRepository";
 export * from "./InMemoryTeamStaffRoleRepository";

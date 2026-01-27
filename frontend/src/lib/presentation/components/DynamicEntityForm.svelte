@@ -727,7 +727,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
   }
 
   function check_jersey_color_clashes(): void {
-    if (entity_type.toLowerCase() !== "fixturemanagement") {
+    if (entity_type.toLowerCase() !== "fixturedetailssetup") {
       color_clash_warnings = [];
       return;
     }

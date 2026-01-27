@@ -9,7 +9,7 @@
   } from "$lib/core/services/fixtureStartChecks";
   import type { PreFlightCheck } from "$lib/core/services/fixtureStartChecks";
   import { get_fixture_use_cases } from "$lib/core/usecases/FixtureUseCases";
-  import { get_fixture_management_use_cases } from "$lib/core/usecases/FixtureManagementUseCases";
+  import { get_fixture_details_setup_use_cases } from "$lib/core/usecases/FixtureDetailsSetupUseCases";
   import { get_fixture_lineup_use_cases } from "$lib/core/usecases/FixtureLineupUseCases";
   import { get_player_team_membership_use_cases } from "$lib/core/usecases/PlayerTeamMembershipUseCases";
   import { get_player_use_cases } from "$lib/core/usecases/PlayerUseCases";
@@ -20,7 +20,7 @@
   import { get_organization_use_cases } from "$lib/core/usecases/OrganizationUseCases";
 
   const fixture_use_cases = get_fixture_use_cases();
-  const fixture_management_use_cases = get_fixture_management_use_cases();
+  const fixture_details_setup_use_cases = get_fixture_details_setup_use_cases();
   const fixture_lineup_use_cases = get_fixture_lineup_use_cases();
   const membership_use_cases = get_player_team_membership_use_cases();
   const player_use_cases = get_player_use_cases();
@@ -178,7 +178,7 @@
 
     const officials_check = await check_fixture_can_start(
       fixture,
-      fixture_management_use_cases,
+      fixture_details_setup_use_cases,
       fixture_lineup_use_cases,
     );
 

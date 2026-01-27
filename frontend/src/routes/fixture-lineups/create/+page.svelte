@@ -65,9 +65,11 @@
   let competition_teams_for_fixture: CompetitionTeam[] = [];
   let fixture_team_label_by_team_id: Map<string, string> = new Map();
   let filtered_team_players: TeamPlayer[] = [];
+  let teams_with_existing_lineups: Map<string, string> = new Map();
 
   let fixtures: Fixture[] = [];
   let teams: Team[] = [];
+  let available_teams: Team[] = [];
   let all_teams: Team[] = [];
   let all_competitions: Competition[] = [];
   let loading: boolean = true;
@@ -84,7 +86,7 @@
     label: get_fixture_name(fixture),
   }));
 
-  $: team_select_options = teams.map((team) => ({
+  $: team_select_options = available_teams.map((team) => ({
     value: team.id,
     label: fixture_team_label_by_team_id.get(team.id) || team.name,
   }));
@@ -250,6 +252,28 @@
     fixture_team_label_by_team_id = build_fixture_team_label_map(
       teams,
       competition_teams_for_fixture,
+    );
+
+    const existing_lineups_result =
+      await lineup_use_cases.list_lineups_by_fixture(form_data.fixture_id, {
+        page: 1,
+        page_size: 100,
+      });
+
+    teams_with_existing_lineups = new Map();
+    if (existing_lineups_result.success && existing_lineups_result.data) {
+      for (const lineup of existing_lineups_result.data) {
+        const team_for_lineup = teams.find((t) => t.id === lineup.team_id);
+        const team_label = team_for_lineup
+          ? fixture_team_label_by_team_id.get(team_for_lineup.id) ||
+            team_for_lineup.name
+          : lineup.team_id;
+        teams_with_existing_lineups.set(lineup.team_id, team_label);
+      }
+    }
+
+    available_teams = teams.filter(
+      (team) => !teams_with_existing_lineups.has(team.id),
     );
 
     reset_team_and_roster();
@@ -749,6 +773,52 @@
                 </div>
               </div>
 
+              {#if teams_with_existing_lineups.size > 0}
+                <div
+                  class="mb-4 p-4 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700"
+                >
+                  <div class="flex items-start gap-3">
+                    <svg
+                      class="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path
+                        fill-rule="evenodd"
+                        d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                        clip-rule="evenodd"
+                      />
+                    </svg>
+                    <div>
+                      <p class="font-medium text-amber-800 dark:text-amber-200">
+                        Some teams have already submitted lineups
+                      </p>
+                      <p
+                        class="mt-1 text-sm text-amber-700 dark:text-amber-300"
+                      >
+                        The following teams already have a lineup for this
+                        fixture and are not shown below:
+                      </p>
+                      <ul
+                        class="mt-2 text-sm text-amber-700 dark:text-amber-300 list-disc list-inside"
+                      >
+                        {#each Array.from(teams_with_existing_lineups.values()) as team_name}
+                          <li>{team_name}</li>
+                        {/each}
+                      </ul>
+                      {#if available_teams.length === 0}
+                        <p
+                          class="mt-2 text-sm font-medium text-amber-800 dark:text-amber-200"
+                        >
+                          All teams in this fixture have already submitted their
+                          lineups.
+                        </p>
+                      {/if}
+                    </div>
+                  </div>
+                </div>
+              {/if}
+
               <SelectField
                 label="Team"
                 name="team"
@@ -756,9 +826,13 @@
                 options={team_select_options}
                 placeholder={!selected_fixture
                   ? "Select a fixture first"
-                  : "Search home/away team..."}
+                  : available_teams.length === 0
+                    ? "All teams have submitted lineups"
+                    : "Search home/away team..."}
                 required={true}
-                disabled={!selected_fixture || saving}
+                disabled={!selected_fixture ||
+                  saving ||
+                  available_teams.length === 0}
                 error={validation_errors.team_id || ""}
                 on:change={(event) => {
                   form_data.team_id = event.detail.value;
