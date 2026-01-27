@@ -970,7 +970,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
         {#if bulk_create_handler}
           <button
             type="button"
-            class="btn w-auto bg-blue-600 hover:bg-blue-700 text-white"
+            class="btn btn-primary-action w-auto"
             on:click={bulk_create_handler}
           >
             Bulk Create
@@ -980,7 +980,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
         {#if show_actions}
           <button
             type="button"
-            class="btn btn-secondary w-auto"
+            class="btn btn-primary-action w-auto"
             on:click={handle_create_new_entity}
           >
             Create New
@@ -1143,7 +1143,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
         {:else if show_actions}
           <button
             type="button"
-            class="btn btn-secondary"
+            class="btn btn-primary-action"
             on:click={handle_create_new_entity}
           >
             Create First {display_name}
@@ -1360,7 +1360,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
         >
           <button
             type="button"
-            class="btn btn-secondary"
+            class="btn btn-primary-action"
             on:click={() => (show_column_selector = false)}
           >
             Done
@@ -1437,7 +1437,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
               </div>
               <button
                 type="button"
-                class="btn btn-secondary"
+                class="btn btn-primary-action"
                 on:click={export_to_csv}
               >
                 Export CSV

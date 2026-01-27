@@ -7,9 +7,7 @@
     UpdateFixtureLineupInput,
     LineupPlayer,
   } from "$lib/core/entities/FixtureLineup";
-  import {
-    get_lineup_player_display_name,
-  } from "$lib/core/entities/FixtureLineup";
+  import { get_lineup_player_display_name } from "$lib/core/entities/FixtureLineup";
   import type { Fixture } from "$lib/core/entities/Fixture";
   import type { Team } from "$lib/core/entities/Team";
   import { get_fixture_lineup_use_cases } from "$lib/core/usecases/FixtureLineupUseCases";
@@ -23,9 +21,7 @@
     build_team_players,
     type TeamPlayer,
   } from "$lib/core/services/teamPlayers";
-  import {
-    convert_team_player_to_lineup_player,
-  } from "$lib/core/services/fixtureLineupWizard";
+  import { convert_team_player_to_lineup_player } from "$lib/core/services/fixtureLineupWizard";
   import {
     get_fixture_lineup_by_id,
     submit_lineup,
@@ -52,7 +48,9 @@
   let error_message: string = "";
 
   $: lineup_id = $page.params.id || "";
-  $: selected_player_ids_set = new Set(lineup?.selected_players.map(p => p.id) ?? []);
+  $: selected_player_ids_set = new Set(
+    lineup?.selected_players.map((p) => p.id) ?? [],
+  );
 
   onMount(async () => {
     await load_lineup();
@@ -88,7 +86,10 @@
         page_number: 1,
         page_size: 5000,
       }),
-      player_position_use_cases.list(undefined, { page_number: 1, page_size: 500 }),
+      player_position_use_cases.list(undefined, {
+        page_number: 1,
+        page_size: 500,
+      }),
     ]);
 
     if (fixture_result.success && fixture_result.data) {
@@ -120,7 +121,7 @@
     team_players = build_team_players(
       base_players,
       memberships,
-      position_name_by_id
+      position_name_by_id,
     );
 
     loading = false;
@@ -132,9 +133,11 @@
     const is_selected = selected_player_ids_set.has(player_id);
 
     if (is_selected) {
-      lineup.selected_players = lineup.selected_players.filter((p) => p.id !== player_id);
+      lineup.selected_players = lineup.selected_players.filter(
+        (p) => p.id !== player_id,
+      );
     } else {
-      const team_player = team_players.find(p => p.id === player_id);
+      const team_player = team_players.find((p) => p.id === player_id);
       if (!team_player) return;
       lineup.selected_players = [
         ...lineup.selected_players,
@@ -171,7 +174,7 @@
 
     if (
       !confirm(
-        "Submit this lineup? You won't be able to edit it after submission."
+        "Submit this lineup? You won't be able to edit it after submission.",
       )
     ) {
       return;
@@ -355,21 +358,21 @@
 
       <div class="flex justify-end space-x-4">
         <button
-          class="btn btn-secondary"
+          class="btn btn-outline"
           on:click={() => goto("/fixture-lineups")}
         >
           Back to List
         </button>
         {#if lineup.status === "draft"}
           <button
-            class="btn btn-secondary"
+            class="btn btn-outline"
             on:click={handle_save}
             disabled={saving}
           >
             {saving ? "Saving..." : "Save Changes"}
           </button>
           <button
-            class="btn btn-primary"
+            class="btn btn-primary-action"
             on:click={handle_submit}
             disabled={saving}
           >

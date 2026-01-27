@@ -595,7 +595,11 @@
         >
           Cancel
         </button>
-        <button type="submit" class="btn btn-primary" disabled={is_saving}>
+        <button
+          type="submit"
+          class="btn btn-primary-action"
+          disabled={is_saving}
+        >
           {#if is_saving}
             <span class="flex items-center justify-center">
               <span

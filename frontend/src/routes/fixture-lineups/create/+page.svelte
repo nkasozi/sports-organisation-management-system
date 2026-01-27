@@ -872,7 +872,7 @@
                 <div class="flex gap-2">
                   <button
                     type="button"
-                    class="btn btn-sm btn-secondary"
+                    class="btn btn-sm btn-primary-action"
                     on:click={select_all_players}
                     disabled={!selected_team}
                   >
@@ -880,7 +880,7 @@
                   </button>
                   <button
                     type="button"
-                    class="btn btn-sm btn-secondary"
+                    class="btn btn-sm btn-outline"
                     on:click={deselect_all_players}
                     disabled={!selected_team}
                   >

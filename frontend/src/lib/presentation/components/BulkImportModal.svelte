@@ -960,7 +960,7 @@
               </button>
               <button
                 type="button"
-                class="btn btn-primary flex-1"
+                class="btn btn-primary-action flex-1"
                 on:click={handle_close}
               >
                 Done

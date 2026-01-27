@@ -514,7 +514,7 @@
       </button>
       <button
         type="button"
-        class="btn btn-primary"
+        class="btn btn-primary-action"
         on:click={handle_save}
         disabled={!can_save || is_saving}
       >

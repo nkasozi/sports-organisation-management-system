@@ -187,7 +187,7 @@
   function remove_foul_category(index: number): void {
     if (!form_data.foul_categories) return;
     form_data.foul_categories = form_data.foul_categories.filter(
-      (_, i) => i !== index
+      (_, i) => i !== index,
     );
   }
 
@@ -210,7 +210,7 @@
   function remove_official_requirement(index: number): void {
     if (!form_data.official_requirements) return;
     form_data.official_requirements = form_data.official_requirements.filter(
-      (_, i) => i !== index
+      (_, i) => i !== index,
     );
   }
 
@@ -227,7 +227,7 @@
   function remove_scoring_rule(index: number): void {
     if (!form_data.scoring_rules) return;
     form_data.scoring_rules = form_data.scoring_rules.filter(
-      (_, i) => i !== index
+      (_, i) => i !== index,
     );
   }
 
@@ -257,7 +257,7 @@
 
   function show_toast(
     message: string,
-    type: "success" | "error" | "info"
+    type: "success" | "error" | "info",
   ): void {
     toast_message = message;
     toast_type = type;
@@ -1011,7 +1011,11 @@
           >
             Cancel
           </button>
-          <button type="submit" class="btn btn-primary" disabled={is_saving}>
+          <button
+            type="submit"
+            class="btn btn-primary-action"
+            disabled={is_saving}
+          >
             {#if is_saving}
               <svg
                 class="animate-spin h-5 w-5 mr-2"

@@ -29,10 +29,8 @@
   let is_loading: boolean = true;
   let is_adding: boolean = false;
   let editing_id: string | null = null;
-  let new_qualification: CreateQualificationInput = create_empty_qualification_input(
-    holder_type,
-    holder_id,
-  );
+  let new_qualification: CreateQualificationInput =
+    create_empty_qualification_input(holder_type, holder_id);
 
   let toast_visible: boolean = false;
   let toast_message: string = "";
@@ -62,14 +60,20 @@
   }
 
   function start_adding(): void {
-    new_qualification = create_empty_qualification_input(holder_type, holder_id);
+    new_qualification = create_empty_qualification_input(
+      holder_type,
+      holder_id,
+    );
     is_adding = true;
     editing_id = null;
   }
 
   function cancel_adding(): void {
     is_adding = false;
-    new_qualification = create_empty_qualification_input(holder_type, holder_id);
+    new_qualification = create_empty_qualification_input(
+      holder_type,
+      holder_id,
+    );
   }
 
   async function save_new_qualification(): Promise<boolean> {
@@ -78,13 +82,18 @@
     if (result.success && result.data) {
       qualifications = [...qualifications, result.data];
       is_adding = false;
-      new_qualification = create_empty_qualification_input(holder_type, holder_id);
+      new_qualification = create_empty_qualification_input(
+        holder_type,
+        holder_id,
+      );
       show_toast("Qualification added successfully", "success");
       dispatch("change", { qualifications });
       return true;
     }
 
-    const error_message = !result.success ? result.error : "Failed to add qualification";
+    const error_message = !result.success
+      ? result.error
+      : "Failed to add qualification";
     show_toast(error_message, "error");
     return false;
   }
@@ -98,8 +107,13 @@
     editing_id = null;
   }
 
-  async function save_edited_qualification(qualification: Qualification): Promise<boolean> {
-    const result = await qualification_use_cases.update(qualification.id, qualification);
+  async function save_edited_qualification(
+    qualification: Qualification,
+  ): Promise<boolean> {
+    const result = await qualification_use_cases.update(
+      qualification.id,
+      qualification,
+    );
 
     if (result.success && result.data) {
       qualifications = qualifications.map((q) =>
@@ -111,7 +125,9 @@
       return true;
     }
 
-    const error_message = !result.success ? result.error : "Failed to update qualification";
+    const error_message = !result.success
+      ? result.error
+      : "Failed to update qualification";
     show_toast(error_message, "error");
     return false;
   }
@@ -198,8 +214,18 @@
         class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-primary-600 bg-primary-50 rounded-lg hover:bg-primary-100 dark:bg-primary-900/30 dark:text-primary-400 dark:hover:bg-primary-900/50 transition-colors"
         on:click={start_adding}
       >
-        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+        <svg
+          class="w-5 h-5"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+          />
         </svg>
         Add Qualification
       </button>
@@ -207,18 +233,26 @@
   </div>
 
   {#if !holder_id}
-    <div class="p-4 text-center text-accent-500 dark:text-accent-400 bg-accent-50 dark:bg-accent-800/50 rounded-lg">
+    <div
+      class="p-4 text-center text-accent-500 dark:text-accent-400 bg-accent-50 dark:bg-accent-800/50 rounded-lg"
+    >
       <p>Save the record first to add qualifications</p>
     </div>
   {:else if is_loading}
     <div class="p-4 text-center">
-      <div class="animate-spin w-6 h-6 border-2 border-primary-500 border-t-transparent rounded-full mx-auto"></div>
+      <div
+        class="animate-spin w-6 h-6 border-2 border-primary-500 border-t-transparent rounded-full mx-auto"
+      ></div>
       <p class="mt-2 text-sm text-accent-500">Loading qualifications...</p>
     </div>
   {:else}
     {#if is_adding}
-      <div class="p-4 border border-primary-200 dark:border-primary-700 rounded-lg bg-primary-50/50 dark:bg-primary-900/20">
-        <h4 class="font-medium text-accent-900 dark:text-accent-100 mb-4">New Qualification</h4>
+      <div
+        class="p-4 border border-primary-200 dark:border-primary-700 rounded-lg bg-primary-50/50 dark:bg-primary-900/20"
+      >
+        <h4 class="font-medium text-accent-900 dark:text-accent-100 mb-4">
+          New Qualification
+        </h4>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField
             label="Certification Name"
@@ -258,7 +292,10 @@
             bind:value={new_qualification.expiry_date}
           />
           <div class="md:col-span-2">
-            <label for="new-qual-specializations" class="block text-sm font-medium text-accent-700 dark:text-accent-300 mb-1">
+            <label
+              for="new-qual-specializations"
+              class="block text-sm font-medium text-accent-700 dark:text-accent-300 mb-1"
+            >
               Specializations
             </label>
             <input
@@ -267,9 +304,12 @@
               class="input w-full"
               placeholder="Enter specializations separated by commas"
               value={new_qualification.specializations.join(", ")}
-              on:input={(e) => handle_specialization_input(e, new_qualification)}
+              on:input={(e) =>
+                handle_specialization_input(e, new_qualification)}
             />
-            <p class="mt-1 text-xs text-accent-500">Separate multiple specializations with commas</p>
+            <p class="mt-1 text-xs text-accent-500">
+              Separate multiple specializations with commas
+            </p>
           </div>
           <div class="md:col-span-2">
             <FormField
@@ -290,7 +330,7 @@
           </button>
           <button
             type="button"
-            class="btn btn-primary"
+            class="btn btn-primary-action"
             on:click={save_new_qualification}
           >
             Add Qualification
@@ -300,11 +340,25 @@
     {/if}
 
     {#if qualifications.length === 0 && !is_adding}
-      <div class="p-6 text-center border-2 border-dashed border-accent-300 dark:border-accent-600 rounded-lg">
-        <svg class="w-12 h-12 mx-auto text-accent-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+      <div
+        class="p-6 text-center border-2 border-dashed border-accent-300 dark:border-accent-600 rounded-lg"
+      >
+        <svg
+          class="w-12 h-12 mx-auto text-accent-400"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="1.5"
+            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+          />
         </svg>
-        <p class="mt-2 text-accent-500 dark:text-accent-400">No qualifications added yet</p>
+        <p class="mt-2 text-accent-500 dark:text-accent-400">
+          No qualifications added yet
+        </p>
         {#if !readonly}
           <button
             type="button"
@@ -319,7 +373,11 @@
       <div class="space-y-3">
         {#each qualifications as qualification (qualification.id)}
           <div
-            class="p-4 border border-accent-200 dark:border-accent-700 rounded-lg bg-white dark:bg-accent-800 {is_qualification_expired(qualification.expiry_date) ? 'border-l-4 border-l-red-500' : ''}"
+            class="p-4 border border-accent-200 dark:border-accent-700 rounded-lg bg-white dark:bg-accent-800 {is_qualification_expired(
+              qualification.expiry_date,
+            )
+              ? 'border-l-4 border-l-red-500'
+              : ''}"
           >
             {#if editing_id === qualification.id}
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -358,7 +416,10 @@
                   bind:value={qualification.expiry_date}
                 />
                 <div class="md:col-span-2">
-                  <label for="edit-qual-specializations-{qualification.id}" class="block text-sm font-medium text-accent-700 dark:text-accent-300 mb-1">
+                  <label
+                    for="edit-qual-specializations-{qualification.id}"
+                    class="block text-sm font-medium text-accent-700 dark:text-accent-300 mb-1"
+                  >
                     Specializations
                   </label>
                   <input
@@ -366,7 +427,8 @@
                     type="text"
                     class="input w-full"
                     value={qualification.specializations.join(", ")}
-                    on:input={(e) => handle_specialization_input(e, qualification)}
+                    on:input={(e) =>
+                      handle_specialization_input(e, qualification)}
                   />
                 </div>
                 <div class="md:col-span-2">
@@ -387,7 +449,7 @@
                 </button>
                 <button
                   type="button"
-                  class="btn btn-primary"
+                  class="btn btn-primary-action"
                   on:click={() => save_edited_qualification(qualification)}
                 >
                   Save Changes
@@ -397,55 +459,85 @@
               <div class="flex items-start justify-between">
                 <div class="flex-1">
                   <div class="flex items-center gap-2 flex-wrap">
-                    <h4 class="font-medium text-accent-900 dark:text-accent-100">
+                    <h4
+                      class="font-medium text-accent-900 dark:text-accent-100"
+                    >
                       {qualification.certification_name}
                     </h4>
-                    <span class="px-2 py-0.5 text-xs font-medium rounded-full bg-accent-100 text-accent-700 dark:bg-accent-700 dark:text-accent-300">
+                    <span
+                      class="px-2 py-0.5 text-xs font-medium rounded-full bg-accent-100 text-accent-700 dark:bg-accent-700 dark:text-accent-300"
+                    >
                       {get_level_label(qualification.certification_level)}
                     </span>
                     {#if qualification.expiry_date}
-                      <span class="px-2 py-0.5 text-xs font-medium rounded-full {get_expiry_badge_class(qualification.expiry_date)}">
+                      <span
+                        class="px-2 py-0.5 text-xs font-medium rounded-full {get_expiry_badge_class(
+                          qualification.expiry_date,
+                        )}"
+                      >
                         {get_expiry_text(qualification.expiry_date)}
                       </span>
                     {/if}
                   </div>
-                  <div class="mt-2 grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-1 text-sm">
+                  <div
+                    class="mt-2 grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-1 text-sm"
+                  >
                     {#if qualification.certification_number}
                       <div>
-                        <span class="text-accent-500 dark:text-accent-400">Number:</span>
-                        <span class="ml-1 text-accent-700 dark:text-accent-300">{qualification.certification_number}</span>
+                        <span class="text-accent-500 dark:text-accent-400"
+                          >Number:</span
+                        >
+                        <span class="ml-1 text-accent-700 dark:text-accent-300"
+                          >{qualification.certification_number}</span
+                        >
                       </div>
                     {/if}
                     {#if qualification.issuing_authority}
                       <div>
-                        <span class="text-accent-500 dark:text-accent-400">Issuer:</span>
-                        <span class="ml-1 text-accent-700 dark:text-accent-300">{qualification.issuing_authority}</span>
+                        <span class="text-accent-500 dark:text-accent-400"
+                          >Issuer:</span
+                        >
+                        <span class="ml-1 text-accent-700 dark:text-accent-300"
+                          >{qualification.issuing_authority}</span
+                        >
                       </div>
                     {/if}
                     {#if qualification.issue_date}
                       <div>
-                        <span class="text-accent-500 dark:text-accent-400">Issued:</span>
-                        <span class="ml-1 text-accent-700 dark:text-accent-300">{format_date(qualification.issue_date)}</span>
+                        <span class="text-accent-500 dark:text-accent-400"
+                          >Issued:</span
+                        >
+                        <span class="ml-1 text-accent-700 dark:text-accent-300"
+                          >{format_date(qualification.issue_date)}</span
+                        >
                       </div>
                     {/if}
                     {#if qualification.expiry_date}
                       <div>
-                        <span class="text-accent-500 dark:text-accent-400">Expires:</span>
-                        <span class="ml-1 text-accent-700 dark:text-accent-300">{format_date(qualification.expiry_date)}</span>
+                        <span class="text-accent-500 dark:text-accent-400"
+                          >Expires:</span
+                        >
+                        <span class="ml-1 text-accent-700 dark:text-accent-300"
+                          >{format_date(qualification.expiry_date)}</span
+                        >
                       </div>
                     {/if}
                   </div>
                   {#if qualification.specializations.length > 0}
                     <div class="mt-2 flex flex-wrap gap-1">
                       {#each qualification.specializations as spec}
-                        <span class="px-2 py-0.5 text-xs bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400 rounded">
+                        <span
+                          class="px-2 py-0.5 text-xs bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400 rounded"
+                        >
                           {spec}
                         </span>
                       {/each}
                     </div>
                   {/if}
                   {#if qualification.notes}
-                    <p class="mt-2 text-sm text-accent-500 dark:text-accent-400 italic">
+                    <p
+                      class="mt-2 text-sm text-accent-500 dark:text-accent-400 italic"
+                    >
                       {qualification.notes}
                     </p>
                   {/if}
@@ -458,8 +550,18 @@
                       on:click={() => start_editing(qualification)}
                       title="Edit qualification"
                     >
-                      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                      <svg
+                        class="w-4 h-4"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                        />
                       </svg>
                     </button>
                     <button
@@ -468,8 +570,18 @@
                       on:click={() => delete_qualification(qualification.id)}
                       title="Remove qualification"
                     >
-                      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      <svg
+                        class="w-4 h-4"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                        />
                       </svg>
                     </button>
                   </div>

@@ -63,34 +63,55 @@
   const color_options = [
     {
       value: "yellow",
-      label: "Yellow",
-      hex: "#EAB308",
-      class: "bg-yellow-500",
+      label: "Amber",
+      hex: "#D97706",
+      class: "bg-amber-600",
     },
-    { value: "blue", label: "Blue", hex: "#3B82F6", class: "bg-blue-500" },
-    { value: "green", label: "Green", hex: "#22C55E", class: "bg-green-500" },
-    { value: "red", label: "Red", hex: "#EF4444", class: "bg-red-500" },
+    { value: "blue", label: "Blue", hex: "#2563EB", class: "bg-blue-600" },
+    {
+      value: "green",
+      label: "Emerald",
+      hex: "#059669",
+      class: "bg-emerald-600",
+    },
+    { value: "red", label: "Red", hex: "#DC2626", class: "bg-red-600" },
     {
       value: "purple",
       label: "Purple",
-      hex: "#A855F7",
-      class: "bg-purple-500",
+      hex: "#9333EA",
+      class: "bg-purple-600",
     },
     {
       value: "orange",
       label: "Orange",
-      hex: "#F97316",
-      class: "bg-orange-500",
+      hex: "#EA580C",
+      class: "bg-orange-600",
     },
-    { value: "pink", label: "Pink", hex: "#EC4899", class: "bg-pink-500" },
-    { value: "teal", label: "Teal", hex: "#14B8A6", class: "bg-teal-500" },
+    { value: "pink", label: "Pink", hex: "#DB2777", class: "bg-pink-600" },
+    { value: "teal", label: "Teal", hex: "#0D9488", class: "bg-teal-600" },
     {
       value: "indigo",
       label: "Indigo",
-      hex: "#6366F1",
-      class: "bg-indigo-500",
+      hex: "#4F46E5",
+      class: "bg-indigo-600",
     },
-    { value: "cyan", label: "Cyan", hex: "#06B6D4", class: "bg-cyan-500" },
+    { value: "cyan", label: "Cyan", hex: "#0891B2", class: "bg-cyan-600" },
+    { value: "rose", label: "Rose", hex: "#E11D48", class: "bg-rose-600" },
+    {
+      value: "violet",
+      label: "Violet",
+      hex: "#7C3AED",
+      class: "bg-violet-600",
+    },
+    {
+      value: "fuchsia",
+      label: "Fuchsia",
+      hex: "#C026D3",
+      class: "bg-fuchsia-600",
+    },
+    { value: "lime", label: "Lime", hex: "#65A30D", class: "bg-lime-600" },
+    { value: "sky", label: "Sky", hex: "#0284C7", class: "bg-sky-600" },
+    { value: "slate", label: "Slate", hex: "#475569", class: "bg-slate-600" },
   ];
 
   $: current_theme = $theme_store;
@@ -397,7 +418,7 @@
 
       <button
         type="button"
-        class="btn btn-primary"
+        class="btn btn-primary-action"
         on:click={handle_save_organization_settings}
       >
         Save Branding
@@ -811,7 +832,7 @@
           </p>
           <button
             type="button"
-            class="btn btn-secondary"
+            class="btn btn-primary-action"
             on:click={add_social_media_link}
           >
             <svg
@@ -910,7 +931,7 @@
 
         <button
           type="button"
-          class="btn btn-secondary"
+          class="btn btn-primary-action"
           on:click={add_social_media_link}
         >
           <svg
@@ -932,7 +953,7 @@
         <div class="pt-4 border-t border-accent-200 dark:border-accent-700">
           <button
             type="button"
-            class="btn btn-primary"
+            class="btn btn-primary-action"
             on:click={save_social_media_settings}
           >
             Save Social Media Settings

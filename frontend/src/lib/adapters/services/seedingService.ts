@@ -70,7 +70,9 @@ import {
   create_seed_profile_links,
   create_seed_team_profiles,
   create_seed_team_profile_links,
+  create_seed_system_users,
   SEED_ORGANIZATION_IDS,
+  SEED_SYSTEM_USER_IDS,
 } from "../../infrastructure/utils/SeedDataGenerator";
 import type { PlayerPosition } from "../../core/entities/PlayerPosition";
 import type { TeamStaffRole } from "../../core/entities/TeamStaffRole";
@@ -84,7 +86,7 @@ import {
 import type { SystemUser } from "../../core/entities/SystemUser";
 import { current_user_store } from "../../presentation/stores/currentUser";
 
-const SEEDING_COMPLETE_KEY = "sports_org_seeding_complete_v3";
+const SEEDING_COMPLETE_KEY = "sports_org_seeding_complete_v4";
 
 export function is_seeding_already_complete(): boolean {
   if (typeof window === "undefined") return true;
@@ -132,6 +134,21 @@ async function load_and_set_current_user(): Promise<SystemUser | null> {
   const container = get_repository_container();
   const system_user_repository = container.system_user_repository;
 
+  const admin_result = await system_user_repository.find_by_id(
+    SEED_SYSTEM_USER_IDS.SYSTEM_ADMINISTRATOR,
+  );
+
+  if (admin_result.success && admin_result.data) {
+    set_user_context({
+      user_id: admin_result.data.id,
+      user_email: admin_result.data.email,
+      user_display_name: `${admin_result.data.first_name} ${admin_result.data.last_name}`,
+    });
+
+    current_user_store.set_user(admin_result.data);
+    return admin_result.data;
+  }
+
   const existing_users_result = await system_user_repository.find_all({
     page_size: 100,
   });
@@ -155,40 +172,23 @@ async function load_and_set_current_user(): Promise<SystemUser | null> {
   return super_admin;
 }
 
-async function seed_super_admin_user(): Promise<SystemUser | null> {
+function seed_super_admin_user(): SystemUser | null {
   const container = get_repository_container();
   const system_user_repository = container.system_user_repository;
 
-  const existing_users_result = await system_user_repository.find_all({
-    page_size: 1,
-  });
+  const seed_users = create_seed_system_users();
+  system_user_repository.seed_with_data(seed_users);
 
-  if (
-    existing_users_result.success &&
-    existing_users_result.data.items.length > 0
-  ) {
-    const existing_admin = existing_users_result.data.items.find(
-      (user) => user.role === "super_admin",
-    );
-    if (existing_admin) {
-      return existing_admin;
-    }
-  }
+  const super_admin = seed_users.find(
+    (user) => user.id === SEED_SYSTEM_USER_IDS.SYSTEM_ADMINISTRATOR,
+  );
 
-  const super_admin_result = await system_user_repository.create({
-    email: "superadmin@sportsorg.local",
-    first_name: "System",
-    last_name: "Administrator",
-    role: "super_admin",
-    status: "active",
-  });
-
-  if (!super_admin_result.success || !super_admin_result.data) {
+  if (!super_admin) {
     console.error("Failed to seed super admin user");
     return null;
   }
 
-  return super_admin_result.data;
+  return super_admin;
 }
 
 function emit_entity_created_events<T extends { id: string }>(
@@ -213,7 +213,7 @@ export async function seed_all_data_if_needed(): Promise<boolean> {
   }
   if (typeof window === "undefined") return false;
 
-  const super_admin = await seed_super_admin_user();
+  const super_admin = seed_super_admin_user();
 
   if (!super_admin) {
     console.error("[SEED] Failed to create super admin, aborting seeding");

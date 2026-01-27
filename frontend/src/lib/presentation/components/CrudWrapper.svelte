@@ -69,7 +69,7 @@
       {#if show_list}
         <button
           class="btn"
-          class:btn-secondary={current_view === "list"}
+          class:btn-primary-action={current_view === "list"}
           class:btn-outline={current_view !== "list"}
           on:click={show_list_view}
         >
@@ -80,7 +80,7 @@
       {#if show_create}
         <button
           class="btn"
-          class:btn-secondary={current_view === "create"}
+          class:btn-primary-action={current_view === "create"}
           class:btn-outline={current_view !== "create"}
           on:click={show_create_form}
         >

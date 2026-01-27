@@ -549,7 +549,7 @@
               </button>
               <button
                 type="submit"
-                class="btn btn-primary w-full sm:w-auto"
+                class="btn btn-primary-action w-full sm:w-auto"
                 disabled={is_saving}
               >
                 {#if is_saving}
@@ -707,7 +707,7 @@
               </button>
               <button
                 type="button"
-                class="btn btn-primary w-full sm:w-auto"
+                class="btn btn-primary-action w-full sm:w-auto"
                 on:click={() => {
                   show_toast("Team changes saved!", "success");
                   goto("/competitions");
@@ -753,7 +753,7 @@
               </button>
               <button
                 type="submit"
-                class="btn btn-primary w-full sm:w-auto"
+                class="btn btn-primary-action w-full sm:w-auto"
                 disabled={is_saving}
               >
                 {#if is_saving}
@@ -844,7 +844,7 @@
               </button>
               <button
                 type="submit"
-                class="btn btn-primary w-full sm:w-auto"
+                class="btn btn-primary-action w-full sm:w-auto"
                 disabled={is_saving}
               >
                 {#if is_saving}

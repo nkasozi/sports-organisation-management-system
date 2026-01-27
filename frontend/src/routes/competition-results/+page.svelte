@@ -337,7 +337,7 @@
         </p>
         <button
           type="button"
-          class="btn btn-primary mt-4"
+          class="btn btn-primary-action mt-4"
           on:click={() => goto("/competitions/create")}
         >
           Create Competition

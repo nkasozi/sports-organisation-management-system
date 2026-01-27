@@ -8,6 +8,7 @@ import type { Official } from "../../core/entities/Official";
 import type { Fixture } from "../../core/entities/Fixture";
 import type { Venue } from "../../core/entities/Venue";
 import type { JerseyColor } from "../../core/entities/JerseyColor";
+import type { SystemUser } from "../../core/entities/SystemUser";
 import { DEFAULT_TEAM_LOGO } from "../../core/entities/Team";
 import { DEFAULT_STAFF_AVATAR } from "../../core/entities/TeamStaff";
 import { DEFAULT_OFFICIAL_AVATAR } from "../../core/entities/Official";
@@ -129,6 +130,10 @@ export const SEED_TEAM_PROFILE_IDS = {
   GREEN_DRAGONS_PROFILE: "team_profile_default_6",
   THUNDER_BASKETBALL_PROFILE: "team_profile_default_7",
   LIGHTNING_BASKETBALL_PROFILE: "team_profile_default_8",
+};
+
+export const SEED_SYSTEM_USER_IDS = {
+  SYSTEM_ADMINISTRATOR: "system_user_default_1",
 };
 
 function generate_current_timestamp(): string {
@@ -1948,6 +1953,23 @@ export function create_seed_team_profile_links(): import("../../core/entities/Pr
       title: "Official Site",
       url: "https://bluethunderunited.com",
       display_order: 2,
+      status: "active",
+      created_at: now,
+      updated_at: now,
+    },
+  ];
+}
+
+export function create_seed_system_users(): SystemUser[] {
+  const now = generate_current_timestamp();
+
+  return [
+    {
+      id: SEED_SYSTEM_USER_IDS.SYSTEM_ADMINISTRATOR,
+      email: "admin@sportsorg.local",
+      first_name: "System",
+      last_name: "Administrator",
+      role: "super_admin",
       status: "active",
       created_at: now,
       updated_at: now,

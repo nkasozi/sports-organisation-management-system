@@ -378,7 +378,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
 
       {#if is_final_step}
         <button
-          class="btn btn-secondary"
+          class="btn btn-primary-action"
           on:click={mark_current_step_completed}
           disabled={!current_step?.is_completed || is_busy}
         >
@@ -386,7 +386,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
         </button>
       {:else}
         <button
-          class="btn btn-secondary"
+          class="btn btn-primary-action"
           on:click={navigate_to_next_step}
           disabled={!can_go_to_next_step || is_busy}
         >

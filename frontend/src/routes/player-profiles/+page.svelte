@@ -129,7 +129,7 @@
         </div>
         <button
           type="button"
-          class="mt-4 sm:mt-0 btn btn-primary"
+          class="mt-4 sm:mt-0 btn btn-primary-action"
           on:click={handle_create_click}
         >
           <svg
@@ -188,7 +188,7 @@
           </p>
           <button
             type="button"
-            class="mt-4 btn btn-primary"
+            class="mt-4 btn btn-primary-action"
             on:click={handle_create_click}
           >
             Create Profile

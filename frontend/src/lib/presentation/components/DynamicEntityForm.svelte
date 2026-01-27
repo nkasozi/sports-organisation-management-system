@@ -1715,7 +1715,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
           </button>
           <button
             type="submit"
-            class="btn btn-secondary w-full sm:w-auto order-3 sm:order-3"
+            class="btn btn-primary-action w-full sm:w-auto order-3 sm:order-3"
             disabled={is_save_in_progress || is_loading}
           >
             {#if is_save_in_progress}

@@ -9,13 +9,16 @@
   function split_organization_name(name: string): {
     prefix: string;
     suffix: string;
+    remainder: string;
   } {
     const parts = name.trim().split(/\s+/);
     if (parts.length === 1) {
-      return { prefix: "", suffix: parts[0] };
+      return { prefix: "", suffix: parts[0], remainder: "" };
     }
-    const suffix = parts.pop() || "";
-    return { prefix: parts.join(" "), suffix };
+    const prefix = parts[0];
+    const suffix = parts[1];
+    const remainder = parts.slice(2).join(" ");
+    return { prefix, suffix, remainder };
   }
 </script>
 
@@ -78,6 +81,10 @@
                   {split_organization_name($branding_store.organization_name)
                     .suffix}
                 </span>
+                {#if split_organization_name($branding_store.organization_name).remainder}
+                  {split_organization_name($branding_store.organization_name)
+                    .remainder}
+                {/if}
               {:else}
                 <span class="text-theme-secondary-600">
                   {split_organization_name($branding_store.organization_name)

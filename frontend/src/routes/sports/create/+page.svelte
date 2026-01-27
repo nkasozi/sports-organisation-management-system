@@ -73,7 +73,7 @@
   ];
 
   function apply_preset(
-    preset_type: "football" | "basketball" | "field_hockey"
+    preset_type: "football" | "basketball" | "field_hockey",
   ): void {
     const preset =
       preset_type === "football"
@@ -142,7 +142,7 @@
 
   function remove_foul_category(index: number): void {
     form_data.foul_categories = form_data.foul_categories.filter(
-      (_, i) => i !== index
+      (_, i) => i !== index,
     );
   }
 
@@ -163,7 +163,7 @@
 
   function remove_official_requirement(index: number): void {
     form_data.official_requirements = form_data.official_requirements.filter(
-      (_, i) => i !== index
+      (_, i) => i !== index,
     );
   }
 
@@ -178,7 +178,7 @@
 
   function remove_scoring_rule(index: number): void {
     form_data.scoring_rules = form_data.scoring_rules.filter(
-      (_, i) => i !== index
+      (_, i) => i !== index,
     );
   }
 
@@ -208,7 +208,7 @@
 
   function show_toast(
     message: string,
-    type: "success" | "error" | "info"
+    type: "success" | "error" | "info",
   ): void {
     toast_message = message;
     toast_type = type;
@@ -998,7 +998,11 @@
         <button type="button" class="btn btn-outline" on:click={handle_cancel}>
           Cancel
         </button>
-        <button type="submit" class="btn btn-primary" disabled={is_saving}>
+        <button
+          type="submit"
+          class="btn btn-primary-action"
+          disabled={is_saving}
+        >
           {#if is_saving}
             <svg
               class="animate-spin h-5 w-5 mr-2"

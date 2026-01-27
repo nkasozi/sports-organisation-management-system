@@ -24,13 +24,16 @@
   function split_organization_name(name: string): {
     prefix: string;
     suffix: string;
+    remainder: string;
   } {
     const parts = name.trim().split(/\s+/);
     if (parts.length === 1) {
-      return { prefix: "", suffix: parts[0] };
+      return { prefix: "", suffix: parts[0], remainder: "" };
     }
-    const suffix = parts.pop() || "";
-    return { prefix: parts.join(" "), suffix };
+    const prefix = parts[0];
+    const suffix = parts[1];
+    const remainder = parts.slice(2).join(" ");
+    return { prefix, suffix, remainder };
   }
 
   function get_social_media_icon(platform: string): string {
@@ -126,6 +129,10 @@
                 {split_organization_name($branding_store.organization_name)
                   .suffix}
               </span>
+              {#if split_organization_name($branding_store.organization_name).remainder}
+                {split_organization_name($branding_store.organization_name)
+                  .remainder}
+              {/if}
             {:else}
               <span class="text-theme-secondary-600">
                 {split_organization_name($branding_store.organization_name)
@@ -360,8 +367,11 @@
   :global(.footer-panel) {
     text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
   }
-  :global(.footer-panel) *:not(svg):not(path) {
+  :global(.footer-panel) *:not(svg):not(path):not(.text-theme-secondary-600) {
     color: white !important;
+  }
+  :global(.footer-panel) .text-theme-secondary-600 {
+    color: var(--color-secondary-600) !important;
   }
   :global(.footer-panel) a:hover {
     color: #fcd34d !important;
