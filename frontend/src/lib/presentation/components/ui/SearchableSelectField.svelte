@@ -2,6 +2,7 @@
   export interface SelectOption {
     value: string;
     label: string;
+    color_swatch?: string;
   }
 </script>
 
@@ -175,6 +176,12 @@
   {/if}
 
   <div class="relative">
+    {#if selected_option?.color_swatch && !is_open}
+      <span
+        class="absolute left-3 top-1/2 -translate-y-1/2 inline-block w-5 h-5 rounded border border-accent-300 dark:border-accent-600 z-10"
+        style="background-color: {selected_option.color_swatch};"
+      ></span>
+    {/if}
     <input
       bind:this={input_element}
       id={select_id}
@@ -191,11 +198,12 @@
       on:input={handle_input}
       on:keydown={handle_keydown}
       disabled={disabled || is_loading}
-      class="w-full px-3 py-2 border rounded-lg text-sm
+      class="w-full py-2 border rounded-lg text-sm
              bg-white dark:bg-accent-800
              text-accent-900 dark:text-accent-100
              focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none
              disabled:bg-accent-100 dark:disabled:bg-accent-700 disabled:cursor-not-allowed
+             {selected_option?.color_swatch && !is_open ? 'pl-11 pr-3' : 'px-3'}
              {has_error
         ? 'border-red-500'
         : 'border-accent-300 dark:border-accent-600'}"
@@ -239,7 +247,7 @@
           {#each filtered_options as option, index (option.value)}
             <button
               type="button"
-              class="w-full text-left px-3 py-2 text-sm transition-colors
+              class="w-full text-left px-3 py-2 text-sm transition-colors flex items-center gap-2
                      {index === highlighted_index
                 ? 'bg-accent-100 dark:bg-accent-700'
                 : 'bg-transparent'}
@@ -251,6 +259,12 @@
               on:mouseenter={() => (highlighted_index = index)}
               on:click={() => handle_option_click(option.value)}
             >
+              {#if option.color_swatch}
+                <span
+                  class="inline-block w-5 h-5 rounded border border-accent-300 dark:border-accent-600 flex-shrink-0"
+                  style="background-color: {option.color_swatch};"
+                ></span>
+              {/if}
               {option.label}
             </button>
           {/each}

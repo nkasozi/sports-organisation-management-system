@@ -1,4 +1,8 @@
-export type SelectOption = { value: string; label: string };
+export type SelectOption = {
+  value: string;
+  label: string;
+  color_swatch?: string;
+};
 
 export function normalize_select_query(query: string): string {
   return query.trim().toLowerCase();

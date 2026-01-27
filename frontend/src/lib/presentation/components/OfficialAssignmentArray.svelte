@@ -89,6 +89,43 @@
   function get_assignment_error(index: number, field: string): string {
     return errors[`assigned_officials_${index}_${field}`] || "";
   }
+
+  function get_official_name(official_id: string): string {
+    const official = official_options.find((o) => o.value === official_id);
+    return official?.label || "Unknown Official";
+  }
+
+  function find_duplicate_officials(): Map<string, number[]> {
+    const official_indices = new Map<string, number[]>();
+
+    assignments.forEach((assignment, index) => {
+      if (assignment.official_id) {
+        const existing = official_indices.get(assignment.official_id) || [];
+        existing.push(index);
+        official_indices.set(assignment.official_id, existing);
+      }
+    });
+
+    const duplicates = new Map<string, number[]>();
+    official_indices.forEach((indices, official_id) => {
+      if (indices.length > 1) {
+        duplicates.set(official_id, indices);
+      }
+    });
+
+    return duplicates;
+  }
+
+  function is_official_duplicate(index: number): boolean {
+    const official_id = assignments[index]?.official_id;
+    if (!official_id) return false;
+
+    const duplicates = find_duplicate_officials();
+    return duplicates.has(official_id);
+  }
+
+  $: duplicate_officials = find_duplicate_officials();
+  $: has_duplicates = duplicate_officials.size > 0;
 </script>
 
 <div class="space-y-4">
@@ -128,15 +165,66 @@
     </p>
   {/if}
 
+  {#if has_duplicates}
+    <div
+      class="p-3 rounded-lg border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/20"
+    >
+      <div class="flex items-start gap-2">
+        <svg
+          class="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+          />
+        </svg>
+        <div class="text-sm text-amber-800 dark:text-amber-200">
+          <p class="font-semibold">Duplicate Official Assignment</p>
+          <p class="mt-1">
+            The same official has been assigned to multiple roles:
+          </p>
+          <ul class="mt-1 list-disc list-inside">
+            {#each [...duplicate_officials.entries()] as [official_id, indices]}
+              <li>
+                <span class="font-medium">{get_official_name(official_id)}</span
+                >
+                is assigned to positions #{indices
+                  .map((i) => i + 1)
+                  .join(", #")}
+              </li>
+            {/each}
+          </ul>
+        </div>
+      </div>
+    </div>
+  {/if}
+
   <div class="space-y-4">
     {#each assignments as assignment, index}
       <div
-        class="p-4 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50"
+        class="p-4 rounded-lg border bg-gray-50 dark:bg-gray-800/50
+               {is_official_duplicate(index)
+          ? 'border-amber-400 dark:border-amber-600'
+          : 'border-gray-200 dark:border-gray-700'}"
       >
         <div class="flex items-start justify-between mb-3">
-          <span class="text-sm font-medium text-gray-600 dark:text-gray-400">
-            Official #{index + 1}
-          </span>
+          <div class="flex items-center gap-2">
+            <span class="text-sm font-medium text-gray-600 dark:text-gray-400">
+              Official #{index + 1}
+            </span>
+            {#if is_official_duplicate(index)}
+              <span
+                class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300"
+              >
+                Duplicate
+              </span>
+            {/if}
+          </div>
           {#if assignments.length > 1}
             <button
               type="button"

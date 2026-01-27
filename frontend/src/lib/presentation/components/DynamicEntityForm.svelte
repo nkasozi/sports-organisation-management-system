@@ -1127,23 +1127,42 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
     return false;
   }
 
+  function is_jersey_color_field(field: FieldMetadata): boolean {
+    return field.foreign_key_entity?.toLowerCase() === "jerseycolor";
+  }
+
   function build_foreign_key_select_options(
     field: FieldMetadata,
     options_map: Record<string, BaseEntity[]>,
-  ): { value: string; label: string }[] {
+  ): { value: string; label: string; color_swatch?: string }[] {
     const entities = options_map[field.field_name] || [];
+    const is_jersey_field = is_jersey_color_field(field);
 
     const options = entities
       .map((entity) => {
         const entity_id = String((entity as BaseEntity).id ?? "").trim();
         if (entity_id.length === 0) return null;
-        return {
-          value: entity_id,
-          label: String(build_entity_display_label(entity)),
-        };
+
+        const option: { value: string; label: string; color_swatch?: string } =
+          {
+            value: entity_id,
+            label: String(build_entity_display_label(entity)),
+          };
+
+        if (is_jersey_field) {
+          const jersey = entity as unknown as { main_color?: string };
+          if (jersey.main_color) {
+            option.color_swatch = jersey.main_color;
+          }
+        }
+
+        return option;
       })
-      .filter((option): option is { value: string; label: string } =>
-        Boolean(option),
+      .filter(
+        (
+          option,
+        ): option is { value: string; label: string; color_swatch?: string } =>
+          Boolean(option),
       );
 
     return options;
