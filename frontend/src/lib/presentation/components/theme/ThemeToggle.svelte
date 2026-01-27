@@ -1,5 +1,8 @@
 <script lang="ts">
-  import { theme_store, toggle_theme_mode } from "$lib/presentation/stores/theme";
+  import {
+    theme_store,
+    toggle_theme_mode,
+  } from "$lib/presentation/stores/theme";
 
   let current_theme: any = { mode: "light" };
 
@@ -15,7 +18,7 @@
 
 <button
   type="button"
-  class="p-2 rounded-md text-black hover:text-gray-700 hover:bg-theme-primary-400 dark:hover:bg-theme-primary-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-black transition-all duration-200"
+  class="p-2 rounded-md text-current hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white transition-all duration-200"
   on:click={handle_toggle}
   aria-label="Toggle {current_theme.mode === 'light' ? 'dark' : 'light'} mode"
   title="Toggle {current_theme.mode === 'light' ? 'dark' : 'light'} mode"

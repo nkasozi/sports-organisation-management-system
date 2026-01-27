@@ -68,11 +68,30 @@
 <svelte:window on:click={close_user_menu} />
 
 <header
-  class="bg-theme-primary-500 dark:bg-theme-primary-600 shadow-sm border-b border-theme-primary-600 dark:border-theme-primary-700 sticky top-0 z-50"
+  class="shadow-sm border-b border-theme-primary-600 dark:border-theme-primary-700 sticky top-0 z-50 relative overflow-hidden"
 >
-  <div class="px-4 sm:px-6 lg:px-8">
-    <div class="flex justify-between items-center h-16">
-      <div class="flex items-center space-x-4">
+  {#if $branding_store.header_pattern === "pattern" && $branding_store.background_pattern_url}
+    <div
+      class="absolute inset-0"
+      style="background-image: url('{$branding_store.background_pattern_url}'); background-size: 200px; background-repeat: repeat;"
+    ></div>
+    <div
+      class="absolute inset-0 bg-theme-primary-500/60 dark:bg-theme-primary-900/65"
+    ></div>
+  {:else}
+    <div
+      class="absolute inset-0 bg-theme-primary-500 dark:bg-theme-primary-600"
+    ></div>
+  {/if}
+
+  <div class="px-4 sm:px-6 lg:px-8 relative z-10">
+    <div class="flex justify-between items-center h-20">
+      <div
+        class="flex items-center space-x-4 {$branding_store.header_pattern ===
+          'pattern' && $branding_store.background_pattern_url
+          ? 'bg-black/25 dark:bg-black/40 backdrop-blur-sm rounded-lg px-3 py-2 header-panel border-2 border-white/60'
+          : ''}"
+      >
         <button
           type="button"
           class="lg:hidden inline-flex items-center justify-center p-2 rounded-md text-black hover:text-gray-800 hover:bg-theme-primary-400 dark:hover:bg-theme-primary-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-black transition-colors duration-200"
@@ -174,7 +193,12 @@
         </div>
       </div>
 
-      <div class="flex items-center space-x-4">
+      <div
+        class="flex items-center space-x-4 {$branding_store.header_pattern ===
+          'pattern' && $branding_store.background_pattern_url
+          ? 'bg-black/25 dark:bg-black/40 backdrop-blur-sm rounded-lg px-3 py-2 header-panel border-2 border-white/60'
+          : ''}"
+      >
         <ThemeToggle />
 
         <div class="relative">
@@ -306,5 +330,22 @@
   button:focus-visible {
     outline: 2px solid theme("colors.primary.500");
     outline-offset: 2px;
+  }
+
+  /* Text shadow for pattern mode panels */
+  :global(.header-panel) {
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+  }
+  :global(.header-panel) span,
+  :global(.header-panel) h1,
+  :global(.header-panel) p {
+    color: white !important;
+  }
+  :global(.header-panel) button {
+    color: white !important;
+  }
+  :global(.header-panel) svg {
+    color: white !important;
+    stroke: white !important;
   }
 </style>

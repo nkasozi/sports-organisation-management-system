@@ -6,6 +6,8 @@ export interface SocialMediaLink {
   url: string;
 }
 
+export type HeaderFooterStyle = "solid_color" | "pattern";
+
 export interface BrandingConfig {
   organization_name: string;
   organization_logo_url: string;
@@ -13,6 +15,10 @@ export interface BrandingConfig {
   organization_email: string;
   organization_address: string;
   social_media_links: SocialMediaLink[];
+  header_footer_style: HeaderFooterStyle;
+  header_pattern: HeaderFooterStyle;
+  footer_pattern: HeaderFooterStyle;
+  background_pattern_url: string;
 }
 
 const default_branding: BrandingConfig = {
@@ -27,6 +33,10 @@ const default_branding: BrandingConfig = {
     { platform: "github", url: "" },
     { platform: "linkedin", url: "" },
   ],
+  header_footer_style: "pattern",
+  header_pattern: "pattern",
+  footer_pattern: "solid_color",
+  background_pattern_url: "/african-mosaic-bg.svg",
 };
 
 const storage_key = "sports-org-branding";

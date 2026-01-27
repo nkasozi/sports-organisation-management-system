@@ -71,11 +71,30 @@
 </script>
 
 <footer
-  class="bg-theme-primary-500 dark:bg-theme-primary-600 border-t border-theme-primary-600 dark:border-theme-primary-700 mt-auto"
+  class="border-t border-theme-primary-600 dark:border-theme-primary-700 mt-auto relative overflow-hidden"
 >
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
-      <div class="col-span-1 md:col-span-2">
+  {#if $branding_store.footer_pattern === "pattern" && $branding_store.background_pattern_url}
+    <div
+      class="absolute inset-0"
+      style="background-image: url('{$branding_store.background_pattern_url}'); background-size: 200px; background-repeat: repeat;"
+    ></div>
+    <div
+      class="absolute inset-0 bg-theme-primary-500/60 dark:bg-theme-primary-900/65"
+    ></div>
+  {:else}
+    <div
+      class="absolute inset-0 bg-theme-primary-500 dark:bg-theme-primary-600"
+    ></div>
+  {/if}
+
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 relative z-10">
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div
+        class="col-span-1 md:col-span-2 {$branding_store.footer_pattern ===
+          'pattern' && $branding_store.background_pattern_url
+          ? 'bg-black/25 dark:bg-black/40 backdrop-blur-sm rounded-lg p-4 footer-panel border-2 border-white/60'
+          : ''}"
+      >
         <div class="flex items-center space-x-3 mb-4">
           <div
             class="h-8 w-8 rounded-lg flex items-center justify-center overflow-hidden {has_custom_logo
@@ -182,9 +201,14 @@
         </div>
       </div>
 
-      <div>
+      <div
+        class={$branding_store.footer_pattern === "pattern" &&
+        $branding_store.background_pattern_url
+          ? "bg-black/25 dark:bg-black/40 backdrop-blur-sm rounded-lg p-4 footer-panel border-2 border-white/60"
+          : ""}
+      >
         <h3
-          class="text-sm font-semibold text-black tracking-wider uppercase mb-4"
+          class="text-sm font-semibold text-white tracking-wider uppercase mb-4 drop-shadow-md"
         >
           Quick Links
         </h3>
@@ -224,10 +248,14 @@
         </ul>
       </div>
 
-      <!-- Support -->
-      <div>
+      <div
+        class={$branding_store.footer_pattern === "pattern" &&
+        $branding_store.background_pattern_url
+          ? "bg-black/25 dark:bg-black/40 backdrop-blur-sm rounded-lg p-4 footer-panel border-2 border-white/60"
+          : ""}
+      >
         <h3
-          class="text-sm font-semibold text-black tracking-wider uppercase mb-4"
+          class="text-sm font-semibold text-white tracking-wider uppercase mb-4 drop-shadow-md"
         >
           Support
         </h3>
@@ -268,8 +296,12 @@
       </div>
     </div>
 
-    <!-- Bottom section -->
-    <div class="mt-8 pt-6 border-t border-primary-600 dark:border-primary-700">
+    <div
+      class="mt-6 pt-4 {$branding_store.footer_pattern === 'pattern' &&
+      $branding_store.background_pattern_url
+        ? 'bg-black/25 dark:bg-black/40 backdrop-blur-sm rounded-lg px-4 py-3 footer-panel border-2 border-white/60'
+        : 'border-t border-primary-600 dark:border-primary-700'}"
+    >
       <div
         class="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0"
       >
@@ -328,5 +360,16 @@
 
   button:hover svg {
     transform: scale(1.1);
+  }
+
+  /* Text shadow for pattern mode panels */
+  :global(.footer-panel) {
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+  }
+  :global(.footer-panel) *:not(svg):not(path) {
+    color: white !important;
+  }
+  :global(.footer-panel) a:hover {
+    color: #fcd34d !important;
   }
 </style>

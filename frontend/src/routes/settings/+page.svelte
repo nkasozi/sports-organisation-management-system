@@ -27,6 +27,9 @@
   let organization_address: string = "";
   let selected_primary_color: string = "yellow";
   let selected_secondary_color: string = "red";
+  let header_pattern: "solid_color" | "pattern" = "pattern";
+  let footer_pattern: "solid_color" | "pattern" = "solid_color";
+  let background_pattern_url: string = "/african-mosaic-bg.svg";
   let notifications_enabled: boolean = true;
   let email_notifications: boolean = true;
   let social_media_links: SocialMediaLink[] = [];
@@ -49,6 +52,10 @@
     organization_email = $branding_store.organization_email || "";
     organization_address = $branding_store.organization_address || "";
     social_media_links = $branding_store.social_media_links || [];
+    header_pattern = $branding_store.header_pattern || "pattern";
+    footer_pattern = $branding_store.footer_pattern || "pattern";
+    background_pattern_url =
+      $branding_store.background_pattern_url || "/african-mosaic-bg.svg";
   });
 
   const color_options = [
@@ -110,6 +117,78 @@
     show_toast("Theme reset to defaults", "success");
   }
 
+  function handle_header_pattern_change(
+    style: "solid_color" | "pattern",
+  ): void {
+    header_pattern = style;
+    branding_store.update((config) => ({
+      ...config,
+      header_pattern: style,
+    }));
+    show_toast(
+      style === "pattern"
+        ? "Header set to pattern"
+        : "Header set to solid color",
+      "success",
+    );
+  }
+
+  function handle_footer_pattern_change(
+    style: "solid_color" | "pattern",
+  ): void {
+    footer_pattern = style;
+    branding_store.update((config) => ({
+      ...config,
+      footer_pattern: style,
+    }));
+    show_toast(
+      style === "pattern"
+        ? "Footer set to pattern"
+        : "Footer set to solid color",
+      "success",
+    );
+  }
+
+  function handle_pattern_upload(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+
+    if (!file.type.includes("svg")) {
+      show_toast("Please upload an SVG file", "error");
+      return;
+    }
+
+    if (file.size > 500 * 1024) {
+      show_toast("File size must be less than 500KB", "error");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const result = e.target?.result as string;
+      background_pattern_url = result;
+      branding_store.update((config) => ({
+        ...config,
+        background_pattern_url: result,
+      }));
+      show_toast("Custom pattern uploaded", "success");
+    };
+    reader.onerror = () => {
+      show_toast("Failed to read file", "error");
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function reset_to_default_pattern(): void {
+    background_pattern_url = "/african-mosaic-bg.svg";
+    branding_store.update((config) => ({
+      ...config,
+      background_pattern_url: "/african-mosaic-bg.svg",
+    }));
+    show_toast("Reset to default pattern", "success");
+  }
+
   function handle_save_organization_settings(): void {
     branding_store.set({
       organization_name: organization_name,
@@ -118,6 +197,10 @@
       organization_email: organization_email,
       organization_address: organization_address,
       social_media_links: social_media_links,
+      header_footer_style: "pattern",
+      header_pattern: header_pattern,
+      footer_pattern: footer_pattern,
+      background_pattern_url: background_pattern_url,
     });
     show_toast("Organization settings saved", "success");
   }
@@ -422,6 +505,228 @@
             ></button>
           {/each}
         </div>
+      </div>
+
+      <div>
+        <h3
+          class="text-sm font-medium text-accent-900 dark:text-accent-100 mb-4"
+        >
+          Header & Footer Style
+        </h3>
+        <p class="text-xs text-accent-500 dark:text-accent-400 mb-4">
+          Choose between a decorative pattern or solid color for header and
+          footer independently
+        </p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-4">
+          <div>
+            <div
+              class="font-semibold mb-2 text-accent-800 dark:text-accent-200 text-sm"
+            >
+              Header
+            </div>
+            <div class="flex gap-2">
+              <button
+                type="button"
+                class="relative flex-1 p-3 rounded-lg border-2 transition-all {header_pattern ===
+                'pattern'
+                  ? 'border-theme-primary-500 bg-theme-primary-50 dark:bg-theme-primary-900/20'
+                  : 'border-accent-200 dark:border-accent-700 hover:border-accent-300 dark:hover:border-accent-600'}"
+                on:click={() => handle_header_pattern_change("pattern")}
+              >
+                <div class="flex items-center gap-2">
+                  <div
+                    class="w-8 h-8 rounded overflow-hidden border border-accent-200 dark:border-accent-600 relative flex-shrink-0"
+                  >
+                    <div
+                      class="absolute inset-0"
+                      style="background-image: url('/african-mosaic-bg.svg'); background-size: 20px; background-repeat: repeat;"
+                    ></div>
+                    <div class="absolute inset-0 bg-theme-primary-500/40"></div>
+                  </div>
+                  <span class="text-xs font-medium">Pattern</span>
+                </div>
+                {#if header_pattern === "pattern"}
+                  <div
+                    class="absolute top-1 right-1 w-4 h-4 bg-theme-primary-500 rounded-full flex items-center justify-center"
+                  >
+                    <svg
+                      class="w-2.5 h-2.5 text-white"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      ><path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="3"
+                        d="M5 13l4 4L19 7"
+                      /></svg
+                    >
+                  </div>
+                {/if}
+              </button>
+              <button
+                type="button"
+                class="relative flex-1 p-3 rounded-lg border-2 transition-all {header_pattern ===
+                'solid_color'
+                  ? 'border-theme-primary-500 bg-theme-primary-50 dark:bg-theme-primary-900/20'
+                  : 'border-accent-200 dark:border-accent-700 hover:border-accent-300 dark:hover:border-accent-600'}"
+                on:click={() => handle_header_pattern_change("solid_color")}
+              >
+                <div class="flex items-center gap-2">
+                  <div
+                    class="w-8 h-8 rounded bg-theme-primary-500 border border-accent-200 dark:border-accent-600 flex-shrink-0"
+                  ></div>
+                  <span class="text-xs font-medium">Solid</span>
+                </div>
+                {#if header_pattern === "solid_color"}
+                  <div
+                    class="absolute top-1 right-1 w-4 h-4 bg-theme-primary-500 rounded-full flex items-center justify-center"
+                  >
+                    <svg
+                      class="w-2.5 h-2.5 text-white"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      ><path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="3"
+                        d="M5 13l4 4L19 7"
+                      /></svg
+                    >
+                  </div>
+                {/if}
+              </button>
+            </div>
+          </div>
+          <div>
+            <div
+              class="font-semibold mb-2 text-accent-800 dark:text-accent-200 text-sm"
+            >
+              Footer
+            </div>
+            <div class="flex gap-2">
+              <button
+                type="button"
+                class="relative flex-1 p-3 rounded-lg border-2 transition-all {footer_pattern ===
+                'pattern'
+                  ? 'border-theme-primary-500 bg-theme-primary-50 dark:bg-theme-primary-900/20'
+                  : 'border-accent-200 dark:border-accent-700 hover:border-accent-300 dark:hover:border-accent-600'}"
+                on:click={() => handle_footer_pattern_change("pattern")}
+              >
+                <div class="flex items-center gap-2">
+                  <div
+                    class="w-8 h-8 rounded overflow-hidden border border-accent-200 dark:border-accent-600 relative flex-shrink-0"
+                  >
+                    <div
+                      class="absolute inset-0"
+                      style="background-image: url('/african-mosaic-bg.svg'); background-size: 20px; background-repeat: repeat;"
+                    ></div>
+                    <div class="absolute inset-0 bg-theme-primary-500/40"></div>
+                  </div>
+                  <span class="text-xs font-medium">Pattern</span>
+                </div>
+                {#if footer_pattern === "pattern"}
+                  <div
+                    class="absolute top-1 right-1 w-4 h-4 bg-theme-primary-500 rounded-full flex items-center justify-center"
+                  >
+                    <svg
+                      class="w-2.5 h-2.5 text-white"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      ><path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="3"
+                        d="M5 13l4 4L19 7"
+                      /></svg
+                    >
+                  </div>
+                {/if}
+              </button>
+              <button
+                type="button"
+                class="relative flex-1 p-3 rounded-lg border-2 transition-all {footer_pattern ===
+                'solid_color'
+                  ? 'border-theme-primary-500 bg-theme-primary-50 dark:bg-theme-primary-900/20'
+                  : 'border-accent-200 dark:border-accent-700 hover:border-accent-300 dark:hover:border-accent-600'}"
+                on:click={() => handle_footer_pattern_change("solid_color")}
+              >
+                <div class="flex items-center gap-2">
+                  <div
+                    class="w-8 h-8 rounded bg-theme-primary-500 border border-accent-200 dark:border-accent-600 flex-shrink-0"
+                  ></div>
+                  <span class="text-xs font-medium">Solid</span>
+                </div>
+                {#if footer_pattern === "solid_color"}
+                  <div
+                    class="absolute top-1 right-1 w-4 h-4 bg-theme-primary-500 rounded-full flex items-center justify-center"
+                  >
+                    <svg
+                      class="w-2.5 h-2.5 text-white"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      ><path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="3"
+                        d="M5 13l4 4L19 7"
+                      /></svg
+                    >
+                  </div>
+                {/if}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {#if header_pattern === "pattern" || footer_pattern === "pattern"}
+          <div class="mt-4 p-4 rounded-lg bg-accent-50 dark:bg-accent-700/50">
+            <h4
+              class="text-sm font-medium text-accent-700 dark:text-accent-300 mb-2"
+            >
+              Custom Pattern (Optional)
+            </h4>
+            <p class="text-xs text-accent-500 dark:text-accent-400 mb-3">
+              Upload your own SVG pattern or use the default African mosaic
+            </p>
+            <div class="flex flex-col sm:flex-row gap-4 items-start">
+              <div
+                class="w-20 h-20 rounded-lg overflow-hidden border-2 border-dashed border-accent-300 dark:border-accent-600 relative flex-shrink-0"
+              >
+                <div
+                  class="absolute inset-0"
+                  style="background-image: url('{background_pattern_url}'); background-size: 40px; background-repeat: repeat;"
+                ></div>
+              </div>
+              <div class="flex-1 space-y-2">
+                <div class="flex flex-wrap gap-2">
+                  <label class="btn btn-outline text-xs cursor-pointer">
+                    <input
+                      type="file"
+                      accept=".svg,image/svg+xml"
+                      class="hidden"
+                      on:change={handle_pattern_upload}
+                    />
+                    Upload SVG
+                  </label>
+                  <button
+                    type="button"
+                    class="btn btn-outline text-xs"
+                    on:click={reset_to_default_pattern}
+                  >
+                    Use Default
+                  </button>
+                </div>
+                <p class="text-xs text-accent-400 dark:text-accent-500">
+                  Max size: 500KB
+                </p>
+              </div>
+            </div>
+          </div>
+        {/if}
       </div>
 
       <div class="pt-4 border-t border-accent-200 dark:border-accent-700">
