@@ -92,7 +92,7 @@
       <div
         class="col-span-1 md:col-span-2 {$branding_store.footer_pattern ===
           'pattern' && $branding_store.background_pattern_url
-          ? 'bg-black/25 dark:bg-black/40 backdrop-blur-sm rounded-lg p-4 footer-panel border-2 border-white/60'
+          ? `bg-black/25 dark:bg-black/40 backdrop-blur-sm rounded-lg p-4 footer-panel ${$branding_store.show_panel_borders ? 'border-2 border-white/60' : ''}`
           : ''}"
       >
         <div class="flex items-center space-x-3 mb-4">
@@ -204,7 +204,7 @@
       <div
         class={$branding_store.footer_pattern === "pattern" &&
         $branding_store.background_pattern_url
-          ? "bg-black/25 dark:bg-black/40 backdrop-blur-sm rounded-lg p-4 footer-panel border-2 border-white/60"
+          ? `bg-black/25 dark:bg-black/40 backdrop-blur-sm rounded-lg p-4 footer-panel ${$branding_store.show_panel_borders ? "border-2 border-white/60" : ""}`
           : ""}
       >
         <h3
@@ -251,7 +251,7 @@
       <div
         class={$branding_store.footer_pattern === "pattern" &&
         $branding_store.background_pattern_url
-          ? "bg-black/25 dark:bg-black/40 backdrop-blur-sm rounded-lg p-4 footer-panel border-2 border-white/60"
+          ? `bg-black/25 dark:bg-black/40 backdrop-blur-sm rounded-lg p-4 footer-panel ${$branding_store.show_panel_borders ? "border-2 border-white/60" : ""}`
           : ""}
       >
         <h3
@@ -299,7 +299,7 @@
     <div
       class="mt-6 pt-4 {$branding_store.footer_pattern === 'pattern' &&
       $branding_store.background_pattern_url
-        ? 'bg-black/25 dark:bg-black/40 backdrop-blur-sm rounded-lg px-4 py-3 footer-panel border-2 border-white/60'
+        ? `bg-black/25 dark:bg-black/40 backdrop-blur-sm rounded-lg px-4 py-3 footer-panel ${$branding_store.show_panel_borders ? 'border-2 border-white/60' : ''}`
         : 'border-t border-primary-600 dark:border-primary-700'}"
     >
       <div

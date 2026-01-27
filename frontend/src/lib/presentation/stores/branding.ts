@@ -19,6 +19,7 @@ export interface BrandingConfig {
   header_pattern: HeaderFooterStyle;
   footer_pattern: HeaderFooterStyle;
   background_pattern_url: string;
+  show_panel_borders: boolean;
 }
 
 const default_branding: BrandingConfig = {
@@ -37,6 +38,7 @@ const default_branding: BrandingConfig = {
   header_pattern: "pattern",
   footer_pattern: "solid_color",
   background_pattern_url: "/african-mosaic-bg.svg",
+  show_panel_borders: false,
 };
 
 const storage_key = "sports-org-branding";

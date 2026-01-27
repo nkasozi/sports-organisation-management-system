@@ -30,6 +30,7 @@
   let header_pattern: "solid_color" | "pattern" = "pattern";
   let footer_pattern: "solid_color" | "pattern" = "solid_color";
   let background_pattern_url: string = "/african-mosaic-bg.svg";
+  let show_panel_borders: boolean = false;
   let notifications_enabled: boolean = true;
   let email_notifications: boolean = true;
   let social_media_links: SocialMediaLink[] = [];
@@ -56,6 +57,7 @@
     footer_pattern = $branding_store.footer_pattern || "pattern";
     background_pattern_url =
       $branding_store.background_pattern_url || "/african-mosaic-bg.svg";
+    show_panel_borders = $branding_store.show_panel_borders ?? false;
   });
 
   const color_options = [
@@ -149,6 +151,18 @@
     );
   }
 
+  function handle_panel_borders_toggle(enabled: boolean): void {
+    show_panel_borders = enabled;
+    branding_store.update((config) => ({
+      ...config,
+      show_panel_borders: enabled,
+    }));
+    show_toast(
+      enabled ? "Panel borders enabled" : "Panel borders disabled",
+      "success",
+    );
+  }
+
   function handle_pattern_upload(event: Event): void {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
@@ -201,6 +215,7 @@
       header_pattern: header_pattern,
       footer_pattern: footer_pattern,
       background_pattern_url: background_pattern_url,
+      show_panel_borders: show_panel_borders,
     });
     show_toast("Organization settings saved", "success");
   }
@@ -681,6 +696,41 @@
             </div>
           </div>
         </div>
+
+        {#if header_pattern === "pattern" || footer_pattern === "pattern"}
+          <div class="mt-4 p-4 rounded-lg bg-accent-50 dark:bg-accent-700/50">
+            <h4
+              class="text-sm font-medium text-accent-700 dark:text-accent-300 mb-3"
+            >
+              Panel Borders
+            </h4>
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-xs text-accent-500 dark:text-accent-400">
+                  Show white borders around header/footer panels when pattern is
+                  active
+                </p>
+              </div>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={show_panel_borders}
+                aria-label="Toggle panel borders"
+                class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-theme-primary-500 focus:ring-offset-2 {show_panel_borders
+                  ? 'bg-theme-primary-500'
+                  : 'bg-accent-300 dark:bg-accent-600'}"
+                on:click={() =>
+                  handle_panel_borders_toggle(!show_panel_borders)}
+              >
+                <span
+                  class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out {show_panel_borders
+                    ? 'translate-x-5'
+                    : 'translate-x-0'}"
+                ></span>
+              </button>
+            </div>
+          </div>
+        {/if}
 
         {#if header_pattern === "pattern" || footer_pattern === "pattern"}
           <div class="mt-4 p-4 rounded-lg bg-accent-50 dark:bg-accent-700/50">

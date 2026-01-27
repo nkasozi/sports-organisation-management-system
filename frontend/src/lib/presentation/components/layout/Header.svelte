@@ -89,7 +89,7 @@
       <div
         class="flex items-center space-x-4 {$branding_store.header_pattern ===
           'pattern' && $branding_store.background_pattern_url
-          ? 'bg-black/25 dark:bg-black/40 backdrop-blur-sm rounded-lg px-3 py-2 header-panel border-2 border-white/60'
+          ? `bg-black/25 dark:bg-black/40 backdrop-blur-sm rounded-lg px-3 py-2 header-panel ${$branding_store.show_panel_borders ? 'border-2 border-white/60' : ''}`
           : ''}"
       >
         <button
@@ -196,7 +196,7 @@
       <div
         class="flex items-center space-x-4 {$branding_store.header_pattern ===
           'pattern' && $branding_store.background_pattern_url
-          ? 'bg-black/25 dark:bg-black/40 backdrop-blur-sm rounded-lg px-3 py-2 header-panel border-2 border-white/60'
+          ? `bg-black/25 dark:bg-black/40 backdrop-blur-sm rounded-lg px-3 py-2 header-panel ${$branding_store.show_panel_borders ? 'border-2 border-white/60' : ''}`
           : ''}"
       >
         <ThemeToggle />
