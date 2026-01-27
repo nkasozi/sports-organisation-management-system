@@ -3,6 +3,13 @@
   import type { FieldMetadata } from "$lib/core/entities/BaseEntity";
   import { entityMetadataRegistry } from "$lib/infrastructure/registry/EntityMetadataRegistry";
   import { get_use_cases_for_entity_type } from "$lib/infrastructure/registry/entityUseCasesRegistry";
+  import {
+    resolve_entity_name_to_id,
+    is_name_column,
+    extract_entity_type_from_name_column,
+    is_id_column,
+    looks_like_entity_name,
+  } from "$lib/core/services/nameResolutionService";
 
   export let entity_type: string;
   export let is_visible: boolean = false;
@@ -206,6 +213,152 @@
     }
   }
 
+  function find_name_columns_in_record(
+    record: Record<string, string>,
+    foreign_key_fields: FieldMetadata[],
+  ): { name_column: string; id_column: string; entity_type: string }[] {
+    const name_columns: {
+      name_column: string;
+      id_column: string;
+      entity_type: string;
+    }[] = [];
+
+    for (const column_name of Object.keys(record)) {
+      if (is_name_column(column_name)) {
+        const potential_entity_type =
+          extract_entity_type_from_name_column(column_name);
+        const matching_fk_field = foreign_key_fields.find(
+          (field) =>
+            field.foreign_key_entity?.toLowerCase() ===
+            potential_entity_type.toLowerCase(),
+        );
+
+        if (matching_fk_field) {
+          name_columns.push({
+            name_column: column_name,
+            id_column: matching_fk_field.field_name,
+            entity_type: potential_entity_type,
+          });
+        }
+      } else if (is_id_column(column_name)) {
+        const value = record[column_name];
+        if (value && looks_like_entity_name(value)) {
+          const matching_fk_field = foreign_key_fields.find(
+            (field) => field.field_name === column_name,
+          );
+
+          if (matching_fk_field && matching_fk_field.foreign_key_entity) {
+            name_columns.push({
+              name_column: column_name,
+              id_column: column_name,
+              entity_type: matching_fk_field.foreign_key_entity.toLowerCase(),
+            });
+          }
+        }
+      }
+    }
+
+    return name_columns;
+  }
+
+  interface NameResolutionError {
+    column_name: string;
+    error_message: string;
+  }
+
+  async function resolve_name_columns_in_record(
+    record: Record<string, string>,
+    name_columns: {
+      name_column: string;
+      id_column: string;
+      entity_type: string;
+    }[],
+  ): Promise<{
+    resolved_values: Record<string, string>;
+    errors: NameResolutionError[];
+  }> {
+    const resolved_values: Record<string, string> = {};
+    const errors: NameResolutionError[] = [];
+
+    for (const { name_column, id_column, entity_type } of name_columns) {
+      const name_value = record[name_column];
+
+      if (!name_value || name_value.trim().length === 0) {
+        continue;
+      }
+
+      const use_cases = get_use_cases_for_entity_type(
+        entity_type.toLowerCase(),
+      );
+      if (!use_cases) {
+        errors.push({
+          column_name: name_column,
+          error_message: `Error: Unknown entity type "${entity_type}". Cause: Cannot resolve name for this entity type. Solution: Use the ID column (${id_column}) instead.`,
+        });
+        continue;
+      }
+
+      const resolution_result = await resolve_entity_name_to_id({
+        entity_name: name_value,
+        entity_type,
+        use_cases,
+      });
+
+      if (resolution_result.success && resolution_result.resolved_id) {
+        resolved_values[id_column] = resolution_result.resolved_id;
+      } else {
+        errors.push({
+          column_name: name_column,
+          error_message:
+            resolution_result.error_message || "Unknown resolution error",
+        });
+      }
+    }
+
+    return { resolved_values, errors };
+  }
+
+  async function convert_csv_record_to_entity_input_with_name_resolution(
+    record: Record<string, string>,
+    name_columns: {
+      name_column: string;
+      id_column: string;
+      entity_type: string;
+    }[],
+  ): Promise<{
+    entity_input: Record<string, unknown>;
+    errors: NameResolutionError[];
+  }> {
+    const { resolved_values, errors } = await resolve_name_columns_in_record(
+      record,
+      name_columns,
+    );
+
+    if (errors.length > 0) {
+      return { entity_input: {}, errors };
+    }
+
+    const augmented_record = { ...record, ...resolved_values };
+    const entity_input: Record<string, unknown> = {};
+
+    for (const field of importable_fields) {
+      const raw_value = augmented_record[field.field_name];
+      if (raw_value === undefined || raw_value === "") {
+        if (field.is_required) {
+          entity_input[field.field_name] = null;
+        }
+        continue;
+      }
+
+      entity_input[field.field_name] = convert_value_for_field_type(
+        raw_value,
+        field.field_type,
+      );
+    }
+
+    return { entity_input, errors: [] };
+  }
+
   async function handle_start_import(): Promise<void> {
     if (!selected_file) return;
 
@@ -234,11 +387,45 @@
       return;
     }
 
+    const first_record = records[0];
+    const name_columns = first_record
+      ? find_name_columns_in_record(first_record, foreign_key_fields)
+      : [];
+    const has_name_columns = name_columns.length > 0;
+
     for (let i = 0; i < records.length; i++) {
       const record = records[i];
       const row_number = i + 2;
 
-      const entity_input = convert_csv_record_to_entity_input(record);
+      let entity_input: Record<string, unknown>;
+      let name_resolution_errors: NameResolutionError[] = [];
+
+      if (has_name_columns) {
+        const resolution_result =
+          await convert_csv_record_to_entity_input_with_name_resolution(
+            record,
+            name_columns,
+          );
+        entity_input = resolution_result.entity_input;
+        name_resolution_errors = resolution_result.errors;
+      } else {
+        entity_input = convert_csv_record_to_entity_input(record);
+      }
+
+      if (name_resolution_errors.length > 0) {
+        failure_count++;
+        const combined_errors = name_resolution_errors
+          .map((e) => `[${e.column_name}]: ${e.error_message}`)
+          .join(" | ");
+        import_results.push({
+          row_number,
+          original_data: record,
+          success: false,
+          error_message: combined_errors,
+        });
+        continue;
+      }
+
       const result = await use_cases.create(entity_input);
 
       if (result.success) {
@@ -376,26 +563,48 @@
                 needed to import {display_name.toLowerCase()}s. Fill in your
                 data following the example row format.
               </p>
-              <button
-                type="button"
-                class="btn bg-purple-600 hover:bg-purple-700 text-white"
-                on:click={handle_download_template}
-              >
-                <svg
-                  class="w-4 h-4 mr-2"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
+              <div class="flex flex-wrap gap-3">
+                <button
+                  type="button"
+                  class="btn bg-purple-600 hover:bg-purple-700 text-white"
+                  on:click={handle_download_template}
                 >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                  />
-                </svg>
-                Download Template
-              </button>
+                  <svg
+                    class="w-4 h-4 mr-2"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                    />
+                  </svg>
+                  Download Template
+                </button>
+                <button
+                  type="button"
+                  class="btn bg-accent-600 hover:bg-accent-700 text-white"
+                  on:click={() => (current_step = "upload")}
+                >
+                  <svg
+                    class="w-4 h-4 mr-2"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"
+                    />
+                  </svg>
+                  Skip to File Upload
+                </button>
+              </div>
             </div>
 
             <div
@@ -424,40 +633,81 @@
                 class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4"
               >
                 <h4 class="font-medium text-blue-900 dark:text-blue-100 mb-2">
-                  Foreign Key Fields (How to Get IDs)
+                  Foreign Key Fields (Two Options)
                 </h4>
-                <p class="text-sm text-blue-700 dark:text-blue-300 mb-3">
-                  These fields reference other records. To find the ID values:
-                </p>
-                <ol
-                  class="text-sm text-blue-700 dark:text-blue-300 list-decimal list-inside space-y-1 mb-3"
+
+                <div
+                  class="mb-4 p-3 bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-700 rounded-lg"
                 >
-                  <li>Go to the related entity's list page</li>
-                  <li>Click the <strong>"Columns"</strong> button</li>
-                  <li>
-                    Enable the <strong>"ID"</strong> column to see the IDs
-                  </li>
-                  <li>
-                    Copy the exact ID value (e.g., <code
-                      class="bg-blue-100 dark:bg-blue-800 px-1 rounded"
-                      >org_default_1</code
-                    >)
-                  </li>
-                </ol>
-                <div class="space-y-2">
-                  {#each foreign_key_fields as field}
-                    <div class="flex items-start gap-2 text-sm">
-                      <span
-                        class="font-medium text-blue-800 dark:text-blue-200 min-w-32"
-                        >{field.field_name}:</span
-                      >
-                      <span class="text-blue-600 dark:text-blue-300">
-                        ID from <strong
-                          >{get_related_entity_display_name(field)}</strong
-                        > list
-                      </span>
-                    </div>
-                  {/each}
+                  <h5
+                    class="font-medium text-emerald-800 dark:text-emerald-200 text-sm mb-2"
+                  >
+                    Option 1: Use Name Columns (Easier)
+                  </h5>
+                  <p
+                    class="text-sm text-emerald-700 dark:text-emerald-300 mb-2"
+                  >
+                    Instead of IDs, you can use name columns and we'll look up
+                    the ID for you:
+                  </p>
+                  <div class="space-y-1">
+                    {#each foreign_key_fields as field}
+                      <div class="flex items-start gap-2 text-sm">
+                        <span
+                          class="font-medium text-emerald-800 dark:text-emerald-200 min-w-40"
+                          >{field.foreign_key_entity?.toLowerCase()}_name:</span
+                        >
+                        <span class="text-emerald-600 dark:text-emerald-300">
+                          Name of the <strong
+                            >{get_related_entity_display_name(field)}</strong
+                          > (must match exactly)
+                        </span>
+                      </div>
+                    {/each}
+                  </div>
+                </div>
+
+                <div
+                  class="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg"
+                >
+                  <h5
+                    class="font-medium text-blue-800 dark:text-blue-200 text-sm mb-2"
+                  >
+                    Option 2: Use ID Columns (More Precise)
+                  </h5>
+                  <p class="text-sm text-blue-700 dark:text-blue-300 mb-2">
+                    To find the ID values:
+                  </p>
+                  <ol
+                    class="text-sm text-blue-700 dark:text-blue-300 list-decimal list-inside space-y-1 mb-3"
+                  >
+                    <li>Go to the related entity's list page</li>
+                    <li>Click the <strong>"Columns"</strong> button</li>
+                    <li>
+                      Enable the <strong>"ID"</strong> column to see the IDs
+                    </li>
+                    <li>
+                      Copy the exact ID value (e.g., <code
+                        class="bg-blue-100 dark:bg-blue-800 px-1 rounded"
+                        >org_default_1</code
+                      >)
+                    </li>
+                  </ol>
+                  <div class="space-y-1">
+                    {#each foreign_key_fields as field}
+                      <div class="flex items-start gap-2 text-sm">
+                        <span
+                          class="font-medium text-blue-800 dark:text-blue-200 min-w-40"
+                          >{field.field_name}:</span
+                        >
+                        <span class="text-blue-600 dark:text-blue-300">
+                          ID from <strong
+                            >{get_related_entity_display_name(field)}</strong
+                          > list
+                        </span>
+                      </div>
+                    {/each}
+                  </div>
                 </div>
               </div>
             {/if}

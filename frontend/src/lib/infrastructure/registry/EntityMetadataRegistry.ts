@@ -1321,6 +1321,7 @@ class EntityMetadataRegistry {
           field_type: "foreign_key",
           is_required: true,
           is_read_only: false,
+          is_read_only_on_edit: true,
           foreign_key_entity: "competition",
         },
         {
@@ -1329,6 +1330,7 @@ class EntityMetadataRegistry {
           field_type: "foreign_key",
           is_required: true,
           is_read_only: false,
+          is_read_only_on_edit: true,
           foreign_key_entity: "team",
           show_in_list: true,
           foreign_key_filter: {
@@ -1343,6 +1345,7 @@ class EntityMetadataRegistry {
           field_type: "foreign_key",
           is_required: true,
           is_read_only: false,
+          is_read_only_on_edit: true,
           foreign_key_entity: "team",
           show_in_list: true,
           foreign_key_filter: {
@@ -1372,7 +1375,7 @@ class EntityMetadataRegistry {
           field_name: "venue" satisfies keyof Fixture,
           display_name: "Venue",
           field_type: "string",
-          is_required: true,
+          is_required: false,
           is_read_only: false,
           show_in_list: false,
         },
