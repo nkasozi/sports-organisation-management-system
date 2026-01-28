@@ -630,20 +630,21 @@
                       fixture.away_team_id,
                     )}
                   </p>
-                  <div class="flex flex-wrap items-center gap-1 mt-0.5">
+                  <div class="flex flex-col gap-1 mt-0.5">
                     <span
-                      class="inline-flex items-center px-1.5 py-0.5 bg-teal-100 dark:bg-teal-900/40 text-teal-700 dark:text-teal-300 rounded text-xs"
+                      class="inline-flex items-center px-1.5 py-0.5 bg-teal-100 dark:bg-teal-900/40 text-teal-700 dark:text-teal-300 rounded text-xs w-fit"
                     >
                       {get_competition_name(fixture.competition_id)}
                     </span>
                     <span
-                      class="inline-flex items-center px-1.5 py-0.5 bg-sky-100 dark:bg-sky-900/40 text-sky-700 dark:text-sky-300 rounded text-xs"
+                      class="inline-flex items-center px-1.5 py-0.5 bg-sky-100 dark:bg-sky-900/40 text-sky-700 dark:text-sky-300 rounded text-xs w-fit"
                     >
                       {get_sport_name(fixture.competition_id)}
                     </span>
                   </div>
                   <p
                     class="text-xs text-accent-500 dark:text-accent-400 mt-0.5"
+                    style="padding-left: 0.2rem;"
                   >
                     {format_fixture_date(
                       fixture.scheduled_date,
