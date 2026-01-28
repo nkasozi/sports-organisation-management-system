@@ -262,10 +262,12 @@
   class:-translate-x-full={!sidebar_open}
   class:lg:translate-x-0={true}
 >
-  <div class="flex flex-col h-full" style="margin-left: 1rem;">
+  <div class="flex flex-col h-full">
     <!-- Sidebar header -->
     <div
-      class="flex items-center justify-between h-16 px-4 border-b border-accent-200 dark:border-accent-700"
+      class="flex items-center justify-between h-16 border-b border-accent-200 dark:border-accent-700 {sidebar_open
+        ? 'pl-6 pr-4'
+        : 'px-2'}"
     >
       {#if sidebar_open}
         <div class="flex items-center space-x-3">
@@ -354,7 +356,11 @@
     </div>
 
     <!-- Navigation -->
-    <nav class="flex-1 px-2 py-4 space-y-1 overflow-y-auto">
+    <nav
+      class="flex-1 py-4 space-y-1 overflow-y-auto {sidebar_open
+        ? 'pl-4 pr-2'
+        : 'px-2'}"
+    >
       <!-- Grouped navigation -->
       {#each navigation_groups as group, group_index}
         {#if group_index > 0}
@@ -456,7 +462,11 @@
     </nav>
 
     <!-- User info at bottom -->
-    <div class="border-t border-accent-200 dark:border-accent-700 p-4">
+    <div
+      class="border-t border-accent-200 dark:border-accent-700 {sidebar_open
+        ? 'pl-10 py-4'
+        : 'p-2'}"
+    >
       {#if sidebar_open}
         <div class="flex items-center space-x-3">
           <div
