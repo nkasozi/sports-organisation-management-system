@@ -266,8 +266,8 @@ const COLOR_PALETTES: Record<ThemeColorName, ColorPalette> = {
 
 const DEFAULT_THEME: ThemeConfig = {
   mode: "light",
-  primary_color: "amber",
-  secondary_color: "red",
+  primary_color: "red",
+  secondary_color: "blue",
 };
 
 function get_initial_theme(): ThemeConfig {

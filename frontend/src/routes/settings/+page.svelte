@@ -25,8 +25,8 @@
   let organization_tagline: string = "";
   let organization_email: string = "";
   let organization_address: string = "";
-  let selected_primary_color: string = "yellow";
-  let selected_secondary_color: string = "red";
+  let selected_primary_color: string = "red";
+  let selected_secondary_color: string = "blue";
   let header_pattern: "solid_color" | "pattern" = "pattern";
   let footer_pattern: "solid_color" | "pattern" = "solid_color";
   let background_pattern_url: string = "/african-mosaic-bg.svg";
@@ -58,6 +58,12 @@
     background_pattern_url =
       $branding_store.background_pattern_url || "/african-mosaic-bg.svg";
     show_panel_borders = $branding_store.show_panel_borders ?? false;
+    selected_primary_color = map_theme_color_to_option(
+      $theme_store.primary_color,
+    );
+    selected_secondary_color = map_theme_color_to_option(
+      $theme_store.secondary_color,
+    );
   });
 
   const color_options = [
@@ -114,6 +120,14 @@
     { value: "slate", label: "Slate", hex: "#475569", class: "bg-slate-600" },
   ];
 
+  function map_theme_color_to_option(theme_color: string): string {
+    const color_mapping: Record<string, string> = {
+      amber: "yellow",
+      emerald: "green",
+    };
+    return color_mapping[theme_color] || theme_color;
+  }
+
   $: current_theme = $theme_store;
 
   function handle_theme_toggle(): void {
@@ -135,8 +149,8 @@
 
   function handle_reset_theme(): void {
     reset_theme_to_default();
-    selected_primary_color = "yellow";
-    selected_secondary_color = "red";
+    selected_primary_color = "red";
+    selected_secondary_color = "blue";
     show_toast("Theme reset to defaults", "success");
   }
 

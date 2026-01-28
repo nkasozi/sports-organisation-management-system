@@ -21,6 +21,7 @@ Uses explicit handlers instead of events for predictable data flow
   export let show_list_actions: boolean = true;
   export let bulk_create_handler: (() => void) | null = null;
   export let enable_bulk_import: boolean = false;
+  export let button_color_class: string = "btn-primary-action";
 
   const dispatch = createEventDispatcher<{
     entity_created: { entity: BaseEntity };
@@ -292,6 +293,7 @@ Uses explicit handlers instead of events for predictable data flow
           view_callbacks={list_view_callbacks}
           {bulk_create_handler}
           {enable_bulk_import}
+          {button_color_class}
           on_total_count_changed={handle_list_count_updated}
           on_selection_changed={handle_selection_changed}
           on_entities_batch_deleted={handle_entities_batch_deleted}
@@ -303,6 +305,7 @@ Uses explicit handlers instead of events for predictable data flow
           {is_mobile_view}
           {crud_handlers}
           view_callbacks={form_view_callbacks}
+          {button_color_class}
         />
       {:else if current_view === "edit"}
         <DynamicEntityForm
@@ -311,6 +314,7 @@ Uses explicit handlers instead of events for predictable data flow
           {is_mobile_view}
           {crud_handlers}
           view_callbacks={form_view_callbacks}
+          {button_color_class}
         />
       {/if}
     </div>

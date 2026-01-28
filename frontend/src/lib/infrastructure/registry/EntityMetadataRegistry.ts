@@ -937,18 +937,6 @@ class EntityMetadataRegistry {
             holder_type_value: "team",
           },
         },
-        {
-          field_name: "team_profile",
-          display_name: "Public Profile",
-          field_type: "sub_entity",
-          is_required: false,
-          is_read_only: false,
-          show_in_list: false,
-          sub_entity_config: {
-            child_entity_type: "teamprofile",
-            foreign_key_field: "team_id",
-          },
-        },
       ],
     });
   }

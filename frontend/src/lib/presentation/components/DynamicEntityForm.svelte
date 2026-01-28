@@ -40,6 +40,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
   export let crud_handlers: EntityCrudHandlers | null = null;
   export let view_callbacks: EntityViewCallbacks | null = null;
   export let sub_entity_filter: SubEntityFilter | null = null;
+  export let button_color_class: string = "btn-primary-action";
 
   $: has_custom_handlers = crud_handlers !== null;
 
@@ -1715,7 +1716,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
           </button>
           <button
             type="submit"
-            class="btn btn-primary-action w-full sm:w-auto order-3 sm:order-3"
+            class="btn {button_color_class} w-full sm:w-auto order-3 sm:order-3"
             disabled={is_save_in_progress || is_loading}
           >
             {#if is_save_in_progress}

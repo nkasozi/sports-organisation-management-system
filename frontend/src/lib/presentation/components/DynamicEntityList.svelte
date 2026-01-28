@@ -29,6 +29,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
   export let view_callbacks: EntityViewCallbacks | null = null;
   export let bulk_create_handler: (() => void) | null = null;
   export let enable_bulk_import: boolean = false;
+  export let button_color_class: string = "btn-primary-action";
 
   export let on_total_count_changed: ((count: number) => void) | null = null;
   export let on_selection_changed: ((selected: BaseEntity[]) => void) | null =
@@ -970,7 +971,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
         {#if bulk_create_handler}
           <button
             type="button"
-            class="btn btn-primary-action w-auto"
+            class="btn {button_color_class} w-auto"
             on:click={bulk_create_handler}
           >
             Bulk Create
@@ -980,7 +981,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
         {#if show_actions}
           <button
             type="button"
-            class="btn btn-primary-action w-auto"
+            class="btn {button_color_class} w-auto"
             on:click={handle_create_new_entity}
           >
             Create New
@@ -1143,7 +1144,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
         {:else if show_actions}
           <button
             type="button"
-            class="btn btn-primary-action"
+            class="btn {button_color_class}"
             on:click={handle_create_new_entity}
           >
             Create First {display_name}
@@ -1360,7 +1361,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
         >
           <button
             type="button"
-            class="btn btn-primary-action"
+            class="btn {button_color_class}"
             on:click={() => (show_column_selector = false)}
           >
             Done
@@ -1437,7 +1438,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
               </div>
               <button
                 type="button"
-                class="btn btn-primary-action"
+                class="btn {button_color_class}"
                 on:click={export_to_csv}
               >
                 Export CSV
