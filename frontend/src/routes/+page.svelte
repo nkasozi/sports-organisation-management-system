@@ -266,7 +266,7 @@
   <div
     class="bg-white dark:bg-accent-800 rounded-lg shadow-sm border border-accent-200 dark:border-accent-700 p-6"
   >
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between">
       <div>
         <h1
           class="text-2xl sm:text-3xl font-bold text-accent-900 dark:text-accent-100 mb-2"
@@ -288,7 +288,7 @@
           {$branding_store.organization_tagline}
         </p>
       </div>
-      <div class="mt-4 sm:mt-0">
+      <div class="mt-4 md:mt-0">
         <button
           class="btn btn-primary-action mobile-touch"
           on:click={handle_reset_data}

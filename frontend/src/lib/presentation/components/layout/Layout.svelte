@@ -62,12 +62,12 @@
     <Header {sidebar_open} on:toggle-sidebar={toggle_sidebar} />
 
     <!-- Main content area -->
-    <div class="flex flex-1">
+    <div class="flex flex-1 min-w-0">
       <!-- Sidebar -->
       <Sidebar {sidebar_open} on:close-sidebar={close_sidebar} />
 
       <!-- Main content -->
-      <main class="flex-1 transition-all duration-300 ease-in-out lg:ml-4">
+      <main class="flex-1 min-w-0 transition-all duration-300 ease-in-out lg:ml-4 overflow-x-auto">
         <div class="w-full max-w-7xl mx-auto p-4 lg:p-6">
           <!-- Page content slot -->
           <slot />
@@ -96,7 +96,6 @@
   /* Global responsive design - mobile first approach */
   :global(body) {
     font-family: "Inter", system-ui, sans-serif;
-    overflow-x: hidden;
   }
 
   /* Ensure smooth transitions for theme changes */
