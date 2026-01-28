@@ -291,29 +291,14 @@
   <title>Competition Results - Sports Management</title>
 </svelte:head>
 
-<div class="space-y-6">
-  <div
-    class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
-  >
-    <div>
-      <h1 class="text-2xl font-bold text-accent-900 dark:text-accent-100">
-        Competition Results
-      </h1>
-      <p class="text-sm text-accent-600 dark:text-accent-400 mt-1">
-        View standings, fixtures, and statistics
-      </p>
-    </div>
-  </div>
-
+<div class="w-full">
   <LoadingStateWrapper
     state={loading_state}
     loading_text="Loading competitions..."
     {error_message}
   >
     {#if competitions.length === 0}
-      <div
-        class="bg-white dark:bg-accent-800 rounded-lg shadow-sm border border-accent-200 dark:border-accent-700 p-12 text-center"
-      >
+      <div class="card p-8 sm:p-12 text-center">
         <svg
           class="mx-auto h-12 w-12 text-accent-400"
           fill="none"
@@ -344,118 +329,116 @@
         </button>
       </div>
     {:else}
-      <div
-        class="bg-white dark:bg-accent-800 rounded-lg shadow-sm border border-accent-200 dark:border-accent-700 p-4"
-      >
+      <div class="card p-4 sm:p-6 space-y-6 overflow-hidden">
         <div
-          class="flex flex-col sm:flex-row gap-4 items-start sm:items-center"
+          class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-gray-200 dark:border-gray-700 pb-4"
         >
-          <label
-            for="competition_select"
-            class="font-medium text-accent-900 dark:text-accent-100"
-          >
-            Select Competition:
-          </label>
-          <select
-            id="competition_select"
-            bind:value={selected_competition_id}
-            on:change={handle_competition_change}
-            class="flex-1 max-w-md px-3 py-2 border border-accent-300 dark:border-accent-600 rounded-lg bg-white dark:bg-accent-700 text-accent-900 dark:text-accent-100"
-          >
-            {#each competitions as competition}
-              <option value={competition.id}>{competition.name}</option>
-            {/each}
-          </select>
+          <div class="flex-1 min-w-0">
+            <h2
+              class="text-lg sm:text-xl font-semibold text-accent-900 dark:text-accent-100"
+            >
+              Competition Results
+            </h2>
+            <p class="text-sm text-accent-600 dark:text-accent-400">
+              View standings, fixtures, and statistics
+            </p>
+          </div>
 
-          {#if selected_competition && selected_competition_status_display}
-            <div class="flex items-center gap-2">
-              <span
-                class="px-2 py-1 text-xs font-medium rounded-full {selected_competition_status_display.color}"
-              >
-                {selected_competition_status_display.label}
-              </span>
-              {#if competition_format}
+          <div
+            class="flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full sm:w-auto"
+          >
+            <select
+              id="competition_select"
+              bind:value={selected_competition_id}
+              on:change={handle_competition_change}
+              class="w-full sm:w-auto min-w-0 sm:min-w-[200px] px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-accent-900 dark:text-accent-100 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+            >
+              {#each competitions as competition}
+                <option value={competition.id}>{competition.name}</option>
+              {/each}
+            </select>
+
+            {#if selected_competition && selected_competition_status_display}
+              <div class="flex flex-wrap items-center gap-2">
                 <span
-                  class="px-2 py-1 text-xs bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300 rounded-full"
+                  class="px-2 py-1 text-xs font-medium rounded-full {selected_competition_status_display.color}"
                 >
-                  {competition_format.name}
+                  {selected_competition_status_display.label}
                 </span>
-              {/if}
-            </div>
-          {/if}
+                {#if competition_format}
+                  <span
+                    class="px-2 py-1 text-xs bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300 rounded-full"
+                  >
+                    {competition_format.name}
+                  </span>
+                {/if}
+              </div>
+            {/if}
+          </div>
         </div>
-      </div>
 
-      <div
-        class="bg-white dark:bg-accent-800 rounded-lg shadow-sm border border-accent-200 dark:border-accent-700"
-      >
-        <div class="border-b border-accent-200 dark:border-accent-700">
-          <nav class="flex overflow-x-auto" aria-label="Tabs">
+        <div
+          class="border-b border-gray-200 dark:border-gray-700 -mx-4 sm:-mx-6 px-4 sm:px-6"
+        >
+          <nav
+            class="flex overflow-x-auto -mb-px scrollbar-hide"
+            aria-label="Tabs"
+          >
             <button
               type="button"
-              class="px-6 py-3 text-sm font-medium border-b-2 whitespace-nowrap {active_tab ===
+              class="flex-shrink-0 px-4 sm:px-6 py-3 text-sm font-medium border-b-2 whitespace-nowrap transition-colors {active_tab ===
               'standings'
                 ? 'border-primary-500 text-primary-600 dark:text-primary-400'
-                : 'border-transparent text-accent-500 hover:text-accent-700 dark:hover:text-accent-300'}"
+                : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-accent-700 dark:hover:text-accent-300 hover:border-gray-300'}"
               on:click={() => (active_tab = "standings")}
             >
-              📊 Standings
+              <span class="hidden sm:inline">📊 </span> Standings
             </button>
             <button
               type="button"
-              class="px-6 py-3 text-sm font-medium border-b-2 whitespace-nowrap {active_tab ===
+              class="flex-shrink-0 px-4 sm:px-6 py-3 text-sm font-medium border-b-2 whitespace-nowrap transition-colors {active_tab ===
               'fixtures'
                 ? 'border-primary-500 text-primary-600 dark:text-primary-400'
-                : 'border-transparent text-accent-500 hover:text-accent-700 dark:hover:text-accent-300'}"
+                : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-accent-700 dark:hover:text-accent-300 hover:border-gray-300'}"
               on:click={() => (active_tab = "fixtures")}
             >
-              📅 Upcoming ({upcoming_fixtures.length})
+              <span class="hidden sm:inline">📅 </span> Upcoming<span
+                class="ml-1 text-xs bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded-full"
+                >{upcoming_fixtures.length}</span
+              >
             </button>
             <button
               type="button"
-              class="px-6 py-3 text-sm font-medium border-b-2 whitespace-nowrap {active_tab ===
+              class="flex-shrink-0 px-4 sm:px-6 py-3 text-sm font-medium border-b-2 whitespace-nowrap transition-colors {active_tab ===
               'results'
                 ? 'border-primary-500 text-primary-600 dark:text-primary-400'
-                : 'border-transparent text-accent-500 hover:text-accent-700 dark:hover:text-accent-300'}"
+                : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-accent-700 dark:hover:text-accent-300 hover:border-gray-300'}"
               on:click={() => (active_tab = "results")}
             >
-              ✅ Results ({completed_fixtures.length})
+              <span class="hidden sm:inline">✅ </span> Results<span
+                class="ml-1 text-xs bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded-full"
+                >{completed_fixtures.length}</span
+              >
             </button>
             <button
               type="button"
-              class="px-6 py-3 text-sm font-medium border-b-2 whitespace-nowrap {active_tab ===
+              class="flex-shrink-0 px-4 sm:px-6 py-3 text-sm font-medium border-b-2 whitespace-nowrap transition-colors {active_tab ===
               'stats'
                 ? 'border-primary-500 text-primary-600 dark:text-primary-400'
-                : 'border-transparent text-accent-500 hover:text-accent-700 dark:hover:text-accent-300'}"
+                : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-accent-700 dark:hover:text-accent-300 hover:border-gray-300'}"
               on:click={() => (active_tab = "stats")}
             >
-              ⚽ Stats
+              <span class="hidden sm:inline">⚽ </span> Stats
             </button>
           </nav>
         </div>
 
-        <div class="p-4">
+        <div class="min-h-[200px]">
           {#if fixtures_loading}
             <div class="flex items-center justify-center py-12">
-              <svg
-                class="animate-spin h-8 w-8 text-primary-500"
-                fill="none"
-                viewBox="0 0 24 24"
-              >
-                <circle
-                  class="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  stroke-width="4"
-                />
-                <path
-                  class="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                />
-              </svg>
+              <div
+                class="animate-spin rounded-full h-8 w-8 border-4 border-primary-500 border-t-transparent"
+              ></div>
             </div>
           {:else if active_tab === "standings"}
             {#if standings.length === 0}
@@ -463,117 +446,177 @@
                 No teams registered for this competition yet.
               </div>
             {:else}
-              <div class="overflow-x-auto">
-                <table class="min-w-full">
-                  <thead>
-                    <tr
-                      class="border-b border-accent-200 dark:border-accent-700"
-                    >
+              <div class="hidden sm:block overflow-x-auto">
+                <table
+                  class="min-w-full divide-y divide-gray-200 dark:divide-gray-700"
+                >
+                  <thead class="bg-gray-50 dark:bg-gray-800">
+                    <tr>
                       <th
-                        class="px-3 py-2 text-left text-xs font-medium text-accent-500 uppercase"
+                        class="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
                         >#</th
                       >
                       <th
-                        class="px-3 py-2 text-left text-xs font-medium text-accent-500 uppercase"
+                        class="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
                         >Team</th
                       >
                       <th
-                        class="px-3 py-2 text-center text-xs font-medium text-accent-500 uppercase"
+                        class="px-3 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
                         >P</th
                       >
                       <th
-                        class="px-3 py-2 text-center text-xs font-medium text-accent-500 uppercase"
+                        class="px-3 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
                         >W</th
                       >
                       <th
-                        class="px-3 py-2 text-center text-xs font-medium text-accent-500 uppercase"
+                        class="px-3 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
                         >D</th
                       >
                       <th
-                        class="px-3 py-2 text-center text-xs font-medium text-accent-500 uppercase"
+                        class="px-3 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
                         >L</th
                       >
                       <th
-                        class="px-3 py-2 text-center text-xs font-medium text-accent-500 uppercase"
+                        class="px-3 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden md:table-cell"
                         >GF</th
                       >
                       <th
-                        class="px-3 py-2 text-center text-xs font-medium text-accent-500 uppercase"
+                        class="px-3 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden md:table-cell"
                         >GA</th
                       >
                       <th
-                        class="px-3 py-2 text-center text-xs font-medium text-accent-500 uppercase"
+                        class="px-3 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
                         >GD</th
                       >
                       <th
-                        class="px-3 py-2 text-center text-xs font-medium text-accent-500 uppercase font-bold"
+                        class="px-3 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider font-bold"
                         >Pts</th
                       >
                     </tr>
                   </thead>
                   <tbody
-                    class="divide-y divide-accent-100 dark:divide-accent-700"
+                    class="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700"
                   >
                     {#each standings as standing, index}
-                      <tr
-                        class="hover:bg-accent-50 dark:hover:bg-accent-700/50"
-                      >
+                      <tr class="hover:bg-gray-50 dark:hover:bg-gray-800">
                         <td
-                          class="px-3 py-2 text-sm font-medium {index < 3
+                          class="px-3 py-3 text-sm font-medium {index < 3
                             ? 'text-green-600'
-                            : 'text-accent-600'}"
+                            : 'text-gray-600 dark:text-gray-400'}"
                         >
                           {index + 1}
                         </td>
                         <td
-                          class="px-3 py-2 text-sm font-medium text-accent-900 dark:text-accent-100"
+                          class="px-3 py-3 text-sm font-medium text-accent-900 dark:text-accent-100"
                         >
                           {standing.team_name}
                         </td>
                         <td
-                          class="px-3 py-2 text-sm text-center text-accent-600 dark:text-accent-400"
+                          class="px-3 py-3 text-sm text-center text-gray-600 dark:text-gray-400"
                           >{standing.played}</td
                         >
                         <td
-                          class="px-3 py-2 text-sm text-center text-accent-600 dark:text-accent-400"
+                          class="px-3 py-3 text-sm text-center text-gray-600 dark:text-gray-400"
                           >{standing.won}</td
                         >
                         <td
-                          class="px-3 py-2 text-sm text-center text-accent-600 dark:text-accent-400"
+                          class="px-3 py-3 text-sm text-center text-gray-600 dark:text-gray-400"
                           >{standing.drawn}</td
                         >
                         <td
-                          class="px-3 py-2 text-sm text-center text-accent-600 dark:text-accent-400"
+                          class="px-3 py-3 text-sm text-center text-gray-600 dark:text-gray-400"
                           >{standing.lost}</td
                         >
                         <td
-                          class="px-3 py-2 text-sm text-center text-accent-600 dark:text-accent-400"
+                          class="px-3 py-3 text-sm text-center text-gray-600 dark:text-gray-400 hidden md:table-cell"
                           >{standing.goals_for}</td
                         >
                         <td
-                          class="px-3 py-2 text-sm text-center text-accent-600 dark:text-accent-400"
+                          class="px-3 py-3 text-sm text-center text-gray-600 dark:text-gray-400 hidden md:table-cell"
                           >{standing.goals_against}</td
                         >
                         <td
-                          class="px-3 py-2 text-sm text-center {standing.goal_difference >
+                          class="px-3 py-3 text-sm text-center {standing.goal_difference >
                           0
                             ? 'text-green-600'
                             : standing.goal_difference < 0
                               ? 'text-red-600'
-                              : 'text-accent-600'}"
+                              : 'text-gray-600 dark:text-gray-400'}"
                         >
                           {standing.goal_difference > 0
                             ? "+"
                             : ""}{standing.goal_difference}
                         </td>
                         <td
-                          class="px-3 py-2 text-sm text-center font-bold text-accent-900 dark:text-accent-100"
+                          class="px-3 py-3 text-sm text-center font-bold text-accent-900 dark:text-accent-100"
                           >{standing.points}</td
                         >
                       </tr>
                     {/each}
                   </tbody>
                 </table>
+              </div>
+
+              <div class="sm:hidden space-y-2">
+                {#each standings as standing, index}
+                  <div
+                    class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
+                  >
+                    <div class="flex items-center gap-3">
+                      <span
+                        class="w-6 h-6 flex items-center justify-center text-sm font-bold rounded-full {index <
+                        3
+                          ? 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-400'
+                          : 'bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-400'}"
+                      >
+                        {index + 1}
+                      </span>
+                      <span
+                        class="font-medium text-accent-900 dark:text-accent-100 truncate max-w-[120px]"
+                      >
+                        {standing.team_name}
+                      </span>
+                    </div>
+                    <div class="flex items-center gap-4 text-sm">
+                      <div class="text-center">
+                        <div class="text-xs text-gray-500 dark:text-gray-400">
+                          P
+                        </div>
+                        <div
+                          class="font-medium text-gray-700 dark:text-gray-300"
+                        >
+                          {standing.played}
+                        </div>
+                      </div>
+                      <div class="text-center">
+                        <div class="text-xs text-gray-500 dark:text-gray-400">
+                          GD
+                        </div>
+                        <div
+                          class="font-medium {standing.goal_difference > 0
+                            ? 'text-green-600'
+                            : standing.goal_difference < 0
+                              ? 'text-red-600'
+                              : 'text-gray-700 dark:text-gray-300'}"
+                        >
+                          {standing.goal_difference > 0
+                            ? "+"
+                            : ""}{standing.goal_difference}
+                        </div>
+                      </div>
+                      <div class="text-center min-w-[32px]">
+                        <div class="text-xs text-gray-500 dark:text-gray-400">
+                          Pts
+                        </div>
+                        <div
+                          class="font-bold text-accent-900 dark:text-accent-100"
+                        >
+                          {standing.points}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                {/each}
               </div>
             {/if}
           {:else if active_tab === "fixtures"}
@@ -585,27 +628,35 @@
               <div class="space-y-3">
                 {#each upcoming_fixtures as fixture}
                   <div
-                    class="flex items-center justify-between p-4 bg-accent-50 dark:bg-accent-700/50 rounded-lg"
+                    class="p-3 sm:p-4 bg-gray-50 dark:bg-gray-800 rounded-lg"
                   >
-                    <div class="flex-1 text-right">
-                      <span
-                        class="font-medium text-accent-900 dark:text-accent-100"
-                      >
-                        {get_team_name(fixture.home_team_id)}
-                      </span>
+                    <div
+                      class="text-xs text-center text-gray-500 dark:text-gray-400 mb-2"
+                    >
+                      {format_date(fixture.scheduled_date)}
                     </div>
-                    <div class="px-6 text-center">
-                      <div class="text-xs text-accent-500 mb-1">
-                        {format_date(fixture.scheduled_date)}
+                    <div class="flex items-center justify-between gap-2">
+                      <div class="flex-1 text-right">
+                        <span
+                          class="text-sm sm:text-base font-medium text-accent-900 dark:text-accent-100 line-clamp-1"
+                        >
+                          {get_team_name(fixture.home_team_id)}
+                        </span>
                       </div>
-                      <div class="text-lg font-bold text-accent-400">VS</div>
-                    </div>
-                    <div class="flex-1 text-left">
-                      <span
-                        class="font-medium text-accent-900 dark:text-accent-100"
-                      >
-                        {get_team_name(fixture.away_team_id)}
-                      </span>
+                      <div class="flex-shrink-0 px-3 sm:px-6">
+                        <div
+                          class="text-base sm:text-lg font-bold text-gray-400"
+                        >
+                          VS
+                        </div>
+                      </div>
+                      <div class="flex-1 text-left">
+                        <span
+                          class="text-sm sm:text-base font-medium text-accent-900 dark:text-accent-100 line-clamp-1"
+                        >
+                          {get_team_name(fixture.away_team_id)}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 {/each}
@@ -623,59 +674,75 @@
                   {@const away_score = fixture.away_team_score ?? 0}
                   <button
                     type="button"
-                    class="w-full flex items-center justify-between p-4 bg-accent-50 dark:bg-accent-700/50 rounded-lg hover:bg-accent-100 dark:hover:bg-accent-600/50 transition-colors cursor-pointer"
+                    class="w-full p-3 sm:p-4 bg-gray-50 dark:bg-gray-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors cursor-pointer text-left"
                     on:click={() => goto(`/live-games/${fixture.id}`)}
                   >
-                    <div class="flex-1 text-right">
-                      <span
-                        class="font-medium text-accent-900 dark:text-accent-100"
-                      >
-                        {get_team_name(fixture.home_team_id)}
-                      </span>
+                    <div
+                      class="text-xs text-center text-gray-500 dark:text-gray-400 mb-2"
+                    >
+                      {format_date(fixture.scheduled_date)}
                     </div>
-                    <div class="px-6 text-center">
-                      <div class="text-xs text-accent-500 mb-1">
-                        {format_date(fixture.scheduled_date)}
-                      </div>
-                      <div class="text-2xl font-bold">
+                    <div class="flex items-center justify-between gap-2">
+                      <div class="flex-1 text-right">
                         <span
-                          class={home_score > away_score
-                            ? "text-green-600"
-                            : "text-accent-900 dark:text-accent-100"}
+                          class="text-sm sm:text-base font-medium text-accent-900 dark:text-accent-100 line-clamp-1 {home_score >
+                          away_score
+                            ? 'text-green-600 dark:text-green-400'
+                            : ''}"
                         >
-                          {home_score}
-                        </span>
-                        <span class="text-accent-400 mx-2">-</span>
-                        <span
-                          class={away_score > home_score
-                            ? "text-green-600"
-                            : "text-accent-900 dark:text-accent-100"}
-                        >
-                          {away_score}
+                          {get_team_name(fixture.home_team_id)}
                         </span>
                       </div>
-                    </div>
-                    <div class="flex-1 text-left">
-                      <span
-                        class="font-medium text-accent-900 dark:text-accent-100"
-                      >
-                        {get_team_name(fixture.away_team_id)}
-                      </span>
+                      <div class="flex-shrink-0 px-2 sm:px-4">
+                        <div
+                          class="flex items-center gap-1 sm:gap-2 text-xl sm:text-2xl font-bold"
+                        >
+                          <span
+                            class={home_score > away_score
+                              ? "text-green-600 dark:text-green-400"
+                              : "text-accent-900 dark:text-accent-100"}
+                          >
+                            {home_score}
+                          </span>
+                          <span class="text-gray-400 text-base sm:text-lg"
+                            >-</span
+                          >
+                          <span
+                            class={away_score > home_score
+                              ? "text-green-600 dark:text-green-400"
+                              : "text-accent-900 dark:text-accent-100"}
+                          >
+                            {away_score}
+                          </span>
+                        </div>
+                      </div>
+                      <div class="flex-1 text-left">
+                        <span
+                          class="text-sm sm:text-base font-medium text-accent-900 dark:text-accent-100 line-clamp-1 {away_score >
+                          home_score
+                            ? 'text-green-600 dark:text-green-400'
+                            : ''}"
+                        >
+                          {get_team_name(fixture.away_team_id)}
+                        </span>
+                      </div>
                     </div>
                   </button>
                 {/each}
               </div>
             {/if}
           {:else if active_tab === "stats"}
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+              <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
                 <h3
-                  class="text-lg font-semibold text-accent-900 dark:text-accent-100 mb-4"
+                  class="text-base sm:text-lg font-semibold text-accent-900 dark:text-accent-100 mb-4 flex items-center gap-2"
                 >
-                  ⚽ Top Scorers
+                  <span>⚽</span> Top Scorers
                 </h3>
                 {#if player_stats.filter((p) => p.goals > 0).length === 0}
-                  <div class="text-center py-4 text-accent-500">
+                  <div
+                    class="text-center py-4 text-gray-500 dark:text-gray-400"
+                  >
                     No goals scored yet.
                   </div>
                 {:else}
@@ -684,46 +751,51 @@
                       .filter((p) => p.goals > 0)
                       .slice(0, 10) as player, index}
                       <div
-                        class="flex items-center justify-between p-3 bg-accent-50 dark:bg-accent-700/50 rounded-lg"
+                        class="flex items-center justify-between p-2 sm:p-3 bg-white dark:bg-gray-900 rounded-lg"
                       >
-                        <div class="flex items-center gap-3">
+                        <div class="flex items-center gap-2 sm:gap-3 min-w-0">
                           <span
-                            class="w-6 h-6 flex items-center justify-center text-sm font-bold {index <
+                            class="w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0 flex items-center justify-center text-xs sm:text-sm font-bold rounded-full {index <
                             3
-                              ? 'text-yellow-600'
-                              : 'text-accent-500'}"
+                              ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/50 dark:text-yellow-400'
+                              : 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400'}"
                           >
                             {index + 1}
                           </span>
-                          <div>
+                          <div class="min-w-0">
                             <div
-                              class="font-medium text-accent-900 dark:text-accent-100"
+                              class="text-sm font-medium text-accent-900 dark:text-accent-100 truncate"
                             >
                               {player.player_name}
                             </div>
-                            <div class="text-xs text-accent-500">
+                            <div
+                              class="text-xs text-gray-500 dark:text-gray-400 truncate"
+                            >
                               {player.team_name}
                             </div>
                           </div>
                         </div>
                         <span
-                          class="text-xl font-bold text-accent-900 dark:text-accent-100"
-                          >{player.goals}</span
+                          class="text-lg sm:text-xl font-bold text-accent-900 dark:text-accent-100 ml-2"
                         >
+                          {player.goals}
+                        </span>
                       </div>
                     {/each}
                   </div>
                 {/if}
               </div>
 
-              <div>
+              <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
                 <h3
-                  class="text-lg font-semibold text-accent-900 dark:text-accent-100 mb-4"
+                  class="text-base sm:text-lg font-semibold text-accent-900 dark:text-accent-100 mb-4 flex items-center gap-2"
                 >
-                  🟨 Most Cards
+                  <span>🟨</span> Most Cards
                 </h3>
                 {#if player_stats.filter((p) => p.yellow_cards > 0 || p.red_cards > 0).length === 0}
-                  <div class="text-center py-4 text-accent-500">
+                  <div
+                    class="text-center py-4 text-gray-500 dark:text-gray-400"
+                  >
                     No cards issued yet.
                   </div>
                 {:else}
@@ -733,33 +805,39 @@
                       .sort((a, b) => b.yellow_cards + b.red_cards * 2 - (a.yellow_cards + a.red_cards * 2))
                       .slice(0, 10) as player}
                       <div
-                        class="flex items-center justify-between p-3 bg-accent-50 dark:bg-accent-700/50 rounded-lg"
+                        class="flex items-center justify-between p-2 sm:p-3 bg-white dark:bg-gray-900 rounded-lg"
                       >
-                        <div>
+                        <div class="min-w-0">
                           <div
-                            class="font-medium text-accent-900 dark:text-accent-100"
+                            class="text-sm font-medium text-accent-900 dark:text-accent-100 truncate"
                           >
                             {player.player_name}
                           </div>
-                          <div class="text-xs text-accent-500">
+                          <div
+                            class="text-xs text-gray-500 dark:text-gray-400 truncate"
+                          >
                             {player.team_name}
                           </div>
                         </div>
-                        <div class="flex gap-3">
+                        <div class="flex gap-2 sm:gap-3 ml-2">
                           {#if player.yellow_cards > 0}
                             <span class="flex items-center gap-1">
-                              <span class="w-3 h-4 bg-yellow-400 rounded-sm"
+                              <span
+                                class="w-2.5 h-3.5 sm:w-3 sm:h-4 bg-yellow-400 rounded-sm"
                               ></span>
-                              <span class="text-sm font-medium"
+                              <span
+                                class="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300"
                                 >{player.yellow_cards}</span
                               >
                             </span>
                           {/if}
                           {#if player.red_cards > 0}
                             <span class="flex items-center gap-1">
-                              <span class="w-3 h-4 bg-red-500 rounded-sm"
+                              <span
+                                class="w-2.5 h-3.5 sm:w-3 sm:h-4 bg-red-500 rounded-sm"
                               ></span>
-                              <span class="text-sm font-medium"
+                              <span
+                                class="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300"
                                 >{player.red_cards}</span
                               >
                             </span>

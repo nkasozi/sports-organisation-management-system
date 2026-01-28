@@ -67,7 +67,9 @@
       <Sidebar {sidebar_open} on:close-sidebar={close_sidebar} />
 
       <!-- Main content -->
-      <main class="flex-1 min-w-0 transition-all duration-300 ease-in-out lg:ml-4 overflow-x-auto">
+      <main
+        class="flex-1 min-w-0 transition-all duration-300 ease-in-out lg:ml-4 overflow-x-auto"
+      >
         <div class="w-full max-w-7xl mx-auto p-4 lg:p-6">
           <!-- Page content slot -->
           <slot />
