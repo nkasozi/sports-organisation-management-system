@@ -331,27 +331,25 @@
     {:else}
       <div class="card p-4 sm:p-6 space-y-6 overflow-hidden">
         <div
-          class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-gray-200 dark:border-gray-700 pb-4"
+          class="flex flex-col gap-4 border-b border-gray-200 dark:border-gray-700 pb-4"
         >
-          <div class="flex-1 min-w-0">
+          <div class="min-w-0">
             <h2
               class="text-lg sm:text-xl font-semibold text-accent-900 dark:text-accent-100"
             >
               Competition Results
             </h2>
-            <p class="text-sm text-accent-600 dark:text-accent-400">
+            <p class="text-xs sm:text-sm text-accent-600 dark:text-accent-400">
               View standings, fixtures, and statistics
             </p>
           </div>
 
-          <div
-            class="flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full sm:w-auto"
-          >
+          <div class="flex flex-col gap-3 w-full sm:w-auto">
             <select
               id="competition_select"
               bind:value={selected_competition_id}
               on:change={handle_competition_change}
-              class="w-full sm:w-auto min-w-0 sm:min-w-[200px] px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-accent-900 dark:text-accent-100 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              class="select-styled w-full sm:w-auto sm:min-w-[200px] sm:max-w-[300px]"
             >
               {#each competitions as competition}
                 <option value={competition.id}>{competition.name}</option>

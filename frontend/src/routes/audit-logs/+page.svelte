@@ -138,7 +138,7 @@
             id="filter_action"
             bind:value={filter_action}
             on:change={handle_filter_change}
-            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500"
+            class="select-styled w-full"
           >
             <option value="">All Actions</option>
             <option value="create">Create</option>
@@ -241,7 +241,9 @@
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap">
                   <span
-                    class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {get_action_badge_class(log.action)}"
+                    class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {get_action_badge_class(
+                      log.action,
+                    )}"
                   >
                     {log.action.toUpperCase()}
                   </span>
@@ -285,7 +287,10 @@
           class="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between"
         >
           <div class="text-sm text-gray-700 dark:text-gray-300">
-            Showing {(current_page - 1) * page_size + 1} to {Math.min(current_page * page_size, total_count)}
+            Showing {(current_page - 1) * page_size + 1} to {Math.min(
+              current_page * page_size,
+              total_count,
+            )}
             of {total_count} results
           </div>
           <div class="flex gap-2">
@@ -296,9 +301,7 @@
             >
               Previous
             </button>
-            <span
-              class="px-3 py-1 text-sm text-gray-700 dark:text-gray-300"
-            >
+            <span class="px-3 py-1 text-sm text-gray-700 dark:text-gray-300">
               Page {current_page} of {compute_total_pages()}
             </span>
             <button

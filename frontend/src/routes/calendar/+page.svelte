@@ -858,7 +858,7 @@
             <select
               bind:value={selected_organization_id}
               onchange={handle_organization_change}
-              class="w-full sm:w-auto min-w-0 sm:min-w-[200px] px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-accent-900 dark:text-accent-100 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              class="select-styled w-full sm:w-auto min-w-0 sm:min-w-[200px]"
             >
               {#each organizations as org}
                 <option value={org.id}>{org.name}</option>
@@ -912,7 +912,7 @@
             bind:value={filter_category_id}
             onchange={() => handle_filter_change()}
             disabled={filter_loading}
-            class="w-full sm:w-auto px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-accent-900 dark:text-accent-100 disabled:opacity-50"
+            class="select-styled w-full sm:w-auto disabled:opacity-50"
           >
             <option value="">All Categories</option>
             {#each categories as category}
@@ -924,7 +924,7 @@
             bind:value={filter_competition_id}
             onchange={() => handle_filter_change()}
             disabled={filter_loading}
-            class="w-full sm:w-auto px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-accent-900 dark:text-accent-100 disabled:opacity-50"
+            class="select-styled w-full sm:w-auto disabled:opacity-50"
           >
             <option value="">All Competitions</option>
             {#each competitions as competition}
@@ -936,7 +936,7 @@
             bind:value={filter_team_id}
             onchange={() => handle_filter_change()}
             disabled={filter_loading}
-            class="w-full sm:w-auto px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-accent-900 dark:text-accent-100 disabled:opacity-50"
+            class="select-styled w-full sm:w-auto disabled:opacity-50"
           >
             <option value="">All Teams</option>
             {#each teams as team}

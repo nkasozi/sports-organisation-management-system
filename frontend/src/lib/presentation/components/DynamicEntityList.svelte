@@ -1020,7 +1020,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
                 {#if field.field_type === "foreign_key" && field.foreign_key_entity}
                   <select
                     id="filter_{field.field_name}"
-                    class="w-full px-3 py-2 text-sm border border-accent-300 dark:border-accent-600 rounded-lg bg-white dark:bg-accent-800 text-accent-900 dark:text-accent-100"
+                    class="select-styled w-full"
                     bind:value={filter_values[field.field_name]}
                   >
                     <option value="">Any</option>
@@ -1035,7 +1035,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
                 {:else if field.field_type === "enum" && field.enum_values}
                   <select
                     id="filter_{field.field_name}"
-                    class="w-full px-3 py-2 text-sm border border-accent-300 dark:border-accent-600 rounded-lg bg-white dark:bg-accent-800 text-accent-900 dark:text-accent-100"
+                    class="select-styled w-full"
                     bind:value={filter_values[field.field_name]}
                   >
                     <option value="">Any</option>

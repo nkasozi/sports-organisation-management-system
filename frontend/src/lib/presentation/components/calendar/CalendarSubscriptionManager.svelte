@@ -384,7 +384,7 @@
               <select
                 bind:value={selected_feed_type}
                 on:change={handle_feed_type_change}
-                class="w-full px-3 py-2 bg-white dark:bg-accent-700 border border-accent-300 dark:border-accent-600 rounded-md"
+                class="select-styled w-full"
               >
                 <option value="all">All Events</option>
                 <option value="team">Team Schedule</option>
@@ -403,7 +403,7 @@
                 </label>
                 <select
                   bind:value={selected_entity_id}
-                  class="w-full px-3 py-2 bg-white dark:bg-accent-700 border border-accent-300 dark:border-accent-600 rounded-md"
+                  class="select-styled w-full"
                 >
                   <option value={null}>-- Select --</option>
                   {#each get_entity_options() as option}
@@ -421,7 +421,7 @@
               </label>
               <select
                 bind:value={reminder_minutes}
-                class="w-full px-3 py-2 bg-white dark:bg-accent-700 border border-accent-300 dark:border-accent-600 rounded-md"
+                class="select-styled w-full"
               >
                 {#each reminder_options as option}
                   <option value={option.value}>{option.label}</option>

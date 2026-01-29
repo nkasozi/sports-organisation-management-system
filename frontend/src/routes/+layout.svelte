@@ -26,6 +26,9 @@
 
   $: if ($first_time_setup_store.setup_complete) {
     show_first_time_setup = false;
+    if (typeof window !== "undefined") {
+      window.location.reload();
+    }
   }
 
   onMount(async () => {

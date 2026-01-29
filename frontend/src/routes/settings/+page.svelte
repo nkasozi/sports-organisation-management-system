@@ -12,7 +12,6 @@
   } from "$lib/presentation/stores/branding";
   import Toast from "$lib/presentation/components/ui/Toast.svelte";
   import ImageUpload from "$lib/presentation/components/ui/ImageUpload.svelte";
-  import CalendarSubscriptionManager from "$lib/presentation/components/calendar/CalendarSubscriptionManager.svelte";
   import { current_user_store } from "$lib/presentation/stores/currentUser";
   import { get_use_cases_container } from "$lib/infrastructure/container";
   import type { Organization } from "$lib/core/entities/Organization";
@@ -897,7 +896,7 @@
                 </label>
                 <select
                   id="platform_{index}"
-                  class="input w-full"
+                  class="select-styled w-full"
                   value={link.platform}
                   on:change={(e) =>
                     update_social_media_platform(
@@ -1113,57 +1112,6 @@
       <p class="text-xs text-accent-500 dark:text-accent-400">
         Export data as JSON for backup or migration purposes
       </p>
-    </div>
-  </div>
-
-  <div
-    class="bg-white dark:bg-accent-800 rounded-lg shadow-sm border border-accent-200 dark:border-accent-700"
-  >
-    <div class="p-6 border-b border-accent-200 dark:border-accent-700">
-      <div class="flex items-center gap-3">
-        <div
-          class="w-10 h-10 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center"
-        >
-          <svg
-            class="w-5 h-5 text-primary-600 dark:text-primary-400"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-            />
-          </svg>
-        </div>
-        <div>
-          <h2
-            class="text-lg font-semibold text-accent-900 dark:text-accent-100"
-          >
-            Calendar Subscriptions (iCal)
-          </h2>
-          <p class="text-sm text-accent-500 dark:text-accent-400 mt-1">
-            Subscribe to your calendar in any app that supports iCal feeds
-          </p>
-        </div>
-      </div>
-    </div>
-
-    <div class="p-6">
-      {#if selected_organization_id}
-        <CalendarSubscriptionManager
-          organization_id={selected_organization_id}
-          user_id={get_current_user_id()}
-          on:feed_created={() =>
-            show_toast("Calendar subscription created!", "success")}
-        />
-      {:else}
-        <p class="text-accent-500 dark:text-accent-400 text-sm">
-          Loading organization data...
-        </p>
-      {/if}
     </div>
   </div>
 </div>
