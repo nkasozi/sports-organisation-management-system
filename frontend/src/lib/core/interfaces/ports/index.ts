@@ -23,3 +23,7 @@ export type { SportUseCasesPort } from "./SportUseCasesPort";
 export type { TeamStaffRoleUseCasesPort } from "./TeamStaffRoleUseCasesPort";
 export type { TeamStaffUseCasesPort } from "./TeamStaffUseCasesPort";
 export type { VenueUseCasesPort } from "./VenueUseCasesPort";
+export type {
+  CalendarTokenUseCasesPort,
+  CalendarFeedInfo,
+} from "./CalendarTokenUseCasesPort";

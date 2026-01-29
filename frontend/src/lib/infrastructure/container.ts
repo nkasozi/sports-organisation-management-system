@@ -6,6 +6,7 @@ import type { OfficialRepository } from "../core/interfaces/adapters/OfficialRep
 import type { FixtureRepository } from "../core/interfaces/adapters/FixtureRepository";
 import type { ActivityRepository } from "../core/interfaces/adapters/ActivityRepository";
 import type { ActivityCategoryRepository } from "../core/interfaces/adapters/ActivityCategoryRepository";
+import type { CalendarTokenRepository } from "../core/interfaces/adapters/CalendarTokenRepository";
 
 import { get_organization_repository } from "../adapters/repositories/InMemoryOrganizationRepository";
 import { get_competition_repository } from "../adapters/repositories/InMemoryCompetitionRepository";
@@ -17,6 +18,7 @@ import { get_activity_repository } from "../adapters/repositories/InMemoryActivi
 import { get_activity_category_repository } from "../adapters/repositories/InMemoryActivityCategoryRepository";
 import { InMemorySystemUserRepository } from "../adapters/repositories/InMemorySystemUserRepository";
 import { InMemoryAuditLogRepository } from "../adapters/repositories/InMemoryAuditLogRepository";
+import { InMemoryCalendarTokenRepository } from "../adapters/repositories/InMemoryCalendarTokenRepository";
 
 import type { OrganizationUseCasesPort } from "../core/interfaces/ports/OrganizationUseCasesPort";
 import type { CompetitionUseCasesPort } from "../core/interfaces/ports/CompetitionUseCasesPort";
@@ -26,6 +28,7 @@ import type { OfficialUseCasesPort } from "../core/interfaces/ports/OfficialUseC
 import type { FixtureUseCasesPort } from "../core/interfaces/ports/FixtureUseCasesPort";
 import type { ActivityUseCasesPort } from "../core/interfaces/ports/ActivityUseCasesPort";
 import type { ActivityCategoryUseCasesPort } from "../core/interfaces/ports/ActivityCategoryUseCasesPort";
+import type { CalendarTokenUseCasesPort } from "../core/interfaces/ports/CalendarTokenUseCasesPort";
 
 import { create_organization_use_cases } from "../core/usecases/OrganizationUseCases";
 import { create_competition_use_cases } from "../core/usecases/CompetitionUseCases";
@@ -35,6 +38,7 @@ import { create_official_use_cases } from "../core/usecases/OfficialUseCases";
 import { create_fixture_use_cases } from "../core/usecases/FixtureUseCases";
 import { create_activity_use_cases } from "../core/usecases/ActivityUseCases";
 import { create_activity_category_use_cases } from "../core/usecases/ActivityCategoryUseCases";
+import { create_calendar_token_use_cases } from "../core/usecases/CalendarTokenUseCases";
 import {
   create_system_user_use_cases,
   type SystemUserUseCases,
@@ -53,6 +57,7 @@ export interface RepositoryContainer {
   fixture_repository: FixtureRepository;
   activity_repository: ActivityRepository;
   activity_category_repository: ActivityCategoryRepository;
+  calendar_token_repository: CalendarTokenRepository;
   system_user_repository: InMemorySystemUserRepository;
   audit_log_repository: InMemoryAuditLogRepository;
 }
@@ -66,6 +71,7 @@ export interface UseCasesContainer {
   fixture_use_cases: FixtureUseCasesPort;
   activity_use_cases: ActivityUseCasesPort;
   activity_category_use_cases: ActivityCategoryUseCasesPort;
+  calendar_token_use_cases: CalendarTokenUseCasesPort;
   system_user_use_cases: SystemUserUseCases;
   audit_log_use_cases: AuditLogUseCases;
 }
@@ -99,6 +105,7 @@ function create_in_memory_repository_container(): RepositoryContainer {
     fixture_repository: get_fixture_repository(),
     activity_repository: get_activity_repository(),
     activity_category_repository: get_activity_category_repository(),
+    calendar_token_repository: new InMemoryCalendarTokenRepository(),
     system_user_repository: new InMemorySystemUserRepository(),
     audit_log_repository: new InMemoryAuditLogRepository(),
   };
@@ -132,6 +139,11 @@ function create_use_cases_container(
     activity_category_use_cases: create_activity_category_use_cases(
       repositories.activity_category_repository,
     ),
+    calendar_token_use_cases: create_calendar_token_use_cases({
+      calendar_token_repository: repositories.calendar_token_repository,
+      get_base_url: () =>
+        typeof window !== "undefined" ? window.location.origin : "",
+    }),
     system_user_use_cases: create_system_user_use_cases(
       repositories.system_user_repository,
     ),

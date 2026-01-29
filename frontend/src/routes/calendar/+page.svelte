@@ -16,6 +16,7 @@
 
   import LoadingStateWrapper from "$lib/presentation/components/ui/LoadingStateWrapper.svelte";
   import Toast from "$lib/presentation/components/ui/Toast.svelte";
+  import CalendarSubscriptionManager from "$lib/presentation/components/calendar/CalendarSubscriptionManager.svelte";
   import { get_use_cases_container } from "$lib/infrastructure/container";
   import { theme_store } from "$lib/presentation/stores/theme";
   import type { Organization } from "$lib/core/entities/Organization";
@@ -35,7 +36,6 @@
     sign_out_of_google_calendar,
     is_signed_in_to_google,
     sync_activity_to_google_calendar,
-    sync_multiple_activities_to_google,
     type GoogleCalendarAuthStatus,
   } from "$lib/adapters/services/GoogleCalendarService";
 
@@ -57,7 +57,7 @@
 
   let show_create_modal: boolean = $state(false);
   let show_category_modal: boolean = $state(false);
-  let show_sync_modal: boolean = $state(false);
+  let show_subscribe_modal: boolean = $state(false);
   let editing_activity: Activity | null = $state(null);
 
   let new_activity_title: string = $state("");
@@ -79,7 +79,6 @@
   let google_auth_status: GoogleCalendarAuthStatus = $state({
     is_signed_in: false,
   });
-  let google_sync_in_progress: boolean = $state(false);
 
   let calendar_container_element: HTMLDivElement | null = $state(null);
   let calendar_instance: ReturnType<typeof createCalendar> | null = null;
@@ -748,38 +747,6 @@
     google_auth_status = { is_signed_in: false };
   }
 
-  async function handle_sync_all_to_google(): Promise<void> {
-    if (!google_auth_status.is_signed_in) {
-      show_toast("Please sign in to Google Calendar first", "warning");
-      return;
-    }
-
-    google_sync_in_progress = true;
-
-    const activities_to_sync = calendar_events
-      .filter((e) => e.activity.google_calendar_sync_enabled)
-      .map((e) => e.activity);
-
-    const sync_result =
-      await sync_multiple_activities_to_google(activities_to_sync);
-
-    google_sync_in_progress = false;
-
-    if (sync_result.success) {
-      show_toast(
-        `Successfully synced ${sync_result.synced_count} activities to Google Calendar`,
-        "success",
-      );
-    } else {
-      show_toast(
-        `Synced ${sync_result.synced_count} activities. Failed: ${sync_result.failed_count}`,
-        "error",
-      );
-    }
-
-    show_sync_modal = false;
-  }
-
   $effect(() => {
     if (
       calendar_container_element &&
@@ -911,105 +878,26 @@
               + Add Activity
             </button>
 
-            {#if google_calendar_configured}
-              {#if google_auth_status.is_signed_in}
-                <div class="flex items-center gap-2">
-                  <button
-                    type="button"
-                    class="btn btn-secondary-action whitespace-nowrap flex items-center gap-2"
-                    onclick={() => (show_sync_modal = true)}
-                  >
-                    <svg
-                      class="w-4 h-4"
-                      viewBox="0 0 24 24"
-                      fill="currentColor"
-                    >
-                      <path
-                        d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"
-                      />
-                    </svg>
-                    Sync to Google
-                  </button>
-                  <button
-                    type="button"
-                    class="text-sm text-accent-500 hover:text-accent-700 dark:text-accent-400 dark:hover:text-accent-200"
-                    onclick={handle_google_sign_out}
-                    title="Sign out of Google"
-                  >
-                    <svg
-                      class="w-5 h-5"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-                      />
-                    </svg>
-                  </button>
-                </div>
-              {:else}
-                <button
-                  type="button"
-                  class="btn btn-secondary-action whitespace-nowrap flex items-center gap-2"
-                  onclick={handle_google_sign_in}
-                >
-                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-                    <path
-                      d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                      fill="#4285F4"
-                    />
-                    <path
-                      d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                      fill="#34A853"
-                    />
-                    <path
-                      d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                      fill="#FBBC05"
-                    />
-                    <path
-                      d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                      fill="#EA4335"
-                    />
-                  </svg>
-                  Connect Google
-                </button>
-              {/if}
-            {:else}
-              <button
-                type="button"
-                class="px-4 py-2 text-sm font-medium rounded-lg border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 whitespace-nowrap flex items-center gap-2 transition-colors"
-                onclick={() =>
-                  show_toast(
-                    "Google Calendar integration requires configuration. Please set VITE_GOOGLE_CLIENT_ID and VITE_GOOGLE_API_KEY environment variables.",
-                    "info",
-                  )}
-                title="Google Calendar not configured"
+            <button
+              type="button"
+              class="px-4 py-2 text-sm font-medium rounded-lg border-2 border-primary-500 dark:border-primary-400 bg-white dark:bg-gray-800 text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 whitespace-nowrap flex items-center gap-2 transition-colors shadow-sm"
+              onclick={() => (show_subscribe_modal = true)}
+            >
+              <svg
+                class="w-4 h-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
               >
-                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-                  <path
-                    d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                    fill="#4285F4"
-                  />
-                  <path
-                    d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                    fill="#34A853"
-                  />
-                  <path
-                    d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                    fill="#FBBC05"
-                  />
-                  <path
-                    d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                    fill="#EA4335"
-                  />
-                </svg>
-                Sync to Google Calendar
-              </button>
-            {/if}
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                />
+              </svg>
+              Subscribe to Calendar
+            </button>
           </div>
         </div>
 
@@ -1699,151 +1587,58 @@
   </div>
 {/if}
 
-{#if show_sync_modal}
+{#if show_subscribe_modal}
   <div class="fixed inset-0 z-50 overflow-y-auto">
     <div class="flex min-h-full items-center justify-center p-4">
       <button
         type="button"
         class="fixed inset-0 bg-black/50 transition-opacity cursor-default border-none p-0"
-        onclick={() => (show_sync_modal = false)}
+        onclick={() => (show_subscribe_modal = false)}
         aria-label="Close modal"
         tabindex="-1"
       ></button>
 
       <div
-        class="relative bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-md"
+        class="relative bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto"
         role="dialog"
         aria-modal="true"
-        aria-labelledby="sync-modal-title"
+        aria-labelledby="subscribe-modal-title"
       >
-        <div class="p-6">
-          <div class="flex items-center gap-3 mb-4">
-            <div
-              class="w-10 h-10 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center"
+        <div
+          class="sticky top-0 bg-white dark:bg-gray-800 p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between"
+        >
+          <h3
+            id="subscribe-modal-title"
+            class="text-lg font-semibold text-accent-900 dark:text-accent-100"
+          >
+            Subscribe to Calendar
+          </h3>
+          <button
+            type="button"
+            onclick={() => (show_subscribe_modal = false)}
+            class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+            aria-label="Close subscription modal"
+          >
+            <svg
+              class="w-5 h-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
             >
-              <svg
-                class="w-5 h-5 text-primary-600 dark:text-primary-400"
-                viewBox="0 0 24 24"
-                fill="currentColor"
-              >
-                <path
-                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                  fill="#4285F4"
-                />
-                <path
-                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                  fill="#34A853"
-                />
-                <path
-                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                  fill="#FBBC05"
-                />
-                <path
-                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                  fill="#EA4335"
-                />
-              </svg>
-            </div>
-            <div>
-              <h3
-                id="sync-modal-title"
-                class="text-lg font-semibold text-accent-900 dark:text-accent-100"
-              >
-                Google Calendar Sync
-              </h3>
-              <p class="text-sm text-accent-600 dark:text-accent-400">
-                Sync your activities to Google Calendar
-              </p>
-            </div>
-          </div>
-
-          <div class="space-y-4">
-            <div class="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-              <div class="flex items-center justify-between mb-2">
-                <span
-                  class="text-sm font-medium text-accent-700 dark:text-accent-300"
-                >
-                  Activities to sync:
-                </span>
-                <span
-                  class="text-lg font-semibold text-primary-600 dark:text-primary-400"
-                >
-                  {calendar_events.filter(
-                    (e) => e.activity.google_calendar_sync_enabled,
-                  ).length}
-                </span>
-              </div>
-              <p class="text-xs text-accent-500 dark:text-accent-400">
-                Only activities with Google sync enabled will be synced. Enable
-                sync for individual activities when creating or editing them.
-              </p>
-            </div>
-
-            {#if google_auth_status.user_email}
-              <div
-                class="flex items-center gap-2 text-sm text-accent-600 dark:text-accent-400"
-              >
-                <svg
-                  class="w-4 h-4 text-green-500"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M5 13l4 4L19 7"
-                  />
-                </svg>
-                <span>Signed in as {google_auth_status.user_email}</span>
-              </div>
-            {/if}
-          </div>
-
-          <div class="flex justify-end gap-3 pt-6">
-            <button
-              type="button"
-              onclick={() => (show_sync_modal = false)}
-              class="px-4 py-2 text-sm font-medium text-accent-700 dark:text-accent-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600"
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              onclick={handle_sync_all_to_google}
-              disabled={google_sync_in_progress ||
-                calendar_events.filter(
-                  (e) => e.activity.google_calendar_sync_enabled,
-                ).length === 0}
-              class="btn btn-primary-action flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {#if google_sync_in_progress}
-                <svg
-                  class="animate-spin w-4 h-4"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <circle
-                    class="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    stroke-width="4"
-                  ></circle>
-                  <path
-                    class="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                  ></path>
-                </svg>
-                Syncing...
-              {:else}
-                Sync Now
-              {/if}
-            </button>
-          </div>
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
+        </div>
+        <div class="p-4">
+          <CalendarSubscriptionManager
+            organization_id={selected_organization_id}
+            user_id="default-user"
+          />
         </div>
       </div>
     </div>

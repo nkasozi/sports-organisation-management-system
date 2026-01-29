@@ -12,6 +12,10 @@
   } from "$lib/presentation/stores/branding";
   import Toast from "$lib/presentation/components/ui/Toast.svelte";
   import ImageUpload from "$lib/presentation/components/ui/ImageUpload.svelte";
+  import CalendarSubscriptionManager from "$lib/presentation/components/calendar/CalendarSubscriptionManager.svelte";
+  import { current_user_store } from "$lib/presentation/stores/currentUser";
+  import { get_use_cases_container } from "$lib/infrastructure/container";
+  import type { Organization } from "$lib/core/entities/Organization";
 
   const DEFAULT_LOGO_SVG =
     "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%23ffffff'%3E%3Cpath fill-rule='evenodd' d='M12.395 2.553a1 1 0 00-1.45-.385c-.345.23-.614.558-.822.88-.214.33-.403.713-.57 1.116-.334.804-.614 1.768-.84 2.734a31.365 31.365 0 00-.613 3.58 2.64 2.64 0 01-.945-1.067c-.328-.68-.398-1.534-.398-2.654A1 1 0 005.05 6.05 6.981 6.981 0 003 11a7 7 0 1011.95-4.95c-.592-.591-.98-.985-1.348-1.467-.363-.476-.724-1.063-1.207-2.03zM12.12 15.12A3 3 0 017 13s.879.5 2.5.5c0-1 .5-4 1.25-4.5.5 1 .786 1.293 1.371 1.879A2.99 2.99 0 0113 13a2.99 2.99 0 01-.879 2.121z' clip-rule='evenodd'/%3E%3C/svg%3E";
@@ -34,6 +38,8 @@
   let notifications_enabled: boolean = true;
   let email_notifications: boolean = true;
   let social_media_links: SocialMediaLink[] = [];
+  let organizations: Organization[] = [];
+  let selected_organization_id: string = "";
 
   const social_media_options = [
     { value: "twitter", label: "Twitter", icon: "twitter" },
@@ -46,7 +52,7 @@
     { value: "discord", label: "Discord", icon: "discord" },
   ];
 
-  onMount(() => {
+  onMount(async () => {
     organization_name = $branding_store.organization_name;
     organization_logo_url = $branding_store.organization_logo_url;
     organization_tagline = $branding_store.organization_tagline || "";
@@ -64,7 +70,18 @@
     selected_secondary_color = map_theme_color_to_option(
       $theme_store.secondary_color,
     );
+
+    const use_cases = get_use_cases_container();
+    const orgs_result = await use_cases.organization_use_cases.list({});
+    if (orgs_result.success && orgs_result.data?.items?.length > 0) {
+      organizations = orgs_result.data.items;
+      selected_organization_id = organizations[0].id;
+    }
   });
+
+  function get_current_user_id(): string {
+    return $current_user_store?.id ?? "default_user";
+  }
 
   const color_options = [
     {
@@ -1096,6 +1113,57 @@
       <p class="text-xs text-accent-500 dark:text-accent-400">
         Export data as JSON for backup or migration purposes
       </p>
+    </div>
+  </div>
+
+  <div
+    class="bg-white dark:bg-accent-800 rounded-lg shadow-sm border border-accent-200 dark:border-accent-700"
+  >
+    <div class="p-6 border-b border-accent-200 dark:border-accent-700">
+      <div class="flex items-center gap-3">
+        <div
+          class="w-10 h-10 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center"
+        >
+          <svg
+            class="w-5 h-5 text-primary-600 dark:text-primary-400"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+            />
+          </svg>
+        </div>
+        <div>
+          <h2
+            class="text-lg font-semibold text-accent-900 dark:text-accent-100"
+          >
+            Calendar Subscriptions (iCal)
+          </h2>
+          <p class="text-sm text-accent-500 dark:text-accent-400 mt-1">
+            Subscribe to your calendar in any app that supports iCal feeds
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="p-6">
+      {#if selected_organization_id}
+        <CalendarSubscriptionManager
+          organization_id={selected_organization_id}
+          user_id={get_current_user_id()}
+          on:feed_created={() =>
+            show_toast("Calendar subscription created!", "success")}
+        />
+      {:else}
+        <p class="text-accent-500 dark:text-accent-400 text-sm">
+          Loading organization data...
+        </p>
+      {/if}
     </div>
   </div>
 </div>

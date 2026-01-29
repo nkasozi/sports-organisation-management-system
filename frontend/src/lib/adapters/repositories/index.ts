@@ -15,3 +15,4 @@ export * from "./InMemoryVenueRepository";
 export * from "./InMemoryJerseyColorRepository";
 export * from "./InMemoryPlayerProfileRepository";
 export * from "./InMemoryProfileLinkRepository";
+export * from "./InMemoryCalendarTokenRepository";
