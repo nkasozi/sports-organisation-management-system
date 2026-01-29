@@ -265,7 +265,7 @@ const COLOR_PALETTES: Record<ThemeColorName, ColorPalette> = {
 };
 
 const DEFAULT_THEME: ThemeConfig = {
-  mode: "light",
+  mode: "dark",
   primary_color: "red",
   secondary_color: "blue",
 };
