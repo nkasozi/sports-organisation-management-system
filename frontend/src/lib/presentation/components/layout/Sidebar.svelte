@@ -46,7 +46,9 @@
     items: NavigationItem[];
   }
 
-  const navigation_groups: NavigationGroup[] = [
+  $: calendar_menu_item_name = `${$branding_store.organization_name} ${new Date().getFullYear()} Calendar`;
+
+  $: navigation_groups = [
     {
       group_name: "Home",
       items: [
@@ -56,7 +58,7 @@
           icon: "M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6",
         },
         {
-          name: `${$branding_store.organization_name} ${new Date().getFullYear()} Calendar`,
+          name: calendar_menu_item_name,
           href: "/calendar",
           icon: "M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z",
         },
@@ -217,9 +219,9 @@
         },
       ],
     },
-  ];
+  ] as NavigationGroup[];
 
-  const navigation_items = navigation_groups.flatMap((group) => group.items);
+  $: navigation_items = navigation_groups.flatMap((group) => group.items);
 
   // Settings items
   const settings_items = [
@@ -415,7 +417,7 @@
                 />
               </svg>
               {#if sidebar_open}
-                <span class="truncate">{item.name}</span>
+                <span class="whitespace-normal break-words">{item.name}</span>
               {/if}
             </a>
           {/each}
@@ -459,7 +461,7 @@
               />
             </svg>
             {#if sidebar_open}
-              <span class="truncate">{item.name}</span>
+              <span class="whitespace-normal break-words">{item.name}</span>
             {/if}
           </a>
         {/each}
