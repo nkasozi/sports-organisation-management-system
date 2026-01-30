@@ -331,27 +331,28 @@
   }
 
   function get_status_badge_class(status: string): string {
-    const base_classes = "px-2 py-1 text-xs font-medium rounded-full";
+    const base_classes =
+      "px-2 py-0.5 text-xs font-semibold rounded-full uppercase tracking-wide whitespace-nowrap";
     switch (status) {
       case "scheduled":
         return (
           base_classes +
-          " bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300"
+          " bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300"
         );
       case "in_progress":
         return (
           base_classes +
-          " bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300"
+          " bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300"
         );
       case "postponed":
         return (
           base_classes +
-          " bg-purple-100 text-purple-800 dark:bg-purple-900/50 dark:text-purple-300"
+          " bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300"
         );
       default:
         return (
           base_classes +
-          " bg-accent-100 text-accent-800 dark:bg-accent-700 dark:text-accent-200"
+          " bg-accent-100 text-accent-700 dark:bg-accent-700 dark:text-accent-200"
         );
     }
   }
@@ -363,7 +364,7 @@
       case "failed":
         return "✗";
       case "checking":
-        return "⟳";
+        return "◌";
       default:
         return "○";
     }
@@ -374,9 +375,9 @@
       case "passed":
         return "text-emerald-600 dark:text-emerald-400";
       case "failed":
-        return "text-red-600 dark:text-red-400 font-bold";
+        return "text-red-600 dark:text-red-400";
       case "checking":
-        return "text-blue-600 dark:text-blue-400 animate-spin";
+        return "text-blue-600 dark:text-blue-400 animate-pulse";
       default:
         return "text-accent-400 dark:text-accent-500";
     }
@@ -385,9 +386,11 @@
   function get_check_container_class(status: string): string {
     switch (status) {
       case "failed":
-        return "bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg p-3";
+        return "bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/50 rounded-lg p-3";
+      case "passed":
+        return "py-1";
       default:
-        return "";
+        return "py-1";
     }
   }
 
@@ -397,12 +400,14 @@
   }
 </script>
 
-<div class="container mx-auto px-4 py-8">
-  <div class="mb-8">
-    <h1 class="text-3xl font-bold mb-2 text-accent-900 dark:text-white">
+<div class="container mx-auto px-3 sm:px-4 py-4 sm:py-8 max-w-5xl">
+  <div class="mb-6 sm:mb-8">
+    <h1
+      class="text-2xl sm:text-3xl font-bold mb-1 sm:mb-2 text-accent-900 dark:text-white"
+    >
       Live Game Management
     </h1>
-    <p class="text-accent-600 dark:text-accent-300">
+    <p class="text-sm sm:text-base text-accent-600 dark:text-accent-300">
       Start and manage fixtures in real-time
     </p>
   </div>
@@ -410,51 +415,136 @@
   {#if is_loading}
     <div class="flex justify-center items-center py-12">
       <div
-        class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 dark:border-blue-400"
+        class="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-b-2 border-blue-600 dark:border-blue-400"
       ></div>
     </div>
   {:else if incomplete_fixtures.length === 0}
-    <div class="bg-accent-50 dark:bg-accent-800 rounded-lg p-8 text-center">
+    <div
+      class="bg-accent-50 dark:bg-accent-800 rounded-xl p-6 sm:p-8 text-center"
+    >
+      <div
+        class="w-16 h-16 mx-auto mb-4 bg-accent-100 dark:bg-accent-700 rounded-full flex items-center justify-center"
+      >
+        <svg
+          class="w-8 h-8 text-accent-400 dark:text-accent-500"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
+          ></path>
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+          ></path>
+        </svg>
+      </div>
       <p class="text-accent-600 dark:text-accent-300 mb-4">
-        No incomplete fixtures found
+        No upcoming fixtures to start
       </p>
       <a
         href="/fixtures"
-        class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 underline"
+        class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
       >
-        Create a new fixture
+        <svg
+          class="w-4 h-4"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M12 4v16m8-8H4"
+          ></path>
+        </svg>
+        Create Fixture
       </a>
     </div>
   {:else}
-    <div class="space-y-4">
+    <div class="space-y-3 sm:space-y-4">
       {#each incomplete_fixtures as fixture (fixture.id)}
         <div
-          class="bg-white dark:bg-accent-800 rounded-lg shadow-md p-6 border border-accent-200 dark:border-accent-700"
+          class="bg-white dark:bg-accent-800 rounded-xl shadow-sm border border-accent-200 dark:border-accent-700 overflow-hidden"
         >
-          <div
-            class="flex flex-col md:flex-row md:items-center md:justify-between gap-4"
-          >
-            <div class="flex-1">
-              <div class="flex items-center gap-3 mb-2">
-                <h3
-                  class="text-lg font-semibold text-accent-900 dark:text-white"
+          <div class="p-4 sm:p-5">
+            <div class="flex flex-col gap-4">
+              <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                <div class="flex-1 min-w-0">
+                  <div class="flex flex-wrap items-center gap-2">
+                    <h3
+                      class="text-base sm:text-lg font-semibold text-accent-900 dark:text-white"
+                    >
+                      {get_team_name(fixture.home_team_id)}
+                      <span
+                        class="text-accent-400 dark:text-accent-500 font-normal mx-1"
+                        >vs</span
+                      >
+                      {get_team_name(fixture.away_team_id)}
+                    </h3>
+                    <span class={get_status_badge_class(fixture.status)}>
+                      {fixture.status.replace("_", " ")}
+                    </span>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  on:click={() => handle_start_click(fixture)}
+                  disabled={is_starting[fixture.id || ""]}
+                  class="hidden sm:inline-flex flex-shrink-0 items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:bg-accent-400 dark:disabled:bg-accent-600 disabled:cursor-not-allowed transition-colors text-sm font-medium"
                 >
-                  {get_team_name(fixture.home_team_id)} vs {get_team_name(
-                    fixture.away_team_id,
-                  )}
-                </h3>
-                <span class={get_status_badge_class(fixture.status)}>
-                  {fixture.status}
-                </span>
+                  {#if is_starting[fixture.id || ""]}
+                    <svg
+                      class="h-5 w-5 animate-spin"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        class="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        stroke-width="4"
+                      ></circle>
+                      <path
+                        class="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
+                    </svg>
+                    Starting...
+                  {:else}
+                    <svg
+                      class="h-5 w-5"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path
+                        fill-rule="evenodd"
+                        d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"
+                        clip-rule="evenodd"
+                      />
+                    </svg>
+                    Start Game
+                  {/if}
+                </button>
               </div>
+
               <div
-                class="flex flex-wrap items-center gap-2 text-sm text-accent-600 dark:text-accent-300 mb-1"
+                class="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-x-6 sm:gap-y-2 text-sm"
               >
-                <span
-                  class="inline-flex items-center gap-1 px-2 py-0.5 bg-teal-100 dark:bg-teal-900/40 text-teal-700 dark:text-teal-300 rounded-full text-xs font-medium"
-                >
+                <div class="flex items-center gap-2">
                   <svg
-                    class="w-3 h-3"
+                    class="w-4 h-4 text-teal-500 dark:text-teal-400 flex-shrink-0"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -466,13 +556,14 @@
                       d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
                     ></path>
                   </svg>
-                  {get_competition_name(fixture.competition_id)}
-                </span>
-                <span
-                  class="inline-flex items-center gap-1 px-2 py-0.5 bg-sky-100 dark:bg-sky-900/40 text-sky-700 dark:text-sky-300 rounded-full text-xs font-medium"
-                >
+                  <span class="text-accent-600 dark:text-accent-400 truncate">
+                    {get_competition_name(fixture.competition_id)}
+                  </span>
+                </div>
+
+                <div class="flex items-center gap-2">
                   <svg
-                    class="w-3 h-3"
+                    class="w-4 h-4 text-sky-500 dark:text-sky-400 flex-shrink-0"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -490,100 +581,150 @@
                       d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                     ></path>
                   </svg>
-                  {get_sport_name(fixture.competition_id)}
-                </span>
-              </div>
-              <p class="text-sm text-accent-600 dark:text-accent-300">
-                {format_date_time(fixture.scheduled_date)}
-              </p>
-              {#if fixture.venue}
-                <p class="text-sm text-accent-500 dark:text-accent-400">
-                  Venue: {fixture.venue}
-                </p>
-              {/if}
-            </div>
+                  <span class="text-accent-600 dark:text-accent-400">
+                    {get_sport_name(fixture.competition_id)}
+                  </span>
+                </div>
 
-            <div class="flex items-center gap-3">
-              <button
-                type="button"
-                on:click={() => handle_start_click(fixture)}
-                disabled={is_starting[fixture.id || ""]}
-                class="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:bg-accent-400 dark:disabled:bg-accent-600 disabled:cursor-not-allowed transition-colors"
-              >
-                {#if is_starting[fixture.id || ""]}
+                <div class="flex items-center gap-2">
                   <svg
-                    class="h-5 w-5 animate-spin"
+                    class="w-4 h-4 text-amber-500 dark:text-amber-400 flex-shrink-0"
                     fill="none"
+                    stroke="currentColor"
                     viewBox="0 0 24 24"
                   >
-                    <circle
-                      class="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      stroke-width="4"
-                    ></circle>
                     <path
-                      class="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
                     ></path>
                   </svg>
-                  Starting...
-                {:else}
-                  <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-                    <path
-                      fill-rule="evenodd"
-                      d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"
-                      clip-rule="evenodd"
-                    />
-                  </svg>
-                  Start Game
+                  <span class="text-accent-600 dark:text-accent-400">
+                    {format_date_time(fixture.scheduled_date)}
+                  </span>
+                </div>
+
+                {#if fixture.venue}
+                  <div class="flex items-center gap-2">
+                    <svg
+                      class="w-4 h-4 text-rose-500 dark:text-rose-400 flex-shrink-0"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                      ></path>
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                      ></path>
+                    </svg>
+                    <span class="text-accent-600 dark:text-accent-400 truncate">
+                      {fixture.venue}
+                    </span>
+                  </div>
                 {/if}
-              </button>
+              </div>
+
+              <div class="pt-2 sm:hidden">
+                <button
+                  type="button"
+                  on:click={() => handle_start_click(fixture)}
+                  disabled={is_starting[fixture.id || ""]}
+                  class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:bg-accent-400 dark:disabled:bg-accent-600 disabled:cursor-not-allowed transition-colors text-sm font-medium"
+                >
+                  {#if is_starting[fixture.id || ""]}
+                    <svg
+                      class="h-5 w-5 animate-spin"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        class="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        stroke-width="4"
+                      ></circle>
+                      <path
+                        class="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
+                    </svg>
+                    Starting...
+                  {:else}
+                    <svg
+                      class="h-5 w-5"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path
+                        fill-rule="evenodd"
+                        d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"
+                        clip-rule="evenodd"
+                      />
+                    </svg>
+                    Start Game
+                  {/if}
+                </button>
+              </div>
             </div>
           </div>
 
           {#if current_checks[fixture.id || ""] && current_checks[fixture.id || ""].length > 0}
-            <div
-              class="mt-4 pt-4 border-t border-accent-200 dark:border-accent-700"
-            >
-              <h4
-                class="text-sm font-medium mb-2 text-accent-800 dark:text-accent-200"
+            <div class="px-4 sm:px-5 pb-4 sm:pb-5 pt-0">
+              <div
+                class="border-t border-accent-200 dark:border-accent-700 pt-4"
               >
-                Pre-flight Checks:
-              </h4>
-              <div class="space-y-2">
-                {#each current_checks[fixture.id || ""] as check}
-                  <div
-                    class="flex items-start gap-2 {get_check_container_class(
-                      check.status,
-                    )}"
-                  >
-                    <span class="text-lg {get_check_class(check.status)}">
-                      {get_check_icon(check.status)}
-                    </span>
-                    <div class="flex-1">
-                      <p
-                        class="text-sm {check.status === 'failed'
-                          ? 'text-red-700 dark:text-red-300 font-medium'
-                          : 'text-accent-700 dark:text-accent-300'}"
+                <h4
+                  class="text-xs font-semibold uppercase tracking-wider text-accent-500 dark:text-accent-400 mb-3"
+                >
+                  Pre-flight Checks
+                </h4>
+                <div class="space-y-2">
+                  {#each current_checks[fixture.id || ""] as check}
+                    <div
+                      class="flex items-start gap-3 {get_check_container_class(
+                        check.status,
+                      )}"
+                    >
+                      <span
+                        class="flex-shrink-0 w-5 h-5 flex items-center justify-center text-base {get_check_class(
+                          check.status,
+                        )}"
                       >
-                        {check.message}
-                      </p>
-                      {#if check.fix_suggestion}
+                        {get_check_icon(check.status)}
+                      </span>
+                      <div class="flex-1 min-w-0">
                         <p
-                          class="text-xs {check.status === 'failed'
-                            ? 'text-red-600 dark:text-red-400'
-                            : 'text-accent-600 dark:text-accent-400'} mt-1"
+                          class="text-sm {check.status === 'failed'
+                            ? 'text-red-700 dark:text-red-300 font-medium'
+                            : 'text-accent-700 dark:text-accent-300'}"
                         >
-                          💡 {check.fix_suggestion}
+                          {check.message}
                         </p>
-                      {/if}
+                        {#if check.fix_suggestion}
+                          <p
+                            class="text-xs mt-1 {check.status === 'failed'
+                              ? 'text-red-600 dark:text-red-400'
+                              : 'text-accent-600 dark:text-accent-400'}"
+                          >
+                            💡 {check.fix_suggestion}
+                          </p>
+                        {/if}
+                      </div>
                     </div>
-                  </div>
-                {/each}
+                  {/each}
+                </div>
               </div>
             </div>
           {/if}
