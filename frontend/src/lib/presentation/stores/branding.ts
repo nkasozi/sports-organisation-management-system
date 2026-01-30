@@ -23,12 +23,12 @@ export interface BrandingConfig {
 }
 
 const default_branding: BrandingConfig = {
-  organization_name: "Sports Organisation",
+  organization_name: "Uganda Hockey",
   organization_logo_url: "",
   organization_tagline:
-    "Track competitions, teams, players, officials and fixtures for your sport all in one place.",
-  organization_email: "contact@sportsorg.example",
-  organization_address: "123 Sports Avenue, Stadium City, SC 12345",
+    "Governing body for field hockey in Uganda - managing competitions, teams, players and officials.",
+  organization_email: "info@ugandahockey.org",
+  organization_address: "Lugogo Hockey Stadium, Kampala, Uganda",
   social_media_links: [
     { platform: "twitter", url: "" },
     { platform: "github", url: "" },

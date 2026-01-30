@@ -108,66 +108,20 @@ export class InMemoryOrganizationRepository
 function create_default_organizations(): Organization[] {
   const now = new Date().toISOString();
 
-  const football_sport_id = get_sport_id_by_code_sync("FOOTBALL") || "";
-  const basketball_sport_id = get_sport_id_by_code_sync("BASKETBALL") || "";
   const field_hockey_sport_id = get_sport_id_by_code_sync("FIELD_HOCKEY") || "";
 
   return [
     {
       id: "org_default_1",
-      name: "City Football League",
+      name: "Uganda Hockey Association",
       description:
-        "Local football league for amateur and semi-professional teams",
-      sport_id: football_sport_id,
-      founded_date: "2018-03-15",
-      contact_email: "admin@cityfootball.com",
-      contact_phone: "+1-555-0123",
-      address: "123 Stadium Road, City Center",
-      website: "https://cityfootball.com",
-      status: "active",
-      created_at: now,
-      updated_at: now,
-    },
-    {
-      id: "org_default_2",
-      name: "Regional Basketball Association",
-      description:
-        "Professional basketball league serving the greater metropolitan area",
-      sport_id: basketball_sport_id,
-      founded_date: "2015-08-01",
-      contact_email: "info@rbabasketball.com",
-      contact_phone: "+1-555-0456",
-      address: "456 Arena Boulevard",
-      website: "https://rbabasketball.com",
-      status: "active",
-      created_at: now,
-      updated_at: now,
-    },
-    {
-      id: "org_default_3",
-      name: "Cricket Champions Network",
-      description: "Premier cricket organization hosting national tournaments",
-      sport_id: football_sport_id,
-      founded_date: "2020-01-10",
-      contact_email: "contact@cricketnetwork.com",
-      contact_phone: "+1-555-0789",
-      address: "789 Pitch Lane",
-      website: "https://cricketnetwork.com",
-      status: "active",
-      created_at: now,
-      updated_at: now,
-    },
-    {
-      id: "org_default_4",
-      name: "National Field Hockey Association",
-      description:
-        "Premier organization for field hockey competitions and development",
+        "The governing body for field hockey in Uganda - organizing national competitions, developing players, and promoting hockey across the country",
       sport_id: field_hockey_sport_id,
-      founded_date: "1995-01-15",
-      contact_email: "info@fieldhockey.org",
-      contact_phone: "+1-555-0100",
-      address: "123 Hockey Lane, Sports City",
-      website: "https://fieldhockey.org",
+      founded_date: "1972-06-15",
+      contact_email: "info@ugandahockey.org",
+      contact_phone: "+256-700-123-456",
+      address: "Lugogo Hockey Stadium, Kampala, Uganda",
+      website: "https://ugandahockey.org",
       status: "active",
       created_at: now,
       updated_at: now,

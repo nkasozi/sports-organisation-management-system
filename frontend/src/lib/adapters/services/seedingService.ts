@@ -413,7 +413,7 @@ export async function seed_all_data_if_needed(): Promise<boolean> {
     existing_officials.data.total_count === 0
   ) {
     const seed_officials = create_seed_officials(
-      SEED_ORGANIZATION_IDS.CITY_FOOTBALL_LEAGUE,
+      SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
     );
     official_repository.seed_with_data(seed_officials);
     emit_entity_created_events(
