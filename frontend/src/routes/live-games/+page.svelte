@@ -476,7 +476,9 @@
         >
           <div class="p-4 sm:p-5">
             <div class="flex flex-col gap-4">
-              <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+              <div
+                class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3"
+              >
                 <div class="flex-1 min-w-0">
                   <div class="flex flex-wrap items-center gap-2">
                     <h3
