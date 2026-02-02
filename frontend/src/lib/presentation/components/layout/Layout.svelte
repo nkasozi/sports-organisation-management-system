@@ -8,6 +8,12 @@
   import Sidebar from "$lib/presentation/components/layout/Sidebar.svelte";
   import Footer from "$lib/presentation/components/layout/Footer.svelte";
   import ThemeProvider from "$lib/presentation/components/theme/ThemeProvider.svelte";
+  import MergeConflictScreen from "$lib/presentation/components/MergeConflictScreen.svelte";
+  import { sync_store } from "$lib/presentation/stores/syncStore";
+  import type {
+    ConflictRecord,
+    ConflictResolutionAction,
+  } from "$lib/infrastructure/sync/conflictTypes";
 
   let sidebar_open = false;
   let is_mobile = true;
@@ -19,7 +25,6 @@
   };
   let theme_classes: any = {};
 
-  // Subscribe to theme changes
   $: theme_classes = get_theme_classes(theme_config);
 
   function handle_resize(): void {
@@ -51,6 +56,21 @@
 
   function close_sidebar(): void {
     sidebar_open = false;
+  }
+
+  async function handle_conflict_resolve(
+    event: CustomEvent<{
+      conflict: ConflictRecord;
+      action: ConflictResolutionAction;
+      merged_data?: Record<string, unknown>;
+    }>,
+  ): Promise<void> {
+    const { conflict, action, merged_data } = event.detail;
+    await sync_store.resolve_conflict_and_sync(conflict, action, merged_data);
+  }
+
+  function handle_conflict_dismiss(): void {
+    console.log("[Layout] Conflict resolution dismissed");
   }
 </script>
 
@@ -91,6 +111,12 @@
         aria-label="Close sidebar"
       ></div>
     {/if}
+
+    <!-- Merge Conflict Screen (modal overlay) -->
+    <MergeConflictScreen
+      on:resolve={handle_conflict_resolve}
+      on:dismiss={handle_conflict_dismiss}
+    />
   </div>
 </ThemeProvider>
 

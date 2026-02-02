@@ -191,5 +191,4 @@ export async function reset_player_team_membership_repository(): Promise<void> {
   const repository =
     get_player_team_membership_repository() as InBrowserPlayerTeamMembershipRepository;
   await repository.clear_all_data();
-  await repository.seed_with_data(create_default_player_team_memberships());
 }

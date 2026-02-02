@@ -18,6 +18,8 @@ import {
 } from "./seedingService";
 import { initialize_audit_event_handlers } from "$lib/infrastructure/handlers/AuditEventHandler";
 import { first_time_setup_store } from "$lib/presentation/stores/firstTimeSetup";
+import { ConvexClient } from "convex/browser";
+import { sync_store } from "$lib/presentation/stores/syncStore";
 
 let initialized = false;
 
@@ -37,6 +39,35 @@ async function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+function initialize_convex_client(): boolean {
+  const convex_url = import.meta.env.VITE_CONVEX_URL;
+
+  if (!convex_url) {
+    console.log(
+      "[Convex] No VITE_CONVEX_URL configured, skipping Convex initialization",
+    );
+    return false;
+  }
+
+  try {
+    const client = new ConvexClient(convex_url);
+    sync_store.set_convex_client({
+      mutation: (name: string, args: Record<string, unknown>) =>
+        client.mutation(name as never, args),
+      query: (name: string, args: Record<string, unknown>) =>
+        client.query(name as never, args),
+    });
+    console.log(
+      "[Convex] Client initialized successfully with URL:",
+      convex_url,
+    );
+    return true;
+  } catch (error) {
+    console.error("[Convex] Failed to initialize client:", error);
+    return false;
+  }
+}
+
 export async function initialize_app_data(): Promise<boolean> {
   if (initialized) return true;
   if (typeof window === "undefined") return false;
@@ -54,6 +85,8 @@ export async function initialize_app_data(): Promise<boolean> {
     await delay(300);
   }
   initialize_audit_event_handlers();
+
+  initialize_convex_client();
 
   if (is_first_time) {
     first_time_setup_store.update_progress(

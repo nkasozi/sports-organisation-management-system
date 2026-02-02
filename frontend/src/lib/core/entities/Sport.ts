@@ -93,7 +93,7 @@ export interface Sport extends BaseEntity {
   min_players_per_fixture: number;
   max_players_per_fixture: number;
 
-  additional_rules: Record<string, unknown>;
+  additional_rules: Record<string, string | number | boolean>;
 
   status: SportStatus;
 }

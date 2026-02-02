@@ -300,5 +300,4 @@ export async function initialize_player_repository(): Promise<void> {
 export async function reset_player_repository(): Promise<void> {
   const repository = get_player_repository() as InBrowserPlayerRepository;
   await repository.clear_all_data();
-  await repository.seed_with_data(create_default_players());
 }

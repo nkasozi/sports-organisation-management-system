@@ -4,13 +4,25 @@
     is_syncing,
     last_sync_time,
     sync_error,
+    sync_percentage,
+    sync_progress,
   } from "$lib/presentation/stores/syncStore";
 
   let show_details = false;
   let sync_in_progress = false;
+  let current_percentage = 0;
+  let current_table = "";
 
   is_syncing.subscribe((value) => {
     sync_in_progress = value;
+  });
+
+  sync_percentage.subscribe((value) => {
+    current_percentage = value;
+  });
+
+  sync_progress.subscribe((value) => {
+    current_table = value?.table_name ?? "";
   });
 
   let last_sync: string | null = null;
@@ -48,6 +60,11 @@
     if (error_message) return "text-red-500";
     return "text-emerald-500";
   }
+
+  function format_sync_status_text(): string {
+    if (!sync_in_progress) return format_relative_time(last_sync);
+    return `${current_percentage}%`;
+  }
 </script>
 
 <div class="relative">
@@ -71,7 +88,7 @@
       />
     </svg>
     <span class="hidden sm:inline text-accent-700 dark:text-accent-300">
-      {sync_in_progress ? "Syncing..." : format_relative_time(last_sync)}
+      {format_sync_status_text()}
     </span>
   </button>
 
@@ -115,9 +132,31 @@
                 ? 'bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300'
                 : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300'}"
           >
-            {sync_in_progress ? "Syncing" : error_message ? "Error" : "Synced"}
+            {sync_in_progress
+              ? `Syncing ${current_percentage}%`
+              : error_message
+                ? "Error"
+                : "Synced"}
           </span>
         </div>
+
+        {#if sync_in_progress}
+          <div class="space-y-2">
+            <div
+              class="w-full bg-accent-200 dark:bg-accent-700 rounded-full h-2"
+            >
+              <div
+                class="bg-blue-500 h-2 rounded-full transition-all duration-300"
+                style="width: {current_percentage}%"
+              ></div>
+            </div>
+            {#if current_table}
+              <p class="text-xs text-accent-500 dark:text-accent-400 truncate">
+                Syncing: {current_table.replace(/_/g, " ")}
+              </p>
+            {/if}
+          </div>
+        {/if}
 
         <div class="flex items-center justify-between text-sm">
           <span class="text-accent-600 dark:text-accent-400">Last Sync</span>
@@ -156,7 +195,7 @@
                 d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
               />
             </svg>
-            Syncing...
+            {current_percentage}%
           {:else}
             <svg
               class="w-4 h-4"

@@ -307,7 +307,10 @@
   <!-- Stats cards -->
   <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
     <!-- Organizations card -->
-    <div class="card p-6">
+    <a
+      href="/organizations"
+      class="card p-6 hover:ring-2 hover:ring-sky-400 dark:hover:ring-sky-500 cursor-pointer"
+    >
       <div class="flex items-center">
         <div class="flex-shrink-0">
           <div
@@ -343,10 +346,13 @@
           </p>
         </div>
       </div>
-    </div>
+    </a>
 
     <!-- Competitions card -->
-    <div class="card p-6">
+    <a
+      href="/competitions"
+      class="card p-6 hover:ring-2 hover:ring-teal-400 dark:hover:ring-teal-500 cursor-pointer"
+    >
       <div class="flex items-center">
         <div class="flex-shrink-0">
           <div
@@ -382,10 +388,13 @@
           </p>
         </div>
       </div>
-    </div>
+    </a>
 
     <!-- Teams card -->
-    <div class="card p-6">
+    <a
+      href="/teams"
+      class="card p-6 hover:ring-2 hover:ring-fuchsia-400 dark:hover:ring-fuchsia-500 cursor-pointer"
+    >
       <div class="flex items-center">
         <div class="flex-shrink-0">
           <div
@@ -421,10 +430,13 @@
           </p>
         </div>
       </div>
-    </div>
+    </a>
 
     <!-- Players card -->
-    <div class="card p-6">
+    <a
+      href="/players"
+      class="card p-6 hover:ring-2 hover:ring-sky-400 dark:hover:ring-sky-500 cursor-pointer"
+    >
       <div class="flex items-center">
         <div class="flex-shrink-0">
           <div
@@ -460,7 +472,7 @@
           </p>
         </div>
       </div>
-    </div>
+    </a>
   </div>
 
   <!-- Recent activity -->
@@ -502,7 +514,10 @@
           </div>
         {:else}
           {#each recent_competitions as competition, index}
-            <div class="flex items-center space-x-4">
+            <a
+              href="/competitions"
+              class="flex items-center space-x-4 p-2 -mx-2 rounded-lg hover:bg-accent-50 dark:hover:bg-accent-700/50 transition-colors cursor-pointer"
+            >
               <div
                 class="h-10 w-10 rounded-lg flex items-center justify-center {index %
                   3 ===
@@ -547,7 +562,7 @@
                 {competition.status.charAt(0).toUpperCase() +
                   competition.status.slice(1)}
               </span>
-            </div>
+            </a>
           {/each}
         {/if}
       </div>
@@ -595,7 +610,10 @@
           </div>
         {:else}
           {#each upcoming_fixtures as fixture, index}
-            <div class="flex items-center justify-between">
+            <a
+              href="/live-games"
+              class="flex items-center justify-between p-2 -mx-2 rounded-lg hover:bg-accent-50 dark:hover:bg-accent-700/50 transition-colors cursor-pointer"
+            >
               <div class="flex items-center space-x-3">
                 <div
                   class="h-8 w-8 rounded flex items-center justify-center {index %
@@ -656,7 +674,7 @@
               <span class="text-xs text-accent-500 dark:text-accent-400">
                 {fixture.venue || "TBD"}
               </span>
-            </div>
+            </a>
           {/each}
         {/if}
       </div>

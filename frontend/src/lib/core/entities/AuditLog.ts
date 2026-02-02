@@ -1,6 +1,11 @@
 import type { BaseEntity } from "./BaseEntity";
 
-export type AuditAction = "create" | "update" | "delete";
+export type AuditAction =
+  | "create"
+  | "update"
+  | "delete"
+  | "sync_conflict_detected"
+  | "sync_conflict_resolved";
 
 export interface FieldChange {
   field_name: string;
@@ -54,6 +59,10 @@ function get_action_past_tense(action: AuditAction): string {
       return "updated";
     case "delete":
       return "deleted";
+    case "sync_conflict_detected":
+      return "detected sync conflict for";
+    case "sync_conflict_resolved":
+      return "resolved sync conflict for";
   }
 }
 
