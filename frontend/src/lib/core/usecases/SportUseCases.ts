@@ -14,7 +14,7 @@ import type {
 } from "../interfaces/adapters/SportRepository";
 import type { QueryOptions } from "../interfaces/adapters/Repository";
 import { create_success_result, create_failure_result } from "../types/Result";
-import { get_sport_repository } from "../../adapters/repositories/InMemorySportRepository";
+import { get_sport_repository } from "../../adapters/repositories/InBrowserSportRepository";
 import type { SportUseCasesPort } from "../interfaces/ports/SportUseCasesPort";
 
 export type SportUseCases = SportUseCasesPort;

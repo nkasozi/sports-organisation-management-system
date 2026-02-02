@@ -11,7 +11,7 @@ import type {
 import type { QueryOptions } from "../interfaces/adapters/Repository";
 import type { AsyncResult, PaginatedResult } from "../types/Result";
 import { create_failure_result, create_success_result } from "../types/Result";
-import { get_game_event_type_repository } from "../../adapters/repositories/InMemoryGameEventTypeRepository";
+import { get_game_event_type_repository } from "../../adapters/repositories/InBrowserGameEventTypeRepository";
 import type { EntityOperationResult, EntityListResult } from "./BaseUseCases";
 import type { GameEventTypeUseCasesPort } from "../interfaces/ports/GameEventTypeUseCasesPort";
 

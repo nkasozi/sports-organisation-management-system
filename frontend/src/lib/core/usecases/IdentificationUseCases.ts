@@ -15,7 +15,7 @@ import {
   create_success_result,
   create_failure_result,
 } from "$lib/core/types/Result";
-import { get_identification_repository } from "$lib/adapters/repositories/InMemoryIdentificationRepository";
+import { get_identification_repository } from "$lib/adapters/repositories/InBrowserIdentificationRepository";
 import type { IdentificationUseCasesPort } from "$lib/core/interfaces/ports/IdentificationUseCasesPort";
 
 export type IdentificationUseCases = IdentificationUseCasesPort;

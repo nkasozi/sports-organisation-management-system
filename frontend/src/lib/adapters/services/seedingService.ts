@@ -1,59 +1,65 @@
-import { get_player_position_repository } from "../repositories/InMemoryPlayerPositionRepository";
-import { get_team_staff_role_repository } from "../repositories/InMemoryTeamStaffRoleRepository";
-import { get_game_official_role_repository } from "../repositories/InMemoryGameOfficialRoleRepository";
-import { get_competition_format_repository } from "../repositories/InMemoryCompetitionFormatRepository";
+import { get_player_position_repository } from "../repositories/InBrowserPlayerPositionRepository";
+import {
+  get_team_staff_role_repository,
+  InBrowserTeamStaffRoleRepository,
+} from "../repositories/InBrowserTeamStaffRoleRepository";
+import {
+  get_game_official_role_repository,
+  InBrowserGameOfficialRoleRepository,
+} from "../repositories/InBrowserGameOfficialRoleRepository";
+import { get_competition_format_repository } from "../repositories/InBrowserCompetitionFormatRepository";
 import {
   get_player_repository,
-  InMemoryPlayerRepository,
-} from "../repositories/InMemoryPlayerRepository";
+  InBrowserPlayerRepository,
+} from "../repositories/InBrowserPlayerRepository";
 import {
   get_team_repository,
-  InMemoryTeamRepository,
-} from "../repositories/InMemoryTeamRepository";
+  InBrowserTeamRepository,
+} from "../repositories/InBrowserTeamRepository";
 import {
   get_team_staff_repository,
-  InMemoryTeamStaffRepository,
-} from "../repositories/InMemoryTeamStaffRepository";
+  InBrowserTeamStaffRepository,
+} from "../repositories/InBrowserTeamStaffRepository";
 import {
   get_official_repository,
-  InMemoryOfficialRepository,
-} from "../repositories/InMemoryOfficialRepository";
+  InBrowserOfficialRepository,
+} from "../repositories/InBrowserOfficialRepository";
 import {
   get_competition_repository,
-  InMemoryCompetitionRepository,
-} from "../repositories/InMemoryCompetitionRepository";
+  InBrowserCompetitionRepository,
+} from "../repositories/InBrowserCompetitionRepository";
 import {
   get_competition_team_repository,
-  InMemoryCompetitionTeamRepository,
-} from "../repositories/InMemoryCompetitionTeamRepository";
+  InBrowserCompetitionTeamRepository,
+} from "../repositories/InBrowserCompetitionTeamRepository";
 import {
   get_player_team_membership_repository,
-  InMemoryPlayerTeamMembershipRepository,
-} from "../repositories/InMemoryPlayerTeamMembershipRepository";
+  InBrowserPlayerTeamMembershipRepository,
+} from "../repositories/InBrowserPlayerTeamMembershipRepository";
 import {
   get_fixture_repository,
-  InMemoryFixtureRepository,
-} from "../repositories/InMemoryFixtureRepository";
+  InBrowserFixtureRepository,
+} from "../repositories/InBrowserFixtureRepository";
 import {
   get_venue_repository,
-  InMemoryVenueRepository,
-} from "../repositories/InMemoryVenueRepository";
+  InBrowserVenueRepository,
+} from "../repositories/InBrowserVenueRepository";
 import {
   get_jersey_color_repository,
-  InMemoryJerseyColorRepository,
-} from "../repositories/InMemoryJerseyColorRepository";
+  InBrowserJerseyColorRepository,
+} from "../repositories/InBrowserJerseyColorRepository";
 import {
   get_player_profile_repository,
-  InMemoryPlayerProfileRepository,
-} from "../repositories/InMemoryPlayerProfileRepository";
+  InBrowserPlayerProfileRepository,
+} from "../repositories/InBrowserPlayerProfileRepository";
 import {
   get_profile_link_repository,
-  InMemoryProfileLinkRepository,
-} from "../repositories/InMemoryProfileLinkRepository";
+  InBrowserProfileLinkRepository,
+} from "../repositories/InBrowserProfileLinkRepository";
 import {
   get_team_profile_repository,
-  InMemoryTeamProfileRepository,
-} from "../repositories/InMemoryTeamProfileRepository";
+  InBrowserTeamProfileRepository,
+} from "../repositories/InBrowserTeamProfileRepository";
 import { get_repository_container } from "../../infrastructure/container";
 import {
   create_seed_players,
@@ -236,22 +242,25 @@ export async function seed_all_data_if_needed(): Promise<boolean> {
   );
 
   const player_position_repository = get_player_position_repository();
-  const team_staff_role_repository = get_team_staff_role_repository();
-  const official_role_repository = get_game_official_role_repository();
+  const team_staff_role_repository =
+    get_team_staff_role_repository() as InBrowserTeamStaffRoleRepository;
+  const official_role_repository =
+    get_game_official_role_repository() as InBrowserGameOfficialRoleRepository;
   const competition_format_repository = get_competition_format_repository();
-  const player_repository = get_player_repository() as InMemoryPlayerRepository;
-  const team_repository = get_team_repository() as InMemoryTeamRepository;
+  const player_repository =
+    get_player_repository() as InBrowserPlayerRepository;
+  const team_repository = get_team_repository() as InBrowserTeamRepository;
   const team_staff_repository =
-    get_team_staff_repository() as InMemoryTeamStaffRepository;
+    get_team_staff_repository() as InBrowserTeamStaffRepository;
   const official_repository =
-    get_official_repository() as InMemoryOfficialRepository;
+    get_official_repository() as InBrowserOfficialRepository;
   const competition_repository =
-    get_competition_repository() as InMemoryCompetitionRepository;
+    get_competition_repository() as InBrowserCompetitionRepository;
   const player_team_membership_repository =
-    get_player_team_membership_repository() as InMemoryPlayerTeamMembershipRepository;
+    get_player_team_membership_repository() as InBrowserPlayerTeamMembershipRepository;
   const fixture_repository =
-    get_fixture_repository() as InMemoryFixtureRepository;
-  const venue_repository = get_venue_repository() as InMemoryVenueRepository;
+    get_fixture_repository() as InBrowserFixtureRepository;
+  const venue_repository = get_venue_repository() as InBrowserVenueRepository;
 
   const positions_result = await player_position_repository.find_all({
     page_size: 100,
@@ -436,7 +445,7 @@ export async function seed_all_data_if_needed(): Promise<boolean> {
   }
 
   const competition_team_repository =
-    get_competition_team_repository() as InMemoryCompetitionTeamRepository;
+    get_competition_team_repository() as InBrowserCompetitionTeamRepository;
   const existing_competition_teams = await competition_team_repository.find_all(
     { page_size: 1 },
   );
@@ -484,7 +493,7 @@ export async function seed_all_data_if_needed(): Promise<boolean> {
   }
 
   const jersey_color_repository =
-    get_jersey_color_repository() as InMemoryJerseyColorRepository;
+    get_jersey_color_repository() as InBrowserJerseyColorRepository;
   const existing_jersey_colors = await jersey_color_repository.find_all({
     page_size: 1,
   });
@@ -502,7 +511,7 @@ export async function seed_all_data_if_needed(): Promise<boolean> {
   }
 
   const player_profile_repository =
-    get_player_profile_repository() as InMemoryPlayerProfileRepository;
+    get_player_profile_repository() as InBrowserPlayerProfileRepository;
   const existing_player_profiles = await player_profile_repository.find_all({
     page_size: 1,
   });
@@ -520,7 +529,7 @@ export async function seed_all_data_if_needed(): Promise<boolean> {
   }
 
   const team_profile_repository =
-    get_team_profile_repository() as InMemoryTeamProfileRepository;
+    get_team_profile_repository() as InBrowserTeamProfileRepository;
   const existing_team_profiles = await team_profile_repository.find_all({
     page_size: 1,
   });
@@ -538,7 +547,7 @@ export async function seed_all_data_if_needed(): Promise<boolean> {
   }
 
   const profile_link_repository =
-    get_profile_link_repository() as InMemoryProfileLinkRepository;
+    get_profile_link_repository() as InBrowserProfileLinkRepository;
   const existing_profile_links = await profile_link_repository.find_all({
     page_size: 1,
   });

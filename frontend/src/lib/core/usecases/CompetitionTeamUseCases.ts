@@ -11,7 +11,7 @@ import type {
 import type { QueryOptions } from "../interfaces/adapters/Repository";
 import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
 import { create_failure_result } from "../types/Result";
-import { get_competition_team_repository } from "../../adapters/repositories/InMemoryCompetitionTeamRepository";
+import { get_competition_team_repository } from "../../adapters/repositories/InBrowserCompetitionTeamRepository";
 import type { EntityOperationResult, EntityListResult } from "./BaseUseCases";
 import type { CompetitionTeamUseCasesPort } from "../interfaces/ports/CompetitionTeamUseCasesPort";
 

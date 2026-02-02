@@ -46,6 +46,9 @@
     "@tailwindcss/forms": "^0.5.7",
     "@tailwindcss/typography": "^0.5.10",
     "@vercel/analytics": "^1.6.1",
+    "convex": "^1.31.7",
+    "convex-svelte": "^0.0.12",
+    "dexie": "^4.3.0",
     "temporal-polyfill": "^0.3.0"
   }
 }

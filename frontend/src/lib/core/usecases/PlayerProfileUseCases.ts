@@ -13,7 +13,7 @@ import type {
   EntityListResult,
 } from "../entities/BaseEntity";
 import { validate_player_profile_input } from "../entities/PlayerProfile";
-import { get_player_profile_repository } from "../../adapters/repositories/InMemoryPlayerProfileRepository";
+import { get_player_profile_repository } from "../../adapters/repositories/InBrowserPlayerProfileRepository";
 
 export interface PlayerProfileUseCases {
   list(

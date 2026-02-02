@@ -5,7 +5,15 @@ import type {
   OfficialRequirement,
 } from "../../core/entities/Sport";
 import { validate_sport_input } from "../../core/entities/Sport";
-import { inMemorySportRepository } from "../repositories/InMemorySportRepository";
+import {
+  get_all_sports as repo_get_all_sports,
+  get_sport_by_id as repo_get_sport_by_id,
+  get_sport_by_code as repo_get_sport_by_code,
+  create_sport as repo_create_sport,
+  update_sport as repo_update_sport,
+  delete_sport as repo_delete_sport,
+  get_active_sports as repo_get_active_sports,
+} from "../repositories/InBrowserSportRepository";
 
 export interface SportServiceResult<T> {
   success: boolean;
@@ -15,7 +23,7 @@ export interface SportServiceResult<T> {
 
 export async function get_all_sports(): Promise<SportServiceResult<Sport[]>> {
   try {
-    const sports = await inMemorySportRepository.get_all();
+    const sports = await repo_get_all_sports();
     return { success: true, data: sports };
   } catch (error) {
     console.error("[SportService] Failed to get all sports:", error);
@@ -31,7 +39,7 @@ export async function get_sport_by_id(
   }
 
   try {
-    const sport = await inMemorySportRepository.get_by_id(id);
+    const sport = await repo_get_sport_by_id(id);
     if (!sport) {
       return { success: false, error: `Sport with ID '${id}' not found` };
     }
@@ -50,7 +58,7 @@ export async function get_sport_by_code(
   }
 
   try {
-    const sport = await inMemorySportRepository.get_by_code(code);
+    const sport = await repo_get_sport_by_code(code);
     if (!sport) {
       return { success: false, error: `Sport with code '${code}' not found` };
     }
@@ -70,9 +78,7 @@ export async function create_sport(
   }
 
   try {
-    const existing_sport = await inMemorySportRepository.get_by_code(
-      input.code,
-    );
+    const existing_sport = await repo_get_sport_by_code(input.code);
     if (existing_sport) {
       return {
         success: false,
@@ -80,7 +86,7 @@ export async function create_sport(
       };
     }
 
-    const sport = await inMemorySportRepository.create(input);
+    const sport = await repo_create_sport(input);
     return { success: true, data: sport };
   } catch (error) {
     console.error("[SportService] Failed to create sport:", error);
@@ -97,15 +103,13 @@ export async function update_sport(
   }
 
   try {
-    const existing_sport = await inMemorySportRepository.get_by_id(id);
+    const existing_sport = await repo_get_sport_by_id(id);
     if (!existing_sport) {
       return { success: false, error: `Sport with ID '${id}' not found` };
     }
 
     if (input.code && input.code !== existing_sport.code) {
-      const sport_with_code = await inMemorySportRepository.get_by_code(
-        input.code,
-      );
+      const sport_with_code = await repo_get_sport_by_code(input.code);
       if (sport_with_code && sport_with_code.id !== id) {
         return {
           success: false,
@@ -114,7 +118,7 @@ export async function update_sport(
       }
     }
 
-    const updated_sport = await inMemorySportRepository.update(id, input);
+    const updated_sport = await repo_update_sport(id, input);
     if (!updated_sport) {
       return { success: false, error: "Failed to update sport" };
     }
@@ -134,7 +138,7 @@ export async function delete_sport(
   }
 
   try {
-    const deleted = await inMemorySportRepository.delete(id);
+    const deleted = await repo_delete_sport(id);
     if (!deleted) {
       return { success: false, error: `Sport with ID '${id}' not found` };
     }
@@ -149,7 +153,7 @@ export async function get_active_sports(): Promise<
   SportServiceResult<Sport[]>
 > {
   try {
-    const sports = await inMemorySportRepository.get_active();
+    const sports = await repo_get_active_sports();
     return { success: true, data: sports };
   } catch (error) {
     console.error("[SportService] Failed to get active sports:", error);

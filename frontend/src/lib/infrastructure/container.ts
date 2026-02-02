@@ -8,17 +8,26 @@ import type { ActivityRepository } from "../core/interfaces/adapters/ActivityRep
 import type { ActivityCategoryRepository } from "../core/interfaces/adapters/ActivityCategoryRepository";
 import type { CalendarTokenRepository } from "../core/interfaces/adapters/CalendarTokenRepository";
 
-import { get_organization_repository } from "../adapters/repositories/InMemoryOrganizationRepository";
-import { get_competition_repository } from "../adapters/repositories/InMemoryCompetitionRepository";
-import { get_team_repository } from "../adapters/repositories/InMemoryTeamRepository";
-import { get_player_repository } from "../adapters/repositories/InMemoryPlayerRepository";
-import { get_official_repository } from "../adapters/repositories/InMemoryOfficialRepository";
-import { get_fixture_repository } from "../adapters/repositories/InMemoryFixtureRepository";
-import { get_activity_repository } from "../adapters/repositories/InMemoryActivityRepository";
-import { get_activity_category_repository } from "../adapters/repositories/InMemoryActivityCategoryRepository";
-import { InMemorySystemUserRepository } from "../adapters/repositories/InMemorySystemUserRepository";
-import { InMemoryAuditLogRepository } from "../adapters/repositories/InMemoryAuditLogRepository";
-import { InMemoryCalendarTokenRepository } from "../adapters/repositories/InMemoryCalendarTokenRepository";
+import {
+  get_organization_repository,
+  type InBrowserOrganizationRepository,
+} from "../adapters/repositories/InBrowserOrganizationRepository";
+import { get_competition_repository } from "../adapters/repositories/InBrowserCompetitionRepository";
+import { get_team_repository } from "../adapters/repositories/InBrowserTeamRepository";
+import { get_player_repository } from "../adapters/repositories/InBrowserPlayerRepository";
+import { get_official_repository } from "../adapters/repositories/InBrowserOfficialRepository";
+import { get_fixture_repository } from "../adapters/repositories/InBrowserFixtureRepository";
+import { get_activity_repository } from "../adapters/repositories/InBrowserActivityRepository";
+import { get_activity_category_repository } from "../adapters/repositories/InBrowserActivityCategoryRepository";
+import {
+  get_system_user_repository,
+  type InBrowserSystemUserRepository,
+} from "../adapters/repositories/InBrowserSystemUserRepository";
+import {
+  get_audit_log_repository,
+  type InBrowserAuditLogRepository,
+} from "../adapters/repositories/InBrowserAuditLogRepository";
+import { get_calendar_token_repository } from "../adapters/repositories/InBrowserCalendarTokenRepository";
 
 import type { OrganizationUseCasesPort } from "../core/interfaces/ports/OrganizationUseCasesPort";
 import type { CompetitionUseCasesPort } from "../core/interfaces/ports/CompetitionUseCasesPort";
@@ -58,8 +67,8 @@ export interface RepositoryContainer {
   activity_repository: ActivityRepository;
   activity_category_repository: ActivityCategoryRepository;
   calendar_token_repository: CalendarTokenRepository;
-  system_user_repository: InMemorySystemUserRepository;
-  audit_log_repository: InMemoryAuditLogRepository;
+  system_user_repository: InBrowserSystemUserRepository;
+  audit_log_repository: InBrowserAuditLogRepository;
 }
 
 export interface UseCasesContainer {
@@ -81,7 +90,7 @@ let use_cases_container_instance: UseCasesContainer | null = null;
 
 export function get_repository_container(): RepositoryContainer {
   if (!repository_container_instance) {
-    repository_container_instance = create_in_memory_repository_container();
+    repository_container_instance = create_in_browser_repository_container();
   }
   return repository_container_instance;
 }
@@ -95,7 +104,7 @@ export function get_use_cases_container(): UseCasesContainer {
   return use_cases_container_instance;
 }
 
-function create_in_memory_repository_container(): RepositoryContainer {
+function create_in_browser_repository_container(): RepositoryContainer {
   return {
     organization_repository: get_organization_repository(),
     competition_repository: get_competition_repository(),
@@ -105,9 +114,9 @@ function create_in_memory_repository_container(): RepositoryContainer {
     fixture_repository: get_fixture_repository(),
     activity_repository: get_activity_repository(),
     activity_category_repository: get_activity_category_repository(),
-    calendar_token_repository: new InMemoryCalendarTokenRepository(),
-    system_user_repository: new InMemorySystemUserRepository(),
-    audit_log_repository: new InMemoryAuditLogRepository(),
+    calendar_token_repository: get_calendar_token_repository(),
+    system_user_repository: get_system_user_repository(),
+    audit_log_repository: get_audit_log_repository(),
   };
 }
 

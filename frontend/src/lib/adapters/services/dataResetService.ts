@@ -1,33 +1,33 @@
-import { reset_organization_repository } from "../repositories/InMemoryOrganizationRepository";
-import { reset_team_repository } from "../repositories/InMemoryTeamRepository";
-import { reset_competition_repository } from "../repositories/InMemoryCompetitionRepository";
-import { reset_player_repository } from "../repositories/InMemoryPlayerRepository";
-import { reset_player_team_membership_repository } from "../repositories/InMemoryPlayerTeamMembershipRepository";
-import { reset_official_repository } from "../repositories/InMemoryOfficialRepository";
-import { reset_sport_repository } from "../repositories/InMemorySportRepository";
-import { reset_fixture_repository } from "../repositories/InMemoryFixtureRepository";
-import { reset_team_staff_repository } from "../repositories/InMemoryTeamStaffRepository";
+import { reset_organization_repository } from "../repositories/InBrowserOrganizationRepository";
+import { reset_team_repository } from "../repositories/InBrowserTeamRepository";
+import { reset_competition_repository } from "../repositories/InBrowserCompetitionRepository";
+import { reset_player_repository } from "../repositories/InBrowserPlayerRepository";
+import { reset_player_team_membership_repository } from "../repositories/InBrowserPlayerTeamMembershipRepository";
+import { reset_official_repository } from "../repositories/InBrowserOfficialRepository";
+import { reset_sport_repository } from "../repositories/InBrowserSportRepository";
+import { reset_fixture_repository } from "../repositories/InBrowserFixtureRepository";
+import { reset_team_staff_repository } from "../repositories/InBrowserTeamStaffRepository";
 import {
   reset_game_event_type_repository,
   get_game_event_type_repository,
-} from "../repositories/InMemoryGameEventTypeRepository";
-import { reset_player_position_repository } from "../repositories/InMemoryPlayerPositionRepository";
-import { reset_team_staff_role_repository } from "../repositories/InMemoryTeamStaffRoleRepository";
-import { reset_game_official_role_repository } from "../repositories/InMemoryGameOfficialRoleRepository";
-import { reset_competition_format_repository } from "../repositories/InMemoryCompetitionFormatRepository";
-import { reset_venue_repository } from "../repositories/InMemoryVenueRepository";
-import { reset_jersey_color_repository } from "../repositories/InMemoryJerseyColorRepository";
-import { reset_competition_team_repository } from "../repositories/InMemoryCompetitionTeamRepository";
-import { reset_player_profile_repository } from "../repositories/InMemoryPlayerProfileRepository";
-import { reset_team_profile_repository } from "../repositories/InMemoryTeamProfileRepository";
-import { reset_profile_link_repository } from "../repositories/InMemoryProfileLinkRepository";
-import { reset_qualification_repository } from "../repositories/InMemoryQualificationRepository";
-import { get_organization_repository } from "../repositories/InMemoryOrganizationRepository";
-import { get_team_repository } from "../repositories/InMemoryTeamRepository";
-import { get_competition_repository } from "../repositories/InMemoryCompetitionRepository";
-import { get_player_repository } from "../repositories/InMemoryPlayerRepository";
-import { get_player_team_membership_repository } from "../repositories/InMemoryPlayerTeamMembershipRepository";
-import { get_official_repository } from "../repositories/InMemoryOfficialRepository";
+} from "../repositories/InBrowserGameEventTypeRepository";
+import { reset_player_position_repository } from "../repositories/InBrowserPlayerPositionRepository";
+import { reset_team_staff_role_repository } from "../repositories/InBrowserTeamStaffRoleRepository";
+import { reset_game_official_role_repository } from "../repositories/InBrowserGameOfficialRoleRepository";
+import { reset_competition_format_repository } from "../repositories/InBrowserCompetitionFormatRepository";
+import { reset_venue_repository } from "../repositories/InBrowserVenueRepository";
+import { reset_jersey_color_repository } from "../repositories/InBrowserJerseyColorRepository";
+import { reset_competition_team_repository } from "../repositories/InBrowserCompetitionTeamRepository";
+import { reset_player_profile_repository } from "../repositories/InBrowserPlayerProfileRepository";
+import { reset_team_profile_repository } from "../repositories/InBrowserTeamProfileRepository";
+import { reset_profile_link_repository } from "../repositories/InBrowserProfileLinkRepository";
+import { reset_qualification_repository } from "../repositories/InBrowserQualificationRepository";
+import { get_organization_repository } from "../repositories/InBrowserOrganizationRepository";
+import { get_team_repository } from "../repositories/InBrowserTeamRepository";
+import { get_competition_repository } from "../repositories/InBrowserCompetitionRepository";
+import { get_player_repository } from "../repositories/InBrowserPlayerRepository";
+import { get_player_team_membership_repository } from "../repositories/InBrowserPlayerTeamMembershipRepository";
+import { get_official_repository } from "../repositories/InBrowserOfficialRepository";
 import { get_all_sports } from "./sportService";
 import { reset_seeding_flag, seed_all_data_if_needed } from "./seedingService";
 
@@ -46,27 +46,27 @@ export async function reset_all_data(): Promise<boolean> {
   reset_seeding_flag();
   reset_first_time_flag();
 
-  reset_sport_repository();
-  reset_organization_repository();
-  reset_team_repository();
-  reset_competition_repository();
-  reset_player_repository();
-  reset_player_team_membership_repository();
-  reset_official_repository();
-  reset_fixture_repository();
-  reset_team_staff_repository();
-  reset_game_event_type_repository();
-  reset_player_position_repository();
-  reset_team_staff_role_repository();
-  reset_game_official_role_repository();
-  reset_competition_format_repository();
-  reset_venue_repository();
-  reset_jersey_color_repository();
-  reset_competition_team_repository();
-  reset_player_profile_repository();
-  reset_team_profile_repository();
-  reset_profile_link_repository();
-  reset_qualification_repository();
+  await reset_sport_repository();
+  await reset_organization_repository();
+  await reset_team_repository();
+  await reset_competition_repository();
+  await reset_player_repository();
+  await reset_player_team_membership_repository();
+  await reset_official_repository();
+  await reset_fixture_repository();
+  await reset_team_staff_repository();
+  await reset_game_event_type_repository();
+  await reset_player_position_repository();
+  await reset_team_staff_role_repository();
+  await reset_game_official_role_repository();
+  await reset_competition_format_repository();
+  await reset_venue_repository();
+  await reset_jersey_color_repository();
+  await reset_competition_team_repository();
+  await reset_player_profile_repository();
+  await reset_team_profile_repository();
+  await reset_profile_link_repository();
+  await reset_qualification_repository();
 
   await get_all_sports();
   get_organization_repository();
@@ -76,7 +76,7 @@ export async function reset_all_data(): Promise<boolean> {
   get_player_team_membership_repository();
   get_official_repository();
   const game_event_repo = get_game_event_type_repository();
-  await game_event_repo.find_all_with_filter();
+  await game_event_repo.find_all();
 
   await seed_all_data_if_needed();
 

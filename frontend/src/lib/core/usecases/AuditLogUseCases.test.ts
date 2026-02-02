@@ -3,16 +3,20 @@ import {
   create_audit_log_use_cases,
   type AuditLogUseCases,
 } from "./AuditLogUseCases";
-import { InMemoryAuditLogRepository } from "../../adapters/repositories/InMemoryAuditLogRepository";
+import {
+  InBrowserAuditLogRepository,
+  reset_audit_log_repository,
+} from "../../adapters/repositories/InBrowserAuditLogRepository";
 import type { CreateAuditLogInput } from "../entities/AuditLog";
 import { compute_field_changes } from "../entities/AuditLog";
 
 describe("AuditLogUseCases", () => {
   let use_cases: AuditLogUseCases;
-  let repository: InMemoryAuditLogRepository;
+  let repository: InBrowserAuditLogRepository;
 
-  beforeEach(() => {
-    repository = new InMemoryAuditLogRepository();
+  beforeEach(async () => {
+    await reset_audit_log_repository();
+    repository = new InBrowserAuditLogRepository();
     use_cases = create_audit_log_use_cases(repository);
   });
 

@@ -9,7 +9,7 @@ import type { PlayerPositionRepository } from "../interfaces/adapters/PlayerPosi
 import type { QueryOptions } from "../interfaces/adapters/Repository";
 import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
 import { create_failure_result, create_success_result } from "../types/Result";
-import { get_player_position_repository } from "../../adapters/repositories/InMemoryPlayerPositionRepository";
+import { get_player_position_repository } from "../../adapters/repositories/InBrowserPlayerPositionRepository";
 import type { EntityOperationResult, EntityListResult } from "./BaseUseCases";
 import type { PlayerPositionUseCasesPort } from "../interfaces/ports/PlayerPositionUseCasesPort";
 

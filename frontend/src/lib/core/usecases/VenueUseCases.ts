@@ -16,7 +16,7 @@ import type {
 import type { VenueUseCasesPort } from "../interfaces/ports/VenueUseCasesPort";
 import { create_failure_result } from "../types/Result";
 import { validate_venue_input } from "../entities/Venue";
-import { get_venue_repository } from "../../adapters/repositories/InMemoryVenueRepository";
+import { get_venue_repository } from "../../adapters/repositories/InBrowserVenueRepository";
 
 export type VenueUseCases = VenueUseCasesPort;
 

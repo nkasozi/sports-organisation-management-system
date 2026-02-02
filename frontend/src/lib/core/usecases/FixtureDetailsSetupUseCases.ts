@@ -11,7 +11,7 @@ import type {
 import type { QueryOptions } from "../interfaces/adapters/Repository";
 import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
 import { create_success_result, create_failure_result } from "../types/Result";
-import { get_fixture_details_setup_repository } from "../../adapters/repositories/InMemoryFixtureDetailsSetupRepository";
+import { get_fixture_details_setup_repository } from "../../adapters/repositories/InBrowserFixtureDetailsSetupRepository";
 import type { FixtureDetailsSetupUseCasesPort } from "../interfaces/ports/FixtureDetailsSetupUseCasesPort";
 
 export type FixtureDetailsSetupUseCases = FixtureDetailsSetupUseCasesPort;

@@ -12,6 +12,7 @@
     current_user_initials,
   } from "$lib/presentation/stores/currentUser";
   import ThemeToggle from "$lib/presentation/components/theme/ThemeToggle.svelte";
+  import SyncStatusIndicator from "$lib/presentation/components/SyncStatusIndicator.svelte";
 
   export let sidebar_open = false;
 
@@ -202,6 +203,7 @@
           ? 'border-2 border-white/60'
           : ''}"
       >
+        <SyncStatusIndicator />
         <ThemeToggle />
 
         <div class="relative">
@@ -361,7 +363,6 @@
   .dropdown-menu {
     text-shadow: none !important;
   }
-  .dropdown-menu span,
   .dropdown-menu button {
     color: inherit !important;
     text-shadow: none !important;

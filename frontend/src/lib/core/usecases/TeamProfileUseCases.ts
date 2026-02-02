@@ -13,7 +13,7 @@ import type {
   EntityListResult,
 } from "../entities/BaseEntity";
 import { validate_team_profile_input } from "../entities/TeamProfile";
-import { get_team_profile_repository } from "../../adapters/repositories/InMemoryTeamProfileRepository";
+import { get_team_profile_repository } from "../../adapters/repositories/InBrowserTeamProfileRepository";
 
 export interface TeamProfileUseCases {
   list(

@@ -72,8 +72,12 @@
 
     const use_cases = get_use_cases_container();
     const orgs_result = await use_cases.organization_use_cases.list({});
-    if (orgs_result.success && orgs_result.data?.items?.length > 0) {
-      organizations = orgs_result.data.items;
+    if (
+      orgs_result.success &&
+      orgs_result.data &&
+      orgs_result.data.length > 0
+    ) {
+      organizations = orgs_result.data;
       selected_organization_id = organizations[0].id;
     }
   });

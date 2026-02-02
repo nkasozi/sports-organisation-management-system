@@ -10,7 +10,7 @@ import type {
 import type { QueryOptions } from "../interfaces/adapters/Repository";
 import type { AsyncResult, PaginatedResult } from "../types/Result";
 import { create_failure_result, create_success_result } from "../types/Result";
-import { get_game_official_role_repository } from "../../adapters/repositories/InMemoryGameOfficialRoleRepository";
+import { get_game_official_role_repository } from "../../adapters/repositories/InBrowserGameOfficialRoleRepository";
 import type { EntityOperationResult, EntityListResult } from "./BaseUseCases";
 import type { GameOfficialRoleUseCasesPort } from "../interfaces/ports/GameOfficialRoleUseCasesPort";
 

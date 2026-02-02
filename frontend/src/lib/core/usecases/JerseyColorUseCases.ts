@@ -15,7 +15,7 @@ import {
   create_success_result,
   create_failure_result,
 } from "$lib/core/types/Result";
-import { get_jersey_color_repository } from "$lib/adapters/repositories/InMemoryJerseyColorRepository";
+import { get_jersey_color_repository } from "$lib/adapters/repositories/InBrowserJerseyColorRepository";
 import type { JerseyColorUseCasesPort } from "$lib/core/interfaces/ports/JerseyColorUseCasesPort";
 
 export type JerseyColorUseCases = JerseyColorUseCasesPort;

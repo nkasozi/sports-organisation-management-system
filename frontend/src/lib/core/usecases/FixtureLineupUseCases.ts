@@ -12,7 +12,7 @@ import type {
   EntityListResult,
 } from "../entities/BaseEntity";
 import type { FixtureLineupUseCasesPort } from "../interfaces/ports/FixtureLineupUseCasesPort";
-import { InMemoryFixtureLineupRepository } from "../../adapters/repositories/InMemoryFixtureLineupRepository";
+import { InBrowserFixtureLineupRepository } from "../../adapters/repositories/InBrowserFixtureLineupRepository";
 
 export type FixtureLineupUseCases = FixtureLineupUseCasesPort;
 
@@ -254,7 +254,7 @@ let use_cases_instance: FixtureLineupUseCases | null = null;
 
 export function get_fixture_lineup_use_cases(): FixtureLineupUseCases {
   if (!use_cases_instance) {
-    const repository = new InMemoryFixtureLineupRepository();
+    const repository = new InBrowserFixtureLineupRepository();
     use_cases_instance = create_fixture_lineup_use_cases(repository);
   }
   return use_cases_instance;

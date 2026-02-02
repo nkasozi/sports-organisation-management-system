@@ -286,11 +286,11 @@
                 </button>
 
                 <div class="url-copy-section">
-                  <label
+                  <span
                     class="text-xs text-accent-500 dark:text-accent-400 block mb-1"
                   >
                     Or copy the feed URL:
-                  </label>
+                  </span>
                   <div class="flex gap-2">
                     <input
                       type="text"
@@ -377,11 +377,13 @@
           <div class="form-fields space-y-4">
             <div>
               <label
+                for="feed-type-select"
                 class="block text-sm font-medium text-accent-700 dark:text-accent-300 mb-1"
               >
                 Feed Type
               </label>
               <select
+                id="feed-type-select"
                 bind:value={selected_feed_type}
                 on:change={handle_feed_type_change}
                 class="select-styled w-full"
@@ -395,6 +397,7 @@
             {#if selected_feed_type !== "all"}
               <div>
                 <label
+                  for="entity-select"
                   class="block text-sm font-medium text-accent-700 dark:text-accent-300 mb-1"
                 >
                   {selected_feed_type === "team"
@@ -402,6 +405,7 @@
                     : "Select Competition"}
                 </label>
                 <select
+                  id="entity-select"
                   bind:value={selected_entity_id}
                   class="select-styled w-full"
                 >
@@ -415,11 +419,13 @@
 
             <div>
               <label
+                for="reminder-select"
                 class="block text-sm font-medium text-accent-700 dark:text-accent-300 mb-1"
               >
                 Default Reminder
               </label>
               <select
+                id="reminder-select"
                 bind:value={reminder_minutes}
                 class="select-styled w-full"
               >

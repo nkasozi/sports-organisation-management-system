@@ -112,8 +112,7 @@
     text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
   }
   :global(.header-panel) span,
-  :global(.header-panel) h1,
-  :global(.header-panel) p {
+  :global(.header-panel) h1 {
     color: white !important;
   }
   :global(.header-panel) svg {

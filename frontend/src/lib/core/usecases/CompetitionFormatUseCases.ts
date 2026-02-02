@@ -12,7 +12,7 @@ import type { QueryOptions } from "../interfaces/adapters/Repository";
 import type { AsyncResult, PaginatedResult } from "../types/Result";
 import { create_failure_result, create_success_result } from "../types/Result";
 import { validate_competition_format_input } from "../entities/CompetitionFormat";
-import { get_competition_format_repository } from "../../adapters/repositories/InMemoryCompetitionFormatRepository";
+import { get_competition_format_repository } from "../../adapters/repositories/InBrowserCompetitionFormatRepository";
 import type { EntityOperationResult, EntityListResult } from "./BaseUseCases";
 import type { CompetitionFormatUseCasesPort } from "../interfaces/ports/CompetitionFormatUseCasesPort";
 

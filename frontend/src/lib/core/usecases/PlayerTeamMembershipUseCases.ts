@@ -12,7 +12,7 @@ import type { QueryOptions } from "../interfaces/adapters/Repository";
 import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
 import { create_failure_result } from "../types/Result";
 import type { EntityListResult, EntityOperationResult } from "./BaseUseCases";
-import { get_player_team_membership_repository } from "../../adapters/repositories/InMemoryPlayerTeamMembershipRepository";
+import { get_player_team_membership_repository } from "../../adapters/repositories/InBrowserPlayerTeamMembershipRepository";
 import type { PlayerTeamMembershipUseCasesPort } from "../interfaces/ports/PlayerTeamMembershipUseCasesPort";
 
 export type PlayerTeamMembershipUseCases = PlayerTeamMembershipUseCasesPort;

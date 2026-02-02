@@ -738,7 +738,7 @@
     google_auth_status = await sign_in_to_google_calendar();
 
     if (google_auth_status.is_signed_in) {
-      show_sync_modal = true;
+      show_toast("Successfully signed in to Google Calendar", "success");
     }
   }
 

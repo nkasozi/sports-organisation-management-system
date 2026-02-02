@@ -6,9 +6,9 @@ import type {
 } from "../entities/AuditLog";
 import { compute_field_changes } from "../entities/AuditLog";
 import type {
-  InMemoryAuditLogRepository,
+  InBrowserAuditLogRepository,
   AuditLogFilter,
-} from "../../adapters/repositories/InMemoryAuditLogRepository";
+} from "../../adapters/repositories/InBrowserAuditLogRepository";
 import type { QueryOptions } from "../interfaces/adapters/Repository";
 import type {
   EntityOperationResult,
@@ -40,7 +40,7 @@ export interface AuditLogUseCases {
 }
 
 export function create_audit_log_use_cases(
-  repository: InMemoryAuditLogRepository,
+  repository: InBrowserAuditLogRepository,
 ): AuditLogUseCases {
   return {
     async list(

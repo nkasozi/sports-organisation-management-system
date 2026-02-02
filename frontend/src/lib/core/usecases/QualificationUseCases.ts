@@ -15,7 +15,7 @@ import {
   create_success_result,
   create_failure_result,
 } from "$lib/core/types/Result";
-import { get_qualification_repository } from "$lib/adapters/repositories/InMemoryQualificationRepository";
+import { get_qualification_repository } from "$lib/adapters/repositories/InBrowserQualificationRepository";
 import type { QualificationUseCasesPort } from "$lib/core/interfaces/ports/QualificationUseCasesPort";
 
 export type QualificationUseCases = QualificationUseCasesPort;

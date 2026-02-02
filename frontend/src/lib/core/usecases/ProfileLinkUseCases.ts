@@ -13,7 +13,7 @@ import type {
   EntityListResult,
 } from "../entities/BaseEntity";
 import { validate_profile_link_input } from "../entities/ProfileLink";
-import { get_profile_link_repository } from "../../adapters/repositories/InMemoryProfileLinkRepository";
+import { get_profile_link_repository } from "../../adapters/repositories/InBrowserProfileLinkRepository";
 
 export interface ProfileLinkUseCases {
   list(

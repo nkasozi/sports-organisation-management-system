@@ -3,15 +3,15 @@ import {
   create_system_user_use_cases,
   type SystemUserUseCases,
 } from "./SystemUserUseCases";
-import { InMemorySystemUserRepository } from "../../adapters/repositories/InMemorySystemUserRepository";
+import { InBrowserSystemUserRepository } from "../../adapters/repositories/InBrowserSystemUserRepository";
 import type { CreateSystemUserInput } from "../entities/SystemUser";
 
 describe("SystemUserUseCases", () => {
   let use_cases: SystemUserUseCases;
-  let repository: InMemorySystemUserRepository;
+  let repository: InBrowserSystemUserRepository;
 
   beforeEach(() => {
-    repository = new InMemorySystemUserRepository();
+    repository = new InBrowserSystemUserRepository();
     use_cases = create_system_user_use_cases(repository);
   });
 

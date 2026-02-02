@@ -11,7 +11,7 @@ import type {
 import type { QueryOptions } from "../interfaces/adapters/Repository";
 import type { AsyncResult, PaginatedResult } from "../types/Result";
 import { create_failure_result, create_success_result } from "../types/Result";
-import { get_team_staff_role_repository } from "../../adapters/repositories/InMemoryTeamStaffRoleRepository";
+import { get_team_staff_role_repository } from "../../adapters/repositories/InBrowserTeamStaffRoleRepository";
 import type { EntityOperationResult, EntityListResult } from "./BaseUseCases";
 import type { TeamStaffRoleUseCasesPort } from "../interfaces/ports/TeamStaffRoleUseCasesPort";
 

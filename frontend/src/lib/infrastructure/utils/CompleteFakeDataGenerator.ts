@@ -534,7 +534,7 @@ export async function generate_field_hockey_dataset(
   players_per_team: number = 16,
 ): Promise<FieldHockeyDataSet> {
   const import_module =
-    await import("../../adapters/repositories/InMemoryCompetitionFormatRepository");
+    await import("../../adapters/repositories/InBrowserCompetitionFormatRepository");
   const format_repository = import_module.get_competition_format_repository();
   const formats_result = await format_repository.find_by_format_type("league");
 
@@ -712,7 +712,7 @@ export async function generate_complete_fake_dataset(
   players_per_team: number = 18,
 ): Promise<CompleteFakeDataSet> {
   const import_module =
-    await import("../../adapters/repositories/InMemoryCompetitionFormatRepository");
+    await import("../../adapters/repositories/InBrowserCompetitionFormatRepository");
   const format_repository = import_module.get_competition_format_repository();
   const formats_result = await format_repository.find_by_format_type("league");
 
