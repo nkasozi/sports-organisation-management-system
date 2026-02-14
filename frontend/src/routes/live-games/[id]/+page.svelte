@@ -89,6 +89,34 @@
   let toast_message: string = "";
   let toast_type: "success" | "error" | "info" = "info";
 
+  let home_lineup_expanded: boolean = false;
+  let away_lineup_expanded: boolean = false;
+
+  function toggle_home_lineup(): boolean {
+    home_lineup_expanded = !home_lineup_expanded;
+    return home_lineup_expanded;
+  }
+
+  function toggle_away_lineup(): boolean {
+    away_lineup_expanded = !away_lineup_expanded;
+    return away_lineup_expanded;
+  }
+
+  function get_starters_from_lineup(players: LineupPlayer[]): LineupPlayer[] {
+    return players.filter((p) => !p.is_substitute);
+  }
+
+  function get_substitutes_from_lineup(
+    players: LineupPlayer[],
+  ): LineupPlayer[] {
+    return players.filter((p) => p.is_substitute);
+  }
+
+  $: home_starters = get_starters_from_lineup(home_players);
+  $: home_substitutes = get_substitutes_from_lineup(home_players);
+  $: away_starters = get_starters_from_lineup(away_players);
+  $: away_substitutes = get_substitutes_from_lineup(away_players);
+
   function get_effective_periods(): SportGamePeriod[] {
     return competition?.rule_overrides?.periods ?? sport?.periods ?? [];
   }
@@ -141,10 +169,17 @@
   $: game_events = fixture?.game_events ?? [];
   $: sorted_events = [...game_events].sort(
     (a, b) =>
-      b.minute - a.minute ||
-      new Date(b.recorded_at).getTime() - new Date(a.recorded_at).getTime(),
+      a.minute - b.minute ||
+      new Date(a.recorded_at).getTime() - new Date(b.recorded_at).getTime(),
   );
   $: is_game_active = fixture?.status === "in_progress";
+  $: is_game_completed = fixture?.status === "completed";
+  $: {
+    if (is_game_completed) {
+      home_lineup_expanded = true;
+      away_lineup_expanded = true;
+    }
+  }
   $: all_event_buttons = get_quick_event_buttons();
 
   onMount(async () => {
@@ -837,7 +872,7 @@
       </div>
     </div>
   {:else if fixture}
-    <div class="flex flex-col h-screen">
+    <div class="flex flex-col min-h-screen">
       <div class="bg-gray-900 text-white px-4 py-3 sticky top-0 z-40">
         <div
           class="flex items-center justify-between max-w-4xl mx-auto relative"
@@ -1063,8 +1098,579 @@
         </div>
       {/if}
 
-      <div class="flex-1 overflow-y-auto px-4 py-6">
+      {#if fixture.status === "scheduled"}
+        <div
+          class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-6"
+        >
+          <div class="max-w-4xl mx-auto">
+            <h2
+              class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-4 text-center"
+            >
+              Team Lineups
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+              <div
+                class="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800"
+              >
+                <div class="flex items-center justify-between mb-3">
+                  <span
+                    class="text-sm font-semibold text-blue-700 dark:text-blue-300"
+                  >
+                    🏠 {home_team?.name ?? "Home Team"}
+                  </span>
+                  <span
+                    class="text-xs text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-800 px-2 py-0.5 rounded-full"
+                  >
+                    {home_players.length} players
+                  </span>
+                </div>
+                {#if home_players.length === 0}
+                  <p
+                    class="text-sm text-gray-500 dark:text-gray-400 text-center py-4"
+                  >
+                    No lineup submitted yet
+                  </p>
+                {:else}
+                  <div class="space-y-3">
+                    {#if home_starters.length > 0}
+                      <div>
+                        <div
+                          class="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2"
+                        >
+                          Starting XI
+                        </div>
+                        <div class="space-y-1">
+                          {#each home_starters as player}
+                            <div class="flex items-center gap-2 text-sm">
+                              {#if player.jersey_number}
+                                <span
+                                  class="w-6 h-6 flex items-center justify-center bg-blue-600 text-white text-xs font-bold rounded"
+                                  >{player.jersey_number}</span
+                                >
+                              {:else}
+                                <span
+                                  class="w-6 h-6 flex items-center justify-center bg-gray-300 dark:bg-gray-600 text-gray-600 dark:text-gray-300 text-xs rounded"
+                                  >-</span
+                                >
+                              {/if}
+                              <span class="text-gray-800 dark:text-gray-200">
+                                {player.first_name}
+                                {player.last_name}
+                                {#if player.is_captain}<span
+                                    class="text-yellow-600 dark:text-yellow-400 ml-1"
+                                    >©</span
+                                  >{/if}
+                              </span>
+                              {#if player.position}
+                                <span
+                                  class="text-xs text-gray-500 dark:text-gray-400 ml-auto"
+                                  >{player.position}</span
+                                >
+                              {/if}
+                            </div>
+                          {/each}
+                        </div>
+                      </div>
+                    {/if}
+                    {#if home_substitutes.length > 0}
+                      <div
+                        class="border-t border-blue-200 dark:border-blue-700 pt-3"
+                      >
+                        <div
+                          class="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2"
+                        >
+                          Substitutes
+                        </div>
+                        <div class="space-y-1">
+                          {#each home_substitutes as player}
+                            <div
+                              class="flex items-center gap-2 text-sm opacity-80"
+                            >
+                              {#if player.jersey_number}
+                                <span
+                                  class="w-6 h-6 flex items-center justify-center bg-blue-400 text-white text-xs font-bold rounded"
+                                  >{player.jersey_number}</span
+                                >
+                              {:else}
+                                <span
+                                  class="w-6 h-6 flex items-center justify-center bg-gray-200 dark:bg-gray-600 text-gray-500 dark:text-gray-300 text-xs rounded"
+                                  >-</span
+                                >
+                              {/if}
+                              <span class="text-gray-700 dark:text-gray-300"
+                                >{player.first_name} {player.last_name}</span
+                              >
+                            </div>
+                          {/each}
+                        </div>
+                      </div>
+                    {/if}
+                    {#if home_starters.length === 0}
+                      <div class="space-y-1">
+                        {#each home_players as player}
+                          <div class="flex items-center gap-2 text-sm">
+                            {#if player.jersey_number}
+                              <span
+                                class="w-6 h-6 flex items-center justify-center bg-blue-600 text-white text-xs font-bold rounded"
+                                >{player.jersey_number}</span
+                              >
+                            {:else}
+                              <span
+                                class="w-6 h-6 flex items-center justify-center bg-gray-300 dark:bg-gray-600 text-gray-600 dark:text-gray-300 text-xs rounded"
+                                >-</span
+                              >
+                            {/if}
+                            <span class="text-gray-800 dark:text-gray-200"
+                              >{player.first_name} {player.last_name}</span
+                            >
+                          </div>
+                        {/each}
+                      </div>
+                    {/if}
+                  </div>
+                {/if}
+              </div>
+              <div
+                class="bg-red-50 dark:bg-red-900/20 rounded-lg p-4 border border-red-200 dark:border-red-800"
+              >
+                <div class="flex items-center justify-between mb-3">
+                  <span
+                    class="text-sm font-semibold text-red-700 dark:text-red-300"
+                  >
+                    ✈️ {away_team?.name ?? "Away Team"}
+                  </span>
+                  <span
+                    class="text-xs text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-800 px-2 py-0.5 rounded-full"
+                  >
+                    {away_players.length} players
+                  </span>
+                </div>
+                {#if away_players.length === 0}
+                  <p
+                    class="text-sm text-gray-500 dark:text-gray-400 text-center py-4"
+                  >
+                    No lineup submitted yet
+                  </p>
+                {:else}
+                  <div class="space-y-3">
+                    {#if away_starters.length > 0}
+                      <div>
+                        <div
+                          class="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2"
+                        >
+                          Starting XI
+                        </div>
+                        <div class="space-y-1">
+                          {#each away_starters as player}
+                            <div class="flex items-center gap-2 text-sm">
+                              {#if player.jersey_number}
+                                <span
+                                  class="w-6 h-6 flex items-center justify-center bg-red-600 text-white text-xs font-bold rounded"
+                                  >{player.jersey_number}</span
+                                >
+                              {:else}
+                                <span
+                                  class="w-6 h-6 flex items-center justify-center bg-gray-300 dark:bg-gray-600 text-gray-600 dark:text-gray-300 text-xs rounded"
+                                  >-</span
+                                >
+                              {/if}
+                              <span class="text-gray-800 dark:text-gray-200">
+                                {player.first_name}
+                                {player.last_name}
+                                {#if player.is_captain}<span
+                                    class="text-yellow-600 dark:text-yellow-400 ml-1"
+                                    >©</span
+                                  >{/if}
+                              </span>
+                              {#if player.position}
+                                <span
+                                  class="text-xs text-gray-500 dark:text-gray-400 ml-auto"
+                                  >{player.position}</span
+                                >
+                              {/if}
+                            </div>
+                          {/each}
+                        </div>
+                      </div>
+                    {/if}
+                    {#if away_substitutes.length > 0}
+                      <div
+                        class="border-t border-red-200 dark:border-red-700 pt-3"
+                      >
+                        <div
+                          class="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2"
+                        >
+                          Substitutes
+                        </div>
+                        <div class="space-y-1">
+                          {#each away_substitutes as player}
+                            <div
+                              class="flex items-center gap-2 text-sm opacity-80"
+                            >
+                              {#if player.jersey_number}
+                                <span
+                                  class="w-6 h-6 flex items-center justify-center bg-red-400 text-white text-xs font-bold rounded"
+                                  >{player.jersey_number}</span
+                                >
+                              {:else}
+                                <span
+                                  class="w-6 h-6 flex items-center justify-center bg-gray-200 dark:bg-gray-600 text-gray-500 dark:text-gray-300 text-xs rounded"
+                                  >-</span
+                                >
+                              {/if}
+                              <span class="text-gray-700 dark:text-gray-300"
+                                >{player.first_name} {player.last_name}</span
+                              >
+                            </div>
+                          {/each}
+                        </div>
+                      </div>
+                    {/if}
+                    {#if away_starters.length === 0}
+                      <div class="space-y-1">
+                        {#each away_players as player}
+                          <div class="flex items-center gap-2 text-sm">
+                            {#if player.jersey_number}
+                              <span
+                                class="w-6 h-6 flex items-center justify-center bg-red-600 text-white text-xs font-bold rounded"
+                                >{player.jersey_number}</span
+                              >
+                            {:else}
+                              <span
+                                class="w-6 h-6 flex items-center justify-center bg-gray-300 dark:bg-gray-600 text-gray-600 dark:text-gray-300 text-xs rounded"
+                                >-</span
+                              >
+                            {/if}
+                            <span class="text-gray-800 dark:text-gray-200"
+                              >{player.first_name} {player.last_name}</span
+                            >
+                          </div>
+                        {/each}
+                      </div>
+                    {/if}
+                  </div>
+                {/if}
+              </div>
+            </div>
+          </div>
+        </div>
+      {/if}
+
+      <div class="flex-1 px-4 py-6 pb-24">
         <div class="max-w-3xl mx-auto">
+          {#if is_game_active || is_game_completed}
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+              <div
+                class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden"
+              >
+                <button
+                  type="button"
+                  class="w-full flex items-center justify-between p-3 text-left hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors"
+                  on:click={() => toggle_home_lineup()}
+                >
+                  <span class="flex items-center gap-2">
+                    <span class="text-blue-600 dark:text-blue-400">🏠</span>
+                    <span
+                      class="text-sm font-medium text-gray-900 dark:text-white"
+                      >{home_team?.name ?? "Home"} Lineup</span
+                    >
+                    <span
+                      class="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded-full"
+                      >{home_players.length}</span
+                    >
+                  </span>
+                  <svg
+                    class="w-5 h-5 text-gray-400 transition-transform duration-200 {home_lineup_expanded
+                      ? 'rotate-180'
+                      : ''}"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M19 9l-7 7-7-7"
+                    />
+                  </svg>
+                </button>
+                {#if home_lineup_expanded}
+                  <div
+                    class="border-t border-gray-200 dark:border-gray-700 p-3 bg-blue-50/50 dark:bg-blue-900/10 max-h-80 overflow-y-auto"
+                  >
+                    {#if home_players.length === 0}
+                      <p
+                        class="text-sm text-gray-500 dark:text-gray-400 text-center py-2"
+                      >
+                        No players
+                      </p>
+                    {:else}
+                      <div class="space-y-3">
+                        {#if home_starters.length > 0}
+                          <div>
+                            <div
+                              class="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 font-medium"
+                            >
+                              Starting XI
+                            </div>
+                            <div class="space-y-1">
+                              {#each home_starters as player}
+                                <div
+                                  class="flex items-center gap-2 text-sm py-1"
+                                >
+                                  {#if player.jersey_number}
+                                    <span
+                                      class="w-6 h-6 flex items-center justify-center bg-blue-600 text-white text-xs font-bold rounded flex-shrink-0"
+                                      >{player.jersey_number}</span
+                                    >
+                                  {:else}
+                                    <span
+                                      class="w-6 h-6 flex items-center justify-center bg-gray-300 dark:bg-gray-600 text-gray-600 dark:text-gray-300 text-xs rounded flex-shrink-0"
+                                      >-</span
+                                    >
+                                  {/if}
+                                  <span
+                                    class="text-gray-800 dark:text-gray-200 truncate"
+                                  >
+                                    {player.first_name}
+                                    {player.last_name}
+                                    {#if player.is_captain}<span
+                                        class="text-yellow-600 dark:text-yellow-400"
+                                        >©</span
+                                      >{/if}
+                                  </span>
+                                  {#if player.position}
+                                    <span
+                                      class="text-xs text-gray-500 dark:text-gray-400 ml-auto"
+                                      >{player.position}</span
+                                    >
+                                  {/if}
+                                </div>
+                              {/each}
+                            </div>
+                          </div>
+                        {/if}
+                        {#if home_substitutes.length > 0}
+                          <div
+                            class="border-t border-blue-200 dark:border-blue-700 pt-3"
+                          >
+                            <div
+                              class="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 font-medium"
+                            >
+                              Substitutes
+                            </div>
+                            <div class="space-y-1">
+                              {#each home_substitutes as player}
+                                <div
+                                  class="flex items-center gap-2 text-sm py-1 opacity-80"
+                                >
+                                  {#if player.jersey_number}
+                                    <span
+                                      class="w-6 h-6 flex items-center justify-center bg-blue-400 text-white text-xs font-bold rounded flex-shrink-0"
+                                      >{player.jersey_number}</span
+                                    >
+                                  {:else}
+                                    <span
+                                      class="w-6 h-6 flex items-center justify-center bg-gray-200 dark:bg-gray-600 text-gray-500 dark:text-gray-300 text-xs rounded flex-shrink-0"
+                                      >-</span
+                                    >
+                                  {/if}
+                                  <span
+                                    class="text-gray-700 dark:text-gray-300 truncate"
+                                    >{player.first_name}
+                                    {player.last_name}</span
+                                  >
+                                </div>
+                              {/each}
+                            </div>
+                          </div>
+                        {/if}
+                        {#if home_starters.length === 0}
+                          <div class="space-y-1">
+                            {#each home_players as player}
+                              <div class="flex items-center gap-2 text-sm py-1">
+                                {#if player.jersey_number}
+                                  <span
+                                    class="w-6 h-6 flex items-center justify-center bg-blue-600 text-white text-xs font-bold rounded flex-shrink-0"
+                                    >{player.jersey_number}</span
+                                  >
+                                {:else}
+                                  <span
+                                    class="w-6 h-6 flex items-center justify-center bg-gray-300 dark:bg-gray-600 text-gray-600 dark:text-gray-300 text-xs rounded flex-shrink-0"
+                                    >-</span
+                                  >
+                                {/if}
+                                <span
+                                  class="text-gray-800 dark:text-gray-200 truncate"
+                                  >{player.first_name} {player.last_name}</span
+                                >
+                              </div>
+                            {/each}
+                          </div>
+                        {/if}
+                      </div>
+                    {/if}
+                  </div>
+                {/if}
+              </div>
+              <div
+                class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden"
+              >
+                <button
+                  type="button"
+                  class="w-full flex items-center justify-between p-3 text-left hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors"
+                  on:click={() => toggle_away_lineup()}
+                >
+                  <span class="flex items-center gap-2">
+                    <span class="text-red-600 dark:text-red-400">✈️</span>
+                    <span
+                      class="text-sm font-medium text-gray-900 dark:text-white"
+                      >{away_team?.name ?? "Away"} Lineup</span
+                    >
+                    <span
+                      class="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded-full"
+                      >{away_players.length}</span
+                    >
+                  </span>
+                  <svg
+                    class="w-5 h-5 text-gray-400 transition-transform duration-200 {away_lineup_expanded
+                      ? 'rotate-180'
+                      : ''}"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M19 9l-7 7-7-7"
+                    />
+                  </svg>
+                </button>
+                {#if away_lineup_expanded}
+                  <div
+                    class="border-t border-gray-200 dark:border-gray-700 p-3 bg-red-50/50 dark:bg-red-900/10 max-h-80 overflow-y-auto"
+                  >
+                    {#if away_players.length === 0}
+                      <p
+                        class="text-sm text-gray-500 dark:text-gray-400 text-center py-2"
+                      >
+                        No players
+                      </p>
+                    {:else}
+                      <div class="space-y-3">
+                        {#if away_starters.length > 0}
+                          <div>
+                            <div
+                              class="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 font-medium"
+                            >
+                              Starting XI
+                            </div>
+                            <div class="space-y-1">
+                              {#each away_starters as player}
+                                <div
+                                  class="flex items-center gap-2 text-sm py-1"
+                                >
+                                  {#if player.jersey_number}
+                                    <span
+                                      class="w-6 h-6 flex items-center justify-center bg-red-600 text-white text-xs font-bold rounded flex-shrink-0"
+                                      >{player.jersey_number}</span
+                                    >
+                                  {:else}
+                                    <span
+                                      class="w-6 h-6 flex items-center justify-center bg-gray-300 dark:bg-gray-600 text-gray-600 dark:text-gray-300 text-xs rounded flex-shrink-0"
+                                      >-</span
+                                    >
+                                  {/if}
+                                  <span
+                                    class="text-gray-800 dark:text-gray-200 truncate"
+                                  >
+                                    {player.first_name}
+                                    {player.last_name}
+                                    {#if player.is_captain}<span
+                                        class="text-yellow-600 dark:text-yellow-400"
+                                        >©</span
+                                      >{/if}
+                                  </span>
+                                  {#if player.position}
+                                    <span
+                                      class="text-xs text-gray-500 dark:text-gray-400 ml-auto"
+                                      >{player.position}</span
+                                    >
+                                  {/if}
+                                </div>
+                              {/each}
+                            </div>
+                          </div>
+                        {/if}
+                        {#if away_substitutes.length > 0}
+                          <div
+                            class="border-t border-red-200 dark:border-red-700 pt-3"
+                          >
+                            <div
+                              class="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 font-medium"
+                            >
+                              Substitutes
+                            </div>
+                            <div class="space-y-1">
+                              {#each away_substitutes as player}
+                                <div
+                                  class="flex items-center gap-2 text-sm py-1 opacity-80"
+                                >
+                                  {#if player.jersey_number}
+                                    <span
+                                      class="w-6 h-6 flex items-center justify-center bg-red-400 text-white text-xs font-bold rounded flex-shrink-0"
+                                      >{player.jersey_number}</span
+                                    >
+                                  {:else}
+                                    <span
+                                      class="w-6 h-6 flex items-center justify-center bg-gray-200 dark:bg-gray-600 text-gray-500 dark:text-gray-300 text-xs rounded flex-shrink-0"
+                                      >-</span
+                                    >
+                                  {/if}
+                                  <span
+                                    class="text-gray-700 dark:text-gray-300 truncate"
+                                    >{player.first_name}
+                                    {player.last_name}</span
+                                  >
+                                </div>
+                              {/each}
+                            </div>
+                          </div>
+                        {/if}
+                        {#if away_starters.length === 0}
+                          <div class="space-y-1">
+                            {#each away_players as player}
+                              <div class="flex items-center gap-2 text-sm py-1">
+                                {#if player.jersey_number}
+                                  <span
+                                    class="w-6 h-6 flex items-center justify-center bg-red-600 text-white text-xs font-bold rounded flex-shrink-0"
+                                    >{player.jersey_number}</span
+                                  >
+                                {:else}
+                                  <span
+                                    class="w-6 h-6 flex items-center justify-center bg-gray-300 dark:bg-gray-600 text-gray-600 dark:text-gray-300 text-xs rounded flex-shrink-0"
+                                    >-</span
+                                  >
+                                {/if}
+                                <span
+                                  class="text-gray-800 dark:text-gray-200 truncate"
+                                  >{player.first_name} {player.last_name}</span
+                                >
+                              </div>
+                            {/each}
+                          </div>
+                        {/if}
+                      </div>
+                    {/if}
+                  </div>
+                {/if}
+              </div>
+            </div>
+          {/if}
+
           <div
             class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 mb-6"
           >
