@@ -138,6 +138,7 @@ export default defineSchema({
     format_id: v.optional(v.string()),
     team_ids: v.optional(v.array(v.string())),
     allow_auto_squad_submission: v.optional(v.boolean()),
+    allow_auto_fixture_details_setup: v.optional(v.boolean()),
     season: v.optional(v.string()),
     start_date: v.optional(v.string()),
     end_date: v.optional(v.string()),

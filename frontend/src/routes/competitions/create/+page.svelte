@@ -555,6 +555,28 @@
             </div>
           </label>
         </div>
+
+        <div class="pt-4">
+          <label class="flex items-center gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              bind:checked={form_data.allow_auto_fixture_details_setup}
+              class="w-5 h-5 text-primary-600 rounded border-accent-300"
+            />
+            <div>
+              <span
+                class="text-sm font-medium text-accent-900 dark:text-accent-100"
+              >
+                Allow auto fixture details setup
+              </span>
+              <p class="text-xs text-accent-500">
+                When enabled, starting a live game without fixture details will
+                redirect to auto-create them with pre-filled officials and
+                jersey colors.
+              </p>
+            </div>
+          </label>
+        </div>
       {:else if active_tab === "rules"}
         <div class="space-y-6">
           <div

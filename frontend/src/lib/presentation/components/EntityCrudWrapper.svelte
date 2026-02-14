@@ -17,11 +17,13 @@ Uses explicit handlers instead of events for predictable data flow
 
   export let entity_type: string;
   export let initial_view: "list" | "create" | "edit" = "list";
+  export let initial_create_data: Record<string, unknown> | null = null;
   export let is_mobile_view: boolean = true;
   export let show_list_actions: boolean = true;
   export let bulk_create_handler: (() => void) | null = null;
   export let enable_bulk_import: boolean = false;
   export let button_color_class: string = "btn-primary-action";
+  export let after_save_redirect_url: string | null = null;
 
   const dispatch = createEventDispatcher<{
     entity_created: { entity: BaseEntity };
@@ -157,6 +159,11 @@ Uses explicit handlers instead of events for predictable data flow
       dispatch("entity_created", { entity });
     } else {
       dispatch("entity_updated", { entity });
+    }
+
+    if (after_save_redirect_url) {
+      goto(after_save_redirect_url);
+      return;
     }
 
     switch_to_view("list");
@@ -301,7 +308,7 @@ Uses explicit handlers instead of events for predictable data flow
       {:else if current_view === "create"}
         <DynamicEntityForm
           {entity_type}
-          entity_data={null}
+          entity_data={initial_create_data}
           {is_mobile_view}
           {crud_handlers}
           view_callbacks={form_view_callbacks}

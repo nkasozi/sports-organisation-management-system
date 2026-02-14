@@ -176,6 +176,8 @@
       team_ids: competition.team_ids || [],
       allow_auto_squad_submission:
         competition.allow_auto_squad_submission || false,
+      allow_auto_fixture_details_setup:
+        competition.allow_auto_fixture_details_setup || false,
       start_date: competition.start_date,
       end_date: competition.end_date,
       registration_deadline: competition.registration_deadline,
@@ -824,6 +826,28 @@
                         When enabled, starting a live game will automatically
                         generate squads from team rosters. When disabled, teams
                         must submit their squads before starting a game.
+                      </p>
+                    </div>
+                  </label>
+                </div>
+
+                <div class="md:col-span-2">
+                  <label class="flex items-center gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      bind:checked={form_data.allow_auto_fixture_details_setup}
+                      class="w-5 h-5 text-primary-600 rounded border-accent-300"
+                    />
+                    <div>
+                      <span
+                        class="text-sm font-medium text-accent-900 dark:text-accent-100"
+                      >
+                        Allow auto fixture details setup
+                      </span>
+                      <p class="text-xs text-accent-500 dark:text-accent-400">
+                        When enabled, starting a live game without fixture
+                        details will redirect to auto-create them with
+                        pre-filled officials and jersey colors.
                       </p>
                     </div>
                   </label>

@@ -717,7 +717,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
     metadata: EntityMetadata,
     data: Partial<BaseEntity> | null,
   ): Promise<void> {
-    if (!data || !data.id) return;
+    if (!data) return;
 
     for (const field of metadata.fields) {
       if (field.foreign_key_filter) {

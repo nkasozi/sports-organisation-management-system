@@ -63,7 +63,7 @@ export async function check_fixture_can_start(
     fix_suggestion:
       officials.length > 0
         ? null
-        : "Go to Fixture Officials page and assign at least one official to this fixture",
+        : "Go to the Fixture Details Setup page and assign officials, team jerseys and official jerseys for this fixture",
   };
 
   const lineups_result = await lineup_use_cases.list({

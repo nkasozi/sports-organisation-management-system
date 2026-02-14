@@ -153,6 +153,12 @@
     is_starting = { ...is_starting, [fixture_id]: value };
   }
 
+  function delay(milliseconds: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, milliseconds));
+  }
+
+  const CHECK_DELAY_MS = 800;
+
   async function start_fixture(fixture: Fixture): Promise<void> {
     console.log("[DEBUG] start_fixture called for fixture:", fixture.id);
 
@@ -169,10 +175,11 @@
     checks.push({
       check_name: "officials",
       status: "checking",
-      message: "Checking fixture officials...",
+      message: "Checking fixture details & officials...",
       fix_suggestion: null,
     });
     update_checks(fixture.id, checks);
+    await delay(CHECK_DELAY_MS);
 
     console.log("[DEBUG] Running pre-flight checks...");
 
@@ -185,6 +192,47 @@
     console.log("[DEBUG] Officials check result:", officials_check);
 
     if (officials_check.officials_check.status === "failed") {
+      checks[checks.length - 1] = {
+        check_name: "officials",
+        status: "failed",
+        message: "No assigned fixture details found",
+        fix_suggestion: null,
+      };
+      update_checks(fixture.id, checks);
+      await delay(CHECK_DELAY_MS);
+
+      const competition_result = await competition_use_cases.get_by_id(
+        fixture.competition_id,
+      );
+      const competition_allows_auto_setup =
+        competition_result.success &&
+        competition_result.data?.allow_auto_fixture_details_setup;
+
+      if (competition_allows_auto_setup) {
+        checks.push({
+          check_name: "auto_setup_check",
+          status: "passed",
+          message: "Auto Fixture Details Setup is enabled for this competition",
+          fix_suggestion: null,
+        });
+        update_checks(fixture.id, checks);
+        await delay(CHECK_DELAY_MS);
+
+        checks.push({
+          check_name: "redirect",
+          status: "checking",
+          message: "Redirecting you to confirm Fixture Details...",
+          fix_suggestion: null,
+        });
+        update_checks(fixture.id, checks);
+        await delay(CHECK_DELAY_MS);
+
+        set_is_starting(fixture.id, false);
+
+        await goto(`/fixture-details-setup?fixture_id=${fixture.id}`);
+        return;
+      }
+
       checks[checks.length - 1] = officials_check.officials_check;
       update_checks(fixture.id, checks);
       set_is_starting(fixture.id, false);
@@ -193,6 +241,7 @@
 
     checks[checks.length - 1] = officials_check.officials_check;
     update_checks(fixture.id, checks);
+    await delay(CHECK_DELAY_MS);
 
     checks.push({
       check_name: "home_lineup",
@@ -201,6 +250,7 @@
       fix_suggestion: null,
     });
     update_checks(fixture.id, checks);
+    await delay(CHECK_DELAY_MS);
 
     if (officials_check.home_lineup_check.status === "failed") {
       const team_result = await team_use_cases.get_by_id(fixture.home_team_id);
@@ -216,6 +266,7 @@
         fix_suggestion: null,
       });
       update_checks(fixture.id, checks);
+      await delay(CHECK_DELAY_MS);
 
       const auto_gen_result = await auto_generate_lineups_if_possible(
         fixture,
@@ -256,6 +307,7 @@
       checks[checks.length - 1] = officials_check.home_lineup_check;
     }
     update_checks(fixture.id, checks);
+    await delay(CHECK_DELAY_MS);
 
     checks.push({
       check_name: "away_lineup",
@@ -264,6 +316,7 @@
       fix_suggestion: null,
     });
     update_checks(fixture.id, checks);
+    await delay(CHECK_DELAY_MS);
 
     if (officials_check.away_lineup_check.status === "failed") {
       const team_result = await team_use_cases.get_by_id(fixture.away_team_id);
@@ -279,6 +332,7 @@
         fix_suggestion: null,
       });
       update_checks(fixture.id, checks);
+      await delay(CHECK_DELAY_MS);
 
       const auto_gen_result = await auto_generate_lineups_if_possible(
         fixture,
@@ -319,6 +373,16 @@
       checks[checks.length - 1] = officials_check.away_lineup_check;
     }
     update_checks(fixture.id, checks);
+    await delay(CHECK_DELAY_MS);
+
+    checks.push({
+      check_name: "all_checks",
+      status: "passed",
+      message: "All pre-flight checks passed! Starting game...",
+      fix_suggestion: null,
+    });
+    update_checks(fixture.id, checks);
+    await delay(CHECK_DELAY_MS);
 
     set_is_starting(fixture.id, false);
 
