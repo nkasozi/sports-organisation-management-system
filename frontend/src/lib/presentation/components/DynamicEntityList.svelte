@@ -30,6 +30,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
   export let bulk_create_handler: (() => void) | null = null;
   export let enable_bulk_import: boolean = false;
   export let button_color_class: string = "btn-primary-action";
+  export let info_message: string | null = null;
 
   export let on_total_count_changed: ((count: number) => void) | null = null;
   export let on_selection_changed: ((selected: BaseEntity[]) => void) | null =
@@ -878,6 +879,31 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
           {filtered_entities.length} of {entities.length}
           {entities.length === 1 ? "item" : "items"}
         </p>
+
+        {#if info_message}
+          <div
+            class="mt-2 p-3 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 rounded-lg"
+          >
+            <div class="flex items-start gap-2">
+              <svg
+                class="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              <p class="text-xs text-blue-800 dark:text-blue-200">
+                {info_message}
+              </p>
+            </div>
+          </div>
+        {/if}
       </div>
 
       <div class="flex flex-wrap gap-2 w-full sm:w-auto">

@@ -22,6 +22,8 @@ import { reset_player_profile_repository } from "../repositories/InBrowserPlayer
 import { reset_team_profile_repository } from "../repositories/InBrowserTeamProfileRepository";
 import { reset_profile_link_repository } from "../repositories/InBrowserProfileLinkRepository";
 import { reset_qualification_repository } from "../repositories/InBrowserQualificationRepository";
+import { reset_fixture_details_setup_repository } from "../repositories/InBrowserFixtureDetailsSetupRepository";
+import { reset_fixture_lineup_repository } from "../repositories/InBrowserFixtureLineupRepository";
 import { get_organization_repository } from "../repositories/InBrowserOrganizationRepository";
 import { get_team_repository } from "../repositories/InBrowserTeamRepository";
 import { get_competition_repository } from "../repositories/InBrowserCompetitionRepository";
@@ -54,6 +56,8 @@ export async function reset_all_data(): Promise<boolean> {
   await reset_player_team_membership_repository();
   await reset_official_repository();
   await reset_fixture_repository();
+  await reset_fixture_details_setup_repository();
+  await reset_fixture_lineup_repository();
   await reset_team_staff_repository();
   await reset_game_event_type_repository();
   await reset_player_position_repository();

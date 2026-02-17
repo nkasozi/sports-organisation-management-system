@@ -190,8 +190,15 @@
     );
 
     console.log("[DEBUG] Officials check result:", officials_check);
+    console.log(
+      "[DEBUG] Officials check status:",
+      officials_check.officials_check.status,
+    );
 
     if (officials_check.officials_check.status === "failed") {
+      console.log(
+        "[DEBUG] Officials check FAILED - will check for auto redirect",
+      );
       checks[checks.length - 1] = {
         check_name: "officials",
         status: "failed",
@@ -204,11 +211,25 @@
       const competition_result = await competition_use_cases.get_by_id(
         fixture.competition_id,
       );
+      console.log("[DEBUG] Competition result:", competition_result);
+      console.log(
+        "[DEBUG] allow_auto_fixture_details_setup:",
+        competition_result.data?.allow_auto_fixture_details_setup,
+      );
+
       const competition_allows_auto_setup =
         competition_result.success &&
         competition_result.data?.allow_auto_fixture_details_setup;
 
+      console.log(
+        "[DEBUG] competition_allows_auto_setup:",
+        competition_allows_auto_setup,
+      );
+
       if (competition_allows_auto_setup) {
+        console.log(
+          "[DEBUG] Auto setup allowed - REDIRECTING to fixture-details-setup",
+        );
         checks.push({
           check_name: "auto_setup_check",
           status: "passed",

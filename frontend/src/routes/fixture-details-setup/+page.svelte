@@ -17,6 +17,7 @@
   let initial_create_data: Record<string, unknown> | null = null;
   let is_ready: boolean = false;
   let after_save_redirect_url: string | null = null;
+  let info_message: string | null = null;
 
   async function load_auto_populated_data(
     fixture_id: string,
@@ -122,6 +123,8 @@
       initial_view = "create";
       initial_create_data = await load_auto_populated_data(fixture_id);
       after_save_redirect_url = "/live-games";
+      info_message =
+        "No fixture details were found for this game. Please review the pre-filled details below (jersey colors and officials) and save to continue starting the game.";
     }
 
     is_ready = true;
@@ -134,6 +137,7 @@
     {initial_view}
     {initial_create_data}
     {after_save_redirect_url}
+    {info_message}
   />
 {:else}
   <div class="flex items-center justify-center py-12">

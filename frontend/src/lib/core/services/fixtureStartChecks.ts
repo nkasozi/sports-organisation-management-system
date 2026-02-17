@@ -47,11 +47,18 @@ export async function check_fixture_can_start(
     throw new Error("Fixture must have an ID");
   }
 
+  console.log("[DEBUG fixtureStartChecks] Checking fixture:", fixture.id);
   const officials_result = await official_use_cases.list_by_fixture(fixture.id);
+  console.log("[DEBUG fixtureStartChecks] officials_result:", officials_result);
   const officials =
     officials_result.success && officials_result.data
       ? officials_result.data.items
       : [];
+  console.log(
+    "[DEBUG fixtureStartChecks] officials array length:",
+    officials.length,
+  );
+  console.log("[DEBUG fixtureStartChecks] officials:", officials);
 
   const officials_check: PreFlightCheck = {
     check_name: "officials",
