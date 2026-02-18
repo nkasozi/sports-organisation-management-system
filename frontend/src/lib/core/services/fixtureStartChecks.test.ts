@@ -59,7 +59,7 @@ describe("fixtureStartChecks", () => {
       expect(result.officials_check.status).toBe("failed");
       expect(result.officials_check.message).toContain("No officials assigned");
       expect(result.officials_check.fix_suggestion).toContain(
-        "Go to Fixture Officials",
+        "Fixture Details Setup",
       );
     });
 
@@ -169,6 +169,7 @@ describe("fixtureStartChecks", () => {
       const player_use_cases = create_mock_player_use_cases(team_players);
       const player_position_use_cases = create_mock_player_position_use_cases();
       const lineup_use_cases = create_mock_lineup_use_cases([]);
+      const fixture_use_cases = create_mock_fixture_use_cases([]);
       const sport_use_cases = create_mock_sport_use_cases(3, 3);
       const competition_use_cases = create_mock_competition_use_cases();
       const organization_use_cases = create_mock_organization_use_cases();
@@ -181,6 +182,7 @@ describe("fixtureStartChecks", () => {
         player_use_cases,
         player_position_use_cases,
         lineup_use_cases,
+        fixture_use_cases,
         competition_use_cases,
         organization_use_cases,
         sport_use_cases,
@@ -208,6 +210,7 @@ describe("fixtureStartChecks", () => {
       const player_use_cases = create_mock_player_use_cases(team_players);
       const player_position_use_cases = create_mock_player_position_use_cases();
       const lineup_use_cases = create_mock_lineup_use_cases([]);
+      const fixture_use_cases = create_mock_fixture_use_cases([]);
       const sport_use_cases = create_mock_sport_use_cases(2, 5);
       const competition_use_cases = create_mock_competition_use_cases();
       const organization_use_cases = create_mock_organization_use_cases();
@@ -220,6 +223,7 @@ describe("fixtureStartChecks", () => {
         player_use_cases,
         player_position_use_cases,
         lineup_use_cases,
+        fixture_use_cases,
         competition_use_cases,
         organization_use_cases,
         sport_use_cases,
@@ -244,6 +248,7 @@ describe("fixtureStartChecks", () => {
       const player_use_cases = create_mock_player_use_cases(team_players);
       const player_position_use_cases = create_mock_player_position_use_cases();
       const lineup_use_cases = create_mock_lineup_use_cases([]);
+      const fixture_use_cases = create_mock_fixture_use_cases([]);
       const sport_use_cases = create_mock_sport_use_cases(3, 5);
       const competition_use_cases = create_mock_competition_use_cases();
       const organization_use_cases = create_mock_organization_use_cases();
@@ -256,6 +261,7 @@ describe("fixtureStartChecks", () => {
         player_use_cases,
         player_position_use_cases,
         lineup_use_cases,
+        fixture_use_cases,
         competition_use_cases,
         organization_use_cases,
         sport_use_cases,
@@ -269,7 +275,7 @@ describe("fixtureStartChecks", () => {
       expect(result.fix_suggestion).toContain("Test Team");
     });
 
-    it("should fail when player count above maximum", async () => {
+    it("should limit players to max when team has more than maximum", async () => {
       const fixture = create_test_fixture({
         id: "fixture-1",
         competition_id: "comp-1",
@@ -288,6 +294,7 @@ describe("fixtureStartChecks", () => {
       const player_use_cases = create_mock_player_use_cases(team_players);
       const player_position_use_cases = create_mock_player_position_use_cases();
       const lineup_use_cases = create_mock_lineup_use_cases([]);
+      const fixture_use_cases = create_mock_fixture_use_cases([]);
       const sport_use_cases = create_mock_sport_use_cases(2, 5);
       const competition_use_cases = create_mock_competition_use_cases();
       const organization_use_cases = create_mock_organization_use_cases();
@@ -300,15 +307,14 @@ describe("fixtureStartChecks", () => {
         player_use_cases,
         player_position_use_cases,
         lineup_use_cases,
+        fixture_use_cases,
         competition_use_cases,
         organization_use_cases,
         sport_use_cases,
       );
 
-      expect(result.success).toBe(false);
-      expect(result.error_message).toContain("has 6 active players");
-      expect(result.error_message).toContain("maximum is 5");
-      expect(result.fix_suggestion).toContain("Team Fixture Lineups");
+      expect(result.success).toBe(true);
+      expect(result.lineup?.selected_players).toHaveLength(5);
     });
 
     it("should only include active players", async () => {
@@ -327,6 +333,7 @@ describe("fixtureStartChecks", () => {
       const player_use_cases = create_mock_player_use_cases(team_players);
       const player_position_use_cases = create_mock_player_position_use_cases();
       const lineup_use_cases = create_mock_lineup_use_cases([]);
+      const fixture_use_cases = create_mock_fixture_use_cases([]);
       const sport_use_cases = create_mock_sport_use_cases(2, 3);
       const competition_use_cases = create_mock_competition_use_cases();
       const organization_use_cases = create_mock_organization_use_cases();
@@ -339,6 +346,7 @@ describe("fixtureStartChecks", () => {
         player_use_cases,
         player_position_use_cases,
         lineup_use_cases,
+        fixture_use_cases,
         competition_use_cases,
         organization_use_cases,
         sport_use_cases,
@@ -368,6 +376,7 @@ describe("fixtureStartChecks", () => {
       const player_use_cases = create_mock_player_use_cases(team_players);
       const player_position_use_cases = create_mock_player_position_use_cases();
       const lineup_use_cases = create_mock_lineup_use_cases([]);
+      const fixture_use_cases = create_mock_fixture_use_cases([]);
       const sport_use_cases = create_mock_sport_use_cases(11, 11);
       const competition_use_cases = create_mock_competition_use_cases({
         min_players_on_field: 3,
@@ -383,6 +392,7 @@ describe("fixtureStartChecks", () => {
         player_use_cases,
         player_position_use_cases,
         lineup_use_cases,
+        fixture_use_cases,
         competition_use_cases,
         organization_use_cases,
         sport_use_cases,
@@ -407,6 +417,7 @@ describe("fixtureStartChecks", () => {
       const player_use_cases = create_mock_player_use_cases(team_players);
       const player_position_use_cases = create_mock_player_position_use_cases();
       const lineup_use_cases = create_mock_lineup_use_cases([]);
+      const fixture_use_cases = create_mock_fixture_use_cases([]);
       const sport_use_cases = create_mock_sport_use_cases(1, 99);
       const competition_use_cases = create_mock_competition_use_cases({
         min_players_on_field: 5,
@@ -422,6 +433,7 @@ describe("fixtureStartChecks", () => {
         player_use_cases,
         player_position_use_cases,
         lineup_use_cases,
+        fixture_use_cases,
         competition_use_cases,
         organization_use_cases,
         sport_use_cases,
@@ -622,7 +634,10 @@ function create_mock_sport_use_cases(min_players: number, max_players: number) {
   } as any;
 }
 
-function create_mock_competition_use_cases(rule_overrides: any = {}) {
+function create_mock_competition_use_cases(
+  rule_overrides: any = {},
+  squad_generation_strategy: string = "first_available",
+) {
   return {
     get_by_id: async () => ({
       success: true,
@@ -631,7 +646,18 @@ function create_mock_competition_use_cases(rule_overrides: any = {}) {
         name: "Test Competition",
         organization_id: "org-1",
         rule_overrides,
+        squad_generation_strategy,
       },
+    }),
+  } as any;
+}
+
+function create_mock_fixture_use_cases(fixtures: any[] = []) {
+  return {
+    list: async () => ({
+      success: true,
+      data: fixtures,
+      total_count: fixtures.length,
     }),
   } as any;
 }

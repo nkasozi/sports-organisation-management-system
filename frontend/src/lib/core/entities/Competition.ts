@@ -11,6 +11,8 @@ import type {
 
 export type CompetitionDerivedStatus = "upcoming" | "active" | "completed";
 
+export type SquadGenerationStrategy = "first_available" | "previous_match";
+
 export interface CompetitionRuleOverrides {
   game_duration_minutes?: number;
   periods?: SportGamePeriod[];
@@ -33,7 +35,9 @@ export interface Competition extends BaseEntity {
   competition_format_id: string;
   team_ids: string[];
   allow_auto_squad_submission: boolean;
+  squad_generation_strategy: SquadGenerationStrategy;
   allow_auto_fixture_details_setup: boolean;
+  lineup_submission_deadline_hours: number;
   start_date: string;
   end_date: string;
   registration_deadline: string;
@@ -114,7 +118,9 @@ export function create_empty_competition_input(
     competition_format_id: "",
     team_ids: [],
     allow_auto_squad_submission: false,
+    squad_generation_strategy: "first_available",
     allow_auto_fixture_details_setup: false,
+    lineup_submission_deadline_hours: 2,
     start_date: next_month.toISOString().split("T")[0],
     end_date: two_months_later.toISOString().split("T")[0],
     registration_deadline: today.toISOString().split("T")[0],

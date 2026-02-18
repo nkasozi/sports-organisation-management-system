@@ -297,6 +297,7 @@
         player_use_cases,
         player_position_use_cases,
         fixture_lineup_use_cases,
+        fixture_use_cases,
         competition_use_cases,
         organization_use_cases,
         sport_use_cases,
@@ -321,7 +322,9 @@
       checks[checks.length - 1] = {
         check_name: "home_lineup",
         status: "passed",
-        message: "Auto-generated lineup for " + team_name,
+        message:
+          auto_gen_result.generation_message ||
+          "Auto-generated lineup for " + team_name,
         fix_suggestion: null,
       };
     } else {
@@ -363,6 +366,7 @@
         player_use_cases,
         player_position_use_cases,
         fixture_lineup_use_cases,
+        fixture_use_cases,
         competition_use_cases,
         organization_use_cases,
         sport_use_cases,
@@ -387,7 +391,9 @@
       checks[checks.length - 1] = {
         check_name: "away_lineup",
         status: "passed",
-        message: "Auto-generated lineup for " + team_name,
+        message:
+          auto_gen_result.generation_message ||
+          "Auto-generated lineup for " + team_name,
         fix_suggestion: null,
       };
     } else {

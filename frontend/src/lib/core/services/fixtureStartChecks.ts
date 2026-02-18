@@ -1,6 +1,7 @@
 import type { Fixture } from "../entities/Fixture";
 import type { FixtureDetailsSetupUseCases } from "../usecases/FixtureDetailsSetupUseCases";
 import type { FixtureLineupUseCases } from "../usecases/FixtureLineupUseCases";
+import type { FixtureUseCases } from "../usecases/FixtureUseCases";
 import type { PlayerTeamMembershipUseCases } from "../usecases/PlayerTeamMembershipUseCases";
 import type { PlayerUseCases } from "../usecases/PlayerUseCases";
 import type { PlayerPositionUseCases } from "../usecases/PlayerPositionUseCases";
@@ -10,10 +11,12 @@ import type { SportUseCases } from "../usecases/SportUseCases";
 import type {
   CreateFixtureLineupInput,
   LineupPlayer,
+  FixtureLineup,
 } from "../entities/FixtureLineup";
 import type { Player } from "../entities/Player";
 import type { PlayerTeamMembership } from "../entities/PlayerTeamMembership";
 import type { PlayerPosition } from "../entities/PlayerPosition";
+import type { SquadGenerationStrategy } from "../entities/Competition";
 
 export type CheckStatus = "pending" | "checking" | "passed" | "failed";
 
@@ -36,6 +39,7 @@ export interface LineupGenerationResult {
   lineup?: CreateFixtureLineupInput;
   error_message?: string | null;
   fix_suggestion?: string | null;
+  generation_message?: string;
 }
 
 export async function check_fixture_can_start(
@@ -146,6 +150,7 @@ export async function auto_generate_lineups_if_possible(
   player_use_cases: PlayerUseCases,
   player_position_use_cases: PlayerPositionUseCases,
   lineup_use_cases: FixtureLineupUseCases,
+  fixture_use_cases: FixtureUseCases,
   competition_use_cases: CompetitionUseCases,
   organization_use_cases: OrganizationUseCases,
   sport_use_cases: SportUseCases,
@@ -185,13 +190,75 @@ export async function auto_generate_lineups_if_possible(
     };
   }
 
-  const { min_players, max_players } = rules_result;
+  const { min_players, max_players, squad_generation_strategy } = rules_result;
   console.log(
     "[fixtureStartChecks] Player rules - min:",
     min_players,
     "max:",
     max_players,
+    "strategy:",
+    squad_generation_strategy,
   );
+
+  if (squad_generation_strategy === "previous_match") {
+    const previous_lineup_result = await find_previous_lineup_for_team(
+      fixture,
+      team_id,
+      fixture_use_cases,
+      lineup_use_cases,
+    );
+
+    if (previous_lineup_result.success && previous_lineup_result.lineup) {
+      const previous_players = previous_lineup_result.lineup.selected_players;
+      console.log(
+        "[fixtureStartChecks] Found previous lineup with",
+        previous_players.length,
+        "players for team:",
+        team_name,
+      );
+
+      const lineup: CreateFixtureLineupInput = {
+        fixture_id: fixture.id,
+        team_id,
+        selected_players: previous_players,
+        status: "submitted",
+        submitted_by: "auto-generated",
+        submitted_at: new Date().toISOString(),
+        notes: "Auto-generated from previous match squad",
+      };
+
+      const create_result = await lineup_use_cases.create(lineup);
+
+      if (!create_result.success) {
+        console.log(
+          "[fixtureStartChecks] ERROR: Failed to create lineup:",
+          create_result.error_message,
+        );
+        return {
+          success: false,
+          error_message:
+            create_result.error_message || "Failed to create lineup",
+        };
+      }
+
+      console.log(
+        "[fixtureStartChecks] SUCCESS: Lineup created for team:",
+        team_name,
+        "using previous match strategy",
+      );
+      return {
+        success: true,
+        lineup,
+        generation_message: `Used previous match squad for ${team_name} (${previous_players.length} players)`,
+      };
+    }
+
+    console.log(
+      "[fixtureStartChecks] No previous lineup found for team:",
+      team_name,
+      "- falling back to first_available strategy",
+    );
+  }
 
   const memberships_result = await membership_use_cases.list({
     team_id,
@@ -225,19 +292,16 @@ export async function auto_generate_lineups_if_possible(
     };
   }
 
-  if (player_count > max_players) {
-    console.log(
-      "[fixtureStartChecks] ERROR: Too many players -",
-      player_count,
-      "> max",
-      max_players,
-    );
-    return {
-      success: false,
-      error_message: `${team_name} has ${player_count} active players, but maximum is ${max_players}`,
-      fix_suggestion: `Go to Team Fixture Lineups page and manually select which players from ${team_name} should be in the lineup`,
-    };
-  }
+  const players_to_select = Math.min(player_count, max_players);
+  console.log(
+    "[fixtureStartChecks] Selecting",
+    players_to_select,
+    "players for lineup (of",
+    player_count,
+    "available, max allowed:",
+    max_players,
+    ")",
+  );
 
   const player_ids = active_memberships.map(
     (m: PlayerTeamMembership) => m.player_id,
@@ -277,17 +341,27 @@ export async function auto_generate_lineups_if_possible(
     positions.map((p: PlayerPosition) => [p.id, p.name]),
   );
 
-  const selected_players: LineupPlayer[] =
+  const all_lineup_players: LineupPlayer[] =
     build_lineup_players_from_memberships(
       active_memberships,
       players,
       position_name_by_id,
     );
 
+  all_lineup_players.sort((player_a, player_b) => {
+    const name_a = `${player_a.last_name} ${player_a.first_name}`.toLowerCase();
+    const name_b = `${player_b.last_name} ${player_b.first_name}`.toLowerCase();
+    return name_a.localeCompare(name_b);
+  });
+
+  const selected_players = all_lineup_players.slice(0, players_to_select);
+
   console.log(
     "[fixtureStartChecks] Built",
     selected_players.length,
-    "lineup players",
+    "lineup players (sorted alphabetically, limited to",
+    players_to_select,
+    ")",
   );
   console.log(
     "[fixtureStartChecks] Sample lineup players:",
@@ -303,7 +377,7 @@ export async function auto_generate_lineups_if_possible(
     status: "submitted",
     submitted_by: "auto-generated",
     submitted_at: new Date().toISOString(),
-    notes: "Auto-generated lineup",
+    notes: "Auto-generated lineup (first available players)",
   };
 
   console.log(
@@ -327,10 +401,12 @@ export async function auto_generate_lineups_if_possible(
   console.log(
     "[fixtureStartChecks] SUCCESS: Lineup created for team:",
     team_name,
+    "using first_available strategy",
   );
   return {
     success: true,
     lineup,
+    generation_message: `Selected first ${selected_players.length} available players for ${team_name} (alphabetically sorted)`,
   };
 }
 
@@ -363,6 +439,7 @@ interface PlayerRulesResult {
   success: boolean;
   min_players: number;
   max_players: number;
+  squad_generation_strategy: SquadGenerationStrategy;
   error_message?: string;
 }
 
@@ -381,12 +458,15 @@ async function get_player_rules_from_competition(
       success: false,
       min_players: 0,
       max_players: 99,
+      squad_generation_strategy: "first_available",
       error_message: "Could not load competition",
     };
   }
 
   const competition = competition_result.data;
   const rule_overrides = competition.rule_overrides;
+  const strategy: SquadGenerationStrategy =
+    competition.squad_generation_strategy || "first_available";
 
   const has_competition_min_players =
     rule_overrides?.min_players_on_field !== undefined;
@@ -399,6 +479,7 @@ async function get_player_rules_from_competition(
       success: true,
       min_players: rule_overrides.min_players_on_field!,
       max_players: rule_overrides.max_players_on_field!,
+      squad_generation_strategy: strategy,
     };
   }
 
@@ -416,6 +497,7 @@ async function get_player_rules_from_competition(
       max_players: has_competition_max_players
         ? rule_overrides.max_players_on_field!
         : 99,
+      squad_generation_strategy: strategy,
     };
   }
 
@@ -432,6 +514,7 @@ async function get_player_rules_from_competition(
       max_players: has_competition_max_players
         ? rule_overrides.max_players_on_field!
         : 99,
+      squad_generation_strategy: strategy,
     };
   }
 
@@ -448,5 +531,85 @@ async function get_player_rules_from_competition(
     max_players: has_competition_max_players
       ? rule_overrides.max_players_on_field!
       : sport.max_players_per_fixture || 99,
+    squad_generation_strategy: strategy,
+  };
+}
+
+interface PreviousLineupResult {
+  success: boolean;
+  lineup?: FixtureLineup;
+}
+
+async function find_previous_lineup_for_team(
+  current_fixture: Fixture,
+  team_id: string,
+  fixture_use_cases: FixtureUseCases,
+  lineup_use_cases: FixtureLineupUseCases,
+): Promise<PreviousLineupResult> {
+  console.log(
+    "[fixtureStartChecks] Looking for previous lineup for team:",
+    team_id,
+    "in competition:",
+    current_fixture.competition_id,
+  );
+
+  const fixtures_result = await fixture_use_cases.list({
+    competition_id: current_fixture.competition_id,
+    team_id: team_id,
+    status: "completed",
+  });
+
+  if (!fixtures_result.success || !fixtures_result.data) {
+    console.log("[fixtureStartChecks] No fixtures found or error occurred");
+    return { success: false };
+  }
+
+  const completed_fixtures = fixtures_result.data
+    .filter((fixture: Fixture) => fixture.id !== current_fixture.id)
+    .sort((fixture_a: Fixture, fixture_b: Fixture) => {
+      const date_a = fixture_a.scheduled_date || fixture_a.created_at || "";
+      const date_b = fixture_b.scheduled_date || fixture_b.created_at || "";
+      return date_b.localeCompare(date_a);
+    });
+
+  if (completed_fixtures.length === 0) {
+    console.log(
+      "[fixtureStartChecks] No completed fixtures found for team in this competition",
+    );
+    return { success: false };
+  }
+
+  const most_recent_fixture = completed_fixtures[0];
+  console.log(
+    "[fixtureStartChecks] Found most recent completed fixture:",
+    most_recent_fixture.id,
+  );
+
+  const lineups_result = await lineup_use_cases.list({
+    fixture_id: most_recent_fixture.id,
+    team_id: team_id,
+  });
+
+  if (
+    !lineups_result.success ||
+    !lineups_result.data ||
+    lineups_result.data.length === 0
+  ) {
+    console.log(
+      "[fixtureStartChecks] No lineup found for team in previous fixture",
+    );
+    return { success: false };
+  }
+
+  const previous_lineup = lineups_result.data[0];
+  console.log(
+    "[fixtureStartChecks] Found previous lineup with",
+    previous_lineup.selected_players.length,
+    "players",
+  );
+
+  return {
+    success: true,
+    lineup: previous_lineup,
   };
 }

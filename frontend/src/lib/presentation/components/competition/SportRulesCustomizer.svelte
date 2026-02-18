@@ -3,6 +3,7 @@
   import type { CompetitionRuleOverrides } from "$lib/core/entities/Competition";
   import FormField from "$lib/presentation/components/ui/FormField.svelte";
   import GamePeriodsEditor from "$lib/presentation/components/game/GamePeriodsEditor.svelte";
+  import InfoTooltip from "$lib/presentation/components/ui/InfoTooltip.svelte";
 
   export let sport: Sport | null = null;
   export let rule_overrides: CompetitionRuleOverrides = {};
@@ -187,9 +188,13 @@
         <div class="border-b border-accent-200 dark:border-accent-700 pb-6">
           <div class="flex items-center justify-between mb-2">
             <div
-              class="text-sm font-medium text-accent-900 dark:text-accent-100"
+              class="flex items-center gap-1 text-sm font-medium text-accent-900 dark:text-accent-100"
             >
               Game Periods
+              <InfoTooltip
+                tooltip_text="Define how the game is divided into playing periods (halves, quarters, etc.) and break times between them"
+                position="right"
+              />
             </div>
             {#if rule_overrides.periods !== undefined}
               <span
@@ -252,9 +257,13 @@
         <div class="border-b border-accent-200 dark:border-accent-700 pb-6">
           <div class="flex items-center justify-between mb-2">
             <div
-              class="text-sm font-medium text-accent-900 dark:text-accent-100"
+              class="flex items-center gap-1 text-sm font-medium text-accent-900 dark:text-accent-100"
             >
               Squad Size Limits
+              <InfoTooltip
+                tooltip_text="Control how many players can be on the field and in the match-day squad"
+                position="right"
+              />
             </div>
             {#if rule_overrides.max_players_on_field !== undefined || rule_overrides.min_players_on_field !== undefined || rule_overrides.max_squad_size !== undefined}
               <span
@@ -303,10 +312,14 @@
             <div class="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
                 <label
-                  class="block text-sm font-medium text-accent-900 dark:text-accent-100 mb-1"
+                  class="flex items-center gap-1 text-sm font-medium text-accent-900 dark:text-accent-100 mb-1"
                   for="max_on_field_input"
                 >
                   Max on Field
+                  <InfoTooltip
+                    tooltip_text="Maximum players allowed on the field at the same time for one team during active play"
+                    position="right"
+                  />
                 </label>
                 <input
                   id="max_on_field_input"
@@ -322,10 +335,14 @@
               </div>
               <div>
                 <label
-                  class="block text-sm font-medium text-accent-900 dark:text-accent-100 mb-1"
+                  class="flex items-center gap-1 text-sm font-medium text-accent-900 dark:text-accent-100 mb-1"
                   for="min_on_field_input"
                 >
                   Min on Field
+                  <InfoTooltip
+                    tooltip_text="Minimum players required on the field for a team to continue playing. Game cannot proceed if a team has fewer players"
+                    position="right"
+                  />
                 </label>
                 <input
                   id="min_on_field_input"
@@ -341,10 +358,14 @@
               </div>
               <div>
                 <label
-                  class="block text-sm font-medium text-accent-900 dark:text-accent-100 mb-1"
+                  class="flex items-center gap-1 text-sm font-medium text-accent-900 dark:text-accent-100 mb-1"
                   for="max_squad_input"
                 >
                   Max Squad Size
+                  <InfoTooltip
+                    tooltip_text="Total players a team can register for a match including substitutes. Auto-lineup uses this to select players"
+                    position="left"
+                  />
                 </label>
                 <input
                   id="max_squad_input"
@@ -372,9 +393,13 @@
         <div class="border-b border-accent-200 dark:border-accent-700 pb-6">
           <div class="flex items-center justify-between mb-2">
             <div
-              class="text-sm font-medium text-accent-900 dark:text-accent-100"
+              class="flex items-center gap-1 text-sm font-medium text-accent-900 dark:text-accent-100"
             >
               Substitution Rules
+              <InfoTooltip
+                tooltip_text="Configure how player substitutions work during matches - limits, timing, and whether substituted players can return"
+                position="right"
+              />
             </div>
             {#if rule_overrides.substitution_rules}
               <span
@@ -435,10 +460,14 @@
             <div class="space-y-3 mt-3">
               <div>
                 <label
-                  class="block text-sm font-medium text-accent-900 dark:text-accent-100 mb-1"
+                  class="flex items-center gap-1 text-sm font-medium text-accent-900 dark:text-accent-100 mb-1"
                   for="max_subs_input"
                 >
                   Max Substitutions Per Game
+                  <InfoTooltip
+                    tooltip_text="Maximum number of player substitutions each team can make during a match"
+                    position="top"
+                  />
                 </label>
                 <input
                   id="max_subs_input"
@@ -462,8 +491,14 @@
                       update_rolling_substitutions(e.currentTarget.checked)}
                     class="w-4 h-4 text-primary-600 rounded border-accent-300"
                   />
-                  <span class="text-sm text-accent-700 dark:text-accent-300">
+                  <span
+                    class="flex items-center gap-1 text-sm text-accent-700 dark:text-accent-300"
+                  >
                     Rolling substitutions allowed
+                    <InfoTooltip
+                      tooltip_text="Players can be substituted freely at any stoppage without using official substitution breaks"
+                      position="top"
+                    />
                   </span>
                 </label>
                 <label class="flex items-center gap-3 cursor-pointer">
@@ -474,8 +509,14 @@
                       update_return_after_substitution(e.currentTarget.checked)}
                     class="w-4 h-4 text-primary-600 rounded border-accent-300"
                   />
-                  <span class="text-sm text-accent-700 dark:text-accent-300">
+                  <span
+                    class="flex items-center gap-1 text-sm text-accent-700 dark:text-accent-300"
+                  >
                     Allow returning to field after substitution
+                    <InfoTooltip
+                      tooltip_text="A player who has been substituted out can come back onto the field later in the match"
+                      position="top"
+                    />
                   </span>
                 </label>
               </div>
@@ -493,9 +534,13 @@
         <div>
           <div class="flex items-center justify-between mb-2">
             <div
-              class="text-sm font-medium text-accent-900 dark:text-accent-100"
+              class="flex items-center gap-1 text-sm font-medium text-accent-900 dark:text-accent-100"
             >
               Overtime Rules
+              <InfoTooltip
+                tooltip_text="Configure whether extra time is played when matches end in a draw, and how that overtime period works"
+                position="right"
+              />
             </div>
             {#if rule_overrides.overtime_rules}
               <span
@@ -549,8 +594,14 @@
                     update_overtime_enabled(e.currentTarget.checked)}
                   class="w-4 h-4 text-primary-600 rounded border-accent-300"
                 />
-                <span class="text-sm text-accent-700 dark:text-accent-300">
+                <span
+                  class="flex items-center gap-1 text-sm text-accent-700 dark:text-accent-300"
+                >
                   Enable overtime
+                  <InfoTooltip
+                    tooltip_text="When enabled, extra time will be played if the match ends in a draw during knockout stages"
+                    position="top"
+                  />
                 </span>
               </label>
             </div>
