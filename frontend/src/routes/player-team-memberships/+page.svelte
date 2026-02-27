@@ -14,4 +14,5 @@
 <EntityCrudWrapper
   entity_type="PlayerTeamMembership"
   bulk_create_handler={handle_bulk_create}
+  disabled_functionalities={["edit"]}
 />

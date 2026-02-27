@@ -3,6 +3,7 @@ import { get_competition_use_cases } from "$lib/core/usecases/CompetitionUseCase
 import { get_team_use_cases } from "$lib/core/usecases/TeamUseCases";
 import { get_player_use_cases } from "$lib/core/usecases/PlayerUseCases";
 import { get_player_team_membership_use_cases } from "$lib/core/usecases/PlayerTeamMembershipUseCases";
+import { get_player_team_transfer_history_use_cases } from "$lib/core/usecases/PlayerTeamTransferHistoryUseCases";
 import { get_player_position_use_cases } from "$lib/core/usecases/PlayerPositionUseCases";
 import { get_official_use_cases } from "$lib/core/usecases/OfficialUseCases";
 import { get_fixture_use_cases } from "$lib/core/usecases/FixtureUseCases";
@@ -24,6 +25,7 @@ import { get_audit_log_use_cases } from "$lib/core/usecases/AuditLogUseCases";
 import { get_player_profile_use_cases } from "$lib/core/usecases/PlayerProfileUseCases";
 import { get_team_profile_use_cases } from "$lib/core/usecases/TeamProfileUseCases";
 import { get_profile_link_use_cases } from "$lib/core/usecases/ProfileLinkUseCases";
+import { get_official_associated_team_use_cases } from "$lib/core/usecases/OfficialAssociatedTeamUseCases";
 import { EventBus } from "$lib/infrastructure/events/EventBus";
 import type {
   BaseEntity,
@@ -37,6 +39,7 @@ const VALID_ENTITY_TYPE_KEYS = [
   "team",
   "player",
   "playerteammembership",
+  "playerteamtransferhistory",
   "official",
   "fixture",
   "fixturedetailssetup",
@@ -58,6 +61,7 @@ const VALID_ENTITY_TYPE_KEYS = [
   "playerprofile",
   "teamprofile",
   "profilelink",
+  "officialassociatedteam",
 ] as const;
 
 export type EntityTypeKey = (typeof VALID_ENTITY_TYPE_KEYS)[number];
@@ -92,6 +96,8 @@ function create_use_cases_registry(): Record<EntityTypeKey, UseCasesGetter> {
     ["player" satisfies EntityTypeKey]: get_player_use_cases as UseCasesGetter,
     ["playerteammembership" satisfies EntityTypeKey]:
       get_player_team_membership_use_cases as UseCasesGetter,
+    ["playerteamtransferhistory" satisfies EntityTypeKey]:
+      get_player_team_transfer_history_use_cases as UseCasesGetter,
     ["official" satisfies EntityTypeKey]:
       get_official_use_cases as UseCasesGetter,
     ["fixture" satisfies EntityTypeKey]:
@@ -132,6 +138,8 @@ function create_use_cases_registry(): Record<EntityTypeKey, UseCasesGetter> {
       get_team_profile_use_cases as UseCasesGetter,
     ["profilelink" satisfies EntityTypeKey]:
       get_profile_link_use_cases as UseCasesGetter,
+    ["officialassociatedteam" satisfies EntityTypeKey]:
+      get_official_associated_team_use_cases as UseCasesGetter,
   } satisfies Record<EntityTypeKey, UseCasesGetter>;
 
   return registry_definition;
@@ -155,6 +163,7 @@ const ENTITY_DISPLAY_NAME_GETTERS: Record<
     return `${p.first_name || ""} ${p.last_name || ""}`.trim() || e.id;
   },
   playerteammembership: (e) => e.id,
+  playerteamtransferhistory: (e) => e.id,
   official: (e) => {
     const o = to_record(e);
     return `${o.first_name || ""} ${o.last_name || ""}`.trim() || e.id;

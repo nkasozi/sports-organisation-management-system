@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { createEventDispatcher } from "svelte";
+  import { createEventDispatcher, onMount } from "svelte";
   import { goto } from "$app/navigation";
   import {
     theme_store,
@@ -11,6 +11,14 @@
     current_user_display_name,
     current_user_initials,
   } from "$lib/presentation/stores/currentUser";
+  import {
+    auth_store,
+    current_user_role_display,
+    other_available_profiles,
+    is_auth_initialized,
+    type UserProfile,
+  } from "$lib/presentation/stores/auth";
+  import { USER_ROLE_DISPLAY_NAMES } from "$lib/core/interfaces/ports/AuthenticationPort";
   import ThemeToggle from "$lib/presentation/components/theme/ThemeToggle.svelte";
   import SyncStatusIndicator from "$lib/presentation/components/SyncStatusIndicator.svelte";
 
@@ -50,8 +58,21 @@
 
   function handle_logout_click(): void {
     close_user_menu();
+    auth_store.logout();
     goto("/");
   }
+
+  async function handle_profile_switch(profile: UserProfile): Promise<void> {
+    close_user_menu();
+    const success = await auth_store.switch_profile(profile.id);
+    if (success) {
+      console.log(`[Header] Switched to profile: ${profile.display_name}`);
+    }
+  }
+
+  onMount(() => {
+    void auth_store.initialize();
+  });
 
   function split_organization_name(name: string): {
     prefix: string;
@@ -253,13 +274,63 @@
 
           {#if user_menu_open}
             <div
-              class="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white dark:bg-accent-800 ring-1 ring-black ring-opacity-5 z-[100] dropdown-menu"
+              class="absolute right-0 mt-2 w-64 rounded-md shadow-lg bg-white dark:bg-accent-800 ring-1 ring-black ring-opacity-5 z-[100] dropdown-menu"
               role="menu"
               tabindex="-1"
               on:click|stopPropagation
               on:keydown|stopPropagation
             >
               <div class="py-1">
+                <div
+                  class="px-4 py-2 border-b border-gray-200 dark:border-accent-700"
+                >
+                  <p
+                    class="text-xs text-gray-500 dark:text-accent-400 uppercase tracking-wide"
+                  >
+                    Current Profile
+                  </p>
+                  <p
+                    class="text-sm font-medium text-gray-900 dark:text-accent-200"
+                  >
+                    {$current_user_role_display}
+                  </p>
+                </div>
+
+                {#if $other_available_profiles.length > 0}
+                  <div class="px-4 py-2">
+                    <p
+                      class="text-xs text-gray-500 dark:text-accent-400 uppercase tracking-wide mb-2"
+                    >
+                      Switch Profile
+                    </p>
+                    {#each $other_available_profiles as profile}
+                      <button
+                        type="button"
+                        class="w-full flex items-center px-3 py-2 text-sm text-gray-700 dark:text-accent-300 hover:bg-gray-100 dark:hover:bg-accent-700 rounded-md transition-colors duration-150 mb-1"
+                        on:click={() => handle_profile_switch(profile)}
+                      >
+                        <svg
+                          class="mr-3 h-4 w-4 text-gray-500 dark:text-accent-400"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                          />
+                        </svg>
+                        {USER_ROLE_DISPLAY_NAMES[profile.role]}
+                      </button>
+                    {/each}
+                  </div>
+                  <div
+                    class="border-t border-gray-200 dark:border-accent-700 my-1"
+                  ></div>
+                {/if}
+
                 <button
                   type="button"
                   class="w-full flex items-center px-4 py-2 text-sm text-gray-900 dark:text-accent-200 hover:bg-gray-100 dark:hover:bg-accent-700 transition-colors duration-150"

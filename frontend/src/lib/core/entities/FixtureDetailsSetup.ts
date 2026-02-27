@@ -101,3 +101,77 @@ export function validate_fixture_details_setup_input(
     errors,
   };
 }
+
+export interface OfficialTeamConflict {
+  official_id: string;
+  official_name: string;
+  team_id: string;
+  team_name: string;
+  association_type: string;
+  message: string;
+}
+
+export interface OfficialWithAssociations {
+  id: string;
+  first_name: string;
+  last_name: string;
+  associated_team_ids: string[];
+  association_details: {
+    team_id: string;
+    association_type: string;
+  }[];
+}
+
+export function detect_official_team_conflicts(
+  assigned_officials: OfficialAssignment[],
+  officials_with_associations: OfficialWithAssociations[],
+  home_team_id: string,
+  away_team_id: string,
+  home_team_name: string,
+  away_team_name: string,
+): OfficialTeamConflict[] {
+  const conflicts: OfficialTeamConflict[] = [];
+  const fixture_team_ids = new Set([home_team_id, away_team_id]);
+
+  for (const assignment of assigned_officials) {
+    if (!assignment.official_id) continue;
+
+    const official = officials_with_associations.find(
+      (o) => o.id === assignment.official_id,
+    );
+
+    if (!official) continue;
+
+    for (const association of official.association_details) {
+      if (fixture_team_ids.has(association.team_id)) {
+        const team_name =
+          association.team_id === home_team_id
+            ? home_team_name
+            : away_team_name;
+        const official_name = `${official.first_name} ${official.last_name}`;
+
+        conflicts.push({
+          official_id: official.id,
+          official_name,
+          team_id: association.team_id,
+          team_name,
+          association_type: association.association_type,
+          message: `${official_name} has a ${format_association_type_for_display(association.association_type)} with ${team_name}`,
+        });
+      }
+    }
+  }
+
+  return conflicts;
+}
+
+function format_association_type_for_display(association_type: string): string {
+  const type_labels: Record<string, string> = {
+    current_member: "current membership",
+    former_member: "former membership",
+    family_connection: "family connection",
+    financial_interest: "financial interest",
+    other: "connection",
+  };
+  return type_labels[association_type] || "association";
+}

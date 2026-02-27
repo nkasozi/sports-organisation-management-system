@@ -18,7 +18,9 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
   import type {
     EntityCrudHandlers,
     EntityViewCallbacks,
+    CrudFunctionality,
   } from "$lib/core/types/EntityHandlers";
+  import { is_functionality_disabled } from "$lib/core/types/EntityHandlers";
   import BulkImportModal from "./BulkImportModal.svelte";
 
   export let entity_type: string;
@@ -31,6 +33,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
   export let enable_bulk_import: boolean = false;
   export let button_color_class: string = "btn-primary-action";
   export let info_message: string | null = null;
+  export let disabled_functionalities: CrudFunctionality[] = [];
 
   export let on_total_count_changed: ((count: number) => void) | null = null;
   export let on_selection_changed: ((selected: BaseEntity[]) => void) | null =
@@ -41,6 +44,18 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
 
   $: has_custom_handlers = crud_handlers !== null;
   $: is_sub_entity_mode = sub_entity_filter !== null;
+  $: is_create_disabled = is_functionality_disabled(
+    "create",
+    disabled_functionalities,
+  );
+  $: is_edit_disabled = is_functionality_disabled(
+    "edit",
+    disabled_functionalities,
+  );
+  $: is_delete_disabled = is_functionality_disabled(
+    "delete",
+    disabled_functionalities,
+  );
 
   let entities: BaseEntity[] = [];
   let filtered_entities: BaseEntity[] = [];
@@ -973,7 +988,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
           Export
         </button>
 
-        {#if can_show_bulk_actions}
+        {#if can_show_bulk_actions && !is_delete_disabled}
           <button
             type="button"
             class="btn btn-outline w-auto"
@@ -994,7 +1009,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
           </button>
         {/if}
 
-        {#if bulk_create_handler}
+        {#if bulk_create_handler && !is_create_disabled}
           <button
             type="button"
             class="btn {button_color_class} w-auto"
@@ -1004,7 +1019,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
           </button>
         {/if}
 
-        {#if show_actions}
+        {#if show_actions && !is_create_disabled}
           <button
             type="button"
             class="btn {button_color_class} w-auto"
@@ -1237,7 +1252,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
                 </th>
               {/each}
 
-              {#if show_actions}
+              {#if show_actions && (!is_edit_disabled || !is_delete_disabled)}
                 <th
                   class="px-3 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider sticky right-0 bg-gray-50 dark:bg-gray-800 z-10"
                 >
@@ -1284,25 +1299,29 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
                   </td>
                 {/each}
 
-                {#if show_actions}
+                {#if show_actions && (!is_edit_disabled || !is_delete_disabled)}
                   <td
                     class="px-3 py-4 text-right text-sm sticky right-0 bg-white dark:bg-gray-900 z-10"
                   >
                     <div class="flex flex-row gap-2 justify-end items-center">
-                      <button
-                        type="button"
-                        class="btn btn-outline btn-sm"
-                        on:click={() => handle_edit_entity(entity)}
-                      >
-                        Edit
-                      </button>
-                      <button
-                        type="button"
-                        class="btn btn-outline btn-sm text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
-                        on:click={() => handle_delete_single_entity(entity)}
-                      >
-                        Delete
-                      </button>
+                      {#if !is_edit_disabled}
+                        <button
+                          type="button"
+                          class="btn btn-outline btn-sm"
+                          on:click={() => handle_edit_entity(entity)}
+                        >
+                          Edit
+                        </button>
+                      {/if}
+                      {#if !is_delete_disabled}
+                        <button
+                          type="button"
+                          class="btn btn-outline btn-sm text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+                          on:click={() => handle_delete_single_entity(entity)}
+                        >
+                          Delete
+                        </button>
+                      {/if}
                     </div>
                   </td>
                 {/if}

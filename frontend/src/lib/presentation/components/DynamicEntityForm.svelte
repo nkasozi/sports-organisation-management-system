@@ -31,6 +31,13 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
   import OfficialAssignmentArray from "./OfficialAssignmentArray.svelte";
   import { create_empty_official_assignment } from "../../core/entities/FixtureDetailsSetup";
   import type { OfficialAssignment } from "../../core/entities/FixtureDetailsSetup";
+  import {
+    detect_official_team_conflicts,
+    type OfficialWithAssociations,
+  } from "../../core/entities/FixtureDetailsSetup";
+  import { get_official_associated_team_use_cases } from "../../core/usecases/OfficialAssociatedTeamUseCases";
+  import { get_fixture_use_cases } from "../../core/usecases/FixtureUseCases";
+  import { get_team_use_cases } from "../../core/usecases/TeamUseCases";
 
   export let entity_type: string;
   export let entity_data: Partial<BaseEntity> | null = null;
@@ -51,6 +58,10 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
   }>();
 
   const competition_team_use_cases = get_competition_team_use_cases();
+  const official_associated_team_use_cases =
+    get_official_associated_team_use_cases();
+  const fixture_use_cases = get_fixture_use_cases();
+  const team_use_cases = get_team_use_cases();
 
   let form_data: Record<string, any> = {};
   let validation_errors: Record<string, string> = {};
@@ -59,6 +70,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
   let foreign_key_options: Record<string, BaseEntity[]> = {};
   let filtered_fields_loading: Record<string, boolean> = {};
   let color_clash_warnings: string[] = [];
+  let official_team_conflict_warnings: string[] = [];
   let competition_team_ids: Set<string> = new Set();
 
   $: entity_metadata = get_entity_metadata_for_type(entity_type);
@@ -75,6 +87,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
       if (browser) {
         void load_foreign_key_options_for_all_fields(entity_metadata.fields);
         void load_filtered_options_for_edit_mode(entity_metadata, entity_data);
+        void check_official_team_conflicts();
       }
     }
   }
@@ -824,6 +837,108 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
     all_warnings.push(...team_warnings.map((w) => w.message));
 
     color_clash_warnings = all_warnings;
+  }
+
+  async function check_official_team_conflicts(): Promise<void> {
+    if (entity_type.toLowerCase() !== "fixturedetailssetup") {
+      official_team_conflict_warnings = [];
+      return;
+    }
+
+    const fixture_id = form_data["fixture_id"];
+    const assigned_officials = form_data["assigned_officials"] as
+      | OfficialAssignment[]
+      | undefined;
+
+    if (!fixture_id || !assigned_officials || assigned_officials.length === 0) {
+      official_team_conflict_warnings = [];
+      return;
+    }
+
+    const fixture_result = await fixture_use_cases.get_by_id(fixture_id);
+    if (!fixture_result.success || !fixture_result.data) {
+      official_team_conflict_warnings = [];
+      return;
+    }
+
+    const fixture = fixture_result.data;
+    const home_team_id = (fixture as any).home_team_id;
+    const away_team_id = (fixture as any).away_team_id;
+
+    const [home_team_result, away_team_result] = await Promise.all([
+      team_use_cases.get_by_id(home_team_id),
+      team_use_cases.get_by_id(away_team_id),
+    ]);
+
+    const home_team_name = home_team_result.success
+      ? (home_team_result.data as any)?.name || "Home Team"
+      : "Home Team";
+    const away_team_name = away_team_result.success
+      ? (away_team_result.data as any)?.name || "Away Team"
+      : "Away Team";
+
+    const officials_with_associations: OfficialWithAssociations[] = [];
+
+    for (const assignment of assigned_officials) {
+      if (!assignment.official_id) continue;
+
+      const associations_result =
+        await official_associated_team_use_cases.list_by_official(
+          assignment.official_id,
+        );
+
+      const official_options_list = foreign_key_options["official_id"] || [];
+      const official = official_options_list.find(
+        (o) => o.id === assignment.official_id,
+      );
+
+      const official_name = official
+        ? `${(official as any).first_name || ""} ${(official as any).last_name || ""}`.trim()
+        : "Unknown Official";
+
+      const associated_team_ids: string[] = [];
+      const association_details: {
+        team_id: string;
+        association_type: string;
+      }[] = [];
+
+      if (associations_result.success && associations_result.data) {
+        const associations_data = associations_result.data as any;
+        const associations_list = Array.isArray(associations_data)
+          ? associations_data
+          : associations_data.items || [];
+
+        for (const assoc of associations_list) {
+          if (assoc.status === "active") {
+            associated_team_ids.push(assoc.team_id);
+            association_details.push({
+              team_id: assoc.team_id,
+              association_type: assoc.association_type,
+            });
+          }
+        }
+      }
+
+      const [first_name, ...last_name_parts] = official_name.split(" ");
+      officials_with_associations.push({
+        id: assignment.official_id,
+        first_name: first_name || "",
+        last_name: last_name_parts.join(" ") || "",
+        associated_team_ids,
+        association_details,
+      });
+    }
+
+    const conflicts = detect_official_team_conflicts(
+      assigned_officials,
+      officials_with_associations,
+      home_team_id,
+      away_team_id,
+      home_team_name,
+      away_team_name,
+    );
+
+    official_team_conflict_warnings = conflicts.map((c) => c.message);
   }
 
   async function handle_form_submission(): Promise<void> {
@@ -1607,6 +1722,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
                       field.field_name,
                       e.detail.assignments,
                     );
+                    void check_official_team_conflicts();
                   }}
                 />
               {/if}
@@ -1694,6 +1810,47 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
                   class="mt-1 text-sm text-orange-700 dark:text-orange-300 list-disc list-inside"
                 >
                   {#each color_clash_warnings as warning}
+                    <li>{warning}</li>
+                  {/each}
+                </ul>
+              </div>
+            </div>
+          </div>
+        {/if}
+
+        <!-- Official Team Association Conflict Warnings -->
+        {#if official_team_conflict_warnings.length > 0}
+          <div
+            class="mt-4 p-4 rounded-lg border border-red-300 dark:border-red-600 bg-red-50 dark:bg-red-900/30"
+          >
+            <div class="flex items-start gap-3">
+              <svg
+                class="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                />
+              </svg>
+              <div>
+                <div
+                  class="text-sm font-semibold text-red-800 dark:text-red-200"
+                >
+                  Official-Team Conflict Detected
+                </div>
+                <p class="mt-1 text-xs text-red-600 dark:text-red-400">
+                  The following officials have associations with teams playing
+                  in this fixture:
+                </p>
+                <ul
+                  class="mt-2 text-sm text-red-700 dark:text-red-300 list-disc list-inside"
+                >
+                  {#each official_team_conflict_warnings as warning}
                     <li>{warning}</li>
                   {/each}
                 </ul>

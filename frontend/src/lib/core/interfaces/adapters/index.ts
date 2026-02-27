@@ -6,3 +6,4 @@ export * from "./PlayerRepository";
 export * from "./OfficialRepository";
 export * from "./FixtureRepository";
 export * from "./VenueRepository";
+export * from "./PlayerTeamTransferHistoryRepository";

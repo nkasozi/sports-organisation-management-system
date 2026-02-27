@@ -10,6 +10,7 @@ import type { Competition } from "../../core/entities/Competition";
 import type { Team } from "../../core/entities/Team";
 import type { Player } from "../../core/entities/Player";
 import type { PlayerTeamMembership } from "../../core/entities/PlayerTeamMembership";
+import type { PlayerTeamTransferHistory } from "../../core/entities/PlayerTeamTransferHistory";
 import type { PlayerPosition } from "../../core/entities/PlayerPosition";
 import type { Official } from "../../core/entities/Official";
 import type { Fixture } from "../../core/entities/Fixture";
@@ -34,6 +35,8 @@ import type { TeamProfile } from "../../core/entities/TeamProfile";
 import { TEAM_PROFILE_VISIBILITY_OPTIONS } from "../../core/entities/TeamProfile";
 import type { ProfileLink } from "../../core/entities/ProfileLink";
 import { PROFILE_LINK_PLATFORM_OPTIONS } from "../../core/entities/ProfileLink";
+import type { OfficialAssociatedTeam } from "../../core/entities/OfficialAssociatedTeam";
+import { OFFICIAL_TEAM_ASSOCIATION_TYPE_OPTIONS } from "../../core/entities/OfficialAssociatedTeam";
 
 function generate_30_minute_time_intervals(): string[] {
   const intervals: string[] = [];
@@ -552,6 +555,7 @@ class EntityMetadataRegistry {
     this.register_team_metadata();
     this.register_player_metadata();
     this.register_player_team_membership_metadata();
+    this.register_player_team_transfer_history_metadata();
     this.register_player_position_metadata();
     this.register_official_metadata();
     this.register_fixture_metadata();
@@ -574,6 +578,7 @@ class EntityMetadataRegistry {
     this.register_player_profile_metadata();
     this.register_team_profile_metadata();
     this.register_profile_link_metadata();
+    this.register_official_associated_team_metadata();
   }
 
   private register_organization_metadata(): void {
@@ -1160,6 +1165,79 @@ class EntityMetadataRegistry {
     });
   }
 
+  private register_player_team_transfer_history_metadata(): void {
+    this.metadata_map.set("playerteamtransferhistory", {
+      entity_name: "playerteamtransferhistory",
+      display_name: "Player Transfer",
+      fields: [
+        {
+          field_name: "player_id" satisfies keyof PlayerTeamTransferHistory,
+          display_name: "Player",
+          field_type: "foreign_key",
+          is_required: true,
+          is_read_only: false,
+          is_read_only_on_edit: true,
+          foreign_key_entity: "player",
+          show_in_list: true,
+        },
+        {
+          field_name: "from_team_id" satisfies keyof PlayerTeamTransferHistory,
+          display_name: "From Team",
+          field_type: "foreign_key",
+          is_required: true,
+          is_read_only: false,
+          is_read_only_on_edit: true,
+          foreign_key_entity: "team",
+          show_in_list: true,
+        },
+        {
+          field_name: "to_team_id" satisfies keyof PlayerTeamTransferHistory,
+          display_name: "To Team",
+          field_type: "foreign_key",
+          is_required: true,
+          is_read_only: false,
+          is_read_only_on_edit: true,
+          foreign_key_entity: "team",
+          show_in_list: true,
+        },
+        {
+          field_name: "transfer_date" satisfies keyof PlayerTeamTransferHistory,
+          display_name: "Transfer Date",
+          field_type: "date",
+          is_required: true,
+          is_read_only: false,
+          show_in_list: true,
+        },
+        {
+          field_name: "status" satisfies keyof PlayerTeamTransferHistory,
+          display_name: "Status",
+          field_type: "enum",
+          is_required: true,
+          is_read_only: false,
+          is_hidden_on_create: true,
+          enum_values: ["pending", "confirmed", "rejected"],
+          show_in_list: true,
+        },
+        {
+          field_name: "approved_by" satisfies keyof PlayerTeamTransferHistory,
+          display_name: "Approved By",
+          field_type: "string",
+          is_required: false,
+          is_read_only: false,
+          show_in_list: false,
+        },
+        {
+          field_name: "notes" satisfies keyof PlayerTeamTransferHistory,
+          display_name: "Notes",
+          field_type: "text",
+          is_required: false,
+          is_read_only: false,
+          show_in_list: false,
+        },
+      ],
+    });
+  }
+
   private register_official_metadata(): void {
     this.metadata_map.set("official", {
       entity_name: "official",
@@ -1292,6 +1370,18 @@ class EntityMetadataRegistry {
             foreign_key_field: "holder_id",
             holder_type_field: "holder_type",
             holder_type_value: "official",
+          },
+        },
+        {
+          field_name: "associated_teams",
+          display_name: "Associated Teams",
+          field_type: "sub_entity",
+          is_required: false,
+          is_read_only: false,
+          show_in_list: false,
+          sub_entity_config: {
+            child_entity_type: "officialassociatedteam",
+            foreign_key_field: "official_id",
           },
         },
       ],
@@ -2627,6 +2717,82 @@ class EntityMetadataRegistry {
         },
         {
           field_name: "status" satisfies keyof ProfileLink,
+          display_name: "Status",
+          field_type: "enum",
+          is_required: true,
+          is_read_only: false,
+          enum_values: ["active", "inactive"],
+          show_in_list: true,
+        },
+      ],
+    });
+  }
+
+  private register_official_associated_team_metadata(): void {
+    this.metadata_map.set("officialassociatedteam", {
+      entity_name: "officialassociatedteam",
+      display_name: "Official Associated Team",
+      fields: [
+        {
+          field_name: "official_id" satisfies keyof OfficialAssociatedTeam,
+          display_name: "Official",
+          field_type: "foreign_key",
+          foreign_key_entity: "official",
+          is_required: true,
+          is_read_only: false,
+          show_in_list: true,
+        },
+        {
+          field_name: "team_id" satisfies keyof OfficialAssociatedTeam,
+          display_name: "Team",
+          field_type: "foreign_key",
+          foreign_key_entity: "team",
+          is_required: true,
+          is_read_only: false,
+          show_in_list: true,
+        },
+        {
+          field_name: "association_type" satisfies keyof OfficialAssociatedTeam,
+          display_name: "Association Type",
+          field_type: "enum",
+          is_required: true,
+          is_read_only: false,
+          show_in_list: true,
+          enum_values: [
+            "current_member",
+            "former_member",
+            "family_connection",
+            "financial_interest",
+            "other",
+          ],
+          enum_options: OFFICIAL_TEAM_ASSOCIATION_TYPE_OPTIONS,
+        },
+        {
+          field_name: "start_date" satisfies keyof OfficialAssociatedTeam,
+          display_name: "Start Date",
+          field_type: "date",
+          is_required: false,
+          is_read_only: false,
+          show_in_list: false,
+        },
+        {
+          field_name: "end_date" satisfies keyof OfficialAssociatedTeam,
+          display_name: "End Date",
+          field_type: "date",
+          is_required: false,
+          is_read_only: false,
+          show_in_list: false,
+        },
+        {
+          field_name: "notes" satisfies keyof OfficialAssociatedTeam,
+          display_name: "Notes",
+          field_type: "string",
+          is_required: false,
+          is_read_only: false,
+          show_in_list: false,
+        },
+        {
+          field_name: "status" satisfies keyof OfficialAssociatedTeam,
           display_name: "Status",
           field_type: "enum",
           is_required: true,

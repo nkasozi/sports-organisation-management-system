@@ -29,6 +29,8 @@ import type { IdentificationType } from "../../core/entities/IdentificationType"
 import type { Identification } from "../../core/entities/Identification";
 import type { Qualification } from "../../core/entities/Qualification";
 import type { GameEventType } from "../../core/entities/GameEventType";
+import type { OfficialAssociatedTeam } from "../../core/entities/OfficialAssociatedTeam";
+import type { PlayerTeamTransferHistory } from "../../core/entities/PlayerTeamTransferHistory";
 
 const DATABASE_NAME = "SportsOrgManagementDB";
 const DATABASE_VERSION = 1;
@@ -64,6 +66,8 @@ class SportsOrgDatabase extends Dexie {
   identifications!: Table<Identification, string>;
   qualifications!: Table<Qualification, string>;
   game_event_types!: Table<GameEventType, string>;
+  official_associated_teams!: Table<OfficialAssociatedTeam, string>;
+  player_team_transfer_histories!: Table<PlayerTeamTransferHistory, string>;
 
   constructor() {
     super(DATABASE_NAME);
@@ -106,6 +110,10 @@ class SportsOrgDatabase extends Dexie {
         "id, entity_type, entity_id, identification_type_id, created_at",
       qualifications: "id, entity_type, entity_id, name, created_at",
       game_event_types: "id, name, sport_id, category, created_at",
+      official_associated_teams:
+        "id, official_id, team_id, association_type, status, created_at",
+      player_team_transfer_histories:
+        "id, player_id, from_team_id, to_team_id, status, transfer_date, created_at",
     });
   }
 }

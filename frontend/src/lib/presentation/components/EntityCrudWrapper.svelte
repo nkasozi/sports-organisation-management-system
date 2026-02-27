@@ -10,7 +10,9 @@ Uses explicit handlers instead of events for predictable data flow
   import type {
     EntityCrudHandlers,
     EntityViewCallbacks,
+    CrudFunctionality,
   } from "../../core/types/EntityHandlers";
+  import { is_functionality_disabled } from "../../core/types/EntityHandlers";
   import { get_use_cases_for_entity_type } from "../../infrastructure/registry/entityUseCasesRegistry";
   import DynamicEntityForm from "./DynamicEntityForm.svelte";
   import DynamicEntityList from "./DynamicEntityList.svelte";
@@ -25,6 +27,7 @@ Uses explicit handlers instead of events for predictable data flow
   export let button_color_class: string = "btn-primary-action";
   export let after_save_redirect_url: string | null = null;
   export let info_message: string | null = null;
+  export let disabled_functionalities: CrudFunctionality[] = [];
 
   const dispatch = createEventDispatcher<{
     entity_created: { entity: BaseEntity };
@@ -111,9 +114,24 @@ Uses explicit handlers instead of events for predictable data flow
 
   function build_list_view_callbacks(): EntityViewCallbacks {
     return {
-      on_create_requested: handle_create_requested,
-      on_edit_requested: handle_edit_requested,
-      on_delete_completed: handle_entity_deleted,
+      on_create_requested: is_functionality_disabled(
+        "create",
+        disabled_functionalities,
+      )
+        ? undefined
+        : handle_create_requested,
+      on_edit_requested: is_functionality_disabled(
+        "edit",
+        disabled_functionalities,
+      )
+        ? undefined
+        : handle_edit_requested,
+      on_delete_completed: is_functionality_disabled(
+        "delete",
+        disabled_functionalities,
+      )
+        ? undefined
+        : handle_entity_deleted,
     };
   }
 
@@ -327,6 +345,7 @@ Uses explicit handlers instead of events for predictable data flow
           {bulk_create_handler}
           {enable_bulk_import}
           {button_color_class}
+          {disabled_functionalities}
           on_total_count_changed={handle_list_count_updated}
           on_selection_changed={handle_selection_changed}
           on_entities_batch_deleted={handle_entities_batch_deleted}

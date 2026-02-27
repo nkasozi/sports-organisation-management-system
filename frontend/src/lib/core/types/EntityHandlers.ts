@@ -4,6 +4,21 @@ import type {
   EntityListResult,
 } from "../entities/BaseEntity";
 
+export type CrudFunctionality = "create" | "edit" | "delete";
+
+export const CRUD_FUNCTIONALITIES = {
+  CREATE: "create" as CrudFunctionality,
+  EDIT: "edit" as CrudFunctionality,
+  DELETE: "delete" as CrudFunctionality,
+};
+
+export function is_functionality_disabled(
+  functionality: CrudFunctionality,
+  disabled_functionalities: CrudFunctionality[],
+): boolean {
+  return disabled_functionalities.includes(functionality);
+}
+
 export type EntityCreateHandler<
   TInput = Record<string, unknown>,
   TEntity extends BaseEntity = BaseEntity,

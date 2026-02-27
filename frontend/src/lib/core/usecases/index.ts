@@ -10,3 +10,4 @@ export * from "./TeamStaffRoleUseCases";
 export * from "./GameEventTypeUseCases";
 export * from "./FixtureLineupUseCases";
 export * from "./SportUseCases";
+export * from "./PlayerTeamTransferHistoryUseCases";

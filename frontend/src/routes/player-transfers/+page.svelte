@@ -1,0 +1,12 @@
+<script lang="ts">
+  import EntityCrudWrapper from "$lib/presentation/components/EntityCrudWrapper.svelte";
+</script>
+
+<svelte:head>
+  <title>Player Transfers - Sports Management</title>
+</svelte:head>
+
+<EntityCrudWrapper
+  entity_type="PlayerTeamTransferHistory"
+  disabled_functionalities={["edit", "delete"]}
+/>

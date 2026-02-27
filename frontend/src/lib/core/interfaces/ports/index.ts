@@ -18,6 +18,7 @@ export type { IdentificationTypeUseCasesPort } from "./IdentificationTypeUseCase
 export type { IdentificationUseCasesPort } from "./IdentificationUseCasesPort";
 export type { PlayerPositionUseCasesPort } from "./PlayerPositionUseCasesPort";
 export type { PlayerTeamMembershipUseCasesPort } from "./PlayerTeamMembershipUseCasesPort";
+export type { PlayerTeamTransferHistoryUseCasesPort } from "./PlayerTeamTransferHistoryUseCasesPort";
 export type { QualificationUseCasesPort } from "./QualificationUseCasesPort";
 export type { SportUseCasesPort } from "./SportUseCasesPort";
 export type { TeamStaffRoleUseCasesPort } from "./TeamStaffRoleUseCasesPort";
@@ -27,3 +28,17 @@ export type {
   CalendarTokenUseCasesPort,
   CalendarFeedInfo,
 } from "./CalendarTokenUseCasesPort";
+export type {
+  AuthenticationPort,
+  AuthToken,
+  AuthTokenPayload,
+  AuthVerificationResult,
+  UserRole,
+  Permission,
+} from "./AuthenticationPort";
+export {
+  USER_ROLE_DISPLAY_NAMES,
+  USER_ROLE_ORDER,
+  ROLE_PERMISSIONS,
+  ANY_VALUE,
+} from "./AuthenticationPort";
