@@ -41,6 +41,10 @@ import {
   InBrowserFixtureRepository,
 } from "../repositories/InBrowserFixtureRepository";
 import {
+  get_fixture_lineup_repository,
+  InBrowserFixtureLineupRepository,
+} from "../repositories/InBrowserFixtureLineupRepository";
+import {
   get_venue_repository,
   InBrowserVenueRepository,
 } from "../repositories/InBrowserVenueRepository";
@@ -70,6 +74,7 @@ import {
   create_seed_player_team_memberships,
   create_seed_officials,
   create_seed_fixtures,
+  create_seed_fixture_lineups,
   create_seed_venues,
   create_seed_jersey_colors,
   create_seed_player_profiles,
@@ -92,7 +97,7 @@ import {
 import type { SystemUser } from "../../core/entities/SystemUser";
 import { current_user_store } from "../../presentation/stores/currentUser";
 
-const SEEDING_COMPLETE_KEY = "sports_org_seeding_complete_v6";
+const SEEDING_COMPLETE_KEY = "sports_org_seeding_complete_v9";
 
 export function is_seeding_already_complete(): boolean {
   if (typeof window === "undefined") return true;
@@ -435,6 +440,16 @@ export async function seed_all_data_if_needed(): Promise<boolean> {
     "fixture",
     seed_fixtures,
     (f) => `${f.venue} - Round ${f.round_number}`,
+  );
+
+  const fixture_lineup_repository =
+    get_fixture_lineup_repository() as InBrowserFixtureLineupRepository;
+  const seed_lineups = create_seed_fixture_lineups();
+  await fixture_lineup_repository.seed_with_data(seed_lineups);
+  emit_entity_created_events(
+    "fixture_lineup",
+    seed_lineups,
+    (l) => `Lineup for fixture ${l.fixture_id} - Team ${l.team_id}`,
   );
 
   const jersey_color_repository =

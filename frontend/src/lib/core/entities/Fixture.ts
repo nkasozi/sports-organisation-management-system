@@ -24,6 +24,7 @@ export type GameEventType =
   | "penalty_scored"
   | "penalty_missed"
   | "yellow_card"
+  | "green_card"
   | "red_card"
   | "second_yellow"
   | "substitution"
@@ -439,6 +440,7 @@ export function create_game_event(
   team_side: "home" | "away" | "match",
   player_name: string = "",
   description: string = "",
+  secondary_player_name: string = "",
 ): GameEvent {
   return {
     id: `evt_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
@@ -447,7 +449,7 @@ export function create_game_event(
     stoppage_time_minute: null,
     team_side,
     player_name,
-    secondary_player_name: "",
+    secondary_player_name,
     description: description || get_event_label(event_type),
     recorded_at: new Date().toISOString(),
   };

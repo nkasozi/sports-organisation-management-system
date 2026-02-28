@@ -2,6 +2,8 @@ import type { BaseEntity } from "./BaseEntity";
 
 export type LineupStatus = "draft" | "submitted" | "locked";
 
+export type PlayerTimeOnStatus = "present_at_start" | "didnt_play" | string;
+
 export interface LineupPlayer {
   id: string;
   first_name: string;
@@ -10,6 +12,7 @@ export interface LineupPlayer {
   position: string | null;
   is_captain: boolean;
   is_substitute: boolean;
+  time_on?: PlayerTimeOnStatus;
 }
 
 export interface FixtureLineup extends BaseEntity {
@@ -58,6 +61,7 @@ export function create_lineup_player(
   position: string | null = null,
   is_captain: boolean = false,
   is_substitute: boolean = false,
+  time_on: PlayerTimeOnStatus = "didnt_play",
 ): LineupPlayer {
   return {
     id,
@@ -67,6 +71,7 @@ export function create_lineup_player(
     position,
     is_captain,
     is_substitute,
+    time_on,
   };
 }
 
@@ -121,4 +126,30 @@ export function validate_fixture_lineup_input(
     is_valid: Object.keys(errors).length === 0,
     errors,
   };
+}
+
+export function get_time_on_display(
+  time_on: PlayerTimeOnStatus | undefined,
+): string {
+  if (!time_on || time_on === "didnt_play") {
+    return "";
+  }
+  if (time_on === "present_at_start") {
+    return "X";
+  }
+  return time_on;
+}
+
+export function is_player_time_on_minute(
+  time_on: PlayerTimeOnStatus | undefined,
+): boolean {
+  if (!time_on) return false;
+  if (time_on === "present_at_start" || time_on === "didnt_play") return false;
+  return !isNaN(parseInt(time_on, 10));
+}
+
+export function get_default_time_on_for_player(
+  is_substitute: boolean,
+): PlayerTimeOnStatus {
+  return is_substitute ? "didnt_play" : "present_at_start";
 }

@@ -320,117 +320,132 @@
     event.stopPropagation();
     downloading_fixture_id = fixture.id;
 
-    const home_team = team_map.get(fixture.home_team_id);
-    const away_team = team_map.get(fixture.away_team_id);
+    try {
+      const home_team = team_map.get(fixture.home_team_id);
+      const away_team = team_map.get(fixture.away_team_id);
 
-    if (!home_team || !away_team) {
-      downloading_fixture_id = null;
-      return false;
-    }
-
-    const [home_lineup_result, away_lineup_result] = await Promise.all([
-      fixture_lineup_use_cases.get_lineup_for_team_in_fixture(
-        fixture.id,
-        fixture.home_team_id,
-      ),
-      fixture_lineup_use_cases.get_lineup_for_team_in_fixture(
-        fixture.id,
-        fixture.away_team_id,
-      ),
-    ]);
-
-    const home_lineup =
-      home_lineup_result.success && home_lineup_result.data
-        ? home_lineup_result.data.selected_players
-        : [];
-    const away_lineup =
-      away_lineup_result.success && away_lineup_result.data
-        ? away_lineup_result.data.selected_players
-        : [];
-
-    const assigned_officials: Array<{ official: Official; role_name: string }> =
-      [];
-    if (fixture.assigned_officials) {
-      for (const assignment of fixture.assigned_officials) {
-        const official_result = await official_use_cases.get_by_id(
-          assignment.official_id,
+      if (!home_team || !away_team) {
+        console.warn(
+          "[MatchReport] Missing team data for fixture:",
+          fixture.id,
         );
-        if (official_result.success && official_result.data) {
-          assigned_officials.push({
-            official: official_result.data,
-            role_name: assignment.role_name,
+        downloading_fixture_id = null;
+        return false;
+      }
+
+      const [home_lineup_result, away_lineup_result] = await Promise.all([
+        fixture_lineup_use_cases.get_lineup_for_team_in_fixture(
+          fixture.id,
+          fixture.home_team_id,
+        ),
+        fixture_lineup_use_cases.get_lineup_for_team_in_fixture(
+          fixture.id,
+          fixture.away_team_id,
+        ),
+      ]);
+
+      const home_lineup =
+        home_lineup_result.success && home_lineup_result.data
+          ? home_lineup_result.data.selected_players
+          : [];
+      const away_lineup =
+        away_lineup_result.success && away_lineup_result.data
+          ? away_lineup_result.data.selected_players
+          : [];
+
+      const assigned_officials: Array<{
+        official: Official;
+        role_name: string;
+      }> = [];
+      if (fixture.assigned_officials) {
+        for (const assignment of fixture.assigned_officials) {
+          const official_result = await official_use_cases.get_by_id(
+            assignment.official_id,
+          );
+          if (official_result.success && official_result.data) {
+            assigned_officials.push({
+              official: official_result.data,
+              role_name: assignment.role_name,
+            });
+          }
+        }
+      }
+
+      let organization_name = "SPORTS ORGANIZATION";
+      if (selected_competition?.organization_id) {
+        const org_result = await organization_use_cases.get_by_id(
+          selected_competition.organization_id,
+        );
+        if (org_result.success && org_result.data) {
+          organization_name = org_result.data.name.toUpperCase();
+        }
+      }
+
+      const staff_roles_result = await team_staff_use_cases.list_staff_roles();
+      const staff_roles_map = new Map<string, string>();
+      if (staff_roles_result.success && staff_roles_result.data) {
+        for (const role of staff_roles_result.data) {
+          staff_roles_map.set(role.id, role.name);
+        }
+      }
+
+      const [home_staff_result, away_staff_result] = await Promise.all([
+        team_staff_use_cases.list_staff_by_team(fixture.home_team_id),
+        team_staff_use_cases.list_staff_by_team(fixture.away_team_id),
+      ]);
+
+      const home_staff: MatchStaffEntry[] = [];
+      if (home_staff_result.success && home_staff_result.data) {
+        for (const staff of home_staff_result.data.items) {
+          home_staff.push({
+            role: staff_roles_map.get(staff.role_id) || "Staff",
+            name: get_team_staff_full_name(staff),
           });
         }
       }
-    }
 
-    let organization_name = "SPORTS ORGANIZATION";
-    if (selected_competition?.organization_id) {
-      const org_result = await organization_use_cases.get_by_id(
-        selected_competition.organization_id,
+      const away_staff: MatchStaffEntry[] = [];
+      if (away_staff_result.success && away_staff_result.data) {
+        for (const staff of away_staff_result.data.items) {
+          away_staff.push({
+            role: staff_roles_map.get(staff.role_id) || "Staff",
+            name: get_team_staff_full_name(staff),
+          });
+        }
+      }
+
+      const ctx: MatchReportBuildContext = {
+        fixture,
+        home_team,
+        away_team,
+        competition: selected_competition,
+        home_lineup,
+        away_lineup,
+        assigned_officials,
+        home_staff,
+        away_staff,
+        organization_name,
+        organization_logo_url: $branding_store.organization_logo_url,
+      };
+
+      const report_data = build_match_report_data(ctx);
+      const filename = generate_match_report_filename(
+        home_team.name,
+        away_team.name,
+        fixture.scheduled_date,
       );
-      if (org_result.success && org_result.data) {
-        organization_name = org_result.data.name.toUpperCase();
-      }
+
+      console.log("[MatchReport] Generating PDF for:", filename);
+      download_match_report(report_data, filename);
+      console.log("[MatchReport] PDF download triggered");
+
+      downloading_fixture_id = null;
+      return true;
+    } catch (error) {
+      console.error("[MatchReport] Error generating report:", error);
+      downloading_fixture_id = null;
+      return false;
     }
-
-    const staff_roles_result = await team_staff_use_cases.list_staff_roles();
-    const staff_roles_map = new Map<string, string>();
-    if (staff_roles_result.success && staff_roles_result.data) {
-      for (const role of staff_roles_result.data) {
-        staff_roles_map.set(role.id, role.name);
-      }
-    }
-
-    const [home_staff_result, away_staff_result] = await Promise.all([
-      team_staff_use_cases.list_staff_by_team(fixture.home_team_id),
-      team_staff_use_cases.list_staff_by_team(fixture.away_team_id),
-    ]);
-
-    const home_staff: MatchStaffEntry[] = [];
-    if (home_staff_result.success && home_staff_result.data) {
-      for (const staff of home_staff_result.data.items) {
-        home_staff.push({
-          role: staff_roles_map.get(staff.role_id) || "Staff",
-          name: get_team_staff_full_name(staff),
-        });
-      }
-    }
-
-    const away_staff: MatchStaffEntry[] = [];
-    if (away_staff_result.success && away_staff_result.data) {
-      for (const staff of away_staff_result.data.items) {
-        away_staff.push({
-          role: staff_roles_map.get(staff.role_id) || "Staff",
-          name: get_team_staff_full_name(staff),
-        });
-      }
-    }
-
-    const ctx: MatchReportBuildContext = {
-      fixture,
-      home_team,
-      away_team,
-      competition: selected_competition,
-      home_lineup,
-      away_lineup,
-      assigned_officials,
-      home_staff,
-      away_staff,
-      organization_name,
-      organization_logo_url: $branding_store.organization_logo_url,
-    };
-
-    const report_data = build_match_report_data(ctx);
-    const filename = generate_match_report_filename(
-      home_team.name,
-      away_team.name,
-      fixture.scheduled_date,
-    );
-    download_match_report(report_data, filename);
-
-    downloading_fixture_id = null;
-    return true;
   }
 
   async function build_report_data_for_fixture(
@@ -530,48 +545,63 @@
 
     downloading_all_reports = true;
 
-    let organization_name = "SPORTS ORGANIZATION";
-    if (selected_competition?.organization_id) {
-      const org_result = await organization_use_cases.get_by_id(
-        selected_competition.organization_id,
+    try {
+      let organization_name = "SPORTS ORGANIZATION";
+      if (selected_competition?.organization_id) {
+        const org_result = await organization_use_cases.get_by_id(
+          selected_competition.organization_id,
+        );
+        if (org_result.success && org_result.data) {
+          organization_name = org_result.data.name.toUpperCase();
+        }
+      }
+
+      const staff_roles_result = await team_staff_use_cases.list_staff_roles();
+      const staff_roles_map = new Map<string, string>();
+      if (staff_roles_result.success && staff_roles_result.data) {
+        for (const role of staff_roles_result.data) {
+          staff_roles_map.set(role.id, role.name);
+        }
+      }
+
+      const all_reports: MatchReportData[] = [];
+
+      for (const fixture of completed_fixtures) {
+        const report_data = await build_report_data_for_fixture(
+          fixture,
+          organization_name,
+          staff_roles_map,
+        );
+        if (report_data) {
+          all_reports.push(report_data);
+        }
+      }
+
+      if (all_reports.length === 0) {
+        console.warn("[MatchReport] No reports to download");
+        downloading_all_reports = false;
+        return false;
+      }
+
+      const competition_name = selected_competition?.name || "Competition";
+      const filename = `${competition_name}_All_Match_Reports.pdf`;
+
+      console.log(
+        "[MatchReport] Generating all reports PDF:",
+        filename,
+        "Reports:",
+        all_reports.length,
       );
-      if (org_result.success && org_result.data) {
-        organization_name = org_result.data.name.toUpperCase();
-      }
-    }
+      download_all_match_reports(all_reports, filename);
+      console.log("[MatchReport] All reports PDF download triggered");
 
-    const staff_roles_result = await team_staff_use_cases.list_staff_roles();
-    const staff_roles_map = new Map<string, string>();
-    if (staff_roles_result.success && staff_roles_result.data) {
-      for (const role of staff_roles_result.data) {
-        staff_roles_map.set(role.id, role.name);
-      }
-    }
-
-    const all_reports: MatchReportData[] = [];
-
-    for (const fixture of completed_fixtures) {
-      const report_data = await build_report_data_for_fixture(
-        fixture,
-        organization_name,
-        staff_roles_map,
-      );
-      if (report_data) {
-        all_reports.push(report_data);
-      }
-    }
-
-    if (all_reports.length === 0) {
+      downloading_all_reports = false;
+      return true;
+    } catch (error) {
+      console.error("[MatchReport] Error generating all reports:", error);
       downloading_all_reports = false;
       return false;
     }
-
-    const competition_name = selected_competition?.name || "Competition";
-    const filename = `${competition_name}_All_Match_Reports.pdf`;
-    download_all_match_reports(all_reports, filename);
-
-    downloading_all_reports = false;
-    return true;
   }
 </script>
 

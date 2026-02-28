@@ -62,14 +62,14 @@
   $: elapsed_minutes = Math.floor(game_clock_seconds / 60);
   $: elapsed_seconds_in_minute = game_clock_seconds % 60;
   $: current_period_duration = get_current_period_duration_seconds(
-    fixture?.current_period ?? "first_half"
+    fixture?.current_period ?? "first_half",
   );
   $: period_elapsed_seconds =
     game_clock_seconds -
     get_period_start_seconds(fixture?.current_period ?? "first_half");
   $: remaining_seconds_in_period = Math.max(
     0,
-    current_period_duration - period_elapsed_seconds
+    current_period_duration - period_elapsed_seconds,
   );
   $: countdown_minutes = Math.floor(remaining_seconds_in_period / 60);
   $: countdown_seconds = remaining_seconds_in_period % 60;
@@ -80,7 +80,7 @@
   $: sorted_events = [...game_events].sort(
     (a, b) =>
       b.minute - a.minute ||
-      new Date(b.recorded_at).getTime() - new Date(a.recorded_at).getTime()
+      new Date(b.recorded_at).getTime() - new Date(a.recorded_at).getTime(),
   );
   $: is_game_active = fixture?.status === "in_progress";
   $: quick_events = get_quick_event_buttons();
@@ -236,7 +236,7 @@
 
   function open_event_modal(
     event_type: QuickEventButton,
-    team: "home" | "away"
+    team: "home" | "away",
   ): void {
     if (!is_game_active) return;
     selected_event_type = event_type;
@@ -265,12 +265,12 @@
       event_minute,
       selected_team_side,
       event_player_name,
-      event_description || selected_event_type.label
+      event_description || selected_event_type.label,
     );
 
     const result = await fixture_use_cases.record_game_event(
       fixture.id,
-      new_event
+      new_event,
     );
 
     is_updating = false;
@@ -304,14 +304,14 @@
       new_minute,
       "match",
       "",
-      `${get_period_display_name(new_period)} started`
+      `${get_period_display_name(new_period)} started`,
     );
 
     await fixture_use_cases.record_game_event(fixture.id, period_event);
     const result = await fixture_use_cases.update_period(
       fixture.id,
       new_period,
-      new_minute
+      new_minute,
     );
 
     is_updating = false;
@@ -337,12 +337,12 @@
       elapsed_minutes,
       "match",
       "",
-      `${get_period_display_name(fixture.current_period)} ended`
+      `${get_period_display_name(fixture.current_period)} ended`,
     );
 
     const result = await fixture_use_cases.record_game_event(
       fixture.id,
-      period_event
+      period_event,
     );
 
     is_updating = false;
@@ -371,7 +371,7 @@
 
     show_toast(
       `${get_period_display_name(fixture.current_period)} ended`,
-      "info"
+      "info",
     );
   }
 
@@ -381,7 +381,7 @@
 
   function show_toast(
     message: string,
-    type: "success" | "error" | "info"
+    type: "success" | "error" | "info",
   ): void {
     toast_message = message;
     toast_type = type;
@@ -703,22 +703,21 @@
 
                   {#if is_match_event}
                     <div class="relative flex items-center justify-center">
-                      <div
-                        class="absolute left-1/2 transform -translate-x-1/2 z-10 w-12 h-12 rounded-full bg-purple-100 dark:bg-purple-900/50 border-4 border-purple-400 dark:border-purple-600 flex items-center justify-center text-xl"
-                      >
-                        {get_event_icon(event.event_type)}
-                      </div>
-                      <div class="w-full flex items-center">
-                        <div class="flex-1"></div>
+                      <div class="flex flex-col items-center">
                         <div
-                          class="w-48 mx-auto text-center py-3 px-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800"
+                          class="z-10 w-12 h-12 rounded-full bg-purple-100 dark:bg-purple-900 border-4 border-purple-400 dark:border-purple-600 flex items-center justify-center text-xl"
+                        >
+                          {get_event_icon(event.event_type)}
+                        </div>
+                        <div
+                          class="mt-2 text-center py-3 px-4 bg-purple-50 dark:bg-gray-800 rounded-lg border border-purple-200 dark:border-purple-800"
                         >
                           <div
                             class="text-xs font-bold text-purple-700 dark:text-purple-300 mb-1"
                           >
                             {format_event_time(
                               event.minute,
-                              event.stoppage_time_minute
+                              event.stoppage_time_minute,
                             )}
                           </div>
                           <div
@@ -728,7 +727,6 @@
                               get_event_label(event.event_type)}
                           </div>
                         </div>
-                        <div class="flex-1"></div>
                       </div>
                     </div>
                   {:else}
@@ -745,7 +743,7 @@
                         <div class="flex-1 pr-8 flex justify-end">
                           <div
                             class="max-w-xs w-full rounded-lg border-r-4 p-3 shadow-sm text-right {get_event_bg_class(
-                              event
+                              event,
                             ).replace('border-l-', 'border-r-')}"
                           >
                             <div
@@ -762,7 +760,7 @@
                               >
                                 {format_event_time(
                                   event.minute,
-                                  event.stoppage_time_minute
+                                  event.stoppage_time_minute,
                                 )}
                               </span>
                             </div>
@@ -784,7 +782,7 @@
                         <div class="flex-1 pl-8 flex justify-start">
                           <div
                             class="max-w-xs w-full rounded-lg border-l-4 p-3 shadow-sm text-left {get_event_bg_class(
-                              event
+                              event,
                             )}"
                           >
                             <div
@@ -795,7 +793,7 @@
                               >
                                 {format_event_time(
                                   event.minute,
-                                  event.stoppage_time_minute
+                                  event.stoppage_time_minute,
                                 )}
                               </span>
                               <span

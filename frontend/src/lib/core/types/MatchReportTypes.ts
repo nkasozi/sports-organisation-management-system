@@ -1,5 +1,6 @@
 import type { GameEvent } from "$lib/core/entities/Fixture";
 import type { LineupPlayer } from "$lib/core/entities/FixtureLineup";
+import { get_time_on_display } from "$lib/core/entities/FixtureLineup";
 
 export interface MatchStaffEntry {
   role: string;
@@ -107,14 +108,13 @@ export function build_match_player_entry(
     }
   }
 
-  const sub_on_event = game_events.find(
-    (e) =>
-      e.team_side === team_side &&
-      e.event_type === "substitution" &&
-      e.secondary_player_name.toUpperCase() === player_full_name,
-  );
-
-  const time_on = sub_on_event ? `${sub_on_event.minute}'` : "X";
+  let time_on = get_time_on_display(player.time_on);
+  if (!time_on && !player.is_substitute) {
+    time_on = "X";
+  }
+  if (time_on && time_on !== "X" && time_on !== "") {
+    time_on = `${time_on}'`;
+  }
 
   return {
     time_on,

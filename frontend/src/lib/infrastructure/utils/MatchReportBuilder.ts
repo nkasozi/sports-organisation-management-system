@@ -266,7 +266,7 @@ function calculate_score_by_period(
     });
   }
 
-  return periods;
+  return periods.reverse();
 }
 
 function infer_period_from_minute(minute: number): string {

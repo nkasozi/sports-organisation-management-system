@@ -614,6 +614,9 @@ function draw_goals_section(
   const goal_headers = [["TEAM", "Minute", "No.", "Action", "Score"]];
   const col_widths = [15, 12, 10, 12, 15];
 
+  let left_table_final_y = y;
+  let right_table_final_y = y;
+
   if (left_goals.length > 0) {
     const left_data = left_goals.map((g, idx) => [
       g.team_initials,
@@ -654,6 +657,8 @@ function draw_goals_section(
       margin: { left: MARGIN_LEFT },
       tableWidth: HALF_WIDTH - 10,
     });
+
+    left_table_final_y = (doc as JsPDFWithAutoTable).lastAutoTable?.finalY ?? y;
   }
 
   if (right_goals.length > 0) {
@@ -696,10 +701,13 @@ function draw_goals_section(
       margin: { left: PAGE_WIDTH / 2 + 5 },
       tableWidth: HALF_WIDTH - 10,
     });
+
+    right_table_final_y =
+      (doc as JsPDFWithAutoTable).lastAutoTable?.finalY ?? y;
   }
 
-  const left_final_y = (doc as JsPDFWithAutoTable).lastAutoTable?.finalY ?? y;
-  return left_final_y + 3;
+  const max_final_y = Math.max(left_table_final_y, right_table_final_y);
+  return max_final_y + 3;
 }
 
 function draw_remarks_section(
@@ -723,11 +731,20 @@ export function download_match_report(
   data: MatchReportData,
   filename?: string,
 ): void {
-  const doc = generate_match_report_pdf(data);
-  const safe_filename =
-    filename ||
-    `Match_Report_${data.home_team.name}_vs_${data.away_team.name}.pdf`;
-  doc.save(safe_filename.replace(/[^a-zA-Z0-9_\-\.]/g, "_"));
+  try {
+    console.log("[PDF] Starting PDF generation...");
+    const doc = generate_match_report_pdf(data);
+    const safe_filename =
+      filename ||
+      `Match_Report_${data.home_team.name}_vs_${data.away_team.name}.pdf`;
+    const sanitized_filename = safe_filename.replace(/[^a-zA-Z0-9_\-\.]/g, "_");
+    console.log("[PDF] Saving PDF as:", sanitized_filename);
+    doc.save(sanitized_filename);
+    console.log("[PDF] PDF save completed");
+  } catch (error) {
+    console.error("[PDF] Error generating or saving PDF:", error);
+    throw error;
+  }
 }
 
 function draw_single_report_on_doc(
@@ -762,6 +779,18 @@ export function download_all_match_reports(
   reports: MatchReportData[],
   filename: string,
 ): void {
-  const doc = generate_all_match_reports_pdf(reports);
-  doc.save(filename.replace(/[^a-zA-Z0-9_\-\.]/g, "_"));
+  try {
+    console.log(
+      "[PDF] Starting all reports PDF generation, count:",
+      reports.length,
+    );
+    const doc = generate_all_match_reports_pdf(reports);
+    const sanitized_filename = filename.replace(/[^a-zA-Z0-9_\-\.]/g, "_");
+    console.log("[PDF] Saving all reports PDF as:", sanitized_filename);
+    doc.save(sanitized_filename);
+    console.log("[PDF] All reports PDF save completed");
+  } catch (error) {
+    console.error("[PDF] Error generating or saving all reports PDF:", error);
+    throw error;
+  }
 }

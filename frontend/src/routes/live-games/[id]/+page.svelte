@@ -15,10 +15,13 @@
     LineupPlayer,
     FixtureLineup,
     CreateFixtureLineupInput,
+    PlayerTimeOnStatus,
   } from "$lib/core/entities/FixtureLineup";
   import {
     get_lineup_player_display_name,
     create_empty_fixture_lineup_input,
+    get_time_on_display,
+    get_default_time_on_for_player,
   } from "$lib/core/entities/FixtureLineup";
   import {
     get_quick_event_buttons,
@@ -78,6 +81,8 @@
   }> = [];
   let home_players: LineupPlayer[] = [];
   let away_players: LineupPlayer[] = [];
+  let home_lineup_id: string = "";
+  let away_lineup_id: string = "";
   let is_loading: boolean = true;
   let error_message: string = "";
   let is_updating: boolean = false;
@@ -93,6 +98,8 @@
   let selected_event_type: QuickEventButton | null = null;
   let selected_team_side: "home" | "away" = "home";
   let selected_player_id: string = "";
+  let secondary_player_id: string = "";
+  let secondary_player_name: string = "";
   let event_player_name: string = "";
   let event_description: string = "";
   let event_minute: number = 0;
@@ -114,6 +121,57 @@
   function toggle_away_lineup(): boolean {
     away_lineup_expanded = !away_lineup_expanded;
     return away_lineup_expanded;
+  }
+
+  function get_time_on_options(
+    current_minute: number,
+  ): Array<{ value: string; label: string }> {
+    const options: Array<{ value: string; label: string }> = [
+      { value: "present_at_start", label: "Present at Start" },
+      { value: "didnt_play", label: "Didn't Play" },
+    ];
+    for (let i = 1; i <= Math.max(current_minute, 90); i++) {
+      options.push({ value: String(i), label: `${i}'` });
+    }
+    return options;
+  }
+
+  async function update_player_time_on(
+    team_side: "home" | "away",
+    player_id: string,
+    new_time_on: PlayerTimeOnStatus,
+  ): Promise<boolean> {
+    const is_home = team_side === "home";
+    const players = is_home ? home_players : away_players;
+    const lineup_id = is_home ? home_lineup_id : away_lineup_id;
+
+    if (!lineup_id) return false;
+
+    const updated_players = players.map((p) =>
+      p.id === player_id ? { ...p, time_on: new_time_on } : p,
+    );
+
+    if (is_home) {
+      home_players = updated_players;
+    } else {
+      away_players = updated_players;
+    }
+
+    const update_result = await fixture_lineup_use_cases.update(lineup_id, {
+      selected_players: updated_players,
+    });
+
+    if (!update_result.success) {
+      show_toast("Failed to save player status", "error");
+      return false;
+    }
+
+    return true;
+  }
+
+  function get_players_on_field(team_side: "home" | "away"): LineupPlayer[] {
+    const players = team_side === "home" ? home_players : away_players;
+    return players.filter((p) => p.time_on && p.time_on !== "didnt_play");
   }
 
   function get_starters_from_lineup(players: LineupPlayer[]): LineupPlayer[] {
@@ -195,6 +253,16 @@
     }
   }
   $: all_event_buttons = get_quick_event_buttons();
+
+  $: players_on_field_options = (() => {
+    const players = get_players_on_field(selected_team_side);
+    return players.map((p) => ({
+      value: p.id,
+      label: `#${p.jersey_number ?? "?"} ${p.first_name} ${p.last_name}`,
+    }));
+  })();
+
+  $: is_substitution_event = selected_event_type?.id === "substitution";
 
   onMount(async () => {
     if (!fixture_id) {
@@ -317,15 +385,25 @@
         away_lineup_result.data?.selected_players?.length ?? 0,
     });
 
-    home_players =
-      home_lineup_result.success && home_lineup_result.data
-        ? home_lineup_result.data.selected_players
-        : [];
+    if (home_lineup_result.success && home_lineup_result.data) {
+      home_lineup_id = home_lineup_result.data.id;
+      home_players = home_lineup_result.data.selected_players.map((p) => ({
+        ...p,
+        time_on: p.time_on ?? get_default_time_on_for_player(p.is_substitute),
+      }));
+    } else {
+      home_players = [];
+    }
 
-    away_players =
-      away_lineup_result.success && away_lineup_result.data
-        ? away_lineup_result.data.selected_players
-        : [];
+    if (away_lineup_result.success && away_lineup_result.data) {
+      away_lineup_id = away_lineup_result.data.id;
+      away_players = away_lineup_result.data.selected_players.map((p) => ({
+        ...p,
+        time_on: p.time_on ?? get_default_time_on_for_player(p.is_substitute),
+      }));
+    } else {
+      away_players = [];
+    }
 
     console.log("[LiveGame] Final players loaded:", {
       home_players_count: home_players.length,
@@ -736,6 +814,8 @@
     selected_event_type = event_type;
     selected_team_side = team;
     selected_player_id = "";
+    secondary_player_id = "";
+    secondary_player_name = "";
     event_player_name = "";
     event_description = "";
     event_minute = Math.floor(game_clock_seconds / 60);
@@ -746,6 +826,8 @@
     show_event_modal = false;
     selected_event_type = null;
     selected_player_id = "";
+    secondary_player_id = "";
+    secondary_player_name = "";
     event_player_name = "";
     event_description = "";
     event_minute = 0;
@@ -757,13 +839,23 @@
     is_updating = true;
 
     const event_label = selected_event_type.label;
+    const is_substitution = selected_event_type.id === "substitution";
+
+    let final_description = event_description || selected_event_type.label;
+    let final_secondary_player_name = "";
+
+    if (is_substitution && secondary_player_name) {
+      final_secondary_player_name = secondary_player_name;
+      final_description = `${event_player_name} ON for ${secondary_player_name}`;
+    }
 
     const new_event = create_game_event(
       selected_event_type.id,
       event_minute,
       selected_team_side,
       event_player_name,
-      event_description || selected_event_type.label,
+      final_description,
+      final_secondary_player_name,
     );
 
     const result = await fixture_use_cases.record_game_event(
@@ -771,13 +863,21 @@
       new_event,
     );
 
-    is_updating = false;
-
     if (!result.success) {
+      is_updating = false;
       show_toast(`Failed to record event: ${result.error}`, "error");
       return;
     }
 
+    if (is_substitution && selected_player_id) {
+      await update_player_time_on(
+        selected_team_side,
+        selected_player_id,
+        String(event_minute),
+      );
+    }
+
+    is_updating = false;
     fixture = result.data;
     cancel_event();
     show_toast(`${event_label} recorded!`, "success");
@@ -1592,7 +1692,7 @@
                                     >
                                   {/if}
                                   <span
-                                    class="text-gray-800 dark:text-gray-200 truncate"
+                                    class="text-gray-800 dark:text-gray-200 truncate flex-1"
                                   >
                                     {player.first_name}
                                     {player.last_name}
@@ -1601,9 +1701,30 @@
                                         >©</span
                                       >{/if}
                                   </span>
-                                  {#if player.position}
+                                  {#if is_game_active}
+                                    <select
+                                      class="w-16 text-xs px-1 py-0.5 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200"
+                                      value={player.time_on ||
+                                        "present_at_start"}
+                                      on:change={(e) =>
+                                        update_player_time_on(
+                                          "home",
+                                          player.id,
+                                          e.currentTarget.value,
+                                        )}
+                                    >
+                                      <option value="present_at_start">X</option
+                                      >
+                                      <option value="didnt_play">-</option>
+                                      {#each Array.from({ length: Math.max(elapsed_minutes, 90) }, (_, i) => i + 1) as minute}
+                                        <option value={String(minute)}
+                                          >{minute}'</option
+                                        >
+                                      {/each}
+                                    </select>
+                                  {:else if player.position}
                                     <span
-                                      class="text-xs text-gray-500 dark:text-gray-400 ml-auto"
+                                      class="text-xs text-gray-500 dark:text-gray-400"
                                       >{player.position}</span
                                     >
                                   {/if}
@@ -1638,10 +1759,31 @@
                                     >
                                   {/if}
                                   <span
-                                    class="text-gray-700 dark:text-gray-300 truncate"
+                                    class="text-gray-700 dark:text-gray-300 truncate flex-1"
                                     >{player.first_name}
                                     {player.last_name}</span
                                   >
+                                  {#if is_game_active}
+                                    <select
+                                      class="w-16 text-xs px-1 py-0.5 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200"
+                                      value={player.time_on || "didnt_play"}
+                                      on:change={(e) =>
+                                        update_player_time_on(
+                                          "home",
+                                          player.id,
+                                          e.currentTarget.value,
+                                        )}
+                                    >
+                                      <option value="present_at_start">X</option
+                                      >
+                                      <option value="didnt_play">-</option>
+                                      {#each Array.from({ length: Math.max(elapsed_minutes, 90) }, (_, i) => i + 1) as minute}
+                                        <option value={String(minute)}
+                                          >{minute}'</option
+                                        >
+                                      {/each}
+                                    </select>
+                                  {/if}
                                 </div>
                               {/each}
                             </div>
@@ -1746,7 +1888,7 @@
                                     >
                                   {/if}
                                   <span
-                                    class="text-gray-800 dark:text-gray-200 truncate"
+                                    class="text-gray-800 dark:text-gray-200 truncate flex-1"
                                   >
                                     {player.first_name}
                                     {player.last_name}
@@ -1755,9 +1897,30 @@
                                         >©</span
                                       >{/if}
                                   </span>
-                                  {#if player.position}
+                                  {#if is_game_active}
+                                    <select
+                                      class="w-16 text-xs px-1 py-0.5 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200"
+                                      value={player.time_on ||
+                                        "present_at_start"}
+                                      on:change={(e) =>
+                                        update_player_time_on(
+                                          "away",
+                                          player.id,
+                                          e.currentTarget.value,
+                                        )}
+                                    >
+                                      <option value="present_at_start">X</option
+                                      >
+                                      <option value="didnt_play">-</option>
+                                      {#each Array.from({ length: Math.max(elapsed_minutes, 90) }, (_, i) => i + 1) as minute}
+                                        <option value={String(minute)}
+                                          >{minute}'</option
+                                        >
+                                      {/each}
+                                    </select>
+                                  {:else if player.position}
                                     <span
-                                      class="text-xs text-gray-500 dark:text-gray-400 ml-auto"
+                                      class="text-xs text-gray-500 dark:text-gray-400"
                                       >{player.position}</span
                                     >
                                   {/if}
@@ -1792,10 +1955,31 @@
                                     >
                                   {/if}
                                   <span
-                                    class="text-gray-700 dark:text-gray-300 truncate"
+                                    class="text-gray-700 dark:text-gray-300 truncate flex-1"
                                     >{player.first_name}
                                     {player.last_name}</span
                                   >
+                                  {#if is_game_active}
+                                    <select
+                                      class="w-16 text-xs px-1 py-0.5 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200"
+                                      value={player.time_on || "didnt_play"}
+                                      on:change={(e) =>
+                                        update_player_time_on(
+                                          "away",
+                                          player.id,
+                                          e.currentTarget.value,
+                                        )}
+                                    >
+                                      <option value="present_at_start">X</option
+                                      >
+                                      <option value="didnt_play">-</option>
+                                      {#each Array.from({ length: Math.max(elapsed_minutes, 90) }, (_, i) => i + 1) as minute}
+                                        <option value={String(minute)}
+                                          >{minute}'</option
+                                        >
+                                      {/each}
+                                    </select>
+                                  {/if}
                                 </div>
                               {/each}
                             </div>
@@ -1999,15 +2183,14 @@
 
                   {#if is_match_event}
                     <div class="relative flex items-center justify-center">
-                      <div
-                        class="absolute left-1/2 transform -translate-x-1/2 z-10 w-12 h-12 rounded-full bg-purple-100 dark:bg-purple-900/50 border-4 border-purple-400 dark:border-purple-600 flex items-center justify-center text-xl"
-                      >
-                        {get_event_icon(event.event_type)}
-                      </div>
-                      <div class="w-full flex items-center">
-                        <div class="flex-1"></div>
+                      <div class="flex flex-col items-center">
                         <div
-                          class="w-48 mx-auto text-center py-3 px-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800"
+                          class="z-10 w-12 h-12 rounded-full bg-purple-100 dark:bg-purple-900 border-4 border-purple-400 dark:border-purple-600 flex items-center justify-center text-xl"
+                        >
+                          {get_event_icon(event.event_type)}
+                        </div>
+                        <div
+                          class="mt-2 text-center py-3 px-4 bg-purple-50 dark:bg-gray-800 rounded-lg border border-purple-200 dark:border-purple-800"
                         >
                           <div
                             class="text-xs font-bold text-purple-700 dark:text-purple-300 mb-1"
@@ -2024,7 +2207,6 @@
                               get_event_label(event.event_type)}
                           </div>
                         </div>
-                        <div class="flex-1"></div>
                       </div>
                     </div>
                   {:else}
@@ -2226,7 +2408,7 @@
         {#if selected_event_type.requires_player}
           <div>
             <SearchableSelectField
-              label="Player"
+              label={is_substitution_event ? "Player Coming ON" : "Player"}
               name="event_player"
               bind:value={selected_player_id}
               options={player_select_options}
@@ -2238,6 +2420,27 @@
                   (p: LineupPlayer) => p.id === e.detail.value,
                 );
                 event_player_name = player
+                  ? `${player.first_name} ${player.last_name}`
+                  : "";
+              }}
+            />
+          </div>
+        {/if}
+
+        {#if is_substitution_event}
+          <div>
+            <SearchableSelectField
+              label="Player Coming OFF"
+              name="secondary_player"
+              bind:value={secondary_player_id}
+              options={players_on_field_options}
+              placeholder="Select player coming off..."
+              on:change={(e) => {
+                const players = get_players_on_field(selected_team_side);
+                const player = players.find(
+                  (p: LineupPlayer) => p.id === e.detail.value,
+                );
+                secondary_player_name = player
                   ? `${player.first_name} ${player.last_name}`
                   : "";
               }}
