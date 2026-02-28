@@ -9,19 +9,34 @@
   import type { Fixture } from "$lib/core/entities/Fixture";
   import type { Team } from "$lib/core/entities/Team";
   import type { CompetitionFormat } from "$lib/core/entities/CompetitionFormat";
+  import type { Official } from "$lib/core/entities/Official";
   import type { LoadingState } from "$lib/presentation/components/ui/LoadingStateWrapper.svelte";
   import { get_competition_use_cases } from "$lib/core/usecases/CompetitionUseCases";
   import { get_fixture_use_cases } from "$lib/core/usecases/FixtureUseCases";
   import { get_team_use_cases } from "$lib/core/usecases/TeamUseCases";
   import { get_competition_format_use_cases } from "$lib/core/usecases/CompetitionFormatUseCases";
   import { get_competition_team_use_cases } from "$lib/core/usecases/CompetitionTeamUseCases";
+  import { get_fixture_lineup_use_cases } from "$lib/core/usecases/FixtureLineupUseCases";
+  import { get_official_use_cases } from "$lib/core/usecases/OfficialUseCases";
+  import { get_organization_use_cases } from "$lib/core/usecases/OrganizationUseCases";
   import LoadingStateWrapper from "$lib/presentation/components/ui/LoadingStateWrapper.svelte";
+  import {
+    build_match_report_data,
+    generate_match_report_filename,
+    type MatchReportBuildContext,
+  } from "$lib/infrastructure/utils/MatchReportBuilder";
+  import { download_match_report } from "$lib/infrastructure/utils/MatchReportPdfGenerator";
 
   const competition_use_cases = get_competition_use_cases();
   const fixture_use_cases = get_fixture_use_cases();
   const team_use_cases = get_team_use_cases();
   const format_use_cases = get_competition_format_use_cases();
   const competition_team_use_cases = get_competition_team_use_cases();
+  const fixture_lineup_use_cases = get_fixture_lineup_use_cases();
+  const official_use_cases = get_official_use_cases();
+  const organization_use_cases = get_organization_use_cases();
+
+  let downloading_fixture_id: string | null = null;
 
   let competitions: Competition[] = [];
   let selected_competition_id: string = "";
@@ -284,6 +299,90 @@
       hour: "2-digit",
       minute: "2-digit",
     });
+  }
+
+  async function handle_download_match_report(
+    fixture: Fixture,
+    event: MouseEvent,
+  ): Promise<boolean> {
+    event.stopPropagation();
+    downloading_fixture_id = fixture.id;
+
+    const home_team = team_map.get(fixture.home_team_id);
+    const away_team = team_map.get(fixture.away_team_id);
+
+    if (!home_team || !away_team) {
+      downloading_fixture_id = null;
+      return false;
+    }
+
+    const [home_lineup_result, away_lineup_result] = await Promise.all([
+      fixture_lineup_use_cases.get_lineup_for_team_in_fixture(
+        fixture.id,
+        fixture.home_team_id,
+      ),
+      fixture_lineup_use_cases.get_lineup_for_team_in_fixture(
+        fixture.id,
+        fixture.away_team_id,
+      ),
+    ]);
+
+    const home_lineup =
+      home_lineup_result.success && home_lineup_result.data
+        ? home_lineup_result.data.selected_players
+        : [];
+    const away_lineup =
+      away_lineup_result.success && away_lineup_result.data
+        ? away_lineup_result.data.selected_players
+        : [];
+
+    const assigned_officials: Array<{ official: Official; role_name: string }> =
+      [];
+    if (fixture.assigned_officials) {
+      for (const assignment of fixture.assigned_officials) {
+        const official_result = await official_use_cases.get_by_id(
+          assignment.official_id,
+        );
+        if (official_result.success && official_result.data) {
+          assigned_officials.push({
+            official: official_result.data,
+            role_name: assignment.role_name,
+          });
+        }
+      }
+    }
+
+    let organization_name = "SPORTS ORGANIZATION";
+    if (selected_competition?.organization_id) {
+      const org_result = await organization_use_cases.get_by_id(
+        selected_competition.organization_id,
+      );
+      if (org_result.success && org_result.data) {
+        organization_name = org_result.data.name.toUpperCase();
+      }
+    }
+
+    const ctx: MatchReportBuildContext = {
+      fixture,
+      home_team,
+      away_team,
+      competition: selected_competition,
+      home_lineup,
+      away_lineup,
+      assigned_officials,
+      organization_name,
+    };
+
+    const report_data = build_match_report_data(ctx);
+    const filename = generate_match_report_filename(
+      home_team.name,
+      away_team.name,
+      fixture.scheduled_date,
+    );
+    download_match_report(report_data, filename);
+
+    downloading_fixture_id = null;
+    return true;
   }
 </script>
 
@@ -670,10 +769,8 @@
                 {#each completed_fixtures as fixture}
                   {@const home_score = fixture.home_team_score ?? 0}
                   {@const away_score = fixture.away_team_score ?? 0}
-                  <button
-                    type="button"
-                    class="w-full p-3 sm:p-4 bg-gray-50 dark:bg-gray-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors cursor-pointer text-left"
-                    on:click={() => goto(`/live-games/${fixture.id}`)}
+                  <div
+                    class="w-full p-3 sm:p-4 bg-gray-50 dark:bg-gray-800 rounded-lg transition-colors"
                   >
                     <div
                       class="text-xs text-center text-gray-500 dark:text-gray-400 mb-2"
@@ -725,7 +822,39 @@
                         </span>
                       </div>
                     </div>
-                  </button>
+                    <div class="flex justify-center gap-2 mt-3 pt-2 border-t border-gray-200 dark:border-gray-700">
+                      <button
+                        type="button"
+                        class="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+                        on:click={() => goto(`/live-games/${fixture.id}`)}
+                      >
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                        View Details
+                      </button>
+                      <button
+                        type="button"
+                        class="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors disabled:opacity-50"
+                        disabled={downloading_fixture_id === fixture.id}
+                        on:click={(e) => handle_download_match_report(fixture, e)}
+                      >
+                        {#if downloading_fixture_id === fixture.id}
+                          <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          Generating...
+                        {:else}
+                          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                          </svg>
+                          Match Report
+                        {/if}
+                      </button>
+                    </div>
+                  </div>
                 {/each}
               </div>
             {/if}

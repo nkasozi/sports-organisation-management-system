@@ -6,14 +6,12 @@
     toggle_theme_mode,
   } from "$lib/presentation/stores/theme";
   import { branding_store } from "$lib/presentation/stores/branding";
-  import {
-    current_user_store,
-    current_user_display_name,
-    current_user_initials,
-  } from "$lib/presentation/stores/currentUser";
+  import { current_user_store } from "$lib/presentation/stores/currentUser";
   import {
     auth_store,
     current_user_role_display,
+    current_profile_display_name,
+    current_profile_initials,
     other_available_profiles,
     is_auth_initialized,
     type UserProfile,
@@ -248,12 +246,12 @@
                 />
               {:else}
                 <span class="text-white font-medium text-sm"
-                  >{$current_user_initials}</span
+                  >{$current_profile_initials}</span
                 >
               {/if}
             </div>
             <span class="hidden md:block text-sm font-medium"
-              >{$current_user_display_name}</span
+              >{$current_profile_display_name}</span
             >
             <svg
               class="hidden md:block h-4 w-4 transition-transform duration-200 {user_menu_open

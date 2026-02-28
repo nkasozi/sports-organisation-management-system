@@ -2,14 +2,12 @@
   import { createEventDispatcher } from "svelte";
   import { page } from "$app/stores";
   import { branding_store } from "$lib/presentation/stores/branding";
-  import {
-    current_user_store,
-    current_user_display_name,
-    current_user_initials,
-  } from "$lib/presentation/stores/currentUser";
+  import { current_user_store } from "$lib/presentation/stores/currentUser";
   import {
     sidebar_menu_items,
     current_user_role_display,
+    current_profile_display_name,
+    current_profile_initials,
   } from "$lib/presentation/stores/auth";
 
   export let sidebar_open = false;
@@ -342,7 +340,7 @@
               />
             {:else}
               <span class="text-white font-medium text-sm"
-                >{$current_user_initials}</span
+                >{$current_profile_initials}</span
               >
             {/if}
           </div>
@@ -350,7 +348,7 @@
             <p
               class="text-sm font-medium text-accent-900 dark:text-accent-100 truncate"
             >
-              {$current_user_display_name}
+              {$current_profile_display_name}
             </p>
             <p class="text-xs text-accent-500 dark:text-accent-400 truncate">
               {$current_user_role_display}
@@ -372,7 +370,7 @@
             />
           {:else}
             <span class="text-white font-medium text-sm"
-              >{$current_user_initials}</span
+              >{$current_profile_initials}</span
             >
           {/if}
         </div>

@@ -43,6 +43,12 @@
   import Toast from "$lib/presentation/components/ui/Toast.svelte";
   import ConfirmationModal from "$lib/presentation/components/ui/ConfirmationModal.svelte";
   import SearchableSelectField from "$lib/presentation/components/ui/SearchableSelectField.svelte";
+  import {
+    build_match_report_data,
+    generate_match_report_filename,
+    type MatchReportBuildContext,
+  } from "$lib/infrastructure/utils/MatchReportBuilder";
+  import { download_match_report } from "$lib/infrastructure/utils/MatchReportPdfGenerator";
 
   const fixture_use_cases = get_fixture_use_cases();
   const team_use_cases = get_team_use_cases();
@@ -88,6 +94,8 @@
   let toast_visible: boolean = false;
   let toast_message: string = "";
   let toast_type: "success" | "error" | "info" = "info";
+
+  let downloading_report: boolean = false;
 
   let home_lineup_expanded: boolean = false;
   let away_lineup_expanded: boolean = false;
@@ -629,6 +637,46 @@
     show_toast("Game completed!", "success");
   }
 
+  async function handle_download_match_report(): Promise<boolean> {
+    if (!fixture || !home_team || !away_team) return false;
+
+    downloading_report = true;
+
+    let organization_name = "SPORTS ORGANIZATION";
+    if (competition?.organization_id) {
+      const org_result = await organization_use_cases.get_by_id(
+        competition.organization_id,
+      );
+      if (org_result.success && org_result.data) {
+        organization_name = org_result.data.name.toUpperCase();
+      }
+    }
+
+    const ctx: MatchReportBuildContext = {
+      fixture,
+      home_team,
+      away_team,
+      competition,
+      home_lineup: home_players,
+      away_lineup: away_players,
+      assigned_officials: assigned_officials_data,
+      organization_name,
+      venue_name: venue?.name,
+    };
+
+    const report_data = build_match_report_data(ctx);
+    const filename = generate_match_report_filename(
+      home_team.name,
+      away_team.name,
+      fixture.scheduled_date,
+    );
+    download_match_report(report_data, filename);
+
+    downloading_report = false;
+    show_toast("Match report downloaded!", "success");
+    return true;
+  }
+
   function open_event_modal(
     event_type: QuickEventButton,
     team: "home" | "away",
@@ -972,6 +1020,22 @@
                 >
                   🏁 End
                 </button>
+              {:else if is_game_completed}
+                <button
+                  class="px-4 py-2 bg-primary-600 hover:bg-primary-700 rounded-lg text-sm font-medium flex items-center gap-2 disabled:opacity-50"
+                  disabled={downloading_report}
+                  on:click={handle_download_match_report}
+                >
+                  {#if downloading_report}
+                    <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Generating...
+                  {:else}
+                    📄 Match Report
+                  {/if}
+                </button>
               {/if}
             </div>
           </div>
@@ -998,6 +1062,22 @@
                 on:click={() => (show_end_modal = true)}
               >
                 🏁 End
+              </button>
+            {:else if is_game_completed}
+              <button
+                class="px-4 py-2 bg-primary-600 hover:bg-primary-700 rounded-lg text-sm font-medium flex items-center gap-2 disabled:opacity-50"
+                disabled={downloading_report}
+                on:click={handle_download_match_report}
+              >
+                {#if downloading_report}
+                  <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Generating...
+                {:else}
+                  📄 Download Match Report
+                {/if}
               </button>
             {/if}
           </div>

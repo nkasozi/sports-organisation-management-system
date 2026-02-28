@@ -392,6 +392,20 @@ export const current_user_role_display = derived(auth_store, ($auth) => {
   return role ? USER_ROLE_DISPLAY_NAMES[role] : "Unknown";
 });
 
+export const current_profile_display_name = derived(auth_store, ($auth) => {
+  return $auth.current_profile?.display_name ?? "Guest";
+});
+
+export const current_profile_initials = derived(auth_store, ($auth) => {
+  const name = $auth.current_profile?.display_name ?? "";
+  if (!name) return "?";
+  const words = name.split(" ").filter((w) => w.length > 0);
+  if (words.length >= 2) {
+    return (words[0].charAt(0) + words[1].charAt(0)).toUpperCase();
+  }
+  return name.substring(0, 2).toUpperCase();
+});
+
 export const available_profiles = derived(
   auth_store,
   ($auth) => $auth.available_profiles,
