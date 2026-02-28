@@ -729,3 +729,39 @@ export function download_match_report(
     `Match_Report_${data.home_team.name}_vs_${data.away_team.name}.pdf`;
   doc.save(safe_filename.replace(/[^a-zA-Z0-9_\-\.]/g, "_"));
 }
+
+function draw_single_report_on_doc(
+  doc: JsPDFWithAutoTable,
+  data: MatchReportData,
+): void {
+  let y_position = 10;
+  y_position = draw_header_section(doc, data, y_position);
+  y_position = draw_result_section(doc, data, y_position);
+  y_position = draw_lineup_section(doc, data, y_position);
+  y_position = draw_officials_section(doc, data, y_position);
+  y_position = draw_goals_section(doc, data, y_position);
+  draw_remarks_section(doc, data, y_position);
+}
+
+export function generate_all_match_reports_pdf(
+  reports: MatchReportData[],
+): jsPDF {
+  const doc = new jsPDF() as JsPDFWithAutoTable;
+
+  for (let i = 0; i < reports.length; i++) {
+    if (i > 0) {
+      doc.addPage();
+    }
+    draw_single_report_on_doc(doc, reports[i]);
+  }
+
+  return doc;
+}
+
+export function download_all_match_reports(
+  reports: MatchReportData[],
+  filename: string,
+): void {
+  const doc = generate_all_match_reports_pdf(reports);
+  doc.save(filename.replace(/[^a-zA-Z0-9_\-\.]/g, "_"));
+}

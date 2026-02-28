@@ -21,14 +21,14 @@
   import { get_organization_use_cases } from "$lib/core/usecases/OrganizationUseCases";
   import { get_team_staff_use_cases } from "$lib/core/usecases/TeamStaffUseCases";
   import { get_team_staff_full_name } from "$lib/core/entities/TeamStaff";
-  import type { MatchStaffEntry } from "$lib/core/types/MatchReportTypes";
+  import type { MatchStaffEntry, MatchReportData } from "$lib/core/types/MatchReportTypes";
   import LoadingStateWrapper from "$lib/presentation/components/ui/LoadingStateWrapper.svelte";
   import {
     build_match_report_data,
     generate_match_report_filename,
     type MatchReportBuildContext,
   } from "$lib/infrastructure/utils/MatchReportBuilder";
-  import { download_match_report } from "$lib/infrastructure/utils/MatchReportPdfGenerator";
+  import { download_match_report, download_all_match_reports } from "$lib/infrastructure/utils/MatchReportPdfGenerator";
   import { branding_store } from "$lib/presentation/stores/branding";
 
   const competition_use_cases = get_competition_use_cases();
@@ -42,6 +42,7 @@
   const team_staff_use_cases = get_team_staff_use_cases();
 
   let downloading_fixture_id: string | null = null;
+  let downloading_all_reports: boolean = false;
 
   let competitions: Competition[] = [];
   let selected_competition_id: string = "";
@@ -425,6 +426,147 @@
     downloading_fixture_id = null;
     return true;
   }
+
+  async function build_report_data_for_fixture(
+    fixture: Fixture,
+    organization_name: string,
+    staff_roles_map: Map<string, string>,
+  ): Promise<MatchReportData | null> {
+    const home_team = team_map.get(fixture.home_team_id);
+    const away_team = team_map.get(fixture.away_team_id);
+
+    if (!home_team || !away_team) {
+      return null;
+    }
+
+    const [home_lineup_result, away_lineup_result] = await Promise.all([
+      fixture_lineup_use_cases.get_lineup_for_team_in_fixture(
+        fixture.id,
+        fixture.home_team_id,
+      ),
+      fixture_lineup_use_cases.get_lineup_for_team_in_fixture(
+        fixture.id,
+        fixture.away_team_id,
+      ),
+    ]);
+
+    const home_lineup =
+      home_lineup_result.success && home_lineup_result.data
+        ? home_lineup_result.data.selected_players
+        : [];
+    const away_lineup =
+      away_lineup_result.success && away_lineup_result.data
+        ? away_lineup_result.data.selected_players
+        : [];
+
+    const assigned_officials: Array<{ official: Official; role_name: string }> =
+      [];
+    if (fixture.assigned_officials) {
+      for (const assignment of fixture.assigned_officials) {
+        const official_result = await official_use_cases.get_by_id(
+          assignment.official_id,
+        );
+        if (official_result.success && official_result.data) {
+          assigned_officials.push({
+            official: official_result.data,
+            role_name: assignment.role_name,
+          });
+        }
+      }
+    }
+
+    const [home_staff_result, away_staff_result] = await Promise.all([
+      team_staff_use_cases.list_staff_by_team(fixture.home_team_id),
+      team_staff_use_cases.list_staff_by_team(fixture.away_team_id),
+    ]);
+
+    const home_staff: MatchStaffEntry[] = [];
+    if (home_staff_result.success && home_staff_result.data) {
+      for (const staff of home_staff_result.data.items) {
+        home_staff.push({
+          role: staff_roles_map.get(staff.role_id) || "Staff",
+          name: get_team_staff_full_name(staff),
+        });
+      }
+    }
+
+    const away_staff: MatchStaffEntry[] = [];
+    if (away_staff_result.success && away_staff_result.data) {
+      for (const staff of away_staff_result.data.items) {
+        away_staff.push({
+          role: staff_roles_map.get(staff.role_id) || "Staff",
+          name: get_team_staff_full_name(staff),
+        });
+      }
+    }
+
+    const ctx: MatchReportBuildContext = {
+      fixture,
+      home_team,
+      away_team,
+      competition: selected_competition,
+      home_lineup,
+      away_lineup,
+      assigned_officials,
+      home_staff,
+      away_staff,
+      organization_name,
+      organization_logo_url: $branding_store.organization_logo_url,
+    };
+
+    return build_match_report_data(ctx);
+  }
+
+  async function handle_download_all_reports(): Promise<boolean> {
+    if (completed_fixtures.length === 0) {
+      return false;
+    }
+
+    downloading_all_reports = true;
+
+    let organization_name = "SPORTS ORGANIZATION";
+    if (selected_competition?.organization_id) {
+      const org_result = await organization_use_cases.get_by_id(
+        selected_competition.organization_id,
+      );
+      if (org_result.success && org_result.data) {
+        organization_name = org_result.data.name.toUpperCase();
+      }
+    }
+
+    const staff_roles_result = await team_staff_use_cases.list_staff_roles();
+    const staff_roles_map = new Map<string, string>();
+    if (staff_roles_result.success && staff_roles_result.data) {
+      for (const role of staff_roles_result.data) {
+        staff_roles_map.set(role.id, role.name);
+      }
+    }
+
+    const all_reports: MatchReportData[] = [];
+
+    for (const fixture of completed_fixtures) {
+      const report_data = await build_report_data_for_fixture(
+        fixture,
+        organization_name,
+        staff_roles_map,
+      );
+      if (report_data) {
+        all_reports.push(report_data);
+      }
+    }
+
+    if (all_reports.length === 0) {
+      downloading_all_reports = false;
+      return false;
+    }
+
+    const competition_name = selected_competition?.name || "Competition";
+    const filename = `${competition_name}_All_Match_Reports.pdf`;
+    download_all_match_reports(all_reports, filename);
+
+    downloading_all_reports = false;
+    return true;
+  }
 </script>
 
 <svelte:head>
@@ -806,6 +948,55 @@
                 No completed fixtures yet.
               </div>
             {:else}
+              <div class="flex items-center justify-between mb-4">
+                <span class="text-sm text-gray-500 dark:text-gray-400">
+                  {completed_fixtures.length} completed {completed_fixtures.length === 1 ? 'match' : 'matches'}
+                </span>
+                <button
+                  type="button"
+                  class="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 dark:bg-primary-500 dark:hover:bg-primary-600 rounded-lg transition-colors disabled:opacity-50"
+                  disabled={downloading_all_reports}
+                  on:click={handle_download_all_reports}
+                >
+                  {#if downloading_all_reports}
+                    <svg
+                      class="w-4 h-4 animate-spin"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        class="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        stroke-width="4"
+                      ></circle>
+                      <path
+                        class="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
+                    </svg>
+                    Generating All...
+                  {:else}
+                    <svg
+                      class="w-4 h-4"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                      />
+                    </svg>
+                    Download All Reports
+                  {/if}
+                </button>
+              </div>
               <div class="space-y-3">
                 {#each completed_fixtures as fixture}
                   {@const home_score = fixture.home_team_score ?? 0}
