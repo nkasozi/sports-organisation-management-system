@@ -1,23 +1,90 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import {
   create_audit_log_use_cases,
   type AuditLogUseCases,
 } from "./AuditLogUseCases";
-import {
-  InBrowserAuditLogRepository,
-  reset_audit_log_repository,
-} from "../../adapters/repositories/InBrowserAuditLogRepository";
-import type { CreateAuditLogInput } from "../entities/AuditLog";
+import type { InBrowserAuditLogRepository } from "../../adapters/repositories/InBrowserAuditLogRepository";
+import type { AuditLog, CreateAuditLogInput } from "../entities/AuditLog";
 import { compute_field_changes } from "../entities/AuditLog";
+import type { Result, PaginatedResult } from "../types/Result";
+
+type MockRepository = Partial<InBrowserAuditLogRepository> & {
+  find_all: ReturnType<typeof vi.fn>;
+  find_by_id: ReturnType<typeof vi.fn>;
+  find_by_ids: ReturnType<typeof vi.fn>;
+  create: ReturnType<typeof vi.fn>;
+  update: ReturnType<typeof vi.fn>;
+  delete_by_id: ReturnType<typeof vi.fn>;
+  delete_by_ids: ReturnType<typeof vi.fn>;
+  count: ReturnType<typeof vi.fn>;
+  find_by_filter: ReturnType<typeof vi.fn>;
+  find_by_entity: ReturnType<typeof vi.fn>;
+};
+
+function create_mock_repository(): MockRepository {
+  return {
+    find_all: vi.fn(),
+    find_by_id: vi.fn(),
+    find_by_ids: vi.fn(),
+    create: vi.fn(),
+    update: vi.fn(),
+    delete_by_id: vi.fn(),
+    delete_by_ids: vi.fn(),
+    count: vi.fn(),
+    find_by_filter: vi.fn(),
+    find_by_entity: vi.fn(),
+  };
+}
+
+function create_mock_audit_log(overrides: Partial<AuditLog> = {}): AuditLog {
+  return {
+    id: "log_1",
+    entity_type: "player",
+    entity_id: "player_123",
+    entity_display_name: "John Doe",
+    action: "create",
+    user_id: "user_456",
+    user_email: "admin@example.com",
+    user_display_name: "Admin User",
+    changes: [],
+    timestamp: "2024-01-01T00:00:00Z",
+    ip_address: "127.0.0.1",
+    user_agent: "Mozilla/5.0",
+    created_at: "2024-01-01T00:00:00Z",
+    updated_at: "2024-01-01T00:00:00Z",
+    ...overrides,
+  };
+}
+
+function create_success_result<T>(data: T): Result<T, string> {
+  return { success: true, data };
+}
+
+function create_paginated_result<T>(
+  items: T[],
+  total_count?: number,
+): Result<PaginatedResult<T>, string> {
+  return {
+    success: true,
+    data: {
+      items,
+      total_count: total_count ?? items.length,
+      page_number: 1,
+      page_size: 10,
+      total_pages: 1,
+    },
+  };
+}
 
 describe("AuditLogUseCases", () => {
   let use_cases: AuditLogUseCases;
-  let repository: InBrowserAuditLogRepository;
+  let mock_repository: MockRepository;
 
-  beforeEach(async () => {
-    await reset_audit_log_repository();
-    repository = new InBrowserAuditLogRepository();
-    use_cases = create_audit_log_use_cases(repository);
+  beforeEach(() => {
+    mock_repository = create_mock_repository();
+    use_cases = create_audit_log_use_cases(
+      mock_repository as unknown as InBrowserAuditLogRepository,
+    );
   });
 
   function create_valid_audit_log_input(): CreateAuditLogInput {
@@ -36,6 +103,10 @@ describe("AuditLogUseCases", () => {
   describe("create", () => {
     it("should create a new audit log entry successfully", async () => {
       const input = create_valid_audit_log_input();
+      const created_log = create_mock_audit_log();
+      vi.mocked(mock_repository.create).mockResolvedValue(
+        create_success_result(created_log),
+      );
 
       const result = await use_cases.create(input);
 
@@ -47,14 +118,22 @@ describe("AuditLogUseCases", () => {
     });
 
     it("should create audit log with field changes", async () => {
+      const changes = [
+        { field_name: "first_name", old_value: "John", new_value: "Jane" },
+        { field_name: "status", old_value: "active", new_value: "inactive" },
+      ];
       const input: CreateAuditLogInput = {
         ...create_valid_audit_log_input(),
         action: "update",
-        changes: [
-          { field_name: "first_name", old_value: "John", new_value: "Jane" },
-          { field_name: "status", old_value: "active", new_value: "inactive" },
-        ],
+        changes,
       };
+      const created_log = create_mock_audit_log({
+        action: "update",
+        changes,
+      });
+      vi.mocked(mock_repository.create).mockResolvedValue(
+        create_success_result(created_log),
+      );
 
       const result = await use_cases.create(input);
 
@@ -96,14 +175,15 @@ describe("AuditLogUseCases", () => {
 
   describe("get_by_id", () => {
     it("should retrieve an existing audit log by id", async () => {
-      const input = create_valid_audit_log_input();
-      const created = await use_cases.create(input);
-      const log_id = created.data!.id;
+      const log = create_mock_audit_log();
+      vi.mocked(mock_repository.find_by_id).mockResolvedValue(
+        create_success_result(log),
+      );
 
-      const result = await use_cases.get_by_id(log_id);
+      const result = await use_cases.get_by_id("log_1");
 
       expect(result.success).toBe(true);
-      expect(result.data?.id).toBe(log_id);
+      expect(result.data?.id).toBe("log_1");
     });
 
     it("should fail with empty id", async () => {
@@ -116,11 +196,13 @@ describe("AuditLogUseCases", () => {
 
   describe("list", () => {
     it("should list all audit logs", async () => {
-      await use_cases.create(create_valid_audit_log_input());
-      await use_cases.create({
-        ...create_valid_audit_log_input(),
-        entity_id: "player_789",
-      });
+      const logs = [
+        create_mock_audit_log({ id: "log_1" }),
+        create_mock_audit_log({ id: "log_2", entity_id: "player_789" }),
+      ];
+      vi.mocked(mock_repository.find_all).mockResolvedValue(
+        create_paginated_result(logs),
+      );
 
       const result = await use_cases.list();
 
@@ -129,12 +211,12 @@ describe("AuditLogUseCases", () => {
     });
 
     it("should filter by entity_type", async () => {
-      await use_cases.create(create_valid_audit_log_input());
-      await use_cases.create({
-        ...create_valid_audit_log_input(),
-        entity_type: "team",
-        entity_id: "team_123",
-      });
+      const logs = [
+        create_mock_audit_log({ id: "log_1", entity_type: "player" }),
+      ];
+      vi.mocked(mock_repository.find_by_filter).mockResolvedValue(
+        create_paginated_result(logs),
+      );
 
       const result = await use_cases.list({ entity_type: "player" });
 
@@ -144,12 +226,10 @@ describe("AuditLogUseCases", () => {
     });
 
     it("should filter by action", async () => {
-      await use_cases.create(create_valid_audit_log_input());
-      await use_cases.create({
-        ...create_valid_audit_log_input(),
-        entity_id: "player_789",
-        action: "update",
-      });
+      const logs = [create_mock_audit_log({ id: "log_1", action: "create" })];
+      vi.mocked(mock_repository.find_by_filter).mockResolvedValue(
+        create_paginated_result(logs),
+      );
 
       const result = await use_cases.list({ action: "create" });
 
@@ -161,10 +241,7 @@ describe("AuditLogUseCases", () => {
 
   describe("update (immutability)", () => {
     it("should reject update attempts on audit logs", async () => {
-      const created = await use_cases.create(create_valid_audit_log_input());
-      const log_id = created.data!.id;
-
-      const result = await use_cases.update(log_id, { entity_type: "team" });
+      const result = await use_cases.update("log_1", { entity_type: "team" });
 
       expect(result.success).toBe(false);
       expect(result.error_message).toContain("immutable");
@@ -174,10 +251,7 @@ describe("AuditLogUseCases", () => {
 
   describe("delete (immutability)", () => {
     it("should reject delete attempts on audit logs", async () => {
-      const created = await use_cases.create(create_valid_audit_log_input());
-      const log_id = created.data!.id;
-
-      const result = await use_cases.delete(log_id);
+      const result = await use_cases.delete("log_1");
 
       expect(result.success).toBe(false);
       expect(result.error_message).toContain("immutable");
@@ -187,18 +261,17 @@ describe("AuditLogUseCases", () => {
 
   describe("get_entity_history", () => {
     it("should retrieve audit logs for a specific entity", async () => {
-      await use_cases.create(create_valid_audit_log_input());
-      await use_cases.create({
-        ...create_valid_audit_log_input(),
-        action: "update",
-        changes: [
-          { field_name: "status", old_value: "active", new_value: "inactive" },
-        ],
-      });
-      await use_cases.create({
-        ...create_valid_audit_log_input(),
-        entity_id: "other_entity",
-      });
+      const logs = [
+        create_mock_audit_log({ id: "log_1", entity_id: "player_123" }),
+        create_mock_audit_log({
+          id: "log_2",
+          entity_id: "player_123",
+          action: "update",
+        }),
+      ];
+      vi.mocked(mock_repository.find_by_entity).mockResolvedValue(
+        create_paginated_result(logs),
+      );
 
       const result = await use_cases.get_entity_history("player", "player_123");
 
@@ -223,16 +296,17 @@ describe("AuditLogUseCases", () => {
 
   describe("get_user_activity", () => {
     it("should retrieve audit logs for a specific user", async () => {
-      await use_cases.create(create_valid_audit_log_input());
-      await use_cases.create({
-        ...create_valid_audit_log_input(),
-        entity_id: "player_789",
-      });
-      await use_cases.create({
-        ...create_valid_audit_log_input(),
-        entity_id: "team_123",
-        user_id: "other_user",
-      });
+      const logs = [
+        create_mock_audit_log({ id: "log_1", user_id: "user_456" }),
+        create_mock_audit_log({
+          id: "log_2",
+          user_id: "user_456",
+          entity_id: "player_789",
+        }),
+      ];
+      vi.mocked(mock_repository.find_by_filter).mockResolvedValue(
+        create_paginated_result(logs),
+      );
 
       const result = await use_cases.get_user_activity("user_456");
 

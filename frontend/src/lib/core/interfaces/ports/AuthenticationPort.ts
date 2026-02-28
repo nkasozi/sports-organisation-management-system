@@ -3,6 +3,7 @@ export type UserRole =
   | "org_admin"
   | "officials_manager"
   | "team_manager"
+  | "official"
   | "player";
 
 export const USER_ROLE_DISPLAY_NAMES: Record<UserRole, string> = {
@@ -10,6 +11,7 @@ export const USER_ROLE_DISPLAY_NAMES: Record<UserRole, string> = {
   org_admin: "Organisation Admin",
   officials_manager: "Officials Manager",
   team_manager: "Team Manager",
+  official: "Official",
   player: "Player",
 };
 
@@ -18,6 +20,7 @@ export const USER_ROLE_ORDER: UserRole[] = [
   "org_admin",
   "officials_manager",
   "team_manager",
+  "official",
   "player",
 ];
 
@@ -77,6 +80,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     "view_own_profile",
     "edit_own_profile",
   ],
+  official: ["view_own_profile", "edit_own_profile"],
   player: ["view_own_team", "view_own_profile", "edit_own_profile"],
 };
 

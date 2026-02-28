@@ -14,6 +14,7 @@ Uses explicit handlers instead of events for predictable data flow
   } from "../../core/types/EntityHandlers";
   import { is_functionality_disabled } from "../../core/types/EntityHandlers";
   import { get_use_cases_for_entity_type } from "../../infrastructure/registry/entityUseCasesRegistry";
+  import { get_disabled_crud_actions } from "../../presentation/stores/auth";
   import DynamicEntityForm from "./DynamicEntityForm.svelte";
   import DynamicEntityList from "./DynamicEntityList.svelte";
 
@@ -28,6 +29,7 @@ Uses explicit handlers instead of events for predictable data flow
   export let after_save_redirect_url: string | null = null;
   export let info_message: string | null = null;
   export let disabled_functionalities: CrudFunctionality[] = [];
+  export let skip_authorization_check: boolean = false;
 
   const dispatch = createEventDispatcher<{
     entity_created: { entity: BaseEntity };
@@ -46,11 +48,36 @@ Uses explicit handlers instead of events for predictable data flow
   $: page_title = build_page_title_for_current_view(current_view, entity_type);
   $: show_back_button = current_view !== "list";
   $: normalized_entity_type = normalize_entity_type(entity_type);
+  $: authorization_disabled_actions = skip_authorization_check
+    ? []
+    : get_disabled_crud_actions(normalized_entity_type);
+  $: effective_disabled_functionalities =
+    compute_effective_disabled_functionalities(
+      disabled_functionalities,
+      authorization_disabled_actions as CrudFunctionality[],
+    );
   $: crud_handlers = build_crud_handlers_for_entity_type(
     normalized_entity_type,
   );
   $: list_view_callbacks = build_list_view_callbacks();
   $: form_view_callbacks = build_form_view_callbacks();
+
+  function compute_effective_disabled_functionalities(
+    explicit_disabled: CrudFunctionality[],
+    auth_disabled: CrudFunctionality[],
+  ): CrudFunctionality[] {
+    const combined = new Set([...explicit_disabled, ...auth_disabled]);
+    const result = Array.from(combined);
+
+    if (auth_disabled.length > 0) {
+      console.log(
+        `[EntityCrudWrapper] Authorization disabled actions for ${normalized_entity_type}:`,
+        auth_disabled,
+      );
+    }
+
+    return result;
+  }
 
   function normalize_entity_type(type: string): string {
     if (typeof type !== "string") return "";
@@ -116,19 +143,19 @@ Uses explicit handlers instead of events for predictable data flow
     return {
       on_create_requested: is_functionality_disabled(
         "create",
-        disabled_functionalities,
+        effective_disabled_functionalities,
       )
         ? undefined
         : handle_create_requested,
       on_edit_requested: is_functionality_disabled(
         "edit",
-        disabled_functionalities,
+        effective_disabled_functionalities,
       )
         ? undefined
         : handle_edit_requested,
       on_delete_completed: is_functionality_disabled(
         "delete",
-        disabled_functionalities,
+        effective_disabled_functionalities,
       )
         ? undefined
         : handle_entity_deleted,
@@ -345,7 +372,7 @@ Uses explicit handlers instead of events for predictable data flow
           {bulk_create_handler}
           {enable_bulk_import}
           {button_color_class}
-          {disabled_functionalities}
+          disabled_functionalities={effective_disabled_functionalities}
           on_total_count_changed={handle_list_count_updated}
           on_selection_changed={handle_selection_changed}
           on_entities_batch_deleted={handle_entities_batch_deleted}

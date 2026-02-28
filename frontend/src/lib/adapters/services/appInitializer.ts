@@ -53,9 +53,9 @@ function initialize_convex_client(): boolean {
     const client = new ConvexClient(convex_url);
     sync_store.set_convex_client({
       mutation: (name: string, args: Record<string, unknown>) =>
-        client.mutation(name as never, args),
+        client.mutation(name as never, args as never),
       query: (name: string, args: Record<string, unknown>) =>
-        client.query(name as never, args),
+        client.query(name as never, args as never),
     });
     console.log(
       "[Convex] Client initialized successfully with URL:",

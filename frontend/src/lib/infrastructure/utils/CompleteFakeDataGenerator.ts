@@ -294,6 +294,7 @@ export function generate_player(_team_id: string | null): Player {
       new Date(2005, 0, 1),
     ),
     position_id: "",
+    organization_id: "",
     height_cm: faker.number.int({ min: 165, max: 200 }),
     weight_kg: faker.number.int({ min: 60, max: 95 }),
     nationality: random_element(NATIONALITIES),
@@ -402,6 +403,9 @@ export function generate_competition(
     competition_format_id,
     team_ids: [],
     allow_auto_squad_submission: false,
+    squad_generation_strategy: "first_available" as const,
+    allow_auto_fixture_details_setup: false,
+    lineup_submission_deadline_hours: 2,
     created_at: now,
     updated_at: now,
   };
@@ -659,6 +663,9 @@ export async function generate_field_hockey_dataset(
     competition_format_id: league_format.id,
     team_ids: teams.map((t) => t.id),
     allow_auto_squad_submission: true,
+    squad_generation_strategy: "first_available",
+    allow_auto_fixture_details_setup: false,
+    lineup_submission_deadline_hours: 2,
     created_at: now,
     updated_at: now,
   };

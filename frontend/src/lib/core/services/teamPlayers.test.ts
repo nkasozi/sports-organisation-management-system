@@ -22,6 +22,7 @@ describe("teamPlayers", () => {
       phone: "+000",
       date_of_birth: "2000-01-01",
       position_id: "",
+      organization_id: "",
       height_cm: null,
       weight_kg: null,
       nationality: "Uganda",

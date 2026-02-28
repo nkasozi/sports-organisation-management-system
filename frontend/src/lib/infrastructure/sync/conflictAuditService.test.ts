@@ -327,7 +327,8 @@ describe("Audit log input structure", () => {
     ];
 
     for (const diff of conflict.field_differences) {
-      const resolved_value = resolved_data[diff.field_name as keyof typeof resolved_data];
+      const resolved_value =
+        resolved_data[diff.field_name as keyof typeof resolved_data];
       changes.push({
         field_name: diff.field_name,
         old_value: `Local: ${format_value_for_audit(diff.local_value)} | Remote: ${format_value_for_audit(diff.remote_value)}`,
@@ -344,7 +345,7 @@ describe("Audit log input structure", () => {
 
 describe("Context handling", () => {
   it("uses default system user when no context provided", () => {
-    const context = {};
+    const context: Record<string, string> = {};
 
     const user_id = context.user_id ?? "system";
     const user_email = context.user_email ?? "system@sportsorg.local";

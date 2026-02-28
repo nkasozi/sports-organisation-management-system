@@ -12,6 +12,7 @@ export interface Player extends BaseEntity {
   phone: string;
   date_of_birth: string;
   position_id: string;
+  organization_id: string;
   height_cm: number | null;
   weight_kg: number | null;
   nationality: string;
@@ -48,7 +49,9 @@ export function get_player_full_name(player: Player): string {
   return `${player.first_name} ${player.last_name}`.trim();
 }
 
-export function create_empty_player_input(): CreatePlayerInput {
+export function create_empty_player_input(
+  organization_id: string = "",
+): CreatePlayerInput {
   return {
     first_name: "",
     last_name: "",
@@ -56,6 +59,7 @@ export function create_empty_player_input(): CreatePlayerInput {
     phone: "",
     date_of_birth: "",
     position_id: "",
+    organization_id,
     height_cm: null,
     weight_kg: null,
     nationality: "",
@@ -88,6 +92,10 @@ export function validate_player_input(input: CreatePlayerInput): string[] {
 
   if (!input.position_id || input.position_id.trim().length === 0) {
     validation_errors.push("Position is required");
+  }
+
+  if (!input.organization_id || input.organization_id.trim().length === 0) {
+    validation_errors.push("Organization is required");
   }
 
   return validation_errors;

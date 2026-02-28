@@ -119,22 +119,6 @@ export const current_user_initials = derived(current_user_store, ($user) => {
   return `${first_initial}${last_initial}` || "?";
 });
 
-export const current_user_role_display = derived(
-  current_user_store,
-  ($user) => {
-    if (!$user) return "Guest";
-
-    const role_display_map: Record<SystemUserRole, string> = {
-      super_admin: "Super Administrator",
-      admin: "Administrator",
-      manager: "Manager",
-      user: "User",
-    };
-
-    return role_display_map[$user.role] || "User";
-  },
-);
-
 function handle_system_user_updated(payload: EntityUpdatedPayload): void {
   if (payload.entity_type !== "system_user") return;
 

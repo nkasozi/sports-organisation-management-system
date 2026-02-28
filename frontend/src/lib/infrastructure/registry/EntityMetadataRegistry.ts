@@ -1214,7 +1214,7 @@ class EntityMetadataRegistry {
           field_type: "enum",
           is_required: true,
           is_read_only: false,
-          is_hidden_on_create: true,
+          hide_on_create: true,
           enum_values: ["pending", "confirmed", "rejected"],
           show_in_list: true,
         },
@@ -1229,7 +1229,7 @@ class EntityMetadataRegistry {
         {
           field_name: "notes" satisfies keyof PlayerTeamTransferHistory,
           display_name: "Notes",
-          field_type: "text",
+          field_type: "string",
           is_required: false,
           is_read_only: false,
           show_in_list: false,

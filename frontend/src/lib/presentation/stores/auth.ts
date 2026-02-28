@@ -13,6 +13,20 @@ import {
   ANY_VALUE,
 } from "$lib/core/interfaces/ports/AuthenticationPort";
 import { get_authentication_adapter } from "$lib/adapters/services/LocalAuthenticationAdapter";
+import type {
+  AuthorizableAction,
+  AuthorizationCheckResult,
+  EntityAuthorizationMap,
+  FeatureAccess,
+  SidebarMenuGroup,
+} from "$lib/core/interfaces/ports/AuthorizationPort";
+import { get_authorization_adapter } from "$lib/adapters/services/LocalAuthorizationAdapter";
+import {
+  SEED_ORGANIZATION_IDS,
+  SEED_TEAM_IDS,
+  SEED_PLAYER_IDS,
+  SEED_OFFICIAL_IDS,
+} from "$lib/infrastructure/utils/SeedDataGenerator";
 
 export interface UserProfile {
   id: string;
@@ -21,6 +35,8 @@ export interface UserProfile {
   role: UserRole;
   organization_id: string;
   team_id: string;
+  player_id?: string;
+  official_id?: string;
 }
 
 interface AuthState {
@@ -45,35 +61,45 @@ function create_default_profiles(): UserProfile[] {
     },
     {
       id: "org-admin-profile",
-      display_name: "Organisation Admin",
-      email: "orgadmin@sportsorg.local",
+      display_name: "Organisation Admin (Uganda Hockey)",
+      email: "orgadmin@ugandahockey.local",
       role: "org_admin",
-      organization_id: "default-org",
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       team_id: ANY_VALUE,
     },
     {
       id: "officials-manager-profile",
-      display_name: "Officials Manager",
-      email: "officials@sportsorg.local",
+      display_name: "Officials Manager (Uganda Hockey)",
+      email: "officials@ugandahockey.local",
       role: "officials_manager",
-      organization_id: "default-org",
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       team_id: ANY_VALUE,
     },
     {
       id: "team-manager-profile",
-      display_name: "Team Manager",
-      email: "teammanager@sportsorg.local",
+      display_name: "Team Manager (Weatherhead HC)",
+      email: "manager@weatherheadhc.local",
       role: "team_manager",
-      organization_id: "default-org",
-      team_id: "default-team",
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
+      team_id: SEED_TEAM_IDS.WEATHERHEAD_HC,
+    },
+    {
+      id: "official-profile",
+      display_name: "Michael Anderson (Official)",
+      email: "michael.anderson@ugandahockey.local",
+      role: "official",
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
+      team_id: ANY_VALUE,
+      official_id: SEED_OFFICIAL_IDS.MICHAEL_ANDERSON,
     },
     {
       id: "player-profile",
-      display_name: "Player",
-      email: "player@sportsorg.local",
+      display_name: "Denis Onyango (Player)",
+      email: "denis.onyango@weatherheadhc.local",
       role: "player",
-      organization_id: "default-org",
-      team_id: "default-team",
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
+      team_id: SEED_TEAM_IDS.WEATHERHEAD_HC,
+      player_id: SEED_PLAYER_IDS.DENIS_ONYANGO,
     },
   ];
 }
@@ -238,6 +264,101 @@ function create_auth_store() {
     console.log("[AuthStore] Logged out");
   }
 
+  function get_sidebar_menu_items(): SidebarMenuGroup[] {
+    const state = get({ subscribe });
+    if (!state.current_token) {
+      console.warn("[AuthStore] No token available for sidebar menu items");
+      return [];
+    }
+    const authorization_adapter = get_authorization_adapter();
+    return authorization_adapter.get_sidebar_menu_items(state.current_token);
+  }
+
+  function get_authorization_level(
+    entity_type: string,
+  ): EntityAuthorizationMap {
+    const state = get({ subscribe });
+    if (!state.current_token) {
+      console.warn(
+        "[AuthStore] No token available for authorization level check",
+      );
+      return {
+        entity_type,
+        authorizations: new Map(),
+      };
+    }
+    const authorization_adapter = get_authorization_adapter();
+    return authorization_adapter.get_user_authorization_level(
+      state.current_token,
+      entity_type,
+    );
+  }
+
+  function is_authorized_to_execute(
+    action: AuthorizableAction,
+    entity_type: string,
+    entity_id?: string,
+    target_organization_id?: string,
+    target_team_id?: string,
+  ): AuthorizationCheckResult {
+    const state = get({ subscribe });
+    if (!state.current_token) {
+      console.warn("[AuthStore] No token available for authorization check");
+      return {
+        is_authorized: false,
+        authorization_level: "none",
+        error_message: "No authentication token available",
+      };
+    }
+    const authorization_adapter = get_authorization_adapter();
+    return authorization_adapter.is_authorized_to_execute(
+      state.current_token,
+      action,
+      entity_type,
+      entity_id,
+      target_organization_id,
+      target_team_id,
+    );
+  }
+
+  function get_feature_access(): FeatureAccess {
+    const state = get({ subscribe });
+    if (!state.current_token) {
+      console.warn("[AuthStore] No token available for feature access");
+      return {
+        can_reset_demo: false,
+        can_view_audit_logs: false,
+        can_access_dashboard: false,
+        audit_logs_scope: "none",
+      };
+    }
+    const authorization_adapter = get_authorization_adapter();
+    return authorization_adapter.get_feature_access(state.current_token);
+  }
+
+  function is_functionality_disabled(
+    action: AuthorizableAction,
+    entity_type: string,
+  ): boolean {
+    const auth_result = is_authorized_to_execute(action, entity_type);
+    return !auth_result.is_authorized;
+  }
+
+  function get_disabled_functionalities(
+    entity_type: string,
+  ): AuthorizableAction[] {
+    const actions: AuthorizableAction[] = [
+      "create",
+      "edit",
+      "delete",
+      "list",
+      "view",
+    ];
+    return actions.filter((action) =>
+      is_functionality_disabled(action, entity_type),
+    );
+  }
+
   return {
     subscribe,
     initialize,
@@ -245,6 +366,12 @@ function create_auth_store() {
     has_permission,
     get_current_role,
     logout,
+    get_sidebar_menu_items,
+    get_authorization_level,
+    is_authorized_to_execute,
+    get_feature_access,
+    is_functionality_disabled,
+    get_disabled_functionalities,
   };
 }
 
@@ -286,4 +413,53 @@ export const current_permissions = derived(auth_store, ($auth) => {
 
 export function check_permission(permission: Permission): boolean {
   return auth_store.has_permission(permission);
+}
+
+export const sidebar_menu_items = derived(auth_store, ($auth) => {
+  if (!$auth.is_initialized || !$auth.current_token) {
+    return [];
+  }
+  const authorization_adapter = get_authorization_adapter();
+  return authorization_adapter.get_sidebar_menu_items($auth.current_token);
+});
+
+export const feature_access = derived(auth_store, ($auth) => {
+  if (!$auth.is_initialized || !$auth.current_token) {
+    return {
+      can_reset_demo: false,
+      can_view_audit_logs: false,
+      can_access_dashboard: false,
+      audit_logs_scope: "none" as const,
+    };
+  }
+  const authorization_adapter = get_authorization_adapter();
+  return authorization_adapter.get_feature_access($auth.current_token);
+});
+
+export function get_entity_authorization_level(
+  entity_type: string,
+): EntityAuthorizationMap {
+  return auth_store.get_authorization_level(entity_type);
+}
+
+export function check_action_authorization(
+  action: AuthorizableAction,
+  entity_type: string,
+  entity_id?: string,
+  target_organization_id?: string,
+  target_team_id?: string,
+): AuthorizationCheckResult {
+  return auth_store.is_authorized_to_execute(
+    action,
+    entity_type,
+    entity_id,
+    target_organization_id,
+    target_team_id,
+  );
+}
+
+export function get_disabled_crud_actions(
+  entity_type: string,
+): AuthorizableAction[] {
+  return auth_store.get_disabled_functionalities(entity_type);
 }

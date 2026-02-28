@@ -38,6 +38,9 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
   import { get_official_associated_team_use_cases } from "../../core/usecases/OfficialAssociatedTeamUseCases";
   import { get_fixture_use_cases } from "../../core/usecases/FixtureUseCases";
   import { get_team_use_cases } from "../../core/usecases/TeamUseCases";
+  import { auth_store, check_action_authorization } from "../stores/auth";
+  import { get } from "svelte/store";
+  import { ANY_VALUE } from "$lib/core/interfaces/ports/AuthenticationPort";
 
   export let entity_type: string;
   export let entity_data: Partial<BaseEntity> | null = null;
@@ -213,17 +216,22 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
     existing_data: Partial<BaseEntity> | null,
   ): void {
     const new_form_data: Record<string, any> = {};
+    const authorization_preselect = get_authorization_preselect_values();
 
     for (const field of metadata.fields) {
       if (
         existing_data &&
         existing_data[field.field_name as keyof BaseEntity] !== undefined
       ) {
-        // Edit mode: use existing data
         new_form_data[field.field_name] =
           existing_data[field.field_name as keyof BaseEntity];
+      } else if (authorization_preselect[field.field_name]) {
+        new_form_data[field.field_name] =
+          authorization_preselect[field.field_name];
+        console.log(
+          `[AuthPreselect] Field ${field.field_name} preselected to: ${authorization_preselect[field.field_name]}`,
+        );
       } else {
-        // Create mode: use defaults
         new_form_data[field.field_name] =
           get_default_value_for_field_type(field);
       }
@@ -287,10 +295,53 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
   function should_field_be_read_only(field: FieldMetadata): boolean {
     if (field.is_read_only) return true;
     if (field.is_read_only_on_edit && is_edit_mode) return true;
+    if (is_field_restricted_by_authorization(field.field_name)) return true;
     return is_field_controlled_by_sub_entity_filter(
       field.field_name,
       sub_entity_filter,
     );
+  }
+
+  function is_field_restricted_by_authorization(field_name: string): boolean {
+    const auth_state = get(auth_store);
+    if (!auth_state.current_profile) return false;
+
+    const profile = auth_state.current_profile;
+    const org_id = profile.organization_id;
+    const team_id = profile.team_id;
+
+    if (field_name === "organization_id" && org_id !== ANY_VALUE) {
+      return true;
+    }
+
+    if (field_name === "team_id" && team_id !== ANY_VALUE) {
+      return true;
+    }
+
+    return false;
+  }
+
+  function get_authorization_preselect_values(): Record<string, string> {
+    const preselect_values: Record<string, string> = {};
+    const auth_state = get(auth_store);
+
+    if (!auth_state.current_profile) return preselect_values;
+
+    const profile = auth_state.current_profile;
+
+    if (profile.organization_id !== ANY_VALUE) {
+      preselect_values["organization_id"] = profile.organization_id;
+    }
+
+    if (profile.team_id !== ANY_VALUE) {
+      preselect_values["team_id"] = profile.team_id;
+    }
+
+    if (profile.player_id) {
+      preselect_values["player_id"] = profile.player_id;
+    }
+
+    return preselect_values;
   }
 
   function get_input_type_for_field(field: FieldMetadata): string {

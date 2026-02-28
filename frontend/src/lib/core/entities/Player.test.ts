@@ -11,11 +11,12 @@ describe("Player", () => {
     expect(errors).toContain("Date of birth is required");
     expect(errors).toContain("Nationality is required");
     expect(errors).toContain("Position is required");
+    expect(errors).toContain("Organization is required");
   });
 
   it("accepts jersey number rules through membership, not Player", () => {
     const errors = validate_player_input({
-      ...create_empty_player_input(),
+      ...create_empty_player_input("org_1"),
       first_name: "Ada",
       last_name: "Lovelace",
       date_of_birth: "1995-01-01",

@@ -42,3 +42,19 @@ export {
   ROLE_PERMISSIONS,
   ANY_VALUE,
 } from "./AuthenticationPort";
+export type {
+  AuthorizationPort,
+  AuthorizableAction,
+  AuthorizationLevel,
+  ActionAuthorization,
+  EntityAuthorizationMap,
+  SidebarMenuItem,
+  SidebarMenuGroup,
+  AuthorizationCheckResult,
+  FeatureAccess,
+  EntityType,
+} from "./AuthorizationPort";
+export {
+  AUTHORIZATION_LEVEL_HIERARCHY,
+  ENTITY_TYPES,
+} from "./AuthorizationPort";

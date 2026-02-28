@@ -348,7 +348,10 @@ export async function seed_all_data_if_needed(): Promise<boolean> {
     competition_formats,
   );
 
-  const seed_players = create_seed_players(position_ids);
+  const seed_players = create_seed_players(
+    position_ids,
+    SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
+  );
   for (const player of seed_players) {
     await player_repository.seed_with_data([player]);
   }
