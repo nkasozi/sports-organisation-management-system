@@ -10,6 +10,7 @@ import type {
   MatchOfficialInfo,
   MatchScoreByPeriod,
   MatchStaffEntry,
+  CardTypeConfig,
 } from "$lib/core/types/MatchReportTypes";
 import {
   build_match_player_entry,
@@ -28,17 +29,38 @@ export interface MatchReportBuildContext {
   assigned_officials: Array<{ official: Official; role_name: string }>;
   home_staff?: MatchStaffEntry[];
   away_staff?: MatchStaffEntry[];
+  card_types?: CardTypeConfig[];
   organization_name?: string;
   organization_logo_url?: string;
   venue_name?: string;
 }
 
-export function build_match_report_data(ctx: MatchReportBuildContext): MatchReportData {
+const DEFAULT_CARD_TYPES: CardTypeConfig[] = [
+  { id: "green", name: "Green", color: "#00FF00", event_type: "green_card" },
+  { id: "yellow", name: "Yellow", color: "#FFFF00", event_type: "yellow_card" },
+  { id: "red", name: "Red", color: "#FF0000", event_type: "red_card" },
+];
+
+export function build_match_report_data(
+  ctx: MatchReportBuildContext,
+): MatchReportData {
   const home_initials = get_team_initials(ctx.home_team.name);
   const away_initials = get_team_initials(ctx.away_team.name);
 
-  const home_players = build_player_entries(ctx.home_lineup, ctx.fixture.game_events, "home");
-  const away_players = build_player_entries(ctx.away_lineup, ctx.fixture.game_events, "away");
+  const card_types = ctx.card_types || DEFAULT_CARD_TYPES;
+
+  const home_players = build_player_entries(
+    ctx.home_lineup,
+    ctx.fixture.game_events,
+    "home",
+    card_types,
+  );
+  const away_players = build_player_entries(
+    ctx.away_lineup,
+    ctx.fixture.game_events,
+    "away",
+    card_types,
+  );
 
   const officials = build_officials_list(ctx.assigned_officials);
 
@@ -50,13 +72,23 @@ export function build_match_report_data(ctx: MatchReportBuildContext): MatchRepo
     ctx.away_lineup,
   );
 
-  const score_by_period = calculate_score_by_period(ctx.fixture.game_events, home_initials, away_initials);
+  const score_by_period = calculate_score_by_period(
+    ctx.fixture.game_events,
+    home_initials,
+    away_initials,
+  );
 
   const scheduled_time = ctx.fixture.scheduled_time || "00:00";
+
+  const fixture_year = ctx.fixture.scheduled_date
+    ? new Date(ctx.fixture.scheduled_date).getFullYear().toString()
+    : new Date().getFullYear().toString();
 
   return {
     league_name: ctx.organization_name || "SPORTS ORGANIZATION",
     organization_logo_url: ctx.organization_logo_url || "",
+    competition_name: ctx.competition?.name?.toUpperCase() || "COMPETITION",
+    fixture_year,
     report_title: "MATCH REPORT",
     date: format_report_date(ctx.fixture.scheduled_date),
     game_week: ctx.fixture.match_day || 1,
@@ -67,13 +99,19 @@ export function build_match_report_data(ctx: MatchReportBuildContext): MatchRepo
     home_team: {
       name: ctx.home_team.name,
       initials: home_initials,
-      jersey_color: ctx.fixture.home_team_jersey?.main_color || ctx.home_team.primary_color || "Unknown",
+      jersey_color:
+        ctx.fixture.home_team_jersey?.main_color ||
+        ctx.home_team.primary_color ||
+        "Unknown",
       staff: ctx.home_staff || [],
     },
     away_team: {
       name: ctx.away_team.name,
       initials: away_initials,
-      jersey_color: ctx.fixture.away_team_jersey?.main_color || ctx.away_team.primary_color || "Unknown",
+      jersey_color:
+        ctx.fixture.away_team_jersey?.main_color ||
+        ctx.away_team.primary_color ||
+        "Unknown",
       staff: ctx.away_staff || [],
     },
     final_score: {
@@ -87,6 +125,7 @@ export function build_match_report_data(ctx: MatchReportBuildContext): MatchRepo
     goals,
     remarks: ctx.fixture.notes || "",
     venue_name: ctx.venue_name || ctx.fixture.venue || "Unknown Venue",
+    card_types,
   };
 }
 
@@ -94,6 +133,7 @@ function build_player_entries(
   players: LineupPlayer[],
   game_events: GameEvent[],
   team_side: "home" | "away",
+  card_types: CardTypeConfig[],
 ): MatchPlayerEntry[] {
   const entries: MatchPlayerEntry[] = [];
 
@@ -101,11 +141,15 @@ function build_player_entries(
   const substitutes = players.filter((p) => p.is_substitute);
 
   for (const player of starters) {
-    entries.push(build_match_player_entry(player, game_events, team_side));
+    entries.push(
+      build_match_player_entry(player, game_events, team_side, card_types),
+    );
   }
 
   for (const player of substitutes) {
-    entries.push(build_match_player_entry(player, game_events, team_side));
+    entries.push(
+      build_match_player_entry(player, game_events, team_side, card_types),
+    );
   }
 
   return entries;
@@ -164,8 +208,10 @@ function calculate_score_by_period(
     const period = infer_period_from_minute(event.minute);
     if (!period_scores[period]) continue;
 
-    const is_home_goal = event.team_side === "home" && event.event_type !== "own_goal";
-    const is_away_own_goal = event.team_side === "away" && event.event_type === "own_goal";
+    const is_home_goal =
+      event.team_side === "home" && event.event_type !== "own_goal";
+    const is_away_own_goal =
+      event.team_side === "away" && event.event_type === "own_goal";
 
     if (is_home_goal || is_away_own_goal) {
       period_scores[period].home++;
@@ -179,15 +225,27 @@ function calculate_score_by_period(
   let cumulative_home = 0;
   let cumulative_away = 0;
 
-  if (period_scores.first_half.home > 0 || period_scores.first_half.away > 0 || true) {
+  if (
+    period_scores.first_half.home > 0 ||
+    period_scores.first_half.away > 0 ||
+    true
+  ) {
     cumulative_home += period_scores.first_half.home;
     cumulative_away += period_scores.first_half.away;
-    periods.push({ period_name: "First Period", home_score: cumulative_home, away_score: cumulative_away });
+    periods.push({
+      period_name: "First Period",
+      home_score: cumulative_home,
+      away_score: cumulative_away,
+    });
   }
 
   cumulative_home += period_scores.second_half.home;
   cumulative_away += period_scores.second_half.away;
-  periods.push({ period_name: "Half-time", home_score: cumulative_home, away_score: cumulative_away });
+  periods.push({
+    period_name: "Half-time",
+    home_score: cumulative_home,
+    away_score: cumulative_away,
+  });
 
   if (
     period_scores.extra_time_first.home > 0 ||
@@ -195,9 +253,17 @@ function calculate_score_by_period(
     period_scores.extra_time_second.home > 0 ||
     period_scores.extra_time_second.away > 0
   ) {
-    cumulative_home += period_scores.extra_time_first.home + period_scores.extra_time_second.home;
-    cumulative_away += period_scores.extra_time_first.away + period_scores.extra_time_second.away;
-    periods.push({ period_name: "Third Period", home_score: cumulative_home, away_score: cumulative_away });
+    cumulative_home +=
+      period_scores.extra_time_first.home +
+      period_scores.extra_time_second.home;
+    cumulative_away +=
+      period_scores.extra_time_first.away +
+      period_scores.extra_time_second.away;
+    periods.push({
+      period_name: "Third Period",
+      home_score: cumulative_home,
+      away_score: cumulative_away,
+    });
   }
 
   return periods;

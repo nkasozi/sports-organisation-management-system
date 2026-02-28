@@ -6,6 +6,13 @@ export interface MatchStaffEntry {
   name: string;
 }
 
+export interface CardTypeConfig {
+  id: string;
+  name: string;
+  color: string;
+  event_type: string;
+}
+
 export interface MatchTeamInfo {
   name: string;
   initials: string;
@@ -26,7 +33,7 @@ export interface MatchScoreByPeriod {
 
 export interface MatchPlayerCard {
   minute: string;
-  card_type: "yellow" | "red";
+  card_type: string;
 }
 
 export interface MatchPlayerEntry {
@@ -47,6 +54,8 @@ export interface MatchGoalEntry {
 export interface MatchReportData {
   league_name: string;
   organization_logo_url: string;
+  competition_name: string;
+  fixture_year: string;
   report_title: string;
   date: string;
   game_week: number;
@@ -67,29 +76,34 @@ export interface MatchReportData {
   goals: MatchGoalEntry[];
   remarks: string;
   venue_name: string;
+  card_types: CardTypeConfig[];
 }
 
 export function build_match_player_entry(
   player: LineupPlayer,
   game_events: GameEvent[],
   team_side: "home" | "away",
+  card_types: CardTypeConfig[],
 ): MatchPlayerEntry {
-  const player_full_name = `${player.first_name} ${player.last_name}`.toUpperCase();
+  const player_full_name =
+    `${player.first_name} ${player.last_name}`.toUpperCase();
   const cards: MatchPlayerCard[] = [];
-  
+
+  const card_event_types = card_types.map((ct) => ct.event_type);
+
   const relevant_events = game_events.filter(
     (e) =>
       e.team_side === team_side &&
       e.player_name.toUpperCase() === player_full_name &&
-      (e.event_type === "yellow_card" || e.event_type === "red_card" || e.event_type === "second_yellow"),
+      card_event_types.includes(e.event_type),
   );
 
   for (const event of relevant_events) {
-    if (event.event_type === "yellow_card" || event.event_type === "second_yellow") {
-      cards.push({ minute: `${event.minute}'`, card_type: "yellow" });
-    }
-    if (event.event_type === "red_card" || event.event_type === "second_yellow") {
-      cards.push({ minute: `${event.minute}'`, card_type: "red" });
+    const card_config = card_types.find(
+      (ct) => ct.event_type === event.event_type,
+    );
+    if (card_config) {
+      cards.push({ minute: `${event.minute}'`, card_type: card_config.id });
     }
   }
 
@@ -128,8 +142,10 @@ export function extract_goals_from_events(
   const goals: MatchGoalEntry[] = [];
 
   for (const event of goal_events) {
-    const is_home_goal = event.team_side === "home" && event.event_type !== "own_goal";
-    const is_away_own_goal = event.team_side === "away" && event.event_type === "own_goal";
+    const is_home_goal =
+      event.team_side === "home" && event.event_type !== "own_goal";
+    const is_away_own_goal =
+      event.team_side === "away" && event.event_type === "own_goal";
     const is_home_scoring = is_home_goal || is_away_own_goal;
 
     if (is_home_scoring) {
@@ -173,7 +189,9 @@ function find_player_jersey_number(
   const name_upper = player_name.toUpperCase().trim();
 
   for (const player of players) {
-    const full_name = `${player.first_name} ${player.last_name}`.toUpperCase().trim();
+    const full_name = `${player.first_name} ${player.last_name}`
+      .toUpperCase()
+      .trim();
     if (full_name === name_upper) {
       return player.jersey_number ?? "?";
     }

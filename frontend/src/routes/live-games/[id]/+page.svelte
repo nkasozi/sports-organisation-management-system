@@ -40,6 +40,7 @@
   import { get_team_staff_use_cases } from "$lib/core/usecases/TeamStaffUseCases";
   import { get_team_staff_full_name } from "$lib/core/entities/TeamStaff";
   import type { MatchStaffEntry } from "$lib/core/types/MatchReportTypes";
+  import type { CardTypeConfig } from "$lib/core/types/MatchReportTypes";
   import type { Venue } from "$lib/core/entities/Venue";
   import type { Official } from "$lib/core/entities/Official";
   import { get_official_full_name } from "$lib/core/entities/Official";
@@ -690,6 +691,14 @@
       }
     }
 
+    const card_types: CardTypeConfig[] =
+      sport?.card_types?.map((ct) => ({
+        id: ct.id,
+        name: ct.name,
+        color: ct.color,
+        event_type: ct.id + "_card",
+      })) || [];
+
     const ctx: MatchReportBuildContext = {
       fixture,
       home_team,
@@ -700,6 +709,7 @@
       assigned_officials: assigned_officials_data,
       home_staff,
       away_staff,
+      card_types,
       organization_name,
       venue_name: venue?.name,
       organization_logo_url: $branding_store.organization_logo_url,
@@ -1068,9 +1078,24 @@
                   on:click={handle_download_match_report}
                 >
                   {#if downloading_report}
-                    <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    <svg
+                      class="w-4 h-4 animate-spin"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        class="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        stroke-width="4"
+                      ></circle>
+                      <path
+                        class="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
                     </svg>
                     Generating...
                   {:else}
@@ -1111,9 +1136,24 @@
                 on:click={handle_download_match_report}
               >
                 {#if downloading_report}
-                  <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  <svg
+                    class="w-4 h-4 animate-spin"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      class="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      stroke-width="4"
+                    ></circle>
+                    <path
+                      class="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
                   </svg>
                   Generating...
                 {:else}
