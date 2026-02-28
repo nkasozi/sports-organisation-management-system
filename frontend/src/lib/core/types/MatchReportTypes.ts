@@ -1,13 +1,16 @@
 import type { GameEvent } from "$lib/core/entities/Fixture";
 import type { LineupPlayer } from "$lib/core/entities/FixtureLineup";
 
+export interface MatchStaffEntry {
+  role: string;
+  name: string;
+}
+
 export interface MatchTeamInfo {
   name: string;
   initials: string;
   jersey_color: string;
-  coach: string;
-  team_manager: string;
-  assistant_coach: string;
+  staff: MatchStaffEntry[];
 }
 
 export interface MatchOfficialInfo {
@@ -43,6 +46,7 @@ export interface MatchGoalEntry {
 
 export interface MatchReportData {
   league_name: string;
+  organization_logo_url: string;
   report_title: string;
   date: string;
   game_week: number;
@@ -110,6 +114,8 @@ export function extract_goals_from_events(
   game_events: GameEvent[],
   home_initials: string,
   away_initials: string,
+  home_players: LineupPlayer[],
+  away_players: LineupPlayer[],
 ): MatchGoalEntry[] {
   const goal_event_types = ["goal", "own_goal", "penalty_scored"];
   let running_home_score = 0;
@@ -134,8 +140,12 @@ export function extract_goals_from_events(
 
     const action = get_goal_action_label(event.event_type);
     const team_initials = is_home_scoring ? home_initials : away_initials;
-    const jersey_match = event.description?.match(/#(\d+)/);
-    const jersey_number = jersey_match ? parseInt(jersey_match[1]) : "?";
+    const jersey_number = find_player_jersey_number(
+      event.player_name,
+      event.team_side,
+      home_players,
+      away_players,
+    );
 
     goals.push({
       team_initials,
@@ -147,6 +157,36 @@ export function extract_goals_from_events(
   }
 
   return goals;
+}
+
+function find_player_jersey_number(
+  player_name: string,
+  team_side: "home" | "away" | "match",
+  home_players: LineupPlayer[],
+  away_players: LineupPlayer[],
+): number | string {
+  if (!player_name || player_name.trim() === "") {
+    return "?";
+  }
+
+  const players = team_side === "home" ? home_players : away_players;
+  const name_upper = player_name.toUpperCase().trim();
+
+  for (const player of players) {
+    const full_name = `${player.first_name} ${player.last_name}`.toUpperCase().trim();
+    if (full_name === name_upper) {
+      return player.jersey_number ?? "?";
+    }
+  }
+
+  for (const player of players) {
+    const full_name = `${player.first_name} ${player.last_name}`.toUpperCase();
+    if (full_name.includes(name_upper) || name_upper.includes(full_name)) {
+      return player.jersey_number ?? "?";
+    }
+  }
+
+  return "?";
 }
 
 function get_goal_action_label(event_type: string): string {
@@ -167,7 +207,7 @@ export function format_report_date(date_string: string): string {
   const day = date.getDate();
   const month = date.toLocaleString("en-US", { month: "short" }).toUpperCase();
   const year = date.getFullYear();
-  return `${day}\t${month}\t${year}`;
+  return `${day} ${month} ${year}`;
 }
 
 export function get_team_initials(team_name: string): string {

@@ -6,6 +6,7 @@ import type {
   MatchGoalEntry,
   MatchOfficialInfo,
   MatchScoreByPeriod,
+  MatchStaffEntry,
 } from "$lib/core/types/MatchReportTypes";
 
 const FONT_SIZE_TITLE = 12;
@@ -25,7 +26,7 @@ interface JsPDFWithAutoTable extends jsPDF {
 
 export function generate_match_report_pdf(data: MatchReportData): jsPDF {
   const doc = new jsPDF() as JsPDFWithAutoTable;
-  let y_position = 15;
+  let y_position = 10;
 
   y_position = draw_header_section(doc, data, y_position);
   y_position = draw_result_section(doc, data, y_position);
@@ -44,24 +45,41 @@ function draw_header_section(
 ): number {
   let y = y_start;
 
-  doc.setFontSize(FONT_SIZE_TITLE);
-  doc.setFont("helvetica", "bold");
-  doc.text(data.league_name, PAGE_WIDTH / 2, y, { align: "center" });
-  y += LINE_HEIGHT;
+  if (data.organization_logo_url && data.organization_logo_url.length > 0) {
+    try {
+      const logo_size = 15;
+      doc.addImage(data.organization_logo_url, "PNG", MARGIN_LEFT, y - 5, logo_size, logo_size);
+      doc.setFontSize(FONT_SIZE_TITLE);
+      doc.setFont("helvetica", "bold");
+      doc.text(data.league_name, MARGIN_LEFT + logo_size + 5, y + 3);
+      doc.setFontSize(FONT_SIZE_HEADER);
+      doc.text(data.report_title, MARGIN_LEFT + logo_size + 5, y + 8);
+      y += 15;
+    } catch {
+      doc.setFontSize(FONT_SIZE_TITLE);
+      doc.setFont("helvetica", "bold");
+      doc.text(data.league_name, PAGE_WIDTH / 2, y, { align: "center" });
+      y += LINE_HEIGHT;
+      doc.setFontSize(FONT_SIZE_HEADER);
+      doc.text(data.report_title, PAGE_WIDTH / 2, y, { align: "center" });
+      y += LINE_HEIGHT;
+    }
+  } else {
+    doc.setFontSize(FONT_SIZE_TITLE);
+    doc.setFont("helvetica", "bold");
+    doc.text(data.league_name, PAGE_WIDTH / 2, y, { align: "center" });
+    y += LINE_HEIGHT;
+    doc.setFontSize(FONT_SIZE_HEADER);
+    doc.text(data.report_title, PAGE_WIDTH / 2, y, { align: "center" });
+    y += LINE_HEIGHT;
+  }
 
-  doc.setFontSize(FONT_SIZE_HEADER);
-  doc.text(data.report_title, PAGE_WIDTH / 2, y, { align: "center" });
-  y += LINE_HEIGHT * 2;
-
-  const header_data = [
-    ["DATE", "GAME WK", "POOL", "MATCH No.", "SCHEDULED PUSH BACK", "PUSH BACK TIME"],
-    [data.date, data.game_week.toString(), data.pool, data.match_number.toString(), data.scheduled_push_back, data.push_back_time],
-  ];
+  y += 3;
 
   autoTable(doc, {
     startY: y,
-    head: [header_data[0]],
-    body: [header_data[1]],
+    head: [["DATE", "GAME WK", "POOL", "MATCH No.", "SCHEDULED PUSH BACK", "PUSH BACK TIME"]],
+    body: [[data.date, data.game_week.toString(), truncate_text(data.pool, 12), data.match_number.toString(), data.scheduled_push_back, data.push_back_time]],
     theme: "grid",
     styles: {
       fontSize: FONT_SIZE_SMALL,
@@ -69,6 +87,7 @@ function draw_header_section(
       halign: "center",
       lineColor: [0, 0, 0],
       lineWidth: 0.3,
+      overflow: "ellipsize",
     },
     headStyles: {
       fillColor: [255, 255, 255],
@@ -79,10 +98,38 @@ function draw_header_section(
       fillColor: [255, 255, 255],
       textColor: [0, 0, 0],
     },
+    columnStyles: {
+      0: { cellWidth: 28 },
+      1: { cellWidth: 22 },
+      2: { cellWidth: 30 },
+      3: { cellWidth: 22 },
+      4: { cellWidth: 42 },
+      5: { cellWidth: 42 },
+    },
     margin: { left: MARGIN_LEFT, right: MARGIN_RIGHT },
   });
 
   return (doc as JsPDFWithAutoTable).lastAutoTable?.finalY ?? y + 20;
+}
+
+function truncate_text(text: string, max_length: number): string {
+  if (text.length <= max_length) return text;
+  return text.substring(0, max_length - 2) + "..";
+}
+
+function parse_hex_color(hex: string): { r: number; g: number; b: number } {
+  const clean_hex = hex.replace(/^#/, "");
+  const r = parseInt(clean_hex.substring(0, 2), 16) || 128;
+  const g = parseInt(clean_hex.substring(2, 4), 16) || 128;
+  const b = parseInt(clean_hex.substring(4, 6), 16) || 128;
+  return { r, g, b };
+}
+
+function draw_color_swatch(doc: jsPDF, hex_color: string, x: number, y: number, width: number, height: number): void {
+  const { r, g, b } = parse_hex_color(hex_color);
+  doc.setFillColor(r, g, b);
+  doc.setDrawColor(0, 0, 0);
+  doc.rect(x, y - height + 1, width, height, "FD");
 }
 
 function draw_result_section(
@@ -95,34 +142,39 @@ function draw_result_section(
   doc.setFontSize(FONT_SIZE_HEADER);
   doc.setFont("helvetica", "bold");
   doc.text("RESULT", PAGE_WIDTH / 2, y, { align: "center" });
-  y += 3;
+  y += 5;
 
-  const col_team = 45;
-  const col_score_left = 95;
-  const col_score_right = 115;
-  const col_period = 75;
-  const col_away_team = 135;
-
-  doc.setFontSize(FONT_SIZE_BODY);
-  doc.setFont("helvetica", "normal");
-  doc.text("Team", MARGIN_LEFT, y + 5);
-  doc.text(data.home_team.initials ? `(${data.home_team.initials})` : "", MARGIN_LEFT, y + 10);
+  const team_box_width = 50;
+  const score_table_width = 55;
+  const col_away_team = PAGE_WIDTH - MARGIN_RIGHT - team_box_width;
 
   const result_rows: string[][] = [];
+  result_rows.push(["Final", data.final_score.home.toString(), data.final_score.away.toString()]);
   for (const period of data.score_by_period) {
     result_rows.push([period.period_name, period.home_score.toString(), period.away_score.toString()]);
   }
-  result_rows.unshift(["Final", data.final_score.home.toString(), data.final_score.away.toString()]);
-
-  doc.text("Team", col_away_team, y + 5);
-  doc.text(data.away_team.initials ? `(${data.away_team.initials})` : "", col_away_team + 30, y + 10);
 
   const team_box_y = y;
-  doc.rect(MARGIN_LEFT, team_box_y, col_team - MARGIN_LEFT, 20);
-  doc.text(data.home_team.name.toUpperCase(), MARGIN_LEFT + 2, team_box_y + 8, { maxWidth: col_team - MARGIN_LEFT - 4 });
+  const team_box_height = 22;
 
-  doc.rect(col_away_team, team_box_y, PAGE_WIDTH - MARGIN_RIGHT - col_away_team, 20);
-  doc.text(data.away_team.name.toUpperCase(), col_away_team + 2, team_box_y + 8, { maxWidth: PAGE_WIDTH - MARGIN_RIGHT - col_away_team - 4 });
+  doc.setFontSize(FONT_SIZE_SMALL);
+  doc.setFont("helvetica", "normal");
+  doc.rect(MARGIN_LEFT, team_box_y, team_box_width, team_box_height);
+  doc.text("Team", MARGIN_LEFT + 2, team_box_y + 4);
+  doc.text(data.home_team.initials ? `(${data.home_team.initials})` : "", MARGIN_LEFT + 2, team_box_y + 8);
+  doc.setFont("helvetica", "bold");
+  const home_name = truncate_text(data.home_team.name.toUpperCase(), 20);
+  doc.text(home_name, MARGIN_LEFT + 2, team_box_y + 14, { maxWidth: team_box_width - 4 });
+
+  doc.setFont("helvetica", "normal");
+  doc.rect(col_away_team, team_box_y, team_box_width, team_box_height);
+  doc.text("Team", col_away_team + 2, team_box_y + 4);
+  doc.text(data.away_team.initials ? `(${data.away_team.initials})` : "", col_away_team + 2, team_box_y + 8);
+  doc.setFont("helvetica", "bold");
+  const away_name = truncate_text(data.away_team.name.toUpperCase(), 20);
+  doc.text(away_name, col_away_team + 2, team_box_y + 14, { maxWidth: team_box_width - 4 });
+
+  const score_table_x = (PAGE_WIDTH - score_table_width) / 2;
 
   autoTable(doc, {
     startY: team_box_y,
@@ -144,22 +196,25 @@ function draw_result_section(
       1: { cellWidth: 15 },
       2: { cellWidth: 15 },
     },
-    margin: { left: col_period - 15, right: PAGE_WIDTH - col_score_right - 15 },
-    tableWidth: 55,
+    margin: { left: score_table_x },
+    tableWidth: score_table_width,
   });
 
   y = team_box_y + 25;
 
   const home_color_y = y;
+  const team_box_width_for_color = 50;
+  const col_away_for_color = PAGE_WIDTH - MARGIN_RIGHT - team_box_width_for_color;
+  const swatch_width = 15;
+  const swatch_height = 4;
+  
   doc.setFontSize(FONT_SIZE_SMALL);
-  doc.text("TEAM COLOR:", MARGIN_LEFT, home_color_y);
-  doc.setFont("helvetica", "bold");
-  doc.text(data.home_team.jersey_color.toUpperCase(), MARGIN_LEFT + 25, home_color_y);
-
   doc.setFont("helvetica", "normal");
-  doc.text("TEAM COLOR:", col_away_team, home_color_y);
-  doc.setFont("helvetica", "bold");
-  doc.text(data.away_team.jersey_color.toUpperCase(), col_away_team + 25, home_color_y);
+  doc.text("TEAM COLOR:", MARGIN_LEFT, home_color_y);
+  draw_color_swatch(doc, data.home_team.jersey_color, MARGIN_LEFT + 25, home_color_y, swatch_width, swatch_height);
+
+  doc.text("TEAM COLOR:", col_away_for_color, home_color_y);
+  draw_color_swatch(doc, data.away_team.jersey_color, col_away_for_color + 25, home_color_y, swatch_width, swatch_height);
 
   return y + 5;
 }
@@ -254,9 +309,7 @@ function draw_lineup_section(
   const away_final_y = (doc as JsPDFWithAutoTable).lastAutoTable?.finalY ?? y + 100;
   y = Math.max(home_final_y, away_final_y) + 3;
 
-  y = draw_team_staff_row(doc, "Coach", data.home_team.coach, data.away_team.coach, y);
-  y = draw_team_staff_row(doc, "TEAM MANAGER", data.home_team.team_manager, data.away_team.team_manager, y);
-  y = draw_team_staff_row(doc, "ASST. COACH / OTHER", data.home_team.assistant_coach, data.away_team.assistant_coach, y);
+  y = draw_team_staff_rows(doc, data.home_team.staff, data.away_team.staff, y);
 
   return y;
 }
@@ -362,11 +415,32 @@ function draw_team_staff_row(
   doc.setFont("helvetica", "normal");
   doc.text(home_value.toUpperCase(), MARGIN_LEFT + label_width + 2, y + 3.5);
   doc.setFont("helvetica", "bold");
-  doc.text(label === "Coach" ? "Coach" : label, PAGE_WIDTH / 2 + 7, y + 3.5);
+  doc.text(label, PAGE_WIDTH / 2 + 7, y + 3.5);
   doc.setFont("helvetica", "normal");
   doc.text(away_value.toUpperCase(), PAGE_WIDTH / 2 + 5 + label_width + 2, y + 3.5);
 
   return y + row_height;
+}
+
+function draw_team_staff_rows(
+  doc: jsPDF,
+  home_staff: MatchStaffEntry[],
+  away_staff: MatchStaffEntry[],
+  y: number,
+): number {
+  const max_staff = Math.max(home_staff.length, away_staff.length, 1);
+  
+  for (let i = 0; i < max_staff; i++) {
+    const home_entry = home_staff[i];
+    const away_entry = away_staff[i];
+    const home_role = home_entry?.role || "";
+    const away_role = away_entry?.role || "";
+    const home_name = home_entry?.name || "";
+    const away_name = away_entry?.name || "";
+    y = draw_team_staff_row(doc, home_role.toUpperCase(), home_name, away_name, y);
+  }
+  
+  return y;
 }
 
 function draw_officials_section(
@@ -376,41 +450,46 @@ function draw_officials_section(
 ): number {
   let y = y_start + 3;
 
-  const left_officials = data.officials.filter((o) =>
-    ["Umpire", "Judge", "Technical Officer", "Referee", "Fourth Official"].includes(o.role),
-  );
-  const right_officials = data.officials.filter((o) =>
-    ["Reserve Umpire", "Assistant Referee 1", "Assistant Referee 2", "VAR"].includes(o.role),
-  );
+  const officials = data.officials;
+  const half_count = Math.ceil(officials.length / 2);
+  const left_officials = officials.slice(0, half_count);
+  const right_officials = officials.slice(half_count);
 
   const row_height = 5;
   const label_width = 35;
   const value_width = HALF_WIDTH - label_width - 5;
 
-  for (const official of left_officials) {
+  const max_rows = Math.max(left_officials.length, right_officials.length, 1);
+
+  for (let i = 0; i < max_rows; i++) {
+    const left_official = left_officials[i];
+    const right_official = right_officials[i];
+
     doc.setFontSize(FONT_SIZE_SMALL);
     doc.setFont("helvetica", "bold");
+    
     doc.rect(MARGIN_LEFT, y, label_width, row_height);
     doc.rect(MARGIN_LEFT + label_width, y, value_width, row_height);
-    doc.text(official.role.toUpperCase(), MARGIN_LEFT + 2, y + 3.5);
-    doc.setFont("helvetica", "normal");
-    doc.text(official.name.toUpperCase(), MARGIN_LEFT + label_width + 2, y + 3.5);
+    doc.rect(PAGE_WIDTH / 2 + 5, y, label_width, row_height);
+    doc.rect(PAGE_WIDTH / 2 + 5 + label_width, y, value_width, row_height);
+
+    if (left_official) {
+      doc.text(left_official.role.toUpperCase(), MARGIN_LEFT + 2, y + 3.5);
+      doc.setFont("helvetica", "normal");
+      doc.text(left_official.name.toUpperCase(), MARGIN_LEFT + label_width + 2, y + 3.5);
+    }
+
+    doc.setFont("helvetica", "bold");
+    if (right_official) {
+      doc.text(right_official.role.toUpperCase(), PAGE_WIDTH / 2 + 7, y + 3.5);
+      doc.setFont("helvetica", "normal");
+      doc.text(right_official.name.toUpperCase(), PAGE_WIDTH / 2 + 5 + label_width + 2, y + 3.5);
+    }
+
     y += row_height;
   }
 
-  let right_y = y_start + 3;
-  for (const official of right_officials) {
-    doc.setFontSize(FONT_SIZE_SMALL);
-    doc.setFont("helvetica", "bold");
-    doc.rect(PAGE_WIDTH / 2 + 5, right_y, label_width, row_height);
-    doc.rect(PAGE_WIDTH / 2 + 5 + label_width, right_y, value_width, row_height);
-    doc.text(official.role.toUpperCase(), PAGE_WIDTH / 2 + 7, right_y + 3.5);
-    doc.setFont("helvetica", "normal");
-    doc.text(official.name.toUpperCase(), PAGE_WIDTH / 2 + 5 + label_width + 2, right_y + 3.5);
-    right_y += row_height;
-  }
-
-  return Math.max(y, right_y) + 3;
+  return y + 3;
 }
 
 function draw_goals_section(

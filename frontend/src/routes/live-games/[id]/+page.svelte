@@ -37,6 +37,9 @@
   import { get_player_team_membership_use_cases } from "$lib/core/usecases/PlayerTeamMembershipUseCases";
   import { get_venue_use_cases } from "$lib/core/usecases/VenueUseCases";
   import { get_official_use_cases } from "$lib/core/usecases/OfficialUseCases";
+  import { get_team_staff_use_cases } from "$lib/core/usecases/TeamStaffUseCases";
+  import { get_team_staff_full_name } from "$lib/core/entities/TeamStaff";
+  import type { MatchStaffEntry } from "$lib/core/types/MatchReportTypes";
   import type { Venue } from "$lib/core/entities/Venue";
   import type { Official } from "$lib/core/entities/Official";
   import { get_official_full_name } from "$lib/core/entities/Official";
@@ -49,6 +52,7 @@
     type MatchReportBuildContext,
   } from "$lib/infrastructure/utils/MatchReportBuilder";
   import { download_match_report } from "$lib/infrastructure/utils/MatchReportPdfGenerator";
+  import { branding_store } from "$lib/presentation/stores/branding";
 
   const fixture_use_cases = get_fixture_use_cases();
   const team_use_cases = get_team_use_cases();
@@ -59,6 +63,7 @@
   const player_membership_use_cases = get_player_team_membership_use_cases();
   const venue_use_cases = get_venue_use_cases();
   const official_use_cases = get_official_use_cases();
+  const team_staff_use_cases = get_team_staff_use_cases();
 
   let fixture: Fixture | null = null;
   let home_team: Team | null = null;
@@ -652,6 +657,39 @@
       }
     }
 
+    const staff_roles_result = await team_staff_use_cases.list_staff_roles();
+    const staff_roles_map = new Map<string, string>();
+    if (staff_roles_result.success && staff_roles_result.data) {
+      for (const role of staff_roles_result.data) {
+        staff_roles_map.set(role.id, role.name);
+      }
+    }
+
+    const [home_staff_result, away_staff_result] = await Promise.all([
+      team_staff_use_cases.list_staff_by_team(fixture.home_team_id),
+      team_staff_use_cases.list_staff_by_team(fixture.away_team_id),
+    ]);
+
+    const home_staff: MatchStaffEntry[] = [];
+    if (home_staff_result.success && home_staff_result.data) {
+      for (const staff of home_staff_result.data.items) {
+        home_staff.push({
+          role: staff_roles_map.get(staff.role_id) || "Staff",
+          name: get_team_staff_full_name(staff),
+        });
+      }
+    }
+
+    const away_staff: MatchStaffEntry[] = [];
+    if (away_staff_result.success && away_staff_result.data) {
+      for (const staff of away_staff_result.data.items) {
+        away_staff.push({
+          role: staff_roles_map.get(staff.role_id) || "Staff",
+          name: get_team_staff_full_name(staff),
+        });
+      }
+    }
+
     const ctx: MatchReportBuildContext = {
       fixture,
       home_team,
@@ -660,8 +698,11 @@
       home_lineup: home_players,
       away_lineup: away_players,
       assigned_officials: assigned_officials_data,
+      home_staff,
+      away_staff,
       organization_name,
       venue_name: venue?.name,
+      organization_logo_url: $branding_store.organization_logo_url,
     };
 
     const report_data = build_match_report_data(ctx);

@@ -9,6 +9,7 @@ import type {
   MatchPlayerEntry,
   MatchOfficialInfo,
   MatchScoreByPeriod,
+  MatchStaffEntry,
 } from "$lib/core/types/MatchReportTypes";
 import {
   build_match_player_entry,
@@ -25,7 +26,10 @@ export interface MatchReportBuildContext {
   home_lineup: LineupPlayer[];
   away_lineup: LineupPlayer[];
   assigned_officials: Array<{ official: Official; role_name: string }>;
+  home_staff?: MatchStaffEntry[];
+  away_staff?: MatchStaffEntry[];
   organization_name?: string;
+  organization_logo_url?: string;
   venue_name?: string;
 }
 
@@ -38,7 +42,13 @@ export function build_match_report_data(ctx: MatchReportBuildContext): MatchRepo
 
   const officials = build_officials_list(ctx.assigned_officials);
 
-  const goals = extract_goals_from_events(ctx.fixture.game_events, home_initials, away_initials);
+  const goals = extract_goals_from_events(
+    ctx.fixture.game_events,
+    home_initials,
+    away_initials,
+    ctx.home_lineup,
+    ctx.away_lineup,
+  );
 
   const score_by_period = calculate_score_by_period(ctx.fixture.game_events, home_initials, away_initials);
 
@@ -46,6 +56,7 @@ export function build_match_report_data(ctx: MatchReportBuildContext): MatchRepo
 
   return {
     league_name: ctx.organization_name || "SPORTS ORGANIZATION",
+    organization_logo_url: ctx.organization_logo_url || "",
     report_title: "MATCH REPORT",
     date: format_report_date(ctx.fixture.scheduled_date),
     game_week: ctx.fixture.match_day || 1,
@@ -57,17 +68,13 @@ export function build_match_report_data(ctx: MatchReportBuildContext): MatchRepo
       name: ctx.home_team.name,
       initials: home_initials,
       jersey_color: ctx.fixture.home_team_jersey?.main_color || ctx.home_team.primary_color || "Unknown",
-      coach: "",
-      team_manager: "",
-      assistant_coach: "",
+      staff: ctx.home_staff || [],
     },
     away_team: {
       name: ctx.away_team.name,
       initials: away_initials,
       jersey_color: ctx.fixture.away_team_jersey?.main_color || ctx.away_team.primary_color || "Unknown",
-      coach: "",
-      team_manager: "",
-      assistant_coach: "",
+      staff: ctx.away_staff || [],
     },
     final_score: {
       home: ctx.fixture.home_team_score ?? 0,
