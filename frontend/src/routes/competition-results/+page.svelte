@@ -21,14 +21,20 @@
   import { get_organization_use_cases } from "$lib/core/usecases/OrganizationUseCases";
   import { get_team_staff_use_cases } from "$lib/core/usecases/TeamStaffUseCases";
   import { get_team_staff_full_name } from "$lib/core/entities/TeamStaff";
-  import type { MatchStaffEntry, MatchReportData } from "$lib/core/types/MatchReportTypes";
+  import type {
+    MatchStaffEntry,
+    MatchReportData,
+  } from "$lib/core/types/MatchReportTypes";
   import LoadingStateWrapper from "$lib/presentation/components/ui/LoadingStateWrapper.svelte";
   import {
     build_match_report_data,
     generate_match_report_filename,
     type MatchReportBuildContext,
   } from "$lib/infrastructure/utils/MatchReportBuilder";
-  import { download_match_report, download_all_match_reports } from "$lib/infrastructure/utils/MatchReportPdfGenerator";
+  import {
+    download_match_report,
+    download_all_match_reports,
+  } from "$lib/infrastructure/utils/MatchReportPdfGenerator";
   import { branding_store } from "$lib/presentation/stores/branding";
 
   const competition_use_cases = get_competition_use_cases();
@@ -950,7 +956,10 @@
             {:else}
               <div class="flex items-center justify-between mb-4">
                 <span class="text-sm text-gray-500 dark:text-gray-400">
-                  {completed_fixtures.length} completed {completed_fixtures.length === 1 ? 'match' : 'matches'}
+                  {completed_fixtures.length} completed {completed_fixtures.length ===
+                  1
+                    ? "match"
+                    : "matches"}
                 </span>
                 <button
                   type="button"
