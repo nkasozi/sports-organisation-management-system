@@ -104,7 +104,7 @@ class SportsOrgDatabase extends Dexie {
         "id, category_id, entity_type, entity_id, scheduled_date, created_at",
       activity_categories: "id, name, color, created_at",
       audit_logs: "id, action, entity_type, entity_id, user_id, created_at",
-      system_users: "id, email, role, created_at",
+      system_users: "id, email, role, organization_id, created_at",
       identification_types: "id, name, country, created_at",
       identifications:
         "id, entity_type, entity_id, identification_type_id, created_at",

@@ -59,6 +59,15 @@ class EntityMetadataRegistry {
       display_name: "Team Staff",
       fields: [
         {
+          field_name: "organization_id" satisfies keyof TeamStaff,
+          display_name: "Organization",
+          field_type: "foreign_key",
+          foreign_key_entity: "organization",
+          is_required: true,
+          is_read_only: false,
+          show_in_list: false,
+        },
+        {
           field_name: "first_name" satisfies keyof TeamStaff,
           display_name: "First Name",
           field_type: "string",
@@ -210,6 +219,15 @@ class EntityMetadataRegistry {
       entity_name: "venue",
       display_name: "Venue",
       fields: [
+        {
+          field_name: "organization_id" satisfies keyof Venue,
+          display_name: "Organization",
+          field_type: "foreign_key",
+          foreign_key_entity: "organization",
+          is_required: true,
+          is_read_only: false,
+          show_in_list: false,
+        },
         {
           field_name: "name" satisfies keyof Venue,
           display_name: "Venue Name",
@@ -952,6 +970,15 @@ class EntityMetadataRegistry {
       display_name: "Player",
       fields: [
         {
+          field_name: "organization_id" satisfies keyof Player,
+          display_name: "Organization",
+          field_type: "foreign_key",
+          foreign_key_entity: "organization",
+          is_required: true,
+          is_read_only: false,
+          show_in_list: false,
+        },
+        {
           field_name: "first_name" satisfies keyof Player,
           display_name: "First Name",
           field_type: "string",
@@ -1105,6 +1132,15 @@ class EntityMetadataRegistry {
       display_name: "Player Team Membership",
       fields: [
         {
+          field_name: "organization_id" satisfies keyof PlayerTeamMembership,
+          display_name: "Organization",
+          field_type: "foreign_key",
+          is_required: true,
+          is_read_only: false,
+          is_read_only_on_edit: true,
+          foreign_key_entity: "organization",
+        },
+        {
           field_name: "player_id" satisfies keyof PlayerTeamMembership,
           display_name: "Player",
           field_type: "foreign_key",
@@ -1113,6 +1149,10 @@ class EntityMetadataRegistry {
           is_read_only_on_edit: true,
           foreign_key_entity: "player",
           show_in_list: true,
+          foreign_key_filter: {
+            depends_on_field: "organization_id",
+            filter_type: "players_from_organization",
+          },
         },
         {
           field_name: "team_id" satisfies keyof PlayerTeamMembership,
@@ -1123,6 +1163,10 @@ class EntityMetadataRegistry {
           is_read_only_on_edit: true,
           foreign_key_entity: "team",
           show_in_list: true,
+          foreign_key_filter: {
+            depends_on_field: "organization_id",
+            filter_type: "teams_from_organization",
+          },
         },
         {
           field_name: "start_date" satisfies keyof PlayerTeamMembership,
@@ -1171,6 +1215,16 @@ class EntityMetadataRegistry {
       display_name: "Player Transfer",
       fields: [
         {
+          field_name:
+            "organization_id" satisfies keyof PlayerTeamTransferHistory,
+          display_name: "Organization",
+          field_type: "foreign_key",
+          is_required: true,
+          is_read_only: false,
+          is_read_only_on_edit: true,
+          foreign_key_entity: "organization",
+        },
+        {
           field_name: "player_id" satisfies keyof PlayerTeamTransferHistory,
           display_name: "Player",
           field_type: "foreign_key",
@@ -1179,6 +1233,10 @@ class EntityMetadataRegistry {
           is_read_only_on_edit: true,
           foreign_key_entity: "player",
           show_in_list: true,
+          foreign_key_filter: {
+            depends_on_field: "organization_id",
+            filter_type: "players_from_organization",
+          },
         },
         {
           field_name: "from_team_id" satisfies keyof PlayerTeamTransferHistory,
@@ -1189,6 +1247,10 @@ class EntityMetadataRegistry {
           is_read_only_on_edit: true,
           foreign_key_entity: "team",
           show_in_list: true,
+          foreign_key_filter: {
+            depends_on_field: "organization_id",
+            filter_type: "teams_from_organization",
+          },
         },
         {
           field_name: "to_team_id" satisfies keyof PlayerTeamTransferHistory,
@@ -1199,6 +1261,10 @@ class EntityMetadataRegistry {
           is_read_only_on_edit: true,
           foreign_key_entity: "team",
           show_in_list: true,
+          foreign_key_filter: {
+            depends_on_field: "organization_id",
+            filter_type: "teams_from_organization",
+          },
         },
         {
           field_name: "transfer_date" satisfies keyof PlayerTeamTransferHistory,
@@ -1243,6 +1309,15 @@ class EntityMetadataRegistry {
       entity_name: "official",
       display_name: "Official",
       fields: [
+        {
+          field_name: "organization_id" satisfies keyof Official,
+          display_name: "Organization",
+          field_type: "foreign_key",
+          foreign_key_entity: "organization",
+          is_required: true,
+          is_read_only: false,
+          show_in_list: false,
+        },
         {
           field_name: "first_name" satisfies keyof Official,
           display_name: "First Name",
@@ -1394,6 +1469,15 @@ class EntityMetadataRegistry {
       display_name: "Fixture",
       fields: [
         {
+          field_name: "organization_id" satisfies keyof Fixture,
+          display_name: "Organization",
+          field_type: "foreign_key",
+          is_required: true,
+          is_read_only: false,
+          is_read_only_on_edit: true,
+          foreign_key_entity: "organization",
+        },
+        {
           field_name: "competition_id" satisfies keyof Fixture,
           display_name: "Competition",
           field_type: "foreign_key",
@@ -1401,6 +1485,10 @@ class EntityMetadataRegistry {
           is_read_only: false,
           is_read_only_on_edit: true,
           foreign_key_entity: "competition",
+          foreign_key_filter: {
+            depends_on_field: "organization_id",
+            filter_type: "competitions_from_organization",
+          },
         },
         {
           field_name: "home_team_id" satisfies keyof Fixture,
@@ -1760,6 +1848,15 @@ class EntityMetadataRegistry {
       display_name: "Fixture Lineup",
       fields: [
         {
+          field_name: "organization_id" satisfies keyof FixtureLineup,
+          display_name: "Organization",
+          field_type: "foreign_key",
+          is_required: true,
+          is_read_only: false,
+          is_read_only_on_edit: true,
+          foreign_key_entity: "organization",
+        },
+        {
           field_name: "fixture_id" satisfies keyof FixtureLineup,
           display_name: "Fixture",
           field_type: "foreign_key",
@@ -1767,6 +1864,10 @@ class EntityMetadataRegistry {
           is_required: true,
           is_read_only: false,
           show_in_list: true,
+          foreign_key_filter: {
+            depends_on_field: "organization_id",
+            filter_type: "fixtures_from_organization",
+          },
         },
         {
           field_name: "team_id" satisfies keyof FixtureLineup,
@@ -1776,6 +1877,10 @@ class EntityMetadataRegistry {
           is_required: true,
           is_read_only: false,
           show_in_list: true,
+          foreign_key_filter: {
+            depends_on_field: "organization_id",
+            filter_type: "teams_from_organization",
+          },
         },
         {
           field_name: "submitted_by" satisfies keyof FixtureLineup,
@@ -1820,6 +1925,15 @@ class EntityMetadataRegistry {
       display_name: "Fixture Details Setup",
       fields: [
         {
+          field_name: "organization_id" satisfies keyof FixtureDetailsSetup,
+          display_name: "Organization",
+          field_type: "foreign_key",
+          is_required: true,
+          is_read_only: false,
+          is_read_only_on_edit: true,
+          foreign_key_entity: "organization",
+        },
+        {
           field_name: "fixture_id" satisfies keyof FixtureDetailsSetup,
           display_name: "Fixture",
           field_type: "foreign_key",
@@ -1828,6 +1942,10 @@ class EntityMetadataRegistry {
           is_read_only: false,
           is_read_only_on_edit: true,
           show_in_list: true,
+          foreign_key_filter: {
+            depends_on_field: "organization_id",
+            filter_type: "fixtures_from_organization",
+          },
         },
         {
           field_name: "home_team_jersey_id" satisfies keyof FixtureDetailsSetup,
@@ -2367,8 +2485,63 @@ class EntityMetadataRegistry {
           field_type: "enum",
           is_required: true,
           is_read_only: false,
-          enum_values: ["super_admin", "admin", "manager", "user"],
+          enum_values: [
+            "super_admin",
+            "org_admin",
+            "officials_manager",
+            "team_manager",
+            "official",
+            "player",
+          ],
           show_in_list: true,
+        },
+        {
+          field_name: "organization_id" satisfies keyof SystemUser,
+          display_name: "Organisation",
+          field_type: "foreign_key",
+          is_required: true,
+          is_read_only: false,
+          foreign_key_entity: "organization",
+          show_in_list: true,
+        },
+        {
+          field_name: "team_id" satisfies keyof SystemUser,
+          display_name: "Team",
+          field_type: "foreign_key",
+          is_required: false,
+          is_read_only: false,
+          foreign_key_entity: "team",
+          foreign_key_filter: {
+            depends_on_field: "organization_id",
+            filter_type: "teams_from_organization",
+          },
+          show_in_list: false,
+        },
+        {
+          field_name: "player_id" satisfies keyof SystemUser,
+          display_name: "Player",
+          field_type: "foreign_key",
+          is_required: false,
+          is_read_only: false,
+          foreign_key_entity: "player",
+          foreign_key_filter: {
+            depends_on_field: "organization_id",
+            filter_type: "players_from_organization",
+          },
+          show_in_list: false,
+        },
+        {
+          field_name: "official_id" satisfies keyof SystemUser,
+          display_name: "Official",
+          field_type: "foreign_key",
+          is_required: false,
+          is_read_only: false,
+          foreign_key_entity: "official",
+          foreign_key_filter: {
+            depends_on_field: "organization_id",
+            filter_type: "officials_from_organization",
+          },
+          show_in_list: false,
         },
         {
           field_name: "status" satisfies keyof SystemUser,

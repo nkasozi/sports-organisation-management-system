@@ -21,6 +21,7 @@ function create_mock_repository(): TeamStaffRepository {
 function create_test_staff(overrides: Partial<TeamStaff> = {}): TeamStaff {
   return {
     id: "staff-123",
+    organization_id: "org-123",
     first_name: "John",
     last_name: "Coach",
     email: "john@example.com",
@@ -46,6 +47,7 @@ function create_valid_input(
   overrides: Partial<CreateTeamStaffInput> = {},
 ): CreateTeamStaffInput {
   return {
+    organization_id: "org-123",
     first_name: "Jane",
     last_name: "Manager",
     email: "jane@example.com",

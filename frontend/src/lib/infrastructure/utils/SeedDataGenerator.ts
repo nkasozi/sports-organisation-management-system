@@ -10,10 +10,12 @@ import type { FixtureLineup } from "../../core/entities/FixtureLineup";
 import type { Venue } from "../../core/entities/Venue";
 import type { JerseyColor } from "../../core/entities/JerseyColor";
 import type { SystemUser } from "../../core/entities/SystemUser";
+import type { IdentificationType } from "../../core/entities/IdentificationType";
 import { DEFAULT_TEAM_LOGO } from "../../core/entities/Team";
 import { DEFAULT_STAFF_AVATAR } from "../../core/entities/TeamStaff";
 import { DEFAULT_OFFICIAL_AVATAR } from "../../core/entities/Official";
 import { DEFAULT_VENUE_IMAGE } from "../../core/entities/Venue";
+import { ANY_VALUE } from "../../core/interfaces/ports/AuthenticationPort";
 
 export const SEED_ORGANIZATION_IDS = {
   UGANDA_HOCKEY_ASSOCIATION: "org_default_1",
@@ -223,6 +225,19 @@ export const SEED_TEAM_PROFILE_IDS = {
 
 export const SEED_SYSTEM_USER_IDS = {
   SYSTEM_ADMINISTRATOR: "system_user_default_1",
+  ORG_ADMIN_UGANDA_HOCKEY: "system_user_default_2",
+  OFFICIALS_MANAGER_UGANDA_HOCKEY: "system_user_default_3",
+  TEAM_MANAGER_WEATHERHEAD: "system_user_default_4",
+  OFFICIAL_MICHAEL_ANDERSON: "system_user_default_5",
+  PLAYER_DENIS_ONYANGO: "system_user_default_6",
+};
+
+export const SEED_IDENTIFICATION_TYPE_IDS = {
+  NATIONAL_ID: "id_type_default_1",
+  PASSPORT: "id_type_default_2",
+  DRIVING_LICENSE: "id_type_default_3",
+  PLAYER_REGISTRATION_NUMBER: "id_type_default_4",
+  FEDERATION_ID: "id_type_default_5",
 };
 
 function generate_current_timestamp(): string {
@@ -2195,6 +2210,7 @@ export function create_seed_team_staff(
   return [
     {
       id: SEED_STAFF_IDS.HEAD_COACH_1,
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       first_name: "Emmanuel",
       last_name: "Lubwama",
       email: "emmanuel.lubwama@weatherheadhc.ug",
@@ -2215,6 +2231,7 @@ export function create_seed_team_staff(
     },
     {
       id: SEED_STAFF_IDS.ASSISTANT_COACH_1,
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       first_name: "Patrick",
       last_name: "Muwanga",
       email: "patrick.muwanga@weatherheadhc.ug",
@@ -2235,6 +2252,7 @@ export function create_seed_team_staff(
     },
     {
       id: SEED_STAFF_IDS.HEAD_COACH_2,
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       first_name: "Joseph",
       last_name: "Kato",
       email: "joseph.kato@kampalahc.ug",
@@ -2255,6 +2273,7 @@ export function create_seed_team_staff(
     },
     {
       id: SEED_STAFF_IDS.PHYSIO_1,
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       first_name: "Dorothy",
       last_name: "Nakato",
       email: "dorothy.nakato@weatherheadhc.ug",
@@ -2275,6 +2294,7 @@ export function create_seed_team_staff(
     },
     {
       id: SEED_STAFF_IDS.MANAGER_1,
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       first_name: "Richard",
       last_name: "Ssempala",
       email: "richard.ssempala@rocketshc.ug",
@@ -2725,6 +2745,7 @@ export function create_seed_player_team_memberships(): PlayerTeamMembership[] {
   return [
     {
       id: "player_team_membership_default_1",
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       player_id: SEED_PLAYER_IDS.DENIS_ONYANGO,
       team_id: SEED_TEAM_IDS.WEATHERHEAD_HC,
       start_date: "2024-01-01",
@@ -2735,6 +2756,7 @@ export function create_seed_player_team_memberships(): PlayerTeamMembership[] {
     },
     {
       id: "player_team_membership_default_2",
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       player_id: SEED_PLAYER_IDS.BRIAN_SSALI,
       team_id: SEED_TEAM_IDS.WEATHERHEAD_HC,
       start_date: "2024-01-01",
@@ -2745,6 +2767,7 @@ export function create_seed_player_team_memberships(): PlayerTeamMembership[] {
     },
     {
       id: "player_team_membership_default_3",
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       player_id: SEED_PLAYER_IDS.JOSEPH_MUSOKE,
       team_id: SEED_TEAM_IDS.WEATHERHEAD_HC,
       start_date: "2024-01-01",
@@ -2755,6 +2778,7 @@ export function create_seed_player_team_memberships(): PlayerTeamMembership[] {
     },
     {
       id: "player_team_membership_default_4",
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       player_id: SEED_PLAYER_IDS.RONALD_MUKIIBI,
       team_id: SEED_TEAM_IDS.KAMPALA_HC,
       start_date: "2024-01-01",
@@ -2765,6 +2789,7 @@ export function create_seed_player_team_memberships(): PlayerTeamMembership[] {
     },
     {
       id: "player_team_membership_default_5",
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       player_id: SEED_PLAYER_IDS.SARAH_NAMUGWANYA,
       team_id: SEED_TEAM_IDS.KAMPALA_HC,
       start_date: "2024-01-01",
@@ -2775,6 +2800,7 @@ export function create_seed_player_team_memberships(): PlayerTeamMembership[] {
     },
     {
       id: "player_team_membership_default_6",
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       player_id: SEED_PLAYER_IDS.PATRICIA_APOLOT,
       team_id: SEED_TEAM_IDS.KAMPALA_HC,
       start_date: "2024-01-01",
@@ -2785,6 +2811,7 @@ export function create_seed_player_team_memberships(): PlayerTeamMembership[] {
     },
     {
       id: "player_team_membership_default_7",
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       player_id: SEED_PLAYER_IDS.DANIEL_WASSWA,
       team_id: SEED_TEAM_IDS.ROCKETS_HC,
       start_date: "2024-01-01",
@@ -2795,6 +2822,7 @@ export function create_seed_player_team_memberships(): PlayerTeamMembership[] {
     },
     {
       id: "player_team_membership_default_8",
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       player_id: SEED_PLAYER_IDS.MOSES_ALOWO,
       team_id: SEED_TEAM_IDS.ROCKETS_HC,
       start_date: "2024-01-01",
@@ -2805,6 +2833,7 @@ export function create_seed_player_team_memberships(): PlayerTeamMembership[] {
     },
     {
       id: "player_team_membership_default_9",
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       player_id: SEED_PLAYER_IDS.EMMANUEL_OKELLO,
       team_id: SEED_TEAM_IDS.ROCKETS_HC,
       start_date: "2024-01-01",
@@ -2815,6 +2844,7 @@ export function create_seed_player_team_memberships(): PlayerTeamMembership[] {
     },
     {
       id: "player_team_membership_default_10",
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       player_id: SEED_PLAYER_IDS.JUDITH_NAKATO,
       team_id: SEED_TEAM_IDS.WANANCHI_HC,
       start_date: "2024-01-01",
@@ -2825,6 +2855,7 @@ export function create_seed_player_team_memberships(): PlayerTeamMembership[] {
     },
     {
       id: "player_team_membership_default_11",
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       player_id: SEED_PLAYER_IDS.PETER_DRAGO,
       team_id: SEED_TEAM_IDS.WANANCHI_HC,
       start_date: "2024-01-01",
@@ -2835,6 +2866,7 @@ export function create_seed_player_team_memberships(): PlayerTeamMembership[] {
     },
     {
       id: "player_team_membership_default_12",
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       player_id: SEED_PLAYER_IDS.CHRISTINE_AMONGI,
       team_id: SEED_TEAM_IDS.WANANCHI_HC,
       start_date: "2024-01-01",
@@ -2845,6 +2877,7 @@ export function create_seed_player_team_memberships(): PlayerTeamMembership[] {
     },
     {
       id: "player_team_membership_default_13",
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       player_id: SEED_PLAYER_IDS.STEVEN_MUKASA,
       team_id: SEED_TEAM_IDS.MAKERERE_UNIVERSITY_HC,
       start_date: "2024-01-01",
@@ -2855,6 +2888,7 @@ export function create_seed_player_team_memberships(): PlayerTeamMembership[] {
     },
     {
       id: "player_team_membership_default_14",
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       player_id: SEED_PLAYER_IDS.HARRIET_NANDAWULA,
       team_id: SEED_TEAM_IDS.MAKERERE_UNIVERSITY_HC,
       start_date: "2024-01-01",
@@ -2865,6 +2899,7 @@ export function create_seed_player_team_memberships(): PlayerTeamMembership[] {
     },
     {
       id: "player_team_membership_default_15",
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       player_id: SEED_PLAYER_IDS.TIMOTHY_LUBEGA,
       team_id: SEED_TEAM_IDS.MAKERERE_UNIVERSITY_HC,
       start_date: "2024-01-01",
@@ -2875,6 +2910,7 @@ export function create_seed_player_team_memberships(): PlayerTeamMembership[] {
     },
     {
       id: "player_team_membership_default_16",
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       player_id: SEED_PLAYER_IDS.GRACE_ACHOLA,
       team_id: SEED_TEAM_IDS.KYAMBOGO_UNIVERSITY_HC,
       start_date: "2024-01-01",
@@ -2885,6 +2921,7 @@ export function create_seed_player_team_memberships(): PlayerTeamMembership[] {
     },
     {
       id: "player_team_membership_default_17",
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       player_id: SEED_PLAYER_IDS.ISAAC_KATO,
       team_id: SEED_TEAM_IDS.KYAMBOGO_UNIVERSITY_HC,
       start_date: "2024-01-01",
@@ -2895,6 +2932,7 @@ export function create_seed_player_team_memberships(): PlayerTeamMembership[] {
     },
     {
       id: "player_team_membership_default_18",
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       player_id: SEED_PLAYER_IDS.JANE_KASULE,
       team_id: SEED_TEAM_IDS.KYAMBOGO_UNIVERSITY_HC,
       start_date: "2024-01-01",
@@ -2905,6 +2943,7 @@ export function create_seed_player_team_memberships(): PlayerTeamMembership[] {
     },
     {
       id: "player_team_membership_default_19",
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       player_id: SEED_PLAYER_IDS.MICHAEL_OPIO,
       team_id: SEED_TEAM_IDS.SIMBA_HC,
       start_date: "2024-01-01",
@@ -2915,6 +2954,7 @@ export function create_seed_player_team_memberships(): PlayerTeamMembership[] {
     },
     {
       id: "player_team_membership_default_20",
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       player_id: SEED_PLAYER_IDS.RUTH_ACAN,
       team_id: SEED_TEAM_IDS.SIMBA_HC,
       start_date: "2024-01-01",
@@ -2925,6 +2965,7 @@ export function create_seed_player_team_memberships(): PlayerTeamMembership[] {
     },
     {
       id: "player_team_membership_default_21",
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       player_id: SEED_PLAYER_IDS.FRANCIS_BYEKWASO,
       team_id: SEED_TEAM_IDS.SIMBA_HC,
       start_date: "2024-01-01",
@@ -2935,6 +2976,7 @@ export function create_seed_player_team_memberships(): PlayerTeamMembership[] {
     },
     {
       id: "player_team_membership_default_22",
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       player_id: SEED_PLAYER_IDS.SHARON_NABATANZI,
       team_id: SEED_TEAM_IDS.STRIKERS_HC,
       start_date: "2024-01-01",
@@ -2945,6 +2987,7 @@ export function create_seed_player_team_memberships(): PlayerTeamMembership[] {
     },
     {
       id: "player_team_membership_default_23",
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       player_id: SEED_PLAYER_IDS.ROBERT_KIGGUNDU,
       team_id: SEED_TEAM_IDS.STRIKERS_HC,
       start_date: "2024-01-01",
@@ -2955,6 +2998,7 @@ export function create_seed_player_team_memberships(): PlayerTeamMembership[] {
     },
     {
       id: "player_team_membership_default_24",
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       player_id: SEED_PLAYER_IDS.FLORENCE_NAMUTEBI,
       team_id: SEED_TEAM_IDS.STRIKERS_HC,
       start_date: "2024-01-01",
@@ -2965,6 +3009,7 @@ export function create_seed_player_team_memberships(): PlayerTeamMembership[] {
     },
     {
       id: "player_team_membership_default_25",
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       player_id: SEED_PLAYER_IDS.WEATHERHEAD_P4,
       team_id: SEED_TEAM_IDS.WEATHERHEAD_HC,
       start_date: "2024-01-01",
@@ -2975,6 +3020,7 @@ export function create_seed_player_team_memberships(): PlayerTeamMembership[] {
     },
     {
       id: "player_team_membership_default_26",
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       player_id: SEED_PLAYER_IDS.WEATHERHEAD_P5,
       team_id: SEED_TEAM_IDS.WEATHERHEAD_HC,
       start_date: "2024-01-01",
@@ -2985,6 +3031,7 @@ export function create_seed_player_team_memberships(): PlayerTeamMembership[] {
     },
     {
       id: "player_team_membership_default_27",
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       player_id: SEED_PLAYER_IDS.WEATHERHEAD_P6,
       team_id: SEED_TEAM_IDS.WEATHERHEAD_HC,
       start_date: "2024-01-01",
@@ -2995,6 +3042,7 @@ export function create_seed_player_team_memberships(): PlayerTeamMembership[] {
     },
     {
       id: "player_team_membership_default_28",
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       player_id: SEED_PLAYER_IDS.WEATHERHEAD_P7,
       team_id: SEED_TEAM_IDS.WEATHERHEAD_HC,
       start_date: "2024-01-01",
@@ -3005,6 +3053,7 @@ export function create_seed_player_team_memberships(): PlayerTeamMembership[] {
     },
     {
       id: "player_team_membership_default_29",
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       player_id: SEED_PLAYER_IDS.WEATHERHEAD_P8,
       team_id: SEED_TEAM_IDS.WEATHERHEAD_HC,
       start_date: "2024-01-01",
@@ -3015,6 +3064,7 @@ export function create_seed_player_team_memberships(): PlayerTeamMembership[] {
     },
     {
       id: "player_team_membership_default_30",
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       player_id: SEED_PLAYER_IDS.WEATHERHEAD_P9,
       team_id: SEED_TEAM_IDS.WEATHERHEAD_HC,
       start_date: "2024-01-01",
@@ -3025,6 +3075,7 @@ export function create_seed_player_team_memberships(): PlayerTeamMembership[] {
     },
     {
       id: "player_team_membership_default_31",
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       player_id: SEED_PLAYER_IDS.WEATHERHEAD_P10,
       team_id: SEED_TEAM_IDS.WEATHERHEAD_HC,
       start_date: "2024-01-01",
@@ -3035,6 +3086,7 @@ export function create_seed_player_team_memberships(): PlayerTeamMembership[] {
     },
     {
       id: "player_team_membership_default_32",
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       player_id: SEED_PLAYER_IDS.WEATHERHEAD_P11,
       team_id: SEED_TEAM_IDS.WEATHERHEAD_HC,
       start_date: "2024-01-01",
@@ -3045,6 +3097,7 @@ export function create_seed_player_team_memberships(): PlayerTeamMembership[] {
     },
     {
       id: "player_team_membership_default_33",
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       player_id: SEED_PLAYER_IDS.KAMPALA_P4,
       team_id: SEED_TEAM_IDS.KAMPALA_HC,
       start_date: "2024-01-01",
@@ -3055,6 +3108,7 @@ export function create_seed_player_team_memberships(): PlayerTeamMembership[] {
     },
     {
       id: "player_team_membership_default_34",
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       player_id: SEED_PLAYER_IDS.KAMPALA_P5,
       team_id: SEED_TEAM_IDS.KAMPALA_HC,
       start_date: "2024-01-01",
@@ -3065,6 +3119,7 @@ export function create_seed_player_team_memberships(): PlayerTeamMembership[] {
     },
     {
       id: "player_team_membership_default_35",
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       player_id: SEED_PLAYER_IDS.KAMPALA_P6,
       team_id: SEED_TEAM_IDS.KAMPALA_HC,
       start_date: "2024-01-01",
@@ -3075,6 +3130,7 @@ export function create_seed_player_team_memberships(): PlayerTeamMembership[] {
     },
     {
       id: "player_team_membership_default_36",
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       player_id: SEED_PLAYER_IDS.KAMPALA_P7,
       team_id: SEED_TEAM_IDS.KAMPALA_HC,
       start_date: "2024-01-01",
@@ -3085,6 +3141,7 @@ export function create_seed_player_team_memberships(): PlayerTeamMembership[] {
     },
     {
       id: "player_team_membership_default_37",
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       player_id: SEED_PLAYER_IDS.KAMPALA_P8,
       team_id: SEED_TEAM_IDS.KAMPALA_HC,
       start_date: "2024-01-01",
@@ -3095,6 +3152,7 @@ export function create_seed_player_team_memberships(): PlayerTeamMembership[] {
     },
     {
       id: "player_team_membership_default_38",
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       player_id: SEED_PLAYER_IDS.KAMPALA_P9,
       team_id: SEED_TEAM_IDS.KAMPALA_HC,
       start_date: "2024-01-01",
@@ -3105,6 +3163,7 @@ export function create_seed_player_team_memberships(): PlayerTeamMembership[] {
     },
     {
       id: "player_team_membership_default_39",
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       player_id: SEED_PLAYER_IDS.KAMPALA_P10,
       team_id: SEED_TEAM_IDS.KAMPALA_HC,
       start_date: "2024-01-01",
@@ -3115,6 +3174,7 @@ export function create_seed_player_team_memberships(): PlayerTeamMembership[] {
     },
     {
       id: "player_team_membership_default_40",
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       player_id: SEED_PLAYER_IDS.KAMPALA_P11,
       team_id: SEED_TEAM_IDS.KAMPALA_HC,
       start_date: "2024-01-01",
@@ -3125,6 +3185,7 @@ export function create_seed_player_team_memberships(): PlayerTeamMembership[] {
     },
     {
       id: "player_team_membership_default_41",
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       player_id: SEED_PLAYER_IDS.ROCKETS_P4,
       team_id: SEED_TEAM_IDS.ROCKETS_HC,
       start_date: "2024-01-01",
@@ -3135,6 +3196,7 @@ export function create_seed_player_team_memberships(): PlayerTeamMembership[] {
     },
     {
       id: "player_team_membership_default_42",
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       player_id: SEED_PLAYER_IDS.ROCKETS_P5,
       team_id: SEED_TEAM_IDS.ROCKETS_HC,
       start_date: "2024-01-01",
@@ -3145,6 +3207,7 @@ export function create_seed_player_team_memberships(): PlayerTeamMembership[] {
     },
     {
       id: "player_team_membership_default_43",
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       player_id: SEED_PLAYER_IDS.ROCKETS_P6,
       team_id: SEED_TEAM_IDS.ROCKETS_HC,
       start_date: "2024-01-01",
@@ -3155,6 +3218,7 @@ export function create_seed_player_team_memberships(): PlayerTeamMembership[] {
     },
     {
       id: "player_team_membership_default_44",
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       player_id: SEED_PLAYER_IDS.ROCKETS_P7,
       team_id: SEED_TEAM_IDS.ROCKETS_HC,
       start_date: "2024-01-01",
@@ -3165,6 +3229,7 @@ export function create_seed_player_team_memberships(): PlayerTeamMembership[] {
     },
     {
       id: "player_team_membership_default_45",
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       player_id: SEED_PLAYER_IDS.ROCKETS_P8,
       team_id: SEED_TEAM_IDS.ROCKETS_HC,
       start_date: "2024-01-01",
@@ -3175,6 +3240,7 @@ export function create_seed_player_team_memberships(): PlayerTeamMembership[] {
     },
     {
       id: "player_team_membership_default_46",
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       player_id: SEED_PLAYER_IDS.ROCKETS_P9,
       team_id: SEED_TEAM_IDS.ROCKETS_HC,
       start_date: "2024-01-01",
@@ -3185,6 +3251,7 @@ export function create_seed_player_team_memberships(): PlayerTeamMembership[] {
     },
     {
       id: "player_team_membership_default_47",
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       player_id: SEED_PLAYER_IDS.ROCKETS_P10,
       team_id: SEED_TEAM_IDS.ROCKETS_HC,
       start_date: "2024-01-01",
@@ -3195,6 +3262,7 @@ export function create_seed_player_team_memberships(): PlayerTeamMembership[] {
     },
     {
       id: "player_team_membership_default_48",
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       player_id: SEED_PLAYER_IDS.ROCKETS_P11,
       team_id: SEED_TEAM_IDS.ROCKETS_HC,
       start_date: "2024-01-01",
@@ -3205,6 +3273,7 @@ export function create_seed_player_team_memberships(): PlayerTeamMembership[] {
     },
     {
       id: "player_team_membership_default_49",
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       player_id: SEED_PLAYER_IDS.WANANCHI_P4,
       team_id: SEED_TEAM_IDS.WANANCHI_HC,
       start_date: "2024-01-01",
@@ -3215,6 +3284,7 @@ export function create_seed_player_team_memberships(): PlayerTeamMembership[] {
     },
     {
       id: "player_team_membership_default_50",
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       player_id: SEED_PLAYER_IDS.WANANCHI_P5,
       team_id: SEED_TEAM_IDS.WANANCHI_HC,
       start_date: "2024-01-01",
@@ -3225,6 +3295,7 @@ export function create_seed_player_team_memberships(): PlayerTeamMembership[] {
     },
     {
       id: "player_team_membership_default_51",
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       player_id: SEED_PLAYER_IDS.WANANCHI_P6,
       team_id: SEED_TEAM_IDS.WANANCHI_HC,
       start_date: "2024-01-01",
@@ -3235,6 +3306,7 @@ export function create_seed_player_team_memberships(): PlayerTeamMembership[] {
     },
     {
       id: "player_team_membership_default_52",
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       player_id: SEED_PLAYER_IDS.WANANCHI_P7,
       team_id: SEED_TEAM_IDS.WANANCHI_HC,
       start_date: "2024-01-01",
@@ -3245,6 +3317,7 @@ export function create_seed_player_team_memberships(): PlayerTeamMembership[] {
     },
     {
       id: "player_team_membership_default_53",
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       player_id: SEED_PLAYER_IDS.WANANCHI_P8,
       team_id: SEED_TEAM_IDS.WANANCHI_HC,
       start_date: "2024-01-01",
@@ -3255,6 +3328,7 @@ export function create_seed_player_team_memberships(): PlayerTeamMembership[] {
     },
     {
       id: "player_team_membership_default_54",
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       player_id: SEED_PLAYER_IDS.WANANCHI_P9,
       team_id: SEED_TEAM_IDS.WANANCHI_HC,
       start_date: "2024-01-01",
@@ -3265,6 +3339,7 @@ export function create_seed_player_team_memberships(): PlayerTeamMembership[] {
     },
     {
       id: "player_team_membership_default_55",
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       player_id: SEED_PLAYER_IDS.WANANCHI_P10,
       team_id: SEED_TEAM_IDS.WANANCHI_HC,
       start_date: "2024-01-01",
@@ -3275,6 +3350,7 @@ export function create_seed_player_team_memberships(): PlayerTeamMembership[] {
     },
     {
       id: "player_team_membership_default_56",
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       player_id: SEED_PLAYER_IDS.WANANCHI_P11,
       team_id: SEED_TEAM_IDS.WANANCHI_HC,
       start_date: "2024-01-01",
@@ -3285,6 +3361,7 @@ export function create_seed_player_team_memberships(): PlayerTeamMembership[] {
     },
     {
       id: "player_team_membership_default_57",
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       player_id: SEED_PLAYER_IDS.MAKERERE_P4,
       team_id: SEED_TEAM_IDS.MAKERERE_UNIVERSITY_HC,
       start_date: "2024-01-01",
@@ -3295,6 +3372,7 @@ export function create_seed_player_team_memberships(): PlayerTeamMembership[] {
     },
     {
       id: "player_team_membership_default_58",
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       player_id: SEED_PLAYER_IDS.MAKERERE_P5,
       team_id: SEED_TEAM_IDS.MAKERERE_UNIVERSITY_HC,
       start_date: "2024-01-01",
@@ -3305,6 +3383,7 @@ export function create_seed_player_team_memberships(): PlayerTeamMembership[] {
     },
     {
       id: "player_team_membership_default_59",
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       player_id: SEED_PLAYER_IDS.MAKERERE_P6,
       team_id: SEED_TEAM_IDS.MAKERERE_UNIVERSITY_HC,
       start_date: "2024-01-01",
@@ -3315,6 +3394,7 @@ export function create_seed_player_team_memberships(): PlayerTeamMembership[] {
     },
     {
       id: "player_team_membership_default_60",
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       player_id: SEED_PLAYER_IDS.MAKERERE_P7,
       team_id: SEED_TEAM_IDS.MAKERERE_UNIVERSITY_HC,
       start_date: "2024-01-01",
@@ -3325,6 +3405,7 @@ export function create_seed_player_team_memberships(): PlayerTeamMembership[] {
     },
     {
       id: "player_team_membership_default_61",
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       player_id: SEED_PLAYER_IDS.MAKERERE_P8,
       team_id: SEED_TEAM_IDS.MAKERERE_UNIVERSITY_HC,
       start_date: "2024-01-01",
@@ -3335,6 +3416,7 @@ export function create_seed_player_team_memberships(): PlayerTeamMembership[] {
     },
     {
       id: "player_team_membership_default_62",
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       player_id: SEED_PLAYER_IDS.MAKERERE_P9,
       team_id: SEED_TEAM_IDS.MAKERERE_UNIVERSITY_HC,
       start_date: "2024-01-01",
@@ -3345,6 +3427,7 @@ export function create_seed_player_team_memberships(): PlayerTeamMembership[] {
     },
     {
       id: "player_team_membership_default_63",
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       player_id: SEED_PLAYER_IDS.MAKERERE_P10,
       team_id: SEED_TEAM_IDS.MAKERERE_UNIVERSITY_HC,
       start_date: "2024-01-01",
@@ -3355,6 +3438,7 @@ export function create_seed_player_team_memberships(): PlayerTeamMembership[] {
     },
     {
       id: "player_team_membership_default_64",
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       player_id: SEED_PLAYER_IDS.MAKERERE_P11,
       team_id: SEED_TEAM_IDS.MAKERERE_UNIVERSITY_HC,
       start_date: "2024-01-01",
@@ -3365,6 +3449,7 @@ export function create_seed_player_team_memberships(): PlayerTeamMembership[] {
     },
     {
       id: "player_team_membership_default_65",
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       player_id: SEED_PLAYER_IDS.KYAMBOGO_P4,
       team_id: SEED_TEAM_IDS.KYAMBOGO_UNIVERSITY_HC,
       start_date: "2024-01-01",
@@ -3375,6 +3460,7 @@ export function create_seed_player_team_memberships(): PlayerTeamMembership[] {
     },
     {
       id: "player_team_membership_default_66",
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       player_id: SEED_PLAYER_IDS.KYAMBOGO_P5,
       team_id: SEED_TEAM_IDS.KYAMBOGO_UNIVERSITY_HC,
       start_date: "2024-01-01",
@@ -3385,6 +3471,7 @@ export function create_seed_player_team_memberships(): PlayerTeamMembership[] {
     },
     {
       id: "player_team_membership_default_67",
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       player_id: SEED_PLAYER_IDS.KYAMBOGO_P6,
       team_id: SEED_TEAM_IDS.KYAMBOGO_UNIVERSITY_HC,
       start_date: "2024-01-01",
@@ -3395,6 +3482,7 @@ export function create_seed_player_team_memberships(): PlayerTeamMembership[] {
     },
     {
       id: "player_team_membership_default_68",
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       player_id: SEED_PLAYER_IDS.KYAMBOGO_P7,
       team_id: SEED_TEAM_IDS.KYAMBOGO_UNIVERSITY_HC,
       start_date: "2024-01-01",
@@ -3405,6 +3493,7 @@ export function create_seed_player_team_memberships(): PlayerTeamMembership[] {
     },
     {
       id: "player_team_membership_default_69",
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       player_id: SEED_PLAYER_IDS.KYAMBOGO_P8,
       team_id: SEED_TEAM_IDS.KYAMBOGO_UNIVERSITY_HC,
       start_date: "2024-01-01",
@@ -3415,6 +3504,7 @@ export function create_seed_player_team_memberships(): PlayerTeamMembership[] {
     },
     {
       id: "player_team_membership_default_70",
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       player_id: SEED_PLAYER_IDS.KYAMBOGO_P9,
       team_id: SEED_TEAM_IDS.KYAMBOGO_UNIVERSITY_HC,
       start_date: "2024-01-01",
@@ -3425,6 +3515,7 @@ export function create_seed_player_team_memberships(): PlayerTeamMembership[] {
     },
     {
       id: "player_team_membership_default_71",
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       player_id: SEED_PLAYER_IDS.KYAMBOGO_P10,
       team_id: SEED_TEAM_IDS.KYAMBOGO_UNIVERSITY_HC,
       start_date: "2024-01-01",
@@ -3435,6 +3526,7 @@ export function create_seed_player_team_memberships(): PlayerTeamMembership[] {
     },
     {
       id: "player_team_membership_default_72",
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       player_id: SEED_PLAYER_IDS.KYAMBOGO_P11,
       team_id: SEED_TEAM_IDS.KYAMBOGO_UNIVERSITY_HC,
       start_date: "2024-01-01",
@@ -3445,6 +3537,7 @@ export function create_seed_player_team_memberships(): PlayerTeamMembership[] {
     },
     {
       id: "player_team_membership_default_73",
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       player_id: SEED_PLAYER_IDS.SIMBA_P4,
       team_id: SEED_TEAM_IDS.SIMBA_HC,
       start_date: "2024-01-01",
@@ -3455,6 +3548,7 @@ export function create_seed_player_team_memberships(): PlayerTeamMembership[] {
     },
     {
       id: "player_team_membership_default_74",
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       player_id: SEED_PLAYER_IDS.SIMBA_P5,
       team_id: SEED_TEAM_IDS.SIMBA_HC,
       start_date: "2024-01-01",
@@ -3465,6 +3559,7 @@ export function create_seed_player_team_memberships(): PlayerTeamMembership[] {
     },
     {
       id: "player_team_membership_default_75",
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       player_id: SEED_PLAYER_IDS.SIMBA_P6,
       team_id: SEED_TEAM_IDS.SIMBA_HC,
       start_date: "2024-01-01",
@@ -3475,6 +3570,7 @@ export function create_seed_player_team_memberships(): PlayerTeamMembership[] {
     },
     {
       id: "player_team_membership_default_76",
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       player_id: SEED_PLAYER_IDS.SIMBA_P7,
       team_id: SEED_TEAM_IDS.SIMBA_HC,
       start_date: "2024-01-01",
@@ -3485,6 +3581,7 @@ export function create_seed_player_team_memberships(): PlayerTeamMembership[] {
     },
     {
       id: "player_team_membership_default_77",
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       player_id: SEED_PLAYER_IDS.SIMBA_P8,
       team_id: SEED_TEAM_IDS.SIMBA_HC,
       start_date: "2024-01-01",
@@ -3495,6 +3592,7 @@ export function create_seed_player_team_memberships(): PlayerTeamMembership[] {
     },
     {
       id: "player_team_membership_default_78",
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       player_id: SEED_PLAYER_IDS.SIMBA_P9,
       team_id: SEED_TEAM_IDS.SIMBA_HC,
       start_date: "2024-01-01",
@@ -3505,6 +3603,7 @@ export function create_seed_player_team_memberships(): PlayerTeamMembership[] {
     },
     {
       id: "player_team_membership_default_79",
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       player_id: SEED_PLAYER_IDS.SIMBA_P10,
       team_id: SEED_TEAM_IDS.SIMBA_HC,
       start_date: "2024-01-01",
@@ -3515,6 +3614,7 @@ export function create_seed_player_team_memberships(): PlayerTeamMembership[] {
     },
     {
       id: "player_team_membership_default_80",
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       player_id: SEED_PLAYER_IDS.SIMBA_P11,
       team_id: SEED_TEAM_IDS.SIMBA_HC,
       start_date: "2024-01-01",
@@ -3525,6 +3625,7 @@ export function create_seed_player_team_memberships(): PlayerTeamMembership[] {
     },
     {
       id: "player_team_membership_default_81",
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       player_id: SEED_PLAYER_IDS.STRIKERS_P4,
       team_id: SEED_TEAM_IDS.STRIKERS_HC,
       start_date: "2024-01-01",
@@ -3535,6 +3636,7 @@ export function create_seed_player_team_memberships(): PlayerTeamMembership[] {
     },
     {
       id: "player_team_membership_default_82",
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       player_id: SEED_PLAYER_IDS.STRIKERS_P5,
       team_id: SEED_TEAM_IDS.STRIKERS_HC,
       start_date: "2024-01-01",
@@ -3545,6 +3647,7 @@ export function create_seed_player_team_memberships(): PlayerTeamMembership[] {
     },
     {
       id: "player_team_membership_default_83",
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       player_id: SEED_PLAYER_IDS.STRIKERS_P6,
       team_id: SEED_TEAM_IDS.STRIKERS_HC,
       start_date: "2024-01-01",
@@ -3555,6 +3658,7 @@ export function create_seed_player_team_memberships(): PlayerTeamMembership[] {
     },
     {
       id: "player_team_membership_default_84",
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       player_id: SEED_PLAYER_IDS.STRIKERS_P7,
       team_id: SEED_TEAM_IDS.STRIKERS_HC,
       start_date: "2024-01-01",
@@ -3565,6 +3669,7 @@ export function create_seed_player_team_memberships(): PlayerTeamMembership[] {
     },
     {
       id: "player_team_membership_default_85",
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       player_id: SEED_PLAYER_IDS.STRIKERS_P8,
       team_id: SEED_TEAM_IDS.STRIKERS_HC,
       start_date: "2024-01-01",
@@ -3575,6 +3680,7 @@ export function create_seed_player_team_memberships(): PlayerTeamMembership[] {
     },
     {
       id: "player_team_membership_default_86",
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       player_id: SEED_PLAYER_IDS.STRIKERS_P9,
       team_id: SEED_TEAM_IDS.STRIKERS_HC,
       start_date: "2024-01-01",
@@ -3585,6 +3691,7 @@ export function create_seed_player_team_memberships(): PlayerTeamMembership[] {
     },
     {
       id: "player_team_membership_default_87",
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       player_id: SEED_PLAYER_IDS.STRIKERS_P10,
       team_id: SEED_TEAM_IDS.STRIKERS_HC,
       start_date: "2024-01-01",
@@ -3595,6 +3702,7 @@ export function create_seed_player_team_memberships(): PlayerTeamMembership[] {
     },
     {
       id: "player_team_membership_default_88",
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       player_id: SEED_PLAYER_IDS.STRIKERS_P11,
       team_id: SEED_TEAM_IDS.STRIKERS_HC,
       start_date: "2024-01-01",
@@ -3700,6 +3808,7 @@ export function create_seed_fixtures(
   return [
     {
       id: SEED_FIXTURE_IDS.FIXTURE_1,
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       competition_id: SEED_COMPETITION_IDS.NATIONAL_HOCKEY_LEAGUE_2026,
       round_number: 1,
       round_name: "Round 1",
@@ -3733,6 +3842,7 @@ export function create_seed_fixtures(
     },
     {
       id: SEED_FIXTURE_IDS.FIXTURE_2,
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       competition_id: SEED_COMPETITION_IDS.NATIONAL_HOCKEY_LEAGUE_2026,
       round_number: 1,
       round_name: "Round 1",
@@ -3766,6 +3876,7 @@ export function create_seed_fixtures(
     },
     {
       id: SEED_FIXTURE_IDS.FIXTURE_3,
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       competition_id: SEED_COMPETITION_IDS.EASTER_CUP_2026,
       round_number: 1,
       round_name: "Group Stage",
@@ -3804,6 +3915,7 @@ export function create_seed_fixtures(
     },
     {
       id: SEED_FIXTURE_IDS.HOCKEY_FIXTURE_1,
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       competition_id: SEED_COMPETITION_IDS.UNIVERSITY_HOCKEY_CHAMPIONSHIP_2026,
       round_number: 1,
       round_name: "Opening Round",
@@ -3837,6 +3949,7 @@ export function create_seed_fixtures(
     },
     {
       id: SEED_FIXTURE_IDS.COMPLETED_HOCKEY_GAME,
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       competition_id: SEED_COMPETITION_IDS.NATIONAL_HOCKEY_LEAGUE_2026,
       round_number: 1,
       round_name: "Opening Round",
@@ -4030,6 +4143,7 @@ export function create_seed_fixtures(
     },
     {
       id: SEED_FIXTURE_IDS.COMPLETED_GAME_2,
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       competition_id: SEED_COMPETITION_IDS.NATIONAL_HOCKEY_LEAGUE_2026,
       round_number: 2,
       round_name: "Round 2",
@@ -4214,6 +4328,7 @@ export function create_seed_fixtures(
     },
     {
       id: SEED_FIXTURE_IDS.COMPLETED_GAME_3,
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       competition_id: SEED_COMPETITION_IDS.EASTER_CUP_2026,
       round_number: 1,
       round_name: "Group Stage",
@@ -4437,6 +4552,7 @@ export function create_seed_fixture_lineups(): FixtureLineup[] {
   return [
     {
       id: SEED_FIXTURE_LINEUP_IDS.COMPLETED_GAME_HOME_LINEUP,
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       fixture_id: SEED_FIXTURE_IDS.COMPLETED_HOCKEY_GAME,
       team_id: SEED_TEAM_IDS.ROCKETS_HC,
       selected_players: [
@@ -4560,6 +4676,7 @@ export function create_seed_fixture_lineups(): FixtureLineup[] {
     },
     {
       id: SEED_FIXTURE_LINEUP_IDS.COMPLETED_GAME_AWAY_LINEUP,
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       fixture_id: SEED_FIXTURE_IDS.COMPLETED_HOCKEY_GAME,
       team_id: SEED_TEAM_IDS.WANANCHI_HC,
       selected_players: [
@@ -4683,6 +4800,7 @@ export function create_seed_fixture_lineups(): FixtureLineup[] {
     },
     {
       id: SEED_FIXTURE_LINEUP_IDS.COMPLETED_GAME_2_HOME_LINEUP,
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       fixture_id: SEED_FIXTURE_IDS.COMPLETED_GAME_2,
       team_id: SEED_TEAM_IDS.WEATHERHEAD_HC,
       selected_players: [
@@ -4806,6 +4924,7 @@ export function create_seed_fixture_lineups(): FixtureLineup[] {
     },
     {
       id: SEED_FIXTURE_LINEUP_IDS.COMPLETED_GAME_2_AWAY_LINEUP,
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       fixture_id: SEED_FIXTURE_IDS.COMPLETED_GAME_2,
       team_id: SEED_TEAM_IDS.KAMPALA_HC,
       selected_players: [
@@ -4929,6 +5048,7 @@ export function create_seed_fixture_lineups(): FixtureLineup[] {
     },
     {
       id: SEED_FIXTURE_LINEUP_IDS.COMPLETED_GAME_3_HOME_LINEUP,
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       fixture_id: SEED_FIXTURE_IDS.COMPLETED_GAME_3,
       team_id: SEED_TEAM_IDS.ROCKETS_HC,
       selected_players: [
@@ -5052,6 +5172,7 @@ export function create_seed_fixture_lineups(): FixtureLineup[] {
     },
     {
       id: SEED_FIXTURE_LINEUP_IDS.COMPLETED_GAME_3_AWAY_LINEUP,
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       fixture_id: SEED_FIXTURE_IDS.COMPLETED_GAME_3,
       team_id: SEED_TEAM_IDS.WANANCHI_HC,
       selected_players: [
@@ -5176,11 +5297,12 @@ export function create_seed_fixture_lineups(): FixtureLineup[] {
   ];
 }
 
-export function create_seed_venues(): Venue[] {
+export function create_seed_venues(organization_id: string): Venue[] {
   const now = generate_current_timestamp();
   return [
     {
       id: SEED_VENUE_IDS.LUGOGO_HOCKEY_STADIUM,
+      organization_id,
       name: "Lugogo Hockey Stadium",
       short_name: "LHS",
       address: "Lugogo Sports Complex",
@@ -5200,6 +5322,7 @@ export function create_seed_venues(): Venue[] {
     },
     {
       id: SEED_VENUE_IDS.KYAMBOGO_HOCKEY_PITCH,
+      organization_id,
       name: "Kyambogo Hockey Pitch",
       short_name: "KHP",
       address: "Kyambogo University",
@@ -5219,6 +5342,7 @@ export function create_seed_venues(): Venue[] {
     },
     {
       id: SEED_VENUE_IDS.MAKERERE_HOCKEY_GROUND,
+      organization_id,
       name: "Makerere Hockey Ground",
       short_name: "MHG",
       address: "Makerere University",
@@ -5238,6 +5362,7 @@ export function create_seed_venues(): Venue[] {
     },
     {
       id: SEED_VENUE_IDS.ENTEBBE_SPORTS_CLUB,
+      organization_id,
       name: "Entebbe Sports Club",
       short_name: "ESC",
       address: "Airport Road",
@@ -5257,6 +5382,7 @@ export function create_seed_venues(): Venue[] {
     },
     {
       id: SEED_VENUE_IDS.JINJA_HOCKEY_GROUND,
+      organization_id,
       name: "Jinja Hockey Ground",
       short_name: "JHG",
       address: "Main Street",
@@ -5888,10 +6014,126 @@ export function create_seed_system_users(): SystemUser[] {
   return [
     {
       id: SEED_SYSTEM_USER_IDS.SYSTEM_ADMINISTRATOR,
-      email: "admin@ugandahockey.org",
-      first_name: "System",
-      last_name: "Administrator",
+      email: "superadmin@sportsorg.local",
+      first_name: "Super",
+      last_name: "Admin",
       role: "super_admin",
+      organization_id: ANY_VALUE,
+      team_id: ANY_VALUE,
+      status: "active",
+      created_at: now,
+      updated_at: now,
+    },
+    {
+      id: SEED_SYSTEM_USER_IDS.ORG_ADMIN_UGANDA_HOCKEY,
+      email: "orgadmin@ugandahockey.local",
+      first_name: "Organisation",
+      last_name: "Administrator",
+      role: "org_admin",
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
+      team_id: ANY_VALUE,
+      status: "active",
+      created_at: now,
+      updated_at: now,
+    },
+    {
+      id: SEED_SYSTEM_USER_IDS.OFFICIALS_MANAGER_UGANDA_HOCKEY,
+      email: "officials@ugandahockey.local",
+      first_name: "Officials",
+      last_name: "Manager",
+      role: "officials_manager",
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
+      team_id: ANY_VALUE,
+      status: "active",
+      created_at: now,
+      updated_at: now,
+    },
+    {
+      id: SEED_SYSTEM_USER_IDS.TEAM_MANAGER_WEATHERHEAD,
+      email: "manager@weatherheadhc.local",
+      first_name: "Team",
+      last_name: "Manager",
+      role: "team_manager",
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
+      team_id: SEED_TEAM_IDS.WEATHERHEAD_HC,
+      status: "active",
+      created_at: now,
+      updated_at: now,
+    },
+    {
+      id: SEED_SYSTEM_USER_IDS.OFFICIAL_MICHAEL_ANDERSON,
+      email: "michael.anderson@ugandahockey.local",
+      first_name: "Michael",
+      last_name: "Anderson",
+      role: "official",
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
+      team_id: ANY_VALUE,
+      official_id: SEED_OFFICIAL_IDS.MICHAEL_ANDERSON,
+      status: "active",
+      created_at: now,
+      updated_at: now,
+    },
+    {
+      id: SEED_SYSTEM_USER_IDS.PLAYER_DENIS_ONYANGO,
+      email: "denis.onyango@weatherheadhc.local",
+      first_name: "Denis",
+      last_name: "Onyango",
+      role: "player",
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
+      team_id: SEED_TEAM_IDS.WEATHERHEAD_HC,
+      player_id: SEED_PLAYER_IDS.DENIS_ONYANGO,
+      status: "active",
+      created_at: now,
+      updated_at: now,
+    },
+  ];
+}
+
+export function create_seed_identification_types(): IdentificationType[] {
+  const now = generate_current_timestamp();
+
+  return [
+    {
+      id: SEED_IDENTIFICATION_TYPE_IDS.NATIONAL_ID,
+      name: "National ID",
+      identifier_field_label: "National ID Number",
+      description: "Government-issued national identification card",
+      status: "active",
+      created_at: now,
+      updated_at: now,
+    },
+    {
+      id: SEED_IDENTIFICATION_TYPE_IDS.PASSPORT,
+      name: "Passport",
+      identifier_field_label: "Passport Number",
+      description: "International travel passport",
+      status: "active",
+      created_at: now,
+      updated_at: now,
+    },
+    {
+      id: SEED_IDENTIFICATION_TYPE_IDS.DRIVING_LICENSE,
+      name: "Driving License",
+      identifier_field_label: "License Number",
+      description: "Government-issued driving permit",
+      status: "active",
+      created_at: now,
+      updated_at: now,
+    },
+    {
+      id: SEED_IDENTIFICATION_TYPE_IDS.PLAYER_REGISTRATION_NUMBER,
+      name: "Player Registration Number",
+      identifier_field_label: "Registration Number",
+      description: "Federation-assigned player registration number",
+      status: "active",
+      created_at: now,
+      updated_at: now,
+    },
+    {
+      id: SEED_IDENTIFICATION_TYPE_IDS.FEDERATION_ID,
+      name: "Federation ID",
+      identifier_field_label: "Federation ID Number",
+      description: "National hockey federation identification",
       status: "active",
       created_at: now,
       updated_at: now,

@@ -3,6 +3,7 @@ import type { BaseEntity } from "./BaseEntity";
 export type PlayerTeamTransferStatus = "pending" | "confirmed" | "rejected";
 
 export interface PlayerTeamTransferHistory extends BaseEntity {
+  organization_id: string;
   player_id: string;
   from_team_id: string;
   to_team_id: string;
@@ -21,11 +22,13 @@ export type UpdatePlayerTeamTransferHistoryInput =
   Partial<CreatePlayerTeamTransferHistoryInput>;
 
 export function create_empty_player_team_transfer_history_input(
+  organization_id: string = "",
   player_id: string = "",
   from_team_id: string = "",
   to_team_id: string = "",
 ): CreatePlayerTeamTransferHistoryInput {
   return {
+    organization_id,
     player_id,
     from_team_id,
     to_team_id,
@@ -40,6 +43,10 @@ export function validate_player_team_transfer_history_input(
   input: CreatePlayerTeamTransferHistoryInput,
 ): string[] {
   const validation_errors: string[] = [];
+
+  if (!input.organization_id || input.organization_id.trim().length === 0) {
+    validation_errors.push("Organization is required");
+  }
 
   if (!input.player_id || input.player_id.trim().length === 0) {
     validation_errors.push("Player is required");

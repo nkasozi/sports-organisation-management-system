@@ -44,6 +44,7 @@ export class InBrowserTeamStaffRepository
     return {
       id,
       ...timestamps,
+      organization_id: input.organization_id,
       first_name: input.first_name,
       last_name: input.last_name,
       email: input.email,
@@ -165,6 +166,7 @@ export function create_default_team_staff(): TeamStaff[] {
   return [
     {
       id: "team_staff_default_1",
+      organization_id: "org_default_1",
       first_name: "John",
       last_name: "Mukasa",
       email: "john.mukasa@ugandahockey.org",
@@ -185,6 +187,7 @@ export function create_default_team_staff(): TeamStaff[] {
     },
     {
       id: "team_staff_default_2",
+      organization_id: "org_default_1",
       first_name: "Grace",
       last_name: "Nalwanga",
       email: "grace.nalwanga@ugandahockey.org",
@@ -205,6 +208,7 @@ export function create_default_team_staff(): TeamStaff[] {
     },
     {
       id: "team_staff_default_3",
+      organization_id: "org_default_1",
       first_name: "David",
       last_name: "Okello",
       email: "david.okello@ugandahockey.org",

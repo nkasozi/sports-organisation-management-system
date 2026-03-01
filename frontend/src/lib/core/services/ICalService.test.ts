@@ -243,6 +243,7 @@ describe("ICalService", () => {
     it("should convert fixture to iCal event with proper title", () => {
       const fixture: Fixture = {
         id: "fixture-123",
+        organization_id: "org-1",
         competition_id: "comp-1",
         round_number: 1,
         round_name: "Round 1",
@@ -286,6 +287,7 @@ describe("ICalService", () => {
     it("should calculate end time as 2 hours after start", () => {
       const fixture: Fixture = {
         id: "fixture-123",
+        organization_id: "org-1",
         competition_id: "comp-1",
         round_number: 1,
         round_name: "Round 1",

@@ -27,6 +27,7 @@ function create_test_membership(
 ): PlayerTeamMembership {
   return {
     id: "membership-123",
+    organization_id: "org-123",
     player_id: "player-123",
     team_id: "team-123",
     jersey_number: 10,
@@ -42,6 +43,7 @@ function create_valid_input(
   overrides: Partial<CreatePlayerTeamMembershipInput> = {},
 ): CreatePlayerTeamMembershipInput {
   return {
+    organization_id: "org-123",
     player_id: "player-456",
     team_id: "team-123",
     jersey_number: 7,

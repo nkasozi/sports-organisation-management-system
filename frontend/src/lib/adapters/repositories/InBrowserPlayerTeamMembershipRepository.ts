@@ -43,6 +43,7 @@ export class InBrowserPlayerTeamMembershipRepository
     return {
       id,
       ...timestamps,
+      organization_id: input.organization_id,
       player_id: input.player_id,
       team_id: input.team_id,
       start_date: input.start_date,
@@ -127,6 +128,7 @@ export function create_default_player_team_memberships(): PlayerTeamMembership[]
   return [
     {
       id: "player_team_membership_default_1",
+      organization_id: "organization_default_1",
       player_id: "player_default_1",
       team_id: "team_default_1",
       start_date: "2024-01-01",
@@ -137,6 +139,7 @@ export function create_default_player_team_memberships(): PlayerTeamMembership[]
     },
     {
       id: "player_team_membership_default_2",
+      organization_id: "organization_default_1",
       player_id: "player_default_2",
       team_id: "team_default_1",
       start_date: "2024-01-01",
@@ -147,6 +150,7 @@ export function create_default_player_team_memberships(): PlayerTeamMembership[]
     },
     {
       id: "player_team_membership_default_3",
+      organization_id: "organization_default_1",
       player_id: "player_default_3",
       team_id: "team_default_2",
       start_date: "2024-01-01",
@@ -157,6 +161,7 @@ export function create_default_player_team_memberships(): PlayerTeamMembership[]
     },
     {
       id: "player_team_membership_default_4",
+      organization_id: "organization_default_1",
       player_id: "player_default_4",
       team_id: "team_default_4",
       start_date: "2024-01-01",

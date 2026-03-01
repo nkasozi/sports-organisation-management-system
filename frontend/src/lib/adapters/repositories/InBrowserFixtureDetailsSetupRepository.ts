@@ -43,6 +43,7 @@ export class InBrowserFixtureDetailsSetupRepository
     return {
       id,
       ...timestamps,
+      organization_id: input.organization_id,
       fixture_id: input.fixture_id,
       home_team_jersey_id: input.home_team_jersey_id || "",
       away_team_jersey_id: input.away_team_jersey_id || "",

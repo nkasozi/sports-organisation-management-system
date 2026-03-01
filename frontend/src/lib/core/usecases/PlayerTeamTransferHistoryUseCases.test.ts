@@ -46,6 +46,7 @@ function create_test_transfer(
 ): PlayerTeamTransferHistory {
   return {
     id: "transfer-123",
+    organization_id: "org-123",
     player_id: "player-123",
     from_team_id: "team-A",
     to_team_id: "team-B",
@@ -64,6 +65,7 @@ function create_test_membership(
 ): PlayerTeamMembership {
   return {
     id: "membership-123",
+    organization_id: "org-123",
     player_id: "player-123",
     team_id: "team-A",
     jersey_number: 10,
@@ -79,6 +81,7 @@ function create_valid_transfer_input(
   overrides: Partial<CreatePlayerTeamTransferHistoryInput> = {},
 ): CreatePlayerTeamTransferHistoryInput {
   return {
+    organization_id: "org-123",
     player_id: "player-456",
     from_team_id: "team-A",
     to_team_id: "team-B",
@@ -287,6 +290,7 @@ describe("PlayerTeamTransferHistoryUseCases", () => {
 
       expect(result.success).toBe(true);
       expect(mock_membership_repository.create).toHaveBeenCalledWith({
+        organization_id: "org-123",
         player_id: "player-123",
         team_id: "team-B",
         start_date: "2024-06-01",

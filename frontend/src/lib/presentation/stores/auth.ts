@@ -13,6 +13,7 @@ import {
   ANY_VALUE,
 } from "$lib/core/interfaces/ports/AuthenticationPort";
 import { get_authentication_adapter } from "$lib/adapters/services/LocalAuthenticationAdapter";
+import { get_system_user_repository } from "$lib/adapters/repositories/InBrowserSystemUserRepository";
 import type {
   AuthorizableAction,
   AuthorizationCheckResult,
@@ -143,7 +144,9 @@ function create_auth_store() {
   async function generate_token_for_profile(
     profile: UserProfile,
   ): Promise<AuthToken> {
-    const auth_adapter = get_authentication_adapter();
+    const auth_adapter = get_authentication_adapter(
+      get_system_user_repository(),
+    );
     const permissions = ROLE_PERMISSIONS[profile.role];
 
     return auth_adapter.generate_token({
@@ -166,7 +169,9 @@ function create_auth_store() {
     let current_token: AuthToken | null = null;
 
     if (saved_token_raw) {
-      const auth_adapter = get_authentication_adapter();
+      const auth_adapter = get_authentication_adapter(
+        get_system_user_repository(),
+      );
       const verification_result =
         await auth_adapter.verify_token(saved_token_raw);
 

@@ -4,6 +4,7 @@ import type { CreateFixtureInput } from "../entities/Fixture";
 import { generate_round_robin_fixtures } from "../entities/Fixture";
 
 export interface FixtureGenerationRequest {
+  organization_id: string;
   competition_id: string;
   teams: Team[];
   competition_format: CompetitionFormat;
@@ -14,6 +15,7 @@ export interface FixtureGenerationRequest {
 }
 
 export function generate_league_fixtures(
+  organization_id: string,
   competition_id: string,
   teams: Team[],
   start_date: string,
@@ -25,6 +27,7 @@ export function generate_league_fixtures(
   const team_ids = teams.map((t) => t.id);
 
   return generate_round_robin_fixtures({
+    organization_id,
     competition_id,
     team_ids,
     start_date,
@@ -37,6 +40,7 @@ export function generate_league_fixtures(
 }
 
 export function generate_knockout_fixtures(
+  organization_id: string,
   competition_id: string,
   teams: Team[],
   start_date: string,
@@ -69,6 +73,7 @@ export function generate_knockout_fixtures(
         venue_rotation === "single_venue" && single_venue ? single_venue : "";
 
       fixtures.push({
+        organization_id,
         competition_id,
         round_number,
         round_name,
@@ -98,6 +103,7 @@ export function generate_knockout_fixtures(
 }
 
 export function generate_group_stage_fixtures(
+  organization_id: string,
   competition_id: string,
   teams: Team[],
   start_date: string,
@@ -139,6 +145,7 @@ export function generate_group_stage_fixtures(
           venue_rotation === "single_venue" && single_venue ? single_venue : "";
 
         fixtures.push({
+          organization_id,
           competition_id,
           round_number: group_idx + 1,
           round_name: group_name,
@@ -165,6 +172,7 @@ export function generate_group_stage_fixtures(
 }
 
 export function generate_double_elimination_fixtures(
+  organization_id: string,
   competition_id: string,
   teams: Team[],
   start_date: string,
@@ -199,6 +207,7 @@ export function generate_double_elimination_fixtures(
         const away_team = winners_bracket[i + 1];
 
         fixtures.push({
+          organization_id,
           competition_id,
           round_number,
           round_name: `Winners Round ${round_number}`,
@@ -232,6 +241,7 @@ export function generate_double_elimination_fixtures(
         const away_team = losers_bracket[i + 1];
 
         fixtures.push({
+          organization_id,
           competition_id,
           round_number,
           round_name: `Losers Round ${round_number}`,
@@ -263,6 +273,7 @@ export function generate_double_elimination_fixtures(
 }
 
 export function generate_swiss_fixtures(
+  organization_id: string,
   competition_id: string,
   teams: Team[],
   start_date: string,
@@ -290,6 +301,7 @@ export function generate_swiss_fixtures(
       if (i + 1 >= shuffled.length) break;
 
       fixtures.push({
+        organization_id,
         competition_id,
         round_number: round,
         round_name: `Round ${round}`,
@@ -314,6 +326,7 @@ export function generate_swiss_fixtures(
 }
 
 export function generate_custom_fixtures(
+  organization_id: string,
   competition_id: string,
   teams: Team[],
   start_date: string,
@@ -334,6 +347,7 @@ export function generate_fixtures_from_format(
       const league_config = format.league_config;
       const num_rounds = league_config?.number_of_rounds ?? 1;
       return generate_league_fixtures(
+        request.organization_id,
         request.competition_id,
         request.teams,
         request.start_date,
@@ -347,6 +361,7 @@ export function generate_fixtures_from_format(
       const rr_config = format.league_config;
       const rr_rounds = rr_config?.number_of_rounds ?? 1;
       return generate_league_fixtures(
+        request.organization_id,
         request.competition_id,
         request.teams,
         request.start_date,
@@ -358,6 +373,7 @@ export function generate_fixtures_from_format(
 
     case "straight_knockout":
       return generate_knockout_fixtures(
+        request.organization_id,
         request.competition_id,
         request.teams,
         request.start_date,
@@ -370,6 +386,7 @@ export function generate_fixtures_from_format(
       const gk_config = format.group_stage_config;
       const teams_per_group = gk_config?.teams_per_group ?? 4;
       return generate_group_stage_fixtures(
+        request.organization_id,
         request.competition_id,
         request.teams,
         request.start_date,
@@ -383,6 +400,7 @@ export function generate_fixtures_from_format(
       const gp_config = format.group_stage_config;
       const gp_teams_per_group = gp_config?.teams_per_group ?? 4;
       const group_fixtures = generate_group_stage_fixtures(
+        request.organization_id,
         request.competition_id,
         request.teams,
         request.start_date,
@@ -400,6 +418,7 @@ export function generate_fixtures_from_format(
         Math.ceil(request.teams.length / 2),
       );
       const playoff_fixtures = generate_knockout_fixtures(
+        request.organization_id,
         request.competition_id,
         qualified_teams,
         playoff_start.toISOString().split("T")[0],
@@ -412,6 +431,7 @@ export function generate_fixtures_from_format(
 
     case "double_elimination":
       return generate_double_elimination_fixtures(
+        request.organization_id,
         request.competition_id,
         request.teams,
         request.start_date,
@@ -424,6 +444,7 @@ export function generate_fixtures_from_format(
       const swiss_config = format.league_config;
       const swiss_rounds = swiss_config?.number_of_rounds ?? 4;
       return generate_swiss_fixtures(
+        request.organization_id,
         request.competition_id,
         request.teams,
         request.start_date,
@@ -435,6 +456,7 @@ export function generate_fixtures_from_format(
 
     case "custom":
       return generate_custom_fixtures(
+        request.organization_id,
         request.competition_id,
         request.teams,
         request.start_date,

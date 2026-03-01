@@ -185,6 +185,7 @@
 
     for (const assignment of all_selected) {
       const input = {
+        organization_id: selected_team?.organization_id || "",
         player_id: assignment.player.id,
         team_id: selected_team_id,
         start_date: assignment.start_date,

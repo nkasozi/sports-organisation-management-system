@@ -1,7 +1,9 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import { LocalAuthenticationAdapter } from "./LocalAuthenticationAdapter";
 import type { AuthTokenPayload } from "$lib/core/interfaces/ports/AuthenticationPort";
 import { ROLE_PERMISSIONS } from "$lib/core/interfaces/ports/AuthenticationPort";
+import type { InBrowserSystemUserRepository } from "$lib/adapters/repositories/InBrowserSystemUserRepository";
+import type { SystemUser } from "$lib/core/entities/SystemUser";
 
 function create_test_payload(): Omit<
   AuthTokenPayload,
@@ -18,11 +20,43 @@ function create_test_payload(): Omit<
   };
 }
 
+function create_mock_system_user(): SystemUser {
+  return {
+    id: "test-user-123",
+    email: "test@example.com",
+    first_name: "Test",
+    last_name: "User",
+    role: "super_admin",
+    status: "active",
+    organization_id: "*",
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  };
+}
+
+function create_mock_repository(): InBrowserSystemUserRepository {
+  const mock_user = create_mock_system_user();
+  return {
+    find_by_email: vi.fn().mockResolvedValue({
+      success: true,
+      data: {
+        items: [mock_user],
+        total_count: 1,
+        page_number: 1,
+        page_size: 10,
+        total_pages: 1,
+      },
+    }),
+  } as unknown as InBrowserSystemUserRepository;
+}
+
 describe("LocalAuthenticationAdapter", () => {
   let adapter: LocalAuthenticationAdapter;
+  let mock_repository: InBrowserSystemUserRepository;
 
   beforeEach(() => {
-    adapter = new LocalAuthenticationAdapter();
+    mock_repository = create_mock_repository();
+    adapter = new LocalAuthenticationAdapter(mock_repository);
   });
 
   describe("generate_token", () => {

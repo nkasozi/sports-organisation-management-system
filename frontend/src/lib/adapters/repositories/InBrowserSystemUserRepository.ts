@@ -21,6 +21,7 @@ export interface SystemUserFilter {
   name_contains?: string;
   role?: SystemUserRole;
   status?: EntityStatus;
+  organization_id?: string;
 }
 
 export class InBrowserSystemUserRepository extends InBrowserBaseRepository<
@@ -49,6 +50,10 @@ export class InBrowserSystemUserRepository extends InBrowserBaseRepository<
       last_name: input.last_name.trim(),
       role: input.role,
       status: input.status || "active",
+      organization_id: input.organization_id,
+      team_id: input.team_id,
+      player_id: input.player_id,
+      official_id: input.official_id,
       profile_picture_base64: input.profile_picture_base64,
     };
   }
@@ -64,6 +69,10 @@ export class InBrowserSystemUserRepository extends InBrowserBaseRepository<
       last_name: updates.last_name?.trim() ?? entity.last_name,
       role: updates.role ?? entity.role,
       status: updates.status ?? entity.status,
+      organization_id: updates.organization_id ?? entity.organization_id,
+      team_id: updates.team_id ?? entity.team_id,
+      player_id: updates.player_id ?? entity.player_id,
+      official_id: updates.official_id ?? entity.official_id,
       profile_picture_base64:
         updates.profile_picture_base64 ?? entity.profile_picture_base64,
     };
@@ -101,6 +110,12 @@ export class InBrowserSystemUserRepository extends InBrowserBaseRepository<
       if (filter.status) {
         filtered_entities = filtered_entities.filter(
           (user) => user.status === filter.status,
+        );
+      }
+
+      if (filter.organization_id) {
+        filtered_entities = filtered_entities.filter(
+          (user) => user.organization_id === filter.organization_id,
         );
       }
 
@@ -161,7 +176,7 @@ export class InBrowserSystemUserRepository extends InBrowserBaseRepository<
       let filtered_entities = await this.database.system_users.toArray();
 
       filtered_entities = filtered_entities.filter(
-        (user) => user.role === "admin" || user.role === "super_admin",
+        (user) => user.role === "org_admin" || user.role === "super_admin",
       );
 
       const total_count = filtered_entities.length;
@@ -194,6 +209,7 @@ export function create_default_system_users(): SystemUser[] {
       first_name: "System",
       last_name: "Administrator",
       role: "super_admin",
+      organization_id: "*",
       status: "active",
       created_at: now,
       updated_at: now,
@@ -201,19 +217,21 @@ export function create_default_system_users(): SystemUser[] {
     {
       id: "usr_default_2",
       email: "manager@ugandahockey.org",
-      first_name: "Competition",
-      last_name: "Manager",
-      role: "manager",
+      first_name: "Organisation",
+      last_name: "Admin",
+      role: "org_admin",
+      organization_id: "org_default_1",
       status: "active",
       created_at: now,
       updated_at: now,
     },
     {
       id: "usr_default_3",
-      email: "user@ugandahockey.org",
-      first_name: "Regular",
-      last_name: "User",
-      role: "user",
+      email: "official@ugandahockey.org",
+      first_name: "Officials",
+      last_name: "Manager",
+      role: "officials_manager",
+      organization_id: "org_default_1",
       status: "active",
       created_at: now,
       updated_at: now,

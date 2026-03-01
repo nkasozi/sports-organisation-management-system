@@ -7,6 +7,7 @@ import {
 describe("PlayerTeamMembership", () => {
   it("requires player_id and team_id", () => {
     const errors = validate_player_team_membership_input({
+      organization_id: "org_1",
       player_id: "",
       team_id: "",
       start_date: "2025-01-01",
@@ -20,6 +21,7 @@ describe("PlayerTeamMembership", () => {
 
   it("validates jersey_number range when provided", () => {
     const too_low_errors = validate_player_team_membership_input({
+      organization_id: "org_1",
       player_id: "player_1",
       team_id: "team_1",
       start_date: "2025-01-01",
@@ -28,6 +30,7 @@ describe("PlayerTeamMembership", () => {
     });
 
     const too_high_errors = validate_player_team_membership_input({
+      organization_id: "org_1",
       player_id: "player_1",
       team_id: "team_1",
       start_date: "2025-01-01",

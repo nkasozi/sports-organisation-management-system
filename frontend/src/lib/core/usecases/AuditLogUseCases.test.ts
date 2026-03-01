@@ -46,6 +46,7 @@ function create_mock_audit_log(overrides: Partial<AuditLog> = {}): AuditLog {
     user_id: "user_456",
     user_email: "admin@example.com",
     user_display_name: "Admin User",
+    organization_id: "org_1",
     changes: [],
     timestamp: "2024-01-01T00:00:00Z",
     ip_address: "127.0.0.1",
@@ -96,6 +97,7 @@ describe("AuditLogUseCases", () => {
       user_id: "user_456",
       user_email: "admin@example.com",
       user_display_name: "Admin User",
+      organization_id: "org_1",
       changes: [],
     };
   }

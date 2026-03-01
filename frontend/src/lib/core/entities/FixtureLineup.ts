@@ -16,6 +16,7 @@ export interface LineupPlayer {
 }
 
 export interface FixtureLineup extends BaseEntity {
+  organization_id: string;
   fixture_id: string;
   team_id: string;
   selected_players: LineupPlayer[];
@@ -41,10 +42,12 @@ export type UpdateFixtureLineupInput = Partial<
 >;
 
 export function create_empty_fixture_lineup_input(
+  organization_id: string = "",
   fixture_id: string = "",
   team_id: string = "",
 ): CreateFixtureLineupInput {
   return {
+    organization_id,
     fixture_id,
     team_id,
     selected_players: [],
@@ -89,6 +92,10 @@ export function validate_fixture_lineup_input(
   max_players: number,
 ): { is_valid: boolean; errors: Record<string, string> } {
   const errors: Record<string, string> = {};
+
+  if ("organization_id" in input && !input.organization_id?.trim()) {
+    errors.organization_id = "Organization is required";
+  }
 
   if ("fixture_id" in input && !input.fixture_id?.trim()) {
     errors.fixture_id = "Fixture is required";

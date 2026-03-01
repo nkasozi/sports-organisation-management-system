@@ -41,6 +41,7 @@ function create_test_lineup(
 ): FixtureLineup {
   return {
     id: "lineup-123",
+    organization_id: "org-123",
     fixture_id: "fixture-123",
     team_id: "team-123",
     selected_players: [create_test_lineup_player()],
@@ -58,6 +59,7 @@ function create_valid_input(
   overrides: Partial<CreateFixtureLineupInput> = {},
 ): CreateFixtureLineupInput {
   return {
+    organization_id: "org-123",
     fixture_id: "fixture-123",
     team_id: "team-123",
     selected_players: [create_test_lineup_player({ id: "player-456" })],

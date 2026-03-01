@@ -39,6 +39,7 @@ export class InBrowserVenueRepository
     return {
       id,
       ...timestamps,
+      organization_id: input.organization_id,
       name: input.name,
       short_name: input.short_name,
       address: input.address,
@@ -128,6 +129,7 @@ export function create_default_venues(): Venue[] {
   return [
     {
       id: "venue_default_1",
+      organization_id: "org_default_1",
       name: "Lugogo Hockey Stadium",
       short_name: "Lugogo",
       address: "Plot 2-12 Lugogo Bypass",
@@ -147,6 +149,7 @@ export function create_default_venues(): Venue[] {
     },
     {
       id: "venue_default_2",
+      organization_id: "org_default_1",
       name: "Makerere University Hockey Pitch",
       short_name: "Makerere",
       address: "University Road, Makerere Hill",
@@ -166,6 +169,7 @@ export function create_default_venues(): Venue[] {
     },
     {
       id: "venue_default_3",
+      organization_id: "org_default_1",
       name: "Kyadondo Rugby Club",
       short_name: "Kyadondo",
       address: "Kira Road, Kamwokya",

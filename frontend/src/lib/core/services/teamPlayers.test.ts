@@ -39,6 +39,7 @@ describe("teamPlayers", () => {
     const memberships: PlayerTeamMembership[] = [
       {
         id: "m1",
+        organization_id: "org_1",
         created_at: "",
         updated_at: "",
         player_id: "p1",
@@ -49,6 +50,7 @@ describe("teamPlayers", () => {
       },
       {
         id: "m2",
+        organization_id: "org_1",
         created_at: "",
         updated_at: "",
         player_id: "p1",
@@ -67,6 +69,7 @@ describe("teamPlayers", () => {
     const memberships: PlayerTeamMembership[] = [
       {
         id: "m1",
+        organization_id: "org_1",
         created_at: "",
         updated_at: "",
         player_id: "p1",
@@ -77,6 +80,7 @@ describe("teamPlayers", () => {
       },
       {
         id: "m2",
+        organization_id: "org_1",
         created_at: "",
         updated_at: "",
         player_id: "p1",
@@ -104,6 +108,7 @@ describe("teamPlayers", () => {
     const memberships: PlayerTeamMembership[] = [
       {
         id: "m1",
+        organization_id: "org_1",
         created_at: "",
         updated_at: "",
         player_id: "p1",

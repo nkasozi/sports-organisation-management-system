@@ -604,6 +604,7 @@
     );
 
     const lineup_input: CreateFixtureLineupInput = {
+      organization_id: fixture.organization_id,
       fixture_id: fixture.id,
       team_id,
       selected_players,

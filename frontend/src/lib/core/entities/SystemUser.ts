@@ -1,6 +1,7 @@
 import type { BaseEntity, EntityStatus } from "./BaseEntity";
+import type { UserRole } from "../interfaces/ports/AuthenticationPort";
 
-export type SystemUserRole = "super_admin" | "admin" | "manager" | "user";
+export type SystemUserRole = UserRole;
 
 export interface SystemUser extends BaseEntity {
   email: string;
@@ -8,6 +9,10 @@ export interface SystemUser extends BaseEntity {
   last_name: string;
   role: SystemUserRole;
   status: EntityStatus;
+  organization_id: string;
+  team_id?: string;
+  player_id?: string;
+  official_id?: string;
   profile_picture_base64?: string;
 }
 
@@ -16,7 +21,11 @@ export interface CreateSystemUserInput {
   first_name: string;
   last_name: string;
   role: SystemUserRole;
+  organization_id: string;
   status?: EntityStatus;
+  team_id?: string;
+  player_id?: string;
+  official_id?: string;
   profile_picture_base64?: string;
 }
 
@@ -25,7 +34,11 @@ export interface UpdateSystemUserInput {
   first_name?: string;
   last_name?: string;
   role?: SystemUserRole;
+  organization_id?: string;
   status?: EntityStatus;
+  team_id?: string;
+  player_id?: string;
+  official_id?: string;
   profile_picture_base64?: string;
 }
 

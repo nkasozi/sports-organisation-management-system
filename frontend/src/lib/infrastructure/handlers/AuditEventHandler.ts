@@ -37,6 +37,7 @@ async function handle_entity_created(
     user_id: payload.user_context?.user_id ?? "system",
     user_email: payload.user_context?.user_email ?? "system@sportsorg.local",
     user_display_name: payload.user_context?.user_display_name ?? "System",
+    organization_id: payload.user_context?.organization_id ?? "*",
     ip_address: "127.0.0.1",
     user_agent: "SportsOrgApp/1.0",
   };
@@ -67,6 +68,7 @@ async function handle_entity_updated(
     user_id: payload.user_context?.user_id ?? "system",
     user_email: payload.user_context?.user_email ?? "system@sportsorg.local",
     user_display_name: payload.user_context?.user_display_name ?? "System",
+    organization_id: payload.user_context?.organization_id ?? "*",
     ip_address: "127.0.0.1",
     user_agent: "SportsOrgApp/1.0",
   };
@@ -89,6 +91,7 @@ async function handle_entity_deleted(
     user_id: payload.user_context?.user_id ?? "system",
     user_email: payload.user_context?.user_email ?? "system@sportsorg.local",
     user_display_name: payload.user_context?.user_display_name ?? "System",
+    organization_id: payload.user_context?.organization_id ?? "*",
     ip_address: "127.0.0.1",
     user_agent: "SportsOrgApp/1.0",
   };

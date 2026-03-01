@@ -1,3 +1,5 @@
+import type { SystemUser } from "../../entities/SystemUser";
+
 export type UserRole =
   | "super_admin"
   | "org_admin"
@@ -108,6 +110,7 @@ export interface AuthVerificationResult {
   is_valid: boolean;
   error_message?: string;
   payload?: AuthTokenPayload;
+  system_user?: SystemUser;
 }
 
 export interface AuthenticationPort {

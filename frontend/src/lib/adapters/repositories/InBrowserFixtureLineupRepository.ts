@@ -45,6 +45,7 @@ export class InBrowserFixtureLineupRepository
     return {
       id,
       ...timestamps,
+      organization_id: input.organization_id,
       fixture_id: input.fixture_id,
       team_id: input.team_id,
       selected_players: input.selected_players || [],

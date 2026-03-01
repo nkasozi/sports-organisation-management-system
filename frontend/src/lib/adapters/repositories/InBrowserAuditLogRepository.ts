@@ -19,6 +19,7 @@ export interface AuditLogFilter {
   entity_id?: string;
   user_id?: string;
   action?: string;
+  organization_id?: string;
   from_date?: string;
   to_date?: string;
 }
@@ -55,6 +56,7 @@ export class InBrowserAuditLogRepository extends InBrowserBaseRepository<
       user_id: input.user_id,
       user_email: input.user_email,
       user_display_name: input.user_display_name,
+      organization_id: input.organization_id,
       changes: input.changes || [],
       timestamp,
       ip_address: input.ip_address || "",
@@ -100,6 +102,12 @@ export class InBrowserAuditLogRepository extends InBrowserBaseRepository<
       if (filter.action) {
         filtered_entities = filtered_entities.filter(
           (log) => log.action === filter.action,
+        );
+      }
+
+      if (filter.organization_id) {
+        filtered_entities = filtered_entities.filter(
+          (log) => log.organization_id === filter.organization_id,
         );
       }
 
@@ -158,6 +166,7 @@ export function create_default_audit_logs(): AuditLog[] {
       user_id: "usr_system",
       user_email: "system@sportsorg.local",
       user_display_name: "System",
+      organization_id: "*",
       changes: [],
       timestamp: now,
       ip_address: "127.0.0.1",
@@ -174,6 +183,7 @@ export function create_default_audit_logs(): AuditLog[] {
       user_id: "usr_system",
       user_email: "system@sportsorg.local",
       user_display_name: "System",
+      organization_id: "*",
       changes: [],
       timestamp: now,
       ip_address: "127.0.0.1",
@@ -190,6 +200,7 @@ export function create_default_audit_logs(): AuditLog[] {
       user_id: "usr_admin_1",
       user_email: "admin@ugandahockey.org",
       user_display_name: "Admin User",
+      organization_id: "org_default_1",
       changes: [],
       timestamp: now,
       ip_address: "192.168.1.100",

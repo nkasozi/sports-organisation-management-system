@@ -53,6 +53,10 @@ import {
   InBrowserJerseyColorRepository,
 } from "../repositories/InBrowserJerseyColorRepository";
 import {
+  get_identification_type_repository,
+  InBrowserIdentificationTypeRepository,
+} from "../repositories/InBrowserIdentificationTypeRepository";
+import {
   get_player_profile_repository,
   InBrowserPlayerProfileRepository,
 } from "../repositories/InBrowserPlayerProfileRepository";
@@ -82,6 +86,7 @@ import {
   create_seed_team_profiles,
   create_seed_team_profile_links,
   create_seed_system_users,
+  create_seed_identification_types,
   SEED_ORGANIZATION_IDS,
   SEED_SYSTEM_USER_IDS,
 } from "../../infrastructure/utils/SeedDataGenerator";
@@ -97,7 +102,7 @@ import {
 import type { SystemUser } from "../../core/entities/SystemUser";
 import { current_user_store } from "../../presentation/stores/currentUser";
 
-const SEEDING_COMPLETE_KEY = "sports_org_seeding_complete_v9";
+const SEEDING_COMPLETE_KEY = "sports_org_seeding_complete_v10";
 
 export function is_seeding_already_complete(): boolean {
   if (typeof window === "undefined") return true;
@@ -154,6 +159,7 @@ async function load_and_set_current_user(): Promise<SystemUser | null> {
       user_id: admin_result.data.id,
       user_email: admin_result.data.email,
       user_display_name: `${admin_result.data.first_name} ${admin_result.data.last_name}`,
+      organization_id: admin_result.data.organization_id,
     });
 
     current_user_store.set_user(admin_result.data);
@@ -176,6 +182,7 @@ async function load_and_set_current_user(): Promise<SystemUser | null> {
     user_id: super_admin.id,
     user_email: super_admin.email,
     user_display_name: `${super_admin.first_name} ${super_admin.last_name}`,
+    organization_id: super_admin.organization_id,
   });
 
   current_user_store.set_user(super_admin);
@@ -235,6 +242,7 @@ export async function seed_all_data_if_needed(): Promise<boolean> {
     user_id: super_admin.id,
     user_email: super_admin.email,
     user_display_name: `${super_admin.first_name} ${super_admin.last_name}`,
+    organization_id: super_admin.organization_id,
   });
 
   current_user_store.set_user(super_admin);
@@ -366,7 +374,9 @@ export async function seed_all_data_if_needed(): Promise<boolean> {
     (p) => `${p.first_name} ${p.last_name}`,
   );
 
-  const seed_venues = create_seed_venues();
+  const seed_venues = create_seed_venues(
+    SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
+  );
   await venue_repository.seed_with_data(seed_venues);
   emit_entity_created_events("venue", seed_venues, (v) => v.name);
 
@@ -460,6 +470,18 @@ export async function seed_all_data_if_needed(): Promise<boolean> {
     "jersey_color",
     seed_jersey_colors,
     (j) => `${j.nickname} (${j.main_color})`,
+  );
+
+  const identification_type_repository =
+    get_identification_type_repository() as InBrowserIdentificationTypeRepository;
+  const seed_identification_types = create_seed_identification_types();
+  await identification_type_repository.seed_with_data(
+    seed_identification_types,
+  );
+  emit_entity_created_events(
+    "identificationtype",
+    seed_identification_types,
+    (t) => t.name,
   );
 
   const player_profile_repository =

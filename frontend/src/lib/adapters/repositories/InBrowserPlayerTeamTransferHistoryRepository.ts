@@ -43,6 +43,7 @@ export class InBrowserPlayerTeamTransferHistoryRepository
     return {
       id,
       ...timestamps,
+      organization_id: input.organization_id,
       player_id: input.player_id,
       from_team_id: input.from_team_id,
       to_team_id: input.to_team_id,

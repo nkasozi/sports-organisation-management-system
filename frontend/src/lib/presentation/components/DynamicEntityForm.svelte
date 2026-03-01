@@ -503,6 +503,31 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
       return;
     }
 
+    if (filter_config.filter_type === "competitions_from_organization") {
+      await load_competitions_from_organization(field, dependency_value);
+      return;
+    }
+
+    if (filter_config.filter_type === "fixtures_from_organization") {
+      await load_fixtures_from_organization(field, dependency_value);
+      return;
+    }
+
+    if (filter_config.filter_type === "teams_from_organization") {
+      await load_teams_from_organization(field, dependency_value);
+      return;
+    }
+
+    if (filter_config.filter_type === "players_from_organization") {
+      await load_players_from_organization(field, dependency_value);
+      return;
+    }
+
+    if (filter_config.filter_type === "officials_from_organization") {
+      await load_officials_from_organization(field, dependency_value);
+      return;
+    }
+
     await load_filtered_jersey_options_internal(field, dependency_value);
   }
 
@@ -588,6 +613,299 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
     foreign_key_options = {
       ...foreign_key_options,
       [field.field_name]: final_teams,
+    };
+
+    filtered_fields_loading = {
+      ...filtered_fields_loading,
+      [field.field_name]: false,
+    };
+  }
+
+  async function load_competitions_from_organization(
+    field: FieldMetadata,
+    organization_id: string,
+  ): Promise<void> {
+    const competition_use_cases = get_use_cases_for_entity_type("competition");
+    if (!competition_use_cases) {
+      console.warn("[FILTERED_FK] Missing competition use cases");
+      foreign_key_options[field.field_name] = [];
+      filtered_fields_loading = {
+        ...filtered_fields_loading,
+        [field.field_name]: false,
+      };
+      return;
+    }
+
+    const competitions_result = await competition_use_cases.list();
+    if (!competitions_result.success) {
+      console.warn(
+        "[FILTERED_FK] Failed to load competitions:",
+        organization_id,
+      );
+      foreign_key_options[field.field_name] = [];
+      filtered_fields_loading = {
+        ...filtered_fields_loading,
+        [field.field_name]: false,
+      };
+      return;
+    }
+
+    const all_competitions_data = competitions_result.data as unknown;
+    const all_competitions: BaseEntity[] = Array.isArray(all_competitions_data)
+      ? (all_competitions_data as BaseEntity[])
+      : Array.isArray((all_competitions_data as { items?: unknown })?.items)
+        ? ((all_competitions_data as { items: unknown[] })
+            .items as unknown as BaseEntity[])
+        : [];
+
+    const filtered_competitions = all_competitions.filter(
+      (comp) =>
+        (comp as unknown as { organization_id: string }).organization_id ===
+        organization_id,
+    );
+
+    console.debug("[FILTERED_FK] Loaded organization competitions", {
+      field: field.field_name,
+      organization_id,
+      total_competitions: all_competitions.length,
+      filtered_count: filtered_competitions.length,
+    });
+
+    foreign_key_options = {
+      ...foreign_key_options,
+      [field.field_name]: filtered_competitions,
+    };
+
+    filtered_fields_loading = {
+      ...filtered_fields_loading,
+      [field.field_name]: false,
+    };
+  }
+
+  async function load_fixtures_from_organization(
+    field: FieldMetadata,
+    organization_id: string,
+  ): Promise<void> {
+    const fixture_use_cases = get_use_cases_for_entity_type("fixture");
+    if (!fixture_use_cases) {
+      console.warn("[FILTERED_FK] Missing fixture use cases");
+      foreign_key_options[field.field_name] = [];
+      filtered_fields_loading = {
+        ...filtered_fields_loading,
+        [field.field_name]: false,
+      };
+      return;
+    }
+
+    const fixtures_result = await fixture_use_cases.list();
+    if (!fixtures_result.success) {
+      console.warn("[FILTERED_FK] Failed to load fixtures:", organization_id);
+      foreign_key_options[field.field_name] = [];
+      filtered_fields_loading = {
+        ...filtered_fields_loading,
+        [field.field_name]: false,
+      };
+      return;
+    }
+
+    const all_fixtures_data = fixtures_result.data as unknown;
+    const all_fixtures: BaseEntity[] = Array.isArray(all_fixtures_data)
+      ? (all_fixtures_data as BaseEntity[])
+      : Array.isArray((all_fixtures_data as { items?: unknown })?.items)
+        ? ((all_fixtures_data as { items: unknown[] })
+            .items as unknown as BaseEntity[])
+        : [];
+
+    const filtered_fixtures = all_fixtures.filter(
+      (fixture) =>
+        (fixture as unknown as { organization_id: string }).organization_id ===
+        organization_id,
+    );
+
+    console.debug("[FILTERED_FK] Loaded organization fixtures", {
+      field: field.field_name,
+      organization_id,
+      total_fixtures: all_fixtures.length,
+      filtered_count: filtered_fixtures.length,
+    });
+
+    foreign_key_options = {
+      ...foreign_key_options,
+      [field.field_name]: filtered_fixtures,
+    };
+
+    filtered_fields_loading = {
+      ...filtered_fields_loading,
+      [field.field_name]: false,
+    };
+  }
+
+  async function load_teams_from_organization(
+    field: FieldMetadata,
+    organization_id: string,
+  ): Promise<void> {
+    const team_use_cases = get_use_cases_for_entity_type("team");
+    if (!team_use_cases) {
+      console.warn("[FILTERED_FK] Missing team use cases");
+      foreign_key_options[field.field_name] = [];
+      filtered_fields_loading = {
+        ...filtered_fields_loading,
+        [field.field_name]: false,
+      };
+      return;
+    }
+
+    const teams_result = await team_use_cases.list();
+    if (!teams_result.success) {
+      console.warn("[FILTERED_FK] Failed to load teams:", organization_id);
+      foreign_key_options[field.field_name] = [];
+      filtered_fields_loading = {
+        ...filtered_fields_loading,
+        [field.field_name]: false,
+      };
+      return;
+    }
+
+    const all_teams_data = teams_result.data as unknown;
+    const all_teams: BaseEntity[] = Array.isArray(all_teams_data)
+      ? (all_teams_data as BaseEntity[])
+      : Array.isArray((all_teams_data as { items?: unknown })?.items)
+        ? ((all_teams_data as { items: unknown[] })
+            .items as unknown as BaseEntity[])
+        : [];
+
+    const filtered_teams = all_teams.filter(
+      (team) =>
+        (team as unknown as { organization_id: string }).organization_id ===
+        organization_id,
+    );
+
+    console.debug("[FILTERED_FK] Loaded organization teams", {
+      field: field.field_name,
+      organization_id,
+      total_teams: all_teams.length,
+      filtered_count: filtered_teams.length,
+    });
+
+    foreign_key_options = {
+      ...foreign_key_options,
+      [field.field_name]: filtered_teams,
+    };
+
+    filtered_fields_loading = {
+      ...filtered_fields_loading,
+      [field.field_name]: false,
+    };
+  }
+
+  async function load_players_from_organization(
+    field: FieldMetadata,
+    organization_id: string,
+  ): Promise<void> {
+    const player_use_cases = get_use_cases_for_entity_type("player");
+    if (!player_use_cases) {
+      console.warn("[FILTERED_FK] Missing player use cases");
+      foreign_key_options[field.field_name] = [];
+      filtered_fields_loading = {
+        ...filtered_fields_loading,
+        [field.field_name]: false,
+      };
+      return;
+    }
+
+    const players_result = await player_use_cases.list();
+    if (!players_result.success) {
+      console.warn("[FILTERED_FK] Failed to load players:", organization_id);
+      foreign_key_options[field.field_name] = [];
+      filtered_fields_loading = {
+        ...filtered_fields_loading,
+        [field.field_name]: false,
+      };
+      return;
+    }
+
+    const all_players_data = players_result.data as unknown;
+    const all_players: BaseEntity[] = Array.isArray(all_players_data)
+      ? (all_players_data as BaseEntity[])
+      : Array.isArray((all_players_data as { items?: unknown })?.items)
+        ? ((all_players_data as { items: unknown[] })
+            .items as unknown as BaseEntity[])
+        : [];
+
+    const filtered_players = all_players.filter(
+      (player) =>
+        (player as unknown as { organization_id: string }).organization_id ===
+        organization_id,
+    );
+
+    console.debug("[FILTERED_FK] Loaded organization players", {
+      field: field.field_name,
+      organization_id,
+      total_players: all_players.length,
+      filtered_count: filtered_players.length,
+    });
+
+    foreign_key_options = {
+      ...foreign_key_options,
+      [field.field_name]: filtered_players,
+    };
+
+    filtered_fields_loading = {
+      ...filtered_fields_loading,
+      [field.field_name]: false,
+    };
+  }
+
+  async function load_officials_from_organization(
+    field: FieldMetadata,
+    organization_id: string,
+  ): Promise<void> {
+    const official_use_cases = get_use_cases_for_entity_type("official");
+    if (!official_use_cases) {
+      console.warn("[FILTERED_FK] Missing official use cases");
+      foreign_key_options[field.field_name] = [];
+      filtered_fields_loading = {
+        ...filtered_fields_loading,
+        [field.field_name]: false,
+      };
+      return;
+    }
+
+    const officials_result = await official_use_cases.list();
+    if (!officials_result.success) {
+      console.warn("[FILTERED_FK] Failed to load officials:", organization_id);
+      foreign_key_options[field.field_name] = [];
+      filtered_fields_loading = {
+        ...filtered_fields_loading,
+        [field.field_name]: false,
+      };
+      return;
+    }
+
+    const all_officials_data = officials_result.data as unknown;
+    const all_officials: BaseEntity[] = Array.isArray(all_officials_data)
+      ? (all_officials_data as BaseEntity[])
+      : Array.isArray((all_officials_data as { items?: unknown })?.items)
+        ? ((all_officials_data as { items: unknown[] })
+            .items as unknown as BaseEntity[])
+        : [];
+
+    const filtered_officials = all_officials.filter(
+      (official) =>
+        (official as unknown as { organization_id: string }).organization_id ===
+        organization_id,
+    );
+
+    console.debug("[FILTERED_FK] Loaded organization officials", {
+      field: field.field_name,
+      organization_id,
+      total_officials: all_officials.length,
+      filtered_count: filtered_officials.length,
+    });
+
+    foreign_key_options = {
+      ...foreign_key_options,
+      [field.field_name]: filtered_officials,
     };
 
     filtered_fields_loading = {

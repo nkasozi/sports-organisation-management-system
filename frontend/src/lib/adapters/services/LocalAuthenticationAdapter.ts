@@ -7,6 +7,7 @@ import type {
   Permission,
 } from "$lib/core/interfaces/ports/AuthenticationPort";
 import { ROLE_PERMISSIONS } from "$lib/core/interfaces/ports/AuthenticationPort";
+import type { InBrowserSystemUserRepository } from "$lib/adapters/repositories/InBrowserSystemUserRepository";
 
 const SECRET_KEY = "sports-org-management-system-secret-key-2024-do-not-share";
 const TOKEN_EXPIRY_DAYS = 365;
@@ -65,6 +66,12 @@ function create_token_header(): string {
 }
 
 export class LocalAuthenticationAdapter implements AuthenticationPort {
+  private system_user_repository: InBrowserSystemUserRepository;
+
+  constructor(system_user_repository: InBrowserSystemUserRepository) {
+    this.system_user_repository = system_user_repository;
+  }
+
   async generate_token(
     payload_input: Omit<AuthTokenPayload, "issued_at" | "expires_at">,
   ): Promise<AuthToken> {
@@ -134,11 +141,24 @@ export class LocalAuthenticationAdapter implements AuthenticationPort {
       return { is_valid: false, error_message: "Token has expired" };
     }
 
+    const user_result = await this.system_user_repository.find_by_email(
+      payload.email,
+    );
+
+    if (!user_result.success || user_result.data.items.length === 0) {
+      console.warn(
+        `[LocalAuthenticationAdapter] User not found for email: ${payload.email}`,
+      );
+      return { is_valid: false, error_message: "User not found" };
+    }
+
+    const system_user = user_result.data.items[0];
+
     console.log(
       `[LocalAuthenticationAdapter] Token verified successfully for user: ${payload.email}`,
     );
 
-    return { is_valid: true, payload };
+    return { is_valid: true, payload, system_user };
   }
 
   decode_token(raw_token: string): AuthTokenPayload | null {
@@ -178,9 +198,13 @@ export class LocalAuthenticationAdapter implements AuthenticationPort {
 
 let authentication_adapter_instance: LocalAuthenticationAdapter | null = null;
 
-export function get_authentication_adapter(): LocalAuthenticationAdapter {
+export function get_authentication_adapter(
+  system_user_repository: InBrowserSystemUserRepository,
+): LocalAuthenticationAdapter {
   if (!authentication_adapter_instance) {
-    authentication_adapter_instance = new LocalAuthenticationAdapter();
+    authentication_adapter_instance = new LocalAuthenticationAdapter(
+      system_user_repository,
+    );
   }
   return authentication_adapter_instance;
 }

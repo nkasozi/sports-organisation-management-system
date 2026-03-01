@@ -62,6 +62,7 @@ export interface JerseyColorAssignment {
 }
 
 export interface Fixture extends BaseEntity {
+  organization_id: string;
   competition_id: string;
   round_number: number;
   round_name: string;
@@ -102,12 +103,14 @@ export type UpdateFixtureInput = Partial<
 >;
 
 export function create_empty_fixture_input(
+  organization_id: string = "",
   competition_id: string = "",
 ): CreateFixtureInput {
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
 
   return {
+    organization_id,
     competition_id,
     round_number: 1,
     round_name: "Round 1",
@@ -230,6 +233,7 @@ export function validate_fixture_officials(
 }
 
 export interface FixtureGenerationConfig {
+  organization_id: string;
   competition_id: string;
   team_ids: string[];
   start_date: string;
@@ -281,6 +285,7 @@ export function generate_round_robin_fixtures(
           : "";
 
       fixtures.push({
+        organization_id: config.organization_id,
         competition_id: config.competition_id,
         round_number,
         round_name: `Round ${round_number}`,
@@ -461,6 +466,7 @@ export function get_event_label(event_type: GameEventType): string {
     own_goal: "Own Goal",
     penalty_scored: "Penalty Scored",
     penalty_missed: "Penalty Missed",
+    green_card: "Green Card",
     yellow_card: "Yellow Card",
     red_card: "Red Card",
     second_yellow: "Second Yellow Card",
@@ -483,6 +489,7 @@ export function get_event_icon(event_type: GameEventType): string {
     own_goal: "🥅",
     penalty_scored: "🎯",
     penalty_missed: "❌",
+    green_card: "🟩",
     yellow_card: "🟨",
     red_card: "🟥",
     second_yellow: "🟨",

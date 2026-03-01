@@ -61,6 +61,11 @@ export interface ForeignKeyFilterConfig {
     | "official_jersey_from_competition"
     | "holder_type_filter"
     | "teams_from_competition"
+    | "competitions_from_organization"
+    | "fixtures_from_organization"
+    | "teams_from_organization"
+    | "players_from_organization"
+    | "officials_from_organization"
     | "exclude_selected_field";
   holder_type?: string;
   team_side?: "home" | "away";

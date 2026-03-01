@@ -6,6 +6,7 @@ import type {
 } from "../../entities/TeamStaff";
 
 export interface TeamStaffFilter {
+  organization_id?: string;
   name_contains?: string;
   team_id?: string;
   role_id?: string;

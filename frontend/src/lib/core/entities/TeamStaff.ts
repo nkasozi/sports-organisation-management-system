@@ -9,6 +9,7 @@ export interface TeamStaff extends BaseEntity {
   email: string;
   phone: string;
   date_of_birth: string;
+  organization_id: string;
   team_id: string;
   role_id: string;
   nationality: string;
@@ -48,6 +49,7 @@ export function get_team_staff_initials(staff: TeamStaff): string {
 }
 
 export function create_empty_team_staff_input(
+  organization_id: string = "",
   team_id: string = "",
   role_id: string = "",
 ): CreateTeamStaffInput {
@@ -57,6 +59,7 @@ export function create_empty_team_staff_input(
     email: "",
     phone: "",
     date_of_birth: "",
+    organization_id,
     team_id,
     role_id,
     nationality: "",

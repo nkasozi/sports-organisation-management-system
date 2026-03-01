@@ -47,6 +47,7 @@ export class InBrowserFixtureRepository
     return {
       id,
       ...timestamps,
+      organization_id: input.organization_id,
       competition_id: input.competition_id,
       round_number: input.round_number,
       round_name: input.round_name,

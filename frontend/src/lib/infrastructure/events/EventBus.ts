@@ -14,6 +14,7 @@ interface EntityEventPayload {
     user_id: string;
     user_email: string;
     user_display_name: string;
+    organization_id: string;
   };
 }
 
@@ -142,6 +143,7 @@ interface UserContext {
   user_id: string;
   user_email: string;
   user_display_name: string;
+  organization_id: string;
 }
 
 let current_user_context: UserContext | undefined;

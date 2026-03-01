@@ -1,6 +1,7 @@
 import type { BaseEntity, EntityStatus } from "./BaseEntity";
 
 export interface Venue extends BaseEntity {
+  organization_id: string;
   name: string;
   short_name: string;
   address: string;
@@ -25,6 +26,7 @@ export const DEFAULT_VENUE_IMAGE =
 
 export function create_empty_venue_input(): CreateVenueInput {
   return {
+    organization_id: "",
     name: "",
     short_name: "",
     address: "",

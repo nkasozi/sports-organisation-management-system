@@ -3,6 +3,7 @@ import type { BaseEntity } from "./BaseEntity";
 export type PlayerTeamMembershipStatus = "active" | "inactive" | "ended";
 
 export interface PlayerTeamMembership extends BaseEntity {
+  organization_id: string;
   player_id: string;
   team_id: string;
   start_date: string;
@@ -18,10 +19,12 @@ export type UpdatePlayerTeamMembershipInput =
   Partial<CreatePlayerTeamMembershipInput>;
 
 export function create_empty_player_team_membership_input(
+  organization_id: string = "",
   player_id: string = "",
   team_id: string = "",
 ): CreatePlayerTeamMembershipInput {
   return {
+    organization_id,
     player_id,
     team_id,
     start_date: new Date().toISOString().split("T")[0],
@@ -34,6 +37,10 @@ export function validate_player_team_membership_input(
   input: CreatePlayerTeamMembershipInput,
 ): string[] {
   const validation_errors: string[] = [];
+
+  if (!input.organization_id || input.organization_id.trim().length === 0) {
+    validation_errors.push("Organization is required");
+  }
 
   if (!input.player_id || input.player_id.trim().length === 0) {
     validation_errors.push("Player is required");

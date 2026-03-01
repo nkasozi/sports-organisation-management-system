@@ -39,7 +39,8 @@ function create_mock_user(overrides: Partial<SystemUser> = {}): SystemUser {
     email: "test@example.com",
     first_name: "John",
     last_name: "Doe",
-    role: "user",
+    role: "player",
+    organization_id: "org_1",
     status: "active",
     created_at: "2024-01-01T00:00:00Z",
     updated_at: "2024-01-01T00:00:00Z",
@@ -54,7 +55,8 @@ function create_valid_user_input(
     email: "test@example.com",
     first_name: "John",
     last_name: "Doe",
-    role: "user",
+    role: "player",
+    organization_id: "org_1",
     ...overrides,
   };
 }
@@ -105,7 +107,7 @@ describe("SystemUserUseCases", () => {
       expect(result.data?.email).toBe("test@example.com");
       expect(result.data?.first_name).toBe("John");
       expect(result.data?.last_name).toBe("Doe");
-      expect(result.data?.role).toBe("user");
+      expect(result.data?.role).toBe("player");
     });
 
     it("should reject creation with missing email", async () => {
@@ -197,16 +199,16 @@ describe("SystemUserUseCases", () => {
     });
 
     it("should filter users by role", async () => {
-      const admin_user = create_mock_user({ id: "user_1", role: "admin" });
+      const admin_user = create_mock_user({ id: "user_1", role: "org_admin" });
       vi.mocked(mock_repository.find_all).mockResolvedValue(
         create_paginated_result([admin_user]),
       );
 
-      const result = await use_cases.list({ role: "admin" });
+      const result = await use_cases.list({ role: "org_admin" });
 
       expect(result.success).toBe(true);
       expect(result.data.length).toBe(1);
-      expect(result.data[0].role).toBe("admin");
+      expect(result.data[0].role).toBe("org_admin");
     });
   });
 
@@ -215,7 +217,7 @@ describe("SystemUserUseCases", () => {
       const existing_user = create_mock_user();
       const updated_user = create_mock_user({
         first_name: "Jane",
-        role: "admin",
+        role: "org_admin",
       });
       vi.mocked(mock_repository.find_by_id).mockResolvedValue(
         create_success_result(existing_user),
@@ -229,12 +231,12 @@ describe("SystemUserUseCases", () => {
 
       const result = await use_cases.update("user_1", {
         first_name: "Jane",
-        role: "admin",
+        role: "org_admin",
       });
 
       expect(result.success).toBe(true);
       expect(result.data?.first_name).toBe("Jane");
-      expect(result.data?.role).toBe("admin");
+      expect(result.data?.role).toBe("org_admin");
     });
 
     it("should reject update with duplicate email", async () => {

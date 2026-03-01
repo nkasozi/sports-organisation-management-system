@@ -4,6 +4,9 @@
   import { get_audit_log_use_cases } from "$lib/core/usecases/AuditLogUseCases";
   import type { AuditLog } from "$lib/core/entities/AuditLog";
   import { build_audit_log_summary } from "$lib/core/entities/AuditLog";
+  import { auth_store } from "$lib/presentation/stores/auth";
+  import { ANY_VALUE } from "$lib/core/interfaces/ports/AuthenticationPort";
+  import { get } from "svelte/store";
 
   let audit_logs: AuditLog[] = [];
   let is_loading = true;
@@ -18,6 +21,15 @@
 
   const audit_log_use_cases = get_audit_log_use_cases();
 
+  function get_organization_filter(): string | null {
+    const auth_state = get(auth_store);
+    const current_profile = auth_state.current_profile;
+    if (!current_profile) return null;
+    if (current_profile.role === "super_admin") return null;
+    if (current_profile.organization_id === ANY_VALUE) return null;
+    return current_profile.organization_id;
+  }
+
   async function load_audit_logs(): Promise<AuditLog[]> {
     if (!browser) return [];
 
@@ -28,6 +40,9 @@
     if (filter_entity_type) filter.entity_type = filter_entity_type;
     if (filter_action) filter.action = filter_action;
     if (filter_user) filter.user_id = filter_user;
+
+    const org_filter = get_organization_filter();
+    if (org_filter) filter.organization_id = org_filter;
 
     const result = await audit_log_use_cases.list(filter, {
       page_number: current_page,

@@ -7,6 +7,7 @@ import type {
 } from "../../entities/Venue";
 
 export interface VenueFilter {
+  organization_id?: string;
   name_contains?: string;
   city?: string;
   country?: string;

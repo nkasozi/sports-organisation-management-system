@@ -30,6 +30,7 @@ function create_mock_repository(): FixtureRepository {
 function create_test_fixture(overrides: Partial<Fixture> = {}): Fixture {
   return {
     id: "fixture-123",
+    organization_id: "org-123",
     competition_id: "comp-123",
     home_team_id: "team-1",
     away_team_id: "team-2",
@@ -57,6 +58,7 @@ function create_valid_input(
   overrides: Partial<CreateFixtureInput> = {},
 ): CreateFixtureInput {
   return {
+    organization_id: "org-123",
     competition_id: "comp-123",
     home_team_id: "team-1",
     away_team_id: "team-2",
@@ -279,6 +281,7 @@ describe("FixtureUseCases", () => {
       });
 
       const result = await use_cases.generate_fixtures({
+        organization_id: "org-123",
         competition_id: "comp-123",
         team_ids: ["team-1", "team-2", "team-3", "team-4"],
         start_date: "2024-06-01",
@@ -293,6 +296,7 @@ describe("FixtureUseCases", () => {
 
     it("should fail for missing competition_id", async () => {
       const result = await use_cases.generate_fixtures({
+        organization_id: "org-123",
         competition_id: "",
         team_ids: ["team-1", "team-2"],
         start_date: "2024-06-01",
@@ -307,6 +311,7 @@ describe("FixtureUseCases", () => {
 
     it("should fail for less than 2 teams", async () => {
       const result = await use_cases.generate_fixtures({
+        organization_id: "org-123",
         competition_id: "comp-123",
         team_ids: ["team-1"],
         start_date: "2024-06-01",
@@ -321,6 +326,7 @@ describe("FixtureUseCases", () => {
 
     it("should fail for missing start_date", async () => {
       const result = await use_cases.generate_fixtures({
+        organization_id: "org-123",
         competition_id: "comp-123",
         team_ids: ["team-1", "team-2"],
         start_date: "",

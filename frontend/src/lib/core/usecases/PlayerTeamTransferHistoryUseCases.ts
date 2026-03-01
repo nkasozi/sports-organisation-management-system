@@ -204,6 +204,7 @@ export function create_player_team_transfer_history_use_cases(
         );
 
         const create_membership_result = await membership_repository.create({
+          organization_id: transfer.organization_id,
           player_id: transfer.player_id,
           team_id: transfer.to_team_id,
           start_date: transfer.transfer_date,

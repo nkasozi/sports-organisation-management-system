@@ -218,6 +218,7 @@ export async function auto_generate_lineups_if_possible(
       );
 
       const lineup: CreateFixtureLineupInput = {
+        organization_id: fixture.organization_id,
         fixture_id: fixture.id,
         team_id,
         selected_players: previous_players,
@@ -371,6 +372,7 @@ export async function auto_generate_lineups_if_possible(
   );
 
   const lineup: CreateFixtureLineupInput = {
+    organization_id: fixture.organization_id,
     fixture_id: fixture.id,
     team_id,
     selected_players,

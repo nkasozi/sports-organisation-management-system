@@ -25,8 +25,12 @@ describe("FixtureDetailsSetup", () => {
     });
 
     it("accepts fixture_id parameter", () => {
-      const input = create_empty_fixture_details_setup_input("fixture_123");
+      const input = create_empty_fixture_details_setup_input(
+        "org_123",
+        "fixture_123",
+      );
 
+      expect(input.organization_id).toBe("org_123");
       expect(input.fixture_id).toBe("fixture_123");
     });
   });
@@ -42,6 +46,7 @@ describe("FixtureDetailsSetup", () => {
 
   describe("validate_fixture_details_setup_input", () => {
     const create_valid_input = (): CreateFixtureDetailsSetupInput => ({
+      organization_id: "org_123",
       fixture_id: "fixture_123",
       home_team_jersey_id: "jersey_home",
       away_team_jersey_id: "jersey_away",

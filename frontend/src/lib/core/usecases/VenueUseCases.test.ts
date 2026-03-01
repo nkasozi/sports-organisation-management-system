@@ -21,6 +21,7 @@ function create_mock_repository(): VenueRepository {
 function create_test_venue(overrides: Partial<Venue> = {}): Venue {
   return {
     id: "venue-123",
+    organization_id: "org-123",
     name: "National Stadium",
     short_name: "Nat Stadium",
     address: "123 Main Street",
@@ -45,6 +46,7 @@ function create_valid_input(
   overrides: Partial<CreateVenueInput> = {},
 ): CreateVenueInput {
   return {
+    organization_id: "org-123",
     name: "New Stadium",
     short_name: "New Stad",
     address: "456 Sports Ave",

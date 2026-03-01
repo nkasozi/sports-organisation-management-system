@@ -13,6 +13,7 @@ export interface ConflictAuditContext {
   user_id?: string;
   user_email?: string;
   user_display_name?: string;
+  organization_id?: string;
 }
 
 function build_conflict_changes(
@@ -53,6 +54,7 @@ export async function log_conflict_detected(
       user_id: context.user_id ?? "system",
       user_email: context.user_email ?? "system@sportsorg.local",
       user_display_name: context.user_display_name ?? "System",
+      organization_id: context.organization_id ?? "*",
       ip_address: "127.0.0.1",
       user_agent: "SportsOrgApp/SyncService",
     };
@@ -118,6 +120,7 @@ export async function log_conflict_resolution(
       user_id: context.user_id ?? "system",
       user_email: context.user_email ?? "system@sportsorg.local",
       user_display_name: context.user_display_name ?? "System",
+      organization_id: context.organization_id ?? "*",
       ip_address: "127.0.0.1",
       user_agent: "SportsOrgApp/SyncService",
     };

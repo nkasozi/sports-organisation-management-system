@@ -309,6 +309,7 @@ export function generate_player(_team_id: string | null): Player {
 }
 
 export function generate_team_staff(
+  organization_id: string,
   team_id: string,
   role_id: string,
 ): TeamStaff {
@@ -318,6 +319,7 @@ export function generate_team_staff(
 
   return {
     id: `staff_${generate_id()}`,
+    organization_id,
     first_name,
     last_name,
     email: generate_email(first_name, last_name),
@@ -444,6 +446,7 @@ export function generate_competition_team(
 }
 
 export function generate_fixture(
+  organization_id: string,
   competition_id: string,
   home_team_id: string,
   away_team_id: string,
@@ -489,6 +492,7 @@ export function generate_fixture(
 
   return {
     id: `fixture_${generate_id()}`,
+    organization_id,
     competition_id,
     round_number,
     round_name: `Round ${round_number}`,
@@ -631,13 +635,19 @@ export async function generate_field_hockey_dataset(
     const physio_role = team_staff_roles.find((r) => r.code === "PHYSIO");
 
     if (coach_role) {
-      team_staff.push(generate_team_staff(team.id, coach_role.id));
+      team_staff.push(
+        generate_team_staff(fh_organization.id, team.id, coach_role.id),
+      );
     }
     if (asst_coach_role) {
-      team_staff.push(generate_team_staff(team.id, asst_coach_role.id));
+      team_staff.push(
+        generate_team_staff(fh_organization.id, team.id, asst_coach_role.id),
+      );
     }
     if (physio_role && Math.random() > 0.3) {
-      team_staff.push(generate_team_staff(team.id, physio_role.id));
+      team_staff.push(
+        generate_team_staff(fh_organization.id, team.id, physio_role.id),
+      );
     }
   }
 
@@ -687,6 +697,7 @@ export async function generate_field_hockey_dataset(
       if (home_index < teams.length && away_index < teams.length) {
         fixtures.push(
           generate_fixture(
+            fh_organization.id,
             competition.id,
             teams[home_index].id,
             teams[away_index].id,
@@ -761,13 +772,19 @@ export async function generate_complete_fake_dataset(
     const physio_role = team_staff_roles.find((r) => r.code === "PHYSIO");
 
     if (coach_role) {
-      team_staff.push(generate_team_staff(team.id, coach_role.id));
+      team_staff.push(
+        generate_team_staff(organization.id, team.id, coach_role.id),
+      );
     }
     if (asst_coach_role) {
-      team_staff.push(generate_team_staff(team.id, asst_coach_role.id));
+      team_staff.push(
+        generate_team_staff(organization.id, team.id, asst_coach_role.id),
+      );
     }
     if (physio_role && Math.random() > 0.3) {
-      team_staff.push(generate_team_staff(team.id, physio_role.id));
+      team_staff.push(
+        generate_team_staff(organization.id, team.id, physio_role.id),
+      );
     }
   }
 
@@ -795,6 +812,7 @@ export async function generate_complete_fake_dataset(
       if (home_index < teams.length && away_index < teams.length) {
         fixtures.push(
           generate_fixture(
+            organization.id,
             competition.id,
             teams[home_index].id,
             teams[away_index].id,

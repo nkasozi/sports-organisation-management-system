@@ -6,6 +6,7 @@ export interface OfficialAssignment {
 }
 
 export interface FixtureDetailsSetup extends BaseEntity {
+  organization_id: string;
   fixture_id: string;
   home_team_jersey_id: string;
   away_team_jersey_id: string;
@@ -39,9 +40,11 @@ export function create_empty_official_assignment(): OfficialAssignment {
 }
 
 export function create_empty_fixture_details_setup_input(
+  organization_id: string = "",
   fixture_id: string = "",
 ): CreateFixtureDetailsSetupInput {
   return {
+    organization_id,
     fixture_id,
     home_team_jersey_id: "",
     away_team_jersey_id: "",
@@ -57,6 +60,10 @@ export function validate_fixture_details_setup_input(
   input: CreateFixtureDetailsSetupInput | UpdateFixtureDetailsSetupInput,
 ): { is_valid: boolean; errors: Record<string, string> } {
   const errors: Record<string, string> = {};
+
+  if ("organization_id" in input && !input.organization_id?.trim()) {
+    errors.organization_id = "Organization is required";
+  }
 
   if ("fixture_id" in input && !input.fixture_id?.trim()) {
     errors.fixture_id = "Fixture is required";

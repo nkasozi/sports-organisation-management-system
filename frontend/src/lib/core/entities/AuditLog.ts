@@ -21,6 +21,7 @@ export interface AuditLog extends BaseEntity {
   user_id: string;
   user_email: string;
   user_display_name: string;
+  organization_id: string;
   changes: FieldChange[];
   timestamp: string;
   ip_address: string;
@@ -35,6 +36,7 @@ export interface CreateAuditLogInput {
   user_id: string;
   user_email: string;
   user_display_name: string;
+  organization_id: string;
   changes: FieldChange[];
   ip_address?: string;
   user_agent?: string;
