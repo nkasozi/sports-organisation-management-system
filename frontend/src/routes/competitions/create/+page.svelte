@@ -21,6 +21,11 @@
   import Toast from "$lib/presentation/components/ui/Toast.svelte";
   import SportRulesCustomizer from "$lib/presentation/components/competition/SportRulesCustomizer.svelte";
   import InfoTooltip from "$lib/presentation/components/ui/InfoTooltip.svelte";
+  import { auth_store } from "$lib/presentation/stores/auth";
+  import {
+    is_scope_restricted,
+    type UserScopeProfile,
+  } from "$lib/core/interfaces/ports/DataAuthorizationPort";
   import type { SquadGenerationStrategy } from "$lib/core/entities/Competition";
 
   const competition_use_cases = get_competition_use_cases();
@@ -49,6 +54,14 @@
   let toast_visible: boolean = false;
   let toast_message: string = "";
   let toast_type: "success" | "error" | "info" = "info";
+
+  $: current_auth_profile = $auth_store.current_profile;
+  $: is_organization_restricted =
+    current_auth_profile !== null &&
+    is_scope_restricted(
+      current_auth_profile as UserScopeProfile,
+      "organization_id",
+    );
 
   const status_options = [
     { value: "upcoming", label: "Upcoming" },
@@ -105,6 +118,23 @@
 
   async function load_organizations(): Promise<void> {
     is_loading_organizations = true;
+
+    if (is_organization_restricted && current_auth_profile) {
+      const result = await organization_use_cases.get_by_id(
+        current_auth_profile.organization_id,
+      );
+      if (result.success && result.data) {
+        organizations = [result.data];
+        organization_options = [
+          { value: result.data.id, label: result.data.name },
+        ];
+        form_data.organization_id = result.data.id;
+        await trigger_organization_side_effects(result.data.id);
+      }
+      is_loading_organizations = false;
+      return;
+    }
+
     const result = await organization_use_cases.list(undefined, {
       page_number: 1,
       page_size: 100,
@@ -170,6 +200,12 @@
     event: CustomEvent<{ value: string }>,
   ): Promise<void> {
     form_data.organization_id = event.detail.value;
+    await trigger_organization_side_effects(event.detail.value);
+  }
+
+  async function trigger_organization_side_effects(
+    organization_id: string,
+  ): Promise<void> {
     selected_team_ids.clear();
     update_team_options();
 
@@ -177,7 +213,7 @@
     selected_sport = null;
 
     const selected_organization = organizations.find(
-      (org) => org.id === form_data.organization_id,
+      (org) => org.id === organization_id,
     );
 
     if (selected_organization && selected_organization.sport_id) {
@@ -386,7 +422,8 @@
             required={true}
             is_loading={is_loading_organizations}
             error={errors.organization_id || ""}
-            disabled={organization_options.length === 0}
+            disabled={is_organization_restricted ||
+              organization_options.length === 0}
             on:change={handle_organization_change}
           />
 

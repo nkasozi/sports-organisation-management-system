@@ -14,7 +14,12 @@ Uses explicit handlers instead of events for predictable data flow
   } from "../../core/types/EntityHandlers";
   import { is_functionality_disabled } from "../../core/types/EntityHandlers";
   import { get_use_cases_for_entity_type } from "../../infrastructure/registry/entityUseCasesRegistry";
-  import { get_disabled_crud_actions } from "../../presentation/stores/auth";
+  import {
+    get_disabled_crud_actions,
+    auth_store,
+  } from "../../presentation/stores/auth";
+  import { get_disabled_crud_for_entity } from "../../core/interfaces/ports/DataAuthorizationPort";
+  import type { UserProfile } from "../../presentation/stores/auth";
   import DynamicEntityForm from "./DynamicEntityForm.svelte";
   import DynamicEntityList from "./DynamicEntityList.svelte";
 
@@ -48,9 +53,13 @@ Uses explicit handlers instead of events for predictable data flow
   $: page_title = build_page_title_for_current_view(current_view, entity_type);
   $: show_back_button = current_view !== "list";
   $: normalized_entity_type = normalize_entity_type(entity_type);
+  $: current_auth_profile = $auth_store.current_profile;
   $: authorization_disabled_actions = skip_authorization_check
     ? []
-    : get_disabled_crud_actions(normalized_entity_type);
+    : get_disabled_crud_actions_for_profile(
+        normalized_entity_type,
+        current_auth_profile,
+      );
   $: effective_disabled_functionalities =
     compute_effective_disabled_functionalities(
       disabled_functionalities,
@@ -59,8 +68,37 @@ Uses explicit handlers instead of events for predictable data flow
   $: crud_handlers = build_crud_handlers_for_entity_type(
     normalized_entity_type,
   );
-  $: list_view_callbacks = build_list_view_callbacks();
+  $: list_view_callbacks = build_list_view_callbacks(
+    effective_disabled_functionalities,
+  );
   $: form_view_callbacks = build_form_view_callbacks();
+
+  function get_disabled_crud_actions_for_profile(
+    entity_type: string,
+    profile: UserProfile | null,
+  ): CrudFunctionality[] {
+    if (!profile) {
+      return ["create", "edit", "delete"];
+    }
+
+    const disabled_data_actions = get_disabled_crud_for_entity(
+      profile.role,
+      entity_type,
+    );
+
+    const disabled_actions: CrudFunctionality[] = [];
+    if (disabled_data_actions.includes("create")) {
+      disabled_actions.push("create");
+    }
+    if (disabled_data_actions.includes("update")) {
+      disabled_actions.push("edit");
+    }
+    if (disabled_data_actions.includes("delete")) {
+      disabled_actions.push("delete");
+    }
+
+    return disabled_actions;
+  }
 
   function compute_effective_disabled_functionalities(
     explicit_disabled: CrudFunctionality[],
@@ -139,24 +177,21 @@ Uses explicit handlers instead of events for predictable data flow
     };
   }
 
-  function build_list_view_callbacks(): EntityViewCallbacks {
+  function build_list_view_callbacks(
+    disabled_funcs: CrudFunctionality[],
+  ): EntityViewCallbacks {
+    console.debug(
+      `[EntityCrudWrapper] Building list view callbacks for ${entity_type}, disabled:`,
+      disabled_funcs,
+    );
     return {
-      on_create_requested: is_functionality_disabled(
-        "create",
-        effective_disabled_functionalities,
-      )
+      on_create_requested: is_functionality_disabled("create", disabled_funcs)
         ? undefined
         : handle_create_requested,
-      on_edit_requested: is_functionality_disabled(
-        "edit",
-        effective_disabled_functionalities,
-      )
+      on_edit_requested: is_functionality_disabled("edit", disabled_funcs)
         ? undefined
         : handle_edit_requested,
-      on_delete_completed: is_functionality_disabled(
-        "delete",
-        effective_disabled_functionalities,
-      )
+      on_delete_completed: is_functionality_disabled("delete", disabled_funcs)
         ? undefined
         : handle_entity_deleted,
     };

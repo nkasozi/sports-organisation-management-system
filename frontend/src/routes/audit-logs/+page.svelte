@@ -5,7 +5,10 @@
   import type { AuditLog } from "$lib/core/entities/AuditLog";
   import { build_audit_log_summary } from "$lib/core/entities/AuditLog";
   import { auth_store } from "$lib/presentation/stores/auth";
-  import { ANY_VALUE } from "$lib/core/interfaces/ports/AuthenticationPort";
+  import {
+    get_scope_value,
+    type UserScopeProfile,
+  } from "$lib/core/interfaces/ports/DataAuthorizationPort";
   import { get } from "svelte/store";
 
   let audit_logs: AuditLog[] = [];
@@ -26,8 +29,10 @@
     const current_profile = auth_state.current_profile;
     if (!current_profile) return null;
     if (current_profile.role === "super_admin") return null;
-    if (current_profile.organization_id === ANY_VALUE) return null;
-    return current_profile.organization_id;
+    return get_scope_value(
+      current_profile as UserScopeProfile,
+      "organization_id",
+    );
   }
 
   async function load_audit_logs(): Promise<AuditLog[]> {

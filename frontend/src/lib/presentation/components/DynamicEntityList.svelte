@@ -24,7 +24,10 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
   import { is_functionality_disabled } from "$lib/core/types/EntityHandlers";
   import BulkImportModal from "./BulkImportModal.svelte";
   import { auth_store } from "../stores/auth";
-  import { ANY_VALUE } from "$lib/core/interfaces/ports/AuthenticationPort";
+  import {
+    build_authorization_list_filter,
+    type UserScopeProfile,
+  } from "$lib/core/interfaces/ports/DataAuthorizationPort";
 
   export let entity_type: string;
   export let show_actions: boolean = true;
@@ -428,37 +431,19 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
   }
 
   function build_authorization_filter(): Record<string, string> {
-    const auth_filter: Record<string, string> = {};
     const auth_state = get(auth_store);
 
-    if (!auth_state.current_profile) return auth_filter;
-    if (!entity_metadata) return auth_filter;
+    if (!auth_state.current_profile) return {};
+    if (!entity_metadata) return {};
 
-    const profile = auth_state.current_profile;
     const entity_fields = entity_metadata.fields.map(
       (f: FieldMetadata) => f.field_name,
     );
 
-    if (
-      profile.organization_id !== ANY_VALUE &&
-      entity_fields.includes("organization_id")
-    ) {
-      auth_filter["organization_id"] = profile.organization_id;
-    }
-
-    if (profile.team_id !== ANY_VALUE && entity_fields.includes("team_id")) {
-      auth_filter["team_id"] = profile.team_id;
-    }
-
-    if (
-      profile.player_id &&
-      profile.player_id !== ANY_VALUE &&
-      entity_fields.includes("player_id")
-    ) {
-      auth_filter["player_id"] = profile.player_id;
-    }
-
-    return auth_filter;
+    return build_authorization_list_filter(
+      auth_state.current_profile as UserScopeProfile,
+      entity_fields,
+    );
   }
 
   function merge_filters(

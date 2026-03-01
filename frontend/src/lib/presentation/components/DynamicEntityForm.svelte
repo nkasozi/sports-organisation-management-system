@@ -40,7 +40,11 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
   import { get_team_use_cases } from "../../core/usecases/TeamUseCases";
   import { auth_store, check_action_authorization } from "../stores/auth";
   import { get } from "svelte/store";
-  import { ANY_VALUE } from "$lib/core/interfaces/ports/AuthenticationPort";
+  import {
+    get_authorization_restricted_fields,
+    get_authorization_preselect_values,
+    type UserScopeProfile,
+  } from "$lib/core/interfaces/ports/DataAuthorizationPort";
 
   export let entity_type: string;
   export let entity_data: Partial<BaseEntity> | null = null;
@@ -54,6 +58,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
   export let info_message: string | null = null;
 
   $: has_custom_handlers = crud_handlers !== null;
+  $: current_auth_profile = $auth_store.current_profile;
 
   const dispatch = createEventDispatcher<{
     inline_save_success: { entity: BaseEntity };
@@ -83,9 +88,12 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
     is_edit_mode,
   );
   $: sub_entity_fields = get_sub_entity_fields(entity_metadata);
+  $: authorization_restricted_fields = get_authorization_restricted_fields(
+    current_auth_profile as UserScopeProfile | null,
+  );
 
   $: {
-    if (entity_metadata) {
+    if (entity_metadata && current_auth_profile) {
       const initialized_form_data = initialize_form_data_for_entity(
         entity_metadata,
         entity_data,
@@ -222,7 +230,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
     existing_data: Partial<BaseEntity> | null,
   ): Record<string, any> {
     const new_form_data: Record<string, any> = {};
-    const authorization_preselect = get_authorization_preselect_values();
+    const authorization_preselect = get_form_authorization_preselect_values();
 
     for (const field of metadata.fields) {
       if (
@@ -234,9 +242,6 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
       } else if (authorization_preselect[field.field_name]) {
         new_form_data[field.field_name] =
           authorization_preselect[field.field_name];
-        console.log(
-          `[AuthPreselect] Field ${field.field_name} preselected to: ${authorization_preselect[field.field_name]}`,
-        );
       } else {
         new_form_data[field.field_name] =
           get_default_value_for_field_type(field);
@@ -299,10 +304,13 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
     return false;
   }
 
-  function should_field_be_read_only(field: FieldMetadata): boolean {
+  function should_field_be_read_only(
+    field: FieldMetadata,
+    auth_restricted_fields: Set<string>,
+  ): boolean {
     if (field.is_read_only) return true;
     if (field.is_read_only_on_edit && is_edit_mode) return true;
-    if (is_field_restricted_by_authorization(field.field_name)) return true;
+    if (auth_restricted_fields.has(field.field_name)) return true;
     return is_field_controlled_by_sub_entity_filter(
       field.field_name,
       sub_entity_filter,
@@ -310,72 +318,13 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
   }
 
   function is_field_restricted_by_authorization(field_name: string): boolean {
-    const auth_state = get(auth_store);
-    if (!auth_state.current_profile) {
-      console.warn(
-        `[AuthRestriction] No current_profile available for field: ${field_name}`,
-      );
-      return true;
-    }
-
-    const profile = auth_state.current_profile;
-    const org_id = profile.organization_id;
-    const team_id = profile.team_id;
-    const player_id = profile.player_id;
-
-    console.debug(`[AuthRestriction] Checking field: ${field_name}`, {
-      org_id,
-      team_id,
-      player_id,
-      ANY_VALUE,
-    });
-
-    if (field_name === "organization_id" && org_id !== ANY_VALUE) {
-      console.debug(
-        `[AuthRestriction] Field ${field_name} IS RESTRICTED (org_id=${org_id}, ANY_VALUE=${ANY_VALUE})`,
-      );
-      return true;
-    }
-
-    if (field_name === "team_id" && team_id !== ANY_VALUE) {
-      console.debug(
-        `[AuthRestriction] Field ${field_name} IS RESTRICTED (team_id=${team_id})`,
-      );
-      return true;
-    }
-
-    if (field_name === "player_id" && player_id && player_id !== ANY_VALUE) {
-      console.debug(
-        `[AuthRestriction] Field ${field_name} IS RESTRICTED (player_id=${player_id})`,
-      );
-      return true;
-    }
-
-    console.debug(`[AuthRestriction] Field ${field_name} is NOT restricted`);
-    return false;
+    return authorization_restricted_fields.has(field_name);
   }
 
-  function get_authorization_preselect_values(): Record<string, string> {
-    const preselect_values: Record<string, string> = {};
-    const auth_state = get(auth_store);
-
-    if (!auth_state.current_profile) return preselect_values;
-
-    const profile = auth_state.current_profile;
-
-    if (profile.organization_id !== ANY_VALUE) {
-      preselect_values["organization_id"] = profile.organization_id;
-    }
-
-    if (profile.team_id !== ANY_VALUE) {
-      preselect_values["team_id"] = profile.team_id;
-    }
-
-    if (profile.player_id && profile.player_id !== ANY_VALUE) {
-      preselect_values["player_id"] = profile.player_id;
-    }
-
-    return preselect_values;
+  function get_form_authorization_preselect_values(): Record<string, string> {
+    return get_authorization_preselect_values(
+      current_auth_profile as UserScopeProfile | null,
+    );
   }
 
   function get_input_type_for_field(field: FieldMetadata): string {
@@ -1931,7 +1880,10 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
                       class="hidden"
                       on:change={(e) =>
                         handle_file_input_change(e, field.field_name)}
-                      disabled={should_field_be_read_only(field)}
+                      disabled={should_field_be_read_only(
+                        field,
+                        authorization_restricted_fields,
+                      )}
                     />
                   </div>
                   <span class="text-xs text-accent-500 dark:text-accent-300"
@@ -1954,7 +1906,10 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
                       file:cursor-pointer cursor-pointer file:transition-colors"
                     on:change={(e) =>
                       handle_file_input_change(e, field.field_name)}
-                    disabled={should_field_be_read_only(field)}
+                    disabled={should_field_be_read_only(
+                      field,
+                      authorization_restricted_fields,
+                    )}
                   />
                   {#if form_data[field.field_name]}
                     <img
@@ -1974,7 +1929,10 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
                     class="input min-h-[100px]"
                     bind:value={form_data[field.field_name]}
                     placeholder={field.placeholder || field.display_name}
-                    readonly={should_field_be_read_only(field)}
+                    readonly={should_field_be_read_only(
+                      field,
+                      authorization_restricted_fields,
+                    )}
                     rows="4"
                   ></textarea>
                 {:else if field.field_name.toLowerCase().includes("color")}
@@ -1984,7 +1942,10 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
                       type="color"
                       class="w-10 h-10 p-0 border-0 bg-transparent cursor-pointer rounded shadow"
                       bind:value={form_data[field.field_name]}
-                      disabled={should_field_be_read_only(field)}
+                      disabled={should_field_be_read_only(
+                        field,
+                        authorization_restricted_fields,
+                      )}
                     />
                     <input
                       id={`field_${field.field_name}`}
@@ -1992,7 +1953,10 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
                       class="input w-32"
                       bind:value={form_data[field.field_name]}
                       placeholder="#RRGGBB or rgb()"
-                      readonly={should_field_be_read_only(field)}
+                      readonly={should_field_be_read_only(
+                        field,
+                        authorization_restricted_fields,
+                      )}
                     />
                     <span
                       class="inline-block w-8 h-8 rounded border border-gray-300 dark:border-gray-600 shadow-sm"
@@ -2011,7 +1975,10 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
                       class="input"
                       bind:value={form_data[field.field_name]}
                       placeholder={field.placeholder || field.display_name}
-                      readonly={should_field_be_read_only(field)}
+                      readonly={should_field_be_read_only(
+                        field,
+                        authorization_restricted_fields,
+                      )}
                     />
                     {#if form_data[field.field_name]}
                       <img
@@ -2029,7 +1996,10 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
                     class="input"
                     bind:value={form_data[field.field_name]}
                     placeholder={field.placeholder || field.display_name}
-                    readonly={should_field_be_read_only(field)}
+                    readonly={should_field_be_read_only(
+                      field,
+                      authorization_restricted_fields,
+                    )}
                   />
                 {/if}
 
@@ -2041,7 +2011,10 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
                   class="input"
                   bind:value={form_data[field.field_name]}
                   placeholder={field.placeholder || field.display_name}
-                  readonly={should_field_be_read_only(field)}
+                  readonly={should_field_be_read_only(
+                    field,
+                    authorization_restricted_fields,
+                  )}
                   min={field.field_name.includes("age") ||
                   field.field_name.includes("number") ||
                   field.field_name.includes("order")
@@ -2063,7 +2036,10 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
                     type="checkbox"
                     class="w-5 h-5 text-secondary-600 dark:text-secondary-400 border-gray-300 dark:border-gray-600 rounded focus:ring-secondary-500 dark:focus:ring-secondary-400 cursor-pointer"
                     bind:checked={form_data[field.field_name]}
-                    disabled={should_field_be_read_only(field)}
+                    disabled={should_field_be_read_only(
+                      field,
+                      authorization_restricted_fields,
+                    )}
                   />
                   <label
                     for={`field_${field.field_name}`}
@@ -2080,7 +2056,10 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
                   type="date"
                   class="input"
                   bind:value={form_data[field.field_name]}
-                  readonly={should_field_be_read_only(field)}
+                  readonly={should_field_be_read_only(
+                    field,
+                    authorization_restricted_fields,
+                  )}
                 />
 
                 <!-- Enum field (dropdown) -->
@@ -2095,7 +2074,10 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
                     ? `First select ${field.enum_dependency.depends_on_field.replace("_", " ")}`
                     : `Select ${field.display_name}`}
                   required={field.is_required}
-                  disabled={should_field_be_read_only(field) ||
+                  disabled={should_field_be_read_only(
+                    field,
+                    authorization_restricted_fields,
+                  ) ||
                     (field.enum_dependency &&
                       !form_data[field.enum_dependency.depends_on_field])}
                   error={validation_errors[field.field_name] || ""}
@@ -2121,7 +2103,10 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
                     ? `First select ${field.foreign_key_filter.depends_on_field.replace("_id", "")}`
                     : `Select ${field.display_name}`}
                   required={field.is_required}
-                  disabled={should_field_be_read_only(field) ||
+                  disabled={should_field_be_read_only(
+                    field,
+                    authorization_restricted_fields,
+                  ) ||
                     (field.foreign_key_filter &&
                       !form_data[field.foreign_key_filter.depends_on_field])}
                   error={validation_errors[field.field_name] || ""}
@@ -2186,7 +2171,10 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
               {:else if field.field_type === "official_assignment_array"}
                 <OfficialAssignmentArray
                   assignments={form_data[field.field_name] || []}
-                  disabled={should_field_be_read_only(field)}
+                  disabled={should_field_be_read_only(
+                    field,
+                    authorization_restricted_fields,
+                  )}
                   errors={validation_errors}
                   on:change={(e) => {
                     update_form_field_value(

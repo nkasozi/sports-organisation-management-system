@@ -27,6 +27,11 @@ import type {
 } from "$lib/core/interfaces/ports/AuthorizationPort";
 import { get_authorization_adapter } from "$lib/adapters/services/LocalAuthorizationAdapter";
 import {
+  get_disabled_crud_for_entity,
+  check_entity_permission,
+  type DataAction,
+} from "$lib/core/interfaces/ports/DataAuthorizationPort";
+import {
   SEED_ORGANIZATION_IDS,
   SEED_TEAM_IDS,
   SEED_PLAYER_IDS,
@@ -372,23 +377,66 @@ function create_auth_store() {
     action: AuthorizableAction,
     entity_type: string,
   ): boolean {
-    const auth_result = is_authorized_to_execute(action, entity_type);
-    return !auth_result.is_authorized;
+    const state = get({ subscribe });
+    if (!state.current_profile) return true;
+
+    const data_action = map_authorizable_action_to_data_action(action);
+    if (!data_action) return false;
+
+    return !check_entity_permission(
+      state.current_profile.role,
+      entity_type,
+      data_action,
+    );
+  }
+
+  function map_authorizable_action_to_data_action(
+    action: AuthorizableAction,
+  ): DataAction | null {
+    switch (action) {
+      case "create":
+        return "create";
+      case "edit":
+        return "update";
+      case "delete":
+        return "delete";
+      case "list":
+      case "view":
+        return "read";
+      default:
+        return null;
+    }
   }
 
   function get_disabled_functionalities(
     entity_type: string,
   ): AuthorizableAction[] {
-    const actions: AuthorizableAction[] = [
-      "create",
-      "edit",
-      "delete",
-      "list",
-      "view",
-    ];
-    return actions.filter((action) =>
-      is_functionality_disabled(action, entity_type),
+    const state = get({ subscribe });
+    if (!state.current_profile) {
+      return ["create", "edit", "delete", "list", "view"];
+    }
+
+    const disabled_data_actions = get_disabled_crud_for_entity(
+      state.current_profile.role,
+      entity_type,
     );
+
+    const disabled_actions: AuthorizableAction[] = [];
+    if (disabled_data_actions.includes("create")) {
+      disabled_actions.push("create");
+    }
+    if (disabled_data_actions.includes("update")) {
+      disabled_actions.push("edit");
+    }
+    if (disabled_data_actions.includes("delete")) {
+      disabled_actions.push("delete");
+    }
+    if (disabled_data_actions.includes("read")) {
+      disabled_actions.push("list");
+      disabled_actions.push("view");
+    }
+
+    return disabled_actions;
   }
 
   return {

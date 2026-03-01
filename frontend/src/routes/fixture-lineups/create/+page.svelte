@@ -32,6 +32,11 @@
     convert_team_player_to_lineup_player,
     sort_lineup_players,
   } from "$lib/core/services/fixtureLineupWizard";
+  import { auth_store } from "$lib/presentation/stores/auth";
+  import {
+    build_authorization_list_filter,
+    get_authorization_preselect_values,
+  } from "$lib/core/interfaces/ports/DataAuthorizationPort";
 
   const lineup_use_cases = get_fixture_lineup_use_cases();
   const fixture_use_cases = get_fixture_use_cases();
@@ -43,16 +48,22 @@
   const player_position_use_cases = get_player_position_use_cases();
   const organization_use_cases = get_organization_use_cases();
 
+  import type { Organization } from "$lib/core/entities/Organization";
+  import { is_field_restricted_by_authorization } from "$lib/core/interfaces/ports/DataAuthorizationPort";
+
+  $: current_auth_profile = $auth_store.current_profile;
+
   let form_data: CreateFixtureLineupInput = create_empty_fixture_lineup_input();
   let selected_fixture: Fixture | null = null;
   let selected_team: Team | null = null;
+  let selected_organization: Organization | null = null;
   let team_players: TeamPlayer[] = [];
   let min_players: number = 2;
   let max_players: number = 18;
   let starters_count: number = 11;
 
   type WizardStep = {
-    step_key: "fixture" | "team" | "players" | "confirm";
+    step_key: "organization" | "fixture" | "team" | "players" | "confirm";
     step_title: string;
     step_description?: string;
     is_completed: boolean;
@@ -67,21 +78,60 @@
   let filtered_team_players: TeamPlayer[] = [];
   let teams_with_existing_lineups: Map<string, string> = new Map();
 
+  let organizations: Organization[] = [];
   let fixtures: Fixture[] = [];
+  let all_fixtures_for_org: Fixture[] = [];
   let teams: Team[] = [];
   let available_teams: Team[] = [];
   let all_teams: Team[] = [];
   let all_competitions: Competition[] = [];
+  let fixtures_with_complete_lineups: Set<string> = new Set();
   let loading: boolean = true;
   let saving: boolean = false;
   let error_message: string = "";
   let validation_errors: Record<string, string> = {};
 
+  $: organization_is_restricted = is_field_restricted_by_authorization(
+    current_auth_profile,
+    "organization_id",
+  );
+
+  $: team_is_restricted = is_field_restricted_by_authorization(
+    current_auth_profile,
+    "team_id",
+  );
+
+  $: user_team_id = current_auth_profile?.team_id;
+
   $: current_fixture_title = selected_fixture
     ? get_fixture_name(selected_fixture)
     : "";
 
-  $: fixture_select_options = fixtures.map((fixture) => ({
+  $: organization_select_options = organizations.map((org) => ({
+    value: org.id,
+    label: org.name,
+  }));
+
+  $: all_fixtures_for_org = selected_organization
+    ? fixtures.filter((f) => f.organization_id === selected_organization?.id)
+    : fixtures;
+
+  $: fixtures_for_user_team = team_is_restricted && user_team_id
+    ? all_fixtures_for_org.filter(
+        (f) => f.home_team_id === user_team_id || f.away_team_id === user_team_id,
+      )
+    : all_fixtures_for_org;
+
+  $: non_scheduled_fixtures_count = fixtures_for_user_team.filter(
+    (f) => f.status !== "scheduled",
+  ).length;
+
+  $: fixtures_for_organization = fixtures_for_user_team.filter(
+    (f) =>
+      f.status === "scheduled" && !fixtures_with_complete_lineups.has(f.id),
+  );
+
+  $: fixture_select_options = fixtures_for_organization.map((fixture) => ({
     value: fixture.id,
     label: get_fixture_name(fixture),
   }));
@@ -97,6 +147,7 @@
   );
 
   $: wizard_steps = build_wizard_steps(
+    selected_organization,
     selected_fixture,
     selected_team,
     form_data.selected_players.length,
@@ -105,24 +156,64 @@
     confirm_lock_understood,
   );
 
+  $: {
+    const preselect = get_authorization_preselect_values(current_auth_profile);
+    if (preselect.organization_id && !form_data.organization_id) {
+      form_data.organization_id = preselect.organization_id;
+    }
+    if (preselect.team_id && !form_data.team_id) {
+      form_data.team_id = preselect.team_id;
+    }
+  }
+
+  $: {
+    if (
+      form_data.organization_id &&
+      organizations.length > 0 &&
+      !selected_organization
+    ) {
+      selected_organization =
+        organizations.find((org) => org.id === form_data.organization_id) ||
+        null;
+    }
+  }
+
   onMount(async () => {
     await load_reference_data();
     loading = false;
   });
 
   async function load_reference_data(): Promise<void> {
-    const [fixtures_result, teams_result, competitions_result] =
-      await Promise.all([
-        fixture_use_cases.list(undefined, {
-          page_number: 1,
-          page_size: 200,
-        }),
-        team_use_cases.list(undefined, { page_number: 1, page_size: 200 }),
-        competition_use_cases.list(undefined, {
-          page_number: 1,
-          page_size: 200,
-        }),
-      ]);
+    const auth_filter = build_authorization_list_filter(current_auth_profile, [
+      "organization_id",
+    ]);
+    const preselect_values =
+      get_authorization_preselect_values(current_auth_profile);
+
+    if (preselect_values.organization_id && !form_data.organization_id) {
+      form_data.organization_id = preselect_values.organization_id;
+    }
+
+    const [
+      fixtures_result,
+      teams_result,
+      competitions_result,
+      organizations_result,
+    ] = await Promise.all([
+      fixture_use_cases.list(auth_filter, {
+        page_number: 1,
+        page_size: 200,
+      }),
+      team_use_cases.list(auth_filter, { page_number: 1, page_size: 200 }),
+      competition_use_cases.list(auth_filter, {
+        page_number: 1,
+        page_size: 200,
+      }),
+      organization_use_cases.list(auth_filter, {
+        page_number: 1,
+        page_size: 200,
+      }),
+    ]);
 
     if (fixtures_result.success) {
       fixtures = fixtures_result.data;
@@ -137,6 +228,16 @@
       all_competitions = competitions_result.data;
     }
 
+    if (organizations_result.success) {
+      organizations = organizations_result.data;
+      if (preselect_values.organization_id) {
+        selected_organization =
+          organizations.find(
+            (org) => org.id === preselect_values.organization_id,
+          ) || null;
+      }
+    }
+
     if (fixtures.length === 0) {
       error_message = build_error_message(
         "No fixtures available.",
@@ -144,6 +245,27 @@
         "Create fixtures first (Fixtures tab), then come back here to submit a lineup.",
       );
     }
+  }
+
+  function handle_organization_change(): void {
+    error_message = "";
+    validation_errors = {};
+
+    if (!form_data.organization_id) {
+      selected_organization = null;
+      selected_fixture = null;
+      form_data.fixture_id = "";
+      reset_team_and_roster();
+      current_step_index = 0;
+      return;
+    }
+
+    selected_organization =
+      organizations.find((org) => org.id === form_data.organization_id) || null;
+
+    selected_fixture = null;
+    form_data.fixture_id = "";
+    reset_team_and_roster();
   }
 
   async function handle_fixture_change(): Promise<void> {
@@ -158,7 +280,7 @@
       fixture_team_label_by_team_id = new Map();
       teams = [];
       reset_team_and_roster();
-      current_step_index = 0;
+      current_step_index = 1;
       return;
     }
 
@@ -174,11 +296,26 @@
       selected_fixture = null;
       teams = [];
       reset_team_and_roster();
-      current_step_index = 0;
+      current_step_index = 1;
       return;
     }
 
     selected_fixture = fixture_result.data;
+
+    if (selected_fixture.status !== "scheduled") {
+      const status_label = selected_fixture.status.replace(/_/g, " ");
+      error_message = build_error_message(
+        `This fixture cannot accept lineup submissions.`,
+        `The fixture status is "${status_label}". Only fixtures with "scheduled" status can receive new lineups.`,
+        "Select a different fixture that is still scheduled.",
+      );
+      selected_fixture = null;
+      form_data.fixture_id = "";
+      teams = [];
+      reset_team_and_roster();
+      current_step_index = 1;
+      return;
+    }
 
     const competition_result = await competition_use_cases.get_by_id(
       selected_fixture.competition_id,
@@ -191,11 +328,12 @@
       );
       teams = [];
       reset_team_and_roster();
-      current_step_index = 0;
+      current_step_index = 1;
       return;
     }
 
     const competition = competition_result.data;
+    form_data.organization_id = competition.organization_id;
 
     const [organization_result, competition_teams_result] = await Promise.all([
       organization_use_cases.get_by_id(competition.organization_id),
@@ -276,8 +414,54 @@
       (team) => !teams_with_existing_lineups.has(team.id),
     );
 
+    if (available_teams.length === 0 && teams.length > 0) {
+      const fixture_name = get_fixture_name(selected_fixture);
+      fixtures_with_complete_lineups = new Set([
+        ...fixtures_with_complete_lineups,
+        form_data.fixture_id,
+      ]);
+      error_message = build_error_message(
+        "All teams have already submitted lineups for this fixture.",
+        `"${fixture_name}" already has lineups from all participating teams.`,
+        "Select a different fixture that still needs team lineups.",
+      );
+      selected_fixture = null;
+      form_data.fixture_id = "";
+      teams = [];
+      reset_team_and_roster();
+      current_step_index = 1;
+      return;
+    }
+
+    const preselect_values =
+      get_authorization_preselect_values(current_auth_profile);
+    if (preselect_values.team_id) {
+      const user_team = available_teams.find(
+        (t) => t.id === preselect_values.team_id,
+      );
+      if (user_team) {
+        form_data.team_id = preselect_values.team_id;
+        reset_team_and_roster();
+        current_step_index = 2;
+        await handle_team_change();
+        return;
+      } else if (teams_with_existing_lineups.has(preselect_values.team_id)) {
+        error_message = build_error_message(
+          "Your team has already submitted a lineup for this fixture.",
+          "Each team can only submit one lineup per fixture.",
+          "Select a different fixture or view your existing lineup.",
+        );
+        selected_fixture = null;
+        form_data.fixture_id = "";
+        teams = [];
+        reset_team_and_roster();
+        current_step_index = 1;
+        return;
+      }
+    }
+
     reset_team_and_roster();
-    current_step_index = 1;
+    current_step_index = 2;
   }
 
   async function handle_team_change(): Promise<void> {
@@ -400,7 +584,22 @@
     from_step_index: number,
     to_step_index: number,
   ): boolean {
-    if (from_step_index === 2 && to_step_index > from_step_index) {
+    if (to_step_index <= from_step_index) return true;
+
+    if (from_step_index === 0 && !form_data.organization_id) {
+      validation_errors.organization_id =
+        "Please select an organization first.";
+      return false;
+    }
+    if (from_step_index === 1 && !form_data.fixture_id) {
+      validation_errors.fixture_id = "Please select a fixture first.";
+      return false;
+    }
+    if (from_step_index === 2 && !form_data.team_id) {
+      validation_errors.team_id = "Please select a team first.";
+      return false;
+    }
+    if (from_step_index === 3 && to_step_index > from_step_index) {
       return validate_players_step();
     }
     return true;
@@ -455,13 +654,23 @@
     validation_errors = {};
     error_message = "";
 
+    if (!selected_organization || !form_data.organization_id) {
+      validation_errors.organization_id = build_error_message(
+        "Organization is required.",
+        "A lineup must belong to an organization.",
+        "Select an organization in Step 1.",
+      );
+      current_step_index = 0;
+      return;
+    }
+
     if (!selected_fixture || !form_data.fixture_id) {
       validation_errors.fixture_id = build_error_message(
         "Fixture is required.",
         "A lineup must belong to a fixture.",
-        "Select a fixture in Step 1.",
+        "Select a fixture in Step 2.",
       );
-      current_step_index = 0;
+      current_step_index = 1;
       return;
     }
 
@@ -469,9 +678,9 @@
       validation_errors.team_id = build_error_message(
         "Team is required.",
         "A lineup must be submitted by a team participating in the fixture.",
-        "Select a team in Step 2.",
+        "Select a team in Step 3.",
       );
-      current_step_index = 1;
+      current_step_index = 2;
       return;
     }
 
@@ -480,9 +689,9 @@
       validation_errors.players = build_error_message(
         "Invalid squad size.",
         `This fixture requires between ${min_players} and ${max_players} players, but ${count} were selected.`,
-        "Adjust the selected players in Step 3, then confirm again.",
+        "Adjust the selected players in Step 4, then confirm again.",
       );
-      current_step_index = 2;
+      current_step_index = 3;
       return;
     }
 
@@ -490,9 +699,9 @@
       validation_errors.confirm = build_error_message(
         "Confirmation required.",
         "Submitting a lineup locks it to prevent accidental changes.",
-        "Tick the confirmation checkbox in Step 4 to proceed.",
+        "Tick the confirmation checkbox in Step 5 to proceed.",
       );
-      current_step_index = 3;
+      current_step_index = 4;
       return;
     }
 
@@ -640,6 +849,7 @@
   }
 
   function build_wizard_steps(
+    organization: Organization | null,
     fixture: Fixture | null,
     team: Team | null,
     selected_player_count: number,
@@ -647,6 +857,7 @@
     maximum_players: number,
     confirm_lock: boolean,
   ): WizardStep[] {
+    const organization_completed = Boolean(organization);
     const fixture_completed = Boolean(fixture);
     const team_completed = Boolean(team);
     const players_completed =
@@ -655,6 +866,12 @@
     const confirm_completed = players_completed && confirm_lock;
 
     return [
+      {
+        step_key: "organization",
+        step_title: "Organization",
+        step_description: "Choose the organization",
+        is_completed: organization_completed,
+      },
       {
         step_key: "fixture",
         step_title: "Fixture",
@@ -734,15 +951,49 @@
           {#if step_index === 0}
             <div>
               <SelectField
+                label="Organization"
+                name="organization"
+                value={form_data.organization_id}
+                options={organization_select_options}
+                placeholder={loading
+                  ? "Loading organizations..."
+                  : "Select organization..."}
+                required={true}
+                disabled={loading || saving || organization_is_restricted}
+                is_loading={loading}
+                error={validation_errors.organization_id || ""}
+                on:change={(event) => {
+                  form_data.organization_id = event.detail.value;
+                  handle_organization_change();
+                }}
+              />
+            </div>
+
+            {#if organizations.length === 0 && !loading}
+              <div
+                class="p-4 bg-red-50 dark:bg-red-900/20 rounded-lg whitespace-pre-line text-red-700 dark:text-red-300"
+              >
+                No organizations available. Please contact an administrator.
+              </div>
+            {/if}
+          {/if}
+
+          {#if step_index === 1}
+            <div>
+              <SelectField
                 label="Fixture"
                 name="fixture"
                 value={form_data.fixture_id}
                 options={fixture_select_options}
-                placeholder={loading
-                  ? "Loading fixtures..."
-                  : "Search fixture..."}
+                placeholder={!selected_organization
+                  ? "Select an organization first"
+                  : fixtures_for_organization.length === 0
+                    ? "No fixtures available"
+                    : team_is_restricted
+                      ? "Select fixture (your team only)..."
+                      : "Search fixture..."}
                 required={true}
-                disabled={loading || saving}
+                disabled={!selected_organization || loading || saving}
                 is_loading={loading}
                 error={validation_errors.fixture_id || ""}
                 on:change={(event) => {
@@ -752,16 +1003,60 @@
               />
             </div>
 
-            {#if fixtures.length === 0}
+            {#if team_is_restricted && selected_organization && !loading}
               <div
-                class="p-4 bg-red-50 dark:bg-red-900/20 rounded-lg whitespace-pre-line text-red-700 dark:text-red-300"
+                class="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-700"
               >
-                {error_message}
+                <p class="text-sm text-blue-800 dark:text-blue-200">
+                  <span class="font-medium">Team Manager:</span> Only showing fixtures involving your team.
+                </p>
+              </div>
+            {/if}
+
+            {#if fixtures_for_organization.length === 0 && selected_organization && !loading}
+              <div
+                class="p-4 bg-red-50 dark:bg-red-900/20 rounded-lg text-red-700 dark:text-red-300"
+              >
+                <p class="font-semibold">No fixtures available for lineup submission</p>
+                <p class="mt-2 text-sm">
+                  Only fixtures with status "Scheduled" that still need team lineups are shown.
+                </p>
+                {#if all_fixtures_for_org.length > 0}
+                  <ul class="mt-2 text-sm list-disc list-inside">
+                    {#if non_scheduled_fixtures_count > 0}
+                      <li>
+                        {non_scheduled_fixtures_count} fixture{non_scheduled_fixtures_count === 1 ? " is" : "s are"} not scheduled (in progress, completed, postponed, or cancelled)
+                      </li>
+                    {/if}
+                    {#if fixtures_with_complete_lineups.size > 0}
+                      <li>
+                        {fixtures_with_complete_lineups.size} fixture{fixtures_with_complete_lineups.size === 1 ? " has" : "s have"} all team lineups already submitted
+                      </li>
+                    {/if}
+                  </ul>
+                {:else}
+                  <p class="mt-2 text-sm">
+                    Create fixtures first (Fixtures tab), then come back here to submit a lineup.
+                  </p>
+                {/if}
+              </div>
+            {/if}
+
+            {#if fixtures_for_organization.length > 0 && (non_scheduled_fixtures_count > 0 || fixtures_with_complete_lineups.size > 0) && selected_organization && !loading}
+              <div
+                class="p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-700"
+              >
+                <p class="text-sm text-amber-800 dark:text-amber-200">
+                  <span class="font-medium">Note:</span> Only showing scheduled fixtures that still need lineups.
+                  {#if non_scheduled_fixtures_count > 0}
+                    {non_scheduled_fixtures_count} fixture{non_scheduled_fixtures_count === 1 ? " is" : "s are"} hidden (not scheduled).
+                  {/if}
+                </p>
               </div>
             {/if}
           {/if}
 
-          {#if step_index === 1}
+          {#if step_index === 2}
             <div>
               <div class="mb-4">
                 <div class="text-sm text-accent-600 dark:text-accent-300">
@@ -828,21 +1123,34 @@
                   ? "Select a fixture first"
                   : available_teams.length === 0
                     ? "All teams have submitted lineups"
-                    : "Search home/away team..."}
+                    : team_is_restricted
+                      ? "Your team (auto-selected)"
+                      : "Search home/away team..."}
                 required={true}
                 disabled={!selected_fixture ||
                   saving ||
-                  available_teams.length === 0}
+                  available_teams.length === 0 ||
+                  team_is_restricted}
                 error={validation_errors.team_id || ""}
                 on:change={(event) => {
                   form_data.team_id = event.detail.value;
                   void handle_team_change();
                 }}
               />
+
+              {#if team_is_restricted && selected_fixture}
+                <div
+                  class="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-700"
+                >
+                  <p class="text-sm text-blue-800 dark:text-blue-200">
+                    <span class="font-medium">Team Manager:</span> Your team is automatically selected. You can only submit lineups for your assigned team.
+                  </p>
+                </div>
+              {/if}
             </div>
           {/if}
 
-          {#if step_index === 2}
+          {#if step_index === 3}
             <div class="space-y-4">
               {#if current_fixture_title}
                 <div
@@ -989,7 +1297,7 @@
             </div>
           {/if}
 
-          {#if step_index === 3}
+          {#if step_index === 4}
             <div class="space-y-5">
               {#if current_fixture_title}
                 <div
