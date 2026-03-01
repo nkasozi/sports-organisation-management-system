@@ -19,6 +19,7 @@ function create_mock_player(overrides: Partial<Player> = {}): Player {
     updated_at: "2024-01-01T00:00:00Z",
     first_name: "John",
     last_name: "Doe",
+    gender_id: "gender_default_male",
     email: "john.doe@example.com",
     phone: "+1234567890",
     date_of_birth: "1990-01-01",
@@ -42,6 +43,7 @@ function create_valid_player_input(
   return {
     first_name: "John",
     last_name: "Doe",
+    gender_id: "gender_default_male",
     email: "john.doe@example.com",
     phone: "+1234567890",
     date_of_birth: "1990-01-01",

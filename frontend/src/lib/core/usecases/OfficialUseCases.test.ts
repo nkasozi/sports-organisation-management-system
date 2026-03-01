@@ -25,6 +25,7 @@ function create_test_official(overrides: Partial<Official> = {}): Official {
     id: "official-123",
     first_name: "John",
     last_name: "Referee",
+    gender_id: "gender_default_male",
     email: "john@example.com",
     phone: "+256700123456",
     date_of_birth: "1985-05-15",
@@ -48,6 +49,7 @@ function create_valid_input(
   return {
     first_name: "John",
     last_name: "Referee",
+    gender_id: "gender_default_male",
     email: "john@example.com",
     phone: "+256700123456",
     date_of_birth: "1985-05-15",

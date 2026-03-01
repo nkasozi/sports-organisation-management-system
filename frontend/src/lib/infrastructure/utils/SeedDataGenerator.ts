@@ -11,6 +11,7 @@ import type { Venue } from "../../core/entities/Venue";
 import type { JerseyColor } from "../../core/entities/JerseyColor";
 import type { SystemUser } from "../../core/entities/SystemUser";
 import type { IdentificationType } from "../../core/entities/IdentificationType";
+import type { Gender } from "../../core/entities/Gender";
 import { DEFAULT_TEAM_LOGO } from "../../core/entities/Team";
 import { DEFAULT_STAFF_AVATAR } from "../../core/entities/TeamStaff";
 import { DEFAULT_OFFICIAL_AVATAR } from "../../core/entities/Official";
@@ -240,6 +241,11 @@ export const SEED_IDENTIFICATION_TYPE_IDS = {
   FEDERATION_ID: "id_type_default_5",
 };
 
+export const SEED_GENDER_IDS = {
+  MALE: "gender_default_male",
+  FEMALE: "gender_default_female",
+};
+
 function generate_current_timestamp(): string {
   return new Date().toISOString();
 }
@@ -259,13 +265,47 @@ export interface PositionIds {
   cf: string;
 }
 
+const FEMALE_SEED_FIRST_NAMES = new Set<string>([
+  "Sarah",
+  "Patricia",
+  "Judith",
+  "Christine",
+  "Harriet",
+  "Grace",
+  "Jane",
+  "Ruth",
+  "Sharon",
+  "Florence",
+  "Martha",
+  "Irene",
+  "Susan",
+  "Mary",
+  "Gloria",
+  "Diana",
+  "Evelyn",
+  "Anita",
+  "Eva",
+  "Lydia",
+  "Miriam",
+  "Dorothy",
+  "Agnes",
+  "Prossy",
+]);
+
+function resolve_seed_gender_id_for_first_name(first_name: string): string {
+  if (FEMALE_SEED_FIRST_NAMES.has(first_name)) {
+    return SEED_GENDER_IDS.FEMALE;
+  }
+  return SEED_GENDER_IDS.MALE;
+}
+
 export function create_seed_players(
   positions: PositionIds,
   organization_id: string,
 ): Player[] {
   const now = generate_current_timestamp();
 
-  return [
+  const players_without_gender: Omit<Player, "gender_id">[] = [
     {
       id: SEED_PLAYER_IDS.DENIS_ONYANGO,
       first_name: "Denis",
@@ -2027,6 +2067,11 @@ export function create_seed_players(
       updated_at: now,
     },
   ];
+
+  return players_without_gender.map((player) => ({
+    ...player,
+    gender_id: resolve_seed_gender_id_for_first_name(player.first_name),
+  }));
 }
 
 export function create_seed_teams(
@@ -3717,7 +3762,7 @@ export function create_seed_player_team_memberships(): PlayerTeamMembership[] {
 export function create_seed_officials(organization_id: string): Official[] {
   const now = generate_current_timestamp();
 
-  return [
+  const officials_without_gender: Omit<Official, "gender_id">[] = [
     {
       id: SEED_OFFICIAL_IDS.MICHAEL_ANDERSON,
       first_name: "Charles",
@@ -3786,6 +3831,34 @@ export function create_seed_officials(organization_id: string): Official[] {
       emergency_contact_name: "Mark Akello",
       emergency_contact_phone: "+256-700-900-104",
       notes: "",
+      status: "active",
+      created_at: now,
+      updated_at: now,
+    },
+  ];
+
+  return officials_without_gender.map((official) => ({
+    ...official,
+    gender_id: resolve_seed_gender_id_for_first_name(official.first_name),
+  }));
+}
+
+export function create_seed_genders(): Gender[] {
+  const now = generate_current_timestamp();
+
+  return [
+    {
+      id: SEED_GENDER_IDS.MALE,
+      name: "Male",
+      description: "Male gender",
+      status: "active",
+      created_at: now,
+      updated_at: now,
+    },
+    {
+      id: SEED_GENDER_IDS.FEMALE,
+      name: "Female",
+      description: "Female gender",
       status: "active",
       created_at: now,
       updated_at: now,
@@ -6020,6 +6093,7 @@ export function create_seed_system_users(): SystemUser[] {
       role: "super_admin",
       organization_id: ANY_VALUE,
       team_id: ANY_VALUE,
+      player_id: ANY_VALUE,
       status: "active",
       created_at: now,
       updated_at: now,
@@ -6032,6 +6106,7 @@ export function create_seed_system_users(): SystemUser[] {
       role: "org_admin",
       organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       team_id: ANY_VALUE,
+      player_id: ANY_VALUE,
       status: "active",
       created_at: now,
       updated_at: now,
@@ -6044,6 +6119,7 @@ export function create_seed_system_users(): SystemUser[] {
       role: "officials_manager",
       organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       team_id: ANY_VALUE,
+      player_id: ANY_VALUE,
       status: "active",
       created_at: now,
       updated_at: now,
@@ -6056,6 +6132,7 @@ export function create_seed_system_users(): SystemUser[] {
       role: "team_manager",
       organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       team_id: SEED_TEAM_IDS.WEATHERHEAD_HC,
+      player_id: ANY_VALUE,
       status: "active",
       created_at: now,
       updated_at: now,
@@ -6068,6 +6145,7 @@ export function create_seed_system_users(): SystemUser[] {
       role: "official",
       organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       team_id: ANY_VALUE,
+      player_id: ANY_VALUE,
       official_id: SEED_OFFICIAL_IDS.MICHAEL_ANDERSON,
       status: "active",
       created_at: now,

@@ -5,6 +5,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
 -->
 <script lang="ts">
   import { onMount } from "svelte";
+  import { get } from "svelte/store";
   import type {
     BaseEntity,
     EntityListResult,
@@ -22,6 +23,8 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
   } from "$lib/core/types/EntityHandlers";
   import { is_functionality_disabled } from "$lib/core/types/EntityHandlers";
   import BulkImportModal from "./BulkImportModal.svelte";
+  import { auth_store } from "../stores/auth";
+  import { ANY_VALUE } from "$lib/core/interfaces/ports/AuthenticationPort";
 
   export let entity_type: string;
   export let show_actions: boolean = true;
@@ -424,13 +427,71 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
     return filter;
   }
 
+  function build_authorization_filter(): Record<string, string> {
+    const auth_filter: Record<string, string> = {};
+    const auth_state = get(auth_store);
+
+    if (!auth_state.current_profile) return auth_filter;
+    if (!entity_metadata) return auth_filter;
+
+    const profile = auth_state.current_profile;
+    const entity_fields = entity_metadata.fields.map(
+      (f: FieldMetadata) => f.field_name,
+    );
+
+    if (
+      profile.organization_id !== ANY_VALUE &&
+      entity_fields.includes("organization_id")
+    ) {
+      auth_filter["organization_id"] = profile.organization_id;
+    }
+
+    if (profile.team_id !== ANY_VALUE && entity_fields.includes("team_id")) {
+      auth_filter["team_id"] = profile.team_id;
+    }
+
+    if (
+      profile.player_id &&
+      profile.player_id !== ANY_VALUE &&
+      entity_fields.includes("player_id")
+    ) {
+      auth_filter["player_id"] = profile.player_id;
+    }
+
+    return auth_filter;
+  }
+
+  function merge_filters(
+    sub_entity_filter_result: Record<string, string> | undefined,
+    auth_filter: Record<string, string>,
+  ): Record<string, string> | undefined {
+    const has_sub_filter =
+      sub_entity_filter_result &&
+      Object.keys(sub_entity_filter_result).length > 0;
+    const has_auth_filter = Object.keys(auth_filter).length > 0;
+
+    if (!has_sub_filter && !has_auth_filter) return undefined;
+
+    return {
+      ...(sub_entity_filter_result || {}),
+      ...auth_filter,
+    };
+  }
+
   async function load_all_entities_for_display(): Promise<void> {
     console.log(`[ENTITY_LIST] Loading entities for type: "${entity_type}"`);
     is_loading = true;
     error_message = "";
 
     try {
-      const filter = build_filter_from_sub_entity_config(sub_entity_filter);
+      const sub_filter = build_filter_from_sub_entity_config(sub_entity_filter);
+      const auth_filter = build_authorization_filter();
+      const filter = merge_filters(sub_filter, auth_filter);
+
+      console.debug(
+        `[DynamicEntityList] Applied filters for "${entity_type}":`,
+        { sub_filter, auth_filter, merged: filter },
+      );
 
       if (crud_handlers?.list) {
         console.debug(

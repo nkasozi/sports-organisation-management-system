@@ -26,11 +26,14 @@ import type { ActivityCategory } from "../../core/entities/ActivityCategory";
 import type { AuditLog } from "../../core/entities/AuditLog";
 import type { SystemUser } from "../../core/entities/SystemUser";
 import type { IdentificationType } from "../../core/entities/IdentificationType";
+import type { Gender } from "../../core/entities/Gender";
 import type { Identification } from "../../core/entities/Identification";
 import type { Qualification } from "../../core/entities/Qualification";
 import type { GameEventType } from "../../core/entities/GameEventType";
 import type { OfficialAssociatedTeam } from "../../core/entities/OfficialAssociatedTeam";
 import type { PlayerTeamTransferHistory } from "../../core/entities/PlayerTeamTransferHistory";
+import type { LiveGameLog } from "../../core/entities/LiveGameLog";
+import type { GameEventLog } from "../../core/entities/GameEventLog";
 
 const DATABASE_NAME = "SportsOrgManagementDB";
 const DATABASE_VERSION = 1;
@@ -63,11 +66,14 @@ class SportsOrgDatabase extends Dexie {
   audit_logs!: Table<AuditLog, string>;
   system_users!: Table<SystemUser, string>;
   identification_types!: Table<IdentificationType, string>;
+  genders!: Table<Gender, string>;
   identifications!: Table<Identification, string>;
   qualifications!: Table<Qualification, string>;
   game_event_types!: Table<GameEventType, string>;
   official_associated_teams!: Table<OfficialAssociatedTeam, string>;
   player_team_transfer_histories!: Table<PlayerTeamTransferHistory, string>;
+  live_game_logs!: Table<LiveGameLog, string>;
+  game_event_logs!: Table<GameEventLog, string>;
 
   constructor() {
     super(DATABASE_NAME);
@@ -106,6 +112,7 @@ class SportsOrgDatabase extends Dexie {
       audit_logs: "id, action, entity_type, entity_id, user_id, created_at",
       system_users: "id, email, role, organization_id, created_at",
       identification_types: "id, name, country, created_at",
+      genders: "id, name, status, created_at",
       identifications:
         "id, entity_type, entity_id, identification_type_id, created_at",
       qualifications: "id, entity_type, entity_id, name, created_at",
@@ -114,6 +121,10 @@ class SportsOrgDatabase extends Dexie {
         "id, official_id, team_id, association_type, status, created_at",
       player_team_transfer_histories:
         "id, player_id, from_team_id, to_team_id, status, transfer_date, created_at",
+      live_game_logs:
+        "id, organization_id, fixture_id, game_status, started_at, ended_at, created_at",
+      game_event_logs:
+        "id, organization_id, live_game_log_id, fixture_id, event_type, minute, team_side, player_id, created_at",
     });
   }
 }

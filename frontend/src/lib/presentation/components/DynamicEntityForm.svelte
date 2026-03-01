@@ -86,10 +86,16 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
 
   $: {
     if (entity_metadata) {
-      initialize_form_data_for_entity(entity_metadata, entity_data);
+      const initialized_form_data = initialize_form_data_for_entity(
+        entity_metadata,
+        entity_data,
+      );
       if (browser) {
         void load_foreign_key_options_for_all_fields(entity_metadata.fields);
-        void load_filtered_options_for_edit_mode(entity_metadata, entity_data);
+        void load_filtered_options_for_initialized_data(
+          entity_metadata,
+          initialized_form_data,
+        );
         void check_official_team_conflicts();
       }
     }
@@ -214,7 +220,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
   function initialize_form_data_for_entity(
     metadata: EntityMetadata,
     existing_data: Partial<BaseEntity> | null,
-  ): void {
+  ): Record<string, any> {
     const new_form_data: Record<string, any> = {};
     const authorization_preselect = get_authorization_preselect_values();
 
@@ -239,6 +245,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
 
     form_data = new_form_data;
     validation_errors = {};
+    return new_form_data;
   }
 
   function get_default_value_for_field_type(field: FieldMetadata): any {
@@ -304,20 +311,47 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
 
   function is_field_restricted_by_authorization(field_name: string): boolean {
     const auth_state = get(auth_store);
-    if (!auth_state.current_profile) return false;
+    if (!auth_state.current_profile) {
+      console.warn(
+        `[AuthRestriction] No current_profile available for field: ${field_name}`,
+      );
+      return true;
+    }
 
     const profile = auth_state.current_profile;
     const org_id = profile.organization_id;
     const team_id = profile.team_id;
+    const player_id = profile.player_id;
+
+    console.debug(`[AuthRestriction] Checking field: ${field_name}`, {
+      org_id,
+      team_id,
+      player_id,
+      ANY_VALUE,
+    });
 
     if (field_name === "organization_id" && org_id !== ANY_VALUE) {
+      console.debug(
+        `[AuthRestriction] Field ${field_name} IS RESTRICTED (org_id=${org_id}, ANY_VALUE=${ANY_VALUE})`,
+      );
       return true;
     }
 
     if (field_name === "team_id" && team_id !== ANY_VALUE) {
+      console.debug(
+        `[AuthRestriction] Field ${field_name} IS RESTRICTED (team_id=${team_id})`,
+      );
       return true;
     }
 
+    if (field_name === "player_id" && player_id && player_id !== ANY_VALUE) {
+      console.debug(
+        `[AuthRestriction] Field ${field_name} IS RESTRICTED (player_id=${player_id})`,
+      );
+      return true;
+    }
+
+    console.debug(`[AuthRestriction] Field ${field_name} is NOT restricted`);
     return false;
   }
 
@@ -337,7 +371,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
       preselect_values["team_id"] = profile.team_id;
     }
 
-    if (profile.player_id) {
+    if (profile.player_id && profile.player_id !== ANY_VALUE) {
       preselect_values["player_id"] = profile.player_id;
     }
 
@@ -525,6 +559,11 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
 
     if (filter_config.filter_type === "officials_from_organization") {
       await load_officials_from_organization(field, dependency_value);
+      return;
+    }
+
+    if (filter_config.filter_type === "live_game_logs_from_organization") {
+      await load_live_game_logs_from_organization(field, dependency_value);
       return;
     }
 
@@ -914,6 +953,70 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
     };
   }
 
+  async function load_live_game_logs_from_organization(
+    field: FieldMetadata,
+    organization_id: string,
+  ): Promise<void> {
+    const live_game_log_use_cases =
+      get_use_cases_for_entity_type("livegamelog");
+    if (!live_game_log_use_cases) {
+      console.warn("[FILTERED_FK] Missing live game log use cases");
+      foreign_key_options[field.field_name] = [];
+      filtered_fields_loading = {
+        ...filtered_fields_loading,
+        [field.field_name]: false,
+      };
+      return;
+    }
+
+    const live_game_logs_result = await live_game_log_use_cases.list();
+    if (!live_game_logs_result.success) {
+      console.warn(
+        "[FILTERED_FK] Failed to load live game logs:",
+        organization_id,
+      );
+      foreign_key_options[field.field_name] = [];
+      filtered_fields_loading = {
+        ...filtered_fields_loading,
+        [field.field_name]: false,
+      };
+      return;
+    }
+
+    const all_live_game_logs_data = live_game_logs_result.data as unknown;
+    const all_live_game_logs: BaseEntity[] = Array.isArray(
+      all_live_game_logs_data,
+    )
+      ? (all_live_game_logs_data as BaseEntity[])
+      : Array.isArray((all_live_game_logs_data as { items?: unknown })?.items)
+        ? ((all_live_game_logs_data as { items: unknown[] })
+            .items as unknown as BaseEntity[])
+        : [];
+
+    const filtered_live_game_logs = all_live_game_logs.filter(
+      (log) =>
+        (log as unknown as { organization_id: string }).organization_id ===
+        organization_id,
+    );
+
+    console.debug("[FILTERED_FK] Loaded organization live game logs", {
+      field: field.field_name,
+      organization_id,
+      total_live_game_logs: all_live_game_logs.length,
+      filtered_count: filtered_live_game_logs.length,
+    });
+
+    foreign_key_options = {
+      ...foreign_key_options,
+      [field.field_name]: filtered_live_game_logs,
+    };
+
+    filtered_fields_loading = {
+      ...filtered_fields_loading,
+      [field.field_name]: false,
+    };
+  }
+
   async function load_filtered_jersey_options_internal(
     field: FieldMetadata,
     fixture_id: string,
@@ -1096,19 +1199,18 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
     }
   }
 
-  async function load_filtered_options_for_edit_mode(
+  async function load_filtered_options_for_initialized_data(
     metadata: EntityMetadata,
-    data: Partial<BaseEntity> | null,
+    initialized_data: Record<string, unknown>,
   ): Promise<void> {
-    if (!data) return;
-
     for (const field of metadata.fields) {
       if (field.foreign_key_filter) {
         const dependency_field = field.foreign_key_filter.depends_on_field;
-        const dependency_value = (data as Record<string, unknown>)[
-          dependency_field
-        ];
-        if (dependency_value && typeof dependency_value === "string") {
+        const dependency_value = initialized_data[dependency_field];
+        if (
+          typeof dependency_value === "string" &&
+          dependency_value.length > 0
+        ) {
           await load_filtered_foreign_key_options(field, dependency_value);
         }
       }

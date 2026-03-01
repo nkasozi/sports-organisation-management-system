@@ -76,6 +76,7 @@ export const ENTITY_TYPES = [
   "venue",
   "sport",
   "identificationtype",
+  "gender",
   "identification",
   "qualification",
   "systemuser",

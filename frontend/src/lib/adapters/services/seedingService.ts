@@ -57,6 +57,10 @@ import {
   InBrowserIdentificationTypeRepository,
 } from "../repositories/InBrowserIdentificationTypeRepository";
 import {
+  get_gender_repository,
+  InBrowserGenderRepository,
+} from "../repositories/InBrowserGenderRepository";
+import {
   get_player_profile_repository,
   InBrowserPlayerProfileRepository,
 } from "../repositories/InBrowserPlayerProfileRepository";
@@ -86,6 +90,7 @@ import {
   create_seed_team_profiles,
   create_seed_team_profile_links,
   create_seed_system_users,
+  create_seed_genders,
   create_seed_identification_types,
   SEED_ORGANIZATION_IDS,
   SEED_SYSTEM_USER_IDS,
@@ -274,6 +279,12 @@ export async function seed_all_data_if_needed(): Promise<boolean> {
   const fixture_repository =
     get_fixture_repository() as InBrowserFixtureRepository;
   const venue_repository = get_venue_repository() as InBrowserVenueRepository;
+  const gender_repository =
+    get_gender_repository() as InBrowserGenderRepository;
+
+  const seed_genders = create_seed_genders();
+  await gender_repository.seed_with_data(seed_genders);
+  emit_entity_created_events("gender", seed_genders, (gender) => gender.name);
 
   const positions_result = await player_position_repository.find_all({
     page_size: 100,

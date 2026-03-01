@@ -8,6 +8,7 @@ export const DEFAULT_PLAYER_AVATAR =
 export interface Player extends BaseEntity {
   first_name: string;
   last_name: string;
+  gender_id: string;
   email: string;
   phone: string;
   date_of_birth: string;
@@ -55,6 +56,7 @@ export function create_empty_player_input(
   return {
     first_name: "",
     last_name: "",
+    gender_id: "",
     email: "",
     phone: "",
     date_of_birth: "",
@@ -80,6 +82,10 @@ export function validate_player_input(input: CreatePlayerInput): string[] {
 
   if (!input.last_name || input.last_name.trim().length < 1) {
     validation_errors.push("Last name is required");
+  }
+
+  if (!input.gender_id || input.gender_id.trim().length === 0) {
+    validation_errors.push("Gender is required");
   }
 
   if (!input.date_of_birth) {

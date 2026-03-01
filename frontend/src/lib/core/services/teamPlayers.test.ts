@@ -18,6 +18,7 @@ describe("teamPlayers", () => {
       updated_at: "",
       first_name: "First",
       last_name: "Last",
+      gender_id: "gender_default_male",
       email: "test@example.com",
       phone: "+000",
       date_of_birth: "2000-01-01",

@@ -22,6 +22,7 @@ describe("Player", () => {
       date_of_birth: "1995-01-01",
       nationality: "Uganda",
       position_id: "playerposition_default_1",
+      gender_id: "gender_seed_female",
     });
 
     expect(errors.length).toBe(0);

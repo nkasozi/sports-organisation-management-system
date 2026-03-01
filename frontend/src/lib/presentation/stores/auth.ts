@@ -7,6 +7,10 @@ import type {
   Permission,
 } from "$lib/core/interfaces/ports/AuthenticationPort";
 import {
+  set_user_context,
+  clear_user_context,
+} from "$lib/infrastructure/events/EventBus";
+import {
   USER_ROLE_DISPLAY_NAMES,
   USER_ROLE_ORDER,
   ROLE_PERMISSIONS,
@@ -59,6 +63,7 @@ function create_default_profiles(): UserProfile[] {
       role: "super_admin",
       organization_id: ANY_VALUE,
       team_id: ANY_VALUE,
+      player_id: ANY_VALUE,
     },
     {
       id: "org-admin-profile",
@@ -67,6 +72,7 @@ function create_default_profiles(): UserProfile[] {
       role: "org_admin",
       organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       team_id: ANY_VALUE,
+      player_id: ANY_VALUE,
     },
     {
       id: "officials-manager-profile",
@@ -75,6 +81,7 @@ function create_default_profiles(): UserProfile[] {
       role: "officials_manager",
       organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       team_id: ANY_VALUE,
+      player_id: ANY_VALUE,
     },
     {
       id: "team-manager-profile",
@@ -83,6 +90,7 @@ function create_default_profiles(): UserProfile[] {
       role: "team_manager",
       organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       team_id: SEED_TEAM_IDS.WEATHERHEAD_HC,
+      player_id: ANY_VALUE,
     },
     {
       id: "official-profile",
@@ -91,6 +99,7 @@ function create_default_profiles(): UserProfile[] {
       role: "official",
       organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
       team_id: ANY_VALUE,
+      player_id: ANY_VALUE,
       official_id: SEED_OFFICIAL_IDS.MICHAEL_ANDERSON,
     },
     {
@@ -160,6 +169,19 @@ function create_auth_store() {
     });
   }
 
+  function sync_user_context_with_event_bus(profile: UserProfile | null): void {
+    if (!profile) {
+      clear_user_context();
+      return;
+    }
+    set_user_context({
+      user_id: profile.id,
+      user_email: profile.email,
+      user_display_name: profile.display_name,
+      organization_id: profile.organization_id,
+    });
+  }
+
   async function initialize(): Promise<void> {
     const available_profiles = create_default_profiles();
     const saved_profile_id = load_saved_profile_id();
@@ -212,6 +234,8 @@ function create_auth_store() {
       );
     }
 
+    sync_user_context_with_event_bus(current_profile);
+
     set({
       current_token,
       current_profile,
@@ -234,6 +258,8 @@ function create_auth_store() {
     const new_token = await generate_token_for_profile(target_profile);
     save_token(new_token.raw_token);
     save_profile_id(target_profile.id);
+
+    sync_user_context_with_event_bus(target_profile);
 
     update((s) => ({
       ...s,
@@ -260,6 +286,7 @@ function create_auth_store() {
 
   function logout(): void {
     clear_auth_storage();
+    clear_user_context();
     set({
       current_token: null,
       current_profile: null,

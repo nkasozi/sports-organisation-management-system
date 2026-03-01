@@ -26,6 +26,7 @@ export * from "./InBrowserActivityCategoryRepository";
 export * from "./InBrowserAuditLogRepository";
 export * from "./InBrowserSystemUserRepository";
 export * from "./InBrowserIdentificationTypeRepository";
+export * from "./InBrowserGenderRepository";
 export * from "./InBrowserIdentificationRepository";
 export * from "./InBrowserQualificationRepository";
 export * from "./InBrowserGameEventTypeRepository";

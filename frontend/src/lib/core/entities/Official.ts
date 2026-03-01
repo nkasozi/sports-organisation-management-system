@@ -8,6 +8,7 @@ export const DEFAULT_OFFICIAL_AVATAR =
 export interface Official extends BaseEntity {
   first_name: string;
   last_name: string;
+  gender_id: string;
   email: string;
   phone: string;
   date_of_birth: string;
@@ -53,6 +54,7 @@ export function create_empty_official_input(
   return {
     first_name: "",
     last_name: "",
+    gender_id: "",
     email: "",
     phone: "",
     date_of_birth: "",
@@ -80,6 +82,10 @@ export function validate_official_input(input: CreateOfficialInput): string[] {
 
   if (!input.organization_id) {
     validation_errors.push("Organization is required");
+  }
+
+  if (!input.gender_id || input.gender_id.trim().length === 0) {
+    validation_errors.push("Gender is required");
   }
 
   if (input.email && !is_valid_email(input.email)) {

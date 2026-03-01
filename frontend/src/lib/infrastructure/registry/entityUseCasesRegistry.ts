@@ -18,6 +18,7 @@ import { get_sport_use_cases } from "$lib/core/usecases/SportUseCases";
 import { get_qualification_use_cases } from "$lib/core/usecases/QualificationUseCases";
 import { get_venue_use_cases } from "$lib/core/usecases/VenueUseCases";
 import { get_identification_type_use_cases } from "$lib/core/usecases/IdentificationTypeUseCases";
+import { get_gender_use_cases } from "$lib/core/usecases/GenderUseCases";
 import { get_identification_use_cases } from "$lib/core/usecases/IdentificationUseCases";
 import { get_jersey_color_use_cases } from "$lib/core/usecases/JerseyColorUseCases";
 import { get_system_user_use_cases } from "$lib/core/usecases/SystemUserUseCases";
@@ -26,6 +27,8 @@ import { get_player_profile_use_cases } from "$lib/core/usecases/PlayerProfileUs
 import { get_team_profile_use_cases } from "$lib/core/usecases/TeamProfileUseCases";
 import { get_profile_link_use_cases } from "$lib/core/usecases/ProfileLinkUseCases";
 import { get_official_associated_team_use_cases } from "$lib/core/usecases/OfficialAssociatedTeamUseCases";
+import { get_live_game_log_use_cases } from "$lib/core/usecases/LiveGameLogUseCases";
+import { get_game_event_log_use_cases } from "$lib/core/usecases/GameEventLogUseCases";
 import { EventBus } from "$lib/infrastructure/events/EventBus";
 import type {
   BaseEntity,
@@ -54,6 +57,7 @@ const VALID_ENTITY_TYPE_KEYS = [
   "qualification",
   "venue",
   "identificationtype",
+  "gender",
   "identification",
   "jerseycolor",
   "systemuser",
@@ -62,6 +66,8 @@ const VALID_ENTITY_TYPE_KEYS = [
   "teamprofile",
   "profilelink",
   "officialassociatedteam",
+  "livegamelog",
+  "gameeventlog",
 ] as const;
 
 export type EntityTypeKey = (typeof VALID_ENTITY_TYPE_KEYS)[number];
@@ -124,6 +130,7 @@ function create_use_cases_registry(): Record<EntityTypeKey, UseCasesGetter> {
     ["venue" satisfies EntityTypeKey]: get_venue_use_cases as UseCasesGetter,
     ["identificationtype" satisfies EntityTypeKey]:
       get_identification_type_use_cases as UseCasesGetter,
+    ["gender" satisfies EntityTypeKey]: get_gender_use_cases as UseCasesGetter,
     ["identification" satisfies EntityTypeKey]:
       get_identification_use_cases as UseCasesGetter,
     ["jerseycolor" satisfies EntityTypeKey]:
@@ -140,6 +147,10 @@ function create_use_cases_registry(): Record<EntityTypeKey, UseCasesGetter> {
       get_profile_link_use_cases as UseCasesGetter,
     ["officialassociatedteam" satisfies EntityTypeKey]:
       get_official_associated_team_use_cases as UseCasesGetter,
+    ["livegamelog" satisfies EntityTypeKey]:
+      get_live_game_log_use_cases as UseCasesGetter,
+    ["gameeventlog" satisfies EntityTypeKey]:
+      get_game_event_log_use_cases as UseCasesGetter,
   } satisfies Record<EntityTypeKey, UseCasesGetter>;
 
   return registry_definition;
@@ -189,6 +200,7 @@ const ENTITY_DISPLAY_NAME_GETTERS: Record<
   qualification: (e) => (to_record(e).name as string) || e.id,
   venue: (e) => (to_record(e).name as string) || e.id,
   identificationtype: (e) => (to_record(e).name as string) || e.id,
+  gender: (e) => (to_record(e).name as string) || e.id,
   identification: (e) => e.id,
   jerseycolor: (e) => (to_record(e).nickname as string) || e.id,
   systemuser: (e) => {
@@ -203,6 +215,14 @@ const ENTITY_DISPLAY_NAME_GETTERS: Record<
   profilelink: (e) => {
     const l = to_record(e);
     return (l.title as string) || (l.platform as string) || e.id;
+  },
+  livegamelog: (e) => {
+    const g = to_record(e);
+    return `Game ${g.fixture_id || e.id} - ${g.game_status || "unknown"}`;
+  },
+  gameeventlog: (e) => {
+    const ev = to_record(e);
+    return `${ev.event_type || "Event"} at ${ev.minute || 0}'`;
   },
 };
 

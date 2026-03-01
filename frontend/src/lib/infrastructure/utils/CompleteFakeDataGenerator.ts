@@ -287,6 +287,7 @@ export function generate_player(_team_id: string | null): Player {
     id: `player_${generate_id()}`,
     first_name,
     last_name,
+    gender_id: random_element(["gender_default_male", "gender_default_female"]),
     email: generate_email(first_name, last_name),
     phone: generate_phone(),
     date_of_birth: random_date_between(
@@ -355,6 +356,7 @@ export function generate_official(organization_id: string): Official {
     id: `official_${generate_id()}`,
     first_name,
     last_name,
+    gender_id: random_element(["gender_default_male", "gender_default_female"]),
     email: generate_email(first_name, last_name),
     phone: generate_phone(),
     date_of_birth: random_date_between(

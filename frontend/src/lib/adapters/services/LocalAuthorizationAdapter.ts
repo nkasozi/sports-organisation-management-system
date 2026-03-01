@@ -80,6 +80,7 @@ const SUPER_ADMIN_PERMISSIONS: RolePermissionMap = {
   venue: ANY_LEVEL_PERMISSIONS,
   sport: ANY_LEVEL_PERMISSIONS,
   identificationtype: ANY_LEVEL_PERMISSIONS,
+  gender: ANY_LEVEL_PERMISSIONS,
   identification: ANY_LEVEL_PERMISSIONS,
   qualification: ANY_LEVEL_PERMISSIONS,
   systemuser: ANY_LEVEL_PERMISSIONS,
@@ -92,6 +93,8 @@ const SUPER_ADMIN_PERMISSIONS: RolePermissionMap = {
   jerseycolor: ANY_LEVEL_PERMISSIONS,
   profilelink: ANY_LEVEL_PERMISSIONS,
   officialassociatedteam: ANY_LEVEL_PERMISSIONS,
+  livegamelog: ANY_LEVEL_PERMISSIONS,
+  gameeventlog: ANY_LEVEL_PERMISSIONS,
 };
 
 const ORG_ADMIN_PERMISSIONS: RolePermissionMap = {
@@ -134,6 +137,7 @@ const ORG_ADMIN_PERMISSIONS: RolePermissionMap = {
     list: "any",
     view: "any",
   },
+  gender: DEFAULT_PERMISSIONS,
   identification: ORG_LEVEL_PERMISSIONS,
   qualification: ORG_LEVEL_PERMISSIONS,
   systemuser: DEFAULT_PERMISSIONS,
@@ -147,6 +151,8 @@ const ORG_ADMIN_PERMISSIONS: RolePermissionMap = {
   jerseycolor: ORG_LEVEL_PERMISSIONS,
   profilelink: ORG_LEVEL_PERMISSIONS,
   officialassociatedteam: ORG_LEVEL_PERMISSIONS,
+  livegamelog: ORG_LEVEL_PERMISSIONS,
+  gameeventlog: ORG_LEVEL_PERMISSIONS,
 };
 
 const OFFICIALS_MANAGER_PERMISSIONS: RolePermissionMap = {
@@ -249,6 +255,7 @@ const OFFICIALS_MANAGER_PERMISSIONS: RolePermissionMap = {
     list: "any",
     view: "any",
   },
+  gender: DEFAULT_PERMISSIONS,
   identification: DEFAULT_PERMISSIONS,
   qualification: DEFAULT_PERMISSIONS,
   systemuser: DEFAULT_PERMISSIONS,
@@ -262,6 +269,8 @@ const OFFICIALS_MANAGER_PERMISSIONS: RolePermissionMap = {
   },
   profilelink: DEFAULT_PERMISSIONS,
   officialassociatedteam: ORG_LEVEL_PERMISSIONS,
+  livegamelog: ORG_LEVEL_PERMISSIONS,
+  gameeventlog: ORG_LEVEL_PERMISSIONS,
 };
 
 const TEAM_MANAGER_PERMISSIONS: RolePermissionMap = {
@@ -400,6 +409,7 @@ const TEAM_MANAGER_PERMISSIONS: RolePermissionMap = {
     list: "any",
     view: "any",
   },
+  gender: DEFAULT_PERMISSIONS,
   identification: TEAM_LEVEL_PERMISSIONS,
   qualification: TEAM_LEVEL_PERMISSIONS,
   systemuser: DEFAULT_PERMISSIONS,
@@ -419,6 +429,8 @@ const TEAM_MANAGER_PERMISSIONS: RolePermissionMap = {
     list: "team",
     view: "team",
   },
+  livegamelog: TEAM_LEVEL_PERMISSIONS,
+  gameeventlog: TEAM_LEVEL_PERMISSIONS,
 };
 
 const OFFICIAL_PERMISSIONS: RolePermissionMap = {
@@ -497,6 +509,7 @@ const OFFICIAL_PERMISSIONS: RolePermissionMap = {
   },
   sport: DEFAULT_PERMISSIONS,
   identificationtype: DEFAULT_PERMISSIONS,
+  gender: DEFAULT_PERMISSIONS,
   identification: DEFAULT_PERMISSIONS,
   qualification: DEFAULT_PERMISSIONS,
   systemuser: DEFAULT_PERMISSIONS,
@@ -504,6 +517,20 @@ const OFFICIAL_PERMISSIONS: RolePermissionMap = {
   jerseycolor: DEFAULT_PERMISSIONS,
   profilelink: DEFAULT_PERMISSIONS,
   officialassociatedteam: DEFAULT_PERMISSIONS,
+  livegamelog: {
+    create: "none",
+    edit: "none",
+    delete: "none",
+    list: "any",
+    view: "any",
+  },
+  gameeventlog: {
+    create: "organization",
+    edit: "none",
+    delete: "none",
+    list: "any",
+    view: "any",
+  },
 };
 
 const PLAYER_PERMISSIONS: RolePermissionMap = {
@@ -582,6 +609,7 @@ const PLAYER_PERMISSIONS: RolePermissionMap = {
   venue: DEFAULT_PERMISSIONS,
   sport: DEFAULT_PERMISSIONS,
   identificationtype: DEFAULT_PERMISSIONS,
+  gender: DEFAULT_PERMISSIONS,
   identification: {
     create: "player",
     edit: "player",
@@ -607,6 +635,20 @@ const PLAYER_PERMISSIONS: RolePermissionMap = {
     view: "player",
   },
   officialassociatedteam: DEFAULT_PERMISSIONS,
+  livegamelog: {
+    create: "none",
+    edit: "none",
+    delete: "none",
+    list: "player",
+    view: "player",
+  },
+  gameeventlog: {
+    create: "none",
+    edit: "none",
+    delete: "none",
+    list: "player",
+    view: "player",
+  },
 };
 
 const ROLE_PERMISSION_MAPS: Record<UserRole, RolePermissionMap> = {
@@ -773,11 +815,6 @@ const SUPER_ADMIN_MENU: SidebarMenuGroup[] = [
         icon: "M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z",
       },
       {
-        name: "Live Games",
-        href: "/live-games",
-        icon: "M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z M21 12a9 9 0 11-18 0 9 9 0 0118 0z",
-      },
-      {
         name: "Game Event Types",
         href: "/event-types",
         icon: "M13 10V3L4 14h7v7l9-11h-7z",
@@ -796,6 +833,11 @@ const SUPER_ADMIN_MENU: SidebarMenuGroup[] = [
         name: "ID Types",
         href: "/identification-types",
         icon: "M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2",
+      },
+      {
+        name: "Genders",
+        href: "/genders",
+        icon: "M7 8a5 5 0 1110 0 5 5 0 01-10 0zm10 0v4m0 0h4m-4 0l-2 2m-6 2a4 4 0 108 0 4 4 0 00-8 0z",
       },
       {
         name: "Audit Trail",
@@ -951,11 +993,6 @@ const ORG_ADMIN_MENU: SidebarMenuGroup[] = [
         icon: "M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z",
       },
       {
-        name: "Live Games",
-        href: "/live-games",
-        icon: "M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z M21 12a9 9 0 11-18 0 9 9 0 0118 0z",
-      },
-      {
         name: "Game Event Types",
         href: "/event-types",
         icon: "M13 10V3L4 14h7v7l9-11h-7z",
@@ -1038,11 +1075,6 @@ const OFFICIALS_MANAGER_MENU: SidebarMenuGroup[] = [
         href: "/fixture-details-setup",
         icon: "M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z",
       },
-      {
-        name: "Live Games",
-        href: "/live-games",
-        icon: "M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z M21 12a9 9 0 11-18 0 9 9 0 0118 0z",
-      },
     ],
   },
 ];
@@ -1120,11 +1152,6 @@ const TEAM_MANAGER_MENU: SidebarMenuGroup[] = [
         name: "Team Lineups",
         href: "/fixture-lineups",
         icon: "M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01",
-      },
-      {
-        name: "Live Games",
-        href: "/live-games",
-        icon: "M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z M21 12a9 9 0 11-18 0 9 9 0 0118 0z",
       },
     ],
   },
@@ -1488,12 +1515,15 @@ export class LocalAuthorizationAdapter implements AuthorizationPort {
       venue: "Venue",
       sport: "Sport",
       identificationtype: "Identification Type",
+      gender: "Gender",
       identification: "Identification",
       qualification: "Qualification",
       auditlog: "Audit Log",
       jerseycolor: "Jersey Color",
       profilelink: "Profile Link",
       officialassociatedteam: "Official Associated Team",
+      livegamelog: "Live Game Log",
+      gameeventlog: "Game Event Log",
     };
 
     const normalized_type = entity_type.toLowerCase().replace(/[\s_]/g, "");

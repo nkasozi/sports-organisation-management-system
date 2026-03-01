@@ -24,6 +24,7 @@ import type { TeamStaff } from "../../core/entities/TeamStaff";
 import type { Venue } from "../../core/entities/Venue";
 import type { Qualification } from "../../core/entities/Qualification";
 import type { IdentificationType } from "../../core/entities/IdentificationType";
+import type { Gender } from "../../core/entities/Gender";
 import type { Identification } from "../../core/entities/Identification";
 import type { FixtureDetailsSetup } from "../../core/entities/FixtureDetailsSetup";
 import type { SystemUser } from "../../core/entities/SystemUser";
@@ -37,6 +38,16 @@ import type { ProfileLink } from "../../core/entities/ProfileLink";
 import { PROFILE_LINK_PLATFORM_OPTIONS } from "../../core/entities/ProfileLink";
 import type { OfficialAssociatedTeam } from "../../core/entities/OfficialAssociatedTeam";
 import { OFFICIAL_TEAM_ASSOCIATION_TYPE_OPTIONS } from "../../core/entities/OfficialAssociatedTeam";
+import type { LiveGameLog } from "../../core/entities/LiveGameLog";
+import {
+  LIVE_GAME_STATUS_OPTIONS,
+  LIVE_GAME_PERIOD_OPTIONS,
+} from "../../core/entities/LiveGameLog";
+import type { GameEventLog } from "../../core/entities/GameEventLog";
+import {
+  GAME_EVENT_TYPE_OPTIONS,
+  TEAM_SIDE_OPTIONS,
+} from "../../core/entities/GameEventLog";
 
 function generate_30_minute_time_intervals(): string[] {
   const intervals: string[] = [];
@@ -113,6 +124,10 @@ class EntityMetadataRegistry {
           is_required: true,
           is_read_only: false,
           show_in_list: true,
+          foreign_key_filter: {
+            depends_on_field: "organization_id",
+            filter_type: "teams_from_organization",
+          },
         },
         {
           field_name: "role_id" satisfies keyof TeamStaff,
@@ -589,6 +604,7 @@ class EntityMetadataRegistry {
     this.register_team_staff_metadata();
     this.register_venue_metadata();
     this.register_identification_type_metadata();
+    this.register_gender_metadata();
     this.register_identification_metadata();
     this.register_jersey_color_metadata();
     this.register_system_user_metadata();
@@ -597,6 +613,8 @@ class EntityMetadataRegistry {
     this.register_team_profile_metadata();
     this.register_profile_link_metadata();
     this.register_official_associated_team_metadata();
+    this.register_live_game_log_metadata();
+    this.register_game_event_log_metadata();
   }
 
   private register_organization_metadata(): void {
@@ -1009,6 +1027,15 @@ class EntityMetadataRegistry {
           ],
         },
         {
+          field_name: "gender_id" satisfies keyof Player,
+          display_name: "Gender",
+          field_type: "foreign_key",
+          is_required: true,
+          is_read_only: false,
+          foreign_key_entity: "gender",
+          show_in_list: true,
+        },
+        {
           field_name: "position_id" satisfies keyof Player,
           display_name: "Position",
           field_type: "foreign_key",
@@ -1348,6 +1375,15 @@ class EntityMetadataRegistry {
               error_message: "Last name is required",
             },
           ],
+        },
+        {
+          field_name: "gender_id" satisfies keyof Official,
+          display_name: "Gender",
+          field_type: "foreign_key",
+          is_required: true,
+          is_read_only: false,
+          foreign_key_entity: "gender",
+          show_in_list: true,
         },
         {
           field_name: "email" satisfies keyof Official,
@@ -2369,6 +2405,46 @@ class EntityMetadataRegistry {
     });
   }
 
+  private register_gender_metadata(): void {
+    this.metadata_map.set("gender", {
+      entity_name: "gender",
+      display_name: "Gender",
+      fields: [
+        {
+          field_name: "name" satisfies keyof Gender,
+          display_name: "Name",
+          field_type: "string",
+          is_required: true,
+          is_read_only: false,
+          show_in_list: true,
+          validation_rules: [
+            {
+              rule_type: "min_length",
+              rule_value: 2,
+              error_message: "Name must be at least 2 characters",
+            },
+          ],
+        },
+        {
+          field_name: "description" satisfies keyof Gender,
+          display_name: "Description",
+          field_type: "string",
+          is_required: false,
+          is_read_only: false,
+        },
+        {
+          field_name: "status" satisfies keyof Gender,
+          display_name: "Status",
+          field_type: "enum",
+          enum_values: ["active", "inactive"],
+          is_required: true,
+          is_read_only: false,
+          show_in_list: true,
+        },
+      ],
+    });
+  }
+
   private register_identification_metadata(): void {
     this.metadata_map.set("identification", {
       entity_name: "identification",
@@ -2971,6 +3047,307 @@ class EntityMetadataRegistry {
           is_required: true,
           is_read_only: false,
           enum_values: ["active", "inactive"],
+          show_in_list: true,
+        },
+      ],
+    });
+  }
+
+  private register_live_game_log_metadata(): void {
+    this.metadata_map.set("livegamelog", {
+      entity_name: "livegamelog",
+      display_name: "Live Game Log",
+      fields: [
+        {
+          field_name: "organization_id" satisfies keyof LiveGameLog,
+          display_name: "Organization",
+          field_type: "foreign_key",
+          foreign_key_entity: "organization",
+          is_required: true,
+          is_read_only: false,
+          show_in_list: false,
+        },
+        {
+          field_name: "fixture_id" satisfies keyof LiveGameLog,
+          display_name: "Fixture",
+          field_type: "foreign_key",
+          foreign_key_entity: "fixture",
+          is_required: true,
+          is_read_only: false,
+          show_in_list: true,
+          foreign_key_filter: {
+            depends_on_field: "organization_id",
+            filter_type: "fixtures_from_organization",
+          },
+        },
+        {
+          field_name: "home_lineup_id" satisfies keyof LiveGameLog,
+          display_name: "Home Lineup",
+          field_type: "foreign_key",
+          foreign_key_entity: "fixturelineup",
+          is_required: false,
+          is_read_only: false,
+          show_in_list: false,
+        },
+        {
+          field_name: "away_lineup_id" satisfies keyof LiveGameLog,
+          display_name: "Away Lineup",
+          field_type: "foreign_key",
+          foreign_key_entity: "fixturelineup",
+          is_required: false,
+          is_read_only: false,
+          show_in_list: false,
+        },
+        {
+          field_name: "current_period" satisfies keyof LiveGameLog,
+          display_name: "Current Period",
+          field_type: "enum",
+          is_required: true,
+          is_read_only: false,
+          show_in_list: true,
+          enum_options: LIVE_GAME_PERIOD_OPTIONS,
+        },
+        {
+          field_name: "current_minute" satisfies keyof LiveGameLog,
+          display_name: "Current Minute",
+          field_type: "number",
+          is_required: false,
+          is_read_only: false,
+          show_in_list: true,
+        },
+        {
+          field_name: "stoppage_time_minutes" satisfies keyof LiveGameLog,
+          display_name: "Stoppage Time",
+          field_type: "number",
+          is_required: false,
+          is_read_only: false,
+          show_in_list: false,
+        },
+        {
+          field_name: "clock_running" satisfies keyof LiveGameLog,
+          display_name: "Clock Running",
+          field_type: "boolean",
+          is_required: false,
+          is_read_only: false,
+          show_in_list: false,
+        },
+        {
+          field_name: "home_team_score" satisfies keyof LiveGameLog,
+          display_name: "Home Score",
+          field_type: "number",
+          is_required: false,
+          is_read_only: false,
+          show_in_list: true,
+        },
+        {
+          field_name: "away_team_score" satisfies keyof LiveGameLog,
+          display_name: "Away Score",
+          field_type: "number",
+          is_required: false,
+          is_read_only: false,
+          show_in_list: true,
+        },
+        {
+          field_name: "game_status" satisfies keyof LiveGameLog,
+          display_name: "Game Status",
+          field_type: "enum",
+          is_required: true,
+          is_read_only: false,
+          show_in_list: true,
+          enum_options: LIVE_GAME_STATUS_OPTIONS,
+        },
+        {
+          field_name: "started_at" satisfies keyof LiveGameLog,
+          display_name: "Started At",
+          field_type: "string",
+          is_required: false,
+          is_read_only: true,
+          show_in_list: false,
+        },
+        {
+          field_name: "ended_at" satisfies keyof LiveGameLog,
+          display_name: "Ended At",
+          field_type: "string",
+          is_required: false,
+          is_read_only: true,
+          show_in_list: false,
+        },
+        {
+          field_name: "notes" satisfies keyof LiveGameLog,
+          display_name: "Notes",
+          field_type: "string",
+          is_required: false,
+          is_read_only: false,
+          show_in_list: false,
+        },
+        {
+          field_name: "status" satisfies keyof LiveGameLog,
+          display_name: "Status",
+          field_type: "enum",
+          is_required: true,
+          is_read_only: false,
+          enum_values: ["active", "inactive", "archived"],
+          show_in_list: true,
+        },
+      ],
+    });
+  }
+
+  private register_game_event_log_metadata(): void {
+    this.metadata_map.set("gameeventlog", {
+      entity_name: "gameeventlog",
+      display_name: "Game Event Log",
+      fields: [
+        {
+          field_name: "organization_id" satisfies keyof GameEventLog,
+          display_name: "Organization",
+          field_type: "foreign_key",
+          foreign_key_entity: "organization",
+          is_required: true,
+          is_read_only: false,
+          show_in_list: false,
+        },
+        {
+          field_name: "live_game_log_id" satisfies keyof GameEventLog,
+          display_name: "Live Game",
+          field_type: "foreign_key",
+          foreign_key_entity: "livegamelog",
+          is_required: true,
+          is_read_only: false,
+          show_in_list: true,
+          foreign_key_filter: {
+            depends_on_field: "organization_id",
+            filter_type: "live_game_logs_from_organization",
+          },
+        },
+        {
+          field_name: "fixture_id" satisfies keyof GameEventLog,
+          display_name: "Fixture",
+          field_type: "foreign_key",
+          foreign_key_entity: "fixture",
+          is_required: true,
+          is_read_only: false,
+          show_in_list: false,
+          foreign_key_filter: {
+            depends_on_field: "organization_id",
+            filter_type: "fixtures_from_organization",
+          },
+        },
+        {
+          field_name: "event_type" satisfies keyof GameEventLog,
+          display_name: "Event Type",
+          field_type: "enum",
+          is_required: true,
+          is_read_only: false,
+          show_in_list: true,
+          enum_options: GAME_EVENT_TYPE_OPTIONS,
+        },
+        {
+          field_name: "minute" satisfies keyof GameEventLog,
+          display_name: "Minute",
+          field_type: "number",
+          is_required: true,
+          is_read_only: false,
+          show_in_list: true,
+        },
+        {
+          field_name: "stoppage_time_minute" satisfies keyof GameEventLog,
+          display_name: "Stoppage Time Minute",
+          field_type: "number",
+          is_required: false,
+          is_read_only: false,
+          show_in_list: false,
+        },
+        {
+          field_name: "team_side" satisfies keyof GameEventLog,
+          display_name: "Team Side",
+          field_type: "enum",
+          is_required: false,
+          is_read_only: false,
+          show_in_list: true,
+          enum_options: TEAM_SIDE_OPTIONS,
+        },
+        {
+          field_name: "player_id" satisfies keyof GameEventLog,
+          display_name: "Player",
+          field_type: "foreign_key",
+          foreign_key_entity: "player",
+          is_required: false,
+          is_read_only: false,
+          show_in_list: false,
+          foreign_key_filter: {
+            depends_on_field: "organization_id",
+            filter_type: "players_from_organization",
+          },
+        },
+        {
+          field_name: "player_name" satisfies keyof GameEventLog,
+          display_name: "Player Name",
+          field_type: "string",
+          is_required: false,
+          is_read_only: false,
+          show_in_list: true,
+        },
+        {
+          field_name: "secondary_player_id" satisfies keyof GameEventLog,
+          display_name: "Secondary Player",
+          field_type: "foreign_key",
+          foreign_key_entity: "player",
+          is_required: false,
+          is_read_only: false,
+          show_in_list: false,
+          foreign_key_filter: {
+            depends_on_field: "organization_id",
+            filter_type: "players_from_organization",
+          },
+        },
+        {
+          field_name: "secondary_player_name" satisfies keyof GameEventLog,
+          display_name: "Secondary Player Name",
+          field_type: "string",
+          is_required: false,
+          is_read_only: false,
+          show_in_list: false,
+        },
+        {
+          field_name: "description" satisfies keyof GameEventLog,
+          display_name: "Description",
+          field_type: "string",
+          is_required: false,
+          is_read_only: false,
+          show_in_list: true,
+        },
+        {
+          field_name: "affects_score" satisfies keyof GameEventLog,
+          display_name: "Affects Score",
+          field_type: "boolean",
+          is_required: false,
+          is_read_only: false,
+          show_in_list: false,
+        },
+        {
+          field_name: "voided" satisfies keyof GameEventLog,
+          display_name: "Voided",
+          field_type: "boolean",
+          is_required: false,
+          is_read_only: true,
+          show_in_list: true,
+        },
+        {
+          field_name: "voided_reason" satisfies keyof GameEventLog,
+          display_name: "Voided Reason",
+          field_type: "string",
+          is_required: false,
+          is_read_only: true,
+          show_in_list: false,
+        },
+        {
+          field_name: "status" satisfies keyof GameEventLog,
+          display_name: "Status",
+          field_type: "enum",
+          is_required: true,
+          is_read_only: false,
+          enum_values: ["active", "inactive", "archived"],
           show_in_list: true,
         },
       ],
