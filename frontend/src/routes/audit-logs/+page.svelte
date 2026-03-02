@@ -1,7 +1,11 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { browser } from "$app/environment";
-  import { ensure_auth_profile } from "$lib/presentation/logic/authGuard";
+  import { page } from "$app/stores";
+  import {
+    ensure_auth_profile,
+    ensure_route_access,
+  } from "$lib/presentation/logic/authGuard";
   import { get_audit_log_use_cases } from "$lib/core/usecases/AuditLogUseCases";
   import type { AuditLog } from "$lib/core/entities/AuditLog";
   import { build_audit_log_summary } from "$lib/core/entities/AuditLog";
@@ -111,6 +115,9 @@
 
   onMount(async () => {
     if (!browser) return;
+
+    const route_allowed = await ensure_route_access($page.url.pathname);
+    if (!route_allowed) return;
 
     const auth_result = await ensure_auth_profile();
     if (!auth_result.success) {

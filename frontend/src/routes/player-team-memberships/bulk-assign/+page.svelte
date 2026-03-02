@@ -16,8 +16,10 @@
   import { get_player_team_membership_use_cases } from "$lib/core/usecases/PlayerTeamMembershipUseCases";
   import Toast from "$lib/presentation/components/ui/Toast.svelte";
   import { auth_store } from "$lib/presentation/stores/auth";
+  import { access_denial_store } from "$lib/presentation/stores/accessDenial";
   import {
     build_authorization_list_filter,
+    get_disabled_crud_for_entity,
     type UserScopeProfile,
   } from "$lib/core/interfaces/ports/DataAuthorizationPort";
 
@@ -89,6 +91,25 @@
       is_loading = false;
       return;
     }
+
+    const auth_state = get(auth_store);
+    if (auth_state.current_profile) {
+      const disabled = get_disabled_crud_for_entity(
+        auth_state.current_profile.role,
+        "playerteammembership",
+      );
+      const can_create = !disabled.includes("create");
+
+      if (!can_create) {
+        access_denial_store.set_denial(
+          "/player-team-memberships/bulk-assign",
+          "Access denied: Your role does not have permission to assign players to teams. Please contact your organization administrator if you believe this is an error.",
+        );
+        goto("/");
+        return;
+      }
+    }
+
     await load_initial_data();
   });
 

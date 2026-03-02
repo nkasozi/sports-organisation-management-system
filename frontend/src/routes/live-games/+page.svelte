@@ -4,6 +4,8 @@
   import { goto } from "$app/navigation";
   import { get } from "svelte/store";
   import { ensure_auth_profile } from "$lib/presentation/logic/authGuard";
+  import { access_denial_store } from "$lib/presentation/stores/accessDenial";
+  import { get_disabled_crud_for_entity } from "$lib/core/interfaces/ports/DataAuthorizationPort";
   import type { Fixture } from "$lib/core/entities/Fixture";
   import {
     check_fixture_can_start,
@@ -54,6 +56,23 @@
       is_loading = false;
       return;
     }
+
+    const auth_state = get(auth_store);
+    if (auth_state.current_profile) {
+      const disabled_operations = get_disabled_crud_for_entity(
+        auth_state.current_profile.role,
+        "fixture",
+      );
+      if (disabled_operations.includes("read")) {
+        access_denial_store.set_denial(
+          "/live-games",
+          "You do not have permission to view live games.",
+        );
+        goto("/");
+        return;
+      }
+    }
+
     const loaded_fixtures = await load_incomplete_fixtures();
     team_names = await load_team_names_for_fixtures(loaded_fixtures);
     const competition_sport_data =

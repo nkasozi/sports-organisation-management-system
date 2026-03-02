@@ -1,11 +1,185 @@
 import { get } from "svelte/store";
+import { goto } from "$app/navigation";
 import { auth_store } from "../stores/auth";
+import { access_denial_store } from "../stores/accessDenial";
 import type { UserProfile } from "../stores/auth";
+import type { UserRole } from "$lib/core/interfaces/ports/AuthenticationPort";
+import { get_repository_container } from "$lib/infrastructure/container";
+import type { CreateAuditLogInput } from "$lib/core/entities/AuditLog";
 
 export interface AuthGuardResult {
   success: boolean;
   profile: UserProfile | null;
   error_message: string;
+}
+
+interface RouteRule {
+  allowed_roles: UserRole[];
+  excluded_roles?: UserRole[];
+}
+
+const SPECIAL_ROUTE_RULES: Record<string, RouteRule> = {
+  "/settings": {
+    allowed_roles: [
+      "org_admin",
+      "officials_manager",
+      "team_manager",
+      "official",
+      "player",
+    ],
+    excluded_roles: ["super_admin"],
+  },
+  "/help": {
+    allowed_roles: ["super_admin"],
+  },
+  "/audit-logs": {
+    allowed_roles: ["super_admin", "org_admin"],
+  },
+  "/system-users": {
+    allowed_roles: ["super_admin"],
+  },
+  "/organizations": {
+    allowed_roles: ["super_admin"],
+  },
+};
+
+function get_route_base(pathname: string): string {
+  const segments = pathname.split("/").filter(Boolean);
+  if (segments.length === 0) return "/";
+  return "/" + segments[0];
+}
+
+function can_role_access_route(role: UserRole, pathname: string): boolean {
+  const route_base = get_route_base(pathname);
+
+  if (pathname === "/" || pathname === "") return true;
+
+  const rule = SPECIAL_ROUTE_RULES[route_base];
+  if (rule) {
+    if (rule.excluded_roles?.includes(role)) {
+      return false;
+    }
+    if (rule.allowed_roles.length > 0 && !rule.allowed_roles.includes(role)) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+export async function check_route_access(
+  pathname: string,
+): Promise<{ allowed: boolean; message: string }> {
+  const auth_state = get(auth_store);
+
+  if (!auth_state.is_initialized) {
+    await auth_store.initialize();
+  }
+
+  const updated_state = get(auth_store);
+  const profile = updated_state.current_profile;
+
+  if (!profile) {
+    return {
+      allowed: false,
+      message: "Please select a user profile to access this page.",
+    };
+  }
+
+  const role = profile.role;
+  const route_allowed = can_role_access_route(role, pathname);
+
+  if (!route_allowed) {
+    return {
+      allowed: false,
+      message: `Your current role (${get_role_display_name(role)}) does not have access to this page. Please contact your organization administrator if you believe this is an error.`,
+    };
+  }
+
+  return { allowed: true, message: "" };
+}
+
+function get_role_display_name(role: UserRole): string {
+  const display_names: Record<UserRole, string> = {
+    super_admin: "Super Admin",
+    org_admin: "Organisation Admin",
+    officials_manager: "Officials Manager",
+    team_manager: "Team Manager",
+    official: "Official",
+    player: "Player",
+  };
+  return display_names[role] || role;
+}
+
+async function log_access_denied_to_audit_trail(
+  pathname: string,
+  profile: UserProfile,
+  denial_reason: string,
+): Promise<boolean> {
+  try {
+    const container = get_repository_container();
+    const audit_log_repository = container.audit_log_repository;
+
+    const audit_input: CreateAuditLogInput = {
+      entity_type: "route",
+      entity_id: pathname,
+      entity_display_name: pathname,
+      action: "access_denied",
+      changes: [
+        {
+          field_name: "denial_reason",
+          old_value: "",
+          new_value: denial_reason,
+        },
+        {
+          field_name: "attempted_route",
+          old_value: "",
+          new_value: pathname,
+        },
+        {
+          field_name: "user_role",
+          old_value: "",
+          new_value: profile.role,
+        },
+      ],
+      user_id: profile.user_id,
+      user_email: profile.email || "unknown@sportsorg.local",
+      user_display_name: profile.display_name || "Unknown User",
+      organization_id: profile.organization_id || "*",
+      ip_address: "127.0.0.1",
+      user_agent:
+        typeof navigator !== "undefined"
+          ? navigator.userAgent
+          : "SportsOrgApp/1.0",
+    };
+
+    await audit_log_repository.create(audit_input);
+    console.log(`[AuthGuard] Access denial logged to audit trail: ${pathname}`);
+    return true;
+  } catch (error) {
+    console.error(
+      "[AuthGuard] Failed to log access denial to audit trail:",
+      error,
+    );
+    return false;
+  }
+}
+
+export async function ensure_route_access(pathname: string): Promise<boolean> {
+  const auth_state = get(auth_store);
+  const profile = auth_state.current_profile;
+  const result = await check_route_access(pathname);
+
+  if (!result.allowed) {
+    if (profile) {
+      await log_access_denied_to_audit_trail(pathname, profile, result.message);
+    }
+    access_denial_store.set_denial(pathname, result.message);
+    goto("/");
+    return false;
+  }
+
+  return true;
 }
 
 export async function ensure_auth_profile(): Promise<AuthGuardResult> {

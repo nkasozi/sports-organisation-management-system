@@ -26,6 +26,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
   import { auth_store } from "../stores/auth";
   import {
     build_authorization_list_filter,
+    get_disabled_crud_for_entity,
     type UserScopeProfile,
   } from "$lib/core/interfaces/ports/DataAuthorizationPort";
   import { ensure_auth_profile } from "../logic/authGuard";
@@ -502,8 +503,31 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
       filter["team_id"] = team_id;
     }
 
+    if (normalized_type === "team" && has_valid_team_id) {
+      filter["id"] = team_id;
+    }
+
+    if (normalized_type === "teamprofile" && has_valid_team_id) {
+      filter["team_id"] = team_id;
+    }
+
     console.debug("[DynamicEntityList] Final auth filter:", filter);
     return filter;
+  }
+
+  function apply_id_filter_if_present(
+    loaded_entities: BaseEntity[],
+    filter: Record<string, string> | undefined,
+  ): BaseEntity[] {
+    if (!filter || !filter.id) return loaded_entities;
+
+    const filtered = loaded_entities.filter(
+      (entity) => entity.id === filter.id,
+    );
+    console.debug(
+      `[DynamicEntityList] Applied id filter "${filter.id}": ${loaded_entities.length} -> ${filtered.length} entities`,
+    );
+    return filtered;
   }
 
   function merge_filters(
@@ -542,6 +566,24 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
         return;
       }
 
+      const auth_state = get(auth_store);
+      const normalized_type = entity_type.toLowerCase().replace(/[\s_-]/g, "");
+      if (auth_state.current_profile) {
+        const disabled_actions = get_disabled_crud_for_entity(
+          auth_state.current_profile.role,
+          normalized_type,
+        );
+        if (disabled_actions.includes("read")) {
+          entities = [];
+          error_message = `Access denied: Your role does not have permission to view ${display_name} data.`;
+          console.warn(
+            `[DynamicEntityList] READ permission denied for role "${auth_state.current_profile.role}" on entity "${normalized_type}"`,
+          );
+          is_loading = false;
+          return;
+        }
+      }
+
       const filter = merge_filters(sub_filter, auth_filter);
 
       console.debug(
@@ -556,11 +598,13 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
         const result = await crud_handlers.list(filter, { page_size: 1000 });
 
         if (result.success && result.data) {
-          entities = extract_items_from_result_data(result.data);
+          let loaded_entities = extract_items_from_result_data(result.data);
+          loaded_entities = apply_id_filter_if_present(loaded_entities, filter);
+          entities = loaded_entities;
           console.debug(
             `[DynamicEntityList] ✅ Custom handler loaded ${entities.length} ${entity_type} entities`,
           );
-          const total = extract_total_count_from_result_data(result.data);
+          const total = entities.length;
           on_total_count_changed?.(total);
         } else {
           error_message = extract_error_message_from_result(result);
@@ -611,11 +655,13 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
       });
 
       if (result.success) {
-        entities = extract_items_from_result_data(result.data);
+        let loaded_entities = extract_items_from_result_data(result.data);
+        loaded_entities = apply_id_filter_if_present(loaded_entities, filter);
+        entities = loaded_entities;
         console.debug(
           `[DynamicEntityList] ✅ Loaded ${entities.length} ${entity_type} entities`,
         );
-        const total = extract_total_count_from_result_data(result.data);
+        const total = entities.length;
         on_total_count_changed?.(total);
       } else {
         error_message = extract_error_message_from_result(result);

@@ -4,6 +4,10 @@
   import { goto } from "$app/navigation";
   import { page } from "$app/stores";
   import { ensure_auth_profile } from "$lib/presentation/logic/authGuard";
+  import { access_denial_store } from "$lib/presentation/stores/accessDenial";
+  import { get_disabled_crud_for_entity } from "$lib/core/interfaces/ports/DataAuthorizationPort";
+  import { auth_store } from "$lib/presentation/stores/auth";
+  import { get } from "svelte/store";
   import type {
     Fixture,
     GameEvent,
@@ -274,6 +278,22 @@
       error_message = auth_result.error_message;
       is_loading = false;
       return;
+    }
+
+    const auth_state = get(auth_store);
+    if (auth_state.current_profile) {
+      const disabled_operations = get_disabled_crud_for_entity(
+        auth_state.current_profile.role,
+        "fixture",
+      );
+      if (disabled_operations.includes("read")) {
+        access_denial_store.set_denial(
+          `/live-games/${fixture_id}`,
+          "You do not have permission to view this live game.",
+        );
+        goto("/");
+        return;
+      }
     }
 
     if (!fixture_id) {

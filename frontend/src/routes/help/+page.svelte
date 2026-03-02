@@ -1,4 +1,9 @@
 <script lang="ts">
+  import { onMount } from "svelte";
+  import { browser } from "$app/environment";
+  import { page } from "$app/stores";
+  import { ensure_route_access } from "$lib/presentation/logic/authGuard";
+
   interface GuideStep {
     step_number: number;
     title: string;
@@ -433,6 +438,11 @@
 
   let expanded_index: number | null = null;
   let expanded_guide_index: number | null = null;
+
+  onMount(async () => {
+    if (!browser) return;
+    await ensure_route_access($page.url.pathname);
+  });
 
   function toggle_faq(index: number): void {
     expanded_index = expanded_index === index ? null : index;

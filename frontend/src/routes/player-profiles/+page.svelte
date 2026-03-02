@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { browser } from "$app/environment";
+  import { goto } from "$app/navigation";
   import { get } from "svelte/store";
   import type { BaseEntity } from "$lib/core/entities/BaseEntity";
   import type { PlayerProfile } from "$lib/core/entities/PlayerProfile";
@@ -8,8 +9,10 @@
   import { get_player_use_cases } from "$lib/core/usecases/PlayerUseCases";
   import DynamicEntityForm from "$lib/presentation/components/DynamicEntityForm.svelte";
   import { auth_store } from "$lib/presentation/stores/auth";
+  import { access_denial_store } from "$lib/presentation/stores/accessDenial";
   import {
     build_authorization_list_filter,
+    get_disabled_crud_for_entity,
     type UserScopeProfile,
   } from "$lib/core/interfaces/ports/DataAuthorizationPort";
   import { ensure_auth_profile } from "$lib/presentation/logic/authGuard";
@@ -23,6 +26,11 @@
   let error_message = "";
   let foreign_key_options: Record<string, { value: string; label: string }[]> =
     {};
+  let can_create: boolean = false;
+  let can_edit: boolean = false;
+  let can_delete: boolean = false;
+  let can_read: boolean = false;
+  let permission_error: string = "";
 
   const profile_use_cases = get_player_profile_use_cases();
   const player_use_cases = get_player_use_cases();
@@ -68,11 +76,19 @@
   }
 
   function handle_create_click(): void {
+    if (!can_create) {
+      error_message = "You do not have permission to create player profiles.";
+      return;
+    }
     selected_profile = null;
     current_view = "create";
   }
 
   function handle_edit_click(profile: PlayerProfile): void {
+    if (!can_edit) {
+      error_message = "You do not have permission to edit player profiles.";
+      return;
+    }
     selected_profile = profile;
     current_view = "edit";
   }
@@ -83,6 +99,10 @@
   }
 
   async function handle_delete_click(profile: PlayerProfile): Promise<boolean> {
+    if (!can_delete) {
+      error_message = "You do not have permission to delete player profiles.";
+      return false;
+    }
     if (!confirm(`Are you sure you want to delete this profile?`)) return false;
 
     const result = await profile_use_cases.delete(profile.id);
@@ -129,6 +149,28 @@
       is_loading = false;
       return;
     }
+
+    const auth_state = get(auth_store);
+    if (auth_state.current_profile) {
+      const disabled = get_disabled_crud_for_entity(
+        auth_state.current_profile.role,
+        "playerprofile",
+      );
+      can_read = !disabled.includes("read");
+      can_create = !disabled.includes("create");
+      can_edit = !disabled.includes("update");
+      can_delete = !disabled.includes("delete");
+
+      if (!can_read) {
+        access_denial_store.set_denial(
+          "/player-profiles",
+          "Access denied: Your role does not have permission to view Player Profiles. Please contact your organization administrator if you believe this is an error.",
+        );
+        goto("/");
+        return;
+      }
+    }
+
     load_profiles();
   });
 </script>

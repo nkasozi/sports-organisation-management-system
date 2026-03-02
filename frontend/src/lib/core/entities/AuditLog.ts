@@ -4,6 +4,7 @@ export type AuditAction =
   | "create"
   | "update"
   | "delete"
+  | "access_denied"
   | "sync_conflict_detected"
   | "sync_conflict_resolved";
 
@@ -61,6 +62,8 @@ function get_action_past_tense(action: AuditAction): string {
       return "updated";
     case "delete":
       return "deleted";
+    case "access_denied":
+      return "was denied access to";
     case "sync_conflict_detected":
       return "detected sync conflict for";
     case "sync_conflict_resolved":

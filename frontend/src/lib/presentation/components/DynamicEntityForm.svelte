@@ -43,6 +43,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
   import {
     get_authorization_restricted_fields,
     get_authorization_preselect_values,
+    get_disabled_crud_for_entity,
     type UserScopeProfile,
   } from "$lib/core/interfaces/ports/DataAuthorizationPort";
   import { ensure_auth_profile } from "../logic/authGuard";
@@ -84,12 +85,33 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
   let competition_team_ids: Set<string> = new Set();
   let auth_profile_missing: boolean = false;
   let auth_error_message: string = "";
+  let permission_denied: boolean = false;
+  let permission_denied_message: string = "";
 
   onMount(async () => {
     const auth_result = await ensure_auth_profile();
     if (!auth_result.success) {
       auth_profile_missing = true;
       auth_error_message = auth_result.error_message;
+      return;
+    }
+
+    const auth_state = get(auth_store);
+    if (auth_state.current_profile) {
+      const normalized_type = entity_type.toLowerCase().replace(/[\s_-]/g, "");
+      const disabled_actions = get_disabled_crud_for_entity(
+        auth_state.current_profile.role,
+        normalized_type,
+      );
+
+      const required_action = is_edit_mode ? "update" : "create";
+      if (disabled_actions.includes(required_action)) {
+        permission_denied = true;
+        permission_denied_message = `Access denied: Your role does not have permission to ${required_action} ${entity_metadata?.display_name || entity_type} records.`;
+        console.warn(
+          `[DynamicEntityForm] ${required_action.toUpperCase()} permission denied for role "${auth_state.current_profile.role}" on entity "${normalized_type}"`,
+        );
+      }
     }
   });
 
@@ -1376,6 +1398,13 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
   async function handle_form_submission(): Promise<void> {
     if (!entity_metadata) return;
 
+    if (permission_denied) {
+      console.warn(
+        "[DynamicEntityForm] Form submission blocked - permission denied",
+      );
+      return;
+    }
+
     is_save_in_progress = true;
     validation_errors = {};
 
@@ -1765,6 +1794,27 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
       class="alert bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 p-4 rounded-lg"
     >
       <p>{auth_error_message}</p>
+    </div>
+  {:else if permission_denied}
+    <div
+      class="alert bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200 p-4 rounded-lg"
+    >
+      <div class="flex items-center gap-2">
+        <svg
+          class="w-5 h-5 flex-shrink-0"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+          />
+        </svg>
+        <p>{permission_denied_message}</p>
+      </div>
     </div>
   {:else if !entity_metadata}
     <div

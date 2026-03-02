@@ -35,9 +35,11 @@
     sort_lineup_players,
   } from "$lib/core/services/fixtureLineupWizard";
   import { auth_store } from "$lib/presentation/stores/auth";
+  import { access_denial_store } from "$lib/presentation/stores/accessDenial";
   import {
     build_authorization_list_filter,
     get_authorization_preselect_values,
+    get_disabled_crud_for_entity,
   } from "$lib/core/interfaces/ports/DataAuthorizationPort";
 
   const lineup_use_cases = get_fixture_lineup_use_cases();
@@ -190,6 +192,23 @@
       error_message = auth_result.error_message;
       loading = false;
       return;
+    }
+
+    if (current_auth_profile) {
+      const disabled = get_disabled_crud_for_entity(
+        current_auth_profile.role,
+        "fixturelineup",
+      );
+      const can_create = !disabled.includes("create");
+
+      if (!can_create) {
+        access_denial_store.set_denial(
+          "/fixture-lineups/create",
+          "Access denied: Your role does not have permission to create fixture lineups. Please contact your organization administrator if you believe this is an error.",
+        );
+        goto("/");
+        return;
+      }
     }
 
     await load_reference_data();

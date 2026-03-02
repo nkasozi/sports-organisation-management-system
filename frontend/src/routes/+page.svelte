@@ -2,6 +2,7 @@
   import { onMount } from "svelte";
   import { browser } from "$app/environment";
   import { ensure_auth_profile } from "$lib/presentation/logic/authGuard";
+  import { access_denial_store } from "$lib/presentation/stores/accessDenial";
   import { get_organization_use_cases } from "$lib/core/usecases/OrganizationUseCases";
   import { get_competition_use_cases } from "$lib/core/usecases/CompetitionUseCases";
   import { get_team_use_cases } from "$lib/core/usecases/TeamUseCases";
@@ -25,6 +26,7 @@
   let loading = true;
   let is_resetting = false;
   let error_message = "";
+  let access_denial_message = "";
   let stats = {
     organizations: 0,
     competitions: 0,
@@ -190,6 +192,11 @@
   onMount(async () => {
     if (!browser) return;
 
+    const denial_info = access_denial_store.get_and_clear();
+    if (denial_info.denied) {
+      access_denial_message = denial_info.message;
+    }
+
     const auth_result = await ensure_auth_profile();
     if (!auth_result.success) {
       error_message = auth_result.error_message;
@@ -302,6 +309,55 @@
     </p>
   </div>
 {:else}
+  {#if access_denial_message}
+    <div
+      class="mb-6 rounded-lg border border-amber-300 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-700 p-4"
+    >
+      <div class="flex items-start gap-3">
+        <svg
+          class="h-6 w-6 text-amber-500 flex-shrink-0 mt-0.5"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+          />
+        </svg>
+        <div class="flex-1">
+          <h3 class="text-sm font-semibold text-amber-800 dark:text-amber-200">
+            Access Denied
+          </h3>
+          <p class="mt-1 text-sm text-amber-700 dark:text-amber-300">
+            {access_denial_message}
+          </p>
+        </div>
+        <button
+          type="button"
+          class="text-amber-500 hover:text-amber-700 dark:hover:text-amber-300"
+          on:click={() => (access_denial_message = "")}
+          aria-label="Dismiss"
+        >
+          <svg
+            class="h-5 w-5"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M6 18L18 6M6 6l12 12"
+            />
+          </svg>
+        </button>
+      </div>
+    </div>
+  {/if}
   <div class="space-y-6">
     <!-- Page header -->
     <div

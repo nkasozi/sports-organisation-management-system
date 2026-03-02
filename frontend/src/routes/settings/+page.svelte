@@ -1,7 +1,11 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { browser } from "$app/environment";
-  import { ensure_auth_profile } from "$lib/presentation/logic/authGuard";
+  import { page } from "$app/stores";
+  import {
+    ensure_auth_profile,
+    ensure_route_access,
+  } from "$lib/presentation/logic/authGuard";
   import { auth_store } from "$lib/presentation/stores/auth";
   import {
     theme_store,
@@ -66,6 +70,9 @@
 
   onMount(async () => {
     if (!browser) return;
+
+    const route_allowed = await ensure_route_access($page.url.pathname);
+    if (!route_allowed) return;
 
     const auth_result = await ensure_auth_profile();
     if (!auth_result.success) {
