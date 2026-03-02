@@ -16,11 +16,7 @@ export type ActivityStatus =
   | "cancelled"
   | "postponed";
 
-export type ActivitySourceType =
-  | "manual"
-  | "competition"
-  | "fixture"
-  | "google_calendar";
+export type ActivitySourceType = "manual" | "competition" | "fixture";
 
 export interface ActivityReminder {
   id: string;
@@ -55,19 +51,12 @@ export interface Activity extends BaseEntity {
   recurrence: ActivityRecurrence | null;
   reminders: ActivityReminder[];
   color_override: string | null;
-  google_calendar_event_id: string | null;
-  google_calendar_sync_enabled: boolean;
-  last_synced_at: string | null;
   notes: string;
 }
 
 export type CreateActivityInput = Omit<
   Activity,
-  | "id"
-  | "created_at"
-  | "updated_at"
-  | "google_calendar_event_id"
-  | "last_synced_at"
+  "id" | "created_at" | "updated_at"
 >;
 
 export type UpdateActivityInput = Partial<
@@ -159,7 +148,6 @@ export function create_activity_from_fixture(
     recurrence: null,
     reminders: [...DEFAULT_REMINDERS],
     color_override: null,
-    google_calendar_sync_enabled: false,
     notes: "",
   };
 }
@@ -193,7 +181,6 @@ export function create_activity_from_competition(
     recurrence: null,
     reminders: [...DEFAULT_REMINDERS],
     color_override: null,
-    google_calendar_sync_enabled: false,
     notes: "",
   };
 }
@@ -247,10 +234,7 @@ export function is_activity_from_external_source(activity: Activity): boolean {
 }
 
 export function can_edit_activity(activity: Activity): boolean {
-  return (
-    activity.source_type === "manual" ||
-    activity.source_type === "google_calendar"
-  );
+  return activity.source_type === "manual";
 }
 
 export function can_delete_activity(activity: Activity): boolean {

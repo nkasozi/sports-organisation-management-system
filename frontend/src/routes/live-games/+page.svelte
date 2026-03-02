@@ -2,6 +2,8 @@
   import { onMount } from "svelte";
   import { browser } from "$app/environment";
   import { goto } from "$app/navigation";
+  import { get } from "svelte/store";
+  import { ensure_auth_profile } from "$lib/presentation/logic/authGuard";
   import type { Fixture } from "$lib/core/entities/Fixture";
   import {
     check_fixture_can_start,
@@ -18,6 +20,11 @@
   import { get_sport_use_cases } from "$lib/core/usecases/SportUseCases";
   import { get_competition_use_cases } from "$lib/core/usecases/CompetitionUseCases";
   import { get_organization_use_cases } from "$lib/core/usecases/OrganizationUseCases";
+  import { auth_store } from "$lib/presentation/stores/auth";
+  import {
+    build_authorization_list_filter,
+    type UserScopeProfile,
+  } from "$lib/core/interfaces/ports/DataAuthorizationPort";
 
   const fixture_use_cases = get_fixture_use_cases();
   const fixture_details_setup_use_cases = get_fixture_details_setup_use_cases();
@@ -32,6 +39,7 @@
 
   let incomplete_fixtures: Fixture[] = [];
   let is_loading = true;
+  let error_message = "";
   let current_checks: Record<string, PreFlightCheck[]> = {};
   let is_starting: Record<string, boolean> = {};
   let team_names: Record<string, string> = {};
@@ -40,6 +48,12 @@
 
   onMount(async () => {
     if (!browser) return;
+    const auth_result = await ensure_auth_profile();
+    if (!auth_result.success) {
+      error_message = auth_result.error_message;
+      is_loading = false;
+      return;
+    }
     const loaded_fixtures = await load_incomplete_fixtures();
     team_names = await load_team_names_for_fixtures(loaded_fixtures);
     const competition_sport_data =
@@ -132,8 +146,24 @@
     return sport_names[competition_id] || "Unknown Sport";
   }
 
+  function build_auth_filter(): Record<string, string> {
+    const auth_state = get(auth_store);
+    if (!auth_state.current_profile) return {};
+    const entity_fields = ["organization_id", "team_id"];
+    const filter = build_authorization_list_filter(
+      auth_state.current_profile as UserScopeProfile,
+      entity_fields,
+    );
+    const team_id = auth_state.current_profile.team_id;
+    if (team_id && team_id !== "*") {
+      filter["team_id"] = team_id;
+    }
+    return filter;
+  }
+
   async function load_incomplete_fixtures(): Promise<Fixture[]> {
-    const all_fixtures_result = await fixture_use_cases.list();
+    const auth_filter = build_auth_filter();
+    const all_fixtures_result = await fixture_use_cases.list(auth_filter);
 
     if (!all_fixtures_result.success || !all_fixtures_result.data) {
       return [];
@@ -508,6 +538,12 @@
       <div
         class="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-b-2 border-blue-600 dark:border-blue-400"
       ></div>
+    </div>
+  {:else if error_message}
+    <div
+      class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4"
+    >
+      <p class="text-red-600 dark:text-red-400">{error_message}</p>
     </div>
   {:else if incomplete_fixtures.length === 0}
     <div

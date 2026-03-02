@@ -7,6 +7,7 @@ import type {
 } from "../../entities/Player";
 
 export interface PlayerFilter {
+  id?: string;
   name_contains?: string;
   team_id?: string;
   position_id?: string;

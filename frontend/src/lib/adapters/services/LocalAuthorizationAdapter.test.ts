@@ -75,10 +75,8 @@ describe("LocalAuthorizationAdapter", () => {
       );
       expect(administration_group).toBeUndefined();
 
-      const my_profile_group = menu_items.find(
-        (g) => g.group_name === "My Profile",
-      );
-      expect(my_profile_group).toBeDefined();
+      const my_info_group = menu_items.find((g) => g.group_name === "My Info");
+      expect(my_info_group).toBeDefined();
     });
 
     it("should return team-specific menu for team_manager", () => {

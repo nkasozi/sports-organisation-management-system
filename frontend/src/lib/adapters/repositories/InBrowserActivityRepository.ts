@@ -47,8 +47,6 @@ export class InBrowserActivityRepository
       id,
       ...timestamps,
       ...input,
-      google_calendar_event_id: null,
-      last_synced_at: null,
     };
   }
 
@@ -144,14 +142,6 @@ export class InBrowserActivityRepository
         );
       }
 
-      if (filter.google_calendar_sync_enabled !== undefined) {
-        filtered_entities = filtered_entities.filter(
-          (activity) =>
-            activity.google_calendar_sync_enabled ===
-            filter.google_calendar_sync_enabled,
-        );
-      }
-
       const total_count = filtered_entities.length;
       const sorted_entities = this.apply_sort(filtered_entities, options);
       const paginated_entities = this.apply_pagination(
@@ -235,15 +225,6 @@ export class InBrowserActivityRepository
       );
     }
   }
-
-  async find_activities_for_google_sync(
-    organization_id: string,
-  ): PaginatedAsyncResult<Activity> {
-    return this.find_by_filter({
-      organization_id,
-      google_calendar_sync_enabled: true,
-    });
-  }
 }
 
 export function create_default_activities(): Activity[] {
@@ -279,9 +260,6 @@ export function create_default_activities(): Activity[] {
         { id: "reminder_1_hour", minutes_before: 60, is_enabled: false },
       ],
       color_override: null,
-      google_calendar_event_id: null,
-      google_calendar_sync_enabled: false,
-      last_synced_at: null,
       notes: "Bring all necessary equipment",
       created_at: now,
       updated_at: now,
@@ -309,9 +287,6 @@ export function create_default_activities(): Activity[] {
         { id: "reminder_1_day", minutes_before: 1440, is_enabled: true },
       ],
       color_override: null,
-      google_calendar_event_id: null,
-      google_calendar_sync_enabled: false,
-      last_synced_at: null,
       notes: "Agenda will be shared via email",
       created_at: now,
       updated_at: now,

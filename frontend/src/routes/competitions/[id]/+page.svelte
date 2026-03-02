@@ -1,7 +1,10 @@
 <script lang="ts">
   import { onMount } from "svelte";
+  import { browser } from "$app/environment";
   import { goto } from "$app/navigation";
   import { page } from "$app/stores";
+  import { get } from "svelte/store";
+  import { ensure_auth_profile } from "$lib/presentation/logic/authGuard";
   import type {
     Competition,
     UpdateCompetitionInput,
@@ -31,6 +34,11 @@
   import SportRulesCustomizer from "$lib/presentation/components/competition/SportRulesCustomizer.svelte";
   import DynamicEntityList from "$lib/presentation/components/DynamicEntityList.svelte";
   import InfoTooltip from "$lib/presentation/components/ui/InfoTooltip.svelte";
+  import { auth_store } from "$lib/presentation/stores/auth";
+  import {
+    build_authorization_list_filter,
+    type UserScopeProfile,
+  } from "$lib/core/interfaces/ports/DataAuthorizationPort";
   import type { SquadGenerationStrategy } from "$lib/core/entities/Competition";
 
   const competition_use_cases = get_competition_use_cases();
@@ -115,7 +123,24 @@
     }
   }
 
+  function build_auth_filter(): Record<string, string> {
+    const auth_state = get(auth_store);
+    if (!auth_state.current_profile) return {};
+    const entity_fields = ["organization_id"];
+    return build_authorization_list_filter(
+      auth_state.current_profile as UserScopeProfile,
+      entity_fields,
+    );
+  }
+
   onMount(async () => {
+    if (!browser) return;
+    const auth_result = await ensure_auth_profile();
+    if (!auth_result.success) {
+      error_message = auth_result.error_message;
+      loading_state = "error";
+      return;
+    }
     if (!competition_id) {
       loading_state = "error";
       error_message = "Competition ID is required";
@@ -127,6 +152,7 @@
   async function load_competition_data(): Promise<void> {
     loading_state = "loading";
 
+    const auth_filter = build_auth_filter();
     const [
       competition_result,
       org_result,
@@ -135,11 +161,11 @@
       formats_result,
     ] = await Promise.all([
       competition_use_cases.get_by_id(competition_id),
-      organization_use_cases.list(undefined, {
+      organization_use_cases.list(auth_filter, {
         page_number: 1,
         page_size: 100,
       }),
-      team_use_cases.list(undefined, { page_number: 1, page_size: 100 }),
+      team_use_cases.list(auth_filter, { page_number: 1, page_size: 100 }),
       competition_team_use_cases.list_teams_in_competition(competition_id, {
         page_number: 1,
         page_size: 100,

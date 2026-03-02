@@ -1,6 +1,8 @@
 <script lang="ts">
   import { onMount } from "svelte";
+  import { browser } from "$app/environment";
   import { goto } from "$app/navigation";
+  import { ensure_auth_profile } from "$lib/presentation/logic/authGuard";
   import type { Organization } from "$lib/core/entities/Organization";
   import type { CompetitionFormat } from "$lib/core/entities/CompetitionFormat";
   import type { Team } from "$lib/core/entities/Team";
@@ -24,6 +26,7 @@
   import { auth_store } from "$lib/presentation/stores/auth";
   import {
     is_scope_restricted,
+    build_authorization_list_filter,
     type UserScopeProfile,
   } from "$lib/core/interfaces/ports/DataAuthorizationPort";
   import type { SquadGenerationStrategy } from "$lib/core/entities/Competition";
@@ -49,6 +52,7 @@
   let is_loading_teams: boolean = true;
   let is_saving: boolean = false;
   let errors: Record<string, string> = {};
+  let error_message: string = "";
   let active_tab: "details" | "rules" = "details";
 
   let toast_visible: boolean = false;
@@ -109,6 +113,15 @@
   }
 
   onMount(async () => {
+    if (!browser) return;
+    const auth_result = await ensure_auth_profile();
+    if (!auth_result.success) {
+      error_message = auth_result.error_message;
+      is_loading_organizations = false;
+      is_loading_formats = false;
+      is_loading_teams = false;
+      return;
+    }
     await Promise.all([
       load_organizations(),
       load_competition_formats(),
@@ -171,7 +184,15 @@
 
   async function load_teams(): Promise<void> {
     is_loading_teams = true;
-    const result = await team_use_cases.list(undefined, {
+    const auth_filter: Record<string, string> = {};
+    if (current_auth_profile) {
+      const filter = build_authorization_list_filter(
+        current_auth_profile as UserScopeProfile,
+        ["organization_id"],
+      );
+      Object.assign(auth_filter, filter);
+    }
+    const result = await team_use_cases.list(auth_filter, {
       page_number: 1,
       page_size: 200,
     });
@@ -340,6 +361,13 @@
 </svelte:head>
 
 <div class="max-w-2xl mx-auto space-y-6">
+  {#if error_message}
+    <div
+      class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4"
+    >
+      <p class="text-red-600 dark:text-red-400">{error_message}</p>
+    </div>
+  {/if}
   <div class="flex items-center gap-4">
     <button
       type="button"

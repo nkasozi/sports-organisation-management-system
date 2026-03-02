@@ -22,7 +22,6 @@ export interface ActivityFilter {
   start_date_after?: string;
   start_date_before?: string;
   is_all_day?: boolean;
-  google_calendar_sync_enabled?: boolean;
 }
 
 export interface ActivityRepository extends FilterableRepository<
@@ -64,8 +63,4 @@ export interface ActivityRepository extends FilterableRepository<
     source_type: ActivitySourceType,
     source_id: string,
   ): AsyncResult<Activity | null>;
-
-  find_activities_for_google_sync(
-    organization_id: string,
-  ): PaginatedAsyncResult<Activity>;
 }

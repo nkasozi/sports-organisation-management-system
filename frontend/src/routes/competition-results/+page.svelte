@@ -1,6 +1,9 @@
 <script lang="ts">
   import { onMount } from "svelte";
+  import { browser } from "$app/environment";
   import { goto } from "$app/navigation";
+  import { get } from "svelte/store";
+  import { ensure_auth_profile } from "$lib/presentation/logic/authGuard";
   import type { Competition } from "$lib/core/entities/Competition";
   import {
     derive_competition_status,
@@ -10,6 +13,7 @@
   import type { Team } from "$lib/core/entities/Team";
   import type { CompetitionFormat } from "$lib/core/entities/CompetitionFormat";
   import type { Official } from "$lib/core/entities/Official";
+  import type { Organization } from "$lib/core/entities/Organization";
   import type { LoadingState } from "$lib/presentation/components/ui/LoadingStateWrapper.svelte";
   import { get_competition_use_cases } from "$lib/core/usecases/CompetitionUseCases";
   import { get_fixture_use_cases } from "$lib/core/usecases/FixtureUseCases";
@@ -21,6 +25,11 @@
   import { get_organization_use_cases } from "$lib/core/usecases/OrganizationUseCases";
   import { get_team_staff_use_cases } from "$lib/core/usecases/TeamStaffUseCases";
   import { get_team_staff_full_name } from "$lib/core/entities/TeamStaff";
+  import { auth_store } from "$lib/presentation/stores/auth";
+  import {
+    build_authorization_list_filter,
+    type UserScopeProfile,
+  } from "$lib/core/interfaces/ports/DataAuthorizationPort";
   import type {
     MatchStaffEntry,
     MatchReportData,
@@ -47,6 +56,8 @@
   const organization_use_cases = get_organization_use_cases();
   const team_staff_use_cases = get_team_staff_use_cases();
 
+  let organizations: Organization[] = [];
+  let selected_organization_id: string = "";
   let downloading_fixture_id: string | null = null;
   let downloading_all_reports: boolean = false;
 
@@ -102,32 +113,94 @@
   $: in_progress_fixtures = fixtures.filter((f) => f.status === "in_progress");
   $: player_stats = calculate_player_stats(fixtures);
 
-  onMount(async () => {
-    await load_competitions();
-  });
+  function get_current_user_role(): string {
+    const auth_state = get(auth_store);
+    return auth_state.current_profile?.role || "player";
+  }
 
-  async function load_competitions(): Promise<void> {
-    loading_state = "loading";
+  function can_user_change_organizations(): boolean {
+    const role = get_current_user_role();
+    return role === "super_admin";
+  }
 
+  function build_auth_filter(): Record<string, string> {
+    const auth_state = get(auth_store);
+    if (!auth_state.current_profile) return {};
+    const entity_fields = ["organization_id", "id"];
+    return build_authorization_list_filter(
+      auth_state.current_profile as UserScopeProfile,
+      entity_fields,
+    );
+  }
+
+  async function load_organizations(): Promise<Organization[]> {
+    const auth_filter = build_auth_filter();
+    const result = await organization_use_cases.list(auth_filter);
+    if (!result.success) {
+      throw new Error(result.error_message || "Failed to load organizations");
+    }
+    return result.data;
+  }
+
+  async function load_competitions_for_organization(
+    organization_id: string,
+  ): Promise<void> {
     const result = await competition_use_cases.list(
-      {},
+      { organization_id },
       { page_number: 1, page_size: 100 },
     );
-
     if (!result.success) {
-      loading_state = "error";
-      error_message = result.error_message || "Failed to load competitions";
+      competitions = [];
       return;
     }
-
     competitions = result.data;
-    loading_state = "success";
 
     if (competitions.length > 0) {
       selected_competition_id = competitions[0].id;
       await load_competition_data();
+    } else {
+      selected_competition_id = "";
+      selected_competition = null;
+      competition_format = null;
+      fixtures = [];
+      teams = [];
+      team_map = new Map();
     }
   }
+
+  async function handle_organization_change(): Promise<void> {
+    if (!selected_organization_id) return;
+    fixtures_loading = true;
+    await load_competitions_for_organization(selected_organization_id);
+    fixtures_loading = false;
+  }
+
+  onMount(async () => {
+    if (!browser) return;
+    const auth_result = await ensure_auth_profile();
+    if (!auth_result.success) {
+      error_message = auth_result.error_message;
+      loading_state = "error";
+      return;
+    }
+
+    loading_state = "loading";
+
+    try {
+      organizations = await load_organizations();
+
+      if (organizations.length > 0) {
+        selected_organization_id = organizations[0].id;
+        await load_competitions_for_organization(selected_organization_id);
+      }
+
+      loading_state = "success";
+    } catch (err) {
+      error_message =
+        err instanceof Error ? err.message : "Failed to load data";
+      loading_state = "error";
+    }
+  });
 
   async function load_competition_data(): Promise<void> {
     if (!selected_competition_id) return;
@@ -612,10 +685,41 @@
 <div class="w-full">
   <LoadingStateWrapper
     state={loading_state}
-    loading_text="Loading competitions..."
+    loading_text="Loading data..."
     {error_message}
   >
-    {#if competitions.length === 0}
+    {#if organizations.length === 0}
+      <div class="card p-8 sm:p-12 text-center">
+        <svg
+          class="mx-auto h-12 w-12 text-accent-400"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+          />
+        </svg>
+        <h3
+          class="mt-4 text-lg font-medium text-accent-900 dark:text-accent-100"
+        >
+          No organizations found
+        </h3>
+        <p class="mt-2 text-accent-600 dark:text-accent-400">
+          Create an organization first to view competition results.
+        </p>
+        <button
+          type="button"
+          class="btn btn-primary-action mt-4"
+          on:click={() => goto("/organizations")}
+        >
+          Go to Organizations
+        </button>
+      </div>
+    {:else if competitions.length === 0}
       <div class="card p-8 sm:p-12 text-center">
         <svg
           class="mx-auto h-12 w-12 text-accent-400"
@@ -649,7 +753,7 @@
     {:else}
       <div class="card p-4 sm:p-6 space-y-6 overflow-hidden">
         <div
-          class="flex flex-col gap-4 border-b border-gray-200 dark:border-gray-700 pb-4"
+          class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 border-b border-gray-200 dark:border-gray-700 pb-4"
         >
           <div class="min-w-0">
             <h2
@@ -662,7 +766,28 @@
             </p>
           </div>
 
-          <div class="flex flex-col gap-3 w-full sm:w-auto">
+          <div
+            class="flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full lg:w-auto"
+          >
+            {#if can_user_change_organizations()}
+              <select
+                bind:value={selected_organization_id}
+                on:change={handle_organization_change}
+                class="select-styled w-full sm:w-auto min-w-0 sm:min-w-[200px]"
+              >
+                {#each organizations as org}
+                  <option value={org.id}>{org.name}</option>
+                {/each}
+              </select>
+            {:else}
+              <span
+                class="text-sm font-medium text-accent-700 dark:text-accent-300 px-3 py-2 bg-accent-100 dark:bg-accent-800 rounded-lg"
+              >
+                {organizations.find((o) => o.id === selected_organization_id)
+                  ?.name || "Organization"}
+              </span>
+            {/if}
+
             <select
               id="competition_select"
               bind:value={selected_competition_id}
@@ -673,25 +798,25 @@
                 <option value={competition.id}>{competition.name}</option>
               {/each}
             </select>
-
-            {#if selected_competition && selected_competition_status_display}
-              <div class="flex flex-wrap items-center gap-2">
-                <span
-                  class="px-2 py-1 text-xs font-medium rounded-full {selected_competition_status_display.color}"
-                >
-                  {selected_competition_status_display.label}
-                </span>
-                {#if competition_format}
-                  <span
-                    class="px-2 py-1 text-xs bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300 rounded-full"
-                  >
-                    {competition_format.name}
-                  </span>
-                {/if}
-              </div>
-            {/if}
           </div>
         </div>
+
+        {#if selected_competition && selected_competition_status_display}
+          <div class="flex flex-wrap items-center gap-2">
+            <span
+              class="px-2 py-1 text-xs font-medium rounded-full {selected_competition_status_display.color}"
+            >
+              {selected_competition_status_display.label}
+            </span>
+            {#if competition_format}
+              <span
+                class="px-2 py-1 text-xs bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300 rounded-full"
+              >
+                {competition_format.name}
+              </span>
+            {/if}
+          </div>
+        {/if}
 
         <div
           class="border-b border-gray-200 dark:border-gray-700 -mx-4 sm:-mx-6 px-4 sm:px-6"

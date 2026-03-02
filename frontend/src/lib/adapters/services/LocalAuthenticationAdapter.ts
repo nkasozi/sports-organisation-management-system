@@ -8,8 +8,18 @@ import type {
 } from "$lib/core/interfaces/ports/AuthenticationPort";
 import { ROLE_PERMISSIONS } from "$lib/core/interfaces/ports/AuthenticationPort";
 import type { InBrowserSystemUserRepository } from "$lib/adapters/repositories/InBrowserSystemUserRepository";
+import { browser } from "$app/environment";
 
-const SECRET_KEY = "sports-org-management-system-secret-key-2024-do-not-share";
+function get_secret_key(): string {
+  if (browser) {
+    return (
+      import.meta.env.VITE_AUTH_SECRET_KEY ||
+      "dev-only-fallback-key-not-for-production"
+    );
+  }
+  return "server-side-placeholder";
+}
+
 const TOKEN_EXPIRY_DAYS = 365;
 
 function base64_url_encode(data: string): string {
@@ -87,7 +97,10 @@ export class LocalAuthenticationAdapter implements AuthenticationPort {
     const header = create_token_header();
     const encoded_payload = base64_url_encode(JSON.stringify(payload));
     const signature_input = `${header}.${encoded_payload}`;
-    const signature = await create_hmac_signature(signature_input, SECRET_KEY);
+    const signature = await create_hmac_signature(
+      signature_input,
+      get_secret_key(),
+    );
 
     const raw_token = `${header}.${encoded_payload}.${signature}`;
 
@@ -118,7 +131,7 @@ export class LocalAuthenticationAdapter implements AuthenticationPort {
     const is_signature_valid = await verify_hmac_signature(
       signature_input,
       signature,
-      SECRET_KEY,
+      get_secret_key(),
     );
 
     if (!is_signature_valid) {

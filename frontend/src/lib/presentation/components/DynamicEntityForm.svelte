@@ -45,6 +45,8 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
     get_authorization_preselect_values,
     type UserScopeProfile,
   } from "$lib/core/interfaces/ports/DataAuthorizationPort";
+  import { ensure_auth_profile } from "../logic/authGuard";
+  import { onMount } from "svelte";
 
   export let entity_type: string;
   export let entity_data: Partial<BaseEntity> | null = null;
@@ -80,6 +82,16 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
   let color_clash_warnings: string[] = [];
   let official_team_conflict_warnings: string[] = [];
   let competition_team_ids: Set<string> = new Set();
+  let auth_profile_missing: boolean = false;
+  let auth_error_message: string = "";
+
+  onMount(async () => {
+    const auth_result = await ensure_auth_profile();
+    if (!auth_result.success) {
+      auth_profile_missing = true;
+      auth_error_message = auth_result.error_message;
+    }
+  });
 
   $: entity_metadata = get_entity_metadata_for_type(entity_type);
   $: is_edit_mode = determine_if_edit_mode(entity_data);
@@ -1748,7 +1760,13 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
 </script>
 
 <div class="w-full">
-  {#if !entity_metadata}
+  {#if auth_profile_missing}
+    <div
+      class="alert bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 p-4 rounded-lg"
+    >
+      <p>{auth_error_message}</p>
+    </div>
+  {:else if !entity_metadata}
     <div
       class="alert bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 p-4 rounded-lg"
     >

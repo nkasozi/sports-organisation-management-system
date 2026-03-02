@@ -1,11 +1,18 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { browser } from "$app/environment";
+  import { get } from "svelte/store";
+  import { ensure_auth_profile } from "$lib/presentation/logic/authGuard";
   import type { BaseEntity } from "$lib/core/entities/BaseEntity";
   import type { TeamProfile } from "$lib/core/entities/TeamProfile";
   import { get_team_profile_use_cases } from "$lib/core/usecases/TeamProfileUseCases";
   import { get_team_use_cases } from "$lib/core/usecases/TeamUseCases";
   import DynamicEntityForm from "$lib/presentation/components/DynamicEntityForm.svelte";
+  import { auth_store } from "$lib/presentation/stores/auth";
+  import {
+    build_authorization_list_filter,
+    type UserScopeProfile,
+  } from "$lib/core/interfaces/ports/DataAuthorizationPort";
 
   type ViewMode = "list" | "create" | "edit";
 
@@ -20,11 +27,22 @@
   const profile_use_cases = get_team_profile_use_cases();
   const team_use_cases = get_team_use_cases();
 
+  function build_profile_authorization_filter(): Record<string, string> {
+    const auth_state = get(auth_store);
+    if (!auth_state.current_profile) return {};
+    const entity_fields = ["team_id", "organization_id"];
+    return build_authorization_list_filter(
+      auth_state.current_profile as UserScopeProfile,
+      entity_fields,
+    );
+  }
+
   async function load_profiles(): Promise<boolean> {
     is_loading = true;
     error_message = "";
 
-    const result = await profile_use_cases.list();
+    const filter = build_profile_authorization_filter();
+    const result = await profile_use_cases.list(filter);
 
     if (!result.success) {
       error_message = result.error_message || "Failed to load profiles";
@@ -39,7 +57,8 @@
   }
 
   async function load_foreign_key_options(): Promise<void> {
-    const teams_result = await team_use_cases.list();
+    const filter = build_profile_authorization_filter();
+    const teams_result = await team_use_cases.list(filter);
     if (teams_result.success) {
       foreign_key_options["team_id"] = teams_result.data.map((t) => ({
         value: t.id,
@@ -101,10 +120,15 @@
     return team_option?.label || team_id;
   }
 
-  onMount(() => {
-    if (browser) {
-      load_profiles();
+  onMount(async () => {
+    if (!browser) return;
+    const auth_result = await ensure_auth_profile();
+    if (!auth_result.success) {
+      error_message = auth_result.error_message;
+      is_loading = false;
+      return;
     }
+    load_profiles();
   });
 </script>
 

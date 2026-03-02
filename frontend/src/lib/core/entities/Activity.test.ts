@@ -35,7 +35,6 @@ describe("Activity Entity", () => {
       recurrence: null,
       reminders: DEFAULT_REMINDERS,
       color_override: null,
-      google_calendar_sync_enabled: false,
       notes: "",
       ...overrides,
     });
@@ -153,9 +152,6 @@ describe("Activity Entity", () => {
       recurrence: null,
       reminders: [],
       color_override: null,
-      google_calendar_event_id: null,
-      google_calendar_sync_enabled: false,
-      last_synced_at: null,
       notes: "",
       created_at: "2025-01-01T00:00:00Z",
       updated_at: "2025-01-01T00:00:00Z",
@@ -174,11 +170,6 @@ describe("Activity Entity", () => {
     it("prevents editing fixture-sourced activities", () => {
       const activity = create_activity("fixture");
       expect(can_edit_activity(activity)).toBe(false);
-    });
-
-    it("allows editing google_calendar-sourced activities", () => {
-      const activity = create_activity("google_calendar");
-      expect(can_edit_activity(activity)).toBe(true);
     });
   });
 
@@ -204,9 +195,6 @@ describe("Activity Entity", () => {
       recurrence: null,
       reminders: [],
       color_override: null,
-      google_calendar_event_id: null,
-      google_calendar_sync_enabled: false,
-      last_synced_at: null,
       notes: "",
       created_at: "2025-01-01T00:00:00Z",
       updated_at: "2025-01-01T00:00:00Z",
@@ -224,11 +212,6 @@ describe("Activity Entity", () => {
 
     it("prevents deleting fixture-sourced activities", () => {
       const activity = create_activity("fixture");
-      expect(can_delete_activity(activity)).toBe(false);
-    });
-
-    it("prevents deleting google_calendar-sourced activities", () => {
-      const activity = create_activity("google_calendar");
       expect(can_delete_activity(activity)).toBe(false);
     });
   });

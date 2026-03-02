@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
+  import { get } from "svelte/store";
   import { get_organization_use_cases } from "$lib/core/usecases/OrganizationUseCases";
   import { get_competition_use_cases } from "$lib/core/usecases/CompetitionUseCases";
   import { get_team_use_cases } from "$lib/core/usecases/TeamUseCases";
@@ -8,6 +9,7 @@
   import { get_sport_use_cases } from "$lib/core/usecases/SportUseCases";
   import { reset_all_data } from "$lib/adapters/services/dataResetService";
   import { branding_store } from "$lib/presentation/stores/branding";
+  import { auth_store } from "$lib/presentation/stores/auth";
   import type { Competition } from "$lib/core/entities/Competition";
   import type { Fixture } from "$lib/core/entities/Fixture";
   import type { Team } from "$lib/core/entities/Team";
@@ -34,6 +36,20 @@
   let competition_names: Record<string, string> = {};
   let sport_names: Record<string, string> = {};
   let competition_sport_names: Record<string, string> = {};
+
+  function get_current_user_role(): string {
+    const auth_state = get(auth_store);
+    return auth_state.current_profile?.role || "player";
+  }
+
+  function is_super_admin(): boolean {
+    return get_current_user_role() === "super_admin";
+  }
+
+  function has_org_admin_access(): boolean {
+    const role = get_current_user_role();
+    return role === "super_admin" || role === "org_admin";
+  }
 
   function get_competition_initials(name: string): string {
     return name
@@ -288,28 +304,33 @@
           {$branding_store.organization_tagline}
         </p>
       </div>
-      <div class="mt-4 md:mt-0">
-        <button
-          class="btn btn-primary-action mobile-touch"
-          on:click={handle_reset_data}
-          disabled={is_resetting}
-        >
-          {#if is_resetting}
-            Resetting...
-          {:else}
-            Reset Demo Data
-          {/if}
-        </button>
-      </div>
+      {#if is_super_admin()}
+        <div class="mt-4 md:mt-0">
+          <button
+            class="btn btn-primary-action mobile-touch"
+            on:click={handle_reset_data}
+            disabled={is_resetting}
+          >
+            {#if is_resetting}
+              Resetting...
+            {:else}
+              Reset Demo Data
+            {/if}
+          </button>
+        </div>
+      {/if}
     </div>
   </div>
 
   <!-- Stats cards -->
   <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
     <!-- Organizations card -->
-    <a
-      href="/organizations"
-      class="card p-6 hover:ring-2 hover:ring-sky-400 dark:hover:ring-sky-500 cursor-pointer"
+    <svelte:element
+      this={has_org_admin_access() ? "a" : "div"}
+      href={has_org_admin_access() ? "/organizations" : undefined}
+      class="card p-6 {has_org_admin_access()
+        ? 'hover:ring-2 hover:ring-sky-400 dark:hover:ring-sky-500 cursor-pointer'
+        : ''}"
     >
       <div class="flex items-center">
         <div class="flex-shrink-0">
@@ -346,12 +367,15 @@
           </p>
         </div>
       </div>
-    </a>
+    </svelte:element>
 
     <!-- Competitions card -->
-    <a
-      href="/competitions"
-      class="card p-6 hover:ring-2 hover:ring-teal-400 dark:hover:ring-teal-500 cursor-pointer"
+    <svelte:element
+      this={has_org_admin_access() ? "a" : "div"}
+      href={has_org_admin_access() ? "/competitions" : undefined}
+      class="card p-6 {has_org_admin_access()
+        ? 'hover:ring-2 hover:ring-teal-400 dark:hover:ring-teal-500 cursor-pointer'
+        : ''}"
     >
       <div class="flex items-center">
         <div class="flex-shrink-0">
@@ -388,12 +412,15 @@
           </p>
         </div>
       </div>
-    </a>
+    </svelte:element>
 
     <!-- Teams card -->
-    <a
-      href="/teams"
-      class="card p-6 hover:ring-2 hover:ring-fuchsia-400 dark:hover:ring-fuchsia-500 cursor-pointer"
+    <svelte:element
+      this={has_org_admin_access() ? "a" : "div"}
+      href={has_org_admin_access() ? "/teams" : undefined}
+      class="card p-6 {has_org_admin_access()
+        ? 'hover:ring-2 hover:ring-fuchsia-400 dark:hover:ring-fuchsia-500 cursor-pointer'
+        : ''}"
     >
       <div class="flex items-center">
         <div class="flex-shrink-0">
@@ -430,12 +457,15 @@
           </p>
         </div>
       </div>
-    </a>
+    </svelte:element>
 
     <!-- Players card -->
-    <a
-      href="/players"
-      class="card p-6 hover:ring-2 hover:ring-sky-400 dark:hover:ring-sky-500 cursor-pointer"
+    <svelte:element
+      this={has_org_admin_access() ? "a" : "div"}
+      href={has_org_admin_access() ? "/players" : undefined}
+      class="card p-6 {has_org_admin_access()
+        ? 'hover:ring-2 hover:ring-sky-400 dark:hover:ring-sky-500 cursor-pointer'
+        : ''}"
     >
       <div class="flex items-center">
         <div class="flex-shrink-0">
@@ -472,7 +502,7 @@
           </p>
         </div>
       </div>
-    </a>
+    </svelte:element>
   </div>
 
   <!-- Recent activity -->
@@ -506,17 +536,23 @@
         {:else if recent_competitions.length === 0}
           <div class="text-center py-4">
             <p class="text-sm text-accent-500 dark:text-accent-400">
-              No competitions yet. <a
-                href="/competitions/create"
-                class="text-primary-500 hover:underline">Create one</a
-              >
+              No competitions yet.
+              {#if has_org_admin_access()}
+                <a
+                  href="/competitions/create"
+                  class="text-primary-500 hover:underline">Create one</a
+                >
+              {/if}
             </p>
           </div>
         {:else}
           {#each recent_competitions as competition, index}
-            <a
-              href="/competitions"
-              class="flex items-center space-x-4 p-2 -mx-2 rounded-lg hover:bg-accent-50 dark:hover:bg-accent-700/50 transition-colors cursor-pointer"
+            <svelte:element
+              this={has_org_admin_access() ? "a" : "div"}
+              href={has_org_admin_access() ? "/competitions" : undefined}
+              class="flex items-center space-x-4 p-2 -mx-2 rounded-lg {has_org_admin_access()
+                ? 'hover:bg-accent-50 dark:hover:bg-accent-700/50 cursor-pointer'
+                : ''} transition-colors"
             >
               <div
                 class="h-10 w-10 rounded-lg flex items-center justify-center {index %
@@ -562,7 +598,7 @@
                 {competition.status.charAt(0).toUpperCase() +
                   competition.status.slice(1)}
               </span>
-            </a>
+            </svelte:element>
           {/each}
         {/if}
       </div>
@@ -602,17 +638,23 @@
         {:else if upcoming_fixtures.length === 0}
           <div class="text-center py-4">
             <p class="text-sm text-accent-500 dark:text-accent-400">
-              No upcoming fixtures. <a
-                href="/fixtures?action=create"
-                class="text-primary-500 hover:underline">Schedule one</a
-              >
+              No upcoming fixtures.
+              {#if has_org_admin_access()}
+                <a
+                  href="/fixtures?action=create"
+                  class="text-primary-500 hover:underline">Schedule one</a
+                >
+              {/if}
             </p>
           </div>
         {:else}
           {#each upcoming_fixtures as fixture, index}
-            <a
-              href="/live-games"
-              class="flex items-center justify-between p-2 -mx-2 rounded-lg hover:bg-accent-50 dark:hover:bg-accent-700/50 transition-colors cursor-pointer"
+            <svelte:element
+              this={has_org_admin_access() ? "a" : "div"}
+              href={has_org_admin_access() ? "/live-games" : undefined}
+              class="flex items-center justify-between p-2 -mx-2 rounded-lg {has_org_admin_access()
+                ? 'hover:bg-accent-50 dark:hover:bg-accent-700/50 cursor-pointer'
+                : ''} transition-colors"
             >
               <div class="flex items-center space-x-3">
                 <div
@@ -674,7 +716,7 @@
               <span class="text-xs text-accent-500 dark:text-accent-400">
                 {fixture.venue || "TBD"}
               </span>
-            </a>
+            </svelte:element>
           {/each}
         {/if}
       </div>
@@ -682,116 +724,120 @@
   </div>
 
   <!-- Quick actions -->
-  <div class="card p-6">
-    <h2 class="text-lg font-semibold text-accent-900 dark:text-accent-100 mb-4">
-      Quick Actions
-    </h2>
-    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
-      <a
-        href="/organizations"
-        class="flex flex-col items-center p-4 text-center hover:bg-accent-50 dark:hover:bg-accent-700 rounded-lg transition-colors duration-200 mobile-touch"
+  {#if has_org_admin_access()}
+    <div class="card p-6">
+      <h2
+        class="text-lg font-semibold text-accent-900 dark:text-accent-100 mb-4"
       >
-        <div
-          class="h-12 w-12 bg-sky-600 rounded-lg flex items-center justify-center mb-3"
+        Quick Actions
+      </h2>
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <a
+          href="/organizations"
+          class="flex flex-col items-center p-4 text-center hover:bg-accent-50 dark:hover:bg-accent-700 rounded-lg transition-colors duration-200 mobile-touch"
         >
-          <svg
-            class="h-6 w-6 text-white"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
+          <div
+            class="h-12 w-12 bg-sky-600 rounded-lg flex items-center justify-center mb-3"
           >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-            />
-          </svg>
-        </div>
-        <span class="text-sm font-medium text-accent-900 dark:text-accent-100"
-          >Organizations</span
-        >
-      </a>
+            <svg
+              class="h-6 w-6 text-white"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+              />
+            </svg>
+          </div>
+          <span class="text-sm font-medium text-accent-900 dark:text-accent-100"
+            >Organizations</span
+          >
+        </a>
 
-      <a
-        href="/competitions/create"
-        class="flex flex-col items-center p-4 text-center hover:bg-accent-50 dark:hover:bg-accent-700 rounded-lg transition-colors duration-200 mobile-touch"
-      >
-        <div
-          class="h-12 w-12 bg-teal-700 rounded-lg flex items-center justify-center mb-3"
+        <a
+          href="/competitions/create"
+          class="flex flex-col items-center p-4 text-center hover:bg-accent-50 dark:hover:bg-accent-700 rounded-lg transition-colors duration-200 mobile-touch"
         >
-          <svg
-            class="h-6 w-6 text-white"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
+          <div
+            class="h-12 w-12 bg-teal-700 rounded-lg flex items-center justify-center mb-3"
           >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-            />
-          </svg>
-        </div>
-        <span class="text-sm font-medium text-accent-900 dark:text-accent-100"
-          >New Competition</span
-        >
-      </a>
+            <svg
+              class="h-6 w-6 text-white"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+              />
+            </svg>
+          </div>
+          <span class="text-sm font-medium text-accent-900 dark:text-accent-100"
+            >New Competition</span
+          >
+        </a>
 
-      <a
-        href="/teams"
-        class="flex flex-col items-center p-4 text-center hover:bg-accent-50 dark:hover:bg-accent-700 rounded-lg transition-colors duration-200 mobile-touch"
-      >
-        <div
-          class="h-12 w-12 bg-fuchsia-700 rounded-lg flex items-center justify-center mb-3"
+        <a
+          href="/teams"
+          class="flex flex-col items-center p-4 text-center hover:bg-accent-50 dark:hover:bg-accent-700 rounded-lg transition-colors duration-200 mobile-touch"
         >
-          <svg
-            class="h-6 w-6 text-white"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
+          <div
+            class="h-12 w-12 bg-fuchsia-700 rounded-lg flex items-center justify-center mb-3"
           >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-            />
-          </svg>
-        </div>
-        <span class="text-sm font-medium text-accent-900 dark:text-accent-100"
-          >Teams</span
-        >
-      </a>
+            <svg
+              class="h-6 w-6 text-white"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+              />
+            </svg>
+          </div>
+          <span class="text-sm font-medium text-accent-900 dark:text-accent-100"
+            >Teams</span
+          >
+        </a>
 
-      <a
-        href="/fixtures/create"
-        class="flex flex-col items-center p-4 text-center hover:bg-accent-50 dark:hover:bg-accent-700 rounded-lg transition-colors duration-200 mobile-touch"
-      >
-        <div
-          class="h-12 w-12 bg-sky-600 rounded-lg flex items-center justify-center mb-3"
+        <a
+          href="/fixtures/create"
+          class="flex flex-col items-center p-4 text-center hover:bg-accent-50 dark:hover:bg-accent-700 rounded-lg transition-colors duration-200 mobile-touch"
         >
-          <svg
-            class="h-6 w-6 text-white"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
+          <div
+            class="h-12 w-12 bg-sky-600 rounded-lg flex items-center justify-center mb-3"
           >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-            />
-          </svg>
-        </div>
-        <span class="text-sm font-medium text-accent-900 dark:text-accent-100"
-          >Create Fixture</span
-        >
-      </a>
+            <svg
+              class="h-6 w-6 text-white"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+              />
+            </svg>
+          </div>
+          <span class="text-sm font-medium text-accent-900 dark:text-accent-100"
+            >Create Fixture</span
+          >
+        </a>
+      </div>
     </div>
-  </div>
+  {/if}
 </div>
 
 <style>

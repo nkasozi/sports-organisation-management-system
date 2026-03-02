@@ -2,6 +2,7 @@
   import { onMount, onDestroy, tick } from "svelte";
   import { browser } from "$app/environment";
   import { goto } from "$app/navigation";
+  import { get } from "svelte/store";
   import "temporal-polyfill/global";
   import {
     createCalendar,
@@ -19,6 +20,12 @@
   import CalendarSubscriptionManager from "$lib/presentation/components/calendar/CalendarSubscriptionManager.svelte";
   import { get_use_cases_container } from "$lib/infrastructure/container";
   import { theme_store } from "$lib/presentation/stores/theme";
+  import { auth_store } from "$lib/presentation/stores/auth";
+  import { ensure_auth_profile } from "$lib/presentation/logic/authGuard";
+  import {
+    build_authorization_list_filter,
+    type UserScopeProfile,
+  } from "$lib/core/interfaces/ports/DataAuthorizationPort";
   import type { Organization } from "$lib/core/entities/Organization";
   import type { Team } from "$lib/core/entities/Team";
   import type { Competition } from "$lib/core/entities/Competition";
@@ -29,15 +36,6 @@
   } from "$lib/core/entities/Activity";
   import type { CalendarEvent } from "$lib/core/interfaces/ports/ActivityUseCasesPort";
   import { DEFAULT_REMINDERS } from "$lib/core/entities/Activity";
-  import {
-    is_google_calendar_configured,
-    initialize_google_calendar,
-    sign_in_to_google_calendar,
-    sign_out_of_google_calendar,
-    is_signed_in_to_google,
-    sync_activity_to_google_calendar,
-    type GoogleCalendarAuthStatus,
-  } from "$lib/adapters/services/GoogleCalendarService";
 
   type LoadingState = "idle" | "loading" | "success" | "error";
 
@@ -69,16 +67,10 @@
   let new_activity_end_time: string = $state("");
   let new_activity_is_all_day: boolean = $state(false);
   let new_activity_location: string = $state("");
-  let new_activity_google_sync: boolean = $state(false);
 
   let new_category_name: string = $state("");
   let new_category_color: string = $state("#3B82F6");
   let new_category_type: string = $state("custom");
-
-  let google_calendar_configured: boolean = $state(false);
-  let google_auth_status: GoogleCalendarAuthStatus = $state({
-    is_signed_in: false,
-  });
 
   let calendar_container_element: HTMLDivElement | null = $state(null);
   let calendar_instance: ReturnType<typeof createCalendar> | null = null;
@@ -96,6 +88,21 @@
   let toast_visible: boolean = $state(false);
   let toast_message: string = $state("");
   let toast_type: "success" | "error" | "warning" | "info" = $state("info");
+
+  function get_current_user_role(): string {
+    const auth_state = get(auth_store);
+    return auth_state.current_profile?.role || "player";
+  }
+
+  function can_user_add_activities(): boolean {
+    const role = get_current_user_role();
+    return role === "super_admin" || role === "org_admin";
+  }
+
+  function can_user_change_organizations(): boolean {
+    const role = get_current_user_role();
+    return role === "super_admin";
+  }
 
   function show_toast(
     message: string,
@@ -141,8 +148,19 @@
     };
   }
 
+  function build_auth_filter(): Record<string, string> {
+    const auth_state = get(auth_store);
+    if (!auth_state.current_profile) return {};
+    const entity_fields = ["organization_id", "id"];
+    return build_authorization_list_filter(
+      auth_state.current_profile as UserScopeProfile,
+      entity_fields,
+    );
+  }
+
   async function load_organizations(): Promise<Organization[]> {
-    const result = await use_cases.organization_use_cases.list();
+    const auth_filter = build_auth_filter();
+    const result = await use_cases.organization_use_cases.list(auth_filter);
     if (!result.success) {
       throw new Error(result.error_message || "Failed to load organizations");
     }
@@ -470,7 +488,6 @@
     new_activity_end_time = "10:00";
     new_activity_is_all_day = false;
     new_activity_location = "";
-    new_activity_google_sync = false;
   }
 
   async function handle_save_activity(): Promise<void> {
@@ -513,7 +530,6 @@
           end_datetime,
           is_all_day: new_activity_is_all_day,
           location: new_activity_location,
-          google_calendar_sync_enabled: new_activity_google_sync,
         },
       );
 
@@ -546,7 +562,6 @@
         recurrence: null,
         reminders: [...DEFAULT_REMINDERS],
         color_override: null,
-        google_calendar_sync_enabled: new_activity_google_sync,
         notes: "",
       };
 
@@ -561,22 +576,6 @@
         return;
       }
       created_or_updated_activity = create_result.data;
-    }
-
-    if (
-      new_activity_google_sync &&
-      google_auth_status.is_signed_in &&
-      created_or_updated_activity
-    ) {
-      const sync_result = await sync_activity_to_google_calendar(
-        created_or_updated_activity,
-      );
-      if (!sync_result.success) {
-        show_toast(
-          `Activity saved but failed to sync to Google Calendar: ${sync_result.error}`,
-          "warning",
-        );
-      }
     }
 
     close_create_modal();
@@ -726,27 +725,6 @@
     close_category_modal();
   }
 
-  async function handle_google_sign_in(): Promise<void> {
-    if (!google_calendar_configured) {
-      show_toast(
-        "Google Calendar is not configured. Please contact your administrator.",
-        "warning",
-      );
-      return;
-    }
-
-    google_auth_status = await sign_in_to_google_calendar();
-
-    if (google_auth_status.is_signed_in) {
-      show_toast("Successfully signed in to Google Calendar", "success");
-    }
-  }
-
-  function handle_google_sign_out(): void {
-    sign_out_of_google_calendar();
-    google_auth_status = { is_signed_in: false };
-  }
-
   $effect(() => {
     if (
       calendar_container_element &&
@@ -761,18 +739,17 @@
 
   onMount(async () => {
     if (!browser) return;
+    const auth_result = await ensure_auth_profile();
+    if (!auth_result.success) {
+      error_message = auth_result.error_message;
+      loading_state = "error";
+      return;
+    }
 
     is_dark_mode = get_current_dark_mode();
     loading_state = "loading";
 
     try {
-      google_calendar_configured = is_google_calendar_configured();
-
-      if (google_calendar_configured) {
-        await initialize_google_calendar();
-        google_auth_status = { is_signed_in: is_signed_in_to_google() };
-      }
-
       organizations = await load_organizations();
 
       if (organizations.length > 0) {
@@ -855,28 +832,39 @@
           <div
             class="flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full lg:w-auto"
           >
-            <select
-              bind:value={selected_organization_id}
-              onchange={handle_organization_change}
-              class="select-styled w-full sm:w-auto min-w-0 sm:min-w-[200px]"
-            >
-              {#each organizations as org}
-                <option value={org.id}>{org.name}</option>
-              {/each}
-            </select>
+            {#if can_user_change_organizations()}
+              <select
+                bind:value={selected_organization_id}
+                onchange={handle_organization_change}
+                class="select-styled w-full sm:w-auto min-w-0 sm:min-w-[200px]"
+              >
+                {#each organizations as org}
+                  <option value={org.id}>{org.name}</option>
+                {/each}
+              </select>
+            {:else}
+              <span
+                class="text-sm font-medium text-accent-700 dark:text-accent-300 px-3 py-2 bg-accent-100 dark:bg-accent-800 rounded-lg"
+              >
+                {organizations.find((o) => o.id === selected_organization_id)
+                  ?.name || "Organization"}
+              </span>
+            {/if}
 
-            <button
-              type="button"
-              class="btn btn-primary-action whitespace-nowrap"
-              onclick={() => {
-                const today = new Date().toISOString().split("T")[0];
-                new_activity_start_date = today;
-                new_activity_end_date = today;
-                show_create_modal = true;
-              }}
-            >
-              + Add Activity
-            </button>
+            {#if can_user_add_activities()}
+              <button
+                type="button"
+                class="btn btn-primary-action whitespace-nowrap"
+                onclick={() => {
+                  const today = new Date().toISOString().split("T")[0];
+                  new_activity_start_date = today;
+                  new_activity_end_date = today;
+                  show_create_modal = true;
+                }}
+              >
+                + Add Activity
+              </button>
+            {/if}
 
             <button
               type="button"
@@ -1218,43 +1206,6 @@
               placeholder="Optional location"
             />
           </div>
-
-          {#if google_calendar_configured}
-            <div
-              class="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg"
-            >
-              <input
-                id="google_sync"
-                type="checkbox"
-                bind:checked={new_activity_google_sync}
-                class="w-4 h-4 text-primary-600 bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-primary-500"
-              />
-              <label
-                for="google_sync"
-                class="flex items-center gap-2 text-sm text-accent-700 dark:text-accent-300 cursor-pointer"
-              >
-                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-                  <path
-                    d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                    fill="#4285F4"
-                  />
-                  <path
-                    d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                    fill="#34A853"
-                  />
-                  <path
-                    d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                    fill="#FBBC05"
-                  />
-                  <path
-                    d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                    fill="#EA4335"
-                  />
-                </svg>
-                Sync to Google Calendar
-              </label>
-            </div>
-          {/if}
         </div>
 
         <div

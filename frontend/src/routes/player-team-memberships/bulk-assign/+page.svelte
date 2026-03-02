@@ -2,6 +2,8 @@
   import { onMount } from "svelte";
   import { goto } from "$app/navigation";
   import { browser } from "$app/environment";
+  import { get } from "svelte/store";
+  import { ensure_auth_profile } from "$lib/presentation/logic/authGuard";
   import type { Player } from "$lib/core/entities/Player";
   import type { Team } from "$lib/core/entities/Team";
   import type { PlayerTeamMembership } from "$lib/core/entities/PlayerTeamMembership";
@@ -13,6 +15,11 @@
   import { get_team_use_cases } from "$lib/core/usecases/TeamUseCases";
   import { get_player_team_membership_use_cases } from "$lib/core/usecases/PlayerTeamMembershipUseCases";
   import Toast from "$lib/presentation/components/ui/Toast.svelte";
+  import { auth_store } from "$lib/presentation/stores/auth";
+  import {
+    build_authorization_list_filter,
+    type UserScopeProfile,
+  } from "$lib/core/interfaces/ports/DataAuthorizationPort";
 
   const player_use_cases = get_player_use_cases();
   const team_use_cases = get_team_use_cases();
@@ -64,8 +71,24 @@
     return new Date().toISOString().split("T")[0];
   }
 
+  function build_auth_filter(): Record<string, string> {
+    const auth_state = get(auth_store);
+    if (!auth_state.current_profile) return {};
+    const entity_fields = ["organization_id", "team_id"];
+    return build_authorization_list_filter(
+      auth_state.current_profile as UserScopeProfile,
+      entity_fields,
+    );
+  }
+
   onMount(async () => {
     if (!browser) return;
+    const auth_result = await ensure_auth_profile();
+    if (!auth_result.success) {
+      error_message = auth_result.error_message;
+      is_loading = false;
+      return;
+    }
     await load_initial_data();
   });
 
@@ -73,11 +96,12 @@
     is_loading = true;
     error_message = "";
 
+    const auth_filter = build_auth_filter();
     const [teams_result, players_result, memberships_result] =
       await Promise.all([
-        team_use_cases.list(undefined, { page_number: 1, page_size: 200 }),
-        player_use_cases.list(undefined, { page_number: 1, page_size: 500 }),
-        membership_use_cases.list(undefined, {
+        team_use_cases.list(auth_filter, { page_number: 1, page_size: 200 }),
+        player_use_cases.list(auth_filter, { page_number: 1, page_size: 500 }),
+        membership_use_cases.list(auth_filter, {
           page_number: 1,
           page_size: 1000,
         }),

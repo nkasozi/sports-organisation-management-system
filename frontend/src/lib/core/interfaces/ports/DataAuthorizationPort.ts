@@ -3,6 +3,7 @@ import { ANY_VALUE } from "./AuthenticationPort";
 
 export type DataCategory =
   | "root_level"
+  | "org_administrator_level"
   | "organisation_level"
   | "team_level"
   | "player_level";
@@ -52,6 +53,7 @@ const READ_ONLY_PERMISSIONS: CategoryPermissions = {
 export const DATA_PERMISSION_MAP: FullPermissionMap = {
   super_admin: {
     root_level: FULL_PERMISSIONS,
+    org_administrator_level: FULL_PERMISSIONS,
     organisation_level: FULL_PERMISSIONS,
     team_level: FULL_PERMISSIONS,
     player_level: FULL_PERMISSIONS,
@@ -59,6 +61,7 @@ export const DATA_PERMISSION_MAP: FullPermissionMap = {
 
   org_admin: {
     root_level: READ_ONLY_PERMISSIONS,
+    org_administrator_level: FULL_PERMISSIONS,
     organisation_level: FULL_PERMISSIONS,
     team_level: FULL_PERMISSIONS,
     player_level: FULL_PERMISSIONS,
@@ -66,6 +69,7 @@ export const DATA_PERMISSION_MAP: FullPermissionMap = {
 
   officials_manager: {
     root_level: READ_ONLY_PERMISSIONS,
+    org_administrator_level: NO_PERMISSIONS,
     organisation_level: {
       create: false,
       read: true,
@@ -78,6 +82,7 @@ export const DATA_PERMISSION_MAP: FullPermissionMap = {
 
   team_manager: {
     root_level: READ_ONLY_PERMISSIONS,
+    org_administrator_level: NO_PERMISSIONS,
     organisation_level: READ_ONLY_PERMISSIONS,
     team_level: FULL_PERMISSIONS,
     player_level: FULL_PERMISSIONS,
@@ -85,6 +90,7 @@ export const DATA_PERMISSION_MAP: FullPermissionMap = {
 
   official: {
     root_level: READ_ONLY_PERMISSIONS,
+    org_administrator_level: NO_PERMISSIONS,
     organisation_level: READ_ONLY_PERMISSIONS,
     team_level: READ_ONLY_PERMISSIONS,
     player_level: READ_ONLY_PERMISSIONS,
@@ -92,9 +98,10 @@ export const DATA_PERMISSION_MAP: FullPermissionMap = {
 
   player: {
     root_level: READ_ONLY_PERMISSIONS,
+    org_administrator_level: NO_PERMISSIONS,
     organisation_level: READ_ONLY_PERMISSIONS,
     team_level: READ_ONLY_PERMISSIONS,
-    player_level: { create: false, read: true, update: true, delete: false },
+    player_level: { create: true, read: true, update: true, delete: false },
   },
 };
 
@@ -108,6 +115,9 @@ export const ENTITY_DATA_CATEGORY_MAP: Record<string, DataCategory> = {
   gameeventtype: "root_level",
   teamstaffrole: "root_level",
   playerposition: "root_level",
+
+  settings: "org_administrator_level",
+  systemsettings: "org_administrator_level",
 
   competition: "organisation_level",
   team: "organisation_level",

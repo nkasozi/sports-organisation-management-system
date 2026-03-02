@@ -156,7 +156,7 @@ describe("DataAuthorizationPort", () => {
         );
       });
 
-      it("should have read and update at player_level only", () => {
+      it("should have create, read and update at player_level only", () => {
         expect(check_data_permission("player", "player_level", "read")).toBe(
           true,
         );
@@ -164,7 +164,7 @@ describe("DataAuthorizationPort", () => {
           true,
         );
         expect(check_data_permission("player", "player_level", "create")).toBe(
-          false,
+          true,
         );
         expect(check_data_permission("player", "player_level", "delete")).toBe(
           false,
@@ -202,8 +202,9 @@ describe("DataAuthorizationPort", () => {
       expect(check_entity_permission("team_manager", "player", "create")).toBe(
         true,
       );
-      expect(check_entity_permission("player", "player", "create")).toBe(false);
+      expect(check_entity_permission("player", "player", "create")).toBe(true);
       expect(check_entity_permission("player", "player", "update")).toBe(true);
+      expect(check_entity_permission("player", "player", "delete")).toBe(false);
     });
   });
 
@@ -257,11 +258,11 @@ describe("DataAuthorizationPort", () => {
       expect(actions).toEqual(["read"]);
     });
 
-    it("should return read and update for player on player entities", () => {
+    it("should return create, read and update for player on player entities", () => {
       const actions = get_allowed_actions_for_entity("player", "playerprofile");
+      expect(actions).toContain("create");
       expect(actions).toContain("read");
       expect(actions).toContain("update");
-      expect(actions).not.toContain("create");
       expect(actions).not.toContain("delete");
     });
   });
@@ -286,10 +287,10 @@ describe("DataAuthorizationPort", () => {
       expect(disabled).not.toContain("read");
     });
 
-    it("should return create and delete for player on player entities", () => {
+    it("should return only delete for player on player entities", () => {
       const disabled = get_disabled_crud_for_entity("player", "player");
-      expect(disabled).toContain("create");
       expect(disabled).toContain("delete");
+      expect(disabled).not.toContain("create");
       expect(disabled).not.toContain("read");
       expect(disabled).not.toContain("update");
     });

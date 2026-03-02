@@ -28,6 +28,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
     build_authorization_list_filter,
     type UserScopeProfile,
   } from "$lib/core/interfaces/ports/DataAuthorizationPort";
+  import { ensure_auth_profile } from "../logic/authGuard";
 
   export let entity_type: string;
   export let show_actions: boolean = true;
@@ -84,6 +85,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
   let sort_direction: "asc" | "desc" = "asc";
   let filter_values: Record<string, string> = {};
   let foreign_key_options: Record<string, any[]> = {};
+  let auth_profile_missing: boolean = false;
 
   // Computed values
   $: entity_metadata = get_entity_metadata_for_type(entity_type);
@@ -156,6 +158,12 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
   onMount(async () => {
     console.log(`[ENTITY_LIST] onMount - entity_type: "${entity_type}"`);
     initialize_default_columns();
+    const auth_result = await ensure_auth_profile();
+    if (!auth_result.success) {
+      auth_profile_missing = true;
+      error_message = auth_result.error_message;
+      return;
+    }
     load_all_entities_for_display();
     await load_foreign_key_options_for_filters();
   });
@@ -430,26 +438,80 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
     return filter;
   }
 
-  function build_authorization_filter(): Record<string, string> {
+  function normalize_entity_type_for_filter(type: string): string {
+    return type.toLowerCase().replace(/[\s_-]/g, "");
+  }
+
+  function build_authorization_filter(): Record<string, string> | null {
     const auth_state = get(auth_store);
 
-    if (!auth_state.current_profile) return {};
-    if (!entity_metadata) return {};
+    if (!auth_state.current_profile) {
+      console.error(
+        "[DynamicEntityList] No auth profile found after initialization - failing safely",
+      );
+      auth_profile_missing = true;
+      return null;
+    }
+
+    auth_profile_missing = false;
+
+    if (!entity_metadata) {
+      console.debug(
+        "[DynamicEntityList] No entity_metadata, returning empty filter",
+      );
+      return {};
+    }
 
     const entity_fields = entity_metadata.fields.map(
       (f: FieldMetadata) => f.field_name,
     );
 
-    return build_authorization_list_filter(
+    const filter = build_authorization_list_filter(
       auth_state.current_profile as UserScopeProfile,
       entity_fields,
     );
+
+    const normalized_type = normalize_entity_type_for_filter(entity_type);
+    const player_id = auth_state.current_profile.player_id;
+    const team_id = auth_state.current_profile.team_id;
+    const has_valid_player_id = player_id && player_id !== "*";
+    const has_valid_team_id = team_id && team_id !== "*";
+
+    console.debug("[DynamicEntityList] Auth filter building:", {
+      normalized_type,
+      player_id,
+      has_valid_player_id,
+      team_id,
+      has_valid_team_id,
+      base_filter: { ...filter },
+    });
+
+    if (normalized_type === "player" && has_valid_player_id) {
+      filter["id"] = player_id;
+    }
+
+    if (normalized_type === "playerteammembership" && has_valid_player_id) {
+      filter["player_id"] = player_id;
+    }
+
+    if (normalized_type === "playerprofile" && has_valid_player_id) {
+      filter["player_id"] = player_id;
+    }
+
+    if (normalized_type === "fixture" && has_valid_team_id) {
+      filter["team_id"] = team_id;
+    }
+
+    console.debug("[DynamicEntityList] Final auth filter:", filter);
+    return filter;
   }
 
   function merge_filters(
     sub_entity_filter_result: Record<string, string> | undefined,
-    auth_filter: Record<string, string>,
+    auth_filter: Record<string, string> | null,
   ): Record<string, string> | undefined {
+    if (auth_filter === null) return undefined;
+
     const has_sub_filter =
       sub_entity_filter_result &&
       Object.keys(sub_entity_filter_result).length > 0;
@@ -471,6 +533,15 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
     try {
       const sub_filter = build_filter_from_sub_entity_config(sub_entity_filter);
       const auth_filter = build_authorization_filter();
+
+      if (auth_profile_missing) {
+        entities = [];
+        error_message =
+          "Unable to load data: No user profile is set. Please select a user profile to continue.";
+        is_loading = false;
+        return;
+      }
+
       const filter = merge_filters(sub_filter, auth_filter);
 
       console.debug(

@@ -80,6 +80,12 @@ export class InBrowserPlayerRepository
     try {
       let filtered_entities = await this.database.players.toArray();
 
+      if (filter.id) {
+        filtered_entities = filtered_entities.filter(
+          (player) => player.id === filter.id,
+        );
+      }
+
       if (filter.name_contains) {
         const search_term = filter.name_contains.toLowerCase();
         filtered_entities = filtered_entities.filter(

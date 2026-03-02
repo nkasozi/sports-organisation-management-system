@@ -8,6 +8,7 @@
     current_user_role_display,
     current_profile_display_name,
     current_profile_initials,
+    current_user_role,
   } from "$lib/presentation/stores/auth";
 
   export let sidebar_open = false;
@@ -69,7 +70,7 @@
 
   $: navigation_items = navigation_groups.flatMap((group) => group.items);
 
-  $: user_role = $current_user_store?.role || "player";
+  $: user_role = $current_user_role || "player";
   $: is_admin_role = user_role === "super_admin" || user_role === "org_admin";
 
   const all_settings_items = [

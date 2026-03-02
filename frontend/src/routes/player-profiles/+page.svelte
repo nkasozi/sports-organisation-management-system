@@ -1,11 +1,18 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { browser } from "$app/environment";
+  import { get } from "svelte/store";
   import type { BaseEntity } from "$lib/core/entities/BaseEntity";
   import type { PlayerProfile } from "$lib/core/entities/PlayerProfile";
   import { get_player_profile_use_cases } from "$lib/core/usecases/PlayerProfileUseCases";
   import { get_player_use_cases } from "$lib/core/usecases/PlayerUseCases";
   import DynamicEntityForm from "$lib/presentation/components/DynamicEntityForm.svelte";
+  import { auth_store } from "$lib/presentation/stores/auth";
+  import {
+    build_authorization_list_filter,
+    type UserScopeProfile,
+  } from "$lib/core/interfaces/ports/DataAuthorizationPort";
+  import { ensure_auth_profile } from "$lib/presentation/logic/authGuard";
 
   type ViewMode = "list" | "create" | "edit";
 
@@ -20,11 +27,22 @@
   const profile_use_cases = get_player_profile_use_cases();
   const player_use_cases = get_player_use_cases();
 
+  function build_profile_authorization_filter(): Record<string, string> {
+    const auth_state = get(auth_store);
+    if (!auth_state.current_profile) return {};
+    const entity_fields = ["player_id", "organization_id", "team_id"];
+    return build_authorization_list_filter(
+      auth_state.current_profile as UserScopeProfile,
+      entity_fields,
+    );
+  }
+
   async function load_profiles(): Promise<boolean> {
     is_loading = true;
     error_message = "";
 
-    const result = await profile_use_cases.list();
+    const filter = build_profile_authorization_filter();
+    const result = await profile_use_cases.list(filter);
 
     if (!result.success) {
       error_message = result.error_message || "Failed to load profiles";
@@ -39,7 +57,8 @@
   }
 
   async function load_foreign_key_options(): Promise<void> {
-    const players_result = await player_use_cases.list();
+    const filter = build_profile_authorization_filter();
+    const players_result = await player_use_cases.list(filter);
     if (players_result.success) {
       foreign_key_options["player_id"] = players_result.data.map((p) => ({
         value: p.id,
@@ -102,10 +121,15 @@
     return player_option?.label || player_id;
   }
 
-  onMount(() => {
-    if (browser) {
-      load_profiles();
+  onMount(async () => {
+    if (!browser) return;
+    const auth_result = await ensure_auth_profile();
+    if (!auth_result.success) {
+      error_message = auth_result.error_message;
+      is_loading = false;
+      return;
     }
+    load_profiles();
   });
 </script>
 
