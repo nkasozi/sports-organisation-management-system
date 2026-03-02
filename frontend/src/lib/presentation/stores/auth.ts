@@ -37,6 +37,7 @@ import {
   SEED_PLAYER_IDS,
   SEED_OFFICIAL_IDS,
 } from "$lib/infrastructure/utils/SeedDataGenerator";
+import { sync_branding_with_profile } from "$lib/adapters/services/brandingSyncService";
 
 export interface UserProfile {
   id: string;
@@ -247,6 +248,8 @@ function create_auth_store() {
       available_profiles,
       is_initialized: true,
     });
+
+    await sync_branding_with_profile(current_profile);
   }
 
   async function switch_profile(profile_id: string): Promise<boolean> {
@@ -271,6 +274,8 @@ function create_auth_store() {
       current_token: new_token,
       current_profile: target_profile,
     }));
+
+    await sync_branding_with_profile(target_profile);
 
     console.log(
       `[AuthStore] Switched to profile: ${target_profile.display_name}`,

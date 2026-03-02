@@ -118,11 +118,13 @@
     ? fixtures.filter((f) => f.organization_id === selected_organization?.id)
     : fixtures;
 
-  $: fixtures_for_user_team = team_is_restricted && user_team_id
-    ? all_fixtures_for_org.filter(
-        (f) => f.home_team_id === user_team_id || f.away_team_id === user_team_id,
-      )
-    : all_fixtures_for_org;
+  $: fixtures_for_user_team =
+    team_is_restricted && user_team_id
+      ? all_fixtures_for_org.filter(
+          (f) =>
+            f.home_team_id === user_team_id || f.away_team_id === user_team_id,
+        )
+      : all_fixtures_for_org;
 
   $: non_scheduled_fixtures_count = fixtures_for_user_team.filter(
     (f) => f.status !== "scheduled",
@@ -1019,7 +1021,8 @@
                 class="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-700"
               >
                 <p class="text-sm text-blue-800 dark:text-blue-200">
-                  <span class="font-medium">Team Manager:</span> Only showing fixtures involving your team.
+                  <span class="font-medium">Team Manager:</span> Only showing fixtures
+                  involving your team.
                 </p>
               </div>
             {/if}
@@ -1028,26 +1031,37 @@
               <div
                 class="p-4 bg-red-50 dark:bg-red-900/20 rounded-lg text-red-700 dark:text-red-300"
               >
-                <p class="font-semibold">No fixtures available for lineup submission</p>
+                <p class="font-semibold">
+                  No fixtures available for lineup submission
+                </p>
                 <p class="mt-2 text-sm">
-                  Only fixtures with status "Scheduled" that still need team lineups are shown.
+                  Only fixtures with status "Scheduled" that still need team
+                  lineups are shown.
                 </p>
                 {#if all_fixtures_for_org.length > 0}
                   <ul class="mt-2 text-sm list-disc list-inside">
                     {#if non_scheduled_fixtures_count > 0}
                       <li>
-                        {non_scheduled_fixtures_count} fixture{non_scheduled_fixtures_count === 1 ? " is" : "s are"} not scheduled (in progress, completed, postponed, or cancelled)
+                        {non_scheduled_fixtures_count} fixture{non_scheduled_fixtures_count ===
+                        1
+                          ? " is"
+                          : "s are"} not scheduled (in progress, completed, postponed,
+                        or cancelled)
                       </li>
                     {/if}
                     {#if fixtures_with_complete_lineups.size > 0}
                       <li>
-                        {fixtures_with_complete_lineups.size} fixture{fixtures_with_complete_lineups.size === 1 ? " has" : "s have"} all team lineups already submitted
+                        {fixtures_with_complete_lineups.size} fixture{fixtures_with_complete_lineups.size ===
+                        1
+                          ? " has"
+                          : "s have"} all team lineups already submitted
                       </li>
                     {/if}
                   </ul>
                 {:else}
                   <p class="mt-2 text-sm">
-                    Create fixtures first (Fixtures tab), then come back here to submit a lineup.
+                    Create fixtures first (Fixtures tab), then come back here to
+                    submit a lineup.
                   </p>
                 {/if}
               </div>
@@ -1058,9 +1072,13 @@
                 class="p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-700"
               >
                 <p class="text-sm text-amber-800 dark:text-amber-200">
-                  <span class="font-medium">Note:</span> Only showing scheduled fixtures that still need lineups.
+                  <span class="font-medium">Note:</span> Only showing scheduled
+                  fixtures that still need lineups.
                   {#if non_scheduled_fixtures_count > 0}
-                    {non_scheduled_fixtures_count} fixture{non_scheduled_fixtures_count === 1 ? " is" : "s are"} hidden (not scheduled).
+                    {non_scheduled_fixtures_count} fixture{non_scheduled_fixtures_count ===
+                    1
+                      ? " is"
+                      : "s are"} hidden (not scheduled).
                   {/if}
                 </p>
               </div>
@@ -1154,7 +1172,8 @@
                   class="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-700"
                 >
                   <p class="text-sm text-blue-800 dark:text-blue-200">
-                    <span class="font-medium">Team Manager:</span> Your team is automatically selected. You can only submit lineups for your assigned team.
+                    <span class="font-medium">Team Manager:</span> Your team is automatically
+                    selected. You can only submit lineups for your assigned team.
                   </p>
                 </div>
               {/if}

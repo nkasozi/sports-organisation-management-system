@@ -1,4 +1,4 @@
-import { writable } from "svelte/store";
+import { writable, get } from "svelte/store";
 import { browser } from "$app/environment";
 
 export interface SocialMediaLink {
@@ -22,13 +22,13 @@ export interface BrandingConfig {
   show_panel_borders: boolean;
 }
 
-const default_branding: BrandingConfig = {
-  organization_name: "Uganda Hockey",
+const DEFAULT_PLATFORM_BRANDING: BrandingConfig = {
+  organization_name: "Sports Organisation",
   organization_logo_url: "",
   organization_tagline:
-    "Governing body for field hockey in Uganda - managing competitions, teams, players and officials.",
-  organization_email: "info@ugandahockey.org",
-  organization_address: "Lugogo Hockey Stadium, Kampala, Uganda",
+    "Professional sports management platform for competitions, teams, players and officials.",
+  organization_email: "info@sportsorg.local",
+  organization_address: "Sports Management HQ",
   social_media_links: [
     { platform: "twitter", url: "" },
     { platform: "github", url: "" },
@@ -41,57 +41,164 @@ const default_branding: BrandingConfig = {
   show_panel_borders: false,
 };
 
-const storage_key = "sports-org-branding";
+const PLATFORM_STORAGE_KEY = "sports-org-branding-platform";
+const ORG_STORAGE_KEY_PREFIX = "sports-org-branding-org-";
+const CURRENT_ORG_ID_KEY = "sports-org-branding-current-org-id";
+
+function get_org_storage_key(org_id: string): string {
+  return `${ORG_STORAGE_KEY_PREFIX}${org_id}`;
+}
+
+function load_branding_from_storage(
+  storage_key: string,
+): BrandingConfig | null {
+  if (!browser) return null;
+  const stored = localStorage.getItem(storage_key);
+  if (!stored) return null;
+  try {
+    return JSON.parse(stored);
+  } catch {
+    return null;
+  }
+}
+
+function save_branding_to_storage(
+  storage_key: string,
+  config: BrandingConfig,
+): void {
+  if (!browser) return;
+  localStorage.setItem(storage_key, JSON.stringify(config));
+}
 
 function create_branding_store() {
-  let initial_branding = default_branding;
+  let current_org_id: string | null = null;
 
   if (browser) {
-    const stored = localStorage.getItem(storage_key);
-    if (stored) {
-      try {
-        initial_branding = JSON.parse(stored);
-      } catch (e) {
-        initial_branding = default_branding;
-      }
-    }
+    current_org_id = localStorage.getItem(CURRENT_ORG_ID_KEY);
   }
 
-  const { subscribe, set, update } = writable<BrandingConfig>(initial_branding);
+  function get_initial_branding(): BrandingConfig {
+    if (!current_org_id) {
+      const platform_branding =
+        load_branding_from_storage(PLATFORM_STORAGE_KEY);
+      return platform_branding || DEFAULT_PLATFORM_BRANDING;
+    }
+    const org_branding = load_branding_from_storage(
+      get_org_storage_key(current_org_id),
+    );
+    return org_branding || DEFAULT_PLATFORM_BRANDING;
+  }
+
+  const { subscribe, set, update } = writable<BrandingConfig>(
+    get_initial_branding(),
+  );
+
+  function get_current_storage_key(): string {
+    return current_org_id
+      ? get_org_storage_key(current_org_id)
+      : PLATFORM_STORAGE_KEY;
+  }
 
   return {
     subscribe,
-    set: (config: BrandingConfig) => {
+
+    set_organization_context: (
+      org_id: string | null,
+      org_name?: string,
+      org_email?: string,
+      org_address?: string,
+    ) => {
+      current_org_id = org_id;
+
       if (browser) {
-        localStorage.setItem(storage_key, JSON.stringify(config));
+        if (org_id) {
+          localStorage.setItem(CURRENT_ORG_ID_KEY, org_id);
+        } else {
+          localStorage.removeItem(CURRENT_ORG_ID_KEY);
+        }
       }
+
+      if (!org_id) {
+        const platform_branding =
+          load_branding_from_storage(PLATFORM_STORAGE_KEY);
+        set(platform_branding || DEFAULT_PLATFORM_BRANDING);
+        return;
+      }
+
+      let org_branding = load_branding_from_storage(
+        get_org_storage_key(org_id),
+      );
+
+      if (!org_branding && org_name) {
+        org_branding = {
+          ...DEFAULT_PLATFORM_BRANDING,
+          organization_name: org_name,
+          organization_email:
+            org_email || DEFAULT_PLATFORM_BRANDING.organization_email,
+          organization_address:
+            org_address || DEFAULT_PLATFORM_BRANDING.organization_address,
+        };
+        save_branding_to_storage(get_org_storage_key(org_id), org_branding);
+      }
+
+      set(org_branding || DEFAULT_PLATFORM_BRANDING);
+    },
+
+    get_current_org_id: (): string | null => {
+      return current_org_id;
+    },
+
+    set: (config: BrandingConfig) => {
+      const storage_key = get_current_storage_key();
+      save_branding_to_storage(storage_key, config);
       set(config);
     },
+
     update: (updater: (config: BrandingConfig) => BrandingConfig) => {
       update((config) => {
         const updated = updater(config);
-        if (browser) {
-          localStorage.setItem(storage_key, JSON.stringify(updated));
-        }
+        const storage_key = get_current_storage_key();
+        save_branding_to_storage(storage_key, updated);
         return updated;
       });
     },
+
     update_organization_name: (name: string) => {
-      update((config) => ({ ...config, organization_name: name }));
+      update((config) => {
+        const updated = { ...config, organization_name: name };
+        const storage_key = get_current_storage_key();
+        save_branding_to_storage(storage_key, updated);
+        return updated;
+      });
     },
+
     update_organization_logo: (logo_url: string) => {
-      update((config) => ({ ...config, organization_logo_url: logo_url }));
+      update((config) => {
+        const updated = { ...config, organization_logo_url: logo_url };
+        const storage_key = get_current_storage_key();
+        save_branding_to_storage(storage_key, updated);
+        return updated;
+      });
     },
+
     update_social_media_links: (links: SocialMediaLink[]) => {
-      update((config) => ({ ...config, social_media_links: links }));
+      update((config) => {
+        const updated = { ...config, social_media_links: links };
+        const storage_key = get_current_storage_key();
+        save_branding_to_storage(storage_key, updated);
+        return updated;
+      });
     },
+
     reset_to_default: () => {
+      const storage_key = get_current_storage_key();
       if (browser) {
         localStorage.removeItem(storage_key);
       }
-      set(default_branding);
+      set(DEFAULT_PLATFORM_BRANDING);
     },
   };
 }
 
 export const branding_store = create_branding_store();
+export { DEFAULT_PLATFORM_BRANDING };
