@@ -65,6 +65,7 @@
     const success = await auth_store.switch_profile(profile.id);
     if (success) {
       console.log(`[Header] Switched to profile: ${profile.display_name}`);
+      window.location.reload();
     }
   }
 

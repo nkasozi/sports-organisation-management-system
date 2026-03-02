@@ -1,6 +1,5 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { get } from "svelte/store";
   import { get_organization_use_cases } from "$lib/core/usecases/OrganizationUseCases";
   import { get_competition_use_cases } from "$lib/core/usecases/CompetitionUseCases";
   import { get_team_use_cases } from "$lib/core/usecases/TeamUseCases";
@@ -37,19 +36,10 @@
   let sport_names: Record<string, string> = {};
   let competition_sport_names: Record<string, string> = {};
 
-  function get_current_user_role(): string {
-    const auth_state = get(auth_store);
-    return auth_state.current_profile?.role || "player";
-  }
-
-  function is_super_admin(): boolean {
-    return get_current_user_role() === "super_admin";
-  }
-
-  function has_org_admin_access(): boolean {
-    const role = get_current_user_role();
-    return role === "super_admin" || role === "org_admin";
-  }
+  $: current_user_role = $auth_store.current_profile?.role || "player";
+  $: user_is_super_admin = current_user_role === "super_admin";
+  $: user_has_org_admin_access =
+    current_user_role === "super_admin" || current_user_role === "org_admin";
 
   function get_competition_initials(name: string): string {
     return name
@@ -304,7 +294,7 @@
           {$branding_store.organization_tagline}
         </p>
       </div>
-      {#if is_super_admin()}
+      {#if user_is_super_admin}
         <div class="mt-4 md:mt-0">
           <button
             class="btn btn-primary-action mobile-touch"
@@ -326,9 +316,9 @@
   <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
     <!-- Organizations card -->
     <svelte:element
-      this={has_org_admin_access() ? "a" : "div"}
-      href={has_org_admin_access() ? "/organizations" : undefined}
-      class="card p-6 {has_org_admin_access()
+      this={user_has_org_admin_access ? "a" : "div"}
+      href={user_has_org_admin_access ? "/organizations" : undefined}
+      class="card p-6 {user_has_org_admin_access
         ? 'hover:ring-2 hover:ring-sky-400 dark:hover:ring-sky-500 cursor-pointer'
         : ''}"
     >
@@ -371,9 +361,9 @@
 
     <!-- Competitions card -->
     <svelte:element
-      this={has_org_admin_access() ? "a" : "div"}
-      href={has_org_admin_access() ? "/competitions" : undefined}
-      class="card p-6 {has_org_admin_access()
+      this={user_has_org_admin_access ? "a" : "div"}
+      href={user_has_org_admin_access ? "/competitions" : undefined}
+      class="card p-6 {user_has_org_admin_access
         ? 'hover:ring-2 hover:ring-teal-400 dark:hover:ring-teal-500 cursor-pointer'
         : ''}"
     >
@@ -416,9 +406,9 @@
 
     <!-- Teams card -->
     <svelte:element
-      this={has_org_admin_access() ? "a" : "div"}
-      href={has_org_admin_access() ? "/teams" : undefined}
-      class="card p-6 {has_org_admin_access()
+      this={user_has_org_admin_access ? "a" : "div"}
+      href={user_has_org_admin_access ? "/teams" : undefined}
+      class="card p-6 {user_has_org_admin_access
         ? 'hover:ring-2 hover:ring-fuchsia-400 dark:hover:ring-fuchsia-500 cursor-pointer'
         : ''}"
     >
@@ -461,9 +451,9 @@
 
     <!-- Players card -->
     <svelte:element
-      this={has_org_admin_access() ? "a" : "div"}
-      href={has_org_admin_access() ? "/players" : undefined}
-      class="card p-6 {has_org_admin_access()
+      this={user_has_org_admin_access ? "a" : "div"}
+      href={user_has_org_admin_access ? "/players" : undefined}
+      class="card p-6 {user_has_org_admin_access
         ? 'hover:ring-2 hover:ring-sky-400 dark:hover:ring-sky-500 cursor-pointer'
         : ''}"
     >
@@ -537,7 +527,7 @@
           <div class="text-center py-4">
             <p class="text-sm text-accent-500 dark:text-accent-400">
               No competitions yet.
-              {#if has_org_admin_access()}
+              {#if user_has_org_admin_access}
                 <a
                   href="/competitions/create"
                   class="text-primary-500 hover:underline">Create one</a
@@ -548,9 +538,9 @@
         {:else}
           {#each recent_competitions as competition, index}
             <svelte:element
-              this={has_org_admin_access() ? "a" : "div"}
-              href={has_org_admin_access() ? "/competitions" : undefined}
-              class="flex items-center space-x-4 p-2 -mx-2 rounded-lg {has_org_admin_access()
+              this={user_has_org_admin_access ? "a" : "div"}
+              href={user_has_org_admin_access ? "/competitions" : undefined}
+              class="flex items-center space-x-4 p-2 -mx-2 rounded-lg {user_has_org_admin_access
                 ? 'hover:bg-accent-50 dark:hover:bg-accent-700/50 cursor-pointer'
                 : ''} transition-colors"
             >
@@ -639,7 +629,7 @@
           <div class="text-center py-4">
             <p class="text-sm text-accent-500 dark:text-accent-400">
               No upcoming fixtures.
-              {#if has_org_admin_access()}
+              {#if user_has_org_admin_access}
                 <a
                   href="/fixtures?action=create"
                   class="text-primary-500 hover:underline">Schedule one</a
@@ -650,9 +640,9 @@
         {:else}
           {#each upcoming_fixtures as fixture, index}
             <svelte:element
-              this={has_org_admin_access() ? "a" : "div"}
-              href={has_org_admin_access() ? "/live-games" : undefined}
-              class="flex items-center justify-between p-2 -mx-2 rounded-lg {has_org_admin_access()
+              this={user_has_org_admin_access ? "a" : "div"}
+              href={user_has_org_admin_access ? "/live-games" : undefined}
+              class="flex items-center justify-between p-2 -mx-2 rounded-lg {user_has_org_admin_access
                 ? 'hover:bg-accent-50 dark:hover:bg-accent-700/50 cursor-pointer'
                 : ''} transition-colors"
             >
@@ -724,7 +714,7 @@
   </div>
 
   <!-- Quick actions -->
-  {#if has_org_admin_access()}
+  {#if user_has_org_admin_access}
     <div class="card p-6">
       <h2
         class="text-lg font-semibold text-accent-900 dark:text-accent-100 mb-4"
