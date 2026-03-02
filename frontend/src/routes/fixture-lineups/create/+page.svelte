@@ -1,6 +1,8 @@
 <script lang="ts">
   import { onMount } from "svelte";
+  import { browser } from "$app/environment";
   import { goto } from "$app/navigation";
+  import { ensure_auth_profile } from "$lib/presentation/logic/authGuard";
   import type { CreateFixtureLineupInput } from "$lib/core/entities/FixtureLineup";
   import type { Fixture } from "$lib/core/entities/Fixture";
   import type { Team } from "$lib/core/entities/Team";
@@ -179,6 +181,15 @@
   }
 
   onMount(async () => {
+    if (!browser) return;
+
+    const auth_result = await ensure_auth_profile();
+    if (!auth_result.success) {
+      error_message = auth_result.error_message;
+      loading = false;
+      return;
+    }
+
     await load_reference_data();
     loading = false;
   });

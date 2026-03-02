@@ -1,5 +1,8 @@
 <script lang="ts">
+  import { onMount } from "svelte";
+  import { browser } from "$app/environment";
   import { goto } from "$app/navigation";
+  import { ensure_auth_profile } from "$lib/presentation/logic/authGuard";
   import type {
     CreateSportInput,
     CardType,
@@ -20,7 +23,9 @@
   import Toast from "$lib/presentation/components/ui/Toast.svelte";
 
   let form_data: CreateSportInput = create_empty_sport_input();
+  let is_loading: boolean = true;
   let is_saving: boolean = false;
+  let error_message: string = "";
   let errors: Record<string, string> = {};
   let active_section: string = "basic";
 
@@ -71,6 +76,19 @@
     { id: "overtime", label: "Overtime" },
     { id: "substitutions", label: "Substitutions" },
   ];
+
+  onMount(async () => {
+    if (!browser) return;
+
+    const auth_result = await ensure_auth_profile();
+    if (!auth_result.success) {
+      error_message = auth_result.error_message;
+      is_loading = false;
+      return;
+    }
+
+    is_loading = false;
+  });
 
   function apply_preset(
     preset_type: "football" | "basketball" | "field_hockey",
@@ -220,6 +238,33 @@
   <title>Create Sport - Sports Management</title>
 </svelte:head>
 
+{#if is_loading}
+  <div class="flex justify-center items-center py-12">
+    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+  </div>
+{:else if error_message}
+  <div class="card p-8 text-center">
+    <svg
+      class="mx-auto h-12 w-12 text-red-400"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2"
+        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+      />
+    </svg>
+    <h3 class="mt-4 text-lg font-medium text-accent-900 dark:text-accent-100">
+      Unable to Create Sport
+    </h3>
+    <p class="mt-2 text-accent-600 dark:text-accent-400">
+      {error_message}
+    </p>
+  </div>
+{:else}
 <div class="max-w-4xl mx-auto space-y-6">
   <div class="flex items-center gap-4">
     <button
@@ -1032,6 +1077,7 @@
     </form>
   </div>
 </div>
+{/if}
 
 <Toast
   message={toast_message}

@@ -1,7 +1,9 @@
 <script lang="ts">
   import { onMount, onDestroy } from "svelte";
+  import { browser } from "$app/environment";
   import { goto } from "$app/navigation";
   import { page } from "$app/stores";
+  import { ensure_auth_profile } from "$lib/presentation/logic/authGuard";
   import type {
     Fixture,
     GameEvent,
@@ -146,6 +148,15 @@
   $: secondary_events = quick_events.slice(8);
 
   onMount(async () => {
+    if (!browser) return;
+
+    const auth_result = await ensure_auth_profile();
+    if (!auth_result.success) {
+      error_message = auth_result.error_message;
+      is_loading = false;
+      return;
+    }
+
     if (!fixture_id) {
       error_message = "No fixture ID provided";
       is_loading = false;

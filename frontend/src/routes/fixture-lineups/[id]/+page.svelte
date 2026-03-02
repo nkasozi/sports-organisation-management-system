@@ -1,7 +1,9 @@
 <script lang="ts">
   import { onMount } from "svelte";
+  import { browser } from "$app/environment";
   import { goto } from "$app/navigation";
   import { page } from "$app/stores";
+  import { ensure_auth_profile } from "$lib/presentation/logic/authGuard";
   import type {
     FixtureLineup,
     UpdateFixtureLineupInput,
@@ -53,6 +55,15 @@
   );
 
   onMount(async () => {
+    if (!browser) return;
+
+    const auth_result = await ensure_auth_profile();
+    if (!auth_result.success) {
+      error_message = auth_result.error_message;
+      loading = false;
+      return;
+    }
+
     await load_lineup();
   });
 

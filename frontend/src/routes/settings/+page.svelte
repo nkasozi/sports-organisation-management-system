@@ -1,5 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
+  import { browser } from "$app/environment";
+  import { ensure_auth_profile } from "$lib/presentation/logic/authGuard";
   import {
     theme_store,
     toggle_theme_mode,
@@ -22,6 +24,9 @@
   let toast_visible: boolean = false;
   let toast_message: string = "";
   let toast_type: "success" | "error" | "info" = "info";
+
+  let is_loading: boolean = true;
+  let error_message: string = "";
 
   let organization_name: string = "";
   let organization_logo_url: string = "";
@@ -52,6 +57,15 @@
   ];
 
   onMount(async () => {
+    if (!browser) return;
+
+    const auth_result = await ensure_auth_profile();
+    if (!auth_result.success) {
+      error_message = auth_result.error_message;
+      is_loading = false;
+      return;
+    }
+
     organization_name = $branding_store.organization_name;
     organization_logo_url = $branding_store.organization_logo_url;
     organization_tagline = $branding_store.organization_tagline || "";
@@ -80,6 +94,8 @@
       organizations = orgs_result.data;
       selected_organization_id = organizations[0].id;
     }
+
+    is_loading = false;
   });
 
   function get_current_user_id(): string {
@@ -342,6 +358,33 @@
   <title>Settings - Sports Management</title>
 </svelte:head>
 
+{#if is_loading}
+  <div class="flex justify-center items-center py-12">
+    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+  </div>
+{:else if error_message}
+  <div class="card p-8 text-center">
+    <svg
+      class="mx-auto h-12 w-12 text-red-400"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2"
+        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+      />
+    </svg>
+    <h3 class="mt-4 text-lg font-medium text-accent-900 dark:text-accent-100">
+      Unable to Load Settings
+    </h3>
+    <p class="mt-2 text-accent-600 dark:text-accent-400">
+      {error_message}
+    </p>
+  </div>
+{:else}
 <div class="max-w-4xl mx-auto space-y-8">
   <div>
     <h1 class="text-2xl font-bold text-accent-900 dark:text-accent-100">
@@ -1119,6 +1162,7 @@
     </div>
   </div>
 </div>
+{/if}
 
 <Toast
   message={toast_message}

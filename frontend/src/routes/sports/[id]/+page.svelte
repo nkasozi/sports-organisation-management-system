@@ -1,7 +1,9 @@
 <script lang="ts">
   import { onMount } from "svelte";
+  import { browser } from "$app/environment";
   import { goto } from "$app/navigation";
   import { page } from "$app/stores";
+  import { ensure_auth_profile } from "$lib/presentation/logic/authGuard";
   import type {
     Sport,
     UpdateSportInput,
@@ -76,7 +78,16 @@
     { id: "substitutions", label: "Substitutions" },
   ];
 
-  onMount(() => {
+  onMount(async () => {
+    if (!browser) return;
+
+    const auth_result = await ensure_auth_profile();
+    if (!auth_result.success) {
+      loading_state = "error";
+      error_message = auth_result.error_message;
+      return;
+    }
+
     if (!sport_id) {
       loading_state = "error";
       error_message = "Sport ID is required";

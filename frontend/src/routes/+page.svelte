@@ -1,5 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
+  import { browser } from "$app/environment";
+  import { ensure_auth_profile } from "$lib/presentation/logic/authGuard";
   import { get_organization_use_cases } from "$lib/core/usecases/OrganizationUseCases";
   import { get_competition_use_cases } from "$lib/core/usecases/CompetitionUseCases";
   import { get_team_use_cases } from "$lib/core/usecases/TeamUseCases";
@@ -22,6 +24,7 @@
 
   let loading = true;
   let is_resetting = false;
+  let error_message = "";
   let stats = {
     organizations: 0,
     competitions: 0,
@@ -185,6 +188,15 @@
   }
 
   onMount(async () => {
+    if (!browser) return;
+
+    const auth_result = await ensure_auth_profile();
+    if (!auth_result.success) {
+      error_message = auth_result.error_message;
+      loading = false;
+      return;
+    }
+
     const debug_count = localStorage.getItem("debug_officials_count");
     if (debug_count) {
       console.log("[DEBUG] Officials count after reset:", debug_count);
@@ -267,6 +279,29 @@
   />
 </svelte:head>
 
+{#if error_message}
+  <div class="card p-8 text-center">
+    <svg
+      class="mx-auto h-12 w-12 text-red-400"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2"
+        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+      />
+    </svg>
+    <h3 class="mt-4 text-lg font-medium text-accent-900 dark:text-accent-100">
+      Unable to Load Dashboard
+    </h3>
+    <p class="mt-2 text-accent-600 dark:text-accent-400">
+      {error_message}
+    </p>
+  </div>
+{:else}
 <div class="space-y-6">
   <!-- Page header -->
   <div
@@ -829,6 +864,7 @@
     </div>
   {/if}
 </div>
+{/if}
 
 <style>
   /* Additional mobile optimizations */
