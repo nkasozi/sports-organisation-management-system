@@ -1226,6 +1226,53 @@ const ROLE_DISPLAY_NAMES: Record<UserRole, string> = {
   player: "Player",
 };
 
+function extract_route_base(pathname: string): string {
+  const segments = pathname.split("/").filter(Boolean);
+  if (segments.length === 0) return "/";
+  return "/" + segments[0];
+}
+
+function get_all_routes_from_menu(menu: SidebarMenuGroup[]): Set<string> {
+  const routes = new Set<string>();
+  for (const group of menu) {
+    for (const item of group.items) {
+      routes.add(item.href);
+      const base = extract_route_base(item.href);
+      if (base !== item.href) {
+        routes.add(base);
+      }
+    }
+  }
+  return routes;
+}
+
+export function get_allowed_routes_for_role(role: UserRole): Set<string> {
+  const menu = ROLE_MENUS[role] || PLAYER_MENU;
+  return get_all_routes_from_menu(menu);
+}
+
+export function can_role_access_route(
+  role: UserRole,
+  pathname: string,
+): { allowed: boolean; reason: string } {
+  if (pathname === "/" || pathname === "") {
+    return { allowed: true, reason: "" };
+  }
+
+  const allowed_routes = get_allowed_routes_for_role(role);
+  const route_base = extract_route_base(pathname);
+
+  if (allowed_routes.has(pathname) || allowed_routes.has(route_base)) {
+    return { allowed: true, reason: "" };
+  }
+
+  const role_display = ROLE_DISPLAY_NAMES[role] || role;
+  return {
+    allowed: false,
+    reason: `Your role (${role_display}) does not have access to this page.`,
+  };
+}
+
 export class LocalAuthorizationAdapter implements AuthorizationPort {
   get_sidebar_menu_items(token: AuthToken): SidebarMenuGroup[] {
     const role = token.payload.role;

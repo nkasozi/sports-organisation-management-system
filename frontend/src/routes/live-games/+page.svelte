@@ -5,7 +5,8 @@
   import { get } from "svelte/store";
   import { ensure_auth_profile } from "$lib/presentation/logic/authGuard";
   import { access_denial_store } from "$lib/presentation/stores/accessDenial";
-  import { get_disabled_crud_for_entity } from "$lib/core/interfaces/ports/DataAuthorizationPort";
+  import { get_entity_data_category } from "$lib/core/interfaces/ports/DataAuthorizationPort";
+  import { get_data_authorization_adapter } from "$lib/adapters/services/DataAuthorizationAdapter";
   import type { Fixture } from "$lib/core/entities/Fixture";
   import {
     check_fixture_can_start,
@@ -58,19 +59,24 @@
     }
 
     const auth_state = get(auth_store);
-    if (auth_state.current_profile) {
-      const disabled_operations = get_disabled_crud_for_entity(
-        auth_state.current_profile.role,
+    if (!auth_state.current_token) {
+      error_message = "No user profile found";
+      is_loading = false;
+      return;
+    }
+
+    const authorization_result =
+      await get_data_authorization_adapter().check_authorized(
+        auth_state.current_token.raw_token,
         "fixture",
+        "read",
       );
-      if (disabled_operations.includes("read")) {
-        access_denial_store.set_denial(
-          "/live-games",
-          "You do not have permission to view live games.",
-        );
-        goto("/");
-        return;
-      }
+
+    if (!authorization_result.is_authorized) {
+      const denial_reason = `Role "${authorization_result.role}" does not have "read" permission for fixture (${get_entity_data_category("fixture")} data).`;
+      access_denial_store.set_denial("/live-games", denial_reason);
+      goto("/");
+      return;
     }
 
     const loaded_fixtures = await load_incomplete_fixtures();
@@ -534,8 +540,28 @@
     }
   }
 
-  function handle_start_click(fixture: Fixture): void {
+  async function handle_start_click(fixture: Fixture): Promise<void> {
     console.log("[DEBUG] Button clicked for fixture:", fixture.id);
+
+    const auth_state = get(auth_store);
+    if (!auth_state.current_token) {
+      error_message = "No user profile found";
+      return;
+    }
+
+    const authorization_result =
+      await get_data_authorization_adapter().check_authorized(
+        auth_state.current_token.raw_token,
+        "official",
+        "create",
+      );
+
+    if (!authorization_result.is_authorized) {
+      error_message =
+        "Permission denied: You do not have permission to start games. This action requires Officials Manager, Organisation Admin, or Super Admin role.";
+      return;
+    }
+
     start_fixture(fixture);
   }
 </script>

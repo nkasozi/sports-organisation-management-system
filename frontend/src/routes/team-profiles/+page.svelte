@@ -13,9 +13,10 @@
   import { access_denial_store } from "$lib/presentation/stores/accessDenial";
   import {
     build_authorization_list_filter,
-    get_disabled_crud_for_entity,
+    check_entity_permission,
     type UserScopeProfile,
   } from "$lib/core/interfaces/ports/DataAuthorizationPort";
+  import { get_data_authorization_adapter } from "$lib/adapters/services/DataAuthorizationAdapter";
 
   type ViewMode = "list" | "create" | "edit";
 
@@ -141,32 +142,53 @@
 
   onMount(async () => {
     if (!browser) return;
-    const auth_result = await ensure_auth_profile();
-    if (!auth_result.success) {
-      error_message = auth_result.error_message;
+    const ensure_result = await ensure_auth_profile();
+    if (!ensure_result.success) {
+      error_message = ensure_result.error_message;
       is_loading = false;
       return;
     }
 
     const auth_state = get(auth_store);
-    if (auth_state.current_profile) {
-      const disabled = get_disabled_crud_for_entity(
-        auth_state.current_profile.role,
-        "teamprofile",
-      );
-      can_read = !disabled.includes("read");
-      can_create = !disabled.includes("create");
-      can_edit = !disabled.includes("update");
-      can_delete = !disabled.includes("delete");
+    if (!auth_state.current_token || !auth_state.current_profile) {
+      error_message = "No user profile found";
+      is_loading = false;
+      return;
+    }
 
-      if (!can_read) {
-        access_denial_store.set_denial(
-          "/team-profiles",
-          "Access denied: Your role does not have permission to view Team Profiles. Please contact your organization administrator if you believe this is an error.",
-        );
-        goto("/");
-        return;
-      }
+    can_read = check_entity_permission(
+      auth_state.current_profile.role,
+      "teamprofile",
+      "read",
+    );
+    can_create = check_entity_permission(
+      auth_state.current_profile.role,
+      "teamprofile",
+      "create",
+    );
+    can_edit = check_entity_permission(
+      auth_state.current_profile.role,
+      "teamprofile",
+      "update",
+    );
+    can_delete = check_entity_permission(
+      auth_state.current_profile.role,
+      "teamprofile",
+      "delete",
+    );
+
+    if (!can_read) {
+      await get_data_authorization_adapter().check_authorized(
+        auth_state.current_token.raw_token,
+        "teamprofile",
+        "read",
+      );
+      access_denial_store.set_denial(
+        "/team-profiles",
+        "Access denied: Your role does not have permission to view Team Profiles.",
+      );
+      goto("/");
+      return;
     }
 
     load_profiles();

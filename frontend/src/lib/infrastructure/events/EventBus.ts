@@ -27,7 +27,28 @@ export type EntityCreatedPayload = EntityEventPayload;
 export type EntityDeletedPayload = EntityEventPayload;
 export type { EntityUpdatedPayload };
 
-export type EventType = "entity_created" | "entity_updated" | "entity_deleted";
+export interface AccessDeniedPayload {
+  entity_type: string;
+  entity_id: string;
+  attempted_action: string;
+  data_category: string;
+  denial_reason: string;
+  context?: string;
+  timestamp: string;
+  user_context?: {
+    user_id: string;
+    user_email: string;
+    user_display_name: string;
+    organization_id: string;
+    role: string;
+  };
+}
+
+export type EventType =
+  | "entity_created"
+  | "entity_updated"
+  | "entity_deleted"
+  | "access_denied";
 
 class EventBusImpl {
   private handlers: Map<EventType, Set<EventHandler<unknown>>> = new Map();
@@ -124,6 +145,29 @@ class EventBusImpl {
       user_context: get_current_user_context(),
     };
     this.emit("entity_deleted", payload);
+  }
+
+  emit_access_denied(
+    entity_type: string,
+    entity_id: string,
+    attempted_action: string,
+    data_category: string,
+    denial_reason: string,
+    role: string,
+    context?: string,
+  ): void {
+    const base_context = get_current_user_context();
+    const payload: AccessDeniedPayload = {
+      entity_type,
+      entity_id,
+      attempted_action,
+      data_category,
+      denial_reason,
+      context,
+      timestamp: new Date().toISOString(),
+      user_context: base_context ? { ...base_context, role } : undefined,
+    };
+    this.emit("access_denied", payload);
   }
 
   enable(): void {

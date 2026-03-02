@@ -18,7 +18,7 @@ Uses explicit handlers instead of events for predictable data flow
     get_disabled_crud_actions,
     auth_store,
   } from "../../presentation/stores/auth";
-  import { get_disabled_crud_for_entity } from "../../core/interfaces/ports/DataAuthorizationPort";
+  import { check_entity_permission } from "../../core/interfaces/ports/DataAuthorizationPort";
   import type { UserProfile } from "../../presentation/stores/auth";
   import DynamicEntityForm from "./DynamicEntityForm.svelte";
   import DynamicEntityList from "./DynamicEntityList.svelte";
@@ -81,19 +81,14 @@ Uses explicit handlers instead of events for predictable data flow
       return ["create", "edit", "delete"];
     }
 
-    const disabled_data_actions = get_disabled_crud_for_entity(
-      profile.role,
-      entity_type,
-    );
-
     const disabled_actions: CrudFunctionality[] = [];
-    if (disabled_data_actions.includes("create")) {
+    if (!check_entity_permission(profile.role, entity_type, "create")) {
       disabled_actions.push("create");
     }
-    if (disabled_data_actions.includes("update")) {
+    if (!check_entity_permission(profile.role, entity_type, "update")) {
       disabled_actions.push("edit");
     }
-    if (disabled_data_actions.includes("delete")) {
+    if (!check_entity_permission(profile.role, entity_type, "delete")) {
       disabled_actions.push("delete");
     }
 

@@ -19,9 +19,9 @@
   import { access_denial_store } from "$lib/presentation/stores/accessDenial";
   import {
     build_authorization_list_filter,
-    get_disabled_crud_for_entity,
     type UserScopeProfile,
   } from "$lib/core/interfaces/ports/DataAuthorizationPort";
+  import { get_data_authorization_adapter } from "$lib/adapters/services/DataAuthorizationAdapter";
 
   const player_use_cases = get_player_use_cases();
   const team_use_cases = get_team_use_cases();
@@ -93,14 +93,15 @@
     }
 
     const auth_state = get(auth_store);
-    if (auth_state.current_profile) {
-      const disabled = get_disabled_crud_for_entity(
-        auth_state.current_profile.role,
-        "playerteammembership",
-      );
-      const can_create = !disabled.includes("create");
+    if (auth_state.current_token) {
+      const authorization_result =
+        await get_data_authorization_adapter().check_authorized(
+          auth_state.current_token.raw_token,
+          "playerteammembership",
+          "create",
+        );
 
-      if (!can_create) {
+      if (!authorization_result.is_authorized) {
         access_denial_store.set_denial(
           "/player-team-memberships/bulk-assign",
           "Access denied: Your role does not have permission to assign players to teams. Please contact your organization administrator if you believe this is an error.",

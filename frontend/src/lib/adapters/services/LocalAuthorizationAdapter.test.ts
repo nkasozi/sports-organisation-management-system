@@ -4,10 +4,7 @@ import type {
   AuthToken,
   AuthTokenPayload,
 } from "$lib/core/interfaces/ports/AuthenticationPort";
-import {
-  ROLE_PERMISSIONS,
-  ANY_VALUE,
-} from "$lib/core/interfaces/ports/AuthenticationPort";
+import { ANY_VALUE } from "$lib/core/interfaces/ports/AuthenticationPort";
 import type { AuthorizableAction, UserRole } from "$lib/core/interfaces/ports";
 
 function create_test_token(
@@ -22,7 +19,6 @@ function create_test_token(
     role,
     organization_id,
     team_id,
-    permissions: ROLE_PERMISSIONS[role],
     issued_at: Date.now(),
     expires_at: Date.now() + 365 * 24 * 60 * 60 * 1000,
   };

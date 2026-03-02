@@ -4,7 +4,6 @@ import type {
   AuthToken,
   AuthTokenPayload,
   UserRole,
-  Permission,
 } from "$lib/core/interfaces/ports/AuthenticationPort";
 import {
   set_user_context,
@@ -13,7 +12,6 @@ import {
 import {
   USER_ROLE_DISPLAY_NAMES,
   USER_ROLE_ORDER,
-  ROLE_PERMISSIONS,
   ANY_VALUE,
 } from "$lib/core/interfaces/ports/AuthenticationPort";
 import { get_authentication_adapter } from "$lib/adapters/services/LocalAuthenticationAdapter";
@@ -27,9 +25,8 @@ import type {
 } from "$lib/core/interfaces/ports/AuthorizationPort";
 import { get_authorization_adapter } from "$lib/adapters/services/LocalAuthorizationAdapter";
 import {
-  get_disabled_crud_for_entity,
-  check_entity_permission,
   type DataAction,
+  check_entity_permission,
 } from "$lib/core/interfaces/ports/DataAuthorizationPort";
 import {
   SEED_ORGANIZATION_IDS,
@@ -162,7 +159,6 @@ function create_auth_store() {
     const auth_adapter = get_authentication_adapter(
       get_system_user_repository(),
     );
-    const permissions = ROLE_PERMISSIONS[profile.role];
 
     return auth_adapter.generate_token({
       user_id: profile.id,
@@ -171,7 +167,6 @@ function create_auth_store() {
       role: profile.role,
       organization_id: profile.organization_id,
       team_id: profile.team_id,
-      permissions,
     });
   }
 
@@ -281,12 +276,6 @@ function create_auth_store() {
       `[AuthStore] Switched to profile: ${target_profile.display_name}`,
     );
     return true;
-  }
-
-  function has_permission(permission: Permission): boolean {
-    const state = get({ subscribe });
-    if (!state.current_token) return false;
-    return state.current_token.payload.permissions.includes(permission);
   }
 
   function get_current_role(): UserRole | null {
@@ -421,22 +410,37 @@ function create_auth_store() {
       return ["create", "edit", "delete", "list", "view"];
     }
 
-    const disabled_data_actions = get_disabled_crud_for_entity(
-      state.current_profile.role,
-      entity_type,
-    );
-
     const disabled_actions: AuthorizableAction[] = [];
-    if (disabled_data_actions.includes("create")) {
+    if (
+      !check_entity_permission(
+        state.current_profile.role,
+        entity_type,
+        "create",
+      )
+    ) {
       disabled_actions.push("create");
     }
-    if (disabled_data_actions.includes("update")) {
+    if (
+      !check_entity_permission(
+        state.current_profile.role,
+        entity_type,
+        "update",
+      )
+    ) {
       disabled_actions.push("edit");
     }
-    if (disabled_data_actions.includes("delete")) {
+    if (
+      !check_entity_permission(
+        state.current_profile.role,
+        entity_type,
+        "delete",
+      )
+    ) {
       disabled_actions.push("delete");
     }
-    if (disabled_data_actions.includes("read")) {
+    if (
+      !check_entity_permission(state.current_profile.role, entity_type, "read")
+    ) {
       disabled_actions.push("list");
       disabled_actions.push("view");
     }
@@ -448,7 +452,6 @@ function create_auth_store() {
     subscribe,
     initialize,
     switch_profile,
-    has_permission,
     get_current_role,
     logout,
     get_sidebar_menu_items,
@@ -505,14 +508,6 @@ export const is_auth_initialized = derived(
   auth_store,
   ($auth) => $auth.is_initialized,
 );
-
-export const current_permissions = derived(auth_store, ($auth) => {
-  return $auth.current_token?.payload.permissions || [];
-});
-
-export function check_permission(permission: Permission): boolean {
-  return auth_store.has_permission(permission);
-}
 
 export const sidebar_menu_items = derived(auth_store, ($auth) => {
   if (!$auth.is_initialized || !$auth.current_token) {

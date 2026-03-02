@@ -4,6 +4,7 @@ import { auth_store } from "../stores/auth";
 import { access_denial_store } from "../stores/accessDenial";
 import type { UserProfile } from "../stores/auth";
 import type { UserRole } from "$lib/core/interfaces/ports/AuthenticationPort";
+import { can_role_access_route } from "$lib/adapters/services/LocalAuthorizationAdapter";
 import { get_repository_container } from "$lib/infrastructure/container";
 import type { CreateAuditLogInput } from "$lib/core/entities/AuditLog";
 
@@ -13,58 +14,16 @@ export interface AuthGuardResult {
   error_message: string;
 }
 
-interface RouteRule {
-  allowed_roles: UserRole[];
-  excluded_roles?: UserRole[];
-}
-
-const SPECIAL_ROUTE_RULES: Record<string, RouteRule> = {
-  "/settings": {
-    allowed_roles: [
-      "org_admin",
-      "officials_manager",
-      "team_manager",
-      "official",
-      "player",
-    ],
-    excluded_roles: ["super_admin"],
-  },
-  "/help": {
-    allowed_roles: ["super_admin"],
-  },
-  "/audit-logs": {
-    allowed_roles: ["super_admin", "org_admin"],
-  },
-  "/system-users": {
-    allowed_roles: ["super_admin"],
-  },
-  "/organizations": {
-    allowed_roles: ["super_admin"],
-  },
-};
-
-function get_route_base(pathname: string): string {
-  const segments = pathname.split("/").filter(Boolean);
-  if (segments.length === 0) return "/";
-  return "/" + segments[0];
-}
-
-function can_role_access_route(role: UserRole, pathname: string): boolean {
-  const route_base = get_route_base(pathname);
-
-  if (pathname === "/" || pathname === "") return true;
-
-  const rule = SPECIAL_ROUTE_RULES[route_base];
-  if (rule) {
-    if (rule.excluded_roles?.includes(role)) {
-      return false;
-    }
-    if (rule.allowed_roles.length > 0 && !rule.allowed_roles.includes(role)) {
-      return false;
-    }
-  }
-
-  return true;
+function get_role_display_name(role: UserRole): string {
+  const display_names: Record<UserRole, string> = {
+    super_admin: "Super Admin",
+    org_admin: "Organisation Admin",
+    officials_manager: "Officials Manager",
+    team_manager: "Team Manager",
+    official: "Official",
+    player: "Player",
+  };
+  return display_names[role] || role;
 }
 
 export async function check_route_access(
@@ -86,32 +45,19 @@ export async function check_route_access(
     };
   }
 
-  const role = profile.role;
-  const route_allowed = can_role_access_route(role, pathname);
+  const result = can_role_access_route(profile.role, pathname);
 
-  if (!route_allowed) {
+  if (!result.allowed) {
     return {
       allowed: false,
-      message: `Your current role (${get_role_display_name(role)}) does not have access to this page. Please contact your organization administrator if you believe this is an error.`,
+      message: `Your current role (${get_role_display_name(profile.role)}) does not have access to this page. ${result.reason}`,
     };
   }
 
   return { allowed: true, message: "" };
 }
 
-function get_role_display_name(role: UserRole): string {
-  const display_names: Record<UserRole, string> = {
-    super_admin: "Super Admin",
-    org_admin: "Organisation Admin",
-    officials_manager: "Officials Manager",
-    team_manager: "Team Manager",
-    official: "Official",
-    player: "Player",
-  };
-  return display_names[role] || role;
-}
-
-async function log_access_denied_to_audit_trail(
+export async function log_access_denied_to_audit_trail(
   pathname: string,
   profile: UserProfile,
   denial_reason: string,
@@ -142,7 +88,7 @@ async function log_access_denied_to_audit_trail(
           new_value: profile.role,
         },
       ],
-      user_id: profile.user_id,
+      user_id: profile.id,
       user_email: profile.email || "unknown@sportsorg.local",
       user_display_name: profile.display_name || "Unknown User",
       organization_id: profile.organization_id || "*",

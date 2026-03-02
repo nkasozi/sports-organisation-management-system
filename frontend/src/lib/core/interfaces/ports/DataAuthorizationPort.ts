@@ -1,5 +1,36 @@
-import type { UserRole } from "./AuthenticationPort";
+import type { UserRole, AuthenticationPort } from "./AuthenticationPort";
 import { ANY_VALUE } from "./AuthenticationPort";
+
+export type AuthorizationFailureReason =
+  | "token_invalid"
+  | "token_expired"
+  | "permission_denied";
+
+export interface AuthorizationResult {
+  is_authorized: boolean;
+  failure_reason?: AuthorizationFailureReason;
+  data_category?: DataCategory;
+  role?: UserRole;
+  reason?: string;
+}
+
+export interface DataAuthorizationPort {
+  check_authorized(
+    raw_token: string,
+    entity_type: string,
+    action: DataAction,
+  ): Promise<AuthorizationResult>;
+
+  get_allowed_actions(
+    raw_token: string,
+    entity_type: string,
+  ): Promise<DataAction[]>;
+
+  get_disabled_actions(
+    raw_token: string,
+    entity_type: string,
+  ): Promise<DataAction[]>;
+}
 
 export type DataCategory =
   | "root_level"
@@ -115,9 +146,12 @@ export const ENTITY_DATA_CATEGORY_MAP: Record<string, DataCategory> = {
   gameeventtype: "root_level",
   teamstaffrole: "root_level",
   playerposition: "root_level",
+  help: "root_level",
 
   settings: "org_administrator_level",
   systemsettings: "org_administrator_level",
+  auditlog: "org_administrator_level",
+  systemuser: "org_administrator_level",
 
   competition: "organisation_level",
   team: "organisation_level",
@@ -127,8 +161,6 @@ export const ENTITY_DATA_CATEGORY_MAP: Record<string, DataCategory> = {
   fixturedetailssetup: "organisation_level",
   livegamelog: "organisation_level",
   gameeventlog: "organisation_level",
-  auditlog: "organisation_level",
-  systemuser: "organisation_level",
   playerteammembership: "organisation_level",
   playerteamtransferhistory: "organisation_level",
 

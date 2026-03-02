@@ -34,12 +34,10 @@ export type {
   AuthTokenPayload,
   AuthVerificationResult,
   UserRole,
-  Permission,
 } from "./AuthenticationPort";
 export {
   USER_ROLE_DISPLAY_NAMES,
   USER_ROLE_ORDER,
-  ROLE_PERMISSIONS,
   ANY_VALUE,
 } from "./AuthenticationPort";
 export type {

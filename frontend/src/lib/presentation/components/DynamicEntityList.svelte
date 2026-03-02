@@ -26,9 +26,9 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
   import { auth_store } from "../stores/auth";
   import {
     build_authorization_list_filter,
-    get_disabled_crud_for_entity,
     type UserScopeProfile,
   } from "$lib/core/interfaces/ports/DataAuthorizationPort";
+  import { get_data_authorization_adapter } from "$lib/adapters/services/DataAuthorizationAdapter";
   import { ensure_auth_profile } from "../logic/authGuard";
 
   export let entity_type: string;
@@ -568,16 +568,18 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
 
       const auth_state = get(auth_store);
       const normalized_type = entity_type.toLowerCase().replace(/[\s_-]/g, "");
-      if (auth_state.current_profile) {
-        const disabled_actions = get_disabled_crud_for_entity(
-          auth_state.current_profile.role,
-          normalized_type,
-        );
-        if (disabled_actions.includes("read")) {
+      if (auth_state.current_token) {
+        const authorization_result =
+          await get_data_authorization_adapter().check_authorized(
+            auth_state.current_token.raw_token,
+            normalized_type,
+            "read",
+          );
+        if (!authorization_result.is_authorized) {
           entities = [];
           error_message = `Access denied: Your role does not have permission to view ${display_name} data.`;
           console.warn(
-            `[DynamicEntityList] READ permission denied for role "${auth_state.current_profile.role}" on entity "${normalized_type}"`,
+            `[DynamicEntityList] READ permission denied for role "${authorization_result.role}" on entity "${normalized_type}"`,
           );
           is_loading = false;
           return;

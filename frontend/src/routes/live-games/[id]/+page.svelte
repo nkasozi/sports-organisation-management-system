@@ -5,7 +5,7 @@
   import { page } from "$app/stores";
   import { ensure_auth_profile } from "$lib/presentation/logic/authGuard";
   import { access_denial_store } from "$lib/presentation/stores/accessDenial";
-  import { get_disabled_crud_for_entity } from "$lib/core/interfaces/ports/DataAuthorizationPort";
+  import { get_data_authorization_adapter } from "$lib/adapters/services/DataAuthorizationAdapter";
   import { auth_store } from "$lib/presentation/stores/auth";
   import { get } from "svelte/store";
   import type {
@@ -281,12 +281,15 @@
     }
 
     const auth_state = get(auth_store);
-    if (auth_state.current_profile) {
-      const disabled_operations = get_disabled_crud_for_entity(
-        auth_state.current_profile.role,
-        "fixture",
-      );
-      if (disabled_operations.includes("read")) {
+    if (auth_state.current_token) {
+      const authorization_result =
+        await get_data_authorization_adapter().check_authorized(
+          auth_state.current_token.raw_token,
+          "fixture",
+          "read",
+        );
+
+      if (!authorization_result.is_authorized) {
         access_denial_store.set_denial(
           `/live-games/${fixture_id}`,
           "You do not have permission to view this live game.",

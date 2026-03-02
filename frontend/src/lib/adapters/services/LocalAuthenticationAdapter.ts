@@ -3,10 +3,7 @@ import type {
   AuthToken,
   AuthTokenPayload,
   AuthVerificationResult,
-  UserRole,
-  Permission,
 } from "$lib/core/interfaces/ports/AuthenticationPort";
-import { ROLE_PERMISSIONS } from "$lib/core/interfaces/ports/AuthenticationPort";
 import type { InBrowserSystemUserRepository } from "$lib/adapters/repositories/InBrowserSystemUserRepository";
 import { browser } from "$app/environment";
 
@@ -141,7 +138,7 @@ export class LocalAuthenticationAdapter implements AuthenticationPort {
       return { is_valid: false, error_message: "Token has been tampered with" };
     }
 
-    const payload = this.decode_token(raw_token);
+    const payload = this.parse_token_payload(raw_token);
     if (!payload) {
       return {
         is_valid: false,
@@ -174,7 +171,7 @@ export class LocalAuthenticationAdapter implements AuthenticationPort {
     return { is_valid: true, payload, system_user };
   }
 
-  decode_token(raw_token: string): AuthTokenPayload | null {
+  private parse_token_payload(raw_token: string): AuthTokenPayload | null {
     if (!raw_token || raw_token.trim().length === 0) {
       return null;
     }
@@ -194,18 +191,6 @@ export class LocalAuthenticationAdapter implements AuthenticationPort {
       );
       return null;
     }
-  }
-
-  get_permissions_for_role(role: UserRole): Permission[] {
-    return ROLE_PERMISSIONS[role] || [];
-  }
-
-  has_permission(token: AuthToken, permission: Permission): boolean {
-    return token.payload.permissions.includes(permission);
-  }
-
-  is_token_expired(token: AuthToken): boolean {
-    return Date.now() > token.payload.expires_at;
   }
 }
 

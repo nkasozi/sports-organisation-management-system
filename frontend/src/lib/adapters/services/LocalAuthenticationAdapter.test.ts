@@ -1,7 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { LocalAuthenticationAdapter } from "./LocalAuthenticationAdapter";
 import type { AuthTokenPayload } from "$lib/core/interfaces/ports/AuthenticationPort";
-import { ROLE_PERMISSIONS } from "$lib/core/interfaces/ports/AuthenticationPort";
 import type { InBrowserSystemUserRepository } from "$lib/adapters/repositories/InBrowserSystemUserRepository";
 import type { SystemUser } from "$lib/core/entities/SystemUser";
 
@@ -16,7 +15,6 @@ function create_test_payload(): Omit<
     role: "super_admin",
     organization_id: "*",
     team_id: "*",
-    permissions: ROLE_PERMISSIONS["super_admin"],
   };
 }
 
@@ -172,110 +170,6 @@ describe("LocalAuthenticationAdapter", () => {
       const result = await adapter.verify_token(modified_expired_token);
 
       expect(result.is_valid).toBe(false);
-    });
-  });
-
-  describe("decode_token", () => {
-    it("should decode a valid token payload", async () => {
-      const payload_input = create_test_payload();
-      const token = await adapter.generate_token(payload_input);
-
-      const decoded = adapter.decode_token(token.raw_token);
-
-      expect(decoded).toBeDefined();
-      expect(decoded?.user_id).toBe(payload_input.user_id);
-      expect(decoded?.email).toBe(payload_input.email);
-      expect(decoded?.role).toBe(payload_input.role);
-    });
-
-    it("should return null for empty token", () => {
-      const decoded = adapter.decode_token("");
-      expect(decoded).toBeNull();
-    });
-
-    it("should return null for invalid token format", () => {
-      const decoded = adapter.decode_token("invalid-token");
-      expect(decoded).toBeNull();
-    });
-  });
-
-  describe("get_permissions_for_role", () => {
-    it("should return all permissions for super_admin", () => {
-      const permissions = adapter.get_permissions_for_role("super_admin");
-
-      expect(permissions).toContain("manage_organizations");
-      expect(permissions).toContain("manage_users");
-      expect(permissions).toContain("manage_teams");
-    });
-
-    it("should return limited permissions for player", () => {
-      const permissions = adapter.get_permissions_for_role("player");
-
-      expect(permissions).toContain("view_own_profile");
-      expect(permissions).toContain("edit_own_profile");
-      expect(permissions).toContain("view_own_team");
-      expect(permissions).not.toContain("manage_organizations");
-      expect(permissions).not.toContain("manage_users");
-    });
-
-    it("should return team manager specific permissions", () => {
-      const permissions = adapter.get_permissions_for_role("team_manager");
-
-      expect(permissions).toContain("manage_players");
-      expect(permissions).toContain("view_own_team");
-      expect(permissions).not.toContain("manage_organizations");
-    });
-  });
-
-  describe("has_permission", () => {
-    it("should return true when token has the permission", async () => {
-      const payload_input = create_test_payload();
-      const token = await adapter.generate_token(payload_input);
-
-      const has_permission = adapter.has_permission(
-        token,
-        "manage_organizations",
-      );
-
-      expect(has_permission).toBe(true);
-    });
-
-    it("should return false when token lacks the permission", async () => {
-      const payload_input = {
-        ...create_test_payload(),
-        role: "player" as const,
-        permissions: ROLE_PERMISSIONS["player"],
-      };
-      const token = await adapter.generate_token(payload_input);
-
-      const has_permission = adapter.has_permission(
-        token,
-        "manage_organizations",
-      );
-
-      expect(has_permission).toBe(false);
-    });
-  });
-
-  describe("is_token_expired", () => {
-    it("should return false for fresh token", async () => {
-      const payload_input = create_test_payload();
-      const token = await adapter.generate_token(payload_input);
-
-      const is_expired = adapter.is_token_expired(token);
-
-      expect(is_expired).toBe(false);
-    });
-
-    it("should return true for token with past expiry", async () => {
-      const payload_input = create_test_payload();
-      const token = await adapter.generate_token(payload_input);
-
-      token.payload.expires_at = Date.now() - 1000;
-
-      const is_expired = adapter.is_token_expired(token);
-
-      expect(is_expired).toBe(true);
     });
   });
 });

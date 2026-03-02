@@ -43,9 +43,9 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
   import {
     get_authorization_restricted_fields,
     get_authorization_preselect_values,
-    get_disabled_crud_for_entity,
     type UserScopeProfile,
   } from "$lib/core/interfaces/ports/DataAuthorizationPort";
+  import { get_data_authorization_adapter } from "$lib/adapters/services/DataAuthorizationAdapter";
   import { ensure_auth_profile } from "../logic/authGuard";
   import { onMount } from "svelte";
 
@@ -97,19 +97,22 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
     }
 
     const auth_state = get(auth_store);
-    if (auth_state.current_profile) {
+    if (auth_state.current_token) {
       const normalized_type = entity_type.toLowerCase().replace(/[\s_-]/g, "");
-      const disabled_actions = get_disabled_crud_for_entity(
-        auth_state.current_profile.role,
-        normalized_type,
-      );
-
       const required_action = is_edit_mode ? "update" : "create";
-      if (disabled_actions.includes(required_action)) {
+
+      const authorization_result =
+        await get_data_authorization_adapter().check_authorized(
+          auth_state.current_token.raw_token,
+          normalized_type,
+          required_action,
+        );
+
+      if (!authorization_result.is_authorized) {
         permission_denied = true;
         permission_denied_message = `Access denied: Your role does not have permission to ${required_action} ${entity_metadata?.display_name || entity_type} records.`;
         console.warn(
-          `[DynamicEntityForm] ${required_action.toUpperCase()} permission denied for role "${auth_state.current_profile.role}" on entity "${normalized_type}"`,
+          `[DynamicEntityForm] ${required_action.toUpperCase()} permission denied for role "${authorization_result.role}" on entity "${normalized_type}"`,
         );
       }
     }

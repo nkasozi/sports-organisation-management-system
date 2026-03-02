@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
+  import { get } from "svelte/store";
   import { browser } from "$app/environment";
   import { goto } from "$app/navigation";
   import { ensure_auth_profile } from "$lib/presentation/logic/authGuard";
@@ -39,8 +40,8 @@
   import {
     build_authorization_list_filter,
     get_authorization_preselect_values,
-    get_disabled_crud_for_entity,
   } from "$lib/core/interfaces/ports/DataAuthorizationPort";
+  import { get_data_authorization_adapter } from "$lib/adapters/services/DataAuthorizationAdapter";
 
   const lineup_use_cases = get_fixture_lineup_use_cases();
   const fixture_use_cases = get_fixture_use_cases();
@@ -194,14 +195,16 @@
       return;
     }
 
-    if (current_auth_profile) {
-      const disabled = get_disabled_crud_for_entity(
-        current_auth_profile.role,
-        "fixturelineup",
-      );
-      const can_create = !disabled.includes("create");
+    const auth_state = get(auth_store);
+    if (auth_state.current_token) {
+      const authorization_result =
+        await get_data_authorization_adapter().check_authorized(
+          auth_state.current_token.raw_token,
+          "fixturelineup",
+          "create",
+        );
 
-      if (!can_create) {
+      if (!authorization_result.is_authorized) {
         access_denial_store.set_denial(
           "/fixture-lineups/create",
           "Access denied: Your role does not have permission to create fixture lineups. Please contact your organization administrator if you believe this is an error.",
