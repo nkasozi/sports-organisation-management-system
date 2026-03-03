@@ -115,6 +115,8 @@
   let toast_type: "success" | "error" | "info" = "info";
 
   let downloading_report: boolean = false;
+  let can_modify_game: boolean = false;
+  let permission_info_message: string = "";
 
   let home_lineup_expanded: boolean = false;
   let away_lineup_expanded: boolean = false;
@@ -296,6 +298,19 @@
         );
         goto("/");
         return;
+      }
+
+      const update_auth_result =
+        await get_authorization_adapter().check_entity_authorized(
+          auth_state.current_token.raw_token,
+          "fixture",
+          "update",
+        );
+
+      can_modify_game = update_auth_result.is_authorized;
+      if (!can_modify_game) {
+        permission_info_message =
+          "You have view-only access to this live game. Game management actions are not available.";
       }
     }
 
@@ -1201,29 +1216,32 @@
             </div>
 
             <div class="flex gap-2 mt-3 md:hidden">
-              {#if fixture.status === "scheduled"}
-                <button
-                  class="px-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg text-sm font-medium"
-                  on:click={() => (show_start_modal = true)}
-                >
-                  ▶️ Start
-                </button>
-              {:else if is_game_active}
-                <button
-                  class="px-3 py-2 rounded-lg text-sm font-medium {is_clock_running
-                    ? 'bg-yellow-500 text-black'
-                    : 'bg-green-500 text-white'}"
-                  on:click={toggle_clock}
-                >
-                  {is_clock_running ? "⏸️ Pause" : "▶️ Resume"}
-                </button>
-                <button
-                  class="px-3 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-sm font-medium"
-                  on:click={() => (show_end_modal = true)}
-                >
-                  🏁 End
-                </button>
-              {:else if is_game_completed}
+              {#if can_modify_game}
+                {#if fixture.status === "scheduled"}
+                  <button
+                    class="px-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg text-sm font-medium"
+                    on:click={() => (show_start_modal = true)}
+                  >
+                    ▶️ Start
+                  </button>
+                {:else if is_game_active}
+                  <button
+                    class="px-3 py-2 rounded-lg text-sm font-medium {is_clock_running
+                      ? 'bg-yellow-500 text-black'
+                      : 'bg-green-500 text-white'}"
+                    on:click={toggle_clock}
+                  >
+                    {is_clock_running ? "⏸️ Pause" : "▶️ Resume"}
+                  </button>
+                  <button
+                    class="px-3 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-sm font-medium"
+                    on:click={() => (show_end_modal = true)}
+                  >
+                    🏁 End
+                  </button>
+                {/if}
+              {/if}
+              {#if is_game_completed}
                 <button
                   class="px-4 py-2 bg-primary-600 hover:bg-primary-700 rounded-lg text-sm font-medium flex items-center gap-2 disabled:opacity-50"
                   disabled={downloading_report}
@@ -1259,29 +1277,32 @@
           </div>
 
           <div class="hidden md:flex gap-2">
-            {#if fixture.status === "scheduled"}
-              <button
-                class="px-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg text-sm font-medium"
-                on:click={() => (show_start_modal = true)}
-              >
-                ▶️ Start
-              </button>
-            {:else if is_game_active}
-              <button
-                class="px-3 py-2 rounded-lg text-sm font-medium {is_clock_running
-                  ? 'bg-yellow-500 text-black'
-                  : 'bg-green-500 text-white'}"
-                on:click={toggle_clock}
-              >
-                {is_clock_running ? "⏸️ Pause" : "▶️ Resume"}
-              </button>
-              <button
-                class="px-3 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-sm font-medium"
-                on:click={() => (show_end_modal = true)}
-              >
-                🏁 End
-              </button>
-            {:else if is_game_completed}
+            {#if can_modify_game}
+              {#if fixture.status === "scheduled"}
+                <button
+                  class="px-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg text-sm font-medium"
+                  on:click={() => (show_start_modal = true)}
+                >
+                  ▶️ Start
+                </button>
+              {:else if is_game_active}
+                <button
+                  class="px-3 py-2 rounded-lg text-sm font-medium {is_clock_running
+                    ? 'bg-yellow-500 text-black'
+                    : 'bg-green-500 text-white'}"
+                  on:click={toggle_clock}
+                >
+                  {is_clock_running ? "⏸️ Pause" : "▶️ Resume"}
+                </button>
+                <button
+                  class="px-3 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-sm font-medium"
+                  on:click={() => (show_end_modal = true)}
+                >
+                  🏁 End
+                </button>
+              {/if}
+            {/if}
+            {#if is_game_completed}
               <button
                 class="px-4 py-2 bg-primary-600 hover:bg-primary-700 rounded-lg text-sm font-medium flex items-center gap-2 disabled:opacity-50"
                 disabled={downloading_report}
@@ -1317,98 +1338,128 @@
         </div>
       </div>
 
-      {#if is_game_active}
-        <div class="bg-gray-800 text-white px-4 py-2 border-b border-gray-700">
-          <div class="flex justify-center gap-3 max-w-4xl mx-auto flex-wrap">
-            {#if fixture.current_period === "first_half" && !is_clock_running}
-              <button
-                class="px-4 py-2 bg-orange-600 hover:bg-orange-700 rounded-lg text-sm font-medium"
-                on:click={end_current_period}
-              >
-                ⏹️ End 1st Half
-              </button>
-            {:else if fixture.current_period === "half_time"}
-              <button
-                class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-sm font-medium"
-                on:click={() => change_period("second_half")}
-              >
-                ▶️ Start 2nd Half
-              </button>
-            {:else if fixture.current_period === "second_half" && !is_clock_running}
-              <button
-                class="px-4 py-2 bg-orange-600 hover:bg-orange-700 rounded-lg text-sm font-medium"
-                on:click={end_current_period}
-              >
-                ⏹️ End 2nd Half
-              </button>
-              <button
-                class="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg text-sm font-medium"
-                on:click={() => change_period("extra_time_first")}
-              >
-                ⚡ Extra Time
-              </button>
-            {/if}
+      {#if permission_info_message}
+        <div
+          class="bg-blue-50 dark:bg-blue-900/20 border-b border-blue-200 dark:border-blue-700 px-4 py-3"
+        >
+          <div class="max-w-4xl mx-auto flex items-center gap-2">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-5 w-5 text-blue-600 dark:text-blue-400 shrink-0"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                clip-rule="evenodd"
+              />
+            </svg>
+            <p class="text-sm text-blue-700 dark:text-blue-300">
+              {permission_info_message}
+            </p>
           </div>
         </div>
+      {/if}
 
-        <div
-          class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-4"
-        >
-          <div class="max-w-5xl mx-auto">
-            <div class="flex flex-col md:flex-row">
-              <div class="flex-1 md:pr-4">
-                <div
-                  class="text-xs font-medium text-blue-600 dark:text-blue-400 mb-3 text-center uppercase tracking-wider"
+      {#if is_game_active}
+        {#if can_modify_game}
+          <div
+            class="bg-gray-800 text-white px-4 py-2 border-b border-gray-700"
+          >
+            <div class="flex justify-center gap-3 max-w-4xl mx-auto flex-wrap">
+              {#if fixture.current_period === "first_half" && !is_clock_running}
+                <button
+                  class="px-4 py-2 bg-orange-600 hover:bg-orange-700 rounded-lg text-sm font-medium"
+                  on:click={end_current_period}
                 >
-                  🏠 {home_team?.name ?? "Home"}
-                </div>
-                <div class="grid grid-cols-4 gap-2">
-                  {#each all_event_buttons as event_btn}
-                    <button
-                      class="flex flex-col items-center justify-center p-2 rounded-lg text-white transition-all active:scale-95 {event_btn.color}"
-                      on:click={() => open_event_modal(event_btn, "home")}
-                      disabled={!is_clock_running}
-                    >
-                      <span class="text-lg">{event_btn.icon}</span>
-                      <span class="text-xs mt-1 truncate w-full text-center"
-                        >{event_btn.label}</span
-                      >
-                    </button>
-                  {/each}
-                </div>
-              </div>
-
-              <div
-                class="hidden md:block w-px bg-gray-300 dark:bg-gray-600 mx-2 self-stretch"
-              ></div>
-              <div
-                class="md:hidden h-px bg-gray-300 dark:bg-gray-600 my-4 w-full"
-              ></div>
-
-              <div class="flex-1 md:pl-4">
-                <div
-                  class="text-xs font-medium text-red-600 dark:text-red-400 mb-3 text-center uppercase tracking-wider"
+                  ⏹️ End 1st Half
+                </button>
+              {:else if fixture.current_period === "half_time"}
+                <button
+                  class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-sm font-medium"
+                  on:click={() => change_period("second_half")}
                 >
-                  ✈️ {away_team?.name ?? "Away"}
-                </div>
-                <div class="grid grid-cols-4 gap-2">
-                  {#each all_event_buttons as event_btn}
-                    <button
-                      class="flex flex-col items-center justify-center p-2 rounded-lg text-white transition-all active:scale-95 {event_btn.color}"
-                      on:click={() => open_event_modal(event_btn, "away")}
-                      disabled={!is_clock_running}
-                    >
-                      <span class="text-lg">{event_btn.icon}</span>
-                      <span class="text-xs mt-1 truncate w-full text-center"
-                        >{event_btn.label}</span
+                  ▶️ Start 2nd Half
+                </button>
+              {:else if fixture.current_period === "second_half" && !is_clock_running}
+                <button
+                  class="px-4 py-2 bg-orange-600 hover:bg-orange-700 rounded-lg text-sm font-medium"
+                  on:click={end_current_period}
+                >
+                  ⏹️ End 2nd Half
+                </button>
+                <button
+                  class="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg text-sm font-medium"
+                  on:click={() => change_period("extra_time_first")}
+                >
+                  ⚡ Extra Time
+                </button>
+              {/if}
+            </div>
+          </div>
+        {/if}
+
+        {#if can_modify_game}
+          <div
+            class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-4"
+          >
+            <div class="max-w-5xl mx-auto">
+              <div class="flex flex-col md:flex-row">
+                <div class="flex-1 md:pr-4">
+                  <div
+                    class="text-xs font-medium text-blue-600 dark:text-blue-400 mb-3 text-center uppercase tracking-wider"
+                  >
+                    🏠 {home_team?.name ?? "Home"}
+                  </div>
+                  <div class="grid grid-cols-4 gap-2">
+                    {#each all_event_buttons as event_btn}
+                      <button
+                        class="flex flex-col items-center justify-center p-2 rounded-lg text-white transition-all active:scale-95 {event_btn.color}"
+                        on:click={() => open_event_modal(event_btn, "home")}
+                        disabled={!is_clock_running}
                       >
-                    </button>
-                  {/each}
+                        <span class="text-lg">{event_btn.icon}</span>
+                        <span class="text-xs mt-1 truncate w-full text-center"
+                          >{event_btn.label}</span
+                        >
+                      </button>
+                    {/each}
+                  </div>
+                </div>
+
+                <div
+                  class="hidden md:block w-px bg-gray-300 dark:bg-gray-600 mx-2 self-stretch"
+                ></div>
+                <div
+                  class="md:hidden h-px bg-gray-300 dark:bg-gray-600 my-4 w-full"
+                ></div>
+
+                <div class="flex-1 md:pl-4">
+                  <div
+                    class="text-xs font-medium text-red-600 dark:text-red-400 mb-3 text-center uppercase tracking-wider"
+                  >
+                    ✈️ {away_team?.name ?? "Away"}
+                  </div>
+                  <div class="grid grid-cols-4 gap-2">
+                    {#each all_event_buttons as event_btn}
+                      <button
+                        class="flex flex-col items-center justify-center p-2 rounded-lg text-white transition-all active:scale-95 {event_btn.color}"
+                        on:click={() => open_event_modal(event_btn, "away")}
+                        disabled={!is_clock_running}
+                      >
+                        <span class="text-lg">{event_btn.icon}</span>
+                        <span class="text-xs mt-1 truncate w-full text-center"
+                          >{event_btn.label}</span
+                        >
+                      </button>
+                    {/each}
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
+        {/if}
       {/if}
 
       {#if fixture.status === "scheduled"}

@@ -5,6 +5,8 @@
   import { page } from "$app/stores";
   import { get } from "svelte/store";
   import { ensure_auth_profile } from "$lib/presentation/logic/authGuard";
+  import { access_denial_store } from "$lib/presentation/stores/accessDenial";
+  import { get_authorization_adapter } from "$lib/adapters/iam/LocalAuthorizationAdapter";
   import type {
     Competition,
     UpdateCompetitionInput,
@@ -69,6 +71,8 @@
   let toast_visible: boolean = false;
   let toast_message: string = "";
   let toast_type: "success" | "error" | "info" = "info";
+  let can_edit_competition: boolean = false;
+  let permission_info_message: string = "";
 
   $: competition_id = $page.params.id ?? "";
 
@@ -141,6 +145,39 @@
       loading_state = "error";
       return;
     }
+
+    const auth_state = get(auth_store);
+    if (auth_state.current_token) {
+      const read_auth_result =
+        await get_authorization_adapter().check_entity_authorized(
+          auth_state.current_token.raw_token,
+          "competition",
+          "read",
+        );
+
+      if (!read_auth_result.is_authorized) {
+        access_denial_store.set_denial(
+          `/competitions/${competition_id}`,
+          "You do not have permission to view this competition.",
+        );
+        goto("/competitions");
+        return;
+      }
+
+      const update_auth_result =
+        await get_authorization_adapter().check_entity_authorized(
+          auth_state.current_token.raw_token,
+          "competition",
+          "update",
+        );
+
+      can_edit_competition = update_auth_result.is_authorized;
+      if (!can_edit_competition) {
+        permission_info_message =
+          "You have view-only access to this competition. Editing is not available.";
+      }
+    }
+
     if (!competition_id) {
       loading_state = "error";
       error_message = "Competition ID is required";
@@ -426,6 +463,29 @@
     {error_message}
     loading_text="Loading competition..."
   >
+    {#if permission_info_message}
+      <div
+        class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg p-4 mb-6"
+      >
+        <div class="flex items-center gap-2">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-5 w-5 text-blue-600 dark:text-blue-400 shrink-0"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+          >
+            <path
+              fill-rule="evenodd"
+              d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+              clip-rule="evenodd"
+            />
+          </svg>
+          <p class="text-sm text-blue-700 dark:text-blue-300">
+            {permission_info_message}
+          </p>
+        </div>
+      </div>
+    {/if}
     <div
       class="bg-white dark:bg-accent-800 rounded-lg shadow-sm border border-accent-200 dark:border-accent-700"
     >
@@ -594,30 +654,32 @@
             <div
               class="mt-8 flex flex-col-reverse sm:flex-row sm:justify-end gap-3"
             >
-              <button
-                type="button"
-                class="btn btn-outline w-full sm:w-auto"
-                disabled={is_saving}
-                on:click={handle_cancel}
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                class="btn btn-primary-action w-full sm:w-auto"
-                disabled={is_saving}
-              >
-                {#if is_saving}
-                  <span class="flex items-center justify-center">
-                    <span
-                      class="animate-spin rounded-full h-4 w-4 border-2 border-white/20 border-t-white mr-2"
-                    ></span>
-                    Saving...
-                  </span>
-                {:else}
-                  Save Changes
-                {/if}
-              </button>
+              {#if can_edit_competition}
+                <button
+                  type="button"
+                  class="btn btn-outline w-full sm:w-auto"
+                  disabled={is_saving}
+                  on:click={handle_cancel}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  class="btn btn-primary-action w-full sm:w-auto"
+                  disabled={is_saving}
+                >
+                  {#if is_saving}
+                    <span class="flex items-center justify-center">
+                      <span
+                        class="animate-spin rounded-full h-4 w-4 border-2 border-white/20 border-t-white mr-2"
+                      ></span>
+                      Saving...
+                    </span>
+                  {:else}
+                    Save Changes
+                  {/if}
+                </button>
+              {/if}
             </div>
           </form>
         {:else if active_tab === "teams"}
@@ -667,27 +729,29 @@
                           >{team.name}</span
                         >
                       </div>
-                      <button
-                        type="button"
-                        class="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 p-1"
-                        on:click={() =>
-                          handle_remove_team_from_competition(team)}
-                        aria-label="Remove {team.name}"
-                      >
-                        <svg
-                          class="h-5 w-5"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
+                      {#if can_edit_competition}
+                        <button
+                          type="button"
+                          class="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 p-1"
+                          on:click={() =>
+                            handle_remove_team_from_competition(team)}
+                          aria-label="Remove {team.name}"
                         >
-                          <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M6 18L18 6M6 6l12 12"
-                          />
-                        </svg>
-                      </button>
+                          <svg
+                            class="h-5 w-5"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="2"
+                              d="M6 18L18 6M6 6l12 12"
+                            />
+                          </svg>
+                        </button>
+                      {/if}
                     </div>
                   {/each}
                 </div>
@@ -722,28 +786,30 @@
                           >{team.name}</span
                         >
                       </div>
-                      <button
-                        type="button"
-                        class="text-primary-600 hover:text-primary-800 dark:text-primary-400 dark:hover:text-primary-300 p-1"
-                        disabled={teams_in_competition.length >=
-                          (form_data.max_teams || 0)}
-                        on:click={() => handle_add_team_to_competition(team)}
-                        aria-label="Add {team.name}"
-                      >
-                        <svg
-                          class="h-5 w-5"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
+                      {#if can_edit_competition}
+                        <button
+                          type="button"
+                          class="text-primary-600 hover:text-primary-800 dark:text-primary-400 dark:hover:text-primary-300 p-1"
+                          disabled={teams_in_competition.length >=
+                            (form_data.max_teams || 0)}
+                          on:click={() => handle_add_team_to_competition(team)}
+                          aria-label="Add {team.name}"
                         >
-                          <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M12 4v16m8-8H4"
-                          />
-                        </svg>
-                      </button>
+                          <svg
+                            class="h-5 w-5"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="2"
+                              d="M12 4v16m8-8H4"
+                            />
+                          </svg>
+                        </button>
+                      {/if}
                     </div>
                   {/each}
                 </div>
@@ -753,23 +819,25 @@
             <div
               class="mt-8 flex flex-col-reverse sm:flex-row sm:justify-end gap-3 border-t border-accent-200 dark:border-accent-700 pt-6"
             >
-              <button
-                type="button"
-                class="btn btn-outline w-full sm:w-auto"
-                on:click={handle_cancel}
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                class="btn btn-primary-action w-full sm:w-auto"
-                on:click={() => {
-                  show_toast("Team changes saved!", "success");
-                  goto("/competitions");
-                }}
-              >
-                Done
-              </button>
+              {#if can_edit_competition}
+                <button
+                  type="button"
+                  class="btn btn-outline w-full sm:w-auto"
+                  on:click={handle_cancel}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-primary-action w-full sm:w-auto"
+                  on:click={() => {
+                    show_toast("Team changes saved!", "success");
+                    goto("/competitions");
+                  }}
+                >
+                  Done
+                </button>
+              {/if}
             </div>
           </div>
         {:else if active_tab === "rules"}
@@ -806,22 +874,24 @@
               >
                 Cancel
               </button>
-              <button
-                type="submit"
-                class="btn btn-primary-action w-full sm:w-auto"
-                disabled={is_saving}
-              >
-                {#if is_saving}
-                  <span class="flex items-center justify-center">
-                    <span
-                      class="animate-spin rounded-full h-4 w-4 border-2 border-white/20 border-t-white mr-2"
-                    ></span>
-                    Saving...
-                  </span>
-                {:else}
-                  Save Rules
-                {/if}
-              </button>
+              {#if can_edit_competition}
+                <button
+                  type="submit"
+                  class="btn btn-primary-action w-full sm:w-auto"
+                  disabled={is_saving}
+                >
+                  {#if is_saving}
+                    <span class="flex items-center justify-center">
+                      <span
+                        class="animate-spin rounded-full h-4 w-4 border-2 border-white/20 border-t-white mr-2"
+                      ></span>
+                      Saving...
+                    </span>
+                  {:else}
+                    Save Rules
+                  {/if}
+                </button>
+              {/if}
             </div>
           </form>
         {:else if active_tab === "settings"}
@@ -995,22 +1065,24 @@
               >
                 Cancel
               </button>
-              <button
-                type="submit"
-                class="btn btn-primary-action w-full sm:w-auto"
-                disabled={is_saving}
-              >
-                {#if is_saving}
-                  <span class="flex items-center justify-center">
-                    <span
-                      class="animate-spin rounded-full h-4 w-4 border-2 border-white/20 border-t-white mr-2"
-                    ></span>
-                    Saving...
-                  </span>
-                {:else}
-                  Save Settings
-                {/if}
-              </button>
+              {#if can_edit_competition}
+                <button
+                  type="submit"
+                  class="btn btn-primary-action w-full sm:w-auto"
+                  disabled={is_saving}
+                >
+                  {#if is_saving}
+                    <span class="flex items-center justify-center">
+                      <span
+                        class="animate-spin rounded-full h-4 w-4 border-2 border-white/20 border-t-white mr-2"
+                      ></span>
+                      Saving...
+                    </span>
+                  {:else}
+                    Save Settings
+                  {/if}
+                </button>
+              {/if}
             </div>
           </form>
         {:else if active_tab === "official_jerseys"}

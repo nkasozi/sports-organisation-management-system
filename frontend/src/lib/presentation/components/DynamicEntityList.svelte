@@ -511,6 +511,13 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
       filter["team_id"] = team_id;
     }
 
+    const official_id = auth_state.current_profile.official_id;
+    const has_valid_official_id = official_id && official_id !== "*";
+
+    if (normalized_type === "official" && has_valid_official_id) {
+      filter["id"] = official_id;
+    }
+
     console.debug("[DynamicEntityList] Final auth filter:", filter);
     return filter;
   }
@@ -1164,7 +1171,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
           </button>
         {/if}
 
-        {#if enable_bulk_import}
+        {#if enable_bulk_import && !is_create_disabled}
           <button
             type="button"
             class="btn w-auto bg-purple-600 hover:bg-purple-700 text-white"

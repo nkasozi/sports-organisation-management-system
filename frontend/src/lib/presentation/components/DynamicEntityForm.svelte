@@ -581,7 +581,9 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
     }
 
     const competition_teams = comp_teams_result.data.items;
-    competition_team_ids = new Set(competition_teams.map((ct: { team_id: any; }) => ct.team_id));
+    competition_team_ids = new Set(
+      competition_teams.map((ct: { team_id: any }) => ct.team_id),
+    );
 
     const team_use_cases = get_use_cases_for_entity_type("team");
     if (!team_use_cases) {
@@ -1798,27 +1800,6 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
     >
       <p>{auth_error_message}</p>
     </div>
-  {:else if permission_denied}
-    <div
-      class="alert bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200 p-4 rounded-lg"
-    >
-      <div class="flex items-center gap-2">
-        <svg
-          class="w-5 h-5 flex-shrink-0"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-          />
-        </svg>
-        <p>{permission_denied_message}</p>
-      </div>
-    </div>
   {:else if !entity_metadata}
     <div
       class="alert bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 p-4 rounded-lg"
@@ -1843,6 +1824,31 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
           </p>
         {/if}
       </div>
+
+      {#if permission_denied}
+        <div
+          class="p-4 bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-700 rounded-lg"
+        >
+          <div class="flex items-start gap-3">
+            <svg
+              class="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+              />
+            </svg>
+            <p class="text-sm text-amber-800 dark:text-amber-200">
+              {permission_denied_message}
+            </p>
+          </div>
+        </div>
+      {/if}
 
       {#if info_message}
         <div
@@ -2427,18 +2433,20 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
           >
             Cancel
           </button>
-          <button
-            type="submit"
-            class="btn {button_color_class} w-full sm:w-auto order-3 sm:order-3"
-            disabled={is_save_in_progress || is_loading}
-          >
-            {#if is_save_in_progress}
-              Saving...
-            {:else}
-              {is_edit_mode ? "Update" : "Create"}
-              {entity_metadata.display_name}
-            {/if}
-          </button>
+          {#if !permission_denied}
+            <button
+              type="submit"
+              class="btn {button_color_class} w-full sm:w-auto order-3 sm:order-3"
+              disabled={is_save_in_progress || is_loading}
+            >
+              {#if is_save_in_progress}
+                Saving...
+              {:else}
+                {is_edit_mode ? "Update" : "Create"}
+                {entity_metadata.display_name}
+              {/if}
+            </button>
+          {/if}
         </div>
       </form>
     </div>

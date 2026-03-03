@@ -48,6 +48,8 @@
   let team_names: Record<string, string> = {};
   let competition_names: Record<string, string> = {};
   let sport_names: Record<string, string> = {};
+  let can_start_games = false;
+  let permission_info_message = "";
 
   onMount(async () => {
     if (!browser) return;
@@ -77,6 +79,18 @@
       access_denial_store.set_denial("/live-games", denial_reason);
       goto("/");
       return;
+    }
+
+    const update_authorization_result =
+      await get_authorization_adapter().check_entity_authorized(
+        auth_state.current_token.raw_token,
+        "fixture",
+        "update",
+      );
+
+    can_start_games = update_authorization_result.is_authorized;
+    if (!can_start_games) {
+      permission_info_message = `Your role "${update_authorization_result.role}" can view fixtures but cannot start games. Contact an administrator if you need this permission.`;
     }
 
     const loaded_fixtures = await load_incomplete_fixtures();
@@ -578,6 +592,31 @@
     </p>
   </div>
 
+  {#if permission_info_message}
+    <div
+      class="p-4 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 rounded-lg mb-4"
+    >
+      <div class="flex items-start gap-3">
+        <svg
+          class="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+          />
+        </svg>
+        <p class="text-sm text-blue-800 dark:text-blue-200">
+          {permission_info_message}
+        </p>
+      </div>
+    </div>
+  {/if}
+
   {#if is_loading}
     <div class="flex justify-center items-center py-12">
       <div
@@ -669,48 +708,50 @@
                   </div>
                 </div>
 
-                <button
-                  type="button"
-                  on:click={() => handle_start_click(fixture)}
-                  disabled={is_starting[fixture.id || ""]}
-                  class="hidden sm:inline-flex flex-shrink-0 items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:bg-accent-400 dark:disabled:bg-accent-600 disabled:cursor-not-allowed transition-colors text-sm font-medium"
-                >
-                  {#if is_starting[fixture.id || ""]}
-                    <svg
-                      class="h-5 w-5 animate-spin"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                    >
-                      <circle
-                        class="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        stroke-width="4"
-                      ></circle>
-                      <path
-                        class="opacity-75"
+                {#if can_start_games}
+                  <button
+                    type="button"
+                    on:click={() => handle_start_click(fixture)}
+                    disabled={is_starting[fixture.id || ""]}
+                    class="hidden sm:inline-flex flex-shrink-0 items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:bg-accent-400 dark:disabled:bg-accent-600 disabled:cursor-not-allowed transition-colors text-sm font-medium"
+                  >
+                    {#if is_starting[fixture.id || ""]}
+                      <svg
+                        class="h-5 w-5 animate-spin"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          class="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          stroke-width="4"
+                        ></circle>
+                        <path
+                          class="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        ></path>
+                      </svg>
+                      Starting...
+                    {:else}
+                      <svg
+                        class="h-5 w-5"
                         fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                      ></path>
-                    </svg>
-                    Starting...
-                  {:else}
-                    <svg
-                      class="h-5 w-5"
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                    >
-                      <path
-                        fill-rule="evenodd"
-                        d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"
-                        clip-rule="evenodd"
-                      />
-                    </svg>
-                    Start Game
-                  {/if}
-                </button>
+                        viewBox="0 0 20 20"
+                      >
+                        <path
+                          fill-rule="evenodd"
+                          d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"
+                          clip-rule="evenodd"
+                        />
+                      </svg>
+                      Start Game
+                    {/if}
+                  </button>
+                {/if}
               </div>
 
               <div
@@ -807,50 +848,52 @@
                 {/if}
               </div>
 
-              <div class="pt-2 sm:hidden">
-                <button
-                  type="button"
-                  on:click={() => handle_start_click(fixture)}
-                  disabled={is_starting[fixture.id || ""]}
-                  class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:bg-accent-400 dark:disabled:bg-accent-600 disabled:cursor-not-allowed transition-colors text-sm font-medium"
-                >
-                  {#if is_starting[fixture.id || ""]}
-                    <svg
-                      class="h-5 w-5 animate-spin"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                    >
-                      <circle
-                        class="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        stroke-width="4"
-                      ></circle>
-                      <path
-                        class="opacity-75"
+              {#if can_start_games}
+                <div class="pt-2 sm:hidden">
+                  <button
+                    type="button"
+                    on:click={() => handle_start_click(fixture)}
+                    disabled={is_starting[fixture.id || ""]}
+                    class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:bg-accent-400 dark:disabled:bg-accent-600 disabled:cursor-not-allowed transition-colors text-sm font-medium"
+                  >
+                    {#if is_starting[fixture.id || ""]}
+                      <svg
+                        class="h-5 w-5 animate-spin"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          class="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          stroke-width="4"
+                        ></circle>
+                        <path
+                          class="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        ></path>
+                      </svg>
+                      Starting...
+                    {:else}
+                      <svg
+                        class="h-5 w-5"
                         fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                      ></path>
-                    </svg>
-                    Starting...
-                  {:else}
-                    <svg
-                      class="h-5 w-5"
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                    >
-                      <path
-                        fill-rule="evenodd"
-                        d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"
-                        clip-rule="evenodd"
-                      />
-                    </svg>
-                    Start Game
-                  {/if}
-                </button>
-              </div>
+                        viewBox="0 0 20 20"
+                      >
+                        <path
+                          fill-rule="evenodd"
+                          d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"
+                          clip-rule="evenodd"
+                        />
+                      </svg>
+                      Start Game
+                    {/if}
+                  </button>
+                </div>
+              {/if}
             </div>
           </div>
 

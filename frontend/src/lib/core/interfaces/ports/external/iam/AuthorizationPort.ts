@@ -120,12 +120,17 @@ export interface AuthorizationPort {
   ): Promise<DataAction[]>;
 }
 
-export type ScopeDimension = "organization_id" | "team_id" | "player_id";
+export type ScopeDimension =
+  | "organization_id"
+  | "team_id"
+  | "player_id"
+  | "official_id";
 
 export interface UserScopeProfile {
   organization_id: string;
   team_id: string;
   player_id?: string;
+  official_id?: string;
 }
 
 export type RolePermissionMap = Record<DataCategory, CategoryPermissions>;
@@ -191,13 +196,18 @@ export const DATA_PERMISSION_MAP: FullPermissionMap = {
     root_level: READ_ONLY_PERMISSIONS,
     org_administrator_level: NO_PERMISSIONS,
     organisation_level: READ_ONLY_PERMISSIONS,
-    team_level: FULL_PERMISSIONS,
-    player_level: FULL_PERMISSIONS,
+    team_level: { create: false, read: true, update: true, delete: false },
+    player_level: { create: false, read: true, update: true, delete: false },
   },
   official: {
     root_level: READ_ONLY_PERMISSIONS,
     org_administrator_level: NO_PERMISSIONS,
-    organisation_level: READ_ONLY_PERMISSIONS,
+    organisation_level: {
+      create: false,
+      read: true,
+      update: true,
+      delete: false,
+    },
     team_level: READ_ONLY_PERMISSIONS,
     player_level: READ_ONLY_PERMISSIONS,
   },
@@ -206,7 +216,7 @@ export const DATA_PERMISSION_MAP: FullPermissionMap = {
     org_administrator_level: NO_PERMISSIONS,
     organisation_level: READ_ONLY_PERMISSIONS,
     team_level: READ_ONLY_PERMISSIONS,
-    player_level: { create: true, read: true, update: true, delete: false },
+    player_level: { create: false, read: true, update: true, delete: false },
   },
 };
 
@@ -226,7 +236,7 @@ export const ENTITY_DATA_CATEGORY_MAP: Record<string, DataCategory> = {
   auditlog: "org_administrator_level",
   systemuser: "org_administrator_level",
   competition: "organisation_level",
-  team: "organisation_level",
+  team: "team_level",
   official: "organisation_level",
   venue: "organisation_level",
   fixture: "organisation_level",

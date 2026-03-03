@@ -3,6 +3,9 @@
   import { browser } from "$app/environment";
   import { goto } from "$app/navigation";
   import { ensure_auth_profile } from "$lib/presentation/logic/authGuard";
+  import { access_denial_store } from "$lib/presentation/stores/accessDenial";
+  import { get_authorization_adapter } from "$lib/adapters/iam/LocalAuthorizationAdapter";
+  import { get } from "svelte/store";
   import type { Organization } from "$lib/core/entities/Organization";
   import type { CompetitionFormat } from "$lib/core/entities/CompetitionFormat";
   import type { Team } from "$lib/core/entities/Team";
@@ -122,6 +125,26 @@
       is_loading_teams = false;
       return;
     }
+
+    const auth_state = get(auth_store);
+    if (auth_state.current_token) {
+      const authorization_result =
+        await get_authorization_adapter().check_entity_authorized(
+          auth_state.current_token.raw_token,
+          "competition",
+          "create",
+        );
+
+      if (!authorization_result.is_authorized) {
+        access_denial_store.set_denial(
+          "/competitions/create",
+          "You do not have permission to create competitions.",
+        );
+        goto("/competitions");
+        return;
+      }
+    }
+
     await Promise.all([
       load_organizations(),
       load_competition_formats(),

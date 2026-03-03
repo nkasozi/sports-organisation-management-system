@@ -18,7 +18,10 @@ Uses explicit handlers instead of events for predictable data flow
     get_disabled_crud_actions,
     auth_store,
   } from "../../presentation/stores/auth";
-  import { check_entity_permission } from "$lib/core/interfaces/ports";
+  import {
+    check_entity_permission,
+    get_entity_data_category,
+  } from "$lib/core/interfaces/ports";
   import type { UserProfile } from "../../presentation/stores/auth";
   import DynamicEntityForm from "./DynamicEntityForm.svelte";
   import DynamicEntityList from "./DynamicEntityList.svelte";
@@ -78,10 +81,15 @@ Uses explicit handlers instead of events for predictable data flow
     profile: UserProfile | null,
   ): CrudFunctionality[] {
     if (!profile) {
+      console.log(
+        `[EntityCrudWrapper] No profile - disabling all crud for "${entity_type}"`,
+      );
       return ["create", "edit", "delete"];
     }
 
     const disabled_actions: CrudFunctionality[] = [];
+    const category = get_entity_data_category(entity_type);
+
     if (!check_entity_permission(profile.role, entity_type, "create")) {
       disabled_actions.push("create");
     }
@@ -92,6 +100,9 @@ Uses explicit handlers instead of events for predictable data flow
       disabled_actions.push("delete");
     }
 
+    console.log(
+      `[EntityCrudWrapper] Permission check for "${entity_type}" (category: ${category}) with role "${profile.role}": disabled = [${disabled_actions.join(", ")}]`,
+    );
     return disabled_actions;
   }
 

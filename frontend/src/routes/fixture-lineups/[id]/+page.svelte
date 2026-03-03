@@ -52,6 +52,8 @@
   let loading: boolean = true;
   let saving: boolean = false;
   let error_message: string = "";
+  let can_modify_lineup: boolean = false;
+  let permission_info_message: string = "";
 
   $: lineup_id = $page.params.id || "";
   $: selected_player_ids_set = new Set(
@@ -84,6 +86,18 @@
         );
         goto("/");
         return;
+      }
+
+      const update_authorization_result =
+        await get_authorization_adapter().check_entity_authorized(
+          auth_state.current_token.raw_token,
+          "fixturelineup",
+          "update",
+        );
+
+      can_modify_lineup = update_authorization_result.is_authorized;
+      if (!can_modify_lineup) {
+        permission_info_message = `Your role "${update_authorization_result.role}" can view lineup details but cannot modify them. Contact an administrator if you need edit access.`;
       }
     }
 
@@ -259,6 +273,31 @@
       <p class="text-red-600 dark:text-red-400">{error_message}</p>
     </div>
   {:else if lineup}
+    {#if permission_info_message}
+      <div
+        class="p-4 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 rounded-lg"
+      >
+        <div class="flex items-start gap-3">
+          <svg
+            class="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+          <p class="text-sm text-blue-800 dark:text-blue-200">
+            {permission_info_message}
+          </p>
+        </div>
+      </div>
+    {/if}
+
     <div
       class="bg-white dark:bg-accent-800 rounded-lg shadow-sm border border-accent-200 dark:border-accent-700 p-6"
     >
@@ -307,7 +346,7 @@
         </div>
       </div>
 
-      {#if lineup.status !== "locked"}
+      {#if lineup.status !== "locked" && can_modify_lineup}
         <div class="mb-6">
           <h2
             class="text-lg font-semibold text-accent-900 dark:text-accent-100 mb-4"
@@ -397,7 +436,7 @@
         >
           Back to List
         </button>
-        {#if lineup.status === "draft"}
+        {#if lineup.status === "draft" && can_modify_lineup}
           <button
             class="btn btn-outline"
             on:click={handle_save}
