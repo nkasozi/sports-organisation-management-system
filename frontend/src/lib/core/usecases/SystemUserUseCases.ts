@@ -7,7 +7,7 @@ import { validate_system_user_input } from "../entities/SystemUser";
 import type {
   Repository,
   QueryOptions,
-} from "../interfaces/adapters/Repository";
+} from "../interfaces/ports";
 import type {
   EntityOperationResult,
   EntityListResult,

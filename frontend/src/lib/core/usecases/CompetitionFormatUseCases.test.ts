@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { create_competition_format_use_cases } from "./CompetitionFormatUseCases";
-import type { CompetitionFormatRepository } from "../interfaces/adapters/CompetitionFormatRepository";
+import type { CompetitionFormatRepository } from "../interfaces/ports";
 import type {
   CompetitionFormat,
   CreateCompetitionFormatInput,

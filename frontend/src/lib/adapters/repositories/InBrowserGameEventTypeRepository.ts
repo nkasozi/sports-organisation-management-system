@@ -9,8 +9,8 @@ import type { BaseEntity } from "../../core/entities/BaseEntity";
 import type {
   GameEventTypeRepository,
   GameEventTypeFilter,
-} from "../../core/interfaces/adapters/GameEventTypeRepository";
-import type { QueryOptions } from "../../core/interfaces/adapters/Repository";
+} from "../../core/interfaces/ports";
+import type { QueryOptions } from "../../core/interfaces/ports";
 import type { PaginatedAsyncResult } from "../../core/types/Result";
 import {
   create_success_result,

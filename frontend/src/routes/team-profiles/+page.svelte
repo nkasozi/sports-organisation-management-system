@@ -15,8 +15,8 @@
     build_authorization_list_filter,
     check_entity_permission,
     type UserScopeProfile,
-  } from "$lib/core/interfaces/ports/DataAuthorizationPort";
-  import { get_data_authorization_adapter } from "$lib/adapters/services/DataAuthorizationAdapter";
+  } from "$lib/core/interfaces/ports";
+  import { get_authorization_adapter } from "$lib/adapters/iam/LocalAuthorizationAdapter";
 
   type ViewMode = "list" | "create" | "edit";
 
@@ -68,7 +68,7 @@
     const filter = build_profile_authorization_filter();
     const teams_result = await team_use_cases.list(filter);
     if (teams_result.success) {
-      foreign_key_options["team_id"] = teams_result.data.map((t) => ({
+      foreign_key_options["team_id"] = teams_result.data.map((t: { id: any; name: any; }) => ({
         value: t.id,
         label: t.name,
       }));
@@ -178,7 +178,7 @@
     );
 
     if (!can_read) {
-      await get_data_authorization_adapter().check_authorized(
+      await get_authorization_adapter().check_entity_authorized(
         auth_state.current_token.raw_token,
         "teamprofile",
         "read",

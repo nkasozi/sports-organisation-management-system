@@ -2,8 +2,8 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import type {
   TeamRepository,
   TeamFilter,
-} from "../interfaces/adapters/TeamRepository";
-import type { QueryOptions } from "../interfaces/adapters/Repository";
+} from "../interfaces/ports";
+import type { QueryOptions } from "../interfaces/ports";
 import type { Team, CreateTeamInput, UpdateTeamInput } from "../entities/Team";
 import type { Result, PaginatedResult } from "../types/Result";
 import { create_team_use_cases } from "./TeamUseCases";

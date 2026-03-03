@@ -20,8 +20,8 @@
   import {
     build_authorization_list_filter,
     type UserScopeProfile,
-  } from "$lib/core/interfaces/ports/DataAuthorizationPort";
-  import { get_data_authorization_adapter } from "$lib/adapters/services/DataAuthorizationAdapter";
+  } from "$lib/core/interfaces/ports";
+  import { get_authorization_adapter } from "$lib/adapters/iam/LocalAuthorizationAdapter";
 
   const player_use_cases = get_player_use_cases();
   const team_use_cases = get_team_use_cases();
@@ -95,7 +95,7 @@
     const auth_state = get(auth_store);
     if (auth_state.current_token) {
       const authorization_result =
-        await get_data_authorization_adapter().check_authorized(
+        await get_authorization_adapter().check_entity_authorized(
           auth_state.current_token.raw_token,
           "playerteammembership",
           "create",

@@ -18,7 +18,7 @@ Uses explicit handlers instead of events for predictable data flow
     get_disabled_crud_actions,
     auth_store,
   } from "../../presentation/stores/auth";
-  import { check_entity_permission } from "../../core/interfaces/ports/DataAuthorizationPort";
+  import { check_entity_permission } from "$lib/core/interfaces/ports";
   import type { UserProfile } from "../../presentation/stores/auth";
   import DynamicEntityForm from "./DynamicEntityForm.svelte";
   import DynamicEntityList from "./DynamicEntityList.svelte";

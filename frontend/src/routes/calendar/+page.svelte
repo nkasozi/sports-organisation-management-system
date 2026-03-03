@@ -25,7 +25,7 @@
   import {
     build_authorization_list_filter,
     type UserScopeProfile,
-  } from "$lib/core/interfaces/ports/DataAuthorizationPort";
+  } from "$lib/core/interfaces/ports";
   import type { Organization } from "$lib/core/entities/Organization";
   import type { Team } from "$lib/core/entities/Team";
   import type { Competition } from "$lib/core/entities/Competition";
@@ -34,7 +34,7 @@
     Activity,
     CreateActivityInput,
   } from "$lib/core/entities/Activity";
-  import type { CalendarEvent } from "$lib/core/interfaces/ports/ActivityUseCasesPort";
+  import type { CalendarEvent } from "$lib/core/interfaces/ports/internal/usecases/ActivityUseCasesPort";
   import { DEFAULT_REMINDERS } from "$lib/core/entities/Activity";
 
   type LoadingState = "idle" | "loading" | "success" | "error";

@@ -9,8 +9,8 @@ import type {
 import type {
   FixtureRepository,
   FixtureFilter,
-} from "../interfaces/adapters/FixtureRepository";
-import type { QueryOptions } from "../interfaces/adapters/Repository";
+} from "../interfaces/ports";
+import type { QueryOptions } from "../interfaces/ports";
 import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
 import { create_failure_result, create_success_result } from "../types/Result";
 import {
@@ -19,7 +19,7 @@ import {
 } from "../entities/Fixture";
 import { get_repository_container } from "../../infrastructure/container";
 import type { EntityOperationResult, EntityListResult } from "./BaseUseCases";
-import type { FixtureUseCasesPort } from "../interfaces/ports/FixtureUseCasesPort";
+import type { FixtureUseCasesPort } from "../interfaces/ports";
 import type { Team } from "../entities/Team";
 
 export type FixtureUseCases = FixtureUseCasesPort;

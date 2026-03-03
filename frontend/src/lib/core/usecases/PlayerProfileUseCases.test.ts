@@ -1,10 +1,10 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import type { PlayerProfileRepository } from "../interfaces/adapters/PlayerProfileRepository";
+import type { PlayerProfileRepository } from "../interfaces/ports";
 import type {
   PlayerProfile,
   CreatePlayerProfileInput,
 } from "../entities/PlayerProfile";
-import type { QueryOptions } from "../interfaces/adapters/Repository";
+import type { QueryOptions } from "../interfaces/ports";
 import type { PaginatedAsyncResult } from "../types/Result";
 import { create_success_result, create_failure_result } from "../types/Result";
 import { create_player_profile_use_cases } from "./PlayerProfileUseCases";

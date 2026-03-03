@@ -3,7 +3,7 @@ import {
   create_live_game_log_use_cases,
   type LiveGameLogUseCases,
 } from "./LiveGameLogUseCases";
-import type { LiveGameLogRepository } from "../interfaces/adapters/LiveGameLogRepository";
+import type { LiveGameLogRepository } from "../interfaces/ports";
 import type { LiveGameLog } from "../entities/LiveGameLog";
 
 function create_mock_live_game_log(

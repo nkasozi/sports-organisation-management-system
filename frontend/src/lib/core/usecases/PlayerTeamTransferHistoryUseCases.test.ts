@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { create_player_team_transfer_history_use_cases } from "./PlayerTeamTransferHistoryUseCases";
-import type { PlayerTeamTransferHistoryRepository } from "../interfaces/adapters/PlayerTeamTransferHistoryRepository";
-import type { PlayerTeamMembershipRepository } from "../interfaces/adapters/PlayerTeamMembershipRepository";
+import type { PlayerTeamTransferHistoryRepository } from "../interfaces/ports";
+import type { PlayerTeamMembershipRepository } from "../interfaces/ports";
 import type {
   PlayerTeamTransferHistory,
   CreatePlayerTeamTransferHistoryInput,

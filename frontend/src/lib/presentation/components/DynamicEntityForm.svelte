@@ -44,8 +44,8 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
     get_authorization_restricted_fields,
     get_authorization_preselect_values,
     type UserScopeProfile,
-  } from "$lib/core/interfaces/ports/DataAuthorizationPort";
-  import { get_data_authorization_adapter } from "$lib/adapters/services/DataAuthorizationAdapter";
+  } from "$lib/core/interfaces/ports";
+  import { get_authorization_adapter } from "$lib/adapters/iam/LocalAuthorizationAdapter";
   import { ensure_auth_profile } from "../logic/authGuard";
   import { onMount } from "svelte";
 
@@ -102,7 +102,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
       const required_action = is_edit_mode ? "update" : "create";
 
       const authorization_result =
-        await get_data_authorization_adapter().check_authorized(
+        await get_authorization_adapter().check_entity_authorized(
           auth_state.current_token.raw_token,
           normalized_type,
           required_action,
@@ -581,7 +581,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
     }
 
     const competition_teams = comp_teams_result.data.items;
-    competition_team_ids = new Set(competition_teams.map((ct) => ct.team_id));
+    competition_team_ids = new Set(competition_teams.map((ct: { team_id: any; }) => ct.team_id));
 
     const team_use_cases = get_use_cases_for_entity_type("team");
     if (!team_use_cases) {

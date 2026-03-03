@@ -6,14 +6,14 @@ import type {
 import type {
   PlayerRepository,
   PlayerFilter,
-} from "../interfaces/adapters/PlayerRepository";
-import type { QueryOptions } from "../interfaces/adapters/Repository";
+} from "../interfaces/ports";
+import type { QueryOptions } from "../interfaces/ports";
 import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
 import type {
   EntityOperationResult,
   EntityListResult,
 } from "../entities/BaseEntity";
-import type { PlayerUseCasesPort } from "../interfaces/ports/PlayerUseCasesPort";
+import type { PlayerUseCasesPort } from "../interfaces/ports";
 import { create_failure_result } from "../types/Result";
 import { validate_player_input } from "../entities/Player";
 import { get_repository_container } from "../../infrastructure/container";

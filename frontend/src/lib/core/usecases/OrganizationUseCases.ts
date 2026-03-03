@@ -6,14 +6,14 @@ import type {
 import type {
   OrganizationRepository,
   OrganizationFilter,
-} from "../interfaces/adapters/OrganizationRepository";
-import type { QueryOptions } from "../interfaces/adapters/Repository";
+} from "../interfaces/ports";
+import type { QueryOptions } from "../interfaces/ports";
 import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
 import type {
   EntityOperationResult,
   EntityListResult,
 } from "../entities/BaseEntity";
-import type { OrganizationUseCasesPort } from "../interfaces/ports/OrganizationUseCasesPort";
+import type { OrganizationUseCasesPort } from "../interfaces/ports";
 import { create_failure_result } from "../types/Result";
 import { validate_organization_input } from "../entities/Organization";
 import { get_repository_container } from "../../infrastructure/container";

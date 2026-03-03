@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { create_fixture_use_cases } from "./FixtureUseCases";
-import type { FixtureRepository } from "../interfaces/adapters/FixtureRepository";
+import type { FixtureRepository } from "../interfaces/ports";
 import type {
   Fixture,
   CreateFixtureInput,

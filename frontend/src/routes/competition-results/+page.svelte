@@ -29,7 +29,7 @@
   import {
     build_authorization_list_filter,
     type UserScopeProfile,
-  } from "$lib/core/interfaces/ports/DataAuthorizationPort";
+  } from "$lib/core/interfaces/ports";
   import type {
     MatchStaffEntry,
     MatchReportData,
@@ -213,9 +213,9 @@
     if (comp_result.success && comp_result.data) {
       selected_competition = comp_result.data;
 
-      if (selected_competition.competition_format_id) {
+      if (selected_competition?.competition_format_id) {
         const format_result = await format_use_cases.get_by_id(
-          selected_competition.competition_format_id,
+          selected_competition?.competition_format_id,
         );
         if (format_result.success && format_result.data) {
           competition_format = format_result.data;

@@ -16,7 +16,7 @@ import type {
 import type {
   GameEventLogRepository,
   GameEventLogFilter,
-} from "../../core/interfaces/adapters/GameEventLogRepository";
+} from "../../core/interfaces/ports";
 import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
 
 const ENTITY_PREFIX = "gameevent";

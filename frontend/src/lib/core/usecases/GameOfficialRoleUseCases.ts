@@ -6,13 +6,13 @@ import type {
 import type {
   GameOfficialRoleRepository,
   GameOfficialRoleFilter,
-} from "../interfaces/adapters/GameOfficialRoleRepository";
-import type { QueryOptions } from "../interfaces/adapters/Repository";
+} from "../interfaces/ports";
+import type { QueryOptions } from "../interfaces/ports";
 import type { AsyncResult, PaginatedResult } from "../types/Result";
 import { create_failure_result, create_success_result } from "../types/Result";
 import { get_game_official_role_repository } from "../../adapters/repositories/InBrowserGameOfficialRoleRepository";
 import type { EntityOperationResult, EntityListResult } from "./BaseUseCases";
-import type { GameOfficialRoleUseCasesPort } from "../interfaces/ports/GameOfficialRoleUseCasesPort";
+import type { GameOfficialRoleUseCasesPort } from "../interfaces/ports";
 
 export type GameOfficialRoleUseCases = GameOfficialRoleUseCasesPort;
 

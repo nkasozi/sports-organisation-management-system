@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { create_player_position_use_cases } from "./PlayerPositionUseCases";
-import type { PlayerPositionRepository } from "../interfaces/adapters/PlayerPositionRepository";
+import type { PlayerPositionRepository } from "../interfaces/ports";
 import type {
   PlayerPosition,
   CreatePlayerPositionInput,

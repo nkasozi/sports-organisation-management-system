@@ -7,13 +7,13 @@ import { validate_competition_team_input } from "../entities/CompetitionTeam";
 import type {
   CompetitionTeamRepository,
   CompetitionTeamFilter,
-} from "../interfaces/adapters/CompetitionTeamRepository";
-import type { QueryOptions } from "../interfaces/adapters/Repository";
+} from "../interfaces/ports";
+import type { QueryOptions } from "../interfaces/ports";
 import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
 import { create_failure_result } from "../types/Result";
 import { get_competition_team_repository } from "../../adapters/repositories/InBrowserCompetitionTeamRepository";
 import type { EntityOperationResult, EntityListResult } from "./BaseUseCases";
-import type { CompetitionTeamUseCasesPort } from "../interfaces/ports/CompetitionTeamUseCasesPort";
+import type { CompetitionTeamUseCasesPort } from "../interfaces/ports";
 
 export type CompetitionTeamUseCases = CompetitionTeamUseCasesPort;
 

@@ -3,8 +3,8 @@ import { goto } from "$app/navigation";
 import { auth_store } from "../stores/auth";
 import { access_denial_store } from "../stores/accessDenial";
 import type { UserProfile } from "../stores/auth";
-import type { UserRole } from "$lib/core/interfaces/ports/AuthenticationPort";
-import { can_role_access_route } from "$lib/adapters/services/LocalAuthorizationAdapter";
+import type { UserRole } from "$lib/core/interfaces/ports";
+import { can_role_access_route } from "$lib/adapters/iam/LocalAuthorizationAdapter";
 
 export interface AuthGuardResult {
   success: boolean;

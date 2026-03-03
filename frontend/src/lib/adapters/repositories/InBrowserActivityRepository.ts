@@ -8,8 +8,8 @@ import type { BaseEntity } from "../../core/entities/BaseEntity";
 import type {
   ActivityRepository,
   ActivityFilter,
-} from "../../core/interfaces/adapters/ActivityRepository";
-import type { QueryOptions } from "../../core/interfaces/adapters/Repository";
+} from "../../core/interfaces/ports";
+import type { QueryOptions } from "../../core/interfaces/ports";
 import type {
   AsyncResult,
   PaginatedAsyncResult,

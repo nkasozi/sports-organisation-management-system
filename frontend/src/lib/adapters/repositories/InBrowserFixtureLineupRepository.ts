@@ -12,7 +12,7 @@ import type {
 import type {
   FixtureLineupRepository,
   FixtureLineupFilter,
-} from "../../core/interfaces/adapters/FixtureLineupRepository";
+} from "../../core/interfaces/ports";
 import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
 
 const ENTITY_PREFIX = "lineup";

@@ -7,15 +7,15 @@ import { validate_identification_type_input } from "$lib/core/entities/Identific
 import type {
   IdentificationTypeRepository,
   IdentificationTypeFilter,
-} from "$lib/core/interfaces/adapters/IdentificationTypeRepository";
-import type { QueryOptions } from "$lib/core/interfaces/adapters/Repository";
+} from "$lib/core/interfaces/ports";
+import type { QueryOptions } from "$lib/core/interfaces/ports";
 import type { AsyncResult, PaginatedAsyncResult } from "$lib/core/types/Result";
 import {
   create_success_result,
   create_failure_result,
 } from "$lib/core/types/Result";
 import { get_identification_type_repository } from "$lib/adapters/repositories/InBrowserIdentificationTypeRepository";
-import type { IdentificationTypeUseCasesPort } from "$lib/core/interfaces/ports/IdentificationTypeUseCasesPort";
+import type { IdentificationTypeUseCasesPort } from "$lib/core/interfaces/ports";
 
 export type IdentificationTypeUseCases = IdentificationTypeUseCasesPort;
 

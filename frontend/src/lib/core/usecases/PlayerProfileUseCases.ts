@@ -6,8 +6,8 @@ import type {
 import type {
   PlayerProfileRepository,
   PlayerProfileFilter,
-} from "../interfaces/adapters/PlayerProfileRepository";
-import type { QueryOptions } from "../interfaces/adapters/Repository";
+} from "../interfaces/ports";
+import type { QueryOptions } from "../interfaces/ports";
 import type {
   EntityOperationResult,
   EntityListResult,

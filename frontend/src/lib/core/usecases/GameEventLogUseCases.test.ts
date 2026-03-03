@@ -3,7 +3,7 @@ import {
   create_game_event_log_use_cases,
   type GameEventLogUseCases,
 } from "./GameEventLogUseCases";
-import type { GameEventLogRepository } from "../interfaces/adapters/GameEventLogRepository";
+import type { GameEventLogRepository } from "../interfaces/ports";
 import type { GameEventLog } from "../entities/GameEventLog";
 
 function create_mock_game_event_log(

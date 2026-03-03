@@ -4,7 +4,7 @@ import type {
   AuthToken,
   AuthTokenPayload,
   UserRole,
-} from "$lib/core/interfaces/ports/AuthenticationPort";
+} from "$lib/core/interfaces/ports";
 import {
   set_user_context,
   clear_user_context,
@@ -13,28 +13,165 @@ import {
   USER_ROLE_DISPLAY_NAMES,
   USER_ROLE_ORDER,
   ANY_VALUE,
-} from "$lib/core/interfaces/ports/AuthenticationPort";
-import { get_authentication_adapter } from "$lib/adapters/services/LocalAuthenticationAdapter";
+} from "$lib/core/interfaces/ports";
+import { get_authentication_adapter } from "$lib/adapters/iam/LocalAuthenticationAdapter";
 import { get_system_user_repository } from "$lib/adapters/repositories/InBrowserSystemUserRepository";
 import type {
-  AuthorizableAction,
-  AuthorizationCheckResult,
-  EntityAuthorizationMap,
-  FeatureAccess,
   SidebarMenuGroup,
-} from "$lib/core/interfaces/ports/AuthorizationPort";
-import { get_authorization_adapter } from "$lib/adapters/services/LocalAuthorizationAdapter";
+  DataAction,
+  DataCategory,
+  CategoryPermissions,
+  AuthorizableAction,
+  AuthorizationLevel,
+  EntityAuthorizationMap,
+  AuthorizationCheckResult,
+  FeatureAccess,
+} from "$lib/core/interfaces/ports";
 import {
-  type DataAction,
-  check_entity_permission,
-} from "$lib/core/interfaces/ports/DataAuthorizationPort";
+  get_authorization_adapter,
+  get_sidebar_menu_for_role,
+} from "$lib/adapters/iam/LocalAuthorizationAdapter";
 import {
   SEED_ORGANIZATION_IDS,
   SEED_TEAM_IDS,
   SEED_PLAYER_IDS,
   SEED_OFFICIAL_IDS,
 } from "$lib/infrastructure/utils/SeedDataGenerator";
-import { sync_branding_with_profile } from "$lib/adapters/services/brandingSyncService";
+import { sync_branding_with_profile } from "$lib/adapters/initialization/brandingSyncService";
+
+const ENTITY_DATA_CATEGORY_MAP: Record<string, DataCategory> = {
+  organization: "root_level",
+  sport: "root_level",
+  gender: "root_level",
+  competitionformat: "root_level",
+  identificationtype: "root_level",
+  gameofficialrole: "root_level",
+  gameeventtype: "root_level",
+  teamstaffrole: "root_level",
+  playerposition: "root_level",
+  help: "root_level",
+  settings: "org_administrator_level",
+  systemsettings: "org_administrator_level",
+  auditlog: "org_administrator_level",
+  systemuser: "org_administrator_level",
+  competition: "organisation_level",
+  team: "organisation_level",
+  official: "organisation_level",
+  venue: "organisation_level",
+  fixture: "organisation_level",
+  fixturedetailssetup: "organisation_level",
+  livegamelog: "organisation_level",
+  gameeventlog: "organisation_level",
+  playerteammembership: "organisation_level",
+  playerteamtransferhistory: "organisation_level",
+  teamstaff: "team_level",
+  fixturelineup: "team_level",
+  competitionteam: "team_level",
+  player: "player_level",
+  playerprofile: "player_level",
+  identification: "player_level",
+  qualification: "player_level",
+  jerseycolor: "player_level",
+  profilelink: "player_level",
+  activitycategory: "player_level",
+  teamprofile: "player_level",
+};
+
+function get_entity_data_category(entity_type: string): DataCategory {
+  const normalized_type = entity_type.toLowerCase().replace(/[\s_-]/g, "");
+  return ENTITY_DATA_CATEGORY_MAP[normalized_type] || "organisation_level";
+}
+
+function check_entity_permission(
+  role: UserRole,
+  entity_type: string,
+  action: DataAction,
+  permissions: Record<DataCategory, CategoryPermissions>,
+): boolean {
+  const category = get_entity_data_category(entity_type);
+  const category_permissions = permissions[category];
+  return category_permissions[action];
+}
+
+const NO_PERMISSIONS: CategoryPermissions = {
+  create: false,
+  read: false,
+  update: false,
+  delete: false,
+};
+
+const FULL_PERMISSIONS: CategoryPermissions = {
+  create: true,
+  read: true,
+  update: true,
+  delete: true,
+};
+
+const READ_ONLY_PERMISSIONS: CategoryPermissions = {
+  create: false,
+  read: true,
+  update: false,
+  delete: false,
+};
+
+const ROLE_PERMISSION_MAP: Record<
+  UserRole,
+  Record<DataCategory, CategoryPermissions>
+> = {
+  super_admin: {
+    root_level: FULL_PERMISSIONS,
+    org_administrator_level: FULL_PERMISSIONS,
+    organisation_level: FULL_PERMISSIONS,
+    team_level: FULL_PERMISSIONS,
+    player_level: FULL_PERMISSIONS,
+  },
+  org_admin: {
+    root_level: READ_ONLY_PERMISSIONS,
+    org_administrator_level: FULL_PERMISSIONS,
+    organisation_level: FULL_PERMISSIONS,
+    team_level: FULL_PERMISSIONS,
+    player_level: FULL_PERMISSIONS,
+  },
+  officials_manager: {
+    root_level: READ_ONLY_PERMISSIONS,
+    org_administrator_level: NO_PERMISSIONS,
+    organisation_level: {
+      create: false,
+      read: true,
+      update: true,
+      delete: false,
+    },
+    team_level: READ_ONLY_PERMISSIONS,
+    player_level: READ_ONLY_PERMISSIONS,
+  },
+  team_manager: {
+    root_level: READ_ONLY_PERMISSIONS,
+    org_administrator_level: NO_PERMISSIONS,
+    organisation_level: READ_ONLY_PERMISSIONS,
+    team_level: FULL_PERMISSIONS,
+    player_level: FULL_PERMISSIONS,
+  },
+  official: {
+    root_level: READ_ONLY_PERMISSIONS,
+    org_administrator_level: NO_PERMISSIONS,
+    organisation_level: READ_ONLY_PERMISSIONS,
+    team_level: READ_ONLY_PERMISSIONS,
+    player_level: READ_ONLY_PERMISSIONS,
+  },
+  player: {
+    root_level: READ_ONLY_PERMISSIONS,
+    org_administrator_level: NO_PERMISSIONS,
+    organisation_level: READ_ONLY_PERMISSIONS,
+    team_level: READ_ONLY_PERMISSIONS,
+    player_level: { create: true, read: true, update: true, delete: false },
+  },
+};
+
+function get_role_permissions_sync(
+  role: UserRole,
+): Record<DataCategory, CategoryPermissions> {
+  return ROLE_PERMISSION_MAP[role] || ROLE_PERMISSION_MAP.player;
+}
 
 export interface UserProfile {
   id: string;
@@ -297,65 +434,94 @@ function create_auth_store() {
 
   function get_sidebar_menu_items(): SidebarMenuGroup[] {
     const state = get({ subscribe });
-    if (!state.current_token) {
-      console.warn("[AuthStore] No token available for sidebar menu items");
+    if (!state.current_profile) {
+      console.warn("[AuthStore] No profile available for sidebar menu items");
       return [];
     }
-    const authorization_adapter = get_authorization_adapter();
-    return authorization_adapter.get_sidebar_menu_items(state.current_token);
+    return get_sidebar_menu_for_role(state.current_profile.role);
   }
 
   function get_authorization_level(
     entity_type: string,
   ): EntityAuthorizationMap {
     const state = get({ subscribe });
-    if (!state.current_token) {
+    if (!state.current_profile) {
       console.warn(
-        "[AuthStore] No token available for authorization level check",
+        "[AuthStore] No profile available for authorization level check",
       );
       return {
         entity_type,
         authorizations: new Map(),
       };
     }
-    const authorization_adapter = get_authorization_adapter();
-    return authorization_adapter.get_user_authorization_level(
-      state.current_token,
+
+    const role = state.current_profile.role;
+    const permissions = get_role_permissions_sync(role);
+    const authorizations = new Map<AuthorizableAction, AuthorizationLevel>();
+
+    const category = get_entity_data_category(entity_type);
+    const category_perms = permissions[category];
+
+    authorizations.set("view", category_perms.read ? "full" : "none");
+    authorizations.set("list", category_perms.read ? "full" : "none");
+    authorizations.set("create", category_perms.create ? "full" : "none");
+    authorizations.set("edit", category_perms.update ? "full" : "none");
+    authorizations.set("delete", category_perms.delete ? "full" : "none");
+
+    return {
       entity_type,
-    );
+      authorizations,
+    };
   }
 
   function is_authorized_to_execute(
     action: AuthorizableAction,
     entity_type: string,
-    entity_id?: string,
-    target_organization_id?: string,
-    target_team_id?: string,
+    _entity_id?: string,
+    _target_organization_id?: string,
+    _target_team_id?: string,
   ): AuthorizationCheckResult {
     const state = get({ subscribe });
-    if (!state.current_token) {
-      console.warn("[AuthStore] No token available for authorization check");
+    if (!state.current_profile) {
+      console.warn("[AuthStore] No profile available for authorization check");
       return {
         is_authorized: false,
         authorization_level: "none",
-        error_message: "No authentication token available",
+        error_message: "No authentication profile available",
       };
     }
-    const authorization_adapter = get_authorization_adapter();
-    return authorization_adapter.is_authorized_to_execute(
-      state.current_token,
-      action,
+
+    const role = state.current_profile.role;
+    const permissions = get_role_permissions_sync(role);
+    const data_action = map_authorizable_action_to_data_action(action);
+
+    if (!data_action) {
+      return {
+        is_authorized: true,
+        authorization_level: "full",
+      };
+    }
+
+    const is_authorized = check_entity_permission(
+      role,
       entity_type,
-      entity_id,
-      target_organization_id,
-      target_team_id,
+      data_action,
+      permissions,
     );
+
+    return {
+      is_authorized,
+      authorization_level: is_authorized ? "full" : "none",
+      error_message: is_authorized
+        ? undefined
+        : `Role "${role}" does not have "${action}" permission for "${entity_type}"`,
+    };
   }
 
   function get_feature_access(): FeatureAccess {
     const state = get({ subscribe });
-    if (!state.current_token) {
-      console.warn("[AuthStore] No token available for feature access");
+    if (!state.current_profile) {
+      console.warn("[AuthStore] No profile available for feature access");
       return {
         can_reset_demo: false,
         can_view_audit_logs: false,
@@ -363,8 +529,21 @@ function create_auth_store() {
         audit_logs_scope: "none",
       };
     }
-    const authorization_adapter = get_authorization_adapter();
-    return authorization_adapter.get_feature_access(state.current_token);
+
+    const role = state.current_profile.role;
+    const is_super_admin = role === "super_admin";
+    const is_org_admin = role === "org_admin";
+
+    return {
+      can_reset_demo: is_super_admin,
+      can_view_audit_logs: is_super_admin || is_org_admin,
+      can_access_dashboard: true,
+      audit_logs_scope: is_super_admin
+        ? "all"
+        : is_org_admin
+          ? "organization"
+          : "none",
+    };
   }
 
   function is_functionality_disabled(
@@ -377,10 +556,12 @@ function create_auth_store() {
     const data_action = map_authorizable_action_to_data_action(action);
     if (!data_action) return false;
 
+    const permissions = get_role_permissions_sync(state.current_profile.role);
     return !check_entity_permission(
       state.current_profile.role,
       entity_type,
       data_action,
+      permissions,
     );
   }
 
@@ -410,12 +591,15 @@ function create_auth_store() {
       return ["create", "edit", "delete", "list", "view"];
     }
 
+    const permissions = get_role_permissions_sync(state.current_profile.role);
     const disabled_actions: AuthorizableAction[] = [];
+
     if (
       !check_entity_permission(
         state.current_profile.role,
         entity_type,
         "create",
+        permissions,
       )
     ) {
       disabled_actions.push("create");
@@ -425,6 +609,7 @@ function create_auth_store() {
         state.current_profile.role,
         entity_type,
         "update",
+        permissions,
       )
     ) {
       disabled_actions.push("edit");
@@ -434,12 +619,18 @@ function create_auth_store() {
         state.current_profile.role,
         entity_type,
         "delete",
+        permissions,
       )
     ) {
       disabled_actions.push("delete");
     }
     if (
-      !check_entity_permission(state.current_profile.role, entity_type, "read")
+      !check_entity_permission(
+        state.current_profile.role,
+        entity_type,
+        "read",
+        permissions,
+      )
     ) {
       disabled_actions.push("list");
       disabled_actions.push("view");
@@ -510,15 +701,14 @@ export const is_auth_initialized = derived(
 );
 
 export const sidebar_menu_items = derived(auth_store, ($auth) => {
-  if (!$auth.is_initialized || !$auth.current_token) {
+  if (!$auth.is_initialized || !$auth.current_profile) {
     return [];
   }
-  const authorization_adapter = get_authorization_adapter();
-  return authorization_adapter.get_sidebar_menu_items($auth.current_token);
+  return get_sidebar_menu_for_role($auth.current_profile.role);
 });
 
 export const feature_access = derived(auth_store, ($auth) => {
-  if (!$auth.is_initialized || !$auth.current_token) {
+  if (!$auth.is_initialized || !$auth.current_profile) {
     return {
       can_reset_demo: false,
       can_view_audit_logs: false,
@@ -526,8 +716,20 @@ export const feature_access = derived(auth_store, ($auth) => {
       audit_logs_scope: "none" as const,
     };
   }
-  const authorization_adapter = get_authorization_adapter();
-  return authorization_adapter.get_feature_access($auth.current_token);
+  const role = $auth.current_profile.role;
+  const is_super_admin = role === "super_admin";
+  const is_org_admin = role === "org_admin";
+
+  return {
+    can_reset_demo: is_super_admin,
+    can_view_audit_logs: is_super_admin || is_org_admin,
+    can_access_dashboard: true,
+    audit_logs_scope: is_super_admin
+      ? ("all" as const)
+      : is_org_admin
+        ? ("organization" as const)
+        : ("none" as const),
+  };
 });
 
 export function get_entity_authorization_level(

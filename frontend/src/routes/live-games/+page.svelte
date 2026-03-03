@@ -5,8 +5,8 @@
   import { get } from "svelte/store";
   import { ensure_auth_profile } from "$lib/presentation/logic/authGuard";
   import { access_denial_store } from "$lib/presentation/stores/accessDenial";
-  import { get_entity_data_category } from "$lib/core/interfaces/ports/DataAuthorizationPort";
-  import { get_data_authorization_adapter } from "$lib/adapters/services/DataAuthorizationAdapter";
+  import { get_entity_data_category } from "$lib/core/interfaces/ports";
+  import { get_authorization_adapter } from "$lib/adapters/iam/LocalAuthorizationAdapter";
   import type { Fixture } from "$lib/core/entities/Fixture";
   import {
     check_fixture_can_start,
@@ -27,7 +27,7 @@
   import {
     build_authorization_list_filter,
     type UserScopeProfile,
-  } from "$lib/core/interfaces/ports/DataAuthorizationPort";
+  } from "$lib/core/interfaces/ports";
 
   const fixture_use_cases = get_fixture_use_cases();
   const fixture_details_setup_use_cases = get_fixture_details_setup_use_cases();
@@ -66,7 +66,7 @@
     }
 
     const authorization_result =
-      await get_data_authorization_adapter().check_authorized(
+      await get_authorization_adapter().check_entity_authorized(
         auth_state.current_token.raw_token,
         "fixture",
         "read",
@@ -550,7 +550,7 @@
     }
 
     const authorization_result =
-      await get_data_authorization_adapter().check_authorized(
+      await get_authorization_adapter().check_entity_authorized(
         auth_state.current_token.raw_token,
         "official",
         "create",

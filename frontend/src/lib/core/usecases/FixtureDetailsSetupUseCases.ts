@@ -7,12 +7,12 @@ import { validate_fixture_details_setup_input } from "../entities/FixtureDetails
 import type {
   FixtureDetailsSetupRepository,
   FixtureDetailsSetupFilter,
-} from "../interfaces/adapters/FixtureDetailsSetupRepository";
-import type { QueryOptions } from "../interfaces/adapters/Repository";
+} from "../interfaces/ports";
+import type { QueryOptions } from "../interfaces/ports";
 import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
 import { create_success_result, create_failure_result } from "../types/Result";
 import { get_fixture_details_setup_repository } from "../../adapters/repositories/InBrowserFixtureDetailsSetupRepository";
-import type { FixtureDetailsSetupUseCasesPort } from "../interfaces/ports/FixtureDetailsSetupUseCasesPort";
+import type { FixtureDetailsSetupUseCasesPort } from "../interfaces/ports";
 
 export type FixtureDetailsSetupUseCases = FixtureDetailsSetupUseCasesPort;
 

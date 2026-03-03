@@ -6,7 +6,7 @@
   import Layout from "$lib/presentation/components/layout/Layout.svelte";
   import PublicLayout from "$lib/presentation/components/layout/PublicLayout.svelte";
   import FirstTimeSetup from "$lib/presentation/components/ui/FirstTimeSetup.svelte";
-  import { initialize_app_data } from "$lib/adapters/services/appInitializer";
+  import { initialize_app_data } from "$lib/adapters/initialization/appInitializer";
   import { first_time_setup_store } from "$lib/presentation/stores/firstTimeSetup";
 
   injectAnalytics();

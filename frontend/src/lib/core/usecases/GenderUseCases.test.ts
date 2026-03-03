@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { create_gender_use_cases } from "./GenderUseCases";
-import type { GenderRepository } from "../interfaces/adapters/GenderRepository";
+import type { GenderRepository } from "../interfaces/ports";
 import type { Gender, CreateGenderInput } from "../entities/Gender";
 
 function create_mock_repository(): GenderRepository {

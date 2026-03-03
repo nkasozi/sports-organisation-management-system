@@ -6,7 +6,7 @@ import {
 import type {
   Repository,
   QueryOptions,
-} from "../interfaces/adapters/Repository";
+} from "../interfaces/ports";
 import type {
   SystemUser,
   CreateSystemUserInput,

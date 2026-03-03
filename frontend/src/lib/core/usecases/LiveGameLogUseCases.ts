@@ -7,12 +7,12 @@ import type { GamePeriod } from "../entities/Fixture";
 import type {
   LiveGameLogRepository,
   LiveGameLogFilter,
-} from "../interfaces/adapters/LiveGameLogRepository";
+} from "../interfaces/ports";
 import type {
   EntityOperationResult,
   EntityListResult,
 } from "../entities/BaseEntity";
-import type { LiveGameLogUseCasesPort } from "../interfaces/ports/LiveGameLogUseCasesPort";
+import type { LiveGameLogUseCasesPort } from "../interfaces/ports";
 import { get_live_game_log_repository } from "../../adapters/repositories/InBrowserLiveGameLogRepository";
 
 export type LiveGameLogUseCases = LiveGameLogUseCasesPort;

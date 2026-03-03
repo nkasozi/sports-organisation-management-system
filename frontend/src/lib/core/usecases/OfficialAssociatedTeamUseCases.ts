@@ -7,12 +7,12 @@ import { validate_official_associated_team_input } from "$lib/core/entities/Offi
 import type {
   OfficialAssociatedTeamRepository,
   OfficialAssociatedTeamFilter,
-} from "$lib/core/interfaces/adapters/OfficialAssociatedTeamRepository";
-import type { QueryOptions } from "$lib/core/interfaces/adapters/Repository";
+} from "$lib/core/interfaces/ports";
+import type { QueryOptions } from "$lib/core/interfaces/ports";
 import type { AsyncResult, PaginatedAsyncResult } from "$lib/core/types/Result";
 import { create_failure_result } from "$lib/core/types/Result";
 import { get_official_associated_team_repository } from "$lib/adapters/repositories/InBrowserOfficialAssociatedTeamRepository";
-import type { OfficialAssociatedTeamUseCasesPort } from "$lib/core/interfaces/ports/OfficialAssociatedTeamUseCasesPort";
+import type { OfficialAssociatedTeamUseCasesPort } from "$lib/core/interfaces/ports";
 
 export type OfficialAssociatedTeamUseCases = OfficialAssociatedTeamUseCasesPort;
 

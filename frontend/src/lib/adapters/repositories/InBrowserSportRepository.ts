@@ -11,8 +11,8 @@ import {
 import type {
   SportRepository,
   SportFilter,
-} from "../../core/interfaces/adapters/SportRepository";
-import type { QueryOptions } from "../../core/interfaces/adapters/Repository";
+} from "../../core/interfaces/ports";
+import type { QueryOptions } from "../../core/interfaces/ports";
 import {
   create_success_result,
   create_failure_result,

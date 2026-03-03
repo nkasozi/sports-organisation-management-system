@@ -16,7 +16,7 @@ import { DEFAULT_TEAM_LOGO } from "../../core/entities/Team";
 import { DEFAULT_STAFF_AVATAR } from "../../core/entities/TeamStaff";
 import { DEFAULT_OFFICIAL_AVATAR } from "../../core/entities/Official";
 import { DEFAULT_VENUE_IMAGE } from "../../core/entities/Venue";
-import { ANY_VALUE } from "../../core/interfaces/ports/AuthenticationPort";
+import { ANY_VALUE } from "../../core/interfaces/ports";
 
 export const SEED_ORGANIZATION_IDS = {
   UGANDA_HOCKEY_ASSOCIATION: "org_default_1",

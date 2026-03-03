@@ -14,12 +14,12 @@ import type { ActivityCategory } from "../entities/ActivityCategory";
 import type {
   ActivityRepository,
   ActivityFilter,
-} from "../interfaces/adapters/ActivityRepository";
-import type { CompetitionRepository } from "../interfaces/adapters/CompetitionRepository";
-import type { FixtureRepository } from "../interfaces/adapters/FixtureRepository";
-import type { TeamRepository } from "../interfaces/adapters/TeamRepository";
-import type { ActivityCategoryRepository } from "../interfaces/adapters/ActivityCategoryRepository";
-import type { QueryOptions } from "../interfaces/adapters/Repository";
+} from "../interfaces/ports";
+import type { CompetitionRepository } from "../interfaces/ports";
+import type { FixtureRepository } from "../interfaces/ports";
+import type { TeamRepository } from "../interfaces/ports";
+import type { ActivityCategoryRepository } from "../interfaces/ports";
+import type { QueryOptions } from "../interfaces/ports";
 import type { PaginatedAsyncResult } from "../types/Result";
 import type {
   EntityOperationResult,
@@ -29,7 +29,7 @@ import type {
   ActivityUseCasesPort,
   CalendarDateRange,
   CalendarEvent,
-} from "../interfaces/ports/ActivityUseCasesPort";
+} from "../interfaces/ports";
 import { get_repository_container } from "../../infrastructure/container";
 
 export type ActivityUseCases = ActivityUseCasesPort;

@@ -29,7 +29,7 @@ vi.stubGlobal("navigator", {
   userAgent: "TestAgent/1.0",
 });
 
-vi.mock("$lib/adapters/services/brandingSyncService", () => ({
+vi.mock("$lib/adapters/initialization/brandingSyncService", () => ({
   sync_branding_with_profile: vi.fn().mockResolvedValue(undefined),
 }));
 

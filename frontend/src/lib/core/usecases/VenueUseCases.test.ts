@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { create_venue_use_cases } from "./VenueUseCases";
-import type { VenueRepository } from "../interfaces/adapters/VenueRepository";
+import type { VenueRepository } from "../interfaces/ports";
 import type { Venue, CreateVenueInput } from "../entities/Venue";
 
 function create_mock_repository(): VenueRepository {

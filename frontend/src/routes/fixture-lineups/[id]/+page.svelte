@@ -5,7 +5,7 @@
   import { page } from "$app/stores";
   import { ensure_auth_profile } from "$lib/presentation/logic/authGuard";
   import { access_denial_store } from "$lib/presentation/stores/accessDenial";
-  import { get_data_authorization_adapter } from "$lib/adapters/services/DataAuthorizationAdapter";
+  import { get_authorization_adapter } from "$lib/adapters/iam/LocalAuthorizationAdapter";
   import { auth_store } from "$lib/presentation/stores/auth";
   import { get } from "svelte/store";
   import type {
@@ -32,7 +32,7 @@
     get_fixture_lineup_by_id,
     submit_lineup,
     lock_lineup,
-  } from "$lib/adapters/services/fixtureLineupService";
+  } from "$lib/adapters/persistence/fixtureLineupService";
 
   const lineup_use_cases = get_fixture_lineup_use_cases();
   const fixture_use_cases = get_fixture_use_cases();
@@ -71,7 +71,7 @@
     const auth_state = get(auth_store);
     if (auth_state.current_token) {
       const authorization_result =
-        await get_data_authorization_adapter().check_authorized(
+        await get_authorization_adapter().check_entity_authorized(
           auth_state.current_token.raw_token,
           "fixturelineup",
           "read",
@@ -130,8 +130,8 @@
       fixture = fixture_result.data;
 
       const [home_team_result, away_team_result] = await Promise.all([
-        team_use_cases.get_by_id(fixture.home_team_id),
-        team_use_cases.get_by_id(fixture.away_team_id),
+        team_use_cases.get_by_id(fixture?.home_team_id),
+        team_use_cases.get_by_id(fixture?.away_team_id),
       ]);
 
       if (home_team_result.success && home_team_result.data)

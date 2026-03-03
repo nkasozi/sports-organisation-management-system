@@ -7,14 +7,14 @@ import type {
 import type {
   CompetitionFormatRepository,
   CompetitionFormatFilter,
-} from "../interfaces/adapters/CompetitionFormatRepository";
-import type { QueryOptions } from "../interfaces/adapters/Repository";
+} from "../interfaces/ports";
+import type { QueryOptions } from "../interfaces/ports";
 import type { AsyncResult, PaginatedResult } from "../types/Result";
 import { create_failure_result, create_success_result } from "../types/Result";
 import { validate_competition_format_input } from "../entities/CompetitionFormat";
 import { get_competition_format_repository } from "../../adapters/repositories/InBrowserCompetitionFormatRepository";
 import type { EntityOperationResult, EntityListResult } from "./BaseUseCases";
-import type { CompetitionFormatUseCasesPort } from "../interfaces/ports/CompetitionFormatUseCasesPort";
+import type { CompetitionFormatUseCasesPort } from "../interfaces/ports";
 
 export type CompetitionFormatUseCases = CompetitionFormatUseCasesPort;
 

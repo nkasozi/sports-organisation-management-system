@@ -6,14 +6,14 @@ import type {
 import type {
   CompetitionRepository,
   CompetitionFilter,
-} from "../interfaces/adapters/CompetitionRepository";
-import type { QueryOptions } from "../interfaces/adapters/Repository";
+} from "../interfaces/ports";
+import type { QueryOptions } from "../interfaces/ports";
 import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
 import type {
   EntityOperationResult,
   EntityListResult,
 } from "../entities/BaseEntity";
-import type { CompetitionUseCasesPort } from "../interfaces/ports/CompetitionUseCasesPort";
+import type { CompetitionUseCasesPort } from "../interfaces/ports";
 import { create_failure_result } from "../types/Result";
 import { validate_competition_input } from "../entities/Competition";
 import { get_repository_container } from "../../infrastructure/container";

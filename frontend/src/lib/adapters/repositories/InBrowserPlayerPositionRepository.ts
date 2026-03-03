@@ -6,8 +6,8 @@ import type {
   PlayerPositionFilter,
 } from "../../core/entities/PlayerPosition";
 import type { BaseEntity } from "../../core/entities/BaseEntity";
-import type { PlayerPositionRepository } from "../../core/interfaces/adapters/PlayerPositionRepository";
-import type { QueryOptions } from "../../core/interfaces/adapters/Repository";
+import type { PlayerPositionRepository } from "../../core/interfaces/ports";
+import type { QueryOptions } from "../../core/interfaces/ports";
 import type { PaginatedAsyncResult } from "../../core/types/Result";
 import {
   create_success_result,

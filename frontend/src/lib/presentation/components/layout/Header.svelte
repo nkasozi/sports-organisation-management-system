@@ -16,7 +16,7 @@
     is_auth_initialized,
     type UserProfile,
   } from "$lib/presentation/stores/auth";
-  import { USER_ROLE_DISPLAY_NAMES } from "$lib/core/interfaces/ports/AuthenticationPort";
+  import { USER_ROLE_DISPLAY_NAMES } from "$lib/core/interfaces/ports";
   import ThemeToggle from "$lib/presentation/components/theme/ThemeToggle.svelte";
   import SyncStatusIndicator from "$lib/presentation/components/SyncStatusIndicator.svelte";
 

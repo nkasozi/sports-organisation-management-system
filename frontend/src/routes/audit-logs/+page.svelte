@@ -13,7 +13,7 @@
   import {
     get_scope_value,
     type UserScopeProfile,
-  } from "$lib/core/interfaces/ports/DataAuthorizationPort";
+  } from "$lib/core/interfaces/ports";
   import { get } from "svelte/store";
 
   let audit_logs: AuditLog[] = [];

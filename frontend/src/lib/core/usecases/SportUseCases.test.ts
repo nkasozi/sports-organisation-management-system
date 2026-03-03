@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { create_sport_use_cases } from "./SportUseCases";
-import type { SportRepository } from "../interfaces/adapters/SportRepository";
+import type { SportRepository } from "../interfaces/ports";
 import type { Sport, CreateSportInput } from "../entities/Sport";
 
 function create_mock_repository(): SportRepository {

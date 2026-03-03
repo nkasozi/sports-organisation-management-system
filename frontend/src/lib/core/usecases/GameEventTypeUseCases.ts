@@ -7,13 +7,13 @@ import type {
 import type {
   GameEventTypeRepository,
   GameEventTypeFilter,
-} from "../interfaces/adapters/GameEventTypeRepository";
-import type { QueryOptions } from "../interfaces/adapters/Repository";
+} from "../interfaces/ports";
+import type { QueryOptions } from "../interfaces/ports";
 import type { AsyncResult, PaginatedResult } from "../types/Result";
 import { create_failure_result, create_success_result } from "../types/Result";
 import { get_game_event_type_repository } from "../../adapters/repositories/InBrowserGameEventTypeRepository";
 import type { EntityOperationResult, EntityListResult } from "./BaseUseCases";
-import type { GameEventTypeUseCasesPort } from "../interfaces/ports/GameEventTypeUseCasesPort";
+import type { GameEventTypeUseCasesPort } from "../interfaces/ports";
 
 export type GameEventTypeUseCases = GameEventTypeUseCasesPort;
 

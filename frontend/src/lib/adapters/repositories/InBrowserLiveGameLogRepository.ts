@@ -12,7 +12,7 @@ import type {
 import type {
   LiveGameLogRepository,
   LiveGameLogFilter,
-} from "../../core/interfaces/adapters/LiveGameLogRepository";
+} from "../../core/interfaces/ports";
 import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
 
 const ENTITY_PREFIX = "livegame";

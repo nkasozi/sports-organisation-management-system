@@ -19,7 +19,7 @@
   import { get_player_team_membership_use_cases } from "$lib/core/usecases/PlayerTeamMembershipUseCases";
   import { get_player_position_use_cases } from "$lib/core/usecases/PlayerPositionUseCases";
   import { get_organization_use_cases } from "$lib/core/usecases/OrganizationUseCases";
-  import { get_sport_by_id } from "$lib/adapters/services/sportService";
+  import { get_sport_by_id } from "$lib/adapters/persistence/sportService";
   import { create_empty_fixture_lineup_input } from "$lib/core/entities/FixtureLineup";
   import UiWizardStepper from "$lib/presentation/components/UiWizardStepper.svelte";
   import SelectField from "$lib/presentation/components/ui/SelectField.svelte";
@@ -40,8 +40,8 @@
   import {
     build_authorization_list_filter,
     get_authorization_preselect_values,
-  } from "$lib/core/interfaces/ports/DataAuthorizationPort";
-  import { get_data_authorization_adapter } from "$lib/adapters/services/DataAuthorizationAdapter";
+  } from "$lib/core/interfaces/ports";
+  import { get_authorization_adapter } from "$lib/adapters/iam/LocalAuthorizationAdapter";
 
   const lineup_use_cases = get_fixture_lineup_use_cases();
   const fixture_use_cases = get_fixture_use_cases();
@@ -54,7 +54,7 @@
   const organization_use_cases = get_organization_use_cases();
 
   import type { Organization } from "$lib/core/entities/Organization";
-  import { is_field_restricted_by_authorization } from "$lib/core/interfaces/ports/DataAuthorizationPort";
+  import { is_field_restricted_by_authorization } from "$lib/core/interfaces/ports";
 
   $: current_auth_profile = $auth_store.current_profile;
 
@@ -198,7 +198,7 @@
     const auth_state = get(auth_store);
     if (auth_state.current_token) {
       const authorization_result =
-        await get_data_authorization_adapter().check_authorized(
+        await get_authorization_adapter().check_entity_authorized(
           auth_state.current_token.raw_token,
           "fixturelineup",
           "create",
@@ -337,8 +337,8 @@
 
     selected_fixture = fixture_result.data;
 
-    if (selected_fixture.status !== "scheduled") {
-      const status_label = selected_fixture.status.replace(/_/g, " ");
+    if (selected_fixture?.status !== "scheduled") {
+      const status_label = selected_fixture?.status.replace(/_/g, " ");
       error_message = build_error_message(
         `This fixture cannot accept lineup submissions.`,
         `The fixture status is "${status_label}". Only fixtures with "scheduled" status can receive new lineups.`,
@@ -353,7 +353,7 @@
     }
 
     const competition_result = await competition_use_cases.get_by_id(
-      selected_fixture.competition_id,
+      selected_fixture?.competition_id,
     );
     if (!competition_result.success || !competition_result.data) {
       error_message = build_error_message(
@@ -412,8 +412,8 @@
         : [];
 
     const [home_team_result, away_team_result] = await Promise.all([
-      team_use_cases.get_by_id(selected_fixture.home_team_id),
-      team_use_cases.get_by_id(selected_fixture.away_team_id),
+      team_use_cases.get_by_id(selected_fixture?.home_team_id),
+      team_use_cases.get_by_id(selected_fixture?.away_team_id),
     ]);
 
     teams = [];

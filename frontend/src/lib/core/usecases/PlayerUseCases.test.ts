@@ -2,8 +2,8 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import type {
   PlayerRepository,
   PlayerFilter,
-} from "../interfaces/adapters/PlayerRepository";
-import type { QueryOptions } from "../interfaces/adapters/Repository";
+} from "../interfaces/ports";
+import type { QueryOptions } from "../interfaces/ports";
 import type {
   Player,
   CreatePlayerInput,

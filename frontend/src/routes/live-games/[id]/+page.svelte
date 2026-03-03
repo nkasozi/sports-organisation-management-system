@@ -5,7 +5,7 @@
   import { page } from "$app/stores";
   import { ensure_auth_profile } from "$lib/presentation/logic/authGuard";
   import { access_denial_store } from "$lib/presentation/stores/accessDenial";
-  import { get_data_authorization_adapter } from "$lib/adapters/services/DataAuthorizationAdapter";
+  import { get_authorization_adapter } from "$lib/adapters/iam/LocalAuthorizationAdapter";
   import { auth_store } from "$lib/presentation/stores/auth";
   import { get } from "svelte/store";
   import type {
@@ -283,7 +283,7 @@
     const auth_state = get(auth_store);
     if (auth_state.current_token) {
       const authorization_result =
-        await get_data_authorization_adapter().check_authorized(
+        await get_authorization_adapter().check_entity_authorized(
           auth_state.current_token.raw_token,
           "fixture",
           "read",
@@ -331,21 +331,22 @@
     }
 
     fixture = result.data;
+    const loaded_fixture: Fixture = result.data;
     console.log("[LiveGame] Fixture loaded:", {
-      id: fixture.id,
-      home_team_id: fixture.home_team_id,
-      away_team_id: fixture.away_team_id,
-      status: fixture.status,
+      id: loaded_fixture.id,
+      home_team_id: loaded_fixture.home_team_id,
+      away_team_id: loaded_fixture.away_team_id,
+      status: loaded_fixture.status,
     });
 
-    if (fixture.status === "in_progress") {
-      game_clock_seconds = (fixture.current_minute || 0) * 60;
+    if (loaded_fixture.status === "in_progress") {
+      game_clock_seconds = (loaded_fixture.current_minute || 0) * 60;
       start_clock();
     }
 
     const [home_result, away_result] = await Promise.all([
-      team_use_cases.get_by_id(fixture.home_team_id),
-      team_use_cases.get_by_id(fixture.away_team_id),
+      team_use_cases.get_by_id(loaded_fixture.home_team_id),
+      team_use_cases.get_by_id(loaded_fixture.away_team_id),
     ]);
 
     console.log("[LiveGame] Teams loaded:", {
@@ -358,16 +359,17 @@
     if (home_result.success && home_result.data) home_team = home_result.data;
     if (away_result.success && away_result.data) away_team = away_result.data;
 
-    if (fixture.competition_id) {
+    if (loaded_fixture.competition_id) {
       const competition_result = await competition_use_cases.get_by_id(
-        fixture.competition_id,
+        loaded_fixture.competition_id,
       );
       if (competition_result.success && competition_result.data) {
         competition = competition_result.data;
+        const loaded_competition: Competition = competition_result.data;
 
-        if (competition.organization_id) {
+        if (loaded_competition.organization_id) {
           const org_result = await organization_use_cases.get_by_id(
-            competition.organization_id,
+            loaded_competition.organization_id,
           );
           if (
             org_result.success &&
@@ -387,19 +389,19 @@
 
     console.log(
       "[LiveGame] Fetching lineups for home_team_id:",
-      fixture.home_team_id,
+      loaded_fixture.home_team_id,
       "away_team_id:",
-      fixture.away_team_id,
+      loaded_fixture.away_team_id,
     );
 
     const [home_lineup_result, away_lineup_result] = await Promise.all([
       fixture_lineup_use_cases.get_lineup_for_team_in_fixture(
         fixture_id,
-        fixture.home_team_id,
+        loaded_fixture.home_team_id,
       ),
       fixture_lineup_use_cases.get_lineup_for_team_in_fixture(
         fixture_id,
-        fixture.away_team_id,
+        loaded_fixture.away_team_id,
       ),
     ]);
 
@@ -421,20 +423,24 @@
 
     if (home_lineup_result.success && home_lineup_result.data) {
       home_lineup_id = home_lineup_result.data.id;
-      home_players = home_lineup_result.data.selected_players.map((p) => ({
-        ...p,
-        time_on: p.time_on ?? get_default_time_on_for_player(p.is_substitute),
-      }));
+      home_players = home_lineup_result.data.selected_players.map(
+        (p: LineupPlayer) => ({
+          ...p,
+          time_on: p.time_on ?? get_default_time_on_for_player(p.is_substitute),
+        }),
+      );
     } else {
       home_players = [];
     }
 
     if (away_lineup_result.success && away_lineup_result.data) {
       away_lineup_id = away_lineup_result.data.id;
-      away_players = away_lineup_result.data.selected_players.map((p) => ({
-        ...p,
-        time_on: p.time_on ?? get_default_time_on_for_player(p.is_substitute),
-      }));
+      away_players = away_lineup_result.data.selected_players.map(
+        (p: LineupPlayer) => ({
+          ...p,
+          time_on: p.time_on ?? get_default_time_on_for_player(p.is_substitute),
+        }),
+      );
     } else {
       away_players = [];
     }
@@ -450,15 +456,20 @@
         .map((p) => ({ id: p.id, name: `${p.first_name} ${p.last_name}` })),
     });
 
-    if (fixture.venue) {
-      const venue_result = await venue_use_cases.get_by_id(fixture.venue);
+    if (loaded_fixture.venue) {
+      const venue_result = await venue_use_cases.get_by_id(
+        loaded_fixture.venue,
+      );
       if (venue_result.success && venue_result.data) {
         venue = venue_result.data;
       }
     }
 
-    if (fixture.assigned_officials && fixture.assigned_officials.length > 0) {
-      const officials_promises = fixture.assigned_officials.map(
+    if (
+      loaded_fixture.assigned_officials &&
+      loaded_fixture.assigned_officials.length > 0
+    ) {
+      const officials_promises = loaded_fixture.assigned_officials.map(
         async (assignment) => {
           const official_result = await official_use_cases.get_by_id(
             assignment.official_id,
@@ -619,16 +630,19 @@
     const player_results = await Promise.all(player_promises);
 
     const players = player_results
-      .filter((result) => result.success && result.data)
-      .map((result) => result.data);
+      .filter(
+        (result: { success: boolean; data?: any }) =>
+          result.success && result.data,
+      )
+      .map((result: { success: boolean; data?: any }) => result.data as any);
 
     const selected_players: LineupPlayer[] = active_memberships.map(
       (membership: any) => {
         const player = players.find((p: any) => p?.id === membership.player_id);
         return {
           id: membership.player_id,
-          first_name: player?.first_name || "Unknown",
-          last_name: player?.last_name || "Player",
+          first_name: (player?.first_name as string) || "Unknown",
+          last_name: (player?.last_name as string) || "Player",
           jersey_number: membership.jersey_number ?? null,
           position: null,
           is_captain: false,
@@ -970,7 +984,7 @@
       elapsed_minutes,
       "match",
       "",
-      `${get_period_display_name(fixture.current_period)} ended`,
+      `${get_period_display_name(fixture.current_period ?? "period")} ended`,
     );
 
     const result = await fixture_use_cases.record_game_event(
@@ -980,12 +994,13 @@
 
     is_updating = false;
 
-    if (!result.success) {
-      show_toast(`Failed to end period: ${result.error}`, "error");
+    if (!result.success || !result.data) {
+      show_toast(`Failed to end period: failed to record event`, "error");
       return;
     }
 
     fixture = result.data;
+    const current_fixture: Fixture = result.data;
 
     const next_period_map: Record<GamePeriod, GamePeriod> = {
       pre_game: "first_half",
@@ -998,14 +1013,16 @@
       finished: "finished",
     };
 
-    const next = next_period_map[fixture.current_period];
-    await fixture_use_cases.update_period(fixture.id, next, elapsed_minutes);
-    fixture = { ...fixture, current_period: next };
-
-    show_toast(
-      `${get_period_display_name(fixture.current_period)} ended`,
-      "info",
+    const current_period = current_fixture.current_period ?? "pre_game";
+    const next = next_period_map[current_period];
+    await fixture_use_cases.update_period(
+      current_fixture.id,
+      next,
+      elapsed_minutes,
     );
+    fixture = { ...current_fixture, current_period: next } as Fixture;
+
+    show_toast(`${get_period_display_name(next)} ended`, "info");
   }
 
   function navigate_back(): void {

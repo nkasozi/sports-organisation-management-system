@@ -7,13 +7,13 @@ import { validate_player_team_membership_input } from "../entities/PlayerTeamMem
 import type {
   PlayerTeamMembershipRepository,
   PlayerTeamMembershipFilter,
-} from "../interfaces/adapters/PlayerTeamMembershipRepository";
-import type { QueryOptions } from "../interfaces/adapters/Repository";
+} from "../interfaces/ports";
+import type { QueryOptions } from "../interfaces/ports";
 import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
 import { create_failure_result } from "../types/Result";
 import type { EntityListResult, EntityOperationResult } from "./BaseUseCases";
 import { get_player_team_membership_repository } from "../../adapters/repositories/InBrowserPlayerTeamMembershipRepository";
-import type { PlayerTeamMembershipUseCasesPort } from "../interfaces/ports/PlayerTeamMembershipUseCasesPort";
+import type { PlayerTeamMembershipUseCasesPort } from "../interfaces/ports";
 
 export type PlayerTeamMembershipUseCases = PlayerTeamMembershipUseCasesPort;
 

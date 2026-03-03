@@ -7,15 +7,15 @@ import { validate_player_team_transfer_history_input } from "../entities/PlayerT
 import type {
   PlayerTeamTransferHistoryRepository,
   PlayerTeamTransferHistoryFilter,
-} from "../interfaces/adapters/PlayerTeamTransferHistoryRepository";
-import type { PlayerTeamMembershipRepository } from "../interfaces/adapters/PlayerTeamMembershipRepository";
-import type { QueryOptions } from "../interfaces/adapters/Repository";
+} from "../interfaces/ports";
+import type { PlayerTeamMembershipRepository } from "../interfaces/ports";
+import type { QueryOptions } from "../interfaces/ports";
 import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
 import { create_failure_result, create_success_result } from "../types/Result";
 import type { EntityListResult, EntityOperationResult } from "./BaseUseCases";
 import { InBrowserPlayerTeamTransferHistoryRepository } from "../../adapters/repositories/InBrowserPlayerTeamTransferHistoryRepository";
 import { InBrowserPlayerTeamMembershipRepository } from "../../adapters/repositories/InBrowserPlayerTeamMembershipRepository";
-import type { PlayerTeamTransferHistoryUseCasesPort } from "../interfaces/ports/PlayerTeamTransferHistoryUseCasesPort";
+import type { PlayerTeamTransferHistoryUseCasesPort } from "../interfaces/ports";
 
 export type PlayerTeamTransferHistoryUseCases =
   PlayerTeamTransferHistoryUseCasesPort;

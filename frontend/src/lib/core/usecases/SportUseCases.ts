@@ -11,11 +11,11 @@ import type {
 import type {
   SportRepository,
   SportFilter,
-} from "../interfaces/adapters/SportRepository";
-import type { QueryOptions } from "../interfaces/adapters/Repository";
+} from "../interfaces/ports";
+import type { QueryOptions } from "../interfaces/ports";
 import { create_success_result, create_failure_result } from "../types/Result";
 import { get_sport_repository } from "../../adapters/repositories/InBrowserSportRepository";
-import type { SportUseCasesPort } from "../interfaces/ports/SportUseCasesPort";
+import type { SportUseCasesPort } from "../interfaces/ports";
 
 export type SportUseCases = SportUseCasesPort;
 

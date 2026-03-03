@@ -10,14 +10,14 @@ import {
 import type {
   ActivityCategoryRepository,
   ActivityCategoryFilter,
-} from "../interfaces/adapters/ActivityCategoryRepository";
-import type { QueryOptions } from "../interfaces/adapters/Repository";
+} from "../interfaces/ports";
+import type { QueryOptions } from "../interfaces/ports";
 import type { PaginatedAsyncResult } from "../types/Result";
 import type {
   EntityOperationResult,
   EntityListResult,
 } from "../entities/BaseEntity";
-import type { ActivityCategoryUseCasesPort } from "../interfaces/ports/ActivityCategoryUseCasesPort";
+import type { ActivityCategoryUseCasesPort } from "../interfaces/ports";
 import { get_repository_container } from "../../infrastructure/container";
 
 export type ActivityCategoryUseCases = ActivityCategoryUseCasesPort;

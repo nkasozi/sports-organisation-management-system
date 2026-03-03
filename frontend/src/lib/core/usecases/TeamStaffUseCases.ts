@@ -4,15 +4,15 @@ import type {
   UpdateTeamStaffInput,
 } from "../entities/TeamStaff";
 import type { TeamStaffRole } from "../entities/TeamStaffRole";
-import type { TeamStaffFilter } from "../interfaces/adapters/TeamStaffRepository";
-import type { QueryOptions } from "../interfaces/adapters/Repository";
+import type { TeamStaffFilter } from "../interfaces/ports";
+import type { QueryOptions } from "../interfaces/ports";
 import type { AsyncResult, PaginatedResult } from "../types/Result";
 import { create_failure_result, create_success_result } from "../types/Result";
 import { validate_team_staff_input } from "../entities/TeamStaff";
 import { get_team_staff_repository } from "../../adapters/repositories/InBrowserTeamStaffRepository";
 import { get_team_staff_role_repository } from "../../adapters/repositories/InBrowserTeamStaffRoleRepository";
 import type { EntityOperationResult, EntityListResult } from "./BaseUseCases";
-import type { TeamStaffUseCasesPort } from "../interfaces/ports/TeamStaffUseCasesPort";
+import type { TeamStaffUseCasesPort } from "../interfaces/ports";
 
 export type TeamStaffUseCases = TeamStaffUseCasesPort;
 

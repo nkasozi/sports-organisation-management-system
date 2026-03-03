@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { create_organization_use_cases } from "./OrganizationUseCases";
-import type { OrganizationRepository } from "../interfaces/adapters/OrganizationRepository";
+import type { OrganizationRepository } from "../interfaces/ports";
 import type {
   Organization,
   CreateOrganizationInput,

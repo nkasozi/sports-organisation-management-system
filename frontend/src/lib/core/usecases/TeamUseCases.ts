@@ -2,14 +2,14 @@ import type { Team, CreateTeamInput, UpdateTeamInput } from "../entities/Team";
 import type {
   TeamRepository,
   TeamFilter,
-} from "../interfaces/adapters/TeamRepository";
-import type { QueryOptions } from "../interfaces/adapters/Repository";
+} from "../interfaces/ports";
+import type { QueryOptions } from "../interfaces/ports";
 import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
 import type {
   EntityOperationResult,
   EntityListResult,
 } from "../entities/BaseEntity";
-import type { TeamUseCasesPort } from "../interfaces/ports/TeamUseCasesPort";
+import type { TeamUseCasesPort } from "../interfaces/ports";
 import { create_failure_result } from "../types/Result";
 import { validate_team_input } from "../entities/Team";
 import { get_repository_container } from "../../infrastructure/container";

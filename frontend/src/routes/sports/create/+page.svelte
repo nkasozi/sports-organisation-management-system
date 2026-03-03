@@ -17,7 +17,7 @@
     create_basketball_sport_preset,
     create_field_hockey_sport_preset,
   } from "$lib/core/entities/Sport";
-  import { sportService } from "$lib/adapters/services/sportService";
+  import { sportService } from "$lib/adapters/persistence/sportService";
   import FormField from "$lib/presentation/components/ui/FormField.svelte";
   import EnumSelectField from "$lib/presentation/components/ui/EnumSelectField.svelte";
   import Toast from "$lib/presentation/components/ui/Toast.svelte";

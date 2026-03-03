@@ -1,10 +1,10 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import type { ProfileLinkRepository } from "../interfaces/adapters/ProfileLinkRepository";
+import type { ProfileLinkRepository } from "../interfaces/ports";
 import type {
   ProfileLink,
   CreateProfileLinkInput,
 } from "../entities/ProfileLink";
-import type { QueryOptions } from "../interfaces/adapters/Repository";
+import type { QueryOptions } from "../interfaces/ports";
 import type { PaginatedAsyncResult } from "../types/Result";
 import { create_success_result, create_failure_result } from "../types/Result";
 import { create_profile_link_use_cases } from "./ProfileLinkUseCases";

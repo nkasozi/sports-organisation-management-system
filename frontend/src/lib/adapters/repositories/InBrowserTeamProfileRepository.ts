@@ -8,8 +8,8 @@ import type { BaseEntity } from "../../core/entities/BaseEntity";
 import type {
   TeamProfileRepository,
   TeamProfileFilter,
-} from "../../core/interfaces/adapters/TeamProfileRepository";
-import type { QueryOptions } from "../../core/interfaces/adapters/Repository";
+} from "../../core/interfaces/ports";
+import type { QueryOptions } from "../../core/interfaces/ports";
 import type {
   PaginatedAsyncResult,
   AsyncResult,

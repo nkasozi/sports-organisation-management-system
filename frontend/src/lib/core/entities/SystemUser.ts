@@ -1,5 +1,5 @@
 import type { BaseEntity, EntityStatus } from "./BaseEntity";
-import type { UserRole } from "../interfaces/ports/AuthenticationPort";
+import type { UserRole } from "../interfaces/ports";
 
 export type SystemUserRole = UserRole;
 

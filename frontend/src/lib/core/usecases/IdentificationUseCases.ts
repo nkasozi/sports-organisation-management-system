@@ -8,15 +8,15 @@ import { validate_identification_input } from "$lib/core/entities/Identification
 import type {
   IdentificationRepository,
   IdentificationFilter,
-} from "$lib/core/interfaces/adapters/IdentificationRepository";
-import type { QueryOptions } from "$lib/core/interfaces/adapters/Repository";
+} from "$lib/core/interfaces/ports";
+import type { QueryOptions } from "$lib/core/interfaces/ports";
 import type { AsyncResult, PaginatedAsyncResult } from "$lib/core/types/Result";
 import {
   create_success_result,
   create_failure_result,
 } from "$lib/core/types/Result";
 import { get_identification_repository } from "$lib/adapters/repositories/InBrowserIdentificationRepository";
-import type { IdentificationUseCasesPort } from "$lib/core/interfaces/ports/IdentificationUseCasesPort";
+import type { IdentificationUseCasesPort } from "$lib/core/interfaces/ports";
 
 export type IdentificationUseCases = IdentificationUseCasesPort;
 

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { create_identification_use_cases } from "./IdentificationUseCases";
-import type { IdentificationRepository } from "../interfaces/adapters/IdentificationRepository";
+import type { IdentificationRepository } from "../interfaces/ports";
 import type {
   Identification,
   CreateIdentificationInput,

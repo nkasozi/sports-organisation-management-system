@@ -9,12 +9,12 @@ import { is_scoring_event } from "../entities/GameEventLog";
 import type {
   GameEventLogRepository,
   GameEventLogFilter,
-} from "../interfaces/adapters/GameEventLogRepository";
+} from "../interfaces/ports";
 import type {
   EntityOperationResult,
   EntityListResult,
 } from "../entities/BaseEntity";
-import type { GameEventLogUseCasesPort } from "../interfaces/ports/GameEventLogUseCasesPort";
+import type { GameEventLogUseCasesPort } from "../interfaces/ports";
 import { get_game_event_log_repository } from "../../adapters/repositories/InBrowserGameEventLogRepository";
 
 export type GameEventLogUseCases = GameEventLogUseCasesPort;

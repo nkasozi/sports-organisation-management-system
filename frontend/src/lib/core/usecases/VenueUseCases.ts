@@ -6,14 +6,14 @@ import type {
 import type {
   VenueRepository,
   VenueFilter,
-} from "../interfaces/adapters/VenueRepository";
-import type { QueryOptions } from "../interfaces/adapters/Repository";
+} from "../interfaces/ports";
+import type { QueryOptions } from "../interfaces/ports";
 import type { AsyncResult } from "../types/Result";
 import type {
   EntityOperationResult,
   EntityListResult,
 } from "../entities/BaseEntity";
-import type { VenueUseCasesPort } from "../interfaces/ports/VenueUseCasesPort";
+import type { VenueUseCasesPort } from "../interfaces/ports";
 import { create_failure_result } from "../types/Result";
 import { validate_venue_input } from "../entities/Venue";
 import { get_venue_repository } from "../../adapters/repositories/InBrowserVenueRepository";

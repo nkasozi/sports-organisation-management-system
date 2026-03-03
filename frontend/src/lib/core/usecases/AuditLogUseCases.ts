@@ -9,7 +9,7 @@ import type {
   InBrowserAuditLogRepository,
   AuditLogFilter,
 } from "../../adapters/repositories/InBrowserAuditLogRepository";
-import type { QueryOptions } from "../interfaces/adapters/Repository";
+import type { QueryOptions } from "../interfaces/ports";
 import type {
   EntityOperationResult,
   EntityListResult,

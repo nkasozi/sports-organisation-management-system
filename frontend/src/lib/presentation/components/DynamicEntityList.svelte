@@ -27,8 +27,8 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
   import {
     build_authorization_list_filter,
     type UserScopeProfile,
-  } from "$lib/core/interfaces/ports/DataAuthorizationPort";
-  import { get_data_authorization_adapter } from "$lib/adapters/services/DataAuthorizationAdapter";
+  } from "$lib/core/interfaces/ports";
+  import { get_authorization_adapter } from "$lib/adapters/iam/LocalAuthorizationAdapter";
   import { ensure_auth_profile } from "../logic/authGuard";
 
   export let entity_type: string;
@@ -570,7 +570,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
       const normalized_type = entity_type.toLowerCase().replace(/[\s_-]/g, "");
       if (auth_state.current_token) {
         const authorization_result =
-          await get_data_authorization_adapter().check_authorized(
+          await get_authorization_adapter().check_entity_authorized(
             auth_state.current_token.raw_token,
             normalized_type,
             "read",

@@ -8,9 +8,9 @@ import type { BaseEntity } from "../../core/entities/BaseEntity";
 import type {
   PlayerRepository,
   PlayerFilter,
-} from "../../core/interfaces/adapters/PlayerRepository";
-import type { PlayerTeamMembershipRepository } from "../../core/interfaces/adapters/PlayerTeamMembershipRepository";
-import type { QueryOptions } from "../../core/interfaces/adapters/Repository";
+} from "../../core/interfaces/ports";
+import type { PlayerTeamMembershipRepository } from "../../core/interfaces/ports";
+import type { QueryOptions } from "../../core/interfaces/ports";
 import type { PaginatedAsyncResult } from "../../core/types/Result";
 import {
   create_success_result,

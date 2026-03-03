@@ -8,8 +8,8 @@ import type { BaseEntity } from "../../core/entities/BaseEntity";
 import type {
   VenueRepository,
   VenueFilter,
-} from "../../core/interfaces/adapters/VenueRepository";
-import type { QueryOptions } from "../../core/interfaces/adapters/Repository";
+} from "../../core/interfaces/ports";
+import type { QueryOptions } from "../../core/interfaces/ports";
 import type { PaginatedAsyncResult } from "../../core/types/Result";
 import {
   create_success_result,

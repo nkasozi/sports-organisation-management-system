@@ -26,7 +26,7 @@ vi.mock("$app/navigation", () => ({
   goto: vi.fn(),
 }));
 
-vi.mock("$lib/adapters/services/brandingSyncService", () => ({
+vi.mock("$lib/adapters/initialization/brandingSyncService", () => ({
   sync_branding_with_profile: vi.fn().mockResolvedValue(undefined),
 }));
 
@@ -37,8 +37,8 @@ import {
   current_user_role_display,
   current_profile_display_name,
 } from "./auth";
-import { get_sidebar_menu_for_role } from "$lib/adapters/services/LocalAuthorizationAdapter";
-import type { UserRole } from "$lib/core/interfaces/ports/AuthenticationPort";
+import { get_sidebar_menu_for_role } from "$lib/adapters/iam/LocalAuthorizationAdapter";
+import type { UserRole } from "$lib/core/interfaces/ports";
 
 describe("auth_store integration", () => {
   beforeEach(async () => {
@@ -279,13 +279,13 @@ describe("auth_store integration", () => {
       await auth_store.switch_profile(super_admin_profile!.id);
       const auth_level = auth_store.get_authorization_level("team");
 
-      expect(auth_level.authorizations.get("create")).toBe("any");
-      expect(auth_level.authorizations.get("list")).toBe("any");
-      expect(auth_level.authorizations.get("edit")).toBe("any");
-      expect(auth_level.authorizations.get("delete")).toBe("any");
+      expect(auth_level.authorizations.get("create")).toBe("full");
+      expect(auth_level.authorizations.get("list")).toBe("full");
+      expect(auth_level.authorizations.get("edit")).toBe("full");
+      expect(auth_level.authorizations.get("delete")).toBe("full");
     });
 
-    it("player cannot create/delete teams", async () => {
+    it("player cannot create/delete teams but can view", async () => {
       const profiles = get(auth_store).available_profiles;
       const player_profile = profiles.find((p) => p.role === "player");
 
@@ -293,7 +293,7 @@ describe("auth_store integration", () => {
       const auth_level = auth_store.get_authorization_level("team");
 
       expect(auth_level.authorizations.get("create")).toBe("none");
-      expect(auth_level.authorizations.get("list")).toBe("player");
+      expect(auth_level.authorizations.get("list")).toBe("full");
       expect(auth_level.authorizations.get("delete")).toBe("none");
     });
   });

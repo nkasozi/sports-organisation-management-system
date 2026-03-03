@@ -26,7 +26,7 @@
   import { get_team_use_cases } from "$lib/core/usecases/TeamUseCases";
   import { get_competition_team_use_cases } from "$lib/core/usecases/CompetitionTeamUseCases";
   import { get_competition_format_use_cases } from "$lib/core/usecases/CompetitionFormatUseCases";
-  import { get_sport_by_id } from "$lib/adapters/services/sportService";
+  import { get_sport_by_id } from "$lib/adapters/persistence/sportService";
   import LoadingStateWrapper from "$lib/presentation/components/ui/LoadingStateWrapper.svelte";
   import FormField from "$lib/presentation/components/ui/FormField.svelte";
   import SelectField from "$lib/presentation/components/ui/SelectField.svelte";
@@ -38,7 +38,7 @@
   import {
     build_authorization_list_filter,
     type UserScopeProfile,
-  } from "$lib/core/interfaces/ports/DataAuthorizationPort";
+  } from "$lib/core/interfaces/ports";
   import type { SquadGenerationStrategy } from "$lib/core/entities/Competition";
 
   const competition_use_cases = get_competition_use_cases();
@@ -222,23 +222,23 @@
     );
 
     form_data = {
-      name: competition.name,
-      description: competition.description,
-      organization_id: competition.organization_id,
-      competition_format_id: competition.competition_format_id,
-      team_ids: competition.team_ids || [],
+      name: competition?.name,
+      description: competition?.description,
+      organization_id: competition?.organization_id,
+      competition_format_id: competition?.competition_format_id,
+      team_ids: competition?.team_ids || [],
       allow_auto_squad_submission:
-        competition.allow_auto_squad_submission || false,
+        competition?.allow_auto_squad_submission || false,
       allow_auto_fixture_details_setup:
-        competition.allow_auto_fixture_details_setup || false,
-      start_date: competition.start_date,
-      end_date: competition.end_date,
-      registration_deadline: competition.registration_deadline,
-      max_teams: competition.max_teams,
-      entry_fee: competition.entry_fee,
-      prize_pool: competition.prize_pool,
-      location: competition.location,
-      rule_overrides: competition.rule_overrides || {},
+        competition?.allow_auto_fixture_details_setup || false,
+      start_date: competition?.start_date,
+      end_date: competition?.end_date,
+      registration_deadline: competition?.registration_deadline,
+      max_teams: competition?.max_teams,
+      entry_fee: competition?.entry_fee,
+      prize_pool: competition?.prize_pool,
+      location: competition?.location,
+      rule_overrides: competition?.rule_overrides || {},
     };
 
     const selected_organization = organizations.find(

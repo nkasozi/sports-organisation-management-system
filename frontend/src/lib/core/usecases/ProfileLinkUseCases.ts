@@ -6,8 +6,8 @@ import type {
 import type {
   ProfileLinkRepository,
   ProfileLinkFilter,
-} from "../interfaces/adapters/ProfileLinkRepository";
-import type { QueryOptions } from "../interfaces/adapters/Repository";
+} from "../interfaces/ports";
+import type { QueryOptions } from "../interfaces/ports";
 import type {
   EntityOperationResult,
   EntityListResult,

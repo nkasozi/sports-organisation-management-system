@@ -12,7 +12,7 @@ import {
 import type {
   QueryOptions,
   Repository,
-} from "../../core/interfaces/adapters/Repository";
+} from "../../core/interfaces/ports";
 import {
   generate_unique_id,
   create_timestamp_fields,

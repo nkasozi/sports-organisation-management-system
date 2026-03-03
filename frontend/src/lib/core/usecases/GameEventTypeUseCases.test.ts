@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { create_game_event_type_use_cases } from "./GameEventTypeUseCases";
-import type { GameEventTypeRepository } from "../interfaces/adapters/GameEventTypeRepository";
+import type { GameEventTypeRepository } from "../interfaces/ports";
 import type {
   GameEventType,
   CreateGameEventTypeInput,

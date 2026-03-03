@@ -9,8 +9,8 @@ import type { BaseEntity } from "../../core/entities/BaseEntity";
 import type {
   CompetitionTeamRepository,
   CompetitionTeamFilter,
-} from "../../core/interfaces/adapters/CompetitionTeamRepository";
-import type { QueryOptions } from "../../core/interfaces/adapters/Repository";
+} from "../../core/interfaces/ports";
+import type { QueryOptions } from "../../core/interfaces/ports";
 import type {
   PaginatedAsyncResult,
   AsyncResult,

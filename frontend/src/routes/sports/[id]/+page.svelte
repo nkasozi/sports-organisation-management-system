@@ -14,7 +14,7 @@
     ScoringRule,
   } from "$lib/core/entities/Sport";
   import type { LoadingState } from "$lib/presentation/components/ui/LoadingStateWrapper.svelte";
-  import { sportService } from "$lib/adapters/services/sportService";
+  import { sportService } from "$lib/adapters/persistence/sportService";
   import LoadingStateWrapper from "$lib/presentation/components/ui/LoadingStateWrapper.svelte";
   import FormField from "$lib/presentation/components/ui/FormField.svelte";
   import EnumSelectField from "$lib/presentation/components/ui/EnumSelectField.svelte";

@@ -8,15 +8,15 @@ import { validate_qualification_input } from "$lib/core/entities/Qualification";
 import type {
   QualificationRepository,
   QualificationFilter,
-} from "$lib/core/interfaces/adapters/QualificationRepository";
-import type { QueryOptions } from "$lib/core/interfaces/adapters/Repository";
+} from "$lib/core/interfaces/ports";
+import type { QueryOptions } from "$lib/core/interfaces/ports";
 import type { AsyncResult, PaginatedAsyncResult } from "$lib/core/types/Result";
 import {
   create_success_result,
   create_failure_result,
 } from "$lib/core/types/Result";
 import { get_qualification_repository } from "$lib/adapters/repositories/InBrowserQualificationRepository";
-import type { QualificationUseCasesPort } from "$lib/core/interfaces/ports/QualificationUseCasesPort";
+import type { QualificationUseCasesPort } from "$lib/core/interfaces/ports";
 
 export type QualificationUseCases = QualificationUseCasesPort;
 

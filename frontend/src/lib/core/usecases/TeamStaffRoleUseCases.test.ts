@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { create_team_staff_role_use_cases } from "./TeamStaffRoleUseCases";
-import type { TeamStaffRoleRepository } from "../interfaces/adapters/TeamStaffRoleRepository";
+import type { TeamStaffRoleRepository } from "../interfaces/ports";
 import type {
   TeamStaffRole,
   CreateTeamStaffRoleInput,

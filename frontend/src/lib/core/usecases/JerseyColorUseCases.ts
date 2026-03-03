@@ -8,15 +8,15 @@ import { validate_jersey_color_input } from "$lib/core/entities/JerseyColor";
 import type {
   JerseyColorRepository,
   JerseyColorFilter,
-} from "$lib/core/interfaces/adapters/JerseyColorRepository";
-import type { QueryOptions } from "$lib/core/interfaces/adapters/Repository";
+} from "$lib/core/interfaces/ports";
+import type { QueryOptions } from "$lib/core/interfaces/ports";
 import type { AsyncResult, PaginatedAsyncResult } from "$lib/core/types/Result";
 import {
   create_success_result,
   create_failure_result,
 } from "$lib/core/types/Result";
 import { get_jersey_color_repository } from "$lib/adapters/repositories/InBrowserJerseyColorRepository";
-import type { JerseyColorUseCasesPort } from "$lib/core/interfaces/ports/JerseyColorUseCasesPort";
+import type { JerseyColorUseCasesPort } from "$lib/core/interfaces/ports";
 
 export type JerseyColorUseCases = JerseyColorUseCasesPort;
 

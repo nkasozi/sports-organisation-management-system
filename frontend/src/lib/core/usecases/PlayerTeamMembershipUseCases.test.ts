@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { create_player_team_membership_use_cases } from "./PlayerTeamMembershipUseCases";
-import type { PlayerTeamMembershipRepository } from "../interfaces/adapters/PlayerTeamMembershipRepository";
+import type { PlayerTeamMembershipRepository } from "../interfaces/ports";
 import type {
   PlayerTeamMembership,
   CreatePlayerTeamMembershipInput,

@@ -5,13 +5,13 @@ import type {
   PlayerPositionFilter,
 } from "../entities/PlayerPosition";
 import { validate_player_position_input } from "../entities/PlayerPosition";
-import type { PlayerPositionRepository } from "../interfaces/adapters/PlayerPositionRepository";
-import type { QueryOptions } from "../interfaces/adapters/Repository";
+import type { PlayerPositionRepository } from "../interfaces/ports";
+import type { QueryOptions } from "../interfaces/ports";
 import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
 import { create_failure_result, create_success_result } from "../types/Result";
 import { get_player_position_repository } from "../../adapters/repositories/InBrowserPlayerPositionRepository";
 import type { EntityOperationResult, EntityListResult } from "./BaseUseCases";
-import type { PlayerPositionUseCasesPort } from "../interfaces/ports/PlayerPositionUseCasesPort";
+import type { PlayerPositionUseCasesPort } from "../interfaces/ports";
 
 export type PlayerPositionUseCases = PlayerPositionUseCasesPort;
 

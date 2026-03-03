@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { create_game_official_role_use_cases } from "./GameOfficialRoleUseCases";
-import type { GameOfficialRoleRepository } from "../interfaces/adapters/GameOfficialRoleRepository";
+import type { GameOfficialRoleRepository } from "../interfaces/ports";
 import type {
   GameOfficialRole,
   CreateGameOfficialRoleInput,

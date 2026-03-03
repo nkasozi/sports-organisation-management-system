@@ -1,12 +1,12 @@
-import type { OrganizationRepository } from "../core/interfaces/adapters/OrganizationRepository";
-import type { CompetitionRepository } from "../core/interfaces/adapters/CompetitionRepository";
-import type { TeamRepository } from "../core/interfaces/adapters/TeamRepository";
-import type { PlayerRepository } from "../core/interfaces/adapters/PlayerRepository";
-import type { OfficialRepository } from "../core/interfaces/adapters/OfficialRepository";
-import type { FixtureRepository } from "../core/interfaces/adapters/FixtureRepository";
-import type { ActivityRepository } from "../core/interfaces/adapters/ActivityRepository";
-import type { ActivityCategoryRepository } from "../core/interfaces/adapters/ActivityCategoryRepository";
-import type { CalendarTokenRepository } from "../core/interfaces/adapters/CalendarTokenRepository";
+import type { OrganizationRepository } from "../core/interfaces/ports";
+import type { CompetitionRepository } from "../core/interfaces/ports";
+import type { TeamRepository } from "../core/interfaces/ports";
+import type { PlayerRepository } from "../core/interfaces/ports";
+import type { OfficialRepository } from "../core/interfaces/ports";
+import type { FixtureRepository } from "../core/interfaces/ports";
+import type { ActivityRepository } from "../core/interfaces/ports";
+import type { ActivityCategoryRepository } from "../core/interfaces/ports";
+import type { CalendarTokenRepository } from "../core/interfaces/ports";
 
 import {
   get_organization_repository,
@@ -29,15 +29,15 @@ import {
 } from "../adapters/repositories/InBrowserAuditLogRepository";
 import { get_calendar_token_repository } from "../adapters/repositories/InBrowserCalendarTokenRepository";
 
-import type { OrganizationUseCasesPort } from "../core/interfaces/ports/OrganizationUseCasesPort";
-import type { CompetitionUseCasesPort } from "../core/interfaces/ports/CompetitionUseCasesPort";
-import type { TeamUseCasesPort } from "../core/interfaces/ports/TeamUseCasesPort";
-import type { PlayerUseCasesPort } from "../core/interfaces/ports/PlayerUseCasesPort";
-import type { OfficialUseCasesPort } from "../core/interfaces/ports/OfficialUseCasesPort";
-import type { FixtureUseCasesPort } from "../core/interfaces/ports/FixtureUseCasesPort";
-import type { ActivityUseCasesPort } from "../core/interfaces/ports/ActivityUseCasesPort";
-import type { ActivityCategoryUseCasesPort } from "../core/interfaces/ports/ActivityCategoryUseCasesPort";
-import type { CalendarTokenUseCasesPort } from "../core/interfaces/ports/CalendarTokenUseCasesPort";
+import type { OrganizationUseCasesPort } from "../core/interfaces/ports";
+import type { CompetitionUseCasesPort } from "../core/interfaces/ports";
+import type { TeamUseCasesPort } from "../core/interfaces/ports";
+import type { PlayerUseCasesPort } from "../core/interfaces/ports";
+import type { OfficialUseCasesPort } from "../core/interfaces/ports";
+import type { FixtureUseCasesPort } from "../core/interfaces/ports";
+import type { ActivityUseCasesPort } from "../core/interfaces/ports";
+import type { ActivityCategoryUseCasesPort } from "../core/interfaces/ports";
+import type { CalendarTokenUseCasesPort } from "../core/interfaces/ports";
 
 import { create_organization_use_cases } from "../core/usecases/OrganizationUseCases";
 import { create_competition_use_cases } from "../core/usecases/CompetitionUseCases";

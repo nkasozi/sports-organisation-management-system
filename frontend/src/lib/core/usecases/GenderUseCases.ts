@@ -7,15 +7,15 @@ import { validate_gender_input } from "$lib/core/entities/Gender";
 import type {
   GenderRepository,
   GenderFilter,
-} from "$lib/core/interfaces/adapters/GenderRepository";
-import type { QueryOptions } from "$lib/core/interfaces/adapters/Repository";
+} from "$lib/core/interfaces/ports";
+import type { QueryOptions } from "$lib/core/interfaces/ports";
 import type { AsyncResult, PaginatedAsyncResult } from "$lib/core/types/Result";
 import {
   create_success_result,
   create_failure_result,
 } from "$lib/core/types/Result";
 import { get_gender_repository } from "$lib/adapters/repositories/InBrowserGenderRepository";
-import type { GenderUseCasesPort } from "$lib/core/interfaces/ports/GenderUseCasesPort";
+import type { GenderUseCasesPort } from "$lib/core/interfaces/ports";
 
 export type GenderUseCases = GenderUseCasesPort;
 

@@ -14,8 +14,8 @@
     build_authorization_list_filter,
     check_entity_permission,
     type UserScopeProfile,
-  } from "$lib/core/interfaces/ports/DataAuthorizationPort";
-  import { get_data_authorization_adapter } from "$lib/adapters/services/DataAuthorizationAdapter";
+  } from "$lib/core/interfaces/ports";
+  import { get_authorization_adapter } from "$lib/adapters/iam/LocalAuthorizationAdapter";
   import { ensure_auth_profile } from "$lib/presentation/logic/authGuard";
 
   type ViewMode = "list" | "create" | "edit";
@@ -69,7 +69,7 @@
     const filter = build_profile_authorization_filter();
     const players_result = await player_use_cases.list(filter);
     if (players_result.success) {
-      foreign_key_options["player_id"] = players_result.data.map((p) => ({
+      foreign_key_options["player_id"] = players_result.data.map((p: { id: any; first_name: any; last_name: any; }) => ({
         value: p.id,
         label: `${p.first_name} ${p.last_name}`,
       }));
@@ -180,7 +180,7 @@
     );
 
     if (!can_read) {
-      await get_data_authorization_adapter().check_authorized(
+      await get_authorization_adapter().check_entity_authorized(
         auth_state.current_token.raw_token,
         "playerprofile",
         "read",

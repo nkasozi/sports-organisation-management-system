@@ -6,12 +6,12 @@ import type {
 import type {
   FixtureLineupRepository,
   FixtureLineupFilter,
-} from "../interfaces/adapters/FixtureLineupRepository";
+} from "../interfaces/ports";
 import type {
   EntityOperationResult,
   EntityListResult,
 } from "../entities/BaseEntity";
-import type { FixtureLineupUseCasesPort } from "../interfaces/ports/FixtureLineupUseCasesPort";
+import type { FixtureLineupUseCasesPort } from "../interfaces/ports";
 import { InBrowserFixtureLineupRepository } from "../../adapters/repositories/InBrowserFixtureLineupRepository";
 
 export type FixtureLineupUseCases = FixtureLineupUseCasesPort;

@@ -6,7 +6,7 @@ import type {
   SystemUserRole,
 } from "../../core/entities/SystemUser";
 import type { BaseEntity, EntityStatus } from "../../core/entities/BaseEntity";
-import type { QueryOptions } from "../../core/interfaces/adapters/Repository";
+import type { QueryOptions } from "../../core/interfaces/ports";
 import type { PaginatedAsyncResult } from "../../core/types/Result";
 import {
   create_success_result,

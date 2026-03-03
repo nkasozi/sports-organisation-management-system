@@ -12,8 +12,8 @@ import {
 import type {
   CalendarTokenRepository,
   CalendarTokenFilter,
-} from "../interfaces/adapters/CalendarTokenRepository";
-import type { QueryOptions } from "../interfaces/adapters/Repository";
+} from "../interfaces/ports";
+import type { QueryOptions } from "../interfaces/ports";
 import type {
   AsyncResult,
   PaginatedAsyncResult,
@@ -27,7 +27,7 @@ import type {
 import type {
   CalendarTokenUseCasesPort,
   CalendarFeedInfo,
-} from "../interfaces/ports/CalendarTokenUseCasesPort";
+} from "../interfaces/ports";
 
 export type CalendarTokenUseCases = CalendarTokenUseCasesPort;
 

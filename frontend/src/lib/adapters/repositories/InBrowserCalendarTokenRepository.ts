@@ -8,8 +8,8 @@ import type { BaseEntity } from "../../core/entities/BaseEntity";
 import type {
   CalendarTokenRepository,
   CalendarTokenFilter,
-} from "../../core/interfaces/adapters/CalendarTokenRepository";
-import type { QueryOptions } from "../../core/interfaces/adapters/Repository";
+} from "../../core/interfaces/ports";
+import type { QueryOptions } from "../../core/interfaces/ports";
 import type {
   AsyncResult,
   PaginatedAsyncResult,
