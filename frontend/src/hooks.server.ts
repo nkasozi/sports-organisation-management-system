@@ -1,5 +1,4 @@
 import type { Handle } from "@sveltejs/kit";
-import { sequence } from "@sveltejs/kit/hooks";
 
 function security_headers(): Handle {
   return async ({ event, resolve }) => {
@@ -22,27 +21,4 @@ function security_headers(): Handle {
   };
 }
 
-async function get_clerk_handler(): Promise<Handle> {
-  try {
-    const { withClerkHandler } = await import("svelte-clerk/server");
-    return withClerkHandler();
-  } catch {
-    return async ({ event, resolve }) => resolve(event);
-  }
-}
-
-let clerk_handler_promise: Promise<Handle> | null = null;
-
-function get_cached_clerk_handler(): Promise<Handle> {
-  if (!clerk_handler_promise) {
-    clerk_handler_promise = get_clerk_handler();
-  }
-  return clerk_handler_promise;
-}
-
-const clerk_handle: Handle = async ({ event, resolve }) => {
-  const handler = await get_cached_clerk_handler();
-  return handler({ event, resolve });
-};
-
-export const handle: Handle = sequence(clerk_handle, security_headers());
+export const handle: Handle = security_headers();

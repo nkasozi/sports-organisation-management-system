@@ -1,6 +1,8 @@
 import { browser } from "$app/environment";
 import { PUBLIC_CLERK_PUBLISHABLE_KEY } from "$env/static/public";
 import { writable, derived, type Readable } from "svelte/store";
+import { Clerk } from "@clerk/clerk-js";
+import { goto } from "$app/navigation";
 
 export interface ClerkUser {
   id: string;
@@ -27,10 +29,61 @@ const initial_state: ClerkSessionState = {
 
 const clerk_store = writable<ClerkSessionState>(initial_state);
 
-let get_token_fn: (() => Promise<string | null>) | null = null;
+let clerk_instance: Clerk | null = null;
+let is_reloading = false;
+let is_navigating = false;
+let pending_state: ClerkSessionState | null = null;
 
-export function set_clerk_token_getter(fn: () => Promise<string | null>): void {
-  get_token_fn = fn;
+export function set_reloading(): void {
+  is_reloading = true;
+}
+
+export function set_navigating(navigating: boolean): void {
+  is_navigating = navigating;
+  if (!navigating && pending_state) {
+    clerk_store.set(pending_state);
+    pending_state = null;
+  }
+}
+
+function safe_store_update(new_state: ClerkSessionState): void {
+  if (is_reloading) return;
+
+  if (is_navigating) {
+    pending_state = new_state;
+    return;
+  }
+
+  clerk_store.set(new_state);
+}
+
+function sync_clerk_state(): void {
+  if (!clerk_instance || is_reloading) return;
+
+  const clerkUser = clerk_instance.user;
+  const session = clerk_instance.session;
+
+  const user: ClerkUser | null = clerkUser
+    ? {
+        id: clerkUser.id,
+        email_address: clerkUser.emailAddresses?.[0]?.emailAddress ?? "",
+        full_name: clerkUser.fullName ?? "",
+        first_name: clerkUser.firstName ?? "",
+        last_name: clerkUser.lastName ?? "",
+        image_url: clerkUser.imageUrl,
+      }
+    : null;
+
+  const new_state = {
+    is_loaded: true,
+    is_signed_in: !!session,
+    user,
+    session_id: session?.id ?? null,
+  };
+
+  requestAnimationFrame(() => {
+    safe_store_update(new_state);
+  });
 }
 
 export function update_clerk_session_state(
@@ -38,6 +91,8 @@ export function update_clerk_session_state(
   user_id: string | null,
   user_email: string | null,
 ): void {
+  if (is_reloading) return;
+
   const user: ClerkUser | null = user_id
     ? {
         id: user_id,
@@ -48,11 +103,15 @@ export function update_clerk_session_state(
       }
     : null;
 
-  clerk_store.set({
+  const new_state = {
     is_loaded: true,
     is_signed_in,
     user,
     session_id: null,
+  };
+
+  requestAnimationFrame(() => {
+    safe_store_update(new_state);
   });
 }
 
@@ -62,36 +121,80 @@ export async function initialize_clerk(): Promise<boolean> {
   const publishable_key = PUBLIC_CLERK_PUBLISHABLE_KEY;
 
   if (!publishable_key) {
-    console.log(
-      "[Clerk] No PUBLIC_CLERK_PUBLISHABLE_KEY configured, skipping Clerk initialization",
-    );
+    console.log("[Clerk] No PUBLIC_CLERK_PUBLISHABLE_KEY configured, skipping");
+    requestAnimationFrame(() => {
+      safe_store_update({ ...initial_state, is_loaded: true });
+    });
     return false;
   }
 
-  console.log(
-    "[Clerk] Clerk will be initialized via svelte-clerk ClerkProvider",
-  );
-  return true;
+  if (clerk_instance) {
+    console.log("[Clerk] Already initialized");
+    return true;
+  }
+
+  try {
+    clerk_instance = new Clerk(publishable_key);
+
+    await clerk_instance.load({
+      routerPush: (to: string) => goto(to),
+      routerReplace: (to: string) => goto(to, { replaceState: true }),
+    });
+
+    sync_clerk_state();
+
+    clerk_instance.addListener(() => {
+      sync_clerk_state();
+    });
+
+    console.log("[Clerk] Initialized successfully");
+    return true;
+  } catch (error) {
+    console.error("[Clerk] Failed to initialize:", error);
+    requestAnimationFrame(() => {
+      safe_store_update({ ...initial_state, is_loaded: true });
+    });
+    return false;
+  }
+}
+
+export function get_clerk(): Clerk | null {
+  return clerk_instance;
 }
 
 export async function get_session_token(): Promise<string | null> {
-  if (!get_token_fn) {
-    console.warn(
-      "[Clerk] Token getter not set. Make sure ClerkProvider is mounted.",
-    );
+  if (!clerk_instance?.session) {
     return null;
   }
 
   try {
-    return await get_token_fn();
+    const token = await clerk_instance.session.getToken({ template: "convex" });
+    return token;
   } catch (error) {
     console.error("[Clerk] Failed to get session token:", error);
     return null;
   }
 }
 
+export function sign_in_with_redirect(): void {
+  if (!clerk_instance) {
+    console.error("[Clerk] Not initialized");
+    return;
+  }
+  clerk_instance.redirectToSignIn();
+}
+
+export async function sign_out(): Promise<void> {
+  if (!clerk_instance) {
+    console.error("[Clerk] Not initialized");
+    return;
+  }
+  await clerk_instance.signOut();
+  sync_clerk_state();
+}
+
 export function destroy_clerk(): void {
-  get_token_fn = null;
+  clerk_instance = null;
   clerk_store.set(initial_state);
 }
 

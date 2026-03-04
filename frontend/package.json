@@ -17,8 +17,8 @@
   "devDependencies": {
     "@sveltejs/adapter-auto": "^3.0.0",
     "@sveltejs/adapter-vercel": "^5.0.0",
-    "@sveltejs/kit": "^2.0.0",
-    "@sveltejs/vite-plugin-svelte": "^3.0.0",
+    "@sveltejs/kit": "^2.53.0",
+    "@sveltejs/vite-plugin-svelte": "^4.0.0",
     "@types/eslint": "^9.6.0",
     "@typescript-eslint/eslint-plugin": "^8.0.0",
     "@typescript-eslint/parser": "^8.0.0",
@@ -52,7 +52,6 @@
     "dexie": "^4.3.0",
     "jspdf": "^4.2.0",
     "jspdf-autotable": "^5.0.7",
-    "svelte-clerk": "^1.0.0",
     "temporal-polyfill": "^0.3.0"
   }
 }

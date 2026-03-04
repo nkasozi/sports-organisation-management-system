@@ -1,5 +1,26 @@
 <script lang="ts">
-  import { SignIn } from "svelte-clerk";
+  import { onMount } from "svelte";
+  import { get_clerk } from "$lib/adapters/iam/clerkAuthService";
+
+  let sign_in_container: HTMLDivElement;
+
+  onMount(() => {
+    const clerk = get_clerk();
+    if (clerk && sign_in_container) {
+      clerk.mountSignIn(sign_in_container, {
+        routing: "path",
+        path: "/sign-in",
+        forceRedirectUrl: "/",
+      });
+    }
+
+    return () => {
+      const clerk = get_clerk();
+      if (clerk) {
+        clerk.unmountSignIn(sign_in_container);
+      }
+    };
+  });
 </script>
 
 <div
@@ -14,8 +35,6 @@
         Use the email address provided by your organization administrator
       </p>
     </div>
-    <div class="mt-8 flex justify-center">
-      <SignIn routing="path" path="/sign-in" afterSignInUrl="/" />
-    </div>
+    <div class="mt-8 flex justify-center" bind:this={sign_in_container}></div>
   </div>
 </div>

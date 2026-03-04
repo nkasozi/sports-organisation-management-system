@@ -1,9 +1,7 @@
 <script lang="ts">
-  import { onMount } from "svelte";
-  import { page } from "$app/stores";
-  import { PUBLIC_CLERK_PUBLISHABLE_KEY } from "$env/static/public";
+  import { onMount, onDestroy } from "svelte";
+  import { page, navigating } from "$app/stores";
   import { injectAnalytics } from "@vercel/analytics/sveltekit";
-  import { ClerkProvider, ClerkLoaded, ClerkLoading } from "svelte-clerk";
   import "../app.css";
   import Layout from "$lib/presentation/components/layout/Layout.svelte";
   import PublicLayout from "$lib/presentation/components/layout/PublicLayout.svelte";
@@ -11,80 +9,80 @@
   import AuthChecker from "$lib/presentation/components/auth/AuthChecker.svelte";
   import { initialize_app_data } from "$lib/adapters/initialization/appInitializer";
   import { first_time_setup_store } from "$lib/presentation/stores/firstTimeSetup";
+  import {
+    is_clerk_loaded,
+    set_navigating,
+  } from "$lib/adapters/iam/clerkAuthService";
+  import { get } from "svelte/store";
 
   injectAnalytics();
 
-  const clerk_publishable_key = PUBLIC_CLERK_PUBLISHABLE_KEY;
   let show_first_time_setup = false;
+  let app_ready = false;
   let clerk_ready = false;
+  let current_path = "";
+  let setup_status_message = "";
+  let setup_progress_percentage = 0;
+  let unsubscribe_page: (() => void) | null = null;
+  let unsubscribe_setup: (() => void) | null = null;
+  let unsubscribe_clerk: (() => void) | null = null;
+  let unsubscribe_navigating: (() => void) | null = null;
 
-  $: is_public_profile_page =
-    $page.url.pathname.startsWith("/profile/") ||
-    $page.url.pathname.startsWith("/team-profile/");
-
-  $: is_auth_page =
-    $page.url.pathname.startsWith("/sign-in") ||
-    $page.url.pathname === "/unauthorized";
-
-  $: if (
-    $first_time_setup_store.is_first_time &&
-    $first_time_setup_store.is_setting_up
-  ) {
-    show_first_time_setup = true;
+  function get_is_public_profile_page(path: string): boolean {
+    return path.startsWith("/profile/") || path.startsWith("/team-profile/");
   }
 
-  $: if ($first_time_setup_store.setup_complete) {
-    show_first_time_setup = false;
-    if (typeof window !== "undefined") {
-      setTimeout(() => window.location.reload(), 50);
-    }
+  function get_is_auth_page(path: string): boolean {
+    return path.startsWith("/sign-in") || path === "/unauthorized";
+  }
+
+  function cleanup_subscriptions(): void {
+    unsubscribe_page?.();
+    unsubscribe_setup?.();
+    unsubscribe_clerk?.();
+    unsubscribe_navigating?.();
+    unsubscribe_page = null;
+    unsubscribe_setup = null;
+    unsubscribe_clerk = null;
+    unsubscribe_navigating = null;
   }
 
   onMount(async () => {
+    current_path = get(page).url.pathname;
+
+    unsubscribe_navigating = navigating.subscribe((nav) => {
+      set_navigating(nav !== null);
+    });
+
+    unsubscribe_page = page.subscribe((p) => {
+      current_path = p.url.pathname;
+    });
+
+    unsubscribe_setup = first_time_setup_store.subscribe((state) => {
+      setup_status_message = state.status_message;
+      setup_progress_percentage = state.progress_percentage;
+      if (state.is_first_time && state.is_setting_up) {
+        show_first_time_setup = true;
+      }
+      if (state.setup_complete) {
+        show_first_time_setup = false;
+      }
+    });
+
+    unsubscribe_clerk = is_clerk_loaded.subscribe((loaded) => {
+      clerk_ready = loaded;
+    });
+
     await initialize_app_data();
-    clerk_ready = true;
+    app_ready = true;
+  });
+
+  onDestroy(() => {
+    cleanup_subscriptions();
   });
 </script>
 
-{#if clerk_publishable_key && clerk_ready}
-  <ClerkProvider publishableKey={clerk_publishable_key}>
-    <ClerkLoading>
-      <div
-        class="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900"
-      >
-        <div class="text-center">
-          <div
-            class="animate-spin rounded-full h-12 w-12 border-b-2 border-theme-primary-600 mx-auto"
-          ></div>
-          <p class="mt-4 text-gray-600 dark:text-gray-400">Loading...</p>
-        </div>
-      </div>
-    </ClerkLoading>
-
-    <ClerkLoaded>
-      <AuthChecker>
-        {#if show_first_time_setup}
-          <FirstTimeSetup
-            status_message={$first_time_setup_store.status_message}
-            progress_percentage={$first_time_setup_store.progress_percentage}
-          />
-        {/if}
-
-        {#if is_auth_page}
-          <slot />
-        {:else if is_public_profile_page}
-          <PublicLayout>
-            <slot />
-          </PublicLayout>
-        {:else}
-          <Layout>
-            <slot />
-          </Layout>
-        {/if}
-      </AuthChecker>
-    </ClerkLoaded>
-  </ClerkProvider>
-{:else if clerk_publishable_key && !clerk_ready}
+{#if !app_ready || !clerk_ready}
   <div
     class="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900"
   >
@@ -92,26 +90,28 @@
       <div
         class="animate-spin rounded-full h-12 w-12 border-b-2 border-theme-primary-600 mx-auto"
       ></div>
-      <p class="mt-4 text-gray-600 dark:text-gray-400">Initializing...</p>
+      <p class="mt-4 text-gray-600 dark:text-gray-400">Loading...</p>
     </div>
   </div>
 {:else}
-  {#if show_first_time_setup}
-    <FirstTimeSetup
-      status_message={$first_time_setup_store.status_message}
-      progress_percentage={$first_time_setup_store.progress_percentage}
-    />
-  {/if}
+  <AuthChecker>
+    {#if show_first_time_setup}
+      <FirstTimeSetup
+        status_message={setup_status_message}
+        progress_percentage={setup_progress_percentage}
+      />
+    {/if}
 
-  {#if is_auth_page}
-    <slot />
-  {:else if is_public_profile_page}
-    <PublicLayout>
+    {#if get_is_auth_page(current_path)}
       <slot />
-    </PublicLayout>
-  {:else}
-    <Layout>
-      <slot />
-    </Layout>
-  {/if}
+    {:else if get_is_public_profile_page(current_path)}
+      <PublicLayout>
+        <slot />
+      </PublicLayout>
+    {:else}
+      <Layout>
+        <slot />
+      </Layout>
+    {/if}
+  </AuthChecker>
 {/if}

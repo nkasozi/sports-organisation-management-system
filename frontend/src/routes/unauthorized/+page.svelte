@@ -1,10 +1,15 @@
 <script lang="ts">
-  import { SignOutButton } from "svelte-clerk";
+  import { sign_out } from "$lib/adapters/iam/clerkAuthService";
   import { page } from "$app/stores";
 
   $: error_message =
     $page.url.searchParams.get("message") ||
     "You don't have access to this system.";
+
+  async function handle_sign_out(): Promise<void> {
+    await sign_out();
+    window.location.href = "/";
+  }
 </script>
 
 <div
@@ -42,27 +47,26 @@
     </div>
 
     <div class="mt-8 space-y-4">
-      <SignOutButton>
-        <button
-          type="button"
-          class="w-full flex justify-center items-center px-4 py-3 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors duration-200"
+      <button
+        type="button"
+        class="w-full flex justify-center items-center px-4 py-3 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors duration-200"
+        on:click={handle_sign_out}
+      >
+        <svg
+          class="mr-2 h-5 w-5"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
         >
-          <svg
-            class="mr-2 h-5 w-5"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-            />
-          </svg>
-          Sign Out and Try Again
-        </button>
-      </SignOutButton>
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+          />
+        </svg>
+        Sign Out and Try Again
+      </button>
 
       <a
         href="mailto:support@example.com"

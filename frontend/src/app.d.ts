@@ -1,10 +1,6 @@
-/// <reference types="svelte-clerk/env" />
-
 declare global {
   namespace App {
-    interface Locals {
-      auth: import("svelte-clerk/server").AuthObject;
-    }
+    interface Locals {}
     interface PageData {
       userId?: string | null;
     }

@@ -16,16 +16,23 @@ const initial_state: FirstTimeSetupState = {
   setup_complete: false,
 };
 
+let is_updating_blocked = false;
+
 function create_first_time_setup_store() {
   const { subscribe, set, update } =
     writable<FirstTimeSetupState>(initial_state);
 
   return {
     subscribe,
+    block_updates: (): void => {
+      is_updating_blocked = true;
+    },
     set_first_time: (is_first: boolean): void => {
+      if (is_updating_blocked) return;
       update((state) => ({ ...state, is_first_time: is_first }));
     },
     start_setup: (): void => {
+      if (is_updating_blocked) return;
       update((state) => ({
         ...state,
         is_setting_up: true,
@@ -34,6 +41,7 @@ function create_first_time_setup_store() {
       }));
     },
     update_progress: (message: string, percentage: number): void => {
+      if (is_updating_blocked) return;
       update((state) => ({
         ...state,
         status_message: message,
@@ -41,6 +49,7 @@ function create_first_time_setup_store() {
       }));
     },
     complete_setup: (): void => {
+      if (is_updating_blocked) return;
       update((state) => ({
         ...state,
         is_setting_up: false,
@@ -50,6 +59,7 @@ function create_first_time_setup_store() {
       }));
     },
     reset: (): void => {
+      is_updating_blocked = false;
       set(initial_state);
     },
   };
