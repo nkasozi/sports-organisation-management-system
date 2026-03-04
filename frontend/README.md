@@ -50,29 +50,34 @@ graph TB
 - **Flexibility**: Easy to swap implementations (e.g., replace InMemory repository with Supabase)
 - **Maintainability**: Clear boundaries between business logic and infrastructure concerns
 
+**Our Port Structure**:
+
+All port interfaces live in `core/interfaces/ports/` and are organized by direction:
+
+- **Internal Ports** (`ports/internal/usecases/`) - Interfaces the UI calls into the core
+  - `PlayerUseCasesPort`, `TeamUseCasesPort`, `FixtureUseCasesPort`, etc.
+  - These define CRUD operations and business logic the presentation layer can invoke
+
+- **External Ports** (`ports/external/`) - Interfaces the core depends on for external services
+  - `repositories/` - Data access interfaces (`PlayerRepository`, `TeamRepository`, etc.)
+  - `iam/` - Identity & Access Management interfaces (`AuthenticationPort`, `AuthorizationPort`)
+
+**Adapters** (implemented in `adapters/`):
+
+- `repositories/` - InMemory implementations of repository interfaces
+- `iam/` - Local authentication and role-based authorization
+- `persistence/` - Service adapters for data persistence
+- `initialization/` - Seeding and data reset utilities
+
 **Layer Responsibilities**:
 
-| Layer              | Direction  | Purpose                                              |
-| ------------------ | ---------- | ---------------------------------------------------- |
-| **Ports**          | Data IN →  | Interfaces for external systems sending data to core |
-| **Adapters**       | Data OUT → | Implementations for core sending data to external    |
-| **Core**           | —          | Pure business logic with no external dependencies    |
-| **Presentation**   | —          | UI components and Svelte stores                      |
-| **Infrastructure** | —          | Cross-cutting utilities (DI container, registries)   |
-
-**Port Interfaces** (defined in `core/interfaces/ports/`):
-
-- `PlayerUseCasesPort`: Player management operations
-- `TeamUseCasesPort`: Team management operations
-- `FixtureUseCasesPort`: Fixture/game scheduling operations
-- All entities have corresponding UseCase port interfaces
-
-**Adapter Interfaces** (defined in `core/interfaces/adapters/`):
-
-- `PlayerRepository`: Abstract player data storage
-- `TeamRepository`: Abstract team data storage
-- `FixtureRepository`: Abstract fixture data storage
-- All entities have corresponding Repository interfaces
+| Layer              | Purpose                                                             |
+| ------------------ | ------------------------------------------------------------------- |
+| **Core**           | Business logic, entities, use cases, domain services                |
+| **Ports**          | Interface contracts (internal use cases, external repositories/IAM) |
+| **Adapters**       | Concrete implementations of port interfaces                         |
+| **Presentation**   | UI components, Svelte stores, page routes                           |
+| **Infrastructure** | DI container, metadata registries, utilities                        |
 
 **Dependency Injection**: All external dependencies injected via `UseCasesContainer` and `RepositoryContainer` for runtime flexibility and testability.
 
@@ -91,17 +96,23 @@ src/lib/
 │   │   ├── Fixture.ts                 # Game/fixture entity with events
 │   │   └── ...                        # 20+ domain entities
 │   │
-│   ├── interfaces/                    # Abstract contracts (TypeScript interfaces)
-│   │   ├── ports/                     # Interfaces for INCOMING data (use cases)
-│   │   │   ├── BaseUseCasesPort.ts    # Base use case interface
-│   │   │   ├── PlayerUseCasesPort.ts  # Player operations contract
-│   │   │   └── ...                    # All entity use case ports
-│   │   └── adapters/                  # Interfaces for OUTGOING data (repositories)
-│   │       ├── Repository.ts          # Base repository interface
-│   │       ├── PlayerRepository.ts    # Player data access contract
-│   │       └── ...                    # All entity repository interfaces
+│   ├── interfaces/                    # Port interfaces (TypeScript interfaces)
+│   │   └── ports/
+│   │       ├── internal/              # Interfaces UI calls INTO the core
+│   │       │   └── usecases/          # Use case port interfaces
+│   │       │       ├── BaseUseCasesPort.ts
+│   │       │       ├── PlayerUseCasesPort.ts
+│   │       │       └── ...            # 30+ entity use case ports
+│   │       └── external/              # Interfaces core DEPENDS ON
+│   │           ├── repositories/      # Data access interfaces
+│   │           │   ├── Repository.ts  # Base repository interface
+│   │           │   ├── PlayerRepository.ts
+│   │           │   └── ...            # 30+ entity repository interfaces
+│   │           └── iam/               # Identity & access interfaces
+│   │               ├── AuthenticationPort.ts
+│   │               └── AuthorizationPort.ts
 │   │
-│   ├── usecases/                      # Application use cases (implementations)
+│   ├── usecases/                      # Use case implementations
 │   │   ├── BaseUseCases.ts            # Base use case types
 │   │   ├── PlayerUseCases.ts          # Player business logic
 │   │   ├── FixtureUseCases.ts         # Fixture operations with game events
@@ -116,25 +127,28 @@ src/lib/
 │       ├── Result.ts                  # Result<T, E> type for error handling
 │       └── SubEntityFilter.ts         # Filter types
 │
-├── ports/                             # PORTS LAYER (Data IN)
-│   │                                  # Implementations that DRIVE the application
-│   │                                  # (Currently empty - reserved for webhooks, etc.)
-│
-├── adapters/                          # ADAPTERS LAYER (Data OUT)
-│   │                                  # Implementations the application DRIVES
+├── adapters/                          # ADAPTERS LAYER
+│   │                                  # Concrete implementations of port interfaces
 │   │
 │   ├── repositories/                  # Repository implementations
 │   │   ├── InMemoryBaseRepository.ts  # Generic in-memory storage
 │   │   ├── InMemoryPlayerRepository.ts
-│   │   └── ...                        # All entity repositories
+│   │   └── ...                        # All entity repository implementations
 │   │
-│   └── services/                      # External service adapters
-│       ├── UnifiedApiService.ts       # API client for backend
+│   ├── iam/                           # Identity & Access Management adapters
+│   │   ├── LocalAuthorizationAdapter.ts  # Role-based authorization
+│   │   └── LocalAuthenticationAdapter.ts # Local auth for development
+│   │
+│   ├── persistence/                   # Data persistence adapters
+│   │   ├── sportService.ts            # Sport data persistence
+│   │   └── officialService.ts         # Official data persistence
+│   │
+│   └── initialization/                # App initialization adapters
 │       ├── seedingService.ts          # Test data generation
-│       └── ...                        # Other service adapters
+│       └── dataResetService.ts        # Data reset utilities
 │
 ├── presentation/                      # PRESENTATION LAYER
-│   │                                  # User interface components
+│   │                                  # UI components and page logic
 │   │
 │   ├── components/                    # Svelte components
 │   │   ├── DynamicEntityForm.svelte   # Auto-generated CRUD forms
@@ -166,20 +180,20 @@ src/lib/
 
 ### Architecture Quick Reference
 
-| Layer              | Purpose                | Dependencies    | Example                             |
-| ------------------ | ---------------------- | --------------- | ----------------------------------- |
-| **Core**           | Business logic & rules | None (pure TS)  | Validating players, fixture scoring |
-| **Ports**          | External events IN     | Core interfaces | Webhooks, external integrations     |
-| **Adapters**       | External services OUT  | Core interfaces | InMemory storage, API clients       |
-| **Presentation**   | User interface         | Core models     | CRUD forms, game management UI      |
-| **Infrastructure** | Utilities              | None            | DI container, metadata registries   |
+| Layer              | Purpose                 | Dependencies    | Example                             |
+| ------------------ | ----------------------- | --------------- | ----------------------------------- |
+| **Core**           | Business logic & rules  | None (pure TS)  | Validating players, fixture scoring |
+| **Ports**          | Interface contracts     | Core entities   | UseCasesPort, Repository interfaces |
+| **Adapters**       | Port implementations    | Port interfaces | InMemory storage, auth adapters     |
+| **Presentation**   | User interface          | Use case ports  | CRUD forms, game management UI      |
+| **Infrastructure** | Cross-cutting utilities | None            | DI container, metadata registries   |
 
 ### Data Flow
 
 ```
-[User Input] → Presentation → UseCases (Core) → Adapters → [Storage/API]
-                    ↓                ↓
-              Svelte Stores    Domain Services
+[User Input] → Presentation → UseCases (internal port) → Repository (external port) → [Storage]
+                    ↓                    ↓
+              Svelte Stores       Domain Services
                     ↓
               [UI Updates]
 ```
@@ -260,6 +274,85 @@ export interface NewEntityRepository extends Repository<...> {}
   on:entity_deleted={handle_deleted}
 />
 ```
+
+## Authorization System
+
+The application implements a comprehensive role-based access control (RBAC) system that controls both navigation and CRUD operations.
+
+### User Roles
+
+| Role                  | Description                           | Typical User               |
+| --------------------- | ------------------------------------- | -------------------------- |
+| **super_admin**       | Full system access                    | System administrator       |
+| **org_admin**         | Full organization access              | Organization administrator |
+| **officials_manager** | Manages officials within organization | Officials coordinator      |
+| **team_manager**      | Manages team, staff, and players      | Team coach/manager         |
+| **official**          | View-only with self-profile edit      | Referee/umpire             |
+| **player**            | View-only with self-profile edit      | Athlete                    |
+
+### Data Categories
+
+Entities are grouped into permission categories that determine access levels:
+
+| Category                    | Description                 | Example Entities                      |
+| --------------------------- | --------------------------- | ------------------------------------- |
+| **root_level**              | System-wide reference data  | Sport, Gender, CompetitionFormat      |
+| **org_administrator_level** | Organization admin settings | SystemUser, AuditLog, Settings        |
+| **organisation_level**      | Organization-owned data     | Competition, Official, Venue, Fixture |
+| **team_level**              | Team-specific data          | Team, TeamStaff, FixtureLineup        |
+| **player_level**            | Player-specific data        | Player, PlayerProfile, Qualification  |
+
+### Permission Matrix
+
+Each role has CRUD permissions per category:
+
+```
+                    root_level   org_admin_level   organisation_level   team_level   player_level
+super_admin         CRUD         CRUD              CRUD                 CRUD         CRUD
+org_admin           R---         CRUD              CRUD                 CRUD         CRUD
+officials_manager   R---         ----              -RU-                 R---         R---
+team_manager        R---         ----              R---                 -RU-         -RU-
+official            R---         ----              -RU-                 R---         R---
+player              R---         ----              R---                 R---         -RU-
+
+Legend: C=Create, R=Read, U=Update, D=Delete, -=No access
+```
+
+### Role-Based Sidebar Menus
+
+Each role sees a customized sidebar menu:
+
+- **super_admin/org_admin**: Full access to all management sections
+- **team_manager**: "My Team", "My Team Profile", "My Team Staff", "My Players"
+- **official**: "My Official Profile", Live Games, Calendar
+- **player**: "My Profile", "My Team Memberships", Calendar
+
+### UI Authorization Enforcement
+
+The `EntityCrudWrapper` and `DynamicEntityList` components automatically:
+
+1. **Hide buttons** based on permissions (Create, Edit, Delete)
+2. **Show info banners** when access is restricted
+3. **Filter data** to only show relevant records (e.g., player sees only their profile)
+
+```typescript
+// Example: Check if user can edit entity
+const can_edit = await authorization_adapter.check_entity_authorized(
+  token,
+  "team",
+  "update",
+);
+```
+
+### Scope-Based Data Filtering
+
+Users with restricted scopes only see data they're authorized to access:
+
+| Role         | Scope Restriction                         |
+| ------------ | ----------------------------------------- |
+| team_manager | `team_id` - Only see their team's data    |
+| official     | `official_id` - Only see their own record |
+| player       | `player_id` - Only see their own record   |
 
 ## Getting Started
 
@@ -397,19 +490,18 @@ inject_test_use_cases_container({
 - ✅ Generalized CRUD system
 - ✅ Mobile-responsive design
 - ✅ Theme customization
+- ✅ Role-based authorization (RBAC)
+- ✅ Scope-based data filtering
+- ✅ Competition standings and brackets
+- ✅ Player statistics and analytics
+- ✅ Notification system
+- ✅ Export/import functionality
 
 ### In Development
 
 - 🚧 Real-time WebSocket updates
 - 🚧 PWA offline support
 - 🚧 Authentication with Auth0
-
-### Planned
-
-- 📋 Competition standings and brackets
-- 📋 Player statistics and analytics
-- 📋 Notification system
-- 📋 Export/import functionality
 
 ## Contributing
 
