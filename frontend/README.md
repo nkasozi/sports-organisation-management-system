@@ -275,6 +275,81 @@ export interface NewEntityRepository extends Repository<...> {}
 />
 ```
 
+## Zero Trust Security
+
+The application implements a **Zero Trust security model** where every request is verified regardless of origin. Nothing is implicitly trusted.
+
+### Core Principles
+
+| Principle                 | Implementation                                                   |
+| ------------------------- | ---------------------------------------------------------------- |
+| **Never Trust**           | Every action requires token validation before execution          |
+| **Always Verify**         | Authorization checked on every CRUD operation, not just login    |
+| **Least Privilege**       | Users only get permissions needed for their specific role        |
+| **Explicit Verification** | UI buttons hidden AND backend checks prevent unauthorized access |
+| **Micro-segmentation**    | Data partitioned by organization, team, and individual scope     |
+
+### Token-Based Verification
+
+Every operation validates the JWT token:
+
+```typescript
+interface AuthTokenPayload {
+  user_id: string;
+  email: string;
+  display_name: string;
+  role: UserRole;
+  organization_id: string;
+  team_id: string;
+  issued_at: number;
+  expires_at: number;
+}
+```
+
+Token failures are explicit:
+
+- `token_invalid` - Token signature or structure invalid
+- `token_expired` - Token past expiration time
+- `permission_denied` - Valid token but insufficient permissions
+
+### Per-Request Authorization
+
+Unlike session-based systems, authorization is checked on EVERY operation:
+
+1. **Route access** - `can_profile_access_route(token, route)` validates navigation
+2. **Entity CRUD** - `check_entity_authorized(token, entity_type, action)` validates operations
+3. **Data scope** - `build_authorization_list_filter(token, entity_type)` restricts query results
+
+### Defense in Depth
+
+Security is enforced at multiple layers:
+
+```
+Layer 1: Route Guard     → Blocks unauthorized page access
+Layer 2: UI Enforcement  → Hides buttons user can't use
+Layer 3: Action Check    → Validates permission before API call
+Layer 4: Data Filtering  → Restricts query results to authorized scope
+```
+
+### Scope Isolation
+
+Users are isolated to their authorized data scope:
+
+- **Organization scope**: org_admin sees only their organization's data
+- **Team scope**: team_manager sees only their team's players/staff
+- **Individual scope**: players/officials see only their own records
+
+The `UserScopeProfile` enforces these boundaries:
+
+```typescript
+interface UserScopeProfile {
+  organization_id: string; // Organization boundary
+  team_id: string; // Team boundary
+  player_id?: string; // Individual boundary (players)
+  official_id?: string; // Individual boundary (officials)
+}
+```
+
 ## Authorization System
 
 The application implements a comprehensive role-based access control (RBAC) system that controls both navigation and CRUD operations.
