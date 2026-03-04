@@ -1,3 +1,4 @@
+import { PUBLIC_CONVEX_URL } from "$env/static/public";
 import { get_repository_container } from "$lib/infrastructure/container";
 import { get_organization_use_cases } from "$lib/core/usecases/OrganizationUseCases";
 import { get_competition_use_cases } from "$lib/core/usecases/CompetitionUseCases";
@@ -20,6 +21,10 @@ import { initialize_audit_event_handlers } from "$lib/infrastructure/handlers/Au
 import { first_time_setup_store } from "$lib/presentation/stores/firstTimeSetup";
 import { ConvexClient } from "convex/browser";
 import { sync_store } from "$lib/presentation/stores/syncStore";
+import {
+  initialize_clerk,
+  get_session_token,
+} from "$lib/adapters/iam/clerkAuthService";
 
 let initialized = false;
 
@@ -39,18 +44,24 @@ async function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-function initialize_convex_client(): boolean {
-  const convex_url = import.meta.env.VITE_CONVEX_URL;
+function initialize_convex_client(): ConvexClient | null {
+  const convex_url = PUBLIC_CONVEX_URL;
 
   if (!convex_url) {
     console.log(
-      "[Convex] No VITE_CONVEX_URL configured, skipping Convex initialization",
+      "[Convex] No PUBLIC_CONVEX_URL configured, skipping Convex initialization",
     );
-    return false;
+    return null;
   }
 
   try {
     const client = new ConvexClient(convex_url);
+
+    client.setAuth(async () => {
+      const token = await get_session_token();
+      return token ?? undefined;
+    });
+
     sync_store.set_convex_client({
       mutation: (name: string, args: Record<string, unknown>) =>
         client.mutation(name as never, args as never),
@@ -61,10 +72,10 @@ function initialize_convex_client(): boolean {
       "[Convex] Client initialized successfully with URL:",
       convex_url,
     );
-    return true;
+    return client;
   } catch (error) {
     console.error("[Convex] Failed to initialize client:", error);
-    return false;
+    return null;
   }
 }
 
@@ -86,6 +97,7 @@ export async function initialize_app_data(): Promise<boolean> {
   }
   initialize_audit_event_handlers();
 
+  await initialize_clerk();
   initialize_convex_client();
 
   if (is_first_time) {

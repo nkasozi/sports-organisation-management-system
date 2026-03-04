@@ -1,6 +1,6 @@
 <script lang="ts">
   import { createEventDispatcher, onMount } from "svelte";
-  import { goto } from "$app/navigation";
+  import { goto, invalidateAll } from "$app/navigation";
   import {
     theme_store,
     toggle_theme_mode,
@@ -60,7 +60,8 @@
     const success = await auth_store.switch_profile(profile.id);
     if (success) {
       console.log(`[Header] Switched to profile: ${profile.display_name}`);
-      window.location.reload();
+      await invalidateAll();
+      await goto("/", { replaceState: true });
     }
   }
 

@@ -1,5 +1,16 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
+import {
+  require_permission,
+  try_auth,
+  build_scope_filter,
+  AuthenticationError,
+  AuthorizationError,
+} from "./lib/auth_middleware";
+
+function get_entity_type_from_table(table_name: string): string {
+  return table_name.toLowerCase().replace(/_/g, "");
+}
 
 export const upsert_record = mutation({
   args: {
@@ -12,10 +23,32 @@ export const upsert_record = mutation({
     const { table_name, local_id, data, version } = args;
     const synced_at = new Date().toISOString();
 
+    const entity_type = get_entity_type_from_table(table_name);
     const table = ctx.db.query(table_name as any);
     const existing = await table
       .withIndex("by_local_id", (q) => q.eq("local_id", local_id))
       .first();
+
+    try {
+      const action = existing ? "update" : "create";
+      await require_permission(ctx, entity_type, action);
+    } catch (error) {
+      if (error instanceof AuthenticationError) {
+        return {
+          success: false,
+          error: "authentication_required",
+          message: error.message,
+        };
+      }
+      if (error instanceof AuthorizationError) {
+        return {
+          success: false,
+          error: "unauthorized",
+          message: error.message,
+        };
+      }
+      throw error;
+    }
 
     const record_data = {
       ...data,
@@ -44,8 +77,26 @@ export const get_changes_since = query({
   },
   handler: async (ctx, args) => {
     const { table_name, since_timestamp } = args;
+    const entity_type = get_entity_type_from_table(table_name);
+
+    const user = await try_auth(ctx);
+
     const table = ctx.db.query(table_name as any);
-    const all_records = await table.collect();
+    let all_records = await table.collect();
+
+    if (user) {
+      const scope_filter = build_scope_filter(user, entity_type);
+      if (Object.keys(scope_filter).length > 0) {
+        all_records = all_records.filter((record: any) => {
+          for (const [key, value] of Object.entries(scope_filter)) {
+            if (value && record[key] !== value) {
+              return false;
+            }
+          }
+          return true;
+        });
+      }
+    }
 
     return all_records.filter((record: any) => {
       const synced_at =
@@ -62,6 +113,28 @@ export const delete_record = mutation({
   },
   handler: async (ctx, args) => {
     const { table_name, local_id } = args;
+    const entity_type = get_entity_type_from_table(table_name);
+
+    try {
+      await require_permission(ctx, entity_type, "delete");
+    } catch (error) {
+      if (error instanceof AuthenticationError) {
+        return {
+          success: false,
+          error: "authentication_required",
+          message: error.message,
+        };
+      }
+      if (error instanceof AuthorizationError) {
+        return {
+          success: false,
+          error: "unauthorized",
+          message: error.message,
+        };
+      }
+      throw error;
+    }
+
     const table = ctx.db.query(table_name as any);
     const existing = await table
       .withIndex("by_local_id", (q) => q.eq("local_id", local_id))
@@ -90,7 +163,33 @@ export const batch_upsert = mutation({
   },
   handler: async (ctx, args) => {
     const { table_name, records, detect_conflicts = false } = args;
+    const entity_type = get_entity_type_from_table(table_name);
     const synced_at = new Date().toISOString();
+
+    try {
+      await require_permission(ctx, entity_type, "create");
+    } catch (error) {
+      if (error instanceof AuthenticationError) {
+        return {
+          success: false,
+          error: "authentication_required",
+          message: error.message,
+          results: [],
+          conflicts: [],
+        };
+      }
+      if (error instanceof AuthorizationError) {
+        return {
+          success: false,
+          error: "unauthorized",
+          message: error.message,
+          results: [],
+          conflicts: [],
+        };
+      }
+      throw error;
+    }
+
     const results: Array<{
       local_id: string;
       success: boolean;

@@ -37,6 +37,7 @@
     "vitest": "^2.1.8"
   },
   "dependencies": {
+    "@clerk/clerk-js": "^6.0.0",
     "@faker-js/faker": "^9.9.0",
     "@schedule-x/calendar": "^3.7.3",
     "@schedule-x/drag-and-drop": "^3.7.3",
@@ -51,6 +52,7 @@
     "dexie": "^4.3.0",
     "jspdf": "^4.2.0",
     "jspdf-autotable": "^5.0.7",
+    "svelte-clerk": "^1.0.0",
     "temporal-polyfill": "^0.3.0"
   }
 }

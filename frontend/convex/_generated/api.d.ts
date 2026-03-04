@@ -8,6 +8,9 @@
  * @module
  */
 
+import type * as authorization from "../authorization.js";
+import type * as lib_auth_middleware from "../lib/auth_middleware.js";
+import type * as seed_permissions from "../seed_permissions.js";
 import type * as sync from "../sync.js";
 
 import type {
@@ -17,6 +20,9 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  authorization: typeof authorization;
+  "lib/auth_middleware": typeof lib_auth_middleware;
+  seed_permissions: typeof seed_permissions;
   sync: typeof sync;
 }>;
 
