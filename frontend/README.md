@@ -496,11 +496,11 @@ inject_test_use_cases_container({
 - ✅ Player statistics and analytics
 - ✅ Notification system
 - ✅ Export/import functionality
+- ✅ PWA offline support
 
 ### In Development
 
 - 🚧 Real-time WebSocket updates
-- 🚧 PWA offline support
 - 🚧 Authentication with Auth0
 
 ## Contributing
