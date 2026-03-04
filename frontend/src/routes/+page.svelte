@@ -10,6 +10,11 @@
   import { get_fixture_use_cases } from "$lib/core/usecases/FixtureUseCases";
   import { get_sport_use_cases } from "$lib/core/usecases/SportUseCases";
   import { reset_all_data } from "$lib/adapters/initialization/dataResetService";
+  import {
+    initialize_app_data,
+    reset_initialization,
+  } from "$lib/adapters/initialization/appInitializer";
+  import { first_time_setup_store } from "$lib/presentation/stores/firstTimeSetup";
   import { branding_store } from "$lib/presentation/stores/branding";
   import { auth_store } from "$lib/presentation/stores/auth";
   import type { Competition } from "$lib/core/entities/Competition";
@@ -273,7 +278,10 @@
       is_resetting = false;
       return false;
     }
-    window.location.reload();
+    first_time_setup_store.reset();
+    reset_initialization();
+    await initialize_app_data();
+    is_resetting = false;
     return true;
   }
 </script>

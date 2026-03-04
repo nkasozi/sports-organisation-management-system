@@ -199,7 +199,7 @@ function create_default_profiles(): UserProfile[] {
     {
       id: "super-admin-profile",
       display_name: "Super Admin",
-      email: "superadmin@sportsorg.local",
+      email: "nkasozi@gmail.com",
       role: "super_admin",
       organization_id: ANY_VALUE,
       team_id: ANY_VALUE,

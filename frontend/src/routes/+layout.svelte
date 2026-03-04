@@ -3,26 +3,28 @@
   import { page } from "$app/stores";
   import { PUBLIC_CLERK_PUBLISHABLE_KEY } from "$env/static/public";
   import { injectAnalytics } from "@vercel/analytics/sveltekit";
-  import { ClerkProvider } from "svelte-clerk";
+  import { ClerkProvider, ClerkLoaded, ClerkLoading } from "svelte-clerk";
   import "../app.css";
   import Layout from "$lib/presentation/components/layout/Layout.svelte";
   import PublicLayout from "$lib/presentation/components/layout/PublicLayout.svelte";
   import FirstTimeSetup from "$lib/presentation/components/ui/FirstTimeSetup.svelte";
+  import AuthChecker from "$lib/presentation/components/auth/AuthChecker.svelte";
   import { initialize_app_data } from "$lib/adapters/initialization/appInitializer";
   import { first_time_setup_store } from "$lib/presentation/stores/firstTimeSetup";
-  import {
-    set_clerk_token_getter,
-    update_clerk_session_state,
-  } from "$lib/adapters/iam/clerkAuthService";
 
   injectAnalytics();
 
   const clerk_publishable_key = PUBLIC_CLERK_PUBLISHABLE_KEY;
   let show_first_time_setup = false;
+  let clerk_ready = false;
 
   $: is_public_profile_page =
     $page.url.pathname.startsWith("/profile/") ||
     $page.url.pathname.startsWith("/team-profile/");
+
+  $: is_auth_page =
+    $page.url.pathname.startsWith("/sign-in") ||
+    $page.url.pathname === "/unauthorized";
 
   $: if (
     $first_time_setup_store.is_first_time &&
@@ -34,62 +36,65 @@
   $: if ($first_time_setup_store.setup_complete) {
     show_first_time_setup = false;
     if (typeof window !== "undefined") {
-      window.location.reload();
+      setTimeout(() => window.location.reload(), 50);
     }
-  }
-
-  function handle_clerk_loaded(clerk: unknown): void {
-    const clerk_instance = clerk as {
-      session?: {
-        getToken: (opts: { template: string }) => Promise<string | null>;
-      } | null;
-      user?: { id: string; emailAddresses?: { emailAddress: string }[] } | null;
-    };
-
-    if (clerk_instance.session) {
-      set_clerk_token_getter(async () => {
-        const token = await clerk_instance.session?.getToken({
-          template: "convex",
-        });
-        return token ?? null;
-      });
-    }
-
-    const is_signed_in = !!clerk_instance.session;
-    const user_id = clerk_instance.user?.id ?? null;
-    const user_email =
-      clerk_instance.user?.emailAddresses?.[0]?.emailAddress ?? null;
-
-    update_clerk_session_state(is_signed_in, user_id, user_email);
   }
 
   onMount(async () => {
     await initialize_app_data();
+    clerk_ready = true;
   });
 </script>
 
-{#if clerk_publishable_key}
-  <ClerkProvider
-    publishableKey={clerk_publishable_key}
-    on:load={(e: CustomEvent) => handle_clerk_loaded(e.detail)}
-  >
-    {#if show_first_time_setup}
-      <FirstTimeSetup
-        status_message={$first_time_setup_store.status_message}
-        progress_percentage={$first_time_setup_store.progress_percentage}
-      />
-    {/if}
+{#if clerk_publishable_key && clerk_ready}
+  <ClerkProvider publishableKey={clerk_publishable_key}>
+    <ClerkLoading>
+      <div
+        class="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900"
+      >
+        <div class="text-center">
+          <div
+            class="animate-spin rounded-full h-12 w-12 border-b-2 border-theme-primary-600 mx-auto"
+          ></div>
+          <p class="mt-4 text-gray-600 dark:text-gray-400">Loading...</p>
+        </div>
+      </div>
+    </ClerkLoading>
 
-    {#if is_public_profile_page}
-      <PublicLayout>
-        <slot />
-      </PublicLayout>
-    {:else}
-      <Layout>
-        <slot />
-      </Layout>
-    {/if}
+    <ClerkLoaded>
+      <AuthChecker>
+        {#if show_first_time_setup}
+          <FirstTimeSetup
+            status_message={$first_time_setup_store.status_message}
+            progress_percentage={$first_time_setup_store.progress_percentage}
+          />
+        {/if}
+
+        {#if is_auth_page}
+          <slot />
+        {:else if is_public_profile_page}
+          <PublicLayout>
+            <slot />
+          </PublicLayout>
+        {:else}
+          <Layout>
+            <slot />
+          </Layout>
+        {/if}
+      </AuthChecker>
+    </ClerkLoaded>
   </ClerkProvider>
+{:else if clerk_publishable_key && !clerk_ready}
+  <div
+    class="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900"
+  >
+    <div class="text-center">
+      <div
+        class="animate-spin rounded-full h-12 w-12 border-b-2 border-theme-primary-600 mx-auto"
+      ></div>
+      <p class="mt-4 text-gray-600 dark:text-gray-400">Initializing...</p>
+    </div>
+  </div>
 {:else}
   {#if show_first_time_setup}
     <FirstTimeSetup
@@ -98,7 +103,9 @@
     />
   {/if}
 
-  {#if is_public_profile_page}
+  {#if is_auth_page}
+    <slot />
+  {:else if is_public_profile_page}
     <PublicLayout>
       <slot />
     </PublicLayout>

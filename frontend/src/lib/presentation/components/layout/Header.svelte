@@ -1,6 +1,8 @@
 <script lang="ts">
   import { createEventDispatcher, onMount } from "svelte";
   import { goto, invalidateAll } from "$app/navigation";
+  import { SignInButton, SignOutButton } from "svelte-clerk";
+  import { is_signed_in } from "$lib/adapters/iam/clerkAuthService";
   import {
     theme_store,
     toggle_theme_mode,
@@ -17,7 +19,6 @@
     type UserProfile,
   } from "$lib/presentation/stores/auth";
   import { USER_ROLE_DISPLAY_NAMES } from "$lib/core/interfaces/ports";
-  import ThemeToggle from "$lib/presentation/components/theme/ThemeToggle.svelte";
   import SyncStatusIndicator from "$lib/presentation/components/SyncStatusIndicator.svelte";
 
   export let sidebar_open = false;
@@ -220,7 +221,6 @@
           : ''}"
       >
         <SyncStatusIndicator />
-        <ThemeToggle />
 
         <div class="relative">
           <button
@@ -291,6 +291,48 @@
                   </p>
                 </div>
 
+                <button
+                  type="button"
+                  class="w-full flex items-center px-4 py-2 text-sm text-gray-700 dark:text-accent-300 hover:bg-gray-100 dark:hover:bg-accent-700 transition-colors duration-150"
+                  on:click={handle_theme_toggle}
+                >
+                  {#if $theme_store.mode === "light"}
+                    <svg
+                      class="mr-3 h-5 w-5"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"
+                      />
+                    </svg>
+                    Switch to Dark Mode
+                  {:else}
+                    <svg
+                      class="mr-3 h-5 w-5"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"
+                      />
+                    </svg>
+                    Switch to Light Mode
+                  {/if}
+                </button>
+
+                <div
+                  class="border-t border-gray-200 dark:border-accent-700 my-1"
+                ></div>
+
                 {#if $other_available_profiles.length > 0}
                   <div class="px-4 py-2">
                     <p
@@ -344,8 +386,58 @@
                       d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
                     />
                   </svg>
-                  Logout
+                  Logout (Local)
                 </button>
+
+                <div
+                  class="border-t border-gray-200 dark:border-accent-700 my-1"
+                ></div>
+
+                {#if $is_signed_in}
+                  <SignOutButton>
+                    <button
+                      type="button"
+                      class="w-full flex items-center px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-accent-700 transition-colors duration-150"
+                    >
+                      <svg
+                        class="mr-3 h-5 w-5"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                        />
+                      </svg>
+                      Sign Out (Clerk)
+                    </button>
+                  </SignOutButton>
+                {:else}
+                  <SignInButton mode="redirect">
+                    <button
+                      type="button"
+                      class="w-full flex items-center px-4 py-2 text-sm text-theme-primary-600 dark:text-theme-primary-400 hover:bg-gray-100 dark:hover:bg-accent-700 transition-colors duration-150"
+                    >
+                      <svg
+                        class="mr-3 h-5 w-5"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"
+                        />
+                      </svg>
+                      Sign In (Clerk)
+                    </button>
+                  </SignInButton>
+                {/if}
               </div>
             </div>
           {/if}

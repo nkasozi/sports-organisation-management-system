@@ -421,3 +421,145 @@ export const can_access_route = query({
     };
   },
 });
+
+export const get_user_profile_by_email = query({
+  args: {
+    email: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const user_profile = await ctx.db
+      .query("user_profiles")
+      .withIndex("by_email", (q: any) =>
+        q.eq("email", args.email.toLowerCase()),
+      )
+      .first();
+
+    if (!user_profile) {
+      return { found: false, profile: null };
+    }
+
+    return {
+      found: true,
+      profile: {
+        id: user_profile._id,
+        clerk_user_id: user_profile.clerk_user_id,
+        email: user_profile.email,
+        display_name: user_profile.display_name,
+        role: user_profile.role,
+        organization_id: user_profile.organization_id,
+        team_id: user_profile.team_id,
+        player_id: user_profile.player_id,
+        official_id: user_profile.official_id,
+        is_active: user_profile.is_active,
+      },
+    };
+  },
+});
+
+export const link_clerk_user_to_profile = mutation({
+  args: {
+    email: v.string(),
+    clerk_user_id: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const user_profile = await ctx.db
+      .query("user_profiles")
+      .withIndex("by_email", (q: any) =>
+        q.eq("email", args.email.toLowerCase()),
+      )
+      .first();
+
+    if (!user_profile) {
+      return {
+        success: false,
+        error: "user_not_found",
+        message:
+          "No system user found with this email address. Please contact your organization administrator.",
+      };
+    }
+
+    if (!user_profile.is_active) {
+      return {
+        success: false,
+        error: "user_inactive",
+        message:
+          "Your account has been deactivated. Please contact your organization administrator.",
+      };
+    }
+
+    if (
+      user_profile.clerk_user_id &&
+      user_profile.clerk_user_id !== args.clerk_user_id
+    ) {
+      return {
+        success: false,
+        error: "already_linked",
+        message: "This email is already linked to a different account.",
+      };
+    }
+
+    await ctx.db.patch(user_profile._id, {
+      clerk_user_id: args.clerk_user_id,
+      last_login_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    });
+
+    return {
+      success: true,
+      profile: {
+        id: user_profile._id,
+        email: user_profile.email,
+        display_name: user_profile.display_name,
+        role: user_profile.role,
+        organization_id: user_profile.organization_id,
+        team_id: user_profile.team_id,
+        player_id: user_profile.player_id,
+        official_id: user_profile.official_id,
+      },
+    };
+  },
+});
+
+export const seed_super_admin = mutation({
+  args: {
+    email: v.string(),
+    display_name: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const existing = await ctx.db
+      .query("user_profiles")
+      .withIndex("by_email", (q: any) =>
+        q.eq("email", args.email.toLowerCase()),
+      )
+      .first();
+
+    if (existing) {
+      return {
+        success: true,
+        message: "Super admin already exists",
+        profile_id: existing._id,
+      };
+    }
+
+    const now = new Date().toISOString();
+    const profile_id = await ctx.db.insert("user_profiles", {
+      clerk_user_id: "",
+      email: args.email.toLowerCase(),
+      display_name: args.display_name || "Super Admin",
+      role: "super_admin",
+      organization_id: "*",
+      team_id: "*",
+      player_id: "*",
+      official_id: "*",
+      is_active: true,
+      created_at: now,
+      updated_at: now,
+    });
+
+    return {
+      success: true,
+      message: "Super admin created successfully",
+      profile_id,
+    };
+  },
+});

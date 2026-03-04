@@ -6087,7 +6087,7 @@ export function create_seed_system_users(): SystemUser[] {
   return [
     {
       id: SEED_SYSTEM_USER_IDS.SYSTEM_ADMINISTRATOR,
-      email: "superadmin@sportsorg.local",
+      email: "nkasozi@gmail.com",
       first_name: "Super",
       last_name: "Admin",
       role: "super_admin",
