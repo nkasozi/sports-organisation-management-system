@@ -67,55 +67,36 @@ export class InBrowserIdentificationRepository
     };
   }
 
-  async find_by_filter(
+  protected apply_entity_filter(
+    entities: Identification[],
     filter: IdentificationFilter,
-    options?: QueryOptions,
-  ): PaginatedAsyncResult<Identification> {
-    try {
-      let filtered_entities = await this.database.identifications.toArray();
+  ): Identification[] {
+    let filtered = entities;
 
-      if (filter.holder_type) {
-        filtered_entities = filtered_entities.filter(
-          (ident) => ident.holder_type === filter.holder_type,
-        );
-      }
-
-      if (filter.holder_id) {
-        filtered_entities = filtered_entities.filter(
-          (ident) => ident.holder_id === filter.holder_id,
-        );
-      }
-
-      if (filter.identification_type_id) {
-        filtered_entities = filtered_entities.filter(
-          (ident) =>
-            ident.identification_type_id === filter.identification_type_id,
-        );
-      }
-
-      if (filter.status) {
-        filtered_entities = filtered_entities.filter(
-          (ident) => ident.status === filter.status,
-        );
-      }
-
-      const total_count = filtered_entities.length;
-      const sorted_entities = this.apply_sort(filtered_entities, options);
-      const paginated_entities = this.apply_pagination(
-        sorted_entities,
-        options,
-      );
-
-      return create_success_result(
-        this.create_paginated_result(paginated_entities, total_count, options),
-      );
-    } catch (error) {
-      const error_message =
-        error instanceof Error ? error.message : "Unknown error occurred";
-      return create_failure_result(
-        `Failed to filter identifications: ${error_message}`,
+    if (filter.holder_type) {
+      filtered = filtered.filter(
+        (ident) => ident.holder_type === filter.holder_type,
       );
     }
+
+    if (filter.holder_id) {
+      filtered = filtered.filter(
+        (ident) => ident.holder_id === filter.holder_id,
+      );
+    }
+
+    if (filter.identification_type_id) {
+      filtered = filtered.filter(
+        (ident) =>
+          ident.identification_type_id === filter.identification_type_id,
+      );
+    }
+
+    if (filter.status) {
+      filtered = filtered.filter((ident) => ident.status === filter.status);
+    }
+
+    return filtered;
   }
 
   async find_by_holder(
@@ -123,7 +104,7 @@ export class InBrowserIdentificationRepository
     holder_id: string,
     options?: QueryOptions,
   ): PaginatedAsyncResult<Identification> {
-    return this.find_by_filter({ holder_type, holder_id }, options);
+    return this.find_all({ holder_type, holder_id }, options);
   }
 
   async find_all_with_filter(

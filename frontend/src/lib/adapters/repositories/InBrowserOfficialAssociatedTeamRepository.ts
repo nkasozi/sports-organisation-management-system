@@ -23,7 +23,8 @@ export class InBrowserOfficialAssociatedTeamRepository
   extends InBrowserBaseRepository<
     OfficialAssociatedTeam,
     CreateOfficialAssociatedTeamInput,
-    UpdateOfficialAssociatedTeamInput
+    UpdateOfficialAssociatedTeamInput,
+    OfficialAssociatedTeamFilter
   >
   implements OfficialAssociatedTeamRepository
 {
@@ -63,69 +64,47 @@ export class InBrowserOfficialAssociatedTeamRepository
     };
   }
 
-  async find_by_filter(
+  protected apply_entity_filter(
+    entities: OfficialAssociatedTeam[],
     filter: OfficialAssociatedTeamFilter,
-    options?: QueryOptions,
-  ): PaginatedAsyncResult<OfficialAssociatedTeam> {
-    try {
-      let filtered_entities =
-        await this.database.official_associated_teams.toArray();
+  ): OfficialAssociatedTeam[] {
+    let filtered = entities;
 
-      if (filter.official_id) {
-        filtered_entities = filtered_entities.filter(
-          (oat) => oat.official_id === filter.official_id,
-        );
-      }
-
-      if (filter.team_id) {
-        filtered_entities = filtered_entities.filter(
-          (oat) => oat.team_id === filter.team_id,
-        );
-      }
-
-      if (filter.association_type) {
-        filtered_entities = filtered_entities.filter(
-          (oat) => oat.association_type === filter.association_type,
-        );
-      }
-
-      if (filter.status) {
-        filtered_entities = filtered_entities.filter(
-          (oat) => oat.status === filter.status,
-        );
-      }
-
-      const total_count = filtered_entities.length;
-      const sorted_entities = this.apply_sort(filtered_entities, options);
-      const paginated_entities = this.apply_pagination(
-        sorted_entities,
-        options,
-      );
-
-      return create_success_result(
-        this.create_paginated_result(paginated_entities, total_count, options),
-      );
-    } catch (error) {
-      const error_message =
-        error instanceof Error ? error.message : "Unknown error occurred";
-      return create_failure_result(
-        `Failed to filter official associated teams: ${error_message}`,
+    if (filter.official_id) {
+      filtered = filtered.filter(
+        (oat) => oat.official_id === filter.official_id,
       );
     }
+
+    if (filter.team_id) {
+      filtered = filtered.filter((oat) => oat.team_id === filter.team_id);
+    }
+
+    if (filter.association_type) {
+      filtered = filtered.filter(
+        (oat) => oat.association_type === filter.association_type,
+      );
+    }
+
+    if (filter.status) {
+      filtered = filtered.filter((oat) => oat.status === filter.status);
+    }
+
+    return filtered;
   }
 
   async find_by_official(
     official_id: string,
     options?: QueryOptions,
   ): PaginatedAsyncResult<OfficialAssociatedTeam> {
-    return this.find_by_filter({ official_id }, options);
+    return this.find_all({ official_id }, options);
   }
 
   async find_by_team(
     team_id: string,
     options?: QueryOptions,
   ): PaginatedAsyncResult<OfficialAssociatedTeam> {
-    return this.find_by_filter({ team_id }, options);
+    return this.find_all({ team_id }, options);
   }
 }
 

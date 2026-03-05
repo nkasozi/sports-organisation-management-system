@@ -1,3 +1,4 @@
+import type { Table } from "dexie";
 import type {
   Sport,
   CreateSportInput,
@@ -8,236 +9,214 @@ import {
   create_basketball_sport_preset,
   create_field_hockey_sport_preset,
 } from "../../core/entities/Sport";
-import type { SportRepository, SportFilter } from "../../core/interfaces/ports";
-import type { QueryOptions } from "../../core/interfaces/ports";
+import type {
+  SportRepository,
+  SportFilter,
+  QueryOptions,
+} from "../../core/interfaces/ports";
+import type { BaseEntity } from "../../core/entities/BaseEntity";
+import type { PaginatedAsyncResult } from "../../core/types/Result";
 import {
   create_success_result,
   create_failure_result,
 } from "../../core/types/Result";
-import type {
-  AsyncResult,
-  PaginatedAsyncResult,
-} from "../../core/types/Result";
-import { get_database } from "./database";
+import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
 
-function generate_sport_id(): string {
-  return `sport-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
-}
+const ENTITY_PREFIX = "sport";
 
 let default_sports_cache: Sport[] | null = null;
 
-function get_default_sports(): Sport[] {
-  if (default_sports_cache) {
-    return default_sports_cache;
-  }
-
+function create_default_sports(): Sport[] {
   const now = new Date().toISOString();
 
   const football: Sport = {
-    id: generate_sport_id(),
+    id: `${ENTITY_PREFIX}-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
     created_at: now,
     updated_at: now,
     ...create_football_sport_preset(),
   };
 
   const basketball: Sport = {
-    id: generate_sport_id(),
+    id: `${ENTITY_PREFIX}-${Date.now() + 1}-${Math.random().toString(36).substring(2, 9)}`,
     created_at: now,
     updated_at: now,
     ...create_basketball_sport_preset(),
   };
 
   const field_hockey: Sport = {
-    id: generate_sport_id(),
+    id: `${ENTITY_PREFIX}-${Date.now() + 2}-${Math.random().toString(36).substring(2, 9)}`,
     created_at: now,
     updated_at: now,
     ...create_field_hockey_sport_preset(),
   };
 
-  default_sports_cache = [football, basketball, field_hockey];
-  return default_sports_cache;
+  return [football, basketball, field_hockey];
 }
 
-export async function ensure_default_sports_exist(): Promise<void> {
-  const db = get_database();
-  const count = await db.sports.count();
+export class InBrowserSportRepository
+  extends InBrowserBaseRepository<
+    Sport,
+    CreateSportInput,
+    UpdateSportInput,
+    SportFilter
+  >
+  implements SportRepository
+{
+  constructor() {
+    super(ENTITY_PREFIX);
+  }
 
-  if (count === 0) {
-    const default_sports = get_default_sports();
-    await db.sports.bulkPut(default_sports);
+  protected get_table(): Table<Sport, string> {
+    return this.database.sports;
+  }
+
+  protected create_entity_from_input(
+    input: CreateSportInput,
+    id: string,
+    timestamps: Pick<BaseEntity, "created_at" | "updated_at">,
+  ): Sport {
+    return {
+      id,
+      ...timestamps,
+      ...input,
+    };
+  }
+
+  protected apply_updates_to_entity(
+    entity: Sport,
+    updates: UpdateSportInput,
+  ): Sport {
+    return {
+      ...entity,
+      ...updates,
+    };
+  }
+
+  protected apply_entity_filter(
+    entities: Sport[],
+    filter: SportFilter,
+  ): Sport[] {
+    let filtered = entities;
+
+    if (filter.name_contains) {
+      const search_term = filter.name_contains.toLowerCase();
+      filtered = filtered.filter((sport) =>
+        sport.name.toLowerCase().includes(search_term),
+      );
+    }
+
+    if (filter.status) {
+      filtered = filtered.filter((sport) => sport.status === filter.status);
+    }
+
+    return filtered;
+  }
+
+  async find_by_code(code: string): Promise<Sport | null> {
+    const all_sports = await this.get_table().toArray();
+    return (
+      all_sports.find(
+        (sport) => sport.code.toLowerCase() === code.toLowerCase(),
+      ) || null
+    );
+  }
+
+  async find_active(): Promise<Sport[]> {
+    const all_sports = await this.get_table().toArray();
+    return all_sports.filter((sport) => sport.status === "active");
   }
 }
 
-export async function reset_sport_repository(): Promise<void> {
-  const db = get_database();
-  await db.sports.clear();
-  default_sports_cache = null;
-  await ensure_default_sports_exist();
-}
-
-export async function get_all_sports(): Promise<Sport[]> {
-  await ensure_default_sports_exist();
-  const db = get_database();
-  return db.sports.toArray();
-}
-
-export async function get_sport_by_id(id: string): Promise<Sport | null> {
-  const db = get_database();
-  const sport = await db.sports.get(id);
-  return sport || null;
-}
-
-export async function get_sport_by_code(code: string): Promise<Sport | null> {
-  const db = get_database();
-  const sports = await db.sports.toArray();
-  return (
-    sports.find((s) => s.code.toLowerCase() === code.toLowerCase()) || null
-  );
-}
-
 export function get_sport_id_by_code_sync(code: string): string | null {
-  const default_sports = get_default_sports();
-  const sport = default_sports.find(
+  if (!default_sports_cache) {
+    default_sports_cache = create_default_sports();
+  }
+
+  const sport = default_sports_cache.find(
     (s) => s.code.toLowerCase() === code.toLowerCase(),
   );
   return sport ? sport.id : null;
 }
 
+let singleton_instance: InBrowserSportRepository | null = null;
+
+export function get_sport_repository(): SportRepository {
+  if (!singleton_instance) {
+    singleton_instance = new InBrowserSportRepository();
+  }
+  return singleton_instance;
+}
+
+function get_concrete_repository(): InBrowserSportRepository {
+  if (!singleton_instance) {
+    singleton_instance = new InBrowserSportRepository();
+  }
+  return singleton_instance;
+}
+
+export async function ensure_default_sports_exist(): Promise<void> {
+  const repository = get_concrete_repository();
+  const has_data = await repository.has_data();
+
+  if (!has_data) {
+    if (!default_sports_cache) {
+      default_sports_cache = create_default_sports();
+    }
+    await repository.seed_with_data(default_sports_cache);
+  }
+}
+
+export async function reset_sport_repository(): Promise<void> {
+  const repository = get_concrete_repository();
+  await repository.clear_all_data();
+  default_sports_cache = null;
+  default_sports_cache = create_default_sports();
+  await repository.seed_with_data(default_sports_cache);
+}
+
+export async function get_all_sports(): Promise<Sport[]> {
+  await ensure_default_sports_exist();
+  const repository = get_concrete_repository();
+  const result = await repository.find_all();
+  return result.success && result.data ? result.data.items : [];
+}
+
+export async function get_sport_by_id(id: string): Promise<Sport | null> {
+  const repository = get_concrete_repository();
+  const result = await repository.find_by_id(id);
+  return result.success && result.data ? result.data : null;
+}
+
+export async function get_sport_by_code(code: string): Promise<Sport | null> {
+  const repository = get_concrete_repository();
+  return repository.find_by_code(code);
+}
+
 export async function create_sport(input: CreateSportInput): Promise<Sport> {
-  const db = get_database();
-  const now = new Date().toISOString();
-
-  const new_sport: Sport = {
-    id: generate_sport_id(),
-    created_at: now,
-    updated_at: now,
-    ...input,
-  };
-
-  await db.sports.add(new_sport);
-  return new_sport;
+  const repository = get_concrete_repository();
+  const result = await repository.create(input);
+  if (!result.success) {
+    throw new Error(result.error || "Failed to create sport");
+  }
+  return result.data;
 }
 
 export async function update_sport(
   id: string,
   input: UpdateSportInput,
 ): Promise<Sport | null> {
-  const db = get_database();
-  const existing = await db.sports.get(id);
-
-  if (!existing) return null;
-
-  const updated_sport: Sport = {
-    ...existing,
-    ...input,
-    updated_at: new Date().toISOString(),
-  };
-
-  await db.sports.put(updated_sport);
-  return updated_sport;
+  const repository = get_concrete_repository();
+  const result = await repository.update(id, input);
+  return result.success && result.data ? result.data : null;
 }
 
 export async function delete_sport(id: string): Promise<boolean> {
-  const db = get_database();
-  const existing = await db.sports.get(id);
-
-  if (!existing) return false;
-
-  await db.sports.delete(id);
-  return true;
+  const repository = get_concrete_repository();
+  const result = await repository.delete_by_id(id);
+  return result.success && result.data === true;
 }
 
 export async function get_active_sports(): Promise<Sport[]> {
-  const db = get_database();
-  const sports = await db.sports.toArray();
-  return sports.filter((s) => s.status === "active");
-}
-
-export const inBrowserSportRepository = {
-  get_all: get_all_sports,
-  get_by_id: get_sport_by_id,
-  get_by_code: get_sport_by_code,
-  create: create_sport,
-  update: update_sport,
-  delete: delete_sport,
-  get_active: get_active_sports,
-};
-
-export function get_sport_repository(): SportRepository {
-  return {
-    async find_all(
-      filter?: SportFilter,
-      options?: QueryOptions,
-    ): PaginatedAsyncResult<Sport> {
-      let sports = await get_all_sports();
-
-      if (filter) {
-        if (filter.name_contains) {
-          sports = sports.filter((s) =>
-            s.name.toLowerCase().includes(filter.name_contains!.toLowerCase()),
-          );
-        }
-        if (filter.status) {
-          sports = sports.filter((s) => s.status === filter.status);
-        }
-      }
-
-      return create_success_result({
-        items: sports,
-        total_count: sports.length,
-        page_number: 1,
-        page_size: sports.length,
-        total_pages: 1,
-      });
-    },
-
-    async find_by_id(id: string): AsyncResult<Sport> {
-      const sport = await get_sport_by_id(id);
-      if (!sport) {
-        return create_failure_result(`Sport with ID ${id} not found`);
-      }
-      return create_success_result(sport);
-    },
-
-    async find_by_ids(ids: string[]): AsyncResult<Sport[]> {
-      const sports = await get_all_sports();
-      const found = sports.filter((s) => ids.includes(s.id));
-      return create_success_result(found);
-    },
-
-    async create(input: CreateSportInput): AsyncResult<Sport> {
-      const sport = await create_sport(input);
-      return create_success_result(sport);
-    },
-
-    async update(id: string, input: UpdateSportInput): AsyncResult<Sport> {
-      const sport = await update_sport(id, input);
-      if (!sport) {
-        return create_failure_result(`Sport with ID ${id} not found`);
-      }
-      return create_success_result(sport);
-    },
-
-    async delete_by_id(id: string): AsyncResult<boolean> {
-      const deleted = await delete_sport(id);
-      if (!deleted) {
-        return create_failure_result(`Sport with ID ${id} not found`);
-      }
-      return create_success_result(true);
-    },
-
-    async delete_by_ids(ids: string[]): AsyncResult<number> {
-      let count = 0;
-      for (const id of ids) {
-        const deleted = await delete_sport(id);
-        if (deleted) count++;
-      }
-      return create_success_result(count);
-    },
-
-    async count(): AsyncResult<number> {
-      const sports = await get_all_sports();
-      return create_success_result(sports.length);
-    },
-  };
+  const repository = get_concrete_repository();
+  return repository.find_active();
 }

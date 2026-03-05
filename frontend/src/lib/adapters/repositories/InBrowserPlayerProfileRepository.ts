@@ -26,7 +26,8 @@ export class InBrowserPlayerProfileRepository
   extends InBrowserBaseRepository<
     PlayerProfile,
     CreatePlayerProfileInput,
-    UpdatePlayerProfileInput
+    UpdatePlayerProfileInput,
+    PlayerProfileFilter
   >
   implements PlayerProfileRepository
 {
@@ -65,48 +66,29 @@ export class InBrowserPlayerProfileRepository
     };
   }
 
-  async find_by_filter(
+  protected apply_entity_filter(
+    entities: PlayerProfile[],
     filter: PlayerProfileFilter,
-    options?: QueryOptions,
-  ): PaginatedAsyncResult<PlayerProfile> {
-    try {
-      let filtered_entities = await this.database.player_profiles.toArray();
+  ): PlayerProfile[] {
+    let filtered = entities;
 
-      if (filter.player_id) {
-        filtered_entities = filtered_entities.filter(
-          (profile) => profile.player_id === filter.player_id,
-        );
-      }
-
-      if (filter.visibility) {
-        filtered_entities = filtered_entities.filter(
-          (profile) => profile.visibility === filter.visibility,
-        );
-      }
-
-      if (filter.status) {
-        filtered_entities = filtered_entities.filter(
-          (profile) => profile.status === filter.status,
-        );
-      }
-
-      const total_count = filtered_entities.length;
-      const sorted_entities = this.apply_sort(filtered_entities, options);
-      const paginated_entities = this.apply_pagination(
-        sorted_entities,
-        options,
-      );
-
-      return create_success_result(
-        this.create_paginated_result(paginated_entities, total_count, options),
-      );
-    } catch (error) {
-      const error_message =
-        error instanceof Error ? error.message : "Unknown error occurred";
-      return create_failure_result(
-        `Failed to filter player profiles: ${error_message}`,
+    if (filter.player_id) {
+      filtered = filtered.filter(
+        (profile) => profile.player_id === filter.player_id,
       );
     }
+
+    if (filter.visibility) {
+      filtered = filtered.filter(
+        (profile) => profile.visibility === filter.visibility,
+      );
+    }
+
+    if (filter.status) {
+      filtered = filtered.filter((profile) => profile.status === filter.status);
+    }
+
+    return filtered;
   }
 
   async find_by_player_id(player_id: string): AsyncResult<PlayerProfile> {
@@ -156,10 +138,7 @@ export class InBrowserPlayerProfileRepository
   async find_public_profiles(
     options?: QueryOptions,
   ): PaginatedAsyncResult<PlayerProfile> {
-    return this.find_by_filter(
-      { visibility: "public", status: "active" },
-      options,
-    );
+    return this.find_all({ visibility: "public", status: "active" }, options);
   }
 }
 

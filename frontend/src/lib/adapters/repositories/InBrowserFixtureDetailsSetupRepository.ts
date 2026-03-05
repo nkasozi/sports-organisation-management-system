@@ -23,7 +23,8 @@ export class InBrowserFixtureDetailsSetupRepository
   extends InBrowserBaseRepository<
     FixtureDetailsSetup,
     CreateFixtureDetailsSetupInput,
-    UpdateFixtureDetailsSetupInput
+    UpdateFixtureDetailsSetupInput,
+    FixtureDetailsSetupFilter
   >
   implements FixtureDetailsSetupRepository
 {
@@ -65,73 +66,55 @@ export class InBrowserFixtureDetailsSetupRepository
     };
   }
 
-  async find_by_filter(
+  protected apply_entity_filter(
+    entities: FixtureDetailsSetup[],
     filter: FixtureDetailsSetupFilter,
-    options?: QueryOptions,
-  ): PaginatedAsyncResult<FixtureDetailsSetup> {
-    try {
-      let filtered_entities =
-        await this.database.fixture_details_setups.toArray();
+  ): FixtureDetailsSetup[] {
+    let filtered = entities;
 
-      if (filter.fixture_id) {
-        filtered_entities = filtered_entities.filter(
-          (item) => item.fixture_id === filter.fixture_id,
-        );
-      }
-
-      if (filter.official_id) {
-        filtered_entities = filtered_entities.filter((item) =>
-          item.assigned_officials.some(
-            (assignment) => assignment.official_id === filter.official_id,
-          ),
-        );
-      }
-
-      if (filter.role_id) {
-        filtered_entities = filtered_entities.filter((item) =>
-          item.assigned_officials.some(
-            (assignment) => assignment.role_id === filter.role_id,
-          ),
-        );
-      }
-
-      if (filter.confirmation_status) {
-        filtered_entities = filtered_entities.filter(
-          (item) => item.confirmation_status === filter.confirmation_status,
-        );
-      }
-
-      const total_count = filtered_entities.length;
-      const sorted_entities = this.apply_sort(filtered_entities, options);
-      const paginated_entities = this.apply_pagination(
-        sorted_entities,
-        options,
-      );
-
-      return create_success_result(
-        this.create_paginated_result(paginated_entities, total_count, options),
-      );
-    } catch (error) {
-      const error_message =
-        error instanceof Error ? error.message : "Unknown error occurred";
-      return create_failure_result(
-        `Failed to filter fixture details setups: ${error_message}`,
+    if (filter.fixture_id) {
+      filtered = filtered.filter(
+        (item) => item.fixture_id === filter.fixture_id,
       );
     }
+
+    if (filter.official_id) {
+      filtered = filtered.filter((item) =>
+        item.assigned_officials.some(
+          (assignment) => assignment.official_id === filter.official_id,
+        ),
+      );
+    }
+
+    if (filter.role_id) {
+      filtered = filtered.filter((item) =>
+        item.assigned_officials.some(
+          (assignment) => assignment.role_id === filter.role_id,
+        ),
+      );
+    }
+
+    if (filter.confirmation_status) {
+      filtered = filtered.filter(
+        (item) => item.confirmation_status === filter.confirmation_status,
+      );
+    }
+
+    return filtered;
   }
 
   async find_by_fixture(
     fixture_id: string,
     options?: QueryOptions,
   ): PaginatedAsyncResult<FixtureDetailsSetup> {
-    return this.find_by_filter({ fixture_id }, options);
+    return this.find_all({ fixture_id }, options);
   }
 
   async find_by_official(
     official_id: string,
     options?: QueryOptions,
   ): PaginatedAsyncResult<FixtureDetailsSetup> {
-    return this.find_by_filter({ official_id }, options);
+    return this.find_all({ official_id }, options);
   }
 }
 

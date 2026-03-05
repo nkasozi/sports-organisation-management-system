@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount, onDestroy } from "svelte";
   import { page, navigating } from "$app/stores";
+  import { afterNavigate } from "$app/navigation";
   import { injectAnalytics } from "@vercel/analytics/sveltekit";
   import "../app.css";
   import Layout from "$lib/presentation/components/layout/Layout.svelte";
@@ -13,6 +14,7 @@
     is_clerk_loaded,
     set_navigating,
   } from "$lib/adapters/iam/clerkAuthService";
+  import { ensure_route_access } from "$lib/presentation/logic/authGuard";
   import { get } from "svelte/store";
 
   injectAnalytics();
@@ -35,6 +37,28 @@
   function get_is_auth_page(path: string): boolean {
     return path.startsWith("/sign-in") || path === "/unauthorized";
   }
+
+  function is_route_guard_exempt(path: string): boolean {
+    return (
+      path === "/" ||
+      path.startsWith("/sign-in") ||
+      path === "/unauthorized" ||
+      path.startsWith("/api/") ||
+      path === "/privacy" ||
+      path === "/terms" ||
+      path === "/contact"
+    );
+  }
+
+  afterNavigate(async ({ to }) => {
+    if (!app_ready) return;
+    if (!to?.url?.pathname) return;
+
+    const pathname = to.url.pathname;
+    if (is_route_guard_exempt(pathname)) return;
+
+    await ensure_route_access(pathname);
+  });
 
   function cleanup_subscriptions(): void {
     unsubscribe_page?.();
@@ -75,6 +99,11 @@
 
     await initialize_app_data();
     app_ready = true;
+
+    const initial_path = get(page).url.pathname;
+    if (!is_route_guard_exempt(initial_path)) {
+      await ensure_route_access(initial_path);
+    }
   });
 
   onDestroy(() => {

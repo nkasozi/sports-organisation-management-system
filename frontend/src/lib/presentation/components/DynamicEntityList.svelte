@@ -1355,7 +1355,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
           >
             Clear Filters
           </button>
-        {:else if show_actions}
+        {:else if show_actions && !is_create_disabled}
           <button
             type="button"
             class="btn {button_color_class}"

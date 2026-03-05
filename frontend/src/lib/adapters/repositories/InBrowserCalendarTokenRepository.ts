@@ -26,7 +26,8 @@ export class InBrowserCalendarTokenRepository
   extends InBrowserBaseRepository<
     CalendarToken,
     CreateCalendarTokenInput,
-    UpdateCalendarTokenInput
+    UpdateCalendarTokenInput,
+    CalendarTokenFilter
   >
   implements CalendarTokenRepository
 {
@@ -62,57 +63,41 @@ export class InBrowserCalendarTokenRepository
     };
   }
 
-  async find_by_filter(
+  protected apply_entity_filter(
+    entities: CalendarToken[],
     filter: CalendarTokenFilter,
-    options?: QueryOptions,
-  ): PaginatedAsyncResult<CalendarToken> {
-    try {
-      let filtered_tokens = await this.database.calendar_tokens.toArray();
+  ): CalendarToken[] {
+    let filtered = entities;
 
-      if (filter.user_id) {
-        filtered_tokens = filtered_tokens.filter(
-          (token) => token.user_id === filter.user_id,
-        );
-      }
+    if (filter.user_id) {
+      filtered = filtered.filter((token) => token.user_id === filter.user_id);
+    }
 
-      if (filter.organization_id) {
-        filtered_tokens = filtered_tokens.filter(
-          (token) => token.organization_id === filter.organization_id,
-        );
-      }
-
-      if (filter.feed_type) {
-        filtered_tokens = filtered_tokens.filter(
-          (token) => token.feed_type === filter.feed_type,
-        );
-      }
-
-      if (filter.entity_id) {
-        filtered_tokens = filtered_tokens.filter(
-          (token) => token.entity_id === filter.entity_id,
-        );
-      }
-
-      if (filter.is_active !== undefined) {
-        filtered_tokens = filtered_tokens.filter(
-          (token) => token.is_active === filter.is_active,
-        );
-      }
-
-      const total_count = filtered_tokens.length;
-      const sorted_tokens = this.apply_sort(filtered_tokens, options);
-      const paginated_tokens = this.apply_pagination(sorted_tokens, options);
-
-      return create_success_result(
-        this.create_paginated_result(paginated_tokens, total_count, options),
-      );
-    } catch (error) {
-      const error_message =
-        error instanceof Error ? error.message : "Unknown error occurred";
-      return create_failure_result(
-        `Failed to filter calendar tokens: ${error_message}`,
+    if (filter.organization_id) {
+      filtered = filtered.filter(
+        (token) => token.organization_id === filter.organization_id,
       );
     }
+
+    if (filter.feed_type) {
+      filtered = filtered.filter(
+        (token) => token.feed_type === filter.feed_type,
+      );
+    }
+
+    if (filter.entity_id) {
+      filtered = filtered.filter(
+        (token) => token.entity_id === filter.entity_id,
+      );
+    }
+
+    if (filter.is_active !== undefined) {
+      filtered = filtered.filter(
+        (token) => token.is_active === filter.is_active,
+      );
+    }
+
+    return filtered;
   }
 
   async find_by_token(token: string): AsyncResult<CalendarToken | null> {
@@ -133,14 +118,14 @@ export class InBrowserCalendarTokenRepository
     user_id: string,
     options?: QueryOptions,
   ): PaginatedAsyncResult<CalendarToken> {
-    return this.find_by_filter({ user_id, is_active: true }, options);
+    return this.find_all({ user_id, is_active: true }, options);
   }
 
   async find_by_organization(
     organization_id: string,
     options?: QueryOptions,
   ): PaginatedAsyncResult<CalendarToken> {
-    return this.find_by_filter({ organization_id, is_active: true }, options);
+    return this.find_all({ organization_id, is_active: true }, options);
   }
 
   async record_access(token: string): AsyncResult<CalendarToken> {

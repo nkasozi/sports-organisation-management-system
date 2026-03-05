@@ -23,7 +23,8 @@ export class InBrowserPlayerTeamMembershipRepository
   extends InBrowserBaseRepository<
     PlayerTeamMembership,
     CreatePlayerTeamMembershipInput,
-    UpdatePlayerTeamMembershipInput
+    UpdatePlayerTeamMembershipInput,
+    PlayerTeamMembershipFilter
   >
   implements PlayerTeamMembershipRepository
 {
@@ -62,63 +63,39 @@ export class InBrowserPlayerTeamMembershipRepository
     };
   }
 
-  async find_by_filter(
+  protected apply_entity_filter(
+    entities: PlayerTeamMembership[],
     filter: PlayerTeamMembershipFilter,
-    options?: QueryOptions,
-  ): PaginatedAsyncResult<PlayerTeamMembership> {
-    try {
-      let filtered_entities =
-        await this.database.player_team_memberships.toArray();
+  ): PlayerTeamMembership[] {
+    let filtered = entities;
 
-      if (filter.player_id) {
-        filtered_entities = filtered_entities.filter(
-          (membership) => membership.player_id === filter.player_id,
-        );
-      }
-
-      if (filter.team_id) {
-        filtered_entities = filtered_entities.filter(
-          (membership) => membership.team_id === filter.team_id,
-        );
-      }
-
-      if (filter.status) {
-        filtered_entities = filtered_entities.filter(
-          (membership) => membership.status === filter.status,
-        );
-      }
-
-      const total_count = filtered_entities.length;
-      const sorted_entities = this.apply_sort(filtered_entities, options);
-      const paginated_entities = this.apply_pagination(
-        sorted_entities,
-        options,
-      );
-
-      return create_success_result(
-        this.create_paginated_result(paginated_entities, total_count, options),
-      );
-    } catch (error) {
-      const error_message =
-        error instanceof Error ? error.message : "Unknown error occurred";
-      return create_failure_result(
-        `Failed to filter player team memberships: ${error_message}`,
-      );
+    if (filter.player_id) {
+      filtered = filtered.filter((m) => m.player_id === filter.player_id);
     }
+
+    if (filter.team_id) {
+      filtered = filtered.filter((m) => m.team_id === filter.team_id);
+    }
+
+    if (filter.status) {
+      filtered = filtered.filter((m) => m.status === filter.status);
+    }
+
+    return filtered;
   }
 
   async find_by_team(
     team_id: string,
     options?: QueryOptions,
   ): PaginatedAsyncResult<PlayerTeamMembership> {
-    return this.find_by_filter({ team_id }, options);
+    return this.find_all({ team_id }, options);
   }
 
   async find_by_player(
     player_id: string,
     options?: QueryOptions,
   ): PaginatedAsyncResult<PlayerTeamMembership> {
-    return this.find_by_filter({ player_id }, options);
+    return this.find_all({ player_id }, options);
   }
 }
 

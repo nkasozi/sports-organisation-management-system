@@ -26,7 +26,8 @@ export class InBrowserTeamProfileRepository
   extends InBrowserBaseRepository<
     TeamProfile,
     CreateTeamProfileInput,
-    UpdateTeamProfileInput
+    UpdateTeamProfileInput,
+    TeamProfileFilter
   >
   implements TeamProfileRepository
 {
@@ -65,48 +66,29 @@ export class InBrowserTeamProfileRepository
     };
   }
 
-  async find_by_filter(
+  protected apply_entity_filter(
+    entities: TeamProfile[],
     filter: TeamProfileFilter,
-    options?: QueryOptions,
-  ): PaginatedAsyncResult<TeamProfile> {
-    try {
-      let filtered_entities = await this.database.team_profiles.toArray();
+  ): TeamProfile[] {
+    let filtered = entities;
 
-      if (filter.team_id) {
-        filtered_entities = filtered_entities.filter(
-          (profile) => profile.team_id === filter.team_id,
-        );
-      }
-
-      if (filter.visibility) {
-        filtered_entities = filtered_entities.filter(
-          (profile) => profile.visibility === filter.visibility,
-        );
-      }
-
-      if (filter.status) {
-        filtered_entities = filtered_entities.filter(
-          (profile) => profile.status === filter.status,
-        );
-      }
-
-      const total_count = filtered_entities.length;
-      const sorted_entities = this.apply_sort(filtered_entities, options);
-      const paginated_entities = this.apply_pagination(
-        sorted_entities,
-        options,
-      );
-
-      return create_success_result(
-        this.create_paginated_result(paginated_entities, total_count, options),
-      );
-    } catch (error) {
-      const error_message =
-        error instanceof Error ? error.message : "Unknown error occurred";
-      return create_failure_result(
-        `Failed to filter team profiles: ${error_message}`,
+    if (filter.team_id) {
+      filtered = filtered.filter(
+        (profile) => profile.team_id === filter.team_id,
       );
     }
+
+    if (filter.visibility) {
+      filtered = filtered.filter(
+        (profile) => profile.visibility === filter.visibility,
+      );
+    }
+
+    if (filter.status) {
+      filtered = filtered.filter((profile) => profile.status === filter.status);
+    }
+
+    return filtered;
   }
 
   async find_by_team_id(team_id: string): AsyncResult<TeamProfile> {
@@ -154,10 +136,7 @@ export class InBrowserTeamProfileRepository
   async find_public_profiles(
     options?: QueryOptions,
   ): PaginatedAsyncResult<TeamProfile> {
-    return this.find_by_filter(
-      { visibility: "public", status: "active" },
-      options,
-    );
+    return this.find_all({ visibility: "public", status: "active" }, options);
   }
 }
 

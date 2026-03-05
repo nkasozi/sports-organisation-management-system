@@ -241,4 +241,5 @@ export type {
 export type {
   AuditLogRepository,
   AuditLogFilter,
+  UpdateAuditLogInput,
 } from "./external/repositories/AuditLogRepository";

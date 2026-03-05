@@ -23,7 +23,8 @@ export class InBrowserPlayerTeamTransferHistoryRepository
   extends InBrowserBaseRepository<
     PlayerTeamTransferHistory,
     CreatePlayerTeamTransferHistoryInput,
-    UpdatePlayerTeamTransferHistoryInput
+    UpdatePlayerTeamTransferHistoryInput,
+    PlayerTeamTransferHistoryFilter
   >
   implements PlayerTeamTransferHistoryRepository
 {
@@ -64,62 +65,44 @@ export class InBrowserPlayerTeamTransferHistoryRepository
     };
   }
 
-  async find_by_filter(
+  protected apply_entity_filter(
+    entities: PlayerTeamTransferHistory[],
     filter: PlayerTeamTransferHistoryFilter,
-    options?: QueryOptions,
-  ): PaginatedAsyncResult<PlayerTeamTransferHistory> {
-    try {
-      let filtered_entities =
-        await this.database.player_team_transfer_histories.toArray();
+  ): PlayerTeamTransferHistory[] {
+    let filtered = entities;
 
-      if (filter.player_id) {
-        filtered_entities = filtered_entities.filter(
-          (transfer) => transfer.player_id === filter.player_id,
-        );
-      }
-
-      if (filter.from_team_id) {
-        filtered_entities = filtered_entities.filter(
-          (transfer) => transfer.from_team_id === filter.from_team_id,
-        );
-      }
-
-      if (filter.to_team_id) {
-        filtered_entities = filtered_entities.filter(
-          (transfer) => transfer.to_team_id === filter.to_team_id,
-        );
-      }
-
-      if (filter.status) {
-        filtered_entities = filtered_entities.filter(
-          (transfer) => transfer.status === filter.status,
-        );
-      }
-
-      const total_count = filtered_entities.length;
-      const sorted_entities = this.apply_sort(filtered_entities, options);
-      const paginated_entities = this.apply_pagination(
-        sorted_entities,
-        options,
-      );
-
-      return create_success_result(
-        this.create_paginated_result(paginated_entities, total_count, options),
-      );
-    } catch (error) {
-      const error_message =
-        error instanceof Error ? error.message : "Unknown error occurred";
-      return create_failure_result(
-        `Failed to filter player team transfer histories: ${error_message}`,
+    if (filter.player_id) {
+      filtered = filtered.filter(
+        (transfer) => transfer.player_id === filter.player_id,
       );
     }
+
+    if (filter.from_team_id) {
+      filtered = filtered.filter(
+        (transfer) => transfer.from_team_id === filter.from_team_id,
+      );
+    }
+
+    if (filter.to_team_id) {
+      filtered = filtered.filter(
+        (transfer) => transfer.to_team_id === filter.to_team_id,
+      );
+    }
+
+    if (filter.status) {
+      filtered = filtered.filter(
+        (transfer) => transfer.status === filter.status,
+      );
+    }
+
+    return filtered;
   }
 
   async find_by_player(
     player_id: string,
     options?: QueryOptions,
   ): PaginatedAsyncResult<PlayerTeamTransferHistory> {
-    return this.find_by_filter({ player_id }, options);
+    return this.find_all({ player_id }, options);
   }
 
   async find_by_team(
@@ -157,6 +140,6 @@ export class InBrowserPlayerTeamTransferHistoryRepository
   async find_pending_transfers(
     options?: QueryOptions,
   ): PaginatedAsyncResult<PlayerTeamTransferHistory> {
-    return this.find_by_filter({ status: "pending" }, options);
+    return this.find_all({ status: "pending" }, options);
   }
 }

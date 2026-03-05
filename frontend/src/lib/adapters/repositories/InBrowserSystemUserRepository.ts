@@ -5,8 +5,12 @@ import type {
   UpdateSystemUserInput,
   SystemUserRole,
 } from "../../core/entities/SystemUser";
-import type { BaseEntity, EntityStatus } from "../../core/entities/BaseEntity";
-import type { QueryOptions } from "../../core/interfaces/ports";
+import type { BaseEntity } from "../../core/entities/BaseEntity";
+import type {
+  QueryOptions,
+  SystemUserRepository,
+  SystemUserFilter,
+} from "../../core/interfaces/ports";
 import type { PaginatedAsyncResult } from "../../core/types/Result";
 import {
   create_success_result,
@@ -16,19 +20,15 @@ import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
 
 const ENTITY_PREFIX = "usr";
 
-export interface SystemUserFilter {
-  email_contains?: string;
-  name_contains?: string;
-  role?: SystemUserRole;
-  status?: EntityStatus;
-  organization_id?: string;
-}
-
-export class InBrowserSystemUserRepository extends InBrowserBaseRepository<
-  SystemUser,
-  CreateSystemUserInput,
-  UpdateSystemUserInput
-> {
+export class InBrowserSystemUserRepository
+  extends InBrowserBaseRepository<
+    SystemUser,
+    CreateSystemUserInput,
+    UpdateSystemUserInput,
+    SystemUserFilter
+  >
+  implements SystemUserRepository
+{
   constructor() {
     super(ENTITY_PREFIX);
   }
@@ -78,64 +78,43 @@ export class InBrowserSystemUserRepository extends InBrowserBaseRepository<
     };
   }
 
-  async find_by_filter(
+  protected apply_entity_filter(
+    entities: SystemUser[],
     filter: SystemUserFilter,
-    options?: QueryOptions,
-  ): PaginatedAsyncResult<SystemUser> {
-    try {
-      let filtered_entities = await this.database.system_users.toArray();
+  ): SystemUser[] {
+    let filtered = entities;
 
-      if (filter.email_contains) {
-        const search_term = filter.email_contains.toLowerCase();
-        filtered_entities = filtered_entities.filter((user) =>
-          user.email.toLowerCase().includes(search_term),
-        );
-      }
-
-      if (filter.name_contains) {
-        const search_term = filter.name_contains.toLowerCase();
-        filtered_entities = filtered_entities.filter(
-          (user) =>
-            user.first_name.toLowerCase().includes(search_term) ||
-            user.last_name.toLowerCase().includes(search_term),
-        );
-      }
-
-      if (filter.role) {
-        filtered_entities = filtered_entities.filter(
-          (user) => user.role === filter.role,
-        );
-      }
-
-      if (filter.status) {
-        filtered_entities = filtered_entities.filter(
-          (user) => user.status === filter.status,
-        );
-      }
-
-      if (filter.organization_id) {
-        filtered_entities = filtered_entities.filter(
-          (user) => user.organization_id === filter.organization_id,
-        );
-      }
-
-      const total_count = filtered_entities.length;
-      const sorted_entities = this.apply_sort(filtered_entities, options);
-      const paginated_entities = this.apply_pagination(
-        sorted_entities,
-        options,
-      );
-
-      return create_success_result(
-        this.create_paginated_result(paginated_entities, total_count, options),
-      );
-    } catch (error) {
-      const error_message =
-        error instanceof Error ? error.message : "Unknown error occurred";
-      return create_failure_result(
-        `Failed to filter system users: ${error_message}`,
+    if (filter.email_contains) {
+      const search_term = filter.email_contains.toLowerCase();
+      filtered = filtered.filter((user) =>
+        user.email.toLowerCase().includes(search_term),
       );
     }
+
+    if (filter.name_contains) {
+      const search_term = filter.name_contains.toLowerCase();
+      filtered = filtered.filter(
+        (user) =>
+          user.first_name.toLowerCase().includes(search_term) ||
+          user.last_name.toLowerCase().includes(search_term),
+      );
+    }
+
+    if (filter.role) {
+      filtered = filtered.filter((user) => user.role === filter.role);
+    }
+
+    if (filter.status) {
+      filtered = filtered.filter((user) => user.status === filter.status);
+    }
+
+    if (filter.organization_id) {
+      filtered = filtered.filter(
+        (user) => user.organization_id === filter.organization_id,
+      );
+    }
+
+    return filtered;
   }
 
   async find_by_email(email: string): PaginatedAsyncResult<SystemUser> {
@@ -162,13 +141,13 @@ export class InBrowserSystemUserRepository extends InBrowserBaseRepository<
     role: SystemUserRole,
     options?: QueryOptions,
   ): PaginatedAsyncResult<SystemUser> {
-    return this.find_by_filter({ role }, options);
+    return this.find_all({ role }, options);
   }
 
   async find_active_users(
     options?: QueryOptions,
   ): PaginatedAsyncResult<SystemUser> {
-    return this.find_by_filter({ status: "active" }, options);
+    return this.find_all({ status: "active" }, options);
   }
 
   async find_admins(options?: QueryOptions): PaginatedAsyncResult<SystemUser> {

@@ -4,7 +4,12 @@ import type {
   CreateAuditLogInput,
 } from "../../core/entities/AuditLog";
 import type { BaseEntity } from "../../core/entities/BaseEntity";
-import type { QueryOptions } from "../../core/interfaces/ports";
+import type {
+  QueryOptions,
+  AuditLogRepository,
+  AuditLogFilter,
+  UpdateAuditLogInput,
+} from "../../core/interfaces/ports";
 import type { PaginatedAsyncResult } from "../../core/types/Result";
 import {
   create_success_result,
@@ -14,23 +19,15 @@ import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
 
 const ENTITY_PREFIX = "aud";
 
-export interface AuditLogFilter {
-  entity_type?: string;
-  entity_id?: string;
-  user_id?: string;
-  action?: string;
-  organization_id?: string;
-  from_date?: string;
-  to_date?: string;
-}
-
-type UpdateAuditLogInput = Partial<Omit<AuditLog, "id" | "created_at">>;
-
-export class InBrowserAuditLogRepository extends InBrowserBaseRepository<
-  AuditLog,
-  CreateAuditLogInput,
-  UpdateAuditLogInput
-> {
+export class InBrowserAuditLogRepository
+  extends InBrowserBaseRepository<
+    AuditLog,
+    CreateAuditLogInput,
+    UpdateAuditLogInput,
+    AuditLogFilter
+  >
+  implements AuditLogRepository
+{
   constructor() {
     super(ENTITY_PREFIX);
   }
@@ -74,74 +71,51 @@ export class InBrowserAuditLogRepository extends InBrowserBaseRepository<
     };
   }
 
-  async find_by_filter(
+  protected apply_entity_filter(
+    entities: AuditLog[],
     filter: AuditLogFilter,
-    options?: QueryOptions,
-  ): PaginatedAsyncResult<AuditLog> {
-    try {
-      let filtered_entities = await this.database.audit_logs.toArray();
+  ): AuditLog[] {
+    let filtered = entities;
 
-      if (filter.entity_type) {
-        filtered_entities = filtered_entities.filter(
-          (log) => log.entity_type === filter.entity_type,
-        );
-      }
-
-      if (filter.entity_id) {
-        filtered_entities = filtered_entities.filter(
-          (log) => log.entity_id === filter.entity_id,
-        );
-      }
-
-      if (filter.user_id) {
-        filtered_entities = filtered_entities.filter(
-          (log) => log.user_id === filter.user_id,
-        );
-      }
-
-      if (filter.action) {
-        filtered_entities = filtered_entities.filter(
-          (log) => log.action === filter.action,
-        );
-      }
-
-      if (filter.organization_id) {
-        filtered_entities = filtered_entities.filter(
-          (log) => log.organization_id === filter.organization_id,
-        );
-      }
-
-      if (filter.from_date) {
-        const from_timestamp = new Date(filter.from_date).getTime();
-        filtered_entities = filtered_entities.filter(
-          (log) => new Date(log.timestamp).getTime() >= from_timestamp,
-        );
-      }
-
-      if (filter.to_date) {
-        const to_timestamp = new Date(filter.to_date).getTime();
-        filtered_entities = filtered_entities.filter(
-          (log) => new Date(log.timestamp).getTime() <= to_timestamp,
-        );
-      }
-
-      const total_count = filtered_entities.length;
-      const sorted_entities = this.apply_sort(filtered_entities, options);
-      const paginated_entities = this.apply_pagination(
-        sorted_entities,
-        options,
-      );
-
-      return create_success_result(
-        this.create_paginated_result(paginated_entities, total_count, options),
-      );
-    } catch (error) {
-      const error_message =
-        error instanceof Error ? error.message : "Unknown error occurred";
-      return create_failure_result(
-        `Failed to filter audit logs: ${error_message}`,
+    if (filter.entity_type) {
+      filtered = filtered.filter(
+        (log) => log.entity_type === filter.entity_type,
       );
     }
+
+    if (filter.entity_id) {
+      filtered = filtered.filter((log) => log.entity_id === filter.entity_id);
+    }
+
+    if (filter.user_id) {
+      filtered = filtered.filter((log) => log.user_id === filter.user_id);
+    }
+
+    if (filter.action) {
+      filtered = filtered.filter((log) => log.action === filter.action);
+    }
+
+    if (filter.organization_id) {
+      filtered = filtered.filter(
+        (log) => log.organization_id === filter.organization_id,
+      );
+    }
+
+    if (filter.from_date) {
+      const from_timestamp = new Date(filter.from_date).getTime();
+      filtered = filtered.filter(
+        (log) => new Date(log.timestamp).getTime() >= from_timestamp,
+      );
+    }
+
+    if (filter.to_date) {
+      const to_timestamp = new Date(filter.to_date).getTime();
+      filtered = filtered.filter(
+        (log) => new Date(log.timestamp).getTime() <= to_timestamp,
+      );
+    }
+
+    return filtered;
   }
 
   async find_by_entity(
@@ -149,7 +123,7 @@ export class InBrowserAuditLogRepository extends InBrowserBaseRepository<
     entity_id: string,
     options?: QueryOptions,
   ): PaginatedAsyncResult<AuditLog> {
-    return this.find_by_filter({ entity_type, entity_id }, options);
+    return this.find_all({ entity_type, entity_id }, options);
   }
 }
 

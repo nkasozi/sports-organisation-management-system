@@ -27,7 +27,8 @@ export class InBrowserTeamStaffRoleRepository
   extends InBrowserBaseRepository<
     TeamStaffRole,
     CreateTeamStaffRoleInput,
-    UpdateTeamStaffRoleInput
+    UpdateTeamStaffRoleInput,
+    TeamStaffRoleFilter
   >
   implements TeamStaffRoleRepository
 {
@@ -65,6 +66,30 @@ export class InBrowserTeamStaffRoleRepository
       ...entity,
       ...updates,
     };
+  }
+
+  protected apply_entity_filter(
+    entities: TeamStaffRole[],
+    filter: TeamStaffRoleFilter,
+  ): TeamStaffRole[] {
+    let filtered = entities;
+
+    if (filter.name_contains) {
+      const search_term = filter.name_contains.toLowerCase();
+      filtered = filtered.filter((role) =>
+        role.name.toLowerCase().includes(search_term),
+      );
+    }
+
+    if (filter.category) {
+      filtered = filtered.filter((role) => role.category === filter.category);
+    }
+
+    if (filter.status) {
+      filtered = filtered.filter((role) => role.status === filter.status);
+    }
+
+    return filtered;
   }
 
   async find_all_with_filter(

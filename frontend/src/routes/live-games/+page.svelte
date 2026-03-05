@@ -8,6 +8,7 @@
   import { get_entity_data_category } from "$lib/core/interfaces/ports";
   import { get_authorization_adapter } from "$lib/adapters/iam/LocalAuthorizationAdapter";
   import type { Fixture } from "$lib/core/entities/Fixture";
+  import type { Organization } from "$lib/core/entities/Organization";
   import {
     check_fixture_can_start,
     auto_generate_lineups_if_possible,
@@ -40,8 +41,11 @@
   const competition_use_cases = get_competition_use_cases();
   const organization_use_cases = get_organization_use_cases();
 
+  let organizations: Organization[] = [];
+  let selected_organization_id = "";
   let incomplete_fixtures: Fixture[] = [];
   let is_loading = true;
+  let is_loading_fixtures = false;
   let error_message = "";
   let current_checks: Record<string, PreFlightCheck[]> = {};
   let is_starting: Record<string, boolean> = {};
@@ -50,6 +54,52 @@
   let sport_names: Record<string, string> = {};
   let can_start_games = false;
   let permission_info_message = "";
+
+  function can_user_change_organizations(): boolean {
+    const auth_state = get(auth_store);
+    const role = auth_state.current_profile?.role || "player";
+    return role === "super_admin";
+  }
+
+  function build_org_auth_filter(): Record<string, string> {
+    const auth_state = get(auth_store);
+    if (!auth_state.current_profile) return {};
+    return build_authorization_list_filter(
+      auth_state.current_profile as UserScopeProfile,
+      ["organization_id", "id"],
+    );
+  }
+
+  async function load_organizations(): Promise<Organization[]> {
+    const auth_filter = build_org_auth_filter();
+    const result = await organization_use_cases.list(auth_filter);
+    if (!result.success) return [];
+    return result.data;
+  }
+
+  async function handle_organization_change(): Promise<boolean> {
+    if (!selected_organization_id) return false;
+
+    is_loading_fixtures = true;
+    error_message = "";
+    incomplete_fixtures = [];
+    team_names = {};
+    competition_names = {};
+    sport_names = {};
+    current_checks = {};
+
+    const loaded_fixtures = await load_incomplete_fixtures(
+      selected_organization_id,
+    );
+    team_names = await load_team_names_for_fixtures(loaded_fixtures);
+    const competition_sport_data =
+      await load_competition_and_sport_names_for_fixtures(loaded_fixtures);
+    competition_names = competition_sport_data.competition_names;
+    sport_names = competition_sport_data.sport_names;
+    incomplete_fixtures = loaded_fixtures;
+    is_loading_fixtures = false;
+    return true;
+  }
 
   onMount(async () => {
     if (!browser) return;
@@ -96,13 +146,15 @@
       permission_info_message = `Your role "${update_authorization_check.success ? update_authorization_check.data.role : "unknown"}" can view fixtures but cannot start games. Contact an administrator if you need this permission.`;
     }
 
-    const loaded_fixtures = await load_incomplete_fixtures();
-    team_names = await load_team_names_for_fixtures(loaded_fixtures);
-    const competition_sport_data =
-      await load_competition_and_sport_names_for_fixtures(loaded_fixtures);
-    competition_names = competition_sport_data.competition_names;
-    sport_names = competition_sport_data.sport_names;
-    incomplete_fixtures = loaded_fixtures;
+    organizations = await load_organizations();
+
+    if (organizations.length === 0) {
+      is_loading = false;
+      return;
+    }
+
+    selected_organization_id = organizations[0].id;
+    await handle_organization_change();
     is_loading = false;
   });
 
@@ -203,8 +255,11 @@
     return filter;
   }
 
-  async function load_incomplete_fixtures(): Promise<Fixture[]> {
+  async function load_incomplete_fixtures(
+    organization_id: string,
+  ): Promise<Fixture[]> {
     const auth_filter = build_auth_filter();
+    auth_filter["organization_id"] = organization_id;
     const all_fixtures_result = await fixture_use_cases.list(auth_filter);
 
     if (!all_fixtures_result.success || !all_fixtures_result.data) {
@@ -588,14 +643,44 @@
 
 <div class="container mx-auto px-3 sm:px-4 py-4 sm:py-8 max-w-5xl">
   <div class="mb-6 sm:mb-8">
-    <h1
-      class="text-2xl sm:text-3xl font-bold mb-1 sm:mb-2 text-accent-900 dark:text-white"
+    <div
+      class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-1 sm:mb-2"
     >
-      Live Game Management
-    </h1>
-    <p class="text-sm sm:text-base text-accent-600 dark:text-accent-300">
-      Start and manage fixtures in real-time
-    </p>
+      <div>
+        <h1
+          class="text-2xl sm:text-3xl font-bold text-accent-900 dark:text-white"
+        >
+          Live Game Management
+        </h1>
+        <p class="text-sm sm:text-base text-accent-600 dark:text-accent-300">
+          Start and manage fixtures in real-time
+        </p>
+      </div>
+
+      {#if organizations.length > 0}
+        <div class="flex-shrink-0">
+          {#if can_user_change_organizations()}
+            <select
+              bind:value={selected_organization_id}
+              on:change={handle_organization_change}
+              class="select-styled w-full sm:w-auto sm:min-w-[220px]"
+              disabled={is_loading_fixtures}
+            >
+              {#each organizations as org}
+                <option value={org.id}>{org.name}</option>
+              {/each}
+            </select>
+          {:else}
+            <span
+              class="inline-block text-sm font-medium text-accent-700 dark:text-accent-300 px-3 py-2 bg-accent-100 dark:bg-accent-800 rounded-lg"
+            >
+              {organizations.find((o) => o.id === selected_organization_id)
+                ?.name || "Organization"}
+            </span>
+          {/if}
+        </div>
+      {/if}
+    </div>
   </div>
 
   {#if permission_info_message}
@@ -634,6 +719,43 @@
       class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4"
     >
       <p class="text-red-600 dark:text-red-400">{error_message}</p>
+    </div>
+  {:else if organizations.length === 0}
+    <div
+      class="bg-accent-50 dark:bg-accent-800 rounded-xl p-6 sm:p-8 text-center"
+    >
+      <div
+        class="w-16 h-16 mx-auto mb-4 bg-accent-100 dark:bg-accent-700 rounded-full flex items-center justify-center"
+      >
+        <svg
+          class="w-8 h-8 text-accent-400 dark:text-accent-500"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+          ></path>
+        </svg>
+      </div>
+      <p class="text-accent-600 dark:text-accent-300 mb-4">
+        No organizations found
+      </p>
+      <a
+        href="/organizations"
+        class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+      >
+        Go to Organizations
+      </a>
+    </div>
+  {:else if is_loading_fixtures}
+    <div class="flex justify-center items-center py-12">
+      <div
+        class="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-b-2 border-blue-600 dark:border-blue-400"
+      ></div>
     </div>
   {:else if incomplete_fixtures.length === 0}
     <div

@@ -319,11 +319,11 @@
 {:else}
   {#if access_denial_message}
     <div
-      class="mb-6 rounded-lg border border-amber-300 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-700 p-4"
+      class="mb-6 rounded-lg border border-blue-300 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-700 p-4"
     >
       <div class="flex items-start gap-3">
         <svg
-          class="h-6 w-6 text-amber-500 flex-shrink-0 mt-0.5"
+          class="h-6 w-6 text-blue-500 flex-shrink-0 mt-0.5"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -336,16 +336,16 @@
           />
         </svg>
         <div class="flex-1">
-          <h3 class="text-sm font-semibold text-amber-800 dark:text-amber-200">
+          <h3 class="text-sm font-semibold text-blue-800 dark:text-blue-200">
             Access Denied
           </h3>
-          <p class="mt-1 text-sm text-amber-700 dark:text-amber-300">
+          <p class="mt-1 text-sm text-blue-700 dark:text-blue-300">
             {access_denial_message}
           </p>
         </div>
         <button
           type="button"
-          class="text-amber-500 hover:text-amber-700 dark:hover:text-amber-300"
+          class="text-blue-500 hover:text-blue-700 dark:hover:text-blue-300"
           on:click={() => (access_denial_message = "")}
           aria-label="Dismiss"
         >

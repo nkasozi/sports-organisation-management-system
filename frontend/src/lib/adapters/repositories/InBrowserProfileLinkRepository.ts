@@ -23,7 +23,8 @@ export class InBrowserProfileLinkRepository
   extends InBrowserBaseRepository<
     ProfileLink,
     CreateProfileLinkInput,
-    UpdateProfileLinkInput
+    UpdateProfileLinkInput,
+    ProfileLinkFilter
   >
   implements ProfileLinkRepository
 {
@@ -60,6 +61,29 @@ export class InBrowserProfileLinkRepository
       ...entity,
       ...updates,
     };
+  }
+
+  protected apply_entity_filter(
+    entities: ProfileLink[],
+    filter: ProfileLinkFilter,
+  ): ProfileLink[] {
+    let filtered = entities;
+
+    if (filter.profile_id) {
+      filtered = filtered.filter(
+        (link) => link.profile_id === filter.profile_id,
+      );
+    }
+
+    if (filter.platform) {
+      filtered = filtered.filter((link) => link.platform === filter.platform);
+    }
+
+    if (filter.status) {
+      filtered = filtered.filter((link) => link.status === filter.status);
+    }
+
+    return filtered;
   }
 
   async find_by_filter(

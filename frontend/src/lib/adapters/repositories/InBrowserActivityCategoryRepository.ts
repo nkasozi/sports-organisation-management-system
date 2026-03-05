@@ -24,7 +24,8 @@ export class InBrowserActivityCategoryRepository
   extends InBrowserBaseRepository<
     ActivityCategory,
     CreateActivityCategoryInput,
-    UpdateActivityCategoryInput
+    UpdateActivityCategoryInput,
+    ActivityCategoryFilter
   >
   implements ActivityCategoryRepository
 {
@@ -64,63 +65,46 @@ export class InBrowserActivityCategoryRepository
     };
   }
 
-  async find_by_filter(
+  protected apply_entity_filter(
+    entities: ActivityCategory[],
     filter: ActivityCategoryFilter,
-    options?: QueryOptions,
-  ): PaginatedAsyncResult<ActivityCategory> {
-    try {
-      let filtered_entities = await this.database.activity_categories.toArray();
+  ): ActivityCategory[] {
+    let filtered = entities;
 
-      if (filter.name_contains) {
-        const search_term = filter.name_contains.toLowerCase();
-        filtered_entities = filtered_entities.filter((category) =>
-          category.name.toLowerCase().includes(search_term),
-        );
-      }
-
-      if (filter.organization_id) {
-        filtered_entities = filtered_entities.filter(
-          (category) => category.organization_id === filter.organization_id,
-        );
-      }
-
-      if (filter.category_type) {
-        filtered_entities = filtered_entities.filter(
-          (category) => category.category_type === filter.category_type,
-        );
-      }
-
-      if (filter.is_system_generated !== undefined) {
-        filtered_entities = filtered_entities.filter(
-          (category) =>
-            category.is_system_generated === filter.is_system_generated,
-        );
-      }
-
-      const total_count = filtered_entities.length;
-      const sorted_entities = this.apply_sort(filtered_entities, options);
-      const paginated_entities = this.apply_pagination(
-        sorted_entities,
-        options,
-      );
-
-      return create_success_result(
-        this.create_paginated_result(paginated_entities, total_count, options),
-      );
-    } catch (error) {
-      const error_message =
-        error instanceof Error ? error.message : "Unknown error occurred";
-      return create_failure_result(
-        `Failed to filter activity categories: ${error_message}`,
+    if (filter.name_contains) {
+      const search_term = filter.name_contains.toLowerCase();
+      filtered = filtered.filter((category) =>
+        category.name.toLowerCase().includes(search_term),
       );
     }
+
+    if (filter.organization_id) {
+      filtered = filtered.filter(
+        (category) => category.organization_id === filter.organization_id,
+      );
+    }
+
+    if (filter.category_type) {
+      filtered = filtered.filter(
+        (category) => category.category_type === filter.category_type,
+      );
+    }
+
+    if (filter.is_system_generated !== undefined) {
+      filtered = filtered.filter(
+        (category) =>
+          category.is_system_generated === filter.is_system_generated,
+      );
+    }
+
+    return filtered;
   }
 
   async find_by_organization(
     organization_id: string,
     options?: QueryOptions,
   ): PaginatedAsyncResult<ActivityCategory> {
-    return this.find_by_filter({ organization_id }, options);
+    return this.find_all({ organization_id }, options);
   }
 
   async find_by_category_type(
@@ -128,7 +112,7 @@ export class InBrowserActivityCategoryRepository
     category_type: ActivityCategory["category_type"],
     options?: QueryOptions,
   ): PaginatedAsyncResult<ActivityCategory> {
-    return this.find_by_filter({ organization_id, category_type }, options);
+    return this.find_all({ organization_id, category_type }, options);
   }
 }
 

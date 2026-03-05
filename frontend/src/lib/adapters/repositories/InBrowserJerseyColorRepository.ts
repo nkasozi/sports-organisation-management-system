@@ -24,7 +24,8 @@ export class InBrowserJerseyColorRepository
   extends InBrowserBaseRepository<
     JerseyColor,
     CreateJerseyColorInput,
-    UpdateJerseyColorInput
+    UpdateJerseyColorInput,
+    JerseyColorFilter
   >
   implements JerseyColorRepository
 {
@@ -64,62 +65,43 @@ export class InBrowserJerseyColorRepository
     };
   }
 
-  async find_by_filter(
+  protected apply_entity_filter(
+    entities: JerseyColor[],
     filter: JerseyColorFilter,
-    options?: QueryOptions,
-  ): PaginatedAsyncResult<JerseyColor> {
-    try {
-      let filtered_entities = await this.database.jersey_colors.toArray();
+  ): JerseyColor[] {
+    let filtered = entities;
 
-      if (filter.holder_type) {
-        filtered_entities = filtered_entities.filter(
-          (jersey) => jersey.holder_type === filter.holder_type,
-        );
-      }
-
-      if (filter.holder_id) {
-        filtered_entities = filtered_entities.filter(
-          (jersey) => jersey.holder_id === filter.holder_id,
-        );
-      }
-
-      if (filter.nickname) {
-        const nickname_lower = filter.nickname.toLowerCase();
-        filtered_entities = filtered_entities.filter((jersey) =>
-          jersey.nickname.toLowerCase().includes(nickname_lower),
-        );
-      }
-
-      if (filter.main_color) {
-        const color_lower = filter.main_color.toLowerCase();
-        filtered_entities = filtered_entities.filter(
-          (jersey) => jersey.main_color.toLowerCase() === color_lower,
-        );
-      }
-
-      if (filter.status) {
-        filtered_entities = filtered_entities.filter(
-          (jersey) => jersey.status === filter.status,
-        );
-      }
-
-      const total_count = filtered_entities.length;
-      const sorted_entities = this.apply_sort(filtered_entities, options);
-      const paginated_entities = this.apply_pagination(
-        sorted_entities,
-        options,
-      );
-
-      return create_success_result(
-        this.create_paginated_result(paginated_entities, total_count, options),
-      );
-    } catch (error) {
-      const error_message =
-        error instanceof Error ? error.message : "Unknown error occurred";
-      return create_failure_result(
-        `Failed to filter jersey colors: ${error_message}`,
+    if (filter.holder_type) {
+      filtered = filtered.filter(
+        (jersey) => jersey.holder_type === filter.holder_type,
       );
     }
+
+    if (filter.holder_id) {
+      filtered = filtered.filter(
+        (jersey) => jersey.holder_id === filter.holder_id,
+      );
+    }
+
+    if (filter.nickname) {
+      const nickname_lower = filter.nickname.toLowerCase();
+      filtered = filtered.filter((jersey) =>
+        jersey.nickname.toLowerCase().includes(nickname_lower),
+      );
+    }
+
+    if (filter.main_color) {
+      const color_lower = filter.main_color.toLowerCase();
+      filtered = filtered.filter(
+        (jersey) => jersey.main_color.toLowerCase() === color_lower,
+      );
+    }
+
+    if (filter.status) {
+      filtered = filtered.filter((jersey) => jersey.status === filter.status);
+    }
+
+    return filtered;
   }
 
   async find_by_holder(
@@ -127,7 +109,7 @@ export class InBrowserJerseyColorRepository
     holder_id: string,
     options?: QueryOptions,
   ): PaginatedAsyncResult<JerseyColor> {
-    return this.find_by_filter({ holder_type, holder_id }, options);
+    return this.find_all({ holder_type, holder_id }, options);
   }
 }
 

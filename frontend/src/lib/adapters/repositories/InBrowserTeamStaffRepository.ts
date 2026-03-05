@@ -28,7 +28,8 @@ export class InBrowserTeamStaffRepository
   extends InBrowserBaseRepository<
     TeamStaff,
     CreateTeamStaffInput,
-    UpdateTeamStaffInput
+    UpdateTeamStaffInput,
+    TeamStaffFilter
   >
   implements TeamStaffRepository
 {
@@ -76,6 +77,42 @@ export class InBrowserTeamStaffRepository
       ...updates,
       profile_image_url: updates.profile_image_url ?? entity.profile_image_url,
     };
+  }
+
+  protected apply_entity_filter(
+    entities: TeamStaff[],
+    filter: TeamStaffFilter,
+  ): TeamStaff[] {
+    let filtered = entities;
+
+    if (filter.organization_id) {
+      filtered = filtered.filter(
+        (staff) => staff.organization_id === filter.organization_id,
+      );
+    }
+
+    if (filter.name_contains) {
+      const search_term = filter.name_contains.toLowerCase();
+      filtered = filtered.filter((staff) =>
+        `${staff.first_name} ${staff.last_name}`
+          .toLowerCase()
+          .includes(search_term),
+      );
+    }
+
+    if (filter.team_id) {
+      filtered = filtered.filter((staff) => staff.team_id === filter.team_id);
+    }
+
+    if (filter.role_id) {
+      filtered = filtered.filter((staff) => staff.role_id === filter.role_id);
+    }
+
+    if (filter.status) {
+      filtered = filtered.filter((staff) => staff.status === filter.status);
+    }
+
+    return filtered;
   }
 
   async find_all_with_filter(

@@ -28,7 +28,8 @@ export class InBrowserGameOfficialRoleRepository
   extends InBrowserBaseRepository<
     GameOfficialRole,
     CreateGameOfficialRoleInput,
-    UpdateGameOfficialRoleInput
+    UpdateGameOfficialRoleInput,
+    GameOfficialRoleFilter
   >
   implements GameOfficialRoleRepository
 {
@@ -67,6 +68,42 @@ export class InBrowserGameOfficialRoleRepository
       ...entity,
       ...updates,
     };
+  }
+
+  protected apply_entity_filter(
+    entities: GameOfficialRole[],
+    filter: GameOfficialRoleFilter,
+  ): GameOfficialRole[] {
+    let filtered = entities;
+
+    if (filter.name_contains) {
+      const search_term = filter.name_contains.toLowerCase();
+      filtered = filtered.filter((role) =>
+        role.name.toLowerCase().includes(search_term),
+      );
+    }
+
+    if (filter.sport_id !== undefined) {
+      filtered = filtered.filter((role) => role.sport_id === filter.sport_id);
+    }
+
+    if (filter.is_on_field !== undefined) {
+      filtered = filtered.filter(
+        (role) => role.is_on_field === filter.is_on_field,
+      );
+    }
+
+    if (filter.is_head_official !== undefined) {
+      filtered = filtered.filter(
+        (role) => role.is_head_official === filter.is_head_official,
+      );
+    }
+
+    if (filter.status) {
+      filtered = filtered.filter((role) => role.status === filter.status);
+    }
+
+    return filtered;
   }
 
   async find_all_with_filter(

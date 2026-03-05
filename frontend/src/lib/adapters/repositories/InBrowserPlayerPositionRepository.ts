@@ -25,7 +25,8 @@ export class InBrowserPlayerPositionRepository
   extends InBrowserBaseRepository<
     PlayerPosition,
     CreatePlayerPositionInput,
-    UpdatePlayerPositionInput
+    UpdatePlayerPositionInput,
+    PlayerPositionFilter
   >
   implements PlayerPositionRepository
 {
@@ -64,6 +65,46 @@ export class InBrowserPlayerPositionRepository
       ...entity,
       ...updates,
     };
+  }
+
+  protected apply_entity_filter(
+    entities: PlayerPosition[],
+    filter: PlayerPositionFilter,
+  ): PlayerPosition[] {
+    let filtered = entities;
+
+    if (filter.name_contains) {
+      const search_term = filter.name_contains.toLowerCase();
+      filtered = filtered.filter((position) =>
+        position.name.toLowerCase().includes(search_term),
+      );
+    }
+
+    if (filter.category) {
+      filtered = filtered.filter(
+        (position) => position.category === filter.category,
+      );
+    }
+
+    if (filter.sport_type) {
+      filtered = filtered.filter(
+        (position) => position.sport_type === filter.sport_type,
+      );
+    }
+
+    if (filter.is_available !== undefined) {
+      filtered = filtered.filter(
+        (position) => position.is_available === filter.is_available,
+      );
+    }
+
+    if (filter.status) {
+      filtered = filtered.filter(
+        (position) => position.status === filter.status,
+      );
+    }
+
+    return filtered;
   }
 
   async find_by_code(code: string): Promise<Result<PlayerPosition | null>> {

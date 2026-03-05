@@ -15,7 +15,7 @@ export interface AuditLogFilter {
   to_date?: string;
 }
 
-type UpdateAuditLogInput = Partial<Omit<AuditLog, "id" | "created_at">>;
+export type UpdateAuditLogInput = Partial<Omit<AuditLog, "id" | "created_at">>;
 
 export interface AuditLogRepository extends FilterableRepository<
   AuditLog,

@@ -23,7 +23,8 @@ export class InBrowserIdentificationTypeRepository
   extends InBrowserBaseRepository<
     IdentificationType,
     CreateIdentificationTypeInput,
-    UpdateIdentificationTypeInput
+    UpdateIdentificationTypeInput,
+    IdentificationTypeFilter
   >
   implements IdentificationTypeRepository
 {
@@ -60,43 +61,25 @@ export class InBrowserIdentificationTypeRepository
     };
   }
 
-  async find_by_filter(
+  protected apply_entity_filter(
+    entities: IdentificationType[],
     filter: IdentificationTypeFilter,
-    options?: QueryOptions,
-  ): PaginatedAsyncResult<IdentificationType> {
-    try {
-      let filtered_entities =
-        await this.database.identification_types.toArray();
+  ): IdentificationType[] {
+    let filtered = entities;
 
-      if (filter.status) {
-        filtered_entities = filtered_entities.filter(
-          (identification_type) => identification_type.status === filter.status,
-        );
-      }
-
-      const total_count = filtered_entities.length;
-      const sorted_entities = this.apply_sort(filtered_entities, options);
-      const paginated_entities = this.apply_pagination(
-        sorted_entities,
-        options,
-      );
-
-      return create_success_result(
-        this.create_paginated_result(paginated_entities, total_count, options),
-      );
-    } catch (error) {
-      const error_message =
-        error instanceof Error ? error.message : "Unknown error occurred";
-      return create_failure_result(
-        `Failed to filter identification types: ${error_message}`,
+    if (filter.status) {
+      filtered = filtered.filter(
+        (identification_type) => identification_type.status === filter.status,
       );
     }
+
+    return filtered;
   }
 
   async find_active_types(
     options?: QueryOptions,
   ): PaginatedAsyncResult<IdentificationType> {
-    return this.find_by_filter({ status: "active" }, options);
+    return this.find_all({ status: "active" }, options);
   }
 }
 

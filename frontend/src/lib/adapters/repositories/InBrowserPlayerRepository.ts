@@ -78,6 +78,44 @@ export class InBrowserPlayerRepository
     };
   }
 
+  protected apply_entity_filter(
+    entities: Player[],
+    filter: PlayerFilter,
+  ): Player[] {
+    let filtered = entities;
+
+    if (filter.id) {
+      filtered = filtered.filter((player) => player.id === filter.id);
+    }
+
+    if (filter.name_contains) {
+      const search_term = filter.name_contains.toLowerCase();
+      filtered = filtered.filter(
+        (player) =>
+          player.first_name.toLowerCase().includes(search_term) ||
+          player.last_name.toLowerCase().includes(search_term),
+      );
+    }
+
+    if (filter.position_id) {
+      filtered = filtered.filter(
+        (player) => player.position_id === filter.position_id,
+      );
+    }
+
+    if (filter.status) {
+      filtered = filtered.filter((player) => player.status === filter.status);
+    }
+
+    if (filter.nationality) {
+      filtered = filtered.filter(
+        (player) => player.nationality === filter.nationality,
+      );
+    }
+
+    return filtered;
+  }
+
   async find_by_filter(
     filter: PlayerFilter,
     options?: QueryOptions,

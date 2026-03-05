@@ -29,7 +29,8 @@ export class InBrowserGameEventTypeRepository
   extends InBrowserBaseRepository<
     GameEventType,
     CreateGameEventTypeInput,
-    UpdateGameEventTypeInput
+    UpdateGameEventTypeInput,
+    GameEventTypeFilter
   >
   implements GameEventTypeRepository
 {
@@ -71,6 +72,60 @@ export class InBrowserGameEventTypeRepository
       ...entity,
       ...updates,
     };
+  }
+
+  protected apply_entity_filter(
+    entities: GameEventType[],
+    filter: GameEventTypeFilter,
+  ): GameEventType[] {
+    let filtered = entities;
+
+    if (filter.name_contains) {
+      const search_term = filter.name_contains.toLowerCase();
+      filtered = filtered.filter((event_type) =>
+        event_type.name.toLowerCase().includes(search_term),
+      );
+    }
+
+    if (filter.code) {
+      filtered = filtered.filter(
+        (event_type) => event_type.code === filter.code,
+      );
+    }
+
+    if (filter.sport_id !== undefined) {
+      filtered = filtered.filter(
+        (event_type) =>
+          event_type.sport_id === filter.sport_id ||
+          event_type.sport_id === null,
+      );
+    }
+
+    if (filter.category) {
+      filtered = filtered.filter(
+        (event_type) => event_type.category === filter.category,
+      );
+    }
+
+    if (filter.affects_score !== undefined) {
+      filtered = filtered.filter(
+        (event_type) => event_type.affects_score === filter.affects_score,
+      );
+    }
+
+    if (filter.requires_player !== undefined) {
+      filtered = filtered.filter(
+        (event_type) => event_type.requires_player === filter.requires_player,
+      );
+    }
+
+    if (filter.status) {
+      filtered = filtered.filter(
+        (event_type) => event_type.status === filter.status,
+      );
+    }
+
+    return filtered;
   }
 
   async find_all_with_filter(

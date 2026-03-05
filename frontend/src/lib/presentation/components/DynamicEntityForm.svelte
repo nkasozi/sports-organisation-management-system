@@ -1349,14 +1349,19 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
           assignment.official_id,
         );
 
-      const official_options_list = foreign_key_options["official_id"] || [];
-      const official = official_options_list.find(
-        (o) => o.id === assignment.official_id,
-      );
-
-      const official_name = official
-        ? `${(official as any).first_name || ""} ${(official as any).last_name || ""}`.trim()
-        : "Unknown Official";
+      let official_name = "Unknown Official";
+      const official_uc = get_use_cases_for_entity_type("official");
+      if (official_uc?.get_by_id) {
+        const official_result = await official_uc.get_by_id(
+          assignment.official_id,
+        );
+        if (official_result.success && official_result.data) {
+          const fetched = official_result.data as any;
+          official_name =
+            `${fetched.first_name || ""} ${fetched.last_name || ""}`.trim() ||
+            "Unknown Official";
+        }
+      }
 
       const associated_team_ids: string[] = [];
       const association_details: {

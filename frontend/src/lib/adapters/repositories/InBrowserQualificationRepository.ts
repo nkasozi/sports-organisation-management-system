@@ -24,7 +24,8 @@ export class InBrowserQualificationRepository
   extends InBrowserBaseRepository<
     Qualification,
     CreateQualificationInput,
-    UpdateQualificationInput
+    UpdateQualificationInput,
+    QualificationFilter
   >
   implements QualificationRepository
 {
@@ -68,63 +69,42 @@ export class InBrowserQualificationRepository
     };
   }
 
-  async find_by_filter(
+  protected apply_entity_filter(
+    entities: Qualification[],
     filter: QualificationFilter,
-    options?: QueryOptions,
-  ): PaginatedAsyncResult<Qualification> {
-    try {
-      let filtered_entities = await this.database.qualifications.toArray();
+  ): Qualification[] {
+    let filtered = entities;
 
-      if (filter.holder_type) {
-        filtered_entities = filtered_entities.filter(
-          (qual) => qual.holder_type === filter.holder_type,
-        );
-      }
-
-      if (filter.holder_id) {
-        filtered_entities = filtered_entities.filter(
-          (qual) => qual.holder_id === filter.holder_id,
-        );
-      }
-
-      if (filter.certification_level) {
-        filtered_entities = filtered_entities.filter(
-          (qual) => qual.certification_level === filter.certification_level,
-        );
-      }
-
-      if (filter.status) {
-        filtered_entities = filtered_entities.filter(
-          (qual) => qual.status === filter.status,
-        );
-      }
-
-      if (filter.is_expired !== undefined) {
-        const today = new Date();
-        filtered_entities = filtered_entities.filter((qual) => {
-          if (!qual.expiry_date) return !filter.is_expired;
-          const expiry = new Date(qual.expiry_date);
-          return filter.is_expired ? expiry < today : expiry >= today;
-        });
-      }
-
-      const total_count = filtered_entities.length;
-      const sorted_entities = this.apply_sort(filtered_entities, options);
-      const paginated_entities = this.apply_pagination(
-        sorted_entities,
-        options,
-      );
-
-      return create_success_result(
-        this.create_paginated_result(paginated_entities, total_count, options),
-      );
-    } catch (error) {
-      const error_message =
-        error instanceof Error ? error.message : "Unknown error occurred";
-      return create_failure_result(
-        `Failed to filter qualifications: ${error_message}`,
+    if (filter.holder_type) {
+      filtered = filtered.filter(
+        (qual) => qual.holder_type === filter.holder_type,
       );
     }
+
+    if (filter.holder_id) {
+      filtered = filtered.filter((qual) => qual.holder_id === filter.holder_id);
+    }
+
+    if (filter.certification_level) {
+      filtered = filtered.filter(
+        (qual) => qual.certification_level === filter.certification_level,
+      );
+    }
+
+    if (filter.status) {
+      filtered = filtered.filter((qual) => qual.status === filter.status);
+    }
+
+    if (filter.is_expired !== undefined) {
+      const today = new Date();
+      filtered = filtered.filter((qual) => {
+        if (!qual.expiry_date) return !filter.is_expired;
+        const expiry = new Date(qual.expiry_date);
+        return filter.is_expired ? expiry < today : expiry >= today;
+      });
+    }
+
+    return filtered;
   }
 
   async find_by_holder(
@@ -132,16 +112,13 @@ export class InBrowserQualificationRepository
     holder_id: string,
     options?: QueryOptions,
   ): PaginatedAsyncResult<Qualification> {
-    return this.find_by_filter({ holder_type, holder_id }, options);
+    return this.find_all({ holder_type, holder_id }, options);
   }
 
   async find_active_qualifications(
     options?: QueryOptions,
   ): PaginatedAsyncResult<Qualification> {
-    return this.find_by_filter(
-      { status: "active", is_expired: false },
-      options,
-    );
+    return this.find_all({ status: "active", is_expired: false }, options);
   }
 }
 
