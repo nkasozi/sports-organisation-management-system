@@ -67,7 +67,10 @@ export class InBrowserOrganizationRepository
     };
   }
 
-  protected apply_entity_filter(entities: Organization[], filter: OrganizationFilter): Organization[] {
+  protected apply_entity_filter(
+    entities: Organization[],
+    filter: OrganizationFilter,
+  ): Organization[] {
     let filtered_entities = entities;
 
     if (filter.name_contains) {

@@ -87,7 +87,10 @@ export function create_gender_use_cases(
     },
 
     async list_all(): PaginatedAsyncResult<Gender> {
-      return repository.find_all(undefined, { page_number: 1, page_size: 1000 });
+      return repository.find_all(undefined, {
+        page_number: 1,
+        page_size: 1000,
+      });
     },
   };
 }

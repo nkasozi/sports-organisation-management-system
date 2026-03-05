@@ -103,7 +103,10 @@ export function create_identification_use_cases(
     },
 
     async list_all(): PaginatedAsyncResult<Identification> {
-      return repository.find_all(undefined, { page_number: 1, page_size: 1000 });
+      return repository.find_all(undefined, {
+        page_number: 1,
+        page_size: 1000,
+      });
     },
 
     async list_identifications_by_entity(

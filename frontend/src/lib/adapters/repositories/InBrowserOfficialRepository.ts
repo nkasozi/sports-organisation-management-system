@@ -72,7 +72,10 @@ export class InBrowserOfficialRepository
     };
   }
 
-  protected apply_entity_filter(entities: Official[], filter: OfficialFilter): Official[] {
+  protected apply_entity_filter(
+    entities: Official[],
+    filter: OfficialFilter,
+  ): Official[] {
     let filtered_entities = entities;
 
     if (filter.name_contains) {

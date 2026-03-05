@@ -124,10 +124,7 @@ describe("CompetitionUseCases", () => {
 
       const result = await use_cases.list(filter);
 
-      expect(mock_repository.find_all).toHaveBeenCalledWith(
-        filter,
-        undefined,
-      );
+      expect(mock_repository.find_all).toHaveBeenCalledWith(filter, undefined);
       expect(result.success).toBe(true);
     });
 

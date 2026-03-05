@@ -113,10 +113,7 @@ export function create_team_staff_use_cases(
           total_pages: 1,
         });
       }
-      const fallback = await staff_repository.find_all(
-        { team_id },
-        options,
-      );
+      const fallback = await staff_repository.find_all({ team_id }, options);
       if (!fallback.success) return create_failure_result(fallback.error);
       return create_success_result(fallback.data);
     },

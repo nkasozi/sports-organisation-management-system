@@ -6,10 +6,7 @@ import type {
 } from "../../core/entities/Team";
 import { DEFAULT_TEAM_LOGO } from "../../core/entities/Team";
 import type { BaseEntity } from "../../core/entities/BaseEntity";
-import type {
-  TeamRepository,
-  TeamFilter,
-} from "../../core/interfaces/ports";
+import type { TeamRepository, TeamFilter } from "../../core/interfaces/ports";
 import type { QueryOptions } from "../../core/interfaces/ports";
 import type { PaginatedAsyncResult } from "../../core/types/Result";
 import {
@@ -21,7 +18,12 @@ import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
 const ENTITY_PREFIX = "team";
 
 export class InBrowserTeamRepository
-  extends InBrowserBaseRepository<Team, CreateTeamInput, UpdateTeamInput, TeamFilter>
+  extends InBrowserBaseRepository<
+    Team,
+    CreateTeamInput,
+    UpdateTeamInput,
+    TeamFilter
+  >
   implements TeamRepository
 {
   constructor() {

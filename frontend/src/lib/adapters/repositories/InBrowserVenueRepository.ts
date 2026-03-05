@@ -5,10 +5,7 @@ import type {
   UpdateVenueInput,
 } from "../../core/entities/Venue";
 import type { BaseEntity } from "../../core/entities/BaseEntity";
-import type {
-  VenueRepository,
-  VenueFilter,
-} from "../../core/interfaces/ports";
+import type { VenueRepository, VenueFilter } from "../../core/interfaces/ports";
 import type { QueryOptions } from "../../core/interfaces/ports";
 import type { PaginatedAsyncResult } from "../../core/types/Result";
 import {
@@ -20,7 +17,12 @@ import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
 const ENTITY_PREFIX = "venue";
 
 export class InBrowserVenueRepository
-  extends InBrowserBaseRepository<Venue, CreateVenueInput, UpdateVenueInput, VenueFilter>
+  extends InBrowserBaseRepository<
+    Venue,
+    CreateVenueInput,
+    UpdateVenueInput,
+    VenueFilter
+  >
   implements VenueRepository
 {
   constructor() {
@@ -67,7 +69,10 @@ export class InBrowserVenueRepository
     };
   }
 
-  protected apply_entity_filter(entities: Venue[], filter: VenueFilter): Venue[] {
+  protected apply_entity_filter(
+    entities: Venue[],
+    filter: VenueFilter,
+  ): Venue[] {
     let filtered_entities = entities;
 
     if (filter.name_contains) {

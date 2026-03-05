@@ -93,7 +93,10 @@ export function create_identification_type_use_cases(
     },
 
     async list_all(): PaginatedAsyncResult<IdentificationType> {
-      return repository.find_all(undefined, { page_number: 1, page_size: 1000 });
+      return repository.find_all(undefined, {
+        page_number: 1,
+        page_size: 1000,
+      });
     },
 
     async list_types_by_sport(
@@ -102,7 +105,10 @@ export function create_identification_type_use_cases(
       if (!sport_id || sport_id.trim() === "") {
         return create_failure_result("Sport ID is required");
       }
-      return repository.find_all(undefined, { page_number: 1, page_size: 1000 });
+      return repository.find_all(undefined, {
+        page_number: 1,
+        page_size: 1000,
+      });
     },
   };
 }

@@ -145,7 +145,10 @@ export function get_official_associated_team_repository(): OfficialAssociatedTea
 export async function initialize_official_associated_team_repository(): Promise<void> {
   const repository =
     get_official_associated_team_repository() as InBrowserOfficialAssociatedTeamRepository;
-  const result = await repository.find_all(undefined, { page_number: 1, page_size: 1 });
+  const result = await repository.find_all(undefined, {
+    page_number: 1,
+    page_size: 1,
+  });
 
   if (result.success && result.data?.items?.length === 0) {
     const default_items = create_default_official_associated_teams();

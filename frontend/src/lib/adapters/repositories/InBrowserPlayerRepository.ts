@@ -22,7 +22,12 @@ import { get_player_team_membership_repository } from "./InBrowserPlayerTeamMemb
 const ENTITY_PREFIX = "player";
 
 export class InBrowserPlayerRepository
-  extends InBrowserBaseRepository<Player, CreatePlayerInput, UpdatePlayerInput, PlayerFilter>
+  extends InBrowserBaseRepository<
+    Player,
+    CreatePlayerInput,
+    UpdatePlayerInput,
+    PlayerFilter
+  >
   implements PlayerRepository
 {
   private membership_repository: PlayerTeamMembershipRepository;

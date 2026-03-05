@@ -79,7 +79,10 @@ export class InBrowserFixtureRepository
     };
   }
 
-  protected apply_entity_filter(entities: Fixture[], filter: FixtureFilter): Fixture[] {
+  protected apply_entity_filter(
+    entities: Fixture[],
+    filter: FixtureFilter,
+  ): Fixture[] {
     let filtered_entities = entities;
 
     if (filter.competition_id) {
@@ -139,9 +142,7 @@ export class InBrowserFixtureRepository
     }
 
     filtered_entities.sort((a, b) => {
-      const date_comparison = a.scheduled_date.localeCompare(
-        b.scheduled_date,
-      );
+      const date_comparison = a.scheduled_date.localeCompare(b.scheduled_date);
       if (date_comparison !== 0) return date_comparison;
       return a.scheduled_time.localeCompare(b.scheduled_time);
     });

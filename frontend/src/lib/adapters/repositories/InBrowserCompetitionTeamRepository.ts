@@ -66,7 +66,10 @@ export class InBrowserCompetitionTeamRepository
     return updated_entity;
   }
 
-  protected apply_entity_filter(entities: CompetitionTeam[], filter: CompetitionTeamFilter): CompetitionTeam[] {
+  protected apply_entity_filter(
+    entities: CompetitionTeam[],
+    filter: CompetitionTeamFilter,
+  ): CompetitionTeam[] {
     let filtered_entities = entities;
 
     if (filter.competition_id) {

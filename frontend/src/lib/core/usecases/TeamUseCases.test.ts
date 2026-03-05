@@ -121,10 +121,7 @@ describe("TeamUseCases", () => {
 
       expect(result.success).toBe(true);
       expect(result.data).toHaveLength(1);
-      expect(mock_repository.find_all).toHaveBeenCalledWith(
-        filter,
-        undefined,
-      );
+      expect(mock_repository.find_all).toHaveBeenCalledWith(filter, undefined);
     });
 
     it("returns empty array with error message when repository fails", async () => {

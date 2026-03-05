@@ -20,7 +20,12 @@ import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
 const ENTITY_PREFIX = "gender";
 
 export class InBrowserGenderRepository
-  extends InBrowserBaseRepository<Gender, CreateGenderInput, UpdateGenderInput, GenderFilter>
+  extends InBrowserBaseRepository<
+    Gender,
+    CreateGenderInput,
+    UpdateGenderInput,
+    GenderFilter
+  >
   implements GenderRepository
 {
   constructor() {
@@ -55,7 +60,10 @@ export class InBrowserGenderRepository
     };
   }
 
-  protected apply_entity_filter(entities: Gender[], filter: GenderFilter): Gender[] {
+  protected apply_entity_filter(
+    entities: Gender[],
+    filter: GenderFilter,
+  ): Gender[] {
     let filtered_entities = entities;
 
     if (filter.status) {

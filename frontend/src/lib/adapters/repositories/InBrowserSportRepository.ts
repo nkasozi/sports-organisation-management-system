@@ -8,10 +8,7 @@ import {
   create_basketball_sport_preset,
   create_field_hockey_sport_preset,
 } from "../../core/entities/Sport";
-import type {
-  SportRepository,
-  SportFilter,
-} from "../../core/interfaces/ports";
+import type { SportRepository, SportFilter } from "../../core/interfaces/ports";
 import type { QueryOptions } from "../../core/interfaces/ports";
 import {
   create_success_result,
@@ -168,7 +165,10 @@ export const inBrowserSportRepository = {
 
 export function get_sport_repository(): SportRepository {
   return {
-    async find_all(filter?: SportFilter, options?: QueryOptions): PaginatedAsyncResult<Sport> {
+    async find_all(
+      filter?: SportFilter,
+      options?: QueryOptions,
+    ): PaginatedAsyncResult<Sport> {
       let sports = await get_all_sports();
 
       if (filter) {
@@ -239,6 +239,5 @@ export function get_sport_repository(): SportRepository {
       const sports = await get_all_sports();
       return create_success_result(sports.length);
     },
-
   };
 }

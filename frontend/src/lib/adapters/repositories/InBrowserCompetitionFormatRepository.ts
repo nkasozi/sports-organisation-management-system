@@ -79,7 +79,10 @@ export class InBrowserCompetitionFormatRepository
     };
   }
 
-  protected apply_entity_filter(entities: CompetitionFormat[], filter: CompetitionFormatFilter): CompetitionFormat[] {
+  protected apply_entity_filter(
+    entities: CompetitionFormat[],
+    filter: CompetitionFormatFilter,
+  ): CompetitionFormat[] {
     let filtered_entities = entities;
 
     if (filter.name_contains) {

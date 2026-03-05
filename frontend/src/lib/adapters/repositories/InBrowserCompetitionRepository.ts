@@ -78,7 +78,10 @@ export class InBrowserCompetitionRepository
     };
   }
 
-  protected apply_entity_filter(entities: Competition[], filter: CompetitionFilter): Competition[] {
+  protected apply_entity_filter(
+    entities: Competition[],
+    filter: CompetitionFilter,
+  ): Competition[] {
     let filtered_entities = entities;
 
     if (filter.name_contains) {
@@ -90,8 +93,7 @@ export class InBrowserCompetitionRepository
 
     if (filter.organization_id) {
       filtered_entities = filtered_entities.filter(
-        (competition) =>
-          competition.organization_id === filter.organization_id,
+        (competition) => competition.organization_id === filter.organization_id,
       );
     }
 

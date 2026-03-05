@@ -134,7 +134,9 @@ export class InBrowserActivityCategoryRepository
 
 async function get_default_organization_id(): Promise<string> {
   const organization_repository = get_organization_repository();
-  const result = await organization_repository.find_all(undefined, { page_size: 1 });
+  const result = await organization_repository.find_all(undefined, {
+    page_size: 1,
+  });
 
   if (result.success && result.data.items.length > 0) {
     return result.data.items[0].id;

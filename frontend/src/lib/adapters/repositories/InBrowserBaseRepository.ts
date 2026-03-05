@@ -9,10 +9,7 @@ import {
   create_success_result,
   create_failure_result,
 } from "../../core/types/Result";
-import type {
-  QueryOptions,
-  Repository,
-} from "../../core/interfaces/ports";
+import type { QueryOptions, Repository } from "../../core/interfaces/ports";
 import {
   generate_unique_id,
   create_timestamp_fields,
@@ -103,11 +100,17 @@ export abstract class InBrowserBaseRepository<
     return entities.slice(start_index, end_index);
   }
 
-  protected apply_entity_filter(entities: TEntity[], _filter: TFilter): TEntity[] {
+  protected apply_entity_filter(
+    entities: TEntity[],
+    _filter: TFilter,
+  ): TEntity[] {
     return entities;
   }
 
-  async find_all(filter?: TFilter, options?: QueryOptions): PaginatedAsyncResult<TEntity> {
+  async find_all(
+    filter?: TFilter,
+    options?: QueryOptions,
+  ): PaginatedAsyncResult<TEntity> {
     try {
       const table = this.get_table();
       let all_entities = await table.toArray();
