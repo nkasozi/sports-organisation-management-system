@@ -13,6 +13,7 @@ const config = {
     // API proxy for development
     alias: {
       $lib: "src/lib",
+      $convex: "convex",
     },
 
     prerender: {

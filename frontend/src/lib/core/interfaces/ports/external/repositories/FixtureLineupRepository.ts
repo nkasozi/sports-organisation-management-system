@@ -5,6 +5,7 @@ import type {
 } from "../../../../entities/FixtureLineup";
 import type { EntityListResult } from "../../../../entities/BaseEntity";
 import type { AsyncResult } from "../../../../types/Result";
+import type { Repository } from "./Repository";
 
 export interface FixtureLineupFilter {
   fixture_id?: string;
@@ -13,25 +14,12 @@ export interface FixtureLineupFilter {
   submitted_by?: string;
 }
 
-export interface FixtureLineupRepository {
-  create_fixture_lineup(
-    input: CreateFixtureLineupInput,
-  ): AsyncResult<FixtureLineup>;
-
-  get_fixture_lineup_by_id(id: string): AsyncResult<FixtureLineup>;
-
-  update_fixture_lineup(
-    id: string,
-    input: UpdateFixtureLineupInput,
-  ): AsyncResult<FixtureLineup>;
-
-  delete_fixture_lineup(id: string): AsyncResult<boolean>;
-
-  find_by_filter(
-    filter?: FixtureLineupFilter,
-    pagination?: { page: number; page_size: number },
-  ): Promise<EntityListResult<FixtureLineup>>;
-
+export interface FixtureLineupRepository extends Repository<
+  FixtureLineup,
+  CreateFixtureLineupInput,
+  UpdateFixtureLineupInput,
+  FixtureLineupFilter
+> {
   get_lineups_for_fixture(
     fixture_id: string,
   ): Promise<EntityListResult<FixtureLineup>>;

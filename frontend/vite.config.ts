@@ -8,6 +8,9 @@ export default defineConfig({
     include: ["src/**/*.test.ts"],
   },
   server: {
+    fs: {
+      allow: ["."],
+    },
     proxy: {
       // Proxy API requests to the backend during development
       "/api": {

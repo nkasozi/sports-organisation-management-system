@@ -32,7 +32,7 @@ import {
   create_auth_cache_invalidator,
   type AuthCacheInvalidator,
 } from "$lib/infrastructure/cache/AuthCacheInvalidator";
-import { api } from "../../../../convex/_generated/api";
+import { api } from "$convex/_generated/api";
 import { get_system_user_repository } from "$lib/adapters/repositories/InBrowserSystemUserRepository";
 
 let initialized = false;

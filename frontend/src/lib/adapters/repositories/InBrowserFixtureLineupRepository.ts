@@ -25,7 +25,8 @@ export class InBrowserFixtureLineupRepository
   extends InBrowserBaseRepository<
     FixtureLineup,
     CreateFixtureLineupInput,
-    UpdateFixtureLineupInput
+    UpdateFixtureLineupInput,
+    FixtureLineupFilter
   >
   implements FixtureLineupRepository
 {
@@ -82,76 +83,62 @@ export class InBrowserFixtureLineupRepository
     };
   }
 
-  async find_by_filter(
+  protected apply_entity_filter(
+    entities: FixtureLineup[],
+    filter: FixtureLineupFilter,
+  ): FixtureLineup[] {
+    let filtered = entities;
+
+    if (filter.fixture_id) {
+      filtered = filtered.filter(
+        (lineup) => lineup.fixture_id === filter.fixture_id,
+      );
+    }
+
+    if (filter.team_id) {
+      filtered = filtered.filter((lineup) => lineup.team_id === filter.team_id);
+    }
+
+    if (filter.status) {
+      filtered = filtered.filter((lineup) => lineup.status === filter.status);
+    }
+
+    if (filter.submitted_by) {
+      filtered = filtered.filter(
+        (lineup) => lineup.submitted_by === filter.submitted_by,
+      );
+    }
+
+    return filtered;
+  }
+
+  private async find_all_as_entity_list(
     filter?: FixtureLineupFilter,
     pagination?: { page: number; page_size: number },
   ): Promise<EntityListResult<FixtureLineup>> {
-    try {
-      let filtered_entities = await this.database.fixture_lineups.toArray();
-
-      if (filter) {
-        if (filter.fixture_id) {
-          filtered_entities = filtered_entities.filter(
-            (lineup) => lineup.fixture_id === filter.fixture_id,
-          );
-        }
-
-        if (filter.team_id) {
-          filtered_entities = filtered_entities.filter(
-            (lineup) => lineup.team_id === filter.team_id,
-          );
-        }
-
-        if (filter.status) {
-          filtered_entities = filtered_entities.filter(
-            (lineup) => lineup.status === filter.status,
-          );
-        }
-
-        if (filter.submitted_by) {
-          filtered_entities = filtered_entities.filter(
-            (lineup) => lineup.submitted_by === filter.submitted_by,
-          );
-        }
-      }
-
-      filtered_entities.sort(
-        (first_entity, second_entity) =>
-          new Date(second_entity.created_at).getTime() -
-          new Date(first_entity.created_at).getTime(),
-      );
-
-      const total_count = filtered_entities.length;
-      const page = pagination?.page || 1;
-      const page_size = pagination?.page_size || 50;
-      const start_index = (page - 1) * page_size;
-      const end_index = start_index + page_size;
-      const paginated_entities = filtered_entities.slice(
-        start_index,
-        end_index,
-      );
-
-      return {
-        success: true,
-        data: paginated_entities,
-        total_count,
-      };
-    } catch (error) {
-      const error_message =
-        error instanceof Error ? error.message : "Unknown error occurred";
+    const query_options = pagination
+      ? { page_number: pagination.page, page_size: pagination.page_size }
+      : undefined;
+    const result = await this.find_all(filter, query_options);
+    if (!result.success) {
       return {
         success: false,
         data: [],
         total_count: 0,
-        error_message: `Failed to filter fixture lineups: ${error_message}`,
+        error_message: result.error,
       };
     }
+    return {
+      success: true,
+      data: result.data.items,
+      total_count: result.data.total_count,
+    };
   }
 
   async get_lineups_for_fixture(
     fixture_id: string,
   ): Promise<EntityListResult<FixtureLineup>> {
-    return this.find_by_filter({ fixture_id });
+    return this.find_all_as_entity_list({ fixture_id });
   }
 
   async get_lineup_for_team_in_fixture(
@@ -159,7 +146,10 @@ export class InBrowserFixtureLineupRepository
     team_id: string,
   ): AsyncResult<FixtureLineup> {
     try {
-      const result = await this.find_by_filter({ fixture_id, team_id });
+      const result = await this.find_all_as_entity_list({
+        fixture_id,
+        team_id,
+      });
 
       if (!result.success || result.data.length === 0) {
         return create_failure_result(
@@ -177,32 +167,11 @@ export class InBrowserFixtureLineupRepository
     }
   }
 
-  async create_fixture_lineup(
-    input: CreateFixtureLineupInput,
-  ): AsyncResult<FixtureLineup> {
-    return this.create(input);
-  }
-
-  async get_fixture_lineup_by_id(id: string): AsyncResult<FixtureLineup> {
-    return this.find_by_id(id);
-  }
-
-  async update_fixture_lineup(
-    id: string,
-    input: UpdateFixtureLineupInput,
-  ): AsyncResult<FixtureLineup> {
-    return this.update(id, input);
-  }
-
-  async delete_fixture_lineup(id: string): AsyncResult<boolean> {
-    return this.delete_by_id(id);
-  }
-
   async find_by_fixture(
     fixture_id: string,
     options?: { page: number; page_size: number },
   ): Promise<EntityListResult<FixtureLineup>> {
-    return this.find_by_filter({ fixture_id }, options);
+    return this.find_all_as_entity_list({ fixture_id }, options);
   }
 
   async find_by_fixture_and_team(
@@ -210,7 +179,7 @@ export class InBrowserFixtureLineupRepository
     team_id: string,
     options?: { page: number; page_size: number },
   ): Promise<EntityListResult<FixtureLineup>> {
-    return this.find_by_filter({ fixture_id, team_id }, options);
+    return this.find_all_as_entity_list({ fixture_id, team_id }, options);
   }
 }
 

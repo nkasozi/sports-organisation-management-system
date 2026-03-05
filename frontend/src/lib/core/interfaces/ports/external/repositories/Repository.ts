@@ -1,4 +1,7 @@
-import type { AsyncResult, PaginatedAsyncResult } from "../../../../types/Result";
+import type {
+  AsyncResult,
+  PaginatedAsyncResult,
+} from "../../../../types/Result";
 import type { BaseEntity } from "../../../../entities/BaseEntity";
 
 export interface QueryOptions {
@@ -14,7 +17,10 @@ export interface Repository<
   TUpdateInput,
   TFilter = undefined,
 > {
-  find_all(filter?: TFilter, options?: QueryOptions): PaginatedAsyncResult<TEntity>;
+  find_all(
+    filter?: TFilter,
+    options?: QueryOptions,
+  ): PaginatedAsyncResult<TEntity>;
   find_by_id(id: string): AsyncResult<TEntity>;
   find_by_ids(ids: string[]): AsyncResult<TEntity[]>;
   create(input: TCreateInput): AsyncResult<TEntity>;

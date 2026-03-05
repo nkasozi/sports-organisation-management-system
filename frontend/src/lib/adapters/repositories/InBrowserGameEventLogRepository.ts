@@ -25,7 +25,8 @@ export class InBrowserGameEventLogRepository
   extends InBrowserBaseRepository<
     GameEventLog,
     CreateGameEventLogInput,
-    UpdateGameEventLogInput
+    UpdateGameEventLogInput,
+    GameEventLogFilter
   >
   implements GameEventLogRepository
 {
@@ -82,121 +83,109 @@ export class InBrowserGameEventLogRepository
     };
   }
 
-  async find_by_filter(
+  protected apply_entity_filter(
+    entities: GameEventLog[],
+    filter: GameEventLogFilter,
+  ): GameEventLog[] {
+    let filtered = entities;
+
+    if (filter.organization_id) {
+      filtered = filtered.filter(
+        (event) => event.organization_id === filter.organization_id,
+      );
+    }
+
+    if (filter.live_game_log_id) {
+      filtered = filtered.filter(
+        (event) => event.live_game_log_id === filter.live_game_log_id,
+      );
+    }
+
+    if (filter.fixture_id) {
+      filtered = filtered.filter(
+        (event) => event.fixture_id === filter.fixture_id,
+      );
+    }
+
+    if (filter.event_type) {
+      filtered = filtered.filter(
+        (event) => event.event_type === filter.event_type,
+      );
+    }
+
+    if (filter.team_side) {
+      filtered = filtered.filter(
+        (event) => event.team_side === filter.team_side,
+      );
+    }
+
+    if (filter.player_id) {
+      filtered = filtered.filter(
+        (event) =>
+          event.player_id === filter.player_id ||
+          event.secondary_player_id === filter.player_id,
+      );
+    }
+
+    if (filter.voided !== undefined) {
+      filtered = filtered.filter((event) => event.voided === filter.voided);
+    }
+
+    return filtered;
+  }
+
+  private async find_all_as_entity_list(
     filter?: GameEventLogFilter,
     pagination?: { page: number; page_size: number },
   ): Promise<EntityListResult<GameEventLog>> {
-    try {
-      let filtered_entities = await this.database.game_event_logs.toArray();
-
-      if (filter) {
-        if (filter.organization_id) {
-          filtered_entities = filtered_entities.filter(
-            (event) => event.organization_id === filter.organization_id,
-          );
-        }
-
-        if (filter.live_game_log_id) {
-          filtered_entities = filtered_entities.filter(
-            (event) => event.live_game_log_id === filter.live_game_log_id,
-          );
-        }
-
-        if (filter.fixture_id) {
-          filtered_entities = filtered_entities.filter(
-            (event) => event.fixture_id === filter.fixture_id,
-          );
-        }
-
-        if (filter.event_type) {
-          filtered_entities = filtered_entities.filter(
-            (event) => event.event_type === filter.event_type,
-          );
-        }
-
-        if (filter.team_side) {
-          filtered_entities = filtered_entities.filter(
-            (event) => event.team_side === filter.team_side,
-          );
-        }
-
-        if (filter.player_id) {
-          filtered_entities = filtered_entities.filter(
-            (event) =>
-              event.player_id === filter.player_id ||
-              event.secondary_player_id === filter.player_id,
-          );
-        }
-
-        if (filter.voided !== undefined) {
-          filtered_entities = filtered_entities.filter(
-            (event) => event.voided === filter.voided,
-          );
-        }
-      }
-
-      filtered_entities.sort((first_entity, second_entity) => {
-        const minute_diff = first_entity.minute - second_entity.minute;
-        if (minute_diff !== 0) return minute_diff;
-        return (
-          new Date(first_entity.recorded_at).getTime() -
-          new Date(second_entity.recorded_at).getTime()
-        );
-      });
-
-      const total_count = filtered_entities.length;
-      const page = pagination?.page || 1;
-      const page_size = pagination?.page_size || 100;
-      const start_index = (page - 1) * page_size;
-      const end_index = start_index + page_size;
-      const paginated_entities = filtered_entities.slice(
-        start_index,
-        end_index,
-      );
-
-      return {
-        success: true,
-        data: paginated_entities,
-        total_count,
-      };
-    } catch (error) {
-      const error_message =
-        error instanceof Error ? error.message : "Unknown error occurred";
+    const query_options = pagination
+      ? { page_number: pagination.page, page_size: pagination.page_size }
+      : undefined;
+    const result = await this.find_all(filter, query_options);
+    if (!result.success) {
       return {
         success: false,
         data: [],
         total_count: 0,
-        error_message: `Failed to filter game event logs: ${error_message}`,
+        error_message: result.error,
       };
     }
+    return {
+      success: true,
+      data: result.data.items,
+      total_count: result.data.total_count,
+    };
   }
 
   async get_events_for_live_game(
     live_game_log_id: string,
     options?: { page: number; page_size: number },
   ): Promise<EntityListResult<GameEventLog>> {
-    return this.find_by_filter({ live_game_log_id, voided: false }, options);
+    return this.find_all_as_entity_list(
+      { live_game_log_id, voided: false },
+      options,
+    );
   }
 
   async get_events_for_fixture(
     fixture_id: string,
     options?: { page: number; page_size: number },
   ): Promise<EntityListResult<GameEventLog>> {
-    return this.find_by_filter({ fixture_id, voided: false }, options);
+    return this.find_all_as_entity_list({ fixture_id, voided: false }, options);
   }
 
   async get_events_for_player(
     player_id: string,
     options?: { page: number; page_size: number },
   ): Promise<EntityListResult<GameEventLog>> {
-    return this.find_by_filter({ player_id, voided: false }, options);
+    return this.find_all_as_entity_list({ player_id, voided: false }, options);
   }
 
   async get_scoring_events_for_live_game(
     live_game_log_id: string,
   ): Promise<EntityListResult<GameEventLog>> {
     try {
-      const result = await this.find_by_filter({
+      const result = await this.find_all_as_entity_list({
         live_game_log_id,
         voided: false,
       });
@@ -230,7 +219,7 @@ export class InBrowserGameEventLogRepository
     live_game_log_id: string,
   ): Promise<EntityListResult<GameEventLog>> {
     try {
-      const result = await this.find_by_filter({
+      const result = await this.find_all_as_entity_list({
         live_game_log_id,
         voided: false,
       });
@@ -266,34 +255,13 @@ export class InBrowserGameEventLogRepository
     voided_by_user_id: string,
   ): AsyncResult<GameEventLog> {
     const now = new Date().toISOString();
-    return this.update_game_event_log(id, {
+    return this.update(id, {
       voided: true,
       voided_reason: reason,
       reviewed: true,
       reviewed_by_user_id: voided_by_user_id,
       reviewed_at: now,
     });
-  }
-
-  async create_game_event_log(
-    input: CreateGameEventLogInput,
-  ): AsyncResult<GameEventLog> {
-    return this.create(input);
-  }
-
-  async get_game_event_log_by_id(id: string): AsyncResult<GameEventLog> {
-    return this.find_by_id(id);
-  }
-
-  async update_game_event_log(
-    id: string,
-    input: UpdateGameEventLogInput,
-  ): AsyncResult<GameEventLog> {
-    return this.update(id, input);
-  }
-
-  async delete_game_event_log(id: string): AsyncResult<boolean> {
-    return this.delete_by_id(id);
   }
 }
 

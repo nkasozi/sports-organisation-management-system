@@ -39,14 +39,14 @@ export function create_game_event_log_use_cases(
         return create_failure_result("Event type is required");
       }
 
-      return repository.create_game_event_log(input);
+      return repository.create(input);
     },
 
     async get_by_id(id: string): AsyncResult<GameEventLog> {
       if (!id || id.trim().length === 0) {
         return create_failure_result("GameEventLog ID is required");
       }
-      return repository.get_game_event_log_by_id(id);
+      return repository.find_by_id(id);
     },
 
     async update(
@@ -57,7 +57,7 @@ export function create_game_event_log_use_cases(
         return create_failure_result("GameEventLog ID is required");
       }
 
-      const existing_result = await repository.get_game_event_log_by_id(id);
+      const existing_result = await repository.find_by_id(id);
       if (!existing_result.success || !existing_result.data) {
         return create_failure_result("Game event log not found");
       }
@@ -66,7 +66,7 @@ export function create_game_event_log_use_cases(
         return create_failure_result("Cannot update a voided event");
       }
 
-      return repository.update_game_event_log(id, input);
+      return repository.update(id, input);
     },
 
     async delete(id: string): AsyncResult<boolean> {
@@ -74,19 +74,32 @@ export function create_game_event_log_use_cases(
         return create_failure_result("GameEventLog ID is required");
       }
 
-      const existing_result = await repository.get_game_event_log_by_id(id);
+      const existing_result = await repository.find_by_id(id);
       if (!existing_result.success || !existing_result.data) {
         return create_failure_result("Game event log not found");
       }
 
-      return repository.delete_game_event_log(id);
+      return repository.delete_by_id(id);
     },
 
     async list(
       filter?: GameEventLogFilter,
       pagination?: { page: number; page_size: number },
     ): Promise<EntityListResult<GameEventLog>> {
-      return repository.find_by_filter(filter, pagination);
+      const result = await repository.find_all(filter, pagination);
+      if (!result.success) {
+        return {
+          success: false,
+          data: [],
+          total_count: 0,
+          error_message: result.error,
+        };
+      }
+      return {
+        success: true,
+        data: result.data?.items || [],
+        total_count: result.data?.total_count || 0,
+      };
     },
 
     async get_events_for_live_game(
@@ -175,7 +188,7 @@ export function create_game_event_log_use_cases(
         return create_failure_result("Void reason is required");
       }
 
-      const existing_result = await repository.get_game_event_log_by_id(id);
+      const existing_result = await repository.find_by_id(id);
       if (!existing_result.success || !existing_result.data) {
         return create_failure_result("Game event log not found");
       }
@@ -217,7 +230,7 @@ export function create_game_event_log_use_cases(
         status: "active",
       };
 
-      return repository.create_game_event_log(input);
+      return repository.create(input);
     },
 
     async record_card(
@@ -260,7 +273,7 @@ export function create_game_event_log_use_cases(
         status: "active",
       };
 
-      return repository.create_game_event_log(input);
+      return repository.create(input);
     },
 
     async record_substitution(
@@ -295,7 +308,7 @@ export function create_game_event_log_use_cases(
         status: "active",
       };
 
-      return repository.create_game_event_log(input);
+      return repository.create(input);
     },
   };
 }

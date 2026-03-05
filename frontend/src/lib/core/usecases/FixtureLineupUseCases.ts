@@ -40,14 +40,14 @@ export function create_fixture_lineup_use_cases(
         );
       }
 
-      return repository.create_fixture_lineup(input);
+      return repository.create(input);
     },
 
     async get_by_id(id: string): AsyncResult<FixtureLineup> {
       if (!id || id.trim().length === 0) {
         return create_failure_result("FixtureLineup ID is required");
       }
-      return repository.get_fixture_lineup_by_id(id);
+      return repository.find_by_id(id);
     },
 
     async update(
@@ -58,7 +58,7 @@ export function create_fixture_lineup_use_cases(
         return create_failure_result("FixtureLineup ID is required");
       }
 
-      const existing_result = await repository.get_fixture_lineup_by_id(id);
+      const existing_result = await repository.find_by_id(id);
       if (!existing_result.success || !existing_result.data) {
         return create_failure_result("Lineup not found");
       }
@@ -67,7 +67,7 @@ export function create_fixture_lineup_use_cases(
         return create_failure_result("Cannot update a locked lineup");
       }
 
-      return repository.update_fixture_lineup(id, input);
+      return repository.update(id, input);
     },
 
     async delete(id: string): AsyncResult<boolean> {
@@ -75,7 +75,7 @@ export function create_fixture_lineup_use_cases(
         return create_failure_result("FixtureLineup ID is required");
       }
 
-      const existing_result = await repository.get_fixture_lineup_by_id(id);
+      const existing_result = await repository.find_by_id(id);
       if (!existing_result.success || !existing_result.data) {
         return create_failure_result("Lineup not found");
       }
@@ -84,14 +84,27 @@ export function create_fixture_lineup_use_cases(
         return create_failure_result("Cannot delete a locked lineup");
       }
 
-      return repository.delete_fixture_lineup(id);
+      return repository.delete_by_id(id);
     },
 
     async list(
       filter?: FixtureLineupFilter,
       pagination?: { page: number; page_size: number },
     ): Promise<EntityListResult<FixtureLineup>> {
-      return repository.find_by_filter(filter, pagination);
+      const result = await repository.find_all(filter, pagination);
+      if (!result.success) {
+        return {
+          success: false,
+          data: [],
+          total_count: 0,
+          error_message: result.error,
+        };
+      }
+      return {
+        success: true,
+        data: result.data?.items || [],
+        total_count: result.data?.total_count || 0,
+      };
     },
 
     async get_lineups_for_fixture(
@@ -147,7 +160,7 @@ export function create_fixture_lineup_use_cases(
     },
 
     async submit_lineup(id: string): AsyncResult<FixtureLineup> {
-      const existing_result = await repository.get_fixture_lineup_by_id(id);
+      const existing_result = await repository.find_by_id(id);
       if (!existing_result.success || !existing_result.data) {
         return create_failure_result("Lineup not found");
       }
@@ -165,14 +178,14 @@ export function create_fixture_lineup_use_cases(
         return create_failure_result("Cannot submit an empty lineup");
       }
 
-      return repository.update_fixture_lineup(id, {
+      return repository.update(id, {
         status: "submitted",
         submitted_at: new Date().toISOString(),
       });
     },
 
     async lock_lineup(id: string): AsyncResult<FixtureLineup> {
-      const existing_result = await repository.get_fixture_lineup_by_id(id);
+      const existing_result = await repository.find_by_id(id);
       if (!existing_result.success || !existing_result.data) {
         return create_failure_result("Lineup not found");
       }
@@ -186,7 +199,7 @@ export function create_fixture_lineup_use_cases(
         return create_failure_result("Cannot lock an empty lineup");
       }
 
-      return repository.update_fixture_lineup(id, {
+      return repository.update(id, {
         status: "locked",
       });
     },

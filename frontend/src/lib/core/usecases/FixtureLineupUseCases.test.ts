@@ -9,11 +9,14 @@ import type {
 
 function create_mock_repository(): FixtureLineupRepository {
   return {
-    create_fixture_lineup: vi.fn(),
-    get_fixture_lineup_by_id: vi.fn(),
-    update_fixture_lineup: vi.fn(),
-    delete_fixture_lineup: vi.fn(),
-    find_by_filter: vi.fn(),
+    create: vi.fn(),
+    find_by_id: vi.fn(),
+    find_by_ids: vi.fn(),
+    find_all: vi.fn(),
+    update: vi.fn(),
+    delete_by_id: vi.fn(),
+    delete_by_ids: vi.fn(),
+    count: vi.fn(),
     find_by_fixture: vi.fn(),
     find_by_fixture_and_team: vi.fn(),
     get_lineups_for_fixture: vi.fn(),
@@ -84,10 +87,15 @@ describe("FixtureLineupUseCases", () => {
         create_test_lineup({ id: "1" }),
         create_test_lineup({ id: "2" }),
       ];
-      vi.mocked(mock_repository.find_by_filter).mockResolvedValue({
+      vi.mocked(mock_repository.find_all).mockResolvedValue({
         success: true,
-        data: lineups,
-        total_count: 2,
+        data: {
+          items: lineups,
+          total_count: 2,
+          page_number: 1,
+          page_size: 50,
+          total_pages: 1,
+        },
       });
 
       const result = await use_cases.list();
@@ -98,24 +106,26 @@ describe("FixtureLineupUseCases", () => {
 
     it("should apply filter when provided", async () => {
       const filter = { fixture_id: "fixture-123" };
-      vi.mocked(mock_repository.find_by_filter).mockResolvedValue({
+      vi.mocked(mock_repository.find_all).mockResolvedValue({
         success: true,
-        data: [create_test_lineup()],
-        total_count: 1,
+        data: {
+          items: [create_test_lineup()],
+          total_count: 1,
+          page_number: 1,
+          page_size: 50,
+          total_pages: 1,
+        },
       });
 
       const result = await use_cases.list(filter);
 
-      expect(mock_repository.find_by_filter).toHaveBeenCalledWith(
-        filter,
-        undefined,
-      );
+      expect(mock_repository.find_all).toHaveBeenCalledWith(filter, undefined);
     });
   });
 
   describe("get_by_id", () => {
     it("should return lineup when found", async () => {
-      vi.mocked(mock_repository.get_fixture_lineup_by_id).mockResolvedValue({
+      vi.mocked(mock_repository.find_by_id).mockResolvedValue({
         success: true,
         data: create_test_lineup(),
       });
@@ -149,7 +159,7 @@ describe("FixtureLineupUseCases", () => {
         success: false,
         error: "Not found",
       });
-      vi.mocked(mock_repository.create_fixture_lineup).mockResolvedValue({
+      vi.mocked(mock_repository.create).mockResolvedValue({
         success: true,
         data: create_test_lineup(),
       });
@@ -178,11 +188,11 @@ describe("FixtureLineupUseCases", () => {
 
   describe("update", () => {
     it("should update with valid input", async () => {
-      vi.mocked(mock_repository.get_fixture_lineup_by_id).mockResolvedValue({
+      vi.mocked(mock_repository.find_by_id).mockResolvedValue({
         success: true,
         data: create_test_lineup({ status: "draft" }),
       });
-      vi.mocked(mock_repository.update_fixture_lineup).mockResolvedValue({
+      vi.mocked(mock_repository.update).mockResolvedValue({
         success: true,
         data: create_test_lineup({ status: "submitted" }),
       });
@@ -205,11 +215,11 @@ describe("FixtureLineupUseCases", () => {
 
   describe("delete", () => {
     it("should delete by id", async () => {
-      vi.mocked(mock_repository.get_fixture_lineup_by_id).mockResolvedValue({
+      vi.mocked(mock_repository.find_by_id).mockResolvedValue({
         success: true,
         data: create_test_lineup({ status: "draft" }),
       });
-      vi.mocked(mock_repository.delete_fixture_lineup).mockResolvedValue({
+      vi.mocked(mock_repository.delete_by_id).mockResolvedValue({
         success: true,
         data: true,
       });

@@ -37,11 +37,14 @@ function create_mock_live_game_log(
 
 function create_mock_repository(): LiveGameLogRepository {
   return {
-    create_live_game_log: vi.fn(),
-    get_live_game_log_by_id: vi.fn(),
-    update_live_game_log: vi.fn(),
-    delete_live_game_log: vi.fn(),
-    find_by_filter: vi.fn(),
+    create: vi.fn(),
+    find_by_id: vi.fn(),
+    find_by_ids: vi.fn(),
+    find_all: vi.fn(),
+    update: vi.fn(),
+    delete_by_id: vi.fn(),
+    delete_by_ids: vi.fn(),
+    count: vi.fn(),
     get_live_game_log_for_fixture: vi.fn(),
     get_active_games: vi.fn(),
     find_by_organization: vi.fn(),
@@ -81,7 +84,7 @@ describe("LiveGameLogUseCases", () => {
         error: "Not found",
       });
 
-      vi.mocked(mock_repository.create_live_game_log).mockResolvedValue({
+      vi.mocked(mock_repository.create).mockResolvedValue({
         success: true,
         data: created_log,
       });
@@ -91,7 +94,7 @@ describe("LiveGameLogUseCases", () => {
       expect(result.success).toBe(true);
       if (!result.success) return;
       expect(result.data).toEqual(created_log);
-      expect(mock_repository.create_live_game_log).toHaveBeenCalledWith(input);
+      expect(mock_repository.create).toHaveBeenCalledWith(input);
     });
 
     it("should fail when fixture ID is missing", async () => {
@@ -170,7 +173,7 @@ describe("LiveGameLogUseCases", () => {
         game_status: "pre_game",
       });
 
-      vi.mocked(mock_repository.get_live_game_log_by_id).mockResolvedValue({
+      vi.mocked(mock_repository.find_by_id).mockResolvedValue({
         success: true,
         data: existing_log,
       });
@@ -182,7 +185,7 @@ describe("LiveGameLogUseCases", () => {
         current_period: "first_half" as const,
       };
 
-      vi.mocked(mock_repository.update_live_game_log).mockResolvedValue({
+      vi.mocked(mock_repository.update).mockResolvedValue({
         success: true,
         data: updated_log,
       });
@@ -190,7 +193,7 @@ describe("LiveGameLogUseCases", () => {
       const result = await use_cases.start_game("livegame-001", "user-001");
 
       expect(result.success).toBe(true);
-      expect(mock_repository.update_live_game_log).toHaveBeenCalledWith(
+      expect(mock_repository.update).toHaveBeenCalledWith(
         "livegame-001",
         expect.objectContaining({
           game_status: "in_progress",
@@ -204,7 +207,7 @@ describe("LiveGameLogUseCases", () => {
         game_status: "completed",
       });
 
-      vi.mocked(mock_repository.get_live_game_log_by_id).mockResolvedValue({
+      vi.mocked(mock_repository.find_by_id).mockResolvedValue({
         success: true,
         data: existing_log,
       });
@@ -223,7 +226,7 @@ describe("LiveGameLogUseCases", () => {
         game_status: "in_progress",
       });
 
-      vi.mocked(mock_repository.get_live_game_log_by_id).mockResolvedValue({
+      vi.mocked(mock_repository.find_by_id).mockResolvedValue({
         success: true,
         data: existing_log,
       });
@@ -234,7 +237,7 @@ describe("LiveGameLogUseCases", () => {
         clock_running: false,
       };
 
-      vi.mocked(mock_repository.update_live_game_log).mockResolvedValue({
+      vi.mocked(mock_repository.update).mockResolvedValue({
         success: true,
         data: updated_log,
       });
@@ -242,7 +245,7 @@ describe("LiveGameLogUseCases", () => {
       const result = await use_cases.end_game("livegame-001", "user-001");
 
       expect(result.success).toBe(true);
-      expect(mock_repository.update_live_game_log).toHaveBeenCalledWith(
+      expect(mock_repository.update).toHaveBeenCalledWith(
         "livegame-001",
         expect.objectContaining({
           game_status: "completed",
@@ -257,7 +260,7 @@ describe("LiveGameLogUseCases", () => {
     it("should update scores successfully", async () => {
       const existing_log = create_mock_live_game_log();
 
-      vi.mocked(mock_repository.update_live_game_log).mockResolvedValue({
+      vi.mocked(mock_repository.update).mockResolvedValue({
         success: true,
         data: { ...existing_log, home_team_score: 2, away_team_score: 1 },
       });
@@ -265,10 +268,10 @@ describe("LiveGameLogUseCases", () => {
       const result = await use_cases.update_score("livegame-001", 2, 1);
 
       expect(result.success).toBe(true);
-      expect(mock_repository.update_live_game_log).toHaveBeenCalledWith(
-        "livegame-001",
-        { home_team_score: 2, away_team_score: 1 },
-      );
+      expect(mock_repository.update).toHaveBeenCalledWith("livegame-001", {
+        home_team_score: 2,
+        away_team_score: 1,
+      });
     });
 
     it("should reject negative scores", async () => {
@@ -286,12 +289,12 @@ describe("LiveGameLogUseCases", () => {
         game_status: "pre_game",
       });
 
-      vi.mocked(mock_repository.get_live_game_log_by_id).mockResolvedValue({
+      vi.mocked(mock_repository.find_by_id).mockResolvedValue({
         success: true,
         data: existing_log,
       });
 
-      vi.mocked(mock_repository.delete_live_game_log).mockResolvedValue({
+      vi.mocked(mock_repository.delete_by_id).mockResolvedValue({
         success: true,
         data: true,
       });
@@ -306,7 +309,7 @@ describe("LiveGameLogUseCases", () => {
         game_status: "in_progress",
       });
 
-      vi.mocked(mock_repository.get_live_game_log_by_id).mockResolvedValue({
+      vi.mocked(mock_repository.find_by_id).mockResolvedValue({
         success: true,
         data: existing_log,
       });

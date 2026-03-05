@@ -59,9 +59,9 @@
       })();
     </script>
 
-    <!-- Service Worker Registration -->
+    <!-- Service Worker Registration (production only) -->
     <script>
-      if ("serviceWorker" in navigator) {
+      if ("serviceWorker" in navigator && !window.location.hostname.includes("localhost")) {
         window.addEventListener("load", function () {
           navigator.serviceWorker
             .register("/sw.js")

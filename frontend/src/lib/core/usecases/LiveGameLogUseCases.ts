@@ -39,14 +39,14 @@ export function create_live_game_log_use_cases(
         );
       }
 
-      return repository.create_live_game_log(input);
+      return repository.create(input);
     },
 
     async get_by_id(id: string): AsyncResult<LiveGameLog> {
       if (!id || id.trim().length === 0) {
         return create_failure_result("LiveGameLog ID is required");
       }
-      return repository.get_live_game_log_by_id(id);
+      return repository.find_by_id(id);
     },
 
     async update(
@@ -57,12 +57,12 @@ export function create_live_game_log_use_cases(
         return create_failure_result("LiveGameLog ID is required");
       }
 
-      const existing_result = await repository.get_live_game_log_by_id(id);
+      const existing_result = await repository.find_by_id(id);
       if (!existing_result.success || !existing_result.data) {
         return create_failure_result("Live game log not found");
       }
 
-      return repository.update_live_game_log(id, input);
+      return repository.update(id, input);
     },
 
     async delete(id: string): AsyncResult<boolean> {
@@ -70,7 +70,7 @@ export function create_live_game_log_use_cases(
         return create_failure_result("LiveGameLog ID is required");
       }
 
-      const existing_result = await repository.get_live_game_log_by_id(id);
+      const existing_result = await repository.find_by_id(id);
       if (!existing_result.success || !existing_result.data) {
         return create_failure_result("Live game log not found");
       }
@@ -79,14 +79,27 @@ export function create_live_game_log_use_cases(
         return create_failure_result("Cannot delete an in-progress game");
       }
 
-      return repository.delete_live_game_log(id);
+      return repository.delete_by_id(id);
     },
 
     async list(
       filter?: LiveGameLogFilter,
       pagination?: { page: number; page_size: number },
     ): Promise<EntityListResult<LiveGameLog>> {
-      return repository.find_by_filter(filter, pagination);
+      const result = await repository.find_all(filter, pagination);
+      if (!result.success) {
+        return {
+          success: false,
+          data: [],
+          total_count: 0,
+          error_message: result.error,
+        };
+      }
+      return {
+        success: true,
+        data: result.data?.items || [],
+        total_count: result.data?.total_count || 0,
+      };
     },
 
     async get_live_game_log_for_fixture(
@@ -105,7 +118,7 @@ export function create_live_game_log_use_cases(
     },
 
     async start_game(id: string, user_id: string): AsyncResult<LiveGameLog> {
-      const existing_result = await repository.get_live_game_log_by_id(id);
+      const existing_result = await repository.find_by_id(id);
       if (!existing_result.success || !existing_result.data) {
         return create_failure_result("Live game log not found");
       }
@@ -117,7 +130,7 @@ export function create_live_game_log_use_cases(
         );
       }
 
-      return repository.update_live_game_log(id, {
+      return repository.update(id, {
         game_status: "in_progress",
         clock_running: true,
         started_by_user_id: user_id,
@@ -129,7 +142,7 @@ export function create_live_game_log_use_cases(
     },
 
     async pause_game(id: string): AsyncResult<LiveGameLog> {
-      const existing_result = await repository.get_live_game_log_by_id(id);
+      const existing_result = await repository.find_by_id(id);
       if (!existing_result.success || !existing_result.data) {
         return create_failure_result("Live game log not found");
       }
@@ -139,14 +152,14 @@ export function create_live_game_log_use_cases(
         return create_failure_result("Can only pause an in-progress game");
       }
 
-      return repository.update_live_game_log(id, {
+      return repository.update(id, {
         game_status: "paused",
         clock_running: false,
       });
     },
 
     async resume_game(id: string): AsyncResult<LiveGameLog> {
-      const existing_result = await repository.get_live_game_log_by_id(id);
+      const existing_result = await repository.find_by_id(id);
       if (!existing_result.success || !existing_result.data) {
         return create_failure_result("Live game log not found");
       }
@@ -156,14 +169,14 @@ export function create_live_game_log_use_cases(
         return create_failure_result("Can only resume a paused game");
       }
 
-      return repository.update_live_game_log(id, {
+      return repository.update(id, {
         game_status: "in_progress",
         clock_running: true,
       });
     },
 
     async end_game(id: string, user_id: string): AsyncResult<LiveGameLog> {
-      const existing_result = await repository.get_live_game_log_by_id(id);
+      const existing_result = await repository.find_by_id(id);
       if (!existing_result.success || !existing_result.data) {
         return create_failure_result("Live game log not found");
       }
@@ -175,7 +188,7 @@ export function create_live_game_log_use_cases(
         );
       }
 
-      return repository.update_live_game_log(id, {
+      return repository.update(id, {
         game_status: "completed",
         clock_running: false,
         current_period: "finished",
@@ -188,7 +201,7 @@ export function create_live_game_log_use_cases(
       user_id: string,
       reason: string,
     ): AsyncResult<LiveGameLog> {
-      const existing_result = await repository.get_live_game_log_by_id(id);
+      const existing_result = await repository.find_by_id(id);
       if (!existing_result.success || !existing_result.data) {
         return create_failure_result("Live game log not found");
       }
@@ -203,7 +216,7 @@ export function create_live_game_log_use_cases(
         );
       }
 
-      return repository.update_live_game_log(id, {
+      return repository.update(id, {
         game_status: "abandoned",
         clock_running: false,
         ended_by_user_id: user_id,
@@ -220,7 +233,7 @@ export function create_live_game_log_use_cases(
         return create_failure_result("Scores cannot be negative");
       }
 
-      return repository.update_live_game_log(id, {
+      return repository.update(id, {
         home_team_score: home_score,
         away_team_score: away_score,
       });
@@ -243,14 +256,14 @@ export function create_live_game_log_use_cases(
         updates.stoppage_time_minutes = stoppage_time_minutes;
       }
 
-      return repository.update_live_game_log(id, updates);
+      return repository.update(id, updates);
     },
 
     async advance_period(
       id: string,
       new_period: string,
     ): AsyncResult<LiveGameLog> {
-      return repository.update_live_game_log(id, {
+      return repository.update(id, {
         current_period: new_period as GamePeriod,
       });
     },

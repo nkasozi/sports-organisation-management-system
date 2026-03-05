@@ -42,11 +42,14 @@ function create_mock_game_event_log(
 
 function create_mock_repository(): GameEventLogRepository {
   return {
-    create_game_event_log: vi.fn(),
-    get_game_event_log_by_id: vi.fn(),
-    update_game_event_log: vi.fn(),
-    delete_game_event_log: vi.fn(),
-    find_by_filter: vi.fn(),
+    create: vi.fn(),
+    find_by_id: vi.fn(),
+    find_by_ids: vi.fn(),
+    find_all: vi.fn(),
+    update: vi.fn(),
+    delete_by_id: vi.fn(),
+    delete_by_ids: vi.fn(),
+    count: vi.fn(),
     get_events_for_live_game: vi.fn(),
     get_events_for_fixture: vi.fn(),
     get_events_for_player: vi.fn(),
@@ -89,7 +92,7 @@ describe("GameEventLogUseCases", () => {
 
       const created_event = create_mock_game_event_log(input);
 
-      vi.mocked(mock_repository.create_game_event_log).mockResolvedValue({
+      vi.mocked(mock_repository.create).mockResolvedValue({
         success: true,
         data: created_event,
       });
@@ -168,7 +171,7 @@ describe("GameEventLogUseCases", () => {
         score_change_away: 0,
       });
 
-      vi.mocked(mock_repository.create_game_event_log).mockResolvedValue({
+      vi.mocked(mock_repository.create).mockResolvedValue({
         success: true,
         data: created_event,
       });
@@ -185,7 +188,7 @@ describe("GameEventLogUseCases", () => {
       );
 
       expect(result.success).toBe(true);
-      expect(mock_repository.create_game_event_log).toHaveBeenCalledWith(
+      expect(mock_repository.create).toHaveBeenCalledWith(
         expect.objectContaining({
           event_type: "goal",
           team_side: "home",
@@ -204,7 +207,7 @@ describe("GameEventLogUseCases", () => {
         affects_score: false,
       });
 
-      vi.mocked(mock_repository.create_game_event_log).mockResolvedValue({
+      vi.mocked(mock_repository.create).mockResolvedValue({
         success: true,
         data: created_event,
       });
@@ -222,7 +225,7 @@ describe("GameEventLogUseCases", () => {
       );
 
       expect(result.success).toBe(true);
-      expect(mock_repository.create_game_event_log).toHaveBeenCalledWith(
+      expect(mock_repository.create).toHaveBeenCalledWith(
         expect.objectContaining({
           event_type: "yellow_card",
           affects_score: false,
@@ -239,7 +242,7 @@ describe("GameEventLogUseCases", () => {
         secondary_player_name: "Player In",
       });
 
-      vi.mocked(mock_repository.create_game_event_log).mockResolvedValue({
+      vi.mocked(mock_repository.create).mockResolvedValue({
         success: true,
         data: created_event,
       });
@@ -258,7 +261,7 @@ describe("GameEventLogUseCases", () => {
       );
 
       expect(result.success).toBe(true);
-      expect(mock_repository.create_game_event_log).toHaveBeenCalledWith(
+      expect(mock_repository.create).toHaveBeenCalledWith(
         expect.objectContaining({
           event_type: "substitution",
           player_id: "player-out-001",
@@ -272,7 +275,7 @@ describe("GameEventLogUseCases", () => {
     it("should void an event successfully", async () => {
       const existing_event = create_mock_game_event_log({ voided: false });
 
-      vi.mocked(mock_repository.get_game_event_log_by_id).mockResolvedValue({
+      vi.mocked(mock_repository.find_by_id).mockResolvedValue({
         success: true,
         data: existing_event,
       });
@@ -300,7 +303,7 @@ describe("GameEventLogUseCases", () => {
     it("should fail to void an already voided event", async () => {
       const existing_event = create_mock_game_event_log({ voided: true });
 
-      vi.mocked(mock_repository.get_game_event_log_by_id).mockResolvedValue({
+      vi.mocked(mock_repository.find_by_id).mockResolvedValue({
         success: true,
         data: existing_event,
       });
@@ -329,7 +332,7 @@ describe("GameEventLogUseCases", () => {
     it("should fail to update a voided event", async () => {
       const existing_event = create_mock_game_event_log({ voided: true });
 
-      vi.mocked(mock_repository.get_game_event_log_by_id).mockResolvedValue({
+      vi.mocked(mock_repository.find_by_id).mockResolvedValue({
         success: true,
         data: existing_event,
       });

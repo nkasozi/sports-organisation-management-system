@@ -25,7 +25,8 @@ export class InBrowserLiveGameLogRepository
   extends InBrowserBaseRepository<
     LiveGameLog,
     CreateLiveGameLogInput,
-    UpdateLiveGameLogInput
+    UpdateLiveGameLogInput,
+    LiveGameLogFilter
   >
   implements LiveGameLogRepository
 {
@@ -98,77 +99,65 @@ export class InBrowserLiveGameLogRepository
     };
   }
 
-  async find_by_filter(
+  protected apply_entity_filter(
+    entities: LiveGameLog[],
+    filter: LiveGameLogFilter,
+  ): LiveGameLog[] {
+    let filtered = entities;
+
+    if (filter.organization_id) {
+      filtered = filtered.filter(
+        (log) => log.organization_id === filter.organization_id,
+      );
+    }
+
+    if (filter.fixture_id) {
+      filtered = filtered.filter((log) => log.fixture_id === filter.fixture_id);
+    }
+
+    if (filter.game_status) {
+      filtered = filtered.filter(
+        (log) => log.game_status === filter.game_status,
+      );
+    }
+
+    if (filter.started_by_user_id) {
+      filtered = filtered.filter(
+        (log) => log.started_by_user_id === filter.started_by_user_id,
+      );
+    }
+
+    return filtered;
+  }
+
+  private async find_all_as_entity_list(
     filter?: LiveGameLogFilter,
     pagination?: { page: number; page_size: number },
   ): Promise<EntityListResult<LiveGameLog>> {
-    try {
-      let filtered_entities = await this.database.live_game_logs.toArray();
-
-      if (filter) {
-        if (filter.organization_id) {
-          filtered_entities = filtered_entities.filter(
-            (log) => log.organization_id === filter.organization_id,
-          );
-        }
-
-        if (filter.fixture_id) {
-          filtered_entities = filtered_entities.filter(
-            (log) => log.fixture_id === filter.fixture_id,
-          );
-        }
-
-        if (filter.game_status) {
-          filtered_entities = filtered_entities.filter(
-            (log) => log.game_status === filter.game_status,
-          );
-        }
-
-        if (filter.started_by_user_id) {
-          filtered_entities = filtered_entities.filter(
-            (log) => log.started_by_user_id === filter.started_by_user_id,
-          );
-        }
-      }
-
-      filtered_entities.sort(
-        (first_entity, second_entity) =>
-          new Date(second_entity.created_at).getTime() -
-          new Date(first_entity.created_at).getTime(),
-      );
-
-      const total_count = filtered_entities.length;
-      const page = pagination?.page || 1;
-      const page_size = pagination?.page_size || 50;
-      const start_index = (page - 1) * page_size;
-      const end_index = start_index + page_size;
-      const paginated_entities = filtered_entities.slice(
-        start_index,
-        end_index,
-      );
-
-      return {
-        success: true,
-        data: paginated_entities,
-        total_count,
-      };
-    } catch (error) {
-      const error_message =
-        error instanceof Error ? error.message : "Unknown error occurred";
+    const query_options = pagination
+      ? { page_number: pagination.page, page_size: pagination.page_size }
+      : undefined;
+    const result = await this.find_all(filter, query_options);
+    if (!result.success) {
       return {
         success: false,
         data: [],
         total_count: 0,
-        error_message: `Failed to filter live game logs: ${error_message}`,
+        error_message: result.error,
       };
     }
+    return {
+      success: true,
+      data: result.data.items,
+      total_count: result.data.total_count,
+    };
   }
 
   async get_live_game_log_for_fixture(
     fixture_id: string,
   ): AsyncResult<LiveGameLog> {
     try {
-      const result = await this.find_by_filter({ fixture_id });
+      const result = await this.find_all_as_entity_list({ fixture_id });
 
       if (!result.success || result.data.length === 0) {
         return create_failure_result("No live game log found for this fixture");
@@ -232,41 +221,20 @@ export class InBrowserLiveGameLogRepository
     organization_id: string,
     options?: { page: number; page_size: number },
   ): Promise<EntityListResult<LiveGameLog>> {
-    return this.find_by_filter({ organization_id }, options);
+    return this.find_all_as_entity_list({ organization_id }, options);
   }
 
   async find_completed_games(
     organization_id?: string,
     options?: { page: number; page_size: number },
   ): Promise<EntityListResult<LiveGameLog>> {
-    return this.find_by_filter(
+    return this.find_all_as_entity_list(
       {
         organization_id,
         game_status: "completed",
       },
       options,
     );
-  }
-
-  async create_live_game_log(
-    input: CreateLiveGameLogInput,
-  ): AsyncResult<LiveGameLog> {
-    return this.create(input);
-  }
-
-  async get_live_game_log_by_id(id: string): AsyncResult<LiveGameLog> {
-    return this.find_by_id(id);
-  }
-
-  async update_live_game_log(
-    id: string,
-    input: UpdateLiveGameLogInput,
-  ): AsyncResult<LiveGameLog> {
-    return this.update(id, input);
-  }
-
-  async delete_live_game_log(id: string): AsyncResult<boolean> {
-    return this.delete_by_id(id);
   }
 }
 
