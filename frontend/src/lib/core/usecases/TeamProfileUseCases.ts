@@ -12,7 +12,7 @@ import type { EntityListResult } from "../entities/BaseEntity";
 import type { AsyncResult } from "../types/Result";
 import { create_failure_result } from "../types/Result";
 import { validate_team_profile_input } from "../entities/TeamProfile";
-import { get_team_profile_repository } from "../../adapters/repositories/InBrowserTeamProfileRepository";
+import { get_repository_container } from "../../infrastructure/container";
 
 export interface TeamProfileUseCases {
   list(
@@ -143,6 +143,6 @@ export function create_team_profile_use_cases(
 }
 
 export function get_team_profile_use_cases(): TeamProfileUseCases {
-  const repository = get_team_profile_repository();
-  return create_team_profile_use_cases(repository);
+  const container = get_repository_container();
+  return create_team_profile_use_cases(container.team_profile_repository);
 }

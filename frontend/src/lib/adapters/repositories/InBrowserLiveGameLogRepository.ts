@@ -276,7 +276,7 @@ export function create_default_live_game_logs(): LiveGameLog[] {
 
 let singleton_instance: InBrowserLiveGameLogRepository | null = null;
 
-export function get_live_game_log_repository(): InBrowserLiveGameLogRepository {
+export function get_live_game_log_repository(): LiveGameLogRepository {
   if (!singleton_instance) {
     singleton_instance = new InBrowserLiveGameLogRepository();
   }

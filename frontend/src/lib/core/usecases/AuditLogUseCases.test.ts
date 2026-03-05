@@ -3,12 +3,12 @@ import {
   create_audit_log_use_cases,
   type AuditLogUseCases,
 } from "./AuditLogUseCases";
-import type { InBrowserAuditLogRepository } from "../../adapters/repositories/InBrowserAuditLogRepository";
+import type { AuditLogRepository } from "../interfaces/ports";
 import type { AuditLog, CreateAuditLogInput } from "../entities/AuditLog";
 import { compute_field_changes } from "../entities/AuditLog";
 import type { Result, PaginatedResult } from "../types/Result";
 
-type MockRepository = Partial<InBrowserAuditLogRepository> & {
+type MockRepository = Partial<AuditLogRepository> & {
   find_all: ReturnType<typeof vi.fn>;
   find_by_id: ReturnType<typeof vi.fn>;
   find_by_ids: ReturnType<typeof vi.fn>;
@@ -84,7 +84,7 @@ describe("AuditLogUseCases", () => {
   beforeEach(() => {
     mock_repository = create_mock_repository();
     use_cases = create_audit_log_use_cases(
-      mock_repository as unknown as InBrowserAuditLogRepository,
+      mock_repository as unknown as AuditLogRepository,
     );
   });
 

@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { create_team_staff_use_cases } from "./TeamStaffUseCases";
 import type { TeamStaffRepository } from "../interfaces/ports";
+import type { TeamStaffRoleRepository } from "../interfaces/ports";
 import type { TeamStaff, CreateTeamStaffInput } from "../entities/TeamStaff";
 
 function create_mock_repository(): TeamStaffRepository {
@@ -15,6 +16,20 @@ function create_mock_repository(): TeamStaffRepository {
     find_by_role: vi.fn(),
     find_by_ids: vi.fn(),
     count: vi.fn(),
+  };
+}
+
+function create_mock_roles_repository(): TeamStaffRoleRepository {
+  return {
+    find_all: vi.fn(),
+    find_by_id: vi.fn(),
+    create: vi.fn(),
+    update: vi.fn(),
+    delete_by_id: vi.fn(),
+    delete_by_ids: vi.fn(),
+    find_by_ids: vi.fn(),
+    count: vi.fn(),
+    find_by_category: vi.fn(),
   };
 }
 
@@ -73,7 +88,10 @@ describe("TeamStaffUseCases", () => {
 
   beforeEach(() => {
     mock_repository = create_mock_repository();
-    use_cases = create_team_staff_use_cases(mock_repository);
+    use_cases = create_team_staff_use_cases(
+      mock_repository,
+      create_mock_roles_repository(),
+    );
   });
 
   describe("list", () => {

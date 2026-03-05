@@ -8,7 +8,7 @@ import type { EntityListResult } from "../entities/BaseEntity";
 import type { SportRepository, SportFilter } from "../interfaces/ports";
 import type { QueryOptions } from "../interfaces/ports";
 import { create_success_result, create_failure_result } from "../types/Result";
-import { get_sport_repository } from "../../adapters/repositories/InBrowserSportRepository";
+import { get_repository_container } from "../../infrastructure/container";
 import type { SportUseCasesPort } from "../interfaces/ports";
 
 export type SportUseCases = SportUseCasesPort;
@@ -102,16 +102,7 @@ export function create_sport_use_cases(
   };
 }
 
-let sport_use_cases_instance: SportUseCases | null = null;
-
 export function get_sport_use_cases(): SportUseCases {
-  if (!sport_use_cases_instance) {
-    const repository = get_sport_repository();
-    sport_use_cases_instance = create_sport_use_cases(repository);
-  }
-  return sport_use_cases_instance;
-}
-
-export function reset_sport_use_cases(): void {
-  sport_use_cases_instance = null;
+  const container = get_repository_container();
+  return create_sport_use_cases(container.sport_repository);
 }

@@ -11,7 +11,7 @@ import type {
 import type { QueryOptions } from "$lib/core/interfaces/ports";
 import type { AsyncResult, PaginatedAsyncResult } from "$lib/core/types/Result";
 import { create_failure_result } from "$lib/core/types/Result";
-import { get_official_associated_team_repository } from "$lib/adapters/repositories/InBrowserOfficialAssociatedTeamRepository";
+import { get_repository_container } from "../../infrastructure/container";
 import type { OfficialAssociatedTeamUseCasesPort } from "$lib/core/interfaces/ports";
 
 export type OfficialAssociatedTeamUseCases = OfficialAssociatedTeamUseCasesPort;
@@ -109,13 +109,9 @@ function create_official_associated_team_use_cases(
   };
 }
 
-let use_cases_instance: OfficialAssociatedTeamUseCases | null = null;
-
 export function get_official_associated_team_use_cases(): OfficialAssociatedTeamUseCases {
-  if (!use_cases_instance) {
-    use_cases_instance = create_official_associated_team_use_cases(
-      get_official_associated_team_repository(),
-    );
-  }
-  return use_cases_instance;
+  const container = get_repository_container();
+  return create_official_associated_team_use_cases(
+    container.official_associated_team_repository,
+  );
 }

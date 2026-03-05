@@ -14,7 +14,7 @@ import {
   create_success_result,
   create_failure_result,
 } from "$lib/core/types/Result";
-import { get_gender_repository } from "$lib/adapters/repositories/InBrowserGenderRepository";
+import { get_repository_container } from "../../infrastructure/container";
 import type { GenderUseCasesPort } from "$lib/core/interfaces/ports";
 
 export type GenderUseCases = GenderUseCasesPort;
@@ -92,12 +92,7 @@ export function create_gender_use_cases(
   };
 }
 
-let gender_use_cases_instance: GenderUseCases | null = null;
-
 export function get_gender_use_cases(): GenderUseCases {
-  if (!gender_use_cases_instance) {
-    const repository = get_gender_repository();
-    gender_use_cases_instance = create_gender_use_cases(repository);
-  }
-  return gender_use_cases_instance;
+  const container = get_repository_container();
+  return create_gender_use_cases(container.gender_repository);
 }

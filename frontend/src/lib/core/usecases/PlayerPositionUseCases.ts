@@ -9,7 +9,7 @@ import type { PlayerPositionRepository } from "../interfaces/ports";
 import type { QueryOptions } from "../interfaces/ports";
 import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
 import { create_failure_result, create_success_result } from "../types/Result";
-import { get_player_position_repository } from "../../adapters/repositories/InBrowserPlayerPositionRepository";
+import { get_repository_container } from "../../infrastructure/container";
 import type { EntityListResult } from "./BaseUseCases";
 import type { PlayerPositionUseCasesPort } from "../interfaces/ports";
 
@@ -177,12 +177,7 @@ export function create_player_position_use_cases(
   };
 }
 
-let use_cases_instance: PlayerPositionUseCases | null = null;
-
 export function get_player_position_use_cases(): PlayerPositionUseCases {
-  if (!use_cases_instance) {
-    const repository = get_player_position_repository();
-    use_cases_instance = create_player_position_use_cases(repository);
-  }
-  return use_cases_instance;
+  const container = get_repository_container();
+  return create_player_position_use_cases(container.player_position_repository);
 }

@@ -12,7 +12,7 @@ import type { QueryOptions } from "../interfaces/ports";
 import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
 import { create_success_result, create_failure_result } from "../types/Result";
 import type { EntityListResult } from "./BaseUseCases";
-import { get_player_team_membership_repository } from "../../adapters/repositories/InBrowserPlayerTeamMembershipRepository";
+import { get_repository_container } from "../../infrastructure/container";
 import type { PlayerTeamMembershipUseCasesPort } from "../interfaces/ports";
 
 export type PlayerTeamMembershipUseCases = PlayerTeamMembershipUseCasesPort;
@@ -117,6 +117,8 @@ export function create_player_team_membership_use_cases(
 }
 
 export function get_player_team_membership_use_cases(): PlayerTeamMembershipUseCases {
-  const repository = get_player_team_membership_repository();
-  return create_player_team_membership_use_cases(repository);
+  const container = get_repository_container();
+  return create_player_team_membership_use_cases(
+    container.player_team_membership_repository,
+  );
 }

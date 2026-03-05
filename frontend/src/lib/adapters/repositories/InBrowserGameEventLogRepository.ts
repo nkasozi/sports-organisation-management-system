@@ -303,7 +303,7 @@ export function create_default_game_event_logs(): GameEventLog[] {
 
 let singleton_instance: InBrowserGameEventLogRepository | null = null;
 
-export function get_game_event_log_repository(): InBrowserGameEventLogRepository {
+export function get_game_event_log_repository(): GameEventLogRepository {
   if (!singleton_instance) {
     singleton_instance = new InBrowserGameEventLogRepository();
   }

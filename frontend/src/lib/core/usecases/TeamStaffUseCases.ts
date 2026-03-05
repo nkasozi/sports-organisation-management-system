@@ -9,20 +9,18 @@ import type { QueryOptions } from "../interfaces/ports";
 import type { AsyncResult, PaginatedResult } from "../types/Result";
 import { create_failure_result, create_success_result } from "../types/Result";
 import { validate_team_staff_input } from "../entities/TeamStaff";
-import { get_team_staff_repository } from "../../adapters/repositories/InBrowserTeamStaffRepository";
-import { get_team_staff_role_repository } from "../../adapters/repositories/InBrowserTeamStaffRoleRepository";
+import { get_repository_container } from "../../infrastructure/container";
 import type { EntityListResult } from "./BaseUseCases";
 import type { TeamStaffUseCasesPort } from "../interfaces/ports";
 
 export type TeamStaffUseCases = TeamStaffUseCasesPort;
 
 export function create_team_staff_use_cases(
-  repository?: any,
-  roles_repository?: any,
+  repository: any,
+  roles_repository: any,
 ): TeamStaffUseCases {
-  const staff_repository = (repository as any) ?? get_team_staff_repository();
-  const role_repository =
-    (roles_repository as any) ?? get_team_staff_role_repository();
+  const staff_repository = repository as any;
+  const role_repository = roles_repository as any;
 
   return {
     async list(
@@ -140,11 +138,10 @@ export function create_team_staff_use_cases(
   };
 }
 
-let team_staff_use_cases_instance: TeamStaffUseCases | null = null;
-
 export function get_team_staff_use_cases(): TeamStaffUseCases {
-  if (!team_staff_use_cases_instance) {
-    team_staff_use_cases_instance = create_team_staff_use_cases();
-  }
-  return team_staff_use_cases_instance;
+  const container = get_repository_container();
+  return create_team_staff_use_cases(
+    container.team_staff_repository,
+    container.team_staff_role_repository,
+  );
 }

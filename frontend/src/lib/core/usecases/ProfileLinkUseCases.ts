@@ -12,7 +12,7 @@ import type { EntityListResult } from "../entities/BaseEntity";
 import type { AsyncResult } from "../types/Result";
 import { create_failure_result } from "../types/Result";
 import { validate_profile_link_input } from "../entities/ProfileLink";
-import { get_profile_link_repository } from "../../adapters/repositories/InBrowserProfileLinkRepository";
+import { get_repository_container } from "../../infrastructure/container";
 
 export interface ProfileLinkUseCases {
   list(
@@ -124,6 +124,6 @@ export function create_profile_link_use_cases(
 }
 
 export function get_profile_link_use_cases(): ProfileLinkUseCases {
-  const repository = get_profile_link_repository();
-  return create_profile_link_use_cases(repository);
+  const container = get_repository_container();
+  return create_profile_link_use_cases(container.profile_link_repository);
 }

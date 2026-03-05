@@ -11,7 +11,7 @@ import type {
 import type { QueryOptions } from "../interfaces/ports";
 import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
 import { create_success_result, create_failure_result } from "../types/Result";
-import { get_competition_team_repository } from "../../adapters/repositories/InBrowserCompetitionTeamRepository";
+import { get_repository_container } from "../../infrastructure/container";
 import type { EntityListResult } from "./BaseUseCases";
 import type { CompetitionTeamUseCasesPort } from "../interfaces/ports";
 
@@ -157,6 +157,8 @@ export function create_competition_team_use_cases(
 }
 
 export function get_competition_team_use_cases(): CompetitionTeamUseCases {
-  const repository = get_competition_team_repository();
-  return create_competition_team_use_cases(repository);
+  const container = get_repository_container();
+  return create_competition_team_use_cases(
+    container.competition_team_repository,
+  );
 }

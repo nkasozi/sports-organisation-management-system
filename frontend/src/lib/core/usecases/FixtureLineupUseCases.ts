@@ -11,7 +11,7 @@ import type { EntityListResult } from "../entities/BaseEntity";
 import type { AsyncResult } from "../types/Result";
 import { create_failure_result } from "../types/Result";
 import type { FixtureLineupUseCasesPort } from "../interfaces/ports";
-import { InBrowserFixtureLineupRepository } from "../../adapters/repositories/InBrowserFixtureLineupRepository";
+import { get_repository_container } from "../../infrastructure/container";
 
 export type FixtureLineupUseCases = FixtureLineupUseCasesPort;
 
@@ -193,12 +193,7 @@ export function create_fixture_lineup_use_cases(
   };
 }
 
-let use_cases_instance: FixtureLineupUseCases | null = null;
-
 export function get_fixture_lineup_use_cases(): FixtureLineupUseCases {
-  if (!use_cases_instance) {
-    const repository = new InBrowserFixtureLineupRepository();
-    use_cases_instance = create_fixture_lineup_use_cases(repository);
-  }
-  return use_cases_instance;
+  const container = get_repository_container();
+  return create_fixture_lineup_use_cases(container.fixture_lineup_repository);
 }

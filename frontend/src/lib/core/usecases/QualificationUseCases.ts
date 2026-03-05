@@ -15,7 +15,7 @@ import {
   create_success_result,
   create_failure_result,
 } from "$lib/core/types/Result";
-import { get_qualification_repository } from "$lib/adapters/repositories/InBrowserQualificationRepository";
+import { get_repository_container } from "../../infrastructure/container";
 import type { QualificationUseCasesPort } from "$lib/core/interfaces/ports";
 
 export type QualificationUseCases = QualificationUseCasesPort;
@@ -99,13 +99,7 @@ function create_qualification_use_cases(
   };
 }
 
-let use_cases_instance: QualificationUseCases | null = null;
-
 export function get_qualification_use_cases(): QualificationUseCases {
-  if (!use_cases_instance) {
-    use_cases_instance = create_qualification_use_cases(
-      get_qualification_repository(),
-    );
-  }
-  return use_cases_instance;
+  const container = get_repository_container();
+  return create_qualification_use_cases(container.qualification_repository);
 }

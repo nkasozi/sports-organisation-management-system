@@ -5,10 +5,7 @@ import type {
   FieldChange,
 } from "../entities/AuditLog";
 import { compute_field_changes } from "../entities/AuditLog";
-import type {
-  InBrowserAuditLogRepository,
-  AuditLogFilter,
-} from "../../adapters/repositories/InBrowserAuditLogRepository";
+import type { AuditLogRepository, AuditLogFilter } from "../interfaces/ports";
 import type { QueryOptions } from "../interfaces/ports";
 import type { EntityListResult } from "../entities/BaseEntity";
 import type { AsyncResult } from "../types/Result";
@@ -36,7 +33,7 @@ export interface AuditLogUseCases {
 }
 
 export function create_audit_log_use_cases(
-  repository: InBrowserAuditLogRepository,
+  repository: AuditLogRepository,
 ): AuditLogUseCases {
   return {
     async list(

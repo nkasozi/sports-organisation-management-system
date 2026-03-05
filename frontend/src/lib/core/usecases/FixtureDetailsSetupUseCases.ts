@@ -11,7 +11,7 @@ import type {
 import type { QueryOptions } from "../interfaces/ports";
 import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
 import { create_success_result, create_failure_result } from "../types/Result";
-import { get_fixture_details_setup_repository } from "../../adapters/repositories/InBrowserFixtureDetailsSetupRepository";
+import { get_repository_container } from "../../infrastructure/container";
 import type { FixtureDetailsSetupUseCasesPort } from "../interfaces/ports";
 
 export type FixtureDetailsSetupUseCases = FixtureDetailsSetupUseCasesPort;
@@ -151,12 +151,9 @@ export function create_fixture_details_setup_use_cases(
   };
 }
 
-let use_cases_instance: FixtureDetailsSetupUseCases | null = null;
-
 export function get_fixture_details_setup_use_cases(): FixtureDetailsSetupUseCases {
-  if (!use_cases_instance) {
-    const repository = get_fixture_details_setup_repository();
-    use_cases_instance = create_fixture_details_setup_use_cases(repository);
-  }
-  return use_cases_instance;
+  const container = get_repository_container();
+  return create_fixture_details_setup_use_cases(
+    container.fixture_details_setup_repository,
+  );
 }

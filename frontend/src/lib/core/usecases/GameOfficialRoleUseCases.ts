@@ -10,7 +10,7 @@ import type {
 import type { QueryOptions } from "../interfaces/ports";
 import type { AsyncResult, PaginatedResult } from "../types/Result";
 import { create_failure_result, create_success_result } from "../types/Result";
-import { get_game_official_role_repository } from "../../adapters/repositories/InBrowserGameOfficialRoleRepository";
+import { get_repository_container } from "../../infrastructure/container";
 import type { EntityListResult } from "./BaseUseCases";
 import type { GameOfficialRoleUseCasesPort } from "../interfaces/ports";
 
@@ -112,12 +112,9 @@ export function create_game_official_role_use_cases(
   };
 }
 
-let use_cases_instance: GameOfficialRoleUseCases | null = null;
-
 export function get_game_official_role_use_cases(): GameOfficialRoleUseCases {
-  if (!use_cases_instance) {
-    const repository = get_game_official_role_repository();
-    use_cases_instance = create_game_official_role_use_cases(repository);
-  }
-  return use_cases_instance;
+  const container = get_repository_container();
+  return create_game_official_role_use_cases(
+    container.game_official_role_repository,
+  );
 }

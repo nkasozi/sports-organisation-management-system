@@ -234,3 +234,11 @@ export type {
   ActivityCategoryRepository,
   ActivityCategoryFilter,
 } from "./external/repositories/ActivityCategoryRepository";
+export type {
+  SystemUserRepository,
+  SystemUserFilter,
+} from "./external/repositories/SystemUserRepository";
+export type {
+  AuditLogRepository,
+  AuditLogFilter,
+} from "./external/repositories/AuditLogRepository";

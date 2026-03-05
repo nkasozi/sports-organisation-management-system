@@ -72,6 +72,7 @@ import {
   get_team_profile_repository,
   InBrowserTeamProfileRepository,
 } from "../repositories/InBrowserTeamProfileRepository";
+import { get_system_user_repository } from "../repositories/InBrowserSystemUserRepository";
 import { get_repository_container } from "../../infrastructure/container";
 import {
   create_seed_players,
@@ -196,8 +197,7 @@ async function load_and_set_current_user(): Promise<SystemUser | null> {
 }
 
 function seed_super_admin_user(): SystemUser | null {
-  const container = get_repository_container();
-  const system_user_repository = container.system_user_repository;
+  const system_user_repository = get_system_user_repository();
 
   const seed_users = create_seed_system_users();
   system_user_repository.seed_with_data(seed_users);

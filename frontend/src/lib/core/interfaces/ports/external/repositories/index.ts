@@ -7,3 +7,5 @@ export * from "./OfficialRepository";
 export * from "./FixtureRepository";
 export * from "./VenueRepository";
 export * from "./PlayerTeamTransferHistoryRepository";
+export * from "./SystemUserRepository";
+export * from "./AuditLogRepository";

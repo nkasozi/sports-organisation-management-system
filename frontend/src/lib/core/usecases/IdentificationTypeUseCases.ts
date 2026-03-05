@@ -14,7 +14,7 @@ import {
   create_success_result,
   create_failure_result,
 } from "$lib/core/types/Result";
-import { get_identification_type_repository } from "$lib/adapters/repositories/InBrowserIdentificationTypeRepository";
+import { get_repository_container } from "../../infrastructure/container";
 import type { IdentificationTypeUseCasesPort } from "$lib/core/interfaces/ports";
 
 export type IdentificationTypeUseCases = IdentificationTypeUseCasesPort;
@@ -107,14 +107,9 @@ export function create_identification_type_use_cases(
   };
 }
 
-let identification_type_use_cases_instance: IdentificationTypeUseCases | null =
-  null;
-
 export function get_identification_type_use_cases(): IdentificationTypeUseCases {
-  if (!identification_type_use_cases_instance) {
-    const repository = get_identification_type_repository();
-    identification_type_use_cases_instance =
-      create_identification_type_use_cases(repository);
-  }
-  return identification_type_use_cases_instance;
+  const container = get_repository_container();
+  return create_identification_type_use_cases(
+    container.identification_type_repository,
+  );
 }

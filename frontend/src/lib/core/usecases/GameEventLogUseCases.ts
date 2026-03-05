@@ -14,7 +14,7 @@ import type { EntityListResult } from "../entities/BaseEntity";
 import type { AsyncResult } from "../types/Result";
 import { create_failure_result } from "../types/Result";
 import type { GameEventLogUseCasesPort } from "../interfaces/ports";
-import { get_game_event_log_repository } from "../../adapters/repositories/InBrowserGameEventLogRepository";
+import { get_repository_container } from "../../infrastructure/container";
 
 export type GameEventLogUseCases = GameEventLogUseCasesPort;
 
@@ -300,13 +300,7 @@ export function create_game_event_log_use_cases(
   };
 }
 
-let singleton_use_cases: GameEventLogUseCases | null = null;
-
 export function get_game_event_log_use_cases(): GameEventLogUseCases {
-  if (!singleton_use_cases) {
-    singleton_use_cases = create_game_event_log_use_cases(
-      get_game_event_log_repository(),
-    );
-  }
-  return singleton_use_cases;
+  const container = get_repository_container();
+  return create_game_event_log_use_cases(container.game_event_log_repository);
 }

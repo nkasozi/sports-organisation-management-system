@@ -13,8 +13,7 @@ import type { QueryOptions } from "../interfaces/ports";
 import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
 import { create_failure_result, create_success_result } from "../types/Result";
 import type { EntityListResult } from "./BaseUseCases";
-import { InBrowserPlayerTeamTransferHistoryRepository } from "../../adapters/repositories/InBrowserPlayerTeamTransferHistoryRepository";
-import { InBrowserPlayerTeamMembershipRepository } from "../../adapters/repositories/InBrowserPlayerTeamMembershipRepository";
+import { get_repository_container } from "../../infrastructure/container";
 import type { PlayerTeamTransferHistoryUseCasesPort } from "../interfaces/ports";
 
 export type PlayerTeamTransferHistoryUseCases =
@@ -284,32 +283,10 @@ export function create_player_team_transfer_history_use_cases(
   };
 }
 
-let transfer_history_repository_instance: InBrowserPlayerTeamTransferHistoryRepository | null =
-  null;
-let membership_repository_instance: InBrowserPlayerTeamMembershipRepository | null =
-  null;
-
-function get_transfer_history_repository(): InBrowserPlayerTeamTransferHistoryRepository {
-  if (!transfer_history_repository_instance) {
-    transfer_history_repository_instance =
-      new InBrowserPlayerTeamTransferHistoryRepository();
-  }
-  return transfer_history_repository_instance;
-}
-
-function get_membership_repository(): InBrowserPlayerTeamMembershipRepository {
-  if (!membership_repository_instance) {
-    membership_repository_instance =
-      new InBrowserPlayerTeamMembershipRepository();
-  }
-  return membership_repository_instance;
-}
-
 export function get_player_team_transfer_history_use_cases(): PlayerTeamTransferHistoryUseCases {
-  const repository = get_transfer_history_repository();
-  const membership_repository = get_membership_repository();
+  const container = get_repository_container();
   return create_player_team_transfer_history_use_cases(
-    repository,
-    membership_repository,
+    container.player_team_transfer_history_repository,
+    container.player_team_membership_repository,
   );
 }

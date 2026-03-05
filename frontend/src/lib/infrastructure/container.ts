@@ -1,17 +1,42 @@
-import type { OrganizationRepository } from "../core/interfaces/ports";
-import type { CompetitionRepository } from "../core/interfaces/ports";
-import type { TeamRepository } from "../core/interfaces/ports";
-import type { PlayerRepository } from "../core/interfaces/ports";
-import type { OfficialRepository } from "../core/interfaces/ports";
-import type { FixtureRepository } from "../core/interfaces/ports";
-import type { ActivityRepository } from "../core/interfaces/ports";
-import type { ActivityCategoryRepository } from "../core/interfaces/ports";
-import type { CalendarTokenRepository } from "../core/interfaces/ports";
+import type {
+  OrganizationRepository,
+  CompetitionRepository,
+  TeamRepository,
+  PlayerRepository,
+  OfficialRepository,
+  FixtureRepository,
+  ActivityRepository,
+  ActivityCategoryRepository,
+  CalendarTokenRepository,
+  SystemUserRepository,
+  AuditLogRepository,
+  SportRepository,
+  VenueRepository,
+  GenderRepository,
+  CompetitionFormatRepository,
+  CompetitionTeamRepository,
+  FixtureLineupRepository,
+  FixtureDetailsSetupRepository,
+  GameEventTypeRepository,
+  GameOfficialRoleRepository,
+  IdentificationTypeRepository,
+  IdentificationRepository,
+  PlayerPositionRepository,
+  PlayerTeamMembershipRepository,
+  PlayerTeamTransferHistoryRepository,
+  QualificationRepository,
+  TeamStaffRoleRepository,
+  TeamStaffRepository,
+  PlayerProfileRepository,
+  TeamProfileRepository,
+  ProfileLinkRepository,
+  OfficialAssociatedTeamRepository,
+  JerseyColorRepository,
+  LiveGameLogRepository,
+  GameEventLogRepository,
+} from "../core/interfaces/ports";
 
-import {
-  get_organization_repository,
-  type InBrowserOrganizationRepository,
-} from "../adapters/repositories/InBrowserOrganizationRepository";
+import { get_organization_repository } from "../adapters/repositories/InBrowserOrganizationRepository";
 import { get_competition_repository } from "../adapters/repositories/InBrowserCompetitionRepository";
 import { get_team_repository } from "../adapters/repositories/InBrowserTeamRepository";
 import { get_player_repository } from "../adapters/repositories/InBrowserPlayerRepository";
@@ -19,15 +44,33 @@ import { get_official_repository } from "../adapters/repositories/InBrowserOffic
 import { get_fixture_repository } from "../adapters/repositories/InBrowserFixtureRepository";
 import { get_activity_repository } from "../adapters/repositories/InBrowserActivityRepository";
 import { get_activity_category_repository } from "../adapters/repositories/InBrowserActivityCategoryRepository";
-import {
-  get_system_user_repository,
-  type InBrowserSystemUserRepository,
-} from "../adapters/repositories/InBrowserSystemUserRepository";
-import {
-  get_audit_log_repository,
-  type InBrowserAuditLogRepository,
-} from "../adapters/repositories/InBrowserAuditLogRepository";
+import { get_system_user_repository } from "../adapters/repositories/InBrowserSystemUserRepository";
+import { get_audit_log_repository } from "../adapters/repositories/InBrowserAuditLogRepository";
 import { get_calendar_token_repository } from "../adapters/repositories/InBrowserCalendarTokenRepository";
+import { get_sport_repository } from "../adapters/repositories/InBrowserSportRepository";
+import { get_venue_repository } from "../adapters/repositories/InBrowserVenueRepository";
+import { get_gender_repository } from "../adapters/repositories/InBrowserGenderRepository";
+import { get_competition_format_repository } from "../adapters/repositories/InBrowserCompetitionFormatRepository";
+import { get_competition_team_repository } from "../adapters/repositories/InBrowserCompetitionTeamRepository";
+import { get_fixture_lineup_repository } from "../adapters/repositories/InBrowserFixtureLineupRepository";
+import { get_fixture_details_setup_repository } from "../adapters/repositories/InBrowserFixtureDetailsSetupRepository";
+import { get_game_event_type_repository } from "../adapters/repositories/InBrowserGameEventTypeRepository";
+import { get_game_official_role_repository } from "../adapters/repositories/InBrowserGameOfficialRoleRepository";
+import { get_identification_type_repository } from "../adapters/repositories/InBrowserIdentificationTypeRepository";
+import { get_identification_repository } from "../adapters/repositories/InBrowserIdentificationRepository";
+import { get_player_position_repository } from "../adapters/repositories/InBrowserPlayerPositionRepository";
+import { get_player_team_membership_repository } from "../adapters/repositories/InBrowserPlayerTeamMembershipRepository";
+import { InBrowserPlayerTeamTransferHistoryRepository } from "../adapters/repositories/InBrowserPlayerTeamTransferHistoryRepository";
+import { get_qualification_repository } from "../adapters/repositories/InBrowserQualificationRepository";
+import { get_team_staff_role_repository } from "../adapters/repositories/InBrowserTeamStaffRoleRepository";
+import { get_team_staff_repository } from "../adapters/repositories/InBrowserTeamStaffRepository";
+import { get_player_profile_repository } from "../adapters/repositories/InBrowserPlayerProfileRepository";
+import { get_team_profile_repository } from "../adapters/repositories/InBrowserTeamProfileRepository";
+import { get_profile_link_repository } from "../adapters/repositories/InBrowserProfileLinkRepository";
+import { get_official_associated_team_repository } from "../adapters/repositories/InBrowserOfficialAssociatedTeamRepository";
+import { get_jersey_color_repository } from "../adapters/repositories/InBrowserJerseyColorRepository";
+import { get_live_game_log_repository } from "../adapters/repositories/InBrowserLiveGameLogRepository";
+import { get_game_event_log_repository } from "../adapters/repositories/InBrowserGameEventLogRepository";
 
 import type { OrganizationUseCasesPort } from "../core/interfaces/ports";
 import type { CompetitionUseCasesPort } from "../core/interfaces/ports";
@@ -67,8 +110,32 @@ export interface RepositoryContainer {
   activity_repository: ActivityRepository;
   activity_category_repository: ActivityCategoryRepository;
   calendar_token_repository: CalendarTokenRepository;
-  system_user_repository: InBrowserSystemUserRepository;
-  audit_log_repository: InBrowserAuditLogRepository;
+  system_user_repository: SystemUserRepository;
+  audit_log_repository: AuditLogRepository;
+  sport_repository: SportRepository;
+  venue_repository: VenueRepository;
+  gender_repository: GenderRepository;
+  competition_format_repository: CompetitionFormatRepository;
+  competition_team_repository: CompetitionTeamRepository;
+  fixture_lineup_repository: FixtureLineupRepository;
+  fixture_details_setup_repository: FixtureDetailsSetupRepository;
+  game_event_type_repository: GameEventTypeRepository;
+  game_official_role_repository: GameOfficialRoleRepository;
+  identification_type_repository: IdentificationTypeRepository;
+  identification_repository: IdentificationRepository;
+  player_position_repository: PlayerPositionRepository;
+  player_team_membership_repository: PlayerTeamMembershipRepository;
+  player_team_transfer_history_repository: PlayerTeamTransferHistoryRepository;
+  qualification_repository: QualificationRepository;
+  team_staff_role_repository: TeamStaffRoleRepository;
+  team_staff_repository: TeamStaffRepository;
+  player_profile_repository: PlayerProfileRepository;
+  team_profile_repository: TeamProfileRepository;
+  profile_link_repository: ProfileLinkRepository;
+  official_associated_team_repository: OfficialAssociatedTeamRepository;
+  jersey_color_repository: JerseyColorRepository;
+  live_game_log_repository: LiveGameLogRepository;
+  game_event_log_repository: GameEventLogRepository;
 }
 
 export interface UseCasesContainer {
@@ -117,6 +184,32 @@ function create_in_browser_repository_container(): RepositoryContainer {
     calendar_token_repository: get_calendar_token_repository(),
     system_user_repository: get_system_user_repository(),
     audit_log_repository: get_audit_log_repository(),
+    sport_repository: get_sport_repository(),
+    venue_repository: get_venue_repository(),
+    gender_repository: get_gender_repository(),
+    competition_format_repository: get_competition_format_repository(),
+    competition_team_repository: get_competition_team_repository(),
+    fixture_lineup_repository: get_fixture_lineup_repository(),
+    fixture_details_setup_repository: get_fixture_details_setup_repository(),
+    game_event_type_repository: get_game_event_type_repository(),
+    game_official_role_repository: get_game_official_role_repository(),
+    identification_type_repository: get_identification_type_repository(),
+    identification_repository: get_identification_repository(),
+    player_position_repository: get_player_position_repository(),
+    player_team_membership_repository: get_player_team_membership_repository(),
+    player_team_transfer_history_repository:
+      new InBrowserPlayerTeamTransferHistoryRepository(),
+    qualification_repository: get_qualification_repository(),
+    team_staff_role_repository: get_team_staff_role_repository(),
+    team_staff_repository: get_team_staff_repository(),
+    player_profile_repository: get_player_profile_repository(),
+    team_profile_repository: get_team_profile_repository(),
+    profile_link_repository: get_profile_link_repository(),
+    official_associated_team_repository:
+      get_official_associated_team_repository(),
+    jersey_color_repository: get_jersey_color_repository(),
+    live_game_log_repository: get_live_game_log_repository(),
+    game_event_log_repository: get_game_event_log_repository(),
   };
 }
 

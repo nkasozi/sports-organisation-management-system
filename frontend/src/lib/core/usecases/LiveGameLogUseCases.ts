@@ -12,7 +12,7 @@ import type { EntityListResult } from "../entities/BaseEntity";
 import type { AsyncResult } from "../types/Result";
 import { create_failure_result } from "../types/Result";
 import type { LiveGameLogUseCasesPort } from "../interfaces/ports";
-import { get_live_game_log_repository } from "../../adapters/repositories/InBrowserLiveGameLogRepository";
+import { get_repository_container } from "../../infrastructure/container";
 
 export type LiveGameLogUseCases = LiveGameLogUseCasesPort;
 
@@ -271,13 +271,7 @@ export function create_live_game_log_use_cases(
   };
 }
 
-let singleton_use_cases: LiveGameLogUseCases | null = null;
-
 export function get_live_game_log_use_cases(): LiveGameLogUseCases {
-  if (!singleton_use_cases) {
-    singleton_use_cases = create_live_game_log_use_cases(
-      get_live_game_log_repository(),
-    );
-  }
-  return singleton_use_cases;
+  const container = get_repository_container();
+  return create_live_game_log_use_cases(container.live_game_log_repository);
 }

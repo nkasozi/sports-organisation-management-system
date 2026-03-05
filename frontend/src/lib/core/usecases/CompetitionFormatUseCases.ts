@@ -12,7 +12,7 @@ import type { QueryOptions } from "../interfaces/ports";
 import type { AsyncResult, PaginatedResult } from "../types/Result";
 import { create_failure_result, create_success_result } from "../types/Result";
 import { validate_competition_format_input } from "../entities/CompetitionFormat";
-import { get_competition_format_repository } from "../../adapters/repositories/InBrowserCompetitionFormatRepository";
+import { get_repository_container } from "../../infrastructure/container";
 import type { EntityListResult } from "./BaseUseCases";
 import type { CompetitionFormatUseCasesPort } from "../interfaces/ports";
 
@@ -153,12 +153,9 @@ export function create_competition_format_use_cases(
   };
 }
 
-let use_cases_instance: CompetitionFormatUseCases | null = null;
-
 export function get_competition_format_use_cases(): CompetitionFormatUseCases {
-  if (!use_cases_instance) {
-    const repository = get_competition_format_repository();
-    use_cases_instance = create_competition_format_use_cases(repository);
-  }
-  return use_cases_instance;
+  const container = get_repository_container();
+  return create_competition_format_use_cases(
+    container.competition_format_repository,
+  );
 }

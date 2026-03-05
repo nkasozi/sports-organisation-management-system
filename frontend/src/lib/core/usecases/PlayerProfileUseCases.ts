@@ -12,7 +12,7 @@ import type { EntityListResult } from "../entities/BaseEntity";
 import type { AsyncResult } from "../types/Result";
 import { create_failure_result } from "../types/Result";
 import { validate_player_profile_input } from "../entities/PlayerProfile";
-import { get_player_profile_repository } from "../../adapters/repositories/InBrowserPlayerProfileRepository";
+import { get_repository_container } from "../../infrastructure/container";
 
 export interface PlayerProfileUseCases {
   list(
@@ -157,12 +157,7 @@ export function create_player_profile_use_cases(
   };
 }
 
-let use_cases_instance: PlayerProfileUseCases | null = null;
-
 export function get_player_profile_use_cases(): PlayerProfileUseCases {
-  if (!use_cases_instance) {
-    const repository = get_player_profile_repository();
-    use_cases_instance = create_player_profile_use_cases(repository);
-  }
-  return use_cases_instance;
+  const container = get_repository_container();
+  return create_player_profile_use_cases(container.player_profile_repository);
 }

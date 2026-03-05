@@ -15,7 +15,7 @@ import {
   create_success_result,
   create_failure_result,
 } from "$lib/core/types/Result";
-import { get_jersey_color_repository } from "$lib/adapters/repositories/InBrowserJerseyColorRepository";
+import { get_repository_container } from "../../infrastructure/container";
 import type { JerseyColorUseCasesPort } from "$lib/core/interfaces/ports";
 
 export type JerseyColorUseCases = JerseyColorUseCasesPort;
@@ -111,12 +111,7 @@ export function create_jersey_color_use_cases(
   };
 }
 
-let use_cases_instance: JerseyColorUseCases | null = null;
-
 export function get_jersey_color_use_cases(): JerseyColorUseCases {
-  if (!use_cases_instance) {
-    const repository = get_jersey_color_repository();
-    use_cases_instance = create_jersey_color_use_cases(repository);
-  }
-  return use_cases_instance;
+  const container = get_repository_container();
+  return create_jersey_color_use_cases(container.jersey_color_repository);
 }

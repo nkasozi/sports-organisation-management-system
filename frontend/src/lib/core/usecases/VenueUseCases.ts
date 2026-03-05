@@ -10,7 +10,7 @@ import type { EntityListResult } from "../entities/BaseEntity";
 import type { VenueUseCasesPort } from "../interfaces/ports";
 import { create_success_result, create_failure_result } from "../types/Result";
 import { validate_venue_input } from "../entities/Venue";
-import { get_venue_repository } from "../../adapters/repositories/InBrowserVenueRepository";
+import { get_repository_container } from "../../infrastructure/container";
 
 export type VenueUseCases = VenueUseCasesPort;
 
@@ -79,5 +79,6 @@ export function create_venue_use_cases(
 }
 
 export function get_venue_use_cases(): VenueUseCases {
-  return create_venue_use_cases(get_venue_repository());
+  const container = get_repository_container();
+  return create_venue_use_cases(container.venue_repository);
 }
