@@ -71,7 +71,7 @@
   <button
     type="button"
     on:click={() => (show_details = !show_details)}
-    class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-accent-100 dark:bg-accent-800 hover:bg-accent-200 dark:hover:bg-accent-700 transition-colors text-sm"
+    class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/15 hover:bg-white/25 transition-colors text-sm"
     title="Sync Status"
   >
     <svg
@@ -87,7 +87,7 @@
         d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
       />
     </svg>
-    <span class="hidden sm:inline text-accent-700 dark:text-accent-300">
+    <span class="hidden sm:inline text-white/80">
       {format_sync_status_text()}
     </span>
   </button>

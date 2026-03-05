@@ -21,7 +21,6 @@
     is_auth_initialized,
     type UserProfile,
   } from "$lib/presentation/stores/auth";
-  import { USER_ROLE_DISPLAY_NAMES } from "$lib/core/interfaces/ports";
   import SyncStatusIndicator from "$lib/presentation/components/SyncStatusIndicator.svelte";
 
   export let sidebar_open = false;
@@ -29,6 +28,7 @@
   const dispatch = createEventDispatcher();
 
   let user_menu_open = false;
+  let profile_submenu_open = false;
 
   $: has_custom_logo =
     $branding_store.organization_logo_url &&
@@ -51,6 +51,11 @@
 
   function close_user_menu(): void {
     user_menu_open = false;
+    profile_submenu_open = false;
+  }
+
+  function toggle_profile_submenu(): void {
+    profile_submenu_open = !profile_submenu_open;
   }
 
   function handle_logout_click(): void {
@@ -279,7 +284,7 @@
 
           {#if user_menu_open}
             <div
-              class="absolute right-0 mt-2 w-64 rounded-md shadow-lg bg-white dark:bg-accent-800 ring-1 ring-black ring-opacity-5 z-[100] dropdown-menu"
+              class="absolute right-0 mt-2 w-72 rounded-md shadow-lg bg-white dark:bg-accent-800 ring-1 ring-black ring-opacity-5 z-[100] dropdown-menu"
               role="menu"
               tabindex="-1"
               on:click|stopPropagation
@@ -287,23 +292,113 @@
             >
               <div class="py-1">
                 <div
-                  class="px-4 py-2 border-b border-gray-200 dark:border-accent-700"
+                  class="px-4 py-3 border-b border-gray-200 dark:border-accent-700"
                 >
                   <p
                     class="text-xs text-gray-500 dark:text-accent-400 uppercase tracking-wide"
                   >
-                    Current Profile
+                    Signed in as
                   </p>
                   <p
-                    class="text-sm font-medium text-gray-900 dark:text-accent-200"
+                    class="text-sm font-semibold text-gray-900 dark:text-accent-100 mt-0.5"
                   >
+                    {$current_profile_display_name}
+                  </p>
+                  <p class="text-xs text-gray-500 dark:text-accent-400">
                     {$current_user_role_display}
                   </p>
                 </div>
 
+                {#if $other_available_profiles.length > 0}
+                  <div class="relative">
+                    <button
+                      type="button"
+                      class="w-full flex items-center justify-between px-4 py-2.5 text-sm text-gray-700 dark:text-accent-300 hover:bg-gray-100 dark:hover:bg-accent-700 transition-colors duration-150"
+                      on:click|stopPropagation={toggle_profile_submenu}
+                    >
+                      <span class="flex items-center">
+                        <svg
+                          class="mr-3 h-5 w-5 text-gray-500 dark:text-accent-400"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"
+                          />
+                        </svg>
+                        Switch Profile
+                      </span>
+                      <svg
+                        class="h-4 w-4 text-gray-400 dark:text-accent-500 transition-transform duration-200 {profile_submenu_open
+                          ? 'rotate-180'
+                          : ''}"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M19 9l-7 7-7-7"
+                        />
+                      </svg>
+                    </button>
+
+                    {#if profile_submenu_open}
+                      <div
+                        class="border-t border-b border-gray-100 dark:border-accent-700 bg-gray-50 dark:bg-accent-900/50 max-h-60 overflow-y-auto"
+                      >
+                        {#each $other_available_profiles as profile}
+                          <button
+                            type="button"
+                            class="w-full flex items-start px-5 py-2.5 text-left hover:bg-gray-100 dark:hover:bg-accent-700 transition-colors duration-150"
+                            on:click={() => handle_profile_switch(profile)}
+                          >
+                            <div
+                              class="flex-shrink-0 h-8 w-8 rounded-full bg-theme-secondary-100 dark:bg-theme-secondary-800 flex items-center justify-center mt-0.5 mr-3"
+                            >
+                              <span
+                                class="text-xs font-semibold text-theme-secondary-700 dark:text-theme-secondary-300"
+                              >
+                                {profile.display_name
+                                  .split(" ")
+                                  .map((n) => n[0])
+                                  .join("")
+                                  .toUpperCase()
+                                  .slice(0, 2)}
+                              </span>
+                            </div>
+                            <div class="min-w-0 flex-1">
+                              <p
+                                class="text-sm font-medium text-gray-900 dark:text-accent-200 truncate"
+                              >
+                                {profile.display_name}
+                              </p>
+                              <p
+                                class="text-xs text-gray-500 dark:text-accent-400 truncate"
+                              >
+                                {profile.organization_name}
+                              </p>
+                            </div>
+                          </button>
+                        {/each}
+                      </div>
+                    {/if}
+                  </div>
+
+                  <div
+                    class="border-t border-gray-200 dark:border-accent-700"
+                  ></div>
+                {/if}
+
                 <button
                   type="button"
-                  class="w-full flex items-center px-4 py-2 text-sm text-gray-700 dark:text-accent-300 hover:bg-gray-100 dark:hover:bg-accent-700 transition-colors duration-150"
+                  class="w-full flex items-center px-4 py-2.5 text-sm text-gray-700 dark:text-accent-300 hover:bg-gray-100 dark:hover:bg-accent-700 transition-colors duration-150"
                   on:click={handle_theme_toggle}
                 >
                   {#if $theme_store.mode === "light"}
@@ -320,7 +415,7 @@
                         d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"
                       />
                     </svg>
-                    Switch to Dark Mode
+                    Dark Mode
                   {:else}
                     <svg
                       class="mr-3 h-5 w-5"
@@ -335,52 +430,17 @@
                         d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"
                       />
                     </svg>
-                    Switch to Light Mode
+                    Light Mode
                   {/if}
                 </button>
 
                 <div
-                  class="border-t border-gray-200 dark:border-accent-700 my-1"
+                  class="border-t border-gray-200 dark:border-accent-700"
                 ></div>
-
-                {#if $other_available_profiles.length > 0}
-                  <div class="px-4 py-2">
-                    <p
-                      class="text-xs text-gray-500 dark:text-accent-400 uppercase tracking-wide mb-2"
-                    >
-                      Switch Profile
-                    </p>
-                    {#each $other_available_profiles as profile}
-                      <button
-                        type="button"
-                        class="w-full flex items-center px-3 py-2 text-sm text-gray-700 dark:text-accent-300 hover:bg-gray-100 dark:hover:bg-accent-700 rounded-md transition-colors duration-150 mb-1"
-                        on:click={() => handle_profile_switch(profile)}
-                      >
-                        <svg
-                          class="mr-3 h-4 w-4 text-gray-500 dark:text-accent-400"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                          />
-                        </svg>
-                        {USER_ROLE_DISPLAY_NAMES[profile.role]}
-                      </button>
-                    {/each}
-                  </div>
-                  <div
-                    class="border-t border-gray-200 dark:border-accent-700 my-1"
-                  ></div>
-                {/if}
 
                 <button
                   type="button"
-                  class="w-full flex items-center px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-accent-700 transition-colors duration-150"
+                  class="w-full flex items-center px-4 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-accent-700 transition-colors duration-150"
                   on:click={handle_logout_click}
                 >
                   <svg
@@ -449,14 +509,17 @@
   }
 
   /* Override header-panel styles for dropdown menu */
-  .dropdown-menu {
+  :global(.header-panel) .dropdown-menu,
+  :global(.header-panel) .dropdown-menu p,
+  :global(.header-panel) .dropdown-menu span {
     text-shadow: none !important;
+    color: inherit !important;
   }
-  .dropdown-menu button {
+  :global(.header-panel) .dropdown-menu button {
     color: inherit !important;
     text-shadow: none !important;
   }
-  .dropdown-menu svg {
+  :global(.header-panel) .dropdown-menu svg {
     color: inherit !important;
     stroke: currentColor !important;
   }

@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { get } from "svelte/store";
+import type { UserProfile } from "./auth";
 
 const mock_local_storage: Record<string, string> = {};
 
@@ -28,6 +29,73 @@ vi.mock("$app/navigation", () => ({
 
 vi.mock("$lib/adapters/initialization/brandingSyncService", () => ({
   sync_branding_with_profile: vi.fn().mockResolvedValue(undefined),
+}));
+
+function create_test_profiles(): UserProfile[] {
+  return [
+    {
+      id: "test-super-admin",
+      display_name: "Super Admin",
+      email: "admin@test.com",
+      role: "super_admin",
+      organization_id: "*",
+      organization_name: "All Organisations",
+      team_id: "*",
+    },
+    {
+      id: "test-org-admin",
+      display_name: "Organisation Admin",
+      email: "orgadmin@test.com",
+      role: "org_admin",
+      organization_id: "org_1",
+      organization_name: "Test Organisation",
+      team_id: "*",
+    },
+    {
+      id: "test-officials-manager",
+      display_name: "Officials Manager",
+      email: "officials@test.com",
+      role: "officials_manager",
+      organization_id: "org_1",
+      organization_name: "Test Organisation",
+      team_id: "*",
+    },
+    {
+      id: "test-team-manager",
+      display_name: "Team Manager",
+      email: "manager@test.com",
+      role: "team_manager",
+      organization_id: "org_1",
+      organization_name: "Test Organisation",
+      team_id: "team_1",
+    },
+    {
+      id: "test-official",
+      display_name: "Michael Anderson",
+      email: "michael@test.com",
+      role: "official",
+      organization_id: "org_1",
+      organization_name: "Test Organisation",
+      team_id: "*",
+      official_id: "official_1",
+    },
+    {
+      id: "test-player",
+      display_name: "Denis Onyango",
+      email: "denis@test.com",
+      role: "player",
+      organization_id: "org_1",
+      organization_name: "Test Organisation",
+      team_id: "team_1",
+      player_id: "player_1",
+    },
+  ];
+}
+
+vi.mock("./profileLoader", () => ({
+  load_profiles_from_repository: vi.fn().mockImplementation(() => {
+    return Promise.resolve(create_test_profiles());
+  }),
 }));
 
 import {

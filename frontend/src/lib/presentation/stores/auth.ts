@@ -12,10 +12,10 @@ import {
 import {
   USER_ROLE_DISPLAY_NAMES,
   USER_ROLE_ORDER,
-  ANY_VALUE,
 } from "$lib/core/interfaces/ports";
 import { get_authentication_adapter } from "$lib/adapters/iam/LocalAuthenticationAdapter";
 import { get_system_user_repository } from "$lib/adapters/repositories/InBrowserSystemUserRepository";
+import { get_organization_repository } from "$lib/adapters/repositories/InBrowserOrganizationRepository";
 import type {
   SidebarMenuGroup,
   DataAction,
@@ -28,13 +28,8 @@ import type {
   FeatureAccess,
 } from "$lib/core/interfaces/ports";
 import { get_authorization_adapter } from "$lib/infrastructure/AuthorizationProvider";
-import {
-  SEED_ORGANIZATION_IDS,
-  SEED_TEAM_IDS,
-  SEED_PLAYER_IDS,
-  SEED_OFFICIAL_IDS,
-} from "$lib/infrastructure/utils/SeedDataGenerator";
 import { sync_branding_with_profile } from "$lib/adapters/initialization/brandingSyncService";
+import { load_profiles_from_repository } from "./profileLoader";
 
 const ENTITY_DATA_CATEGORY_MAP: Record<string, DataCategory> = {
   organization: "root_level",
@@ -182,6 +177,7 @@ export interface UserProfile {
   email: string;
   role: UserRole;
   organization_id: string;
+  organization_name: string;
   team_id: string;
   player_id?: string;
   official_id?: string;
@@ -197,66 +193,6 @@ interface AuthState {
 
 const AUTH_STORAGE_KEY = "sports-org-auth-token";
 const PROFILE_STORAGE_KEY = "sports-org-current-profile-id";
-
-function create_default_profiles(): UserProfile[] {
-  return [
-    {
-      id: "super-admin-profile",
-      display_name: "Super Admin",
-      email: "nkasozi@gmail.com",
-      role: "super_admin",
-      organization_id: ANY_VALUE,
-      team_id: ANY_VALUE,
-      player_id: ANY_VALUE,
-    },
-    {
-      id: "org-admin-profile",
-      display_name: "Organisation Admin (Uganda Hockey)",
-      email: "orgadmin@ugandahockey.local",
-      role: "org_admin",
-      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
-      team_id: ANY_VALUE,
-      player_id: ANY_VALUE,
-    },
-    {
-      id: "officials-manager-profile",
-      display_name: "Officials Manager (Uganda Hockey)",
-      email: "officials@ugandahockey.local",
-      role: "officials_manager",
-      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
-      team_id: ANY_VALUE,
-      player_id: ANY_VALUE,
-    },
-    {
-      id: "team-manager-profile",
-      display_name: "Team Manager (Weatherhead HC)",
-      email: "manager@weatherheadhc.local",
-      role: "team_manager",
-      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
-      team_id: SEED_TEAM_IDS.WEATHERHEAD_HC,
-      player_id: ANY_VALUE,
-    },
-    {
-      id: "official-profile",
-      display_name: "Michael Anderson (Official)",
-      email: "michael.anderson@ugandahockey.local",
-      role: "official",
-      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
-      team_id: ANY_VALUE,
-      player_id: ANY_VALUE,
-      official_id: SEED_OFFICIAL_IDS.MICHAEL_ANDERSON,
-    },
-    {
-      id: "player-profile",
-      display_name: "Denis Onyango (Player)",
-      email: "denis.onyango@weatherheadhc.local",
-      role: "player",
-      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
-      team_id: SEED_TEAM_IDS.WEATHERHEAD_HC,
-      player_id: SEED_PLAYER_IDS.DENIS_ONYANGO,
-    },
-  ];
-}
 
 function load_saved_profile_id(): string | null {
   if (!browser) return null;
@@ -288,7 +224,7 @@ function create_auth_store() {
   const initial_state: AuthState = {
     current_token: null,
     current_profile: null,
-    available_profiles: create_default_profiles(),
+    available_profiles: [],
     sidebar_menu_items: [],
     is_initialized: false,
   };
@@ -351,9 +287,20 @@ function create_auth_store() {
   }
 
   async function initialize(): Promise<void> {
-    const available_profiles = create_default_profiles();
+    const repository = get_system_user_repository();
+    const organization_repository = get_organization_repository();
+    const available_profiles = await load_profiles_from_repository(
+      repository,
+      organization_repository,
+    );
     const saved_profile_id = load_saved_profile_id();
     const saved_token_raw = load_saved_token();
+
+    if (available_profiles.length === 0) {
+      console.error("[AuthStore] No profiles available from repository");
+      set({ ...initial_state, is_initialized: true });
+      return;
+    }
 
     let current_profile: UserProfile | null = null;
     let current_token: AuthToken | null = null;
@@ -394,7 +341,7 @@ function create_auth_store() {
     }
 
     if (!current_profile) {
-      const default_profile_id = saved_profile_id || "super-admin-profile";
+      const default_profile_id = saved_profile_id || available_profiles[0].id;
       current_profile =
         available_profiles.find((p) => p.id === default_profile_id) ||
         available_profiles[0];
@@ -402,7 +349,7 @@ function create_auth_store() {
       save_token(current_token.raw_token);
       save_profile_id(current_profile.id);
       console.log(
-        `[AuthStore] Initialized with default profile: ${current_profile.display_name}`,
+        `[AuthStore] Initialized with profile: ${current_profile.display_name}`,
       );
     }
 
@@ -421,6 +368,38 @@ function create_auth_store() {
     });
 
     await sync_branding_with_profile(current_profile);
+  }
+
+  async function refresh_profiles(): Promise<boolean> {
+    const repository = get_system_user_repository();
+    const organization_repository = get_organization_repository();
+    const refreshed_profiles = await load_profiles_from_repository(
+      repository,
+      organization_repository,
+    );
+
+    if (refreshed_profiles.length === 0) {
+      console.warn("[AuthStore] No profiles found during refresh");
+      return false;
+    }
+
+    const state = get({ subscribe });
+    const current_profile_still_exists = state.current_profile
+      ? refreshed_profiles.some((p) => p.id === state.current_profile!.id)
+      : false;
+
+    update((s) => ({
+      ...s,
+      available_profiles: refreshed_profiles,
+      current_profile: current_profile_still_exists
+        ? refreshed_profiles.find((p) => p.id === s.current_profile!.id)!
+        : s.current_profile,
+    }));
+
+    console.log(
+      `[AuthStore] Refreshed profiles: ${refreshed_profiles.length} available`,
+    );
+    return true;
   }
 
   async function switch_profile(profile_id: string): Promise<boolean> {
@@ -470,7 +449,7 @@ function create_auth_store() {
     set({
       current_token: null,
       current_profile: null,
-      available_profiles: create_default_profiles(),
+      available_profiles: [],
       sidebar_menu_items: [],
       is_initialized: false,
     });
@@ -684,6 +663,7 @@ function create_auth_store() {
     subscribe,
     initialize,
     switch_profile,
+    refresh_profiles,
     get_current_role,
     logout,
     get_sidebar_menu_items,
