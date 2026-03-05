@@ -1,20 +1,16 @@
 import { mutation } from "./_generated/server";
+import {
+  SHARED_ROLE_PERMISSIONS,
+  SHARED_ENTITY_CATEGORIES,
+  ALL_ROLES,
+  ALL_CATEGORIES,
+  type SharedUserRole,
+  type SharedDataCategory,
+} from "./shared_permission_definitions";
 
-export type UserRole =
-  | "super_admin"
-  | "org_admin"
-  | "officials_manager"
-  | "team_manager"
-  | "official"
-  | "player";
+export type UserRole = SharedUserRole;
 
-export type DataCategory =
-  | "root_level"
-  | "org_administrator_level"
-  | "organisation_level"
-  | "team_level"
-  | "player_level"
-  | "public_level";
+export type DataCategory = SharedDataCategory;
 
 interface RolePermission {
   role: UserRole;
@@ -40,115 +36,12 @@ interface MenuItem {
   item_order: number;
 }
 
-const FULL_PERMISSIONS = {
-  can_create: true,
-  can_read: true,
-  can_update: true,
-  can_delete: true,
-};
-const READ_ONLY = {
-  can_create: false,
-  can_read: true,
-  can_update: false,
-  can_delete: false,
-};
-const NO_PERMISSIONS = {
-  can_create: false,
-  can_read: false,
-  can_update: false,
-  can_delete: false,
-};
-const READ_UPDATE = {
-  can_create: false,
-  can_read: true,
-  can_update: true,
-  can_delete: false,
-};
-
 function build_role_permissions(): RolePermission[] {
-  const PERMISSIONS_MAP: Record<
-    UserRole,
-    Record<
-      DataCategory,
-      {
-        can_create: boolean;
-        can_read: boolean;
-        can_update: boolean;
-        can_delete: boolean;
-      }
-    >
-  > = {
-    super_admin: {
-      root_level: FULL_PERMISSIONS,
-      org_administrator_level: FULL_PERMISSIONS,
-      organisation_level: FULL_PERMISSIONS,
-      team_level: FULL_PERMISSIONS,
-      player_level: FULL_PERMISSIONS,
-      public_level: FULL_PERMISSIONS,
-    },
-    org_admin: {
-      root_level: READ_ONLY,
-      org_administrator_level: FULL_PERMISSIONS,
-      organisation_level: FULL_PERMISSIONS,
-      team_level: FULL_PERMISSIONS,
-      player_level: FULL_PERMISSIONS,
-      public_level: FULL_PERMISSIONS,
-    },
-    officials_manager: {
-      root_level: READ_ONLY,
-      org_administrator_level: NO_PERMISSIONS,
-      organisation_level: READ_UPDATE,
-      team_level: READ_ONLY,
-      player_level: READ_ONLY,
-      public_level: FULL_PERMISSIONS,
-    },
-    team_manager: {
-      root_level: READ_ONLY,
-      org_administrator_level: NO_PERMISSIONS,
-      organisation_level: READ_ONLY,
-      team_level: READ_UPDATE,
-      player_level: READ_UPDATE,
-      public_level: FULL_PERMISSIONS,
-    },
-    official: {
-      root_level: READ_ONLY,
-      org_administrator_level: NO_PERMISSIONS,
-      organisation_level: READ_UPDATE,
-      team_level: READ_ONLY,
-      player_level: READ_ONLY,
-      public_level: FULL_PERMISSIONS,
-    },
-    player: {
-      root_level: READ_ONLY,
-      org_administrator_level: NO_PERMISSIONS,
-      organisation_level: READ_ONLY,
-      team_level: READ_ONLY,
-      player_level: READ_UPDATE,
-      public_level: FULL_PERMISSIONS,
-    },
-  };
-
   const result: RolePermission[] = [];
-  const roles: UserRole[] = [
-    "super_admin",
-    "org_admin",
-    "officials_manager",
-    "team_manager",
-    "official",
-    "player",
-  ];
-  const categories: DataCategory[] = [
-    "root_level",
-    "org_administrator_level",
-    "organisation_level",
-    "team_level",
-    "player_level",
-    "public_level",
-  ];
 
-  for (const role of roles) {
-    for (const category of categories) {
-      const perms = PERMISSIONS_MAP[role][category];
+  for (const role of ALL_ROLES) {
+    for (const category of ALL_CATEGORIES) {
+      const perms = SHARED_ROLE_PERMISSIONS[role][category];
       result.push({
         role,
         data_category: category,
@@ -161,49 +54,10 @@ function build_role_permissions(): RolePermission[] {
 }
 
 function build_entity_categories(): EntityCategory[] {
-  return [
-    { entity_type: "organization", data_category: "root_level" },
-    { entity_type: "sport", data_category: "root_level" },
-    { entity_type: "gender", data_category: "root_level" },
-    { entity_type: "competitionformat", data_category: "root_level" },
-    { entity_type: "identificationtype", data_category: "root_level" },
-    { entity_type: "gameofficialrole", data_category: "root_level" },
-    { entity_type: "gameeventtype", data_category: "root_level" },
-    { entity_type: "teamstaffrole", data_category: "root_level" },
-    { entity_type: "playerposition", data_category: "root_level" },
-    { entity_type: "help", data_category: "root_level" },
-    { entity_type: "settings", data_category: "org_administrator_level" },
-    { entity_type: "systemsettings", data_category: "org_administrator_level" },
-    { entity_type: "auditlog", data_category: "org_administrator_level" },
-    { entity_type: "systemuser", data_category: "org_administrator_level" },
-    { entity_type: "competition", data_category: "organisation_level" },
-    { entity_type: "team", data_category: "team_level" },
-    { entity_type: "official", data_category: "organisation_level" },
-    { entity_type: "venue", data_category: "organisation_level" },
-    { entity_type: "fixture", data_category: "organisation_level" },
-    { entity_type: "fixturedetailssetup", data_category: "organisation_level" },
-    { entity_type: "livegamelog", data_category: "organisation_level" },
-    { entity_type: "gameeventlog", data_category: "organisation_level" },
-    {
-      entity_type: "playerteammembership",
-      data_category: "organisation_level",
-    },
-    {
-      entity_type: "playerteamtransferhistory",
-      data_category: "organisation_level",
-    },
-    { entity_type: "teamstaff", data_category: "team_level" },
-    { entity_type: "fixturelineup", data_category: "team_level" },
-    { entity_type: "competitionteam", data_category: "team_level" },
-    { entity_type: "player", data_category: "player_level" },
-    { entity_type: "playerprofile", data_category: "public_level" },
-    { entity_type: "identification", data_category: "public_level" },
-    { entity_type: "qualification", data_category: "public_level" },
-    { entity_type: "jerseycolor", data_category: "public_level" },
-    { entity_type: "profilelink", data_category: "public_level" },
-    { entity_type: "activitycategory", data_category: "public_level" },
-    { entity_type: "teamprofile", data_category: "public_level" },
-  ];
+  return SHARED_ENTITY_CATEGORIES.map((entry) => ({
+    entity_type: entry.entity_type,
+    data_category: entry.data_category,
+  }));
 }
 
 const DASHBOARD_ICON =

@@ -437,6 +437,29 @@ export const force_resolve_conflict = mutation({
       resolution_action,
       resolved_by,
     } = args;
+
+    const entity_type = get_entity_type_from_table(table_name);
+
+    try {
+      await require_permission(ctx, entity_type, "update");
+    } catch (error) {
+      if (error instanceof AuthenticationError) {
+        return {
+          success: false,
+          error: "authentication_required",
+          message: error.message,
+        };
+      }
+      if (error instanceof AuthorizationError) {
+        return {
+          success: false,
+          error: "unauthorized",
+          message: error.message,
+        };
+      }
+      throw error;
+    }
+
     const synced_at = new Date().toISOString();
 
     const table = ctx.db.query(table_name as any);

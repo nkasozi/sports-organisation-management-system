@@ -362,4 +362,66 @@ export class ConvexAuthorizationAdapter implements AuthorizationPort {
   clear_cache(): number {
     return this.authorization_cache.invalidate_all();
   }
+
+  async get_sidebar_menu_for_role(
+    role: UserRole,
+  ): AsyncResult<SidebarMenuGroup[]> {
+    const cache_key = `sidebar_menu_role:${role}`;
+    const cached = this.authorization_cache.get_or_miss(cache_key);
+
+    if (cached.is_hit && cached.value) {
+      console.log(
+        "[ConvexAuthorizationAdapter] Cache HIT for role sidebar menu",
+      );
+      return cached.value as Awaited<AsyncResult<SidebarMenuGroup[]>>;
+    }
+
+    try {
+      const menu_groups = (await this.convex_client.query(
+        "authorization:get_sidebar_menu",
+        { role },
+      )) as Array<{
+        group_name: string;
+        items: Array<{ name: string; href: string; icon: string }>;
+      }>;
+
+      const menu_result: SidebarMenuGroup[] = (menu_groups || []).map(
+        (group) => ({
+          group_name: group.group_name,
+          items: group.items.map((item) => ({
+            name: item.name,
+            href: item.href,
+            icon: item.icon,
+          })),
+        }),
+      );
+
+      const result = create_success_result(menu_result);
+      this.authorization_cache.set(cache_key, result);
+      return result;
+    } catch (error) {
+      console.error(
+        "[ConvexAuthorizationAdapter] Error fetching sidebar menu for role:",
+        error,
+      );
+      return create_success_result([]);
+    }
+  }
+
+  async get_accessible_routes_for_role(role: UserRole): AsyncResult<string[]> {
+    const menu_result = await this.get_sidebar_menu_for_role(role);
+
+    if (!menu_result.success || !menu_result.data) {
+      return create_success_result([]);
+    }
+
+    const accessible_routes: string[] = [];
+    for (const group of menu_result.data) {
+      for (const item of group.items) {
+        accessible_routes.push(item.href);
+      }
+    }
+
+    return create_success_result(accessible_routes);
+  }
 }

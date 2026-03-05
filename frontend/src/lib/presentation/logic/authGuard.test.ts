@@ -34,13 +34,20 @@ vi.mock("$lib/adapters/initialization/brandingSyncService", () => ({
 }));
 
 import { goto } from "$app/navigation";
-import { check_route_access, ensure_route_access } from "./authGuard";
+import {
+  check_route_access,
+  ensure_route_access,
+  invalidate_route_access_cache,
+  extract_route_base,
+  is_route_in_accessible_set,
+} from "./authGuard";
 import { auth_store } from "../stores/auth";
 import { get } from "svelte/store";
 
 describe("authGuard", () => {
   beforeEach(async () => {
     vi.mocked(goto).mockClear();
+    invalidate_route_access_cache();
     Object.keys(mock_local_storage).forEach(
       (key) => delete mock_local_storage[key],
     );
@@ -282,6 +289,88 @@ describe("authGuard", () => {
       await auth_store.switch_profile(team_manager!.id);
       const manager_result = await check_route_access("/audit-logs");
       expect(manager_result.allowed).toBe(false);
+    });
+  });
+
+  describe("extract_route_base", () => {
+    it("returns / for empty pathname", () => {
+      expect(extract_route_base("")).toBe("/");
+    });
+
+    it("returns / for root pathname", () => {
+      expect(extract_route_base("/")).toBe("/");
+    });
+
+    it("returns /teams for /teams", () => {
+      expect(extract_route_base("/teams")).toBe("/teams");
+    });
+
+    it("returns /teams for /teams/123", () => {
+      expect(extract_route_base("/teams/123")).toBe("/teams");
+    });
+
+    it("returns /competitions for /competitions/create", () => {
+      expect(extract_route_base("/competitions/create")).toBe("/competitions");
+    });
+  });
+
+  describe("is_route_in_accessible_set", () => {
+    const test_routes = new Set(["/teams", "/players", "/fixtures"]);
+
+    it("returns true for root path", () => {
+      expect(is_route_in_accessible_set("/", test_routes)).toBe(true);
+    });
+
+    it("returns true for empty path", () => {
+      expect(is_route_in_accessible_set("", test_routes)).toBe(true);
+    });
+
+    it("returns true for exact match", () => {
+      expect(is_route_in_accessible_set("/teams", test_routes)).toBe(true);
+    });
+
+    it("returns true for sub-route matching base", () => {
+      expect(is_route_in_accessible_set("/teams/123", test_routes)).toBe(true);
+    });
+
+    it("returns false for route not in set", () => {
+      expect(is_route_in_accessible_set("/settings", test_routes)).toBe(false);
+    });
+
+    it("returns false for sub-route of missing base", () => {
+      expect(is_route_in_accessible_set("/settings/general", test_routes)).toBe(
+        false,
+      );
+    });
+  });
+
+  describe("route access cache", () => {
+    it("invalidate_route_access_cache returns false when no cache exists", () => {
+      expect(invalidate_route_access_cache()).toBe(false);
+    });
+
+    it("invalidate_route_access_cache returns true after cache is populated", async () => {
+      const profiles = get(auth_store).available_profiles;
+      const super_admin = profiles.find((p) => p.role === "super_admin");
+      await auth_store.switch_profile(super_admin!.id);
+
+      await check_route_access("/teams");
+
+      expect(invalidate_route_access_cache()).toBe(true);
+    });
+
+    it("cache auto-invalidates when role changes", async () => {
+      const profiles = get(auth_store).available_profiles;
+      const super_admin = profiles.find((p) => p.role === "super_admin");
+      const player = profiles.find((p) => p.role === "player");
+
+      await auth_store.switch_profile(super_admin!.id);
+      const admin_result = await check_route_access("/system-users");
+      expect(admin_result.allowed).toBe(true);
+
+      await auth_store.switch_profile(player!.id);
+      const player_result = await check_route_access("/system-users");
+      expect(player_result.allowed).toBe(false);
     });
   });
 });

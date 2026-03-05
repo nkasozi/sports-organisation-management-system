@@ -993,4 +993,16 @@ export class LocalAuthorizationAdapter implements AuthorizationPort {
     this.authorization_cache.set(cache_key, disabled);
     return create_success_result(disabled);
   }
+
+  async get_sidebar_menu_for_role(
+    role: UserRole,
+  ): AsyncResult<SidebarMenuGroup[]> {
+    const menu_items = get_sidebar_menu_for_role(role);
+    return create_success_result(menu_items);
+  }
+
+  async get_accessible_routes_for_role(role: UserRole): AsyncResult<string[]> {
+    const allowed_routes = get_allowed_routes_for_role(role);
+    return create_success_result(Array.from(allowed_routes));
+  }
 }

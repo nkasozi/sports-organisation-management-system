@@ -27,7 +27,7 @@ import type {
   AuthorizationCheckResult,
   FeatureAccess,
 } from "$lib/core/interfaces/ports";
-import { get_sidebar_menu_for_role } from "$lib/infrastructure/AuthorizationProvider";
+import { get_authorization_adapter } from "$lib/infrastructure/AuthorizationProvider";
 import {
   SEED_ORGANIZATION_IDS,
   SEED_TEAM_IDS,
@@ -191,6 +191,7 @@ interface AuthState {
   current_token: AuthToken | null;
   current_profile: UserProfile | null;
   available_profiles: UserProfile[];
+  sidebar_menu_items: SidebarMenuGroup[];
   is_initialized: boolean;
 }
 
@@ -288,6 +289,7 @@ function create_auth_store() {
     current_token: null,
     current_profile: null,
     available_profiles: create_default_profiles(),
+    sidebar_menu_items: [],
     is_initialized: false,
   };
 
@@ -330,6 +332,22 @@ function create_auth_store() {
       user_display_name: profile.display_name,
       organization_id: profile.organization_id,
     });
+  }
+
+  async function load_sidebar_menu_for_role(
+    role: UserRole,
+  ): Promise<SidebarMenuGroup[]> {
+    const adapter = get_authorization_adapter();
+    const menu_result = await adapter.get_sidebar_menu_for_role(role);
+
+    if (!menu_result.success) {
+      console.error(
+        `[AuthStore] Failed to load sidebar menu: ${menu_result.error}`,
+      );
+      return [];
+    }
+
+    return menu_result.data;
   }
 
   async function initialize(): Promise<void> {
@@ -390,10 +408,15 @@ function create_auth_store() {
 
     sync_user_context_with_event_bus(current_profile);
 
+    const sidebar_menu_items = await load_sidebar_menu_for_role(
+      current_profile.role,
+    );
+
     set({
       current_token,
       current_profile,
       available_profiles,
+      sidebar_menu_items,
       is_initialized: true,
     });
 
@@ -417,10 +440,15 @@ function create_auth_store() {
 
     sync_user_context_with_event_bus(target_profile);
 
+    const sidebar_menu_items = await load_sidebar_menu_for_role(
+      target_profile.role,
+    );
+
     update((s) => ({
       ...s,
       current_token: new_token,
       current_profile: target_profile,
+      sidebar_menu_items,
     }));
 
     await sync_branding_with_profile(target_profile);
@@ -443,6 +471,7 @@ function create_auth_store() {
       current_token: null,
       current_profile: null,
       available_profiles: create_default_profiles(),
+      sidebar_menu_items: [],
       is_initialized: false,
     });
     console.log("[AuthStore] Logged out");
@@ -450,11 +479,7 @@ function create_auth_store() {
 
   function get_sidebar_menu_items(): SidebarMenuGroup[] {
     const state = get({ subscribe });
-    if (!state.current_profile) {
-      console.warn("[AuthStore] No profile available for sidebar menu items");
-      return [];
-    }
-    return get_sidebar_menu_for_role(state.current_profile.role);
+    return state.sidebar_menu_items;
   }
 
   function get_authorization_level(
@@ -717,10 +742,7 @@ export const is_auth_initialized = derived(
 );
 
 export const sidebar_menu_items = derived(auth_store, ($auth) => {
-  if (!$auth.is_initialized || !$auth.current_profile) {
-    return [];
-  }
-  return get_sidebar_menu_for_role($auth.current_profile.role);
+  return $auth.sidebar_menu_items;
 });
 
 export const feature_access = derived(auth_store, ($auth) => {

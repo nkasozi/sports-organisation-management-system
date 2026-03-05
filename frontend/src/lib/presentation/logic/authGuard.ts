@@ -4,12 +4,66 @@ import { auth_store } from "../stores/auth";
 import { access_denial_store } from "../stores/accessDenial";
 import type { UserProfile } from "../stores/auth";
 import type { UserRole } from "$lib/core/interfaces/ports";
-import { can_role_access_route } from "$lib/infrastructure/AuthorizationProvider";
+import { get_authorization_adapter } from "$lib/infrastructure/AuthorizationProvider";
 
 export interface AuthGuardResult {
   success: boolean;
   profile: UserProfile | null;
   error_message: string;
+}
+
+interface RouteAccessCache {
+  role: UserRole;
+  accessible_routes: Set<string>;
+  cached_at: number;
+}
+
+const ROUTE_CACHE_TTL_MS = 5 * 60 * 1000;
+
+let route_access_cache: RouteAccessCache | null = null;
+
+export function extract_route_base(pathname: string): string {
+  const segments = pathname.split("/").filter(Boolean);
+  if (segments.length === 0) return "/";
+  return "/" + segments[0];
+}
+
+export function is_route_in_accessible_set(
+  pathname: string,
+  accessible_routes: Set<string>,
+): boolean {
+  if (pathname === "/" || pathname === "") return true;
+  const route_base = extract_route_base(pathname);
+  return accessible_routes.has(pathname) || accessible_routes.has(route_base);
+}
+
+function is_cache_valid_for_role(role: UserRole): boolean {
+  if (!route_access_cache) return false;
+  if (route_access_cache.role !== role) return false;
+  return Date.now() - route_access_cache.cached_at < ROUTE_CACHE_TTL_MS;
+}
+
+async function load_accessible_routes(role: UserRole): Promise<Set<string>> {
+  const adapter = get_authorization_adapter();
+  const result = await adapter.get_accessible_routes_for_role(role);
+
+  if (!result.success) {
+    console.error(
+      `[AuthGuard] Failed to load accessible routes: ${result.error}`,
+    );
+    return new Set<string>();
+  }
+
+  console.log(
+    `[AuthGuard] Loaded ${result.data.length} accessible routes for role: ${role}`,
+  );
+  return new Set(result.data);
+}
+
+export function invalidate_route_access_cache(): boolean {
+  const had_cache = route_access_cache !== null;
+  route_access_cache = null;
+  return had_cache;
 }
 
 function get_role_display_name(role: UserRole): string {
@@ -43,16 +97,25 @@ export async function check_route_access(
     };
   }
 
-  const result = can_role_access_route(profile.role, pathname);
-
-  if (!result.allowed) {
-    return {
-      allowed: false,
-      message: `Your current role (${get_role_display_name(profile.role)}) does not have access to this page. ${result.reason}`,
+  if (!is_cache_valid_for_role(profile.role)) {
+    const accessible_routes = await load_accessible_routes(profile.role);
+    route_access_cache = {
+      role: profile.role,
+      accessible_routes,
+      cached_at: Date.now(),
     };
   }
 
-  return { allowed: true, message: "" };
+  if (
+    is_route_in_accessible_set(pathname, route_access_cache!.accessible_routes)
+  ) {
+    return { allowed: true, message: "" };
+  }
+
+  return {
+    allowed: false,
+    message: `Your current role (${get_role_display_name(profile.role)}) does not have access to this page.`,
+  };
 }
 
 export async function ensure_route_access(pathname: string): Promise<boolean> {
