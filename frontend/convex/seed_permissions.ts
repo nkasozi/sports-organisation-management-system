@@ -351,15 +351,6 @@ function build_sidebar_menu_items(): MenuItem[] {
     "super_admin",
     "Teams",
     4,
-    "Team Profiles",
-    "/team-profiles",
-    PROFILE_ICON,
-    2,
-  );
-  add_item(
-    "super_admin",
-    "Teams",
-    4,
     "Team Staff",
     "/team-staff",
     STAFF_ICON,
@@ -375,15 +366,6 @@ function build_sidebar_menu_items(): MenuItem[] {
     4,
   );
   add_item("super_admin", "Players", 5, "Players", "/players", PLAYERS_ICON, 1);
-  add_item(
-    "super_admin",
-    "Players",
-    5,
-    "Player Profiles",
-    "/player-profiles",
-    PROFILE_ICON,
-    2,
-  );
   add_item(
     "super_admin",
     "Players",
@@ -542,27 +524,9 @@ function build_sidebar_menu_items(): MenuItem[] {
     2,
   );
   add_item("org_admin", "Teams", 4, "Teams", "/teams", TEAMS_ICON, 1);
-  add_item(
-    "org_admin",
-    "Teams",
-    4,
-    "Team Profiles",
-    "/team-profiles",
-    PROFILE_ICON,
-    2,
-  );
   add_item("org_admin", "Teams", 4, "Team Staff", "/team-staff", STAFF_ICON, 3);
   add_item("org_admin", "Teams", 4, "Staff Roles", "/staff-roles", TAG_ICON, 4);
   add_item("org_admin", "Players", 5, "Players", "/players", PLAYERS_ICON, 1);
-  add_item(
-    "org_admin",
-    "Players",
-    5,
-    "Player Profiles",
-    "/player-profiles",
-    PROFILE_ICON,
-    2,
-  );
   add_item(
     "org_admin",
     "Players",
@@ -761,15 +725,6 @@ function build_sidebar_menu_items(): MenuItem[] {
     "team_manager",
     "My Team",
     2,
-    "My Team Profile",
-    "/team-profiles",
-    PROFILE_ICON,
-    2,
-  );
-  add_item(
-    "team_manager",
-    "My Team",
-    2,
     "My Team Staff",
     "/team-staff",
     STAFF_ICON,
@@ -852,15 +807,6 @@ function build_sidebar_menu_items(): MenuItem[] {
     "/players",
     PLAYERS_ICON,
     1,
-  );
-  add_item(
-    "player",
-    "My Info",
-    2,
-    "My Profile",
-    "/player-profiles",
-    PROFILE_ICON,
-    2,
   );
   add_item(
     "player",

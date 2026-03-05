@@ -337,7 +337,7 @@ describe("can_role_access_route", () => {
     expect(result.allowed).toBe(true);
 
     const result2 = can_role_access_route("player", "/player-profiles");
-    expect(result2.allowed).toBe(true);
+    expect(result2.allowed).toBe(false);
   });
 
   it("should always allow access to home route", () => {
@@ -379,7 +379,7 @@ describe("get_allowed_routes_for_role", () => {
     const routes = get_allowed_routes_for_role("player");
 
     expect(routes.has("/players")).toBe(true);
-    expect(routes.has("/player-profiles")).toBe(true);
+    expect(routes.has("/player-profiles")).toBe(false);
     expect(routes.has("/organizations")).toBe(false);
     expect(routes.has("/teams")).toBe(false);
   });

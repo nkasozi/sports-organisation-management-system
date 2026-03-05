@@ -135,14 +135,9 @@ describe("authGuard", () => {
         expect(result.allowed).toBe(false);
       });
 
-      it("allows access to /player-profiles", async () => {
+      it("denies access to /player-profiles", async () => {
         const result = await check_route_access("/player-profiles");
-        expect(result.allowed).toBe(true);
-      });
-
-      it("allows access to /player-profiles", async () => {
-        const result = await check_route_access("/player-profiles");
-        expect(result.allowed).toBe(true);
+        expect(result.allowed).toBe(false);
       });
     });
 
@@ -163,9 +158,9 @@ describe("authGuard", () => {
         expect(result.allowed).toBe(false);
       });
 
-      it("allows access to /team-profiles", async () => {
+      it("denies access to /team-profiles", async () => {
         const result = await check_route_access("/team-profiles");
-        expect(result.allowed).toBe(true);
+        expect(result.allowed).toBe(false);
       });
 
       it("allows access to /fixture-lineups", async () => {
