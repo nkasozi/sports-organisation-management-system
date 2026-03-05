@@ -26,7 +26,7 @@ import {
   get_session_token,
 } from "$lib/adapters/iam/clerkAuthService";
 import { get_authentication_adapter } from "$lib/adapters/iam/LocalAuthenticationAdapter";
-import { get_authorization_adapter } from "$lib/adapters/iam/LocalAuthorizationAdapter";
+import { get_authorization_adapter } from "$lib/infrastructure/AuthorizationProvider";
 import { get_clerk_authentication_adapter } from "$lib/adapters/iam/ClerkAuthenticationAdapter";
 import {
   create_auth_cache_invalidator,

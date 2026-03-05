@@ -6,7 +6,7 @@
   import { ensure_auth_profile } from "$lib/presentation/logic/authGuard";
   import { access_denial_store } from "$lib/presentation/stores/accessDenial";
   import { get_entity_data_category } from "$lib/core/interfaces/ports";
-  import { get_authorization_adapter } from "$lib/adapters/iam/LocalAuthorizationAdapter";
+  import { get_authorization_adapter } from "$lib/infrastructure/AuthorizationProvider";
   import type { Fixture } from "$lib/core/entities/Fixture";
   import type { Organization } from "$lib/core/entities/Organization";
   import {

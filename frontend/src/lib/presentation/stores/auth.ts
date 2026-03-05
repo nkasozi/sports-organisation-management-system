@@ -27,10 +27,7 @@ import type {
   AuthorizationCheckResult,
   FeatureAccess,
 } from "$lib/core/interfaces/ports";
-import {
-  get_authorization_adapter,
-  get_sidebar_menu_for_role,
-} from "$lib/adapters/iam/LocalAuthorizationAdapter";
+import { get_sidebar_menu_for_role } from "$lib/infrastructure/AuthorizationProvider";
 import {
   SEED_ORGANIZATION_IDS,
   SEED_TEAM_IDS,

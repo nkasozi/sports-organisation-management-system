@@ -1,14 +1,16 @@
 <script lang="ts">
-  import { sign_out } from "$lib/adapters/iam/clerkAuthService";
+  import { sign_out, destroy_clerk } from "$lib/adapters/iam/clerkAuthService";
   import { page } from "$app/stores";
 
   $: error_message =
     $page.url.searchParams.get("message") ||
     "You don't have access to this system.";
 
-  async function handle_sign_out(): Promise<void> {
+  async function handle_sign_out(): Promise<boolean> {
     await sign_out();
+    destroy_clerk();
     window.location.href = "/";
+    return true;
   }
 </script>
 

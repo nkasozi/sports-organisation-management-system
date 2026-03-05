@@ -1,6 +1,7 @@
 import type { UserRole } from "./AuthenticationPort";
 import type { AsyncResult } from "../../../../types/Result";
 import { ANY_VALUE } from "./AuthenticationPort";
+import type { AuthCache } from "$lib/infrastructure/cache/AuthCache";
 
 export type DataAction = "create" | "read" | "update" | "delete";
 
@@ -119,6 +120,8 @@ export interface AuthorizationPort {
     raw_token: string,
     entity_type: string,
   ): AsyncResult<DataAction[]>;
+
+  get_authorization_cache(): AuthCache<unknown>;
 }
 
 export type ScopeDimension =

@@ -41,7 +41,7 @@
     build_authorization_list_filter,
     get_authorization_preselect_values,
   } from "$lib/core/interfaces/ports";
-  import { get_authorization_adapter } from "$lib/adapters/iam/LocalAuthorizationAdapter";
+  import { get_authorization_adapter } from "$lib/infrastructure/AuthorizationProvider";
 
   const lineup_use_cases = get_fixture_lineup_use_cases();
   const fixture_use_cases = get_fixture_use_cases();

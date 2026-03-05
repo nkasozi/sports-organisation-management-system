@@ -994,20 +994,3 @@ export class LocalAuthorizationAdapter implements AuthorizationPort {
     return create_success_result(disabled);
   }
 }
-
-import { get_authentication_adapter } from "./LocalAuthenticationAdapter";
-import { get_system_user_repository } from "$lib/adapters/repositories/InBrowserSystemUserRepository";
-
-let authorization_adapter_instance: LocalAuthorizationAdapter | null = null;
-
-export function get_authorization_adapter(): LocalAuthorizationAdapter {
-  if (!authorization_adapter_instance) {
-    const auth_adapter = get_authentication_adapter(
-      get_system_user_repository(),
-    );
-    authorization_adapter_instance = new LocalAuthorizationAdapter(
-      auth_adapter,
-    );
-  }
-  return authorization_adapter_instance;
-}

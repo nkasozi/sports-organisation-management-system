@@ -55,8 +55,15 @@
 
   function handle_logout_click(): void {
     close_user_menu();
-    auth_store.logout();
-    goto("/");
+
+    if ($is_signed_in) {
+      auth_store.logout();
+      sign_out();
+      goto("/sign-in");
+      return;
+    }
+
+    sign_in_with_redirect();
   }
 
   async function handle_profile_switch(profile: UserProfile): Promise<void> {
@@ -389,56 +396,8 @@
                       d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
                     />
                   </svg>
-                  Logout (Local)
+                  {$is_signed_in ? "Sign Out" : "Sign In"}
                 </button>
-
-                <div
-                  class="border-t border-gray-200 dark:border-accent-700 my-1"
-                ></div>
-
-                {#if $is_signed_in}
-                  <button
-                    type="button"
-                    class="w-full flex items-center px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-accent-700 transition-colors duration-150"
-                    on:click={() => sign_out()}
-                  >
-                    <svg
-                      class="mr-3 h-5 w-5"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-                      />
-                    </svg>
-                    Sign Out (Clerk)
-                  </button>
-                {:else}
-                  <button
-                    type="button"
-                    class="w-full flex items-center px-4 py-2 text-sm text-theme-primary-600 dark:text-theme-primary-400 hover:bg-gray-100 dark:hover:bg-accent-700 transition-colors duration-150"
-                    on:click={() => sign_in_with_redirect()}
-                  >
-                    <svg
-                      class="mr-3 h-5 w-5"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"
-                      />
-                    </svg>
-                    Sign In (Clerk)
-                  </button>
-                {/if}
               </div>
             </div>
           {/if}

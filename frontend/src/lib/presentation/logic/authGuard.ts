@@ -4,7 +4,7 @@ import { auth_store } from "../stores/auth";
 import { access_denial_store } from "../stores/accessDenial";
 import type { UserProfile } from "../stores/auth";
 import type { UserRole } from "$lib/core/interfaces/ports";
-import { can_role_access_route } from "$lib/adapters/iam/LocalAuthorizationAdapter";
+import { can_role_access_route } from "$lib/infrastructure/AuthorizationProvider";
 
 export interface AuthGuardResult {
   success: boolean;

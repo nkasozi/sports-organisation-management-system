@@ -21,7 +21,7 @@
     build_authorization_list_filter,
     type UserScopeProfile,
   } from "$lib/core/interfaces/ports";
-  import { get_authorization_adapter } from "$lib/adapters/iam/LocalAuthorizationAdapter";
+  import { get_authorization_adapter } from "$lib/infrastructure/AuthorizationProvider";
 
   const player_use_cases = get_player_use_cases();
   const team_use_cases = get_team_use_cases();

@@ -15,7 +15,7 @@
     check_entity_permission,
     type UserScopeProfile,
   } from "$lib/core/interfaces/ports";
-  import { get_authorization_adapter } from "$lib/adapters/iam/LocalAuthorizationAdapter";
+  import { get_authorization_adapter } from "$lib/infrastructure/AuthorizationProvider";
   import { ensure_auth_profile } from "$lib/presentation/logic/authGuard";
 
   type ViewMode = "list" | "create" | "edit";

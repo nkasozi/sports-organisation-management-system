@@ -28,7 +28,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
     build_authorization_list_filter,
     type UserScopeProfile,
   } from "$lib/core/interfaces/ports";
-  import { get_authorization_adapter } from "$lib/adapters/iam/LocalAuthorizationAdapter";
+  import { get_authorization_adapter } from "$lib/infrastructure/AuthorizationProvider";
   import { ensure_auth_profile } from "../logic/authGuard";
 
   export let entity_type: string;

@@ -37,7 +37,7 @@ import {
   current_user_role_display,
   current_profile_display_name,
 } from "./auth";
-import { get_sidebar_menu_for_role } from "$lib/adapters/iam/LocalAuthorizationAdapter";
+import { get_sidebar_menu_for_role } from "$lib/infrastructure/AuthorizationProvider";
 import type { UserRole } from "$lib/core/interfaces/ports";
 
 describe("auth_store integration", () => {

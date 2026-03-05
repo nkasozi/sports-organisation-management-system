@@ -5,7 +5,7 @@
   import { page } from "$app/stores";
   import { ensure_auth_profile } from "$lib/presentation/logic/authGuard";
   import { access_denial_store } from "$lib/presentation/stores/accessDenial";
-  import { get_authorization_adapter } from "$lib/adapters/iam/LocalAuthorizationAdapter";
+  import { get_authorization_adapter } from "$lib/infrastructure/AuthorizationProvider";
   import { auth_store } from "$lib/presentation/stores/auth";
   import { get } from "svelte/store";
   import type {
