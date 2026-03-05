@@ -6,10 +6,7 @@ import type {
   GameEvent,
   GamePeriod,
 } from "../entities/Fixture";
-import type {
-  FixtureRepository,
-  FixtureFilter,
-} from "../interfaces/ports";
+import type { FixtureRepository, FixtureFilter } from "../interfaces/ports";
 import type { QueryOptions } from "../interfaces/ports";
 import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
 import { create_failure_result, create_success_result } from "../types/Result";
@@ -18,7 +15,7 @@ import {
   generate_round_robin_fixtures,
 } from "../entities/Fixture";
 import { get_repository_container } from "../../infrastructure/container";
-import type { EntityOperationResult, EntityListResult } from "./BaseUseCases";
+import type { EntityListResult } from "./BaseUseCases";
 import type { FixtureUseCasesPort } from "../interfaces/ports";
 import type { Team } from "../entities/Team";
 
@@ -92,54 +89,49 @@ export function create_fixture_use_cases(
       };
     },
 
-    async get_by_id(id: string): Promise<EntityOperationResult<Fixture>> {
+    async get_by_id(id: string): AsyncResult<Fixture> {
       if (!id || id.trim().length === 0) {
-        return { success: false, error_message: "Fixture ID is required" };
+        return create_failure_result("Fixture ID is required");
       }
       const result = await repository.find_by_id(id);
       if (!result.success) {
-        return { success: false, error_message: result.error };
+        return create_failure_result(result.error);
       }
-      return { success: true, data: result.data };
+      return create_success_result(result.data);
     },
 
-    async create(
-      input: CreateFixtureInput,
-    ): Promise<EntityOperationResult<Fixture>> {
+    async create(input: CreateFixtureInput): AsyncResult<Fixture> {
       const validation_errors = validate_fixture_input(input);
       if (validation_errors.length > 0) {
-        return { success: false, error_message: validation_errors.join(", ") };
+        return create_failure_result(validation_errors.join(", "));
       }
       const result = await repository.create(input);
       if (!result.success) {
-        return { success: false, error_message: result.error };
+        return create_failure_result(result.error);
       }
-      return { success: true, data: result.data };
+      return create_success_result(result.data);
     },
 
-    async update(
-      id: string,
-      input: UpdateFixtureInput,
-    ): Promise<EntityOperationResult<Fixture>> {
+    async update(id: string, input: UpdateFixtureInput): AsyncResult<Fixture> {
       if (!id || id.trim().length === 0) {
-        return { success: false, error_message: "Fixture ID is required" };
+        return create_failure_result("Fixture ID is required");
       }
       const result = await repository.update(id, input);
       if (!result.success) {
-        return { success: false, error_message: result.error };
+        return create_failure_result(result.error);
       }
-      return { success: true, data: result.data };
+      return create_success_result(result.data);
     },
 
-    async delete(id: string): Promise<EntityOperationResult<boolean>> {
+    async delete(id: string): AsyncResult<boolean> {
       if (!id || id.trim().length === 0) {
-        return { success: false, error_message: "Fixture ID is required" };
+        return create_failure_result("Fixture ID is required");
       }
       const result = await repository.delete_by_id(id);
       if (!result.success) {
-        return { success: false, error_message: result.error };
+        return create_failure_result(result.error);
       }
-      return { success: true, data: result.data };
+      return create_success_result(result.data);
     },
 
     async list_fixtures_by_competition(

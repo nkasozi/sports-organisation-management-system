@@ -92,14 +92,6 @@ export interface ValidationRule {
   error_message: string;
 }
 
-export interface EntityOperationResult<T = any> {
-  success: boolean;
-  data?: T;
-  error_message?: string;
-  validation_errors?: Record<string, string>;
-  debug_info?: string;
-}
-
 export interface EntityListResult<T = any> {
   success: boolean;
   data: T[];

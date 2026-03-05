@@ -1,8 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import type {
-  TeamRepository,
-  TeamFilter,
-} from "../interfaces/ports";
+import type { TeamRepository, TeamFilter } from "../interfaces/ports";
 import type { QueryOptions } from "../interfaces/ports";
 import type { Team, CreateTeamInput, UpdateTeamInput } from "../entities/Team";
 import type { Result, PaginatedResult } from "../types/Result";
@@ -156,6 +153,7 @@ describe("TeamUseCases", () => {
       const result = await use_cases.get_by_id("t1");
 
       expect(result.success).toBe(true);
+      if (!result.success) return;
       expect(result.data?.id).toBe("t1");
       expect(mock_repository.find_by_id).toHaveBeenCalledWith("t1");
     });
@@ -164,7 +162,8 @@ describe("TeamUseCases", () => {
       const result = await use_cases.get_by_id("");
 
       expect(result.success).toBe(false);
-      expect(result.error_message).toBe("Team ID is required");
+      if (result.success) return;
+      expect(result.error).toBe("Team ID is required");
       expect(mock_repository.find_by_id).not.toHaveBeenCalled();
     });
 
@@ -172,7 +171,8 @@ describe("TeamUseCases", () => {
       const result = await use_cases.get_by_id("   ");
 
       expect(result.success).toBe(false);
-      expect(result.error_message).toBe("Team ID is required");
+      if (result.success) return;
+      expect(result.error).toBe("Team ID is required");
     });
   });
 
@@ -188,6 +188,7 @@ describe("TeamUseCases", () => {
       const result = await use_cases.create(input);
 
       expect(result.success).toBe(true);
+      if (!result.success) return;
       expect(result.data?.id).toBe("new_team");
       expect(mock_repository.create).toHaveBeenCalledWith(input);
     });
@@ -198,9 +199,8 @@ describe("TeamUseCases", () => {
       const result = await use_cases.create(input);
 
       expect(result.success).toBe(false);
-      expect(result.error_message).toContain(
-        "Team name must be at least 2 characters",
-      );
+      if (result.success) return;
+      expect(result.error).toContain("Team name must be at least 2 characters");
       expect(mock_repository.create).not.toHaveBeenCalled();
     });
 
@@ -210,9 +210,8 @@ describe("TeamUseCases", () => {
       const result = await use_cases.create(input);
 
       expect(result.success).toBe(false);
-      expect(result.error_message).toContain(
-        "Team name must be at least 2 characters",
-      );
+      if (result.success) return;
+      expect(result.error).toContain("Team name must be at least 2 characters");
     });
 
     it("returns validation error when organization is missing", async () => {
@@ -221,7 +220,8 @@ describe("TeamUseCases", () => {
       const result = await use_cases.create(input);
 
       expect(result.success).toBe(false);
-      expect(result.error_message).toContain("Organization is required");
+      if (result.success) return;
+      expect(result.error).toContain("Organization is required");
     });
 
     it("returns validation error when max squad size is less than 1", async () => {
@@ -230,9 +230,8 @@ describe("TeamUseCases", () => {
       const result = await use_cases.create(input);
 
       expect(result.success).toBe(false);
-      expect(result.error_message).toContain(
-        "Maximum squad size must be at least 1",
-      );
+      if (result.success) return;
+      expect(result.error).toContain("Maximum squad size must be at least 1");
     });
 
     it("returns multiple validation errors when multiple fields are invalid", async () => {
@@ -245,13 +244,10 @@ describe("TeamUseCases", () => {
       const result = await use_cases.create(input);
 
       expect(result.success).toBe(false);
-      expect(result.error_message).toContain(
-        "Team name must be at least 2 characters",
-      );
-      expect(result.error_message).toContain("Organization is required");
-      expect(result.error_message).toContain(
-        "Maximum squad size must be at least 1",
-      );
+      if (result.success) return;
+      expect(result.error).toContain("Team name must be at least 2 characters");
+      expect(result.error).toContain("Organization is required");
+      expect(result.error).toContain("Maximum squad size must be at least 1");
     });
 
     it("returns error when repository fails", async () => {
@@ -264,7 +260,8 @@ describe("TeamUseCases", () => {
       const result = await use_cases.create(input);
 
       expect(result.success).toBe(false);
-      expect(result.error_message).toBe("Database error");
+      if (result.success) return;
+      expect(result.error).toBe("Database error");
     });
   });
 
@@ -283,6 +280,7 @@ describe("TeamUseCases", () => {
       const result = await use_cases.update("t1", update_input);
 
       expect(result.success).toBe(true);
+      if (!result.success) return;
       expect(result.data?.name).toBe("Updated Team Name");
       expect(mock_repository.update).toHaveBeenCalledWith("t1", update_input);
     });
@@ -291,7 +289,8 @@ describe("TeamUseCases", () => {
       const result = await use_cases.update("", { name: "New Name" });
 
       expect(result.success).toBe(false);
-      expect(result.error_message).toBe("Team ID is required");
+      if (result.success) return;
+      expect(result.error).toBe("Team ID is required");
       expect(mock_repository.update).not.toHaveBeenCalled();
     });
 
@@ -299,7 +298,8 @@ describe("TeamUseCases", () => {
       const result = await use_cases.update("   ", { name: "New Name" });
 
       expect(result.success).toBe(false);
-      expect(result.error_message).toBe("Team ID is required");
+      if (result.success) return;
+      expect(result.error).toBe("Team ID is required");
     });
   });
 
@@ -313,6 +313,7 @@ describe("TeamUseCases", () => {
       const result = await use_cases.delete("t1");
 
       expect(result.success).toBe(true);
+      if (!result.success) return;
       expect(result.data).toBe(true);
       expect(mock_repository.delete_by_id).toHaveBeenCalledWith("t1");
     });
@@ -321,7 +322,8 @@ describe("TeamUseCases", () => {
       const result = await use_cases.delete("");
 
       expect(result.success).toBe(false);
-      expect(result.error_message).toBe("Team ID is required");
+      if (result.success) return;
+      expect(result.error).toBe("Team ID is required");
       expect(mock_repository.delete_by_id).not.toHaveBeenCalled();
     });
 
@@ -329,7 +331,8 @@ describe("TeamUseCases", () => {
       const result = await use_cases.delete("   ");
 
       expect(result.success).toBe(false);
-      expect(result.error_message).toBe("Team ID is required");
+      if (result.success) return;
+      expect(result.error).toBe("Team ID is required");
     });
   });
 

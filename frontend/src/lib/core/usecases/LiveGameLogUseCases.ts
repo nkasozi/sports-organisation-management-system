@@ -8,10 +8,9 @@ import type {
   LiveGameLogRepository,
   LiveGameLogFilter,
 } from "../interfaces/ports";
-import type {
-  EntityOperationResult,
-  EntityListResult,
-} from "../entities/BaseEntity";
+import type { EntityListResult } from "../entities/BaseEntity";
+import type { AsyncResult } from "../types/Result";
+import { create_failure_result } from "../types/Result";
 import type { LiveGameLogUseCasesPort } from "../interfaces/ports";
 import { get_live_game_log_repository } from "../../adapters/repositories/InBrowserLiveGameLogRepository";
 
@@ -21,21 +20,13 @@ export function create_live_game_log_use_cases(
   repository: LiveGameLogRepository,
 ): LiveGameLogUseCases {
   return {
-    async create(
-      input: CreateLiveGameLogInput,
-    ): Promise<EntityOperationResult<LiveGameLog>> {
+    async create(input: CreateLiveGameLogInput): AsyncResult<LiveGameLog> {
       if (!input.fixture_id?.trim()) {
-        return {
-          success: false,
-          error_message: "Fixture ID is required",
-        };
+        return create_failure_result("Fixture ID is required");
       }
 
       if (!input.organization_id?.trim()) {
-        return {
-          success: false,
-          error_message: "Organization ID is required",
-        };
+        return create_failure_result("Organization ID is required");
       }
 
       const existing_result = await repository.get_live_game_log_for_fixture(
@@ -43,21 +34,17 @@ export function create_live_game_log_use_cases(
       );
 
       if (existing_result.success) {
-        return {
-          success: false,
-          error_message: "A live game log already exists for this fixture",
-        };
+        return create_failure_result(
+          "A live game log already exists for this fixture",
+        );
       }
 
       return repository.create_live_game_log(input);
     },
 
-    async get_by_id(id: string): Promise<EntityOperationResult<LiveGameLog>> {
+    async get_by_id(id: string): AsyncResult<LiveGameLog> {
       if (!id || id.trim().length === 0) {
-        return {
-          success: false,
-          error_message: "LiveGameLog ID is required",
-        };
+        return create_failure_result("LiveGameLog ID is required");
       }
       return repository.get_live_game_log_by_id(id);
     },
@@ -65,46 +52,31 @@ export function create_live_game_log_use_cases(
     async update(
       id: string,
       input: UpdateLiveGameLogInput,
-    ): Promise<EntityOperationResult<LiveGameLog>> {
+    ): AsyncResult<LiveGameLog> {
       if (!id || id.trim().length === 0) {
-        return {
-          success: false,
-          error_message: "LiveGameLog ID is required",
-        };
+        return create_failure_result("LiveGameLog ID is required");
       }
 
       const existing_result = await repository.get_live_game_log_by_id(id);
       if (!existing_result.success || !existing_result.data) {
-        return {
-          success: false,
-          error_message: "Live game log not found",
-        };
+        return create_failure_result("Live game log not found");
       }
 
       return repository.update_live_game_log(id, input);
     },
 
-    async delete(id: string): Promise<EntityOperationResult<boolean>> {
+    async delete(id: string): AsyncResult<boolean> {
       if (!id || id.trim().length === 0) {
-        return {
-          success: false,
-          error_message: "LiveGameLog ID is required",
-        };
+        return create_failure_result("LiveGameLog ID is required");
       }
 
       const existing_result = await repository.get_live_game_log_by_id(id);
       if (!existing_result.success || !existing_result.data) {
-        return {
-          success: false,
-          error_message: "Live game log not found",
-        };
+        return create_failure_result("Live game log not found");
       }
 
       if (existing_result.data.game_status === "in_progress") {
-        return {
-          success: false,
-          error_message: "Cannot delete an in-progress game",
-        };
+        return create_failure_result("Cannot delete an in-progress game");
       }
 
       return repository.delete_live_game_log(id);
@@ -119,12 +91,9 @@ export function create_live_game_log_use_cases(
 
     async get_live_game_log_for_fixture(
       fixture_id: string,
-    ): Promise<EntityOperationResult<LiveGameLog>> {
+    ): AsyncResult<LiveGameLog> {
       if (!fixture_id || fixture_id.trim().length === 0) {
-        return {
-          success: false,
-          error_message: "Fixture ID is required",
-        };
+        return create_failure_result("Fixture ID is required");
       }
       return repository.get_live_game_log_for_fixture(fixture_id);
     },
@@ -135,24 +104,17 @@ export function create_live_game_log_use_cases(
       return repository.get_active_games(organization_id);
     },
 
-    async start_game(
-      id: string,
-      user_id: string,
-    ): Promise<EntityOperationResult<LiveGameLog>> {
+    async start_game(id: string, user_id: string): AsyncResult<LiveGameLog> {
       const existing_result = await repository.get_live_game_log_by_id(id);
       if (!existing_result.success || !existing_result.data) {
-        return {
-          success: false,
-          error_message: "Live game log not found",
-        };
+        return create_failure_result("Live game log not found");
       }
 
       const game = existing_result.data;
       if (game.game_status !== "pre_game" && game.game_status !== "paused") {
-        return {
-          success: false,
-          error_message: `Cannot start a game that is ${game.game_status}`,
-        };
+        return create_failure_result(
+          `Cannot start a game that is ${game.game_status}`,
+        );
       }
 
       return repository.update_live_game_log(id, {
@@ -166,21 +128,15 @@ export function create_live_game_log_use_cases(
       });
     },
 
-    async pause_game(id: string): Promise<EntityOperationResult<LiveGameLog>> {
+    async pause_game(id: string): AsyncResult<LiveGameLog> {
       const existing_result = await repository.get_live_game_log_by_id(id);
       if (!existing_result.success || !existing_result.data) {
-        return {
-          success: false,
-          error_message: "Live game log not found",
-        };
+        return create_failure_result("Live game log not found");
       }
 
       const game = existing_result.data;
       if (game.game_status !== "in_progress") {
-        return {
-          success: false,
-          error_message: "Can only pause an in-progress game",
-        };
+        return create_failure_result("Can only pause an in-progress game");
       }
 
       return repository.update_live_game_log(id, {
@@ -189,21 +145,15 @@ export function create_live_game_log_use_cases(
       });
     },
 
-    async resume_game(id: string): Promise<EntityOperationResult<LiveGameLog>> {
+    async resume_game(id: string): AsyncResult<LiveGameLog> {
       const existing_result = await repository.get_live_game_log_by_id(id);
       if (!existing_result.success || !existing_result.data) {
-        return {
-          success: false,
-          error_message: "Live game log not found",
-        };
+        return create_failure_result("Live game log not found");
       }
 
       const game = existing_result.data;
       if (game.game_status !== "paused") {
-        return {
-          success: false,
-          error_message: "Can only resume a paused game",
-        };
+        return create_failure_result("Can only resume a paused game");
       }
 
       return repository.update_live_game_log(id, {
@@ -212,24 +162,17 @@ export function create_live_game_log_use_cases(
       });
     },
 
-    async end_game(
-      id: string,
-      user_id: string,
-    ): Promise<EntityOperationResult<LiveGameLog>> {
+    async end_game(id: string, user_id: string): AsyncResult<LiveGameLog> {
       const existing_result = await repository.get_live_game_log_by_id(id);
       if (!existing_result.success || !existing_result.data) {
-        return {
-          success: false,
-          error_message: "Live game log not found",
-        };
+        return create_failure_result("Live game log not found");
       }
 
       const game = existing_result.data;
       if (game.game_status !== "in_progress" && game.game_status !== "paused") {
-        return {
-          success: false,
-          error_message: `Cannot end a game that is ${game.game_status}`,
-        };
+        return create_failure_result(
+          `Cannot end a game that is ${game.game_status}`,
+        );
       }
 
       return repository.update_live_game_log(id, {
@@ -244,13 +187,10 @@ export function create_live_game_log_use_cases(
       id: string,
       user_id: string,
       reason: string,
-    ): Promise<EntityOperationResult<LiveGameLog>> {
+    ): AsyncResult<LiveGameLog> {
       const existing_result = await repository.get_live_game_log_by_id(id);
       if (!existing_result.success || !existing_result.data) {
-        return {
-          success: false,
-          error_message: "Live game log not found",
-        };
+        return create_failure_result("Live game log not found");
       }
 
       const game = existing_result.data;
@@ -258,10 +198,9 @@ export function create_live_game_log_use_cases(
         game.game_status === "completed" ||
         game.game_status === "abandoned"
       ) {
-        return {
-          success: false,
-          error_message: `Cannot abandon a game that is already ${game.game_status}`,
-        };
+        return create_failure_result(
+          `Cannot abandon a game that is already ${game.game_status}`,
+        );
       }
 
       return repository.update_live_game_log(id, {
@@ -276,12 +215,9 @@ export function create_live_game_log_use_cases(
       id: string,
       home_score: number,
       away_score: number,
-    ): Promise<EntityOperationResult<LiveGameLog>> {
+    ): AsyncResult<LiveGameLog> {
       if (home_score < 0 || away_score < 0) {
-        return {
-          success: false,
-          error_message: "Scores cannot be negative",
-        };
+        return create_failure_result("Scores cannot be negative");
       }
 
       return repository.update_live_game_log(id, {
@@ -294,12 +230,9 @@ export function create_live_game_log_use_cases(
       id: string,
       current_minute: number,
       stoppage_time_minutes?: number,
-    ): Promise<EntityOperationResult<LiveGameLog>> {
+    ): AsyncResult<LiveGameLog> {
       if (current_minute < 0) {
-        return {
-          success: false,
-          error_message: "Current minute cannot be negative",
-        };
+        return create_failure_result("Current minute cannot be negative");
       }
 
       const updates: UpdateLiveGameLogInput = {
@@ -316,7 +249,7 @@ export function create_live_game_log_use_cases(
     async advance_period(
       id: string,
       new_period: string,
-    ): Promise<EntityOperationResult<LiveGameLog>> {
+    ): AsyncResult<LiveGameLog> {
       return repository.update_live_game_log(id, {
         current_period: new_period as GamePeriod,
       });

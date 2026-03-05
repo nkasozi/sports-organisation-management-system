@@ -158,6 +158,7 @@ describe("SportUseCases", () => {
       const result = await use_cases.get_by_id("sport-123");
 
       expect(result.success).toBe(true);
+      if (!result.success) return;
       expect(result.data?.name).toBe("Football");
     });
 
@@ -165,7 +166,8 @@ describe("SportUseCases", () => {
       const result = await use_cases.get_by_id("");
 
       expect(result.success).toBe(false);
-      expect(result.error_message).toBe("Sport ID is required");
+      if (result.success) return;
+      expect(result.error).toBe("Sport ID is required");
     });
   });
 
@@ -209,7 +211,8 @@ describe("SportUseCases", () => {
       const result = await use_cases.update("", { name: "Updated" });
 
       expect(result.success).toBe(false);
-      expect(result.error_message).toBe("Sport ID is required");
+      if (result.success) return;
+      expect(result.error).toBe("Sport ID is required");
     });
   });
 

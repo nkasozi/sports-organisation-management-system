@@ -8,10 +8,9 @@ import type {
   ProfileLinkFilter,
 } from "../interfaces/ports";
 import type { QueryOptions } from "../interfaces/ports";
-import type {
-  EntityOperationResult,
-  EntityListResult,
-} from "../entities/BaseEntity";
+import type { EntityListResult } from "../entities/BaseEntity";
+import type { AsyncResult } from "../types/Result";
+import { create_failure_result } from "../types/Result";
 import { validate_profile_link_input } from "../entities/ProfileLink";
 import { get_profile_link_repository } from "../../adapters/repositories/InBrowserProfileLinkRepository";
 
@@ -20,15 +19,10 @@ export interface ProfileLinkUseCases {
     filter?: ProfileLinkFilter | Record<string, string>,
     options?: QueryOptions,
   ): Promise<EntityListResult<ProfileLink>>;
-  get_by_id(id: string): Promise<EntityOperationResult<ProfileLink>>;
-  create(
-    input: CreateProfileLinkInput,
-  ): Promise<EntityOperationResult<ProfileLink>>;
-  update(
-    id: string,
-    input: UpdateProfileLinkInput,
-  ): Promise<EntityOperationResult<ProfileLink>>;
-  delete(id: string): Promise<EntityOperationResult<boolean>>;
+  get_by_id(id: string): AsyncResult<ProfileLink>;
+  create(input: CreateProfileLinkInput): AsyncResult<ProfileLink>;
+  update(id: string, input: UpdateProfileLinkInput): AsyncResult<ProfileLink>;
+  delete(id: string): AsyncResult<boolean>;
   list_by_profile(
     profile_id: string,
     options?: QueryOptions,
@@ -69,100 +63,40 @@ export function create_profile_link_use_cases(
       };
     },
 
-    async get_by_id(id: string): Promise<EntityOperationResult<ProfileLink>> {
+    async get_by_id(id: string): AsyncResult<ProfileLink> {
       if (!id || id.trim().length === 0) {
-        return {
-          success: false,
-          error_message: "Link ID is required",
-        };
+        return create_failure_result("Link ID is required");
       }
-      const result = await repository.find_by_id(id);
-      if (!result.success) {
-        return {
-          success: false,
-          error_message: result.error,
-        };
-      }
-      return {
-        success: true,
-        data: result.data,
-      };
+      return repository.find_by_id(id);
     },
 
-    async create(
-      input: CreateProfileLinkInput,
-    ): Promise<EntityOperationResult<ProfileLink>> {
+    async create(input: CreateProfileLinkInput): AsyncResult<ProfileLink> {
       const validation_errors = validate_profile_link_input(input);
 
       if (validation_errors.length > 0) {
-        return {
-          success: false,
-          error_message: validation_errors.join(", "),
-        };
+        return create_failure_result(validation_errors.join(", "));
       }
 
-      const result = await repository.create(input);
-
-      if (!result.success) {
-        return {
-          success: false,
-          error_message: result.error,
-        };
-      }
-
-      return {
-        success: true,
-        data: result.data,
-      };
+      return repository.create(input);
     },
 
     async update(
       id: string,
       input: UpdateProfileLinkInput,
-    ): Promise<EntityOperationResult<ProfileLink>> {
+    ): AsyncResult<ProfileLink> {
       if (!id || id.trim().length === 0) {
-        return {
-          success: false,
-          error_message: "Link ID is required",
-        };
+        return create_failure_result("Link ID is required");
       }
 
-      const result = await repository.update(id, input);
-
-      if (!result.success) {
-        return {
-          success: false,
-          error_message: result.error,
-        };
-      }
-
-      return {
-        success: true,
-        data: result.data,
-      };
+      return repository.update(id, input);
     },
 
-    async delete(id: string): Promise<EntityOperationResult<boolean>> {
+    async delete(id: string): AsyncResult<boolean> {
       if (!id || id.trim().length === 0) {
-        return {
-          success: false,
-          error_message: "Link ID is required",
-        };
+        return create_failure_result("Link ID is required");
       }
 
-      const result = await repository.delete_by_id(id);
-
-      if (!result.success) {
-        return {
-          success: false,
-          error_message: result.error,
-        };
-      }
-
-      return {
-        success: true,
-        data: true,
-      };
+      return repository.delete_by_id(id);
     },
 
     async list_by_profile(

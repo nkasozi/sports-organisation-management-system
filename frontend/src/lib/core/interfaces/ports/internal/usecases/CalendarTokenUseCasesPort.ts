@@ -6,11 +6,11 @@ import type {
 } from "../../../../entities/CalendarToken";
 import type { CalendarTokenFilter } from "../../external/repositories/CalendarTokenRepository";
 import type { QueryOptions } from "../../external/repositories/Repository";
-import type { AsyncResult, PaginatedAsyncResult } from "../../../../types/Result";
 import type {
-  BaseUseCasesPort,
-  EntityOperationResult,
-} from "./BaseUseCasesPort";
+  AsyncResult,
+  PaginatedAsyncResult,
+} from "../../../../types/Result";
+import type { BaseUseCasesPort } from "./BaseUseCasesPort";
 
 export interface CalendarFeedInfo {
   token: CalendarToken;
@@ -31,7 +31,7 @@ export interface CalendarTokenUseCasesPort extends BaseUseCasesPort<
     entity_id: string | null,
     entity_name: string | null,
     reminder_minutes_before?: number,
-  ): Promise<EntityOperationResult<CalendarFeedInfo>>;
+  ): AsyncResult<CalendarFeedInfo>;
 
   list_user_feeds(
     user_id: string,

@@ -770,7 +770,7 @@
 
     if (!result.success || !result.data) {
       error_message =
-        result.error_message ||
+        (!result.success ? result.error : null) ||
         build_error_message(
           "Failed to submit lineup.",
           "The lineup could not be saved.",

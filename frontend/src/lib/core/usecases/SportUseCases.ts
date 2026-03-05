@@ -4,14 +4,8 @@ import type {
   UpdateSportInput,
 } from "../entities/Sport";
 import type { AsyncResult } from "../types/Result";
-import type {
-  EntityOperationResult,
-  EntityListResult,
-} from "../entities/BaseEntity";
-import type {
-  SportRepository,
-  SportFilter,
-} from "../interfaces/ports";
+import type { EntityListResult } from "../entities/BaseEntity";
+import type { SportRepository, SportFilter } from "../interfaces/ports";
 import type { QueryOptions } from "../interfaces/ports";
 import { create_success_result, create_failure_result } from "../types/Result";
 import { get_sport_repository } from "../../adapters/repositories/InBrowserSportRepository";
@@ -46,69 +40,52 @@ export function create_sport_use_cases(
       };
     },
 
-    async get_by_id(id: string): Promise<EntityOperationResult<Sport>> {
+    async get_by_id(id: string): AsyncResult<Sport> {
       if (!id || id.trim().length === 0) {
-        return {
-          success: false,
-          error_message: "Sport ID is required",
-        };
+        return create_failure_result("Sport ID is required");
       }
 
       const result = await repository.find_by_id(id);
       if (!result.success) {
-        return { success: false, error_message: result.error };
+        return create_failure_result(result.error);
       }
-      return { success: true, data: result.data };
+      return create_success_result(result.data);
     },
 
-    async create(
-      input: CreateSportInput,
-    ): Promise<EntityOperationResult<Sport>> {
+    async create(input: CreateSportInput): AsyncResult<Sport> {
       if (!input.name || input.name.trim().length === 0) {
-        return {
-          success: false,
-          error_message: "Sport name is required",
-        };
+        return create_failure_result("Sport name is required");
       }
 
       const result = await repository.create(input);
       if (!result.success) {
-        return { success: false, error_message: result.error };
+        return create_failure_result(result.error);
       }
-      return { success: true, data: result.data };
+      return create_success_result(result.data);
     },
 
-    async update(
-      id: string,
-      input: UpdateSportInput,
-    ): Promise<EntityOperationResult<Sport>> {
+    async update(id: string, input: UpdateSportInput): AsyncResult<Sport> {
       if (!id || id.trim().length === 0) {
-        return {
-          success: false,
-          error_message: "Sport ID is required",
-        };
+        return create_failure_result("Sport ID is required");
       }
 
       const result = await repository.update(id, input);
       if (!result.success) {
-        return { success: false, error_message: result.error };
+        return create_failure_result(result.error);
       }
-      return { success: true, data: result.data };
+      return create_success_result(result.data);
     },
 
-    async delete(id: string): Promise<EntityOperationResult<boolean>> {
+    async delete(id: string): AsyncResult<boolean> {
       if (!id || id.trim().length === 0) {
-        return {
-          success: false,
-          error_message: "Sport ID is required",
-        };
+        return create_failure_result("Sport ID is required");
       }
 
       const result = await repository.delete_by_id(id);
       if (!result.success) {
-        return { success: false, error_message: result.error };
+        return create_failure_result(result.error);
       }
-      return { success: true, data: result.data };
+      return create_success_result(result.data);
     },
 
     async delete_sports(ids: string[]): Promise<AsyncResult<number>> {

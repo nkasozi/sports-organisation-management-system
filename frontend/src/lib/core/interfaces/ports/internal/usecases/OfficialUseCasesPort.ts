@@ -5,7 +5,10 @@ import type {
 } from "../../../../entities/Official";
 import type { OfficialFilter } from "../../external/repositories/OfficialRepository";
 import type { QueryOptions } from "../../external/repositories/Repository";
-import type { AsyncResult, PaginatedAsyncResult } from "../../../../types/Result";
+import type {
+  AsyncResult,
+  PaginatedAsyncResult,
+} from "../../../../types/Result";
 import type { BaseUseCasesPort } from "./BaseUseCasesPort";
 
 export interface OfficialUseCasesPort extends BaseUseCasesPort<
@@ -14,18 +17,18 @@ export interface OfficialUseCasesPort extends BaseUseCasesPort<
   UpdateOfficialInput,
   OfficialFilter
 > {
-  delete_officials(ids: string[]): Promise<AsyncResult<number>>;
+  delete_officials(ids: string[]): AsyncResult<number>;
   list_officials_by_organization(
     organization_id: string,
     options?: QueryOptions,
-  ): Promise<PaginatedAsyncResult<Official>>;
+  ): PaginatedAsyncResult<Official>;
   list_officials_by_role_id(
     role_id: string,
     options?: QueryOptions,
-  ): Promise<PaginatedAsyncResult<Official>>;
+  ): PaginatedAsyncResult<Official>;
   list_available_officials(
     date: string,
     organization_id?: string,
     options?: QueryOptions,
-  ): Promise<PaginatedAsyncResult<Official>>;
+  ): PaginatedAsyncResult<Official>;
 }

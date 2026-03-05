@@ -10,10 +10,9 @@ import type {
   GameEventLogRepository,
   GameEventLogFilter,
 } from "../interfaces/ports";
-import type {
-  EntityOperationResult,
-  EntityListResult,
-} from "../entities/BaseEntity";
+import type { EntityListResult } from "../entities/BaseEntity";
+import type { AsyncResult } from "../types/Result";
+import { create_failure_result } from "../types/Result";
 import type { GameEventLogUseCasesPort } from "../interfaces/ports";
 import { get_game_event_log_repository } from "../../adapters/repositories/InBrowserGameEventLogRepository";
 
@@ -23,46 +22,29 @@ export function create_game_event_log_use_cases(
   repository: GameEventLogRepository,
 ): GameEventLogUseCases {
   return {
-    async create(
-      input: CreateGameEventLogInput,
-    ): Promise<EntityOperationResult<GameEventLog>> {
+    async create(input: CreateGameEventLogInput): AsyncResult<GameEventLog> {
       if (!input.live_game_log_id?.trim()) {
-        return {
-          success: false,
-          error_message: "Live game log ID is required",
-        };
+        return create_failure_result("Live game log ID is required");
       }
 
       if (!input.fixture_id?.trim()) {
-        return {
-          success: false,
-          error_message: "Fixture ID is required",
-        };
+        return create_failure_result("Fixture ID is required");
       }
 
       if (!input.organization_id?.trim()) {
-        return {
-          success: false,
-          error_message: "Organization ID is required",
-        };
+        return create_failure_result("Organization ID is required");
       }
 
       if (!input.event_type?.trim()) {
-        return {
-          success: false,
-          error_message: "Event type is required",
-        };
+        return create_failure_result("Event type is required");
       }
 
       return repository.create_game_event_log(input);
     },
 
-    async get_by_id(id: string): Promise<EntityOperationResult<GameEventLog>> {
+    async get_by_id(id: string): AsyncResult<GameEventLog> {
       if (!id || id.trim().length === 0) {
-        return {
-          success: false,
-          error_message: "GameEventLog ID is required",
-        };
+        return create_failure_result("GameEventLog ID is required");
       }
       return repository.get_game_event_log_by_id(id);
     },
@@ -70,46 +52,31 @@ export function create_game_event_log_use_cases(
     async update(
       id: string,
       input: UpdateGameEventLogInput,
-    ): Promise<EntityOperationResult<GameEventLog>> {
+    ): AsyncResult<GameEventLog> {
       if (!id || id.trim().length === 0) {
-        return {
-          success: false,
-          error_message: "GameEventLog ID is required",
-        };
+        return create_failure_result("GameEventLog ID is required");
       }
 
       const existing_result = await repository.get_game_event_log_by_id(id);
       if (!existing_result.success || !existing_result.data) {
-        return {
-          success: false,
-          error_message: "Game event log not found",
-        };
+        return create_failure_result("Game event log not found");
       }
 
       if (existing_result.data.voided) {
-        return {
-          success: false,
-          error_message: "Cannot update a voided event",
-        };
+        return create_failure_result("Cannot update a voided event");
       }
 
       return repository.update_game_event_log(id, input);
     },
 
-    async delete(id: string): Promise<EntityOperationResult<boolean>> {
+    async delete(id: string): AsyncResult<boolean> {
       if (!id || id.trim().length === 0) {
-        return {
-          success: false,
-          error_message: "GameEventLog ID is required",
-        };
+        return create_failure_result("GameEventLog ID is required");
       }
 
       const existing_result = await repository.get_game_event_log_by_id(id);
       if (!existing_result.success || !existing_result.data) {
-        return {
-          success: false,
-          error_message: "Game event log not found",
-        };
+        return create_failure_result("Game event log not found");
       }
 
       return repository.delete_game_event_log(id);
@@ -199,34 +166,22 @@ export function create_game_event_log_use_cases(
       id: string,
       reason: string,
       voided_by_user_id: string,
-    ): Promise<EntityOperationResult<GameEventLog>> {
+    ): AsyncResult<GameEventLog> {
       if (!id || id.trim().length === 0) {
-        return {
-          success: false,
-          error_message: "GameEventLog ID is required",
-        };
+        return create_failure_result("GameEventLog ID is required");
       }
 
       if (!reason || reason.trim().length === 0) {
-        return {
-          success: false,
-          error_message: "Void reason is required",
-        };
+        return create_failure_result("Void reason is required");
       }
 
       const existing_result = await repository.get_game_event_log_by_id(id);
       if (!existing_result.success || !existing_result.data) {
-        return {
-          success: false,
-          error_message: "Game event log not found",
-        };
+        return create_failure_result("Game event log not found");
       }
 
       if (existing_result.data.voided) {
-        return {
-          success: false,
-          error_message: "Event is already voided",
-        };
+        return create_failure_result("Event is already voided");
       }
 
       return repository.void_event(id, reason, voided_by_user_id);
@@ -241,7 +196,7 @@ export function create_game_event_log_use_cases(
       player_id: string,
       player_name: string,
       recorded_by_user_id: string,
-    ): Promise<EntityOperationResult<GameEventLog>> {
+    ): AsyncResult<GameEventLog> {
       const input: CreateGameEventLogInput = {
         organization_id,
         live_game_log_id,
@@ -275,7 +230,7 @@ export function create_game_event_log_use_cases(
       player_name: string,
       card_type: "yellow_card" | "red_card" | "second_yellow" | "green_card",
       recorded_by_user_id: string,
-    ): Promise<EntityOperationResult<GameEventLog>> {
+    ): AsyncResult<GameEventLog> {
       const card_label =
         card_type === "yellow_card"
           ? "Yellow card"
@@ -319,7 +274,7 @@ export function create_game_event_log_use_cases(
       player_in_id: string,
       player_in_name: string,
       recorded_by_user_id: string,
-    ): Promise<EntityOperationResult<GameEventLog>> {
+    ): AsyncResult<GameEventLog> {
       const input: CreateGameEventLogInput = {
         organization_id,
         live_game_log_id,

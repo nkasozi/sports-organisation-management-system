@@ -118,7 +118,9 @@
     const result = await fixture_use_cases.get_by_id(fixture_id);
 
     if (!result.success || !result.data) {
-      error_message = result.error_message || "Failed to load fixture";
+      error_message = !result.success
+        ? result.error || "Failed to load fixture"
+        : "Failed to load fixture";
       is_loading = false;
       return;
     }

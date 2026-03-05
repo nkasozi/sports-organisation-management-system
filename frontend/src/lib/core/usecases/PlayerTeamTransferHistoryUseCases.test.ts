@@ -145,7 +145,8 @@ describe("PlayerTeamTransferHistoryUseCases", () => {
       const result = await use_cases.get_by_id("");
 
       expect(result.success).toBe(false);
-      expect(result.error_message).toBe("Transfer ID is required");
+      if (result.success) return;
+      expect(result.error).toBe("Transfer ID is required");
     });
   });
 
@@ -174,7 +175,8 @@ describe("PlayerTeamTransferHistoryUseCases", () => {
       const result = await use_cases.create(input);
 
       expect(result.success).toBe(false);
-      expect(result.error_message).toContain("Player is required");
+      if (result.success) return;
+      expect(result.error).toContain("Player is required");
     });
 
     it("should fail when from_team_id equals to_team_id", async () => {
@@ -186,7 +188,8 @@ describe("PlayerTeamTransferHistoryUseCases", () => {
       const result = await use_cases.create(input);
 
       expect(result.success).toBe(false);
-      expect(result.error_message).toContain("cannot be the same");
+      if (result.success) return;
+      expect(result.error).toContain("cannot be the same");
     });
   });
 
@@ -354,7 +357,8 @@ describe("PlayerTeamTransferHistoryUseCases", () => {
       const result = await use_cases.delete("");
 
       expect(result.success).toBe(false);
-      expect(result.error_message).toBe("Transfer ID is required");
+      if (result.success) return;
+      expect(result.error).toBe("Transfer ID is required");
     });
   });
 });

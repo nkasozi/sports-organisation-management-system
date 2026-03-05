@@ -4,14 +4,10 @@ import type {
   UpdateSystemUserInput,
 } from "../entities/SystemUser";
 import { validate_system_user_input } from "../entities/SystemUser";
-import type {
-  Repository,
-  QueryOptions,
-} from "../interfaces/ports";
-import type {
-  EntityOperationResult,
-  EntityListResult,
-} from "../entities/BaseEntity";
+import type { Repository, QueryOptions } from "../interfaces/ports";
+import type { EntityListResult } from "../entities/BaseEntity";
+import type { AsyncResult } from "../types/Result";
+import { create_success_result, create_failure_result } from "../types/Result";
 import { get_repository_container } from "../../infrastructure/container";
 
 export interface SystemUserFilter {
@@ -25,16 +21,11 @@ export interface SystemUserUseCases {
     filter?: SystemUserFilter,
     options?: QueryOptions,
   ): Promise<EntityListResult<SystemUser>>;
-  get_by_id(id: string): Promise<EntityOperationResult<SystemUser>>;
-  create(
-    input: CreateSystemUserInput,
-  ): Promise<EntityOperationResult<SystemUser>>;
-  update(
-    id: string,
-    input: UpdateSystemUserInput,
-  ): Promise<EntityOperationResult<SystemUser>>;
-  delete(id: string): Promise<EntityOperationResult<boolean>>;
-  get_by_email(email: string): Promise<EntityOperationResult<SystemUser>>;
+  get_by_id(id: string): AsyncResult<SystemUser>;
+  create(input: CreateSystemUserInput): AsyncResult<SystemUser>;
+  update(id: string, input: UpdateSystemUserInput): AsyncResult<SystemUser>;
+  delete(id: string): AsyncResult<boolean>;
+  get_by_email(email: string): AsyncResult<SystemUser>;
 }
 
 export function create_system_user_use_cases(
@@ -73,27 +64,19 @@ export function create_system_user_use_cases(
       };
     },
 
-    async get_by_id(id: string): Promise<EntityOperationResult<SystemUser>> {
+    async get_by_id(id: string): AsyncResult<SystemUser> {
       if (!id || id.trim().length === 0) {
-        return { success: false, error_message: "User ID is required" };
+        return create_failure_result("User ID is required");
       }
 
-      const result = await repository.find_by_id(id);
-
-      if (!result.success) {
-        return { success: false, error_message: result.error };
-      }
-
-      return { success: true, data: result.data };
+      return repository.find_by_id(id);
     },
 
-    async create(
-      input: CreateSystemUserInput,
-    ): Promise<EntityOperationResult<SystemUser>> {
+    async create(input: CreateSystemUserInput): AsyncResult<SystemUser> {
       const validation_errors = validate_system_user_input(input);
 
       if (validation_errors.length > 0) {
-        return { success: false, error_message: validation_errors.join(", ") };
+        return create_failure_result(validation_errors.join(", "));
       }
 
       const email_exists_result = await check_email_already_exists(
@@ -102,27 +85,18 @@ export function create_system_user_use_cases(
       );
 
       if (email_exists_result.exists) {
-        return {
-          success: false,
-          error_message: "A user with this email already exists",
-        };
+        return create_failure_result("A user with this email already exists");
       }
 
-      const result = await repository.create(input);
-
-      if (!result.success) {
-        return { success: false, error_message: result.error };
-      }
-
-      return { success: true, data: result.data };
+      return repository.create(input);
     },
 
     async update(
       id: string,
       input: UpdateSystemUserInput,
-    ): Promise<EntityOperationResult<SystemUser>> {
+    ): AsyncResult<SystemUser> {
       if (!id || id.trim().length === 0) {
-        return { success: false, error_message: "User ID is required" };
+        return create_failure_result("User ID is required");
       }
 
       if (input.email) {
@@ -133,47 +107,30 @@ export function create_system_user_use_cases(
         );
 
         if (email_exists_result.exists) {
-          return {
-            success: false,
-            error_message: "A user with this email already exists",
-          };
+          return create_failure_result("A user with this email already exists");
         }
       }
 
-      const result = await repository.update(id, input);
-
-      if (!result.success) {
-        return { success: false, error_message: result.error };
-      }
-
-      return { success: true, data: result.data };
+      return repository.update(id, input);
     },
 
-    async delete(id: string): Promise<EntityOperationResult<boolean>> {
+    async delete(id: string): AsyncResult<boolean> {
       if (!id || id.trim().length === 0) {
-        return { success: false, error_message: "User ID is required" };
+        return create_failure_result("User ID is required");
       }
 
-      const result = await repository.delete_by_id(id);
-
-      if (!result.success) {
-        return { success: false, error_message: result.error };
-      }
-
-      return { success: true, data: result.data };
+      return repository.delete_by_id(id);
     },
 
-    async get_by_email(
-      email: string,
-    ): Promise<EntityOperationResult<SystemUser>> {
+    async get_by_email(email: string): AsyncResult<SystemUser> {
       if (!email || email.trim().length === 0) {
-        return { success: false, error_message: "Email is required" };
+        return create_failure_result("Email is required");
       }
 
       const all_result = await repository.find_all();
 
       if (!all_result.success) {
-        return { success: false, error_message: all_result.error };
+        return create_failure_result(all_result.error);
       }
 
       const normalized_email = email.trim().toLowerCase();
@@ -182,13 +139,10 @@ export function create_system_user_use_cases(
       );
 
       if (!found_user) {
-        return {
-          success: false,
-          error_message: `User with email '${email}' not found`,
-        };
+        return create_failure_result(`User with email '${email}' not found`);
       }
 
-      return { success: true, data: found_user };
+      return create_success_result(found_user);
     },
   };
 }

@@ -12,7 +12,7 @@ import type { PlayerTeamMembershipRepository } from "../interfaces/ports";
 import type { QueryOptions } from "../interfaces/ports";
 import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
 import { create_failure_result, create_success_result } from "../types/Result";
-import type { EntityListResult, EntityOperationResult } from "./BaseUseCases";
+import type { EntityListResult } from "./BaseUseCases";
 import { InBrowserPlayerTeamTransferHistoryRepository } from "../../adapters/repositories/InBrowserPlayerTeamTransferHistoryRepository";
 import { InBrowserPlayerTeamMembershipRepository } from "../../adapters/repositories/InBrowserPlayerTeamMembershipRepository";
 import type { PlayerTeamTransferHistoryUseCasesPort } from "../interfaces/ports";
@@ -49,69 +49,64 @@ export function create_player_team_transfer_history_use_cases(
       };
     },
 
-    async get_by_id(
-      id: string,
-    ): Promise<EntityOperationResult<PlayerTeamTransferHistory>> {
+    async get_by_id(id: string): AsyncResult<PlayerTeamTransferHistory> {
       if (!id || id.trim().length === 0) {
-        return { success: false, error_message: "Transfer ID is required" };
+        return create_failure_result("Transfer ID is required");
       }
 
       const result = await repository.find_by_id(id);
       if (!result.success) {
-        return { success: false, error_message: result.error };
+        return create_failure_result(result.error);
       }
 
-      return { success: true, data: result.data };
+      return create_success_result(result.data);
     },
 
     async create(
       input: CreatePlayerTeamTransferHistoryInput,
-    ): Promise<EntityOperationResult<PlayerTeamTransferHistory>> {
+    ): AsyncResult<PlayerTeamTransferHistory> {
       const validation_errors =
         validate_player_team_transfer_history_input(input);
 
       if (validation_errors.length > 0) {
-        return {
-          success: false,
-          error_message: validation_errors.join(", "),
-        };
+        return create_failure_result(validation_errors.join(", "));
       }
 
       const result = await repository.create(input);
       if (!result.success) {
-        return { success: false, error_message: result.error };
+        return create_failure_result(result.error);
       }
 
-      return { success: true, data: result.data };
+      return create_success_result(result.data);
     },
 
     async update(
       id: string,
       input: UpdatePlayerTeamTransferHistoryInput,
-    ): Promise<EntityOperationResult<PlayerTeamTransferHistory>> {
+    ): AsyncResult<PlayerTeamTransferHistory> {
       if (!id || id.trim().length === 0) {
-        return { success: false, error_message: "Transfer ID is required" };
+        return create_failure_result("Transfer ID is required");
       }
 
       const result = await repository.update(id, input);
       if (!result.success) {
-        return { success: false, error_message: result.error };
+        return create_failure_result(result.error);
       }
 
-      return { success: true, data: result.data };
+      return create_success_result(result.data);
     },
 
-    async delete(id: string): Promise<EntityOperationResult<boolean>> {
+    async delete(id: string): AsyncResult<boolean> {
       if (!id || id.trim().length === 0) {
-        return { success: false, error_message: "Transfer ID is required" };
+        return create_failure_result("Transfer ID is required");
       }
 
       const result = await repository.delete_by_id(id);
       if (!result.success) {
-        return { success: false, error_message: result.error };
+        return create_failure_result(result.error);
       }
 
-      return { success: true, data: result.data };
+      return create_success_result(result.data);
     },
 
     async list_transfers_by_player(

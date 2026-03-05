@@ -10,8 +10,8 @@ import type {
 } from "../interfaces/ports";
 import type { QueryOptions } from "../interfaces/ports";
 import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
-import { create_failure_result } from "../types/Result";
-import type { EntityListResult, EntityOperationResult } from "./BaseUseCases";
+import { create_success_result, create_failure_result } from "../types/Result";
+import type { EntityListResult } from "./BaseUseCases";
 import { get_player_team_membership_repository } from "../../adapters/repositories/InBrowserPlayerTeamMembershipRepository";
 import type { PlayerTeamMembershipUseCasesPort } from "../interfaces/ports";
 
@@ -45,68 +45,43 @@ export function create_player_team_membership_use_cases(
       };
     },
 
-    async get_by_id(
-      id: string,
-    ): Promise<EntityOperationResult<PlayerTeamMembership>> {
+    async get_by_id(id: string): AsyncResult<PlayerTeamMembership> {
       if (!id || id.trim().length === 0) {
-        return { success: false, error_message: "Membership ID is required" };
+        return create_failure_result("Membership ID is required");
       }
 
-      const result = await repository.find_by_id(id);
-      if (!result.success) {
-        return { success: false, error_message: result.error };
-      }
-
-      return { success: true, data: result.data };
+      return repository.find_by_id(id);
     },
 
     async create(
       input: CreatePlayerTeamMembershipInput,
-    ): Promise<EntityOperationResult<PlayerTeamMembership>> {
+    ): AsyncResult<PlayerTeamMembership> {
       const validation_errors = validate_player_team_membership_input(input);
 
       if (validation_errors.length > 0) {
-        return {
-          success: false,
-          error_message: validation_errors.join(", "),
-        };
+        return create_failure_result(validation_errors.join(", "));
       }
 
-      const result = await repository.create(input);
-      if (!result.success) {
-        return { success: false, error_message: result.error };
-      }
-
-      return { success: true, data: result.data };
+      return repository.create(input);
     },
 
     async update(
       id: string,
       input: UpdatePlayerTeamMembershipInput,
-    ): Promise<EntityOperationResult<PlayerTeamMembership>> {
+    ): AsyncResult<PlayerTeamMembership> {
       if (!id || id.trim().length === 0) {
-        return { success: false, error_message: "Membership ID is required" };
+        return create_failure_result("Membership ID is required");
       }
 
-      const result = await repository.update(id, input);
-      if (!result.success) {
-        return { success: false, error_message: result.error };
-      }
-
-      return { success: true, data: result.data };
+      return repository.update(id, input);
     },
 
-    async delete(id: string): Promise<EntityOperationResult<boolean>> {
+    async delete(id: string): AsyncResult<boolean> {
       if (!id || id.trim().length === 0) {
-        return { success: false, error_message: "Membership ID is required" };
+        return create_failure_result("Membership ID is required");
       }
 
-      const result = await repository.delete_by_id(id);
-      if (!result.success) {
-        return { success: false, error_message: result.error };
-      }
-
-      return { success: true, data: result.data };
+      return repository.delete_by_id(id);
     },
 
     async list_memberships_by_team(

@@ -1,6 +1,6 @@
 export type {
   BaseUseCasesPort,
-  EntityOperationResult,
+  AsyncResult,
   EntityListResult,
 } from "./internal/usecases/BaseUseCasesPort";
 export type { PlayerUseCasesPort } from "./internal/usecases/PlayerUseCasesPort";

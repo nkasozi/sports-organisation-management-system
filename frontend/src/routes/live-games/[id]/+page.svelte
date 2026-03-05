@@ -336,12 +336,14 @@
     const result = await fixture_use_cases.get_by_id(fixture_id);
     console.log("[LiveGame] fixture_use_cases.get_by_id result:", {
       success: result.success,
-      has_data: !!result.data,
-      error: result.error_message,
+      has_data: result.success && !!result.data,
+      error: !result.success ? result.error : undefined,
     });
 
     if (!result.success || !result.data) {
-      error_message = result.error_message || "Failed to load fixture";
+      error_message = !result.success
+        ? result.error || "Failed to load fixture"
+        : "Failed to load fixture";
       is_loading = false;
       console.log("[LiveGame] Failed to load fixture:", error_message);
       return;
@@ -368,9 +370,9 @@
 
     console.log("[LiveGame] Teams loaded:", {
       home_success: home_result.success,
-      home_name: home_result.data?.name,
+      home_name: home_result.success ? home_result.data?.name : undefined,
       away_success: away_result.success,
-      away_name: away_result.data?.name,
+      away_name: away_result.success ? away_result.data?.name : undefined,
     });
 
     if (home_result.success && home_result.data) home_team = home_result.data;
@@ -424,18 +426,20 @@
 
     console.log("[LiveGame] Home lineup result:", {
       success: home_lineup_result.success,
-      has_data: !!home_lineup_result.data,
-      error: home_lineup_result.error_message,
-      selected_players_count:
-        home_lineup_result.data?.selected_players?.length ?? 0,
+      has_data: home_lineup_result.success && !!home_lineup_result.data,
+      error: !home_lineup_result.success ? home_lineup_result.error : undefined,
+      selected_players_count: home_lineup_result.success
+        ? (home_lineup_result.data?.selected_players?.length ?? 0)
+        : 0,
     });
 
     console.log("[LiveGame] Away lineup result:", {
       success: away_lineup_result.success,
-      has_data: !!away_lineup_result.data,
-      error: away_lineup_result.error_message,
-      selected_players_count:
-        away_lineup_result.data?.selected_players?.length ?? 0,
+      has_data: away_lineup_result.success && !!away_lineup_result.data,
+      error: !away_lineup_result.success ? away_lineup_result.error : undefined,
+      selected_players_count: away_lineup_result.success
+        ? (away_lineup_result.data?.selected_players?.length ?? 0)
+        : 0,
     });
 
     if (home_lineup_result.success && home_lineup_result.data) {

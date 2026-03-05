@@ -8,10 +8,9 @@ import type {
   PlayerProfileFilter,
 } from "../interfaces/ports";
 import type { QueryOptions } from "../interfaces/ports";
-import type {
-  EntityOperationResult,
-  EntityListResult,
-} from "../entities/BaseEntity";
+import type { EntityListResult } from "../entities/BaseEntity";
+import type { AsyncResult } from "../types/Result";
+import { create_failure_result } from "../types/Result";
 import { validate_player_profile_input } from "../entities/PlayerProfile";
 import { get_player_profile_repository } from "../../adapters/repositories/InBrowserPlayerProfileRepository";
 
@@ -20,19 +19,15 @@ export interface PlayerProfileUseCases {
     filter?: PlayerProfileFilter | Record<string, string>,
     options?: QueryOptions,
   ): Promise<EntityListResult<PlayerProfile>>;
-  get_by_id(id: string): Promise<EntityOperationResult<PlayerProfile>>;
-  get_by_player_id(
-    player_id: string,
-  ): Promise<EntityOperationResult<PlayerProfile>>;
-  get_by_slug(slug: string): Promise<EntityOperationResult<PlayerProfile>>;
-  create(
-    input: CreatePlayerProfileInput,
-  ): Promise<EntityOperationResult<PlayerProfile>>;
+  get_by_id(id: string): AsyncResult<PlayerProfile>;
+  get_by_player_id(player_id: string): AsyncResult<PlayerProfile>;
+  get_by_slug(slug: string): AsyncResult<PlayerProfile>;
+  create(input: CreatePlayerProfileInput): AsyncResult<PlayerProfile>;
   update(
     id: string,
     input: UpdatePlayerProfileInput,
-  ): Promise<EntityOperationResult<PlayerProfile>>;
-  delete(id: string): Promise<EntityOperationResult<boolean>>;
+  ): AsyncResult<PlayerProfile>;
+  delete(id: string): AsyncResult<boolean>;
   list_public_profiles(
     options?: QueryOptions,
   ): Promise<EntityListResult<PlayerProfile>>;
@@ -72,161 +67,71 @@ export function create_player_profile_use_cases(
       };
     },
 
-    async get_by_id(id: string): Promise<EntityOperationResult<PlayerProfile>> {
+    async get_by_id(id: string): AsyncResult<PlayerProfile> {
       if (!id || id.trim().length === 0) {
-        return {
-          success: false,
-          error_message: "Profile ID is required",
-        };
+        return create_failure_result("Profile ID is required");
       }
-      const result = await repository.find_by_id(id);
-      if (!result.success) {
-        return {
-          success: false,
-          error_message: result.error,
-        };
-      }
-      return {
-        success: true,
-        data: result.data,
-      };
+      return repository.find_by_id(id);
     },
 
-    async get_by_player_id(
-      player_id: string,
-    ): Promise<EntityOperationResult<PlayerProfile>> {
+    async get_by_player_id(player_id: string): AsyncResult<PlayerProfile> {
       if (!player_id || player_id.trim().length === 0) {
-        return {
-          success: false,
-          error_message: "Player ID is required",
-        };
+        return create_failure_result("Player ID is required");
       }
-      const result = await repository.find_by_player_id(player_id);
-      if (!result.success) {
-        return {
-          success: false,
-          error_message: result.error,
-        };
-      }
-      return {
-        success: true,
-        data: result.data,
-      };
+      return repository.find_by_player_id(player_id);
     },
 
-    async get_by_slug(
-      slug: string,
-    ): Promise<EntityOperationResult<PlayerProfile>> {
+    async get_by_slug(slug: string): AsyncResult<PlayerProfile> {
       if (!slug || slug.trim().length === 0) {
-        return {
-          success: false,
-          error_message: "Profile slug is required",
-        };
+        return create_failure_result("Profile slug is required");
       }
-      const result = await repository.find_by_slug(slug);
-      if (!result.success) {
-        return {
-          success: false,
-          error_message: result.error,
-        };
-      }
-      return {
-        success: true,
-        data: result.data,
-      };
+      return repository.find_by_slug(slug);
     },
 
-    async create(
-      input: CreatePlayerProfileInput,
-    ): Promise<EntityOperationResult<PlayerProfile>> {
+    async create(input: CreatePlayerProfileInput): AsyncResult<PlayerProfile> {
       const validation = validate_player_profile_input(input);
 
       if (!validation.is_valid) {
-        return {
-          success: false,
-          error_message: Object.values(validation.errors).join(", "),
-        };
+        return create_failure_result(
+          Object.values(validation.errors).join(", "),
+        );
       }
 
       const existing = await repository.find_by_player_id(input.player_id);
       if (existing.success && existing.data) {
-        return {
-          success: false,
-          error_message: "A profile already exists for this player",
-        };
+        return create_failure_result(
+          "A profile already exists for this player",
+        );
       }
 
-      const result = await repository.create(input);
-
-      if (!result.success) {
-        return {
-          success: false,
-          error_message: result.error,
-        };
-      }
-
-      return {
-        success: true,
-        data: result.data,
-      };
+      return repository.create(input);
     },
 
     async update(
       id: string,
       input: UpdatePlayerProfileInput,
-    ): Promise<EntityOperationResult<PlayerProfile>> {
+    ): AsyncResult<PlayerProfile> {
       if (!id || id.trim().length === 0) {
-        return {
-          success: false,
-          error_message: "Profile ID is required",
-        };
+        return create_failure_result("Profile ID is required");
       }
 
       const validation = validate_player_profile_input(input);
 
       if (!validation.is_valid) {
-        return {
-          success: false,
-          error_message: Object.values(validation.errors).join(", "),
-        };
+        return create_failure_result(
+          Object.values(validation.errors).join(", "),
+        );
       }
 
-      const result = await repository.update(id, input);
-
-      if (!result.success) {
-        return {
-          success: false,
-          error_message: result.error,
-        };
-      }
-
-      return {
-        success: true,
-        data: result.data,
-      };
+      return repository.update(id, input);
     },
 
-    async delete(id: string): Promise<EntityOperationResult<boolean>> {
+    async delete(id: string): AsyncResult<boolean> {
       if (!id || id.trim().length === 0) {
-        return {
-          success: false,
-          error_message: "Profile ID is required",
-        };
+        return create_failure_result("Profile ID is required");
       }
 
-      const result = await repository.delete_by_id(id);
-
-      if (!result.success) {
-        return {
-          success: false,
-          error_message: result.error,
-        };
-      }
-
-      return {
-        success: true,
-        data: true,
-      };
+      return repository.delete_by_id(id);
     },
 
     async list_public_profiles(

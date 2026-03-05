@@ -129,6 +129,7 @@ describe("OfficialUseCases", () => {
       const result = await use_cases.get_by_id("official-123");
 
       expect(result.success).toBe(true);
+      if (!result.success) return;
       expect(result.data?.first_name).toBe("John");
     });
 
@@ -136,7 +137,8 @@ describe("OfficialUseCases", () => {
       const result = await use_cases.get_by_id("");
 
       expect(result.success).toBe(false);
-      expect(result.error_message).toBe("Official ID is required");
+      if (result.success) return;
+      expect(result.error).toBe("Official ID is required");
     });
   });
 
@@ -188,7 +190,8 @@ describe("OfficialUseCases", () => {
       const result = await use_cases.update("", { first_name: "Updated" });
 
       expect(result.success).toBe(false);
-      expect(result.error_message).toBe("Official ID is required");
+      if (result.success) return;
+      expect(result.error).toBe("Official ID is required");
     });
   });
 

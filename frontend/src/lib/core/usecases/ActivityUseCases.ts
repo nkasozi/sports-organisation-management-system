@@ -11,20 +11,15 @@ import {
   can_delete_activity,
 } from "../entities/Activity";
 import type { ActivityCategory } from "../entities/ActivityCategory";
-import type {
-  ActivityRepository,
-  ActivityFilter,
-} from "../interfaces/ports";
+import type { ActivityRepository, ActivityFilter } from "../interfaces/ports";
 import type { CompetitionRepository } from "../interfaces/ports";
 import type { FixtureRepository } from "../interfaces/ports";
 import type { TeamRepository } from "../interfaces/ports";
 import type { ActivityCategoryRepository } from "../interfaces/ports";
 import type { QueryOptions } from "../interfaces/ports";
-import type { PaginatedAsyncResult } from "../types/Result";
-import type {
-  EntityOperationResult,
-  EntityListResult,
-} from "../entities/BaseEntity";
+import type { PaginatedAsyncResult, AsyncResult } from "../types/Result";
+import { create_success_result, create_failure_result } from "../types/Result";
+import type { EntityListResult } from "../entities/BaseEntity";
 import type {
   ActivityUseCasesPort,
   CalendarDateRange,
@@ -118,96 +113,66 @@ export function create_activity_use_cases(
       };
     },
 
-    async get_by_id(id: string): Promise<EntityOperationResult<Activity>> {
+    async get_by_id(id: string): AsyncResult<Activity> {
       if (!id || id.trim().length === 0) {
-        return { success: false, error_message: "Activity ID is required" };
+        return create_failure_result("Activity ID is required");
       }
 
-      const result = await activity_repository.find_by_id(id);
-
-      if (!result.success) {
-        return { success: false, error_message: result.error };
-      }
-
-      return { success: true, data: result.data };
+      return activity_repository.find_by_id(id);
     },
 
-    async create(
-      input: CreateActivityInput,
-    ): Promise<EntityOperationResult<Activity>> {
+    async create(input: CreateActivityInput): AsyncResult<Activity> {
       const validation = validate_activity_input(input);
 
       if (!validation.is_valid) {
         const error_messages = Object.values(validation.errors).join(", ");
-        return { success: false, error_message: error_messages };
+        return create_failure_result(error_messages);
       }
 
-      const result = await activity_repository.create(input);
-
-      if (!result.success) {
-        return { success: false, error_message: result.error };
-      }
-
-      return { success: true, data: result.data };
+      return activity_repository.create(input);
     },
 
     async update(
       id: string,
       input: UpdateActivityInput,
-    ): Promise<EntityOperationResult<Activity>> {
+    ): AsyncResult<Activity> {
       if (!id || id.trim().length === 0) {
-        return { success: false, error_message: "Activity ID is required" };
+        return create_failure_result("Activity ID is required");
       }
 
       const existing_result = await activity_repository.find_by_id(id);
 
       if (!existing_result.success) {
-        return { success: false, error_message: existing_result.error };
+        return create_failure_result(existing_result.error);
       }
 
       if (!can_edit_activity(existing_result.data!)) {
-        return {
-          success: false,
-          error_message:
-            "Cannot edit activities auto-generated from competitions or fixtures",
-        };
+        return create_failure_result(
+          "Cannot edit activities auto-generated from competitions or fixtures",
+        );
       }
 
-      const result = await activity_repository.update(id, input);
-
-      if (!result.success) {
-        return { success: false, error_message: result.error };
-      }
-
-      return { success: true, data: result.data };
+      return activity_repository.update(id, input);
     },
 
-    async delete(id: string): Promise<EntityOperationResult<boolean>> {
+    async delete(id: string): AsyncResult<boolean> {
       if (!id || id.trim().length === 0) {
-        return { success: false, error_message: "Activity ID is required" };
+        return create_failure_result("Activity ID is required");
       }
 
       const existing_result = await activity_repository.find_by_id(id);
 
       if (!existing_result.success) {
-        return { success: false, error_message: existing_result.error };
+        return create_failure_result(existing_result.error);
       }
 
       if (!can_delete_activity(existing_result.data!)) {
-        return {
-          success: false,
-          error_message:
-            "Cannot delete activities auto-generated from competitions or fixtures",
-        };
+        return create_failure_result(
+          "Cannot delete activities auto-generated from competitions or fixtures",
+        );
       }
 
-      const result = await activity_repository.delete_by_id(id);
-
-      if (!result.success) {
-        return { success: false, error_message: result.error };
-      }
-
-      return { success: true, data: result.data };
+      return activity_repository.delete_by_id(id);
     },
 
     async list_by_organization(
@@ -273,7 +238,7 @@ export function create_activity_use_cases(
       organization_id: string,
       date_range: CalendarDateRange,
       filter?: ActivityFilter,
-    ): Promise<EntityOperationResult<CalendarEvent[]>> {
+    ): AsyncResult<CalendarEvent[]> {
       const combined_filter: ActivityFilter = {
         ...filter,
         organization_id,
@@ -287,7 +252,7 @@ export function create_activity_use_cases(
       );
 
       if (!activities_result.success) {
-        return { success: false, error_message: activities_result.error };
+        return create_failure_result(activities_result.error);
       }
 
       const activities = activities_result.data?.items || [];
@@ -326,28 +291,26 @@ export function create_activity_use_cases(
         };
       });
 
-      return { success: true, data: calendar_events };
+      return create_success_result(calendar_events);
     },
 
     async sync_competitions_to_activities(
       organization_id: string,
-    ): Promise<EntityOperationResult<{ created: number; updated: number }>> {
+    ): AsyncResult<{ created: number; updated: number }> {
       const competition_category_id =
         await get_or_create_competition_category(organization_id);
 
       if (!competition_category_id) {
-        return {
-          success: false,
-          error_message:
-            "Competition category not found. Please ensure default categories are created.",
-        };
+        return create_failure_result(
+          "Competition category not found. Please ensure default categories are created.",
+        );
       }
 
       const competitions_result =
         await competition_repository.find_by_organization(organization_id);
 
       if (!competitions_result.success) {
-        return { success: false, error_message: competitions_result.error };
+        return create_failure_result(competitions_result.error);
       }
 
       const competitions = competitions_result.data?.items || [];
@@ -399,13 +362,13 @@ export function create_activity_use_cases(
         }
       }
 
-      return { success: true, data: { created, updated } };
+      return create_success_result({ created, updated });
     },
 
     async sync_fixtures_to_activities(
       organization_id: string,
       competition_id?: string,
-    ): Promise<EntityOperationResult<{ created: number; updated: number }>> {
+    ): AsyncResult<{ created: number; updated: number }> {
       console.log(
         "[ActivityUseCases] sync_fixtures_to_activities - org:",
         organization_id,
@@ -418,11 +381,9 @@ export function create_activity_use_cases(
 
       if (!fixture_category_id) {
         console.log("[ActivityUseCases] No fixture category found");
-        return {
-          success: false,
-          error_message:
-            "Fixture category not found. Please ensure default categories are created.",
-        };
+        return create_failure_result(
+          "Fixture category not found. Please ensure default categories are created.",
+        );
       }
 
       const fixtures_result = competition_id
@@ -434,7 +395,7 @@ export function create_activity_use_cases(
           "[ActivityUseCases] Failed to fetch fixtures:",
           fixtures_result.error,
         );
-        return { success: false, error_message: fixtures_result.error };
+        return create_failure_result(fixtures_result.error);
       }
 
       console.log(
@@ -508,23 +469,14 @@ export function create_activity_use_cases(
         }
       }
 
-      return { success: true, data: { created, updated } };
+      return create_success_result({ created, updated });
     },
 
     async find_activity_by_source(
       source_type: Activity["source_type"],
       source_id: string,
-    ): Promise<EntityOperationResult<Activity | null>> {
-      const result = await activity_repository.find_by_source(
-        source_type,
-        source_id,
-      );
-
-      if (!result.success) {
-        return { success: false, error_message: result.error };
-      }
-
-      return { success: true, data: result.data };
+    ): AsyncResult<Activity | null> {
+      return activity_repository.find_by_source(source_type, source_id);
     },
   };
 }

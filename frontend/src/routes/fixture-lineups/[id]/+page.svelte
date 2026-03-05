@@ -113,7 +113,9 @@
 
     const result = await get_fixture_lineup_by_id(lineup_id);
     if (!result.success || !result.data) {
-      error_message = result.error_message || "Lineup not found";
+      error_message = !result.success
+        ? result.error || "Lineup not found"
+        : "Lineup not found";
       loading = false;
       return;
     }
@@ -213,7 +215,7 @@
     saving = false;
 
     if (!result.success) {
-      error_message = result.error_message || "Failed to update lineup";
+      error_message = result.error || "Failed to update lineup";
       return;
     }
 
@@ -236,7 +238,7 @@
     saving = false;
 
     if (!result.success) {
-      error_message = result.error_message || "Failed to submit lineup";
+      error_message = result.error || "Failed to submit lineup";
       return;
     }
 

@@ -176,7 +176,7 @@
     const result = await fixture_use_cases.get_by_id(fixture_id);
 
     if (!result.success) {
-      error_message = result.error_message || "Failed to load game";
+      error_message = result.error || "Failed to load game";
       is_loading = false;
       return;
     }

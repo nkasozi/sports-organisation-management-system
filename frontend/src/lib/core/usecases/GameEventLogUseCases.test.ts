@@ -97,6 +97,7 @@ describe("GameEventLogUseCases", () => {
       const result = await use_cases.create(input);
 
       expect(result.success).toBe(true);
+      if (!result.success) return;
       expect(result.data).toEqual(created_event);
     });
 
@@ -124,7 +125,8 @@ describe("GameEventLogUseCases", () => {
       const result = await use_cases.create(input);
 
       expect(result.success).toBe(false);
-      expect(result.error_message).toBe("Live game log ID is required");
+      if (result.success) return;
+      expect(result.error).toBe("Live game log ID is required");
     });
 
     it("should fail when event_type is missing", async () => {
@@ -151,7 +153,8 @@ describe("GameEventLogUseCases", () => {
       const result = await use_cases.create(input);
 
       expect(result.success).toBe(false);
-      expect(result.error_message).toBe("Event type is required");
+      if (result.success) return;
+      expect(result.error).toBe("Event type is required");
     });
   });
 
@@ -309,14 +312,16 @@ describe("GameEventLogUseCases", () => {
       );
 
       expect(result.success).toBe(false);
-      expect(result.error_message).toBe("Event is already voided");
+      if (result.success) return;
+      expect(result.error).toBe("Event is already voided");
     });
 
     it("should fail without a reason", async () => {
       const result = await use_cases.void_event("event-001", "", "user-001");
 
       expect(result.success).toBe(false);
-      expect(result.error_message).toBe("Void reason is required");
+      if (result.success) return;
+      expect(result.error).toBe("Void reason is required");
     });
   });
 
@@ -332,7 +337,8 @@ describe("GameEventLogUseCases", () => {
       const result = await use_cases.update("event-001", { minute: 30 });
 
       expect(result.success).toBe(false);
-      expect(result.error_message).toBe("Cannot update a voided event");
+      if (result.success) return;
+      expect(result.error).toBe("Cannot update a voided event");
     });
   });
 });

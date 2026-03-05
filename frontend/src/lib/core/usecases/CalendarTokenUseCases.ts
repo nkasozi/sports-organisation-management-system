@@ -20,10 +20,7 @@ import type {
   PaginatedResult,
 } from "../types/Result";
 import { create_success_result, create_failure_result } from "../types/Result";
-import type {
-  EntityOperationResult,
-  EntityListResult,
-} from "../entities/BaseEntity";
+import type { EntityListResult } from "../entities/BaseEntity";
 import type {
   CalendarTokenUseCasesPort,
   CalendarFeedInfo,
@@ -71,69 +68,59 @@ export function create_calendar_token_use_cases(
       };
     },
 
-    async get_by_id(id: string): Promise<EntityOperationResult<CalendarToken>> {
+    async get_by_id(id: string): AsyncResult<CalendarToken> {
       const result = await calendar_token_repository.find_by_id(id);
 
       if (!result.success) {
-        return {
-          success: false,
-          error_message:
-            "error" in result ? result.error : "Failed to get token",
-        };
+        return create_failure_result(
+          "error" in result ? result.error : "Failed to get token",
+        );
       }
 
       if (!result.data) {
-        return { success: false, error_message: "Calendar token not found" };
+        return create_failure_result("Calendar token not found");
       }
 
-      return { success: true, data: result.data };
+      return create_success_result(result.data);
     },
 
-    async create(
-      input: CreateCalendarTokenInput,
-    ): Promise<EntityOperationResult<CalendarToken>> {
+    async create(input: CreateCalendarTokenInput): AsyncResult<CalendarToken> {
       const result = await calendar_token_repository.create(input);
 
       if (!result.success) {
-        return {
-          success: false,
-          error_message:
-            "error" in result ? result.error : "Failed to create token",
-        };
+        return create_failure_result(
+          "error" in result ? result.error : "Failed to create token",
+        );
       }
 
-      return { success: true, data: result.data! };
+      return create_success_result(result.data!);
     },
 
     async update(
       id: string,
       updates: UpdateCalendarTokenInput,
-    ): Promise<EntityOperationResult<CalendarToken>> {
+    ): AsyncResult<CalendarToken> {
       const result = await calendar_token_repository.update(id, updates);
 
       if (!result.success) {
-        return {
-          success: false,
-          error_message:
-            "error" in result ? result.error : "Failed to update token",
-        };
+        return create_failure_result(
+          "error" in result ? result.error : "Failed to update token",
+        );
       }
 
-      return { success: true, data: result.data! };
+      return create_success_result(result.data!);
     },
 
-    async delete(id: string): Promise<EntityOperationResult<boolean>> {
+    async delete(id: string): AsyncResult<boolean> {
       const result = await calendar_token_repository.delete_by_id(id);
 
       if (!result.success) {
-        return {
-          success: false,
-          error_message:
-            "error" in result ? result.error : "Failed to delete token",
-        };
+        return create_failure_result(
+          "error" in result ? result.error : "Failed to delete token",
+        );
       }
 
-      return { success: true, data: true };
+      return create_success_result(true);
     },
 
     async create_feed(
@@ -143,7 +130,7 @@ export function create_calendar_token_use_cases(
       entity_id: string | null,
       entity_name: string | null,
       reminder_minutes_before: number = DEFAULT_REMINDER_MINUTES,
-    ): Promise<EntityOperationResult<CalendarFeedInfo>> {
+    ): AsyncResult<CalendarFeedInfo> {
       const token = generate_calendar_token();
 
       const input: CreateCalendarTokenInput = {
@@ -160,25 +147,20 @@ export function create_calendar_token_use_cases(
       const create_result = await calendar_token_repository.create(input);
 
       if (!create_result.success || !create_result.data) {
-        return {
-          success: false,
-          error_message:
-            "error" in create_result
-              ? create_result.error
-              : "Failed to create calendar token",
-        };
+        return create_failure_result(
+          "error" in create_result
+            ? create_result.error
+            : "Failed to create calendar token",
+        );
       }
 
       const base_url = get_base_url();
 
-      return {
-        success: true,
-        data: {
-          token: create_result.data,
-          https_url: build_ical_feed_url(base_url, token),
-          webcal_url: build_webcal_feed_url(base_url, token),
-        },
-      };
+      return create_success_result({
+        token: create_result.data,
+        https_url: build_ical_feed_url(base_url, token),
+        webcal_url: build_webcal_feed_url(base_url, token),
+      });
     },
 
     async list_user_feeds(

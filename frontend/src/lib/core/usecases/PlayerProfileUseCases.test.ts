@@ -180,7 +180,7 @@ describe("PlayerProfileUseCases", () => {
 
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(result.error_message).toBe("Profile ID is required");
+        expect(result.error).toBe("Profile ID is required");
       }
       expect(mock_repository.find_by_id).not.toHaveBeenCalled();
     });
@@ -194,7 +194,7 @@ describe("PlayerProfileUseCases", () => {
 
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(result.error_message).toBe("Profile not found");
+        expect(result.error).toBe("Profile not found");
       }
     });
   });
@@ -224,7 +224,7 @@ describe("PlayerProfileUseCases", () => {
 
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(result.error_message).toBe("Player ID is required");
+        expect(result.error).toBe("Player ID is required");
       }
       expect(mock_repository.find_by_player_id).not.toHaveBeenCalled();
     });
@@ -238,7 +238,7 @@ describe("PlayerProfileUseCases", () => {
 
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(result.error_message).toBe("No profile found for player");
+        expect(result.error).toBe("No profile found for player");
       }
     });
   });
@@ -266,7 +266,7 @@ describe("PlayerProfileUseCases", () => {
 
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(result.error_message).toBe("Profile slug is required");
+        expect(result.error).toBe("Profile slug is required");
       }
       expect(mock_repository.find_by_slug).not.toHaveBeenCalled();
     });
@@ -280,7 +280,7 @@ describe("PlayerProfileUseCases", () => {
 
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(result.error_message).toBe("No profile found with slug");
+        expect(result.error).toBe("No profile found with slug");
       }
     });
   });
@@ -312,7 +312,7 @@ describe("PlayerProfileUseCases", () => {
 
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(result.error_message).toContain("Player is required");
+        expect(result.error).toContain("Player is required");
       }
       expect(mock_repository.create).not.toHaveBeenCalled();
     });
@@ -327,7 +327,7 @@ describe("PlayerProfileUseCases", () => {
 
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(result.error_message).toContain("Visibility must be");
+        expect(result.error).toContain("Visibility must be");
       }
       expect(mock_repository.create).not.toHaveBeenCalled();
     });
@@ -345,7 +345,7 @@ describe("PlayerProfileUseCases", () => {
 
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(result.error_message).toBe("Database error");
+        expect(result.error).toBe("Database error");
       }
     });
   });
@@ -374,7 +374,7 @@ describe("PlayerProfileUseCases", () => {
 
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(result.error_message).toContain("Visibility must be");
+        expect(result.error).toContain("Visibility must be");
       }
       expect(mock_repository.update).not.toHaveBeenCalled();
     });
@@ -390,7 +390,7 @@ describe("PlayerProfileUseCases", () => {
 
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(result.error_message).toBe("Profile not found");
+        expect(result.error).toBe("Profile not found");
       }
     });
   });
@@ -419,7 +419,7 @@ describe("PlayerProfileUseCases", () => {
 
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(result.error_message).toBe("Profile not found");
+        expect(result.error).toBe("Profile not found");
       }
     });
   });

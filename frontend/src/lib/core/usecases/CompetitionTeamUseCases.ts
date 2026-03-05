@@ -10,9 +10,9 @@ import type {
 } from "../interfaces/ports";
 import type { QueryOptions } from "../interfaces/ports";
 import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
-import { create_failure_result } from "../types/Result";
+import { create_success_result, create_failure_result } from "../types/Result";
 import { get_competition_team_repository } from "../../adapters/repositories/InBrowserCompetitionTeamRepository";
-import type { EntityOperationResult, EntityListResult } from "./BaseUseCases";
+import type { EntityListResult } from "./BaseUseCases";
 import type { CompetitionTeamUseCasesPort } from "../interfaces/ports";
 
 export type CompetitionTeamUseCases = CompetitionTeamUseCasesPort;
@@ -43,28 +43,19 @@ export function create_competition_team_use_cases(
       };
     },
 
-    async get_by_id(
-      id: string,
-    ): Promise<EntityOperationResult<CompetitionTeam>> {
+    async get_by_id(id: string): AsyncResult<CompetitionTeam> {
       if (!id || id.trim().length === 0) {
-        return {
-          success: false,
-          error_message: "Competition team ID is required",
-        };
+        return create_failure_result("Competition team ID is required");
       }
-      const result = await repository.find_by_id(id);
-      if (!result.success) {
-        return { success: false, error_message: result.error };
-      }
-      return { success: true, data: result.data };
+      return repository.find_by_id(id);
     },
 
     async create(
       input: CreateCompetitionTeamInput,
-    ): Promise<EntityOperationResult<CompetitionTeam>> {
+    ): AsyncResult<CompetitionTeam> {
       const validation_errors = validate_competition_team_input(input);
       if (validation_errors.length > 0) {
-        return { success: false, error_message: validation_errors.join(", ") };
+        return create_failure_result(validation_errors.join(", "));
       }
 
       const existing = await repository.find_team_in_competition(
@@ -72,48 +63,29 @@ export function create_competition_team_use_cases(
         input.team_id,
       );
       if (existing.success) {
-        return {
-          success: false,
-          error_message: "Team is already registered in this competition",
-        };
+        return create_failure_result(
+          "Team is already registered in this competition",
+        );
       }
 
-      const result = await repository.create(input);
-      if (!result.success) {
-        return { success: false, error_message: result.error };
-      }
-      return { success: true, data: result.data };
+      return repository.create(input);
     },
 
     async update(
       id: string,
       input: UpdateCompetitionTeamInput,
-    ): Promise<EntityOperationResult<CompetitionTeam>> {
+    ): AsyncResult<CompetitionTeam> {
       if (!id || id.trim().length === 0) {
-        return {
-          success: false,
-          error_message: "Competition team ID is required",
-        };
+        return create_failure_result("Competition team ID is required");
       }
-      const result = await repository.update(id, input);
-      if (!result.success) {
-        return { success: false, error_message: result.error };
-      }
-      return { success: true, data: result.data };
+      return repository.update(id, input);
     },
 
-    async delete(id: string): Promise<EntityOperationResult<boolean>> {
+    async delete(id: string): AsyncResult<boolean> {
       if (!id || id.trim().length === 0) {
-        return {
-          success: false,
-          error_message: "Competition team ID is required",
-        };
+        return create_failure_result("Competition team ID is required");
       }
-      const result = await repository.delete_by_id(id);
-      if (!result.success) {
-        return { success: false, error_message: result.error };
-      }
-      return { success: true, data: result.data };
+      return repository.delete_by_id(id);
     },
 
     async add_team_to_competition(

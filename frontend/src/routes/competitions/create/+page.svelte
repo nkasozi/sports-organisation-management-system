@@ -310,7 +310,7 @@
       );
       if (!result.success) {
         console.error(
-          `[CompetitionCreate] Failed to create CompetitionTeam for team ${team_id}: ${result.error_message}`,
+          `[CompetitionCreate] Failed to create CompetitionTeam for team ${team_id}: ${result.error}`,
         );
         return false;
       }
@@ -336,7 +336,9 @@
     if (!result.success || !result.data) {
       is_saving = false;
       show_toast(
-        result.error_message || "Failed to create competition",
+        !result.success
+          ? result.error || "Failed to create competition"
+          : "Failed to create competition",
         "error",
       );
       return;

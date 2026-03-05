@@ -12,11 +12,9 @@ import type {
   ActivityCategoryFilter,
 } from "../interfaces/ports";
 import type { QueryOptions } from "../interfaces/ports";
-import type { PaginatedAsyncResult } from "../types/Result";
-import type {
-  EntityOperationResult,
-  EntityListResult,
-} from "../entities/BaseEntity";
+import type { PaginatedAsyncResult, AsyncResult } from "../types/Result";
+import { create_success_result, create_failure_result } from "../types/Result";
+import type { EntityListResult } from "../entities/BaseEntity";
 import type { ActivityCategoryUseCasesPort } from "../interfaces/ports";
 import { get_repository_container } from "../../infrastructure/container";
 
@@ -50,83 +48,56 @@ export function create_activity_category_use_cases(
       };
     },
 
-    async get_by_id(
-      id: string,
-    ): Promise<EntityOperationResult<ActivityCategory>> {
+    async get_by_id(id: string): AsyncResult<ActivityCategory> {
       if (!id || id.trim().length === 0) {
-        return { success: false, error_message: "Category ID is required" };
+        return create_failure_result("Category ID is required");
       }
 
-      const result = await repository.find_by_id(id);
-
-      if (!result.success) {
-        return { success: false, error_message: result.error };
-      }
-
-      return { success: true, data: result.data };
+      return repository.find_by_id(id);
     },
 
     async create(
       input: CreateActivityCategoryInput,
-    ): Promise<EntityOperationResult<ActivityCategory>> {
+    ): AsyncResult<ActivityCategory> {
       const validation = validate_activity_category_input(input);
 
       if (!validation.is_valid) {
         const error_messages = Object.values(validation.errors).join(", ");
-        return { success: false, error_message: error_messages };
+        return create_failure_result(error_messages);
       }
 
-      const result = await repository.create(input);
-
-      if (!result.success) {
-        return { success: false, error_message: result.error };
-      }
-
-      return { success: true, data: result.data };
+      return repository.create(input);
     },
 
     async update(
       id: string,
       input: UpdateActivityCategoryInput,
-    ): Promise<EntityOperationResult<ActivityCategory>> {
+    ): AsyncResult<ActivityCategory> {
       if (!id || id.trim().length === 0) {
-        return { success: false, error_message: "Category ID is required" };
+        return create_failure_result("Category ID is required");
       }
 
-      const result = await repository.update(id, input);
-
-      if (!result.success) {
-        return { success: false, error_message: result.error };
-      }
-
-      return { success: true, data: result.data };
+      return repository.update(id, input);
     },
 
-    async delete(id: string): Promise<EntityOperationResult<boolean>> {
+    async delete(id: string): AsyncResult<boolean> {
       if (!id || id.trim().length === 0) {
-        return { success: false, error_message: "Category ID is required" };
+        return create_failure_result("Category ID is required");
       }
 
       const category_result = await repository.find_by_id(id);
 
       if (!category_result.success) {
-        return { success: false, error_message: category_result.error };
+        return create_failure_result(category_result.error);
       }
 
       if (category_result.data?.is_system_generated) {
-        return {
-          success: false,
-          error_message: "Cannot delete system-generated categories",
-        };
+        return create_failure_result(
+          "Cannot delete system-generated categories",
+        );
       }
 
-      const result = await repository.delete_by_id(id);
-
-      if (!result.success) {
-        return { success: false, error_message: result.error };
-      }
-
-      return { success: true, data: result.data };
+      return repository.delete_by_id(id);
     },
 
     async list_by_organization(

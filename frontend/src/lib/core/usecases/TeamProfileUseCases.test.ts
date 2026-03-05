@@ -178,7 +178,7 @@ describe("TeamProfileUseCases", () => {
 
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(result.error_message).toBe("Profile ID is required");
+        expect(result.error).toBe("Profile ID is required");
       }
       expect(mock_repository.find_by_id).not.toHaveBeenCalled();
     });
@@ -188,7 +188,7 @@ describe("TeamProfileUseCases", () => {
 
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(result.error_message).toBe("Profile ID is required");
+        expect(result.error).toBe("Profile ID is required");
       }
     });
 
@@ -201,7 +201,7 @@ describe("TeamProfileUseCases", () => {
 
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(result.error_message).toBe("Profile not found");
+        expect(result.error).toBe("Profile not found");
       }
     });
   });
@@ -227,7 +227,7 @@ describe("TeamProfileUseCases", () => {
 
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(result.error_message).toBe("Team ID is required");
+        expect(result.error).toBe("Team ID is required");
       }
       expect(mock_repository.find_by_team_id).not.toHaveBeenCalled();
     });
@@ -241,7 +241,7 @@ describe("TeamProfileUseCases", () => {
 
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(result.error_message).toBe("No profile found for team");
+        expect(result.error).toBe("No profile found for team");
       }
     });
   });
@@ -269,7 +269,7 @@ describe("TeamProfileUseCases", () => {
 
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(result.error_message).toBe("Profile slug is required");
+        expect(result.error).toBe("Profile slug is required");
       }
       expect(mock_repository.find_by_slug).not.toHaveBeenCalled();
     });
@@ -283,7 +283,7 @@ describe("TeamProfileUseCases", () => {
 
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(result.error_message).toBe("No profile found with slug");
+        expect(result.error).toBe("No profile found with slug");
       }
     });
   });
@@ -312,7 +312,7 @@ describe("TeamProfileUseCases", () => {
 
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(result.error_message).toContain("Team is required");
+        expect(result.error).toContain("Team is required");
       }
       expect(mock_repository.create).not.toHaveBeenCalled();
     });
@@ -327,7 +327,7 @@ describe("TeamProfileUseCases", () => {
 
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(result.error_message).toContain("Visibility must be");
+        expect(result.error).toContain("Visibility must be");
       }
       expect(mock_repository.create).not.toHaveBeenCalled();
     });
@@ -342,7 +342,7 @@ describe("TeamProfileUseCases", () => {
 
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(result.error_message).toBe("Database error");
+        expect(result.error).toBe("Database error");
       }
     });
   });
@@ -371,7 +371,7 @@ describe("TeamProfileUseCases", () => {
 
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(result.error_message).toContain("Visibility must be");
+        expect(result.error).toContain("Visibility must be");
       }
       expect(mock_repository.update).not.toHaveBeenCalled();
     });
@@ -387,7 +387,7 @@ describe("TeamProfileUseCases", () => {
 
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(result.error_message).toBe("Profile not found");
+        expect(result.error).toBe("Profile not found");
       }
     });
   });
@@ -416,7 +416,7 @@ describe("TeamProfileUseCases", () => {
 
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(result.error_message).toBe("Profile not found");
+        expect(result.error).toBe("Profile not found");
       }
     });
   });

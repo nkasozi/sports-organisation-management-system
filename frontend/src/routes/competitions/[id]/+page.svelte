@@ -217,8 +217,7 @@
 
     if (!competition_result.success) {
       loading_state = "error";
-      error_message =
-        competition_result.error_message || "Failed to load competition";
+      error_message = competition_result.error || "Failed to load competition";
       return;
     }
 
@@ -339,10 +338,7 @@
 
     if (!result.success) {
       is_saving = false;
-      show_toast(
-        result.error_message || "Failed to update competition",
-        "error",
-      );
+      show_toast(result.error || "Failed to update competition", "error");
       return;
     }
 

@@ -246,7 +246,7 @@
       } else {
         error_count++;
         console.error(
-          `Failed to create membership for ${get_player_full_name(assignment.player)}: ${result.error_message}`,
+          `Failed to create membership for ${get_player_full_name(assignment.player)}: ${result.error}`,
         );
       }
     }

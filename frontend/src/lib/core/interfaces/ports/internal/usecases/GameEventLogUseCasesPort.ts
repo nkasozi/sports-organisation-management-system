@@ -4,10 +4,8 @@ import type {
   UpdateGameEventLogInput,
 } from "../../../../entities/GameEventLog";
 import type { GameEventLogFilter } from "../../external/repositories/GameEventLogRepository";
-import type {
-  EntityOperationResult,
-  EntityListResult,
-} from "../../../../entities/BaseEntity";
+import type { EntityListResult } from "../../../../entities/BaseEntity";
+import type { AsyncResult } from "../../../../types/Result";
 import type { BaseUseCasesPort } from "./BaseUseCasesPort";
 
 export interface GameEventLogUseCasesPort extends BaseUseCasesPort<
@@ -43,7 +41,7 @@ export interface GameEventLogUseCasesPort extends BaseUseCasesPort<
     id: string,
     reason: string,
     voided_by_user_id: string,
-  ): Promise<EntityOperationResult<GameEventLog>>;
+  ): AsyncResult<GameEventLog>;
 
   record_goal(
     live_game_log_id: string,
@@ -54,7 +52,7 @@ export interface GameEventLogUseCasesPort extends BaseUseCasesPort<
     player_id: string,
     player_name: string,
     recorded_by_user_id: string,
-  ): Promise<EntityOperationResult<GameEventLog>>;
+  ): AsyncResult<GameEventLog>;
 
   record_card(
     live_game_log_id: string,
@@ -66,7 +64,7 @@ export interface GameEventLogUseCasesPort extends BaseUseCasesPort<
     player_name: string,
     card_type: "yellow_card" | "red_card" | "second_yellow" | "green_card",
     recorded_by_user_id: string,
-  ): Promise<EntityOperationResult<GameEventLog>>;
+  ): AsyncResult<GameEventLog>;
 
   record_substitution(
     live_game_log_id: string,
@@ -79,5 +77,5 @@ export interface GameEventLogUseCasesPort extends BaseUseCasesPort<
     player_in_id: string,
     player_in_name: string,
     recorded_by_user_id: string,
-  ): Promise<EntityOperationResult<GameEventLog>>;
+  ): AsyncResult<GameEventLog>;
 }

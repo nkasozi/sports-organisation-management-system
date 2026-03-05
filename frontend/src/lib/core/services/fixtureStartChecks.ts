@@ -233,12 +233,11 @@ export async function auto_generate_lineups_if_possible(
       if (!create_result.success) {
         console.log(
           "[fixtureStartChecks] ERROR: Failed to create lineup:",
-          create_result.error_message,
+          create_result.error,
         );
         return {
           success: false,
-          error_message:
-            create_result.error_message || "Failed to create lineup",
+          error_message: create_result.error || "Failed to create lineup",
         };
       }
 
@@ -318,8 +317,10 @@ export async function auto_generate_lineups_if_possible(
   const player_results = await Promise.all(player_promises);
 
   const players: Player[] = player_results
-    .filter((result) => result.success && result.data)
-    .map((result) => result.data as Player);
+    .filter(
+      (result): result is { success: true; data: Player } => result.success,
+    )
+    .map((result) => result.data);
 
   console.log(
     "[fixtureStartChecks] Fetched",
@@ -392,11 +393,11 @@ export async function auto_generate_lineups_if_possible(
   if (!create_result.success) {
     console.log(
       "[fixtureStartChecks] ERROR: Failed to create lineup:",
-      create_result.error_message,
+      create_result.error,
     );
     return {
       success: false,
-      error_message: create_result.error_message || "Failed to create lineup",
+      error_message: create_result.error || "Failed to create lineup",
     };
   }
 

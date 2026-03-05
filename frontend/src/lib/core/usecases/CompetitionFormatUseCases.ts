@@ -13,7 +13,7 @@ import type { AsyncResult, PaginatedResult } from "../types/Result";
 import { create_failure_result, create_success_result } from "../types/Result";
 import { validate_competition_format_input } from "../entities/CompetitionFormat";
 import { get_competition_format_repository } from "../../adapters/repositories/InBrowserCompetitionFormatRepository";
-import type { EntityOperationResult, EntityListResult } from "./BaseUseCases";
+import type { EntityListResult } from "./BaseUseCases";
 import type { CompetitionFormatUseCasesPort } from "../interfaces/ports";
 
 export type CompetitionFormatUseCases = CompetitionFormatUseCasesPort;
@@ -48,68 +48,64 @@ export function create_competition_format_use_cases(
       };
     },
 
-    async get_by_id(
-      id: string,
-    ): Promise<EntityOperationResult<CompetitionFormat>> {
+    async get_by_id(id: string): AsyncResult<CompetitionFormat> {
       if (!id || id.trim().length === 0) {
-        return { success: false, error_message: "Format ID is required" };
+        return create_failure_result("Format ID is required");
       }
       const result = await repository.find_by_id(id);
       if (!result.success) {
-        return { success: false, error_message: result.error };
+        return create_failure_result(result.error);
       }
-      return { success: true, data: result.data };
+      return create_success_result(result.data);
     },
 
     async create(
       input: CreateCompetitionFormatInput,
-    ): Promise<EntityOperationResult<CompetitionFormat>> {
+    ): AsyncResult<CompetitionFormat> {
       const validation = validate_competition_format_input(input);
       if (!validation.is_valid) {
-        return { success: false, error_message: validation.errors.join(", ") };
+        return create_failure_result(validation.errors.join(", "));
       }
 
       const existing_result = await repository.find_by_code(input.code);
       if (!existing_result.success) {
-        return { success: false, error_message: existing_result.error };
+        return create_failure_result(existing_result.error);
       }
       if (existing_result.data) {
-        return {
-          success: false,
-          error_message: `Format with code '${input.code}' already exists`,
-        };
+        return create_failure_result(
+          `Format with code '${input.code}' already exists`,
+        );
       }
 
       const result = await repository.create(input);
       if (!result.success) {
-        return { success: false, error_message: result.error };
+        return create_failure_result(result.error);
       }
-      return { success: true, data: result.data };
+      return create_success_result(result.data);
     },
 
     async update(
       id: string,
       input: UpdateCompetitionFormatInput,
-    ): Promise<EntityOperationResult<CompetitionFormat>> {
+    ): AsyncResult<CompetitionFormat> {
       if (!id || id.trim().length === 0) {
-        return { success: false, error_message: "Format ID is required" };
+        return create_failure_result("Format ID is required");
       }
 
       const existing_result = await repository.find_by_id(id);
       if (!existing_result.success) {
-        return { success: false, error_message: "Format not found" };
+        return create_failure_result("Format not found");
       }
 
       if (input.code) {
         const code_check_result = await repository.find_by_code(input.code);
         if (!code_check_result.success) {
-          return { success: false, error_message: code_check_result.error };
+          return create_failure_result(code_check_result.error);
         }
         if (code_check_result.data && code_check_result.data.id !== id) {
-          return {
-            success: false,
-            error_message: `Format with code '${input.code}' already exists`,
-          };
+          return create_failure_result(
+            `Format with code '${input.code}' already exists`,
+          );
         }
       }
 
@@ -118,25 +114,25 @@ export function create_competition_format_use_cases(
         merged_input as CreateCompetitionFormatInput,
       );
       if (!validation.is_valid) {
-        return { success: false, error_message: validation.errors.join(", ") };
+        return create_failure_result(validation.errors.join(", "));
       }
 
       const result = await repository.update(id, input);
       if (!result.success) {
-        return { success: false, error_message: result.error };
+        return create_failure_result(result.error);
       }
-      return { success: true, data: result.data };
+      return create_success_result(result.data);
     },
 
-    async delete(id: string): Promise<EntityOperationResult<boolean>> {
+    async delete(id: string): AsyncResult<boolean> {
       if (!id || id.trim().length === 0) {
-        return { success: false, error_message: "Format ID is required" };
+        return create_failure_result("Format ID is required");
       }
       const result = await repository.delete_by_id(id);
       if (!result.success) {
-        return { success: false, error_message: result.error };
+        return create_failure_result(result.error);
       }
-      return { success: true, data: result.data };
+      return create_success_result(result.data);
     },
 
     async get_format_by_code(

@@ -3,10 +3,7 @@ import {
   create_system_user_use_cases,
   type SystemUserUseCases,
 } from "./SystemUserUseCases";
-import type {
-  Repository,
-  QueryOptions,
-} from "../interfaces/ports";
+import type { Repository, QueryOptions } from "../interfaces/ports";
 import type {
   SystemUser,
   CreateSystemUserInput,
@@ -104,6 +101,7 @@ describe("SystemUserUseCases", () => {
       const result = await use_cases.create(input);
 
       expect(result.success).toBe(true);
+      if (!result.success) return;
       expect(result.data?.email).toBe("test@example.com");
       expect(result.data?.first_name).toBe("John");
       expect(result.data?.last_name).toBe("Doe");
@@ -116,7 +114,8 @@ describe("SystemUserUseCases", () => {
       const result = await use_cases.create(input);
 
       expect(result.success).toBe(false);
-      expect(result.error_message).toContain("Email is required");
+      if (result.success) return;
+      expect(result.error).toContain("Email is required");
     });
 
     it("should reject creation with invalid email format", async () => {
@@ -125,7 +124,8 @@ describe("SystemUserUseCases", () => {
       const result = await use_cases.create(input);
 
       expect(result.success).toBe(false);
-      expect(result.error_message).toContain("Invalid email format");
+      if (result.success) return;
+      expect(result.error).toContain("Invalid email format");
     });
 
     it("should reject creation with missing first name", async () => {
@@ -134,7 +134,8 @@ describe("SystemUserUseCases", () => {
       const result = await use_cases.create(input);
 
       expect(result.success).toBe(false);
-      expect(result.error_message).toContain("First name is required");
+      if (result.success) return;
+      expect(result.error).toContain("First name is required");
     });
 
     it("should reject creation with missing last name", async () => {
@@ -143,7 +144,8 @@ describe("SystemUserUseCases", () => {
       const result = await use_cases.create(input);
 
       expect(result.success).toBe(false);
-      expect(result.error_message).toContain("Last name is required");
+      if (result.success) return;
+      expect(result.error).toContain("Last name is required");
     });
 
     it("should reject duplicate email addresses", async () => {
@@ -156,7 +158,8 @@ describe("SystemUserUseCases", () => {
       const result = await use_cases.create(input);
 
       expect(result.success).toBe(false);
-      expect(result.error_message).toContain("email already exists");
+      if (result.success) return;
+      expect(result.error).toContain("email already exists");
     });
   });
 
@@ -170,6 +173,7 @@ describe("SystemUserUseCases", () => {
       const result = await use_cases.get_by_id("user_1");
 
       expect(result.success).toBe(true);
+      if (!result.success) return;
       expect(result.data?.id).toBe("user_1");
       expect(result.data?.email).toBe("test@example.com");
     });
@@ -178,7 +182,8 @@ describe("SystemUserUseCases", () => {
       const result = await use_cases.get_by_id("");
 
       expect(result.success).toBe(false);
-      expect(result.error_message).toContain("User ID is required");
+      if (result.success) return;
+      expect(result.error).toContain("User ID is required");
     });
   });
 
@@ -235,6 +240,7 @@ describe("SystemUserUseCases", () => {
       });
 
       expect(result.success).toBe(true);
+      if (!result.success) return;
       expect(result.data?.first_name).toBe("Jane");
       expect(result.data?.role).toBe("org_admin");
     });
@@ -257,14 +263,16 @@ describe("SystemUserUseCases", () => {
       });
 
       expect(result.success).toBe(false);
-      expect(result.error_message).toContain("email already exists");
+      if (result.success) return;
+      expect(result.error).toContain("email already exists");
     });
 
     it("should fail with empty id", async () => {
       const result = await use_cases.update("", { first_name: "Jane" });
 
       expect(result.success).toBe(false);
-      expect(result.error_message).toContain("User ID is required");
+      if (result.success) return;
+      expect(result.error).toContain("User ID is required");
     });
   });
 
@@ -283,7 +291,8 @@ describe("SystemUserUseCases", () => {
       const result = await use_cases.delete("");
 
       expect(result.success).toBe(false);
-      expect(result.error_message).toContain("User ID is required");
+      if (result.success) return;
+      expect(result.error).toContain("User ID is required");
     });
   });
 
@@ -297,6 +306,7 @@ describe("SystemUserUseCases", () => {
       const result = await use_cases.get_by_email("test@example.com");
 
       expect(result.success).toBe(true);
+      if (!result.success) return;
       expect(result.data?.email).toBe("test@example.com");
     });
 
@@ -309,6 +319,7 @@ describe("SystemUserUseCases", () => {
       const result = await use_cases.get_by_email("TEST@EXAMPLE.COM");
 
       expect(result.success).toBe(true);
+      if (!result.success) return;
       expect(result.data?.email).toBe("test@example.com");
     });
 
@@ -320,14 +331,16 @@ describe("SystemUserUseCases", () => {
       const result = await use_cases.get_by_email("nonexistent@example.com");
 
       expect(result.success).toBe(false);
-      expect(result.error_message).toContain("not found");
+      if (result.success) return;
+      expect(result.error).toContain("not found");
     });
 
     it("should fail with empty email", async () => {
       const result = await use_cases.get_by_email("");
 
       expect(result.success).toBe(false);
-      expect(result.error_message).toContain("Email is required");
+      if (result.success) return;
+      expect(result.error).toContain("Email is required");
     });
   });
 });

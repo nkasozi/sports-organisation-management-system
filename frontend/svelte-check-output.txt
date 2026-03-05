@@ -1,0 +1,19 @@
+Loading svelte-check in workspace: /Users/nkasozi/Documents/GitHub/SportsOrganisationManagementSystem/frontend
+Getting Svelte diagnostics...
+
+/Users/nkasozi/Documents/GitHub/SportsOrganisationManagementSystem/frontend/src/lib/core/usecases/CompetitionUseCases.test.ts:166:21
+Error: Property 'error' does not exist on type 'Result<Competition, string>'.
+  Property 'error' does not exist on type '{ success: true; data: Competition; }'. 
+      expect(result.success).toBe(false);
+      expect(result.error).toBe("Competition ID is required");
+    });
+
+/Users/nkasozi/Documents/GitHub/SportsOrganisationManagementSystem/frontend/src/lib/core/usecases/FixtureUseCases.test.ts:149:21
+Error: Property 'error' does not exist on type 'Result<Fixture, string>'.
+  Property 'error' does not exist on type '{ success: true; data: Fixture; }'. 
+      expect(result.success).toBe(false);
+      expect(result.error).toBe("Fixture ID is required");
+    });
+
+====================================
+svelte-check found 2 errors and 0 warnings in 2 files

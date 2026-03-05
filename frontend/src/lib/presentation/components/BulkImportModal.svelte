@@ -442,7 +442,7 @@
           row_number,
           original_data: record,
           success: false,
-          error_message: result.error_message || "Unknown error",
+          error_message: result.error || "Unknown error",
         });
       }
     }

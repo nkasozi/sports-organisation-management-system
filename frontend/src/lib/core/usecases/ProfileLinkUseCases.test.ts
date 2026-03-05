@@ -176,7 +176,7 @@ describe("ProfileLinkUseCases", () => {
 
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(result.error_message).toBe("Link ID is required");
+        expect(result.error).toBe("Link ID is required");
       }
       expect(mock_repository.find_by_id).not.toHaveBeenCalled();
     });
@@ -190,7 +190,7 @@ describe("ProfileLinkUseCases", () => {
 
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(result.error_message).toBe("Link not found");
+        expect(result.error).toBe("Link not found");
       }
     });
   });
@@ -253,7 +253,7 @@ describe("ProfileLinkUseCases", () => {
 
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(result.error_message).toContain("Profile is required");
+        expect(result.error).toContain("Profile is required");
       }
       expect(mock_repository.create).not.toHaveBeenCalled();
     });
@@ -265,7 +265,7 @@ describe("ProfileLinkUseCases", () => {
 
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(result.error_message).toContain("Platform is required");
+        expect(result.error).toContain("Platform is required");
       }
       expect(mock_repository.create).not.toHaveBeenCalled();
     });
@@ -277,7 +277,7 @@ describe("ProfileLinkUseCases", () => {
 
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(result.error_message).toContain("URL is required");
+        expect(result.error).toContain("URL is required");
       }
       expect(mock_repository.create).not.toHaveBeenCalled();
     });
@@ -289,7 +289,7 @@ describe("ProfileLinkUseCases", () => {
 
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(result.error_message).toContain("valid URL");
+        expect(result.error).toContain("valid URL");
       }
       expect(mock_repository.create).not.toHaveBeenCalled();
     });
@@ -304,7 +304,7 @@ describe("ProfileLinkUseCases", () => {
 
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(result.error_message).toBe("Database error");
+        expect(result.error).toBe("Database error");
       }
     });
   });
@@ -335,7 +335,7 @@ describe("ProfileLinkUseCases", () => {
 
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(result.error_message).toBe("Link not found");
+        expect(result.error).toBe("Link not found");
       }
     });
   });
@@ -364,7 +364,7 @@ describe("ProfileLinkUseCases", () => {
 
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(result.error_message).toBe("Link not found");
+        expect(result.error).toBe("Link not found");
       }
     });
   });

@@ -5,10 +5,8 @@ import type {
   GameEventLogType,
   TeamSide,
 } from "../../../../entities/GameEventLog";
-import type {
-  EntityOperationResult,
-  EntityListResult,
-} from "../../../../entities/BaseEntity";
+import type { EntityListResult } from "../../../../entities/BaseEntity";
+import type { AsyncResult } from "../../../../types/Result";
 
 export interface GameEventLogFilter {
   organization_id?: string;
@@ -23,18 +21,16 @@ export interface GameEventLogFilter {
 export interface GameEventLogRepository {
   create_game_event_log(
     input: CreateGameEventLogInput,
-  ): Promise<EntityOperationResult<GameEventLog>>;
+  ): AsyncResult<GameEventLog>;
 
-  get_game_event_log_by_id(
-    id: string,
-  ): Promise<EntityOperationResult<GameEventLog>>;
+  get_game_event_log_by_id(id: string): AsyncResult<GameEventLog>;
 
   update_game_event_log(
     id: string,
     input: UpdateGameEventLogInput,
-  ): Promise<EntityOperationResult<GameEventLog>>;
+  ): AsyncResult<GameEventLog>;
 
-  delete_game_event_log(id: string): Promise<EntityOperationResult<boolean>>;
+  delete_game_event_log(id: string): AsyncResult<boolean>;
 
   find_by_filter(
     filter?: GameEventLogFilter,
@@ -68,5 +64,5 @@ export interface GameEventLogRepository {
     id: string,
     reason: string,
     voided_by_user_id: string,
-  ): Promise<EntityOperationResult<GameEventLog>>;
+  ): AsyncResult<GameEventLog>;
 }

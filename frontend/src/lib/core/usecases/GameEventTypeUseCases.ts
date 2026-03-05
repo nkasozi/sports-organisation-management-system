@@ -12,7 +12,7 @@ import type { QueryOptions } from "../interfaces/ports";
 import type { AsyncResult, PaginatedResult } from "../types/Result";
 import { create_failure_result, create_success_result } from "../types/Result";
 import { get_game_event_type_repository } from "../../adapters/repositories/InBrowserGameEventTypeRepository";
-import type { EntityOperationResult, EntityListResult } from "./BaseUseCases";
+import type { EntityListResult } from "./BaseUseCases";
 import type { GameEventTypeUseCasesPort } from "../interfaces/ports";
 
 export type GameEventTypeUseCases = GameEventTypeUseCasesPort;
@@ -45,94 +45,88 @@ export function create_game_event_type_use_cases(
       };
     },
 
-    async get_by_id(id: string): Promise<EntityOperationResult<GameEventType>> {
+    async get_by_id(id: string): AsyncResult<GameEventType> {
       if (!id || id.trim().length === 0) {
-        return { success: false, error_message: "Event type ID is required" };
+        return create_failure_result("Event type ID is required");
       }
       const result = await repository.find_by_id(id);
       if (!result.success) {
-        return { success: false, error_message: result.error };
+        return create_failure_result(result.error);
       }
-      return { success: true, data: result.data };
+      return create_success_result(result.data);
     },
 
-    async create(
-      input: CreateGameEventTypeInput,
-    ): Promise<EntityOperationResult<GameEventType>> {
+    async create(input: CreateGameEventTypeInput): AsyncResult<GameEventType> {
       if (!input.name || input.name.trim().length < 2) {
-        return {
-          success: false,
-          error_message: "Event type name must be at least 2 characters",
-        };
+        return create_failure_result(
+          "Event type name must be at least 2 characters",
+        );
       }
 
       if (!input.code || input.code.trim().length < 2) {
-        return {
-          success: false,
-          error_message: "Event type code must be at least 2 characters",
-        };
+        return create_failure_result(
+          "Event type code must be at least 2 characters",
+        );
       }
 
       const existing_result = await repository.find_by_code(input.code);
       if (!existing_result.success) {
-        return { success: false, error_message: existing_result.error };
+        return create_failure_result(existing_result.error);
       }
       if (existing_result.data) {
-        return {
-          success: false,
-          error_message: `Event type with code '${input.code}' already exists`,
-        };
+        return create_failure_result(
+          `Event type with code '${input.code}' already exists`,
+        );
       }
 
       const result = await repository.create(input);
       if (!result.success) {
-        return { success: false, error_message: result.error };
+        return create_failure_result(result.error);
       }
-      return { success: true, data: result.data };
+      return create_success_result(result.data);
     },
 
     async update(
       id: string,
       input: UpdateGameEventTypeInput,
-    ): Promise<EntityOperationResult<GameEventType>> {
+    ): AsyncResult<GameEventType> {
       if (!id || id.trim().length === 0) {
-        return { success: false, error_message: "Event type ID is required" };
+        return create_failure_result("Event type ID is required");
       }
 
       const existing_result = await repository.find_by_id(id);
       if (!existing_result.success) {
-        return { success: false, error_message: "Event type not found" };
+        return create_failure_result("Event type not found");
       }
 
       if (input.code) {
         const code_check_result = await repository.find_by_code(input.code);
         if (!code_check_result.success) {
-          return { success: false, error_message: code_check_result.error };
+          return create_failure_result(code_check_result.error);
         }
         if (code_check_result.data && code_check_result.data.id !== id) {
-          return {
-            success: false,
-            error_message: `Event type with code '${input.code}' already exists`,
-          };
+          return create_failure_result(
+            `Event type with code '${input.code}' already exists`,
+          );
         }
       }
 
       const result = await repository.update(id, input);
       if (!result.success) {
-        return { success: false, error_message: result.error };
+        return create_failure_result(result.error);
       }
-      return { success: true, data: result.data };
+      return create_success_result(result.data);
     },
 
-    async delete(id: string): Promise<EntityOperationResult<boolean>> {
+    async delete(id: string): AsyncResult<boolean> {
       if (!id || id.trim().length === 0) {
-        return { success: false, error_message: "Event type ID is required" };
+        return create_failure_result("Event type ID is required");
       }
       const result = await repository.delete_by_id(id);
       if (!result.success) {
-        return { success: false, error_message: result.error };
+        return create_failure_result(result.error);
       }
-      return { success: true, data: result.data };
+      return create_success_result(result.data);
     },
 
     async get_event_type_by_code(

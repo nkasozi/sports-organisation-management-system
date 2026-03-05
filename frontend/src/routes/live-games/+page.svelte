@@ -286,7 +286,9 @@
       console.log("[DEBUG] Competition result:", competition_result);
       console.log(
         "[DEBUG] allow_auto_fixture_details_setup:",
-        competition_result.data?.allow_auto_fixture_details_setup,
+        competition_result.success
+          ? competition_result.data?.allow_auto_fixture_details_setup
+          : undefined,
       );
 
       const competition_allows_auto_setup =

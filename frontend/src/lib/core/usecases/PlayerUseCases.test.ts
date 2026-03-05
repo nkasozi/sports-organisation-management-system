@@ -1,8 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import type {
-  PlayerRepository,
-  PlayerFilter,
-} from "../interfaces/ports";
+import type { PlayerRepository, PlayerFilter } from "../interfaces/ports";
 import type { QueryOptions } from "../interfaces/ports";
 import type {
   Player,
@@ -174,6 +171,7 @@ describe("PlayerUseCases", () => {
       const result = await use_cases.get_by_id("p1");
 
       expect(result.success).toBe(true);
+      if (!result.success) return;
       expect(result.data?.id).toBe("p1");
       expect(mock_repository.find_by_id).toHaveBeenCalledWith("p1");
     });
@@ -182,7 +180,8 @@ describe("PlayerUseCases", () => {
       const result = await use_cases.get_by_id("");
 
       expect(result.success).toBe(false);
-      expect(result.error_message).toBe("Player ID is required");
+      if (result.success) return;
+      expect(result.error).toBe("Player ID is required");
       expect(mock_repository.find_by_id).not.toHaveBeenCalled();
     });
 
@@ -190,7 +189,8 @@ describe("PlayerUseCases", () => {
       const result = await use_cases.get_by_id("   ");
 
       expect(result.success).toBe(false);
-      expect(result.error_message).toBe("Player ID is required");
+      if (result.success) return;
+      expect(result.error).toBe("Player ID is required");
     });
 
     it("returns error when repository fails", async () => {
@@ -202,7 +202,8 @@ describe("PlayerUseCases", () => {
       const result = await use_cases.get_by_id("nonexistent");
 
       expect(result.success).toBe(false);
-      expect(result.error_message).toBe("Player not found");
+      if (result.success) return;
+      expect(result.error).toBe("Player not found");
     });
   });
 
@@ -218,6 +219,7 @@ describe("PlayerUseCases", () => {
       const result = await use_cases.create(input);
 
       expect(result.success).toBe(true);
+      if (!result.success) return;
       expect(result.data?.id).toBe("new_player");
       expect(mock_repository.create).toHaveBeenCalledWith(input);
     });
@@ -228,7 +230,8 @@ describe("PlayerUseCases", () => {
       const result = await use_cases.create(input);
 
       expect(result.success).toBe(false);
-      expect(result.error_message).toContain("First name is required");
+      if (result.success) return;
+      expect(result.error).toContain("First name is required");
       expect(mock_repository.create).not.toHaveBeenCalled();
     });
 
@@ -238,7 +241,8 @@ describe("PlayerUseCases", () => {
       const result = await use_cases.create(input);
 
       expect(result.success).toBe(false);
-      expect(result.error_message).toContain("Last name is required");
+      if (result.success) return;
+      expect(result.error).toContain("Last name is required");
     });
 
     it("returns validation error when date of birth is missing", async () => {
@@ -247,7 +251,8 @@ describe("PlayerUseCases", () => {
       const result = await use_cases.create(input);
 
       expect(result.success).toBe(false);
-      expect(result.error_message).toContain("Date of birth is required");
+      if (result.success) return;
+      expect(result.error).toContain("Date of birth is required");
     });
 
     it("returns validation error when nationality is missing", async () => {
@@ -256,7 +261,8 @@ describe("PlayerUseCases", () => {
       const result = await use_cases.create(input);
 
       expect(result.success).toBe(false);
-      expect(result.error_message).toContain("Nationality is required");
+      if (result.success) return;
+      expect(result.error).toContain("Nationality is required");
     });
 
     it("returns validation error when position is missing", async () => {
@@ -265,7 +271,8 @@ describe("PlayerUseCases", () => {
       const result = await use_cases.create(input);
 
       expect(result.success).toBe(false);
-      expect(result.error_message).toContain("Position is required");
+      if (result.success) return;
+      expect(result.error).toContain("Position is required");
     });
 
     it("returns multiple validation errors when multiple fields are invalid", async () => {
@@ -278,9 +285,10 @@ describe("PlayerUseCases", () => {
       const result = await use_cases.create(input);
 
       expect(result.success).toBe(false);
-      expect(result.error_message).toContain("First name is required");
-      expect(result.error_message).toContain("Last name is required");
-      expect(result.error_message).toContain("Date of birth is required");
+      if (result.success) return;
+      expect(result.error).toContain("First name is required");
+      expect(result.error).toContain("Last name is required");
+      expect(result.error).toContain("Date of birth is required");
     });
 
     it("returns error when repository fails", async () => {
@@ -293,7 +301,8 @@ describe("PlayerUseCases", () => {
       const result = await use_cases.create(input);
 
       expect(result.success).toBe(false);
-      expect(result.error_message).toBe("Database error");
+      if (result.success) return;
+      expect(result.error).toBe("Database error");
     });
   });
 
@@ -312,6 +321,7 @@ describe("PlayerUseCases", () => {
       const result = await use_cases.update("p1", update_input);
 
       expect(result.success).toBe(true);
+      if (!result.success) return;
       expect(result.data?.first_name).toBe("Jane");
       expect(mock_repository.update).toHaveBeenCalledWith("p1", update_input);
     });
@@ -320,7 +330,8 @@ describe("PlayerUseCases", () => {
       const result = await use_cases.update("", { first_name: "Jane" });
 
       expect(result.success).toBe(false);
-      expect(result.error_message).toBe("Player ID is required");
+      if (result.success) return;
+      expect(result.error).toBe("Player ID is required");
       expect(mock_repository.update).not.toHaveBeenCalled();
     });
 
@@ -328,7 +339,8 @@ describe("PlayerUseCases", () => {
       const result = await use_cases.update("   ", { first_name: "Jane" });
 
       expect(result.success).toBe(false);
-      expect(result.error_message).toBe("Player ID is required");
+      if (result.success) return;
+      expect(result.error).toBe("Player ID is required");
     });
 
     it("returns error when repository fails", async () => {
@@ -342,7 +354,8 @@ describe("PlayerUseCases", () => {
       });
 
       expect(result.success).toBe(false);
-      expect(result.error_message).toBe("Player not found");
+      if (result.success) return;
+      expect(result.error).toBe("Player not found");
     });
   });
 
@@ -356,6 +369,7 @@ describe("PlayerUseCases", () => {
       const result = await use_cases.delete("p1");
 
       expect(result.success).toBe(true);
+      if (!result.success) return;
       expect(result.data).toBe(true);
       expect(mock_repository.delete_by_id).toHaveBeenCalledWith("p1");
     });
@@ -364,7 +378,8 @@ describe("PlayerUseCases", () => {
       const result = await use_cases.delete("");
 
       expect(result.success).toBe(false);
-      expect(result.error_message).toBe("Player ID is required");
+      if (result.success) return;
+      expect(result.error).toBe("Player ID is required");
       expect(mock_repository.delete_by_id).not.toHaveBeenCalled();
     });
 
@@ -372,7 +387,8 @@ describe("PlayerUseCases", () => {
       const result = await use_cases.delete("   ");
 
       expect(result.success).toBe(false);
-      expect(result.error_message).toBe("Player ID is required");
+      if (result.success) return;
+      expect(result.error).toBe("Player ID is required");
     });
 
     it("returns error when repository fails", async () => {
@@ -384,9 +400,8 @@ describe("PlayerUseCases", () => {
       const result = await use_cases.delete("p1");
 
       expect(result.success).toBe(false);
-      expect(result.error_message).toBe(
-        "Cannot delete player with active memberships",
-      );
+      if (result.success) return;
+      expect(result.error).toBe("Cannot delete player with active memberships");
     });
   });
 

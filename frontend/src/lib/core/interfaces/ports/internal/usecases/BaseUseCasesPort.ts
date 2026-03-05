@@ -1,11 +1,11 @@
 import type {
   BaseEntity,
-  EntityOperationResult,
   EntityListResult,
 } from "../../../../entities/BaseEntity";
+import type { AsyncResult } from "../../../../types/Result";
 import type { QueryOptions } from "../../external/repositories/Repository";
 
-export type { EntityOperationResult, EntityListResult };
+export type { EntityListResult, AsyncResult };
 
 export interface BaseUseCasesPort<
   T extends BaseEntity,
@@ -13,12 +13,12 @@ export interface BaseUseCasesPort<
   UpdateInput,
   Filter = unknown,
 > {
-  create(input: CreateInput): Promise<EntityOperationResult<T>>;
-  get_by_id(id: string): Promise<EntityOperationResult<T>>;
+  create(input: CreateInput): AsyncResult<T>;
+  get_by_id(id: string): AsyncResult<T>;
   list(
     filter?: Filter,
     pagination?: QueryOptions,
   ): Promise<EntityListResult<T>>;
-  update(id: string, input: UpdateInput): Promise<EntityOperationResult<T>>;
-  delete(id: string): Promise<EntityOperationResult<boolean>>;
+  update(id: string, input: UpdateInput): AsyncResult<T>;
+  delete(id: string): AsyncResult<boolean>;
 }

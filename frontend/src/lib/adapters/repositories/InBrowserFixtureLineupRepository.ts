@@ -6,9 +6,13 @@ import type {
 } from "../../core/entities/FixtureLineup";
 import type {
   BaseEntity,
-  EntityOperationResult,
   EntityListResult,
 } from "../../core/entities/BaseEntity";
+import type { AsyncResult } from "../../core/types/Result";
+import {
+  create_success_result,
+  create_failure_result,
+} from "../../core/types/Result";
 import type {
   FixtureLineupRepository,
   FixtureLineupFilter,
@@ -153,70 +157,45 @@ export class InBrowserFixtureLineupRepository
   async get_lineup_for_team_in_fixture(
     fixture_id: string,
     team_id: string,
-  ): Promise<EntityOperationResult<FixtureLineup>> {
+  ): AsyncResult<FixtureLineup> {
     try {
       const result = await this.find_by_filter({ fixture_id, team_id });
 
       if (!result.success || result.data.length === 0) {
-        return {
-          success: false,
-          error_message: "No lineup found for this team in this fixture",
-        };
+        return create_failure_result(
+          "No lineup found for this team in this fixture",
+        );
       }
 
-      return {
-        success: true,
-        data: result.data[0],
-      };
+      return create_success_result(result.data[0]);
     } catch (error) {
       const error_message =
         error instanceof Error ? error.message : "Unknown error occurred";
-      return {
-        success: false,
-        error_message: `Failed to get lineup for team in fixture: ${error_message}`,
-      };
+      return create_failure_result(
+        `Failed to get lineup for team in fixture: ${error_message}`,
+      );
     }
   }
 
   async create_fixture_lineup(
     input: CreateFixtureLineupInput,
-  ): Promise<EntityOperationResult<FixtureLineup>> {
-    const result = await this.create(input);
-    if (!result.success) {
-      return { success: false, error_message: result.error };
-    }
-    return { success: true, data: result.data };
+  ): AsyncResult<FixtureLineup> {
+    return this.create(input);
   }
 
-  async get_fixture_lineup_by_id(
-    id: string,
-  ): Promise<EntityOperationResult<FixtureLineup>> {
-    const result = await this.find_by_id(id);
-    if (!result.success) {
-      return { success: false, error_message: result.error };
-    }
-    return { success: true, data: result.data };
+  async get_fixture_lineup_by_id(id: string): AsyncResult<FixtureLineup> {
+    return this.find_by_id(id);
   }
 
   async update_fixture_lineup(
     id: string,
     input: UpdateFixtureLineupInput,
-  ): Promise<EntityOperationResult<FixtureLineup>> {
-    const result = await this.update(id, input);
-    if (!result.success) {
-      return { success: false, error_message: result.error };
-    }
-    return { success: true, data: result.data };
+  ): AsyncResult<FixtureLineup> {
+    return this.update(id, input);
   }
 
-  async delete_fixture_lineup(
-    id: string,
-  ): Promise<EntityOperationResult<boolean>> {
-    const result = await this.delete_by_id(id);
-    if (!result.success) {
-      return { success: false, error_message: result.error };
-    }
-    return { success: true, data: result.data };
+  async delete_fixture_lineup(id: string): AsyncResult<boolean> {
+    return this.delete_by_id(id);
   }
 
   async find_by_fixture(

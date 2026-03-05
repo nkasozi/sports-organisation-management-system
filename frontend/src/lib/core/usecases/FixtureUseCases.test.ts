@@ -104,6 +104,7 @@ describe("FixtureUseCases", () => {
       const result = await use_cases.list();
 
       expect(result.success).toBe(true);
+      if (!result.success) return;
       expect(result.data).toHaveLength(2);
     });
 
@@ -145,7 +146,8 @@ describe("FixtureUseCases", () => {
       const result = await use_cases.get_by_id("");
 
       expect(result.success).toBe(false);
-      expect(result.error_message).toBe("Fixture ID is required");
+      if (result.success) return;
+      expect(result.error).toBe("Fixture ID is required");
     });
   });
 

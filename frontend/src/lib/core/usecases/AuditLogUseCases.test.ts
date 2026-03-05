@@ -113,6 +113,7 @@ describe("AuditLogUseCases", () => {
       const result = await use_cases.create(input);
 
       expect(result.success).toBe(true);
+      if (!result.success) return;
       expect(result.data?.entity_type).toBe("player");
       expect(result.data?.entity_id).toBe("player_123");
       expect(result.data?.action).toBe("create");
@@ -140,6 +141,7 @@ describe("AuditLogUseCases", () => {
       const result = await use_cases.create(input);
 
       expect(result.success).toBe(true);
+      if (!result.success) return;
       expect(result.data?.changes.length).toBe(2);
       expect(result.data?.changes[0].field_name).toBe("first_name");
     });
@@ -151,7 +153,8 @@ describe("AuditLogUseCases", () => {
       const result = await use_cases.create(input);
 
       expect(result.success).toBe(false);
-      expect(result.error_message).toContain("Entity type is required");
+      if (result.success) return;
+      expect(result.error).toContain("Entity type is required");
     });
 
     it("should reject creation with missing entity_id", async () => {
@@ -161,7 +164,8 @@ describe("AuditLogUseCases", () => {
       const result = await use_cases.create(input);
 
       expect(result.success).toBe(false);
-      expect(result.error_message).toContain("Entity ID is required");
+      if (result.success) return;
+      expect(result.error).toContain("Entity ID is required");
     });
 
     it("should reject creation with missing user_id", async () => {
@@ -171,7 +175,8 @@ describe("AuditLogUseCases", () => {
       const result = await use_cases.create(input);
 
       expect(result.success).toBe(false);
-      expect(result.error_message).toContain("User ID is required");
+      if (result.success) return;
+      expect(result.error).toContain("User ID is required");
     });
   });
 
@@ -185,6 +190,7 @@ describe("AuditLogUseCases", () => {
       const result = await use_cases.get_by_id("log_1");
 
       expect(result.success).toBe(true);
+      if (!result.success) return;
       expect(result.data?.id).toBe("log_1");
     });
 
@@ -192,7 +198,8 @@ describe("AuditLogUseCases", () => {
       const result = await use_cases.get_by_id("");
 
       expect(result.success).toBe(false);
-      expect(result.error_message).toContain("Audit log ID is required");
+      if (result.success) return;
+      expect(result.error).toContain("Audit log ID is required");
     });
   });
 
@@ -246,8 +253,9 @@ describe("AuditLogUseCases", () => {
       const result = await use_cases.update("log_1", { entity_type: "team" });
 
       expect(result.success).toBe(false);
-      expect(result.error_message).toContain("immutable");
-      expect(result.error_message).toContain("cannot be updated");
+      if (result.success) return;
+      expect(result.error).toContain("immutable");
+      expect(result.error).toContain("cannot be updated");
     });
   });
 
@@ -256,8 +264,9 @@ describe("AuditLogUseCases", () => {
       const result = await use_cases.delete("log_1");
 
       expect(result.success).toBe(false);
-      expect(result.error_message).toContain("immutable");
-      expect(result.error_message).toContain("cannot be deleted");
+      if (result.success) return;
+      expect(result.error).toContain("immutable");
+      expect(result.error).toContain("cannot be deleted");
     });
   });
 

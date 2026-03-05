@@ -1,8 +1,5 @@
-import type {
-  BaseEntity,
-  EntityOperationResult,
-  EntityListResult,
-} from "../entities/BaseEntity";
+import type { BaseEntity, EntityListResult } from "../entities/BaseEntity";
+import type { AsyncResult } from "../types/Result";
 
 export type CrudFunctionality = "create" | "edit" | "delete";
 
@@ -22,28 +19,27 @@ export function is_functionality_disabled(
 export type EntityCreateHandler<
   TInput = Record<string, unknown>,
   TEntity extends BaseEntity = BaseEntity,
-> = (input: TInput) => Promise<EntityOperationResult<TEntity>>;
+> = (input: TInput) => AsyncResult<TEntity>;
 
 export type EntityUpdateHandler<
   TInput = Record<string, unknown>,
   TEntity extends BaseEntity = BaseEntity,
-> = (id: string, input: TInput) => Promise<EntityOperationResult<TEntity>>;
+> = (id: string, input: TInput) => AsyncResult<TEntity>;
 
-export type EntityDeleteHandler = (
-  id: string,
-) => Promise<EntityOperationResult<boolean>>;
+export type EntityDeleteHandler = (id: string) => AsyncResult<boolean>;
 
 export type EntityListHandler<TEntity extends BaseEntity = BaseEntity> = (
   filter?: Record<string, string>,
   options?: { page_number?: number; page_size?: number },
 ) => Promise<
   | EntityListResult<TEntity>
-  | EntityOperationResult<{ items: TEntity[]; total_count: number }>
+  | { success: true; data: { items: TEntity[]; total_count: number } }
+  | { success: false; error: string }
 >;
 
 export type EntityGetByIdHandler<TEntity extends BaseEntity = BaseEntity> = (
   id: string,
-) => Promise<EntityOperationResult<TEntity>>;
+) => AsyncResult<TEntity>;
 
 export interface EntityCrudHandlers<
   TEntity extends BaseEntity = BaseEntity,

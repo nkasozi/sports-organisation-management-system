@@ -7,10 +7,9 @@ import type {
   FixtureLineupRepository,
   FixtureLineupFilter,
 } from "../interfaces/ports";
-import type {
-  EntityOperationResult,
-  EntityListResult,
-} from "../entities/BaseEntity";
+import type { EntityListResult } from "../entities/BaseEntity";
+import type { AsyncResult } from "../types/Result";
+import { create_failure_result } from "../types/Result";
 import type { FixtureLineupUseCasesPort } from "../interfaces/ports";
 import { InBrowserFixtureLineupRepository } from "../../adapters/repositories/InBrowserFixtureLineupRepository";
 
@@ -20,21 +19,13 @@ export function create_fixture_lineup_use_cases(
   repository: FixtureLineupRepository,
 ): FixtureLineupUseCases {
   return {
-    async create(
-      input: CreateFixtureLineupInput,
-    ): Promise<EntityOperationResult<FixtureLineup>> {
+    async create(input: CreateFixtureLineupInput): AsyncResult<FixtureLineup> {
       if (!input.fixture_id?.trim()) {
-        return {
-          success: false,
-          error_message: "Fixture ID is required",
-        };
+        return create_failure_result("Fixture ID is required");
       }
 
       if (!input.team_id?.trim()) {
-        return {
-          success: false,
-          error_message: "Team ID is required",
-        };
+        return create_failure_result("Team ID is required");
       }
 
       const existing_lineup_result =
@@ -44,22 +35,17 @@ export function create_fixture_lineup_use_cases(
         );
 
       if (existing_lineup_result.success) {
-        return {
-          success: false,
-          error_message:
-            "A lineup already exists for this team in this fixture",
-        };
+        return create_failure_result(
+          "A lineup already exists for this team in this fixture",
+        );
       }
 
       return repository.create_fixture_lineup(input);
     },
 
-    async get_by_id(id: string): Promise<EntityOperationResult<FixtureLineup>> {
+    async get_by_id(id: string): AsyncResult<FixtureLineup> {
       if (!id || id.trim().length === 0) {
-        return {
-          success: false,
-          error_message: "FixtureLineup ID is required",
-        };
+        return create_failure_result("FixtureLineup ID is required");
       }
       return repository.get_fixture_lineup_by_id(id);
     },
@@ -67,53 +53,35 @@ export function create_fixture_lineup_use_cases(
     async update(
       id: string,
       input: UpdateFixtureLineupInput,
-    ): Promise<EntityOperationResult<FixtureLineup>> {
+    ): AsyncResult<FixtureLineup> {
       if (!id || id.trim().length === 0) {
-        return {
-          success: false,
-          error_message: "FixtureLineup ID is required",
-        };
+        return create_failure_result("FixtureLineup ID is required");
       }
 
       const existing_result = await repository.get_fixture_lineup_by_id(id);
       if (!existing_result.success || !existing_result.data) {
-        return {
-          success: false,
-          error_message: "Lineup not found",
-        };
+        return create_failure_result("Lineup not found");
       }
 
       if (existing_result.data.status === "locked") {
-        return {
-          success: false,
-          error_message: "Cannot update a locked lineup",
-        };
+        return create_failure_result("Cannot update a locked lineup");
       }
 
       return repository.update_fixture_lineup(id, input);
     },
 
-    async delete(id: string): Promise<EntityOperationResult<boolean>> {
+    async delete(id: string): AsyncResult<boolean> {
       if (!id || id.trim().length === 0) {
-        return {
-          success: false,
-          error_message: "FixtureLineup ID is required",
-        };
+        return create_failure_result("FixtureLineup ID is required");
       }
 
       const existing_result = await repository.get_fixture_lineup_by_id(id);
       if (!existing_result.success || !existing_result.data) {
-        return {
-          success: false,
-          error_message: "Lineup not found",
-        };
+        return create_failure_result("Lineup not found");
       }
 
       if (existing_result.data.status === "locked") {
-        return {
-          success: false,
-          error_message: "Cannot delete a locked lineup",
-        };
+        return create_failure_result("Cannot delete a locked lineup");
       }
 
       return repository.delete_fixture_lineup(id);
@@ -135,7 +103,7 @@ export function create_fixture_lineup_use_cases(
     async get_lineup_for_team_in_fixture(
       fixture_id: string,
       team_id: string,
-    ): Promise<EntityOperationResult<FixtureLineup>> {
+    ): AsyncResult<FixtureLineup> {
       return repository.get_lineup_for_team_in_fixture(fixture_id, team_id);
     },
 
@@ -178,37 +146,23 @@ export function create_fixture_lineup_use_cases(
       return repository.find_by_fixture_and_team(fixture_id, team_id, options);
     },
 
-    async submit_lineup(
-      id: string,
-    ): Promise<EntityOperationResult<FixtureLineup>> {
+    async submit_lineup(id: string): AsyncResult<FixtureLineup> {
       const existing_result = await repository.get_fixture_lineup_by_id(id);
       if (!existing_result.success || !existing_result.data) {
-        return {
-          success: false,
-          error_message: "Lineup not found",
-        };
+        return create_failure_result("Lineup not found");
       }
 
       if (existing_result.data.status === "locked") {
-        return {
-          success: false,
-          error_message: "Cannot submit a locked lineup",
-        };
+        return create_failure_result("Cannot submit a locked lineup");
       }
 
       if (existing_result.data.status === "submitted") {
-        return {
-          success: false,
-          error_message: "Lineup is already submitted",
-        };
+        return create_failure_result("Lineup is already submitted");
       }
 
       const player_count = existing_result.data.selected_players.length;
       if (player_count === 0) {
-        return {
-          success: false,
-          error_message: "Cannot submit an empty lineup",
-        };
+        return create_failure_result("Cannot submit an empty lineup");
       }
 
       return repository.update_fixture_lineup(id, {
@@ -217,30 +171,19 @@ export function create_fixture_lineup_use_cases(
       });
     },
 
-    async lock_lineup(
-      id: string,
-    ): Promise<EntityOperationResult<FixtureLineup>> {
+    async lock_lineup(id: string): AsyncResult<FixtureLineup> {
       const existing_result = await repository.get_fixture_lineup_by_id(id);
       if (!existing_result.success || !existing_result.data) {
-        return {
-          success: false,
-          error_message: "Lineup not found",
-        };
+        return create_failure_result("Lineup not found");
       }
 
       if (existing_result.data.status === "locked") {
-        return {
-          success: false,
-          error_message: "Lineup is already locked",
-        };
+        return create_failure_result("Lineup is already locked");
       }
 
       const player_count = existing_result.data.selected_players.length;
       if (player_count === 0) {
-        return {
-          success: false,
-          error_message: "Cannot lock an empty lineup",
-        };
+        return create_failure_result("Cannot lock an empty lineup");
       }
 
       return repository.update_fixture_lineup(id, {

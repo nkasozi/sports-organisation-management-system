@@ -6,9 +6,13 @@ import type {
 } from "../../core/entities/LiveGameLog";
 import type {
   BaseEntity,
-  EntityOperationResult,
   EntityListResult,
 } from "../../core/entities/BaseEntity";
+import type { AsyncResult } from "../../core/types/Result";
+import {
+  create_success_result,
+  create_failure_result,
+} from "../../core/types/Result";
 import type {
   LiveGameLogRepository,
   LiveGameLogFilter,
@@ -162,28 +166,21 @@ export class InBrowserLiveGameLogRepository
 
   async get_live_game_log_for_fixture(
     fixture_id: string,
-  ): Promise<EntityOperationResult<LiveGameLog>> {
+  ): AsyncResult<LiveGameLog> {
     try {
       const result = await this.find_by_filter({ fixture_id });
 
       if (!result.success || result.data.length === 0) {
-        return {
-          success: false,
-          error_message: "No live game log found for this fixture",
-        };
+        return create_failure_result("No live game log found for this fixture");
       }
 
-      return {
-        success: true,
-        data: result.data[0],
-      };
+      return create_success_result(result.data[0]);
     } catch (error) {
       const error_message =
         error instanceof Error ? error.message : "Unknown error occurred";
-      return {
-        success: false,
-        error_message: `Failed to get live game log for fixture: ${error_message}`,
-      };
+      return create_failure_result(
+        `Failed to get live game log for fixture: ${error_message}`,
+      );
     }
   }
 
@@ -253,43 +250,23 @@ export class InBrowserLiveGameLogRepository
 
   async create_live_game_log(
     input: CreateLiveGameLogInput,
-  ): Promise<EntityOperationResult<LiveGameLog>> {
-    const result = await this.create(input);
-    if (!result.success) {
-      return { success: false, error_message: result.error };
-    }
-    return { success: true, data: result.data };
+  ): AsyncResult<LiveGameLog> {
+    return this.create(input);
   }
 
-  async get_live_game_log_by_id(
-    id: string,
-  ): Promise<EntityOperationResult<LiveGameLog>> {
-    const result = await this.find_by_id(id);
-    if (!result.success) {
-      return { success: false, error_message: result.error };
-    }
-    return { success: true, data: result.data };
+  async get_live_game_log_by_id(id: string): AsyncResult<LiveGameLog> {
+    return this.find_by_id(id);
   }
 
   async update_live_game_log(
     id: string,
     input: UpdateLiveGameLogInput,
-  ): Promise<EntityOperationResult<LiveGameLog>> {
-    const result = await this.update(id, input);
-    if (!result.success) {
-      return { success: false, error_message: result.error };
-    }
-    return { success: true, data: result.data };
+  ): AsyncResult<LiveGameLog> {
+    return this.update(id, input);
   }
 
-  async delete_live_game_log(
-    id: string,
-  ): Promise<EntityOperationResult<boolean>> {
-    const result = await this.delete_by_id(id);
-    if (!result.success) {
-      return { success: false, error_message: result.error };
-    }
-    return { success: true, data: result.data };
+  async delete_live_game_log(id: string): AsyncResult<boolean> {
+    return this.delete_by_id(id);
   }
 }
 

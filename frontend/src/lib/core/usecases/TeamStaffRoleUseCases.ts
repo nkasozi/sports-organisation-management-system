@@ -12,7 +12,7 @@ import type { QueryOptions } from "../interfaces/ports";
 import type { AsyncResult, PaginatedResult } from "../types/Result";
 import { create_failure_result, create_success_result } from "../types/Result";
 import { get_team_staff_role_repository } from "../../adapters/repositories/InBrowserTeamStaffRoleRepository";
-import type { EntityOperationResult, EntityListResult } from "./BaseUseCases";
+import type { EntityListResult } from "./BaseUseCases";
 import type { TeamStaffRoleUseCasesPort } from "../interfaces/ports";
 
 export type TeamStaffRoleUseCases = TeamStaffRoleUseCasesPort;
@@ -45,61 +45,59 @@ export function create_team_staff_role_use_cases(
       };
     },
 
-    async get_by_id(id: string): Promise<EntityOperationResult<TeamStaffRole>> {
+    async get_by_id(id: string): AsyncResult<TeamStaffRole> {
       if (!id || id.trim().length === 0) {
-        return { success: false, error_message: "Staff role ID is required" };
+        return create_failure_result("Staff role ID is required");
       }
       const result = await repository.find_by_id(id);
       if (!result.success) {
-        return { success: false, error_message: result.error };
+        return create_failure_result(result.error);
       }
-      return { success: true, data: result.data };
+      return create_success_result(result.data);
     },
 
-    async create(
-      input: CreateTeamStaffRoleInput,
-    ): Promise<EntityOperationResult<TeamStaffRole>> {
+    async create(input: CreateTeamStaffRoleInput): AsyncResult<TeamStaffRole> {
       const validation_errors = validate_team_staff_role_input(input);
       if (validation_errors.length > 0) {
-        return { success: false, error_message: validation_errors.join(", ") };
+        return create_failure_result(validation_errors.join(", "));
       }
 
       const result = await repository.create(input);
       if (!result.success) {
-        return { success: false, error_message: result.error };
+        return create_failure_result(result.error);
       }
-      return { success: true, data: result.data };
+      return create_success_result(result.data);
     },
 
     async update(
       id: string,
       input: UpdateTeamStaffRoleInput,
-    ): Promise<EntityOperationResult<TeamStaffRole>> {
+    ): AsyncResult<TeamStaffRole> {
       if (!id || id.trim().length === 0) {
-        return { success: false, error_message: "Staff role ID is required" };
+        return create_failure_result("Staff role ID is required");
       }
 
       const existing_result = await repository.find_by_id(id);
       if (!existing_result.success) {
-        return { success: false, error_message: "Staff role not found" };
+        return create_failure_result("Staff role not found");
       }
 
       const result = await repository.update(id, input);
       if (!result.success) {
-        return { success: false, error_message: result.error };
+        return create_failure_result(result.error);
       }
-      return { success: true, data: result.data };
+      return create_success_result(result.data);
     },
 
-    async delete(id: string): Promise<EntityOperationResult<boolean>> {
+    async delete(id: string): AsyncResult<boolean> {
       if (!id || id.trim().length === 0) {
-        return { success: false, error_message: "Staff role ID is required" };
+        return create_failure_result("Staff role ID is required");
       }
       const result = await repository.delete_by_id(id);
       if (!result.success) {
-        return { success: false, error_message: result.error };
+        return create_failure_result(result.error);
       }
-      return { success: true, data: result.data };
+      return create_success_result(result.data);
     },
 
     async list_roles_by_category(

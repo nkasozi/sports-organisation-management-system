@@ -2,9 +2,13 @@
 // Follows coding rules: stateless functions, explicit return types, dependency injection
 import type {
   BaseEntity,
-  EntityOperationResult,
   EntityListResult,
 } from "../../core/entities/BaseEntity";
+import type { AsyncResult } from "../../core/types/Result";
+import {
+  create_success_result,
+  create_failure_result,
+} from "../../core/types/Result";
 
 export type EntityFilterFunction<T> = (entity: T) => boolean;
 
@@ -12,7 +16,7 @@ export interface UnifiedApiServiceInterface {
   get_entity_by_id<T extends BaseEntity>(
     entity_type: string,
     id: string,
-  ): Promise<EntityOperationResult<T>>;
+  ): AsyncResult<T>;
   get_all_entities<T extends BaseEntity>(
     entity_type: string,
     filter_function?: EntityFilterFunction<T>,
@@ -20,20 +24,17 @@ export interface UnifiedApiServiceInterface {
   create_entity<T extends BaseEntity>(
     entity_type: string,
     entity_data: Omit<T, "id" | "created_at" | "updated_at">,
-  ): Promise<EntityOperationResult<T>>;
+  ): AsyncResult<T>;
   update_entity<T extends BaseEntity>(
     entity_type: string,
     id: string,
     updates: Partial<T>,
-  ): Promise<EntityOperationResult<T>>;
-  delete_entity(
-    entity_type: string,
-    id: string,
-  ): Promise<EntityOperationResult<boolean>>;
+  ): AsyncResult<T>;
+  delete_entity(entity_type: string, id: string): AsyncResult<boolean>;
   delete_multiple_entities(
     entity_type: string,
     ids: string[],
-  ): Promise<EntityOperationResult<boolean>>;
+  ): AsyncResult<boolean>;
 }
 
 // In-memory implementation of the unified service
@@ -106,30 +107,20 @@ class InMemoryUnifiedApiService implements UnifiedApiServiceInterface {
   async get_entity_by_id<T extends BaseEntity>(
     entity_type: string,
     id: string,
-  ): Promise<EntityOperationResult<T>> {
+  ): AsyncResult<T> {
     try {
       const entities = this.get_entity_storage_for_type(entity_type);
       const found_entity = entities.get(id);
 
       if (!found_entity) {
-        return {
-          success: false,
-          error_message: `Entity with id ${id} not found in ${entity_type}`,
-          debug_info: `Searched in storage with ${entities.size} entities`,
-        };
+        return create_failure_result(
+          `Entity with id ${id} not found in ${entity_type}`,
+        );
       }
 
-      return {
-        success: true,
-        data: found_entity as T,
-        debug_info: `Successfully retrieved ${entity_type} with id ${id}`,
-      };
+      return create_success_result(found_entity as T);
     } catch (error) {
-      return {
-        success: false,
-        error_message: `Failed to retrieve entity: ${error}`,
-        debug_info: `Error occurred while getting ${entity_type} by id ${id}`,
-      };
+      return create_failure_result(`Failed to retrieve entity: ${error}`);
     }
   }
 
@@ -165,7 +156,7 @@ class InMemoryUnifiedApiService implements UnifiedApiServiceInterface {
   async create_entity<T extends BaseEntity>(
     entity_type: string,
     entity_data: Omit<T, "id" | "created_at" | "updated_at">,
-  ): Promise<EntityOperationResult<T>> {
+  ): AsyncResult<T> {
     try {
       const entities = this.get_entity_storage_for_type(entity_type);
       const entity_id = this.generate_unique_entity_id(entity_type);
@@ -185,24 +176,12 @@ class InMemoryUnifiedApiService implements UnifiedApiServiceInterface {
       );
 
       if (!save_success) {
-        return {
-          success: false,
-          error_message: "Failed to persist entity to storage",
-          debug_info: `Entity created in memory but failed to save to localStorage for ${entity_type}`,
-        };
+        return create_failure_result("Failed to persist entity to storage");
       }
 
-      return {
-        success: true,
-        data: new_entity,
-        debug_info: `Successfully created ${entity_type} with id ${entity_id}`,
-      };
+      return create_success_result(new_entity);
     } catch (error) {
-      return {
-        success: false,
-        error_message: `Failed to create entity: ${error}`,
-        debug_info: `Error occurred while creating ${entity_type}`,
-      };
+      return create_failure_result(`Failed to create entity: ${error}`);
     }
   }
 
@@ -210,23 +189,21 @@ class InMemoryUnifiedApiService implements UnifiedApiServiceInterface {
     entity_type: string,
     id: string,
     updates: Partial<T>,
-  ): Promise<EntityOperationResult<T>> {
+  ): AsyncResult<T> {
     try {
       const entities = this.get_entity_storage_for_type(entity_type);
       const existing_entity = entities.get(id);
 
       if (!existing_entity) {
-        return {
-          success: false,
-          error_message: `Entity with id ${id} not found for update`,
-          debug_info: `Attempted to update non-existent ${entity_type} with id ${id}`,
-        };
+        return create_failure_result(
+          `Entity with id ${id} not found for update`,
+        );
       }
 
       const updated_entity: T = {
         ...existing_entity,
         ...updates,
-        id, // Ensure ID doesn't change
+        id,
         updated_at: new Date().toISOString(),
       } as T;
 
@@ -237,41 +214,26 @@ class InMemoryUnifiedApiService implements UnifiedApiServiceInterface {
       );
 
       if (!save_success) {
-        return {
-          success: false,
-          error_message: "Failed to persist updated entity to storage",
-          debug_info: `Entity updated in memory but failed to save to localStorage for ${entity_type}`,
-        };
+        return create_failure_result(
+          "Failed to persist updated entity to storage",
+        );
       }
 
-      return {
-        success: true,
-        data: updated_entity,
-        debug_info: `Successfully updated ${entity_type} with id ${id}`,
-      };
+      return create_success_result(updated_entity);
     } catch (error) {
-      return {
-        success: false,
-        error_message: `Failed to update entity: ${error}`,
-        debug_info: `Error occurred while updating ${entity_type} with id ${id}`,
-      };
+      return create_failure_result(`Failed to update entity: ${error}`);
     }
   }
 
-  async delete_entity(
-    entity_type: string,
-    id: string,
-  ): Promise<EntityOperationResult<boolean>> {
+  async delete_entity(entity_type: string, id: string): AsyncResult<boolean> {
     try {
       const entities = this.get_entity_storage_for_type(entity_type);
       const entity_existed = entities.has(id);
 
       if (!entity_existed) {
-        return {
-          success: false,
-          error_message: `Entity with id ${id} not found for deletion`,
-          debug_info: `Attempted to delete non-existent ${entity_type} with id ${id}`,
-        };
+        return create_failure_result(
+          `Entity with id ${id} not found for deletion`,
+        );
       }
 
       entities.delete(id);
@@ -281,31 +243,19 @@ class InMemoryUnifiedApiService implements UnifiedApiServiceInterface {
       );
 
       if (!save_success) {
-        return {
-          success: false,
-          error_message: "Failed to persist deletion to storage",
-          debug_info: `Entity deleted from memory but failed to save to localStorage for ${entity_type}`,
-        };
+        return create_failure_result("Failed to persist deletion to storage");
       }
 
-      return {
-        success: true,
-        data: true,
-        debug_info: `Successfully deleted ${entity_type} with id ${id}`,
-      };
+      return create_success_result(true);
     } catch (error) {
-      return {
-        success: false,
-        error_message: `Failed to delete entity: ${error}`,
-        debug_info: `Error occurred while deleting ${entity_type} with id ${id}`,
-      };
+      return create_failure_result(`Failed to delete entity: ${error}`);
     }
   }
 
   async delete_multiple_entities(
     entity_type: string,
     ids: string[],
-  ): Promise<EntityOperationResult<boolean>> {
+  ): AsyncResult<boolean> {
     try {
       const entities = this.get_entity_storage_for_type(entity_type);
       let deleted_count = 0;
@@ -323,24 +273,16 @@ class InMemoryUnifiedApiService implements UnifiedApiServiceInterface {
       );
 
       if (!save_success) {
-        return {
-          success: false,
-          error_message: "Failed to persist bulk deletion to storage",
-          debug_info: `${deleted_count} entities deleted from memory but failed to save to localStorage`,
-        };
+        return create_failure_result(
+          "Failed to persist bulk deletion to storage",
+        );
       }
 
-      return {
-        success: true,
-        data: true,
-        debug_info: `Successfully deleted ${deleted_count} out of ${ids.length} requested ${entity_type} entities`,
-      };
+      return create_success_result(true);
     } catch (error) {
-      return {
-        success: false,
-        error_message: `Failed to delete multiple entities: ${error}`,
-        debug_info: `Error occurred while bulk deleting ${entity_type} entities`,
-      };
+      return create_failure_result(
+        `Failed to delete multiple entities: ${error}`,
+      );
     }
   }
 

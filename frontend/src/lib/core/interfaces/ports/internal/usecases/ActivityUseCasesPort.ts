@@ -6,11 +6,11 @@ import type {
 } from "../../../../entities/Activity";
 import type { ActivityFilter } from "../../external/repositories/ActivityRepository";
 import type { QueryOptions } from "../../external/repositories/Repository";
-import type { AsyncResult, PaginatedAsyncResult } from "../../../../types/Result";
 import type {
-  BaseUseCasesPort,
-  EntityOperationResult,
-} from "./BaseUseCasesPort";
+  AsyncResult,
+  PaginatedAsyncResult,
+} from "../../../../types/Result";
+import type { BaseUseCasesPort } from "./BaseUseCasesPort";
 
 export interface CalendarDateRange {
   start_date: string;
@@ -71,19 +71,19 @@ export interface ActivityUseCasesPort extends BaseUseCasesPort<
     organization_id: string,
     date_range: CalendarDateRange,
     filter?: ActivityFilter,
-  ): Promise<EntityOperationResult<CalendarEvent[]>>;
+  ): AsyncResult<CalendarEvent[]>;
 
   sync_competitions_to_activities(
     organization_id: string,
-  ): Promise<EntityOperationResult<{ created: number; updated: number }>>;
+  ): AsyncResult<{ created: number; updated: number }>;
 
   sync_fixtures_to_activities(
     organization_id: string,
     competition_id?: string,
-  ): Promise<EntityOperationResult<{ created: number; updated: number }>>;
+  ): AsyncResult<{ created: number; updated: number }>;
 
   find_activity_by_source(
     source_type: ActivitySourceType,
     source_id: string,
-  ): Promise<EntityOperationResult<Activity | null>>;
+  ): AsyncResult<Activity | null>;
 }

@@ -123,8 +123,11 @@ describe("FixtureLineupUseCases", () => {
       const result = await use_cases.get_by_id("lineup-123");
 
       expect(result.success).toBe(true);
+      if (!result.success) return;
       expect(
-        result.data?.selected_players.some((p) => p.id === "player-123"),
+        result.data?.selected_players.some(
+          (p: LineupPlayer) => p.id === "player-123",
+        ),
       ).toBe(true);
     });
 
@@ -132,7 +135,8 @@ describe("FixtureLineupUseCases", () => {
       const result = await use_cases.get_by_id("");
 
       expect(result.success).toBe(false);
-      expect(result.error_message).toBe("FixtureLineup ID is required");
+      if (result.success) return;
+      expect(result.error).toBe("FixtureLineup ID is required");
     });
   });
 
@@ -143,7 +147,7 @@ describe("FixtureLineupUseCases", () => {
         mock_repository.get_lineup_for_team_in_fixture,
       ).mockResolvedValue({
         success: false,
-        error_message: "Not found",
+        error: "Not found",
       });
       vi.mocked(mock_repository.create_fixture_lineup).mockResolvedValue({
         success: true,
@@ -194,7 +198,8 @@ describe("FixtureLineupUseCases", () => {
       const result = await use_cases.update("", { status: "submitted" });
 
       expect(result.success).toBe(false);
-      expect(result.error_message).toBe("FixtureLineup ID is required");
+      if (result.success) return;
+      expect(result.error).toBe("FixtureLineup ID is required");
     });
   });
 

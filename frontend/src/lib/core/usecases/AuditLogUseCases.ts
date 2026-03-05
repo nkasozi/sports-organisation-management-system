@@ -10,10 +10,9 @@ import type {
   AuditLogFilter,
 } from "../../adapters/repositories/InBrowserAuditLogRepository";
 import type { QueryOptions } from "../interfaces/ports";
-import type {
-  EntityOperationResult,
-  EntityListResult,
-} from "../entities/BaseEntity";
+import type { EntityListResult } from "../entities/BaseEntity";
+import type { AsyncResult } from "../types/Result";
+import { create_success_result, create_failure_result } from "../types/Result";
 import { get_repository_container } from "../../infrastructure/container";
 
 export interface AuditLogUseCases {
@@ -21,13 +20,10 @@ export interface AuditLogUseCases {
     filter?: AuditLogFilter,
     options?: QueryOptions,
   ): Promise<EntityListResult<AuditLog>>;
-  get_by_id(id: string): Promise<EntityOperationResult<AuditLog>>;
-  create(input: CreateAuditLogInput): Promise<EntityOperationResult<AuditLog>>;
-  update(
-    id: string,
-    input: Record<string, unknown>,
-  ): Promise<EntityOperationResult<AuditLog>>;
-  delete(id: string): Promise<EntityOperationResult<boolean>>;
+  get_by_id(id: string): AsyncResult<AuditLog>;
+  create(input: CreateAuditLogInput): AsyncResult<AuditLog>;
+  update(id: string, input: Record<string, unknown>): AsyncResult<AuditLog>;
+  delete(id: string): AsyncResult<boolean>;
   get_entity_history(
     entity_type: string,
     entity_id: string,
@@ -67,53 +63,37 @@ export function create_audit_log_use_cases(
       };
     },
 
-    async get_by_id(id: string): Promise<EntityOperationResult<AuditLog>> {
+    async get_by_id(id: string): AsyncResult<AuditLog> {
       if (!id || id.trim().length === 0) {
-        return { success: false, error_message: "Audit log ID is required" };
+        return create_failure_result("Audit log ID is required");
       }
 
-      const result = await repository.find_by_id(id);
-
-      if (!result.success) {
-        return { success: false, error_message: result.error };
-      }
-
-      return { success: true, data: result.data };
+      return repository.find_by_id(id);
     },
 
-    async create(
-      input: CreateAuditLogInput,
-    ): Promise<EntityOperationResult<AuditLog>> {
+    async create(input: CreateAuditLogInput): AsyncResult<AuditLog> {
       const validation_errors = validate_audit_log_input(input);
 
       if (validation_errors.length > 0) {
-        return { success: false, error_message: validation_errors.join(", ") };
+        return create_failure_result(validation_errors.join(", "));
       }
 
-      const result = await repository.create(input);
-
-      if (!result.success) {
-        return { success: false, error_message: result.error };
-      }
-
-      return { success: true, data: result.data };
+      return repository.create(input);
     },
 
     async update(
       _id: string,
       _input: Record<string, unknown>,
-    ): Promise<EntityOperationResult<AuditLog>> {
-      return {
-        success: false,
-        error_message: "Audit logs are immutable and cannot be updated",
-      };
+    ): AsyncResult<AuditLog> {
+      return create_failure_result(
+        "Audit logs are immutable and cannot be updated",
+      );
     },
 
-    async delete(_id: string): Promise<EntityOperationResult<boolean>> {
-      return {
-        success: false,
-        error_message: "Audit logs are immutable and cannot be deleted",
-      };
+    async delete(_id: string): AsyncResult<boolean> {
+      return create_failure_result(
+        "Audit logs are immutable and cannot be deleted",
+      );
     },
 
     async get_entity_history(

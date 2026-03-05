@@ -4,10 +4,8 @@ import type {
   UpdateFixtureLineupInput,
 } from "../../../../entities/FixtureLineup";
 import type { FixtureLineupFilter } from "../../external/repositories/FixtureLineupRepository";
-import type {
-  EntityOperationResult,
-  EntityListResult,
-} from "../../../../entities/BaseEntity";
+import type { EntityListResult } from "../../../../entities/BaseEntity";
+import type { AsyncResult } from "../../../../types/Result";
 import type { BaseUseCasesPort } from "./BaseUseCasesPort";
 
 export interface FixtureLineupUseCasesPort extends BaseUseCasesPort<
@@ -31,7 +29,7 @@ export interface FixtureLineupUseCasesPort extends BaseUseCasesPort<
   get_lineup_for_team_in_fixture(
     fixture_id: string,
     team_id: string,
-  ): Promise<EntityOperationResult<FixtureLineup>>;
-  submit_lineup(id: string): Promise<EntityOperationResult<FixtureLineup>>;
-  lock_lineup(id: string): Promise<EntityOperationResult<FixtureLineup>>;
+  ): AsyncResult<FixtureLineup>;
+  submit_lineup(id: string): AsyncResult<FixtureLineup>;
+  lock_lineup(id: string): AsyncResult<FixtureLineup>;
 }

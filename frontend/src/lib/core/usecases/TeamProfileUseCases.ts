@@ -8,10 +8,9 @@ import type {
   TeamProfileFilter,
 } from "../interfaces/ports";
 import type { QueryOptions } from "../interfaces/ports";
-import type {
-  EntityOperationResult,
-  EntityListResult,
-} from "../entities/BaseEntity";
+import type { EntityListResult } from "../entities/BaseEntity";
+import type { AsyncResult } from "../types/Result";
+import { create_failure_result } from "../types/Result";
 import { validate_team_profile_input } from "../entities/TeamProfile";
 import { get_team_profile_repository } from "../../adapters/repositories/InBrowserTeamProfileRepository";
 
@@ -20,17 +19,12 @@ export interface TeamProfileUseCases {
     filter?: TeamProfileFilter | Record<string, string>,
     options?: QueryOptions,
   ): Promise<EntityListResult<TeamProfile>>;
-  get_by_id(id: string): Promise<EntityOperationResult<TeamProfile>>;
-  get_by_team_id(team_id: string): Promise<EntityOperationResult<TeamProfile>>;
-  get_by_slug(slug: string): Promise<EntityOperationResult<TeamProfile>>;
-  create(
-    input: CreateTeamProfileInput,
-  ): Promise<EntityOperationResult<TeamProfile>>;
-  update(
-    id: string,
-    input: UpdateTeamProfileInput,
-  ): Promise<EntityOperationResult<TeamProfile>>;
-  delete(id: string): Promise<EntityOperationResult<boolean>>;
+  get_by_id(id: string): AsyncResult<TeamProfile>;
+  get_by_team_id(team_id: string): AsyncResult<TeamProfile>;
+  get_by_slug(slug: string): AsyncResult<TeamProfile>;
+  create(input: CreateTeamProfileInput): AsyncResult<TeamProfile>;
+  update(id: string, input: UpdateTeamProfileInput): AsyncResult<TeamProfile>;
+  delete(id: string): AsyncResult<boolean>;
   list_public_profiles(
     options?: QueryOptions,
   ): Promise<EntityListResult<TeamProfile>>;
@@ -70,150 +64,59 @@ export function create_team_profile_use_cases(
       };
     },
 
-    async get_by_id(id: string): Promise<EntityOperationResult<TeamProfile>> {
+    async get_by_id(id: string): AsyncResult<TeamProfile> {
       if (!id || id.trim().length === 0) {
-        return {
-          success: false,
-          error_message: "Profile ID is required",
-        };
+        return create_failure_result("Profile ID is required");
       }
-      const result = await repository.find_by_id(id);
-      if (!result.success) {
-        return {
-          success: false,
-          error_message: result.error,
-        };
-      }
-      return {
-        success: true,
-        data: result.data,
-      };
+      return repository.find_by_id(id);
     },
 
-    async get_by_team_id(
-      team_id: string,
-    ): Promise<EntityOperationResult<TeamProfile>> {
+    async get_by_team_id(team_id: string): AsyncResult<TeamProfile> {
       if (!team_id || team_id.trim().length === 0) {
-        return {
-          success: false,
-          error_message: "Team ID is required",
-        };
+        return create_failure_result("Team ID is required");
       }
-      const result = await repository.find_by_team_id(team_id);
-      if (!result.success) {
-        return {
-          success: false,
-          error_message: result.error,
-        };
-      }
-      return {
-        success: true,
-        data: result.data,
-      };
+      return repository.find_by_team_id(team_id);
     },
 
-    async get_by_slug(
-      slug: string,
-    ): Promise<EntityOperationResult<TeamProfile>> {
+    async get_by_slug(slug: string): AsyncResult<TeamProfile> {
       if (!slug || slug.trim().length === 0) {
-        return {
-          success: false,
-          error_message: "Profile slug is required",
-        };
+        return create_failure_result("Profile slug is required");
       }
-      const result = await repository.find_by_slug(slug);
-      if (!result.success) {
-        return {
-          success: false,
-          error_message: result.error,
-        };
-      }
-      return {
-        success: true,
-        data: result.data,
-      };
+      return repository.find_by_slug(slug);
     },
 
-    async create(
-      input: CreateTeamProfileInput,
-    ): Promise<EntityOperationResult<TeamProfile>> {
+    async create(input: CreateTeamProfileInput): AsyncResult<TeamProfile> {
       const validation = validate_team_profile_input(input);
       if (!validation.is_valid) {
         const error_messages = Object.values(validation.errors).join(", ");
-        return {
-          success: false,
-          error_message: error_messages,
-        };
+        return create_failure_result(error_messages);
       }
 
-      const result = await repository.create(input);
-
-      if (!result.success) {
-        return {
-          success: false,
-          error_message: result.error,
-        };
-      }
-
-      return {
-        success: true,
-        data: result.data,
-      };
+      return repository.create(input);
     },
 
     async update(
       id: string,
       input: UpdateTeamProfileInput,
-    ): Promise<EntityOperationResult<TeamProfile>> {
+    ): AsyncResult<TeamProfile> {
       if (!id || id.trim().length === 0) {
-        return {
-          success: false,
-          error_message: "Profile ID is required",
-        };
+        return create_failure_result("Profile ID is required");
       }
 
       const validation = validate_team_profile_input(input);
       if (!validation.is_valid) {
         const error_messages = Object.values(validation.errors).join(", ");
-        return {
-          success: false,
-          error_message: error_messages,
-        };
+        return create_failure_result(error_messages);
       }
 
-      const result = await repository.update(id, input);
-
-      if (!result.success) {
-        return {
-          success: false,
-          error_message: result.error,
-        };
-      }
-
-      return {
-        success: true,
-        data: result.data,
-      };
+      return repository.update(id, input);
     },
 
-    async delete(id: string): Promise<EntityOperationResult<boolean>> {
+    async delete(id: string): AsyncResult<boolean> {
       if (!id || id.trim().length === 0) {
-        return {
-          success: false,
-          error_message: "Profile ID is required",
-        };
+        return create_failure_result("Profile ID is required");
       }
-      const result = await repository.delete_by_id(id);
-      if (!result.success) {
-        return {
-          success: false,
-          error_message: result.error,
-        };
-      }
-      return {
-        success: true,
-        data: true,
-      };
+      return repository.delete_by_id(id);
     },
 
     async list_public_profiles(

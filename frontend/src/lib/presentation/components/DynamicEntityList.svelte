@@ -828,7 +828,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
             selected_entity_ids.delete(entity.id);
             view_callbacks?.on_delete_completed?.(entity);
           } else {
-            error_message = result.error_message || "Failed to delete entity";
+            error_message = result.error || "Failed to delete entity";
           }
           return;
         }
@@ -851,7 +851,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
           selected_entity_ids.delete(entity.id);
           view_callbacks?.on_delete_completed?.(entity);
         } else {
-          error_message = result.error_message || "Failed to delete entity";
+          error_message = result.error || "Failed to delete entity";
         }
       } else {
         const ids_to_delete = entities_to_delete.map((e) => e.id);
@@ -867,7 +867,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
             if (!result.success) {
               all_success = false;
               error_message =
-                result.error_message || `Failed to delete entity ${entity_id}`;
+                result.error || `Failed to delete entity ${entity_id}`;
               break;
             }
           }
@@ -908,7 +908,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
             if (!result.success) {
               all_success = false;
               error_message =
-                result.error_message || `Failed to delete entity ${entity_id}`;
+                result.error || `Failed to delete entity ${entity_id}`;
               break;
             }
           }

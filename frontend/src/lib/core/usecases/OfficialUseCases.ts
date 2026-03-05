@@ -3,18 +3,12 @@ import type {
   CreateOfficialInput,
   UpdateOfficialInput,
 } from "../entities/Official";
-import type {
-  OfficialRepository,
-  OfficialFilter,
-} from "../interfaces/ports";
+import type { OfficialRepository, OfficialFilter } from "../interfaces/ports";
 import type { QueryOptions } from "../interfaces/ports";
 import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
-import type {
-  EntityOperationResult,
-  EntityListResult,
-} from "../entities/BaseEntity";
+import type { EntityListResult } from "../entities/BaseEntity";
 import type { OfficialUseCasesPort } from "../interfaces/ports";
-import { create_failure_result } from "../types/Result";
+import { create_success_result, create_failure_result } from "../types/Result";
 import { validate_official_input } from "../entities/Official";
 import { get_repository_container } from "../../infrastructure/container";
 
@@ -46,71 +40,49 @@ export function create_official_use_cases(
       };
     },
 
-    async get_by_id(id: string): Promise<EntityOperationResult<Official>> {
+    async get_by_id(id: string): AsyncResult<Official> {
       if (!id || id.trim().length === 0) {
-        return { success: false, error_message: "Official ID is required" };
+        return create_failure_result("Official ID is required");
       }
-      const result = await repository.find_by_id(id);
-      if (!result.success) {
-        return { success: false, error_message: result.error };
-      }
-      return { success: true, data: result.data };
+      return repository.find_by_id(id);
     },
 
-    async create(
-      input: CreateOfficialInput,
-    ): Promise<EntityOperationResult<Official>> {
+    async create(input: CreateOfficialInput): AsyncResult<Official> {
       const validation_errors = validate_official_input(input);
       if (validation_errors.length > 0) {
-        return { success: false, error_message: validation_errors.join(", ") };
+        return create_failure_result(validation_errors.join(", "));
       }
-      const result = await repository.create(input);
-      if (!result.success) {
-        return { success: false, error_message: result.error };
-      }
-      return { success: true, data: result.data };
+      return repository.create(input);
     },
 
     async update(
       id: string,
       input: UpdateOfficialInput,
-    ): Promise<EntityOperationResult<Official>> {
+    ): AsyncResult<Official> {
       if (!id || id.trim().length === 0) {
-        return { success: false, error_message: "Official ID is required" };
+        return create_failure_result("Official ID is required");
       }
-      const result = await repository.update(id, input);
-      if (!result.success) {
-        return { success: false, error_message: result.error };
-      }
-      return { success: true, data: result.data };
+      return repository.update(id, input);
     },
 
-    async delete(id: string): Promise<EntityOperationResult<boolean>> {
+    async delete(id: string): AsyncResult<boolean> {
       if (!id || id.trim().length === 0) {
-        return { success: false, error_message: "Official ID is required" };
+        return create_failure_result("Official ID is required");
       }
-      const result = await repository.delete_by_id(id);
-      if (!result.success) {
-        return { success: false, error_message: result.error };
-      }
-      return { success: true, data: result.data };
+      return repository.delete_by_id(id);
     },
 
-    async delete_officials(ids: string[]): Promise<AsyncResult<number>> {
+    async delete_officials(ids: string[]): AsyncResult<number> {
       if (!ids || ids.length === 0) {
-        return { success: false, error: "Official IDs are required" };
+        return create_failure_result("Official IDs are required");
       }
-      const result = await repository.delete_by_ids(ids);
-      if (!result.success) {
-        return { success: false, error: result.error };
-      }
-      return { success: true, data: result.data };
+      return repository.delete_by_ids(ids);
     },
 
     async list_officials_by_organization(
       organization_id: string,
       options?: QueryOptions,
-    ): Promise<PaginatedAsyncResult<Official>> {
+    ): PaginatedAsyncResult<Official> {
       if (!organization_id || organization_id.trim().length === 0) {
         return create_failure_result("Organization ID is required");
       }
@@ -120,7 +92,7 @@ export function create_official_use_cases(
     async list_officials_by_role_id(
       role_id: string,
       options?: QueryOptions,
-    ): Promise<PaginatedAsyncResult<Official>> {
+    ): PaginatedAsyncResult<Official> {
       if (!role_id || role_id.trim().length === 0) {
         return create_failure_result("Role ID is required");
       }
@@ -131,7 +103,7 @@ export function create_official_use_cases(
       date: string,
       organization_id?: string,
       options?: QueryOptions,
-    ): Promise<PaginatedAsyncResult<Official>> {
+    ): PaginatedAsyncResult<Official> {
       if (!date) {
         return create_failure_result("Date is required");
       }

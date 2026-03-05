@@ -78,7 +78,7 @@ describe("LiveGameLogUseCases", () => {
         mock_repository.get_live_game_log_for_fixture,
       ).mockResolvedValue({
         success: false,
-        error_message: "Not found",
+        error: "Not found",
       });
 
       vi.mocked(mock_repository.create_live_game_log).mockResolvedValue({
@@ -89,6 +89,7 @@ describe("LiveGameLogUseCases", () => {
       const result = await use_cases.create(input);
 
       expect(result.success).toBe(true);
+      if (!result.success) return;
       expect(result.data).toEqual(created_log);
       expect(mock_repository.create_live_game_log).toHaveBeenCalledWith(input);
     });
@@ -109,7 +110,8 @@ describe("LiveGameLogUseCases", () => {
       const result = await use_cases.create(input);
 
       expect(result.success).toBe(false);
-      expect(result.error_message).toBe("Fixture ID is required");
+      if (result.success) return;
+      expect(result.error).toBe("Fixture ID is required");
     });
 
     it("should fail when organization ID is missing", async () => {
@@ -128,7 +130,8 @@ describe("LiveGameLogUseCases", () => {
       const result = await use_cases.create(input);
 
       expect(result.success).toBe(false);
-      expect(result.error_message).toBe("Organization ID is required");
+      if (result.success) return;
+      expect(result.error).toBe("Organization ID is required");
     });
 
     it("should fail when a live game log already exists for fixture", async () => {
@@ -154,7 +157,8 @@ describe("LiveGameLogUseCases", () => {
       const result = await use_cases.create(input);
 
       expect(result.success).toBe(false);
-      expect(result.error_message).toBe(
+      if (result.success) return;
+      expect(result.error).toBe(
         "A live game log already exists for this fixture",
       );
     });
@@ -208,7 +212,8 @@ describe("LiveGameLogUseCases", () => {
       const result = await use_cases.start_game("livegame-001", "user-001");
 
       expect(result.success).toBe(false);
-      expect(result.error_message).toContain("Cannot start a game that is");
+      if (result.success) return;
+      expect(result.error).toContain("Cannot start a game that is");
     });
   });
 
@@ -270,7 +275,8 @@ describe("LiveGameLogUseCases", () => {
       const result = await use_cases.update_score("livegame-001", -1, 0);
 
       expect(result.success).toBe(false);
-      expect(result.error_message).toBe("Scores cannot be negative");
+      if (result.success) return;
+      expect(result.error).toBe("Scores cannot be negative");
     });
   });
 
@@ -308,7 +314,8 @@ describe("LiveGameLogUseCases", () => {
       const result = await use_cases.delete("livegame-001");
 
       expect(result.success).toBe(false);
-      expect(result.error_message).toBe("Cannot delete an in-progress game");
+      if (result.success) return;
+      expect(result.error).toBe("Cannot delete an in-progress game");
     });
   });
 });

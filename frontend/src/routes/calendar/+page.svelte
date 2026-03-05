@@ -252,7 +252,7 @@
       "[Calendar] Calendar events result:",
       result.success,
       "count:",
-      result.data?.length,
+      result.success ? result.data?.length : "error",
     );
 
     if (!result.success) {
@@ -534,10 +534,7 @@
       );
 
       if (!update_result.success) {
-        show_toast(
-          update_result.error_message || "Failed to update activity",
-          "error",
-        );
+        show_toast(update_result.error || "Failed to update activity", "error");
         return;
       }
       created_or_updated_activity = update_result.data;
@@ -569,10 +566,7 @@
         await use_cases.activity_use_cases.create(create_input);
 
       if (!create_result.success) {
-        show_toast(
-          create_result.error_message || "Failed to create activity",
-          "error",
-        );
+        show_toast(create_result.error || "Failed to create activity", "error");
         return;
       }
       created_or_updated_activity = create_result.data;
@@ -596,10 +590,7 @@
     );
 
     if (!delete_result.success) {
-      show_toast(
-        delete_result.error_message || "Failed to delete activity",
-        "error",
-      );
+      show_toast(delete_result.error || "Failed to delete activity", "error");
       return;
     }
 
@@ -705,10 +696,7 @@
     });
 
     if (!create_result.success) {
-      show_toast(
-        create_result.error_message || "Failed to create category",
-        "error",
-      );
+      show_toast(create_result.error || "Failed to create category", "error");
       return;
     }
 

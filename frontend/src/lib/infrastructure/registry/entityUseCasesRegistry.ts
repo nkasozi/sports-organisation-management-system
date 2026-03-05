@@ -33,8 +33,8 @@ import { EventBus } from "$lib/infrastructure/events/EventBus";
 import type {
   BaseEntity,
   EntityListResult,
-  EntityOperationResult,
 } from "$lib/core/entities/BaseEntity";
+import type { AsyncResult } from "$lib/core/types/Result";
 
 const VALID_ENTITY_TYPE_KEYS = [
   "organization",
@@ -73,8 +73,8 @@ const VALID_ENTITY_TYPE_KEYS = [
 export type EntityTypeKey = (typeof VALID_ENTITY_TYPE_KEYS)[number];
 
 export interface GenericEntityUseCases<T extends BaseEntity = BaseEntity> {
-  create(input: Record<string, unknown>): Promise<EntityOperationResult<T>>;
-  get_by_id(id: string): Promise<EntityOperationResult<T>>;
+  create(input: Record<string, unknown>): AsyncResult<T>;
+  get_by_id(id: string): AsyncResult<T>;
   list(
     filter?: Record<string, unknown>,
     options?: { page?: number; page_size?: number },
@@ -83,11 +83,8 @@ export interface GenericEntityUseCases<T extends BaseEntity = BaseEntity> {
     | { success: true; data: { items: T[]; total_count: number } }
     | { success: false; error: string }
   >;
-  update(
-    id: string,
-    input: Record<string, unknown>,
-  ): Promise<EntityOperationResult<T>>;
-  delete(id: string): Promise<EntityOperationResult<boolean>>;
+  update(id: string, input: Record<string, unknown>): AsyncResult<T>;
+  delete(id: string): AsyncResult<boolean>;
 }
 
 type UseCasesGetter = () => GenericEntityUseCases;
@@ -252,9 +249,7 @@ function wrap_use_cases_with_events(
   return {
     ...use_cases,
 
-    async create(
-      input: Record<string, unknown>,
-    ): Promise<EntityOperationResult<BaseEntity>> {
+    async create(input: Record<string, unknown>): AsyncResult<BaseEntity> {
       const result = await original_create(input);
       if (result.success && result.data) {
         EventBus.emit_entity_created(
@@ -270,7 +265,7 @@ function wrap_use_cases_with_events(
     async update(
       id: string,
       input: Record<string, unknown>,
-    ): Promise<EntityOperationResult<BaseEntity>> {
+    ): AsyncResult<BaseEntity> {
       const old_entity_result = await original_get_by_id(id);
       const old_entity = old_entity_result.success
         ? old_entity_result.data
@@ -299,7 +294,7 @@ function wrap_use_cases_with_events(
       return result;
     },
 
-    async delete(id: string): Promise<EntityOperationResult<boolean>> {
+    async delete(id: string): AsyncResult<boolean> {
       const entity_result = await original_get_by_id(id);
       const entity = entity_result.success ? entity_result.data : undefined;
 

@@ -11,7 +11,7 @@ import { create_failure_result, create_success_result } from "../types/Result";
 import { validate_team_staff_input } from "../entities/TeamStaff";
 import { get_team_staff_repository } from "../../adapters/repositories/InBrowserTeamStaffRepository";
 import { get_team_staff_role_repository } from "../../adapters/repositories/InBrowserTeamStaffRoleRepository";
-import type { EntityOperationResult, EntityListResult } from "./BaseUseCases";
+import type { EntityListResult } from "./BaseUseCases";
 import type { TeamStaffUseCasesPort } from "../interfaces/ports";
 
 export type TeamStaffUseCases = TeamStaffUseCasesPort;
@@ -47,56 +47,54 @@ export function create_team_staff_use_cases(
       };
     },
 
-    async get_by_id(id: string): Promise<EntityOperationResult<TeamStaff>> {
+    async get_by_id(id: string): AsyncResult<TeamStaff> {
       if (!id || id.trim().length === 0) {
-        return { success: false, error_message: "Team staff ID is required" };
+        return create_failure_result("Team staff ID is required");
       }
       const result = await staff_repository.find_by_id(id);
       if (!result.success) {
-        return { success: false, error_message: result.error };
+        return create_failure_result(result.error);
       }
-      return { success: true, data: result.data };
+      return create_success_result(result.data);
     },
 
-    async create(
-      input: CreateTeamStaffInput,
-    ): Promise<EntityOperationResult<TeamStaff>> {
+    async create(input: CreateTeamStaffInput): AsyncResult<TeamStaff> {
       const validation_errors = validate_team_staff_input(input);
       if (validation_errors.length > 0) {
-        return { success: false, error_message: validation_errors.join(", ") };
+        return create_failure_result(validation_errors.join(", "));
       }
 
       const result = await staff_repository.create(input);
       if (!result.success) {
-        return { success: false, error_message: result.error };
+        return create_failure_result(result.error);
       }
-      return { success: true, data: result.data };
+      return create_success_result(result.data);
     },
 
     async update(
       id: string,
       input: UpdateTeamStaffInput,
-    ): Promise<EntityOperationResult<TeamStaff>> {
+    ): AsyncResult<TeamStaff> {
       if (!id || id.trim().length === 0) {
-        return { success: false, error_message: "Team staff ID is required" };
+        return create_failure_result("Team staff ID is required");
       }
 
       const result = await staff_repository.update(id, input);
       if (!result.success) {
-        return { success: false, error_message: result.error };
+        return create_failure_result(result.error);
       }
-      return { success: true, data: result.data };
+      return create_success_result(result.data);
     },
 
-    async delete(id: string): Promise<EntityOperationResult<boolean>> {
+    async delete(id: string): AsyncResult<boolean> {
       if (!id || id.trim().length === 0) {
-        return { success: false, error_message: "Team staff ID is required" };
+        return create_failure_result("Team staff ID is required");
       }
       const result = await staff_repository.delete_by_id(id);
       if (!result.success) {
-        return { success: false, error_message: result.error };
+        return create_failure_result(result.error);
       }
-      return { success: true, data: result.data };
+      return create_success_result(result.data);
     },
 
     async list_staff_by_team(

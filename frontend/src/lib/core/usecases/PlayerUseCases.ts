@@ -3,18 +3,12 @@ import type {
   CreatePlayerInput,
   UpdatePlayerInput,
 } from "../entities/Player";
-import type {
-  PlayerRepository,
-  PlayerFilter,
-} from "../interfaces/ports";
+import type { PlayerRepository, PlayerFilter } from "../interfaces/ports";
 import type { QueryOptions } from "../interfaces/ports";
 import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
-import type {
-  EntityOperationResult,
-  EntityListResult,
-} from "../entities/BaseEntity";
+import type { EntityListResult } from "../entities/BaseEntity";
 import type { PlayerUseCasesPort } from "../interfaces/ports";
-import { create_failure_result } from "../types/Result";
+import { create_success_result, create_failure_result } from "../types/Result";
 import { validate_player_input } from "../entities/Player";
 import { get_repository_container } from "../../infrastructure/container";
 
@@ -48,93 +42,36 @@ export function create_player_use_cases(
       };
     },
 
-    async get_by_id(id: string): Promise<EntityOperationResult<Player>> {
+    async get_by_id(id: string): AsyncResult<Player> {
       if (!id || id.trim().length === 0) {
-        return {
-          success: false,
-          error_message: "Player ID is required",
-        };
+        return create_failure_result("Player ID is required");
       }
-      const result = await repository.find_by_id(id);
-      if (!result.success) {
-        return {
-          success: false,
-          error_message: result.error,
-        };
-      }
-      return {
-        success: true,
-        data: result.data,
-      };
+      return repository.find_by_id(id);
     },
 
-    async create(
-      input: CreatePlayerInput,
-    ): Promise<EntityOperationResult<Player>> {
+    async create(input: CreatePlayerInput): AsyncResult<Player> {
       const validation_errors = validate_player_input(input);
 
       if (validation_errors.length > 0) {
-        return {
-          success: false,
-          error_message: validation_errors.join(", "),
-        };
+        return create_failure_result(validation_errors.join(", "));
       }
 
-      const result = await repository.create(input);
-      if (!result.success) {
-        return {
-          success: false,
-          error_message: result.error,
-        };
-      }
-      return {
-        success: true,
-        data: result.data,
-      };
+      return repository.create(input);
     },
 
-    async update(
-      id: string,
-      input: UpdatePlayerInput,
-    ): Promise<EntityOperationResult<Player>> {
+    async update(id: string, input: UpdatePlayerInput): AsyncResult<Player> {
       if (!id || id.trim().length === 0) {
-        return {
-          success: false,
-          error_message: "Player ID is required",
-        };
+        return create_failure_result("Player ID is required");
       }
 
-      const result = await repository.update(id, input);
-      if (!result.success) {
-        return {
-          success: false,
-          error_message: result.error,
-        };
-      }
-      return {
-        success: true,
-        data: result.data,
-      };
+      return repository.update(id, input);
     },
 
-    async delete(id: string): Promise<EntityOperationResult<boolean>> {
+    async delete(id: string): AsyncResult<boolean> {
       if (!id || id.trim().length === 0) {
-        return {
-          success: false,
-          error_message: "Player ID is required",
-        };
+        return create_failure_result("Player ID is required");
       }
-      const result = await repository.delete_by_id(id);
-      if (!result.success) {
-        return {
-          success: false,
-          error_message: result.error,
-        };
-      }
-      return {
-        success: true,
-        data: result.data,
-      };
+      return repository.delete_by_id(id);
     },
 
     async delete_players(ids: string[]): Promise<AsyncResult<number>> {

@@ -137,6 +137,7 @@ describe("OrganizationUseCases", () => {
       const result = await use_cases.get_by_id("org-123");
 
       expect(result.success).toBe(true);
+      if (!result.success) return;
       expect(result.data?.name).toBe("Test Organization");
     });
 
@@ -144,14 +145,16 @@ describe("OrganizationUseCases", () => {
       const result = await use_cases.get_by_id("");
 
       expect(result.success).toBe(false);
-      expect(result.error_message).toBe("Organization ID is required");
+      if (result.success) return;
+      expect(result.error).toBe("Organization ID is required");
     });
 
     it("should return failure for whitespace id", async () => {
       const result = await use_cases.get_by_id("   ");
 
       expect(result.success).toBe(false);
-      expect(result.error_message).toBe("Organization ID is required");
+      if (result.success) return;
+      expect(result.error).toBe("Organization ID is required");
     });
 
     it("should return failure when not found", async () => {
@@ -178,6 +181,7 @@ describe("OrganizationUseCases", () => {
       const result = await use_cases.create(input);
 
       expect(result.success).toBe(true);
+      if (!result.success) return;
       expect(result.data?.name).toBe("New Organization");
     });
 
@@ -187,7 +191,8 @@ describe("OrganizationUseCases", () => {
       const result = await use_cases.create(input);
 
       expect(result.success).toBe(false);
-      expect(result.error_message).toContain("name");
+      if (result.success) return;
+      expect(result.error).toContain("name");
     });
 
     it("should fail validation for short name", async () => {
@@ -208,7 +213,8 @@ describe("OrganizationUseCases", () => {
       const result = await use_cases.create(input);
 
       expect(result.success).toBe(false);
-      expect(result.error_message).toBe("Database error");
+      if (result.success) return;
+      expect(result.error).toBe("Database error");
     });
   });
 
@@ -225,6 +231,7 @@ describe("OrganizationUseCases", () => {
       });
 
       expect(result.success).toBe(true);
+      if (!result.success) return;
       expect(result.data?.name).toBe("Updated Name");
     });
 
@@ -232,7 +239,8 @@ describe("OrganizationUseCases", () => {
       const result = await use_cases.update("", { name: "Updated" });
 
       expect(result.success).toBe(false);
-      expect(result.error_message).toBe("Organization ID is required");
+      if (result.success) return;
+      expect(result.error).toBe("Organization ID is required");
     });
 
     it("should return failure when repository fails", async () => {
@@ -264,7 +272,8 @@ describe("OrganizationUseCases", () => {
       const result = await use_cases.delete("");
 
       expect(result.success).toBe(false);
-      expect(result.error_message).toBe("Organization ID is required");
+      if (result.success) return;
+      expect(result.error).toBe("Organization ID is required");
     });
   });
 

@@ -360,7 +360,7 @@ function create_auth_store() {
             (p) => p.id === verification.payload?.user_id,
           ) || null;
 
-        if (current_profile) {
+        if (current_profile && verification.payload) {
           current_token = {
             payload: verification.payload,
             signature: saved_token_raw.split(".")[2],

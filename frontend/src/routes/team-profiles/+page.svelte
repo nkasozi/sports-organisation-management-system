@@ -68,10 +68,12 @@
     const filter = build_profile_authorization_filter();
     const teams_result = await team_use_cases.list(filter);
     if (teams_result.success) {
-      foreign_key_options["team_id"] = teams_result.data.map((t: { id: any; name: any; }) => ({
-        value: t.id,
-        label: t.name,
-      }));
+      foreign_key_options["team_id"] = teams_result.data.map(
+        (t: { id: any; name: any }) => ({
+          value: t.id,
+          label: t.name,
+        }),
+      );
     }
   }
 
@@ -109,7 +111,7 @@
     const result = await profile_use_cases.delete(profile.id);
 
     if (!result.success) {
-      error_message = result.error_message || "Failed to delete profile";
+      error_message = result.error || "Failed to delete profile";
       return false;
     }
 

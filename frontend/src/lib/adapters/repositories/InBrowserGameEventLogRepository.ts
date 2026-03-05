@@ -10,9 +10,9 @@ import {
 } from "../../core/entities/GameEventLog";
 import type {
   BaseEntity,
-  EntityOperationResult,
   EntityListResult,
 } from "../../core/entities/BaseEntity";
+import type { AsyncResult } from "../../core/types/Result";
 import type {
   GameEventLogRepository,
   GameEventLogFilter,
@@ -264,7 +264,7 @@ export class InBrowserGameEventLogRepository
     id: string,
     reason: string,
     voided_by_user_id: string,
-  ): Promise<EntityOperationResult<GameEventLog>> {
+  ): AsyncResult<GameEventLog> {
     const now = new Date().toISOString();
     return this.update_game_event_log(id, {
       voided: true,
@@ -277,43 +277,23 @@ export class InBrowserGameEventLogRepository
 
   async create_game_event_log(
     input: CreateGameEventLogInput,
-  ): Promise<EntityOperationResult<GameEventLog>> {
-    const result = await this.create(input);
-    if (!result.success) {
-      return { success: false, error_message: result.error };
-    }
-    return { success: true, data: result.data };
+  ): AsyncResult<GameEventLog> {
+    return this.create(input);
   }
 
-  async get_game_event_log_by_id(
-    id: string,
-  ): Promise<EntityOperationResult<GameEventLog>> {
-    const result = await this.find_by_id(id);
-    if (!result.success) {
-      return { success: false, error_message: result.error };
-    }
-    return { success: true, data: result.data };
+  async get_game_event_log_by_id(id: string): AsyncResult<GameEventLog> {
+    return this.find_by_id(id);
   }
 
   async update_game_event_log(
     id: string,
     input: UpdateGameEventLogInput,
-  ): Promise<EntityOperationResult<GameEventLog>> {
-    const result = await this.update(id, input);
-    if (!result.success) {
-      return { success: false, error_message: result.error };
-    }
-    return { success: true, data: result.data };
+  ): AsyncResult<GameEventLog> {
+    return this.update(id, input);
   }
 
-  async delete_game_event_log(
-    id: string,
-  ): Promise<EntityOperationResult<boolean>> {
-    const result = await this.delete_by_id(id);
-    if (!result.success) {
-      return { success: false, error_message: result.error };
-    }
-    return { success: true, data: result.data };
+  async delete_game_event_log(id: string): AsyncResult<boolean> {
+    return this.delete_by_id(id);
   }
 }
 

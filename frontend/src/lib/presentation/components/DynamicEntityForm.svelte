@@ -10,9 +10,9 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
   import type {
     BaseEntity,
     FieldMetadata,
-    EntityOperationResult,
     SubEntityConfig,
   } from "../../core/entities/BaseEntity";
+  import type { Result } from "../../core/types/Result";
   import type { EntityMetadata } from "../../core/entities/BaseEntity";
   import { entityMetadataRegistry } from "../../infrastructure/registry/EntityMetadataRegistry";
   import { fakeDataGenerator } from "../../infrastructure/utils/FakeDataGenerator";
@@ -1427,7 +1427,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
     }
 
     try {
-      let save_result: EntityOperationResult<BaseEntity>;
+      let save_result: Result<BaseEntity, string>;
 
       if (is_edit_mode && entity_data?.id) {
         if (crud_handlers?.update) {
@@ -1492,9 +1492,11 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
           view_callbacks.on_save_completed(saved_entity, was_new_entity);
         }
       } else {
-        const error_msg = save_result.error_message || "Unknown error occurred";
-        console.error("[DynamicEntityForm] Save failed:", error_msg);
-        validation_errors = save_result.validation_errors || {};
+        if (!save_result.success) {
+          const error_msg = save_result.error || "Unknown error occurred";
+          console.error("[DynamicEntityForm] Save failed:", error_msg);
+        }
+        validation_errors = {};
       }
     } catch (error) {
       is_save_in_progress = false;

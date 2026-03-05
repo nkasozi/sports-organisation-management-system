@@ -106,6 +106,7 @@ describe("CompetitionUseCases", () => {
       const result = await use_cases.list();
 
       expect(result.success).toBe(true);
+      if (!result.success) return;
       expect(result.data).toHaveLength(2);
     });
 
@@ -154,6 +155,7 @@ describe("CompetitionUseCases", () => {
       const result = await use_cases.get_by_id("comp-123");
 
       expect(result.success).toBe(true);
+      if (!result.success) return;
       expect(result.data?.name).toBe("Test League");
     });
 
@@ -161,7 +163,8 @@ describe("CompetitionUseCases", () => {
       const result = await use_cases.get_by_id("");
 
       expect(result.success).toBe(false);
-      expect(result.error_message).toBe("Competition ID is required");
+      if (result.success) return;
+      expect(result.error).toBe("Competition ID is required");
     });
   });
 
@@ -212,7 +215,8 @@ describe("CompetitionUseCases", () => {
       const result = await use_cases.update("", { name: "Updated" });
 
       expect(result.success).toBe(false);
-      expect(result.error_message).toBe("Competition ID is required");
+      if (result.success) return;
+      expect(result.error).toBe("Competition ID is required");
     });
   });
 
