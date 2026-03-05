@@ -50,8 +50,7 @@ describe("frontend-backend permission sync", () => {
       const mismatches: string[] = [];
 
       for (const entry of SHARED_ENTITY_CATEGORIES) {
-        const frontend_category =
-          ENTITY_DATA_CATEGORY_MAP[entry.entity_type];
+        const frontend_category = ENTITY_DATA_CATEGORY_MAP[entry.entity_type];
 
         if (frontend_category !== entry.data_category) {
           mismatches.push(
@@ -65,10 +64,7 @@ describe("frontend-backend permission sync", () => {
 
     it("every frontend entity maps to the same category on the backend", () => {
       const backend_map = new Map(
-        SHARED_ENTITY_CATEGORIES.map((e) => [
-          e.entity_type,
-          e.data_category,
-        ]),
+        SHARED_ENTITY_CATEGORIES.map((e) => [e.entity_type, e.data_category]),
       );
       const mismatches: string[] = [];
 
@@ -91,9 +87,7 @@ describe("frontend-backend permission sync", () => {
       const backend_entities = new Set(
         SHARED_ENTITY_CATEGORIES.map((e) => e.entity_type),
       );
-      const frontend_entities = new Set(
-        Object.keys(ENTITY_DATA_CATEGORY_MAP),
-      );
+      const frontend_entities = new Set(Object.keys(ENTITY_DATA_CATEGORY_MAP));
 
       const only_in_backend = [...backend_entities].filter(
         (e) => !frontend_entities.has(e),
@@ -129,8 +123,7 @@ describe("frontend-backend permission sync", () => {
       const backend_categories = new Set(ALL_CATEGORIES);
 
       const missing_from_backend = [...frontend_categories].filter(
-        (c) =>
-          !backend_categories.has(c as (typeof ALL_CATEGORIES)[number]),
+        (c) => !backend_categories.has(c as (typeof ALL_CATEGORIES)[number]),
       );
 
       expect(missing_from_backend).toEqual([]);
