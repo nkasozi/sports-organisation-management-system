@@ -571,8 +571,8 @@
     const authorization_check =
       await get_authorization_adapter().check_entity_authorized(
         auth_state.current_token.raw_token,
-        "official",
-        "create",
+        "fixture",
+        "update",
       );
 
     if (!authorization_check.success) return;

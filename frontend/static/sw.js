@@ -40,7 +40,9 @@ function is_cacheable_request(request) {
 
 function is_static_asset(request) {
   const url = new URL(request.url);
-  const is_sveltekit_chunk = url.pathname.startsWith("/_app/") || url.pathname.startsWith("/.svelte-kit/");
+  const is_sveltekit_chunk =
+    url.pathname.startsWith("/_app/") ||
+    url.pathname.startsWith("/.svelte-kit/");
   if (is_sveltekit_chunk) {
     return false;
   }
