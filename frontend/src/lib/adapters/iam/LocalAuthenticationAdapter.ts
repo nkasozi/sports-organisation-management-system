@@ -6,6 +6,13 @@ import type {
 } from "$lib/core/interfaces/ports";
 import type { InBrowserSystemUserRepository } from "$lib/adapters/repositories/InBrowserSystemUserRepository";
 import { browser } from "$app/environment";
+import {
+  create_auth_cache,
+  type AuthCache,
+} from "$lib/infrastructure/cache/AuthCache";
+
+const VERIFICATION_CACHE_MAX_ENTRIES = 50;
+const VERIFICATION_CACHE_TTL_MS = 30 * 60 * 1000;
 
 function get_secret_key(): string {
   if (browser) {
@@ -74,9 +81,23 @@ function create_token_header(): string {
 
 export class LocalAuthenticationAdapter implements AuthenticationPort {
   private system_user_repository: InBrowserSystemUserRepository;
+  private verification_cache: AuthCache<AuthVerificationResult>;
 
-  constructor(system_user_repository: InBrowserSystemUserRepository) {
+  constructor(
+    system_user_repository: InBrowserSystemUserRepository,
+    verification_cache?: AuthCache<AuthVerificationResult>,
+  ) {
     this.system_user_repository = system_user_repository;
+    this.verification_cache =
+      verification_cache ??
+      create_auth_cache<AuthVerificationResult>({
+        max_entries: VERIFICATION_CACHE_MAX_ENTRIES,
+        fallback_ttl_ms: VERIFICATION_CACHE_TTL_MS,
+      });
+  }
+
+  get_verification_cache(): AuthCache<AuthVerificationResult> {
+    return this.verification_cache;
   }
 
   async generate_token(
@@ -117,6 +138,27 @@ export class LocalAuthenticationAdapter implements AuthenticationPort {
       return { is_valid: false, error_message: "Token is empty" };
     }
 
+    const cached_result = this.verification_cache.get_or_miss(raw_token);
+    if (cached_result.is_hit && cached_result.value) {
+      console.log(
+        "[LocalAuthenticationAdapter] Cache HIT for token verification",
+      );
+      return cached_result.value;
+    }
+
+    const verification_result =
+      await this.verify_token_without_cache(raw_token);
+
+    if (verification_result.is_valid) {
+      this.verification_cache.set(raw_token, verification_result);
+    }
+
+    return verification_result;
+  }
+
+  private async verify_token_without_cache(
+    raw_token: string,
+  ): Promise<AuthVerificationResult> {
     const parts = raw_token.split(".");
     if (parts.length !== 3) {
       return { is_valid: false, error_message: "Invalid token format" };

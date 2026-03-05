@@ -17,51 +17,52 @@ import {
   create_success_result,
   create_failure_result,
 } from "$lib/core/types/Result";
-
-interface CacheEntry<T> {
-  data: T;
-  timestamp: number;
-}
+import {
+  create_auth_cache,
+  type AuthCache,
+} from "$lib/infrastructure/cache/AuthCache";
 
 interface ConvexQueryClient {
   query(name: string, args?: Record<string, unknown>): Promise<unknown>;
 }
 
-const CACHE_TTL_MS = 5 * 60 * 1000;
+const CONVEX_AUTH_CACHE_MAX_ENTRIES = 100;
+const CONVEX_AUTH_CACHE_TTL_MS = 60 * 60 * 1000;
 
 export class ConvexAuthorizationAdapter implements AuthorizationPort {
   private convex_client: ConvexQueryClient;
-  private permissions_cache: Map<string, CacheEntry<ProfilePermissions>> =
-    new Map();
-  private menu_cache: Map<string, CacheEntry<SidebarMenuGroup[]>> = new Map();
-  private entity_actions_cache: Map<string, CacheEntry<DataAction[]>> =
-    new Map();
+  private authorization_cache: AuthCache<unknown>;
 
-  constructor(convex_client: ConvexQueryClient) {
+  constructor(
+    convex_client: ConvexQueryClient,
+    authorization_cache?: AuthCache<unknown>,
+  ) {
     this.convex_client = convex_client;
+    this.authorization_cache =
+      authorization_cache ??
+      create_auth_cache<unknown>({
+        max_entries: CONVEX_AUTH_CACHE_MAX_ENTRIES,
+        fallback_ttl_ms: CONVEX_AUTH_CACHE_TTL_MS,
+      });
   }
 
-  private is_cache_valid<T>(entry: CacheEntry<T> | undefined): boolean {
-    if (!entry) return false;
-    return Date.now() - entry.timestamp < CACHE_TTL_MS;
-  }
-
-  private set_cache<T>(
-    cache: Map<string, CacheEntry<T>>,
-    key: string,
-    data: T,
-  ): void {
-    cache.set(key, { data, timestamp: Date.now() });
+  get_authorization_cache(): AuthCache<unknown> {
+    return this.authorization_cache;
   }
 
   async get_profile_permissions(
     _raw_token: string,
   ): AsyncResult<ProfilePermissions, AuthorizationFailure> {
     const cache_key = "profile_permissions";
-    const cached = this.permissions_cache.get(cache_key);
+    const cached = this.authorization_cache.get_or_miss(cache_key);
 
-    if (this.is_cache_valid(cached)) {
-      return create_success_result(cached!.data);
+    if (cached.is_hit && cached.value) {
+      console.log(
+        "[ConvexAuthorizationAdapter] Cache HIT for profile permissions",
+      );
+      return cached.value as Awaited<
+        AsyncResult<ProfilePermissions, AuthorizationFailure>
+      >;
     }
 
     try {
@@ -121,10 +122,10 @@ export class ConvexAuthorizationAdapter implements AuthorizationPort {
         }
       }
 
-      const result: ProfilePermissions = { role, permissions };
-      this.set_cache(this.permissions_cache, cache_key, result);
-
-      return create_success_result(result);
+      const profile_permissions: ProfilePermissions = { role, permissions };
+      const result = create_success_result(profile_permissions);
+      this.authorization_cache.set(cache_key, result);
+      return result;
     } catch (error) {
       console.error(
         "[ConvexAuthorizationAdapter] Error fetching permissions:",
@@ -144,10 +145,13 @@ export class ConvexAuthorizationAdapter implements AuthorizationPort {
     _raw_token: string,
   ): AsyncResult<SidebarMenuGroup[], AuthorizationFailure> {
     const cache_key = "sidebar_menu";
-    const cached = this.menu_cache.get(cache_key);
+    const cached = this.authorization_cache.get_or_miss(cache_key);
 
-    if (this.is_cache_valid(cached)) {
-      return create_success_result(cached!.data);
+    if (cached.is_hit && cached.value) {
+      console.log("[ConvexAuthorizationAdapter] Cache HIT for sidebar menu");
+      return cached.value as Awaited<
+        AsyncResult<SidebarMenuGroup[], AuthorizationFailure>
+      >;
     }
 
     try {
@@ -166,7 +170,7 @@ export class ConvexAuthorizationAdapter implements AuthorizationPort {
         });
       }
 
-      const result: SidebarMenuGroup[] = menu_groups.map((group) => ({
+      const menu_result: SidebarMenuGroup[] = menu_groups.map((group) => ({
         group_name: group.group_name,
         items: group.items.map((item) => ({
           name: item.name,
@@ -175,9 +179,9 @@ export class ConvexAuthorizationAdapter implements AuthorizationPort {
         })),
       }));
 
-      this.set_cache(this.menu_cache, cache_key, result);
-
-      return create_success_result(result);
+      const result = create_success_result(menu_result);
+      this.authorization_cache.set(cache_key, result);
+      return result;
     } catch (error) {
       console.error(
         "[ConvexAuthorizationAdapter] Error fetching sidebar menu:",
@@ -197,6 +201,15 @@ export class ConvexAuthorizationAdapter implements AuthorizationPort {
     _raw_token: string,
     route: string,
   ): AsyncResult<RouteAccessGranted, RouteAccessDenied> {
+    const cache_key = `route_access:${route}`;
+    const cached = this.authorization_cache.get_or_miss(cache_key);
+
+    if (cached.is_hit && cached.value) {
+      return cached.value as Awaited<
+        AsyncResult<RouteAccessGranted, RouteAccessDenied>
+      >;
+    }
+
     try {
       const access_result = (await this.convex_client.query(
         "authorization:can_access_route",
@@ -213,10 +226,12 @@ export class ConvexAuthorizationAdapter implements AuthorizationPort {
       const menu_result = await this.get_sidebar_menu_for_profile("");
       const all_routes = menu_result.success ? menu_result.data : [];
 
-      return create_success_result({
+      const result = create_success_result({
         route,
         all_accessible_routes: all_routes,
       });
+      this.authorization_cache.set(cache_key, result);
+      return result;
     } catch (error) {
       console.error(
         "[ConvexAuthorizationAdapter] Error checking route access:",
@@ -237,8 +252,15 @@ export class ConvexAuthorizationAdapter implements AuthorizationPort {
     entity_type: string,
     action: DataAction,
   ): Promise<EntityAuthorizationResult> {
+    const cache_key = `entity_auth:${entity_type}:${action}`;
+    const cached = this.authorization_cache.get_or_miss(cache_key);
+
+    if (cached.is_hit && cached.value) {
+      return cached.value as EntityAuthorizationResult;
+    }
+
     try {
-      const result = (await this.convex_client.query(
+      const query_result = (await this.convex_client.query(
         "authorization:check_entity_authorized",
         { entity_type, action },
       )) as {
@@ -248,13 +270,18 @@ export class ConvexAuthorizationAdapter implements AuthorizationPort {
         reason?: string;
       };
 
-      return {
-        is_authorized: result.is_authorized,
-        failure_reason: result.is_authorized ? undefined : "permission_denied",
-        data_category: result.data_category as DataCategory,
-        role: result.user_role as UserRole,
-        reason: result.reason,
+      const auth_result: EntityAuthorizationResult = {
+        is_authorized: query_result.is_authorized,
+        failure_reason: query_result.is_authorized
+          ? undefined
+          : "permission_denied",
+        data_category: query_result.data_category as DataCategory,
+        role: query_result.user_role as UserRole,
+        reason: query_result.reason,
       };
+
+      this.authorization_cache.set(cache_key, auth_result);
+      return auth_result;
     } catch (error) {
       console.error(
         "[ConvexAuthorizationAdapter] Error checking entity authorization:",
@@ -275,11 +302,11 @@ export class ConvexAuthorizationAdapter implements AuthorizationPort {
     _raw_token: string,
     entity_type: string,
   ): Promise<DataAction[]> {
-    const cache_key = `allowed_${entity_type}`;
-    const cached = this.entity_actions_cache.get(cache_key);
+    const cache_key = `allowed_actions:${entity_type}`;
+    const cached = this.authorization_cache.get_or_miss(cache_key);
 
-    if (this.is_cache_valid(cached)) {
-      return cached!.data;
+    if (cached.is_hit && cached.value) {
+      return cached.value as DataAction[];
     }
 
     try {
@@ -288,8 +315,7 @@ export class ConvexAuthorizationAdapter implements AuthorizationPort {
         { entity_type },
       )) as DataAction[];
 
-      this.set_cache(this.entity_actions_cache, cache_key, actions);
-
+      this.authorization_cache.set(cache_key, actions);
       return actions;
     } catch (error) {
       console.error(
@@ -304,11 +330,11 @@ export class ConvexAuthorizationAdapter implements AuthorizationPort {
     _raw_token: string,
     entity_type: string,
   ): Promise<DataAction[]> {
-    const cache_key = `disabled_${entity_type}`;
-    const cached = this.entity_actions_cache.get(cache_key);
+    const cache_key = `disabled_actions:${entity_type}`;
+    const cached = this.authorization_cache.get_or_miss(cache_key);
 
-    if (this.is_cache_valid(cached)) {
-      return cached!.data;
+    if (cached.is_hit && cached.value) {
+      return cached.value as DataAction[];
     }
 
     try {
@@ -317,8 +343,7 @@ export class ConvexAuthorizationAdapter implements AuthorizationPort {
         { entity_type },
       )) as DataAction[];
 
-      this.set_cache(this.entity_actions_cache, cache_key, actions);
-
+      this.authorization_cache.set(cache_key, actions);
       return actions;
     } catch (error) {
       console.error(
@@ -329,9 +354,7 @@ export class ConvexAuthorizationAdapter implements AuthorizationPort {
     }
   }
 
-  clear_cache(): void {
-    this.permissions_cache.clear();
-    this.menu_cache.clear();
-    this.entity_actions_cache.clear();
+  clear_cache(): number {
+    return this.authorization_cache.invalidate_all();
   }
 }

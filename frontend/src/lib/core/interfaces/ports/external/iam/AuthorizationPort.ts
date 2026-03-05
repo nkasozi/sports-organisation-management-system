@@ -9,7 +9,8 @@ export type DataCategory =
   | "org_administrator_level"
   | "organisation_level"
   | "team_level"
-  | "player_level";
+  | "player_level"
+  | "public_level";
 
 export type AuthorizableAction = "create" | "edit" | "delete" | "view" | "list";
 
@@ -172,6 +173,7 @@ export const DATA_PERMISSION_MAP: FullPermissionMap = {
     organisation_level: FULL_PERMISSIONS,
     team_level: FULL_PERMISSIONS,
     player_level: FULL_PERMISSIONS,
+    public_level: FULL_PERMISSIONS,
   },
   org_admin: {
     root_level: READ_ONLY_PERMISSIONS,
@@ -179,6 +181,7 @@ export const DATA_PERMISSION_MAP: FullPermissionMap = {
     organisation_level: FULL_PERMISSIONS,
     team_level: FULL_PERMISSIONS,
     player_level: FULL_PERMISSIONS,
+    public_level: FULL_PERMISSIONS,
   },
   officials_manager: {
     root_level: READ_ONLY_PERMISSIONS,
@@ -191,6 +194,7 @@ export const DATA_PERMISSION_MAP: FullPermissionMap = {
     },
     team_level: READ_ONLY_PERMISSIONS,
     player_level: READ_ONLY_PERMISSIONS,
+    public_level: FULL_PERMISSIONS,
   },
   team_manager: {
     root_level: READ_ONLY_PERMISSIONS,
@@ -198,6 +202,7 @@ export const DATA_PERMISSION_MAP: FullPermissionMap = {
     organisation_level: READ_ONLY_PERMISSIONS,
     team_level: { create: false, read: true, update: true, delete: false },
     player_level: { create: false, read: true, update: true, delete: false },
+    public_level: FULL_PERMISSIONS,
   },
   official: {
     root_level: READ_ONLY_PERMISSIONS,
@@ -210,6 +215,7 @@ export const DATA_PERMISSION_MAP: FullPermissionMap = {
     },
     team_level: READ_ONLY_PERMISSIONS,
     player_level: READ_ONLY_PERMISSIONS,
+    public_level: FULL_PERMISSIONS,
   },
   player: {
     root_level: READ_ONLY_PERMISSIONS,
@@ -217,6 +223,7 @@ export const DATA_PERMISSION_MAP: FullPermissionMap = {
     organisation_level: READ_ONLY_PERMISSIONS,
     team_level: READ_ONLY_PERMISSIONS,
     player_level: { create: false, read: true, update: true, delete: false },
+    public_level: FULL_PERMISSIONS,
   },
 };
 
@@ -249,13 +256,13 @@ export const ENTITY_DATA_CATEGORY_MAP: Record<string, DataCategory> = {
   fixturelineup: "team_level",
   competitionteam: "team_level",
   player: "player_level",
-  playerprofile: "player_level",
-  identification: "player_level",
-  qualification: "player_level",
-  jerseycolor: "player_level",
-  profilelink: "player_level",
-  activitycategory: "player_level",
-  teamprofile: "player_level",
+  playerprofile: "public_level",
+  identification: "public_level",
+  qualification: "public_level",
+  jerseycolor: "public_level",
+  profilelink: "public_level",
+  activitycategory: "public_level",
+  teamprofile: "public_level",
 };
 
 export function get_entity_data_category(entity_type: string): DataCategory {

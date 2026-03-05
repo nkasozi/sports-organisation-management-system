@@ -14,7 +14,8 @@ export type DataCategory =
   | "org_administrator_level"
   | "organisation_level"
   | "team_level"
-  | "player_level";
+  | "player_level"
+  | "public_level";
 
 export type DataAction = "create" | "read" | "update" | "delete";
 

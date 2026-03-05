@@ -25,8 +25,18 @@ import {
   initialize_clerk,
   get_session_token,
 } from "$lib/adapters/iam/clerkAuthService";
+import { get_authentication_adapter } from "$lib/adapters/iam/LocalAuthenticationAdapter";
+import { get_authorization_adapter } from "$lib/adapters/iam/LocalAuthorizationAdapter";
+import { get_clerk_authentication_adapter } from "$lib/adapters/iam/ClerkAuthenticationAdapter";
+import {
+  create_auth_cache_invalidator,
+  type AuthCacheInvalidator,
+} from "$lib/infrastructure/cache/AuthCacheInvalidator";
+import { api } from "../../../../convex/_generated/api";
+import { get_system_user_repository } from "$lib/adapters/repositories/InBrowserSystemUserRepository";
 
 let initialized = false;
+let auth_cache_invalidator: AuthCacheInvalidator | null = null;
 
 const FIRST_TIME_DETECTION_KEY = "sports_org_app_initialized";
 
@@ -79,6 +89,41 @@ function initialize_convex_client(): ConvexClient | null {
   }
 }
 
+function start_auth_cache_invalidation(convex_client: ConvexClient): boolean {
+  if (auth_cache_invalidator?.is_running()) return false;
+
+  const local_auth_adapter = get_authentication_adapter(
+    get_system_user_repository(),
+  );
+  const clerk_auth_adapter = get_clerk_authentication_adapter();
+  const authz_adapter = get_authorization_adapter();
+
+  const local_verification_cache = local_auth_adapter.get_verification_cache();
+  const clerk_verification_cache = clerk_auth_adapter.get_verification_cache();
+  const authorization_cache = authz_adapter.get_authorization_cache();
+
+  auth_cache_invalidator = create_auth_cache_invalidator({
+    convex_client:
+      convex_client as unknown as import("$lib/infrastructure/cache/AuthCacheInvalidator").SubscribableConvexClient,
+    caches_to_invalidate: [
+      local_verification_cache,
+      clerk_verification_cache,
+      authorization_cache,
+    ],
+    queries_to_watch: [api.authorization.get_current_user_profile],
+  });
+
+  const started = auth_cache_invalidator.start();
+
+  if (started) {
+    console.log(
+      "[AppInitializer] Auth cache invalidation started via Convex subscriptions",
+    );
+  }
+
+  return started;
+}
+
 export async function initialize_app_data(): Promise<boolean> {
   if (initialized) return true;
   if (typeof window === "undefined") return false;
@@ -98,7 +143,11 @@ export async function initialize_app_data(): Promise<boolean> {
   initialize_audit_event_handlers();
 
   await initialize_clerk();
-  initialize_convex_client();
+  const convex_client = initialize_convex_client();
+
+  if (convex_client) {
+    start_auth_cache_invalidation(convex_client);
+  }
 
   if (is_first_time) {
     first_time_setup_store.update_progress(
@@ -175,6 +224,10 @@ export async function initialize_app_data(): Promise<boolean> {
 }
 
 export function reset_initialization(): void {
+  if (auth_cache_invalidator?.is_running()) {
+    auth_cache_invalidator.stop();
+    auth_cache_invalidator = null;
+  }
   initialized = false;
 }
 

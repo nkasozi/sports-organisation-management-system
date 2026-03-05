@@ -23,6 +23,13 @@ import {
   create_failure_result,
 } from "$lib/core/types/Result";
 import { EventBus } from "$lib/infrastructure/events/EventBus";
+import {
+  create_auth_cache,
+  type AuthCache,
+} from "$lib/infrastructure/cache/AuthCache";
+
+const AUTHORIZATION_CACHE_MAX_ENTRIES = 200;
+const AUTHORIZATION_CACHE_TTL_MS = 30 * 60 * 1000;
 
 const SUPER_ADMIN_MENU: SidebarMenuGroup[] = [
   {
@@ -675,14 +682,41 @@ export function can_role_access_route(
 
 export class LocalAuthorizationAdapter implements AuthorizationPort {
   private auth_port: AuthenticationPort;
+  private authorization_cache: AuthCache<unknown>;
 
-  constructor(auth_port: AuthenticationPort) {
+  constructor(
+    auth_port: AuthenticationPort,
+    authorization_cache?: AuthCache<unknown>,
+  ) {
     this.auth_port = auth_port;
+    this.authorization_cache =
+      authorization_cache ??
+      create_auth_cache<unknown>({
+        max_entries: AUTHORIZATION_CACHE_MAX_ENTRIES,
+        fallback_ttl_ms: AUTHORIZATION_CACHE_TTL_MS,
+      });
+  }
+
+  get_authorization_cache(): AuthCache<unknown> {
+    return this.authorization_cache;
+  }
+
+  private build_cache_key(...parts: string[]): string {
+    return parts.join(":");
   }
 
   async get_profile_permissions(
     raw_token: string,
   ): AsyncResult<ProfilePermissions, AuthorizationFailure> {
+    const cache_key = this.build_cache_key("profile_permissions", raw_token);
+    const cached = this.authorization_cache.get_or_miss(cache_key);
+    if (cached.is_hit && cached.value) {
+      console.log(
+        "[LocalAuthorizationAdapter] Cache HIT for profile permissions",
+      );
+      return cached.value as Result<ProfilePermissions, AuthorizationFailure>;
+    }
+
     const verification = await this.auth_port.verify_token(raw_token);
 
     if (!verification.is_valid || !verification.payload) {
@@ -702,6 +736,7 @@ export class LocalAuthorizationAdapter implements AuthorizationPort {
       "organisation_level",
       "team_level",
       "player_level",
+      "public_level",
     ];
 
     const permissions: Record<DataCategory, CategoryPermissions> = {} as Record<
@@ -717,15 +752,24 @@ export class LocalAuthorizationAdapter implements AuthorizationPort {
       `[LocalAuthorizationAdapter] Retrieved permissions for role: ${role}`,
     );
 
-    return create_success_result({
+    const result = create_success_result({
       role,
       permissions,
     });
+    this.authorization_cache.set(cache_key, result);
+    return result;
   }
 
   async get_sidebar_menu_for_profile(
     raw_token: string,
   ): AsyncResult<SidebarMenuGroup[], AuthorizationFailure> {
+    const cache_key = this.build_cache_key("sidebar_menu", raw_token);
+    const cached = this.authorization_cache.get_or_miss(cache_key);
+    if (cached.is_hit && cached.value) {
+      console.log("[LocalAuthorizationAdapter] Cache HIT for sidebar menu");
+      return cached.value as Result<SidebarMenuGroup[], AuthorizationFailure>;
+    }
+
     const verification = await this.auth_port.verify_token(raw_token);
 
     if (!verification.is_valid || !verification.payload) {
@@ -746,13 +790,21 @@ export class LocalAuthorizationAdapter implements AuthorizationPort {
       `[LocalAuthorizationAdapter] Getting sidebar menu for role: ${role}, returned ${menu_items.length} groups`,
     );
 
-    return create_success_result(menu_items);
+    const result = create_success_result(menu_items);
+    this.authorization_cache.set(cache_key, result);
+    return result;
   }
 
   async can_profile_access_route(
     raw_token: string,
     route: string,
   ): AsyncResult<RouteAccessGranted, RouteAccessDenied> {
+    const cache_key = this.build_cache_key("route_access", raw_token, route);
+    const cached = this.authorization_cache.get_or_miss(cache_key);
+    if (cached.is_hit && cached.value) {
+      return cached.value as Result<RouteAccessGranted, RouteAccessDenied>;
+    }
+
     const verification = await this.auth_port.verify_token(raw_token);
 
     if (!verification.is_valid || !verification.payload) {
@@ -773,8 +825,9 @@ export class LocalAuthorizationAdapter implements AuthorizationPort {
     }
 
     const all_accessible_routes = get_sidebar_menu_for_role(role);
-
-    return create_success_result({ route, all_accessible_routes });
+    const result = create_success_result({ route, all_accessible_routes });
+    this.authorization_cache.set(cache_key, result);
+    return result;
   }
 
   async check_entity_authorized(
@@ -782,6 +835,17 @@ export class LocalAuthorizationAdapter implements AuthorizationPort {
     entity_type: string,
     action: DataAction,
   ): Promise<EntityAuthorizationResult> {
+    const cache_key = this.build_cache_key(
+      "entity_auth",
+      raw_token,
+      entity_type,
+      action,
+    );
+    const cached = this.authorization_cache.get_or_miss(cache_key);
+    if (cached.is_hit && cached.value) {
+      return cached.value as EntityAuthorizationResult;
+    }
+
     const verification = await this.auth_port.verify_token(raw_token);
 
     if (!verification.is_valid || !verification.payload) {
@@ -809,26 +873,44 @@ export class LocalAuthorizationAdapter implements AuthorizationPort {
         role,
       );
 
-      return {
+      return this.cache_entity_authorization_result(cache_key, {
         is_authorized: false,
         failure_reason: "permission_denied",
         data_category: category,
         role,
         reason: denial_reason,
-      };
+      });
     }
 
-    return {
+    return this.cache_entity_authorization_result(cache_key, {
       is_authorized: true,
       data_category: category,
       role,
-    };
+    });
+  }
+
+  private cache_entity_authorization_result(
+    cache_key: string,
+    result: EntityAuthorizationResult,
+  ): EntityAuthorizationResult {
+    this.authorization_cache.set(cache_key, result);
+    return result;
   }
 
   async get_allowed_entity_actions(
     raw_token: string,
     entity_type: string,
   ): Promise<DataAction[]> {
+    const cache_key = this.build_cache_key(
+      "allowed_actions",
+      raw_token,
+      entity_type,
+    );
+    const cached = this.authorization_cache.get_or_miss(cache_key);
+    if (cached.is_hit && cached.value) {
+      return cached.value as DataAction[];
+    }
+
     const verification = await this.auth_port.verify_token(raw_token);
 
     if (!verification.is_valid || !verification.payload) {
@@ -845,6 +927,7 @@ export class LocalAuthorizationAdapter implements AuthorizationPort {
     if (permissions.update) allowed_actions.push("update");
     if (permissions.delete) allowed_actions.push("delete");
 
+    this.authorization_cache.set(cache_key, allowed_actions);
     return allowed_actions;
   }
 
@@ -852,6 +935,16 @@ export class LocalAuthorizationAdapter implements AuthorizationPort {
     raw_token: string,
     entity_type: string,
   ): Promise<DataAction[]> {
+    const cache_key = this.build_cache_key(
+      "disabled_actions",
+      raw_token,
+      entity_type,
+    );
+    const cached = this.authorization_cache.get_or_miss(cache_key);
+    if (cached.is_hit && cached.value) {
+      return cached.value as DataAction[];
+    }
+
     const verification = await this.auth_port.verify_token(raw_token);
 
     if (!verification.is_valid || !verification.payload) {
@@ -868,6 +961,7 @@ export class LocalAuthorizationAdapter implements AuthorizationPort {
     if (!permissions.update) disabled.push("update");
     if (!permissions.delete) disabled.push("delete");
 
+    this.authorization_cache.set(cache_key, disabled);
     return disabled;
   }
 }

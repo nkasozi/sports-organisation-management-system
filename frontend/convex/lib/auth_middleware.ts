@@ -13,7 +13,8 @@ export type DataCategory =
   | "org_administrator_level"
   | "organisation_level"
   | "team_level"
-  | "player_level";
+  | "player_level"
+  | "public_level";
 
 interface UserProfileRecord {
   _id: Id<"user_profiles">;

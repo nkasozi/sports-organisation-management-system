@@ -92,9 +92,14 @@ describe("LocalAuthorizationAdapter", () => {
         expect(result.data.permissions.org_administrator_level.create).toBe(
           false,
         );
-        expect(result.data.permissions.player_level.create).toBe(true);
+        expect(result.data.permissions.player_level.create).toBe(false);
         expect(result.data.permissions.player_level.read).toBe(true);
+        expect(result.data.permissions.player_level.update).toBe(true);
         expect(result.data.permissions.player_level.delete).toBe(false);
+        expect(result.data.permissions.public_level.create).toBe(true);
+        expect(result.data.permissions.public_level.read).toBe(true);
+        expect(result.data.permissions.public_level.update).toBe(true);
+        expect(result.data.permissions.public_level.delete).toBe(true);
       }
     });
 

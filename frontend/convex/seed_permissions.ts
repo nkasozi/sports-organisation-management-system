@@ -13,7 +13,8 @@ export type DataCategory =
   | "org_administrator_level"
   | "organisation_level"
   | "team_level"
-  | "player_level";
+  | "player_level"
+  | "public_level";
 
 interface RolePermission {
   role: UserRole;
@@ -83,6 +84,7 @@ function build_role_permissions(): RolePermission[] {
       organisation_level: FULL_PERMISSIONS,
       team_level: FULL_PERMISSIONS,
       player_level: FULL_PERMISSIONS,
+      public_level: FULL_PERMISSIONS,
     },
     org_admin: {
       root_level: READ_ONLY,
@@ -90,6 +92,7 @@ function build_role_permissions(): RolePermission[] {
       organisation_level: FULL_PERMISSIONS,
       team_level: FULL_PERMISSIONS,
       player_level: FULL_PERMISSIONS,
+      public_level: FULL_PERMISSIONS,
     },
     officials_manager: {
       root_level: READ_ONLY,
@@ -97,6 +100,7 @@ function build_role_permissions(): RolePermission[] {
       organisation_level: READ_UPDATE,
       team_level: READ_ONLY,
       player_level: READ_ONLY,
+      public_level: FULL_PERMISSIONS,
     },
     team_manager: {
       root_level: READ_ONLY,
@@ -104,6 +108,7 @@ function build_role_permissions(): RolePermission[] {
       organisation_level: READ_ONLY,
       team_level: READ_UPDATE,
       player_level: READ_UPDATE,
+      public_level: FULL_PERMISSIONS,
     },
     official: {
       root_level: READ_ONLY,
@@ -111,6 +116,7 @@ function build_role_permissions(): RolePermission[] {
       organisation_level: READ_UPDATE,
       team_level: READ_ONLY,
       player_level: READ_ONLY,
+      public_level: FULL_PERMISSIONS,
     },
     player: {
       root_level: READ_ONLY,
@@ -118,6 +124,7 @@ function build_role_permissions(): RolePermission[] {
       organisation_level: READ_ONLY,
       team_level: READ_ONLY,
       player_level: READ_UPDATE,
+      public_level: FULL_PERMISSIONS,
     },
   };
 
@@ -136,6 +143,7 @@ function build_role_permissions(): RolePermission[] {
     "organisation_level",
     "team_level",
     "player_level",
+    "public_level",
   ];
 
   for (const role of roles) {
@@ -188,13 +196,13 @@ function build_entity_categories(): EntityCategory[] {
     { entity_type: "fixturelineup", data_category: "team_level" },
     { entity_type: "competitionteam", data_category: "team_level" },
     { entity_type: "player", data_category: "player_level" },
-    { entity_type: "playerprofile", data_category: "player_level" },
-    { entity_type: "identification", data_category: "player_level" },
-    { entity_type: "qualification", data_category: "player_level" },
-    { entity_type: "jerseycolor", data_category: "player_level" },
-    { entity_type: "profilelink", data_category: "player_level" },
-    { entity_type: "activitycategory", data_category: "player_level" },
-    { entity_type: "teamprofile", data_category: "player_level" },
+    { entity_type: "playerprofile", data_category: "public_level" },
+    { entity_type: "identification", data_category: "public_level" },
+    { entity_type: "qualification", data_category: "public_level" },
+    { entity_type: "jerseycolor", data_category: "public_level" },
+    { entity_type: "profilelink", data_category: "public_level" },
+    { entity_type: "activitycategory", data_category: "public_level" },
+    { entity_type: "teamprofile", data_category: "public_level" },
   ];
 }
 
