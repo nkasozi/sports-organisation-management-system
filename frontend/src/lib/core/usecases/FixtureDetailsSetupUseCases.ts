@@ -29,7 +29,7 @@ export function create_fixture_details_setup_use_cases(
         return create_failure_result(first_error || "Validation failed");
       }
 
-      const existing_setups = await repository.find_by_filter(
+      const existing_setups = await repository.find_all(
         {
           fixture_id: input.fixture_id,
         },
@@ -89,7 +89,7 @@ export function create_fixture_details_setup_use_cases(
       filter?: FixtureDetailsSetupFilter,
       options?: QueryOptions,
     ): PaginatedAsyncResult<FixtureDetailsSetup> {
-      return repository.find_by_filter(filter || {}, {
+      return repository.find_all(filter || {}, {
         page_number: options?.page_number || 1,
         page_size: options?.page_size || 50,
       });

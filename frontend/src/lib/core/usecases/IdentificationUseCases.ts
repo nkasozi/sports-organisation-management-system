@@ -82,7 +82,7 @@ export function create_identification_use_cases(
       const query_options = options || { page_number: 1, page_size: 100 };
 
       if (!filter) {
-        return repository.find_all(query_options);
+        return repository.find_all(undefined, query_options);
       }
 
       const identification_filter: IdentificationFilter = {
@@ -92,7 +92,7 @@ export function create_identification_use_cases(
         status: filter.status,
       };
 
-      return repository.find_by_filter(identification_filter, query_options);
+      return repository.find_all(identification_filter, query_options);
     },
 
     async list_by_holder(
@@ -103,7 +103,7 @@ export function create_identification_use_cases(
     },
 
     async list_all(): PaginatedAsyncResult<Identification> {
-      return repository.find_all({ page_number: 1, page_size: 1000 });
+      return repository.find_all(undefined, { page_number: 1, page_size: 1000 });
     },
 
     async list_identifications_by_entity(

@@ -21,9 +21,7 @@ export function create_sport_use_cases(
       filter?: SportFilter,
       options?: QueryOptions,
     ): Promise<EntityListResult<Sport>> {
-      const result = filter
-        ? await repository.find_by_filter(filter, options)
-        : await repository.find_all(options);
+      const result = await repository.find_all(filter, options);
 
       if (!result.success) {
         return {

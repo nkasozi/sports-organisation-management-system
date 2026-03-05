@@ -11,7 +11,6 @@ function create_mock_repository(): IdentificationRepository {
     find_all: vi.fn(),
     find_by_id: vi.fn(),
     find_by_ids: vi.fn(),
-    find_by_filter: vi.fn(),
     create: vi.fn(),
     update: vi.fn(),
     delete_by_id: vi.fn(),

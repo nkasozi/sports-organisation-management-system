@@ -40,9 +40,7 @@ export function create_audit_log_use_cases(
       filter?: AuditLogFilter,
       options?: QueryOptions,
     ): Promise<EntityListResult<AuditLog>> {
-      const result = filter
-        ? await repository.find_by_filter(filter, options)
-        : await repository.find_all(options);
+      const result = await repository.find_all(filter, options);
 
       if (!result.success) {
         return {
@@ -151,7 +149,7 @@ export function create_audit_log_use_cases(
         };
       }
 
-      const result = await repository.find_by_filter({ user_id }, options);
+      const result = await repository.find_all({ user_id }, options);
 
       if (!result.success) {
         return {

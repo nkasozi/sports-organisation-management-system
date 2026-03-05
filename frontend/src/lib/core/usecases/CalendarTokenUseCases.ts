@@ -45,7 +45,7 @@ export function create_calendar_token_use_cases(
       filter?: CalendarTokenFilter,
       options?: QueryOptions,
     ): Promise<EntityListResult<CalendarToken>> {
-      const result = await calendar_token_repository.find_by_filter(
+      const result = await calendar_token_repository.find_all(
         filter ?? {},
         options,
       );

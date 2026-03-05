@@ -12,7 +12,6 @@ function create_mock_transfer_repository(): PlayerTeamTransferHistoryRepository 
   return {
     find_all: vi.fn(),
     find_by_id: vi.fn(),
-    find_by_filter: vi.fn(),
     create: vi.fn(),
     update: vi.fn(),
     delete_by_id: vi.fn(),
@@ -29,7 +28,6 @@ function create_mock_membership_repository(): PlayerTeamMembershipRepository {
   return {
     find_all: vi.fn(),
     find_by_id: vi.fn(),
-    find_by_filter: vi.fn(),
     create: vi.fn(),
     update: vi.fn(),
     delete_by_id: vi.fn(),
@@ -207,7 +205,7 @@ describe("PlayerTeamTransferHistoryUseCases", () => {
         data: pending_transfer,
       });
 
-      vi.mocked(mock_membership_repository.find_by_filter).mockResolvedValue({
+      vi.mocked(mock_membership_repository.find_all).mockResolvedValue({
         success: true,
         data: {
           items: [existing_membership],
@@ -268,7 +266,7 @@ describe("PlayerTeamTransferHistoryUseCases", () => {
         data: pending_transfer,
       });
 
-      vi.mocked(mock_membership_repository.find_by_filter).mockResolvedValue({
+      vi.mocked(mock_membership_repository.find_all).mockResolvedValue({
         success: true,
         data: {
           items: [],

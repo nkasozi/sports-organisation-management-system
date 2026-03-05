@@ -22,9 +22,7 @@ export function create_official_use_cases(
       filter?: OfficialFilter,
       options?: QueryOptions,
     ): Promise<EntityListResult<Official>> {
-      const result = filter
-        ? await repository.find_by_filter(filter, options)
-        : await repository.find_all(options);
+      const result = await repository.find_all(filter, options);
       if (!result.success) {
         return {
           success: false,
@@ -96,7 +94,7 @@ export function create_official_use_cases(
       if (!role_id || role_id.trim().length === 0) {
         return create_failure_result("Role ID is required");
       }
-      return repository.find_by_filter({ role_id }, options);
+      return repository.find_all({ role_id }, options);
     },
 
     async list_available_officials(

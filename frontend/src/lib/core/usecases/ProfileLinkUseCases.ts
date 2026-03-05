@@ -37,15 +37,32 @@ export function create_profile_link_use_cases(
       filter?: ProfileLinkFilter | Record<string, string>,
       options?: QueryOptions,
     ): Promise<EntityListResult<ProfileLink>> {
+      if (!filter) {
+        const result = await repository.find_all(undefined, options);
+
+        if (!result.success) {
+          return {
+            success: false,
+            data: [],
+            total_count: 0,
+            error_message: result.error,
+          };
+        }
+
+        return {
+          success: true,
+          data: result.data?.items || [],
+          total_count: result.data?.total_count || 0,
+        };
+      }
+
       const typed_filter: ProfileLinkFilter = {
         profile_id: filter?.profile_id,
         platform: filter?.platform,
         status: filter?.status,
       };
 
-      const result = filter
-        ? await repository.find_by_filter(typed_filter, options)
-        : await repository.find_all(options);
+      const result = await repository.find_all(typed_filter, options);
 
       if (!result.success) {
         return {

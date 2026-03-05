@@ -23,7 +23,8 @@ export class InBrowserCompetitionRepository
   extends InBrowserBaseRepository<
     Competition,
     CreateCompetitionInput,
-    UpdateCompetitionInput
+    UpdateCompetitionInput,
+    CompetitionFilter
   >
   implements CompetitionRepository
 {
@@ -77,75 +78,55 @@ export class InBrowserCompetitionRepository
     };
   }
 
-  async find_by_filter(
-    filter: CompetitionFilter,
-    options?: QueryOptions,
-  ): PaginatedAsyncResult<Competition> {
-    try {
-      let filtered_entities = await this.database.competitions.toArray();
+  protected apply_entity_filter(entities: Competition[], filter: CompetitionFilter): Competition[] {
+    let filtered_entities = entities;
 
-      if (filter.name_contains) {
-        const search_term = filter.name_contains.toLowerCase();
-        filtered_entities = filtered_entities.filter((competition) =>
-          competition.name.toLowerCase().includes(search_term),
-        );
-      }
-
-      if (filter.organization_id) {
-        filtered_entities = filtered_entities.filter(
-          (competition) =>
-            competition.organization_id === filter.organization_id,
-        );
-      }
-
-      if (filter.status) {
-        filtered_entities = filtered_entities.filter(
-          (competition) => competition.status === filter.status,
-        );
-      }
-
-      if (filter.start_date_after) {
-        filtered_entities = filtered_entities.filter(
-          (competition) => competition.start_date >= filter.start_date_after!,
-        );
-      }
-
-      if (filter.start_date_before) {
-        filtered_entities = filtered_entities.filter(
-          (competition) => competition.start_date <= filter.start_date_before!,
-        );
-      }
-
-      const total_count = filtered_entities.length;
-      const sorted_entities = this.apply_sort(filtered_entities, options);
-      const paginated_entities = this.apply_pagination(
-        sorted_entities,
-        options,
-      );
-
-      return create_success_result(
-        this.create_paginated_result(paginated_entities, total_count, options),
-      );
-    } catch (error) {
-      const error_message =
-        error instanceof Error ? error.message : "Unknown error occurred";
-      return create_failure_result(
-        `Failed to filter competitions: ${error_message}`,
+    if (filter.name_contains) {
+      const search_term = filter.name_contains.toLowerCase();
+      filtered_entities = filtered_entities.filter((competition) =>
+        competition.name.toLowerCase().includes(search_term),
       );
     }
+
+    if (filter.organization_id) {
+      filtered_entities = filtered_entities.filter(
+        (competition) =>
+          competition.organization_id === filter.organization_id,
+      );
+    }
+
+    if (filter.status) {
+      filtered_entities = filtered_entities.filter(
+        (competition) => competition.status === filter.status,
+      );
+    }
+
+    if (filter.start_date_after) {
+      filtered_entities = filtered_entities.filter(
+        (competition) => competition.start_date >= filter.start_date_after!,
+      );
+    }
+
+    if (filter.start_date_before) {
+      filtered_entities = filtered_entities.filter(
+        (competition) => competition.start_date <= filter.start_date_before!,
+      );
+    }
+
+    return filtered_entities;
   }
 
   async find_by_organization(
     organization_id: string,
     options?: QueryOptions,
   ): PaginatedAsyncResult<Competition> {
-    return this.find_by_filter({ organization_id }, options);
+    return this.find_all({ organization_id }, options);
   }
 
   async find_active_competitions(
     options?: QueryOptions,
   ): PaginatedAsyncResult<Competition> {
-    return this.find_by_filter({ status: "active" }, options);
+    return this.find_all({ status: "active" }, options);
   }
 }
 

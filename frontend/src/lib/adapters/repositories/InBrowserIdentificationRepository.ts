@@ -24,7 +24,8 @@ export class InBrowserIdentificationRepository
   extends InBrowserBaseRepository<
     Identification,
     CreateIdentificationInput,
-    UpdateIdentificationInput
+    UpdateIdentificationInput,
+    IdentificationFilter
   >
   implements IdentificationRepository
 {
@@ -129,10 +130,7 @@ export class InBrowserIdentificationRepository
     filter?: IdentificationFilter,
     options?: QueryOptions,
   ): PaginatedAsyncResult<Identification> {
-    if (!filter) {
-      return this.find_all(options);
-    }
-    return this.find_by_filter(filter, options);
+    return this.find_all(filter, options);
   }
 }
 

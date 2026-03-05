@@ -41,15 +41,32 @@ export function create_player_profile_use_cases(
       filter?: PlayerProfileFilter | Record<string, string>,
       options?: QueryOptions,
     ): Promise<EntityListResult<PlayerProfile>> {
+      if (!filter) {
+        const result = await repository.find_all(undefined, options);
+
+        if (!result.success) {
+          return {
+            success: false,
+            data: [],
+            total_count: 0,
+            error_message: result.error,
+          };
+        }
+
+        return {
+          success: true,
+          data: result.data?.items || [],
+          total_count: result.data?.total_count || 0,
+        };
+      }
+
       const typed_filter: PlayerProfileFilter = {
         player_id: filter?.player_id,
         visibility: filter?.visibility as PlayerProfileFilter["visibility"],
         status: filter?.status as PlayerProfileFilter["status"],
       };
 
-      const result = filter
-        ? await repository.find_by_filter(typed_filter, options)
-        : await repository.find_all(options);
+      const result = await repository.find_all(typed_filter, options);
 
       if (!result.success) {
         return {

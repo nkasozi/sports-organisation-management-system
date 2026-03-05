@@ -172,9 +172,12 @@ async function load_and_set_current_user(): Promise<SystemUser | null> {
     return admin_result.data;
   }
 
-  const existing_users_result = await system_user_repository.find_all({
-    page_size: 100,
-  });
+  const existing_users_result = await system_user_repository.find_all(
+    undefined,
+    {
+      page_size: 100,
+    },
+  );
 
   if (!existing_users_result.success) return null;
 
@@ -286,9 +289,12 @@ export async function seed_all_data_if_needed(): Promise<boolean> {
   await gender_repository.seed_with_data(seed_genders);
   emit_entity_created_events("gender", seed_genders, (gender) => gender.name);
 
-  const positions_result = await player_position_repository.find_all({
-    page_size: 100,
-  });
+  const positions_result = await player_position_repository.find_all(
+    undefined,
+    {
+      page_size: 100,
+    },
+  );
   const positions = positions_result.success ? positions_result.data.items : [];
 
   const staff_roles_result =
@@ -308,7 +314,7 @@ export async function seed_all_data_if_needed(): Promise<boolean> {
     : [];
 
   const competition_formats_result =
-    await competition_format_repository.find_all({ page_size: 100 });
+    await competition_format_repository.find_all(undefined, { page_size: 100 });
   const competition_formats = competition_formats_result.success
     ? competition_formats_result.data.items
     : [];

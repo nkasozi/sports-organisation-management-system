@@ -85,7 +85,7 @@ export function create_jersey_color_use_cases(
         status: filter?.status,
       };
 
-      return repository.find_by_filter(typed_filter, options);
+      return repository.find_all(typed_filter, options);
     },
 
     async list_by_holder(
@@ -96,7 +96,7 @@ export function create_jersey_color_use_cases(
     },
 
     async list_all(): PaginatedAsyncResult<JerseyColor> {
-      return repository.find_all({ page_size: 1000 });
+      return repository.find_all(undefined, { page_size: 1000 });
     },
 
     async list_jerseys_by_entity(

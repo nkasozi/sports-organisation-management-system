@@ -15,7 +15,8 @@ export interface TeamStaffRoleFilter {
 export interface TeamStaffRoleRepository extends Repository<
   TeamStaffRole,
   CreateTeamStaffRoleInput,
-  UpdateTeamStaffRoleInput
+  UpdateTeamStaffRoleInput,
+  TeamStaffRoleFilter
 > {
   find_by_category(
     category: TeamStaffRole["category"],

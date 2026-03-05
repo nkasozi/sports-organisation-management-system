@@ -28,7 +28,7 @@ export function create_game_official_role_use_cases(
         page_number: pagination?.page ?? 1,
         page_size: pagination?.page_size ?? 10,
       };
-      const result = await repository.find_all(query_options);
+      const result = await repository.find_all(filter, query_options);
       if (!result.success) {
         return {
           success: false,

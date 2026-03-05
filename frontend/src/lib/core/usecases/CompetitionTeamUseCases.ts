@@ -25,9 +25,7 @@ export function create_competition_team_use_cases(
       filter?: CompetitionTeamFilter,
       options?: QueryOptions,
     ): Promise<EntityListResult<CompetitionTeam>> {
-      const result = filter
-        ? await repository.find_by_filter(filter, options)
-        : await repository.find_all(options);
+      const result = await repository.find_all(filter, options);
       if (!result.success) {
         return {
           success: false,

@@ -27,9 +27,7 @@ export function create_player_position_use_cases(
       const page_size = pagination?.page_size ?? 10;
       const query_options = { page_number, page_size };
 
-      const positions_result = filter
-        ? await repository.find_by_filter(filter, query_options)
-        : await repository.find_all(query_options);
+      const positions_result = await repository.find_all(filter, query_options);
 
       if (!positions_result.success) {
         return {

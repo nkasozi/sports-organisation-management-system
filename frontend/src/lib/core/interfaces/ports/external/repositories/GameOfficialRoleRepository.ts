@@ -17,7 +17,8 @@ export interface GameOfficialRoleFilter {
 export interface GameOfficialRoleRepository extends Repository<
   GameOfficialRole,
   CreateGameOfficialRoleInput,
-  UpdateGameOfficialRoleInput
+  UpdateGameOfficialRoleInput,
+  GameOfficialRoleFilter
 > {
   find_by_sport(sport_id: string | null): AsyncResult<GameOfficialRole[]>;
   find_head_officials(): AsyncResult<GameOfficialRole[]>;

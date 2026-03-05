@@ -24,7 +24,8 @@ export abstract class InBrowserBaseRepository<
   TEntity extends BaseEntity,
   TCreateInput,
   TUpdateInput,
-> implements Repository<TEntity, TCreateInput, TUpdateInput> {
+  TFilter = undefined,
+> implements Repository<TEntity, TCreateInput, TUpdateInput, TFilter> {
   protected entity_prefix: string;
   protected database: SportsOrgDatabase;
 
@@ -102,12 +103,20 @@ export abstract class InBrowserBaseRepository<
     return entities.slice(start_index, end_index);
   }
 
-  async find_all(options?: QueryOptions): PaginatedAsyncResult<TEntity> {
+  protected apply_entity_filter(entities: TEntity[], _filter: TFilter): TEntity[] {
+    return entities;
+  }
+
+  async find_all(filter?: TFilter, options?: QueryOptions): PaginatedAsyncResult<TEntity> {
     try {
       const table = this.get_table();
-      const all_entities = await table.toArray();
-      const total_count = all_entities.length;
+      let all_entities = await table.toArray();
 
+      if (filter) {
+        all_entities = this.apply_entity_filter(all_entities, filter);
+      }
+
+      const total_count = all_entities.length;
       const sorted_entities = this.apply_sort(all_entities, options);
       const paginated_entities = this.apply_pagination(
         sorted_entities,

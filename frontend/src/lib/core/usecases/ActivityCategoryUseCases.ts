@@ -28,9 +28,7 @@ export function create_activity_category_use_cases(
       filter?: ActivityCategoryFilter,
       options?: QueryOptions,
     ): Promise<EntityListResult<ActivityCategory>> {
-      const result = filter
-        ? await repository.find_by_filter(filter, options)
-        : await repository.find_all(options);
+      const result = await repository.find_all(filter, options);
 
       if (!result.success) {
         return {

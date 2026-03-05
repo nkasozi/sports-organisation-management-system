@@ -16,12 +16,9 @@ export interface OfficialAssociatedTeamFilter {
 export interface OfficialAssociatedTeamRepository extends Repository<
   OfficialAssociatedTeam,
   CreateOfficialAssociatedTeamInput,
-  UpdateOfficialAssociatedTeamInput
+  UpdateOfficialAssociatedTeamInput,
+  OfficialAssociatedTeamFilter
 > {
-  find_by_filter(
-    filter: OfficialAssociatedTeamFilter,
-    options?: QueryOptions,
-  ): PaginatedAsyncResult<OfficialAssociatedTeam>;
   find_by_official(
     official_id: string,
     options?: QueryOptions,

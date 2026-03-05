@@ -25,9 +25,7 @@ export function create_competition_use_cases(
       filter?: CompetitionFilter,
       options?: QueryOptions,
     ): Promise<EntityListResult<Competition>> {
-      const result = filter
-        ? await repository.find_by_filter(filter, options)
-        : await repository.find_all(options);
+      const result = await repository.find_all(filter, options);
       if (!result.success) {
         return {
           success: false,

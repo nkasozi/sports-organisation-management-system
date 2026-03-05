@@ -28,9 +28,7 @@ export function create_player_team_transfer_history_use_cases(
       filter?: PlayerTeamTransferHistoryFilter,
       options?: QueryOptions,
     ): Promise<EntityListResult<PlayerTeamTransferHistory>> {
-      const result = filter
-        ? await repository.find_by_filter(filter, options)
-        : await repository.find_all(options);
+      const result = await repository.find_all(filter, options);
 
       if (!result.success) {
         return {
@@ -160,7 +158,7 @@ export function create_player_team_transfer_history_use_cases(
         );
       }
 
-      const memberships_result = await membership_repository.find_by_filter({
+      const memberships_result = await membership_repository.find_all({
         player_id: transfer.player_id,
         team_id: transfer.from_team_id,
         status: "active",

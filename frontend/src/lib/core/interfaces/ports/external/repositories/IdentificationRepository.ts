@@ -17,12 +17,9 @@ export interface IdentificationFilter {
 export interface IdentificationRepository extends Repository<
   Identification,
   CreateIdentificationInput,
-  UpdateIdentificationInput
+  UpdateIdentificationInput,
+  IdentificationFilter
 > {
-  find_by_filter(
-    filter: IdentificationFilter,
-    options?: QueryOptions,
-  ): PaginatedAsyncResult<Identification>;
   find_by_holder(
     holder_type: IdentificationHolderType,
     holder_id: string,

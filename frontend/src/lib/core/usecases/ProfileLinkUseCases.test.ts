@@ -65,7 +65,6 @@ function create_mock_repository(): ProfileLinkRepository {
     delete_by_id: vi.fn(),
     delete_by_ids: vi.fn(),
     count: vi.fn(),
-    find_by_filter: vi.fn(),
     find_by_profile_id: vi.fn(),
   };
 }
@@ -101,7 +100,7 @@ describe("ProfileLinkUseCases", () => {
       const mock_links = [
         create_mock_profile_link({ profile_id: "profile_1" }),
       ];
-      vi.mocked(mock_repository.find_by_filter).mockResolvedValue(
+      vi.mocked(mock_repository.find_all).mockResolvedValue(
         create_paginated_result(mock_links),
       );
 
@@ -109,7 +108,7 @@ describe("ProfileLinkUseCases", () => {
 
       expect(result.success).toBe(true);
       expect(result.data.length).toBe(1);
-      expect(mock_repository.find_by_filter).toHaveBeenCalledWith(
+      expect(mock_repository.find_all).toHaveBeenCalledWith(
         expect.objectContaining({ profile_id: "profile_1" }),
         undefined,
       );
@@ -117,7 +116,7 @@ describe("ProfileLinkUseCases", () => {
 
     it("filters by platform", async () => {
       const mock_links = [create_mock_profile_link({ platform: "twitter" })];
-      vi.mocked(mock_repository.find_by_filter).mockResolvedValue(
+      vi.mocked(mock_repository.find_all).mockResolvedValue(
         create_paginated_result(mock_links),
       );
 
@@ -125,7 +124,7 @@ describe("ProfileLinkUseCases", () => {
 
       expect(result.success).toBe(true);
       expect(result.data.length).toBe(1);
-      expect(mock_repository.find_by_filter).toHaveBeenCalledWith(
+      expect(mock_repository.find_all).toHaveBeenCalledWith(
         expect.objectContaining({ platform: "twitter" }),
         undefined,
       );
@@ -139,7 +138,7 @@ describe("ProfileLinkUseCases", () => {
       const options: QueryOptions = { page_number: 2, page_size: 20 };
       await use_cases.list(undefined, options);
 
-      expect(mock_repository.find_all).toHaveBeenCalledWith(options);
+      expect(mock_repository.find_all).toHaveBeenCalledWith(undefined, options);
     });
 
     it("handles repository failure", async () => {

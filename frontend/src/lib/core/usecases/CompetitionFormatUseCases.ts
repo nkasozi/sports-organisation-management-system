@@ -30,9 +30,7 @@ export function create_competition_format_use_cases(
       const page_size = pagination?.page_size ?? 10;
       const query_options = { page_number, page_size };
 
-      const formats_result = filter
-        ? await repository.find_by_filter(filter, query_options)
-        : await repository.find_all(query_options);
+      const formats_result = await repository.find_all(filter, query_options);
       if (!formats_result.success) {
         return {
           success: false,

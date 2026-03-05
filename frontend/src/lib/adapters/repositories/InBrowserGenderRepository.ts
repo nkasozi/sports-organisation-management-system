@@ -20,7 +20,7 @@ import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
 const ENTITY_PREFIX = "gender";
 
 export class InBrowserGenderRepository
-  extends InBrowserBaseRepository<Gender, CreateGenderInput, UpdateGenderInput>
+  extends InBrowserBaseRepository<Gender, CreateGenderInput, UpdateGenderInput, GenderFilter>
   implements GenderRepository
 {
   constructor() {
@@ -55,42 +55,22 @@ export class InBrowserGenderRepository
     };
   }
 
-  async find_by_filter(
-    filter: GenderFilter,
-    options?: QueryOptions,
-  ): PaginatedAsyncResult<Gender> {
-    try {
-      let filtered_entities = await this.database.genders.toArray();
+  protected apply_entity_filter(entities: Gender[], filter: GenderFilter): Gender[] {
+    let filtered_entities = entities;
 
-      if (filter.status) {
-        filtered_entities = filtered_entities.filter(
-          (gender) => gender.status === filter.status,
-        );
-      }
-
-      const total_count = filtered_entities.length;
-      const sorted_entities = this.apply_sort(filtered_entities, options);
-      const paginated_entities = this.apply_pagination(
-        sorted_entities,
-        options,
-      );
-
-      return create_success_result(
-        this.create_paginated_result(paginated_entities, total_count, options),
-      );
-    } catch (error) {
-      const error_message =
-        error instanceof Error ? error.message : "Unknown error occurred";
-      return create_failure_result(
-        `Failed to filter genders: ${error_message}`,
+    if (filter.status) {
+      filtered_entities = filtered_entities.filter(
+        (gender) => gender.status === filter.status,
       );
     }
+
+    return filtered_entities;
   }
 
   async find_active_genders(
     options?: QueryOptions,
   ): PaginatedAsyncResult<Gender> {
-    return this.find_by_filter({ status: "active" }, options);
+    return this.find_all({ status: "active" }, options);
   }
 }
 

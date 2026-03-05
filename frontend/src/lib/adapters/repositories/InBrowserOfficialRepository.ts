@@ -24,7 +24,8 @@ export class InBrowserOfficialRepository
   extends InBrowserBaseRepository<
     Official,
     CreateOfficialInput,
-    UpdateOfficialInput
+    UpdateOfficialInput,
+    OfficialFilter
   >
   implements OfficialRepository
 {
@@ -71,64 +72,44 @@ export class InBrowserOfficialRepository
     };
   }
 
-  async find_by_filter(
-    filter: OfficialFilter,
-    options?: QueryOptions,
-  ): PaginatedAsyncResult<Official> {
-    try {
-      let filtered_entities = await this.database.officials.toArray();
+  protected apply_entity_filter(entities: Official[], filter: OfficialFilter): Official[] {
+    let filtered_entities = entities;
 
-      if (filter.name_contains) {
-        const search_term = filter.name_contains.toLowerCase();
-        filtered_entities = filtered_entities.filter((official) =>
-          `${official.first_name} ${official.last_name}`
-            .toLowerCase()
-            .includes(search_term),
-        );
-      }
-
-      if (filter.organization_id) {
-        filtered_entities = filtered_entities.filter(
-          (official) => official.organization_id === filter.organization_id,
-        );
-      }
-
-      if (filter.status) {
-        filtered_entities = filtered_entities.filter(
-          (official) => official.status === filter.status,
-        );
-      }
-
-      const total_count = filtered_entities.length;
-      const sorted_entities = this.apply_sort(filtered_entities, options);
-      const paginated_entities = this.apply_pagination(
-        sorted_entities,
-        options,
-      );
-
-      return create_success_result(
-        this.create_paginated_result(paginated_entities, total_count, options),
-      );
-    } catch (error) {
-      const error_message =
-        error instanceof Error ? error.message : "Unknown error occurred";
-      return create_failure_result(
-        `Failed to filter officials: ${error_message}`,
+    if (filter.name_contains) {
+      const search_term = filter.name_contains.toLowerCase();
+      filtered_entities = filtered_entities.filter((official) =>
+        `${official.first_name} ${official.last_name}`
+          .toLowerCase()
+          .includes(search_term),
       );
     }
+
+    if (filter.organization_id) {
+      filtered_entities = filtered_entities.filter(
+        (official) => official.organization_id === filter.organization_id,
+      );
+    }
+
+    if (filter.status) {
+      filtered_entities = filtered_entities.filter(
+        (official) => official.status === filter.status,
+      );
+    }
+
+    return filtered_entities;
   }
 
   async find_by_organization(
     organization_id: string,
     options?: QueryOptions,
   ): PaginatedAsyncResult<Official> {
-    return this.find_by_filter({ organization_id }, options);
+    return this.find_all({ organization_id }, options);
   }
 
   async find_active_officials(
     options?: QueryOptions,
   ): PaginatedAsyncResult<Official> {
-    return this.find_by_filter({ status: "active" }, options);
+    return this.find_all({ status: "active" }, options);
   }
 
   async find_available_for_date(
@@ -140,7 +121,7 @@ export class InBrowserOfficialRepository
     if (organization_id) {
       filter.organization_id = organization_id;
     }
-    return this.find_by_filter(filter, options);
+    return this.find_all(filter, options);
   }
 }
 

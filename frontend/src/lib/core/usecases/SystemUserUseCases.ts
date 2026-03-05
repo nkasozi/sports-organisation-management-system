@@ -40,7 +40,7 @@ export function create_system_user_use_cases(
       filter?: SystemUserFilter,
       options?: QueryOptions,
     ): Promise<EntityListResult<SystemUser>> {
-      const result = await repository.find_all(options);
+      const result = await repository.find_all(undefined, options);
 
       if (!result.success) {
         return {

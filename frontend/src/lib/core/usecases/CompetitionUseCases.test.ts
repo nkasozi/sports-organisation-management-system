@@ -11,7 +11,6 @@ function create_mock_repository(): CompetitionRepository {
     find_all: vi.fn(),
     find_by_id: vi.fn(),
     find_by_ids: vi.fn(),
-    find_by_filter: vi.fn(),
     create: vi.fn(),
     update: vi.fn(),
     delete_by_id: vi.fn(),
@@ -112,7 +111,7 @@ describe("CompetitionUseCases", () => {
 
     it("should apply filter when provided", async () => {
       const filter = { organization_id: "org-123" };
-      vi.mocked(mock_repository.find_by_filter).mockResolvedValue({
+      vi.mocked(mock_repository.find_all).mockResolvedValue({
         success: true,
         data: {
           items: [create_test_competition()],
@@ -125,7 +124,7 @@ describe("CompetitionUseCases", () => {
 
       const result = await use_cases.list(filter);
 
-      expect(mock_repository.find_by_filter).toHaveBeenCalledWith(
+      expect(mock_repository.find_all).toHaveBeenCalledWith(
         filter,
         undefined,
       );

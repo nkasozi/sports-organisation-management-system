@@ -93,9 +93,7 @@ export function create_activity_use_cases(
       filter?: ActivityFilter,
       options?: QueryOptions,
     ): Promise<EntityListResult<Activity>> {
-      const result = filter
-        ? await activity_repository.find_by_filter(filter, options)
-        : await activity_repository.find_all(options);
+      const result = await activity_repository.find_all(filter, options);
 
       if (!result.success) {
         return {
@@ -246,7 +244,7 @@ export function create_activity_use_cases(
         start_date_before: date_range.end_date,
       };
 
-      const activities_result = await activity_repository.find_by_filter(
+      const activities_result = await activity_repository.find_all(
         combined_filter,
         { page_size: 1000 },
       );
@@ -388,7 +386,7 @@ export function create_activity_use_cases(
 
       const fixtures_result = competition_id
         ? await fixture_repository.find_by_competition(competition_id)
-        : await fixture_repository.find_all({ page_size: 1000 });
+        : await fixture_repository.find_all(undefined, { page_size: 1000 });
 
       if (!fixtures_result.success) {
         console.log(

@@ -12,8 +12,9 @@ export interface Repository<
   TEntity extends BaseEntity,
   TCreateInput,
   TUpdateInput,
+  TFilter = undefined,
 > {
-  find_all(options?: QueryOptions): PaginatedAsyncResult<TEntity>;
+  find_all(filter?: TFilter, options?: QueryOptions): PaginatedAsyncResult<TEntity>;
   find_by_id(id: string): AsyncResult<TEntity>;
   find_by_ids(ids: string[]): AsyncResult<TEntity[]>;
   create(input: TCreateInput): AsyncResult<TEntity>;
@@ -23,14 +24,9 @@ export interface Repository<
   count(): AsyncResult<number>;
 }
 
-export interface FilterableRepository<
+export type FilterableRepository<
   TEntity extends BaseEntity,
   TCreateInput,
   TUpdateInput,
   TFilter,
-> extends Repository<TEntity, TCreateInput, TUpdateInput> {
-  find_by_filter(
-    filter: TFilter,
-    options?: QueryOptions,
-  ): PaginatedAsyncResult<TEntity>;
-}
+> = Repository<TEntity, TCreateInput, TUpdateInput, TFilter>;

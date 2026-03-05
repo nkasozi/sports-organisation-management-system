@@ -20,7 +20,8 @@ export interface GameEventTypeFilter {
 export interface GameEventTypeRepository extends Repository<
   GameEventType,
   CreateGameEventTypeInput,
-  UpdateGameEventTypeInput
+  UpdateGameEventTypeInput,
+  GameEventTypeFilter
 > {
   find_by_sport(sport_id: string | null): AsyncResult<GameEventType[]>;
   find_by_category(category: EventCategory): AsyncResult<GameEventType[]>;

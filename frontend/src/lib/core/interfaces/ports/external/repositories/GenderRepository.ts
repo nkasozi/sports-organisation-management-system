@@ -13,11 +13,8 @@ export interface GenderFilter {
 export interface GenderRepository extends Repository<
   Gender,
   CreateGenderInput,
-  UpdateGenderInput
+  UpdateGenderInput,
+  GenderFilter
 > {
-  find_by_filter(
-    filter: GenderFilter,
-    options?: QueryOptions,
-  ): PaginatedAsyncResult<Gender>;
   find_active_genders(options?: QueryOptions): PaginatedAsyncResult<Gender>;
 }

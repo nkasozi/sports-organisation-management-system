@@ -20,7 +20,7 @@ import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
 const ENTITY_PREFIX = "venue";
 
 export class InBrowserVenueRepository
-  extends InBrowserBaseRepository<Venue, CreateVenueInput, UpdateVenueInput>
+  extends InBrowserBaseRepository<Venue, CreateVenueInput, UpdateVenueInput, VenueFilter>
   implements VenueRepository
 {
   constructor() {
@@ -67,59 +67,41 @@ export class InBrowserVenueRepository
     };
   }
 
-  async find_by_filter(
-    filter: VenueFilter,
-    options?: QueryOptions,
-  ): PaginatedAsyncResult<Venue> {
-    try {
-      let filtered_entities = await this.database.venues.toArray();
+  protected apply_entity_filter(entities: Venue[], filter: VenueFilter): Venue[] {
+    let filtered_entities = entities;
 
-      if (filter.name_contains) {
-        const search_term = filter.name_contains.toLowerCase();
-        filtered_entities = filtered_entities.filter((venue) =>
-          venue.name.toLowerCase().includes(search_term),
-        );
-      }
-
-      if (filter.city) {
-        filtered_entities = filtered_entities.filter(
-          (venue) => venue.city === filter.city,
-        );
-      }
-
-      if (filter.country) {
-        filtered_entities = filtered_entities.filter(
-          (venue) => venue.country === filter.country,
-        );
-      }
-
-      if (filter.status) {
-        filtered_entities = filtered_entities.filter(
-          (venue) => venue.status === filter.status,
-        );
-      }
-
-      const total_count = filtered_entities.length;
-      const sorted_entities = this.apply_sort(filtered_entities, options);
-      const paginated_entities = this.apply_pagination(
-        sorted_entities,
-        options,
+    if (filter.name_contains) {
+      const search_term = filter.name_contains.toLowerCase();
+      filtered_entities = filtered_entities.filter((venue) =>
+        venue.name.toLowerCase().includes(search_term),
       );
-
-      return create_success_result(
-        this.create_paginated_result(paginated_entities, total_count, options),
-      );
-    } catch (error) {
-      const error_message =
-        error instanceof Error ? error.message : "Unknown error occurred";
-      return create_failure_result(`Failed to filter venues: ${error_message}`);
     }
+
+    if (filter.city) {
+      filtered_entities = filtered_entities.filter(
+        (venue) => venue.city === filter.city,
+      );
+    }
+
+    if (filter.country) {
+      filtered_entities = filtered_entities.filter(
+        (venue) => venue.country === filter.country,
+      );
+    }
+
+    if (filter.status) {
+      filtered_entities = filtered_entities.filter(
+        (venue) => venue.status === filter.status,
+      );
+    }
+
+    return filtered_entities;
   }
 
   async find_active_venues(
     options?: QueryOptions,
   ): PaginatedAsyncResult<Venue> {
-    return this.find_by_filter({ status: "active" }, options);
+    return this.find_all({ status: "active" }, options);
   }
 }
 

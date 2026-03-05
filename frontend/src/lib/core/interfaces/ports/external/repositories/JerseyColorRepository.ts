@@ -18,12 +18,9 @@ export interface JerseyColorFilter {
 export interface JerseyColorRepository extends Repository<
   JerseyColor,
   CreateJerseyColorInput,
-  UpdateJerseyColorInput
+  UpdateJerseyColorInput,
+  JerseyColorFilter
 > {
-  find_by_filter(
-    filter: JerseyColorFilter,
-    options?: QueryOptions,
-  ): PaginatedAsyncResult<JerseyColor>;
   find_by_holder(
     holder_type: JerseyColorHolderType,
     holder_id: string,

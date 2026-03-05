@@ -76,7 +76,6 @@ function create_mock_repository(): TeamRepository {
     delete_by_id: vi.fn(),
     delete_by_ids: vi.fn(),
     count: vi.fn(),
-    find_by_filter: vi.fn(),
     find_by_organization: vi.fn(),
     find_active_teams: vi.fn(),
   };
@@ -114,7 +113,7 @@ describe("TeamUseCases", () => {
         create_mock_team({ id: "t1", organization_id: "org_1" }),
       ];
       const filter: TeamFilter = { organization_id: "org_1" };
-      vi.mocked(mock_repository.find_by_filter).mockResolvedValue(
+      vi.mocked(mock_repository.find_all).mockResolvedValue(
         create_paginated_result(mock_teams),
       );
 
@@ -122,7 +121,7 @@ describe("TeamUseCases", () => {
 
       expect(result.success).toBe(true);
       expect(result.data).toHaveLength(1);
-      expect(mock_repository.find_by_filter).toHaveBeenCalledWith(
+      expect(mock_repository.find_all).toHaveBeenCalledWith(
         filter,
         undefined,
       );

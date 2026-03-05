@@ -18,12 +18,9 @@ export interface QualificationFilter {
 export interface QualificationRepository extends Repository<
   Qualification,
   CreateQualificationInput,
-  UpdateQualificationInput
+  UpdateQualificationInput,
+  QualificationFilter
 > {
-  find_by_filter(
-    filter: QualificationFilter,
-    options?: QueryOptions,
-  ): PaginatedAsyncResult<Qualification>;
   find_by_holder(
     holder_type: QualificationHolderType,
     holder_id: string,

@@ -24,7 +24,8 @@ export class InBrowserOrganizationRepository
   extends InBrowserBaseRepository<
     Organization,
     CreateOrganizationInput,
-    UpdateOrganizationInput
+    UpdateOrganizationInput,
+    OrganizationFilter
   >
   implements OrganizationRepository
 {
@@ -66,55 +67,35 @@ export class InBrowserOrganizationRepository
     };
   }
 
-  async find_by_filter(
-    filter: OrganizationFilter,
-    options?: QueryOptions,
-  ): PaginatedAsyncResult<Organization> {
-    try {
-      let filtered_entities = await this.database.organizations.toArray();
+  protected apply_entity_filter(entities: Organization[], filter: OrganizationFilter): Organization[] {
+    let filtered_entities = entities;
 
-      if (filter.name_contains) {
-        const search_term = filter.name_contains.toLowerCase();
-        filtered_entities = filtered_entities.filter((org) =>
-          org.name.toLowerCase().includes(search_term),
-        );
-      }
-
-      if (filter?.sport_id) {
-        filtered_entities = filtered_entities.filter(
-          (org) => org.sport_id === filter.sport_id,
-        );
-      }
-
-      if (filter.status) {
-        filtered_entities = filtered_entities.filter(
-          (org) => org.status === filter.status,
-        );
-      }
-
-      const total_count = filtered_entities.length;
-      const sorted_entities = this.apply_sort(filtered_entities, options);
-      const paginated_entities = this.apply_pagination(
-        sorted_entities,
-        options,
-      );
-
-      return create_success_result(
-        this.create_paginated_result(paginated_entities, total_count, options),
-      );
-    } catch (error) {
-      const error_message =
-        error instanceof Error ? error.message : "Unknown error occurred";
-      return create_failure_result(
-        `Failed to filter organizations: ${error_message}`,
+    if (filter.name_contains) {
+      const search_term = filter.name_contains.toLowerCase();
+      filtered_entities = filtered_entities.filter((org) =>
+        org.name.toLowerCase().includes(search_term),
       );
     }
+
+    if (filter?.sport_id) {
+      filtered_entities = filtered_entities.filter(
+        (org) => org.sport_id === filter.sport_id,
+      );
+    }
+
+    if (filter.status) {
+      filtered_entities = filtered_entities.filter(
+        (org) => org.status === filter.status,
+      );
+    }
+
+    return filtered_entities;
   }
 
   async find_active_organizations(
     options?: QueryOptions,
   ): PaginatedAsyncResult<Organization> {
-    return this.find_by_filter({ status: "active" }, options);
+    return this.find_all({ status: "active" }, options);
   }
 }
 

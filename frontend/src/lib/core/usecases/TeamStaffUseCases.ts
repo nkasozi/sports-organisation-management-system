@@ -27,9 +27,7 @@ export function create_team_staff_use_cases(
       filter?: TeamStaffFilter,
       pagination?: { page: number; page_size: number },
     ): Promise<EntityListResult<TeamStaff>> {
-      const result = await (staff_repository.find_all
-        ? staff_repository.find_all(undefined)
-        : staff_repository.find_by_filter({}, undefined));
+      const result = await staff_repository.find_all(undefined);
       if (!result.success) {
         return {
           success: false,
@@ -115,7 +113,7 @@ export function create_team_staff_use_cases(
           total_pages: 1,
         });
       }
-      const fallback = await staff_repository.find_by_filter(
+      const fallback = await staff_repository.find_all(
         { team_id },
         options,
       );
@@ -124,7 +122,7 @@ export function create_team_staff_use_cases(
     },
 
     async list_staff_roles(): AsyncResult<TeamStaffRole[]> {
-      const result = await role_repository.find_all_with_filter(
+      const result = await role_repository.find_all(
         { status: "active" },
         { page_size: 100 },
       );

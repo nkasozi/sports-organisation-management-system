@@ -17,7 +17,6 @@ type MockRepository = Partial<AuditLogRepository> & {
   delete_by_id: ReturnType<typeof vi.fn>;
   delete_by_ids: ReturnType<typeof vi.fn>;
   count: ReturnType<typeof vi.fn>;
-  find_by_filter: ReturnType<typeof vi.fn>;
   find_by_entity: ReturnType<typeof vi.fn>;
 };
 
@@ -31,7 +30,6 @@ function create_mock_repository(): MockRepository {
     delete_by_id: vi.fn(),
     delete_by_ids: vi.fn(),
     count: vi.fn(),
-    find_by_filter: vi.fn(),
     find_by_entity: vi.fn(),
   };
 }
@@ -223,7 +221,7 @@ describe("AuditLogUseCases", () => {
       const logs = [
         create_mock_audit_log({ id: "log_1", entity_type: "player" }),
       ];
-      vi.mocked(mock_repository.find_by_filter).mockResolvedValue(
+      vi.mocked(mock_repository.find_all).mockResolvedValue(
         create_paginated_result(logs),
       );
 
@@ -236,7 +234,7 @@ describe("AuditLogUseCases", () => {
 
     it("should filter by action", async () => {
       const logs = [create_mock_audit_log({ id: "log_1", action: "create" })];
-      vi.mocked(mock_repository.find_by_filter).mockResolvedValue(
+      vi.mocked(mock_repository.find_all).mockResolvedValue(
         create_paginated_result(logs),
       );
 
@@ -315,7 +313,7 @@ describe("AuditLogUseCases", () => {
           entity_id: "player_789",
         }),
       ];
-      vi.mocked(mock_repository.find_by_filter).mockResolvedValue(
+      vi.mocked(mock_repository.find_all).mockResolvedValue(
         create_paginated_result(logs),
       );
 

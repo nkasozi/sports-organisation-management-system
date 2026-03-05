@@ -27,7 +27,8 @@ export class InBrowserFixtureRepository
   extends InBrowserBaseRepository<
     Fixture,
     CreateFixtureInput,
-    UpdateFixtureInput
+    UpdateFixtureInput,
+    FixtureFilter
   >
   implements FixtureRepository
 {
@@ -78,108 +79,88 @@ export class InBrowserFixtureRepository
     };
   }
 
-  async find_by_filter(
-    filter: FixtureFilter,
-    options?: QueryOptions,
-  ): PaginatedAsyncResult<Fixture> {
-    try {
-      let filtered_entities = await this.database.fixtures.toArray();
+  protected apply_entity_filter(entities: Fixture[], filter: FixtureFilter): Fixture[] {
+    let filtered_entities = entities;
 
-      if (filter.competition_id) {
-        filtered_entities = filtered_entities.filter(
-          (fixture) => fixture.competition_id === filter.competition_id,
-        );
-      }
-
-      if (filter.home_team_id) {
-        filtered_entities = filtered_entities.filter(
-          (fixture) => fixture.home_team_id === filter.home_team_id,
-        );
-      }
-
-      if (filter.away_team_id) {
-        filtered_entities = filtered_entities.filter(
-          (fixture) => fixture.away_team_id === filter.away_team_id,
-        );
-      }
-
-      if (filter.team_id) {
-        filtered_entities = filtered_entities.filter(
-          (fixture) =>
-            fixture.home_team_id === filter.team_id ||
-            fixture.away_team_id === filter.team_id,
-        );
-      }
-
-      if (filter.round_number !== undefined) {
-        filtered_entities = filtered_entities.filter(
-          (fixture) => fixture.round_number === filter.round_number,
-        );
-      }
-
-      if (filter.match_day !== undefined) {
-        filtered_entities = filtered_entities.filter(
-          (fixture) => fixture.match_day === filter.match_day,
-        );
-      }
-
-      if (filter.status) {
-        filtered_entities = filtered_entities.filter(
-          (fixture) => fixture.status === filter.status,
-        );
-      }
-
-      if (filter.scheduled_date_from) {
-        filtered_entities = filtered_entities.filter(
-          (fixture) => fixture.scheduled_date >= filter.scheduled_date_from!,
-        );
-      }
-
-      if (filter.scheduled_date_to) {
-        filtered_entities = filtered_entities.filter(
-          (fixture) => fixture.scheduled_date <= filter.scheduled_date_to!,
-        );
-      }
-
-      filtered_entities.sort((a, b) => {
-        const date_comparison = a.scheduled_date.localeCompare(
-          b.scheduled_date,
-        );
-        if (date_comparison !== 0) return date_comparison;
-        return a.scheduled_time.localeCompare(b.scheduled_time);
-      });
-
-      const total_count = filtered_entities.length;
-      const sorted_entities = this.apply_sort(filtered_entities, options);
-      const paginated_entities = this.apply_pagination(
-        sorted_entities,
-        options,
-      );
-
-      return create_success_result(
-        this.create_paginated_result(paginated_entities, total_count, options),
-      );
-    } catch (error) {
-      const error_message =
-        error instanceof Error ? error.message : "Unknown error occurred";
-      return create_failure_result(
-        `Failed to filter fixtures: ${error_message}`,
+    if (filter.competition_id) {
+      filtered_entities = filtered_entities.filter(
+        (fixture) => fixture.competition_id === filter.competition_id,
       );
     }
+
+    if (filter.home_team_id) {
+      filtered_entities = filtered_entities.filter(
+        (fixture) => fixture.home_team_id === filter.home_team_id,
+      );
+    }
+
+    if (filter.away_team_id) {
+      filtered_entities = filtered_entities.filter(
+        (fixture) => fixture.away_team_id === filter.away_team_id,
+      );
+    }
+
+    if (filter.team_id) {
+      filtered_entities = filtered_entities.filter(
+        (fixture) =>
+          fixture.home_team_id === filter.team_id ||
+          fixture.away_team_id === filter.team_id,
+      );
+    }
+
+    if (filter.round_number !== undefined) {
+      filtered_entities = filtered_entities.filter(
+        (fixture) => fixture.round_number === filter.round_number,
+      );
+    }
+
+    if (filter.match_day !== undefined) {
+      filtered_entities = filtered_entities.filter(
+        (fixture) => fixture.match_day === filter.match_day,
+      );
+    }
+
+    if (filter.status) {
+      filtered_entities = filtered_entities.filter(
+        (fixture) => fixture.status === filter.status,
+      );
+    }
+
+    if (filter.scheduled_date_from) {
+      filtered_entities = filtered_entities.filter(
+        (fixture) => fixture.scheduled_date >= filter.scheduled_date_from!,
+      );
+    }
+
+    if (filter.scheduled_date_to) {
+      filtered_entities = filtered_entities.filter(
+        (fixture) => fixture.scheduled_date <= filter.scheduled_date_to!,
+      );
+    }
+
+    filtered_entities.sort((a, b) => {
+      const date_comparison = a.scheduled_date.localeCompare(
+        b.scheduled_date,
+      );
+      if (date_comparison !== 0) return date_comparison;
+      return a.scheduled_time.localeCompare(b.scheduled_time);
+    });
+
+    return filtered_entities;
   }
 
   async find_by_competition(
     competition_id: string,
     options?: QueryOptions,
   ): PaginatedAsyncResult<Fixture> {
-    return this.find_by_filter({ competition_id }, options);
+    return this.find_all({ competition_id }, options);
   }
 
   async find_by_team(
     team_id: string,
     options?: QueryOptions,
   ): PaginatedAsyncResult<Fixture> {
-    return this.find_by_filter({ team_id }, options);
+    return this.find_all({ team_id }, options);
   }
 
   async find_by_round(
@@ -187,7 +168,7 @@ export class InBrowserFixtureRepository
     round_number: number,
     options?: QueryOptions,
   ): PaginatedAsyncResult<Fixture> {
-    return this.find_by_filter({ competition_id, round_number }, options);
+    return this.find_all({ competition_id, round_number }, options);
   }
 
   async find_upcoming(
@@ -202,7 +183,7 @@ export class InBrowserFixtureRepository
     if (competition_id) {
       filter.competition_id = competition_id;
     }
-    return this.find_by_filter(filter, options);
+    return this.find_all(filter, options);
   }
 
   async find_by_date_range(
@@ -210,7 +191,7 @@ export class InBrowserFixtureRepository
     end_date: string,
     options?: QueryOptions,
   ): PaginatedAsyncResult<Fixture> {
-    return this.find_by_filter(
+    return this.find_all(
       {
         scheduled_date_from: start_date,
         scheduled_date_to: end_date,

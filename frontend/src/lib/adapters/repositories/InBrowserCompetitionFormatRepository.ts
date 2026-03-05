@@ -34,7 +34,8 @@ export class InBrowserCompetitionFormatRepository
   extends InBrowserBaseRepository<
     CompetitionFormat,
     CreateCompetitionFormatInput,
-    UpdateCompetitionFormatInput
+    UpdateCompetitionFormatInput,
+    CompetitionFormatFilter
   >
   implements CompetitionFormatRepository
 {
@@ -78,55 +79,35 @@ export class InBrowserCompetitionFormatRepository
     };
   }
 
-  async find_by_filter(
-    filter: CompetitionFormatFilter,
-    options?: QueryOptions,
-  ): PaginatedAsyncResult<CompetitionFormat> {
-    try {
-      let filtered_entities = await this.database.competition_formats.toArray();
+  protected apply_entity_filter(entities: CompetitionFormat[], filter: CompetitionFormatFilter): CompetitionFormat[] {
+    let filtered_entities = entities;
 
-      if (filter.name_contains) {
-        const search_term = filter.name_contains.toLowerCase();
-        filtered_entities = filtered_entities.filter((format) =>
-          format.name.toLowerCase().includes(search_term),
-        );
-      }
-
-      if (filter.code) {
-        filtered_entities = filtered_entities.filter(
-          (format) => format.code === filter.code,
-        );
-      }
-
-      if (filter.format_type) {
-        filtered_entities = filtered_entities.filter(
-          (format) => format.format_type === filter.format_type,
-        );
-      }
-
-      if (filter.status) {
-        filtered_entities = filtered_entities.filter(
-          (format) => format.status === filter.status,
-        );
-      }
-
-      const total_count = filtered_entities.length;
-      const sorted_entities = this.apply_sort(filtered_entities, options);
-      const paginated_entities = this.apply_pagination(
-        sorted_entities,
-        options,
-      );
-
-      return create_success_result(
-        this.create_paginated_result(paginated_entities, total_count, options),
-      );
-    } catch (error) {
-      const error_message =
-        error instanceof Error ? error.message : "Unknown error occurred";
-      return create_failure_result(
-        `Failed to filter competition formats: ${error_message}`,
+    if (filter.name_contains) {
+      const search_term = filter.name_contains.toLowerCase();
+      filtered_entities = filtered_entities.filter((format) =>
+        format.name.toLowerCase().includes(search_term),
       );
     }
+
+    if (filter.code) {
+      filtered_entities = filtered_entities.filter(
+        (format) => format.code === filter.code,
+      );
+    }
+
+    if (filter.format_type) {
+      filtered_entities = filtered_entities.filter(
+        (format) => format.format_type === filter.format_type,
+      );
+    }
+
+    if (filter.status) {
+      filtered_entities = filtered_entities.filter(
+        (format) => format.status === filter.status,
+      );
+    }
+
+    return filtered_entities;
   }
 
   async find_by_format_type(

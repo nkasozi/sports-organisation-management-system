@@ -84,7 +84,6 @@ function create_mock_repository(): PlayerRepository {
     delete_by_id: vi.fn(),
     delete_by_ids: vi.fn(),
     count: vi.fn(),
-    find_by_filter: vi.fn(),
     find_by_team: vi.fn(),
     find_active_players: vi.fn(),
     find_by_jersey_number: vi.fn(),
@@ -121,7 +120,7 @@ describe("PlayerUseCases", () => {
     it("returns filtered players when filter provided", async () => {
       const mock_players = [create_mock_player({ id: "p1", status: "active" })];
       const filter: PlayerFilter = { status: "active" };
-      vi.mocked(mock_repository.find_by_filter).mockResolvedValue(
+      vi.mocked(mock_repository.find_all).mockResolvedValue(
         create_paginated_result(mock_players),
       );
 
@@ -129,7 +128,7 @@ describe("PlayerUseCases", () => {
 
       expect(result.success).toBe(true);
       expect(result.data).toHaveLength(1);
-      expect(mock_repository.find_by_filter).toHaveBeenCalledWith(
+      expect(mock_repository.find_all).toHaveBeenCalledWith(
         filter,
         undefined,
       );
@@ -156,7 +155,7 @@ describe("PlayerUseCases", () => {
 
       await use_cases.list(undefined, options);
 
-      expect(mock_repository.find_all).toHaveBeenCalledWith(options);
+      expect(mock_repository.find_all).toHaveBeenCalledWith(undefined, options);
     });
   });
 

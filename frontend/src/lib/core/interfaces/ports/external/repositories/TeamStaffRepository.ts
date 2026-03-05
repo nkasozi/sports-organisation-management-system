@@ -17,7 +17,8 @@ export interface TeamStaffFilter {
 export interface TeamStaffRepository extends Repository<
   TeamStaff,
   CreateTeamStaffInput,
-  UpdateTeamStaffInput
+  UpdateTeamStaffInput,
+  TeamStaffFilter
 > {
   find_by_team(team_id: string): AsyncResult<TeamStaff[]>;
   find_by_role(role_id: string): AsyncResult<TeamStaff[]>;

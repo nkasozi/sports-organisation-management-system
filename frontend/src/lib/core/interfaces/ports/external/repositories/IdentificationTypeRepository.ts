@@ -13,12 +13,9 @@ export interface IdentificationTypeFilter {
 export interface IdentificationTypeRepository extends Repository<
   IdentificationType,
   CreateIdentificationTypeInput,
-  UpdateIdentificationTypeInput
+  UpdateIdentificationTypeInput,
+  IdentificationTypeFilter
 > {
-  find_by_filter(
-    filter: IdentificationTypeFilter,
-    options?: QueryOptions,
-  ): PaginatedAsyncResult<IdentificationType>;
   find_active_types(
     options?: QueryOptions,
   ): PaginatedAsyncResult<IdentificationType>;

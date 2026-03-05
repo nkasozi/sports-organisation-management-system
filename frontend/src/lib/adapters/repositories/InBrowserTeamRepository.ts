@@ -21,7 +21,7 @@ import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
 const ENTITY_PREFIX = "team";
 
 export class InBrowserTeamRepository
-  extends InBrowserBaseRepository<Team, CreateTeamInput, UpdateTeamInput>
+  extends InBrowserBaseRepository<Team, CreateTeamInput, UpdateTeamInput, TeamFilter>
   implements TeamRepository
 {
   constructor() {
@@ -67,58 +67,40 @@ export class InBrowserTeamRepository
     };
   }
 
-  async find_by_filter(
-    filter: TeamFilter,
-    options?: QueryOptions,
-  ): PaginatedAsyncResult<Team> {
-    try {
-      let filtered_entities = await this.database.teams.toArray();
+  protected apply_entity_filter(entities: Team[], filter: TeamFilter): Team[] {
+    let filtered_entities = entities;
 
-      if (filter.name_contains) {
-        const search_term = filter.name_contains.toLowerCase();
-        filtered_entities = filtered_entities.filter((team) =>
-          team.name.toLowerCase().includes(search_term),
-        );
-      }
-
-      if (filter.organization_id) {
-        filtered_entities = filtered_entities.filter(
-          (team) => team.organization_id === filter.organization_id,
-        );
-      }
-
-      if (filter.status) {
-        filtered_entities = filtered_entities.filter(
-          (team) => team.status === filter.status,
-        );
-      }
-
-      const total_count = filtered_entities.length;
-      const sorted_entities = this.apply_sort(filtered_entities, options);
-      const paginated_entities = this.apply_pagination(
-        sorted_entities,
-        options,
+    if (filter.name_contains) {
+      const search_term = filter.name_contains.toLowerCase();
+      filtered_entities = filtered_entities.filter((team) =>
+        team.name.toLowerCase().includes(search_term),
       );
-
-      return create_success_result(
-        this.create_paginated_result(paginated_entities, total_count, options),
-      );
-    } catch (error) {
-      const error_message =
-        error instanceof Error ? error.message : "Unknown error occurred";
-      return create_failure_result(`Failed to filter teams: ${error_message}`);
     }
+
+    if (filter.organization_id) {
+      filtered_entities = filtered_entities.filter(
+        (team) => team.organization_id === filter.organization_id,
+      );
+    }
+
+    if (filter.status) {
+      filtered_entities = filtered_entities.filter(
+        (team) => team.status === filter.status,
+      );
+    }
+
+    return filtered_entities;
   }
 
   async find_by_organization(
     organization_id: string,
     options?: QueryOptions,
   ): PaginatedAsyncResult<Team> {
-    return this.find_by_filter({ organization_id }, options);
+    return this.find_all({ organization_id }, options);
   }
 
   async find_active_teams(options?: QueryOptions): PaginatedAsyncResult<Team> {
-    return this.find_by_filter({ status: "active" }, options);
+    return this.find_all({ status: "active" }, options);
   }
 }
 

@@ -168,8 +168,20 @@ export const inBrowserSportRepository = {
 
 export function get_sport_repository(): SportRepository {
   return {
-    async find_all(options?: QueryOptions): PaginatedAsyncResult<Sport> {
-      const sports = await get_all_sports();
+    async find_all(filter?: SportFilter, options?: QueryOptions): PaginatedAsyncResult<Sport> {
+      let sports = await get_all_sports();
+
+      if (filter) {
+        if (filter.name_contains) {
+          sports = sports.filter((s) =>
+            s.name.toLowerCase().includes(filter.name_contains!.toLowerCase()),
+          );
+        }
+        if (filter.status) {
+          sports = sports.filter((s) => s.status === filter.status);
+        }
+      }
+
       return create_success_result({
         items: sports,
         total_count: sports.length,
@@ -228,30 +240,5 @@ export function get_sport_repository(): SportRepository {
       return create_success_result(sports.length);
     },
 
-    async find_by_filter(
-      filter?: SportFilter,
-      options?: QueryOptions,
-    ): PaginatedAsyncResult<Sport> {
-      let sports = await get_all_sports();
-
-      if (filter) {
-        if (filter.name_contains) {
-          sports = sports.filter((s) =>
-            s.name.toLowerCase().includes(filter.name_contains!.toLowerCase()),
-          );
-        }
-        if (filter.status) {
-          sports = sports.filter((s) => s.status === filter.status);
-        }
-      }
-
-      return create_success_result({
-        items: sports,
-        total_count: sports.length,
-        page_number: 1,
-        page_size: sports.length,
-        total_pages: 1,
-      });
-    },
   };
 }

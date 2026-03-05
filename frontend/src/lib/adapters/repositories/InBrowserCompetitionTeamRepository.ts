@@ -27,7 +27,8 @@ export class InBrowserCompetitionTeamRepository
   extends InBrowserBaseRepository<
     CompetitionTeam,
     CreateCompetitionTeamInput,
-    UpdateCompetitionTeamInput
+    UpdateCompetitionTeamInput,
+    CompetitionTeamFilter
   >
   implements CompetitionTeamRepository
 {
@@ -65,62 +66,42 @@ export class InBrowserCompetitionTeamRepository
     return updated_entity;
   }
 
-  async find_by_filter(
-    filter: CompetitionTeamFilter,
-    options?: QueryOptions,
-  ): PaginatedAsyncResult<CompetitionTeam> {
-    try {
-      let filtered_entities = await this.database.competition_teams.toArray();
+  protected apply_entity_filter(entities: CompetitionTeam[], filter: CompetitionTeamFilter): CompetitionTeam[] {
+    let filtered_entities = entities;
 
-      if (filter.competition_id) {
-        filtered_entities = filtered_entities.filter(
-          (ct) => ct.competition_id === filter.competition_id,
-        );
-      }
-
-      if (filter.team_id) {
-        filtered_entities = filtered_entities.filter(
-          (ct) => ct.team_id === filter.team_id,
-        );
-      }
-
-      if (filter.status) {
-        filtered_entities = filtered_entities.filter(
-          (ct) => ct.status === filter.status,
-        );
-      }
-
-      const total_count = filtered_entities.length;
-      const sorted_entities = this.apply_sort(filtered_entities, options);
-      const paginated_entities = this.apply_pagination(
-        sorted_entities,
-        options,
-      );
-
-      return create_success_result(
-        this.create_paginated_result(paginated_entities, total_count, options),
-      );
-    } catch (error) {
-      const error_message =
-        error instanceof Error ? error.message : "Unknown error occurred";
-      return create_failure_result(
-        `Failed to filter competition teams: ${error_message}`,
+    if (filter.competition_id) {
+      filtered_entities = filtered_entities.filter(
+        (ct) => ct.competition_id === filter.competition_id,
       );
     }
+
+    if (filter.team_id) {
+      filtered_entities = filtered_entities.filter(
+        (ct) => ct.team_id === filter.team_id,
+      );
+    }
+
+    if (filter.status) {
+      filtered_entities = filtered_entities.filter(
+        (ct) => ct.status === filter.status,
+      );
+    }
+
+    return filtered_entities;
   }
 
   async find_by_competition(
     competition_id: string,
     options?: QueryOptions,
   ): PaginatedAsyncResult<CompetitionTeam> {
-    return this.find_by_filter({ competition_id }, options);
+    return this.find_all({ competition_id }, options);
   }
 
   async find_by_team(
     team_id: string,
     options?: QueryOptions,
   ): PaginatedAsyncResult<CompetitionTeam> {
-    return this.find_by_filter({ team_id }, options);
+    return this.find_all({ team_id }, options);
   }
 
   async find_team_in_competition(

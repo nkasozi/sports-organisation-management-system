@@ -67,9 +67,7 @@ export function create_fixture_use_cases(
       filter?: FixtureFilter,
       options?: QueryOptions,
     ): Promise<EntityListResult<Fixture>> {
-      const result = filter
-        ? await repository.find_by_filter(filter, options)
-        : await repository.find_all(options);
+      const result = await repository.find_all(filter, options);
       if (!result.success) {
         return {
           success: false,
