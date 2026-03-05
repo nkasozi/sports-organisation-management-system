@@ -128,7 +128,10 @@ describe("CompetitionFormatUseCases", () => {
 
   describe("create", () => {
     it("should create with valid input", async () => {
-      vi.mocked(mock_repository.find_by_code).mockResolvedValue(null);
+      vi.mocked(mock_repository.find_by_code).mockResolvedValue({
+        success: true,
+        data: null,
+      });
       vi.mocked(mock_repository.create).mockResolvedValue({
         success: true,
         data: create_test_format(),
@@ -152,7 +155,10 @@ describe("CompetitionFormatUseCases", () => {
         success: true,
         data: create_test_format(),
       });
-      vi.mocked(mock_repository.find_by_code).mockResolvedValue(null);
+      vi.mocked(mock_repository.find_by_code).mockResolvedValue({
+        success: true,
+        data: null,
+      });
       vi.mocked(mock_repository.update).mockResolvedValue({
         success: true,
         data: create_test_format(),

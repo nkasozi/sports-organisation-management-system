@@ -197,14 +197,15 @@
 
     const auth_state = get(auth_store);
     if (auth_state.current_token) {
-      const authorization_result =
+      const authorization_check =
         await get_authorization_adapter().check_entity_authorized(
           auth_state.current_token.raw_token,
           "fixturelineup",
           "create",
         );
 
-      if (!authorization_result.is_authorized) {
+      if (!authorization_check.success) return;
+      if (!authorization_check.data.is_authorized) {
         access_denial_store.set_denial(
           "/fixture-lineups/create",
           "Access denied: Your role does not have permission to create fixture lineups. Please contact your organization administrator if you believe this is an error.",

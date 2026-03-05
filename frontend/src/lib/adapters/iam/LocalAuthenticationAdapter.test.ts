@@ -60,18 +60,22 @@ describe("LocalAuthenticationAdapter", () => {
   describe("generate_token", () => {
     it("should generate a valid JWT-like token", async () => {
       const payload_input = create_test_payload();
-      const token = await adapter.generate_token(payload_input);
+      const token_result = await adapter.generate_token(payload_input);
 
-      expect(token).toBeDefined();
-      expect(token.raw_token).toBeDefined();
-      expect(token.payload).toBeDefined();
-      expect(token.signature).toBeDefined();
+      expect(token_result.success).toBe(true);
+      if (!token_result.success) return;
+      expect(token_result.data.raw_token).toBeDefined();
+      expect(token_result.data.payload).toBeDefined();
+      expect(token_result.data.signature).toBeDefined();
     });
 
     it("should include issued_at and expires_at in the payload", async () => {
       const payload_input = create_test_payload();
-      const token = await adapter.generate_token(payload_input);
+      const token_result = await adapter.generate_token(payload_input);
 
+      expect(token_result.success).toBe(true);
+      if (!token_result.success) return;
+      const token = token_result.data;
       expect(token.payload.issued_at).toBeDefined();
       expect(token.payload.expires_at).toBeDefined();
       expect(token.payload.expires_at).toBeGreaterThan(token.payload.issued_at);
@@ -80,8 +84,12 @@ describe("LocalAuthenticationAdapter", () => {
     it("should set expiry to 365 days from now", async () => {
       const payload_input = create_test_payload();
       const before_generation = Date.now();
-      const token = await adapter.generate_token(payload_input);
+      const token_result = await adapter.generate_token(payload_input);
       const after_generation = Date.now();
+
+      expect(token_result.success).toBe(true);
+      if (!token_result.success) return;
+      const token = token_result.data;
 
       const expected_min_expiry = before_generation + 365 * 24 * 60 * 60 * 1000;
       const expected_max_expiry = after_generation + 365 * 24 * 60 * 60 * 1000;
@@ -94,9 +102,11 @@ describe("LocalAuthenticationAdapter", () => {
 
     it("should generate token with three parts separated by dots", async () => {
       const payload_input = create_test_payload();
-      const token = await adapter.generate_token(payload_input);
+      const token_result = await adapter.generate_token(payload_input);
 
-      const parts = token.raw_token.split(".");
+      expect(token_result.success).toBe(true);
+      if (!token_result.success) return;
+      const parts = token_result.data.raw_token.split(".");
       expect(parts).toHaveLength(3);
     });
   });
@@ -104,32 +114,44 @@ describe("LocalAuthenticationAdapter", () => {
   describe("verify_token", () => {
     it("should verify a valid token successfully", async () => {
       const payload_input = create_test_payload();
-      const token = await adapter.generate_token(payload_input);
+      const token_result = await adapter.generate_token(payload_input);
+      expect(token_result.success).toBe(true);
+      if (!token_result.success) return;
+      const token = token_result.data;
 
       const result = await adapter.verify_token(token.raw_token);
 
-      expect(result.is_valid).toBe(true);
-      expect(result.payload).toBeDefined();
-      expect(result.payload?.email).toBe(payload_input.email);
+      expect(result.success).toBe(true);
+      if (!result.success) return;
+      expect(result.data.is_valid).toBe(true);
+      expect(result.data.payload).toBeDefined();
+      expect(result.data.payload?.email).toBe(payload_input.email);
     });
 
     it("should fail verification for empty token", async () => {
       const result = await adapter.verify_token("");
 
-      expect(result.is_valid).toBe(false);
-      expect(result.error_message).toBe("Token is empty");
+      expect(result.success).toBe(true);
+      if (!result.success) return;
+      expect(result.data.is_valid).toBe(false);
+      expect(result.data.error_message).toBe("Token is empty");
     });
 
     it("should fail verification for invalid token format", async () => {
       const result = await adapter.verify_token("invalid-token-without-dots");
 
-      expect(result.is_valid).toBe(false);
-      expect(result.error_message).toBe("Invalid token format");
+      expect(result.success).toBe(true);
+      if (!result.success) return;
+      expect(result.data.is_valid).toBe(false);
+      expect(result.data.error_message).toBe("Invalid token format");
     });
 
     it("should detect tampered token", async () => {
       const payload_input = create_test_payload();
-      const token = await adapter.generate_token(payload_input);
+      const token_result = await adapter.generate_token(payload_input);
+      expect(token_result.success).toBe(true);
+      if (!token_result.success) return;
+      const token = token_result.data;
 
       const parts = token.raw_token.split(".");
       const tampered_payload = btoa(
@@ -142,13 +164,18 @@ describe("LocalAuthenticationAdapter", () => {
 
       const result = await adapter.verify_token(tampered_token);
 
-      expect(result.is_valid).toBe(false);
-      expect(result.error_message).toBe("Token has been tampered with");
+      expect(result.success).toBe(true);
+      if (!result.success) return;
+      expect(result.data.is_valid).toBe(false);
+      expect(result.data.error_message).toBe("Token has been tampered with");
     });
 
     it("should detect expired token", async () => {
       const payload_input = create_test_payload();
-      const token = await adapter.generate_token(payload_input);
+      const token_result = await adapter.generate_token(payload_input);
+      expect(token_result.success).toBe(true);
+      if (!token_result.success) return;
+      const token = token_result.data;
 
       const expired_payload: AuthTokenPayload = {
         ...token.payload,
@@ -169,7 +196,9 @@ describe("LocalAuthenticationAdapter", () => {
       const modified_expired_token = `${header}.${encoded_payload}.fake-signature`;
       const result = await adapter.verify_token(modified_expired_token);
 
-      expect(result.is_valid).toBe(false);
+      expect(result.success).toBe(true);
+      if (!result.success) return;
+      expect(result.data.is_valid).toBe(false);
     });
   });
 });

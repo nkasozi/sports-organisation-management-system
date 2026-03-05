@@ -10,7 +10,11 @@ import type {
   GameOfficialRoleFilter,
 } from "../../core/interfaces/ports";
 import type { QueryOptions } from "../../core/interfaces/ports";
-import type { PaginatedAsyncResult } from "../../core/types/Result";
+import type {
+  PaginatedAsyncResult,
+  AsyncResult,
+  Result,
+} from "../../core/types/Result";
 import {
   create_success_result,
   create_failure_result,
@@ -125,33 +129,41 @@ export class InBrowserGameOfficialRoleRepository
     }
   }
 
-  async find_by_sport(sport_id: string | null): Promise<GameOfficialRole[]> {
+  async find_by_sport(
+    sport_id: string | null,
+  ): Promise<Result<GameOfficialRole[]>> {
     try {
       const all_roles = await this.database.game_official_roles.toArray();
-      return all_roles
-        .filter((role) => role.sport_id === sport_id || role.sport_id === null)
-        .sort((a, b) => a.display_order - b.display_order);
+      return create_success_result(
+        all_roles
+          .filter(
+            (role) => role.sport_id === sport_id || role.sport_id === null,
+          )
+          .sort((a, b) => a.display_order - b.display_order),
+      );
     } catch (error) {
       console.error(
         "[InBrowserGameOfficialRoleRepository] find_by_sport error:",
         error,
       );
-      return [];
+      return create_failure_result(`Failed to find roles by sport: ${error}`);
     }
   }
 
-  async find_head_officials(): Promise<GameOfficialRole[]> {
+  async find_head_officials(): Promise<Result<GameOfficialRole[]>> {
     try {
       const all_roles = await this.database.game_official_roles.toArray();
-      return all_roles
-        .filter((role) => role.is_head_official)
-        .sort((a, b) => a.display_order - b.display_order);
+      return create_success_result(
+        all_roles
+          .filter((role) => role.is_head_official)
+          .sort((a, b) => a.display_order - b.display_order),
+      );
     } catch (error) {
       console.error(
         "[InBrowserGameOfficialRoleRepository] find_head_officials error:",
         error,
       );
-      return [];
+      return create_failure_result(`Failed to find head officials: ${error}`);
     }
   }
 }

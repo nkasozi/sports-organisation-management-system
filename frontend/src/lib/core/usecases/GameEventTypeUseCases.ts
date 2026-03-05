@@ -73,8 +73,11 @@ export function create_game_event_type_use_cases(
         };
       }
 
-      const existing = await repository.find_by_code(input.code);
-      if (existing) {
+      const existing_result = await repository.find_by_code(input.code);
+      if (!existing_result.success) {
+        return { success: false, error_message: existing_result.error };
+      }
+      if (existing_result.data) {
         return {
           success: false,
           error_message: `Event type with code '${input.code}' already exists`,
@@ -102,8 +105,11 @@ export function create_game_event_type_use_cases(
       }
 
       if (input.code) {
-        const code_check = await repository.find_by_code(input.code);
-        if (code_check && code_check.id !== id) {
+        const code_check_result = await repository.find_by_code(input.code);
+        if (!code_check_result.success) {
+          return { success: false, error_message: code_check_result.error };
+        }
+        if (code_check_result.data && code_check_result.data.id !== id) {
           return {
             success: false,
             error_message: `Event type with code '${input.code}' already exists`,
@@ -132,27 +138,23 @@ export function create_game_event_type_use_cases(
     async get_event_type_by_code(
       code: string,
     ): AsyncResult<GameEventType | null> {
-      const event_type = await repository.find_by_code(code);
-      return create_success_result(event_type);
+      return await repository.find_by_code(code);
     },
 
     async list_event_types_for_sport(
       sport_id: string | null,
     ): AsyncResult<GameEventType[]> {
-      const event_types = await repository.find_by_sport(sport_id);
-      return create_success_result(event_types);
+      return await repository.find_by_sport(sport_id);
     },
 
     async list_event_types_by_category(
       category: EventCategory,
     ): AsyncResult<GameEventType[]> {
-      const event_types = await repository.find_by_category(category);
-      return create_success_result(event_types);
+      return await repository.find_by_category(category);
     },
 
     async list_scoring_event_types(): AsyncResult<GameEventType[]> {
-      const event_types = await repository.find_scoring_events();
-      return create_success_result(event_types);
+      return await repository.find_scoring_events();
     },
   };
 }

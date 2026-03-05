@@ -284,14 +284,15 @@
 
     const auth_state = get(auth_store);
     if (auth_state.current_token) {
-      const authorization_result =
+      const authorization_check =
         await get_authorization_adapter().check_entity_authorized(
           auth_state.current_token.raw_token,
           "fixture",
           "read",
         );
 
-      if (!authorization_result.is_authorized) {
+      if (!authorization_check.success) return;
+      if (!authorization_check.data.is_authorized) {
         access_denial_store.set_denial(
           `/live-games/${fixture_id}`,
           "You do not have permission to view this live game.",
@@ -300,14 +301,15 @@
         return;
       }
 
-      const update_auth_result =
+      const update_auth_check =
         await get_authorization_adapter().check_entity_authorized(
           auth_state.current_token.raw_token,
           "fixture",
           "update",
         );
 
-      can_modify_game = update_auth_result.is_authorized;
+      can_modify_game =
+        update_auth_check.success && update_auth_check.data.is_authorized;
       if (!can_modify_game) {
         permission_info_message =
           "You have view-only access to this live game. Game management actions are not available.";

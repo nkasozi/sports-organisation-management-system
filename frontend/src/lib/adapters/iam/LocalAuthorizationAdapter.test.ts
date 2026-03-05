@@ -17,20 +17,23 @@ function create_mock_auth_port(
   return {
     generate_token: vi.fn(),
     verify_token: vi.fn().mockResolvedValue({
-      is_valid,
-      payload: is_valid
-        ? {
-            user_id: `test-${role}-123`,
-            email: `${role}@test.com`,
-            display_name: `Test ${role}`,
-            role,
-            organization_id: "org-1",
-            team_id: "team-1",
-            issued_at: Date.now(),
-            expires_at: Date.now() + 365 * 24 * 60 * 60 * 1000,
-          }
-        : null,
-      error_message,
+      success: true,
+      data: {
+        is_valid,
+        payload: is_valid
+          ? {
+              user_id: `test-${role}-123`,
+              email: `${role}@test.com`,
+              display_name: `Test ${role}`,
+              role,
+              organization_id: "org-1",
+              team_id: "team-1",
+              issued_at: Date.now(),
+              expires_at: Date.now() + 365 * 24 * 60 * 60 * 1000,
+            }
+          : null,
+        error_message,
+      },
     }),
     decode_token_payload: vi.fn(),
   } as unknown as AuthenticationPort;

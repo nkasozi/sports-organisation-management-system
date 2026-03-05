@@ -251,12 +251,12 @@ export class ConvexAuthorizationAdapter implements AuthorizationPort {
     _raw_token: string,
     entity_type: string,
     action: DataAction,
-  ): Promise<EntityAuthorizationResult> {
+  ): AsyncResult<EntityAuthorizationResult> {
     const cache_key = `entity_auth:${entity_type}:${action}`;
     const cached = this.authorization_cache.get_or_miss(cache_key);
 
     if (cached.is_hit && cached.value) {
-      return cached.value as EntityAuthorizationResult;
+      return create_success_result(cached.value as EntityAuthorizationResult);
     }
 
     try {
@@ -281,32 +281,32 @@ export class ConvexAuthorizationAdapter implements AuthorizationPort {
       };
 
       this.authorization_cache.set(cache_key, auth_result);
-      return auth_result;
+      return create_success_result(auth_result);
     } catch (error) {
       console.error(
         "[ConvexAuthorizationAdapter] Error checking entity authorization:",
         error,
       );
-      return {
+      return create_success_result({
         is_authorized: false,
         failure_reason: "token_invalid",
         reason:
           error instanceof Error
             ? error.message
             : "Failed to check authorization",
-      };
+      });
     }
   }
 
   async get_allowed_entity_actions(
     _raw_token: string,
     entity_type: string,
-  ): Promise<DataAction[]> {
+  ): AsyncResult<DataAction[]> {
     const cache_key = `allowed_actions:${entity_type}`;
     const cached = this.authorization_cache.get_or_miss(cache_key);
 
     if (cached.is_hit && cached.value) {
-      return cached.value as DataAction[];
+      return create_success_result(cached.value as DataAction[]);
     }
 
     try {
@@ -316,25 +316,25 @@ export class ConvexAuthorizationAdapter implements AuthorizationPort {
       )) as DataAction[];
 
       this.authorization_cache.set(cache_key, actions);
-      return actions;
+      return create_success_result(actions);
     } catch (error) {
       console.error(
         "[ConvexAuthorizationAdapter] Error fetching allowed actions:",
         error,
       );
-      return [];
+      return create_success_result([]);
     }
   }
 
   async get_disabled_entity_actions(
     _raw_token: string,
     entity_type: string,
-  ): Promise<DataAction[]> {
+  ): AsyncResult<DataAction[]> {
     const cache_key = `disabled_actions:${entity_type}`;
     const cached = this.authorization_cache.get_or_miss(cache_key);
 
     if (cached.is_hit && cached.value) {
-      return cached.value as DataAction[];
+      return create_success_result(cached.value as DataAction[]);
     }
 
     try {
@@ -344,13 +344,18 @@ export class ConvexAuthorizationAdapter implements AuthorizationPort {
       )) as DataAction[];
 
       this.authorization_cache.set(cache_key, actions);
-      return actions;
+      return create_success_result(actions);
     } catch (error) {
       console.error(
         "[ConvexAuthorizationAdapter] Error fetching disabled actions:",
         error,
       );
-      return ["create", "read", "update", "delete"];
+      return create_success_result([
+        "create",
+        "read",
+        "update",
+        "delete",
+      ] as DataAction[]);
     }
   }
 

@@ -107,12 +107,15 @@ export function create_team_staff_use_cases(
         return create_failure_result("Team ID is required");
       }
       if (staff_repository.find_by_team) {
-        const staff = await staff_repository.find_by_team(team_id);
+        const staff_result = await staff_repository.find_by_team(team_id);
+        if (!staff_result.success) {
+          return create_failure_result(staff_result.error);
+        }
         return create_success_result({
-          items: staff,
-          total_count: staff.length,
+          items: staff_result.data,
+          total_count: staff_result.data.length,
           page_number: 1,
-          page_size: staff.length,
+          page_size: staff_result.data.length,
           total_pages: 1,
         });
       }

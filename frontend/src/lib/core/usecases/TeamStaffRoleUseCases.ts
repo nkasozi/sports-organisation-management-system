@@ -105,8 +105,7 @@ export function create_team_staff_role_use_cases(
     async list_roles_by_category(
       category: TeamStaffRole["category"],
     ): AsyncResult<TeamStaffRole[]> {
-      const roles = await repository.find_by_category(category);
-      return create_success_result(roles);
+      return await repository.find_by_category(category);
     },
   };
 }

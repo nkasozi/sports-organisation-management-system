@@ -166,9 +166,10 @@ describe("GameOfficialRoleUseCases", () => {
 
   describe("list_roles_for_sport", () => {
     it("should return roles for sport", async () => {
-      vi.mocked(mock_repository.find_by_sport).mockResolvedValue([
-        create_test_role(),
-      ]);
+      vi.mocked(mock_repository.find_by_sport).mockResolvedValue({
+        success: true,
+        data: [create_test_role()],
+      });
 
       const result = await use_cases.list_roles_for_sport("sport-123");
 

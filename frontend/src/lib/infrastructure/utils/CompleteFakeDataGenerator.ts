@@ -548,13 +548,13 @@ export async function generate_field_hockey_dataset(
   const format_repository = import_module.get_competition_format_repository();
   const formats_result = await format_repository.find_by_format_type("league");
 
-  if (!formats_result || formats_result.length === 0) {
+  if (!formats_result.success || formats_result.data.length === 0) {
     throw new Error(
       "No league competition formats found. Please ensure competition formats are seeded.",
     );
   }
 
-  const league_format = formats_result[0];
+  const league_format = formats_result.data[0];
 
   const field_hockey_sport =
     create_field_hockey_sport_preset() as unknown as Sport;
@@ -736,13 +736,13 @@ export async function generate_complete_fake_dataset(
   const format_repository = import_module.get_competition_format_repository();
   const formats_result = await format_repository.find_by_format_type("league");
 
-  if (!formats_result || formats_result.length === 0) {
+  if (!formats_result.success || formats_result.data.length === 0) {
     throw new Error(
       "No league competition formats found. Please ensure competition formats are seeded.",
     );
   }
 
-  const league_format = formats_result[0];
+  const league_format = formats_result.data[0];
 
   const sport = generate_sport();
   const organization = generate_organization(sport.id);

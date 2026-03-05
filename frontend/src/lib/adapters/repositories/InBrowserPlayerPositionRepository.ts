@@ -8,7 +8,11 @@ import type {
 import type { BaseEntity } from "../../core/entities/BaseEntity";
 import type { PlayerPositionRepository } from "../../core/interfaces/ports";
 import type { QueryOptions } from "../../core/interfaces/ports";
-import type { PaginatedAsyncResult } from "../../core/types/Result";
+import type {
+  PaginatedAsyncResult,
+  AsyncResult,
+  Result,
+} from "../../core/types/Result";
 import {
   create_success_result,
   create_failure_result,
@@ -62,52 +66,66 @@ export class InBrowserPlayerPositionRepository
     };
   }
 
-  async find_by_code(code: string): Promise<PlayerPosition | null> {
+  async find_by_code(code: string): Promise<Result<PlayerPosition | null>> {
     try {
       const all_positions = await this.database.player_positions.toArray();
       const found_position = all_positions.find(
         (position) => position.code.toLowerCase() === code.toLowerCase(),
       );
-      return found_position ?? null;
-    } catch {
-      return null;
+      return create_success_result(found_position ?? null);
+    } catch (error) {
+      return create_failure_result(`Failed to find position by code: ${error}`);
     }
   }
 
-  async find_by_sport_type(sport_type: string): Promise<PlayerPosition[]> {
+  async find_by_sport_type(
+    sport_type: string,
+  ): Promise<Result<PlayerPosition[]>> {
     try {
       const all_positions = await this.database.player_positions.toArray();
-      return all_positions
-        .filter((position) => position.sport_type === sport_type)
-        .sort((a, b) => a.display_order - b.display_order);
-    } catch {
-      return [];
+      return create_success_result(
+        all_positions
+          .filter((position) => position.sport_type === sport_type)
+          .sort((a, b) => a.display_order - b.display_order),
+      );
+    } catch (error) {
+      return create_failure_result(
+        `Failed to find positions by sport type: ${error}`,
+      );
     }
   }
 
   async find_by_category(
     category: PlayerPosition["category"],
-  ): Promise<PlayerPosition[]> {
+  ): Promise<Result<PlayerPosition[]>> {
     try {
       const all_positions = await this.database.player_positions.toArray();
-      return all_positions
-        .filter((position) => position.category === category)
-        .sort((a, b) => a.display_order - b.display_order);
-    } catch {
-      return [];
+      return create_success_result(
+        all_positions
+          .filter((position) => position.category === category)
+          .sort((a, b) => a.display_order - b.display_order),
+      );
+    } catch (error) {
+      return create_failure_result(
+        `Failed to find positions by category: ${error}`,
+      );
     }
   }
 
-  async find_available_positions(): Promise<PlayerPosition[]> {
+  async find_available_positions(): Promise<Result<PlayerPosition[]>> {
     try {
       const all_positions = await this.database.player_positions.toArray();
-      return all_positions
-        .filter(
-          (position) => position.is_available && position.status === "active",
-        )
-        .sort((a, b) => a.display_order - b.display_order);
-    } catch {
-      return [];
+      return create_success_result(
+        all_positions
+          .filter(
+            (position) => position.is_available && position.status === "active",
+          )
+          .sort((a, b) => a.display_order - b.display_order),
+      );
+    } catch (error) {
+      return create_failure_result(
+        `Failed to find available positions: ${error}`,
+      );
     }
   }
 

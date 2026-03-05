@@ -101,18 +101,21 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
       const normalized_type = entity_type.toLowerCase().replace(/[\s_-]/g, "");
       const required_action = is_edit_mode ? "update" : "create";
 
-      const authorization_result =
+      const authorization_check =
         await get_authorization_adapter().check_entity_authorized(
           auth_state.current_token.raw_token,
           normalized_type,
           required_action,
         );
 
-      if (!authorization_result.is_authorized) {
+      if (
+        authorization_check.success &&
+        !authorization_check.data.is_authorized
+      ) {
         permission_denied = true;
         permission_denied_message = `Access denied: Your role does not have permission to ${required_action} ${entity_metadata?.display_name || entity_type} records.`;
         console.warn(
-          `[DynamicEntityForm] ${required_action.toUpperCase()} permission denied for role "${authorization_result.role}" on entity "${normalized_type}"`,
+          `[DynamicEntityForm] ${required_action.toUpperCase()} permission denied for role "${authorization_check.data.role}" on entity "${normalized_type}"`,
         );
       }
     }

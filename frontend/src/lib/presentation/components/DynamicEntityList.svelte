@@ -576,17 +576,18 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
       const auth_state = get(auth_store);
       const normalized_type = entity_type.toLowerCase().replace(/[\s_-]/g, "");
       if (auth_state.current_token) {
-        const authorization_result =
+        const authorization_check =
           await get_authorization_adapter().check_entity_authorized(
             auth_state.current_token.raw_token,
             normalized_type,
             "read",
           );
-        if (!authorization_result.is_authorized) {
+        if (!authorization_check.success) return;
+        if (!authorization_check.data.is_authorized) {
           entities = [];
           error_message = `Access denied: Your role does not have permission to view ${display_name} data.`;
           console.warn(
-            `[DynamicEntityList] READ permission denied for role "${authorization_result.role}" on entity "${normalized_type}"`,
+            `[DynamicEntityList] READ permission denied for role "${authorization_check.data.role}" on entity "${normalized_type}"`,
           );
           is_loading = false;
           return;

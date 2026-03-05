@@ -34,7 +34,7 @@ describe("ClerkAuthenticationAdapter", () => {
 
   describe("generate_token", () => {
     it("should return a token using the clerk session token", async () => {
-      const token = await adapter.generate_token({
+      const token_result = await adapter.generate_token({
         user_id: "clerk-user-123",
         email: "testuser@example.com",
         display_name: "Test User",
@@ -43,6 +43,9 @@ describe("ClerkAuthenticationAdapter", () => {
         team_id: "team-1",
       });
 
+      expect(token_result.success).toBe(true);
+      if (!token_result.success) return;
+      const token = token_result.data;
       expect(token.raw_token).toBe("mock-clerk-jwt-token-abc123");
       expect(token.payload.user_id).toBe("clerk-user-123");
       expect(token.payload.email).toBe("testuser@example.com");
@@ -52,7 +55,7 @@ describe("ClerkAuthenticationAdapter", () => {
       expect(mock_provider.get_session_token).toHaveBeenCalled();
     });
 
-    it("should throw when no clerk session is available", async () => {
+    it("should return failure when no clerk session is available", async () => {
       const no_session_provider = create_mock_clerk_session_provider({
         get_session_token: vi.fn().mockResolvedValue(null),
         is_signed_in: vi.fn().mockReturnValue(false),
@@ -61,22 +64,22 @@ describe("ClerkAuthenticationAdapter", () => {
         no_session_provider,
       );
 
-      await expect(
-        no_session_adapter.generate_token({
-          user_id: "clerk-user-123",
-          email: "testuser@example.com",
-          display_name: "Test User",
-          role: "super_admin",
-          organization_id: "org-1",
-          team_id: "team-1",
-        }),
-      ).rejects.toThrow("No active Clerk session");
+      const result = await no_session_adapter.generate_token({
+        user_id: "clerk-user-123",
+        email: "testuser@example.com",
+        display_name: "Test User",
+        role: "super_admin",
+        organization_id: "org-1",
+        team_id: "team-1",
+      });
+
+      expect(result.success).toBe(false);
     });
 
     it("should populate issued_at and expires_at timestamps", async () => {
       const before_generation = Math.floor(Date.now() / 1000);
 
-      const token = await adapter.generate_token({
+      const token_result = await adapter.generate_token({
         user_id: "clerk-user-123",
         email: "testuser@example.com",
         display_name: "Test User",
@@ -87,6 +90,9 @@ describe("ClerkAuthenticationAdapter", () => {
 
       const after_generation = Math.floor(Date.now() / 1000);
 
+      expect(token_result.success).toBe(true);
+      if (!token_result.success) return;
+      const token = token_result.data;
       expect(token.payload.issued_at).toBeGreaterThanOrEqual(before_generation);
       expect(token.payload.issued_at).toBeLessThanOrEqual(after_generation);
       expect(token.payload.expires_at).toBeGreaterThan(token.payload.issued_at);
@@ -97,11 +103,13 @@ describe("ClerkAuthenticationAdapter", () => {
     it("should return valid result when clerk session is active", async () => {
       const result = await adapter.verify_token("mock-clerk-jwt-token-abc123");
 
-      expect(result.is_valid).toBe(true);
-      expect(result.payload).toBeDefined();
-      expect(result.payload?.user_id).toBe("clerk-user-123");
-      expect(result.payload?.email).toBe("testuser@example.com");
-      expect(result.payload?.display_name).toBe("Test User");
+      expect(result.success).toBe(true);
+      if (!result.success) return;
+      expect(result.data.is_valid).toBe(true);
+      expect(result.data.payload).toBeDefined();
+      expect(result.data.payload?.user_id).toBe("clerk-user-123");
+      expect(result.data.payload?.email).toBe("testuser@example.com");
+      expect(result.data.payload?.display_name).toBe("Test User");
     });
 
     it("should return invalid result when clerk user is not signed in", async () => {
@@ -116,8 +124,10 @@ describe("ClerkAuthenticationAdapter", () => {
 
       const result = await signed_out_adapter.verify_token("some-old-token");
 
-      expect(result.is_valid).toBe(false);
-      expect(result.error_message).toBeDefined();
+      expect(result.success).toBe(true);
+      if (!result.success) return;
+      expect(result.data.is_valid).toBe(false);
+      expect(result.data.error_message).toBeDefined();
     });
 
     it("should return invalid result when clerk user is null", async () => {
@@ -129,16 +139,21 @@ describe("ClerkAuthenticationAdapter", () => {
 
       const result = await no_user_adapter.verify_token("some-token");
 
-      expect(result.is_valid).toBe(false);
-      expect(result.error_message).toBeDefined();
+      expect(result.success).toBe(true);
+      if (!result.success) return;
+      expect(result.data.is_valid).toBe(false);
+      expect(result.data.error_message).toBeDefined();
     });
 
     it("should cache successful verification results", async () => {
       const first_result = await adapter.verify_token("clerk-token-xyz");
       const second_result = await adapter.verify_token("clerk-token-xyz");
 
-      expect(first_result.is_valid).toBe(true);
-      expect(second_result.is_valid).toBe(true);
+      expect(first_result.success).toBe(true);
+      expect(second_result.success).toBe(true);
+      if (!first_result.success || !second_result.success) return;
+      expect(first_result.data.is_valid).toBe(true);
+      expect(second_result.data.is_valid).toBe(true);
 
       expect(mock_provider.is_signed_in).toHaveBeenCalledTimes(1);
     });
@@ -162,15 +177,20 @@ describe("ClerkAuthenticationAdapter", () => {
       const first_result = await flaky_adapter.verify_token("some-token");
       const second_result = await flaky_adapter.verify_token("some-token");
 
-      expect(first_result.is_valid).toBe(false);
-      expect(second_result.is_valid).toBe(true);
+      expect(first_result.success).toBe(true);
+      expect(second_result.success).toBe(true);
+      if (!first_result.success || !second_result.success) return;
+      expect(first_result.data.is_valid).toBe(false);
+      expect(second_result.data.is_valid).toBe(true);
       expect(flaky_provider.is_signed_in).toHaveBeenCalledTimes(2);
     });
 
     it("should include default role in verification payload", async () => {
       const result = await adapter.verify_token("clerk-token");
 
-      expect(result.payload?.role).toBeDefined();
+      expect(result.success).toBe(true);
+      if (!result.success) return;
+      expect(result.data.payload?.role).toBeDefined();
     });
   });
 

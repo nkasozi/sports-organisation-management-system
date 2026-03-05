@@ -108,17 +108,17 @@ export interface AuthorizationPort {
     raw_token: string,
     entity_type: string,
     action: DataAction,
-  ): Promise<EntityAuthorizationResult>;
+  ): AsyncResult<EntityAuthorizationResult>;
 
   get_allowed_entity_actions(
     raw_token: string,
     entity_type: string,
-  ): Promise<DataAction[]>;
+  ): AsyncResult<DataAction[]>;
 
   get_disabled_entity_actions(
     raw_token: string,
     entity_type: string,
-  ): Promise<DataAction[]>;
+  ): AsyncResult<DataAction[]>;
 }
 
 export type ScopeDimension =

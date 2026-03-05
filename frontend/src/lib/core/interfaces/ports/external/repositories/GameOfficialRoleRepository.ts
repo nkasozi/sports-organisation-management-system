@@ -1,4 +1,5 @@
 import type { Repository } from "./Repository";
+import type { AsyncResult } from "../../../../types/Result";
 import type {
   GameOfficialRole,
   CreateGameOfficialRoleInput,
@@ -18,8 +19,8 @@ export interface GameOfficialRoleRepository extends Repository<
   CreateGameOfficialRoleInput,
   UpdateGameOfficialRoleInput
 > {
-  find_by_sport(sport_id: string | null): Promise<GameOfficialRole[]>;
-  find_head_officials(): Promise<GameOfficialRole[]>;
+  find_by_sport(sport_id: string | null): AsyncResult<GameOfficialRole[]>;
+  find_head_officials(): AsyncResult<GameOfficialRole[]>;
 }
 
 export type {

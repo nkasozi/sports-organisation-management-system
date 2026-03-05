@@ -124,8 +124,7 @@ export function create_game_official_role_use_cases(
     async list_roles_for_sport(
       sport_id: string | null,
     ): AsyncResult<GameOfficialRole[]> {
-      const roles = await repository.find_by_sport(sport_id);
-      return create_success_result(roles);
+      return await repository.find_by_sport(sport_id);
     },
   };
 }

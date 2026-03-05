@@ -69,8 +69,11 @@ export function create_player_position_use_cases(
         return { success: false, error_message: validation.errors.join(", ") };
       }
 
-      const existing = await repository.find_by_code(input.code);
-      if (existing) {
+      const existing_result = await repository.find_by_code(input.code);
+      if (!existing_result.success) {
+        return { success: false, error_message: existing_result.error };
+      }
+      if (existing_result.data) {
         return {
           success: false,
           error_message: `Position with code '${input.code}' already exists`,
@@ -98,8 +101,11 @@ export function create_player_position_use_cases(
       }
 
       if (input.code) {
-        const code_check = await repository.find_by_code(input.code);
-        if (code_check && code_check.id !== id) {
+        const code_check_result = await repository.find_by_code(input.code);
+        if (!code_check_result.success) {
+          return { success: false, error_message: code_check_result.error };
+        }
+        if (code_check_result.data && code_check_result.data.id !== id) {
           return {
             success: false,
             error_message: `Position with code '${input.code}' already exists`,
@@ -127,27 +133,23 @@ export function create_player_position_use_cases(
     },
 
     async find_by_code(code: string): AsyncResult<PlayerPosition | null> {
-      const position = await repository.find_by_code(code);
-      return create_success_result(position);
+      return await repository.find_by_code(code);
     },
 
     async find_by_sport_type(
       sport_type: string,
     ): AsyncResult<PlayerPosition[]> {
-      const positions = await repository.find_by_sport_type(sport_type);
-      return create_success_result(positions);
+      return await repository.find_by_sport_type(sport_type);
     },
 
     async find_by_category(
       category: PlayerPosition["category"],
     ): AsyncResult<PlayerPosition[]> {
-      const positions = await repository.find_by_category(category);
-      return create_success_result(positions);
+      return await repository.find_by_category(category);
     },
 
     async find_available_positions(): AsyncResult<PlayerPosition[]> {
-      const positions = await repository.find_available_positions();
-      return create_success_result(positions);
+      return await repository.find_available_positions();
     },
 
     async list_positions_by_sport(
@@ -161,11 +163,19 @@ export function create_player_position_use_cases(
           error_message: "Sport type is required",
         };
       }
-      const positions = await repository.find_by_sport_type(sport_type);
+      const positions_result = await repository.find_by_sport_type(sport_type);
+      if (!positions_result.success) {
+        return {
+          success: false,
+          data: [],
+          total_count: 0,
+          error_message: positions_result.error,
+        };
+      }
       return {
         success: true,
-        data: positions,
-        total_count: positions.length,
+        data: positions_result.data,
+        total_count: positions_result.data.length,
       };
     },
   };

@@ -11,7 +11,11 @@ import type {
   TeamStaffFilter,
 } from "../../core/interfaces/ports";
 import type { QueryOptions } from "../../core/interfaces/ports";
-import type { PaginatedAsyncResult } from "../../core/types/Result";
+import type {
+  PaginatedAsyncResult,
+  AsyncResult,
+  Result,
+} from "../../core/types/Result";
 import {
   create_success_result,
   create_failure_result,
@@ -129,33 +133,35 @@ export class InBrowserTeamStaffRepository
     }
   }
 
-  async find_by_team(team_id: string): Promise<TeamStaff[]> {
+  async find_by_team(team_id: string): Promise<Result<TeamStaff[]>> {
     try {
-      return await this.database.team_staff
+      const staff = await this.database.team_staff
         .where("team_id")
         .equals(team_id)
         .toArray();
+      return create_success_result(staff);
     } catch (error) {
       console.error(
         "[InBrowserTeamStaffRepository] find_by_team error:",
         error,
       );
-      return [];
+      return create_failure_result(`Failed to find staff by team: ${error}`);
     }
   }
 
-  async find_by_role(role_id: string): Promise<TeamStaff[]> {
+  async find_by_role(role_id: string): Promise<Result<TeamStaff[]>> {
     try {
-      return await this.database.team_staff
+      const staff = await this.database.team_staff
         .where("role_id")
         .equals(role_id)
         .toArray();
+      return create_success_result(staff);
     } catch (error) {
       console.error(
         "[InBrowserTeamStaffRepository] find_by_role error:",
         error,
       );
-      return [];
+      return create_failure_result(`Failed to find staff by role: ${error}`);
     }
   }
 }

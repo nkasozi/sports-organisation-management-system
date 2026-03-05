@@ -69,8 +69,11 @@ export function create_competition_format_use_cases(
         return { success: false, error_message: validation.errors.join(", ") };
       }
 
-      const existing = await repository.find_by_code(input.code);
-      if (existing) {
+      const existing_result = await repository.find_by_code(input.code);
+      if (!existing_result.success) {
+        return { success: false, error_message: existing_result.error };
+      }
+      if (existing_result.data) {
         return {
           success: false,
           error_message: `Format with code '${input.code}' already exists`,
@@ -98,8 +101,11 @@ export function create_competition_format_use_cases(
       }
 
       if (input.code) {
-        const code_check = await repository.find_by_code(input.code);
-        if (code_check && code_check.id !== id) {
+        const code_check_result = await repository.find_by_code(input.code);
+        if (!code_check_result.success) {
+          return { success: false, error_message: code_check_result.error };
+        }
+        if (code_check_result.data && code_check_result.data.id !== id) {
           return {
             success: false,
             error_message: `Format with code '${input.code}' already exists`,
@@ -136,20 +142,17 @@ export function create_competition_format_use_cases(
     async get_format_by_code(
       code: string,
     ): AsyncResult<CompetitionFormat | null> {
-      const format = await repository.find_by_code(code);
-      return create_success_result(format);
+      return await repository.find_by_code(code);
     },
 
     async list_formats_by_type(
       format_type: FormatType,
     ): AsyncResult<CompetitionFormat[]> {
-      const formats = await repository.find_by_format_type(format_type);
-      return create_success_result(formats);
+      return await repository.find_by_format_type(format_type);
     },
 
     async list_active_formats(): AsyncResult<CompetitionFormat[]> {
-      const formats = await repository.find_active_formats();
-      return create_success_result(formats);
+      return await repository.find_active_formats();
     },
   };
 }

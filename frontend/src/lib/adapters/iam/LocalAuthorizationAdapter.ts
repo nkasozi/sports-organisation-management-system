@@ -687,7 +687,16 @@ export class LocalAuthorizationAdapter implements AuthorizationPort {
       return cached.value as Result<ProfilePermissions, AuthorizationFailure>;
     }
 
-    const verification = await this.auth_port.verify_token(raw_token);
+    const verification_result = await this.auth_port.verify_token(raw_token);
+
+    if (!verification_result.success) {
+      return create_failure_result({
+        failure_type: "token_invalid",
+        message: verification_result.error,
+      });
+    }
+
+    const verification = verification_result.data;
 
     if (!verification.is_valid || !verification.payload) {
       const is_expired = verification.error_message?.includes("expired");
@@ -740,7 +749,19 @@ export class LocalAuthorizationAdapter implements AuthorizationPort {
       return cached.value as Result<SidebarMenuGroup[], AuthorizationFailure>;
     }
 
-    const verification = await this.auth_port.verify_token(raw_token);
+    const verification_result = await this.auth_port.verify_token(raw_token);
+
+    if (!verification_result.success) {
+      console.warn(
+        "[LocalAuthorizationAdapter] Token verification failed for sidebar menu",
+      );
+      return create_failure_result({
+        failure_type: "token_invalid",
+        message: verification_result.error,
+      });
+    }
+
+    const verification = verification_result.data;
 
     if (!verification.is_valid || !verification.payload) {
       const is_expired = verification.error_message?.includes("expired");
@@ -775,7 +796,16 @@ export class LocalAuthorizationAdapter implements AuthorizationPort {
       return cached.value as Result<RouteAccessGranted, RouteAccessDenied>;
     }
 
-    const verification = await this.auth_port.verify_token(raw_token);
+    const verification_result = await this.auth_port.verify_token(raw_token);
+
+    if (!verification_result.success) {
+      return create_failure_result({
+        route,
+        message: verification_result.error,
+      });
+    }
+
+    const verification = verification_result.data;
 
     if (!verification.is_valid || !verification.payload) {
       return create_failure_result({
@@ -804,7 +834,7 @@ export class LocalAuthorizationAdapter implements AuthorizationPort {
     raw_token: string,
     entity_type: string,
     action: DataAction,
-  ): Promise<EntityAuthorizationResult> {
+  ): AsyncResult<EntityAuthorizationResult> {
     const cache_key = this.build_cache_key(
       "entity_auth",
       raw_token,
@@ -813,18 +843,30 @@ export class LocalAuthorizationAdapter implements AuthorizationPort {
     );
     const cached = this.authorization_cache.get_or_miss(cache_key);
     if (cached.is_hit && cached.value) {
-      return cached.value as EntityAuthorizationResult;
+      return create_success_result(cached.value as EntityAuthorizationResult);
     }
 
-    const verification = await this.auth_port.verify_token(raw_token);
+    const verification_result = await this.auth_port.verify_token(raw_token);
+
+    if (!verification_result.success) {
+      return create_success_result({
+        is_authorized: false,
+        failure_reason: "token_invalid" as const,
+        reason: verification_result.error,
+      });
+    }
+
+    const verification = verification_result.data;
 
     if (!verification.is_valid || !verification.payload) {
       const is_expired = verification.error_message?.includes("expired");
-      return {
+      return create_success_result({
         is_authorized: false,
-        failure_reason: is_expired ? "token_expired" : "token_invalid",
+        failure_reason: is_expired
+          ? ("token_expired" as const)
+          : ("token_invalid" as const),
         reason: verification.error_message || "Token verification failed",
-      };
+      });
     }
 
     const role = verification.payload.role;
@@ -843,20 +885,24 @@ export class LocalAuthorizationAdapter implements AuthorizationPort {
         role,
       );
 
-      return this.cache_entity_authorization_result(cache_key, {
-        is_authorized: false,
-        failure_reason: "permission_denied",
-        data_category: category,
-        role,
-        reason: denial_reason,
-      });
+      return create_success_result(
+        this.cache_entity_authorization_result(cache_key, {
+          is_authorized: false,
+          failure_reason: "permission_denied",
+          data_category: category,
+          role,
+          reason: denial_reason,
+        }),
+      );
     }
 
-    return this.cache_entity_authorization_result(cache_key, {
-      is_authorized: true,
-      data_category: category,
-      role,
-    });
+    return create_success_result(
+      this.cache_entity_authorization_result(cache_key, {
+        is_authorized: true,
+        data_category: category,
+        role,
+      }),
+    );
   }
 
   private cache_entity_authorization_result(
@@ -870,7 +916,7 @@ export class LocalAuthorizationAdapter implements AuthorizationPort {
   async get_allowed_entity_actions(
     raw_token: string,
     entity_type: string,
-  ): Promise<DataAction[]> {
+  ): AsyncResult<DataAction[]> {
     const cache_key = this.build_cache_key(
       "allowed_actions",
       raw_token,
@@ -878,16 +924,20 @@ export class LocalAuthorizationAdapter implements AuthorizationPort {
     );
     const cached = this.authorization_cache.get_or_miss(cache_key);
     if (cached.is_hit && cached.value) {
-      return cached.value as DataAction[];
+      return create_success_result(cached.value as DataAction[]);
     }
 
-    const verification = await this.auth_port.verify_token(raw_token);
+    const verification_result = await this.auth_port.verify_token(raw_token);
 
-    if (!verification.is_valid || !verification.payload) {
-      return [];
+    if (
+      !verification_result.success ||
+      !verification_result.data.is_valid ||
+      !verification_result.data.payload
+    ) {
+      return create_success_result([]);
     }
 
-    const role = verification.payload.role;
+    const role = verification_result.data.payload.role;
     const category = get_entity_data_category(entity_type);
     const permissions = get_role_permissions(role)[category];
 
@@ -898,13 +948,13 @@ export class LocalAuthorizationAdapter implements AuthorizationPort {
     if (permissions.delete) allowed_actions.push("delete");
 
     this.authorization_cache.set(cache_key, allowed_actions);
-    return allowed_actions;
+    return create_success_result(allowed_actions);
   }
 
   async get_disabled_entity_actions(
     raw_token: string,
     entity_type: string,
-  ): Promise<DataAction[]> {
+  ): AsyncResult<DataAction[]> {
     const cache_key = this.build_cache_key(
       "disabled_actions",
       raw_token,
@@ -912,16 +962,25 @@ export class LocalAuthorizationAdapter implements AuthorizationPort {
     );
     const cached = this.authorization_cache.get_or_miss(cache_key);
     if (cached.is_hit && cached.value) {
-      return cached.value as DataAction[];
+      return create_success_result(cached.value as DataAction[]);
     }
 
-    const verification = await this.auth_port.verify_token(raw_token);
+    const verification_result = await this.auth_port.verify_token(raw_token);
 
-    if (!verification.is_valid || !verification.payload) {
-      return ["create", "read", "update", "delete"];
+    if (
+      !verification_result.success ||
+      !verification_result.data.is_valid ||
+      !verification_result.data.payload
+    ) {
+      return create_success_result([
+        "create",
+        "read",
+        "update",
+        "delete",
+      ] as DataAction[]);
     }
 
-    const role = verification.payload.role;
+    const role = verification_result.data.payload.role;
     const category = get_entity_data_category(entity_type);
     const permissions = get_role_permissions(role)[category];
 
@@ -932,7 +991,7 @@ export class LocalAuthorizationAdapter implements AuthorizationPort {
     if (!permissions.delete) disabled.push("delete");
 
     this.authorization_cache.set(cache_key, disabled);
-    return disabled;
+    return create_success_result(disabled);
   }
 }
 

@@ -1,4 +1,5 @@
 import type { Repository, FilterableRepository } from "./Repository";
+import type { AsyncResult } from "../../../../types/Result";
 import type {
   CompetitionFormat,
   CreateCompetitionFormatInput,
@@ -20,9 +21,11 @@ export interface CompetitionFormatRepository extends FilterableRepository<
   UpdateCompetitionFormatInput,
   CompetitionFormatFilter
 > {
-  find_by_format_type(format_type: FormatType): Promise<CompetitionFormat[]>;
-  find_by_code(code: string): Promise<CompetitionFormat | null>;
-  find_active_formats(): Promise<CompetitionFormat[]>;
+  find_by_format_type(
+    format_type: FormatType,
+  ): AsyncResult<CompetitionFormat[]>;
+  find_by_code(code: string): AsyncResult<CompetitionFormat | null>;
+  find_active_formats(): AsyncResult<CompetitionFormat[]>;
 }
 
 export type {

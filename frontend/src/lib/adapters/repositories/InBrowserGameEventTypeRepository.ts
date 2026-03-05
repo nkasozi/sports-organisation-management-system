@@ -11,7 +11,11 @@ import type {
   GameEventTypeFilter,
 } from "../../core/interfaces/ports";
 import type { QueryOptions } from "../../core/interfaces/ports";
-import type { PaginatedAsyncResult } from "../../core/types/Result";
+import type {
+  PaginatedAsyncResult,
+  AsyncResult,
+  Result,
+} from "../../core/types/Result";
 import {
   create_success_result,
   create_failure_result,
@@ -144,50 +148,66 @@ export class InBrowserGameEventTypeRepository
     }
   }
 
-  async find_by_sport(sport_id: string | null): Promise<GameEventType[]> {
+  async find_by_sport(
+    sport_id: string | null,
+  ): Promise<Result<GameEventType[]>> {
     try {
       const all_event_types = await this.database.game_event_types.toArray();
-      return all_event_types
-        .filter(
-          (event_type) =>
-            event_type.sport_id === sport_id || event_type.sport_id === null,
-        )
-        .sort((a, b) => a.display_order - b.display_order);
-    } catch {
-      return [];
-    }
-  }
-
-  async find_by_category(category: EventCategory): Promise<GameEventType[]> {
-    try {
-      const all_event_types = await this.database.game_event_types.toArray();
-      return all_event_types
-        .filter((event_type) => event_type.category === category)
-        .sort((a, b) => a.display_order - b.display_order);
-    } catch {
-      return [];
-    }
-  }
-
-  async find_by_code(code: string): Promise<GameEventType | null> {
-    try {
-      const all_event_types = await this.database.game_event_types.toArray();
-      return (
-        all_event_types.find((event_type) => event_type.code === code) ?? null
+      return create_success_result(
+        all_event_types
+          .filter(
+            (event_type) =>
+              event_type.sport_id === sport_id || event_type.sport_id === null,
+          )
+          .sort((a, b) => a.display_order - b.display_order),
       );
-    } catch {
-      return null;
+    } catch (error) {
+      return create_failure_result(
+        `Failed to find event types by sport: ${error}`,
+      );
     }
   }
 
-  async find_scoring_events(): Promise<GameEventType[]> {
+  async find_by_category(
+    category: EventCategory,
+  ): Promise<Result<GameEventType[]>> {
     try {
       const all_event_types = await this.database.game_event_types.toArray();
-      return all_event_types
-        .filter((event_type) => event_type.affects_score)
-        .sort((a, b) => a.display_order - b.display_order);
-    } catch {
-      return [];
+      return create_success_result(
+        all_event_types
+          .filter((event_type) => event_type.category === category)
+          .sort((a, b) => a.display_order - b.display_order),
+      );
+    } catch (error) {
+      return create_failure_result(
+        `Failed to find event types by category: ${error}`,
+      );
+    }
+  }
+
+  async find_by_code(code: string): Promise<Result<GameEventType | null>> {
+    try {
+      const all_event_types = await this.database.game_event_types.toArray();
+      return create_success_result(
+        all_event_types.find((event_type) => event_type.code === code) ?? null,
+      );
+    } catch (error) {
+      return create_failure_result(
+        `Failed to find event type by code: ${error}`,
+      );
+    }
+  }
+
+  async find_scoring_events(): Promise<Result<GameEventType[]>> {
+    try {
+      const all_event_types = await this.database.game_event_types.toArray();
+      return create_success_result(
+        all_event_types
+          .filter((event_type) => event_type.affects_score)
+          .sort((a, b) => a.display_order - b.display_order),
+      );
+    } catch (error) {
+      return create_failure_result(`Failed to find scoring events: ${error}`);
     }
   }
 }

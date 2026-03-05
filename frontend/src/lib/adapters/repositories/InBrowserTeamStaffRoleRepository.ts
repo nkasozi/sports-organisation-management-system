@@ -10,7 +10,11 @@ import type {
   TeamStaffRoleFilter,
 } from "../../core/interfaces/ports";
 import type { QueryOptions } from "../../core/interfaces/ports";
-import type { PaginatedAsyncResult } from "../../core/types/Result";
+import type {
+  PaginatedAsyncResult,
+  AsyncResult,
+  Result,
+} from "../../core/types/Result";
 import {
   create_success_result,
   create_failure_result,
@@ -113,19 +117,23 @@ export class InBrowserTeamStaffRoleRepository
 
   async find_by_category(
     category: TeamStaffRole["category"],
-  ): Promise<TeamStaffRole[]> {
+  ): Promise<Result<TeamStaffRole[]>> {
     try {
       const roles = await this.database.team_staff_roles
         .where("category")
         .equals(category)
         .toArray();
 
-      return roles.sort((a, b) => a.display_order - b.display_order);
+      return create_success_result(
+        roles.sort((a, b) => a.display_order - b.display_order),
+      );
     } catch (error) {
       console.error(
         `[InBrowserTeamStaffRoleRepository] Failed to find by category: ${error}`,
       );
-      return [];
+      return create_failure_result(
+        `Failed to find roles by category: ${error}`,
+      );
     }
   }
 }

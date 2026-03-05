@@ -1,4 +1,5 @@
 import type { SystemUser } from "$lib/core/entities/SystemUser";
+import type { AsyncResult } from "../../../../types/Result";
 
 export type UserRole =
   | "super_admin"
@@ -55,7 +56,7 @@ export interface AuthVerificationResult {
 export interface AuthenticationPort {
   generate_token(
     payload: Omit<AuthTokenPayload, "issued_at" | "expires_at">,
-  ): Promise<AuthToken>;
+  ): AsyncResult<AuthToken>;
 
-  verify_token(raw_token: string): Promise<AuthVerificationResult>;
+  verify_token(raw_token: string): AsyncResult<AuthVerificationResult>;
 }

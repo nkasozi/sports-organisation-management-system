@@ -165,9 +165,10 @@ describe("TeamStaffRoleUseCases", () => {
 
   describe("list_roles_by_category", () => {
     it("should return roles for category", async () => {
-      vi.mocked(mock_repository.find_by_category).mockResolvedValue([
-        create_test_role(),
-      ]);
+      vi.mocked(mock_repository.find_by_category).mockResolvedValue({
+        success: true,
+        data: [create_test_role()],
+      });
 
       const result = await use_cases.list_roles_by_category("coaching");
 

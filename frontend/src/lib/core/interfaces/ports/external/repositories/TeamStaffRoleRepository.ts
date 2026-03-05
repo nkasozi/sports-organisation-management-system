@@ -1,4 +1,5 @@
 import type { Repository } from "./Repository";
+import type { AsyncResult } from "../../../../types/Result";
 import type {
   TeamStaffRole,
   CreateTeamStaffRoleInput,
@@ -18,7 +19,7 @@ export interface TeamStaffRoleRepository extends Repository<
 > {
   find_by_category(
     category: TeamStaffRole["category"],
-  ): Promise<TeamStaffRole[]>;
+  ): AsyncResult<TeamStaffRole[]>;
 }
 
 export type {

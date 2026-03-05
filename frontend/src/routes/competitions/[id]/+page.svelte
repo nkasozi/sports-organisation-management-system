@@ -148,14 +148,15 @@
 
     const auth_state = get(auth_store);
     if (auth_state.current_token) {
-      const read_auth_result =
+      const read_auth_check =
         await get_authorization_adapter().check_entity_authorized(
           auth_state.current_token.raw_token,
           "competition",
           "read",
         );
 
-      if (!read_auth_result.is_authorized) {
+      if (!read_auth_check.success) return;
+      if (!read_auth_check.data.is_authorized) {
         access_denial_store.set_denial(
           `/competitions/${competition_id}`,
           "You do not have permission to view this competition.",
@@ -164,14 +165,15 @@
         return;
       }
 
-      const update_auth_result =
+      const update_auth_check =
         await get_authorization_adapter().check_entity_authorized(
           auth_state.current_token.raw_token,
           "competition",
           "update",
         );
 
-      can_edit_competition = update_auth_result.is_authorized;
+      can_edit_competition =
+        update_auth_check.success && update_auth_check.data.is_authorized;
       if (!can_edit_competition) {
         permission_info_message =
           "You have view-only access to this competition. Editing is not available.";

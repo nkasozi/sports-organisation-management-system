@@ -303,7 +303,7 @@ function create_auth_store() {
       get_system_user_repository(),
     );
 
-    return auth_adapter.generate_token({
+    const token_result = await auth_adapter.generate_token({
       user_id: profile.id,
       email: profile.email,
       display_name: profile.display_name,
@@ -311,6 +311,15 @@ function create_auth_store() {
       organization_id: profile.organization_id,
       team_id: profile.team_id,
     });
+
+    if (!token_result.success) {
+      console.error(
+        `[AuthStore] Failed to generate token: ${token_result.error}`,
+      );
+      throw new Error(token_result.error);
+    }
+
+    return token_result.data;
   }
 
   function sync_user_context_with_event_bus(profile: UserProfile | null): void {
@@ -338,18 +347,22 @@ function create_auth_store() {
       const auth_adapter = get_authentication_adapter(
         get_system_user_repository(),
       );
-      const verification_result =
-        await auth_adapter.verify_token(saved_token_raw);
+      const verify_result = await auth_adapter.verify_token(saved_token_raw);
 
-      if (verification_result.is_valid && verification_result.payload) {
+      if (
+        verify_result.success &&
+        verify_result.data.is_valid &&
+        verify_result.data.payload
+      ) {
+        const verification = verify_result.data;
         current_profile =
           available_profiles.find(
-            (p) => p.id === verification_result.payload?.user_id,
+            (p) => p.id === verification.payload?.user_id,
           ) || null;
 
         if (current_profile) {
           current_token = {
-            payload: verification_result.payload,
+            payload: verification.payload,
             signature: saved_token_raw.split(".")[2],
             raw_token: saved_token_raw,
           };

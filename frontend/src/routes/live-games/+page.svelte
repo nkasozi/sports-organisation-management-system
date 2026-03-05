@@ -67,30 +67,33 @@
       return;
     }
 
-    const authorization_result =
+    const authorization_check =
       await get_authorization_adapter().check_entity_authorized(
         auth_state.current_token.raw_token,
         "fixture",
         "read",
       );
 
-    if (!authorization_result.is_authorized) {
-      const denial_reason = `Role "${authorization_result.role}" does not have "read" permission for fixture (${get_entity_data_category("fixture")} data).`;
+    if (!authorization_check.success) return;
+    if (!authorization_check.data.is_authorized) {
+      const denial_reason = `Role "${authorization_check.data.role}" does not have "read" permission for fixture (${get_entity_data_category("fixture")} data).`;
       access_denial_store.set_denial("/live-games", denial_reason);
       goto("/");
       return;
     }
 
-    const update_authorization_result =
+    const update_authorization_check =
       await get_authorization_adapter().check_entity_authorized(
         auth_state.current_token.raw_token,
         "fixture",
         "update",
       );
 
-    can_start_games = update_authorization_result.is_authorized;
+    can_start_games =
+      update_authorization_check.success &&
+      update_authorization_check.data.is_authorized;
     if (!can_start_games) {
-      permission_info_message = `Your role "${update_authorization_result.role}" can view fixtures but cannot start games. Contact an administrator if you need this permission.`;
+      permission_info_message = `Your role "${update_authorization_check.success ? update_authorization_check.data.role : "unknown"}" can view fixtures but cannot start games. Contact an administrator if you need this permission.`;
     }
 
     const loaded_fixtures = await load_incomplete_fixtures();
@@ -563,14 +566,15 @@
       return;
     }
 
-    const authorization_result =
+    const authorization_check =
       await get_authorization_adapter().check_entity_authorized(
         auth_state.current_token.raw_token,
         "official",
         "create",
       );
 
-    if (!authorization_result.is_authorized) {
+    if (!authorization_check.success) return;
+    if (!authorization_check.data.is_authorized) {
       error_message =
         "Permission denied: You do not have permission to start games. This action requires Officials Manager, Organisation Admin, or Super Admin role.";
       return;

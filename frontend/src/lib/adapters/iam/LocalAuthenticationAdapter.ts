@@ -10,6 +10,11 @@ import {
   create_auth_cache,
   type AuthCache,
 } from "$lib/infrastructure/cache/AuthCache";
+import type { Result } from "$lib/core/types/Result";
+import {
+  create_success_result,
+  create_failure_result,
+} from "$lib/core/types/Result";
 
 const VERIFICATION_CACHE_MAX_ENTRIES = 50;
 const VERIFICATION_CACHE_TTL_MS = 30 * 60 * 1000;
@@ -102,40 +107,49 @@ export class LocalAuthenticationAdapter implements AuthenticationPort {
 
   async generate_token(
     payload_input: Omit<AuthTokenPayload, "issued_at" | "expires_at">,
-  ): Promise<AuthToken> {
-    const now = Date.now();
-    const expires_at = now + TOKEN_EXPIRY_DAYS * 24 * 60 * 60 * 1000;
+  ): Promise<Result<AuthToken>> {
+    try {
+      const now = Date.now();
+      const expires_at = now + TOKEN_EXPIRY_DAYS * 24 * 60 * 60 * 1000;
 
-    const payload: AuthTokenPayload = {
-      ...payload_input,
-      issued_at: now,
-      expires_at,
-    };
+      const payload: AuthTokenPayload = {
+        ...payload_input,
+        issued_at: now,
+        expires_at,
+      };
 
-    const header = create_token_header();
-    const encoded_payload = base64_url_encode(JSON.stringify(payload));
-    const signature_input = `${header}.${encoded_payload}`;
-    const signature = await create_hmac_signature(
-      signature_input,
-      get_secret_key(),
-    );
+      const header = create_token_header();
+      const encoded_payload = base64_url_encode(JSON.stringify(payload));
+      const signature_input = `${header}.${encoded_payload}`;
+      const signature = await create_hmac_signature(
+        signature_input,
+        get_secret_key(),
+      );
 
-    const raw_token = `${header}.${encoded_payload}.${signature}`;
+      const raw_token = `${header}.${encoded_payload}.${signature}`;
 
-    console.log(
-      `[LocalAuthenticationAdapter] Generated token for user: ${payload.email}, role: ${payload.role}`,
-    );
+      console.log(
+        `[LocalAuthenticationAdapter] Generated token for user: ${payload.email}, role: ${payload.role}`,
+      );
 
-    return {
-      payload,
-      signature,
-      raw_token,
-    };
+      return create_success_result({
+        payload,
+        signature,
+        raw_token,
+      });
+    } catch (error) {
+      return create_failure_result(`Failed to generate token: ${error}`);
+    }
   }
 
-  async verify_token(raw_token: string): Promise<AuthVerificationResult> {
+  async verify_token(
+    raw_token: string,
+  ): Promise<Result<AuthVerificationResult>> {
     if (!raw_token || raw_token.trim().length === 0) {
-      return { is_valid: false, error_message: "Token is empty" };
+      return create_success_result({
+        is_valid: false,
+        error_message: "Token is empty",
+      });
     }
 
     const cached_result = this.verification_cache.get_or_miss(raw_token);
@@ -143,7 +157,7 @@ export class LocalAuthenticationAdapter implements AuthenticationPort {
       console.log(
         "[LocalAuthenticationAdapter] Cache HIT for token verification",
       );
-      return cached_result.value;
+      return create_success_result(cached_result.value);
     }
 
     const verification_result =
@@ -153,7 +167,7 @@ export class LocalAuthenticationAdapter implements AuthenticationPort {
       this.verification_cache.set(raw_token, verification_result);
     }
 
-    return verification_result;
+    return create_success_result(verification_result);
   }
 
   private async verify_token_without_cache(

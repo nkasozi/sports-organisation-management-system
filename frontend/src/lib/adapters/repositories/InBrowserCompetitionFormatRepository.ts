@@ -11,7 +11,11 @@ import type {
   CompetitionFormatFilter,
 } from "../../core/interfaces/ports";
 import type { QueryOptions } from "../../core/interfaces/ports";
-import type { PaginatedAsyncResult } from "../../core/types/Result";
+import type {
+  PaginatedAsyncResult,
+  AsyncResult,
+  Result,
+} from "../../core/types/Result";
 import {
   create_success_result,
   create_failure_result,
@@ -127,36 +131,40 @@ export class InBrowserCompetitionFormatRepository
 
   async find_by_format_type(
     format_type: FormatType,
-  ): Promise<CompetitionFormat[]> {
+  ): Promise<Result<CompetitionFormat[]>> {
     try {
       const all_formats = await this.database.competition_formats.toArray();
-      return all_formats.filter(
-        (format) =>
-          format.format_type === format_type && format.status === "active",
+      return create_success_result(
+        all_formats.filter(
+          (format) =>
+            format.format_type === format_type && format.status === "active",
+        ),
       );
     } catch (error) {
-      return [];
+      return create_failure_result(`Failed to find formats by type: ${error}`);
     }
   }
 
-  async find_by_code(code: string): Promise<CompetitionFormat | null> {
+  async find_by_code(code: string): Promise<Result<CompetitionFormat | null>> {
     try {
       const all_formats = await this.database.competition_formats.toArray();
       const found = all_formats.find((format) => format.code === code);
-      return found ?? null;
+      return create_success_result(found ?? null);
     } catch (error) {
-      return null;
+      return create_failure_result(`Failed to find format by code: ${error}`);
     }
   }
 
-  async find_active_formats(): Promise<CompetitionFormat[]> {
+  async find_active_formats(): Promise<Result<CompetitionFormat[]>> {
     try {
       const all_formats = await this.database.competition_formats.toArray();
-      return all_formats
-        .filter((format) => format.status === "active")
-        .sort((a, b) => a.name.localeCompare(b.name));
+      return create_success_result(
+        all_formats
+          .filter((format) => format.status === "active")
+          .sort((a, b) => a.name.localeCompare(b.name)),
+      );
     } catch (error) {
-      return [];
+      return create_failure_result(`Failed to find active formats: ${error}`);
     }
   }
 }

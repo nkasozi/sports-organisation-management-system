@@ -8,6 +8,11 @@ import {
   create_auth_cache,
   type AuthCache,
 } from "$lib/infrastructure/cache/AuthCache";
+import type { Result } from "$lib/core/types/Result";
+import {
+  create_success_result,
+  create_failure_result,
+} from "$lib/core/types/Result";
 
 const CLERK_VERIFICATION_CACHE_MAX_ENTRIES = 50;
 const CLERK_VERIFICATION_CACHE_TTL_MS = 30 * 60 * 1000;
@@ -99,11 +104,13 @@ export class ClerkAuthenticationAdapter implements AuthenticationPort {
 
   async generate_token(
     payload_input: Omit<AuthTokenPayload, "issued_at" | "expires_at">,
-  ): Promise<AuthToken> {
+  ): Promise<Result<AuthToken>> {
     const session_token = await this.session_provider.get_session_token();
 
     if (!session_token) {
-      throw new Error("No active Clerk session - cannot generate token");
+      return create_failure_result(
+        "No active Clerk session - cannot generate token",
+      );
     }
 
     const payload = build_auth_token_payload(payload_input);
@@ -112,21 +119,23 @@ export class ClerkAuthenticationAdapter implements AuthenticationPort {
       `[ClerkAuthenticationAdapter] Generated token for user: ${payload.email}, role: ${payload.role}`,
     );
 
-    return {
+    return create_success_result({
       payload,
       signature: "clerk-managed",
       raw_token: session_token,
-    };
+    });
   }
 
-  async verify_token(raw_token: string): Promise<AuthVerificationResult> {
+  async verify_token(
+    raw_token: string,
+  ): Promise<Result<AuthVerificationResult>> {
     const cached = this.verification_cache.get_or_miss(raw_token);
 
     if (cached.is_hit && cached.value) {
       console.log(
         "[ClerkAuthenticationAdapter] Cache HIT for token verification",
       );
-      return cached.value;
+      return create_success_result(cached.value);
     }
 
     const result = this.verify_token_via_clerk_session();
@@ -135,7 +144,7 @@ export class ClerkAuthenticationAdapter implements AuthenticationPort {
       this.verification_cache.set(raw_token, result);
     }
 
-    return result;
+    return create_success_result(result);
   }
 
   private verify_token_via_clerk_session(): AuthVerificationResult {

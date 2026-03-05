@@ -113,7 +113,10 @@ describe("GameEventTypeUseCases", () => {
 
   describe("create", () => {
     it("should create with valid input", async () => {
-      vi.mocked(mock_repository.find_by_code).mockResolvedValue(null);
+      vi.mocked(mock_repository.find_by_code).mockResolvedValue({
+        success: true,
+        data: null,
+      });
       vi.mocked(mock_repository.create).mockResolvedValue({
         success: true,
         data: create_test_event_type(),
@@ -137,7 +140,10 @@ describe("GameEventTypeUseCases", () => {
         success: true,
         data: create_test_event_type(),
       });
-      vi.mocked(mock_repository.find_by_code).mockResolvedValue(null);
+      vi.mocked(mock_repository.find_by_code).mockResolvedValue({
+        success: true,
+        data: null,
+      });
       vi.mocked(mock_repository.update).mockResolvedValue({
         success: true,
         data: create_test_event_type(),
@@ -178,9 +184,10 @@ describe("GameEventTypeUseCases", () => {
 
   describe("list_event_types_for_sport", () => {
     it("should return event types for sport", async () => {
-      vi.mocked(mock_repository.find_by_sport).mockResolvedValue([
-        create_test_event_type(),
-      ]);
+      vi.mocked(mock_repository.find_by_sport).mockResolvedValue({
+        success: true,
+        data: [create_test_event_type()],
+      });
 
       const result = await use_cases.list_event_types_for_sport("sport-123");
 

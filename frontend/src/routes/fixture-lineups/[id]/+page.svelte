@@ -72,14 +72,15 @@
 
     const auth_state = get(auth_store);
     if (auth_state.current_token) {
-      const authorization_result =
+      const authorization_check =
         await get_authorization_adapter().check_entity_authorized(
           auth_state.current_token.raw_token,
           "fixturelineup",
           "read",
         );
 
-      if (!authorization_result.is_authorized) {
+      if (!authorization_check.success) return;
+      if (!authorization_check.data.is_authorized) {
         access_denial_store.set_denial(
           `/fixture-lineups/${lineup_id}`,
           "Access denied: Your role does not have permission to view fixture lineups. Please contact your organization administrator if you believe this is an error.",
@@ -88,16 +89,18 @@
         return;
       }
 
-      const update_authorization_result =
+      const update_authorization_check =
         await get_authorization_adapter().check_entity_authorized(
           auth_state.current_token.raw_token,
           "fixturelineup",
           "update",
         );
 
-      can_modify_lineup = update_authorization_result.is_authorized;
+      can_modify_lineup =
+        update_authorization_check.success &&
+        update_authorization_check.data.is_authorized;
       if (!can_modify_lineup) {
-        permission_info_message = `Your role "${update_authorization_result.role}" can view lineup details but cannot modify them. Contact an administrator if you need edit access.`;
+        permission_info_message = `Your role "${update_authorization_check.success ? update_authorization_check.data.role : "unknown"}" can view lineup details but cannot modify them. Contact an administrator if you need edit access.`;
       }
     }
 

@@ -1,4 +1,5 @@
 import type { Repository } from "./Repository";
+import type { AsyncResult } from "../../../../types/Result";
 import type {
   GameEventType,
   CreateGameEventTypeInput,
@@ -21,10 +22,10 @@ export interface GameEventTypeRepository extends Repository<
   CreateGameEventTypeInput,
   UpdateGameEventTypeInput
 > {
-  find_by_sport(sport_id: string | null): Promise<GameEventType[]>;
-  find_by_category(category: EventCategory): Promise<GameEventType[]>;
-  find_by_code(code: string): Promise<GameEventType | null>;
-  find_scoring_events(): Promise<GameEventType[]>;
+  find_by_sport(sport_id: string | null): AsyncResult<GameEventType[]>;
+  find_by_category(category: EventCategory): AsyncResult<GameEventType[]>;
+  find_by_code(code: string): AsyncResult<GameEventType | null>;
+  find_scoring_events(): AsyncResult<GameEventType[]>;
 }
 
 export type {

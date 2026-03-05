@@ -185,9 +185,10 @@ describe("TeamStaffUseCases", () => {
 
   describe("list_staff_by_team", () => {
     it("should return staff for team", async () => {
-      vi.mocked(mock_repository.find_by_team).mockResolvedValue([
-        create_test_staff(),
-      ]);
+      vi.mocked(mock_repository.find_by_team).mockResolvedValue({
+        success: true,
+        data: [create_test_staff()],
+      });
 
       const result = await use_cases.list_staff_by_team("team-123");
 

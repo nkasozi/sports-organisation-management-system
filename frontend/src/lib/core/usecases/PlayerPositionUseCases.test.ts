@@ -108,7 +108,10 @@ describe("PlayerPositionUseCases", () => {
 
   describe("create", () => {
     it("should create with valid input", async () => {
-      vi.mocked(mock_repository.find_by_code).mockResolvedValue(null);
+      vi.mocked(mock_repository.find_by_code).mockResolvedValue({
+        success: true,
+        data: null,
+      });
       vi.mocked(mock_repository.create).mockResolvedValue({
         success: true,
         data: create_test_position(),
@@ -132,7 +135,10 @@ describe("PlayerPositionUseCases", () => {
         success: true,
         data: create_test_position(),
       });
-      vi.mocked(mock_repository.find_by_code).mockResolvedValue(null);
+      vi.mocked(mock_repository.find_by_code).mockResolvedValue({
+        success: true,
+        data: null,
+      });
       vi.mocked(mock_repository.update).mockResolvedValue({
         success: true,
         data: create_test_position(),
@@ -173,9 +179,10 @@ describe("PlayerPositionUseCases", () => {
 
   describe("list_positions_by_sport", () => {
     it("should return positions for sport", async () => {
-      vi.mocked(mock_repository.find_by_sport_type).mockResolvedValue([
-        create_test_position(),
-      ]);
+      vi.mocked(mock_repository.find_by_sport_type).mockResolvedValue({
+        success: true,
+        data: [create_test_position()],
+      });
 
       const result = await use_cases.list_positions_by_sport("Football");
 
