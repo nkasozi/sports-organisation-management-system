@@ -85,6 +85,12 @@ export class InBrowserFixtureRepository
   ): Fixture[] {
     let filtered_entities = entities;
 
+    if (filter.organization_id) {
+      filtered_entities = filtered_entities.filter(
+        (fixture) => fixture.organization_id === filter.organization_id,
+      );
+    }
+
     if (filter.competition_id) {
       filtered_entities = filtered_entities.filter(
         (fixture) => fixture.competition_id === filter.competition_id,

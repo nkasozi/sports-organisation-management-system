@@ -204,12 +204,7 @@ export const DATA_PERMISSION_MAP: FullPermissionMap = {
   officials_manager: {
     root_level: READ_ONLY_PERMISSIONS,
     org_administrator_level: NO_PERMISSIONS,
-    organisation_level: {
-      create: false,
-      read: true,
-      update: true,
-      delete: false,
-    },
+    organisation_level: CREATE_READ_UPDATE_NO_DELETE_PERMISSIONS,
     team_level: CREATE_READ_UPDATE_NO_DELETE_PERMISSIONS,
     player_level: READ_ONLY_PERMISSIONS,
     public_level: FULL_PERMISSIONS,
@@ -283,11 +278,14 @@ export const ENTITY_DATA_CATEGORY_MAP: SharedEntityCategoryMap = {
   teamprofile: "public_level",
 };
 
-export function get_entity_data_category(entity_type: string): DataCategory {
-  const normalized_type = entity_type
-    .toLowerCase()
-    .replace(/[\s_-]/g, "") as SharedEntityType;
-  return ENTITY_DATA_CATEGORY_MAP[normalized_type] || "organisation_level";
+export function normalize_to_entity_type(raw: string): SharedEntityType {
+  return raw.toLowerCase().replace(/[\s_-]/g, "") as SharedEntityType;
+}
+
+export function get_entity_data_category(
+  entity_type: SharedEntityType,
+): DataCategory {
+  return ENTITY_DATA_CATEGORY_MAP[entity_type] || "organisation_level";
 }
 
 export function get_role_permissions(role: UserRole): RolePermissionMap {
@@ -306,7 +304,7 @@ export function check_data_permission(
 
 export function check_entity_permission(
   role: UserRole,
-  entity_type: string,
+  entity_type: SharedEntityType,
   action: DataAction,
 ): boolean {
   const category = get_entity_data_category(entity_type);
@@ -315,7 +313,7 @@ export function check_entity_permission(
 
 export function authorize_entity_action(
   role: UserRole,
-  entity_type: string,
+  entity_type: SharedEntityType,
   action: DataAction,
 ): DataAuthorizationResult {
   const category = get_entity_data_category(entity_type);
@@ -332,7 +330,7 @@ export function authorize_entity_action(
 
 export function get_allowed_actions_for_entity(
   role: UserRole,
-  entity_type: string,
+  entity_type: SharedEntityType,
 ): DataAction[] {
   const category = get_entity_data_category(entity_type);
   const permissions = get_role_permissions(role)[category];
@@ -346,7 +344,7 @@ export function get_allowed_actions_for_entity(
 
 export function get_disabled_crud_for_entity(
   role: UserRole,
-  entity_type: string,
+  entity_type: SharedEntityType,
 ): ("create" | "read" | "update" | "delete")[] {
   const category = get_entity_data_category(entity_type);
   const permissions = get_role_permissions(role)[category];

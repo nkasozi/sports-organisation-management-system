@@ -5,6 +5,39 @@ export interface SelectOption {
   label: string;
 }
 
+export interface OfficialRecord {
+  id: string;
+  first_name: string;
+  last_name: string;
+  organization_id: string;
+}
+
+export function build_official_options_from_records(
+  officials: OfficialRecord[],
+): SelectOption[] {
+  return officials.map((official) => ({
+    value: official.id,
+    label: `${official.first_name} ${official.last_name}`,
+  }));
+}
+
+export function filter_officials_by_organization(
+  officials: OfficialRecord[],
+  organization_id: string,
+): OfficialRecord[] {
+  if (!organization_id) return officials;
+  return officials.filter(
+    (official) => official.organization_id === organization_id,
+  );
+}
+
+export function build_organization_official_filter(
+  organization_id: string,
+): { organization_id: string } | undefined {
+  if (!organization_id) return undefined;
+  return { organization_id };
+}
+
 export function compute_available_officials(
   all_officials: SelectOption[],
   current_assignments: OfficialAssignment[],

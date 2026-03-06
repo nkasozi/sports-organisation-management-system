@@ -50,7 +50,10 @@
         holder_type: "competition_official",
         holder_id: fixture.competition_id,
       }),
-      official_use_cases.list({}, { page_number: 1, page_size: 100 }),
+      official_use_cases.list(
+        { organization_id: fixture.organization_id },
+        { page_number: 1, page_size: 100 },
+      ),
       game_official_role_use_cases.list({}, { page_number: 1, page_size: 100 }),
     ]);
 

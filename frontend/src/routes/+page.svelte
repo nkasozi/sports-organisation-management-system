@@ -17,6 +17,7 @@
   import { first_time_setup_store } from "$lib/presentation/stores/firstTimeSetup";
   import { branding_store } from "$lib/presentation/stores/branding";
   import { auth_store } from "$lib/presentation/stores/auth";
+  import { build_dashboard_filters } from "$lib/presentation/logic/dashboardStatsLogic";
   import type { Competition } from "$lib/core/entities/Competition";
   import type { Fixture } from "$lib/core/entities/Fixture";
   import type { Team } from "$lib/core/entities/Team";
@@ -220,6 +221,14 @@
       localStorage.removeItem("debug_officials_count");
     }
 
+    const user_role = $auth_store.current_profile?.role || "player";
+    const user_organization_id =
+      $auth_store.current_profile?.organization_id || "";
+    const dashboard_filters = build_dashboard_filters(
+      user_role,
+      user_organization_id,
+    );
+
     const [
       org_result,
       comp_result,
@@ -228,17 +237,28 @@
       fixture_result,
     ] = await Promise.all([
       organization_use_cases.list(undefined, { page_number: 1, page_size: 1 }),
-      competition_use_cases.list(undefined, { page_number: 1, page_size: 5 }),
-      team_use_cases.list(undefined, { page_number: 1, page_size: 100 }),
-      player_use_cases.list(undefined, { page_number: 1, page_size: 1 }),
-      fixture_use_cases.list(
-        { status: "scheduled" },
-        { page_number: 1, page_size: 5 },
-      ),
+      competition_use_cases.list(dashboard_filters.organization_filter, {
+        page_number: 1,
+        page_size: 5,
+      }),
+      team_use_cases.list(dashboard_filters.organization_filter, {
+        page_number: 1,
+        page_size: 100,
+      }),
+      player_use_cases.list(dashboard_filters.organization_filter, {
+        page_number: 1,
+        page_size: 1,
+      }),
+      fixture_use_cases.list(dashboard_filters.fixture_filter, {
+        page_number: 1,
+        page_size: 5,
+      }),
     ]);
 
     stats = {
-      organizations: org_result.success ? org_result.total_count : 0,
+      organizations:
+        dashboard_filters.organization_count_override ??
+        (org_result.success ? org_result.total_count : 0),
       competitions: comp_result.success ? comp_result.total_count : 0,
       teams: team_result.success ? team_result.total_count : 0,
       players: player_result.success ? player_result.total_count : 0,

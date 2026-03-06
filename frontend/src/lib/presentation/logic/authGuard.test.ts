@@ -164,6 +164,7 @@ import {
   invalidate_route_access_cache,
   extract_route_base,
   is_route_in_accessible_set,
+  format_route_as_page_name,
 } from "./authGuard";
 import { auth_store } from "../stores/auth";
 import { get } from "svelte/store";
@@ -499,6 +500,40 @@ describe("authGuard", () => {
       await auth_store.switch_profile(player!.id);
       const player_result = await check_route_access("/system-users");
       expect(player_result.allowed).toBe(false);
+    });
+  });
+
+  describe("format_route_as_page_name", () => {
+    it("returns Dashboard for root path", () => {
+      expect(format_route_as_page_name("/")).toBe("Dashboard");
+    });
+
+    it("returns Dashboard for empty string", () => {
+      expect(format_route_as_page_name("")).toBe("Dashboard");
+    });
+
+    it("capitalizes single-word route", () => {
+      expect(format_route_as_page_name("/teams")).toBe("Teams");
+    });
+
+    it("converts hyphenated route to title case", () => {
+      expect(format_route_as_page_name("/system-users")).toBe("System Users");
+    });
+
+    it("handles multi-hyphen route", () => {
+      expect(format_route_as_page_name("/player-team-memberships")).toBe(
+        "Player Team Memberships",
+      );
+    });
+
+    it("uses base route for nested paths", () => {
+      expect(format_route_as_page_name("/competitions/create")).toBe(
+        "Competitions",
+      );
+    });
+
+    it("uses base route for dynamic segment paths", () => {
+      expect(format_route_as_page_name("/fixtures/abc-123")).toBe("Fixtures");
     });
   });
 });

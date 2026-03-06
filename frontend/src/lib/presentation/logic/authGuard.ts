@@ -78,6 +78,21 @@ function get_role_display_name(role: UserRole): string {
   return display_names[role] || role;
 }
 
+export function format_route_as_page_name(pathname: string): string {
+  const base = extract_route_base(pathname);
+  const slug = base.replace(/^\//, "");
+
+  switch (slug) {
+    case "":
+      return "Dashboard";
+    default:
+      return slug
+        .split("-")
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(" ");
+  }
+}
+
 export async function check_route_access(
   pathname: string,
 ): Promise<{ allowed: boolean; message: string }> {
@@ -112,9 +127,11 @@ export async function check_route_access(
     return { allowed: true, message: "" };
   }
 
+  const page_name = format_route_as_page_name(pathname);
+
   return {
     allowed: false,
-    message: `Your current role (${get_role_display_name(profile.role)}) does not have access to this page.`,
+    message: `Your current role (${get_role_display_name(profile.role)}) does not have access to the "${page_name}" page.`,
   };
 }
 

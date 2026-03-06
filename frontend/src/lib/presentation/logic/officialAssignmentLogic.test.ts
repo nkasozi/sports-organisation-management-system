@@ -2,7 +2,11 @@ import { describe, expect, it } from "vitest";
 import {
   compute_available_officials,
   get_assignment_error,
+  filter_officials_by_organization,
+  build_official_options_from_records,
+  build_organization_official_filter,
   type SelectOption,
+  type OfficialRecord,
 } from "./officialAssignmentLogic";
 import type { OfficialAssignment } from "$lib/core/entities/FixtureDetailsSetup";
 
@@ -188,6 +192,116 @@ describe("officialAssignmentLogic", () => {
       const errors = {};
 
       expect(get_assignment_error(errors, 0, "official")).toBe("");
+    });
+  });
+
+  describe("filter_officials_by_organization", () => {
+    const all_officials: OfficialRecord[] = [
+      {
+        id: "off_1",
+        first_name: "John",
+        last_name: "Doe",
+        organization_id: "org_a",
+      },
+      {
+        id: "off_2",
+        first_name: "Jane",
+        last_name: "Smith",
+        organization_id: "org_b",
+      },
+      {
+        id: "off_3",
+        first_name: "Bob",
+        last_name: "Jones",
+        organization_id: "org_a",
+      },
+      {
+        id: "off_4",
+        first_name: "Alice",
+        last_name: "Brown",
+        organization_id: "org_c",
+      },
+    ];
+
+    it("returns only officials matching the given organization_id", () => {
+      const filtered = filter_officials_by_organization(all_officials, "org_a");
+
+      expect(filtered).toHaveLength(2);
+      expect(filtered.map((o) => o.id)).toEqual(["off_1", "off_3"]);
+    });
+
+    it("returns empty array when no officials match the organization_id", () => {
+      const filtered = filter_officials_by_organization(
+        all_officials,
+        "org_nonexistent",
+      );
+
+      expect(filtered).toHaveLength(0);
+    });
+
+    it("returns all officials when organization_id is empty string", () => {
+      const filtered = filter_officials_by_organization(all_officials, "");
+
+      expect(filtered).toHaveLength(4);
+    });
+
+    it("returns single matching official for unique organization", () => {
+      const filtered = filter_officials_by_organization(all_officials, "org_c");
+
+      expect(filtered).toHaveLength(1);
+      expect(filtered[0].id).toBe("off_4");
+    });
+
+    it("handles empty officials array", () => {
+      const filtered = filter_officials_by_organization([], "org_a");
+
+      expect(filtered).toHaveLength(0);
+    });
+  });
+
+  describe("build_official_options_from_records", () => {
+    it("maps official records to select options with full name label", () => {
+      const records: OfficialRecord[] = [
+        {
+          id: "off_1",
+          first_name: "John",
+          last_name: "Doe",
+          organization_id: "org_a",
+        },
+        {
+          id: "off_2",
+          first_name: "Jane",
+          last_name: "Smith",
+          organization_id: "org_b",
+        },
+      ];
+
+      const options = build_official_options_from_records(records);
+
+      expect(options).toEqual([
+        { value: "off_1", label: "John Doe" },
+        { value: "off_2", label: "Jane Smith" },
+      ]);
+    });
+
+    it("returns empty array for empty input", () => {
+      const options = build_official_options_from_records([]);
+
+      expect(options).toEqual([]);
+    });
+  });
+
+  describe("build_organization_official_filter", () => {
+    it("returns filter object with organization_id when provided", () => {
+      const filter = build_organization_official_filter("org_123");
+
+      expect(filter).toEqual({ organization_id: "org_123" });
+    });
+
+    it("returns undefined when organization_id is empty", () => {
+      const filter = build_organization_official_filter("");
+
+      expect(filter).toBeUndefined();
     });
   });
 });

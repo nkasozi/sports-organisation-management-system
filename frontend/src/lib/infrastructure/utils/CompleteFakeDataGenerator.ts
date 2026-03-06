@@ -278,7 +278,10 @@ export function generate_team(organization_id: string): Team {
   };
 }
 
-export function generate_player(_team_id: string | null): Player {
+export function generate_player(
+  organization_id: string,
+  _team_id: string | null,
+): Player {
   const first_name = random_element(FIRST_NAMES);
   const last_name = random_element(LAST_NAMES);
   const now = new Date().toISOString();
@@ -295,7 +298,7 @@ export function generate_player(_team_id: string | null): Player {
       new Date(2005, 0, 1),
     ),
     position_id: "",
-    organization_id: "",
+    organization_id,
     height_cm: faker.number.int({ min: 165, max: 200 }),
     weight_kg: faker.number.int({ min: 60, max: 95 }),
     nationality: random_element(NATIONALITIES),
@@ -622,7 +625,7 @@ export async function generate_field_hockey_dataset(
 
     const team_players: Player[] = [];
     for (let j = 0; j < players_per_team; j++) {
-      const player = generate_player(team.id);
+      const player = generate_player(fh_organization.id, team.id);
       team_players.push(player);
       players.push(player);
     }
@@ -759,7 +762,7 @@ export async function generate_complete_fake_dataset(
 
     const team_players: Player[] = [];
     for (let j = 0; j < players_per_team; j++) {
-      const player = generate_player(team.id);
+      const player = generate_player(organization.id, team.id);
       team_players.push(player);
       players.push(player);
     }

@@ -7,6 +7,7 @@ import type {
 } from "../../../../entities/PlayerTeamMembership";
 
 export interface PlayerTeamMembershipFilter {
+  organization_id?: string;
   player_id?: string;
   team_id?: string;
   status?: PlayerTeamMembership["status"];

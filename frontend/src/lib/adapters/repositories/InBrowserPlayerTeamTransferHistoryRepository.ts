@@ -71,6 +71,12 @@ export class InBrowserPlayerTeamTransferHistoryRepository
   ): PlayerTeamTransferHistory[] {
     let filtered = entities;
 
+    if (filter.organization_id) {
+      filtered = filtered.filter(
+        (transfer) => transfer.organization_id === filter.organization_id,
+      );
+    }
+
     if (filter.player_id) {
       filtered = filtered.filter(
         (transfer) => transfer.player_id === filter.player_id,

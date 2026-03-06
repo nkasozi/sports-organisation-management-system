@@ -55,7 +55,9 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
   } from "../logic/systemUserFormLogic";
   import {
     check_player_team_gender_mismatch,
+    check_fixture_team_gender_mismatch,
     type GenderMismatchInput,
+    type FixtureTeamGenderMismatchInput,
   } from "../../core/services/genderMismatchCheck";
 
   export let entity_type: string;
@@ -92,6 +94,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
   let color_clash_warnings: string[] = [];
   let official_team_conflict_warnings: string[] = [];
   let gender_mismatch_warnings: string[] = [];
+  let fixture_team_gender_mismatch_warnings: string[] = [];
   let competition_team_ids: Set<string> = new Set();
   let auth_profile_missing: boolean = false;
   let auth_error_message: string = "";
@@ -931,7 +934,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
       return;
     }
 
-    const officials_result = await official_use_cases.list();
+    const officials_result = await official_use_cases.list({ organization_id });
     if (!officials_result.success) {
       console.warn("[FILTERED_FK] Failed to load officials:", organization_id);
       foreign_key_options[field.field_name] = [];
@@ -943,23 +946,16 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
     }
 
     const all_officials_data = officials_result.data as unknown;
-    const all_officials: BaseEntity[] = Array.isArray(all_officials_data)
+    const filtered_officials: BaseEntity[] = Array.isArray(all_officials_data)
       ? (all_officials_data as BaseEntity[])
       : Array.isArray((all_officials_data as { items?: unknown })?.items)
         ? ((all_officials_data as { items: unknown[] })
             .items as unknown as BaseEntity[])
         : [];
 
-    const filtered_officials = all_officials.filter(
-      (official) =>
-        (official as unknown as { organization_id: string }).organization_id ===
-        organization_id,
-    );
-
     console.debug("[FILTERED_FK] Loaded organization officials", {
       field: field.field_name,
       organization_id,
-      total_officials: all_officials.length,
       filtered_count: filtered_officials.length,
     });
 
@@ -1229,6 +1225,15 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
 
     if (is_membership_or_transfer && is_gender_relevant_field) {
       void run_gender_mismatch_check();
+    }
+
+    const is_fixture_entity = entity_type.toLowerCase() === "fixture";
+    const is_fixture_team_field =
+      changed_field_name === "home_team_id" ||
+      changed_field_name === "away_team_id";
+
+    if (is_fixture_entity && is_fixture_team_field) {
+      void run_fixture_team_gender_mismatch_check();
     }
   }
 
@@ -1513,6 +1518,66 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
 
     gender_mismatch_warnings =
       check_player_team_gender_mismatch(mismatch_input);
+  }
+
+  async function run_fixture_team_gender_mismatch_check(): Promise<void> {
+    const home_team_id = form_data["home_team_id"];
+    const away_team_id = form_data["away_team_id"];
+
+    if (!home_team_id || !away_team_id) {
+      fixture_team_gender_mismatch_warnings = [];
+      return;
+    }
+
+    const gender_use_cases = get_use_cases_for_entity_type("gender");
+
+    if (!gender_use_cases) {
+      console.debug("[FIXTURE_GENDER_CHECK] Missing use cases, skipping check");
+      return;
+    }
+
+    const [home_team_result, away_team_result] = await Promise.all([
+      team_use_cases.get_by_id(home_team_id),
+      team_use_cases.get_by_id(away_team_id),
+    ]);
+
+    if (!home_team_result.success || !away_team_result.success) return;
+
+    const home_team = home_team_result.data as {
+      gender_id?: string;
+      name?: string;
+    };
+    const away_team = away_team_result.data as {
+      gender_id?: string;
+      name?: string;
+    };
+
+    if (!home_team.gender_id || !away_team.gender_id) {
+      fixture_team_gender_mismatch_warnings = [];
+      return;
+    }
+
+    const gender_name_map = new Map<string, string>();
+    const gender_ids = [...new Set([home_team.gender_id, away_team.gender_id])];
+
+    for (const gender_id of gender_ids) {
+      const gender_result = await gender_use_cases.get_by_id(gender_id);
+      if (gender_result.success) {
+        const gender = gender_result.data as { name?: string };
+        if (gender.name) gender_name_map.set(gender_id, gender.name);
+      }
+    }
+
+    const mismatch_input: FixtureTeamGenderMismatchInput = {
+      home_team_gender_id: home_team.gender_id,
+      away_team_gender_id: away_team.gender_id,
+      home_team_display_name: home_team.name ?? home_team_id,
+      away_team_display_name: away_team.name ?? away_team_id,
+      gender_name_map,
+    };
+
+    fixture_team_gender_mismatch_warnings =
+      check_fixture_team_gender_mismatch(mismatch_input);
   }
 
   async function handle_form_submission(): Promise<void> {
@@ -2431,6 +2496,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
                     field,
                     authorization_restricted_fields,
                   )}
+                  organization_id={form_data["organization_id"] || ""}
                   errors={validation_errors}
                   on:change={(e) => {
                     update_form_field_value(
@@ -2602,6 +2668,42 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
                   class="mt-1 text-sm text-amber-700 dark:text-amber-300 list-disc list-inside"
                 >
                   {#each gender_mismatch_warnings as warning}
+                    <li>{warning}</li>
+                  {/each}
+                </ul>
+              </div>
+            </div>
+          </div>
+        {/if}
+
+        {#if fixture_team_gender_mismatch_warnings.length > 0}
+          <div
+            class="mt-4 p-4 rounded-lg border border-amber-300 dark:border-amber-600 bg-amber-50 dark:bg-amber-900/30"
+          >
+            <div class="flex items-start gap-3">
+              <svg
+                class="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                />
+              </svg>
+              <div>
+                <div
+                  class="text-sm font-semibold text-amber-800 dark:text-amber-200"
+                >
+                  Team Gender Mismatch
+                </div>
+                <ul
+                  class="mt-1 text-sm text-amber-700 dark:text-amber-300 list-disc list-inside"
+                >
+                  {#each fixture_team_gender_mismatch_warnings as warning}
                     <li>{warning}</li>
                   {/each}
                 </ul>

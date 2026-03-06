@@ -123,7 +123,7 @@ export const SHARED_ROLE_PERMISSIONS: SharedPermissionMap = {
   officials_manager: {
     root_level: READ_ONLY,
     org_administrator_level: NO_PERMISSIONS,
-    organisation_level: READ_UPDATE,
+    organisation_level: CREATE_READ_UPDATE_NO_DELETE,
     team_level: CREATE_READ_UPDATE_NO_DELETE,
     player_level: READ_ONLY,
     public_level: FULL_PERMISSIONS,

@@ -72,6 +72,12 @@ export class InBrowserFixtureDetailsSetupRepository
   ): FixtureDetailsSetup[] {
     let filtered = entities;
 
+    if (filter.organization_id) {
+      filtered = filtered.filter(
+        (item) => item.organization_id === filter.organization_id,
+      );
+    }
+
     if (filter.fixture_id) {
       filtered = filtered.filter(
         (item) => item.fixture_id === filter.fixture_id,

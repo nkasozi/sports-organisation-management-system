@@ -8,6 +8,7 @@ import type { AsyncResult } from "../../../../types/Result";
 import type { Repository } from "./Repository";
 
 export interface FixtureLineupFilter {
+  organization_id?: string;
   fixture_id?: string;
   team_id?: string;
   status?: "draft" | "submitted" | "locked";

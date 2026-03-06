@@ -79,6 +79,7 @@ export type {
 export {
   DATA_PERMISSION_MAP,
   ENTITY_DATA_CATEGORY_MAP,
+  normalize_to_entity_type,
   get_entity_data_category,
   get_role_permissions,
   check_data_permission,

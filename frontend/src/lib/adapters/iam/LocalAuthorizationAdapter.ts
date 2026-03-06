@@ -16,6 +16,7 @@ import {
   get_entity_data_category,
   check_data_permission,
   get_role_permissions,
+  normalize_to_entity_type,
 } from "$lib/core/interfaces/ports";
 import type { Result, AsyncResult } from "$lib/core/types/Result";
 import {
@@ -870,7 +871,8 @@ export class LocalAuthorizationAdapter implements AuthorizationPort {
     }
 
     const role = verification.payload.role;
-    const category = get_entity_data_category(entity_type);
+    const normalized = normalize_to_entity_type(entity_type);
+    const category = get_entity_data_category(normalized);
     const is_authorized = check_data_permission(role, category, action);
 
     if (!is_authorized) {
@@ -938,7 +940,8 @@ export class LocalAuthorizationAdapter implements AuthorizationPort {
     }
 
     const role = verification_result.data.payload.role;
-    const category = get_entity_data_category(entity_type);
+    const normalized_allowed = normalize_to_entity_type(entity_type);
+    const category = get_entity_data_category(normalized_allowed);
     const permissions = get_role_permissions(role)[category];
 
     const allowed_actions: DataAction[] = [];
@@ -981,7 +984,8 @@ export class LocalAuthorizationAdapter implements AuthorizationPort {
     }
 
     const role = verification_result.data.payload.role;
-    const category = get_entity_data_category(entity_type);
+    const normalized_disabled = normalize_to_entity_type(entity_type);
+    const category = get_entity_data_category(normalized_disabled);
     const permissions = get_role_permissions(role)[category];
 
     const disabled: DataAction[] = [];

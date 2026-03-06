@@ -8,6 +8,7 @@ import type {
 } from "../../../../entities/Fixture";
 
 export interface FixtureFilter {
+  organization_id?: string;
   competition_id?: string;
   home_team_id?: string;
   away_team_id?: string;

@@ -21,7 +21,9 @@ Uses explicit handlers instead of events for predictable data flow
   import {
     check_entity_permission,
     get_entity_data_category,
+    normalize_to_entity_type,
   } from "$lib/core/interfaces/ports";
+  import type { SharedEntityType } from "$convex/shared_permission_definitions";
   import type { UserProfile } from "../../presentation/stores/auth";
   import DynamicEntityForm from "./DynamicEntityForm.svelte";
   import DynamicEntityList from "./DynamicEntityList.svelte";
@@ -88,15 +90,16 @@ Uses explicit handlers instead of events for predictable data flow
     }
 
     const disabled_actions: CrudFunctionality[] = [];
-    const category = get_entity_data_category(entity_type);
+    const normalized = normalize_to_entity_type(entity_type);
+    const category = get_entity_data_category(normalized);
 
-    if (!check_entity_permission(profile.role, entity_type, "create")) {
+    if (!check_entity_permission(profile.role, normalized, "create")) {
       disabled_actions.push("create");
     }
-    if (!check_entity_permission(profile.role, entity_type, "update")) {
+    if (!check_entity_permission(profile.role, normalized, "update")) {
       disabled_actions.push("edit");
     }
-    if (!check_entity_permission(profile.role, entity_type, "delete")) {
+    if (!check_entity_permission(profile.role, normalized, "delete")) {
       disabled_actions.push("delete");
     }
 

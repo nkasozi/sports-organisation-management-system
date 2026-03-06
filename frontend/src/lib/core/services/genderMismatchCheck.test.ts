@@ -1,7 +1,9 @@
 import { describe, it, expect } from "vitest";
 import {
   check_player_team_gender_mismatch,
+  check_fixture_team_gender_mismatch,
   type GenderMismatchInput,
+  type FixtureTeamGenderMismatchInput,
 } from "./genderMismatchCheck";
 
 function create_mismatch_input(
@@ -111,5 +113,126 @@ describe("check_player_team_gender_mismatch", () => {
     expect(warnings).toHaveLength(1);
     expect(warnings[0]).toContain("gender_custom_1");
     expect(warnings[0]).toContain("gender_custom_2");
+  });
+});
+
+function create_fixture_gender_input(
+  overrides: Partial<FixtureTeamGenderMismatchInput> = {},
+): FixtureTeamGenderMismatchInput {
+  return {
+    home_team_gender_id: "gender_default_male",
+    away_team_gender_id: "gender_default_male",
+    home_team_display_name: "Rockets HC",
+    away_team_display_name: "Weatherhead HC",
+    gender_name_map: new Map([
+      ["gender_default_male", "Male"],
+      ["gender_default_female", "Female"],
+    ]),
+    ...overrides,
+  };
+}
+
+describe("check_fixture_team_gender_mismatch", () => {
+  it("returns empty array when both teams have same gender", () => {
+    const input = create_fixture_gender_input({
+      home_team_gender_id: "gender_default_male",
+      away_team_gender_id: "gender_default_male",
+    });
+
+    const warnings = check_fixture_team_gender_mismatch(input);
+
+    expect(warnings).toEqual([]);
+  });
+
+  it("returns warning when home team is male and away team is female", () => {
+    const input = create_fixture_gender_input({
+      home_team_gender_id: "gender_default_male",
+      away_team_gender_id: "gender_default_female",
+      home_team_display_name: "Rockets HC",
+      away_team_display_name: "Weatherhead Ladies",
+    });
+
+    const warnings = check_fixture_team_gender_mismatch(input);
+
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0]).toContain("Rockets HC");
+    expect(warnings[0]).toContain("Male");
+    expect(warnings[0]).toContain("Weatherhead Ladies");
+    expect(warnings[0]).toContain("Female");
+  });
+
+  it("returns warning when home team is female and away team is male", () => {
+    const input = create_fixture_gender_input({
+      home_team_gender_id: "gender_default_female",
+      away_team_gender_id: "gender_default_male",
+      home_team_display_name: "She Cranes HC",
+      away_team_display_name: "Rockets HC",
+    });
+
+    const warnings = check_fixture_team_gender_mismatch(input);
+
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0]).toContain("She Cranes HC");
+    expect(warnings[0]).toContain("Female");
+    expect(warnings[0]).toContain("Rockets HC");
+    expect(warnings[0]).toContain("Male");
+  });
+
+  it("returns empty array when home team has no gender set", () => {
+    const input = create_fixture_gender_input({
+      home_team_gender_id: "",
+      away_team_gender_id: "gender_default_female",
+    });
+
+    const warnings = check_fixture_team_gender_mismatch(input);
+
+    expect(warnings).toEqual([]);
+  });
+
+  it("returns empty array when away team has no gender set", () => {
+    const input = create_fixture_gender_input({
+      home_team_gender_id: "gender_default_male",
+      away_team_gender_id: "",
+    });
+
+    const warnings = check_fixture_team_gender_mismatch(input);
+
+    expect(warnings).toEqual([]);
+  });
+
+  it("returns empty array when both teams have no gender set", () => {
+    const input = create_fixture_gender_input({
+      home_team_gender_id: "",
+      away_team_gender_id: "",
+    });
+
+    const warnings = check_fixture_team_gender_mismatch(input);
+
+    expect(warnings).toEqual([]);
+  });
+
+  it("uses raw gender ids in warning when gender names not in map", () => {
+    const input = create_fixture_gender_input({
+      home_team_gender_id: "gender_custom_x",
+      away_team_gender_id: "gender_custom_y",
+      gender_name_map: new Map(),
+    });
+
+    const warnings = check_fixture_team_gender_mismatch(input);
+
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0]).toContain("gender_custom_x");
+    expect(warnings[0]).toContain("gender_custom_y");
+  });
+
+  it("includes confirmation question in warning message", () => {
+    const input = create_fixture_gender_input({
+      home_team_gender_id: "gender_default_male",
+      away_team_gender_id: "gender_default_female",
+    });
+
+    const warnings = check_fixture_team_gender_mismatch(input);
+
+    expect(warnings[0]).toContain("Are you sure");
   });
 });

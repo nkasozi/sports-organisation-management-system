@@ -34,6 +34,7 @@ import type {
   SharedEntityType,
   SharedEntityCategoryMap,
 } from "$convex/shared_permission_definitions";
+import { normalize_to_entity_type } from "$lib/core/interfaces/ports/external/iam/AuthorizationPort";
 
 const ENTITY_DATA_CATEGORY_MAP: SharedEntityCategoryMap = {
   organization: "root_level",
@@ -73,16 +74,13 @@ const ENTITY_DATA_CATEGORY_MAP: SharedEntityCategoryMap = {
   teamprofile: "public_level",
 };
 
-function get_entity_data_category(entity_type: string): DataCategory {
-  const normalized_type = entity_type
-    .toLowerCase()
-    .replace(/[\s_-]/g, "") as SharedEntityType;
-  return ENTITY_DATA_CATEGORY_MAP[normalized_type] || "organisation_level";
+function get_entity_data_category(entity_type: SharedEntityType): DataCategory {
+  return ENTITY_DATA_CATEGORY_MAP[entity_type] || "organisation_level";
 }
 
 function check_entity_permission(
   role: UserRole,
-  entity_type: string,
+  entity_type: SharedEntityType,
   action: DataAction,
   permissions: Record<DataCategory, CategoryPermissions>,
 ): boolean {
@@ -496,7 +494,8 @@ function create_auth_store() {
     const permissions = get_role_permissions_sync(role);
     const authorizations = new Map<AuthorizableAction, AuthorizationLevel>();
 
-    const category = get_entity_data_category(entity_type);
+    const normalized = normalize_to_entity_type(entity_type);
+    const category = get_entity_data_category(normalized);
     const category_perms = permissions[category];
 
     authorizations.set("view", category_perms.read ? "full" : "none");
@@ -539,9 +538,10 @@ function create_auth_store() {
       };
     }
 
+    const normalized = normalize_to_entity_type(entity_type);
     const is_authorized = check_entity_permission(
       role,
-      entity_type,
+      normalized,
       data_action,
       permissions,
     );
@@ -593,10 +593,11 @@ function create_auth_store() {
     const data_action = map_authorizable_action_to_data_action(action);
     if (!data_action) return false;
 
+    const normalized = normalize_to_entity_type(entity_type);
     const permissions = get_role_permissions_sync(state.current_profile.role);
     return !check_entity_permission(
       state.current_profile.role,
-      entity_type,
+      normalized,
       data_action,
       permissions,
     );
@@ -628,13 +629,14 @@ function create_auth_store() {
       return ["create", "edit", "delete", "list", "view"];
     }
 
+    const normalized = normalize_to_entity_type(entity_type);
     const permissions = get_role_permissions_sync(state.current_profile.role);
     const disabled_actions: AuthorizableAction[] = [];
 
     if (
       !check_entity_permission(
         state.current_profile.role,
-        entity_type,
+        normalized,
         "create",
         permissions,
       )
@@ -644,7 +646,7 @@ function create_auth_store() {
     if (
       !check_entity_permission(
         state.current_profile.role,
-        entity_type,
+        normalized,
         "update",
         permissions,
       )
@@ -654,7 +656,7 @@ function create_auth_store() {
     if (
       !check_entity_permission(
         state.current_profile.role,
-        entity_type,
+        normalized,
         "delete",
         permissions,
       )
@@ -664,7 +666,7 @@ function create_auth_store() {
     if (
       !check_entity_permission(
         state.current_profile.role,
-        entity_type,
+        normalized,
         "read",
         permissions,
       )

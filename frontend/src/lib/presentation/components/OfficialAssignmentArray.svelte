@@ -9,6 +9,7 @@
   export let assignments: OfficialAssignment[] = [];
   export let disabled: boolean = false;
   export let errors: Record<string, string> = {};
+  export let organization_id: string = "";
 
   const dispatch = createEventDispatcher<{
     change: { assignments: OfficialAssignment[] };
@@ -24,13 +25,56 @@
   let is_loading = true;
 
   onMount(async () => {
-    await load_options();
+    await load_options(organization_id);
     is_loading = false;
   });
 
-  async function load_options(): Promise<void> {
+  $: {
+    if (organization_id) {
+      reload_officials_for_organization(organization_id);
+    }
+  }
+
+  async function reload_officials_for_organization(
+    org_id: string,
+  ): Promise<boolean> {
+    is_loading = true;
+    const filter = org_id ? { organization_id: org_id } : undefined;
+    const officials_result = await official_use_cases.list(filter, {
+      page_number: 1,
+      page_size: 500,
+    });
+
+    if (officials_result.success && officials_result.data) {
+      const officials_data = officials_result.data as any;
+      const officials_list = Array.isArray(officials_data)
+        ? officials_data
+        : officials_data.items || [];
+      official_options = officials_list.map(
+        (official: { id: string; first_name: string; last_name: string }) => ({
+          value: official.id,
+          label: `${official.first_name} ${official.last_name}`,
+        }),
+      );
+      console.debug(
+        "[OFFICIALS] Reloaded officials for org:",
+        org_id,
+        "count:",
+        official_options.length,
+      );
+    }
+
+    is_loading = false;
+    return true;
+  }
+
+  async function load_options(org_id: string): Promise<void> {
+    const official_filter = org_id ? { organization_id: org_id } : undefined;
     const [officials_result, roles_result] = await Promise.all([
-      official_use_cases.list(undefined, { page_number: 1, page_size: 500 }),
+      official_use_cases.list(official_filter, {
+        page_number: 1,
+        page_size: 500,
+      }),
       role_use_cases.list(undefined, { page_number: 1, page_size: 100 }),
     ]);
 

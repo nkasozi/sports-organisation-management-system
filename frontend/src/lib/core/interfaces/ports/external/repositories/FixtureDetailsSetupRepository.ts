@@ -7,6 +7,7 @@ import type {
 } from "../../../../entities/FixtureDetailsSetup";
 
 export interface FixtureDetailsSetupFilter {
+  organization_id?: string;
   fixture_id?: string;
   official_id?: string;
   role_id?: string;

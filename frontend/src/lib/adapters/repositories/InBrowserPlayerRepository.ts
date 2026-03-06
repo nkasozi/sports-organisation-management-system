@@ -94,6 +94,12 @@ export class InBrowserPlayerRepository
   ): Player[] {
     let filtered = entities;
 
+    if (filter.organization_id) {
+      filtered = filtered.filter(
+        (player) => player.organization_id === filter.organization_id,
+      );
+    }
+
     if (filter.id) {
       filtered = filtered.filter((player) => player.id === filter.id);
     }
@@ -269,7 +275,7 @@ export function create_default_players(): Player[] {
       phone: "+1-555-2001",
       date_of_birth: "1995-03-15",
       position_id: "",
-      organization_id: "",
+      organization_id: "org_default_1",
       height_cm: 180,
       weight_kg: 75,
       nationality: "Spain",
@@ -290,7 +296,7 @@ export function create_default_players(): Player[] {
       phone: "+1-555-2002",
       date_of_birth: "1998-07-22",
       position_id: "",
-      organization_id: "",
+      organization_id: "org_default_1",
       height_cm: 175,
       weight_kg: 72,
       nationality: "United States",
@@ -311,7 +317,7 @@ export function create_default_players(): Player[] {
       phone: "+1-555-2003",
       date_of_birth: "1997-11-08",
       position_id: "",
-      organization_id: "",
+      organization_id: "org_default_1",
       height_cm: 188,
       weight_kg: 82,
       nationality: "Japan",
@@ -332,7 +338,7 @@ export function create_default_players(): Player[] {
       phone: "+1-555-2004",
       date_of_birth: "1996-05-30",
       position_id: "",
-      organization_id: "",
+      organization_id: "org_default_1",
       height_cm: 190,
       weight_kg: 85,
       nationality: "United States",

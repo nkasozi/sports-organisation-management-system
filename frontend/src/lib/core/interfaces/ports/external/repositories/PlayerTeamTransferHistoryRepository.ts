@@ -8,6 +8,7 @@ import type {
 } from "../../../../entities/PlayerTeamTransferHistory";
 
 export interface PlayerTeamTransferHistoryFilter {
+  organization_id?: string;
   player_id?: string;
   from_team_id?: string;
   to_team_id?: string;
