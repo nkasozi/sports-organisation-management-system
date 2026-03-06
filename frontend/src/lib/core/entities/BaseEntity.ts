@@ -25,6 +25,11 @@ export interface EnumDependencyConfig {
   options_map: Record<string, { value: string; label: string }[]>;
 }
 
+export interface FieldVisibilityCondition {
+  depends_on_field: string;
+  visible_when_values: string[];
+}
+
 export interface FieldMetadata<T extends BaseEntity = any> {
   field_name: Extract<keyof T, string> | string;
   display_name: string;
@@ -48,6 +53,7 @@ export interface FieldMetadata<T extends BaseEntity = any> {
   enum_values?: string[];
   enum_options?: { value: string; label: string }[];
   enum_dependency?: EnumDependencyConfig;
+  visible_when?: FieldVisibilityCondition;
   foreign_key_entity?: string;
   foreign_key_filter?: ForeignKeyFilterConfig;
   validation_rules?: ValidationRule[];

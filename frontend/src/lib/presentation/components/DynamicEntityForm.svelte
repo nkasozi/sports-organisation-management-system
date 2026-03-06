@@ -44,10 +44,15 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
     get_authorization_restricted_fields,
     get_authorization_preselect_values,
     type UserScopeProfile,
+    type UserRole,
   } from "$lib/core/interfaces/ports";
   import { get_authorization_adapter } from "$lib/infrastructure/AuthorizationProvider";
   import { ensure_auth_profile } from "../logic/authGuard";
   import { onMount } from "svelte";
+  import {
+    filter_enum_values_by_creator_role,
+    should_field_be_required_for_role,
+  } from "../logic/systemUserFormLogic";
 
   export let entity_type: string;
   export let entity_data: Partial<BaseEntity> | null = null;
@@ -310,9 +315,21 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
     return "";
   }
 
+  function is_field_visible_by_visible_when_condition(
+    field: FieldMetadata,
+    current_form_data: Record<string, any>,
+  ): boolean {
+    if (!field.visible_when) return true;
+    const dependency_value =
+      current_form_data[field.visible_when.depends_on_field];
+    if (!dependency_value) return false;
+    return field.visible_when.visible_when_values.includes(dependency_value);
+  }
+
   function get_sorted_fields_for_display(
     fields: FieldMetadata[],
     in_edit_mode: boolean,
+    current_form_data: Record<string, any>,
   ): FieldMetadata[] {
     const renderable_fields = fields.filter(
       (f) => f.field_type !== "sub_entity",
@@ -325,6 +342,8 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
           sub_entity_filter,
         )
       )
+        return false;
+      if (!is_field_visible_by_visible_when_condition(f, current_form_data))
         return false;
       return true;
     });
@@ -1518,12 +1537,24 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
   ): { is_valid: boolean; errors: Record<string, string> } {
     const errors: Record<string, string> = {};
 
+    const is_system_user_entity =
+      entity_type.toLowerCase().replace(/[\s_-]/g, "") === "systemuser";
+    const selected_role = is_system_user_entity
+      ? (data["role"] as UserRole | null)
+      : null;
+
     for (const field of metadata.fields) {
+      if (!is_field_visible_by_visible_when_condition(field, data)) continue;
+
       const field_value = data[field.field_name];
 
-      // Check required fields
+      const is_dynamically_required =
+        is_system_user_entity &&
+        should_field_be_required_for_role(field.field_name, selected_role);
+      const is_required = field.is_required || is_dynamically_required;
+
       if (
-        field.is_required &&
+        is_required &&
         (field_value === "" ||
           field_value === null ||
           field_value === undefined)
@@ -1532,7 +1563,6 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
         continue;
       }
 
-      // Run validation rules
       if (
         field.validation_rules &&
         field_value !== "" &&
@@ -1675,12 +1705,31 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
     }
   }
 
+  function clear_fields_hidden_by_visible_when(
+    changed_field_name: string,
+  ): void {
+    if (!entity_metadata) return;
+    for (const field of entity_metadata.fields) {
+      if (!field.visible_when) continue;
+      if (field.visible_when.depends_on_field !== changed_field_name) continue;
+      const dependency_value = form_data[changed_field_name];
+      const is_still_visible =
+        dependency_value &&
+        field.visible_when.visible_when_values.includes(dependency_value);
+      if (!is_still_visible) {
+        form_data[field.field_name] = "";
+      }
+    }
+  }
+
   function update_form_field_value(
     field_name: string,
     value: string | OfficialAssignment[],
   ): boolean {
     form_data[field_name] = value;
     clear_dependent_enum_values(field_name);
+    clear_fields_hidden_by_visible_when(field_name);
+    form_data = form_data;
     return true;
   }
 
@@ -1707,7 +1756,20 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
     }
 
     if (!field.enum_values) return [];
-    return field.enum_values.map((option) => ({
+
+    const is_system_user_role_field =
+      entity_type.toLowerCase().replace(/[\s_-]/g, "") === "systemuser" &&
+      field.field_name === "role";
+
+    const filtered_values = is_system_user_role_field
+      ? filter_enum_values_by_creator_role(
+          field.field_name,
+          field.enum_values,
+          (current_auth_profile?.role as UserRole | null) ?? null,
+        )
+      : field.enum_values;
+
+    return filtered_values.map((option) => ({
       value: option,
       label: format_enum_label(option),
     }));
@@ -1891,7 +1953,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
       >
         <!-- Dynamic field generation based on metadata -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-          {#each get_sorted_fields_for_display(entity_metadata.fields, is_edit_mode) as field}
+          {#each get_sorted_fields_for_display(entity_metadata.fields, is_edit_mode, form_data) as field}
             <div
               class="space-y-2 {field.field_type === 'file' ||
               (field.field_type === 'string' &&
@@ -1903,7 +1965,9 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
             >
               <label class="label" for={`field_${field.field_name}`}>
                 {field.display_name}
-                {#if field.is_required}
+                {#if field.is_required || (entity_type
+                    .toLowerCase()
+                    .replace(/[\s_-]/g, "") === "systemuser" && should_field_be_required_for_role(field.field_name, form_data["role"] ?? null))}
                   <span class="text-red-500 dark:text-red-400">*</span>
                 {/if}
               </label>
@@ -2160,7 +2224,13 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
                   !form_data[field.enum_dependency.depends_on_field]
                     ? `First select ${field.enum_dependency.depends_on_field.replace("_", " ")}`
                     : `Select ${field.display_name}`}
-                  required={field.is_required}
+                  required={field.is_required ||
+                    (entity_type.toLowerCase().replace(/[\s_-]/g, "") ===
+                      "systemuser" &&
+                      should_field_be_required_for_role(
+                        field.field_name,
+                        form_data["role"] ?? null,
+                      ))}
                   disabled={should_field_be_read_only(
                     field,
                     authorization_restricted_fields,
@@ -2189,7 +2259,13 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
                   !form_data[field.foreign_key_filter.depends_on_field]
                     ? `First select ${field.foreign_key_filter.depends_on_field.replace("_id", "")}`
                     : `Select ${field.display_name}`}
-                  required={field.is_required}
+                  required={field.is_required ||
+                    (entity_type.toLowerCase().replace(/[\s_-]/g, "") ===
+                      "systemuser" &&
+                      should_field_be_required_for_role(
+                        field.field_name,
+                        form_data["role"] ?? null,
+                      ))}
                   disabled={should_field_be_read_only(
                     field,
                     authorization_restricted_fields,

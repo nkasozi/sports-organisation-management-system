@@ -2532,6 +2532,22 @@ class EntityMetadataRegistry {
       display_name: "System User",
       fields: [
         {
+          field_name: "role" satisfies keyof SystemUser,
+          display_name: "Role",
+          field_type: "enum",
+          is_required: true,
+          is_read_only: false,
+          enum_values: [
+            "super_admin",
+            "org_admin",
+            "officials_manager",
+            "team_manager",
+            "official",
+            "player",
+          ],
+          show_in_list: true,
+        },
+        {
           field_name: "email" satisfies keyof SystemUser,
           display_name: "Email",
           field_type: "string",
@@ -2556,29 +2572,23 @@ class EntityMetadataRegistry {
           show_in_list: true,
         },
         {
-          field_name: "role" satisfies keyof SystemUser,
-          display_name: "Role",
-          field_type: "enum",
-          is_required: true,
-          is_read_only: false,
-          enum_values: [
-            "super_admin",
-            "org_admin",
-            "officials_manager",
-            "team_manager",
-            "official",
-            "player",
-          ],
-          show_in_list: true,
-        },
-        {
           field_name: "organization_id" satisfies keyof SystemUser,
           display_name: "Organisation",
           field_type: "foreign_key",
-          is_required: true,
+          is_required: false,
           is_read_only: false,
           foreign_key_entity: "organization",
           show_in_list: true,
+          visible_when: {
+            depends_on_field: "role",
+            visible_when_values: [
+              "org_admin",
+              "officials_manager",
+              "team_manager",
+              "official",
+              "player",
+            ],
+          },
         },
         {
           field_name: "team_id" satisfies keyof SystemUser,
@@ -2592,6 +2602,10 @@ class EntityMetadataRegistry {
             filter_type: "teams_from_organization",
           },
           show_in_list: false,
+          visible_when: {
+            depends_on_field: "role",
+            visible_when_values: ["team_manager"],
+          },
         },
         {
           field_name: "player_id" satisfies keyof SystemUser,
@@ -2605,6 +2619,10 @@ class EntityMetadataRegistry {
             filter_type: "players_from_organization",
           },
           show_in_list: false,
+          visible_when: {
+            depends_on_field: "role",
+            visible_when_values: ["player"],
+          },
         },
         {
           field_name: "official_id" satisfies keyof SystemUser,
@@ -2618,6 +2636,10 @@ class EntityMetadataRegistry {
             filter_type: "officials_from_organization",
           },
           show_in_list: false,
+          visible_when: {
+            depends_on_field: "role",
+            visible_when_values: ["official"],
+          },
         },
         {
           field_name: "status" satisfies keyof SystemUser,
