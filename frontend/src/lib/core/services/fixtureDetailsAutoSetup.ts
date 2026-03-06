@@ -26,32 +26,36 @@ export async function auto_create_fixture_details_setup(
     fixture.id,
   );
 
-  const populated_data = await build_auto_populated_input(
-    fixture,
-    dependencies,
-  );
-
-  console.log(
-    "[DEBUG fixtureDetailsAutoSetup] Auto-populated data built, creating fixture details setup",
-  );
-
-  const create_result =
-    await dependencies.fixture_details_setup_use_cases.create(populated_data);
-
-  if (!create_result.success) {
-    console.log(
-      "[DEBUG fixtureDetailsAutoSetup] Failed to create fixture details setup:",
-      create_result.error,
+  try {
+    const populated_data = await build_auto_populated_input(
+      fixture,
+      dependencies,
     );
+
+    console.log(
+      "[DEBUG fixtureDetailsAutoSetup] Auto-populated data built, creating fixture details setup",
+    );
+
+    const create_result =
+      await dependencies.fixture_details_setup_use_cases.create(populated_data);
+
+    if (!create_result.success) {
+      console.log(
+        "[DEBUG fixtureDetailsAutoSetup] Failed to create fixture details setup:",
+        create_result.error,
+      );
+      return create_result;
+    }
+
+    console.log(
+      "[DEBUG fixtureDetailsAutoSetup] Successfully created fixture details setup:",
+      create_result.data.id,
+    );
+
     return create_result;
+  } catch (err: any) {
+    return { success: false, error: err?.message || String(err) };
   }
-
-  console.log(
-    "[DEBUG fixtureDetailsAutoSetup] Successfully created fixture details setup:",
-    create_result.data.id,
-  );
-
-  return create_result;
 }
 
 async function build_auto_populated_input(
@@ -73,10 +77,10 @@ async function build_auto_populated_input(
   ] = await Promise.all([
     jersey_color_use_cases.list_jerseys_by_entity("team", fixture.home_team_id),
     jersey_color_use_cases.list_jerseys_by_entity("team", fixture.away_team_id),
-    jersey_color_use_cases.list({
-      holder_type: "competition_official",
-      holder_id: fixture.competition_id,
-    }),
+    jersey_color_use_cases.list_jerseys_by_entity(
+      "competition_official",
+      fixture.competition_id,
+    ),
     official_use_cases.list(
       { organization_id: fixture.organization_id },
       { page_number: 1, page_size: 100 },
@@ -84,28 +88,54 @@ async function build_auto_populated_input(
     game_official_role_use_cases.list({}, { page_number: 1, page_size: 100 }),
   ]);
 
+  const errors: string[] = [];
   const home_team_jersey_id = extract_first_jersey_id(home_jerseys_result);
+  if (!home_team_jersey_id) {
+    errors.push(`No Jerseys found for Home Team (${fixture.home_team_id})`);
+  }
   const away_team_jersey_id = extract_first_jersey_id(away_jerseys_result);
-  let official_jersey_id = extract_first_jersey_id(official_jerseys_result);
-
+  if (!away_team_jersey_id) {
+    errors.push(`No Jerseys found for Away Team (${fixture.away_team_id})`);
+  }
+  const official_jersey_id = extract_first_jersey_id(official_jerseys_result);
   if (!official_jersey_id) {
-    const all_official_jerseys_result = await jersey_color_use_cases.list({
-      holder_type: "competition_official",
-    });
-    official_jersey_id = extract_first_jersey_id(all_official_jerseys_result);
+    errors.push(
+      `No Jerseys found for Officials (competition ${fixture.competition_id})`,
+    );
   }
 
   const assigned_officials = build_official_assignments(
     officials_result,
     roles_result,
   );
+  if (
+    roles_result.success &&
+    roles_result.data.length > 0 &&
+    (!officials_result.success || !officials_result.data.length)
+  ) {
+    errors.push(
+      `No Officials found for Organization (${fixture.organization_id})`,
+    );
+  }
+  if (
+    officials_result.success &&
+    officials_result.data.length > 0 &&
+    (!roles_result.success || !roles_result.data.length)
+  ) {
+    errors.push(
+      `No Official Roles found for Competition (${fixture.competition_id})`,
+    );
+  }
+  if (errors.length > 0) {
+    throw new Error(errors.join(", "));
+  }
 
   return {
     organization_id: fixture.organization_id,
     fixture_id: fixture.id,
-    home_team_jersey_id: home_team_jersey_id || "",
-    away_team_jersey_id: away_team_jersey_id || "",
-    official_jersey_id: official_jersey_id || "",
+    home_team_jersey_id,
+    away_team_jersey_id,
+    official_jersey_id,
     assigned_officials,
     assignment_notes: "",
     confirmation_status: "confirmed",
