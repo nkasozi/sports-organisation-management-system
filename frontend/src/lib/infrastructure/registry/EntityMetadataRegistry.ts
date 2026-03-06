@@ -2647,7 +2647,7 @@ class EntityMetadataRegistry {
           field_type: "enum",
           is_required: true,
           is_read_only: false,
-          enum_values: ["active", "inactive", "pending"],
+          enum_values: ["active", "inactive"],
           show_in_list: true,
         },
       ],

@@ -199,11 +199,11 @@ async function load_and_set_current_user(): Promise<SystemUser | null> {
   return super_admin;
 }
 
-function seed_super_admin_user(): SystemUser | null {
+async function seed_super_admin_user(): Promise<SystemUser | null> {
   const system_user_repository = get_system_user_repository();
 
   const seed_users = create_seed_system_users();
-  system_user_repository.seed_with_data(seed_users);
+  await system_user_repository.seed_with_data(seed_users);
 
   const super_admin = seed_users.find(
     (user) => user.id === SEED_SYSTEM_USER_IDS.SYSTEM_ADMINISTRATOR,
@@ -239,7 +239,7 @@ export async function seed_all_data_if_needed(): Promise<boolean> {
   }
   if (typeof window === "undefined") return false;
 
-  const super_admin = seed_super_admin_user();
+  const super_admin = await seed_super_admin_user();
 
   if (!super_admin) {
     console.error("[SEED] Failed to create super admin, aborting seeding");

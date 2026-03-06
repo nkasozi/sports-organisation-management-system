@@ -2,8 +2,12 @@
   import EntityCrudWrapper from "$lib/presentation/components/EntityCrudWrapper.svelte";
   import { auth_store } from "$lib/presentation/stores/auth";
 
-  function handle_system_user_changed(): void {
-    auth_store.refresh_profiles();
+  async function handle_system_user_changed(): Promise<void> {
+    console.debug("[SystemUsersPage] System user changed, refreshing profiles");
+    const refresh_succeeded = await auth_store.refresh_profiles();
+    console.debug(
+      `[SystemUsersPage] Profile refresh ${refresh_succeeded ? "succeeded" : "failed"}`,
+    );
   }
 </script>
 

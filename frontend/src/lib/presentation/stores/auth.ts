@@ -371,6 +371,7 @@ function create_auth_store() {
   }
 
   async function refresh_profiles(): Promise<boolean> {
+    console.debug("[AuthStore] Starting profile refresh");
     const repository = get_system_user_repository();
     const organization_repository = get_organization_repository();
     const refreshed_profiles = await load_profiles_from_repository(
@@ -384,6 +385,7 @@ function create_auth_store() {
     }
 
     const state = get({ subscribe });
+    const previous_count = state.available_profiles.length;
     const current_profile_still_exists = state.current_profile
       ? refreshed_profiles.some((p) => p.id === state.current_profile!.id)
       : false;
@@ -396,8 +398,8 @@ function create_auth_store() {
         : s.current_profile,
     }));
 
-    console.log(
-      `[AuthStore] Refreshed profiles: ${refreshed_profiles.length} available`,
+    console.debug(
+      `[AuthStore] Refreshed profiles: ${previous_count} -> ${refreshed_profiles.length} available`,
     );
     return true;
   }

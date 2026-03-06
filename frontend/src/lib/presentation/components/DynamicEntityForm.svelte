@@ -1507,6 +1507,11 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
         const saved_entity = save_result.data;
         const was_new_entity = !is_edit_mode;
 
+        console.debug(
+          `[DynamicEntityForm] Save succeeded for ${entity_type}:`,
+          { id: saved_entity.id, was_new_entity, entity: saved_entity },
+        );
+
         if (is_inline_mode) {
           dispatch("inline_save_success", { entity: saved_entity });
         } else if (view_callbacks?.on_save_completed) {

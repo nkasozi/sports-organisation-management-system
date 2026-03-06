@@ -34,14 +34,14 @@ function create_test_system_user(
 }
 
 function create_mock_system_user_repository(
-  return_value: ReturnType<SystemUserRepository["find_active_users"]>,
+  return_value: ReturnType<SystemUserRepository["find_all"]>,
 ): SystemUserRepository {
   return {
-    find_active_users: vi.fn().mockReturnValue(return_value),
+    find_active_users: vi.fn(),
+    find_all: vi.fn().mockReturnValue(return_value),
     find_by_email: vi.fn(),
     find_by_role: vi.fn(),
     find_admins: vi.fn(),
-    find_all: vi.fn(),
     find_by_id: vi.fn(),
     find_by_ids: vi.fn(),
     create: vi.fn(),
@@ -179,7 +179,7 @@ describe("convert_system_users_to_profiles", () => {
     expect(profiles[0].organization_name).toBe("org_unknown");
   });
 
-  it("filters out inactive system users", () => {
+  it("includes all system users regardless of status", () => {
     const users = [
       create_test_system_user({ id: "usr_1", status: "active" }),
       create_test_system_user({ id: "usr_2", status: "inactive" }),
@@ -188,9 +188,10 @@ describe("convert_system_users_to_profiles", () => {
 
     const profiles = convert_system_users_to_profiles(users, new Map());
 
-    expect(profiles).toHaveLength(2);
+    expect(profiles).toHaveLength(3);
     expect(profiles[0].id).toBe("usr_1");
-    expect(profiles[1].id).toBe("usr_3");
+    expect(profiles[1].id).toBe("usr_2");
+    expect(profiles[2].id).toBe("usr_3");
   });
 
   it("returns empty array for empty input", () => {
@@ -297,7 +298,7 @@ describe("load_profiles_from_repository", () => {
     expect(profiles).toEqual([]);
   });
 
-  it("returns empty array when no active users exist", async () => {
+  it("returns empty array when no users exist", async () => {
     const mock_user_repo = create_mock_system_user_repository(
       Promise.resolve(create_success_result({ items: [], total_count: 0 })),
     );

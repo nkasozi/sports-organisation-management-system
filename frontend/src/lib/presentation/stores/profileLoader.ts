@@ -27,7 +27,6 @@ export function convert_system_users_to_profiles(
   organization_name_map: Map<string, string>,
 ): UserProfile[] {
   return system_users
-    .filter((user) => user.status === "active")
     .map((user) =>
       convert_system_user_to_profile(
         user,
@@ -70,7 +69,7 @@ export async function load_profiles_from_repository(
   repository: SystemUserRepository,
   organization_repository: OrganizationRepository,
 ): Promise<UserProfile[]> {
-  const result = await repository.find_active_users();
+  const result = await repository.find_all();
 
   if (!result.success) {
     console.error(
@@ -81,8 +80,19 @@ export async function load_profiles_from_repository(
 
   const system_users = result.data.items;
 
+  console.debug(
+    `[ProfileLoader] Found ${system_users.length} system user(s):`,
+    system_users.map((u) => ({
+      id: u.id,
+      email: u.email,
+      role: u.role,
+      status: u.status,
+      organization_id: u.organization_id,
+    })),
+  );
+
   if (system_users.length === 0) {
-    console.warn("[ProfileLoader] No active system users found in repository");
+    console.warn("[ProfileLoader] No system users found in repository");
     return [];
   }
 
@@ -92,9 +102,20 @@ export async function load_profiles_from_repository(
     organization_repository,
   );
 
-  console.log(
-    `[ProfileLoader] Loaded ${system_users.length} active system user(s) from repository`,
+  const profiles = convert_system_users_to_profiles(
+    system_users,
+    organization_name_map,
   );
 
-  return convert_system_users_to_profiles(system_users, organization_name_map);
+  console.debug(
+    `[ProfileLoader] Converted to ${profiles.length} profile(s):`,
+    profiles.map((p) => ({
+      id: p.id,
+      display_name: p.display_name,
+      role: p.role,
+      organization_name: p.organization_name,
+    })),
+  );
+
+  return profiles;
 }

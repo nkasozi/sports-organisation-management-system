@@ -11,7 +11,7 @@ import type {
   SystemUserRepository,
   SystemUserFilter,
 } from "../../core/interfaces/ports";
-import type { PaginatedAsyncResult } from "../../core/types/Result";
+import type { PaginatedAsyncResult, AsyncResult } from "../../core/types/Result";
 import {
   create_success_result,
   create_failure_result,
@@ -19,6 +19,15 @@ import {
 import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
 
 const ENTITY_PREFIX = "usr";
+const ALL_ORGANIZATIONS_SCOPE = "*";
+
+export function resolve_organization_id_for_role(
+  organization_id: string,
+  role: SystemUserRole,
+): string {
+  if (role === "super_admin") return ALL_ORGANIZATIONS_SCOPE;
+  return organization_id || "";
+}
 
 export class InBrowserSystemUserRepository
   extends InBrowserBaseRepository<
@@ -37,11 +46,54 @@ export class InBrowserSystemUserRepository
     return this.database.system_users;
   }
 
+  async create(input: CreateSystemUserInput): AsyncResult<SystemUser> {
+    console.debug("[SystemUserRepo] create called with input:", {
+      email: input.email,
+      role: input.role,
+      status: input.status,
+      organization_id: input.organization_id,
+    });
+
+    const result = await super.create(input);
+
+    if (result.success && result.data) {
+      console.debug("[SystemUserRepo] create succeeded:", {
+        id: result.data.id,
+        email: result.data.email,
+        role: result.data.role,
+        status: result.data.status,
+        organization_id: result.data.organization_id,
+      });
+
+      const verification = await this.find_by_id(result.data.id);
+      if (verification.success && verification.data) {
+        console.debug("[SystemUserRepo] verification read-back confirmed:", {
+          id: verification.data.id,
+          status: verification.data.status,
+        });
+      } else {
+        console.error(
+          "[SystemUserRepo] VERIFICATION FAILED - entity not found after create!",
+          result.data.id,
+        );
+      }
+    } else {
+      console.error("[SystemUserRepo] create failed:", result.error);
+    }
+
+    return result;
+  }
+
   protected create_entity_from_input(
     input: CreateSystemUserInput,
     id: string,
     timestamps: Pick<BaseEntity, "created_at" | "updated_at">,
   ): SystemUser {
+    const organization_id = resolve_organization_id_for_role(
+      input.organization_id,
+      input.role,
+    );
+
     return {
       id,
       ...timestamps,
@@ -50,7 +102,7 @@ export class InBrowserSystemUserRepository
       last_name: input.last_name.trim(),
       role: input.role,
       status: input.status || "active",
-      organization_id: input.organization_id,
+      organization_id,
       team_id: input.team_id,
       player_id: input.player_id,
       official_id: input.official_id,
@@ -62,14 +114,20 @@ export class InBrowserSystemUserRepository
     entity: SystemUser,
     updates: UpdateSystemUserInput,
   ): SystemUser {
+    const updated_role = updates.role ?? entity.role;
+    const updated_organization_id = resolve_organization_id_for_role(
+      updates.organization_id ?? entity.organization_id,
+      updated_role,
+    );
+
     return {
       ...entity,
       email: updates.email?.trim().toLowerCase() ?? entity.email,
       first_name: updates.first_name?.trim() ?? entity.first_name,
       last_name: updates.last_name?.trim() ?? entity.last_name,
-      role: updates.role ?? entity.role,
+      role: updated_role,
       status: updates.status ?? entity.status,
-      organization_id: updates.organization_id ?? entity.organization_id,
+      organization_id: updated_organization_id,
       team_id: updates.team_id ?? entity.team_id,
       player_id: updates.player_id ?? entity.player_id,
       official_id: updates.official_id ?? entity.official_id,
@@ -147,6 +205,20 @@ export class InBrowserSystemUserRepository
   async find_active_users(
     options?: QueryOptions,
   ): PaginatedAsyncResult<SystemUser> {
+    const all_users_result = await this.find_all(undefined, options);
+    if (all_users_result.success) {
+      const all_users = all_users_result.data.items;
+      const active_users = all_users.filter((u) => u.status === "active");
+      console.debug(
+        `[SystemUserRepo] find_active_users: ${all_users.length} total, ${active_users.length} active`,
+        all_users.map((u) => ({
+          id: u.id,
+          email: u.email,
+          role: u.role,
+          status: u.status,
+        })),
+      );
+    }
     return this.find_all({ status: "active" }, options);
   }
 

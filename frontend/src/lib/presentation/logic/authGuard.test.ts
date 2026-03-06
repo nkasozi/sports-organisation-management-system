@@ -82,7 +82,7 @@ const { mock_repository, mock_org_repository } = vi.hoisted(() => {
 
   return {
     mock_repository: {
-      find_active_users: vi.fn().mockResolvedValue({
+      find_all: vi.fn().mockResolvedValue({
         success: true,
         data: {
           items: create_test_system_users(),
