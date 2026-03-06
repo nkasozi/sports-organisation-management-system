@@ -11,7 +11,10 @@ import type {
   SystemUserRepository,
   SystemUserFilter,
 } from "../../core/interfaces/ports";
-import type { PaginatedAsyncResult, AsyncResult } from "../../core/types/Result";
+import type {
+  PaginatedAsyncResult,
+  AsyncResult,
+} from "../../core/types/Result";
 import {
   create_success_result,
   create_failure_result,

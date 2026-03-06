@@ -26,13 +26,12 @@ export function convert_system_users_to_profiles(
   system_users: SystemUser[],
   organization_name_map: Map<string, string>,
 ): UserProfile[] {
-  return system_users
-    .map((user) =>
-      convert_system_user_to_profile(
-        user,
-        organization_name_map.get(user.organization_id) ?? user.organization_id,
-      ),
-    );
+  return system_users.map((user) =>
+    convert_system_user_to_profile(
+      user,
+      organization_name_map.get(user.organization_id) ?? user.organization_id,
+    ),
+  );
 }
 
 export async function resolve_organization_names(
