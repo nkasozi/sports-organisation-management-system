@@ -46,6 +46,7 @@ export class InBrowserTeamRepository
       short_name: input.short_name,
       description: input.description,
       organization_id: input.organization_id,
+      gender_id: input.gender_id || "",
       captain_player_id: input.captain_player_id,
       vice_captain_player_id: input.vice_captain_player_id,
       max_squad_size: input.max_squad_size,
@@ -117,6 +118,7 @@ export function create_default_teams(): Team[] {
       description:
         "One of Uganda's most prestigious field hockey clubs, known for technical excellence and youth development",
       organization_id: "org_default_1",
+      gender_id: "",
       captain_player_id: null,
       vice_captain_player_id: null,
       max_squad_size: 25,
@@ -137,6 +139,7 @@ export function create_default_teams(): Team[] {
       description:
         "Founding member of the Uganda Hockey Association with a rich history and passionate supporter base",
       organization_id: "org_default_1",
+      gender_id: "",
       captain_player_id: null,
       vice_captain_player_id: null,
       max_squad_size: 25,
@@ -157,6 +160,7 @@ export function create_default_teams(): Team[] {
       description:
         "Dynamic hockey club known for fast-paced attacking play and team spirit",
       organization_id: "org_default_1",
+      gender_id: "",
       captain_player_id: null,
       vice_captain_player_id: null,
       max_squad_size: 25,
@@ -177,6 +181,7 @@ export function create_default_teams(): Team[] {
       description:
         "Grassroots hockey club committed to making hockey accessible to all Ugandans",
       organization_id: "org_default_1",
+      gender_id: "",
       captain_player_id: null,
       vice_captain_player_id: null,
       max_squad_size: 25,
@@ -197,6 +202,7 @@ export function create_default_teams(): Team[] {
       description:
         "Elite university hockey team combining academic excellence with sporting prowess",
       organization_id: "org_default_1",
+      gender_id: "",
       captain_player_id: null,
       vice_captain_player_id: null,
       max_squad_size: 22,
@@ -217,6 +223,7 @@ export function create_default_teams(): Team[] {
       description:
         "Rising force in Ugandan university hockey with strong support and excellent facilities",
       organization_id: "org_default_1",
+      gender_id: "",
       captain_player_id: null,
       vice_captain_player_id: null,
       max_squad_size: 22,
@@ -237,6 +244,7 @@ export function create_default_teams(): Team[] {
       description:
         "Fierce competitors known for disciplined defense and tactical awareness",
       organization_id: "org_default_1",
+      gender_id: "",
       captain_player_id: null,
       vice_captain_player_id: null,
       max_squad_size: 25,
@@ -257,6 +265,7 @@ export function create_default_teams(): Team[] {
       description:
         "Goal-scoring specialists known for entertaining attacking hockey",
       organization_id: "org_default_1",
+      gender_id: "",
       captain_player_id: null,
       vice_captain_player_id: null,
       max_squad_size: 25,

@@ -54,7 +54,6 @@
       : 0;
 
     return tick().then(() => {
-      input_element?.focus();
       return true;
     });
   }
@@ -63,9 +62,7 @@
     is_open = false;
     query = "";
     highlighted_index = 0;
-    if (input_element) {
-      input_element.value = selected_option ? selected_option.label : "";
-    }
+    input_element?.blur();
     return true;
   }
 
@@ -73,11 +70,38 @@
     value = selected_value;
     dispatch("change", { value: selected_value });
     close_dropdown();
+    const chosen_option = find_select_option_by_value(options, selected_value);
+    if (input_element) {
+      input_element.value = chosen_option ? chosen_option.label : "";
+    }
     return true;
   }
 
+  function handle_input_mousedown(event: MouseEvent): void {
+    if (disabled || is_loading) return;
+
+    if (!is_open) {
+      event.preventDefault();
+      void open_dropdown();
+      return;
+    }
+
+    void tick().then(() => {
+      if (!input_element) return;
+      const length = input_element.value.length;
+      input_element.setSelectionRange(length, length);
+    });
+  }
+
   function handle_input_focus(): void {
-    void open_dropdown();
+    if (!is_open) {
+      void open_dropdown();
+    }
+    void tick().then(() => {
+      if (!input_element) return;
+      const length = input_element.value.length;
+      input_element.setSelectionRange(length, length);
+    });
   }
 
   function handle_input(event: Event): void {
@@ -144,15 +168,6 @@
     }
   }
 
-  function handle_option_mousedown(
-    event: MouseEvent,
-    option_value: string,
-  ): boolean {
-    event.preventDefault();
-    event.stopPropagation();
-    return commit_value(option_value);
-  }
-
   function handle_global_pointer_down(event: MouseEvent): void {
     const target_node = event.target as Node | null;
     if (!target_node) return;
@@ -215,11 +230,12 @@
       aria-expanded={is_open}
       aria-controls={list_id}
       role="combobox"
+      on:mousedown={handle_input_mousedown}
       on:focus={handle_input_focus}
       on:input={handle_input}
       on:keydown={handle_keydown}
       disabled={disabled || is_loading}
-      class="w-full py-2 border rounded-lg text-sm
+      class="w-full py-2 border rounded-lg text-sm cursor-pointer
              bg-white dark:bg-accent-800
              text-accent-900 dark:text-accent-100
              focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none
@@ -259,6 +275,7 @@
         id={list_id}
         class="absolute z-[9999] mt-2 w-full max-h-64 overflow-auto rounded-lg border border-accent-200 dark:border-accent-700 bg-white dark:bg-accent-800 shadow-lg"
         role="listbox"
+        on:mousedown|preventDefault
       >
         {#if filtered_options.length === 0}
           <div class="px-3 py-2 text-sm text-accent-600 dark:text-accent-400">
@@ -278,8 +295,8 @@
               role="option"
               aria-selected={option.value === value}
               on:mouseenter={() => (highlighted_index = index)}
-              on:mousedown={(event) =>
-                handle_option_mousedown(event, option.value)}
+              on:mousedown|preventDefault|stopPropagation={() =>
+                commit_value(option.value)}
             >
               {#if option.color_swatch}
                 <span

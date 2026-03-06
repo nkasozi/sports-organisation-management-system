@@ -18,6 +18,7 @@ export interface Team extends BaseEntity {
   short_name: string;
   description: string;
   organization_id: string;
+  gender_id: string;
   captain_player_id: string | null;
   vice_captain_player_id: string | null;
   max_squad_size: number;
@@ -58,6 +59,7 @@ export function create_empty_team_input(
     short_name: "",
     description: "",
     organization_id,
+    gender_id: "",
     captain_player_id: null,
     vice_captain_player_id: null,
     max_squad_size: 25,

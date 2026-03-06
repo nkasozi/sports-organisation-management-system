@@ -53,6 +53,10 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
     filter_enum_values_by_creator_role,
     should_field_be_required_for_role,
   } from "../logic/systemUserFormLogic";
+  import {
+    check_player_team_gender_mismatch,
+    type GenderMismatchInput,
+  } from "../../core/services/genderMismatchCheck";
 
   export let entity_type: string;
   export let entity_data: Partial<BaseEntity> | null = null;
@@ -87,6 +91,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
   let filtered_fields_loading: Record<string, boolean> = {};
   let color_clash_warnings: string[] = [];
   let official_team_conflict_warnings: string[] = [];
+  let gender_mismatch_warnings: string[] = [];
   let competition_team_ids: Set<string> = new Set();
   let auth_profile_missing: boolean = false;
   let auth_error_message: string = "";
@@ -1207,6 +1212,18 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
     if (changed_field_name.includes("jersey")) {
       check_jersey_color_clashes();
     }
+
+    const is_membership_or_transfer =
+      entity_type.toLowerCase() === "playerteammembership" ||
+      entity_type.toLowerCase() === "playerteamtransferhistory";
+    const is_gender_relevant_field =
+      changed_field_name === "player_id" ||
+      changed_field_name === "team_id" ||
+      changed_field_name === "to_team_id";
+
+    if (is_membership_or_transfer && is_gender_relevant_field) {
+      void run_gender_mismatch_check();
+    }
   }
 
   async function load_filtered_options_for_initialized_data(
@@ -1425,6 +1442,71 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
     );
 
     official_team_conflict_warnings = conflicts.map((c) => c.message);
+  }
+
+  async function run_gender_mismatch_check(): Promise<void> {
+    const entity_lower = entity_type.toLowerCase();
+    const player_id = form_data["player_id"];
+    const team_id =
+      entity_lower === "playerteamtransferhistory"
+        ? form_data["to_team_id"]
+        : form_data["team_id"];
+
+    if (!player_id || !team_id) {
+      gender_mismatch_warnings = [];
+      return;
+    }
+
+    const player_use_cases = get_use_cases_for_entity_type("player");
+    const team_uc = get_use_cases_for_entity_type("team");
+    const gender_use_cases = get_use_cases_for_entity_type("gender");
+
+    if (!player_use_cases || !team_uc || !gender_use_cases) {
+      console.debug("[GENDER_CHECK] Missing use cases, skipping check");
+      return;
+    }
+
+    const [player_result, team_result] = await Promise.all([
+      player_use_cases.get_by_id(player_id),
+      team_uc.get_by_id(team_id),
+    ]);
+
+    if (!player_result.success || !team_result.success) return;
+
+    const player = player_result.data as {
+      gender_id?: string;
+      first_name?: string;
+      last_name?: string;
+    };
+    const team = team_result.data as { gender_id?: string; name?: string };
+
+    if (!player.gender_id || !team.gender_id) {
+      gender_mismatch_warnings = [];
+      return;
+    }
+
+    const gender_name_map = new Map<string, string>();
+    const gender_ids = [...new Set([player.gender_id, team.gender_id])];
+
+    for (const gid of gender_ids) {
+      const gender_result = await gender_use_cases.get_by_id(gid);
+      if (gender_result.success) {
+        const gender = gender_result.data as { name?: string };
+        if (gender.name) gender_name_map.set(gid, gender.name);
+      }
+    }
+
+    const mismatch_input: GenderMismatchInput = {
+      player_gender_id: player.gender_id,
+      team_gender_id: team.gender_id,
+      player_display_name:
+        `${player.first_name ?? ""} ${player.last_name ?? ""}`.trim(),
+      team_display_name: team.name ?? team_id,
+      gender_name_map,
+    };
+
+    gender_mismatch_warnings =
+      check_player_team_gender_mismatch(mismatch_input);
   }
 
   async function handle_form_submission(): Promise<void> {
@@ -2478,6 +2560,42 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
                   class="mt-2 text-sm text-red-700 dark:text-red-300 list-disc list-inside"
                 >
                   {#each official_team_conflict_warnings as warning}
+                    <li>{warning}</li>
+                  {/each}
+                </ul>
+              </div>
+            </div>
+          </div>
+        {/if}
+
+        {#if gender_mismatch_warnings.length > 0}
+          <div
+            class="mt-4 p-4 rounded-lg border border-amber-300 dark:border-amber-600 bg-amber-50 dark:bg-amber-900/30"
+          >
+            <div class="flex items-start gap-3">
+              <svg
+                class="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                />
+              </svg>
+              <div>
+                <div
+                  class="text-sm font-semibold text-amber-800 dark:text-amber-200"
+                >
+                  Gender Mismatch Detected
+                </div>
+                <ul
+                  class="mt-1 text-sm text-amber-700 dark:text-amber-300 list-disc list-inside"
+                >
+                  {#each gender_mismatch_warnings as warning}
                     <li>{warning}</li>
                   {/each}
                 </ul>

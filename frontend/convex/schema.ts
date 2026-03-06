@@ -180,6 +180,7 @@ export default defineSchema({
     short_name: v.optional(v.string()),
     description: v.optional(v.string()),
     organization_id: v.string(),
+    gender_id: v.optional(v.string()),
     captain_player_id: v.optional(v.union(v.string(), v.null())),
     vice_captain_player_id: v.optional(v.union(v.string(), v.null())),
     max_squad_size: v.optional(v.number()),
