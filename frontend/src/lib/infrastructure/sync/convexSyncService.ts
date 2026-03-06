@@ -59,7 +59,7 @@ interface ConvexClient {
   query: (name: string, args: Record<string, unknown>) => Promise<unknown>;
 }
 
-const TABLE_NAMES = [
+export const TABLE_NAMES = [
   "organizations",
   "competitions",
   "teams",
@@ -97,7 +97,7 @@ const TABLE_NAMES = [
   "official_associated_teams",
 ] as const;
 
-type TableName = (typeof TABLE_NAMES)[number];
+export type TableName = (typeof TABLE_NAMES)[number];
 
 const EPOCH_TIMESTAMP = "1970-01-01T00:00:00.000Z";
 
@@ -116,7 +116,7 @@ async function get_remote_latest_modified_at(
   return result;
 }
 
-function get_local_latest_modified_at(
+export function get_local_latest_modified_at(
   all_records: Array<{ id: string; updated_at?: string; created_at?: string }>,
 ): string {
   return all_records.reduce((max, record) => {
@@ -125,7 +125,7 @@ function get_local_latest_modified_at(
   }, EPOCH_TIMESTAMP);
 }
 
-function get_table_from_database(
+export function get_table_from_database(
   database: SportsOrgDatabase,
   table_name: TableName,
 ): Table<
@@ -330,7 +330,7 @@ async function push_table_to_convex(
   };
 }
 
-async function pull_table_from_convex(
+export async function pull_table_from_convex(
   convex_client: ConvexClient,
   table: Table<
     { id: string; updated_at?: string; created_at?: string },

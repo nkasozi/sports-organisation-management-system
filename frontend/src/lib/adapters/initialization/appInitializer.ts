@@ -38,6 +38,11 @@ import {
   start_background_sync,
   stop_background_sync,
 } from "$lib/infrastructure/sync/backgroundSyncService";
+import {
+  start_realtime_sync,
+  stop_realtime_sync,
+} from "$lib/infrastructure/sync/convexRealtimeSync";
+import type { SubscribableConvexClient } from "$lib/infrastructure/cache/AuthCacheInvalidator";
 
 let initialized = false;
 let auth_cache_invalidator: AuthCacheInvalidator | null = null;
@@ -217,6 +222,22 @@ export async function initialize_app_data(): Promise<boolean> {
 
   start_background_sync();
 
+  if (convex_client) {
+    start_realtime_sync(
+      convex_client as unknown as SubscribableConvexClient,
+      {
+        mutation: (name: string, args: Record<string, unknown>) =>
+          convex_client.mutation(name as never, args as never),
+        query: (name: string, args: Record<string, unknown>) =>
+          convex_client.query(name as never, args as never),
+      },
+      api.sync.get_latest_modified_at,
+    );
+    console.log(
+      "[AppInitializer] Real-time sync started via Convex subscriptions",
+    );
+  }
+
   if (is_first_time) {
     first_time_setup_store.update_progress("Finalizing setup...", 95);
     await delay(400);
@@ -231,6 +252,7 @@ export async function initialize_app_data(): Promise<boolean> {
 
 export function reset_initialization(): void {
   stop_background_sync();
+  stop_realtime_sync();
   if (auth_cache_invalidator?.is_running()) {
     auth_cache_invalidator.stop();
     auth_cache_invalidator = null;
