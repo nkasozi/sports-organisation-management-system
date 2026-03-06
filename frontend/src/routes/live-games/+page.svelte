@@ -13,7 +13,9 @@
     check_fixture_can_start,
     auto_generate_lineups_if_possible,
   } from "$lib/core/services/fixtureStartChecks";
+  import { auto_create_fixture_details_setup } from "$lib/core/services/fixtureDetailsAutoSetup";
   import type { PreFlightCheck } from "$lib/core/services/fixtureStartChecks";
+  import { can_role_access_route } from "$lib/adapters/iam/LocalAuthorizationAdapter";
   import { get_fixture_use_cases } from "$lib/core/usecases/FixtureUseCases";
   import { get_fixture_details_setup_use_cases } from "$lib/core/usecases/FixtureDetailsSetupUseCases";
   import { get_fixture_lineup_use_cases } from "$lib/core/usecases/FixtureLineupUseCases";
@@ -24,6 +26,9 @@
   import { get_sport_use_cases } from "$lib/core/usecases/SportUseCases";
   import { get_competition_use_cases } from "$lib/core/usecases/CompetitionUseCases";
   import { get_organization_use_cases } from "$lib/core/usecases/OrganizationUseCases";
+  import { get_jersey_color_use_cases } from "$lib/core/usecases/JerseyColorUseCases";
+  import { get_official_use_cases } from "$lib/core/usecases/OfficialUseCases";
+  import { get_game_official_role_use_cases } from "$lib/core/usecases/GameOfficialRoleUseCases";
   import { auth_store } from "$lib/presentation/stores/auth";
   import {
     build_authorization_list_filter,
@@ -40,6 +45,9 @@
   const sport_use_cases = get_sport_use_cases();
   const competition_use_cases = get_competition_use_cases();
   const organization_use_cases = get_organization_use_cases();
+  const jersey_color_use_cases = get_jersey_color_use_cases();
+  const official_use_cases = get_official_use_cases();
+  const game_official_role_use_cases = get_game_official_role_use_cases();
 
   let organizations: Organization[] = [];
   let selected_organization_id = "";
@@ -356,9 +364,6 @@
       );
 
       if (competition_allows_auto_setup) {
-        console.log(
-          "[DEBUG] Auto setup allowed - REDIRECTING to fixture-details-setup",
-        );
         checks.push({
           check_name: "auto_setup_check",
           status: "passed",
@@ -368,18 +373,82 @@
         update_checks(fixture.id, checks);
         await delay(CHECK_DELAY_MS);
 
+        const auth_state = get(auth_store);
+        const current_role = auth_state.current_profile?.role || "player";
+        const route_access = can_role_access_route(
+          current_role,
+          "/fixture-details-setup",
+        );
+
+        if (route_access.allowed) {
+          console.log(
+            "[DEBUG] Role has access to fixture-details-setup - REDIRECTING to confirm",
+          );
+          checks.push({
+            check_name: "redirect",
+            status: "checking",
+            message: "Redirecting you to confirm Fixture Details...",
+            fix_suggestion: null,
+          });
+          update_checks(fixture.id, checks);
+          await delay(CHECK_DELAY_MS);
+
+          set_is_starting(fixture.id, false);
+          await goto(`/fixture-details-setup?fixture_id=${fixture.id}`);
+          return;
+        }
+
+        console.log(
+          "[DEBUG] Role does not have access to fixture-details-setup - creating silently",
+        );
         checks.push({
-          check_name: "redirect",
+          check_name: "silent_create",
           status: "checking",
-          message: "Redirecting you to confirm Fixture Details...",
+          message: "Auto-creating fixture details in the background...",
           fix_suggestion: null,
         });
+        update_checks(fixture.id, checks);
+
+        const auto_create_result = await auto_create_fixture_details_setup(
+          fixture,
+          {
+            fixture_details_setup_use_cases,
+            jersey_color_use_cases,
+            official_use_cases,
+            game_official_role_use_cases,
+          },
+        );
+
+        if (!auto_create_result.success) {
+          console.log(
+            "[DEBUG] Silent auto-create failed:",
+            auto_create_result.error,
+          );
+          checks[checks.length - 1] = {
+            check_name: "silent_create",
+            status: "failed",
+            message:
+              "Failed to auto-create fixture details: " +
+              auto_create_result.error,
+            fix_suggestion:
+              "Contact an administrator to set up fixture details for this game",
+          };
+          update_checks(fixture.id, checks);
+          set_is_starting(fixture.id, false);
+          return;
+        }
+
+        checks[checks.length - 1] = {
+          check_name: "silent_create",
+          status: "passed",
+          message: "Fixture details auto-created successfully",
+          fix_suggestion: null,
+        };
         update_checks(fixture.id, checks);
         await delay(CHECK_DELAY_MS);
 
         set_is_starting(fixture.id, false);
-
-        await goto(`/fixture-details-setup?fixture_id=${fixture.id}`);
+        await start_fixture(fixture);
         return;
       }
 
