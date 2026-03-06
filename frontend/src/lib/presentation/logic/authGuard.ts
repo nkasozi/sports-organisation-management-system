@@ -28,12 +28,15 @@ export function extract_route_base(pathname: string): string {
   return "/" + segments[0];
 }
 
+const ALWAYS_ALLOWED_ROUTE_BASES: Set<string> = new Set(["/", "/match-report"]);
+
 export function is_route_in_accessible_set(
   pathname: string,
   accessible_routes: Set<string>,
 ): boolean {
   if (pathname === "/" || pathname === "") return true;
   const route_base = extract_route_base(pathname);
+  if (ALWAYS_ALLOWED_ROUTE_BASES.has(route_base)) return true;
   return accessible_routes.has(pathname) || accessible_routes.has(route_base);
 }
 

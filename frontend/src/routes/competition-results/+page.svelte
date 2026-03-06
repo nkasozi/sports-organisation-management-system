@@ -1224,7 +1224,7 @@
                       <button
                         type="button"
                         class="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
-                        on:click={() => goto(`/live-games/${fixture.id}`)}
+                        on:click={() => goto(`/match-report/${fixture.id}`)}
                       >
                         <svg
                           class="w-4 h-4"

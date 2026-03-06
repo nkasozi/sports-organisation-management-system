@@ -617,6 +617,8 @@ export function get_sidebar_menu_for_role(role: UserRole): SidebarMenuGroup[] {
   return ROLE_MENUS[role] || PLAYER_MENU;
 }
 
+const ALWAYS_ALLOWED_ROUTE_BASES: Set<string> = new Set(["/", "/match-report"]);
+
 export function can_role_access_route(
   role: UserRole,
   pathname: string,
@@ -625,8 +627,12 @@ export function can_role_access_route(
     return { allowed: true, reason: "" };
   }
 
-  const allowed_routes = get_allowed_routes_for_role(role);
   const route_base = extract_route_base(pathname);
+  if (ALWAYS_ALLOWED_ROUTE_BASES.has(route_base)) {
+    return { allowed: true, reason: "" };
+  }
+
+  const allowed_routes = get_allowed_routes_for_role(role);
 
   if (allowed_routes.has(pathname) || allowed_routes.has(route_base)) {
     return { allowed: true, reason: "" };
