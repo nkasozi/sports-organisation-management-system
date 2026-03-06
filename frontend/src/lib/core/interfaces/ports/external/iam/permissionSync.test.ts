@@ -72,7 +72,9 @@ describe("frontend-backend permission sync", () => {
       for (const [entity_type, frontend_category] of Object.entries(
         ENTITY_DATA_CATEGORY_MAP,
       )) {
-        const backend_category = backend_map.get(entity_type as SharedEntityType);
+        const backend_category = backend_map.get(
+          entity_type as SharedEntityType,
+        );
 
         if (backend_category !== frontend_category) {
           mismatches.push(

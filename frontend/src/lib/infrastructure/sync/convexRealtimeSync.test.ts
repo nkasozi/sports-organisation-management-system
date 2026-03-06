@@ -57,7 +57,9 @@ describe("ConvexRealtimeSync", () => {
     it("passes correct query reference and args for each table", () => {
       sync_service.start();
 
-      const calls = (deps.subscribable_client.onUpdate as ReturnType<typeof vi.fn>).mock.calls;
+      const calls = (
+        deps.subscribable_client.onUpdate as ReturnType<typeof vi.fn>
+      ).mock.calls;
       expect(calls[0][1]).toEqual({ table_name: "teams" });
       expect(calls[1][1]).toEqual({ table_name: "players" });
     });

@@ -186,10 +186,7 @@ function create_pull_table_adapter(
     since_timestamp: string,
   ): Promise<{ success: boolean; records_pulled: number }> => {
     const database = get_database();
-    const table = get_table_from_database(
-      database,
-      table_name as TableName,
-    );
+    const table = get_table_from_database(database, table_name as TableName);
 
     if (!table) {
       console.error(

@@ -16,6 +16,10 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
   import type { SubEntityFilter } from "$lib/core/types/SubEntityFilter";
   import DynamicEntityForm from "./DynamicEntityForm.svelte";
   import { get_display_value_for_entity_field } from "../logic/dynamicListLogic";
+  import {
+    save_column_preferences,
+    load_column_preferences,
+  } from "../logic/columnPreferences";
   import type {
     EntityCrudHandlers,
     EntityViewCallbacks,
@@ -87,6 +91,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
   let filter_values: Record<string, string> = {};
   let foreign_key_options: Record<string, any[]> = {};
   let auth_profile_missing: boolean = false;
+  let columns_restored_from_cache: boolean = false;
 
   // Computed values
   $: entity_metadata = get_entity_metadata_for_type(entity_type);
@@ -216,6 +221,26 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
 
   function initialize_default_columns(): void {
     if (!entity_metadata) return;
+
+    const all_fields = get_all_available_fields();
+    const available_field_names = all_fields.map(
+      (f: FieldMetadata) => f.field_name,
+    );
+    const cached_result = load_column_preferences(
+      entity_type,
+      sub_entity_filter,
+      available_field_names,
+    );
+
+    if (cached_result.restored && cached_result.columns) {
+      visible_columns = cached_result.columns;
+      columns_restored_from_cache = true;
+      console.log(
+        `[DynamicEntityList] Restored ${cached_result.columns.size} cached column preferences for ${entity_type}`,
+      );
+      return;
+    }
+
     const default_field_names = build_default_visible_column_names(
       entity_metadata.fields,
       5,
@@ -328,6 +353,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
       visible_columns.add(field_name);
     }
     visible_columns = visible_columns;
+    save_column_preferences(entity_type, sub_entity_filter, visible_columns);
   }
 
   function export_to_csv(): void {
@@ -1071,6 +1097,53 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
           {filtered_entities.length} of {entities.length}
           {entities.length === 1 ? "item" : "items"}
         </p>
+
+        {#if columns_restored_from_cache}
+          <div
+            class="mt-2 p-2.5 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg"
+          >
+            <div class="flex items-center justify-between gap-2">
+              <div class="flex items-center gap-2">
+                <svg
+                  class="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 flex-shrink-0"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                  />
+                </svg>
+                <p class="text-xs text-blue-800 dark:text-blue-200">
+                  Showing your previously saved column selection
+                </p>
+              </div>
+              <button
+                type="button"
+                class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 p-0.5"
+                on:click={() => (columns_restored_from_cache = false)}
+                title="Dismiss"
+              >
+                <svg
+                  class="w-3.5 h-3.5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+          </div>
+        {/if}
 
         {#if info_message}
           <div
