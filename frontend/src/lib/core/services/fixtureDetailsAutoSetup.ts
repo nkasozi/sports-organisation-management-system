@@ -133,9 +133,9 @@ async function build_auto_populated_input(
   return {
     organization_id: fixture.organization_id,
     fixture_id: fixture.id,
-    home_team_jersey_id,
-    away_team_jersey_id,
-    official_jersey_id,
+    home_team_jersey_id: home_team_jersey_id!,
+    away_team_jersey_id: away_team_jersey_id!,
+    official_jersey_id: official_jersey_id!,
     assigned_officials,
     assignment_notes: "",
     confirmation_status: "confirmed",

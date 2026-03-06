@@ -340,6 +340,10 @@ describe("FixtureUseCases", () => {
 
   describe("update_fixture_score", () => {
     it("should update score", async () => {
+      vi.mocked(mock_repository.find_by_id).mockResolvedValue({
+        success: true,
+        data: create_test_fixture(),
+      });
       vi.mocked(mock_repository.update).mockResolvedValue({
         success: true,
         data: create_test_fixture({ home_team_score: 2, away_team_score: 1 }),
@@ -365,6 +369,10 @@ describe("FixtureUseCases", () => {
 
   describe("start_fixture", () => {
     it("should start fixture", async () => {
+      vi.mocked(mock_repository.find_by_id).mockResolvedValue({
+        success: true,
+        data: create_test_fixture(),
+      });
       vi.mocked(mock_repository.update).mockResolvedValue({
         success: true,
         data: create_test_fixture({ status: "in_progress" }),
@@ -484,6 +492,10 @@ describe("FixtureUseCases", () => {
 
   describe("update_period", () => {
     it("should update period", async () => {
+      vi.mocked(mock_repository.find_by_id).mockResolvedValue({
+        success: true,
+        data: create_test_fixture(),
+      });
       vi.mocked(mock_repository.update).mockResolvedValue({
         success: true,
         data: create_test_fixture({ current_period: "second_half" }),

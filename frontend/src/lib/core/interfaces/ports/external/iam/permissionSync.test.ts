@@ -4,6 +4,7 @@ import {
   SHARED_ENTITY_CATEGORIES,
   ALL_ROLES,
   ALL_CATEGORIES,
+  type SharedEntityType,
 } from "$convex/shared_permission_definitions";
 import {
   DATA_PERMISSION_MAP,
@@ -71,7 +72,7 @@ describe("frontend-backend permission sync", () => {
       for (const [entity_type, frontend_category] of Object.entries(
         ENTITY_DATA_CATEGORY_MAP,
       )) {
-        const backend_category = backend_map.get(entity_type);
+        const backend_category = backend_map.get(entity_type as SharedEntityType);
 
         if (backend_category !== frontend_category) {
           mismatches.push(
@@ -93,7 +94,7 @@ describe("frontend-backend permission sync", () => {
         (e) => !frontend_entities.has(e),
       );
       const only_in_frontend = [...frontend_entities].filter(
-        (e) => !backend_entities.has(e),
+        (e) => !backend_entities.has(e as SharedEntityType),
       );
 
       expect(only_in_backend).toEqual([]);

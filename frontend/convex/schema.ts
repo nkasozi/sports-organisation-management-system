@@ -111,6 +111,7 @@ const lineup_player_validator = v.object({
   position: v.union(v.string(), v.null()),
   is_captain: v.boolean(),
   is_substitute: v.boolean(),
+  time_on: v.optional(v.string()),
 });
 
 export default defineSchema({
@@ -200,6 +201,8 @@ export default defineSchema({
     ...sync_metadata_fields,
     first_name: v.string(),
     last_name: v.string(),
+    gender_id: v.optional(v.string()),
+    organization_id: v.optional(v.string()),
     email: v.optional(v.string()),
     phone: v.optional(v.string()),
     date_of_birth: v.optional(v.string()),
@@ -221,6 +224,7 @@ export default defineSchema({
     ...sync_metadata_fields,
     first_name: v.string(),
     last_name: v.string(),
+    gender_id: v.optional(v.string()),
     email: v.optional(v.string()),
     phone: v.optional(v.string()),
     date_of_birth: v.optional(v.string()),
@@ -239,6 +243,7 @@ export default defineSchema({
 
   fixtures: defineTable({
     ...sync_metadata_fields,
+    organization_id: v.optional(v.string()),
     competition_id: v.optional(v.string()),
     round_number: v.optional(v.union(v.number(), v.null())),
     round_name: v.optional(v.string()),
@@ -306,6 +311,7 @@ export default defineSchema({
 
   team_staff: defineTable({
     ...sync_metadata_fields,
+    organization_id: v.optional(v.string()),
     team_id: v.string(),
     role_id: v.optional(v.string()),
     first_name: v.string(),
@@ -357,6 +363,7 @@ export default defineSchema({
 
   venues: defineTable({
     ...sync_metadata_fields,
+    organization_id: v.optional(v.string()),
     name: v.string(),
     short_name: v.optional(v.string()),
     address: v.optional(v.string()),
@@ -457,8 +464,16 @@ export default defineSchema({
   calendar_tokens: defineTable({
     ...sync_metadata_fields,
     token: v.string(),
-    entity_type: v.string(),
-    entity_id: v.string(),
+    user_id: v.optional(v.string()),
+    organization_id: v.optional(v.string()),
+    feed_type: v.optional(v.string()),
+    entity_type: v.optional(v.string()),
+    entity_id: v.optional(v.string()),
+    entity_name: v.optional(v.union(v.string(), v.null())),
+    reminder_minutes_before: v.optional(v.number()),
+    is_active: v.optional(v.boolean()),
+    last_accessed_at: v.optional(v.union(v.string(), v.null())),
+    access_count: v.optional(v.number()),
     expires_at: v.optional(v.string()),
     ...timestamp_fields,
   })
@@ -544,6 +559,7 @@ export default defineSchema({
 
   player_team_memberships: defineTable({
     ...sync_metadata_fields,
+    organization_id: v.optional(v.string()),
     player_id: v.string(),
     team_id: v.string(),
     position_id: v.optional(v.string()),
@@ -560,6 +576,7 @@ export default defineSchema({
 
   fixture_details_setups: defineTable({
     ...sync_metadata_fields,
+    organization_id: v.optional(v.string()),
     fixture_id: v.string(),
     home_team_jersey_id: v.optional(v.string()),
     away_team_jersey_id: v.optional(v.string()),
@@ -582,6 +599,7 @@ export default defineSchema({
 
   fixture_lineups: defineTable({
     ...sync_metadata_fields,
+    organization_id: v.optional(v.string()),
     fixture_id: v.string(),
     team_id: v.string(),
     selected_players: v.optional(v.array(lineup_player_validator)),
@@ -602,15 +620,48 @@ export default defineSchema({
 
   activities: defineTable({
     ...sync_metadata_fields,
-    category_id: v.string(),
-    entity_type: v.string(),
-    entity_id: v.string(),
     title: v.string(),
     description: v.optional(v.string()),
-    scheduled_date: v.string(),
+    organization_id: v.optional(v.string()),
+    category_id: v.optional(v.string()),
+    category_type: v.optional(v.string()),
+    entity_type: v.optional(v.string()),
+    entity_id: v.optional(v.string()),
+    start_datetime: v.optional(v.string()),
+    end_datetime: v.optional(v.string()),
+    scheduled_date: v.optional(v.string()),
     end_date: v.optional(v.string()),
+    is_all_day: v.optional(v.boolean()),
     location: v.optional(v.string()),
-    status: v.string(),
+    venue_id: v.optional(v.union(v.string(), v.null())),
+    team_ids: v.optional(v.array(v.string())),
+    competition_id: v.optional(v.union(v.string(), v.null())),
+    fixture_id: v.optional(v.union(v.string(), v.null())),
+    source_type: v.optional(v.string()),
+    source_id: v.optional(v.union(v.string(), v.null())),
+    recurrence: v.optional(
+      v.union(
+        v.object({
+          pattern: v.string(),
+          interval: v.number(),
+          end_date: v.union(v.string(), v.null()),
+          days_of_week: v.array(v.number()),
+        }),
+        v.null(),
+      ),
+    ),
+    reminders: v.optional(
+      v.array(
+        v.object({
+          id: v.string(),
+          minutes_before: v.number(),
+          is_enabled: v.boolean(),
+        }),
+      ),
+    ),
+    color_override: v.optional(v.union(v.string(), v.null())),
+    notes: v.optional(v.string()),
+    status: v.optional(v.string()),
     ...timestamp_fields,
   })
     .index("by_local_id", ["local_id"])
@@ -619,8 +670,12 @@ export default defineSchema({
   activity_categories: defineTable({
     ...sync_metadata_fields,
     name: v.string(),
+    description: v.optional(v.string()),
+    organization_id: v.optional(v.string()),
+    category_type: v.optional(v.string()),
     color: v.optional(v.string()),
     icon: v.optional(v.string()),
+    is_system_generated: v.optional(v.boolean()),
     status: v.optional(v.string()),
     ...timestamp_fields,
   }).index("by_local_id", ["local_id"]),
@@ -631,6 +686,7 @@ export default defineSchema({
     entity_type: v.string(),
     entity_id: v.string(),
     entity_display_name: v.optional(v.string()),
+    organization_id: v.optional(v.string()),
     user_id: v.optional(v.string()),
     user_email: v.optional(v.string()),
     user_display_name: v.optional(v.string()),
@@ -660,6 +716,10 @@ export default defineSchema({
     last_name: v.optional(v.string()),
     name: v.optional(v.string()),
     role: v.optional(v.string()),
+    organization_id: v.optional(v.string()),
+    team_id: v.optional(v.string()),
+    player_id: v.optional(v.string()),
+    official_id: v.optional(v.string()),
     avatar_url: v.optional(v.string()),
     profile_picture_base64: v.optional(v.string()),
     status: v.optional(v.string()),
@@ -670,6 +730,7 @@ export default defineSchema({
   identification_types: defineTable({
     ...sync_metadata_fields,
     name: v.string(),
+    identifier_field_label: v.optional(v.string()),
     country: v.optional(v.string()),
     description: v.optional(v.string()),
     status: v.optional(v.string()),
@@ -680,12 +741,18 @@ export default defineSchema({
     ...sync_metadata_fields,
     entity_type: v.optional(v.string()),
     entity_id: v.optional(v.string()),
+    holder_type: v.optional(v.string()),
+    holder_id: v.optional(v.string()),
     identification_type_id: v.optional(v.string()),
     identification_number: v.optional(v.string()),
+    identifier_value: v.optional(v.string()),
     issue_date: v.optional(v.string()),
     expiry_date: v.optional(v.string()),
     document_url: v.optional(v.string()),
+    document_image_url: v.optional(v.string()),
+    notes: v.optional(v.string()),
     is_verified: v.optional(v.boolean()),
+    status: v.optional(v.string()),
     ...timestamp_fields,
   }).index("by_local_id", ["local_id"]),
 

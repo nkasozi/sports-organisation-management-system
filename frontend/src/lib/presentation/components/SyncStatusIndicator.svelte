@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { onDestroy } from "svelte";
   import {
     sync_store,
     is_syncing,
@@ -12,6 +13,7 @@
   let sync_in_progress = false;
   let current_percentage = 0;
   let current_table = "";
+  let relative_time_tick = 0;
 
   is_syncing.subscribe((value) => {
     sync_in_progress = value;
@@ -35,11 +37,22 @@
     error_message = value;
   });
 
+  const tick_interval = setInterval(() => {
+    relative_time_tick++;
+  }, 15000);
+
+  onDestroy(() => {
+    clearInterval(tick_interval);
+  });
+
   async function trigger_manual_sync(): Promise<void> {
     await sync_store.sync_now();
   }
 
-  function format_relative_time(timestamp: string | null): string {
+  function format_relative_time(
+    timestamp: string | null,
+    _tick: number,
+  ): string {
     if (!timestamp) return "Never";
 
     const date = new Date(timestamp);
@@ -49,7 +62,8 @@
     const diff_minutes = Math.floor(diff_seconds / 60);
     const diff_hours = Math.floor(diff_minutes / 60);
 
-    if (diff_seconds < 60) return "Just now";
+    if (diff_seconds < 15) return "Just now";
+    if (diff_seconds < 60) return `${diff_seconds}s ago`;
     if (diff_minutes < 60) return `${diff_minutes}m ago`;
     if (diff_hours < 24) return `${diff_hours}h ago`;
     return date.toLocaleDateString();
@@ -62,7 +76,8 @@
   }
 
   function format_sync_status_text(): string {
-    if (!sync_in_progress) return format_relative_time(last_sync);
+    if (!sync_in_progress)
+      return format_relative_time(last_sync, relative_time_tick);
     return `${current_percentage}%`;
   }
 </script>
@@ -94,7 +109,7 @@
 
   {#if show_details}
     <div
-      class="absolute right-0 top-full mt-2 w-72 bg-white dark:bg-accent-800 rounded-xl shadow-lg border border-accent-200 dark:border-accent-700 p-4 z-50"
+      class="absolute right-0 top-full mt-2 w-72 bg-white dark:bg-accent-800 rounded-xl shadow-lg border border-accent-200 dark:border-accent-700 p-4 z-[60]"
     >
       <div class="flex items-center justify-between mb-3">
         <h4 class="text-sm font-semibold text-accent-900 dark:text-white">
@@ -161,7 +176,7 @@
         <div class="flex items-center justify-between text-sm">
           <span class="text-accent-600 dark:text-accent-400">Last Sync</span>
           <span class="text-accent-900 dark:text-white">
-            {format_relative_time(last_sync)}
+            {format_relative_time(last_sync, relative_time_tick)}
           </span>
         </div>
 

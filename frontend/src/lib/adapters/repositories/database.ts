@@ -142,6 +142,7 @@ export function reset_database(): Promise<void> {
   if (database_instance) {
     return database_instance.delete().then(() => {
       database_instance = new SportsOrgDatabase();
+      localStorage.removeItem("convex_sync_metadata");
     });
   }
   return Promise.resolve();

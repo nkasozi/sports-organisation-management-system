@@ -260,6 +260,10 @@ describe("LiveGameLogUseCases", () => {
     it("should update scores successfully", async () => {
       const existing_log = create_mock_live_game_log();
 
+      vi.mocked(mock_repository.find_by_id).mockResolvedValue({
+        success: true,
+        data: existing_log,
+      });
       vi.mocked(mock_repository.update).mockResolvedValue({
         success: true,
         data: { ...existing_log, home_team_score: 2, away_team_score: 1 },

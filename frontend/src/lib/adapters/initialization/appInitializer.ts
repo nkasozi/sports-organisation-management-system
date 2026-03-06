@@ -34,6 +34,10 @@ import {
 } from "$lib/infrastructure/cache/AuthCacheInvalidator";
 import { api } from "$convex/_generated/api";
 import { get_system_user_repository } from "$lib/adapters/repositories/InBrowserSystemUserRepository";
+import {
+  start_background_sync,
+  stop_background_sync,
+} from "$lib/infrastructure/sync/backgroundSyncService";
 
 let initialized = false;
 let auth_cache_invalidator: AuthCacheInvalidator | null = null;
@@ -211,6 +215,8 @@ export async function initialize_app_data(): Promise<boolean> {
   }
   await seed_all_data_if_needed();
 
+  start_background_sync();
+
   if (is_first_time) {
     first_time_setup_store.update_progress("Finalizing setup...", 95);
     await delay(400);
@@ -224,6 +230,7 @@ export async function initialize_app_data(): Promise<boolean> {
 }
 
 export function reset_initialization(): void {
+  stop_background_sync();
   if (auth_cache_invalidator?.is_running()) {
     auth_cache_invalidator.stop();
     auth_cache_invalidator = null;

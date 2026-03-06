@@ -104,7 +104,7 @@
 <svelte:window on:click={close_user_menu} />
 
 <header
-  class="shadow-sm border-b border-theme-primary-600 dark:border-theme-primary-700 sticky top-0 z-40 relative"
+  class="shadow-sm border-b border-theme-primary-600 dark:border-theme-primary-700 sticky top-0 z-50 relative"
 >
   {#if $branding_store.header_pattern === "pattern" && $branding_store.background_pattern_url}
     <div

@@ -8,7 +8,10 @@
   import PublicLayout from "$lib/presentation/components/layout/PublicLayout.svelte";
   import FirstTimeSetup from "$lib/presentation/components/ui/FirstTimeSetup.svelte";
   import AuthChecker from "$lib/presentation/components/auth/AuthChecker.svelte";
-  import { initialize_app_data } from "$lib/adapters/initialization/appInitializer";
+  import {
+    initialize_app_data,
+    reset_initialization,
+  } from "$lib/adapters/initialization/appInitializer";
   import { first_time_setup_store } from "$lib/presentation/stores/firstTimeSetup";
   import {
     is_clerk_loaded,
@@ -108,6 +111,7 @@
 
   onDestroy(() => {
     cleanup_subscriptions();
+    reset_initialization();
   });
 </script>
 

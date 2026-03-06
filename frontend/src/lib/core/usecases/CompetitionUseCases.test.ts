@@ -237,6 +237,10 @@ describe("CompetitionUseCases", () => {
 
   describe("delete_competitions", () => {
     it("should delete multiple", async () => {
+      vi.mocked(mock_repository.find_by_id).mockResolvedValue({
+        success: true,
+        data: create_test_competition(),
+      });
       vi.mocked(mock_repository.delete_by_ids).mockResolvedValue({
         success: true,
         data: 2,

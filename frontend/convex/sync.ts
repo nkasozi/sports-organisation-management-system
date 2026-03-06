@@ -9,7 +9,21 @@ import {
 } from "./lib/auth_middleware";
 
 function get_entity_type_from_table(table_name: string): string {
-  return table_name.toLowerCase().replace(/_/g, "");
+  const stripped = table_name.toLowerCase().replace(/_/g, "");
+  if (stripped.endsWith("ies")) {
+    return stripped.slice(0, -3) + "y";
+  }
+  if (
+    stripped.endsWith("xes") ||
+    stripped.endsWith("shes") ||
+    stripped.endsWith("ches")
+  ) {
+    return stripped.slice(0, -2);
+  }
+  if (stripped.endsWith("s") && !stripped.endsWith("ss")) {
+    return stripped.slice(0, -1);
+  }
+  return stripped;
 }
 
 export const upsert_record = mutation({
@@ -167,7 +181,18 @@ export const batch_upsert = mutation({
     const synced_at = new Date().toISOString();
 
     try {
-      await require_permission(ctx, entity_type, "create");
+      let has_write_permission = false;
+      try {
+        await require_permission(ctx, entity_type, "create");
+        has_write_permission = true;
+      } catch (create_error) {
+        if (create_error instanceof AuthorizationError) {
+          await require_permission(ctx, entity_type, "update");
+          has_write_permission = true;
+        } else {
+          throw create_error;
+        }
+      }
     } catch (error) {
       if (error instanceof AuthenticationError) {
         return {
@@ -175,6 +200,7 @@ export const batch_upsert = mutation({
           error: "authentication_required",
           message: error.message,
           results: [],
+          has_conflicts: false,
           conflicts: [],
         };
       }
@@ -184,6 +210,7 @@ export const batch_upsert = mutation({
           error: "unauthorized",
           message: error.message,
           results: [],
+          has_conflicts: false,
           conflicts: [],
         };
       }
@@ -346,6 +373,37 @@ export const get_all_records = query({
   },
 });
 
+export const get_latest_modified_at = query({
+  args: {
+    table_name: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const { table_name } = args;
+    const records = await ctx.db.query(table_name as any).collect();
+
+    let latest_modified_at = "";
+    let record_count = 0;
+
+    for (const record of records) {
+      record_count++;
+      const timestamp =
+        (record as any).updated_at ||
+        (record as any).modified_at ||
+        (record as any).created_at ||
+        "";
+      if (timestamp > latest_modified_at) {
+        latest_modified_at = timestamp;
+      }
+    }
+
+    return {
+      table_name,
+      record_count,
+      latest_modified_at: latest_modified_at || null,
+    };
+  },
+});
+
 export const update_sync_metadata = mutation({
   args: {
     table_name: v.string(),
@@ -494,5 +552,13 @@ export const force_resolve_conflict = mutation({
       resolution: resolution_action,
       id,
     };
+  },
+});
+
+export const check_auth = query({
+  args: {},
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity();
+    return { authenticated: identity !== null };
   },
 });

@@ -264,7 +264,7 @@ describe("load_profiles_from_repository", () => {
     ];
 
     const mock_user_repo = create_mock_system_user_repository(
-      Promise.resolve(create_success_result({ items: users, total_count: 2 })),
+      Promise.resolve(create_success_result({ items: users, total_count: 2, page_number: 1, page_size: 100, total_pages: 1 })),
     );
 
     const mock_org_repo = create_mock_org_repository([
@@ -300,7 +300,7 @@ describe("load_profiles_from_repository", () => {
 
   it("returns empty array when no users exist", async () => {
     const mock_user_repo = create_mock_system_user_repository(
-      Promise.resolve(create_success_result({ items: [], total_count: 0 })),
+      Promise.resolve(create_success_result({ items: [], total_count: 0, page_number: 1, page_size: 100, total_pages: 0 })),
     );
     const mock_org_repo = create_mock_org_repository();
 
@@ -327,7 +327,7 @@ describe("load_profiles_from_repository", () => {
     ];
 
     const mock_user_repo = create_mock_system_user_repository(
-      Promise.resolve(create_success_result({ items: users, total_count: 1 })),
+      Promise.resolve(create_success_result({ items: users, total_count: 1, page_number: 1, page_size: 100, total_pages: 1 })),
     );
     const mock_org_repo = create_mock_org_repository([
       { id: "org_hockey", name: "Hockey Association" },
@@ -360,7 +360,7 @@ describe("load_profiles_from_repository", () => {
     ];
 
     const mock_user_repo = create_mock_system_user_repository(
-      Promise.resolve(create_success_result({ items: users, total_count: 1 })),
+      Promise.resolve(create_success_result({ items: users, total_count: 1, page_number: 1, page_size: 100, total_pages: 1 })),
     );
     const mock_org_repo = create_mock_org_repository();
 

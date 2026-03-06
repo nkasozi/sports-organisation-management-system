@@ -2,6 +2,7 @@ import {
   get_database,
   type SportsOrgDatabase,
 } from "../../adapters/repositories/database";
+import { set_pulling_from_remote } from "./syncState";
 import type { Table } from "dexie";
 
 export type SyncDirection = "push" | "pull" | "bidirectional";
@@ -89,30 +90,39 @@ const TABLE_NAMES = [
   "identifications",
   "qualifications",
   "game_event_types",
+  "genders",
+  "live_game_logs",
+  "game_event_logs",
+  "player_team_transfer_histories",
+  "official_associated_teams",
 ] as const;
 
 type TableName = (typeof TABLE_NAMES)[number];
 
-const SYNC_METADATA_KEY = "convex_sync_metadata";
+const EPOCH_TIMESTAMP = "1970-01-01T00:00:00.000Z";
 
-interface SyncMetadata {
-  last_sync_at: string;
-  table_versions: Record<string, number>;
+interface RemoteTableState {
+  record_count: number;
+  latest_modified_at: string | null;
 }
 
-function get_sync_metadata(): SyncMetadata {
-  const stored = localStorage.getItem(SYNC_METADATA_KEY);
-  if (stored) {
-    return JSON.parse(stored);
-  }
-  return {
-    last_sync_at: "1970-01-01T00:00:00.000Z",
-    table_versions: {},
-  };
+async function get_remote_latest_modified_at(
+  convex_client: ConvexClient,
+  table_name: string,
+): Promise<RemoteTableState> {
+  const result = (await convex_client.query("sync:get_latest_modified_at", {
+    table_name,
+  })) as RemoteTableState;
+  return result;
 }
 
-function save_sync_metadata(metadata: SyncMetadata): void {
-  localStorage.setItem(SYNC_METADATA_KEY, JSON.stringify(metadata));
+function get_local_latest_modified_at(
+  all_records: Array<{ id: string; updated_at?: string; created_at?: string }>,
+): string {
+  return all_records.reduce((max, record) => {
+    const timestamp = record.updated_at || record.created_at || EPOCH_TIMESTAMP;
+    return timestamp > max ? timestamp : max;
+  }, EPOCH_TIMESTAMP);
 }
 
 function get_table_from_database(
@@ -156,16 +166,45 @@ function get_table_from_database(
     identifications: database.identifications,
     qualifications: database.qualifications,
     game_event_types: database.game_event_types,
+    genders: database.genders,
+    live_game_logs: database.live_game_logs,
+    game_event_logs: database.game_event_logs,
+    player_team_transfer_histories: database.player_team_transfer_histories,
+    official_associated_teams: database.official_associated_teams,
   };
 
   return table_map[table_name] || null;
 }
 
+function is_auth_error(error_message: string | null): boolean {
+  if (!error_message) return false;
+  return (
+    error_message.includes("authentication_required") ||
+    error_message.includes("unauthorized") ||
+    error_message.includes("Server rejected")
+  );
+}
+
+async function verify_sync_auth(
+  convex_client: ConvexClient,
+): Promise<{ authenticated: boolean; error: string | null }> {
+  try {
+    const result = (await convex_client.query("sync:check_auth", {})) as {
+      authenticated: boolean;
+    };
+    return { authenticated: result.authenticated, error: null };
+  } catch (error) {
+    const error_message =
+      error instanceof Error ? error.message : String(error);
+    return { authenticated: false, error: error_message };
+  }
+}
+
 async function push_table_to_convex(
   convex_client: ConvexClient,
-  database: SportsOrgDatabase,
   table_name: TableName,
-  last_sync_at: string,
+  all_records: Array<{ id: string; updated_at?: string; created_at?: string }>,
+  remote_latest_modified_at: string | null,
   detect_conflicts: boolean = true,
 ): Promise<{
   success: boolean;
@@ -173,34 +212,51 @@ async function push_table_to_convex(
   error: string | null;
   conflicts: ConflictFromServer[];
 }> {
-  const table = get_table_from_database(database, table_name);
-  if (!table) {
-    return {
-      success: false,
-      records_pushed: 0,
-      error: `Table ${table_name} not found`,
-      conflicts: [],
-    };
+  const remote_cutoff = remote_latest_modified_at || EPOCH_TIMESTAMP;
+  const server_is_empty = !remote_latest_modified_at;
+
+  if (server_is_empty) {
+    console.log(
+      `[Sync:Push] ${table_name} — server is EMPTY, pushing all ${all_records.length} local records`,
+    );
+  } else {
+    console.log(
+      `[Sync:Push] ${table_name} — ${all_records.length} local records, server latest_modified_at: ${remote_cutoff}`,
+    );
   }
 
-  const all_records = await table.toArray();
-  const records_to_sync = all_records.filter((record) => {
-    const record_timestamp =
-      record.updated_at || record.created_at || "1970-01-01T00:00:00.000Z";
-    return record_timestamp > last_sync_at;
-  });
+  const records_to_push = server_is_empty
+    ? all_records
+    : all_records.filter((record) => {
+        const record_modified_at =
+          record.updated_at || record.created_at || EPOCH_TIMESTAMP;
+        return record_modified_at > remote_cutoff;
+      });
 
-  if (records_to_sync.length === 0) {
+  if (records_to_push.length === 0) {
+    console.log(
+      `[Sync:Push] ${table_name} — no local records newer than server, nothing to push`,
+    );
     return { success: true, records_pushed: 0, error: null, conflicts: [] };
   }
+
+  console.log(
+    `[Sync:Push] ${table_name} — ${records_to_push.length} records to push`,
+  );
 
   const batch_size = 25;
   let total_pushed = 0;
   const all_conflicts: ConflictFromServer[] = [];
 
   try {
-    for (let i = 0; i < records_to_sync.length; i += batch_size) {
-      const batch = records_to_sync.slice(i, i + batch_size);
+    for (let i = 0; i < records_to_push.length; i += batch_size) {
+      const batch = records_to_push.slice(i, i + batch_size);
+      const batch_number = Math.floor(i / batch_size) + 1;
+      const total_batches = Math.ceil(records_to_push.length / batch_size);
+      console.log(
+        `[Sync:Push] ${table_name} — sending batch ${batch_number}/${total_batches} (${batch.length} records)`,
+      );
+
       const batch_records = batch.map((record) => ({
         local_id: record.id,
         data: record,
@@ -213,12 +269,36 @@ async function push_table_to_convex(
         detect_conflicts,
       })) as {
         success: boolean;
+        error?: string;
+        message?: string;
         results: Array<{ local_id: string; success: boolean; action: string }>;
         has_conflicts: boolean;
         conflicts: ConflictFromServer[];
       };
 
+      if (!result.success) {
+        const auth_error_message = result.error
+          ? `${result.error}: ${result.message || "unknown"}`
+          : `Server rejected batch (success=false, results: ${result.results?.length ?? 0})`;
+        console.error(
+          `[Sync:Push] ${table_name} — batch ${batch_number} REJECTED by server: ${auth_error_message}`,
+        );
+        return {
+          success: false,
+          records_pushed: total_pushed,
+          error: auth_error_message,
+          conflicts: all_conflicts,
+        };
+      }
+
+      console.log(
+        `[Sync:Push] ${table_name} — batch ${batch_number} result: success=${result.success}, actions: ${JSON.stringify(result.results.map((r) => r.action))}`,
+      );
+
       if (result.has_conflicts && result.conflicts.length > 0) {
+        console.warn(
+          `[Sync:Push] ${table_name} — batch ${batch_number} has ${result.conflicts.length} conflicts`,
+        );
         all_conflicts.push(...result.conflicts);
       }
 
@@ -230,7 +310,7 @@ async function push_table_to_convex(
   } catch (error) {
     const error_message =
       error instanceof Error ? error.message : String(error);
-    console.error(`[Sync] Push failed for ${table_name}:`, error_message);
+    console.error(`[Sync:Push] ${table_name} — FAILED: ${error_message}`);
     return {
       success: false,
       records_pushed: total_pushed,
@@ -239,6 +319,9 @@ async function push_table_to_convex(
     };
   }
 
+  console.log(
+    `[Sync:Push] ${table_name} — completed, pushed ${total_pushed} records`,
+  );
   return {
     success: true,
     records_pushed: total_pushed,
@@ -249,68 +332,84 @@ async function push_table_to_convex(
 
 async function pull_table_from_convex(
   convex_client: ConvexClient,
-  database: SportsOrgDatabase,
+  table: Table<
+    { id: string; updated_at?: string; created_at?: string },
+    string
+  >,
   table_name: TableName,
-  last_sync_at: string,
+  local_latest_modified_at: string,
 ): Promise<{ success: boolean; records_pulled: number; error: string | null }> {
-  const table = get_table_from_database(database, table_name);
-  if (!table) {
-    return {
-      success: false,
-      records_pulled: 0,
-      error: `Table ${table_name} not found`,
-    };
-  }
-
   try {
+    console.log(
+      `[Sync:Pull] ${table_name} — querying Convex for changes since local latest: ${local_latest_modified_at}`,
+    );
+
     const remote_changes = (await convex_client.query(
       "sync:get_changes_since",
       {
         table_name,
-        since_timestamp: last_sync_at,
+        since_timestamp: local_latest_modified_at,
       },
     )) as ConvexRecord[];
 
     if (!remote_changes || remote_changes.length === 0) {
+      console.log(`[Sync:Pull] ${table_name} — no remote changes found`);
       return { success: true, records_pulled: 0, error: null };
     }
 
+    console.log(
+      `[Sync:Pull] ${table_name} — found ${remote_changes.length} remote changes to process`,
+    );
     let records_pulled = 0;
+    let records_skipped = 0;
 
-    for (const remote_record of remote_changes) {
-      const local_id = remote_record.local_id;
-      const existing_local = await table.get(local_id);
+    set_pulling_from_remote(true);
 
-      const local_data = { ...remote_record } as Record<string, unknown>;
-      delete local_data._id;
-      delete local_data.local_id;
-      delete local_data.synced_at;
-      delete local_data.version;
-      local_data.id = local_id;
+    try {
+      for (const remote_record of remote_changes) {
+        const local_id = remote_record.local_id;
+        const existing_local = await table.get(local_id);
 
-      if (existing_local) {
-        const local_timestamp =
-          existing_local.updated_at ||
-          existing_local.created_at ||
-          "1970-01-01T00:00:00.000Z";
-        const remote_timestamp =
-          remote_record.synced_at || "1970-01-01T00:00:00.000Z";
+        const local_data = { ...remote_record } as Record<string, unknown>;
+        delete local_data._id;
+        delete local_data.local_id;
+        delete local_data.synced_at;
+        delete local_data.version;
+        local_data.id = local_id;
 
-        if (remote_timestamp > local_timestamp) {
+        if (existing_local) {
+          const local_timestamp =
+            existing_local.updated_at ||
+            existing_local.created_at ||
+            EPOCH_TIMESTAMP;
+          const remote_timestamp =
+            ((remote_record as Record<string, unknown>).updated_at as string) ||
+            remote_record.synced_at ||
+            EPOCH_TIMESTAMP;
+
+          if (remote_timestamp > local_timestamp) {
+            await table.put(local_data as unknown as { id: string });
+            records_pulled++;
+          } else {
+            records_skipped++;
+          }
+        } else {
           await table.put(local_data as unknown as { id: string });
           records_pulled++;
         }
-      } else {
-        await table.put(local_data as unknown as { id: string });
-        records_pulled++;
       }
+    } finally {
+      set_pulling_from_remote(false);
     }
 
+    console.log(
+      `[Sync:Pull] ${table_name} — completed: pulled ${records_pulled}, skipped ${records_skipped} (local was newer)`,
+    );
     return { success: true, records_pulled, error: null };
   } catch (error) {
     const error_message =
       error instanceof Error ? error.message : String(error);
-    console.error(`[Sync] Pull failed for ${table_name}:`, error_message);
+    console.error(`[Sync:Pull] ${table_name} — FAILED: ${error_message}`);
     return {
       success: false,
       records_pulled: 0,
@@ -328,7 +427,6 @@ export async function sync_all_tables(
 ): Promise<SyncResult> {
   const start_time = Date.now();
   const database = get_database();
-  const metadata = get_sync_metadata();
   const errors: Array<{ table_name: string; error: string }> = [];
   const all_conflicts: Array<{
     table_name: string;
@@ -338,14 +436,44 @@ export async function sync_all_tables(
   let total_pushed = 0;
   let total_pulled = 0;
   let tables_synced = 0;
+  let auth_failed = false;
 
-  const total_tables = enabled_tables.filter((t) =>
+  const valid_tables = enabled_tables.filter((t) =>
     TABLE_NAMES.includes(t as TableName),
-  ).length;
+  );
+  const total_tables = valid_tables.length;
   let tables_completed = 0;
 
-  for (const table_name of enabled_tables) {
-    if (!TABLE_NAMES.includes(table_name as TableName)) {
+  console.log(
+    `[Sync] ===== Starting sync: direction=${direction}, tables=${total_tables} =====`,
+  );
+
+  if (direction !== "pull") {
+    const auth_check = await verify_sync_auth(convex_client);
+    if (!auth_check.authenticated) {
+      const auth_error = auth_check.error
+        ? `Auth verification failed: ${auth_check.error}`
+        : "Convex client is NOT authenticated — cannot push data. Check Clerk session and JWT template.";
+      console.error(`[Sync] ${auth_error}`);
+      return {
+        success: false,
+        tables_synced: 0,
+        records_pushed: 0,
+        records_pulled: 0,
+        errors: [{ table_name: "auth_check", error: auth_error }],
+        duration_ms: Date.now() - start_time,
+        conflicts: [],
+      };
+    }
+    console.log("[Sync] Auth verified — Convex client is authenticated");
+  }
+
+  for (const table_name of valid_tables) {
+    if (auth_failed) {
+      console.warn(
+        `[Sync] ${table_name} — SKIPPED (auth failed on earlier table)`,
+      );
+      tables_completed++;
       continue;
     }
 
@@ -366,51 +494,161 @@ export async function sync_all_tables(
       on_progress(progress);
     }
 
-    if (direction === "push" || direction === "bidirectional") {
-      const push_result = await push_table_to_convex(
-        convex_client,
-        database,
-        table_name as TableName,
-        metadata.last_sync_at,
-        detect_conflicts,
+    let table_had_error = false;
+
+    const table = get_table_from_database(database, table_name as TableName);
+    if (!table) {
+      console.warn(
+        `[Sync] ${table_name} — table not found in database, skipping`,
       );
-
-      if (!push_result.success) {
-        errors.push({ table_name, error: push_result.error || "Push failed" });
-        progress.status = "error";
-        progress.error_message = push_result.error;
-      } else {
-        total_pushed += push_result.records_pushed;
-        progress.synced_records += push_result.records_pushed;
-
-        if (push_result.conflicts.length > 0) {
-          all_conflicts.push({ table_name, conflicts: push_result.conflicts });
-          progress.status = "conflict";
-        }
-      }
+      errors.push({ table_name, error: `Table ${table_name} not found` });
+      tables_completed++;
+      continue;
     }
 
-    if (direction === "pull" || direction === "bidirectional") {
+    const all_local_records = await table.toArray();
+    const local_latest = get_local_latest_modified_at(all_local_records);
+
+    let remote_state: RemoteTableState = {
+      record_count: 0,
+      latest_modified_at: null,
+    };
+    try {
+      remote_state = await get_remote_latest_modified_at(
+        convex_client,
+        table_name,
+      );
+    } catch (error) {
+      const error_message =
+        error instanceof Error ? error.message : String(error);
+      console.error(
+        `[Sync] ${table_name} — failed to get remote state: ${error_message}`,
+      );
+      errors.push({ table_name, error: error_message });
+      tables_completed++;
+      continue;
+    }
+
+    const remote_latest = remote_state.latest_modified_at || EPOCH_TIMESTAMP;
+    const local_is_ahead = local_latest > remote_latest;
+    const remote_is_ahead = remote_latest > local_latest;
+
+    console.log(
+      `[Sync] ${table_name} — local: ${all_local_records.length} records (latest: ${local_latest}), remote: ${remote_state.record_count} records (latest: ${remote_latest}), ${local_is_ahead ? "LOCAL ahead" : remote_is_ahead ? "REMOTE ahead" : "IN SYNC"}`,
+    );
+
+    if (local_is_ahead || direction === "push") {
+      if (direction !== "pull") {
+        const push_result = await push_table_to_convex(
+          convex_client,
+          table_name as TableName,
+          all_local_records,
+          remote_state.latest_modified_at,
+          detect_conflicts,
+        );
+
+        if (!push_result.success) {
+          errors.push({
+            table_name,
+            error: push_result.error || "Push failed",
+          });
+          progress.status = "error";
+          progress.error_message = push_result.error;
+          table_had_error = true;
+          auth_failed = is_auth_error(push_result.error);
+        } else {
+          total_pushed += push_result.records_pushed;
+          progress.synced_records += push_result.records_pushed;
+
+          if (push_result.conflicts.length > 0) {
+            all_conflicts.push({
+              table_name,
+              conflicts: push_result.conflicts,
+            });
+            progress.status = "conflict";
+          }
+        }
+      }
+
+      if (!table_had_error && direction !== "push") {
+        const pull_result = await pull_table_from_convex(
+          convex_client,
+          table,
+          table_name as TableName,
+          local_latest,
+        );
+
+        if (!pull_result.success) {
+          errors.push({
+            table_name,
+            error: pull_result.error || "Pull failed",
+          });
+          progress.status = "error";
+          progress.error_message = pull_result.error;
+          table_had_error = true;
+        } else {
+          total_pulled += pull_result.records_pulled;
+          progress.synced_records += pull_result.records_pulled;
+        }
+      }
+    } else {
       const pull_result = await pull_table_from_convex(
         convex_client,
-        database,
+        table,
         table_name as TableName,
-        metadata.last_sync_at,
+        local_latest,
       );
 
       if (!pull_result.success) {
-        errors.push({ table_name, error: pull_result.error || "Pull failed" });
+        errors.push({
+          table_name,
+          error: pull_result.error || "Pull failed",
+        });
         progress.status = "error";
         progress.error_message = pull_result.error;
+        table_had_error = true;
       } else {
         total_pulled += pull_result.records_pulled;
         progress.synced_records += pull_result.records_pulled;
+      }
+
+      if (!table_had_error && direction !== "pull") {
+        const refreshed_records = await table.toArray();
+        const push_result = await push_table_to_convex(
+          convex_client,
+          table_name as TableName,
+          refreshed_records,
+          remote_state.latest_modified_at,
+          detect_conflicts,
+        );
+
+        if (!push_result.success) {
+          errors.push({
+            table_name,
+            error: push_result.error || "Push failed",
+          });
+          progress.status = "error";
+          progress.error_message = push_result.error;
+          table_had_error = true;
+          auth_failed = is_auth_error(push_result.error);
+        } else {
+          total_pushed += push_result.records_pushed;
+          progress.synced_records += push_result.records_pushed;
+
+          if (push_result.conflicts.length > 0) {
+            all_conflicts.push({
+              table_name,
+              conflicts: push_result.conflicts,
+            });
+            progress.status = "conflict";
+          }
+        }
       }
     }
 
     tables_completed++;
 
-    if (progress.status !== "error") {
+    if (!table_had_error && progress.status !== "conflict") {
       progress.status = "success";
       tables_synced++;
     }
@@ -423,21 +661,30 @@ export async function sync_all_tables(
     }
   }
 
-  const new_metadata: SyncMetadata = {
-    last_sync_at: new Date().toISOString(),
-    table_versions: metadata.table_versions,
-  };
-  save_sync_metadata(new_metadata);
-
   const has_conflicts = all_conflicts.length > 0;
+  const sync_succeeded = errors.length === 0 && !has_conflicts;
+  const duration_ms = Date.now() - start_time;
+
+  console.log(
+    `[Sync] ===== Sync ${sync_succeeded ? "SUCCEEDED" : "FAILED"} in ${duration_ms}ms — ` +
+      `pushed: ${total_pushed}, pulled: ${total_pulled}, tables: ${tables_synced}/${total_tables}, ` +
+      `errors: ${errors.length}, conflicts: ${all_conflicts.length} =====`,
+  );
+
+  if (errors.length > 0) {
+    console.warn(
+      "[Sync] Errors:",
+      errors.map((e) => `${e.table_name}: ${e.error}`).join("; "),
+    );
+  }
 
   return {
-    success: errors.length === 0 && !has_conflicts,
+    success: sync_succeeded,
     tables_synced,
     records_pushed: total_pushed,
     records_pulled: total_pulled,
     errors,
-    duration_ms: Date.now() - start_time,
+    duration_ms,
     conflicts: all_conflicts,
   };
 }
@@ -451,12 +698,11 @@ export async function sync_single_table(
 }
 
 export function get_last_sync_timestamp(): string {
-  const metadata = get_sync_metadata();
-  return metadata.last_sync_at;
+  return EPOCH_TIMESTAMP;
 }
 
 export function reset_sync_metadata(): void {
-  localStorage.removeItem(SYNC_METADATA_KEY);
+  localStorage.removeItem("convex_sync_metadata");
 }
 
 export class ConvexSyncManager {
@@ -486,6 +732,9 @@ export class ConvexSyncManager {
     on_progress?: (progress: SyncProgress) => void,
   ): Promise<SyncResult> {
     if (!this.convex_client) {
+      console.error(
+        "[Sync:Manager] sync_now called but Convex client is NOT configured",
+      );
       return {
         success: false,
         tables_synced: 0,
@@ -498,6 +747,9 @@ export class ConvexSyncManager {
     }
 
     if (this.is_syncing) {
+      console.warn(
+        "[Sync:Manager] sync_now called but sync is already in progress, skipping",
+      );
       return {
         success: false,
         tables_synced: 0,
@@ -510,6 +762,9 @@ export class ConvexSyncManager {
     }
 
     this.is_syncing = true;
+    console.log(
+      `[Sync:Manager] sync_now starting \u2014 direction: ${this.config.direction}, tables: ${this.config.enabled_tables.length}`,
+    );
 
     const result = await sync_all_tables(
       this.convex_client,

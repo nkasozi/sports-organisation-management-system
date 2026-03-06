@@ -59,29 +59,30 @@ export class InBrowserSystemUserRepository
 
     const result = await super.create(input);
 
-    if (result.success && result.data) {
-      console.debug("[SystemUserRepo] create succeeded:", {
-        id: result.data.id,
-        email: result.data.email,
-        role: result.data.role,
-        status: result.data.status,
-        organization_id: result.data.organization_id,
-      });
-
-      const verification = await this.find_by_id(result.data.id);
-      if (verification.success && verification.data) {
-        console.debug("[SystemUserRepo] verification read-back confirmed:", {
-          id: verification.data.id,
-          status: verification.data.status,
-        });
-      } else {
-        console.error(
-          "[SystemUserRepo] VERIFICATION FAILED - entity not found after create!",
-          result.data.id,
-        );
-      }
-    } else {
+    if (!result.success) {
       console.error("[SystemUserRepo] create failed:", result.error);
+      return result;
+    }
+
+    console.debug("[SystemUserRepo] create succeeded:", {
+      id: result.data.id,
+      email: result.data.email,
+      role: result.data.role,
+      status: result.data.status,
+      organization_id: result.data.organization_id,
+    });
+
+    const verification = await this.find_by_id(result.data.id);
+    if (verification.success && verification.data) {
+      console.debug("[SystemUserRepo] verification read-back confirmed:", {
+        id: verification.data.id,
+        status: verification.data.status,
+      });
+    } else {
+      console.error(
+        "[SystemUserRepo] VERIFICATION FAILED - entity not found after create!",
+        result.data.id,
+      );
     }
 
     return result;

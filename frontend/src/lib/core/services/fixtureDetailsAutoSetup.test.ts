@@ -54,12 +54,12 @@ describe("auto_create_fixture_details_setup", () => {
     // eslint-disable-next-line no-console
     console.log(
       "list_jerseys_by_entity calls:",
-      dependencies.jersey_color_use_cases.list_jerseys_by_entity.mock.calls,
+      vi.mocked(dependencies.jersey_color_use_cases.list_jerseys_by_entity).mock.calls,
     );
     // eslint-disable-next-line no-console
     console.log(
       "list calls:",
-      dependencies.jersey_color_use_cases.list.mock.calls,
+      vi.mocked(dependencies.jersey_color_use_cases.list).mock.calls,
     );
   });
 
@@ -73,7 +73,7 @@ describe("auto_create_fixture_details_setup", () => {
       dependencies.fixture_details_setup_use_cases.create,
     ).toHaveBeenCalled();
     const input =
-      dependencies.fixture_details_setup_use_cases.create.mock.calls[0][0];
+      vi.mocked(dependencies.fixture_details_setup_use_cases.create).mock.calls[0][0];
     expect(input.home_team_jersey_id).toBe("jersey-1");
     expect(input.away_team_jersey_id).toBe("jersey-1");
     expect(input.official_jersey_id).toBe("jersey-1");
@@ -91,7 +91,7 @@ describe("auto_create_fixture_details_setup", () => {
       dependencies,
     );
     expect(result.success).toBe(false);
-    expect(result.error).toBe("fail");
+    if (!result.success) expect(result.error).toBe("fail");
   });
 
   it("returns empty assigned_officials if no officials or roles", async () => {
@@ -107,7 +107,7 @@ describe("auto_create_fixture_details_setup", () => {
     );
     expect(result.success).toBe(true);
     const input =
-      dependencies.fixture_details_setup_use_cases.create.mock.calls[0][0];
+      vi.mocked(dependencies.fixture_details_setup_use_cases.create).mock.calls[0][0];
     expect(input.assigned_officials.length).toBe(0);
   });
 
@@ -124,7 +124,7 @@ describe("auto_create_fixture_details_setup", () => {
       dependencies,
     );
     expect(result.success).toBe(false);
-    expect(result.error).toMatch(/No Jerseys found for Home Team/);
+    if (!result.success) expect(result.error).toMatch(/No Jerseys found for Home Team/);
   });
 
   it("fails if away team jersey is missing", async () => {
@@ -140,7 +140,7 @@ describe("auto_create_fixture_details_setup", () => {
       dependencies,
     );
     expect(result.success).toBe(false);
-    expect(result.error).toMatch(/No Jerseys found for Away Team/);
+    if (!result.success) expect(result.error).toMatch(/No Jerseys found for Away Team/);
   });
 
   it("fails if official jersey is missing", async () => {
@@ -156,7 +156,7 @@ describe("auto_create_fixture_details_setup", () => {
       dependencies,
     );
     expect(result.success).toBe(false);
-    expect(result.error).toMatch(/No Jerseys found for Officials/);
+    if (!result.success) expect(result.error).toMatch(/No Jerseys found for Officials/);
   });
 
   it("fails if officials are missing", async () => {
@@ -168,7 +168,7 @@ describe("auto_create_fixture_details_setup", () => {
       dependencies,
     );
     expect(result.success).toBe(false);
-    expect(result.error).toMatch(/No Officials found/);
+    if (!result.success) expect(result.error).toMatch(/No Officials found/);
   });
 
   it("fails if official roles are missing", async () => {
@@ -180,6 +180,6 @@ describe("auto_create_fixture_details_setup", () => {
       dependencies,
     );
     expect(result.success).toBe(false);
-    expect(result.error).toMatch(/No Official Roles found/);
+    if (!result.success) expect(result.error).toMatch(/No Official Roles found/);
   });
 });
