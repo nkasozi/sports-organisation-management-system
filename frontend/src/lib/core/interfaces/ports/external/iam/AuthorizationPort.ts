@@ -2,6 +2,10 @@ import type { UserRole } from "./AuthenticationPort";
 import type { AsyncResult } from "../../../../types/Result";
 import { ANY_VALUE } from "./AuthenticationPort";
 import type { AuthCache } from "$lib/infrastructure/cache/AuthCache";
+import type {
+  SharedEntityType,
+  SharedEntityCategoryMap,
+} from "$convex/shared_permission_definitions";
 
 export type DataAction = "create" | "read" | "update" | "delete";
 
@@ -173,6 +177,13 @@ const READ_ONLY_PERMISSIONS: CategoryPermissions = {
   delete: false,
 };
 
+const CREATE_READ_UPDATE_NO_DELETE_PERMISSIONS: CategoryPermissions = {
+  create: true,
+  read: true,
+  update: true,
+  delete: false,
+};
+
 export const DATA_PERMISSION_MAP: FullPermissionMap = {
   super_admin: {
     root_level: FULL_PERMISSIONS,
@@ -199,12 +210,7 @@ export const DATA_PERMISSION_MAP: FullPermissionMap = {
       update: true,
       delete: false,
     },
-    team_level: {
-      create: true,
-      read: true,
-      update: true,
-      delete: false,
-    },
+    team_level: CREATE_READ_UPDATE_NO_DELETE_PERMISSIONS,
     player_level: READ_ONLY_PERMISSIONS,
     public_level: FULL_PERMISSIONS,
   },
@@ -213,7 +219,7 @@ export const DATA_PERMISSION_MAP: FullPermissionMap = {
     org_administrator_level: NO_PERMISSIONS,
     organisation_level: READ_ONLY_PERMISSIONS,
     team_level: { create: false, read: true, update: true, delete: false },
-    player_level: { create: false, read: true, update: true, delete: false },
+    player_level: { create: true, read: true, update: true, delete: false },
     public_level: FULL_PERMISSIONS,
   },
   official: {
@@ -239,7 +245,7 @@ export const DATA_PERMISSION_MAP: FullPermissionMap = {
   },
 };
 
-export const ENTITY_DATA_CATEGORY_MAP: Record<string, DataCategory> = {
+export const ENTITY_DATA_CATEGORY_MAP: SharedEntityCategoryMap = {
   organization: "root_level",
   sport: "root_level",
   gender: "root_level",
@@ -258,14 +264,14 @@ export const ENTITY_DATA_CATEGORY_MAP: Record<string, DataCategory> = {
   team: "team_level",
   official: "organisation_level",
   venue: "organisation_level",
-  fixture: "team_level",
-  fixturedetailssetup: "team_level",
+  fixture: "organisation_level",
+  fixturedetailssetup: "organisation_level",
   livegamelog: "organisation_level",
   gameeventlog: "organisation_level",
   playerteammembership: "organisation_level",
   playerteamtransferhistory: "organisation_level",
   teamstaff: "team_level",
-  fixturelineup: "team_level",
+  fixturelineup: "player_level",
   competitionteam: "team_level",
   player: "player_level",
   playerprofile: "public_level",
@@ -278,7 +284,9 @@ export const ENTITY_DATA_CATEGORY_MAP: Record<string, DataCategory> = {
 };
 
 export function get_entity_data_category(entity_type: string): DataCategory {
-  const normalized_type = entity_type.toLowerCase().replace(/[\s_-]/g, "");
+  const normalized_type = entity_type
+    .toLowerCase()
+    .replace(/[\s_-]/g, "") as SharedEntityType;
   return ENTITY_DATA_CATEGORY_MAP[normalized_type] || "organisation_level";
 }
 

@@ -21,8 +21,45 @@ export interface SharedCrudPermissions {
   can_delete: boolean;
 }
 
+export type SharedEntityType =
+  | "organization"
+  | "sport"
+  | "gender"
+  | "competitionformat"
+  | "identificationtype"
+  | "gameofficialrole"
+  | "gameeventtype"
+  | "teamstaffrole"
+  | "playerposition"
+  | "help"
+  | "settings"
+  | "systemsettings"
+  | "auditlog"
+  | "systemuser"
+  | "competition"
+  | "team"
+  | "official"
+  | "venue"
+  | "fixture"
+  | "fixturedetailssetup"
+  | "livegamelog"
+  | "gameeventlog"
+  | "playerteammembership"
+  | "playerteamtransferhistory"
+  | "teamstaff"
+  | "fixturelineup"
+  | "competitionteam"
+  | "player"
+  | "playerprofile"
+  | "identification"
+  | "qualification"
+  | "jerseycolor"
+  | "profilelink"
+  | "activitycategory"
+  | "teamprofile";
+
 export interface SharedEntityCategory {
-  entity_type: string;
+  entity_type: SharedEntityType;
   data_category: SharedDataCategory;
 }
 
@@ -54,6 +91,13 @@ const READ_UPDATE: SharedCrudPermissions = {
   can_delete: false,
 };
 
+const CREATE_READ_UPDATE_NO_DELETE: SharedCrudPermissions = {
+  can_create: true,
+  can_read: true,
+  can_update: true,
+  can_delete: false,
+};
+
 export type SharedPermissionMap = Record<
   SharedUserRole,
   Record<SharedDataCategory, SharedCrudPermissions>
@@ -80,12 +124,7 @@ export const SHARED_ROLE_PERMISSIONS: SharedPermissionMap = {
     root_level: READ_ONLY,
     org_administrator_level: NO_PERMISSIONS,
     organisation_level: READ_UPDATE,
-    team_level: {
-      can_create: true,
-      can_read: true,
-      can_update: true,
-      can_delete: false,
-    },
+    team_level: CREATE_READ_UPDATE_NO_DELETE,
     player_level: READ_ONLY,
     public_level: FULL_PERMISSIONS,
   },
@@ -94,7 +133,7 @@ export const SHARED_ROLE_PERMISSIONS: SharedPermissionMap = {
     org_administrator_level: NO_PERMISSIONS,
     organisation_level: READ_ONLY,
     team_level: READ_UPDATE,
-    player_level: READ_UPDATE,
+    player_level: CREATE_READ_UPDATE_NO_DELETE,
     public_level: FULL_PERMISSIONS,
   },
   official: {
@@ -115,49 +154,55 @@ export const SHARED_ROLE_PERMISSIONS: SharedPermissionMap = {
   },
 };
 
-export const SHARED_ENTITY_CATEGORIES: SharedEntityCategory[] = [
-  { entity_type: "organization", data_category: "root_level" },
-  { entity_type: "sport", data_category: "root_level" },
-  { entity_type: "gender", data_category: "root_level" },
-  { entity_type: "competitionformat", data_category: "root_level" },
-  { entity_type: "identificationtype", data_category: "root_level" },
-  { entity_type: "gameofficialrole", data_category: "root_level" },
-  { entity_type: "gameeventtype", data_category: "root_level" },
-  { entity_type: "teamstaffrole", data_category: "root_level" },
-  { entity_type: "playerposition", data_category: "root_level" },
-  { entity_type: "help", data_category: "root_level" },
-  { entity_type: "settings", data_category: "org_administrator_level" },
-  { entity_type: "systemsettings", data_category: "org_administrator_level" },
-  { entity_type: "auditlog", data_category: "org_administrator_level" },
-  { entity_type: "systemuser", data_category: "org_administrator_level" },
-  { entity_type: "competition", data_category: "organisation_level" },
-  { entity_type: "team", data_category: "team_level" },
-  { entity_type: "official", data_category: "organisation_level" },
-  { entity_type: "venue", data_category: "organisation_level" },
-  { entity_type: "fixture", data_category: "team_level" },
-  { entity_type: "fixturedetailssetup", data_category: "team_level" },
-  { entity_type: "livegamelog", data_category: "organisation_level" },
-  { entity_type: "gameeventlog", data_category: "organisation_level" },
-  {
-    entity_type: "playerteammembership",
-    data_category: "organisation_level",
-  },
-  {
-    entity_type: "playerteamtransferhistory",
-    data_category: "organisation_level",
-  },
-  { entity_type: "teamstaff", data_category: "team_level" },
-  { entity_type: "fixturelineup", data_category: "team_level" },
-  { entity_type: "competitionteam", data_category: "team_level" },
-  { entity_type: "player", data_category: "player_level" },
-  { entity_type: "playerprofile", data_category: "public_level" },
-  { entity_type: "identification", data_category: "public_level" },
-  { entity_type: "qualification", data_category: "public_level" },
-  { entity_type: "jerseycolor", data_category: "public_level" },
-  { entity_type: "profilelink", data_category: "public_level" },
-  { entity_type: "activitycategory", data_category: "public_level" },
-  { entity_type: "teamprofile", data_category: "public_level" },
-];
+export type SharedEntityCategoryMap = Record<
+  SharedEntityType,
+  SharedDataCategory
+>;
+
+export const SHARED_ENTITY_CATEGORY_MAP: SharedEntityCategoryMap = {
+  organization: "root_level",
+  sport: "root_level",
+  gender: "root_level",
+  competitionformat: "root_level",
+  identificationtype: "root_level",
+  gameofficialrole: "root_level",
+  gameeventtype: "root_level",
+  teamstaffrole: "root_level",
+  playerposition: "root_level",
+  help: "root_level",
+  settings: "org_administrator_level",
+  systemsettings: "org_administrator_level",
+  auditlog: "org_administrator_level",
+  systemuser: "org_administrator_level",
+  competition: "organisation_level",
+  team: "team_level",
+  official: "organisation_level",
+  venue: "organisation_level",
+  fixture: "organisation_level",
+  fixturedetailssetup: "organisation_level",
+  livegamelog: "organisation_level",
+  gameeventlog: "organisation_level",
+  playerteammembership: "organisation_level",
+  playerteamtransferhistory: "organisation_level",
+  teamstaff: "team_level",
+  fixturelineup: "player_level",
+  competitionteam: "team_level",
+  player: "player_level",
+  playerprofile: "public_level",
+  identification: "public_level",
+  qualification: "public_level",
+  jerseycolor: "public_level",
+  profilelink: "public_level",
+  activitycategory: "public_level",
+  teamprofile: "public_level",
+};
+
+export const SHARED_ENTITY_CATEGORIES: SharedEntityCategory[] = (
+  Object.entries(SHARED_ENTITY_CATEGORY_MAP) as [
+    SharedEntityType,
+    SharedDataCategory,
+  ][]
+).map(([entity_type, data_category]) => ({ entity_type, data_category }));
 
 export const ALL_ROLES: SharedUserRole[] = [
   "super_admin",

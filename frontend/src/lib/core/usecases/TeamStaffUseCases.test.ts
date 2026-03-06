@@ -110,6 +110,69 @@ describe("TeamStaffUseCases", () => {
       const result = await use_cases.list();
 
       expect(result.success).toBe(true);
+      expect(mock_repository.find_all).toHaveBeenCalledWith(undefined);
+    });
+
+    it("should pass team_id filter to repository when provided", async () => {
+      const team_a_staff = create_test_staff({
+        id: "staff-a",
+        team_id: "team-a",
+      });
+      vi.mocked(mock_repository.find_all).mockResolvedValue({
+        success: true,
+        data: {
+          items: [team_a_staff],
+          total_count: 1,
+          page_number: 1,
+          page_size: 10,
+          total_pages: 1,
+        },
+      });
+
+      const filter = { team_id: "team-a" };
+      const result = await use_cases.list(filter);
+
+      expect(result.success).toBe(true);
+      expect(mock_repository.find_all).toHaveBeenCalledWith(filter);
+      expect(result.data).toHaveLength(1);
+    });
+
+    it("should pass organization_id filter to repository when provided", async () => {
+      vi.mocked(mock_repository.find_all).mockResolvedValue({
+        success: true,
+        data: {
+          items: [create_test_staff()],
+          total_count: 1,
+          page_number: 1,
+          page_size: 10,
+          total_pages: 1,
+        },
+      });
+
+      const filter = { organization_id: "org-123" };
+      const result = await use_cases.list(filter);
+
+      expect(result.success).toBe(true);
+      expect(mock_repository.find_all).toHaveBeenCalledWith(filter);
+    });
+
+    it("should pass combined team_id and organization_id filter to repository", async () => {
+      vi.mocked(mock_repository.find_all).mockResolvedValue({
+        success: true,
+        data: {
+          items: [create_test_staff()],
+          total_count: 1,
+          page_number: 1,
+          page_size: 10,
+          total_pages: 1,
+        },
+      });
+
+      const filter = { team_id: "team-123", organization_id: "org-123" };
+      const result = await use_cases.list(filter);
+
+      expect(result.success).toBe(true);
+      expect(mock_repository.find_all).toHaveBeenCalledWith(filter);
     });
   });
 

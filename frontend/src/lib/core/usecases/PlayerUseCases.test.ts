@@ -154,6 +154,41 @@ describe("PlayerUseCases", () => {
 
       expect(mock_repository.find_all).toHaveBeenCalledWith(undefined, options);
     });
+
+    it("passes team_id filter to repository for team manager scoping", async () => {
+      const team_players = [
+        create_mock_player({ id: "p1" }),
+        create_mock_player({ id: "p2" }),
+      ];
+      const filter: PlayerFilter = { team_id: "team_123" };
+      vi.mocked(mock_repository.find_all).mockResolvedValue(
+        create_paginated_result(team_players),
+      );
+
+      const result = await use_cases.list(filter);
+
+      expect(result.success).toBe(true);
+      expect(result.data).toHaveLength(2);
+      expect(mock_repository.find_all).toHaveBeenCalledWith(
+        { team_id: "team_123" },
+        undefined,
+      );
+    });
+
+    it("passes combined team_id and organization_id filter to repository", async () => {
+      const filter: PlayerFilter = {
+        team_id: "team_456",
+        status: "active",
+      };
+      vi.mocked(mock_repository.find_all).mockResolvedValue(
+        create_paginated_result([create_mock_player({ id: "p1" })]),
+      );
+
+      const result = await use_cases.list(filter);
+
+      expect(result.success).toBe(true);
+      expect(mock_repository.find_all).toHaveBeenCalledWith(filter, undefined);
+    });
   });
 
   describe("get_by_id", () => {

@@ -30,8 +30,12 @@ import type {
 import { get_authorization_adapter } from "$lib/infrastructure/AuthorizationProvider";
 import { sync_branding_with_profile } from "$lib/adapters/initialization/brandingSyncService";
 import { load_profiles_from_repository } from "./profileLoader";
+import type {
+  SharedEntityType,
+  SharedEntityCategoryMap,
+} from "$convex/shared_permission_definitions";
 
-const ENTITY_DATA_CATEGORY_MAP: Record<string, DataCategory> = {
+const ENTITY_DATA_CATEGORY_MAP: SharedEntityCategoryMap = {
   organization: "root_level",
   sport: "root_level",
   gender: "root_level",
@@ -47,7 +51,7 @@ const ENTITY_DATA_CATEGORY_MAP: Record<string, DataCategory> = {
   auditlog: "org_administrator_level",
   systemuser: "org_administrator_level",
   competition: "organisation_level",
-  team: "organisation_level",
+  team: "team_level",
   official: "organisation_level",
   venue: "organisation_level",
   fixture: "organisation_level",
@@ -57,7 +61,7 @@ const ENTITY_DATA_CATEGORY_MAP: Record<string, DataCategory> = {
   playerteammembership: "organisation_level",
   playerteamtransferhistory: "organisation_level",
   teamstaff: "team_level",
-  fixturelineup: "team_level",
+  fixturelineup: "player_level",
   competitionteam: "team_level",
   player: "player_level",
   playerprofile: "public_level",
@@ -70,7 +74,9 @@ const ENTITY_DATA_CATEGORY_MAP: Record<string, DataCategory> = {
 };
 
 function get_entity_data_category(entity_type: string): DataCategory {
-  const normalized_type = entity_type.toLowerCase().replace(/[\s_-]/g, "");
+  const normalized_type = entity_type
+    .toLowerCase()
+    .replace(/[\s_-]/g, "") as SharedEntityType;
   return ENTITY_DATA_CATEGORY_MAP[normalized_type] || "organisation_level";
 }
 
@@ -106,6 +112,20 @@ const READ_ONLY_PERMISSIONS: CategoryPermissions = {
   delete: false,
 };
 
+const READ_UPDATE_PERMISSIONS: CategoryPermissions = {
+  create: false,
+  read: true,
+  update: true,
+  delete: false,
+};
+
+const CREATE_READ_UPDATE_NO_DELETE_PERMISSIONS: CategoryPermissions = {
+  create: true,
+  read: true,
+  update: true,
+  delete: false,
+};
+
 const ROLE_PERMISSION_MAP: Record<
   UserRole,
   Record<DataCategory, CategoryPermissions>
@@ -129,13 +149,8 @@ const ROLE_PERMISSION_MAP: Record<
   officials_manager: {
     root_level: READ_ONLY_PERMISSIONS,
     org_administrator_level: NO_PERMISSIONS,
-    organisation_level: {
-      create: false,
-      read: true,
-      update: true,
-      delete: false,
-    },
-    team_level: READ_ONLY_PERMISSIONS,
+    organisation_level: READ_UPDATE_PERMISSIONS,
+    team_level: CREATE_READ_UPDATE_NO_DELETE_PERMISSIONS,
     player_level: READ_ONLY_PERMISSIONS,
     public_level: FULL_PERMISSIONS,
   },
@@ -143,14 +158,14 @@ const ROLE_PERMISSION_MAP: Record<
     root_level: READ_ONLY_PERMISSIONS,
     org_administrator_level: NO_PERMISSIONS,
     organisation_level: READ_ONLY_PERMISSIONS,
-    team_level: FULL_PERMISSIONS,
-    player_level: FULL_PERMISSIONS,
+    team_level: READ_UPDATE_PERMISSIONS,
+    player_level: CREATE_READ_UPDATE_NO_DELETE_PERMISSIONS,
     public_level: FULL_PERMISSIONS,
   },
   official: {
     root_level: READ_ONLY_PERMISSIONS,
     org_administrator_level: NO_PERMISSIONS,
-    organisation_level: READ_ONLY_PERMISSIONS,
+    organisation_level: READ_UPDATE_PERMISSIONS,
     team_level: READ_ONLY_PERMISSIONS,
     player_level: READ_ONLY_PERMISSIONS,
     public_level: FULL_PERMISSIONS,
@@ -160,7 +175,7 @@ const ROLE_PERMISSION_MAP: Record<
     org_administrator_level: NO_PERMISSIONS,
     organisation_level: READ_ONLY_PERMISSIONS,
     team_level: READ_ONLY_PERMISSIONS,
-    player_level: { create: false, read: true, update: true, delete: false },
+    player_level: READ_UPDATE_PERMISSIONS,
     public_level: FULL_PERMISSIONS,
   },
 };

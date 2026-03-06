@@ -27,7 +27,7 @@ export function create_team_staff_use_cases(
       filter?: TeamStaffFilter,
       pagination?: { page: number; page_size: number },
     ): Promise<EntityListResult<TeamStaff>> {
-      const result = await staff_repository.find_all(undefined);
+      const result = await staff_repository.find_all(filter);
       if (!result.success) {
         return {
           success: false,

@@ -41,6 +41,16 @@ export class InBrowserPlayerRepository
     return this.database.players;
   }
 
+  async find_all(
+    filter?: PlayerFilter,
+    options?: QueryOptions,
+  ): PaginatedAsyncResult<Player> {
+    if (filter) {
+      return this.find_by_filter(filter, options);
+    }
+    return super.find_all(undefined, options);
+  }
+
   protected create_entity_from_input(
     input: CreatePlayerInput,
     id: string,

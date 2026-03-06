@@ -8,6 +8,8 @@ import {
   convert_team_players_to_lineup_players,
   summarize_selected_team_players,
   sort_lineup_players,
+  determine_initial_wizard_step,
+  determine_step_after_team_auto_selected,
 } from "./fixtureLineupWizard";
 import type { LineupPlayer } from "$lib/core/entities/FixtureLineup";
 
@@ -44,8 +46,20 @@ describe("fixtureLineupWizard", () => {
 
   it("derives initial selected players with full info", () => {
     const players: TeamPlayer[] = [
-      { id: "p1", first_name: "John", last_name: "Doe", jersey_number: 10, position: "Forward" } as TeamPlayer,
-      { id: "p2", first_name: "Jane", last_name: "Smith", jersey_number: 7, position: "Midfielder" } as TeamPlayer,
+      {
+        id: "p1",
+        first_name: "John",
+        last_name: "Doe",
+        jersey_number: 10,
+        position: "Forward",
+      } as TeamPlayer,
+      {
+        id: "p2",
+        first_name: "Jane",
+        last_name: "Smith",
+        jersey_number: 7,
+        position: "Midfielder",
+      } as TeamPlayer,
     ];
 
     const result = derive_initial_selected_players(players, 1);
@@ -64,7 +78,11 @@ describe("fixtureLineupWizard", () => {
       position: "Forward",
     } as TeamPlayer;
 
-    const lineup_player = convert_team_player_to_lineup_player(team_player, true, false);
+    const lineup_player = convert_team_player_to_lineup_player(
+      team_player,
+      true,
+      false,
+    );
     expect(lineup_player.id).toBe("p1");
     expect(lineup_player.first_name).toBe("John");
     expect(lineup_player.is_captain).toBe(true);
@@ -73,8 +91,20 @@ describe("fixtureLineupWizard", () => {
 
   it("converts team players to lineup players by ids", () => {
     const players: TeamPlayer[] = [
-      { id: "p1", first_name: "A", last_name: "One", jersey_number: 1, position: "GK" } as TeamPlayer,
-      { id: "p2", first_name: "B", last_name: "Two", jersey_number: 2, position: "DF" } as TeamPlayer,
+      {
+        id: "p1",
+        first_name: "A",
+        last_name: "One",
+        jersey_number: 1,
+        position: "GK",
+      } as TeamPlayer,
+      {
+        id: "p2",
+        first_name: "B",
+        last_name: "Two",
+        jersey_number: 2,
+        position: "DF",
+      } as TeamPlayer,
     ];
 
     const result = convert_team_players_to_lineup_players(players, ["p2"]);
@@ -117,12 +147,108 @@ describe("fixtureLineupWizard", () => {
 
   it("sorts lineup players by jersey then name", () => {
     const players: LineupPlayer[] = [
-      { id: "p2", first_name: "B", last_name: "Two", jersey_number: 10, position: "MF", is_captain: false, is_substitute: false },
-      { id: "p1", first_name: "A", last_name: "One", jersey_number: 7, position: "FW", is_captain: false, is_substitute: false },
-      { id: "p3", first_name: "C", last_name: "Three", jersey_number: null, position: null, is_captain: false, is_substitute: false },
+      {
+        id: "p2",
+        first_name: "B",
+        last_name: "Two",
+        jersey_number: 10,
+        position: "MF",
+        is_captain: false,
+        is_substitute: false,
+      },
+      {
+        id: "p1",
+        first_name: "A",
+        last_name: "One",
+        jersey_number: 7,
+        position: "FW",
+        is_captain: false,
+        is_substitute: false,
+      },
+      {
+        id: "p3",
+        first_name: "C",
+        last_name: "Three",
+        jersey_number: null,
+        position: null,
+        is_captain: false,
+        is_substitute: false,
+      },
     ];
 
     const sorted = sort_lineup_players(players);
-    expect(sorted.map(p => p.id)).toEqual(["p1", "p2", "p3"]);
+    expect(sorted.map((p) => p.id)).toEqual(["p1", "p2", "p3"]);
+  });
+
+  describe("determine_initial_wizard_step", () => {
+    it("returns step 1 when organization is restricted and pre-populated", () => {
+      const result = determine_initial_wizard_step({
+        organization_is_restricted: true,
+        organization_id: "org-123",
+        has_selected_organization: true,
+      });
+      expect(result).toBe(1);
+    });
+
+    it("returns step 0 when organization is not restricted", () => {
+      const result = determine_initial_wizard_step({
+        organization_is_restricted: false,
+        organization_id: "org-123",
+        has_selected_organization: true,
+      });
+      expect(result).toBe(0);
+    });
+
+    it("returns step 0 when organization_id is empty", () => {
+      const result = determine_initial_wizard_step({
+        organization_is_restricted: true,
+        organization_id: "",
+        has_selected_organization: false,
+      });
+      expect(result).toBe(0);
+    });
+
+    it("returns step 0 when organization is restricted but not yet resolved", () => {
+      const result = determine_initial_wizard_step({
+        organization_is_restricted: true,
+        organization_id: "org-123",
+        has_selected_organization: false,
+      });
+      expect(result).toBe(0);
+    });
+  });
+
+  describe("determine_step_after_team_auto_selected", () => {
+    it("returns step 3 (players) when team selected and players loaded", () => {
+      const result = determine_step_after_team_auto_selected({
+        has_selected_team: true,
+        team_players_count: 5,
+      });
+      expect(result).toBe(3);
+    });
+
+    it("returns step 2 (team) when team selected but no players found", () => {
+      const result = determine_step_after_team_auto_selected({
+        has_selected_team: true,
+        team_players_count: 0,
+      });
+      expect(result).toBe(2);
+    });
+
+    it("returns step 2 (team) when team not selected", () => {
+      const result = determine_step_after_team_auto_selected({
+        has_selected_team: false,
+        team_players_count: 0,
+      });
+      expect(result).toBe(2);
+    });
+
+    it("returns step 2 (team) when team not selected even with players", () => {
+      const result = determine_step_after_team_auto_selected({
+        has_selected_team: false,
+        team_players_count: 10,
+      });
+      expect(result).toBe(2);
+    });
   });
 });

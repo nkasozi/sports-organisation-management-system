@@ -354,7 +354,13 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
     });
     const file_fields = visible_fields.filter((f) => f.field_type === "file");
     const other_fields = visible_fields.filter((f) => f.field_type !== "file");
-    return [...file_fields, ...other_fields];
+    const result = [...file_fields, ...other_fields];
+    console.debug("[FIELD_VISIBILITY] Visible fields for display:", {
+      entity_type,
+      role: current_form_data["role"],
+      visible_field_names: result.map((f) => f.field_name),
+    });
+    return result;
   }
 
   function is_field_controlled_by_sub_entity_filter(
@@ -2040,7 +2046,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
       >
         <!-- Dynamic field generation based on metadata -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-          {#each get_sorted_fields_for_display(entity_metadata.fields, is_edit_mode, form_data) as field}
+          {#each get_sorted_fields_for_display(entity_metadata.fields, is_edit_mode, form_data) as field (field.field_name)}
             <div
               class="space-y-2 {field.field_type === 'file' ||
               (field.field_type === 'string' &&

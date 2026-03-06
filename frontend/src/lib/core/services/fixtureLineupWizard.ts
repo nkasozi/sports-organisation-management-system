@@ -1,6 +1,39 @@
 import type { TeamPlayer } from "$lib/core/services/teamPlayers";
 import type { LineupPlayer } from "$lib/core/entities/FixtureLineup";
 
+export interface WizardAutoSkipInput {
+  organization_is_restricted: boolean;
+  organization_id: string;
+  has_selected_organization: boolean;
+}
+
+export function determine_initial_wizard_step(
+  input: WizardAutoSkipInput,
+): number {
+  if (
+    input.organization_is_restricted &&
+    input.organization_id &&
+    input.has_selected_organization
+  ) {
+    return 1;
+  }
+  return 0;
+}
+
+export interface TeamAutoSelectResult {
+  has_selected_team: boolean;
+  team_players_count: number;
+}
+
+export function determine_step_after_team_auto_selected(
+  result: TeamAutoSelectResult,
+): number {
+  if (result.has_selected_team && result.team_players_count > 0) {
+    return 3;
+  }
+  return 2;
+}
+
 export function build_error_message(
   error: string,
   why: string,

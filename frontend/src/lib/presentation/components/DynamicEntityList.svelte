@@ -491,6 +491,10 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
       filter["id"] = player_id;
     }
 
+    if (normalized_type === "player" && has_valid_team_id) {
+      filter["team_id"] = team_id;
+    }
+
     if (normalized_type === "playerteammembership" && has_valid_player_id) {
       filter["player_id"] = player_id;
     }

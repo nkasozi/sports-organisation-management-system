@@ -34,6 +34,8 @@
     derive_initial_selected_players,
     convert_team_player_to_lineup_player,
     sort_lineup_players,
+    determine_initial_wizard_step,
+    determine_step_after_team_auto_selected,
   } from "$lib/core/services/fixtureLineupWizard";
   import { auth_store } from "$lib/presentation/stores/auth";
   import { access_denial_store } from "$lib/presentation/stores/accessDenial";
@@ -217,6 +219,12 @@
 
     await load_reference_data();
     loading = false;
+
+    current_step_index = determine_initial_wizard_step({
+      organization_is_restricted,
+      organization_id: form_data.organization_id,
+      has_selected_organization: Boolean(selected_organization),
+    });
   });
 
   async function load_reference_data(): Promise<void> {
@@ -476,10 +484,13 @@
         (t) => t.id === preselect_values.team_id,
       );
       if (user_team) {
-        form_data.team_id = preselect_values.team_id;
         reset_team_and_roster();
-        current_step_index = 2;
+        form_data.team_id = preselect_values.team_id;
         await handle_team_change();
+        current_step_index = determine_step_after_team_auto_selected({
+          has_selected_team: Boolean(selected_team),
+          team_players_count: team_players.length,
+        });
         return;
       } else if (teams_with_existing_lineups.has(preselect_values.team_id)) {
         error_message = build_error_message(
@@ -1192,7 +1203,7 @@
 
               {#if team_is_restricted && selected_fixture}
                 <div
-                  class="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-700"
+                  class="mt-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-700"
                 >
                   <p class="text-sm text-blue-800 dark:text-blue-200">
                     <span class="font-medium">Team Manager:</span> Your team is automatically
