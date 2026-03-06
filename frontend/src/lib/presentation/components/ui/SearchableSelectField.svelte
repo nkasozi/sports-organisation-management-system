@@ -63,6 +63,9 @@
     is_open = false;
     query = "";
     highlighted_index = 0;
+    if (input_element) {
+      input_element.value = selected_option ? selected_option.label : "";
+    }
     return true;
   }
 
@@ -122,6 +125,13 @@
       return;
     }
 
+    if (event.key === "Tab") {
+      if (is_open) {
+        close_dropdown();
+      }
+      return;
+    }
+
     if (event.key === "Enter") {
       if (!is_open) {
         void open_dropdown();
@@ -134,7 +144,12 @@
     }
   }
 
-  function handle_option_click(option_value: string): boolean {
+  function handle_option_mousedown(
+    event: MouseEvent,
+    option_value: string,
+  ): boolean {
+    event.preventDefault();
+    event.stopPropagation();
     return commit_value(option_value);
   }
 
@@ -185,11 +200,17 @@
     <input
       bind:this={input_element}
       id={select_id}
-      {name}
+      name="{name}_searchable_select"
       type="text"
       value={get_display_input_value()}
       placeholder={selected_option ? selected_option.label : placeholder}
       autocomplete="off"
+      autocorrect="off"
+      autocapitalize="off"
+      spellcheck="false"
+      data-form-type="other"
+      data-lpignore="true"
+      data-1p-ignore="true"
       aria-invalid={has_error}
       aria-expanded={is_open}
       aria-controls={list_id}
@@ -257,7 +278,8 @@
               role="option"
               aria-selected={option.value === value}
               on:mouseenter={() => (highlighted_index = index)}
-              on:click={() => handle_option_click(option.value)}
+              on:mousedown={(event) =>
+                handle_option_mousedown(event, option.value)}
             >
               {#if option.color_swatch}
                 <span
