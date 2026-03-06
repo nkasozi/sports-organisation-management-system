@@ -14,6 +14,7 @@ import type { CompetitionUseCasesPort } from "../interfaces/ports";
 import { create_success_result, create_failure_result } from "../types/Result";
 import { validate_competition_input } from "../entities/Competition";
 import { get_repository_container } from "../../infrastructure/container";
+import { EventBus } from "$lib/infrastructure/events/EventBus";
 
 export type CompetitionUseCases = CompetitionUseCasesPort;
 
@@ -77,7 +78,28 @@ export function create_competition_use_cases(
       if (!ids || ids.length === 0) {
         return create_failure_result("At least one competition ID is required");
       }
-      return repository.delete_by_ids(ids);
+
+      const competitions_to_delete = await Promise.all(
+        ids.map((id) => repository.find_by_id(id)),
+      );
+
+      const result = await repository.delete_by_ids(ids);
+
+      if (result.success) {
+        for (const comp_result of competitions_to_delete) {
+          if (comp_result.success && comp_result.data) {
+            const comp = comp_result.data;
+            EventBus.emit_entity_deleted(
+              "competition",
+              comp.id,
+              comp.name || comp.id,
+              comp as unknown as Record<string, unknown>,
+            );
+          }
+        }
+      }
+
+      return result;
     },
 
     async list_competitions_by_organization(

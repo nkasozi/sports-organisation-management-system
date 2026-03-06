@@ -15,11 +15,36 @@ import {
   generate_round_robin_fixtures,
 } from "../entities/Fixture";
 import { get_repository_container } from "../../infrastructure/container";
+import { EventBus } from "$lib/infrastructure/events/EventBus";
 import type { EntityListResult } from "./BaseUseCases";
 import type { FixtureUseCasesPort } from "../interfaces/ports";
 import type { Team } from "../entities/Team";
 
 export type FixtureUseCases = FixtureUseCasesPort;
+
+const ENTITY_TYPE = "fixture";
+
+function build_fixture_display_name(fixture: Fixture): string {
+  return (
+    `${fixture.venue || "Fixture"} - Round ${fixture.round_number || ""}`.trim() ||
+    fixture.id
+  );
+}
+
+function emit_fixture_updated(
+  old_fixture: Fixture,
+  updated_fixture: Fixture,
+  changed_fields: string[],
+): void {
+  EventBus.emit_entity_updated(
+    ENTITY_TYPE,
+    updated_fixture.id,
+    build_fixture_display_name(updated_fixture),
+    old_fixture as unknown as Record<string, unknown>,
+    updated_fixture as unknown as Record<string, unknown>,
+    changed_fields,
+  );
+}
 
 async function enrich_fixtures_with_team_names(
   fixtures: Fixture[],
@@ -187,7 +212,20 @@ export function create_fixture_use_cases(
       }
 
       const fixture_inputs = generate_round_robin_fixtures(config);
-      return repository.create_many(fixture_inputs);
+      const result = await repository.create_many(fixture_inputs);
+
+      if (result.success && result.data) {
+        for (const created_fixture of result.data.items) {
+          EventBus.emit_entity_created(
+            ENTITY_TYPE,
+            created_fixture.id,
+            build_fixture_display_name(created_fixture),
+            created_fixture as unknown as Record<string, unknown>,
+          );
+        }
+      }
+
+      return result;
     },
 
     async update_fixture_score(
@@ -202,10 +240,22 @@ export function create_fixture_use_cases(
         return create_failure_result("Scores cannot be negative");
       }
 
-      return repository.update(id, {
+      const old_result = await repository.find_by_id(id);
+      const old_fixture = old_result.success ? old_result.data : undefined;
+
+      const result = await repository.update(id, {
         home_team_score: home_score,
         away_team_score: away_score,
       });
+
+      if (result.success && result.data && old_fixture) {
+        emit_fixture_updated(old_fixture, result.data, [
+          "home_team_score",
+          "away_team_score",
+        ]);
+      }
+
+      return result;
     },
 
     async start_fixture(id: string): AsyncResult<Fixture> {
@@ -213,7 +263,10 @@ export function create_fixture_use_cases(
         return create_failure_result("Fixture ID is required");
       }
 
-      return repository.update(id, {
+      const old_result = await repository.find_by_id(id);
+      const old_fixture = old_result.success ? old_result.data : undefined;
+
+      const result = await repository.update(id, {
         status: "in_progress",
         current_period: "first_half",
         current_minute: 0,
@@ -221,6 +274,19 @@ export function create_fixture_use_cases(
         away_team_score: 0,
         game_events: [],
       });
+
+      if (result.success && result.data && old_fixture) {
+        emit_fixture_updated(old_fixture, result.data, [
+          "status",
+          "current_period",
+          "current_minute",
+          "home_team_score",
+          "away_team_score",
+          "game_events",
+        ]);
+      }
+
+      return result;
     },
 
     async record_game_event(
@@ -259,12 +325,23 @@ export function create_fixture_use_cases(
         }
       }
 
-      return repository.update(id, {
+      const result = await repository.update(id, {
         game_events: updated_events,
         home_team_score: home_score,
         away_team_score: away_score,
         current_minute: event.minute,
       });
+
+      if (result.success && result.data) {
+        emit_fixture_updated(fixture, result.data, [
+          "game_events",
+          "home_team_score",
+          "away_team_score",
+          "current_minute",
+        ]);
+      }
+
+      return result;
     },
 
     async update_period(
@@ -276,10 +353,22 @@ export function create_fixture_use_cases(
         return create_failure_result("Fixture ID is required");
       }
 
-      return repository.update(id, {
+      const old_result = await repository.find_by_id(id);
+      const old_fixture = old_result.success ? old_result.data : undefined;
+
+      const result = await repository.update(id, {
         current_period: period,
         current_minute: minute,
       });
+
+      if (result.success && result.data && old_fixture) {
+        emit_fixture_updated(old_fixture, result.data, [
+          "current_period",
+          "current_minute",
+        ]);
+      }
+
+      return result;
     },
 
     async end_fixture(id: string): AsyncResult<Fixture> {
@@ -296,12 +385,23 @@ export function create_fixture_use_cases(
       const final_home_score = fixture.home_team_score ?? 0;
       const final_away_score = fixture.away_team_score ?? 0;
 
-      return repository.update(id, {
+      const result = await repository.update(id, {
         status: "completed",
         current_period: "finished",
         home_team_score: final_home_score,
         away_team_score: final_away_score,
       });
+
+      if (result.success && result.data) {
+        emit_fixture_updated(fixture, result.data, [
+          "status",
+          "current_period",
+          "home_team_score",
+          "away_team_score",
+        ]);
+      }
+
+      return result;
     },
   };
 }

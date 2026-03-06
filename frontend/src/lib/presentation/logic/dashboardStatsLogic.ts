@@ -1,6 +1,8 @@
+import type { FixtureStatus } from "$lib/core/entities/Fixture";
+
 export interface DashboardFilters {
   organization_filter: { organization_id: string } | undefined;
-  fixture_filter: { status: string; organization_id?: string };
+  fixture_filter: { status: FixtureStatus; organization_id?: string };
   organization_count_override: number | null;
 }
 

@@ -109,7 +109,9 @@
 
   $: standings = calculate_standings(fixtures, teams);
   $: completed_fixtures = fixtures.filter((f) => f.status === "completed");
-  $: upcoming_fixtures = fixtures.filter((f) => f.status === "scheduled");
+  $: upcoming_fixtures = fixtures.filter(
+    (f) => f.status === "scheduled" || f.status === "in_progress",
+  );
   $: in_progress_fixtures = fixtures.filter((f) => f.status === "in_progress");
   $: player_stats = calculate_player_stats(fixtures);
 
@@ -1069,12 +1071,31 @@
               <div class="space-y-3">
                 {#each upcoming_fixtures as fixture}
                   <div
-                    class="p-3 sm:p-4 bg-gray-50 dark:bg-gray-800 rounded-lg"
+                    class="p-3 sm:p-4 bg-gray-50 dark:bg-gray-800 rounded-lg {fixture.status ===
+                    'in_progress'
+                      ? 'border border-red-200 dark:border-red-800'
+                      : ''}"
                   >
-                    <div
-                      class="text-xs text-center text-gray-500 dark:text-gray-400 mb-2"
-                    >
-                      {format_date(fixture.scheduled_date)}
+                    <div class="flex items-center justify-between mb-2">
+                      <div class="text-xs text-gray-500 dark:text-gray-400">
+                        {format_date(fixture.scheduled_date)}
+                      </div>
+                      {#if fixture.status === "in_progress"}
+                        <div class="flex items-center gap-1.5">
+                          <span class="relative flex h-2 w-2">
+                            <span
+                              class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"
+                            ></span>
+                            <span
+                              class="relative inline-flex rounded-full h-2 w-2 bg-red-500"
+                            ></span>
+                          </span>
+                          <span
+                            class="text-xs font-semibold text-red-600 dark:text-red-400"
+                            >LIVE</span
+                          >
+                        </div>
+                      {/if}
                     </div>
                     <div class="flex items-center justify-between gap-2">
                       <div class="flex-1 text-right">
@@ -1098,6 +1119,36 @@
                           {get_team_name(fixture.away_team_id)}
                         </span>
                       </div>
+                    </div>
+                    <div
+                      class="flex justify-center mt-3 pt-2 border-t border-gray-200 dark:border-gray-700"
+                    >
+                      <button
+                        type="button"
+                        class="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+                        on:click={() => goto(`/match-report/${fixture.id}`)}
+                      >
+                        <svg
+                          class="w-4 h-4"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                          />
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                          />
+                        </svg>
+                        View Details
+                      </button>
                     </div>
                   </div>
                 {/each}

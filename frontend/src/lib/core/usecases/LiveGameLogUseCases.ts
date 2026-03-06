@@ -13,6 +13,28 @@ import type { AsyncResult } from "../types/Result";
 import { create_failure_result } from "../types/Result";
 import type { LiveGameLogUseCasesPort } from "../interfaces/ports";
 import { get_repository_container } from "../../infrastructure/container";
+import { EventBus } from "$lib/infrastructure/events/EventBus";
+
+const ENTITY_TYPE = "livegamelog";
+
+function build_display_name(game: LiveGameLog): string {
+  return `Game ${game.fixture_id || game.id} - ${game.game_status || "unknown"}`;
+}
+
+function emit_live_game_updated(
+  old_game: LiveGameLog,
+  updated_game: LiveGameLog,
+  changed_fields: string[],
+): void {
+  EventBus.emit_entity_updated(
+    ENTITY_TYPE,
+    updated_game.id,
+    build_display_name(updated_game),
+    old_game as unknown as Record<string, unknown>,
+    updated_game as unknown as Record<string, unknown>,
+    changed_fields,
+  );
+}
 
 export type LiveGameLogUseCases = LiveGameLogUseCasesPort;
 
@@ -130,7 +152,7 @@ export function create_live_game_log_use_cases(
         );
       }
 
-      return repository.update(id, {
+      const result = await repository.update(id, {
         game_status: "in_progress",
         clock_running: true,
         started_by_user_id: user_id,
@@ -139,6 +161,17 @@ export function create_live_game_log_use_cases(
             ? "first_half"
             : game.current_period,
       });
+
+      if (result.success && result.data) {
+        emit_live_game_updated(game, result.data, [
+          "game_status",
+          "clock_running",
+          "started_by_user_id",
+          "current_period",
+        ]);
+      }
+
+      return result;
     },
 
     async pause_game(id: string): AsyncResult<LiveGameLog> {
@@ -152,10 +185,19 @@ export function create_live_game_log_use_cases(
         return create_failure_result("Can only pause an in-progress game");
       }
 
-      return repository.update(id, {
+      const result = await repository.update(id, {
         game_status: "paused",
         clock_running: false,
       });
+
+      if (result.success && result.data) {
+        emit_live_game_updated(game, result.data, [
+          "game_status",
+          "clock_running",
+        ]);
+      }
+
+      return result;
     },
 
     async resume_game(id: string): AsyncResult<LiveGameLog> {
@@ -169,10 +211,19 @@ export function create_live_game_log_use_cases(
         return create_failure_result("Can only resume a paused game");
       }
 
-      return repository.update(id, {
+      const result = await repository.update(id, {
         game_status: "in_progress",
         clock_running: true,
       });
+
+      if (result.success && result.data) {
+        emit_live_game_updated(game, result.data, [
+          "game_status",
+          "clock_running",
+        ]);
+      }
+
+      return result;
     },
 
     async end_game(id: string, user_id: string): AsyncResult<LiveGameLog> {
@@ -188,12 +239,23 @@ export function create_live_game_log_use_cases(
         );
       }
 
-      return repository.update(id, {
+      const result = await repository.update(id, {
         game_status: "completed",
         clock_running: false,
         current_period: "finished",
         ended_by_user_id: user_id,
       });
+
+      if (result.success && result.data) {
+        emit_live_game_updated(game, result.data, [
+          "game_status",
+          "clock_running",
+          "current_period",
+          "ended_by_user_id",
+        ]);
+      }
+
+      return result;
     },
 
     async abandon_game(
@@ -216,12 +278,23 @@ export function create_live_game_log_use_cases(
         );
       }
 
-      return repository.update(id, {
+      const result = await repository.update(id, {
         game_status: "abandoned",
         clock_running: false,
         ended_by_user_id: user_id,
         notes: reason,
       });
+
+      if (result.success && result.data) {
+        emit_live_game_updated(game, result.data, [
+          "game_status",
+          "clock_running",
+          "ended_by_user_id",
+          "notes",
+        ]);
+      }
+
+      return result;
     },
 
     async update_score(
@@ -233,10 +306,22 @@ export function create_live_game_log_use_cases(
         return create_failure_result("Scores cannot be negative");
       }
 
-      return repository.update(id, {
+      const old_result = await repository.find_by_id(id);
+      const old_game = old_result.success ? old_result.data : undefined;
+
+      const result = await repository.update(id, {
         home_team_score: home_score,
         away_team_score: away_score,
       });
+
+      if (result.success && result.data && old_game) {
+        emit_live_game_updated(old_game, result.data, [
+          "home_team_score",
+          "away_team_score",
+        ]);
+      }
+
+      return result;
     },
 
     async update_game_clock(
@@ -248,6 +333,9 @@ export function create_live_game_log_use_cases(
         return create_failure_result("Current minute cannot be negative");
       }
 
+      const old_result = await repository.find_by_id(id);
+      const old_game = old_result.success ? old_result.data : undefined;
+
       const updates: UpdateLiveGameLogInput = {
         current_minute,
       };
@@ -256,16 +344,34 @@ export function create_live_game_log_use_cases(
         updates.stoppage_time_minutes = stoppage_time_minutes;
       }
 
-      return repository.update(id, updates);
+      const result = await repository.update(id, updates);
+
+      if (result.success && result.data && old_game) {
+        const changed = ["current_minute"];
+        if (stoppage_time_minutes !== undefined)
+          changed.push("stoppage_time_minutes");
+        emit_live_game_updated(old_game, result.data, changed);
+      }
+
+      return result;
     },
 
     async advance_period(
       id: string,
       new_period: string,
     ): AsyncResult<LiveGameLog> {
-      return repository.update(id, {
+      const old_result = await repository.find_by_id(id);
+      const old_game = old_result.success ? old_result.data : undefined;
+
+      const result = await repository.update(id, {
         current_period: new_period as GamePeriod,
       });
+
+      if (result.success && result.data && old_game) {
+        emit_live_game_updated(old_game, result.data, ["current_period"]);
+      }
+
+      return result;
     },
 
     async list_by_organization(

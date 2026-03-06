@@ -12,6 +12,7 @@ import type { AsyncResult } from "../types/Result";
 import { create_failure_result } from "../types/Result";
 import type { FixtureLineupUseCasesPort } from "../interfaces/ports";
 import { get_repository_container } from "../../infrastructure/container";
+import { EventBus } from "$lib/infrastructure/events/EventBus";
 
 export type FixtureLineupUseCases = FixtureLineupUseCasesPort;
 
@@ -178,10 +179,25 @@ export function create_fixture_lineup_use_cases(
         return create_failure_result("Cannot submit an empty lineup");
       }
 
-      return repository.update(id, {
+      const old_lineup = existing_result.data;
+
+      const result = await repository.update(id, {
         status: "submitted",
         submitted_at: new Date().toISOString(),
       });
+
+      if (result.success && result.data) {
+        EventBus.emit_entity_updated(
+          "fixturelineup",
+          result.data.id,
+          result.data.id,
+          old_lineup as unknown as Record<string, unknown>,
+          result.data as unknown as Record<string, unknown>,
+          ["status", "submitted_at"],
+        );
+      }
+
+      return result;
     },
 
     async lock_lineup(id: string): AsyncResult<FixtureLineup> {
@@ -199,9 +215,24 @@ export function create_fixture_lineup_use_cases(
         return create_failure_result("Cannot lock an empty lineup");
       }
 
-      return repository.update(id, {
+      const old_lineup = existing_result.data;
+
+      const result = await repository.update(id, {
         status: "locked",
       });
+
+      if (result.success && result.data) {
+        EventBus.emit_entity_updated(
+          "fixturelineup",
+          result.data.id,
+          result.data.id,
+          old_lineup as unknown as Record<string, unknown>,
+          result.data as unknown as Record<string, unknown>,
+          ["status"],
+        );
+      }
+
+      return result;
     },
   };
 }

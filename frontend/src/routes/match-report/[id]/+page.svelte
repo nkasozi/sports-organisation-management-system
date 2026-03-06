@@ -734,7 +734,7 @@
             </div>
           {/if}
 
-          {#if has_lineups}
+          {#if has_lineups || is_game_scheduled || is_game_in_progress}
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
               <div
                 class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden"
@@ -778,11 +778,33 @@
                     class="border-t border-gray-200 dark:border-gray-700 p-3 bg-blue-50/50 dark:bg-blue-900/10 max-h-80 overflow-y-auto"
                   >
                     {#if home_players.length === 0}
-                      <p
-                        class="text-sm text-gray-500 dark:text-gray-400 text-center py-2"
+                      <div
+                        class="flex flex-col items-center justify-center py-6 gap-2"
                       >
-                        No players
-                      </p>
+                        <svg
+                          class="w-8 h-8 text-gray-300 dark:text-gray-600"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="1.5"
+                            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                          />
+                        </svg>
+                        <p
+                          class="text-sm font-medium text-gray-500 dark:text-gray-400"
+                        >
+                          Lineup Not Submitted
+                        </p>
+                        <p
+                          class="text-xs text-gray-400 dark:text-gray-500 text-center"
+                        >
+                          This team hasn't submitted their lineup yet.
+                        </p>
+                      </div>
                     {:else}
                       <div class="space-y-3">
                         {#if home_starters.length > 0}
@@ -941,11 +963,33 @@
                     class="border-t border-gray-200 dark:border-gray-700 p-3 bg-red-50/50 dark:bg-red-900/10 max-h-80 overflow-y-auto"
                   >
                     {#if away_players.length === 0}
-                      <p
-                        class="text-sm text-gray-500 dark:text-gray-400 text-center py-2"
+                      <div
+                        class="flex flex-col items-center justify-center py-6 gap-2"
                       >
-                        No players
-                      </p>
+                        <svg
+                          class="w-8 h-8 text-gray-300 dark:text-gray-600"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="1.5"
+                            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                          />
+                        </svg>
+                        <p
+                          class="text-sm font-medium text-gray-500 dark:text-gray-400"
+                        >
+                          Lineup Not Submitted
+                        </p>
+                        <p
+                          class="text-xs text-gray-400 dark:text-gray-500 text-center"
+                        >
+                          This team hasn't submitted their lineup yet.
+                        </p>
+                      </div>
                     {:else}
                       <div class="space-y-3">
                         {#if away_starters.length > 0}
@@ -1061,14 +1105,6 @@
                   </div>
                 {/if}
               </div>
-            </div>
-          {:else if !is_game_scheduled}
-            <div
-              class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 mb-6 text-center"
-            >
-              <p class="text-sm text-gray-500 dark:text-gray-400">
-                No lineup information available
-              </p>
             </div>
           {/if}
 

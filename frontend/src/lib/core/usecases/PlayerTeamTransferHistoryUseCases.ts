@@ -15,6 +15,7 @@ import { create_failure_result, create_success_result } from "../types/Result";
 import type { EntityListResult } from "./BaseUseCases";
 import { get_repository_container } from "../../infrastructure/container";
 import type { PlayerTeamTransferHistoryUseCasesPort } from "../interfaces/ports";
+import { EventBus } from "$lib/infrastructure/events/EventBus";
 
 export type PlayerTeamTransferHistoryUseCases =
   PlayerTeamTransferHistoryUseCasesPort;
@@ -173,6 +174,10 @@ export function create_player_team_transfer_history_use_cases(
       const active_membership = memberships_result.data?.items?.[0];
 
       if (active_membership) {
+        const old_membership_data = {
+          ...active_membership,
+        } as unknown as Record<string, unknown>;
+
         const update_membership_result = await membership_repository.update(
           active_membership.id,
           {
@@ -184,6 +189,17 @@ export function create_player_team_transfer_history_use_cases(
         if (!update_membership_result.success) {
           return create_failure_result(
             `Failed to update player membership: ${update_membership_result.error}`,
+          );
+        }
+
+        if (update_membership_result.data) {
+          EventBus.emit_entity_updated(
+            "playerteammembership",
+            active_membership.id,
+            active_membership.id,
+            old_membership_data,
+            update_membership_result.data as unknown as Record<string, unknown>,
+            ["team_id", "start_date"],
           );
         }
 
@@ -210,6 +226,15 @@ export function create_player_team_transfer_history_use_cases(
           );
         }
 
+        if (create_membership_result.data) {
+          EventBus.emit_entity_created(
+            "playerteammembership",
+            create_membership_result.data.id,
+            create_membership_result.data.id,
+            create_membership_result.data as unknown as Record<string, unknown>,
+          );
+        }
+
         console.log(
           `[PlayerTeamTransferHistoryUseCases] Created new membership for player ${transfer.player_id} in team ${transfer.to_team_id}`,
         );
@@ -222,6 +247,17 @@ export function create_player_team_transfer_history_use_cases(
       if (!update_result.success) {
         return create_failure_result(
           `Failed to confirm transfer: ${update_result.error}`,
+        );
+      }
+
+      if (update_result.data) {
+        EventBus.emit_entity_updated(
+          "playerteamtransferhistory",
+          transfer_id,
+          transfer_id,
+          transfer as unknown as Record<string, unknown>,
+          update_result.data as unknown as Record<string, unknown>,
+          ["status"],
         );
       }
 
@@ -264,6 +300,17 @@ export function create_player_team_transfer_history_use_cases(
         );
       }
 
+      if (update_result.data && transfer_result.data) {
+        EventBus.emit_entity_updated(
+          "playerteamtransferhistory",
+          transfer_id,
+          transfer_id,
+          transfer_result.data as unknown as Record<string, unknown>,
+          update_result.data as unknown as Record<string, unknown>,
+          ["status"],
+        );
+      }
+
       console.log(
         `[PlayerTeamTransferHistoryUseCases] Transfer ${transfer_id} rejected`,
       );
@@ -276,7 +323,26 @@ export function create_player_team_transfer_history_use_cases(
         return create_failure_result("At least one transfer ID is required");
       }
 
-      return repository.delete_by_ids(ids);
+      const transfers_to_delete = await Promise.all(
+        ids.map((id) => repository.find_by_id(id)),
+      );
+
+      const result = await repository.delete_by_ids(ids);
+
+      if (result.success) {
+        for (const transfer_result of transfers_to_delete) {
+          if (transfer_result.success && transfer_result.data) {
+            EventBus.emit_entity_deleted(
+              "playerteamtransferhistory",
+              transfer_result.data.id,
+              transfer_result.data.id,
+              transfer_result.data as unknown as Record<string, unknown>,
+            );
+          }
+        }
+      }
+
+      return result;
     },
   };
 }

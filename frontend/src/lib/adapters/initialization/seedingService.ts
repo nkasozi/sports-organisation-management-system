@@ -108,7 +108,7 @@ import {
 import type { SystemUser } from "../../core/entities/SystemUser";
 import { current_user_store } from "../../presentation/stores/currentUser";
 
-const SEEDING_COMPLETE_KEY = "sports_org_seeding_complete_v10";
+const SEEDING_COMPLETE_KEY = "sports_org_seeding_complete_v11";
 
 export function is_seeding_already_complete(): boolean {
   if (typeof window === "undefined") return true;

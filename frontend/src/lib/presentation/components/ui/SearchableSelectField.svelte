@@ -275,6 +275,7 @@
         id={list_id}
         class="absolute z-[9999] mt-2 w-full max-h-64 overflow-auto rounded-lg border border-accent-200 dark:border-accent-700 bg-white dark:bg-accent-800 shadow-lg"
         role="listbox"
+        tabindex="-1"
         on:mousedown|preventDefault
       >
         {#if filtered_options.length === 0}

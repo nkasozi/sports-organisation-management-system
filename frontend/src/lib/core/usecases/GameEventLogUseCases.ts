@@ -15,6 +15,7 @@ import type { AsyncResult } from "../types/Result";
 import { create_failure_result } from "../types/Result";
 import type { GameEventLogUseCasesPort } from "../interfaces/ports";
 import { get_repository_container } from "../../infrastructure/container";
+import { EventBus } from "$lib/infrastructure/events/EventBus";
 
 export type GameEventLogUseCases = GameEventLogUseCasesPort;
 
@@ -197,7 +198,21 @@ export function create_game_event_log_use_cases(
         return create_failure_result("Event is already voided");
       }
 
-      return repository.void_event(id, reason, voided_by_user_id);
+      const old_event = existing_result.data;
+      const result = await repository.void_event(id, reason, voided_by_user_id);
+
+      if (result.success && result.data) {
+        EventBus.emit_entity_updated(
+          "gameeventlog",
+          result.data.id,
+          `${result.data.event_type || "Event"} at ${result.data.minute || 0}'`,
+          old_event as unknown as Record<string, unknown>,
+          result.data as unknown as Record<string, unknown>,
+          ["voided", "void_reason", "voided_by_user_id"],
+        );
+      }
+
+      return result;
     },
 
     async record_goal(
@@ -230,7 +245,18 @@ export function create_game_event_log_use_cases(
         status: "active",
       };
 
-      return repository.create(input);
+      const result = await repository.create(input);
+
+      if (result.success && result.data) {
+        EventBus.emit_entity_created(
+          "gameeventlog",
+          result.data.id,
+          `${result.data.event_type || "Event"} at ${result.data.minute || 0}'`,
+          result.data as unknown as Record<string, unknown>,
+        );
+      }
+
+      return result;
     },
 
     async record_card(
@@ -273,7 +299,18 @@ export function create_game_event_log_use_cases(
         status: "active",
       };
 
-      return repository.create(input);
+      const result = await repository.create(input);
+
+      if (result.success && result.data) {
+        EventBus.emit_entity_created(
+          "gameeventlog",
+          result.data.id,
+          `${result.data.event_type || "Event"} at ${result.data.minute || 0}'`,
+          result.data as unknown as Record<string, unknown>,
+        );
+      }
+
+      return result;
     },
 
     async record_substitution(
@@ -308,7 +345,18 @@ export function create_game_event_log_use_cases(
         status: "active",
       };
 
-      return repository.create(input);
+      const result = await repository.create(input);
+
+      if (result.success && result.data) {
+        EventBus.emit_entity_created(
+          "gameeventlog",
+          result.data.id,
+          `${result.data.event_type || "Event"} at ${result.data.minute || 0}'`,
+          result.data as unknown as Record<string, unknown>,
+        );
+      }
+
+      return result;
     },
   };
 }
