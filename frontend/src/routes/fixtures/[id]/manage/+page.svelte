@@ -527,7 +527,7 @@
 
     fixture = result.data;
 
-    const next_period_map: Record<GamePeriod, GamePeriod> = {
+    const next_period_map: Record<string, GamePeriod> = {
       pre_game: "first_half",
       first_half: "half_time",
       half_time: "second_half",

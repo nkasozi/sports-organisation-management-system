@@ -81,6 +81,7 @@
   let competition: Competition | null = null;
   let sport: Sport | null = null;
   let venue: Venue | null = null;
+  let organization_name: string = "";
   let assigned_officials_data: Array<{
     official: Official;
     role_name: string;
@@ -97,9 +98,17 @@
   let clock_interval: ReturnType<typeof setInterval> | null = null;
   let is_clock_running: boolean = false;
 
+  const EXTRA_TIME_AVAILABLE_WITHIN_MINUTES: number = 5;
+
   let show_start_modal: boolean = false;
   let show_end_modal: boolean = false;
+  let show_period_modal: boolean = false;
+  let show_extra_time_modal: boolean = false;
   let show_event_modal: boolean = false;
+
+  let extra_time_added_seconds: number = 0;
+  let extra_minutes_to_add: number = 5;
+  let break_elapsed_seconds: number = 0;
 
   let selected_event_type: QuickEventButton | null = null;
   let selected_team_side: "home" | "away" = "home";
@@ -197,12 +206,19 @@
   $: away_starters = get_starters_from_lineup(away_players);
   $: away_substitutes = get_substitutes_from_lineup(away_players);
 
+  function get_effective_periods_for(
+    _sport: Sport | null,
+    _competition: Competition | null,
+  ): SportGamePeriod[] {
+    return _competition?.rule_overrides?.periods ?? _sport?.periods ?? [];
+  }
+
   function get_effective_periods(): SportGamePeriod[] {
-    return competition?.rule_overrides?.periods ?? sport?.periods ?? [];
+    return effective_periods;
   }
 
   function get_playing_periods(): SportGamePeriod[] {
-    return get_effective_periods().filter((p) => !p.is_break);
+    return playing_periods;
   }
 
   function get_period_duration_seconds_by_index(period_index: number): number {
@@ -214,32 +230,57 @@
   }
 
   function get_current_period_index(): number {
-    const current_period = fixture?.current_period ?? "first_half";
-    const period_map: Record<string, number> = {
-      first_half: 0,
-      second_half: 1,
-      first_quarter: 0,
-      second_quarter: 1,
-      third_quarter: 2,
-      fourth_quarter: 3,
-      extra_time_first: -1,
-      extra_time_second: -2,
-    };
-    return period_map[current_period] ?? 0;
+    const current_period = fixture?.current_period ?? "";
+    const index = playing_periods.findIndex((p) => p.id === current_period);
+    return index >= 0 ? index : 0;
   }
 
+  $: effective_periods = get_effective_periods_for(sport, competition);
+  $: playing_periods = effective_periods.filter(
+    (p: SportGamePeriod) => !p.is_break,
+  );
   $: fixture_id = $page.params.id ?? "";
   $: elapsed_minutes = Math.floor(game_clock_seconds / 60);
-  $: current_period_index = get_current_period_index();
-  $: current_period_duration = get_current_period_duration_seconds(
-    fixture?.current_period ?? "first_half",
-  );
-  $: period_elapsed_seconds =
-    game_clock_seconds -
-    get_period_start_seconds(fixture?.current_period ?? "first_half");
+  $: current_period_index = (() => {
+    const cp = fixture?.current_period ?? "";
+    const idx = playing_periods.findIndex((p) => p.id === cp);
+    return idx >= 0 ? idx : 0;
+  })();
+  $: is_break_period = (() => {
+    const cp = fixture?.current_period;
+    if (!cp) return false;
+    const found = effective_periods.find((p) => p.id === cp);
+    return found ? found.is_break : false;
+  })();
+  $: is_finished_period =
+    fixture?.current_period === "finished" || fixture?.status === "completed";
+  $: current_period_duration = (() => {
+    if (is_finished_period) return 0;
+    const cp = fixture?.current_period ?? "first_half";
+    if (is_break_period) {
+      const found = effective_periods.find((p) => p.id === cp);
+      return found ? found.duration_minutes * 60 : 5 * 60;
+    }
+    const found = playing_periods.find((p) => p.id === cp);
+    if (found) return found.duration_minutes * 60;
+    return playing_periods.length > 0
+      ? playing_periods[0].duration_minutes * 60
+      : 45 * 60;
+  })();
+  $: period_elapsed_seconds = (() => {
+    if (is_finished_period) return 0;
+    if (is_break_period) return break_elapsed_seconds;
+    const cp = fixture?.current_period ?? "first_half";
+    let start = 0;
+    for (const p of playing_periods) {
+      if (p.id === cp) break;
+      start += p.duration_minutes * 60;
+    }
+    return game_clock_seconds - start;
+  })();
   $: remaining_seconds_in_period = Math.max(
     0,
-    current_period_duration - period_elapsed_seconds,
+    current_period_duration + extra_time_added_seconds - period_elapsed_seconds,
   );
   $: countdown_minutes = Math.floor(remaining_seconds_in_period / 60);
   $: countdown_seconds = remaining_seconds_in_period % 60;
@@ -254,6 +295,17 @@
   );
   $: is_game_active = fixture?.status === "in_progress";
   $: is_game_completed = fixture?.status === "completed";
+  $: period_button_config = build_period_button_config(
+    fixture?.current_period,
+    is_game_active,
+    effective_periods,
+  );
+  $: can_add_extra_time =
+    remaining_seconds_in_period <= EXTRA_TIME_AVAILABLE_WITHIN_MINUTES * 60;
+  $: show_extra_time_button =
+    is_game_active &&
+    can_add_extra_time &&
+    check_is_playing_period(fixture?.current_period, effective_periods);
   $: {
     if (is_game_completed) {
       home_lineup_expanded = true;
@@ -390,16 +442,15 @@
           const org_result = await organization_use_cases.get_by_id(
             loaded_competition.organization_id,
           );
-          if (
-            org_result.success &&
-            org_result.data &&
-            org_result.data.sport_id
-          ) {
-            const sport_result = await sport_use_cases.get_by_id(
-              org_result.data.sport_id,
-            );
-            if (sport_result.success && sport_result.data) {
-              sport = sport_result.data;
+          if (org_result.success && org_result.data) {
+            organization_name = org_result.data.name;
+            if (org_result.data.sport_id) {
+              const sport_result = await sport_use_cases.get_by_id(
+                org_result.data.sport_id,
+              );
+              if (sport_result.success && sport_result.data) {
+                sport = sport_result.data;
+              }
             }
           }
         }
@@ -515,67 +566,18 @@
 
   function get_period_start_seconds(period: GamePeriod): number {
     const playing_periods = get_playing_periods();
-    const period_map: Record<string, number> = {
-      first_half: 0,
-      second_half: 1,
-      first_quarter: 0,
-      second_quarter: 1,
-      third_quarter: 2,
-      fourth_quarter: 3,
-      extra_time_first: -1,
-      extra_time_second: -2,
-    };
-
-    const period_index = period_map[period] ?? 0;
-
-    if (period === "extra_time_first") {
-      const total_regular_time = playing_periods.reduce(
-        (sum, p) => sum + p.duration_minutes * 60,
-        0,
-      );
-      return total_regular_time;
-    }
-
-    if (period === "extra_time_second") {
-      const total_regular_time = playing_periods.reduce(
-        (sum, p) => sum + p.duration_minutes * 60,
-        0,
-      );
-      return total_regular_time + 15 * 60;
-    }
-
     let start_seconds = 0;
-    for (let i = 0; i < period_index && i < playing_periods.length; i++) {
-      start_seconds += playing_periods[i].duration_minutes * 60;
+    for (const p of playing_periods) {
+      if (p.id === period) return start_seconds;
+      start_seconds += p.duration_minutes * 60;
     }
     return start_seconds;
   }
 
   function get_current_period_duration_seconds(period: GamePeriod): number {
     const playing_periods = get_playing_periods();
-    const period_map: Record<string, number> = {
-      first_half: 0,
-      second_half: 1,
-      first_quarter: 0,
-      second_quarter: 1,
-      third_quarter: 2,
-      fourth_quarter: 3,
-    };
-
-    const period_index = period_map[period];
-
-    if (period === "extra_time_first" || period === "extra_time_second") {
-      return 15 * 60;
-    }
-
-    if (
-      period_index !== undefined &&
-      period_index >= 0 &&
-      period_index < playing_periods.length
-    ) {
-      return playing_periods[period_index].duration_minutes * 60;
-    }
-
+    const found = playing_periods.find((p) => p.id === period);
+    if (found) return found.duration_minutes * 60;
     return playing_periods.length > 0
       ? playing_periods[0].duration_minutes * 60
       : 45 * 60;
@@ -583,12 +585,20 @@
 
   function start_clock(): void {
     if (clock_interval) return;
+    const cp = fixture?.current_period;
+    if (cp === "finished" || fixture?.status === "completed") return;
     is_clock_running = true;
     clock_interval = setInterval(tick_clock, 1000);
   }
 
   function tick_clock(): void {
-    game_clock_seconds += 1;
+    const cp = fixture?.current_period;
+    const in_break = cp && effective_periods.find((p) => p.id === cp)?.is_break;
+    if (in_break) {
+      break_elapsed_seconds += 1;
+    } else {
+      game_clock_seconds += 1;
+    }
   }
 
   function stop_clock(): void {
@@ -766,6 +776,22 @@
     }
 
     fixture = result.data;
+
+    const playing_periods = get_playing_periods();
+    const first_period_id =
+      playing_periods.length > 0 ? playing_periods[0].id : "first_half";
+    if (first_period_id !== "first_half" && fixture) {
+      await fixture_use_cases.update_period(
+        fixture.id,
+        first_period_id as GamePeriod,
+        0,
+      );
+      fixture = {
+        ...fixture,
+        current_period: first_period_id as GamePeriod,
+      } as Fixture;
+    }
+
     game_clock_seconds = 0;
     start_clock();
     show_toast("Game started! Clock is running.", "success");
@@ -776,6 +802,25 @@
 
     is_updating = true;
     stop_clock();
+
+    const end_event = create_game_event(
+      "period_end",
+      elapsed_minutes,
+      "match",
+      "",
+      `Match ended. Final score: ${home_score}-${away_score}`,
+    );
+
+    const event_result = await fixture_use_cases.record_game_event(
+      fixture.id,
+      end_event,
+    );
+
+    if (!event_result.success) {
+      console.warn(
+        `[DEBUG] Failed to record game end event: ${event_result.error}`,
+      );
+    }
 
     const result = await fixture_use_cases.end_fixture(fixture.id);
 
@@ -953,26 +998,30 @@
     show_toast(`${event_label} recorded!`, "success");
   }
 
+  function get_sport_period_display_name(period: GamePeriod): string {
+    const all_periods = get_effective_periods();
+    const found = all_periods.find((p) => p.id === period);
+    return found ? found.name : get_period_display_name(period);
+  }
+
   async function change_period(new_period: GamePeriod): Promise<void> {
     if (!fixture) return;
 
     is_updating = true;
 
-    let new_minute = elapsed_minutes;
-    if (new_period === "second_half") {
-      new_minute = 45;
-      game_clock_seconds = 45 * 60;
-    } else if (new_period === "extra_time_first") {
-      new_minute = 90;
-      game_clock_seconds = 90 * 60;
-    }
+    const period_start = get_period_start_seconds(new_period);
+    game_clock_seconds = period_start;
+    const new_minute = Math.floor(period_start / 60);
+
+    extra_time_added_seconds = 0;
+    break_elapsed_seconds = 0;
 
     const period_event = create_game_event(
       "period_start",
       new_minute,
       "match",
       "",
-      `${get_period_display_name(new_period)} started`,
+      `${get_sport_period_display_name(new_period)} started`,
     );
 
     await fixture_use_cases.record_game_event(fixture.id, period_event);
@@ -991,7 +1040,7 @@
 
     fixture = result.data;
     start_clock();
-    show_toast(`${get_period_display_name(new_period)} started!`, "info");
+    show_toast(`${get_sport_period_display_name(new_period)} started!`, "info");
   }
 
   async function end_current_period(): Promise<void> {
@@ -999,13 +1048,15 @@
 
     stop_clock();
     is_updating = true;
+    extra_time_added_seconds = 0;
+    break_elapsed_seconds = 0;
 
     const period_event = create_game_event(
       "period_end",
       elapsed_minutes,
       "match",
       "",
-      `${get_period_display_name(fixture.current_period ?? "period")} ended`,
+      `${get_sport_period_display_name(fixture.current_period ?? "period")} ended`,
     );
 
     const result = await fixture_use_cases.record_game_event(
@@ -1020,30 +1071,180 @@
       return;
     }
 
-    fixture = result.data;
     const current_fixture: Fixture = result.data;
-
-    const next_period_map: Record<GamePeriod, GamePeriod> = {
-      pre_game: "first_half",
-      first_half: "half_time",
-      half_time: "second_half",
-      second_half: "finished",
-      extra_time_first: "extra_time_second",
-      extra_time_second: "finished",
-      penalty_shootout: "finished",
-      finished: "finished",
-    };
-
+    const all_periods = get_effective_periods();
     const current_period = current_fixture.current_period ?? "pre_game";
-    const next = next_period_map[current_period];
+    const current_index = all_periods.findIndex((p) => p.id === current_period);
+    const next_in_sequence =
+      current_index >= 0 && current_index + 1 < all_periods.length
+        ? all_periods[current_index + 1]
+        : null;
+    const next: GamePeriod = next_in_sequence?.id ?? "finished";
+
+    fixture = { ...current_fixture, current_period: next } as Fixture;
+
     await fixture_use_cases.update_period(
       current_fixture.id,
       next,
       elapsed_minutes,
     );
-    fixture = { ...current_fixture, current_period: next } as Fixture;
 
-    show_toast(`${get_period_display_name(next)} ended`, "info");
+    const next_is_break = next_in_sequence?.is_break ?? false;
+    if (next_is_break) {
+      start_clock();
+    }
+
+    show_toast(
+      `${get_sport_period_display_name(current_period)} ended`,
+      "info",
+    );
+  }
+
+  interface PeriodButtonConfig {
+    label: string;
+    icon: string;
+    is_end_action: boolean;
+    next_period: GamePeriod;
+    message: string;
+    confirm_text: string;
+  }
+
+  function build_period_button_config(
+    current_period: GamePeriod | undefined,
+    game_active: boolean,
+    all_periods: SportGamePeriod[],
+  ): PeriodButtonConfig | null {
+    if (!current_period || !game_active) return null;
+    if (all_periods.length === 0) return null;
+
+    const current_index = all_periods.findIndex((p) => p.id === current_period);
+    if (current_index === -1) return null;
+
+    const current = all_periods[current_index];
+
+    if (!current.is_break) {
+      const next =
+        current_index + 1 < all_periods.length
+          ? all_periods[current_index + 1]
+          : null;
+      const next_period_id: GamePeriod = next?.id ?? "finished";
+      return {
+        label: `End ${current.name}`,
+        icon: "⏹️",
+        is_end_action: true,
+        next_period: next_period_id,
+        message: `Are you sure you want to end ${current.name}?`,
+        confirm_text: `End ${current.name}`,
+      };
+    }
+
+    const next_playing = all_periods
+      .slice(current_index + 1)
+      .find((p) => !p.is_break);
+    if (!next_playing) return null;
+
+    return {
+      label: `Start ${next_playing.name}`,
+      icon: "▶️",
+      is_end_action: false,
+      next_period: next_playing.id as GamePeriod,
+      message: `Are you sure you want to start ${next_playing.name}? The clock will resume.`,
+      confirm_text: `Start ${next_playing.name}`,
+    };
+  }
+
+  function get_period_button_config(
+    current_period: GamePeriod | undefined,
+    game_active: boolean,
+  ): PeriodButtonConfig | null {
+    return build_period_button_config(
+      current_period,
+      game_active,
+      effective_periods,
+    );
+  }
+
+  async function confirm_period_action(): Promise<void> {
+    const config = get_period_button_config(
+      fixture?.current_period,
+      is_game_active,
+    );
+    show_period_modal = false;
+    if (!config) return;
+
+    if (config.is_end_action) {
+      await end_current_period();
+    } else {
+      await change_period(config.next_period);
+    }
+  }
+
+  async function confirm_extra_time(): Promise<void> {
+    if (!fixture) return;
+    if (extra_minutes_to_add < 1) return;
+
+    show_extra_time_modal = false;
+    is_updating = true;
+
+    const minutes_added = extra_minutes_to_add;
+    const seconds_to_add = minutes_added * 60;
+    const period_label = get_sport_period_display_name(
+      fixture.current_period ?? "first_half",
+    );
+
+    extra_time_added_seconds += seconds_to_add;
+
+    const extra_time_event = create_game_event(
+      "period_start",
+      elapsed_minutes,
+      "match",
+      "",
+      `${minutes_added} min added time - ${period_label}`,
+    );
+
+    const result = await fixture_use_cases.record_game_event(
+      fixture.id,
+      extra_time_event,
+    );
+
+    is_updating = false;
+
+    if (!result.success) {
+      show_toast("Failed to record extra time event", "error");
+      return;
+    }
+
+    fixture = result.data;
+
+    if (!is_clock_running) {
+      start_clock();
+    }
+
+    extra_minutes_to_add = 5;
+    show_toast(`${minutes_added} min added time - ${period_label}`, "success");
+  }
+
+  function check_is_playing_period(
+    period: GamePeriod | undefined,
+    all_periods: SportGamePeriod[],
+  ): boolean {
+    if (!period) return false;
+    if (period === "penalty_shootout") return true;
+    if (all_periods.length === 0) {
+      const known_playing: string[] = [
+        "first_half",
+        "second_half",
+        "extra_time_first",
+        "extra_time_second",
+      ];
+      return known_playing.includes(period);
+    }
+    const found = all_periods.find((p) => p.id === period);
+    return found ? !found.is_break : false;
+  }
+
+  function is_playing_period(period: GamePeriod | undefined): boolean {
+    return check_is_playing_period(period, effective_periods);
   }
 
   function navigate_back(): void {
@@ -1146,6 +1347,22 @@
   {:else if fixture}
     <div class="flex flex-col min-h-screen">
       <div class="bg-gray-900 text-white px-4 py-3 sticky top-0 z-40">
+        {#if organization_name || competition?.name}
+          <div class="text-center max-w-4xl mx-auto pb-2">
+            {#if organization_name}
+              <p
+                class="text-xs uppercase tracking-widest text-gray-400 font-medium"
+              >
+                {organization_name}
+              </p>
+            {/if}
+            {#if competition?.name}
+              <p class="text-sm font-semibold text-gray-200">
+                {competition.name}
+              </p>
+            {/if}
+          </div>
+        {/if}
         <div
           class="flex items-center justify-between max-w-4xl mx-auto relative"
         >
@@ -1186,7 +1403,7 @@
               <div class="text-center min-w-24 sm:min-w-32">
                 <div class="text-xs text-gray-400 mb-1">
                   {#if fixture.status === "in_progress"}
-                    {get_period_display_name(fixture.current_period)}
+                    {get_sport_period_display_name(fixture.current_period)}
                   {:else if fixture.status === "completed"}
                     Full Time
                   {:else}
@@ -1221,7 +1438,7 @@
               </div>
             </div>
 
-            <div class="flex gap-2 mt-3 md:hidden">
+            <div class="flex gap-2 mt-3 flex-wrap justify-center">
               {#if can_modify_game}
                 {#if fixture.status === "scheduled"}
                   <button
@@ -1232,18 +1449,33 @@
                   </button>
                 {:else if is_game_active}
                   <button
-                    class="px-3 py-2 rounded-lg text-sm font-medium {is_clock_running
-                      ? 'bg-yellow-500 text-black'
-                      : 'bg-green-500 text-white'}"
+                    class="px-3 py-2 rounded-lg text-sm font-medium bg-blue-600 text-white hover:bg-blue-700"
                     on:click={toggle_clock}
                   >
-                    {is_clock_running ? "⏸️ Pause" : "▶️ Resume"}
+                    {is_clock_running ? "⏸️ Pause Time" : "▶️ Resume"}
                   </button>
+                  {#if period_button_config}
+                    <button
+                      class="px-3 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg text-sm font-medium"
+                      on:click={() => (show_period_modal = true)}
+                    >
+                      {period_button_config.icon}
+                      {period_button_config.label}
+                    </button>
+                  {/if}
+                  {#if show_extra_time_button}
+                    <button
+                      class="px-3 py-2 rounded-lg text-sm font-medium bg-amber-600 hover:bg-amber-700 text-white"
+                      on:click={() => (show_extra_time_modal = true)}
+                    >
+                      ⏱️ Add Time
+                    </button>
+                  {/if}
                   <button
                     class="px-3 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-sm font-medium"
                     on:click={() => (show_end_modal = true)}
                   >
-                    🏁 End
+                    🏁 End Game
                   </button>
                 {/if}
               {/if}
@@ -1281,66 +1513,6 @@
               {/if}
             </div>
           </div>
-
-          <div class="hidden md:flex gap-2">
-            {#if can_modify_game}
-              {#if fixture.status === "scheduled"}
-                <button
-                  class="px-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg text-sm font-medium"
-                  on:click={() => (show_start_modal = true)}
-                >
-                  ▶️ Start
-                </button>
-              {:else if is_game_active}
-                <button
-                  class="px-3 py-2 rounded-lg text-sm font-medium {is_clock_running
-                    ? 'bg-yellow-500 text-black'
-                    : 'bg-green-500 text-white'}"
-                  on:click={toggle_clock}
-                >
-                  {is_clock_running ? "⏸️ Pause" : "▶️ Resume"}
-                </button>
-                <button
-                  class="px-3 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-sm font-medium"
-                  on:click={() => (show_end_modal = true)}
-                >
-                  🏁 End
-                </button>
-              {/if}
-            {/if}
-            {#if is_game_completed}
-              <button
-                class="px-4 py-2 bg-primary-600 hover:bg-primary-700 rounded-lg text-sm font-medium flex items-center gap-2 disabled:opacity-50"
-                disabled={downloading_report}
-                on:click={handle_download_match_report}
-              >
-                {#if downloading_report}
-                  <svg
-                    class="w-4 h-4 animate-spin"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                  >
-                    <circle
-                      class="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      stroke-width="4"
-                    ></circle>
-                    <path
-                      class="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    ></path>
-                  </svg>
-                  Generating...
-                {:else}
-                  📄 Download Match Report
-                {/if}
-              </button>
-            {/if}
-          </div>
         </div>
       </div>
 
@@ -1369,43 +1541,6 @@
       {/if}
 
       {#if is_game_active}
-        {#if can_modify_game}
-          <div
-            class="bg-gray-800 text-white px-4 py-2 border-b border-gray-700"
-          >
-            <div class="flex justify-center gap-3 max-w-4xl mx-auto flex-wrap">
-              {#if fixture.current_period === "first_half" && !is_clock_running}
-                <button
-                  class="px-4 py-2 bg-orange-600 hover:bg-orange-700 rounded-lg text-sm font-medium"
-                  on:click={end_current_period}
-                >
-                  ⏹️ End 1st Half
-                </button>
-              {:else if fixture.current_period === "half_time"}
-                <button
-                  class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-sm font-medium"
-                  on:click={() => change_period("second_half")}
-                >
-                  ▶️ Start 2nd Half
-                </button>
-              {:else if fixture.current_period === "second_half" && !is_clock_running}
-                <button
-                  class="px-4 py-2 bg-orange-600 hover:bg-orange-700 rounded-lg text-sm font-medium"
-                  on:click={end_current_period}
-                >
-                  ⏹️ End 2nd Half
-                </button>
-                <button
-                  class="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg text-sm font-medium"
-                  on:click={() => change_period("extra_time_first")}
-                >
-                  ⚡ Extra Time
-                </button>
-              {/if}
-            </div>
-          </div>
-        {/if}
-
         {#if can_modify_game}
           <div
             class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-4"
@@ -2437,6 +2572,70 @@
   on:confirm={end_game}
   on:cancel={() => (show_end_modal = false)}
 />
+
+{#if period_button_config}
+  <ConfirmationModal
+    is_visible={show_period_modal}
+    title={period_button_config.is_end_action ? "End Period" : "Start Period"}
+    message={period_button_config.message}
+    confirm_text={period_button_config.confirm_text}
+    is_destructive={period_button_config.is_end_action}
+    is_processing={is_updating}
+    on:confirm={confirm_period_action}
+    on:cancel={() => (show_period_modal = false)}
+  />
+{/if}
+
+{#if show_extra_time_modal}
+  <div
+    class="fixed inset-0 bg-black/60 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4"
+  >
+    <div
+      class="bg-white dark:bg-gray-800 w-full sm:max-w-sm sm:rounded-xl shadow-2xl"
+    >
+      <div class="p-4 border-b border-gray-200 dark:border-gray-700">
+        <h3 class="font-semibold text-gray-900 dark:text-white text-lg">
+          ⏱️ Add Extra Time
+        </h3>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+          How many minutes of extra time to add to the current period?
+        </p>
+      </div>
+      <div class="p-4">
+        <label
+          for="extra-time-input"
+          class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+          >Minutes to add</label
+        >
+        <input
+          id="extra-time-input"
+          type="number"
+          min="1"
+          max="30"
+          bind:value={extra_minutes_to_add}
+          class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+        />
+      </div>
+      <div
+        class="p-4 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-3"
+      >
+        <button
+          class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
+          on:click={() => (show_extra_time_modal = false)}
+        >
+          Cancel
+        </button>
+        <button
+          class="px-4 py-2 text-sm font-medium text-white bg-amber-600 hover:bg-amber-700 rounded-lg disabled:opacity-50"
+          disabled={extra_minutes_to_add < 1 || is_updating}
+          on:click={confirm_extra_time}
+        >
+          Add {extra_minutes_to_add} min
+        </button>
+      </div>
+    </div>
+  </div>
+{/if}
 
 {#if show_event_modal && selected_event_type}
   <div

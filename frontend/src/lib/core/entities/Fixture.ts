@@ -16,7 +16,8 @@ export type GamePeriod =
   | "extra_time_first"
   | "extra_time_second"
   | "penalty_shootout"
-  | "finished";
+  | "finished"
+  | (string & {});
 
 export type GameEventType =
   | "goal"
@@ -517,7 +518,7 @@ export function format_event_time(
 }
 
 export function get_period_display_name(period: GamePeriod): string {
-  const names: Record<GamePeriod, string> = {
+  const names: Record<string, string> = {
     pre_game: "Pre-Game",
     first_half: "1st Half",
     half_time: "Half Time",
@@ -527,7 +528,7 @@ export function get_period_display_name(period: GamePeriod): string {
     penalty_shootout: "Penalties",
     finished: "Full Time",
   };
-  return names[period];
+  return names[period] ?? period;
 }
 
 export interface ColorClashWarning {

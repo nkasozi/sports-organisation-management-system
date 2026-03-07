@@ -57,6 +57,7 @@
   let competition: Competition | null = null;
   let sport: Sport | null = null;
   let venue: Venue | null = null;
+  let organization_name: string = "";
   let assigned_officials_data: Array<{
     official: Official;
     role_name: string;
@@ -236,16 +237,15 @@
           const org_result = await organization_use_cases.get_by_id(
             loaded_competition.organization_id,
           );
-          if (
-            org_result.success &&
-            org_result.data &&
-            org_result.data.sport_id
-          ) {
-            const sport_result = await sport_use_cases.get_by_id(
-              org_result.data.sport_id,
-            );
-            if (sport_result.success && sport_result.data) {
-              sport = sport_result.data;
+          if (org_result.success && org_result.data) {
+            organization_name = org_result.data.name;
+            if (org_result.data.sport_id) {
+              const sport_result = await sport_use_cases.get_by_id(
+                org_result.data.sport_id,
+              );
+              if (sport_result.success && sport_result.data) {
+                sport = sport_result.data;
+              }
             }
           }
         }
@@ -518,6 +518,22 @@
     <div class="flex flex-col min-h-screen">
       <div class="bg-gray-900 text-white px-4 py-4 sticky top-0 z-40">
         <div class="max-w-4xl mx-auto">
+          {#if organization_name || competition?.name}
+            <div class="text-center pb-2">
+              {#if organization_name}
+                <p
+                  class="text-xs uppercase tracking-widest text-gray-400 font-medium"
+                >
+                  {organization_name}
+                </p>
+              {/if}
+              {#if competition?.name}
+                <p class="text-sm font-semibold text-gray-200">
+                  {competition.name}
+                </p>
+              {/if}
+            </div>
+          {/if}
           <div class="flex items-center justify-between mb-3">
             <button
               type="button"
