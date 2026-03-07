@@ -705,6 +705,47 @@ export function reset_sync_metadata(): void {
   localStorage.removeItem("convex_sync_metadata");
 }
 
+export async function clear_all_synced_tables_in_convex(): Promise<boolean> {
+  const manager = get_sync_manager();
+  const convex_client = (
+    manager as unknown as { convex_client: ConvexClient | null }
+  ).convex_client;
+
+  if (!convex_client) {
+    console.warn(
+      "[Sync:Reset] Convex client not configured, skipping remote clear",
+    );
+    return false;
+  }
+
+  console.log("[Sync:Reset] Clearing all synced tables in Convex...");
+  let total_deleted = 0;
+
+  for (const table_name of TABLE_NAMES) {
+    try {
+      const result = (await convex_client.mutation("sync:clear_table", {
+        table_name,
+      })) as { success: boolean; deleted_count: number; error?: string };
+
+      if (result.success) {
+        total_deleted += result.deleted_count;
+        if (result.deleted_count > 0) {
+          console.log(
+            `[Sync:Reset] ${table_name}: deleted ${result.deleted_count} records`,
+          );
+        }
+      } else {
+        console.warn(`[Sync:Reset] ${table_name}: ${result.error}`);
+      }
+    } catch (error) {
+      console.warn(`[Sync:Reset] ${table_name}: failed — ${error}`);
+    }
+  }
+
+  console.log(`[Sync:Reset] Done. Total deleted: ${total_deleted}`);
+  return true;
+}
+
 export class ConvexSyncManager {
   private convex_client: ConvexClient | null = null;
   private sync_interval_id: number | null = null;

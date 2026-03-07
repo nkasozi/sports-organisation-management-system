@@ -562,3 +562,42 @@ export const check_auth = query({
     return { authenticated: identity !== null };
   },
 });
+
+export const clear_table = mutation({
+  args: {
+    table_name: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const { table_name } = args;
+    const entity_type = get_entity_type_from_table(table_name);
+
+    try {
+      await require_permission(ctx, entity_type, "delete");
+    } catch (error) {
+      if (error instanceof AuthenticationError) {
+        return {
+          success: false,
+          error: "authentication_required",
+          message: error.message,
+          deleted_count: 0,
+        };
+      }
+      if (error instanceof AuthorizationError) {
+        return {
+          success: false,
+          error: "unauthorized",
+          message: error.message,
+          deleted_count: 0,
+        };
+      }
+      throw error;
+    }
+
+    const all_records = await ctx.db.query(table_name as any).collect();
+    for (const record of all_records) {
+      await ctx.db.delete(record._id);
+    }
+
+    return { success: true, deleted_count: all_records.length };
+  },
+});

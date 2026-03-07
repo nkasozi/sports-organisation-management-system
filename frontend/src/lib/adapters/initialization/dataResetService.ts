@@ -33,6 +33,15 @@ import { get_player_team_membership_repository } from "../repositories/InBrowser
 import { get_official_repository } from "../repositories/InBrowserOfficialRepository";
 import { get_all_sports } from "../persistence/sportService";
 import { reset_seeding_flag, seed_all_data_if_needed } from "./seedingService";
+import {
+  clear_all_synced_tables_in_convex,
+  reset_sync_metadata,
+} from "$lib/infrastructure/sync/convexSyncService";
+import {
+  stop_background_sync,
+  start_background_sync,
+  set_pulling_from_remote,
+} from "$lib/infrastructure/sync/backgroundSyncService";
 
 const FIRST_TIME_DETECTION_KEY = "sports_org_app_initialized";
 
@@ -44,7 +53,13 @@ function reset_first_time_flag(): void {
 export async function reset_all_data(): Promise<boolean> {
   if (typeof window === "undefined") return false;
 
+  stop_background_sync();
+  set_pulling_from_remote(true);
+
+  await clear_all_synced_tables_in_convex();
+
   localStorage.clear();
+  reset_sync_metadata();
 
   reset_seeding_flag();
   reset_first_time_flag();
@@ -85,6 +100,9 @@ export async function reset_all_data(): Promise<boolean> {
   await game_event_repo.find_all();
 
   await seed_all_data_if_needed();
+
+  set_pulling_from_remote(false);
+  start_background_sync();
 
   return true;
 }

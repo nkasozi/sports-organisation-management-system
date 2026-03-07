@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+  import { onMount, tick } from "svelte";
   import { browser } from "$app/environment";
   import { ensure_auth_profile } from "$lib/presentation/logic/authGuard";
   import { access_denial_store } from "$lib/presentation/stores/accessDenial";
@@ -293,6 +293,7 @@
   async function handle_reset_data(): Promise<boolean> {
     if (is_resetting) return false;
     is_resetting = true;
+    await tick();
     const reset_result = await reset_all_data();
     if (!reset_result) {
       is_resetting = false;
@@ -302,6 +303,7 @@
     reset_initialization();
     await initialize_app_data();
     is_resetting = false;
+    window.location.reload();
     return true;
   }
 </script>
@@ -313,6 +315,36 @@
     content="Overview of your sports organization management system"
   />
 </svelte:head>
+
+{#if is_resetting}
+  <div
+    class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
+  >
+    <div class="text-center">
+      <svg
+        class="mx-auto h-12 w-12 animate-spin text-primary-400"
+        fill="none"
+        viewBox="0 0 24 24"
+      >
+        <circle
+          class="opacity-25"
+          cx="12"
+          cy="12"
+          r="10"
+          stroke="currentColor"
+          stroke-width="4"
+        />
+        <path
+          class="opacity-75"
+          fill="currentColor"
+          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+        />
+      </svg>
+      <p class="mt-4 text-lg font-medium text-white">Resetting demo data...</p>
+      <p class="mt-1 text-sm text-gray-400">Clearing and re-seeding all data</p>
+    </div>
+  </div>
+{/if}
 
 {#if error_message}
   <div class="card p-8 text-center">
