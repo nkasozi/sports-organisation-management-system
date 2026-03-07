@@ -30,9 +30,6 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# GitHub
-.github/
-
 # Cache
 .cache/
 .temp/
@@ -51,4 +48,8 @@ dist/
 .idea/
 .trunk/
 .vite/
+
+# GitHub - exclude prompts and copilot instructions but keep workflows
+.github/prompts/
+.github/copilot-instructions.md
 /frontend/.vercel
