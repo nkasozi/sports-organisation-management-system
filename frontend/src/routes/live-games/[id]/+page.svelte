@@ -268,7 +268,7 @@
       : 45 * 60;
   })();
   $: period_elapsed_seconds = (() => {
-    if (is_finished_period) return 0;
+    if (is_finished_period) return break_elapsed_seconds;
     if (is_break_period) return break_elapsed_seconds;
     const cp = fixture?.current_period ?? "first_half";
     let start = 0;
@@ -282,6 +282,9 @@
     0,
     current_period_duration + extra_time_added_seconds - period_elapsed_seconds,
   );
+  $: if (remaining_seconds_in_period <= 0 && is_clock_running) {
+    stop_clock();
+  }
   $: countdown_minutes = Math.floor(remaining_seconds_in_period / 60);
   $: countdown_seconds = remaining_seconds_in_period % 60;
   $: clock_display = `${countdown_minutes.toString().padStart(2, "0")}:${countdown_seconds.toString().padStart(2, "0")}`;
@@ -302,10 +305,7 @@
   );
   $: can_add_extra_time =
     remaining_seconds_in_period <= EXTRA_TIME_AVAILABLE_WITHIN_MINUTES * 60;
-  $: show_extra_time_button =
-    is_game_active &&
-    can_add_extra_time &&
-    check_is_playing_period(fixture?.current_period, effective_periods);
+  $: show_extra_time_button = is_game_active && can_add_extra_time;
   $: {
     if (is_game_completed) {
       home_lineup_expanded = true;
@@ -586,15 +586,17 @@
   function start_clock(): void {
     if (clock_interval) return;
     const cp = fixture?.current_period;
-    if (cp === "finished" || fixture?.status === "completed") return;
+    const is_finished = cp === "finished" || fixture?.status === "completed";
+    if (is_finished && extra_time_added_seconds <= 0) return;
     is_clock_running = true;
     clock_interval = setInterval(tick_clock, 1000);
   }
 
   function tick_clock(): void {
     const cp = fixture?.current_period;
+    const is_finished = cp === "finished";
     const in_break = cp && effective_periods.find((p) => p.id === cp)?.is_break;
-    if (in_break) {
+    if (in_break || is_finished) {
       break_elapsed_seconds += 1;
     } else {
       game_clock_seconds += 1;
@@ -1465,7 +1467,7 @@
                   {/if}
                   {#if show_extra_time_button}
                     <button
-                      class="px-3 py-2 rounded-lg text-sm font-medium bg-amber-600 hover:bg-amber-700 text-white"
+                      class="px-3 py-2 rounded-lg text-sm font-medium bg-green-600 hover:bg-green-700 text-white"
                       on:click={() => (show_extra_time_modal = true)}
                     >
                       ⏱️ Add Time
