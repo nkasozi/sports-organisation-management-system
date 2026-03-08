@@ -28,7 +28,7 @@
 </script>
 
 <div
-  class="min-h-screen flex flex-col lg:flex-row bg-white dark:bg-gray-900 transition-colors"
+  class="min-h-screen flex flex-col lg:flex-row bg-gray-900 transition-colors"
 >
   <div
     class="hidden lg:flex lg:w-1/2 bg-gray-900 dark:bg-gray-950 relative overflow-hidden flex-col justify-between p-12"
@@ -155,10 +155,17 @@
   </div>
 
   <div
-    class="flex-1 flex flex-col items-center justify-center px-6 py-12 sm:px-12 lg:px-16"
+    class="flex-1 flex flex-col items-center justify-center px-6 py-12 sm:px-12 lg:px-16 relative overflow-hidden bg-gray-900"
   >
-    <div class="w-full max-w-sm">
-      <div class="lg:hidden flex items-center gap-3 mb-10">
+    <div
+      class="absolute top-0 left-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-blue-400/5 rounded-full -translate-y-1/2"
+    ></div>
+    <div
+      class="absolute bottom-0 right-0 w-72 h-72 bg-indigo-400/5 rounded-full translate-y-1/3 translate-x-1/4"
+    ></div>
+
+    <div class="w-full max-w-md relative z-10">
+      <div class="lg:hidden flex items-center justify-center gap-3 mb-10">
         <div
           class="w-9 h-9 bg-blue-600 rounded-lg flex items-center justify-center"
         >
@@ -176,54 +183,82 @@
             />
           </svg>
         </div>
-        <span
-          class="text-gray-900 dark:text-white text-lg font-semibold tracking-tight"
+        <span class="text-white text-lg font-semibold tracking-tight"
           >SportSync</span
         >
       </div>
 
-      <div class="mb-8">
-        <h2
-          class="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white tracking-tight"
-        >
+      <div class="mb-8 text-center">
+        <div class="flex items-center justify-center gap-2 mb-4">
+          <div class="h-px w-8 bg-blue-600/30"></div>
+          <svg
+            class="w-5 h-5 text-blue-600 dark:text-blue-400"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="1.5"
+              d="M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z"
+            />
+          </svg>
+          <div class="h-px w-8 bg-blue-600/30"></div>
+        </div>
+        <h2 class="text-2xl sm:text-3xl font-bold text-white tracking-tight">
           Sign in to your account
         </h2>
-        <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">
+        <p class="mt-2 text-sm text-gray-400">
           Use the email address provided by your organization
         </p>
       </div>
 
-      <SignIn
-        forceRedirectUrl="/"
-        appearance={{
-          elements: {
-            rootBox: "w-full",
-            card: "shadow-none border-0 bg-transparent w-full",
-            headerTitle: "hidden",
-            headerSubtitle: "hidden",
-            socialButtonsBlockButton:
-              "border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 transition-colors",
-            formButtonPrimary:
-              "bg-blue-600 hover:bg-blue-700 text-white transition-colors",
-            formFieldInput:
-              "border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-blue-500 focus:border-blue-500",
-            formFieldLabel: "text-gray-700 dark:text-gray-300",
-            footerActionLink:
-              "text-blue-600 dark:text-blue-400 hover:underline",
-            dividerLine: "bg-gray-200 dark:bg-gray-600",
-            dividerText: "text-gray-500 dark:text-gray-400",
-            identityPreviewEditButton: "text-blue-600 dark:text-blue-400",
-            formFieldSuccessText: "text-green-600 dark:text-green-400",
-            alert: "dark:bg-gray-700 dark:border-gray-600",
-            alertText: "dark:text-gray-200",
-          },
-        }}
-      />
+      <div class="flex justify-center">
+        <SignIn
+          forceRedirectUrl="/"
+          appearance={{
+            variables: {
+              colorBackground: "#1a1a2e",
+              colorNeutral: "white",
+              colorPrimary: "#2563eb",
+              colorPrimaryForeground: "white",
+              colorForeground: "white",
+              colorInputForeground: "white",
+              colorInput: "#26262B",
+              borderRadius: "0.5rem",
+            },
+            elements: {
+              providerIcon__apple: { filter: "invert(1)" },
+              providerIcon__github: { filter: "invert(1)" },
+            },
+          }}
+        />
+      </div>
 
       <div
-        class="lg:hidden mt-12 pt-6 border-t border-gray-200 dark:border-gray-700"
+        class="mt-6 flex items-center justify-center gap-4 text-xs text-gray-500"
       >
-        <p class="text-xs text-gray-400 dark:text-gray-500 text-center">
+        <span class="flex items-center gap-1.5">
+          <svg
+            class="w-3.5 h-3.5 text-green-500"
+            fill="currentColor"
+            viewBox="0 0 20 20"
+          >
+            <path
+              fill-rule="evenodd"
+              d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z"
+              clip-rule="evenodd"
+            />
+          </svg>
+          Encrypted connection
+        </span>
+        <span class="w-1 h-1 rounded-full bg-gray-600"></span>
+        <span>Secured by Clerk</span>
+      </div>
+
+      <div class="lg:hidden mt-12 pt-6 border-t border-gray-700">
+        <p class="text-xs text-gray-500 text-center">
           &copy; {current_year} SportSync. All rights reserved.
         </p>
       </div>

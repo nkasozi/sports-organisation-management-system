@@ -180,7 +180,22 @@
   });
 </script>
 
-<ClerkProvider signInUrl="/sign-in" signInForceRedirectUrl="/">
+<ClerkProvider
+  signInUrl="/sign-in"
+  signInForceRedirectUrl="/"
+  appearance={{
+    variables: {
+      colorBackground: "#1a1a2e",
+      colorNeutral: "white",
+      colorPrimary: "#2563eb",
+      colorPrimaryForeground: "white",
+      colorForeground: "white",
+      colorInputForeground: "white",
+      colorInput: "#26262B",
+      borderRadius: "0.5rem",
+    },
+  }}
+>
   {#if !app_ready || !clerk_ready}
     <div
       class="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900"
