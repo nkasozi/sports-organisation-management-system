@@ -31,7 +31,7 @@
   class="min-h-screen flex flex-col lg:flex-row bg-gray-900 transition-colors"
 >
   <div
-    class="hidden lg:flex lg:w-1/2 bg-gray-900 dark:bg-gray-950 relative overflow-hidden flex-col justify-between p-12"
+    class="hidden lg:flex lg:w-1/2 bg-gray-900 relative overflow-hidden flex-col justify-between p-12"
   >
     <div class="relative z-10">
       <div class="flex items-center gap-3 mb-16">
@@ -155,7 +155,7 @@
   </div>
 
   <div
-    class="flex-1 flex flex-col items-center justify-center px-6 py-12 sm:px-12 lg:px-16 relative overflow-hidden bg-gray-900"
+    class="flex-1 flex flex-col items-center justify-center px-6 py-12 sm:px-12 lg:px-16 relative overflow-hidden bg-gray-900 dark:bg-gray-950"
   >
     <div
       class="absolute top-0 left-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-blue-400/5 rounded-full -translate-y-1/2"
