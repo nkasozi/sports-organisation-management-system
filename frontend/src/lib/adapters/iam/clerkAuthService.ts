@@ -1,7 +1,7 @@
 import { browser } from "$app/environment";
 import { PUBLIC_CLERK_PUBLISHABLE_KEY } from "$env/static/public";
 import { writable, derived, type Readable } from "svelte/store";
-import { Clerk } from "@clerk/clerk-js";
+import type { Clerk } from "@clerk/clerk-js";
 import { goto } from "$app/navigation";
 
 export interface ClerkUser {
@@ -134,12 +134,24 @@ export async function initialize_clerk(): Promise<boolean> {
   }
 
   try {
-    clerk_instance = new Clerk(publishable_key);
+    const max_wait_ms = 10000;
+    const poll_interval_ms = 100;
+    let elapsed_ms = 0;
 
-    await clerk_instance.load({
-      routerPush: (to: string) => goto(to),
-      routerReplace: (to: string) => goto(to, { replaceState: true }),
-    });
+    while (!window.Clerk && elapsed_ms < max_wait_ms) {
+      await new Promise((resolve) => setTimeout(resolve, poll_interval_ms));
+      elapsed_ms += poll_interval_ms;
+    }
+
+    if (!window.Clerk) {
+      console.error("[Clerk] ClerkProvider did not load Clerk in time");
+      requestAnimationFrame(() => {
+        safe_store_update({ ...initial_state, is_loaded: true });
+      });
+      return false;
+    }
+
+    clerk_instance = window.Clerk as unknown as Clerk;
 
     sync_clerk_state();
 
@@ -147,7 +159,7 @@ export async function initialize_clerk(): Promise<boolean> {
       sync_clerk_state();
     });
 
-    console.log("[Clerk] Initialized successfully");
+    console.log("[Clerk] Initialized successfully via ClerkProvider");
     return true;
   } catch (error) {
     console.error("[Clerk] Failed to initialize:", error);

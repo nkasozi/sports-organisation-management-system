@@ -2615,7 +2615,7 @@
           min="1"
           max="30"
           bind:value={extra_minutes_to_add}
-          class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+          class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-violet-500 focus:border-violet-500"
         />
       </div>
       <div
@@ -2628,7 +2628,7 @@
           Cancel
         </button>
         <button
-          class="px-4 py-2 text-sm font-medium text-white bg-amber-600 hover:bg-amber-700 rounded-lg disabled:opacity-50"
+          class="px-4 py-2 text-sm font-medium text-white bg-violet-600 hover:bg-violet-700 rounded-lg disabled:opacity-50"
           disabled={extra_minutes_to_add < 1 || is_updating}
           on:click={confirm_extra_time}
         >

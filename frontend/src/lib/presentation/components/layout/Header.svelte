@@ -1,11 +1,7 @@
 <script lang="ts">
   import { createEventDispatcher, onMount } from "svelte";
   import { goto, invalidateAll } from "$app/navigation";
-  import {
-    is_signed_in,
-    sign_in_with_redirect,
-    sign_out,
-  } from "$lib/adapters/iam/clerkAuthService";
+  import { is_signed_in, sign_out } from "$lib/adapters/iam/clerkAuthService";
   import {
     theme_store,
     toggle_theme_mode,
@@ -68,7 +64,7 @@
       return;
     }
 
-    sign_in_with_redirect();
+    goto("/sign-in");
   }
 
   async function handle_profile_switch(profile: UserProfile): Promise<void> {

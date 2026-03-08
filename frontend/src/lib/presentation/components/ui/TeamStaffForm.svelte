@@ -40,7 +40,7 @@
       case "administrative":
         return "bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300";
       case "technical":
-        return "bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300";
+        return "bg-violet-100 text-violet-700 dark:bg-violet-900/50 dark:text-violet-300";
       default:
         return "bg-accent-100 text-accent-700 dark:bg-accent-700 dark:text-accent-300";
     }

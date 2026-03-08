@@ -10,6 +10,7 @@
   import ThemeProvider from "$lib/presentation/components/theme/ThemeProvider.svelte";
   import MergeConflictScreen from "$lib/presentation/components/MergeConflictScreen.svelte";
   import { sync_store } from "$lib/presentation/stores/syncStore";
+  import { is_signed_in } from "$lib/adapters/iam/clerkAuthService";
   import type {
     ConflictRecord,
     ConflictResolutionAction,
@@ -80,6 +81,38 @@
   >
     <!-- Header -->
     <Header {sidebar_open} on:toggle-sidebar={toggle_sidebar} />
+
+    {#if !$is_signed_in}
+      <div
+        class="bg-violet-50 dark:bg-violet-950/60 border-b border-violet-200 dark:border-violet-800 w-full pt-4 pb-2 text-center"
+      >
+        <p
+          class="text-xs sm:text-sm text-violet-700 dark:text-violet-300 inline-flex items-center gap-1.5"
+        >
+          <svg
+            class="w-4 h-4 text-violet-600 dark:text-violet-400 flex-shrink-0"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+          You are not signed in. Any changes you make will be overridden when you
+          sign in.
+          <a
+            href="/sign-in"
+            class="font-medium hover:text-violet-900 dark:hover:text-violet-100 underline"
+          >
+            Sign in
+          </a>
+        </p>
+      </div>
+    {/if}
 
     <!-- Main content area -->
     <div class="flex flex-1 min-w-0">

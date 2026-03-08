@@ -52,6 +52,7 @@
     "dexie": "^4.3.0",
     "jspdf": "^4.2.0",
     "jspdf-autotable": "^5.0.7",
+    "svelte-clerk": "^1.0.1",
     "temporal-polyfill": "^0.3.0"
   }
 }

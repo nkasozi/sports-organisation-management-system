@@ -1000,7 +1000,7 @@
 
                 <div class="flex items-center gap-2">
                   <svg
-                    class="w-4 h-4 text-amber-500 dark:text-amber-400 flex-shrink-0"
+                    class="w-4 h-4 text-violet-500 dark:text-violet-400 flex-shrink-0"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"

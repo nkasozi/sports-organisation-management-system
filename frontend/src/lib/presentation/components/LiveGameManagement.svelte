@@ -156,7 +156,7 @@
         id: "foul",
         label: "Foul",
         icon: "⚠️",
-        color: "bg-amber-500",
+        color: "bg-violet-500",
         category: "foul",
         requires_player: true,
         affects_score: false,
@@ -830,7 +830,7 @@
               {/if}
             {:else if is_clock_running}
               <button
-                class="px-4 py-2 bg-amber-600 hover:bg-amber-700 rounded-lg text-sm font-medium"
+                class="px-4 py-2 bg-violet-600 hover:bg-violet-700 rounded-lg text-sm font-medium"
                 on:click={() => add_stoppage_time(1)}
               >
                 +1' Stoppage

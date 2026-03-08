@@ -1019,7 +1019,7 @@
                           ? "s"
                           : ""} before match time.
                         {#if (form_data.lineup_submission_deadline_hours ?? 0) > 0}
-                          <span class="text-amber-600 dark:text-amber-400">
+                          <span class="text-violet-600 dark:text-violet-400">
                             Auto-submission is required when deadline is set.
                           </span>
                         {/if}

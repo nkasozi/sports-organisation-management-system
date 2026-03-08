@@ -483,10 +483,10 @@
             <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">Assists</p>
           </div>
           <div
-            class="bg-amber-50 dark:bg-amber-900/30 rounded-xl p-4 text-center"
+            class="bg-violet-50 dark:bg-violet-900/30 rounded-xl p-4 text-center"
           >
             <p
-              class="text-3xl sm:text-4xl font-bold text-amber-600 dark:text-amber-400"
+              class="text-3xl sm:text-4xl font-bold text-violet-600 dark:text-violet-400"
             >
               {overall_stats.yellow_cards}
             </p>
@@ -586,7 +586,7 @@
                     </p>
                   </div>
                   <div>
-                    <p class="font-bold text-amber-600 dark:text-amber-400">
+                    <p class="font-bold text-violet-600 dark:text-violet-400">
                       {team_stat.stats.yellow_cards}
                     </p>
                     <p class="text-xs text-gray-500 dark:text-gray-400">

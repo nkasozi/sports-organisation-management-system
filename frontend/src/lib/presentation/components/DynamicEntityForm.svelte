@@ -2057,11 +2057,11 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
 
       {#if permission_denied}
         <div
-          class="p-4 bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-700 rounded-lg"
+          class="p-4 bg-violet-50 dark:bg-violet-900/30 border border-violet-200 dark:border-violet-700 rounded-lg"
         >
           <div class="flex items-start gap-3">
             <svg
-              class="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5"
+              class="w-5 h-5 text-violet-600 dark:text-violet-400 flex-shrink-0 mt-0.5"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -2073,7 +2073,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
                 d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
               />
             </svg>
-            <p class="text-sm text-amber-800 dark:text-amber-200">
+            <p class="text-sm text-violet-800 dark:text-violet-200">
               {permission_denied_message}
             </p>
           </div>
@@ -2642,11 +2642,11 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
 
         {#if gender_mismatch_warnings.length > 0}
           <div
-            class="mt-4 p-4 rounded-lg border border-amber-300 dark:border-amber-600 bg-amber-50 dark:bg-amber-900/30"
+            class="mt-4 p-4 rounded-lg border border-violet-300 dark:border-violet-600 bg-violet-50 dark:bg-violet-900/30"
           >
             <div class="flex items-start gap-3">
               <svg
-                class="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5"
+                class="w-5 h-5 text-violet-600 dark:text-violet-400 flex-shrink-0 mt-0.5"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -2660,12 +2660,12 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
               </svg>
               <div>
                 <div
-                  class="text-sm font-semibold text-amber-800 dark:text-amber-200"
+                  class="text-sm font-semibold text-violet-800 dark:text-violet-200"
                 >
                   Gender Mismatch Detected
                 </div>
                 <ul
-                  class="mt-1 text-sm text-amber-700 dark:text-amber-300 list-disc list-inside"
+                  class="mt-1 text-sm text-violet-700 dark:text-violet-300 list-disc list-inside"
                 >
                   {#each gender_mismatch_warnings as warning}
                     <li>{warning}</li>
@@ -2678,11 +2678,11 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
 
         {#if fixture_team_gender_mismatch_warnings.length > 0}
           <div
-            class="mt-4 p-4 rounded-lg border border-amber-300 dark:border-amber-600 bg-amber-50 dark:bg-amber-900/30"
+            class="mt-4 p-4 rounded-lg border border-violet-300 dark:border-violet-600 bg-violet-50 dark:bg-violet-900/30"
           >
             <div class="flex items-start gap-3">
               <svg
-                class="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5"
+                class="w-5 h-5 text-violet-600 dark:text-violet-400 flex-shrink-0 mt-0.5"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -2696,12 +2696,12 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
               </svg>
               <div>
                 <div
-                  class="text-sm font-semibold text-amber-800 dark:text-amber-200"
+                  class="text-sm font-semibold text-violet-800 dark:text-violet-200"
                 >
                   Team Gender Mismatch
                 </div>
                 <ul
-                  class="mt-1 text-sm text-amber-700 dark:text-amber-300 list-disc list-inside"
+                  class="mt-1 text-sm text-violet-700 dark:text-violet-300 list-disc list-inside"
                 >
                   {#each fixture_team_gender_mismatch_warnings as warning}
                     <li>{warning}</li>

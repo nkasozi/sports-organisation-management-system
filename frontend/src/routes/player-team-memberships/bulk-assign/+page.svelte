@@ -498,7 +498,7 @@
                   >
                     {get_player_full_name(assignment.player)}
                   </p>
-                  <p class="text-sm text-amber-600 dark:text-amber-400">
+                  <p class="text-sm text-violet-600 dark:text-violet-400">
                     Currently on: {assignment.current_team_name}
                   </p>
                 </div>

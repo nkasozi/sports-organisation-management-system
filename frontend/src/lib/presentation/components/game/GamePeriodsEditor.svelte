@@ -301,12 +301,12 @@
     {#each sorted_periods as period, index (period.id)}
       <div
         class="flex items-center gap-3 p-3 rounded-lg border {period.is_break
-          ? 'border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20'
+          ? 'border-violet-200 dark:border-violet-800 bg-violet-50 dark:bg-violet-900/20'
           : 'border-accent-200 dark:border-accent-700 bg-white dark:bg-accent-900'}"
       >
         <div
           class="flex flex-col items-center justify-center w-8 h-8 rounded-full {period.is_break
-            ? 'bg-amber-200 dark:bg-amber-800 text-amber-700 dark:text-amber-300'
+            ? 'bg-violet-200 dark:bg-violet-800 text-violet-700 dark:text-violet-300'
             : 'bg-primary-100 dark:bg-primary-900 text-primary-700 dark:text-primary-300'} text-sm font-medium"
         >
           {index + 1}
@@ -357,7 +357,7 @@
 
             {#if period.is_break}
               <span
-                class="text-xs px-2 py-0.5 rounded bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300"
+                class="text-xs px-2 py-0.5 rounded bg-violet-100 dark:bg-violet-900 text-violet-700 dark:text-violet-300"
               >
                 Break
               </span>
@@ -466,7 +466,7 @@
       <button
         type="button"
         on:click={add_break}
-        class="flex items-center gap-1 px-3 py-2 text-sm rounded-md bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-800 transition-colors"
+        class="flex items-center gap-1 px-3 py-2 text-sm rounded-md bg-violet-100 dark:bg-violet-900 text-violet-700 dark:text-violet-300 hover:bg-violet-200 dark:hover:bg-violet-800 transition-colors"
       >
         <svg
           class="w-4 h-4"

@@ -125,7 +125,7 @@
     <div
       class="flex max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden rounded-lg bg-white shadow-xl"
     >
-      <div class="border-b border-gray-200 bg-amber-50 px-6 py-4">
+      <div class="border-b border-gray-200 bg-violet-50 px-6 py-4">
         <div class="flex items-center justify-between">
           <div>
             <h2 class="text-xl font-semibold text-gray-900">

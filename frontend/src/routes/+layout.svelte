@@ -15,23 +15,46 @@
   import { first_time_setup_store } from "$lib/presentation/stores/firstTimeSetup";
   import {
     is_clerk_loaded,
+    is_signed_in,
     set_navigating,
   } from "$lib/adapters/iam/clerkAuthService";
   import { ensure_route_access } from "$lib/presentation/logic/authGuard";
   import { get } from "svelte/store";
+  import InitialSyncOverlay from "$lib/presentation/components/ui/InitialSyncOverlay.svelte";
+  import {
+    initial_sync_store,
+    has_session_been_synced,
+  } from "$lib/presentation/stores/initialSyncStore";
+  import { sync_store } from "$lib/presentation/stores/syncStore";
+  import {
+    stop_background_sync,
+    start_background_sync,
+    set_pulling_from_remote,
+  } from "$lib/infrastructure/sync/backgroundSyncService";
+  import { reset_database } from "$lib/adapters/repositories/database";
+  import { reset_sync_metadata } from "$lib/infrastructure/sync/convexSyncService";
+  import {
+    reset_seeding_flag,
+    seed_all_data_if_needed,
+  } from "$lib/adapters/initialization/seedingService";
+  import { ClerkProvider } from "svelte-clerk";
 
   injectAnalytics();
 
   let show_first_time_setup = false;
+  let show_initial_sync = false;
   let app_ready = false;
   let clerk_ready = false;
   let current_path = "";
   let setup_status_message = "";
   let setup_progress_percentage = 0;
+  let sync_status_message = "";
+  let sync_progress_percentage = 0;
   let unsubscribe_page: (() => void) | null = null;
   let unsubscribe_setup: (() => void) | null = null;
   let unsubscribe_clerk: (() => void) | null = null;
   let unsubscribe_navigating: (() => void) | null = null;
+  let unsubscribe_sync: (() => void) | null = null;
 
   function get_is_public_profile_page(path: string): boolean {
     return path.startsWith("/profile/") || path.startsWith("/team-profile/");
@@ -63,15 +86,50 @@
     await ensure_route_access(pathname);
   });
 
+  async function run_initial_sync_if_needed(): Promise<void> {
+    if (has_session_been_synced()) return;
+    if (!get(is_signed_in)) return;
+
+    initial_sync_store.start_sync();
+
+    initial_sync_store.update_progress("Stopping background processes...", 10);
+    stop_background_sync();
+    set_pulling_from_remote(true);
+
+    initial_sync_store.update_progress("Clearing local data...", 20);
+    await reset_database();
+    reset_sync_metadata();
+    reset_seeding_flag();
+
+    initial_sync_store.update_progress("Seeding base configurations...", 35);
+    await seed_all_data_if_needed();
+
+    initial_sync_store.update_progress("Pulling data from server...", 50);
+    set_pulling_from_remote(false);
+    await sync_store.sync_now();
+
+    initial_sync_store.update_progress("Pulling remaining data...", 75);
+    await sync_store.sync_now();
+
+    initial_sync_store.update_progress("Finalizing...", 95);
+    start_background_sync();
+    await new Promise((r) => setTimeout(r, 400));
+
+    initial_sync_store.complete_sync();
+    await new Promise((r) => setTimeout(r, 500));
+  }
+
   function cleanup_subscriptions(): void {
     unsubscribe_page?.();
     unsubscribe_setup?.();
     unsubscribe_clerk?.();
     unsubscribe_navigating?.();
+    unsubscribe_sync?.();
     unsubscribe_page = null;
     unsubscribe_setup = null;
     unsubscribe_clerk = null;
     unsubscribe_navigating = null;
+    unsubscribe_sync = null;
   }
 
   onMount(async () => {
@@ -100,7 +158,14 @@
       clerk_ready = loaded;
     });
 
+    unsubscribe_sync = initial_sync_store.subscribe((state) => {
+      sync_status_message = state.status_message;
+      sync_progress_percentage = state.progress_percentage;
+      show_initial_sync = state.is_syncing;
+    });
+
     await initialize_app_data();
+    await run_initial_sync_if_needed();
     app_ready = true;
 
     const initial_path = get(page).url.pathname;
@@ -115,36 +180,45 @@
   });
 </script>
 
-{#if !app_ready || !clerk_ready}
-  <div
-    class="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900"
-  >
-    <div class="text-center">
-      <div
-        class="animate-spin rounded-full h-12 w-12 border-b-2 border-theme-primary-600 mx-auto"
-      ></div>
-      <p class="mt-4 text-gray-600 dark:text-gray-400">Loading...</p>
+<ClerkProvider signInUrl="/sign-in" signInForceRedirectUrl="/">
+  {#if !app_ready || !clerk_ready}
+    <div
+      class="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900"
+    >
+      <div class="text-center">
+        <div
+          class="animate-spin rounded-full h-12 w-12 border-b-2 border-theme-primary-600 mx-auto"
+        ></div>
+        <p class="mt-4 text-gray-600 dark:text-gray-400">Loading...</p>
+      </div>
     </div>
-  </div>
-{:else}
-  <AuthChecker>
-    {#if show_first_time_setup}
-      <FirstTimeSetup
-        status_message={setup_status_message}
-        progress_percentage={setup_progress_percentage}
-      />
-    {/if}
+  {:else}
+    <AuthChecker>
+      {#if show_first_time_setup}
+        <FirstTimeSetup
+          status_message={setup_status_message}
+          progress_percentage={setup_progress_percentage}
+        />
+      {/if}
 
-    {#if get_is_auth_page(current_path)}
-      <slot />
-    {:else if get_is_public_profile_page(current_path)}
-      <PublicLayout>
+      {#if show_initial_sync}
+        <InitialSyncOverlay
+          status_message={sync_status_message}
+          progress_percentage={sync_progress_percentage}
+        />
+      {/if}
+
+      {#if get_is_auth_page(current_path)}
         <slot />
-      </PublicLayout>
-    {:else}
-      <Layout>
-        <slot />
-      </Layout>
-    {/if}
-  </AuthChecker>
-{/if}
+      {:else if get_is_public_profile_page(current_path)}
+        <PublicLayout>
+          <slot />
+        </PublicLayout>
+      {:else}
+        <Layout>
+          <slot />
+        </Layout>
+      {/if}
+    </AuthChecker>
+  {/if}
+</ClerkProvider>

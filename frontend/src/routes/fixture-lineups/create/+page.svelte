@@ -1103,9 +1103,9 @@
 
             {#if fixtures_for_organization.length > 0 && (non_scheduled_fixtures_count > 0 || fixtures_with_complete_lineups.size > 0) && selected_organization && !loading}
               <div
-                class="p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-700"
+                class="p-3 bg-violet-50 dark:bg-violet-900/20 rounded-lg border border-violet-200 dark:border-violet-700"
               >
-                <p class="text-sm text-amber-800 dark:text-amber-200">
+                <p class="text-sm text-violet-800 dark:text-violet-200">
                   <span class="font-medium">Note:</span> Only showing scheduled
                   fixtures that still need lineups.
                   {#if non_scheduled_fixtures_count > 0}
@@ -1133,11 +1133,11 @@
 
               {#if teams_with_existing_lineups.size > 0}
                 <div
-                  class="mb-4 p-4 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700"
+                  class="mb-4 p-4 rounded-lg bg-violet-50 dark:bg-violet-900/20 border border-violet-200 dark:border-violet-700"
                 >
                   <div class="flex items-start gap-3">
                     <svg
-                      class="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5"
+                      class="w-5 h-5 text-violet-500 flex-shrink-0 mt-0.5"
                       fill="currentColor"
                       viewBox="0 0 20 20"
                     >
@@ -1148,17 +1148,17 @@
                       />
                     </svg>
                     <div>
-                      <p class="font-medium text-amber-800 dark:text-amber-200">
+                      <p class="font-medium text-violet-800 dark:text-violet-200">
                         Some teams have already submitted lineups
                       </p>
                       <p
-                        class="mt-1 text-sm text-amber-700 dark:text-amber-300"
+                        class="mt-1 text-sm text-violet-700 dark:text-violet-300"
                       >
                         The following teams already have a lineup for this
                         fixture and are not shown below:
                       </p>
                       <ul
-                        class="mt-2 text-sm text-amber-700 dark:text-amber-300 list-disc list-inside"
+                        class="mt-2 text-sm text-violet-700 dark:text-violet-300 list-disc list-inside"
                       >
                         {#each Array.from(teams_with_existing_lineups.values()) as team_name}
                           <li>{team_name}</li>
@@ -1166,7 +1166,7 @@
                       </ul>
                       {#if available_teams.length === 0}
                         <p
-                          class="mt-2 text-sm font-medium text-amber-800 dark:text-amber-200"
+                          class="mt-2 text-sm font-medium text-violet-800 dark:text-violet-200"
                         >
                           All teams in this fixture have already submitted their
                           lineups.
@@ -1339,7 +1339,7 @@
                                 class="inline-block mt-1 px-2 py-0.5 text-xs font-medium rounded {player_role ===
                                 'Starter'
                                   ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
-                                  : 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300'}"
+                                  : 'bg-violet-100 text-violet-800 dark:bg-violet-900/30 dark:text-violet-300'}"
                               >
                                 {player_role}
                               </span>
@@ -1445,17 +1445,17 @@
                   {#if substitutes.length > 0}
                     <div>
                       <h3
-                        class="text-sm font-semibold text-amber-700 dark:text-amber-400 mb-2 flex items-center gap-2"
+                        class="text-sm font-semibold text-violet-700 dark:text-violet-400 mb-2 flex items-center gap-2"
                       >
                         <span
-                          class="inline-block w-3 h-3 rounded-full bg-amber-500"
+                          class="inline-block w-3 h-3 rounded-full bg-violet-500"
                         ></span>
                         Substitutes ({substitutes.length})
                       </h3>
                       <div class="space-y-2">
                         {#each sort_lineup_players(substitutes) as player}
                           <div
-                            class="p-3 rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20"
+                            class="p-3 rounded-lg border border-violet-200 dark:border-violet-800 bg-violet-50 dark:bg-violet-900/20"
                           >
                             <div class="flex items-center justify-between">
                               <div

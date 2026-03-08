@@ -443,10 +443,10 @@
               </div>
             </div>
             <div
-              class="bg-amber-50 dark:bg-amber-900/30 rounded-xl p-4 text-center"
+              class="bg-violet-50 dark:bg-violet-900/30 rounded-xl p-4 text-center"
             >
               <div
-                class="text-3xl sm:text-4xl font-bold text-amber-600 dark:text-amber-400"
+                class="text-3xl sm:text-4xl font-bold text-violet-600 dark:text-violet-400"
               >
                 {overall_stats.draws}
               </div>
@@ -491,10 +491,10 @@
               </div>
             </div>
             <div
-              class="bg-amber-50 dark:bg-amber-900/30 rounded-xl p-4 text-center"
+              class="bg-violet-50 dark:bg-violet-900/30 rounded-xl p-4 text-center"
             >
               <div
-                class="text-3xl sm:text-4xl font-bold text-amber-600 dark:text-amber-400"
+                class="text-3xl sm:text-4xl font-bold text-violet-600 dark:text-violet-400"
               >
                 {overall_stats.yellow_cards}
               </div>
@@ -555,10 +555,10 @@
                 </div>
               </div>
               <div
-                class="bg-amber-50 dark:bg-amber-900/30 rounded-xl p-4 text-center"
+                class="bg-violet-50 dark:bg-violet-900/30 rounded-xl p-4 text-center"
               >
                 <div
-                  class="text-3xl sm:text-4xl font-bold text-amber-600 dark:text-amber-400"
+                  class="text-3xl sm:text-4xl font-bold text-violet-600 dark:text-violet-400"
                 >
                   {comp_stat.stats.draws}
                 </div>

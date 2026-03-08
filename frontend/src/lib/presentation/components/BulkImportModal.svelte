@@ -745,13 +745,13 @@
             {/if}
 
             <div
-              class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4"
+              class="bg-violet-50 dark:bg-violet-900/20 border border-violet-200 dark:border-violet-800 rounded-lg p-4"
             >
-              <h4 class="font-medium text-amber-900 dark:text-amber-100 mb-2">
+              <h4 class="font-medium text-violet-900 dark:text-violet-100 mb-2">
                 General Tips
               </h4>
               <ul
-                class="text-sm text-amber-700 dark:text-amber-300 list-disc list-inside space-y-1"
+                class="text-sm text-violet-700 dark:text-violet-300 list-disc list-inside space-y-1"
               >
                 <li>Keep the header row exactly as provided in the template</li>
                 <li>Dates must be in YYYY-MM-DD format (e.g., 2000-01-15)</li>
@@ -876,7 +876,7 @@
                   ? "bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800"
                   : success_count === 0
                     ? "bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800"
-                    : "bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800"
+                    : "bg-violet-50 dark:bg-violet-900/20 border border-violet-200 dark:border-violet-800"
               }`}
             >
               <h3
@@ -885,7 +885,7 @@
                     ? "text-green-900 dark:text-green-100"
                     : success_count === 0
                       ? "text-red-900 dark:text-red-100"
-                      : "text-amber-900 dark:text-amber-100"
+                      : "text-violet-900 dark:text-violet-100"
                 }`}
               >
                 Import Complete
