@@ -58,7 +58,13 @@
     {/if}
 
     <div class="text-xs text-accent-500 space-y-1">
-      <p>Preparing your sports management environment</p>
+      {#if status_message.includes("server") || status_message.includes("Pulling")}
+        <p>Syncing data from the server</p>
+      {:else if status_message.includes("demo") || status_message.includes("offline")}
+        <p>Loading local demo data for offline use</p>
+      {:else}
+        <p>Preparing your sports management environment</p>
+      {/if}
       <p class="text-accent-600">This only happens on first launch</p>
     </div>
   </div>

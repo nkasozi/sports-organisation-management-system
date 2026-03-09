@@ -301,7 +301,7 @@
     }
     first_time_setup_store.reset();
     reset_initialization();
-    await initialize_app_data();
+    await initialize_app_data({ current_path: window.location.pathname });
     is_resetting = false;
     window.location.reload();
     return true;

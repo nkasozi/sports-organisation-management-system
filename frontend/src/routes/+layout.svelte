@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount, onDestroy } from "svelte";
   import { page, navigating } from "$app/stores";
-  import { afterNavigate } from "$app/navigation";
+  import { afterNavigate, goto } from "$app/navigation";
   import { injectAnalytics } from "@vercel/analytics/sveltekit";
   import "../app.css";
   import Layout from "$lib/presentation/components/layout/Layout.svelte";
@@ -177,7 +177,15 @@
       show_initial_sync = state.is_syncing;
     });
 
-    await initialize_app_data();
+    const init_result = await initialize_app_data({ current_path });
+
+    if (init_result === "redirect_to_login") {
+      app_ready = true;
+      clerk_ready = true;
+      await goto("/sign-in?error=server_unavailable");
+      return;
+    }
+
     await run_initial_sync_if_needed();
     app_ready = true;
 

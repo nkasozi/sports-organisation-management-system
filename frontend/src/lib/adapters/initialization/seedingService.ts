@@ -107,6 +107,31 @@ import {
 } from "../../infrastructure/events/EventBus";
 import type { SystemUser } from "../../core/entities/SystemUser";
 import { current_user_store } from "../../presentation/stores/currentUser";
+import {
+  try_seed_all_tables_from_convex,
+  type ProgressCallback,
+  type DataSource,
+} from "../../infrastructure/sync/convexSeedingService";
+
+type SeedingStrategy =
+  | "skip_seeding"
+  | "convex_first_with_local_fallback"
+  | "convex_mandatory";
+
+type SeedOutcome =
+  | "skipped"
+  | "convex_success"
+  | "local_fallback_success"
+  | "offline_mode"
+  | "convex_required_but_unavailable"
+  | "failed";
+
+interface SeedResult {
+  success: boolean;
+  data_source: DataSource;
+  outcome: SeedOutcome;
+  error_message: string;
+}
 
 const SEEDING_COMPLETE_KEY = "sports_org_seeding_complete_v11";
 
@@ -546,3 +571,139 @@ export function reset_seeding_flag(): void {
   if (typeof window === "undefined") return;
   localStorage.removeItem(SEEDING_COMPLETE_KEY);
 }
+
+export async function seed_from_convex_or_local(
+  on_progress: ProgressCallback,
+  strategy: SeedingStrategy,
+): Promise<SeedResult> {
+  switch (strategy) {
+    case "skip_seeding":
+      return handle_skip_seeding();
+    case "convex_first_with_local_fallback":
+      return handle_convex_with_local_fallback(on_progress);
+    case "convex_mandatory":
+      return handle_convex_mandatory(on_progress);
+  }
+}
+
+function handle_skip_seeding(): SeedResult {
+  console.log("[Seeding] Skip strategy — public viewer, no seeding needed");
+  return {
+    success: true,
+    data_source: "none",
+    outcome: "skipped",
+    error_message: "",
+  };
+}
+
+async function handle_convex_with_local_fallback(
+  on_progress: ProgressCallback,
+): Promise<SeedResult> {
+  if (is_seeding_already_complete()) {
+    await load_and_set_current_user();
+    return {
+      success: true,
+      data_source: "local",
+      outcome: "local_fallback_success",
+      error_message: "",
+    };
+  }
+
+  if (typeof window === "undefined") {
+    return {
+      success: false,
+      data_source: "none",
+      outcome: "failed",
+      error_message: "Not in browser environment",
+    };
+  }
+
+  on_progress("Connecting to server...", 15);
+  const convex_result = await try_seed_all_tables_from_convex(on_progress);
+
+  if (convex_result.success) {
+    on_progress("Server data loaded successfully", 85);
+    console.log(
+      `[Seeding] Convex seeding succeeded: ${convex_result.total_records} records from ${convex_result.tables_fetched} tables`,
+    );
+    await load_and_set_current_user();
+    mark_seeding_complete();
+    return {
+      success: true,
+      data_source: "convex",
+      outcome: "convex_success",
+      error_message: "",
+    };
+  }
+
+  console.log("[Seeding] Convex unavailable, falling back to local demo data");
+  on_progress("Server unavailable, loading demo data...", 40);
+  const local_success = await seed_all_data_if_needed();
+
+  return {
+    success: local_success,
+    data_source: local_success ? "local" : "none",
+    outcome: local_success ? "local_fallback_success" : "failed",
+    error_message: local_success ? "" : "Both Convex and local seeding failed",
+  };
+}
+
+async function handle_convex_mandatory(
+  on_progress: ProgressCallback,
+): Promise<SeedResult> {
+  const seeding_already_done = is_seeding_already_complete();
+
+  if (typeof window === "undefined") {
+    return {
+      success: false,
+      data_source: "none",
+      outcome: "failed",
+      error_message: "Not in browser environment",
+    };
+  }
+
+  on_progress("Pulling data from server...", 15);
+  const convex_result = await try_seed_all_tables_from_convex(on_progress);
+
+  if (convex_result.success) {
+    on_progress("Server data loaded successfully", 85);
+    console.log(
+      `[Seeding] Convex pull succeeded: ${convex_result.total_records} records from ${convex_result.tables_fetched} tables`,
+    );
+    await load_and_set_current_user();
+    mark_seeding_complete();
+    return {
+      success: true,
+      data_source: "convex",
+      outcome: "convex_success",
+      error_message: "",
+    };
+  }
+
+  if (seeding_already_done) {
+    console.log(
+      "[Seeding] Convex unavailable but local data exists — entering offline mode",
+    );
+    await load_and_set_current_user();
+    return {
+      success: true,
+      data_source: "local",
+      outcome: "offline_mode",
+      error_message:
+        "Unable to fetch the latest data from the server. Using previously saved data.",
+    };
+  }
+
+  console.error(
+    "[Seeding] Convex unavailable and no local data — cannot proceed",
+  );
+  return {
+    success: false,
+    data_source: "none",
+    outcome: "convex_required_but_unavailable",
+    error_message:
+      "Unable to connect to the server to load your data. Please check your internet connection and try again.",
+  };
+}
+
+export type { SeedResult, DataSource, SeedingStrategy, SeedOutcome };

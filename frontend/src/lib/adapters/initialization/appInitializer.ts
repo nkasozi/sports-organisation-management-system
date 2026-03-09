@@ -1,4 +1,5 @@
 import { PUBLIC_CONVEX_URL } from "$env/static/public";
+import { get } from "svelte/store";
 import { get_repository_container } from "$lib/infrastructure/container";
 import { get_organization_use_cases } from "$lib/core/usecases/OrganizationUseCases";
 import { get_competition_use_cases } from "$lib/core/usecases/CompetitionUseCases";
@@ -14,16 +15,20 @@ import { get_team_staff_role_use_cases } from "$lib/core/usecases/TeamStaffRoleU
 import { get_competition_format_use_cases } from "$lib/core/usecases/CompetitionFormatUseCases";
 import { get_game_official_role_use_cases } from "$lib/core/usecases/GameOfficialRoleUseCases";
 import {
-  seed_all_data_if_needed,
+  seed_from_convex_or_local,
   is_seeding_already_complete,
+  type SeedingStrategy,
+  type SeedResult,
 } from "./seedingService";
 import { initialize_audit_event_handlers } from "$lib/infrastructure/handlers/AuditEventHandler";
 import { first_time_setup_store } from "$lib/presentation/stores/firstTimeSetup";
+import { app_status_store } from "$lib/presentation/stores/appStatus";
 import { ConvexClient } from "convex/browser";
 import { sync_store } from "$lib/presentation/stores/syncStore";
 import {
   initialize_clerk,
   get_session_token,
+  is_signed_in,
 } from "$lib/adapters/iam/clerkAuthService";
 import { get_authentication_adapter } from "$lib/adapters/iam/LocalAuthenticationAdapter";
 import { get_authorization_adapter } from "$lib/infrastructure/AuthorizationProvider";
@@ -133,9 +138,38 @@ function start_auth_cache_invalidation(convex_client: ConvexClient): boolean {
   return started;
 }
 
-export async function initialize_app_data(): Promise<boolean> {
-  if (initialized) return true;
-  if (typeof window === "undefined") return false;
+type InitResult = "success" | "redirect_to_login";
+
+interface InitializeOptions {
+  current_path: string;
+}
+
+function get_is_public_content_page(path: string): boolean {
+  return (
+    path.startsWith("/competition-results") ||
+    path.startsWith("/calendar") ||
+    path.startsWith("/match-report")
+  );
+}
+
+function determine_seeding_strategy(
+  user_is_signed_in: boolean,
+  current_path: string,
+): SeedingStrategy {
+  if (!user_is_signed_in && get_is_public_content_page(current_path)) {
+    return "skip_seeding";
+  }
+  if (!user_is_signed_in) {
+    return "convex_first_with_local_fallback";
+  }
+  return "convex_mandatory";
+}
+
+export async function initialize_app_data(
+  options: InitializeOptions,
+): Promise<InitResult> {
+  if (initialized) return "success";
+  if (typeof window === "undefined") return "success";
 
   const is_first_time = is_first_time_use();
 
@@ -153,6 +187,7 @@ export async function initialize_app_data(): Promise<boolean> {
 
   await initialize_clerk();
   const convex_client = initialize_convex_client();
+  const user_is_signed_in = get(is_signed_in);
 
   if (convex_client) {
     start_auth_cache_invalidation(convex_client);
@@ -165,60 +200,21 @@ export async function initialize_app_data(): Promise<boolean> {
     );
     await delay(300);
   }
-  get_repository_container();
+  initialize_all_use_cases();
 
-  if (is_first_time) {
-    first_time_setup_store.update_progress(
-      "Loading sport configurations...",
-      30,
-    );
-    await delay(200);
-  }
-  get_sport_use_cases();
-  get_organization_use_cases();
+  const strategy = determine_seeding_strategy(
+    user_is_signed_in,
+    options.current_path,
+  );
+  console.log(
+    `[AppInitializer] Seeding strategy: ${strategy} (signed_in=${user_is_signed_in}, path=${options.current_path})`,
+  );
 
-  if (is_first_time) {
-    first_time_setup_store.update_progress(
-      "Configuring player positions...",
-      40,
-    );
-    await delay(200);
-  }
-  get_player_position_use_cases();
-  get_team_staff_role_use_cases();
-  get_game_official_role_use_cases();
-  get_competition_format_use_cases();
+  const seed_outcome = await run_seeding_with_strategy(strategy, is_first_time);
 
-  if (is_first_time) {
-    first_time_setup_store.update_progress("Setting up team management...", 50);
-    await delay(200);
+  if (seed_outcome === "redirect_to_login") {
+    return "redirect_to_login";
   }
-  get_team_use_cases();
-  get_player_use_cases();
-  get_player_team_membership_use_cases();
-
-  if (is_first_time) {
-    first_time_setup_store.update_progress(
-      "Configuring staff and officials...",
-      60,
-    );
-    await delay(200);
-  }
-  get_team_staff_use_cases();
-  get_official_use_cases();
-
-  if (is_first_time) {
-    first_time_setup_store.update_progress("Loading competition system...", 70);
-    await delay(200);
-  }
-  get_competition_use_cases();
-  get_fixture_use_cases();
-
-  if (is_first_time) {
-    first_time_setup_store.update_progress("Seeding demo data...", 80);
-    await delay(300);
-  }
-  await seed_all_data_if_needed();
 
   start_background_sync();
 
@@ -238,16 +234,138 @@ export async function initialize_app_data(): Promise<boolean> {
     );
   }
 
-  if (is_first_time) {
-    first_time_setup_store.update_progress("Finalizing setup...", 95);
-    await delay(400);
-    mark_app_initialized();
-    first_time_setup_store.complete_setup();
-    await delay(600);
+  initialized = true;
+  return "success";
+}
+
+function initialize_all_use_cases(): void {
+  get_repository_container();
+  get_sport_use_cases();
+  get_organization_use_cases();
+  get_player_position_use_cases();
+  get_team_staff_role_use_cases();
+  get_game_official_role_use_cases();
+  get_competition_format_use_cases();
+  get_team_use_cases();
+  get_player_use_cases();
+  get_player_team_membership_use_cases();
+  get_team_staff_use_cases();
+  get_official_use_cases();
+  get_competition_use_cases();
+  get_fixture_use_cases();
+}
+
+async function run_seeding_with_strategy(
+  strategy: SeedingStrategy,
+  is_first_time: boolean,
+): Promise<InitResult> {
+  if (strategy === "skip_seeding") {
+    console.log("[AppInitializer] Public viewer — skipping seeding");
+    if (is_first_time) {
+      first_time_setup_store.update_progress("Preparing public view...", 90);
+      await delay(200);
+      mark_app_initialized();
+      first_time_setup_store.complete_setup();
+      await delay(400);
+    }
+    return "success";
   }
 
-  initialized = true;
-  return true;
+  if (is_first_time) {
+    const connecting_message =
+      strategy === "convex_mandatory"
+        ? "Pulling data from server..."
+        : "Checking server for existing data...";
+    first_time_setup_store.update_progress(connecting_message, 30);
+    await delay(300);
+  }
+
+  const progress_callback = is_first_time
+    ? (message: string, percentage: number) =>
+        first_time_setup_store.update_progress(message, percentage)
+    : (_message: string, _percentage: number) => {};
+
+  const seed_result = await seed_from_convex_or_local(
+    progress_callback,
+    strategy,
+  );
+
+  return handle_seed_result(seed_result, is_first_time);
+}
+
+async function handle_seed_result(
+  seed_result: SeedResult,
+  is_first_time: boolean,
+): Promise<InitResult> {
+  switch (seed_result.outcome) {
+    case "convex_success": {
+      app_status_store.set_online();
+      if (is_first_time) {
+        first_time_setup_store.update_progress("Data loaded from server", 90);
+        await delay(400);
+        await finalize_first_time_setup();
+      }
+      return "success";
+    }
+
+    case "local_fallback_success": {
+      app_status_store.set_online();
+      if (is_first_time) {
+        first_time_setup_store.update_progress(
+          "Demo data loaded (offline mode)",
+          90,
+        );
+        await delay(400);
+        await finalize_first_time_setup();
+      }
+      return "success";
+    }
+
+    case "offline_mode": {
+      app_status_store.set_offline(seed_result.error_message);
+      console.warn(
+        `[AppInitializer] Offline mode: ${seed_result.error_message}`,
+      );
+      if (is_first_time) {
+        await finalize_first_time_setup();
+      }
+      return "success";
+    }
+
+    case "convex_required_but_unavailable": {
+      console.error(
+        `[AppInitializer] Cannot proceed: ${seed_result.error_message}`,
+      );
+      if (is_first_time) {
+        first_time_setup_store.update_progress(seed_result.error_message, 0);
+        await delay(1500);
+        first_time_setup_store.complete_setup();
+      }
+      return "redirect_to_login";
+    }
+
+    case "skipped": {
+      return "success";
+    }
+
+    default: {
+      console.error(
+        `[AppInitializer] Seeding failed: ${seed_result.error_message}`,
+      );
+      if (is_first_time) {
+        await finalize_first_time_setup();
+      }
+      return "success";
+    }
+  }
+}
+
+async function finalize_first_time_setup(): Promise<void> {
+  first_time_setup_store.update_progress("Finalizing setup...", 95);
+  await delay(400);
+  mark_app_initialized();
+  first_time_setup_store.complete_setup();
+  await delay(600);
 }
 
 export function reset_initialization(): void {

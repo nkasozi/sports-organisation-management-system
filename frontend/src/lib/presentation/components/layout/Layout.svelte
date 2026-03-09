@@ -11,6 +11,10 @@
   import MergeConflictScreen from "$lib/presentation/components/MergeConflictScreen.svelte";
   import { sync_store } from "$lib/presentation/stores/syncStore";
   import { is_signed_in } from "$lib/adapters/iam/clerkAuthService";
+  import {
+    is_offline_mode,
+    offline_reason,
+  } from "$lib/presentation/stores/appStatus";
   import type {
     ConflictRecord,
     ConflictResolutionAction,
@@ -82,7 +86,30 @@
     <!-- Header -->
     <Header {sidebar_open} on:toggle-sidebar={toggle_sidebar} />
 
-    {#if !$is_signed_in}
+    {#if $is_offline_mode}
+      <div
+        class="bg-amber-50 dark:bg-amber-950/60 border-b border-amber-200 dark:border-amber-800 w-full pt-4 pb-2 text-center"
+      >
+        <p
+          class="text-xs sm:text-sm text-amber-700 dark:text-amber-300 inline-flex items-center gap-1.5 flex-wrap justify-center px-4"
+        >
+          <svg
+            class="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M18.364 5.636a9 9 0 010 12.728M5.636 18.364a9 9 0 010-12.728M12 9v4m0 4h.01"
+            />
+          </svg>
+          Offline mode — {$offline_reason}
+        </p>
+      </div>
+    {:else if !$is_signed_in}
       <div
         class="bg-violet-50 dark:bg-violet-950/60 border-b border-violet-200 dark:border-violet-800 w-full pt-4 pb-2 text-center"
       >
