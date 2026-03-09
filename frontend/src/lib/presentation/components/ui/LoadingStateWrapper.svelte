@@ -3,10 +3,14 @@
 </script>
 
 <script lang="ts">
+  import ErrorDisplay from "./ErrorDisplay.svelte";
+
   export let state: LoadingState = "idle";
   export let error_message: string = "";
+  export let error_title: string = "Something went wrong";
   export let loading_text: string = "Loading...";
   export let show_content_while_loading: boolean = false;
+  export let on_retry: (() => void) | null = null;
 
   $: is_loading = state === "loading";
   $: is_error = state === "error";
@@ -23,33 +27,11 @@
       <p class="text-accent-600 dark:text-accent-400 text-sm">{loading_text}</p>
     </div>
   {:else if is_error}
-    <div
-      class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4"
-    >
-      <div class="flex items-start">
-        <div class="flex-shrink-0">
-          <svg
-            class="h-5 w-5 text-red-500"
-            viewBox="0 0 20 20"
-            fill="currentColor"
-          >
-            <path
-              fill-rule="evenodd"
-              d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-              clip-rule="evenodd"
-            />
-          </svg>
-        </div>
-        <div class="ml-3">
-          <h3 class="text-sm font-medium text-red-800 dark:text-red-200">
-            Error
-          </h3>
-          <p class="mt-1 text-sm text-red-700 dark:text-red-300">
-            {error_message || "An unexpected error occurred"}
-          </p>
-        </div>
-      </div>
-    </div>
+    <ErrorDisplay
+      title={error_title}
+      message={error_message || "An unexpected error occurred"}
+      {on_retry}
+    />
   {:else if should_show_content}
     <div class="relative">
       {#if is_loading && show_content_while_loading}

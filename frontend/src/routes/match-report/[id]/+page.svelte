@@ -31,6 +31,7 @@
   import type { Venue } from "$lib/core/entities/Venue";
   import type { Official } from "$lib/core/entities/Official";
   import Toast from "$lib/presentation/components/ui/Toast.svelte";
+  import { ErrorDisplay } from "$lib/presentation/components/ui";
   import {
     build_match_report_data,
     generate_match_report_filename,
@@ -505,19 +506,12 @@
     </div>
   {:else if error_message}
     <div class="max-w-2xl mx-auto p-6">
-      <div
-        class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6 text-center"
-      >
-        <h3 class="text-lg font-medium text-red-800 dark:text-red-200 mb-2">
-          Error Loading Match
-        </h3>
-        <p class="text-red-600 dark:text-red-400">{error_message}</p>
-        <button
-          type="button"
-          class="btn btn-outline mt-4"
-          on:click={navigate_back}>Go Back</button
-        >
-      </div>
+      <ErrorDisplay
+        variant="page"
+        title="Error Loading Match"
+        message={error_message}
+        on_back={navigate_back}
+      />
     </div>
   {:else if fixture}
     <div class="flex flex-col min-h-screen">

@@ -1,4 +1,5 @@
 export { default as LoadingStateWrapper } from "./LoadingStateWrapper.svelte";
+export { default as ErrorDisplay } from "./ErrorDisplay.svelte";
 export { default as ConfirmationModal } from "./ConfirmationModal.svelte";
 export { default as Pagination } from "./Pagination.svelte";
 export { default as Toast } from "./Toast.svelte";
