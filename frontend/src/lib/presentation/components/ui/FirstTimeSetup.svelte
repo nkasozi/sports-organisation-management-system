@@ -1,12 +1,14 @@
 <script lang="ts">
   import { fade } from "svelte/transition";
 
+  export let title: string = "Sports Management System";
   export let status_message: string = "Loading...";
   export let progress_percentage: number = 0;
+  export let subtitle: string = "";
 </script>
 
 <div
-  class="fixed inset-0 z-[9999] flex items-center justify-center bg-accent-900/95 dark:bg-accent-950/98"
+  class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 backdrop-blur-sm"
   transition:fade={{ duration: 300 }}
 >
   <div class="text-center space-y-8 px-6 max-w-md">
@@ -37,7 +39,7 @@
     </div>
 
     <div class="space-y-3">
-      <h2 class="text-xl font-semibold text-white">Sports Management System</h2>
+      <h2 class="text-xl font-semibold text-white">{title}</h2>
       <p class="text-theme-primary-400 font-medium animate-pulse">
         {status_message}
       </p>
@@ -57,15 +59,20 @@
       </div>
     {/if}
 
-    <div class="text-xs text-accent-500 space-y-1">
-      {#if status_message.includes("server") || status_message.includes("Pulling")}
-        <p>Syncing data from the server</p>
-      {:else if status_message.includes("demo") || status_message.includes("offline")}
-        <p>Loading local demo data for offline use</p>
-      {:else}
-        <p>Preparing your sports management environment</p>
-      {/if}
-      <p class="text-accent-600">This only happens on first launch</p>
-    </div>
+    {#if subtitle}
+      <p class="text-xs text-accent-500">{subtitle}</p>
+    {:else}
+      <div class="text-xs text-accent-500 space-y-1">
+        {#if status_message.includes("server") || status_message.includes("Pulling")}
+          <p>Syncing data from the server</p>
+        {:else if status_message.includes("demo") || status_message.includes("offline")}
+          <p>Loading local demo data for offline use</p>
+        {:else if status_message.includes("Clearing") || status_message.includes("Resetting")}
+          <p>Clearing and re-seeding all data</p>
+        {:else}
+          <p>Preparing your sports management environment</p>
+        {/if}
+      </div>
+    {/if}
   </div>
 </div>

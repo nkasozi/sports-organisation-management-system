@@ -2,12 +2,14 @@
   import { sign_out, destroy_clerk } from "$lib/adapters/iam/clerkAuthService";
   import { page } from "$app/stores";
   import { goto } from "$app/navigation";
+  import { clear_session_sync_flag } from "$lib/presentation/stores/initialSyncStore";
 
   $: error_message =
     $page.url.searchParams.get("message") ||
     "You don't have access to this system.";
 
   async function handle_sign_out(): Promise<boolean> {
+    clear_session_sync_flag();
     await sign_out();
     destroy_clerk();
     window.location.href = "/";

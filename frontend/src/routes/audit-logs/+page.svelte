@@ -15,13 +15,14 @@
     type UserScopeProfile,
   } from "$lib/core/interfaces/ports";
   import { get } from "svelte/store";
+  import { AUDIT_LOG_PAGE_SIZE } from "$lib/infrastructure/sync/convexAuditLogService";
 
   let audit_logs: AuditLog[] = [];
   let is_loading = true;
   let error_message = "";
   let total_count = 0;
   let current_page = 1;
-  let page_size = 25;
+  let page_size = AUDIT_LOG_PAGE_SIZE;
 
   let filter_entity_type = "";
   let filter_action = "";

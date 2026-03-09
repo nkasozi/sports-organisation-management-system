@@ -19,6 +19,7 @@
   import { auth_store } from "$lib/presentation/stores/auth";
   import { build_dashboard_filters } from "$lib/presentation/logic/dashboardStatsLogic";
   import { ErrorDisplay } from "$lib/presentation/components/ui";
+  import FullScreenOverlay from "$lib/presentation/components/ui/FullScreenOverlay.svelte";
   import type { Competition } from "$lib/core/entities/Competition";
   import type { Fixture } from "$lib/core/entities/Fixture";
   import type { Team } from "$lib/core/entities/Team";
@@ -318,33 +319,12 @@
 </svelte:head>
 
 {#if is_resetting}
-  <div
-    class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
-  >
-    <div class="text-center">
-      <svg
-        class="mx-auto h-12 w-12 animate-spin text-primary-400"
-        fill="none"
-        viewBox="0 0 24 24"
-      >
-        <circle
-          class="opacity-25"
-          cx="12"
-          cy="12"
-          r="10"
-          stroke="currentColor"
-          stroke-width="4"
-        />
-        <path
-          class="opacity-75"
-          fill="currentColor"
-          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-        />
-      </svg>
-      <p class="mt-4 text-lg font-medium text-white">Resetting demo data...</p>
-      <p class="mt-1 text-sm text-gray-400">Clearing and re-seeding all data</p>
-    </div>
-  </div>
+  <FullScreenOverlay
+    title="Resetting Demo"
+    subtitle="Clearing and re-seeding all data"
+    status_message="Resetting demo data..."
+    progress_percentage={0}
+  />
 {/if}
 
 {#if error_message}

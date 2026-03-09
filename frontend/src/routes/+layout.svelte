@@ -6,7 +6,7 @@
   import "../app.css";
   import Layout from "$lib/presentation/components/layout/Layout.svelte";
   import PublicLayout from "$lib/presentation/components/layout/PublicLayout.svelte";
-  import FirstTimeSetup from "$lib/presentation/components/ui/FirstTimeSetup.svelte";
+  import FullScreenOverlay from "$lib/presentation/components/ui/FullScreenOverlay.svelte";
   import AuthChecker from "$lib/presentation/components/auth/AuthChecker.svelte";
   import {
     initialize_app_data,
@@ -20,7 +20,6 @@
   } from "$lib/adapters/iam/clerkAuthService";
   import { ensure_route_access } from "$lib/presentation/logic/authGuard";
   import { get } from "svelte/store";
-  import InitialSyncOverlay from "$lib/presentation/components/ui/InitialSyncOverlay.svelte";
   import {
     initial_sync_store,
     has_session_been_synced,
@@ -56,6 +55,8 @@
   let unsubscribe_clerk: (() => void) | null = null;
   let unsubscribe_navigating: (() => void) | null = null;
   let unsubscribe_sync: (() => void) | null = null;
+  let unsubscribe_signed_in: (() => void) | null = null;
+  let previous_signed_in_state = false;
 
   function get_is_public_profile_page(path: string): boolean {
     return path.startsWith("/profile/") || path.startsWith("/team-profile/");
@@ -96,36 +97,76 @@
     await ensure_route_access(pathname);
   });
 
-  async function run_initial_sync_if_needed(): Promise<void> {
-    if (has_session_been_synced()) return;
-    if (!get(is_signed_in)) return;
+  function format_table_name(table_name: string): string {
+    return table_name
+      .replace(/_/g, " ")
+      .replace(/\b\w/g, (char) => char.toUpperCase());
+  }
 
+  async function run_initial_sync_if_needed(): Promise<void> {
+    if (has_session_been_synced()) {
+      console.log("[Layout] Session already synced, skipping initial sync");
+      return;
+    }
+    if (!get(is_signed_in)) {
+      console.log("[Layout] User not signed in, skipping initial sync");
+      return;
+    }
+
+    const current_sync_state = get(initial_sync_store);
+    if (current_sync_state.is_syncing) {
+      console.log(
+        "[Layout] Sync already in progress, skipping duplicate request",
+      );
+      return;
+    }
+
+    console.log("[Layout] Starting initial sync from Convex...");
     initial_sync_store.start_sync();
 
-    initial_sync_store.update_progress("Stopping background processes...", 10);
+    initial_sync_store.update_progress("Stopping background processes...", 5);
     stop_background_sync();
     set_pulling_from_remote(true);
 
-    initial_sync_store.update_progress("Clearing local data...", 20);
+    initial_sync_store.update_progress("Clearing local data...", 10);
     await reset_database();
     reset_sync_metadata();
     reset_seeding_flag();
 
-    initial_sync_store.update_progress("Seeding base configurations...", 35);
+    initial_sync_store.update_progress("Seeding base configurations...", 15);
     await seed_all_data_if_needed();
 
-    initial_sync_store.update_progress("Pulling data from server...", 50);
+    initial_sync_store.update_progress("Starting data sync...", 20);
     set_pulling_from_remote(false);
+
+    let sync_unsub: (() => void) | null = null;
+    sync_unsub = sync_store.subscribe((state) => {
+      if (state.current_progress) {
+        const progress = state.current_progress;
+        const base_percentage = 20;
+        const sync_range = 70;
+        const scaled_percentage =
+          base_percentage +
+          Math.round((progress.percentage / 100) * sync_range);
+        const table_display = format_table_name(progress.table_name);
+        const message = `Syncing ${table_display} (${progress.tables_completed}/${progress.total_tables})`;
+        initial_sync_store.update_progress(message, scaled_percentage);
+      }
+    });
+
+    await sync_store.sync_now();
     await sync_store.sync_now();
 
-    initial_sync_store.update_progress("Pulling remaining data...", 75);
-    await sync_store.sync_now();
+    if (sync_unsub) {
+      sync_unsub();
+      sync_unsub = null;
+    }
 
-    initial_sync_store.update_progress("Finalizing...", 95);
+    initial_sync_store.update_progress("Finalizing...", 92);
     start_background_sync();
     await new Promise((r) => setTimeout(r, 400));
 
-    initial_sync_store.update_progress("Loading user profiles...", 98);
+    initial_sync_store.update_progress("Loading user profiles...", 96);
     await auth_store.initialize();
 
     initial_sync_store.complete_sync();
@@ -138,11 +179,13 @@
     unsubscribe_clerk?.();
     unsubscribe_navigating?.();
     unsubscribe_sync?.();
+    unsubscribe_signed_in?.();
     unsubscribe_page = null;
     unsubscribe_setup = null;
     unsubscribe_clerk = null;
     unsubscribe_navigating = null;
     unsubscribe_sync = null;
+    unsubscribe_signed_in = null;
   }
 
   onMount(async () => {
@@ -175,6 +218,19 @@
       sync_status_message = state.status_message;
       sync_progress_percentage = state.progress_percentage;
       show_initial_sync = state.is_syncing;
+    });
+
+    unsubscribe_signed_in = is_signed_in.subscribe(async (signed_in) => {
+      const user_just_signed_in = signed_in && !previous_signed_in_state;
+      previous_signed_in_state = signed_in;
+
+      if (!user_just_signed_in) return;
+      if (!app_ready) return;
+
+      console.log(
+        "[Layout] User signed in detected, triggering initial sync...",
+      );
+      await run_initial_sync_if_needed();
     });
 
     const init_result = await initialize_app_data({ current_path });
@@ -217,7 +273,14 @@
     },
   }}
 >
-  {#if !app_ready || !clerk_ready}
+  {#if show_initial_sync}
+    <FullScreenOverlay
+      title="Syncing Data"
+      subtitle="Please wait while we sync your data"
+      status_message={sync_status_message}
+      progress_percentage={sync_progress_percentage}
+    />
+  {:else if !app_ready || !clerk_ready}
     <div
       class="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900"
     >
@@ -231,16 +294,11 @@
   {:else}
     <AuthChecker>
       {#if show_first_time_setup}
-        <FirstTimeSetup
+        <FullScreenOverlay
+          title="Setting Up"
+          subtitle="Preparing your environment"
           status_message={setup_status_message}
           progress_percentage={setup_progress_percentage}
-        />
-      {/if}
-
-      {#if show_initial_sync}
-        <InitialSyncOverlay
-          status_message={sync_status_message}
-          progress_percentage={sync_progress_percentage}
         />
       {/if}
 

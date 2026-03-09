@@ -86,6 +86,33 @@ function sync_clerk_state(): void {
   });
 }
 
+function sync_clerk_state_immediate(): void {
+  if (!clerk_instance || is_reloading) return;
+
+  const clerkUser = clerk_instance.user;
+  const session = clerk_instance.session;
+
+  const user: ClerkUser | null = clerkUser
+    ? {
+        id: clerkUser.id,
+        email_address: clerkUser.emailAddresses?.[0]?.emailAddress ?? "",
+        full_name: clerkUser.fullName ?? "",
+        first_name: clerkUser.firstName ?? "",
+        last_name: clerkUser.lastName ?? "",
+        image_url: clerkUser.imageUrl,
+      }
+    : null;
+
+  const new_state = {
+    is_loaded: true,
+    is_signed_in: !!session,
+    user,
+    session_id: session?.id ?? null,
+  };
+
+  clerk_store.set(new_state);
+}
+
 export function update_clerk_session_state(
   is_signed_in: boolean,
   user_id: string | null,
@@ -151,9 +178,33 @@ export async function initialize_clerk(): Promise<boolean> {
       return false;
     }
 
+    const clerk = window.Clerk as unknown as Clerk & { loaded?: boolean };
+
+    while (!clerk.loaded && elapsed_ms < max_wait_ms) {
+      await new Promise((resolve) => setTimeout(resolve, poll_interval_ms));
+      elapsed_ms += poll_interval_ms;
+    }
+
+    if (!clerk.loaded) {
+      console.warn("[Clerk] Clerk did not finish loading in time, proceeding anyway");
+    }
+
+    if (clerk.user && !clerk.session) {
+      console.log("[Clerk] User exists but session not ready, waiting for session...");
+      while (!clerk.session && elapsed_ms < max_wait_ms) {
+        await new Promise((resolve) => setTimeout(resolve, poll_interval_ms));
+        elapsed_ms += poll_interval_ms;
+      }
+      if (!clerk.session) {
+        console.warn("[Clerk] Session did not become available in time");
+      } else {
+        console.log("[Clerk] Session now available");
+      }
+    }
+
     clerk_instance = window.Clerk as unknown as Clerk;
 
-    sync_clerk_state();
+    sync_clerk_state_immediate();
 
     clerk_instance.addListener(() => {
       sync_clerk_state();
@@ -176,11 +227,15 @@ export function get_clerk(): Clerk | null {
 
 export async function get_session_token(): Promise<string | null> {
   if (!clerk_instance?.session) {
+    console.log("[Clerk] get_session_token: No session available");
     return null;
   }
 
   try {
     const token = await clerk_instance.session.getToken({ template: "convex" });
+    if (!token) {
+      console.log("[Clerk] get_session_token: Token returned null");
+    }
     return token;
   } catch (error) {
     console.error("[Clerk] Failed to get session token:", error);

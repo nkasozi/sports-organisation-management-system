@@ -254,3 +254,26 @@ export function get_background_sync_status(): {
     is_online: state.is_online,
   };
 }
+
+export function has_pending_unsynced_changes(): boolean {
+  return state.has_pending_changes;
+}
+
+export async function flush_pending_changes(): Promise<{
+  success: boolean;
+  skipped_offline: boolean;
+}> {
+  if (!state.has_pending_changes) {
+    return { success: true, skipped_offline: false };
+  }
+
+  if (!state.is_online) {
+    console.log("[BackgroundSync] Cannot flush changes while offline");
+    return { success: false, skipped_offline: true };
+  }
+
+  cancel_pending_debounce();
+  const sync_result = await execute_sync();
+
+  return { success: sync_result, skipped_offline: false };
+}

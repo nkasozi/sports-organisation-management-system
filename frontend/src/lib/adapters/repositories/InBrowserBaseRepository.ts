@@ -24,11 +24,13 @@ export abstract class InBrowserBaseRepository<
   TFilter = undefined,
 > implements Repository<TEntity, TCreateInput, TUpdateInput, TFilter> {
   protected entity_prefix: string;
-  protected database: SportsOrgDatabase;
+
+  protected get database(): SportsOrgDatabase {
+    return get_database();
+  }
 
   constructor(entity_prefix: string) {
     this.entity_prefix = entity_prefix;
-    this.database = get_database();
   }
 
   protected abstract get_table(): Table<TEntity, string>;

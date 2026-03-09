@@ -84,7 +84,6 @@ export const TABLE_NAMES = [
   "fixture_lineups",
   "activities",
   "activity_categories",
-  "audit_logs",
   "system_users",
   "identification_types",
   "identifications",

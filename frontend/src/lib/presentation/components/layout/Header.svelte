@@ -18,6 +18,8 @@
     type UserProfile,
   } from "$lib/presentation/stores/auth";
   import SyncStatusIndicator from "$lib/presentation/components/SyncStatusIndicator.svelte";
+  import LogoutWarningModal from "$lib/presentation/components/ui/LogoutWarningModal.svelte";
+  import { clear_session_sync_flag } from "$lib/presentation/stores/initialSyncStore";
 
   export let sidebar_open = false;
 
@@ -25,6 +27,7 @@
 
   let user_menu_open = false;
   let profile_submenu_open = false;
+  let show_logout_warning = false;
 
   $: has_custom_logo =
     $branding_store.organization_logo_url &&
@@ -58,13 +61,23 @@
     close_user_menu();
 
     if ($is_signed_in) {
-      auth_store.logout();
-      sign_out();
-      goto("/sign-in");
+      show_logout_warning = true;
       return;
     }
 
     goto("/sign-in");
+  }
+
+  function handle_logout_confirmed(): void {
+    show_logout_warning = false;
+    clear_session_sync_flag();
+    auth_store.logout();
+    sign_out();
+    goto("/sign-in");
+  }
+
+  function handle_logout_cancelled(): void {
+    show_logout_warning = false;
   }
 
   async function handle_profile_switch(profile: UserProfile): Promise<void> {
@@ -462,6 +475,12 @@
     </div>
   </div>
 </header>
+
+<LogoutWarningModal
+  is_visible={show_logout_warning}
+  on:confirm_logout={handle_logout_confirmed}
+  on:cancel={handle_logout_cancelled}
+/>
 
 <style>
   /* Mobile-first responsive header */

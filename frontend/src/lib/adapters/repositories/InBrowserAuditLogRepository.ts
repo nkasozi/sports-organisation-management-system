@@ -16,6 +16,11 @@ import {
   create_failure_result,
 } from "../../core/types/Result";
 import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
+import {
+  search_audit_logs_from_convex,
+  is_convex_available,
+  AUDIT_LOG_PAGE_SIZE,
+} from "../../infrastructure/sync/convexAuditLogService";
 
 const ENTITY_PREFIX = "aud";
 
@@ -116,6 +121,38 @@ export class InBrowserAuditLogRepository
     }
 
     return filtered;
+  }
+
+  async find_all(
+    filter?: AuditLogFilter,
+    options?: QueryOptions,
+  ): PaginatedAsyncResult<AuditLog> {
+    if (is_convex_available()) {
+      const convex_result = await search_audit_logs_from_convex(filter || {}, {
+        page_number: options?.page_number || 1,
+        page_size: options?.page_size || AUDIT_LOG_PAGE_SIZE,
+      });
+
+      if (convex_result.success) {
+        console.log(
+          `[AuditLog] Fetched ${convex_result.data.length} logs from Convex`,
+        );
+        return create_success_result({
+          items: convex_result.data,
+          total_count: convex_result.total_count,
+          page_number: convex_result.page_number,
+          page_size: convex_result.page_size,
+        });
+      }
+
+      console.warn(
+        "[AuditLog] Convex query failed, falling back to local:",
+        convex_result.error_message,
+      );
+    }
+
+    console.log("[AuditLog] Querying local database");
+    return super.find_all(filter, options);
   }
 
   async find_by_entity(

@@ -707,7 +707,9 @@ export default defineSchema({
     ...timestamp_fields,
   })
     .index("by_local_id", ["local_id"])
-    .index("by_entity", ["entity_type", "entity_id"]),
+    .index("by_entity", ["entity_type", "entity_id"])
+    .index("by_timestamp", ["timestamp"])
+    .index("by_organization", ["organization_id"]),
 
   system_users: defineTable({
     ...sync_metadata_fields,
