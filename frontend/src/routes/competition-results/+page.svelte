@@ -48,6 +48,7 @@
   import { branding_store } from "$lib/presentation/stores/branding";
   import { public_organization_store } from "$lib/presentation/stores/publicOrganization";
   import { is_public_viewer } from "$lib/presentation/stores/auth";
+  import { fetch_public_data_from_convex } from "$lib/infrastructure/sync/convexPublicDataService";
 
   const competition_use_cases = get_competition_use_cases();
   const fixture_use_cases = get_fixture_use_cases();
@@ -248,6 +249,7 @@
     loading_state = "loading";
 
     try {
+      await fetch_public_data_from_convex("competition_results");
       organizations = await load_organizations();
 
       if (has_shareable_params && organizations.length > 0) {

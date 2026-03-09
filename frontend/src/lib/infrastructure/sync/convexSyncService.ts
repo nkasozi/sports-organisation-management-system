@@ -765,6 +765,10 @@ export class ConvexSyncManager {
     this.convex_client = client;
   }
 
+  get_convex_client(): ConvexClient | null {
+    return this.convex_client;
+  }
+
   is_configured(): boolean {
     return this.convex_client !== null && this.config.convex_url !== "";
   }

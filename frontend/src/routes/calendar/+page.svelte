@@ -36,6 +36,8 @@
   } from "$lib/core/entities/Activity";
   import type { CalendarEvent } from "$lib/core/interfaces/ports/internal/usecases/ActivityUseCasesPort";
   import { DEFAULT_REMINDERS } from "$lib/core/entities/Activity";
+  import { fetch_public_data_from_convex } from "$lib/infrastructure/sync/convexPublicDataService";
+  import { is_public_viewer } from "$lib/presentation/stores/auth";
 
   type LoadingState = "idle" | "loading" | "success" | "error";
 
@@ -728,7 +730,8 @@
   onMount(async () => {
     if (!browser) return;
     const auth_result = await ensure_auth_profile();
-    if (!auth_result.success) {
+    const is_public = get(is_public_viewer);
+    if (!auth_result.success && !is_public) {
       error_message = auth_result.error_message;
       loading_state = "error";
       return;
@@ -738,6 +741,7 @@
     loading_state = "loading";
 
     try {
+      await fetch_public_data_from_convex("calendar");
       organizations = await load_organizations();
 
       if (organizations.length > 0) {

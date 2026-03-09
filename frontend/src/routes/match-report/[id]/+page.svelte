@@ -38,6 +38,9 @@
   } from "$lib/infrastructure/utils/MatchReportBuilder";
   import { download_match_report } from "$lib/infrastructure/utils/MatchReportPdfGenerator";
   import { branding_store } from "$lib/presentation/stores/branding";
+  import { fetch_public_data_from_convex } from "$lib/infrastructure/sync/convexPublicDataService";
+  import { is_public_viewer } from "$lib/presentation/stores/auth";
+  import { get } from "svelte/store";
 
   const LIVE_POLL_INTERVAL_MS = 10000;
 
@@ -118,7 +121,8 @@
     if (!browser) return;
 
     const auth_result = await ensure_auth_profile();
-    if (!auth_result.success) {
+    const is_public = get(is_public_viewer);
+    if (!auth_result.success && !is_public) {
       error_message = auth_result.error_message;
       is_loading = false;
       return;
@@ -130,6 +134,7 @@
       return;
     }
 
+    await fetch_public_data_from_convex("match_report");
     await load_match_data();
     start_live_polling_if_needed();
   });
