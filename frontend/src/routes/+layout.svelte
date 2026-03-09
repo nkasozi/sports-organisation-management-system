@@ -38,6 +38,7 @@
     seed_all_data_if_needed,
   } from "$lib/adapters/initialization/seedingService";
   import { ClerkProvider } from "svelte-clerk";
+  import { auth_store } from "$lib/presentation/stores/auth";
 
   injectAnalytics();
 
@@ -60,6 +61,14 @@
     return path.startsWith("/profile/") || path.startsWith("/team-profile/");
   }
 
+  function get_is_public_content_page(path: string): boolean {
+    return (
+      path.startsWith("/competition-results") ||
+      path.startsWith("/calendar") ||
+      path.startsWith("/match-report")
+    );
+  }
+
   function get_is_auth_page(path: string): boolean {
     return path.startsWith("/sign-in") || path === "/unauthorized";
   }
@@ -72,7 +81,8 @@
       path.startsWith("/api/") ||
       path === "/privacy" ||
       path === "/terms" ||
-      path === "/contact"
+      path === "/contact" ||
+      get_is_public_content_page(path)
     );
   }
 
@@ -114,6 +124,9 @@
     initial_sync_store.update_progress("Finalizing...", 95);
     start_background_sync();
     await new Promise((r) => setTimeout(r, 400));
+
+    initial_sync_store.update_progress("Loading user profiles...", 98);
+    await auth_store.initialize();
 
     initial_sync_store.complete_sync();
     await new Promise((r) => setTimeout(r, 500));
@@ -229,6 +242,10 @@
         <PublicLayout>
           <slot />
         </PublicLayout>
+      {:else if get_is_public_content_page(current_path) && !$is_signed_in}
+        <Layout>
+          <slot />
+        </Layout>
       {:else}
         <Layout>
           <slot />

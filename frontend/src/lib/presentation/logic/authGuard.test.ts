@@ -194,6 +194,71 @@ describe("authGuard", () => {
 
         initialize_spy.mockRestore();
       });
+
+      it("allows access to /competition-results without profile", async () => {
+        auth_store.logout();
+        const initialize_spy = vi
+          .spyOn(auth_store, "initialize")
+          .mockResolvedValue();
+
+        const result = await check_route_access("/competition-results");
+
+        expect(result.allowed).toBe(true);
+
+        initialize_spy.mockRestore();
+      });
+
+      it("allows access to /calendar without profile", async () => {
+        auth_store.logout();
+        const initialize_spy = vi
+          .spyOn(auth_store, "initialize")
+          .mockResolvedValue();
+
+        const result = await check_route_access("/calendar");
+
+        expect(result.allowed).toBe(true);
+
+        initialize_spy.mockRestore();
+      });
+
+      it("allows access to /match-report without profile", async () => {
+        auth_store.logout();
+        const initialize_spy = vi
+          .spyOn(auth_store, "initialize")
+          .mockResolvedValue();
+
+        const result = await check_route_access("/match-report");
+
+        expect(result.allowed).toBe(true);
+
+        initialize_spy.mockRestore();
+      });
+
+      it("allows access to /match-report/some-id without profile", async () => {
+        auth_store.logout();
+        const initialize_spy = vi
+          .spyOn(auth_store, "initialize")
+          .mockResolvedValue();
+
+        const result = await check_route_access("/match-report/abc-123");
+
+        expect(result.allowed).toBe(true);
+
+        initialize_spy.mockRestore();
+      });
+
+      it("denies access to /settings without profile", async () => {
+        auth_store.logout();
+        const initialize_spy = vi
+          .spyOn(auth_store, "initialize")
+          .mockResolvedValue();
+
+        const result = await check_route_access("/settings");
+
+        expect(result.allowed).toBe(false);
+
+        initialize_spy.mockRestore();
+      });
     });
 
     describe("with super_admin profile", () => {
@@ -470,6 +535,32 @@ describe("authGuard", () => {
       expect(is_route_in_accessible_set("/settings/general", test_routes)).toBe(
         false,
       );
+    });
+
+    it("returns true for /competition-results even when not in accessible set", () => {
+      const empty_routes = new Set<string>();
+      expect(
+        is_route_in_accessible_set("/competition-results", empty_routes),
+      ).toBe(true);
+    });
+
+    it("returns true for /calendar even when not in accessible set", () => {
+      const empty_routes = new Set<string>();
+      expect(is_route_in_accessible_set("/calendar", empty_routes)).toBe(true);
+    });
+
+    it("returns true for /match-report even when not in accessible set", () => {
+      const empty_routes = new Set<string>();
+      expect(is_route_in_accessible_set("/match-report", empty_routes)).toBe(
+        true,
+      );
+    });
+
+    it("returns true for /match-report/some-id even when not in accessible set", () => {
+      const empty_routes = new Set<string>();
+      expect(
+        is_route_in_accessible_set("/match-report/game-456", empty_routes),
+      ).toBe(true);
     });
   });
 

@@ -7,7 +7,8 @@ export type UserRole =
   | "officials_manager"
   | "team_manager"
   | "official"
-  | "player";
+  | "player"
+  | "public_viewer";
 
 export const USER_ROLE_DISPLAY_NAMES: Record<UserRole, string> = {
   super_admin: "Super Admin",
@@ -16,6 +17,7 @@ export const USER_ROLE_DISPLAY_NAMES: Record<UserRole, string> = {
   team_manager: "Team Manager",
   official: "Official",
   player: "Player",
+  public_viewer: "Public Viewer",
 };
 
 export const USER_ROLE_ORDER: UserRole[] = [
@@ -25,6 +27,7 @@ export const USER_ROLE_ORDER: UserRole[] = [
   "team_manager",
   "official",
   "player",
+  "public_viewer",
 ];
 
 export const ANY_VALUE = "*";

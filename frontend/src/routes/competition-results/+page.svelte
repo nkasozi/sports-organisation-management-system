@@ -3,6 +3,7 @@
   import { browser } from "$app/environment";
   import { goto } from "$app/navigation";
   import { get } from "svelte/store";
+  import { page } from "$app/stores";
   import { ensure_auth_profile } from "$lib/presentation/logic/authGuard";
   import type { Competition } from "$lib/core/entities/Competition";
   import {
@@ -45,6 +46,8 @@
     download_all_match_reports,
   } from "$lib/infrastructure/utils/MatchReportPdfGenerator";
   import { branding_store } from "$lib/presentation/stores/branding";
+  import { public_organization_store } from "$lib/presentation/stores/publicOrganization";
+  import { is_public_viewer } from "$lib/presentation/stores/auth";
 
   const competition_use_cases = get_competition_use_cases();
   const fixture_use_cases = get_fixture_use_cases();
@@ -73,6 +76,57 @@
   let error_message: string = "";
 
   let active_tab: "standings" | "fixtures" | "results" | "stats" = "standings";
+
+  let share_link_copied = false;
+
+  function build_shareable_url(
+    org_id: string,
+    competition_id: string,
+    org_name: string,
+  ): string {
+    if (!browser) return "";
+
+    const base_url = window.location.origin;
+    const params = new URLSearchParams();
+    params.set("org", org_id);
+    params.set("competition", competition_id);
+    if (org_name) {
+      params.set("org_name", org_name);
+    }
+    return `${base_url}/competition-results?${params.toString()}`;
+  }
+
+  function handle_copy_share_link(): boolean {
+    if (!selected_organization_id || !selected_competition_id) return false;
+
+    const org_name =
+      organizations.find((o) => o.id === selected_organization_id)?.name ?? "";
+    const url = build_shareable_url(
+      selected_organization_id,
+      selected_competition_id,
+      org_name,
+    );
+
+    navigator.clipboard.writeText(url);
+    share_link_copied = true;
+    setTimeout(() => {
+      share_link_copied = false;
+    }, 2000);
+    return true;
+  }
+
+  function extract_url_params(): {
+    org_id: string;
+    competition_id: string;
+    org_name: string;
+  } {
+    const current_page = get(page);
+    const org_id = current_page.url.searchParams.get("org") ?? "";
+    const competition_id =
+      current_page.url.searchParams.get("competition") ?? "";
+    const org_name = current_page.url.searchParams.get("org_name") ?? "";
+    return { org_id, competition_id, org_name };
+  }
 
   $: selected_competition_derived_status = selected_competition
     ? derive_competition_status(
@@ -179,8 +233,21 @@
 
   onMount(async () => {
     if (!browser) return;
+
+    const url_params = extract_url_params();
+    const has_shareable_params = url_params.org_id.length > 0;
+
+    if (has_shareable_params) {
+      public_organization_store.set_organization(
+        url_params.org_id,
+        url_params.org_name,
+      );
+    }
+
     const auth_result = await ensure_auth_profile();
-    if (!auth_result.success) {
+    const is_public = get(is_public_viewer);
+
+    if (!auth_result.success && !is_public) {
       error_message = auth_result.error_message;
       loading_state = "error";
       return;
@@ -191,7 +258,28 @@
     try {
       organizations = await load_organizations();
 
-      if (organizations.length > 0) {
+      if (has_shareable_params && organizations.length > 0) {
+        const matching_org = organizations.find(
+          (o) => o.id === url_params.org_id,
+        );
+        if (matching_org) {
+          selected_organization_id = matching_org.id;
+          await load_competitions_for_organization(selected_organization_id);
+
+          if (url_params.competition_id) {
+            const matching_comp = competitions.find(
+              (c) => c.id === url_params.competition_id,
+            );
+            if (matching_comp) {
+              selected_competition_id = matching_comp.id;
+              await load_competition_data();
+            }
+          }
+        } else {
+          selected_organization_id = organizations[0].id;
+          await load_competitions_for_organization(selected_organization_id);
+        }
+      } else if (organizations.length > 0) {
         selected_organization_id = organizations[0].id;
         await load_competitions_for_organization(selected_organization_id);
       }
@@ -800,6 +888,28 @@
                 <option value={competition.id}>{competition.name}</option>
               {/each}
             </select>
+
+            <button
+              type="button"
+              class="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg transition-colors
+                {share_link_copied
+                  ? 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300'
+                  : 'bg-accent-100 text-accent-700 dark:bg-accent-800 dark:text-accent-300 hover:bg-accent-200 dark:hover:bg-accent-700'}"
+              on:click={handle_copy_share_link}
+              title="Copy shareable link"
+            >
+              {#if share_link_copied}
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg>
+                <span class="hidden sm:inline">Copied</span>
+              {:else}
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                </svg>
+                <span class="hidden sm:inline">Share</span>
+              {/if}
+            </button>
           </div>
         </div>
 

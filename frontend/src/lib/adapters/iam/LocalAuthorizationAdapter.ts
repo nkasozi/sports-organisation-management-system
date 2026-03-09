@@ -570,6 +570,24 @@ const OFFICIAL_MENU: SidebarMenuGroup[] = [
   },
 ];
 
+const PUBLIC_VIEWER_MENU: SidebarMenuGroup[] = [
+  {
+    group_name: "Home",
+    items: [
+      {
+        name: "Competition Results",
+        href: "/competition-results",
+        icon: "M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z",
+      },
+      {
+        name: "Calendar",
+        href: "/calendar",
+        icon: "M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z",
+      },
+    ],
+  },
+];
+
 const ROLE_MENUS: Record<UserRole, SidebarMenuGroup[]> = {
   super_admin: SUPER_ADMIN_MENU,
   org_admin: ORG_ADMIN_MENU,
@@ -577,6 +595,7 @@ const ROLE_MENUS: Record<UserRole, SidebarMenuGroup[]> = {
   team_manager: TEAM_MANAGER_MENU,
   official: OFFICIAL_MENU,
   player: PLAYER_MENU,
+  public_viewer: PUBLIC_VIEWER_MENU,
 };
 
 const ROLE_DISPLAY_NAMES: Record<UserRole, string> = {
@@ -586,6 +605,7 @@ const ROLE_DISPLAY_NAMES: Record<UserRole, string> = {
   team_manager: "Team Manager",
   official: "Official",
   player: "Player",
+  public_viewer: "Public Viewer",
 };
 
 function extract_route_base(pathname: string): string {

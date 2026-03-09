@@ -20,6 +20,7 @@ const ROLE_CREATION_HIERARCHY: Record<UserRole, UserRole[]> = {
   team_manager: ["player"],
   official: [],
   player: [],
+  public_viewer: [],
 };
 
 type ConditionalField =
@@ -35,6 +36,7 @@ const FIELD_VISIBILITY_BY_ROLE: Record<UserRole, ConditionalField[]> = {
   team_manager: ["organization_id", "team_id"],
   official: ["organization_id", "official_id"],
   player: ["organization_id", "player_id"],
+  public_viewer: [],
 };
 
 const ALWAYS_VISIBLE_FIELDS: Set<string> = new Set([
@@ -52,6 +54,7 @@ const REQUIRED_FIELDS_BY_ROLE: Record<UserRole, Set<string>> = {
   team_manager: new Set(["organization_id", "team_id"]),
   official: new Set(["organization_id", "official_id"]),
   player: new Set(["organization_id", "player_id"]),
+  public_viewer: new Set(),
 };
 
 export function get_allowed_roles_for_creator(

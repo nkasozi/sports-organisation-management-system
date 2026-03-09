@@ -28,7 +28,12 @@ export function extract_route_base(pathname: string): string {
   return "/" + segments[0];
 }
 
-const ALWAYS_ALLOWED_ROUTE_BASES: Set<string> = new Set(["/", "/match-report"]);
+const ALWAYS_ALLOWED_ROUTE_BASES: Set<string> = new Set([
+  "/",
+  "/match-report",
+  "/competition-results",
+  "/calendar",
+]);
 
 export function is_route_in_accessible_set(
   pathname: string,
@@ -77,6 +82,7 @@ function get_role_display_name(role: UserRole): string {
     team_manager: "Team Manager",
     official: "Official",
     player: "Player",
+    public_viewer: "Public Viewer",
   };
   return display_names[role] || role;
 }
@@ -109,6 +115,10 @@ export async function check_route_access(
   const profile = updated_state.current_profile;
 
   if (!profile) {
+    const route_base = extract_route_base(pathname);
+    if (ALWAYS_ALLOWED_ROUTE_BASES.has(route_base)) {
+      return { allowed: true, message: "" };
+    }
     return {
       allowed: false,
       message: "Please select a user profile to access this page.",

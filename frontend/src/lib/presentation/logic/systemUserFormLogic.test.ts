@@ -118,6 +118,7 @@ describe("is_system_user_field_visible_for_role", () => {
       "team_manager",
       "official",
       "player",
+      "public_viewer",
     ];
     for (const role of roles) {
       expect(is_system_user_field_visible_for_role("email", role)).toBe(true);

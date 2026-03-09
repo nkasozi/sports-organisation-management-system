@@ -30,6 +30,7 @@ import type {
 import { get_authorization_adapter } from "$lib/infrastructure/AuthorizationProvider";
 import { sync_branding_with_profile } from "$lib/adapters/initialization/brandingSyncService";
 import { load_profiles_from_repository } from "./profileLoader";
+import { is_signed_in } from "$lib/adapters/iam/clerkAuthService";
 import type {
   SharedEntityType,
   SharedEntityCategoryMap,
@@ -176,6 +177,14 @@ const ROLE_PERMISSION_MAP: Record<
     player_level: READ_UPDATE_PERMISSIONS,
     public_level: FULL_PERMISSIONS,
   },
+  public_viewer: {
+    root_level: READ_ONLY_PERMISSIONS,
+    org_administrator_level: NO_PERMISSIONS,
+    organisation_level: READ_ONLY_PERMISSIONS,
+    team_level: READ_ONLY_PERMISSIONS,
+    player_level: READ_ONLY_PERMISSIONS,
+    public_level: READ_ONLY_PERMISSIONS,
+  },
 };
 
 function get_role_permissions_sync(
@@ -231,6 +240,18 @@ function clear_auth_storage(): void {
   if (!browser) return;
   localStorage.removeItem(AUTH_STORAGE_KEY);
   localStorage.removeItem(PROFILE_STORAGE_KEY);
+}
+
+function create_public_viewer_profile(): UserProfile {
+  return {
+    id: "public-viewer",
+    display_name: "Public Viewer",
+    email: "",
+    role: "public_viewer",
+    organization_id: "",
+    organization_name: "",
+    team_id: "",
+  };
 }
 
 function create_auth_store() {
@@ -299,24 +320,46 @@ function create_auth_store() {
     return menu_result.data;
   }
 
+  function build_profiles_with_public_viewer(
+    loaded_profiles: UserProfile[],
+  ): UserProfile[] {
+    const has_public_viewer = loaded_profiles.some(
+      (p) => p.id === "public-viewer",
+    );
+    if (has_public_viewer) return loaded_profiles;
+    return [create_public_viewer_profile(), ...loaded_profiles];
+  }
+
   async function initialize(): Promise<void> {
     const repository = get_system_user_repository();
     const organization_repository = get_organization_repository();
-    const available_profiles = await load_profiles_from_repository(
+    const loaded_profiles = await load_profiles_from_repository(
       repository,
       organization_repository,
     );
+    const available_profiles = build_profiles_with_public_viewer(loaded_profiles);
     const saved_profile_id = load_saved_profile_id();
     const saved_token_raw = load_saved_token();
-
-    if (available_profiles.length === 0) {
-      console.error("[AuthStore] No profiles available from repository");
-      set({ ...initial_state, is_initialized: true });
-      return;
-    }
+    const user_is_signed_in = get(is_signed_in);
 
     let current_profile: UserProfile | null = null;
     let current_token: AuthToken | null = null;
+
+    if (!user_is_signed_in) {
+      console.log("[AuthStore] User not signed in, defaulting to public viewer");
+      const public_profile = available_profiles.find(
+        (p) => p.id === "public-viewer",
+      )!;
+      const sidebar_menu_items = await load_sidebar_menu_for_role("public_viewer");
+      set({
+        current_token: null,
+        current_profile: public_profile,
+        available_profiles,
+        sidebar_menu_items,
+        is_initialized: true,
+      });
+      return;
+    }
 
     if (saved_token_raw) {
       const auth_adapter = get_authentication_adapter(
@@ -354,9 +397,13 @@ function create_auth_store() {
     }
 
     if (!current_profile) {
-      const default_profile_id = saved_profile_id || available_profiles[0].id;
+      const real_profiles = available_profiles.filter(
+        (p) => p.id !== "public-viewer",
+      );
+      const default_profile_id = saved_profile_id || real_profiles[0]?.id;
       current_profile =
         available_profiles.find((p) => p.id === default_profile_id) ||
+        real_profiles[0] ||
         available_profiles[0];
       current_token = await generate_token_for_profile(current_profile);
       save_token(current_token.raw_token);
@@ -387,15 +434,11 @@ function create_auth_store() {
     console.debug("[AuthStore] Starting profile refresh");
     const repository = get_system_user_repository();
     const organization_repository = get_organization_repository();
-    const refreshed_profiles = await load_profiles_from_repository(
+    const loaded_profiles = await load_profiles_from_repository(
       repository,
       organization_repository,
     );
-
-    if (refreshed_profiles.length === 0) {
-      console.warn("[AuthStore] No profiles found during refresh");
-      return false;
-    }
+    const refreshed_profiles = build_profiles_with_public_viewer(loaded_profiles);
 
     const state = get({ subscribe });
     const previous_count = state.available_profiles.length;
@@ -738,6 +781,11 @@ export const other_available_profiles = derived(auth_store, ($auth) => {
 export const is_auth_initialized = derived(
   auth_store,
   ($auth) => $auth.is_initialized,
+);
+
+export const is_public_viewer = derived(
+  auth_store,
+  ($auth) => $auth.current_profile?.role === "public_viewer",
 );
 
 export const sidebar_menu_items = derived(auth_store, ($auth) => {

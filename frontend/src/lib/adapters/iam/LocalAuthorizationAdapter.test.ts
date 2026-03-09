@@ -310,6 +310,38 @@ describe("get_sidebar_menu_for_role", () => {
     );
     expect(my_info_group).toBeDefined();
   });
+
+  it("should return public viewer menu with competition results and calendar", () => {
+    const menu = get_sidebar_menu_for_role("public_viewer");
+
+    expect(menu.length).toBeGreaterThan(0);
+
+    const all_items = menu.flatMap(
+      (group: SidebarMenuGroup) => group.items,
+    );
+    const hrefs = all_items.map((item: { href: string }) => item.href);
+
+    expect(hrefs).toContain("/competition-results");
+    expect(hrefs).toContain("/calendar");
+  });
+
+  it("should not include admin routes for public_viewer", () => {
+    const menu = get_sidebar_menu_for_role("public_viewer");
+
+    const administration_group = menu.find(
+      (group: SidebarMenuGroup) => group.group_name === "Administration",
+    );
+    expect(administration_group).toBeUndefined();
+
+    const all_items = menu.flatMap(
+      (group: SidebarMenuGroup) => group.items,
+    );
+    const hrefs = all_items.map((item: { href: string }) => item.href);
+
+    expect(hrefs).not.toContain("/system-users");
+    expect(hrefs).not.toContain("/settings");
+    expect(hrefs).not.toContain("/organizations");
+  });
 });
 
 describe("can_role_access_route", () => {
@@ -350,6 +382,7 @@ describe("can_role_access_route", () => {
       "team_manager",
       "player",
       "official",
+      "public_viewer",
     ];
 
     for (const role of roles) {
@@ -366,6 +399,42 @@ describe("can_role_access_route", () => {
   it("should deny team_manager access to organizations route", () => {
     const result = can_role_access_route("team_manager", "/organizations");
     expect(result.allowed).toBe(false);
+  });
+
+  it("should allow public_viewer to access competition-results", () => {
+    const result = can_role_access_route(
+      "public_viewer",
+      "/competition-results",
+    );
+    expect(result.allowed).toBe(true);
+  });
+
+  it("should allow public_viewer to access calendar", () => {
+    const result = can_role_access_route("public_viewer", "/calendar");
+    expect(result.allowed).toBe(true);
+  });
+
+  it("should allow public_viewer to access match-report", () => {
+    const result = can_role_access_route("public_viewer", "/match-report/123");
+    expect(result.allowed).toBe(true);
+  });
+
+  it("should deny public_viewer access to admin routes", () => {
+    const denied_routes = [
+      "/system-users",
+      "/settings",
+      "/organizations",
+      "/teams",
+      "/players",
+      "/officials",
+      "/fixtures",
+      "/audit-logs",
+    ];
+
+    for (const route of denied_routes) {
+      const result = can_role_access_route("public_viewer", route);
+      expect(result.allowed).toBe(false);
+    }
   });
 });
 
@@ -392,5 +461,16 @@ describe("get_allowed_routes_for_role", () => {
 
     expect(routes.has("/settings")).toBe(true);
     expect(routes.has("/audit-logs")).toBe(true);
+  });
+
+  it("should return only public routes for public_viewer", () => {
+    const routes = get_allowed_routes_for_role("public_viewer");
+
+    expect(routes.has("/competition-results")).toBe(true);
+    expect(routes.has("/calendar")).toBe(true);
+    expect(routes.has("/organizations")).toBe(false);
+    expect(routes.has("/teams")).toBe(false);
+    expect(routes.has("/system-users")).toBe(false);
+    expect(routes.has("/settings")).toBe(false);
   });
 });

@@ -4,7 +4,8 @@ export type SharedUserRole =
   | "officials_manager"
   | "team_manager"
   | "official"
-  | "player";
+  | "player"
+  | "public_viewer";
 
 export type SharedDataCategory =
   | "root_level"
@@ -152,6 +153,14 @@ export const SHARED_ROLE_PERMISSIONS: SharedPermissionMap = {
     player_level: READ_UPDATE,
     public_level: FULL_PERMISSIONS,
   },
+  public_viewer: {
+    root_level: READ_ONLY,
+    org_administrator_level: NO_PERMISSIONS,
+    organisation_level: READ_ONLY,
+    team_level: READ_ONLY,
+    player_level: READ_ONLY,
+    public_level: READ_ONLY,
+  },
 };
 
 export type SharedEntityCategoryMap = Record<
@@ -211,6 +220,7 @@ export const ALL_ROLES: SharedUserRole[] = [
   "team_manager",
   "official",
   "player",
+  "public_viewer",
 ];
 
 export const ALL_CATEGORIES: SharedDataCategory[] = [

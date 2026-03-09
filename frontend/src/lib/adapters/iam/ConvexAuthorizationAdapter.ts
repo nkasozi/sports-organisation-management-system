@@ -85,6 +85,7 @@ export class ConvexAuthorizationAdapter implements AuthorizationPort {
         "organisation_level",
         "team_level",
         "player_level",
+        "public_level",
       ];
 
       const permissions: Record<DataCategory, CategoryPermissions> =

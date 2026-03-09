@@ -238,6 +238,14 @@ export const DATA_PERMISSION_MAP: FullPermissionMap = {
     player_level: { create: false, read: true, update: true, delete: false },
     public_level: FULL_PERMISSIONS,
   },
+  public_viewer: {
+    root_level: READ_ONLY_PERMISSIONS,
+    org_administrator_level: NO_PERMISSIONS,
+    organisation_level: READ_ONLY_PERMISSIONS,
+    team_level: READ_ONLY_PERMISSIONS,
+    player_level: READ_ONLY_PERMISSIONS,
+    public_level: READ_ONLY_PERMISSIONS,
+  },
 };
 
 export const ENTITY_DATA_CATEGORY_MAP: SharedEntityCategoryMap = {
