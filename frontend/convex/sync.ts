@@ -8,6 +8,28 @@ import {
   AuthorizationError,
 } from "./lib/auth_middleware";
 
+export const GLOBAL_TABLES = [
+  "sports",
+  "genders",
+  "player_positions",
+  "identification_types",
+  "competition_formats",
+  "game_event_types",
+  "team_staff_roles",
+  "game_official_roles",
+  "jersey_colors",
+  "activity_categories",
+] as const;
+
+export function is_global_table(table_name: string): boolean {
+  return GLOBAL_TABLES.includes(table_name as (typeof GLOBAL_TABLES)[number]);
+}
+
+function is_global_record(record: Record<string, unknown>): boolean {
+  const org_id = record.organization_id;
+  return org_id === undefined || org_id === null || org_id === "*" || org_id === "";
+}
+
 function get_entity_type_from_table(table_name: string): string {
   const stripped = table_name.toLowerCase().replace(/_/g, "");
   if (stripped.endsWith("ies")) {
@@ -98,17 +120,29 @@ export const get_changes_since = query({
     const table = ctx.db.query(table_name as any);
     let all_records = await table.collect();
 
-    if (user) {
+    if (user && !is_global_table(table_name)) {
       const scope_filter = build_scope_filter(user, entity_type);
-      if (Object.keys(scope_filter).length > 0) {
-        all_records = all_records.filter((record: any) => {
-          for (const [key, value] of Object.entries(scope_filter)) {
-            if (value && record[key] !== value) {
-              return false;
+      if (scope_filter.organization_id) {
+        const user_org_id = scope_filter.organization_id;
+
+        if (table_name === "organizations") {
+          all_records = all_records.filter(
+            (record: any) => record.local_id === user_org_id,
+          );
+        } else {
+          all_records = all_records.filter((record: any) => {
+            if (is_global_record(record)) {
+              return true;
             }
-          }
-          return true;
-        });
+            if (scope_filter.team_id && record.team_id) {
+              return (
+                record.organization_id === user_org_id &&
+                record.team_id === scope_filter.team_id
+              );
+            }
+            return record.organization_id === user_org_id;
+          });
+        }
       }
     }
 
