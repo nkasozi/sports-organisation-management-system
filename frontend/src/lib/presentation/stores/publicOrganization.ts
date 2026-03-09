@@ -18,7 +18,10 @@ function load_saved_public_org(): PublicOrganizationState {
   return { organization_id: saved_id, organization_name: saved_name };
 }
 
-function save_public_org(organization_id: string, organization_name: string): boolean {
+function save_public_org(
+  organization_id: string,
+  organization_name: string,
+): boolean {
   if (!browser) return false;
 
   localStorage.setItem(PUBLIC_ORG_STORAGE_KEY, organization_id);
@@ -36,9 +39,13 @@ function clear_public_org(): boolean {
 
 function create_public_organization_store() {
   const initial_state = load_saved_public_org();
-  const { subscribe, set, update } = writable<PublicOrganizationState>(initial_state);
+  const { subscribe, set, update } =
+    writable<PublicOrganizationState>(initial_state);
 
-  function set_organization(organization_id: string, organization_name: string): boolean {
+  function set_organization(
+    organization_id: string,
+    organization_name: string,
+  ): boolean {
     if (!organization_id) return false;
 
     save_public_org(organization_id, organization_name);
@@ -53,8 +60,7 @@ function create_public_organization_store() {
     const org_id = search_params.get("org") ?? "";
     if (!org_id) return false;
 
-    const org_name = search_params.get("org_name") ?? "";
-    return set_organization(org_id, org_name);
+    return set_organization(org_id, "");
   }
 
   function clear(): boolean {
