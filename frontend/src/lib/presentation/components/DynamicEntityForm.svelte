@@ -2026,15 +2026,59 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
 <div class="w-full">
   {#if auth_profile_missing}
     <div
-      class="alert bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 p-4 rounded-lg"
+      class="rounded-xl border border-secondary-200 dark:border-secondary-800/50 bg-white dark:bg-accent-900 overflow-hidden"
     >
-      <p>{auth_error_message}</p>
+      <div class="h-1 bg-secondary-400"></div>
+      <div class="p-4 flex items-center gap-3">
+        <div
+          class="flex-shrink-0 w-9 h-9 rounded-full bg-secondary-50 dark:bg-secondary-900/30 flex items-center justify-center"
+        >
+          <svg
+            class="w-5 h-5 text-secondary-500"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z"
+            />
+          </svg>
+        </div>
+        <p class="text-sm font-medium text-accent-800 dark:text-accent-200">
+          {auth_error_message}
+        </p>
+      </div>
     </div>
   {:else if !entity_metadata}
     <div
-      class="alert bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 p-4 rounded-lg"
+      class="rounded-xl border border-secondary-200 dark:border-secondary-800/50 bg-white dark:bg-accent-900 overflow-hidden"
     >
-      <p>Error: No metadata found for entity type "{entity_type}"</p>
+      <div class="h-1 bg-secondary-400"></div>
+      <div class="p-4 flex items-center gap-3">
+        <div
+          class="flex-shrink-0 w-9 h-9 rounded-full bg-secondary-50 dark:bg-secondary-900/30 flex items-center justify-center"
+        >
+          <svg
+            class="w-5 h-5 text-secondary-500"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z"
+            />
+          </svg>
+        </div>
+        <p class="text-sm font-medium text-accent-800 dark:text-accent-200">
+          No metadata found for entity type "{entity_type}"
+        </p>
+      </div>
     </div>
   {:else}
     <div

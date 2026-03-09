@@ -80,6 +80,110 @@
 
   let share_link_copied = false;
 
+  let selected_team_id: string | null = null;
+  let selected_team_name: string = "";
+  let team_fixtures_loading: boolean = false;
+  let team_fixtures_in_competition: Fixture[] = [];
+  let team_fixtures_all_competitions: Fixture[] = [];
+  let show_all_competitions_fixtures: boolean = false;
+  let extended_team_map: Map<string, Team> = new Map();
+  let extended_competition_map: Map<string, Competition> = new Map();
+
+  function handle_team_click(team_id: string, team_name: string): void {
+    if (selected_team_id === team_id) {
+      selected_team_id = null;
+      selected_team_name = "";
+      team_fixtures_in_competition = [];
+      team_fixtures_all_competitions = [];
+      return;
+    }
+    selected_team_id = team_id;
+    selected_team_name = team_name;
+    load_team_fixtures(team_id);
+  }
+
+  function close_team_fixtures_panel(): void {
+    selected_team_id = null;
+    selected_team_name = "";
+    team_fixtures_in_competition = [];
+    team_fixtures_all_competitions = [];
+    show_all_competitions_fixtures = false;
+  }
+
+  async function load_team_fixtures(team_id: string): Promise<void> {
+    team_fixtures_loading = true;
+
+    team_fixtures_in_competition = fixtures.filter(
+      (f) => f.home_team_id === team_id || f.away_team_id === team_id,
+    );
+
+    const all_fixtures_result = await fixture_use_cases.list(
+      {},
+      { page_number: 1, page_size: 500 },
+    );
+
+    if (all_fixtures_result.success) {
+      team_fixtures_all_competitions = all_fixtures_result.data.filter(
+        (f: Fixture) =>
+          f.home_team_id === team_id || f.away_team_id === team_id,
+      );
+
+      const all_team_ids = new Set<string>();
+      const all_competition_ids = new Set<string>();
+      for (const f of team_fixtures_all_competitions) {
+        all_team_ids.add(f.home_team_id);
+        all_team_ids.add(f.away_team_id);
+        if (f.competition_id) {
+          all_competition_ids.add(f.competition_id);
+        }
+      }
+
+      extended_team_map = new Map(team_map);
+      for (const tid of all_team_ids) {
+        if (!extended_team_map.has(tid)) {
+          const team_result = await team_use_cases.get_by_id(tid);
+          if (team_result.success && team_result.data) {
+            extended_team_map.set(tid, team_result.data);
+          }
+        }
+      }
+
+      extended_competition_map = new Map();
+      for (const comp of competitions) {
+        extended_competition_map.set(comp.id, comp);
+      }
+      for (const cid of all_competition_ids) {
+        if (!extended_competition_map.has(cid)) {
+          const comp_result = await competition_use_cases.get_by_id(cid);
+          if (comp_result.success && comp_result.data) {
+            extended_competition_map.set(cid, comp_result.data);
+          }
+        }
+      }
+    }
+
+    team_fixtures_loading = false;
+  }
+
+  function get_team_name_extended(team_id: string): string {
+    return (
+      extended_team_map.get(team_id)?.name ??
+      team_map.get(team_id)?.name ??
+      "Unknown Team"
+    );
+  }
+
+  function get_competition_name_extended(competition_id: string): string {
+    return (
+      extended_competition_map.get(competition_id)?.name ??
+      "Unknown Competition"
+    );
+  }
+
+  $: displayed_team_fixtures = show_all_competitions_fixtures
+    ? team_fixtures_all_competitions
+    : team_fixtures_in_competition;
+
   function sync_branding_for_org(org: Organization): boolean {
     branding_store.set_organization_context(
       org.id,
@@ -1070,7 +1174,17 @@
                     class="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700"
                   >
                     {#each standings as standing, index}
-                      <tr class="hover:bg-gray-50 dark:hover:bg-gray-800">
+                      <tr
+                        class="hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer transition-colors {selected_team_id ===
+                        standing.team_id
+                          ? 'bg-primary-50 dark:bg-primary-900/20'
+                          : ''}"
+                        on:click={() =>
+                          handle_team_click(
+                            standing.team_id,
+                            standing.team_name,
+                          )}
+                      >
                         <td
                           class="px-3 py-3 text-sm font-medium {index < 3
                             ? 'text-green-600'
@@ -1079,9 +1193,24 @@
                           {index + 1}
                         </td>
                         <td
-                          class="px-3 py-3 text-sm font-medium text-accent-900 dark:text-accent-100"
+                          class="px-3 py-3 text-sm font-medium text-accent-900 dark:text-accent-100 hover:text-primary-600 dark:hover:text-primary-400"
                         >
-                          {standing.team_name}
+                          <span class="flex items-center gap-2">
+                            {standing.team_name}
+                            <svg
+                              class="w-3.5 h-3.5 text-gray-400"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                              stroke-width="2"
+                            >
+                              <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                d="m8.25 4.5 7.5 7.5-7.5 7.5"
+                              />
+                            </svg>
+                          </span>
                         </td>
                         <td
                           class="px-3 py-3 text-sm text-center text-gray-600 dark:text-gray-400"
@@ -1131,8 +1260,14 @@
 
               <div class="sm:hidden space-y-2">
                 {#each standings as standing, index}
-                  <div
-                    class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
+                  <button
+                    type="button"
+                    class="w-full flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg transition-colors {selected_team_id ===
+                    standing.team_id
+                      ? 'ring-2 ring-primary-500 bg-primary-50 dark:bg-primary-900/20'
+                      : ''}"
+                    on:click={() =>
+                      handle_team_click(standing.team_id, standing.team_name)}
                   >
                     <div class="flex items-center gap-3">
                       <span
@@ -1144,7 +1279,7 @@
                         {index + 1}
                       </span>
                       <span
-                        class="font-medium text-accent-900 dark:text-accent-100 truncate max-w-[120px]"
+                        class="font-medium text-accent-900 dark:text-accent-100 truncate max-w-[120px] text-left"
                       >
                         {standing.team_name}
                       </span>
@@ -1186,10 +1321,325 @@
                           {standing.points}
                         </div>
                       </div>
+                      <svg
+                        class="w-4 h-4 text-gray-400"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        stroke-width="2"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          d="m8.25 4.5 7.5 7.5-7.5 7.5"
+                        />
+                      </svg>
                     </div>
-                  </div>
+                  </button>
                 {/each}
               </div>
+
+              <div
+                class="mt-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg text-center"
+              >
+                <div
+                  class="text-xs text-gray-500 dark:text-gray-400 font-bold mb-2"
+                >
+                  Legend
+                </div>
+                <div
+                  class="flex flex-wrap justify-center gap-x-4 gap-y-1 text-xs text-gray-600 dark:text-gray-400"
+                >
+                  <span
+                    ><strong class="text-gray-700 dark:text-gray-300">P</strong> =
+                    Played</span
+                  >
+                  <span
+                    ><strong class="text-gray-700 dark:text-gray-300">W</strong> =
+                    Won</span
+                  >
+                  <span
+                    ><strong class="text-gray-700 dark:text-gray-300">D</strong> =
+                    Drawn</span
+                  >
+                  <span
+                    ><strong class="text-gray-700 dark:text-gray-300">L</strong> =
+                    Lost</span
+                  >
+                  <span
+                    ><strong class="text-gray-700 dark:text-gray-300">GF</strong
+                    > = Goals For</span
+                  >
+                  <span
+                    ><strong class="text-gray-700 dark:text-gray-300">GA</strong
+                    > = Goals Against</span
+                  >
+                  <span
+                    ><strong class="text-gray-700 dark:text-gray-300">GD</strong
+                    > = Goal Difference</span
+                  >
+                  <span
+                    ><strong class="text-gray-700 dark:text-gray-300"
+                      >Pts</strong
+                    > = Points</span
+                  >
+                </div>
+                <div
+                  class="mt-2 text-xs text-gray-500 dark:text-gray-400 italic"
+                >
+                  Click on a team to view their fixtures
+                </div>
+              </div>
+
+              {#if selected_team_id}
+                <div
+                  class="mt-6 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden"
+                >
+                  <div
+                    class="px-4 py-3 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700"
+                  >
+                    <div
+                      class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
+                    >
+                      <div class="flex items-center gap-3">
+                        <button
+                          type="button"
+                          class="p-1.5 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                          on:click={close_team_fixtures_panel}
+                          aria-label="Close"
+                        >
+                          <svg
+                            class="w-5 h-5 text-gray-500"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                            stroke-width="2"
+                          >
+                            <path
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              d="M6 18 18 6M6 6l12 12"
+                            />
+                          </svg>
+                        </button>
+                        <div>
+                          <h3
+                            class="text-base font-semibold text-accent-900 dark:text-accent-100"
+                          >
+                            {selected_team_name} Fixtures
+                          </h3>
+                          <p class="text-xs text-gray-500 dark:text-gray-400">
+                            {displayed_team_fixtures.length}
+                            {displayed_team_fixtures.length === 1
+                              ? "fixture"
+                              : "fixtures"}
+                          </p>
+                        </div>
+                      </div>
+                      <div class="flex items-center gap-2">
+                        <label class="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            bind:checked={show_all_competitions_fixtures}
+                            class="w-4 h-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                          />
+                          <span
+                            class="text-sm text-gray-600 dark:text-gray-400"
+                          >
+                            All competitions
+                          </span>
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="p-4 max-h-[400px] overflow-y-auto">
+                    {#if team_fixtures_loading}
+                      <div class="flex items-center justify-center py-8">
+                        <div
+                          class="animate-spin rounded-full h-6 w-6 border-2 border-primary-500 border-t-transparent"
+                        ></div>
+                      </div>
+                    {:else if displayed_team_fixtures.length === 0}
+                      <div
+                        class="text-center py-8 text-gray-500 dark:text-gray-400"
+                      >
+                        No fixtures found for this team.
+                      </div>
+                    {:else}
+                      <div class="space-y-3">
+                        {#each displayed_team_fixtures.sort((a, b) => new Date(a.scheduled_date).getTime() - new Date(b.scheduled_date).getTime()) as fixture}
+                          {@const is_home =
+                            fixture.home_team_id === selected_team_id}
+                          {@const home_score = fixture.home_team_score ?? 0}
+                          {@const away_score = fixture.away_team_score ?? 0}
+                          {@const did_win =
+                            fixture.status === "completed" &&
+                            ((is_home && home_score > away_score) ||
+                              (!is_home && away_score > home_score))}
+                          {@const did_lose =
+                            fixture.status === "completed" &&
+                            ((is_home && home_score < away_score) ||
+                              (!is_home && away_score < home_score))}
+                          {@const did_draw =
+                            fixture.status === "completed" &&
+                            home_score === away_score}
+                          <div
+                            class="p-3 rounded-lg border transition-colors {fixture.status ===
+                            'completed'
+                              ? did_win
+                                ? 'border-green-200 bg-green-50 dark:border-green-800/50 dark:bg-green-900/10'
+                                : did_lose
+                                  ? 'border-red-200 bg-red-50 dark:border-red-800/50 dark:bg-red-900/10'
+                                  : 'border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800'
+                              : fixture.status === 'in_progress'
+                                ? 'border-red-300 bg-red-50 dark:border-red-700 dark:bg-red-900/20'
+                                : 'border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800'}"
+                          >
+                            <div class="flex items-center justify-between mb-1">
+                              <div
+                                class="text-xs text-gray-500 dark:text-gray-400"
+                              >
+                                {format_date(fixture.scheduled_date)}
+                              </div>
+                              <div class="flex items-center gap-2">
+                                {#if fixture.status === "in_progress"}
+                                  <span class="flex items-center gap-1">
+                                    <span class="relative flex h-2 w-2">
+                                      <span
+                                        class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"
+                                      ></span>
+                                      <span
+                                        class="relative inline-flex rounded-full h-2 w-2 bg-red-500"
+                                      ></span>
+                                    </span>
+                                    <span
+                                      class="text-xs font-semibold text-red-600 dark:text-red-400"
+                                      >LIVE</span
+                                    >
+                                  </span>
+                                {:else if fixture.status === "completed"}
+                                  <span
+                                    class="text-xs font-medium px-1.5 py-0.5 rounded {did_win
+                                      ? 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-400'
+                                      : did_lose
+                                        ? 'bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-400'
+                                        : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400'}"
+                                  >
+                                    {did_win ? "W" : did_lose ? "L" : "D"}
+                                  </span>
+                                {:else}
+                                  <span
+                                    class="text-xs text-gray-400 dark:text-gray-500"
+                                    >Scheduled</span
+                                  >
+                                {/if}
+                              </div>
+                            </div>
+                            <div class="mb-2">
+                              <span
+                                class="inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400 max-w-full truncate"
+                                title={get_competition_name_extended(
+                                  fixture.competition_id,
+                                )}
+                              >
+                                {get_competition_name_extended(
+                                  fixture.competition_id,
+                                )}
+                              </span>
+                            </div>
+                            <div
+                              class="flex items-center justify-between gap-2"
+                            >
+                              <div class="flex-1 text-right">
+                                <span
+                                  class="text-sm font-medium {fixture.home_team_id ===
+                                  selected_team_id
+                                    ? 'text-primary-600 dark:text-primary-400'
+                                    : 'text-accent-900 dark:text-accent-100'} line-clamp-1"
+                                >
+                                  {get_team_name_extended(fixture.home_team_id)}
+                                </span>
+                              </div>
+                              <div class="flex-shrink-0 px-2 sm:px-4">
+                                {#if fixture.status === "completed" || fixture.status === "in_progress"}
+                                  <div
+                                    class="flex items-center gap-1 text-lg font-bold"
+                                  >
+                                    <span
+                                      class={is_home && home_score > away_score
+                                        ? "text-green-600"
+                                        : is_home && home_score < away_score
+                                          ? "text-red-600"
+                                          : "text-accent-900 dark:text-accent-100"}
+                                    >
+                                      {home_score}
+                                    </span>
+                                    <span class="text-gray-400">-</span>
+                                    <span
+                                      class={!is_home && away_score > home_score
+                                        ? "text-green-600"
+                                        : !is_home && away_score < home_score
+                                          ? "text-red-600"
+                                          : "text-accent-900 dark:text-accent-100"}
+                                    >
+                                      {away_score}
+                                    </span>
+                                  </div>
+                                {:else}
+                                  <span class="text-sm font-bold text-gray-400"
+                                    >VS</span
+                                  >
+                                {/if}
+                              </div>
+                              <div class="flex-1 text-left">
+                                <span
+                                  class="text-sm font-medium {fixture.away_team_id ===
+                                  selected_team_id
+                                    ? 'text-primary-600 dark:text-primary-400'
+                                    : 'text-accent-900 dark:text-accent-100'} line-clamp-1"
+                                >
+                                  {get_team_name_extended(fixture.away_team_id)}
+                                </span>
+                              </div>
+                            </div>
+                            <div
+                              class="flex justify-center mt-2 pt-2 border-t border-gray-200 dark:border-gray-700"
+                            >
+                              <button
+                                type="button"
+                                class="flex items-center gap-1 px-3 py-1 text-xs font-medium text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 rounded transition-colors"
+                                on:click={() =>
+                                  goto(`/match-report/${fixture.id}`)}
+                              >
+                                <svg
+                                  class="w-3.5 h-3.5"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  stroke="currentColor"
+                                  stroke-width="2"
+                                >
+                                  <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                                  />
+                                  <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                                  />
+                                </svg>
+                                View Details
+                              </button>
+                            </div>
+                          </div>
+                        {/each}
+                      </div>
+                    {/if}
+                  </div>
+                </div>
+              {/if}
             {/if}
           {:else if active_tab === "fixtures"}
             {#if upcoming_fixtures.length === 0}

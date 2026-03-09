@@ -1065,16 +1065,55 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
 <div class="w-full">
   {#if error_message}
     <div
-      class="alert bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 p-4 rounded-lg mb-4"
+      class="rounded-xl border border-secondary-200 dark:border-secondary-800/50 bg-white dark:bg-accent-900 overflow-hidden mb-4"
     >
-      <p>{error_message}</p>
-      <button
-        type="button"
-        class="btn btn-outline mt-2"
-        on:click={refresh_entity_list}
-      >
-        Retry
-      </button>
+      <div class="h-1 bg-secondary-400"></div>
+      <div class="p-4">
+        <div class="flex items-start gap-3">
+          <div
+            class="flex-shrink-0 w-9 h-9 rounded-full bg-secondary-50 dark:bg-secondary-900/30 flex items-center justify-center"
+          >
+            <svg
+              class="w-5 h-5 text-secondary-500"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z"
+              />
+            </svg>
+          </div>
+          <div class="flex-1">
+            <p class="text-sm font-medium text-accent-800 dark:text-accent-200">
+              {error_message}
+            </p>
+            <button
+              type="button"
+              class="mt-3 text-sm font-semibold text-secondary-600 dark:text-secondary-400 hover:text-secondary-700 dark:hover:text-secondary-300 transition-colors flex items-center gap-1.5"
+              on:click={refresh_entity_list}
+            >
+              <svg
+                class="w-3.5 h-3.5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182"
+                />
+              </svg>
+              Retry
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   {/if}
 
