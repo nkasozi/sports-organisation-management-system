@@ -71,15 +71,50 @@ vi.mock("../repositories/InBrowserSystemUserRepository", () => ({
   }),
 }));
 
-const { create_empty_repo } = vi.hoisted(() => ({
-  create_empty_repo: () => ({
-    seed_with_data: vi.fn().mockResolvedValue(undefined),
-    find_all: vi.fn().mockResolvedValue({ success: true, data: { items: [] } }),
-    find_all_with_filter: vi
-      .fn()
-      .mockResolvedValue({ success: true, data: { items: [] } }),
-  }),
-}));
+const {
+  create_empty_repo,
+  mock_competition_formats,
+  mock_competition_format_repository,
+} = vi.hoisted(() => {
+  const mock_competition_formats: Array<Record<string, unknown>> = [];
+
+  return {
+    create_empty_repo: () => ({
+      seed_with_data: vi.fn().mockResolvedValue(undefined),
+      find_all: vi.fn().mockResolvedValue({
+        success: true,
+        data: { items: [], total_count: 0 },
+      }),
+      find_all_with_filter: vi.fn().mockResolvedValue({
+        success: true,
+        data: { items: [], total_count: 0 },
+      }),
+      update: vi.fn().mockResolvedValue({ success: true, data: null }),
+    }),
+    mock_competition_formats,
+    mock_competition_format_repository: {
+      seed_with_data: vi.fn().mockResolvedValue(undefined),
+      find_all: vi.fn().mockImplementation(async () => ({
+        success: true,
+        data: {
+          items: [...mock_competition_formats],
+          total_count: mock_competition_formats.length,
+        },
+      })),
+      update: vi
+        .fn()
+        .mockImplementation(async (id: string, updates: object) => ({
+          success: true,
+          data: {
+            ...(mock_competition_formats.find((format) => format.id === id) ??
+              {}),
+            ...updates,
+            id,
+          },
+        })),
+    },
+  };
+});
 
 vi.mock("../repositories/InBrowserPlayerPositionRepository", () => ({
   get_player_position_repository: create_empty_repo,
@@ -93,7 +128,7 @@ vi.mock("../repositories/InBrowserGameOfficialRoleRepository", () => ({
   InBrowserGameOfficialRoleRepository: vi.fn(),
 }));
 vi.mock("../repositories/InBrowserCompetitionFormatRepository", () => ({
-  get_competition_format_repository: create_empty_repo,
+  get_competition_format_repository: () => mock_competition_format_repository,
 }));
 vi.mock("../repositories/InBrowserPlayerRepository", () => ({
   get_player_repository: create_empty_repo,
@@ -210,6 +245,12 @@ import {
   reset_seeding_flag,
 } from "./seedingService";
 
+beforeEach(() => {
+  mock_competition_formats.splice(0, mock_competition_formats.length);
+  mock_competition_format_repository.find_all.mockClear();
+  mock_competition_format_repository.update.mockClear();
+});
+
 describe("seed_from_convex_or_local — skip_seeding strategy", () => {
   let progress_messages: Array<{ message: string; percentage: number }>;
   let on_progress: (message: string, percentage: number) => void;
@@ -274,6 +315,43 @@ describe("seed_from_convex_or_local — convex_first_with_local_fallback strateg
     expect(result.data_source).toBe("local");
   });
 
+  it("repairs competition format stage fields when local seeded data already exists", async () => {
+    mock_local_storage["sports_org_seeding_complete_v12"] = "true";
+    mock_competition_formats.push({
+      id: "format-2",
+      created_at: "2024-01-01T00:00:00.000Z",
+      updated_at: "2024-01-01T00:00:00.000Z",
+      name: "Standard League",
+      code: "standard_league",
+      description: "League format",
+      format_type: "league",
+      tie_breakers: ["goal_difference", "head_to_head", "goals_scored"],
+      group_stage_config: null,
+      knockout_stage_config: null,
+      league_config: null,
+      stage_templates: [],
+      min_teams_required: 4,
+      max_teams_allowed: 24,
+      status: "active",
+    });
+
+    await seed_from_convex_or_local(
+      on_progress,
+      "convex_first_with_local_fallback",
+    );
+
+    expect(mock_competition_format_repository.update).toHaveBeenCalledWith(
+      "format-2",
+      expect.objectContaining({
+        league_config: expect.objectContaining({ number_of_rounds: 2 }),
+        stage_templates: expect.arrayContaining([
+          expect.objectContaining({ name: "Round 1", stage_order: 1 }),
+          expect.objectContaining({ name: "Round 2", stage_order: 2 }),
+        ]),
+      }),
+    );
+  });
+
   it("uses convex data when convex seeding succeeds", async () => {
     mock_convex_seed_result = {
       success: true,
@@ -308,6 +386,52 @@ describe("seed_from_convex_or_local — convex_first_with_local_fallback strateg
     );
 
     expect(mock_local_storage["sports_org_seeding_complete_v12"]).toBe("true");
+  });
+
+  it("repairs competition format stage fields after successful convex seed", async () => {
+    mock_competition_formats.push({
+      id: "format-1",
+      created_at: "2024-01-01T00:00:00.000Z",
+      updated_at: "2024-01-01T00:00:00.000Z",
+      name: "World Cup Style",
+      code: "world_cup_style",
+      description: "Groups then knockout",
+      format_type: "groups_knockout",
+      tie_breakers: ["goal_difference", "head_to_head", "goals_scored"],
+      group_stage_config: null,
+      knockout_stage_config: null,
+      league_config: null,
+      stage_templates: [],
+      min_teams_required: 8,
+      max_teams_allowed: 32,
+      status: "active",
+    });
+    mock_convex_seed_result = {
+      success: true,
+      data_source: "convex",
+      tables_fetched: 10,
+      total_records: 50,
+      failed_tables: [],
+    };
+
+    await seed_from_convex_or_local(
+      on_progress,
+      "convex_first_with_local_fallback",
+    );
+
+    expect(mock_competition_format_repository.update).toHaveBeenCalledWith(
+      "format-1",
+      expect.objectContaining({
+        group_stage_config: expect.objectContaining({ number_of_groups: 4 }),
+        knockout_stage_config: expect.objectContaining({ number_of_rounds: 4 }),
+        league_config: null,
+        stage_templates: expect.arrayContaining([
+          expect.objectContaining({ name: "Pool Stage", stage_order: 1 }),
+          expect.objectContaining({ name: "Semi Finals", stage_order: 2 }),
+          expect.objectContaining({ name: "Final", stage_order: 3 }),
+        ]),
+      }),
+    );
   });
 
   it("falls back to local seeding when convex fails", async () => {

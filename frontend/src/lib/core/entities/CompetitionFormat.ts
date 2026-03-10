@@ -241,12 +241,85 @@ export function validate_competition_format_input(
     errors.push("League configuration is required for this format type");
   }
 
+  if (input.stage_templates.length === 0) {
+    errors.push("At least one stage template is required");
+  }
+
+  for (const stage_template of input.stage_templates) {
+    if (!stage_template.name || stage_template.name.trim().length === 0) {
+      errors.push("Each stage template must have a name");
+      break;
+    }
+
+    if (stage_template.stage_order < 1) {
+      errors.push("Stage template order must be at least 1");
+      break;
+    }
+  }
+
   return { is_valid: errors.length === 0, errors };
+}
+
+export function hydrate_competition_format_input(
+  input: CreateCompetitionFormatInput,
+): CreateCompetitionFormatInput {
+  const league_config = requires_league_config(input.format_type)
+    ? input.league_config ?? create_default_league_config()
+    : null;
+  const group_stage_config = requires_group_stage_config(input.format_type)
+    ? input.group_stage_config ?? create_default_group_stage_config()
+    : null;
+  const knockout_stage_config = requires_knockout_stage_config(input.format_type)
+    ? input.knockout_stage_config ?? create_default_knockout_stage_config()
+    : null;
+
+  return {
+    ...input,
+    league_config,
+    group_stage_config,
+    knockout_stage_config,
+    stage_templates: normalize_stage_templates(
+      input.stage_templates,
+      input.format_type,
+      league_config,
+    ),
+  };
+}
+
+function requires_group_stage_config(format_type: FormatType): boolean {
+  return ["groups_knockout", "groups_playoffs"].includes(format_type);
+}
+
+function requires_knockout_stage_config(format_type: FormatType): boolean {
+  return ["groups_knockout", "straight_knockout", "double_elimination"].includes(
+    format_type,
+  );
+}
+
+function requires_league_config(format_type: FormatType): boolean {
+  return ["league", "round_robin"].includes(format_type);
+}
+
+function normalize_stage_templates(
+  stage_templates: CompetitionFormatStageTemplate[],
+  format_type: FormatType,
+  league_config: LeagueConfig | null,
+): CompetitionFormatStageTemplate[] {
+  const source_templates =
+    stage_templates.length > 0
+      ? stage_templates
+      : create_default_stage_templates(format_type, league_config ?? undefined);
+
+  return source_templates.map((template, index) => ({
+    name: template.name,
+    stage_type: template.stage_type,
+    stage_order: index + 1,
+  }));
 }
 
 export function get_default_competition_formats(): CreateCompetitionFormatInput[] {
   return [
-    {
+    hydrate_competition_format_input({
       name: "Standard League",
       code: "standard_league",
       description: "Traditional league format with home and away fixtures",
@@ -255,12 +328,12 @@ export function get_default_competition_formats(): CreateCompetitionFormatInput[
       group_stage_config: null,
       knockout_stage_config: null,
       league_config: create_default_league_config(),
-      stage_templates: create_default_stage_templates("league", create_default_league_config()),
+      stage_templates: [],
       min_teams_required: 4,
       max_teams_allowed: 24,
       status: "active",
-    },
-    {
+    }),
+    hydrate_competition_format_input({
       name: "Single Round Robin",
       code: "single_round_robin",
       description: "Each team plays every other team once",
@@ -269,12 +342,12 @@ export function get_default_competition_formats(): CreateCompetitionFormatInput[
       group_stage_config: null,
       knockout_stage_config: null,
       league_config: { ...create_default_league_config(), number_of_rounds: 1 },
-      stage_templates: create_default_stage_templates("round_robin"),
+      stage_templates: [],
       min_teams_required: 3,
       max_teams_allowed: 16,
       status: "active",
-    },
-    {
+    }),
+    hydrate_competition_format_input({
       name: "World Cup Style",
       code: "world_cup_style",
       description: "Group stage followed by knockout rounds",
@@ -288,12 +361,12 @@ export function get_default_competition_formats(): CreateCompetitionFormatInput[
       group_stage_config: create_default_group_stage_config(),
       knockout_stage_config: create_default_knockout_stage_config(),
       league_config: null,
-      stage_templates: create_default_stage_templates("groups_knockout"),
+      stage_templates: [],
       min_teams_required: 8,
       max_teams_allowed: 32,
       status: "active",
-    },
-    {
+    }),
+    hydrate_competition_format_input({
       name: "Cup Tournament",
       code: "cup_tournament",
       description: "Single elimination knockout tournament",
@@ -305,12 +378,12 @@ export function get_default_competition_formats(): CreateCompetitionFormatInput[
         third_place_match: false,
       },
       league_config: null,
-      stage_templates: create_default_stage_templates("straight_knockout"),
+      stage_templates: [],
       min_teams_required: 4,
       max_teams_allowed: 64,
       status: "active",
-    },
-    {
+    }),
+    hydrate_competition_format_input({
       name: "Champions League Style",
       code: "champions_league_style",
       description: "Group stage with two-legged knockout rounds",
@@ -323,10 +396,10 @@ export function get_default_competition_formats(): CreateCompetitionFormatInput[
         away_goals_rule: true,
       },
       league_config: null,
-      stage_templates: create_default_stage_templates("groups_knockout"),
+      stage_templates: [],
       min_teams_required: 16,
       max_teams_allowed: 32,
       status: "active",
-    },
+    }),
   ];
 }

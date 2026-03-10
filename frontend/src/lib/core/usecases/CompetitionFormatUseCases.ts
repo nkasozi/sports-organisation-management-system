@@ -11,7 +11,10 @@ import type {
 import type { QueryOptions } from "../interfaces/ports";
 import type { AsyncResult, PaginatedResult } from "../types/Result";
 import { create_failure_result, create_success_result } from "../types/Result";
-import { validate_competition_format_input } from "../entities/CompetitionFormat";
+import {
+  hydrate_competition_format_input,
+  validate_competition_format_input,
+} from "../entities/CompetitionFormat";
 import { get_repository_container } from "../../infrastructure/container";
 import type { EntityListResult } from "./BaseUseCases";
 import type { CompetitionFormatUseCasesPort } from "../interfaces/ports";
@@ -60,22 +63,23 @@ export function create_competition_format_use_cases(
     async create(
       input: CreateCompetitionFormatInput,
     ): AsyncResult<CompetitionFormat> {
-      const validation = validate_competition_format_input(input);
+      const hydrated_input = hydrate_competition_format_input(input);
+      const validation = validate_competition_format_input(hydrated_input);
       if (!validation.is_valid) {
         return create_failure_result(validation.errors.join(", "));
       }
 
-      const existing_result = await repository.find_by_code(input.code);
+      const existing_result = await repository.find_by_code(hydrated_input.code);
       if (!existing_result.success) {
         return create_failure_result(existing_result.error);
       }
       if (existing_result.data) {
         return create_failure_result(
-          `Format with code '${input.code}' already exists`,
+          `Format with code '${hydrated_input.code}' already exists`,
         );
       }
 
-      const result = await repository.create(input);
+      const result = await repository.create(hydrated_input);
       if (!result.success) {
         return create_failure_result(result.error);
       }
@@ -107,7 +111,10 @@ export function create_competition_format_use_cases(
         }
       }
 
-      const merged_input = { ...existing_result.data, ...input };
+      const merged_input = hydrate_competition_format_input({
+        ...existing_result.data,
+        ...input,
+      } as CreateCompetitionFormatInput);
       const validation = validate_competition_format_input(
         merged_input as CreateCompetitionFormatInput,
       );
@@ -115,7 +122,7 @@ export function create_competition_format_use_cases(
         return create_failure_result(validation.errors.join(", "));
       }
 
-      const result = await repository.update(id, input);
+      const result = await repository.update(id, merged_input);
       if (!result.success) {
         return create_failure_result(result.error);
       }

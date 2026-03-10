@@ -96,6 +96,10 @@ class FakeDataGeneratorService {
       return "";
     }
 
+    if (field.field_type === "stage_template_array") {
+      return [];
+    }
+
     // Generate based on field name patterns and types
     const field_name_lower = field.field_name.toLowerCase();
 

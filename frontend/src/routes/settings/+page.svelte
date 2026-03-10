@@ -119,10 +119,10 @@
 
   const color_options = [
     {
-      value: "yellow",
-      label: "Amber",
-      hex: "#D97706",
-      class: "bg-amber-600",
+      value: "sky",
+      label: "Sky",
+      hex: "#0284C7",
+      class: "bg-sky-600",
     },
     { value: "blue", label: "Blue", hex: "#2563EB", class: "bg-blue-600" },
     {
@@ -139,10 +139,10 @@
       class: "bg-purple-600",
     },
     {
-      value: "orange",
-      label: "Orange",
-      hex: "#EA580C",
-      class: "bg-orange-600",
+      value: "cyan",
+      label: "Cyan",
+      hex: "#0891B2",
+      class: "bg-cyan-600",
     },
     { value: "pink", label: "Pink", hex: "#DB2777", class: "bg-pink-600" },
     { value: "teal", label: "Teal", hex: "#0D9488", class: "bg-teal-600" },

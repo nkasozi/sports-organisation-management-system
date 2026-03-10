@@ -55,6 +55,7 @@ export function get_default_value_for_field_type(field: FieldMetadata): any {
     return field.enum_values[0];
   }
   if (field.field_type === "foreign_key") return "";
+  if (field.field_type === "stage_template_array") return [];
   return "";
 }
 
@@ -105,7 +106,12 @@ export function validate_form_data_against_metadata(
 
     if (
       field.is_required &&
-      (field_value === "" || field_value === null || field_value === undefined)
+      (field_value === "" ||
+        field_value === null ||
+        field_value === undefined ||
+        (field.field_type === "stage_template_array" &&
+          Array.isArray(field_value) &&
+          field_value.length === 0))
     ) {
       errors[field.field_name] = `${field.display_name} is required`;
       continue;

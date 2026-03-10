@@ -1148,7 +1148,9 @@
                       />
                     </svg>
                     <div>
-                      <p class="font-medium text-violet-800 dark:text-violet-200">
+                      <p
+                        class="font-medium text-violet-800 dark:text-violet-200"
+                      >
                         Some teams have already submitted lineups
                       </p>
                       <p
@@ -1480,7 +1482,7 @@
               {/if}
 
               <div
-                class="p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg text-yellow-900 dark:text-yellow-100"
+                class="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg text-blue-900 dark:text-blue-100"
               >
                 <div class="font-semibold">Warning</div>
                 <div class="text-sm mt-1">

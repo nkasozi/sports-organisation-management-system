@@ -29,6 +29,7 @@ import { get_profile_link_use_cases } from "$lib/core/usecases/ProfileLinkUseCas
 import { get_official_associated_team_use_cases } from "$lib/core/usecases/OfficialAssociatedTeamUseCases";
 import { get_live_game_log_use_cases } from "$lib/core/usecases/LiveGameLogUseCases";
 import { get_game_event_log_use_cases } from "$lib/core/usecases/GameEventLogUseCases";
+import { get_competition_stage_use_cases } from "$lib/core/usecases/CompetitionStageUseCases";
 import { EventBus } from "$lib/infrastructure/events/EventBus";
 import type {
   BaseEntity,
@@ -47,6 +48,7 @@ const VALID_ENTITY_TYPE_KEYS = [
   "fixture",
   "fixturedetailssetup",
   "competitionformat",
+  "competitionstage",
   "gameeventtype",
   "gameofficialrole",
   "teamstaffrole",
@@ -109,6 +111,8 @@ function create_use_cases_registry(): Record<EntityTypeKey, UseCasesGetter> {
       get_fixture_details_setup_use_cases as UseCasesGetter,
     ["competitionformat" satisfies EntityTypeKey]:
       get_competition_format_use_cases as UseCasesGetter,
+    ["competitionstage" satisfies EntityTypeKey]:
+      get_competition_stage_use_cases as UseCasesGetter,
     ["gameeventtype" satisfies EntityTypeKey]:
       get_game_event_type_use_cases as UseCasesGetter,
     ["gameofficialrole" satisfies EntityTypeKey]:
@@ -184,6 +188,7 @@ const ENTITY_DISPLAY_NAME_GETTERS: Record<
   },
   fixturedetailssetup: (e) => e.id,
   competitionformat: (e) => (to_record(e).name as string) || e.id,
+  competitionstage: (e) => (to_record(e).name as string) || e.id,
   gameeventtype: (e) => (to_record(e).name as string) || e.id,
   gameofficialrole: (e) => (to_record(e).name as string) || e.id,
   teamstaffrole: (e) => (to_record(e).name as string) || e.id,

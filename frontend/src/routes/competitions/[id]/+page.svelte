@@ -64,6 +64,7 @@
   let active_tab:
     | "details"
     | "teams"
+    | "stages"
     | "rules"
     | "settings"
     | "official_jerseys" = "details";
@@ -100,6 +101,11 @@
     foreign_key_value: competition_id,
     holder_type_field: "holder_type",
     holder_type_value: "competition_official",
+  } as SubEntityFilter;
+
+  $: competition_stage_filter = {
+    foreign_key_field: "competition_id",
+    foreign_key_value: competition_id,
   } as SubEntityFilter;
 
   $: {
@@ -512,6 +518,16 @@
           <button
             type="button"
             class="px-6 py-3 text-sm font-medium border-b-2 whitespace-nowrap {active_tab ===
+            'stages'
+              ? 'border-primary-500 text-primary-600 dark:text-primary-400'
+              : 'border-transparent text-accent-500 hover:text-accent-700 hover:border-accent-300 dark:text-accent-400 dark:hover:text-accent-200'}"
+            on:click={() => (active_tab = "stages")}
+          >
+            Stages
+          </button>
+          <button
+            type="button"
+            class="px-6 py-3 text-sm font-medium border-b-2 whitespace-nowrap {active_tab ===
             'official_jerseys'
               ? 'border-primary-500 text-primary-600 dark:text-primary-400'
               : 'border-transparent text-accent-500 hover:text-accent-700 hover:border-accent-300 dark:text-accent-400 dark:hover:text-accent-200'}"
@@ -837,6 +853,29 @@
                 </button>
               {/if}
             </div>
+          </div>
+        {:else if active_tab === "stages"}
+          <div class="space-y-6">
+            <div>
+              <h3
+                class="text-lg font-medium text-accent-900 dark:text-accent-100"
+              >
+                Competition Stages
+              </h3>
+              <p class="mt-1 text-sm text-accent-600 dark:text-accent-400">
+                Every competition format is stage-based. Fixtures attach to a
+                stage, and group membership is inferred later from the stage's
+                fixtures.
+              </p>
+            </div>
+
+            <DynamicEntityList
+              entity_type="competitionstage"
+              sub_entity_filter={competition_stage_filter}
+              disabled_functionalities={can_edit_competition
+                ? []
+                : ["create", "edit", "delete"]}
+            />
           </div>
         {:else if active_tab === "rules"}
           <form on:submit|preventDefault={handle_submit}>

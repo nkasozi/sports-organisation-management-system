@@ -247,6 +247,13 @@ describe("dynamicFormLogic", () => {
       const field = create_field_metadata({ field_type: "foreign_key" });
       expect(get_default_value_for_field_type(field)).toBe("");
     });
+
+    it("returns empty array for stage template array fields", () => {
+      const field = create_field_metadata({
+        field_type: "stage_template_array",
+      });
+      expect(get_default_value_for_field_type(field)).toEqual([]);
+    });
   });
 
   describe("get_sorted_fields_for_display", () => {
@@ -556,6 +563,29 @@ describe("dynamicFormLogic", () => {
 
       expect(result.is_valid).toBe(false);
       expect(Object.keys(result.errors)).toHaveLength(2);
+    });
+
+    it("treats an empty stage template array as missing when required", () => {
+      const metadata = create_entity_metadata({
+        fields: [
+          create_field_metadata({
+            field_name: "stage_templates",
+            display_name: "Stage Template",
+            field_type: "stage_template_array",
+            is_required: true,
+          }),
+        ],
+      });
+
+      const result = validate_form_data_against_metadata(
+        { stage_templates: [] },
+        metadata,
+      );
+
+      expect(result.is_valid).toBe(false);
+      expect(result.errors["stage_templates"]).toBe(
+        "Stage Template is required",
+      );
     });
   });
 

@@ -42,17 +42,17 @@ export interface ColorPalette {
 
 const COLOR_PALETTES: Record<ThemeColorName, ColorPalette> = {
   amber: {
-    50: "#fffbeb",
-    100: "#fef3c7",
-    200: "#fde68a",
-    300: "#fcd34d",
-    400: "#fbbf24",
-    500: "#f59e0b",
-    600: "#d97706",
-    700: "#b45309",
-    800: "#92400e",
-    900: "#78350f",
-    950: "#451a03",
+    50: "#f0f9ff",
+    100: "#e0f2fe",
+    200: "#bae6fd",
+    300: "#7dd3fc",
+    400: "#38bdf8",
+    500: "#0ea5e9",
+    600: "#0284c7",
+    700: "#0369a1",
+    800: "#075985",
+    900: "#0c4a6e",
+    950: "#082f49",
   },
   blue: {
     50: "#eff6ff",
@@ -107,17 +107,17 @@ const COLOR_PALETTES: Record<ThemeColorName, ColorPalette> = {
     950: "#3b0764",
   },
   orange: {
-    50: "#fff7ed",
-    100: "#ffedd5",
-    200: "#fed7aa",
-    300: "#fdba74",
-    400: "#fb923c",
-    500: "#f97316",
-    600: "#ea580c",
-    700: "#c2410c",
-    800: "#9a3412",
-    900: "#7c2d12",
-    950: "#431407",
+    50: "#ecfeff",
+    100: "#cffafe",
+    200: "#a5f3fc",
+    300: "#67e8f9",
+    400: "#22d3ee",
+    500: "#06b6d4",
+    600: "#0891b2",
+    700: "#0e7490",
+    800: "#155e75",
+    900: "#164e63",
+    950: "#083344",
   },
   teal: {
     50: "#f0fdfa",
@@ -394,13 +394,13 @@ export function update_theme_colors(options: {
   secondaryColor?: string;
 }): void {
   const color_name_map: Record<string, ThemeColorName> = {
-    yellow: "amber",
-    amber: "amber",
+    yellow: "sky",
+    amber: "sky",
     blue: "blue",
     green: "green",
     red: "red",
     purple: "purple",
-    orange: "orange",
+    orange: "cyan",
     teal: "teal",
     pink: "pink",
     indigo: "indigo",
@@ -419,7 +419,7 @@ export function update_theme_colors(options: {
 
     if (options.primaryColor) {
       const mapped_color =
-        color_name_map[options.primaryColor.toLowerCase()] || "amber";
+        color_name_map[options.primaryColor.toLowerCase()] || "blue";
       new_theme.primary_color = mapped_color;
     }
 

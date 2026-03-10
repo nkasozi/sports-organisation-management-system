@@ -10,6 +10,10 @@
     derive_competition_status,
     get_competition_status_display,
   } from "$lib/core/entities/Competition";
+  import {
+    get_stage_type_label,
+    type CompetitionStage,
+  } from "$lib/core/entities/CompetitionStage";
   import type { Fixture } from "$lib/core/entities/Fixture";
   import type { Team } from "$lib/core/entities/Team";
   import type { CompetitionFormat } from "$lib/core/entities/CompetitionFormat";
@@ -20,6 +24,7 @@
   import { get_fixture_use_cases } from "$lib/core/usecases/FixtureUseCases";
   import { get_team_use_cases } from "$lib/core/usecases/TeamUseCases";
   import { get_competition_format_use_cases } from "$lib/core/usecases/CompetitionFormatUseCases";
+  import { get_competition_stage_use_cases } from "$lib/core/usecases/CompetitionStageUseCases";
   import { get_competition_team_use_cases } from "$lib/core/usecases/CompetitionTeamUseCases";
   import { get_fixture_lineup_use_cases } from "$lib/core/usecases/FixtureLineupUseCases";
   import { get_official_use_cases } from "$lib/core/usecases/OfficialUseCases";
@@ -49,11 +54,18 @@
   import { public_organization_store } from "$lib/presentation/stores/publicOrganization";
   import { is_public_viewer } from "$lib/presentation/stores/auth";
   import { fetch_public_data_from_convex } from "$lib/infrastructure/sync/convexPublicDataService";
+  import CompetitionStandingsTable from "$lib/presentation/components/competition/CompetitionStandingsTable.svelte";
+  import {
+    build_competition_stage_results_sections,
+    calculate_team_standings,
+    type TeamStanding,
+  } from "$lib/presentation/logic/competitionStageResults";
 
   const competition_use_cases = get_competition_use_cases();
   const fixture_use_cases = get_fixture_use_cases();
   const team_use_cases = get_team_use_cases();
   const format_use_cases = get_competition_format_use_cases();
+  const competition_stage_use_cases = get_competition_stage_use_cases();
   const competition_team_use_cases = get_competition_team_use_cases();
   const fixture_lineup_use_cases = get_fixture_lineup_use_cases();
   const official_use_cases = get_official_use_cases();
@@ -69,6 +81,7 @@
   let selected_competition_id: string = "";
   let selected_competition: Competition | null = null;
   let competition_format: CompetitionFormat | null = null;
+  let competition_stages: CompetitionStage[] = [];
   let fixtures: Fixture[] = [];
   let teams: Team[] = [];
   let team_map: Map<string, Team> = new Map();
@@ -244,19 +257,6 @@
     ? get_competition_status_display(selected_competition_derived_status)
     : null;
 
-  interface TeamStanding {
-    team_id: string;
-    team_name: string;
-    played: number;
-    won: number;
-    drawn: number;
-    lost: number;
-    goals_for: number;
-    goals_against: number;
-    goal_difference: number;
-    points: number;
-  }
-
   interface PlayerStats {
     player_name: string;
     team_name: string;
@@ -266,7 +266,15 @@
     red_cards: number;
   }
 
-  $: standings = calculate_standings(fixtures, teams);
+  $: standings = calculate_team_standings(fixtures, teams);
+  $: stage_results_sections = build_competition_stage_results_sections(
+    competition_stages,
+    fixtures,
+    teams,
+  );
+  $: competition_stage_map = new Map(
+    competition_stages.map((stage) => [stage.id, stage]),
+  );
   $: completed_fixtures = fixtures.filter((f) => f.status === "completed");
   $: upcoming_fixtures = fixtures.filter(
     (f) => f.status === "scheduled" || f.status === "in_progress",
@@ -323,6 +331,7 @@
       selected_competition_id = "";
       selected_competition = null;
       competition_format = null;
+      competition_stages = [];
       fixtures = [];
       teams = [];
       team_map = new Map();
@@ -425,6 +434,12 @@
         selected_competition_id,
         { page_number: 1, page_size: 100 },
       );
+    const stage_result =
+      await competition_stage_use_cases.list_stages_by_competition(
+        selected_competition_id,
+        { page_number: 1, page_size: 100 },
+      );
+    competition_stages = stage_result.success ? stage_result.data : [];
     if (comp_teams_result.success) {
       const team_ids = comp_teams_result.data.items.map(
         (ct: { team_id: string }) => ct.team_id,
@@ -457,71 +472,10 @@
     load_competition_data();
   }
 
-  function calculate_standings(
-    fixtures: Fixture[],
-    teams: Team[],
-  ): TeamStanding[] {
-    const standings_map = new Map<string, TeamStanding>();
-
-    for (const team of teams) {
-      standings_map.set(team.id, {
-        team_id: team.id,
-        team_name: team.name,
-        played: 0,
-        won: 0,
-        drawn: 0,
-        lost: 0,
-        goals_for: 0,
-        goals_against: 0,
-        goal_difference: 0,
-        points: 0,
-      });
-    }
-
-    const completed = fixtures.filter((f) => f.status === "completed");
-
-    for (const fixture of completed) {
-      const home = standings_map.get(fixture.home_team_id);
-      const away = standings_map.get(fixture.away_team_id);
-
-      if (!home || !away) continue;
-
-      const home_goals = fixture.home_team_score ?? 0;
-      const away_goals = fixture.away_team_score ?? 0;
-
-      home.played++;
-      away.played++;
-      home.goals_for += home_goals;
-      home.goals_against += away_goals;
-      away.goals_for += away_goals;
-      away.goals_against += home_goals;
-
-      if (home_goals > away_goals) {
-        home.won++;
-        home.points += 3;
-        away.lost++;
-      } else if (home_goals < away_goals) {
-        away.won++;
-        away.points += 3;
-        home.lost++;
-      } else {
-        home.drawn++;
-        away.drawn++;
-        home.points += 1;
-        away.points += 1;
-      }
-    }
-
-    for (const standing of standings_map.values()) {
-      standing.goal_difference = standing.goals_for - standing.goals_against;
-    }
-
-    return Array.from(standings_map.values()).sort((a, b) => {
-      if (b.points !== a.points) return b.points - a.points;
-      if (b.goal_difference !== a.goal_difference)
-        return b.goal_difference - a.goal_difference;
-      return b.goals_for - a.goals_for;
-    });
+  function handle_standings_team_click(
+    event: CustomEvent<{ team_id: string; team_name: string }>,
+  ): void {
+    handle_team_click(event.detail.team_id, event.detail.team_name);
   }
 
   function calculate_player_stats(fixtures: Fixture[]): PlayerStats[] {
@@ -571,6 +525,23 @@
 
   function get_team_name(team_id: string): string {
     return team_map.get(team_id)?.name ?? "Unknown Team";
+  }
+
+  function get_fixture_stage_name(stage_id?: string | null): string {
+    if (!stage_id) {
+      return competition_stages.length > 0 ? "Unassigned Stage" : "";
+    }
+
+    return competition_stage_map.get(stage_id)?.name ?? "Unknown Stage";
+  }
+
+  function get_fixture_stage_type(stage_id?: string | null): string {
+    if (!stage_id) return "";
+
+    const stage = competition_stage_map.get(stage_id);
+    if (!stage) return "";
+
+    return get_stage_type_label(stage.stage_type);
   }
 
   function format_date(date_string: string): string {
@@ -882,10 +853,10 @@
 <div class="w-full">
   {#if is_using_cached_data}
     <div
-      class="mx-4 mt-4 mb-2 flex items-center gap-2 rounded-md border border-amber-400 bg-amber-50 px-4 py-2.5 text-sm text-amber-800 dark:border-amber-600 dark:bg-amber-950 dark:text-amber-200"
+      class="banner-info mx-4 mt-4 mb-2 flex items-center gap-2 rounded-md px-4 py-2.5 text-sm"
     >
       <svg
-        class="h-4 w-4 shrink-0"
+        class="banner-info-icon h-4 w-4 shrink-0"
         fill="none"
         viewBox="0 0 24 24"
         stroke="currentColor"
@@ -894,7 +865,7 @@
         <path
           stroke-linecap="round"
           stroke-linejoin="round"
-          d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"
+          d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
         />
       </svg>
       <span
@@ -1144,529 +1115,395 @@
               ></div>
             </div>
           {:else if active_tab === "standings"}
-            {#if standings.length === 0}
-              <div class="text-center py-8 text-accent-500">
-                No teams registered for this competition yet.
-              </div>
+            {#if stage_results_sections.length === 0}
+              <CompetitionStandingsTable
+                {standings}
+                {selected_team_id}
+                empty_message="No teams registered for this competition yet."
+                on:teamclick={handle_standings_team_click}
+              />
             {:else}
-              <div class="hidden sm:block overflow-x-auto">
-                <table
-                  class="min-w-full divide-y divide-gray-200 dark:divide-gray-700"
-                >
-                  <thead class="bg-gray-50 dark:bg-gray-800">
-                    <tr>
-                      <th
-                        class="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
-                        >#</th
-                      >
-                      <th
-                        class="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
-                        >Team</th
-                      >
-                      <th
-                        class="px-3 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
-                        >P</th
-                      >
-                      <th
-                        class="px-3 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
-                        >W</th
-                      >
-                      <th
-                        class="px-3 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
-                        >D</th
-                      >
-                      <th
-                        class="px-3 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
-                        >L</th
-                      >
-                      <th
-                        class="px-3 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden md:table-cell"
-                        >GF</th
-                      >
-                      <th
-                        class="px-3 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden md:table-cell"
-                        >GA</th
-                      >
-                      <th
-                        class="px-3 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
-                        >GD</th
-                      >
-                      <th
-                        class="px-3 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider font-bold"
-                        >Pts</th
-                      >
-                    </tr>
-                  </thead>
-                  <tbody
-                    class="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700"
-                  >
-                    {#each standings as standing, index}
-                      <tr
-                        class="hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer transition-colors {selected_team_id ===
-                        standing.team_id
-                          ? 'bg-primary-50 dark:bg-primary-900/20'
-                          : ''}"
-                        on:click={() =>
-                          handle_team_click(
-                            standing.team_id,
-                            standing.team_name,
-                          )}
-                      >
-                        <td
-                          class="px-3 py-3 text-sm font-medium {index < 3
-                            ? 'text-green-600'
-                            : 'text-gray-600 dark:text-gray-400'}"
-                        >
-                          {index + 1}
-                        </td>
-                        <td
-                          class="px-3 py-3 text-sm font-medium text-accent-900 dark:text-accent-100 hover:text-primary-600 dark:hover:text-primary-400"
-                        >
-                          <span class="flex items-center gap-2">
-                            {standing.team_name}
-                            <svg
-                              class="w-3.5 h-3.5 text-gray-400"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
-                              stroke-width="2"
-                            >
-                              <path
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                d="m8.25 4.5 7.5 7.5-7.5 7.5"
-                              />
-                            </svg>
-                          </span>
-                        </td>
-                        <td
-                          class="px-3 py-3 text-sm text-center text-gray-600 dark:text-gray-400"
-                          >{standing.played}</td
-                        >
-                        <td
-                          class="px-3 py-3 text-sm text-center text-gray-600 dark:text-gray-400"
-                          >{standing.won}</td
-                        >
-                        <td
-                          class="px-3 py-3 text-sm text-center text-gray-600 dark:text-gray-400"
-                          >{standing.drawn}</td
-                        >
-                        <td
-                          class="px-3 py-3 text-sm text-center text-gray-600 dark:text-gray-400"
-                          >{standing.lost}</td
-                        >
-                        <td
-                          class="px-3 py-3 text-sm text-center text-gray-600 dark:text-gray-400 hidden md:table-cell"
-                          >{standing.goals_for}</td
-                        >
-                        <td
-                          class="px-3 py-3 text-sm text-center text-gray-600 dark:text-gray-400 hidden md:table-cell"
-                          >{standing.goals_against}</td
-                        >
-                        <td
-                          class="px-3 py-3 text-sm text-center {standing.goal_difference >
-                          0
-                            ? 'text-green-600'
-                            : standing.goal_difference < 0
-                              ? 'text-red-600'
-                              : 'text-gray-600 dark:text-gray-400'}"
-                        >
-                          {standing.goal_difference > 0
-                            ? "+"
-                            : ""}{standing.goal_difference}
-                        </td>
-                        <td
-                          class="px-3 py-3 text-sm text-center font-bold text-accent-900 dark:text-accent-100"
-                          >{standing.points}</td
-                        >
-                      </tr>
-                    {/each}
-                  </tbody>
-                </table>
-              </div>
-
-              <div class="sm:hidden space-y-2">
-                {#each standings as standing, index}
-                  <button
-                    type="button"
-                    class="w-full flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg transition-colors {selected_team_id ===
-                    standing.team_id
-                      ? 'ring-2 ring-primary-500 bg-primary-50 dark:bg-primary-900/20'
-                      : ''}"
-                    on:click={() =>
-                      handle_team_click(standing.team_id, standing.team_name)}
-                  >
-                    <div class="flex items-center gap-3">
-                      <span
-                        class="w-6 h-6 flex items-center justify-center text-sm font-bold rounded-full {index <
-                        3
-                          ? 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-400'
-                          : 'bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-400'}"
-                      >
-                        {index + 1}
-                      </span>
-                      <span
-                        class="font-medium text-accent-900 dark:text-accent-100 truncate max-w-[120px] text-left"
-                      >
-                        {standing.team_name}
-                      </span>
-                    </div>
-                    <div class="flex items-center gap-4 text-sm">
-                      <div class="text-center">
-                        <div class="text-xs text-gray-500 dark:text-gray-400">
-                          P
-                        </div>
-                        <div
-                          class="font-medium text-gray-700 dark:text-gray-300"
-                        >
-                          {standing.played}
-                        </div>
-                      </div>
-                      <div class="text-center">
-                        <div class="text-xs text-gray-500 dark:text-gray-400">
-                          GD
-                        </div>
-                        <div
-                          class="font-medium {standing.goal_difference > 0
-                            ? 'text-green-600'
-                            : standing.goal_difference < 0
-                              ? 'text-red-600'
-                              : 'text-gray-700 dark:text-gray-300'}"
-                        >
-                          {standing.goal_difference > 0
-                            ? "+"
-                            : ""}{standing.goal_difference}
-                        </div>
-                      </div>
-                      <div class="text-center min-w-[32px]">
-                        <div class="text-xs text-gray-500 dark:text-gray-400">
-                          Pts
-                        </div>
-                        <div
-                          class="font-bold text-accent-900 dark:text-accent-100"
-                        >
-                          {standing.points}
-                        </div>
-                      </div>
-                      <svg
-                        class="w-4 h-4 text-gray-400"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                        stroke-width="2"
-                      >
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          d="m8.25 4.5 7.5 7.5-7.5 7.5"
-                        />
-                      </svg>
-                    </div>
-                  </button>
-                {/each}
-              </div>
-
-              <div
-                class="mt-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg text-center"
-              >
-                <div
-                  class="text-xs text-gray-500 dark:text-gray-400 font-bold mb-2"
-                >
-                  Legend
-                </div>
-                <div
-                  class="flex flex-wrap justify-center gap-x-4 gap-y-1 text-xs text-gray-600 dark:text-gray-400"
-                >
-                  <span
-                    ><strong class="text-gray-700 dark:text-gray-300">P</strong> =
-                    Played</span
-                  >
-                  <span
-                    ><strong class="text-gray-700 dark:text-gray-300">W</strong> =
-                    Won</span
-                  >
-                  <span
-                    ><strong class="text-gray-700 dark:text-gray-300">D</strong> =
-                    Drawn</span
-                  >
-                  <span
-                    ><strong class="text-gray-700 dark:text-gray-300">L</strong> =
-                    Lost</span
-                  >
-                  <span
-                    ><strong class="text-gray-700 dark:text-gray-300">GF</strong
-                    > = Goals For</span
-                  >
-                  <span
-                    ><strong class="text-gray-700 dark:text-gray-300">GA</strong
-                    > = Goals Against</span
-                  >
-                  <span
-                    ><strong class="text-gray-700 dark:text-gray-300">GD</strong
-                    > = Goal Difference</span
-                  >
-                  <span
-                    ><strong class="text-gray-700 dark:text-gray-300"
-                      >Pts</strong
-                    > = Points</span
-                  >
-                </div>
-                <div
-                  class="mt-2 text-xs text-gray-500 dark:text-gray-400 italic"
-                >
-                  Click on a team to view their fixtures
-                </div>
-              </div>
-
-              {#if selected_team_id}
-                <div
-                  class="mt-6 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden"
-                >
-                  <div
-                    class="px-4 py-3 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700"
+              <div class="space-y-6">
+                {#each stage_results_sections as stage_section}
+                  <section
+                    class="rounded-xl border border-accent-200 dark:border-accent-700 p-4 sm:p-5"
                   >
                     <div
-                      class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
+                      class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-4"
                     >
-                      <div class="flex items-center gap-3">
-                        <button
-                          type="button"
-                          class="p-1.5 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-                          on:click={close_team_fixtures_panel}
-                          aria-label="Close"
+                      <div>
+                        <h3
+                          class="text-lg font-semibold text-accent-900 dark:text-accent-100"
                         >
-                          <svg
-                            class="w-5 h-5 text-gray-500"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                            stroke-width="2"
-                          >
-                            <path
-                              stroke-linecap="round"
-                              stroke-linejoin="round"
-                              d="M6 18 18 6M6 6l12 12"
-                            />
-                          </svg>
-                        </button>
-                        <div>
-                          <h3
-                            class="text-base font-semibold text-accent-900 dark:text-accent-100"
-                          >
-                            {selected_team_name} Fixtures
-                          </h3>
-                          <p class="text-xs text-gray-500 dark:text-gray-400">
-                            {displayed_team_fixtures.length}
-                            {displayed_team_fixtures.length === 1
-                              ? "fixture"
-                              : "fixtures"}
-                          </p>
-                        </div>
+                          {stage_section.stage.name}
+                        </h3>
+                        <p class="text-sm text-accent-600 dark:text-accent-400">
+                          {stage_section.fixtures.length} fixture{stage_section
+                            .fixtures.length === 1
+                            ? ""
+                            : "s"} attached to this stage
+                        </p>
                       </div>
-                      <div class="flex items-center gap-2">
-                        <label class="flex items-center gap-2 cursor-pointer">
-                          <input
-                            type="checkbox"
-                            bind:checked={show_all_competitions_fixtures}
-                            class="w-4 h-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
-                          />
-                          <span
-                            class="text-sm text-gray-600 dark:text-gray-400"
-                          >
-                            All competitions
-                          </span>
-                        </label>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div class="p-4 max-h-[400px] overflow-y-auto">
-                    {#if team_fixtures_loading}
-                      <div class="flex items-center justify-center py-8">
-                        <div
-                          class="animate-spin rounded-full h-6 w-6 border-2 border-primary-500 border-t-transparent"
-                        ></div>
-                      </div>
-                    {:else if displayed_team_fixtures.length === 0}
-                      <div
-                        class="text-center py-8 text-gray-500 dark:text-gray-400"
+                      <span
+                        class="inline-flex items-center rounded-full bg-accent-100 px-3 py-1 text-xs font-medium uppercase tracking-wide text-accent-700 dark:bg-accent-800 dark:text-accent-300"
                       >
-                        No fixtures found for this team.
-                      </div>
-                    {:else}
-                      <div class="space-y-3">
-                        {#each displayed_team_fixtures.sort((a, b) => new Date(a.scheduled_date).getTime() - new Date(b.scheduled_date).getTime()) as fixture}
-                          {@const is_home =
-                            fixture.home_team_id === selected_team_id}
-                          {@const home_score = fixture.home_team_score ?? 0}
-                          {@const away_score = fixture.away_team_score ?? 0}
-                          {@const did_win =
-                            fixture.status === "completed" &&
-                            ((is_home && home_score > away_score) ||
-                              (!is_home && away_score > home_score))}
-                          {@const did_lose =
-                            fixture.status === "completed" &&
-                            ((is_home && home_score < away_score) ||
-                              (!is_home && away_score < home_score))}
-                          {@const did_draw =
-                            fixture.status === "completed" &&
-                            home_score === away_score}
-                          <div
-                            class="p-3 rounded-lg border transition-colors {fixture.status ===
-                            'completed'
-                              ? did_win
-                                ? 'border-green-200 bg-green-50 dark:border-green-800/50 dark:bg-green-900/10'
-                                : did_lose
-                                  ? 'border-red-200 bg-red-50 dark:border-red-800/50 dark:bg-red-900/10'
-                                  : 'border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800'
-                              : fixture.status === 'in_progress'
-                                ? 'border-red-300 bg-red-50 dark:border-red-700 dark:bg-red-900/20'
-                                : 'border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800'}"
-                          >
-                            <div class="flex items-center justify-between mb-1">
+                        {stage_section.stage.stage_type.replaceAll("_", " ")}
+                      </span>
+                    </div>
+
+                    {#if stage_section.stage.stage_type === "group_stage"}
+                      {#if stage_section.inferred_groups.length === 0}
+                        <div class="text-center py-8 text-accent-500">
+                          No groups can be inferred for this stage yet.
+                        </div>
+                      {:else}
+                        <div class="space-y-6">
+                          {#each stage_section.inferred_groups as inferred_group}
+                            <div
+                              class="rounded-lg bg-accent-50/70 p-4 dark:bg-accent-900/20"
+                            >
                               <div
-                                class="text-xs text-gray-500 dark:text-gray-400"
+                                class="mb-3 flex items-center justify-between gap-3"
                               >
-                                {format_date(fixture.scheduled_date)}
-                              </div>
-                              <div class="flex items-center gap-2">
-                                {#if fixture.status === "in_progress"}
-                                  <span class="flex items-center gap-1">
-                                    <span class="relative flex h-2 w-2">
-                                      <span
-                                        class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"
-                                      ></span>
-                                      <span
-                                        class="relative inline-flex rounded-full h-2 w-2 bg-red-500"
-                                      ></span>
-                                    </span>
-                                    <span
-                                      class="text-xs font-semibold text-red-600 dark:text-red-400"
-                                      >LIVE</span
-                                    >
-                                  </span>
-                                {:else if fixture.status === "completed"}
-                                  <span
-                                    class="text-xs font-medium px-1.5 py-0.5 rounded {did_win
-                                      ? 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-400'
-                                      : did_lose
-                                        ? 'bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-400'
-                                        : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400'}"
-                                  >
-                                    {did_win ? "W" : did_lose ? "L" : "D"}
-                                  </span>
-                                {:else}
-                                  <span
-                                    class="text-xs text-gray-400 dark:text-gray-500"
-                                    >Scheduled</span
-                                  >
-                                {/if}
-                              </div>
-                            </div>
-                            <div class="mb-2">
-                              <span
-                                class="inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400 max-w-full truncate"
-                                title={get_competition_name_extended(
-                                  fixture.competition_id,
-                                )}
-                              >
-                                {get_competition_name_extended(
-                                  fixture.competition_id,
-                                )}
-                              </span>
-                            </div>
-                            <div
-                              class="flex items-center justify-between gap-2"
-                            >
-                              <div class="flex-1 text-right">
-                                <span
-                                  class="text-sm font-medium {fixture.home_team_id ===
-                                  selected_team_id
-                                    ? 'text-primary-600 dark:text-primary-400'
-                                    : 'text-accent-900 dark:text-accent-100'} line-clamp-1"
+                                <h4
+                                  class="text-base font-semibold text-accent-900 dark:text-accent-100"
                                 >
-                                  {get_team_name_extended(fixture.home_team_id)}
+                                  {inferred_group.label}
+                                </h4>
+                                <span
+                                  class="text-xs text-accent-600 dark:text-accent-400"
+                                >
+                                  {inferred_group.team_ids.length} teams
                                 </span>
                               </div>
-                              <div class="flex-shrink-0 px-2 sm:px-4">
-                                {#if fixture.status === "completed" || fixture.status === "in_progress"}
-                                  <div
-                                    class="flex items-center gap-1 text-lg font-bold"
-                                  >
-                                    <span
-                                      class={is_home && home_score > away_score
-                                        ? "text-green-600"
-                                        : is_home && home_score < away_score
-                                          ? "text-red-600"
-                                          : "text-accent-900 dark:text-accent-100"}
-                                    >
-                                      {home_score}
-                                    </span>
-                                    <span class="text-gray-400">-</span>
-                                    <span
-                                      class={!is_home && away_score > home_score
-                                        ? "text-green-600"
-                                        : !is_home && away_score < home_score
-                                          ? "text-red-600"
-                                          : "text-accent-900 dark:text-accent-100"}
-                                    >
-                                      {away_score}
-                                    </span>
-                                  </div>
-                                {:else}
-                                  <span class="text-sm font-bold text-gray-400"
-                                    >VS</span
-                                  >
-                                {/if}
-                              </div>
-                              <div class="flex-1 text-left">
-                                <span
-                                  class="text-sm font-medium {fixture.away_team_id ===
-                                  selected_team_id
-                                    ? 'text-primary-600 dark:text-primary-400'
-                                    : 'text-accent-900 dark:text-accent-100'} line-clamp-1"
-                                >
-                                  {get_team_name_extended(fixture.away_team_id)}
-                                </span>
-                              </div>
+                              <CompetitionStandingsTable
+                                standings={inferred_group.standings}
+                                {selected_team_id}
+                                empty_message="No completed fixtures in this inferred group yet."
+                                show_legend={false}
+                                on:teamclick={handle_standings_team_click}
+                              />
                             </div>
-                            <div
-                              class="flex justify-center mt-2 pt-2 border-t border-gray-200 dark:border-gray-700"
-                            >
-                              <button
-                                type="button"
-                                class="flex items-center gap-1 px-3 py-1 text-xs font-medium text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 rounded transition-colors"
-                                on:click={() =>
-                                  goto(`/match-report/${fixture.id}`)}
-                              >
-                                <svg
-                                  class="w-3.5 h-3.5"
-                                  fill="none"
-                                  viewBox="0 0 24 24"
-                                  stroke="currentColor"
-                                  stroke-width="2"
-                                >
-                                  <path
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                                  />
-                                  <path
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                                  />
-                                </svg>
-                                View Details
-                              </button>
-                            </div>
-                          </div>
-                        {/each}
-                      </div>
+                          {/each}
+                        </div>
+                      {/if}
+                    {:else}
+                      <CompetitionStandingsTable
+                        standings={stage_section.standings}
+                        {selected_team_id}
+                        empty_message="No standings are available for this stage yet."
+                        show_legend={false}
+                        on:teamclick={handle_standings_team_click}
+                      />
                     {/if}
+                  </section>
+                {/each}
+
+                <div
+                  class="mt-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg text-center"
+                >
+                  <div
+                    class="text-xs text-gray-500 dark:text-gray-400 font-bold mb-2"
+                  >
+                    Legend
+                  </div>
+                  <div
+                    class="flex flex-wrap justify-center gap-x-4 gap-y-1 text-xs text-gray-600 dark:text-gray-400"
+                  >
+                    <span
+                      ><strong class="text-gray-700 dark:text-gray-300"
+                        >P</strong
+                      > = Played</span
+                    >
+                    <span
+                      ><strong class="text-gray-700 dark:text-gray-300"
+                        >W</strong
+                      > = Won</span
+                    >
+                    <span
+                      ><strong class="text-gray-700 dark:text-gray-300"
+                        >D</strong
+                      > = Drawn</span
+                    >
+                    <span
+                      ><strong class="text-gray-700 dark:text-gray-300"
+                        >L</strong
+                      > = Lost</span
+                    >
+                    <span
+                      ><strong class="text-gray-700 dark:text-gray-300"
+                        >GF</strong
+                      > = Goals For</span
+                    >
+                    <span
+                      ><strong class="text-gray-700 dark:text-gray-300"
+                        >GA</strong
+                      > = Goals Against</span
+                    >
+                    <span
+                      ><strong class="text-gray-700 dark:text-gray-300"
+                        >GD</strong
+                      > = Goal Difference</span
+                    >
+                    <span
+                      ><strong class="text-gray-700 dark:text-gray-300"
+                        >Pts</strong
+                      > = Points</span
+                    >
+                  </div>
+                  <div
+                    class="mt-2 text-xs text-gray-500 dark:text-gray-400 italic"
+                  >
+                    Click on a team to view their fixtures
                   </div>
                 </div>
-              {/if}
+              </div>
+            {/if}
+
+            {#if selected_team_id}
+              <div
+                class="mt-6 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden"
+              >
+                <div
+                  class="px-4 py-3 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700"
+                >
+                  <div
+                    class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
+                  >
+                    <div class="flex items-center gap-3">
+                      <button
+                        type="button"
+                        class="p-1.5 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                        on:click={close_team_fixtures_panel}
+                        aria-label="Close"
+                      >
+                        <svg
+                          class="w-5 h-5 text-gray-500"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          stroke-width="2"
+                        >
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            d="M6 18 18 6M6 6l12 12"
+                          />
+                        </svg>
+                      </button>
+                      <div>
+                        <h3
+                          class="text-base font-semibold text-accent-900 dark:text-accent-100"
+                        >
+                          {selected_team_name} Fixtures
+                        </h3>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">
+                          {displayed_team_fixtures.length}
+                          {displayed_team_fixtures.length === 1
+                            ? "fixture"
+                            : "fixtures"}
+                        </p>
+                      </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                      <label class="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          bind:checked={show_all_competitions_fixtures}
+                          class="w-4 h-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                        />
+                        <span class="text-sm text-gray-600 dark:text-gray-400">
+                          All competitions
+                        </span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="p-4 max-h-[400px] overflow-y-auto">
+                  {#if team_fixtures_loading}
+                    <div class="flex items-center justify-center py-8">
+                      <div
+                        class="animate-spin rounded-full h-6 w-6 border-2 border-primary-500 border-t-transparent"
+                      ></div>
+                    </div>
+                  {:else if displayed_team_fixtures.length === 0}
+                    <div
+                      class="text-center py-8 text-gray-500 dark:text-gray-400"
+                    >
+                      No fixtures found for this team.
+                    </div>
+                  {:else}
+                    <div class="space-y-3">
+                      {#each displayed_team_fixtures.sort((a, b) => new Date(a.scheduled_date).getTime() - new Date(b.scheduled_date).getTime()) as fixture}
+                        {@const is_home =
+                          fixture.home_team_id === selected_team_id}
+                        {@const home_score = fixture.home_team_score ?? 0}
+                        {@const away_score = fixture.away_team_score ?? 0}
+                        {@const did_win =
+                          fixture.status === "completed" &&
+                          ((is_home && home_score > away_score) ||
+                            (!is_home && away_score > home_score))}
+                        {@const did_lose =
+                          fixture.status === "completed" &&
+                          ((is_home && home_score < away_score) ||
+                            (!is_home && away_score < home_score))}
+                        {@const did_draw =
+                          fixture.status === "completed" &&
+                          home_score === away_score}
+                        <div
+                          class="p-3 rounded-lg border transition-colors {fixture.status ===
+                          'completed'
+                            ? did_win
+                              ? 'border-green-200 bg-green-50 dark:border-green-800/50 dark:bg-green-900/10'
+                              : did_lose
+                                ? 'border-red-200 bg-red-50 dark:border-red-800/50 dark:bg-red-900/10'
+                                : 'border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800'
+                            : fixture.status === 'in_progress'
+                              ? 'border-red-300 bg-red-50 dark:border-red-700 dark:bg-red-900/20'
+                              : 'border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800'}"
+                        >
+                          <div class="flex items-center justify-between mb-1">
+                            <div
+                              class="text-xs text-gray-500 dark:text-gray-400"
+                            >
+                              {format_date(fixture.scheduled_date)}
+                            </div>
+                            <div class="flex items-center gap-2">
+                              {#if fixture.status === "in_progress"}
+                                <span class="flex items-center gap-1">
+                                  <span class="relative flex h-2 w-2">
+                                    <span
+                                      class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"
+                                    ></span>
+                                    <span
+                                      class="relative inline-flex rounded-full h-2 w-2 bg-red-500"
+                                    ></span>
+                                  </span>
+                                  <span
+                                    class="text-xs font-semibold text-red-600 dark:text-red-400"
+                                    >LIVE</span
+                                  >
+                                </span>
+                              {:else if fixture.status === "completed"}
+                                <span
+                                  class="text-xs font-medium px-1.5 py-0.5 rounded {did_win
+                                    ? 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-400'
+                                    : did_lose
+                                      ? 'bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-400'
+                                      : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400'}"
+                                >
+                                  {did_win ? "W" : did_lose ? "L" : "D"}
+                                </span>
+                              {:else}
+                                <span
+                                  class="text-xs text-gray-400 dark:text-gray-500"
+                                  >Scheduled</span
+                                >
+                              {/if}
+                            </div>
+                          </div>
+                          <div class="mb-2">
+                            <span
+                              class="inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400 max-w-full truncate"
+                              title={get_competition_name_extended(
+                                fixture.competition_id,
+                              )}
+                            >
+                              {get_competition_name_extended(
+                                fixture.competition_id,
+                              )}
+                            </span>
+                          </div>
+                          <div class="flex items-center justify-between gap-2">
+                            <div class="flex-1 text-right">
+                              <span
+                                class="text-sm font-medium {fixture.home_team_id ===
+                                selected_team_id
+                                  ? 'text-primary-600 dark:text-primary-400'
+                                  : 'text-accent-900 dark:text-accent-100'} line-clamp-1"
+                              >
+                                {get_team_name_extended(fixture.home_team_id)}
+                              </span>
+                            </div>
+                            <div class="flex-shrink-0 px-2 sm:px-4">
+                              {#if fixture.status === "completed" || fixture.status === "in_progress"}
+                                <div
+                                  class="flex items-center gap-1 text-lg font-bold"
+                                >
+                                  <span
+                                    class={is_home && home_score > away_score
+                                      ? "text-green-600"
+                                      : is_home && home_score < away_score
+                                        ? "text-red-600"
+                                        : "text-accent-900 dark:text-accent-100"}
+                                  >
+                                    {home_score}
+                                  </span>
+                                  <span class="text-gray-400">-</span>
+                                  <span
+                                    class={!is_home && away_score > home_score
+                                      ? "text-green-600"
+                                      : !is_home && away_score < home_score
+                                        ? "text-red-600"
+                                        : "text-accent-900 dark:text-accent-100"}
+                                  >
+                                    {away_score}
+                                  </span>
+                                </div>
+                              {:else}
+                                <span class="text-sm font-bold text-gray-400"
+                                  >VS</span
+                                >
+                              {/if}
+                            </div>
+                            <div class="flex-1 text-left">
+                              <span
+                                class="text-sm font-medium {fixture.away_team_id ===
+                                selected_team_id
+                                  ? 'text-primary-600 dark:text-primary-400'
+                                  : 'text-accent-900 dark:text-accent-100'} line-clamp-1"
+                              >
+                                {get_team_name_extended(fixture.away_team_id)}
+                              </span>
+                            </div>
+                          </div>
+                          <div
+                            class="flex justify-center mt-2 pt-2 border-t border-gray-200 dark:border-gray-700"
+                          >
+                            <button
+                              type="button"
+                              class="flex items-center gap-1 px-3 py-1 text-xs font-medium text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 rounded transition-colors"
+                              on:click={() =>
+                                goto(`/match-report/${fixture.id}`)}
+                            >
+                              <svg
+                                class="w-3.5 h-3.5"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                                stroke-width="2"
+                              >
+                                <path
+                                  stroke-linecap="round"
+                                  stroke-linejoin="round"
+                                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                                />
+                                <path
+                                  stroke-linecap="round"
+                                  stroke-linejoin="round"
+                                  d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                                />
+                              </svg>
+                              View Details
+                            </button>
+                          </div>
+                        </div>
+                      {/each}
+                    </div>
+                  {/if}
+                </div>
+              </div>
             {/if}
           {:else if active_tab === "fixtures"}
             {#if upcoming_fixtures.length === 0}
@@ -1676,6 +1513,12 @@
             {:else}
               <div class="space-y-3">
                 {#each upcoming_fixtures as fixture}
+                  {@const fixture_stage_name = get_fixture_stage_name(
+                    fixture.stage_id,
+                  )}
+                  {@const fixture_stage_type = get_fixture_stage_type(
+                    fixture.stage_id,
+                  )}
                   <div
                     class="p-3 sm:p-4 bg-gray-50 dark:bg-gray-800 rounded-lg {fixture.status ===
                     'in_progress'
@@ -1683,8 +1526,26 @@
                       : ''}"
                   >
                     <div class="flex items-center justify-between mb-2">
-                      <div class="text-xs text-gray-500 dark:text-gray-400">
-                        {format_date(fixture.scheduled_date)}
+                      <div>
+                        <div class="text-xs text-gray-500 dark:text-gray-400">
+                          {format_date(fixture.scheduled_date)}
+                        </div>
+                        {#if fixture_stage_name}
+                          <div class="mt-1">
+                            <span
+                              class="inline-flex items-center gap-1 rounded-full bg-primary-50 px-2 py-1 text-[11px] font-medium text-primary-700 dark:bg-primary-900/40 dark:text-primary-300"
+                            >
+                              {fixture_stage_name}
+                              {#if fixture_stage_type}
+                                <span
+                                  class="text-primary-500 dark:text-primary-400"
+                                >
+                                  • {fixture_stage_type}
+                                </span>
+                              {/if}
+                            </span>
+                          </div>
+                        {/if}
                       </div>
                       {#if fixture.status === "in_progress"}
                         <div class="flex items-center gap-1.5">
@@ -1822,6 +1683,12 @@
                 {#each completed_fixtures as fixture}
                   {@const home_score = fixture.home_team_score ?? 0}
                   {@const away_score = fixture.away_team_score ?? 0}
+                  {@const fixture_stage_name = get_fixture_stage_name(
+                    fixture.stage_id,
+                  )}
+                  {@const fixture_stage_type = get_fixture_stage_type(
+                    fixture.stage_id,
+                  )}
                   <div
                     class="w-full p-3 sm:p-4 bg-gray-50 dark:bg-gray-800 rounded-lg transition-colors"
                   >
@@ -1830,6 +1697,22 @@
                     >
                       {format_date(fixture.scheduled_date)}
                     </div>
+                    {#if fixture_stage_name}
+                      <div class="mb-3 text-center">
+                        <span
+                          class="inline-flex items-center gap-1 rounded-full bg-primary-50 px-2 py-1 text-[11px] font-medium text-primary-700 dark:bg-primary-900/40 dark:text-primary-300"
+                        >
+                          {fixture_stage_name}
+                          {#if fixture_stage_type}
+                            <span
+                              class="text-primary-500 dark:text-primary-400"
+                            >
+                              • {fixture_stage_type}
+                            </span>
+                          {/if}
+                        </span>
+                      </div>
+                    {/if}
                     <div class="flex items-center justify-between gap-2">
                       <div class="flex-1 text-right">
                         <span

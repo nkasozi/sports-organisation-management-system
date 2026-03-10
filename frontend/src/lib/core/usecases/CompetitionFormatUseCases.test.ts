@@ -141,12 +141,84 @@ describe("CompetitionFormatUseCases", () => {
       const result = await use_cases.create(create_valid_input());
 
       expect(result.success).toBe(true);
+      expect(mock_repository.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          stage_templates: [
+            {
+              name: "Round of 16",
+              stage_type: "knockout_stage",
+              stage_order: 1,
+            },
+            {
+              name: "Quarter Finals",
+              stage_type: "knockout_stage",
+              stage_order: 2,
+            },
+            {
+              name: "Semi Finals",
+              stage_type: "knockout_stage",
+              stage_order: 3,
+            },
+            {
+              name: "Final",
+              stage_type: "one_off_stage",
+              stage_order: 4,
+            },
+          ],
+        }),
+      );
     });
 
     it("should fail for empty name", async () => {
       const result = await use_cases.create(create_valid_input({ name: "" }));
 
       expect(result.success).toBe(false);
+    });
+
+    it("should preserve explicitly provided stage templates on create", async () => {
+      vi.mocked(mock_repository.find_by_code).mockResolvedValue({
+        success: true,
+        data: null,
+      });
+      vi.mocked(mock_repository.create).mockResolvedValue({
+        success: true,
+        data: create_test_format(),
+      });
+
+      const result = await use_cases.create(
+        create_valid_input({
+          stage_templates: [
+            {
+              name: "Preliminary Round",
+              stage_type: "league_stage",
+              stage_order: 1,
+            },
+            {
+              name: "Championship Final",
+              stage_type: "one_off_stage",
+              stage_order: 2,
+            },
+          ],
+        }),
+      );
+
+      expect(result.success).toBe(true);
+      expect(mock_repository.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          stage_templates: [
+            {
+              name: "Preliminary Round",
+              stage_type: "league_stage",
+              stage_order: 1,
+            },
+            {
+              name: "Championship Final",
+              stage_type: "one_off_stage",
+              stage_order: 2,
+            },
+          ],
+        }),
+      );
     });
   });
 
@@ -168,12 +240,132 @@ describe("CompetitionFormatUseCases", () => {
       const result = await use_cases.update("format-123", { name: "Updated" });
 
       expect(result.success).toBe(true);
+      expect(mock_repository.update).toHaveBeenCalledWith(
+        "format-123",
+        expect.objectContaining({
+          stage_templates: [
+            {
+              name: "Round Robin",
+              stage_type: "league_stage",
+              stage_order: 1,
+            },
+          ],
+        }),
+      );
+    });
+
+    it("should regenerate stage templates when format type changes", async () => {
+      vi.mocked(mock_repository.find_by_id).mockResolvedValue({
+        success: true,
+        data: create_test_format(),
+      });
+      vi.mocked(mock_repository.find_by_code).mockResolvedValue({
+        success: true,
+        data: null,
+      });
+      vi.mocked(mock_repository.update).mockResolvedValue({
+        success: true,
+        data: create_test_format({ format_type: "straight_knockout" }),
+      });
+
+      const result = await use_cases.update("format-123", {
+        format_type: "straight_knockout",
+        knockout_stage_config: null,
+        league_config: null,
+      });
+
+      expect(result.success).toBe(true);
+      expect(mock_repository.update).toHaveBeenCalledWith(
+        "format-123",
+        expect.objectContaining({
+          stage_templates: [
+            {
+              name: "Round of 16",
+              stage_type: "knockout_stage",
+              stage_order: 1,
+            },
+            {
+              name: "Quarter Finals",
+              stage_type: "knockout_stage",
+              stage_order: 2,
+            },
+            {
+              name: "Semi Finals",
+              stage_type: "knockout_stage",
+              stage_order: 3,
+            },
+            {
+              name: "Final",
+              stage_type: "one_off_stage",
+              stage_order: 4,
+            },
+          ],
+        }),
+      );
     });
 
     it("should fail for empty id", async () => {
       const result = await use_cases.update("", { name: "Updated" });
 
       expect(result.success).toBe(false);
+    });
+
+    it("should preserve explicitly provided stage templates on update", async () => {
+      vi.mocked(mock_repository.find_by_id).mockResolvedValue({
+        success: true,
+        data: create_test_format({
+          stage_templates: [
+            {
+              name: "Round Robin",
+              stage_type: "league_stage",
+              stage_order: 1,
+            },
+          ],
+        }),
+      });
+      vi.mocked(mock_repository.find_by_code).mockResolvedValue({
+        success: true,
+        data: null,
+      });
+      vi.mocked(mock_repository.update).mockResolvedValue({
+        success: true,
+        data: create_test_format(),
+      });
+
+      const result = await use_cases.update("format-123", {
+        format_type: "groups_knockout",
+        stage_templates: [
+          {
+            name: "Pool A and B",
+            stage_type: "group_stage",
+            stage_order: 1,
+          },
+          {
+            name: "Gold Medal Match",
+            stage_type: "one_off_stage",
+            stage_order: 2,
+          },
+        ],
+      });
+
+      expect(result.success).toBe(true);
+      expect(mock_repository.update).toHaveBeenCalledWith(
+        "format-123",
+        expect.objectContaining({
+          stage_templates: [
+            {
+              name: "Pool A and B",
+              stage_type: "group_stage",
+              stage_order: 1,
+            },
+            {
+              name: "Gold Medal Match",
+              stage_type: "one_off_stage",
+              stage_order: 2,
+            },
+          ],
+        }),
+      );
     });
   });
 

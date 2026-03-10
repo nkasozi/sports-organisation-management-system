@@ -133,7 +133,7 @@ export function get_expiry_status_color(expiry_date: string): string {
   const days = get_days_until_expiry(expiry_date);
   if (days === null) return "gray";
   if (days < 0) return "red";
-  if (days <= 30) return "orange";
+  if (days <= 30) return "blue";
   if (days <= 90) return "yellow";
   return "green";
 }

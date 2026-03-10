@@ -17,6 +17,7 @@ import type { Fixture } from "../../core/entities/Fixture";
 import type { Sport } from "../../core/entities/Sport";
 import type { FixtureLineup } from "../../core/entities/FixtureLineup";
 import type { CompetitionFormat } from "../../core/entities/CompetitionFormat";
+import type { CompetitionStage } from "../../core/entities/CompetitionStage";
 import type { GameEventType } from "../../core/entities/GameEventType";
 import type { GameOfficialRole } from "../../core/entities/GameOfficialRole";
 import type { TeamStaffRole } from "../../core/entities/TeamStaffRole";
@@ -598,6 +599,7 @@ class EntityMetadataRegistry {
     this.register_fixture_lineup_metadata();
     this.register_fixture_details_setup_metadata();
     this.register_competition_format_metadata();
+    this.register_competition_stage_metadata();
     this.register_game_event_type_metadata();
     this.register_game_official_role_metadata();
     this.register_team_staff_role_metadata();
@@ -2099,6 +2101,13 @@ class EntityMetadataRegistry {
           show_in_list: true,
         },
         {
+          field_name: "stage_templates" satisfies keyof CompetitionFormat,
+          display_name: "Stage Template",
+          field_type: "stage_template_array",
+          is_required: true,
+          is_read_only: false,
+        },
+        {
           field_name: "min_teams_required" satisfies keyof CompetitionFormat,
           display_name: "Min Teams Required",
           field_type: "number",
@@ -2116,6 +2125,65 @@ class EntityMetadataRegistry {
         },
         {
           field_name: "status" satisfies keyof CompetitionFormat,
+          display_name: "Status",
+          field_type: "enum",
+          enum_values: ["active", "inactive", "archived"],
+          is_required: true,
+          is_read_only: false,
+          show_in_list: true,
+        },
+      ],
+    });
+  }
+
+  private register_competition_stage_metadata(): void {
+    this.metadata_map.set("competitionstage", {
+      entity_name: "competitionstage",
+      display_name: "Competition Stage",
+      fields: [
+        {
+          field_name: "competition_id" satisfies keyof CompetitionStage,
+          display_name: "Competition",
+          field_type: "foreign_key",
+          foreign_key_entity: "competition",
+          is_required: true,
+          is_read_only: false,
+          is_read_only_on_edit: true,
+          show_in_list: false,
+        },
+        {
+          field_name: "name" satisfies keyof CompetitionStage,
+          display_name: "Stage Name",
+          field_type: "string",
+          is_required: true,
+          is_read_only: false,
+          show_in_list: true,
+        },
+        {
+          field_name: "stage_type" satisfies keyof CompetitionStage,
+          display_name: "Stage Type",
+          field_type: "enum",
+          enum_values: [
+            "group_stage",
+            "knockout_stage",
+            "league_stage",
+            "one_off_stage",
+            "custom",
+          ],
+          is_required: true,
+          is_read_only: false,
+          show_in_list: true,
+        },
+        {
+          field_name: "stage_order" satisfies keyof CompetitionStage,
+          display_name: "Stage Order",
+          field_type: "number",
+          is_required: true,
+          is_read_only: false,
+          show_in_list: true,
+        },
+        {
+          field_name: "status" satisfies keyof CompetitionStage,
           display_name: "Status",
           field_type: "enum",
           enum_values: ["active", "inactive", "archived"],

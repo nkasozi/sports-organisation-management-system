@@ -1,6 +1,10 @@
 <script lang="ts">
   import { createEventDispatcher, onDestroy } from "svelte";
-  import type { Game, ActiveGame, GameEvent } from "$lib/core/entities/GameEntities";
+  import type {
+    Game,
+    ActiveGame,
+    GameEvent,
+  } from "$lib/core/entities/GameEntities";
   import type {
     Sport,
     CardType,
@@ -93,7 +97,7 @@
         id: "own_goal",
         label: "Own Goal",
         icon: "🥅",
-        color: "bg-orange-500",
+        color: "bg-blue-500",
         category: "score",
         requires_player: true,
         affects_score: true,
@@ -138,7 +142,7 @@
         id: "second_yellow",
         label: "2nd Yellow",
         icon: "🟨🟥",
-        color: "bg-orange-500",
+        color: "bg-blue-500",
         category: "card",
         requires_player: true,
         affects_score: false,
@@ -227,7 +231,7 @@
           category: "card",
           requires_player: true,
           affects_score: false,
-        })
+        }),
       );
       return [
         ...base_events.filter((e) => e.category !== "card"),
@@ -308,13 +312,13 @@
 
   $: home_score = game_events
     .filter(
-      (e) => e.attributes.team_id === "home_team" && e.attributes.affects_score
+      (e) => e.attributes.team_id === "home_team" && e.attributes.affects_score,
     )
     .reduce((sum, e) => sum + (e.attributes.score_change_home || 0), 0);
 
   $: away_score = game_events
     .filter(
-      (e) => e.attributes.team_id === "away_team" && e.attributes.affects_score
+      (e) => e.attributes.team_id === "away_team" && e.attributes.affects_score,
     )
     .reduce((sum, e) => sum + (e.attributes.score_change_away || 0), 0);
 
@@ -450,7 +454,7 @@
 
   function record_period_event(
     event_type: "period_start" | "period_end",
-    description: string
+    description: string,
   ): void {
     const now = new Date().toISOString();
     const new_event: GameEvent = {
@@ -490,7 +494,7 @@
 
   function open_event_modal(
     event_type: QuickEventType,
-    team: "home" | "away"
+    team: "home" | "away",
   ): void {
     if (!can_record_events) return;
     selected_event_type = event_type;
@@ -515,7 +519,7 @@
 
     if (affects_score) {
       const scoring_rule = get_scoring_rules().find(
-        (r) => r.event_type === "goal"
+        (r) => r.event_type === "goal",
       );
       const points = scoring_rule?.points_awarded ?? 1;
 
@@ -651,7 +655,7 @@
 
   function remove_player_from_lineup(
     side: "home" | "away",
-    index: number
+    index: number,
   ): void {
     if (side === "home") {
       home_lineup = home_lineup.filter((_, i) => i !== index);
@@ -747,7 +751,9 @@
           >
             <span class="text-4xl">🏟️</span>
           </div>
-          <h3 class="text-lg font-medium text-accent-900 dark:text-accent-100 mb-2">
+          <h3
+            class="text-lg font-medium text-accent-900 dark:text-accent-100 mb-2"
+          >
             No Games Scheduled
           </h3>
           <p class="text-accent-500 dark:text-accent-400">
@@ -758,7 +764,9 @@
     </div>
   {:else}
     <div class="flex flex-col h-screen">
-      <div class="bg-accent-800 dark:bg-accent-900 text-white px-4 py-3 sticky top-0 z-40">
+      <div
+        class="bg-accent-800 dark:bg-accent-900 text-white px-4 py-3 sticky top-0 z-40"
+      >
         <div class="flex items-center justify-between max-w-4xl mx-auto">
           <div class="flex items-center gap-6">
             <div class="text-center">
@@ -808,7 +816,9 @@
       </div>
 
       {#if lineups_confirmed}
-        <div class="bg-accent-700 dark:bg-accent-800 text-white px-4 py-2 border-b border-accent-600 dark:border-accent-700">
+        <div
+          class="bg-accent-700 dark:bg-accent-800 text-white px-4 py-2 border-b border-accent-600 dark:border-accent-700"
+        >
           <div class="flex justify-center gap-4 max-w-4xl mx-auto">
             {#if !is_clock_running && current_period}
               {#if current_period.is_break}
@@ -836,7 +846,7 @@
                 +1' Stoppage
               </button>
               <button
-                class="px-4 py-2 bg-orange-600 hover:bg-orange-700 rounded-lg text-sm font-medium"
+                class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-sm font-medium"
                 on:click={end_period}
               >
                 ⏹️ End {current_period?.name}
@@ -917,7 +927,9 @@
         {/if}
       {/if}
 
-      <div class="flex-1 overflow-y-auto px-4 py-4 bg-accent-50 dark:bg-accent-900">
+      <div
+        class="flex-1 overflow-y-auto px-4 py-4 bg-accent-50 dark:bg-accent-900"
+      >
         <div class="max-w-2xl mx-auto">
           <h3
             class="text-sm font-semibold text-accent-500 dark:text-accent-400 uppercase tracking-wider mb-4"
@@ -967,7 +979,7 @@
                     <div class="flex-1 min-w-0">
                       <div
                         class="rounded-lg border-l-4 p-3 shadow-sm {get_event_color_class(
-                          event
+                          event,
                         )}"
                       >
                         <div
@@ -992,7 +1004,9 @@
                           {/if}
                         </div>
                         {#if event.attributes.player_id}
-                          <p class="text-xs text-accent-500 dark:text-accent-400">
+                          <p
+                            class="text-xs text-accent-500 dark:text-accent-400"
+                          >
                             Player: {event.attributes.player_id}
                           </p>
                         {/if}
@@ -1081,7 +1095,9 @@
 
             <div>
               <div class="flex items-center justify-between mb-4">
-                <h4 class="font-semibold text-emerald-600 dark:text-emerald-400">
+                <h4
+                  class="font-semibold text-emerald-600 dark:text-emerald-400"
+                >
                   ✈️ Away Team
                 </h4>
                 <button
@@ -1200,7 +1216,9 @@
         </div>
 
         <form on:submit|preventDefault={record_event} class="p-4 space-y-4">
-          <div class="bg-accent-100 dark:bg-accent-700 rounded-lg p-3 text-center">
+          <div
+            class="bg-accent-100 dark:bg-accent-700 rounded-lg p-3 text-center"
+          >
             <span
               class="text-2xl font-mono font-bold text-accent-900 dark:text-accent-100"
             >

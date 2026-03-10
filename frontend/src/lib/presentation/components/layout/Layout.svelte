@@ -87,14 +87,12 @@
     <Header {sidebar_open} on:toggle-sidebar={toggle_sidebar} />
 
     {#if $is_offline_mode}
-      <div
-        class="bg-amber-50 dark:bg-amber-950/60 border-b border-amber-200 dark:border-amber-800 w-full pt-4 pb-2 text-center"
-      >
+      <div class="banner-info w-full border-b pt-4 pb-2 text-center">
         <p
-          class="text-xs sm:text-sm text-amber-700 dark:text-amber-300 inline-flex items-center gap-1.5 flex-wrap justify-center px-4"
+          class="inline-flex items-center gap-1.5 px-4 text-xs sm:text-sm flex-wrap justify-center"
         >
           <svg
-            class="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0"
+            class="banner-info-icon w-4 h-4 flex-shrink-0"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"

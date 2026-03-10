@@ -1,5 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { create_competition_use_cases } from "./CompetitionUseCases";
+import {
+  create_competition_use_cases_with_stage_lifecycle,
+  type CompetitionStageLifecyclePort,
+} from "./CompetitionUseCases";
 import type { CompetitionRepository } from "../interfaces/ports";
 import type {
   Competition,
@@ -78,11 +81,29 @@ function create_valid_input(
 
 describe("CompetitionUseCases", () => {
   let mock_repository: CompetitionRepository;
-  let use_cases: ReturnType<typeof create_competition_use_cases>;
+  let mock_stage_lifecycle: CompetitionStageLifecyclePort;
+  let use_cases: ReturnType<typeof create_competition_use_cases_with_stage_lifecycle>;
 
   beforeEach(() => {
     mock_repository = create_mock_repository();
-    use_cases = create_competition_use_cases(mock_repository);
+    mock_stage_lifecycle = {
+      ensure_stages_for_competition: vi.fn().mockResolvedValue({
+        success: true,
+        data: true,
+      }),
+      can_replace_stages_for_competition: vi.fn().mockResolvedValue({
+        success: true,
+        data: true,
+      }),
+      replace_stages_for_competition: vi.fn().mockResolvedValue({
+        success: true,
+        data: true,
+      }),
+    };
+    use_cases = create_competition_use_cases_with_stage_lifecycle(
+      mock_repository,
+      mock_stage_lifecycle,
+    );
   });
 
   describe("list", () => {
@@ -176,6 +197,33 @@ describe("CompetitionUseCases", () => {
       const result = await use_cases.create(input);
 
       expect(result.success).toBe(true);
+      expect(
+        mock_stage_lifecycle.ensure_stages_for_competition,
+      ).toHaveBeenCalledWith("comp-123", "format-123");
+    });
+
+    it("should roll back the competition when stage initialization fails", async () => {
+      const input = create_valid_input();
+      const created = create_test_competition({ name: input.name });
+      vi.mocked(mock_repository.create).mockResolvedValue({
+        success: true,
+        data: created,
+      });
+      vi.mocked(mock_repository.delete_by_id).mockResolvedValue({
+        success: true,
+        data: true,
+      });
+      vi.mocked(
+        mock_stage_lifecycle.ensure_stages_for_competition,
+      ).mockResolvedValue({
+        success: false,
+        error: "Stage setup failed",
+      });
+
+      const result = await use_cases.create(input);
+
+      expect(result.success).toBe(false);
+      expect(mock_repository.delete_by_id).toHaveBeenCalledWith("comp-123");
     });
 
     it("should fail for empty name", async () => {
@@ -197,6 +245,10 @@ describe("CompetitionUseCases", () => {
 
   describe("update", () => {
     it("should update with valid input", async () => {
+      vi.mocked(mock_repository.find_by_id).mockResolvedValue({
+        success: true,
+        data: create_test_competition(),
+      });
       vi.mocked(mock_repository.update).mockResolvedValue({
         success: true,
         data: create_test_competition({ name: "Updated" }),
@@ -205,6 +257,9 @@ describe("CompetitionUseCases", () => {
       const result = await use_cases.update("comp-123", { name: "Updated" });
 
       expect(result.success).toBe(true);
+      expect(
+        mock_stage_lifecycle.ensure_stages_for_competition,
+      ).toHaveBeenCalledWith("comp-123", "format-123");
     });
 
     it("should fail for empty id", async () => {
@@ -213,6 +268,30 @@ describe("CompetitionUseCases", () => {
       expect(result.success).toBe(false);
       if (result.success) return;
       expect(result.error).toBe("Competition ID is required");
+    });
+
+    it("should replace stages when the competition format changes", async () => {
+      vi.mocked(mock_repository.find_by_id).mockResolvedValue({
+        success: true,
+        data: create_test_competition({ competition_format_id: "format-old" }),
+      });
+      vi.mocked(mock_repository.update).mockResolvedValue({
+        success: true,
+        data: create_test_competition({ competition_format_id: "format-new" }),
+      });
+
+      const result = await use_cases.update("comp-123", {
+        competition_format_id: "format-new",
+      });
+
+      expect(result.success).toBe(true);
+      expect(
+        mock_stage_lifecycle.can_replace_stages_for_competition,
+      ).toHaveBeenCalledWith("comp-123");
+      expect(mock_stage_lifecycle.replace_stages_for_competition).toHaveBeenCalledWith(
+        "comp-123",
+        "format-new",
+      );
     });
   });
 

@@ -30,7 +30,7 @@
                     primary_action_href: "/",
                     secondary_action_label: "Go Back",
                     show_error_code: true,
-                    accent_color: "amber",
+                    accent_color: "blue",
                 };
             case 401:
                 return {
@@ -43,7 +43,7 @@
                     primary_action_href: "/sign-in",
                     secondary_action_label: "Go Home",
                     show_error_code: false,
-                    accent_color: "amber",
+                    accent_color: "blue",
                 };
             case 403:
                 return {

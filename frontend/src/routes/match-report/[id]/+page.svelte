@@ -324,7 +324,7 @@
       case "penalty_scored":
         return "border-l-green-500 bg-green-50 dark:bg-green-900/20";
       case "own_goal":
-        return "border-l-orange-500 bg-orange-50 dark:bg-orange-900/20";
+        return "border-l-blue-500 bg-blue-50 dark:bg-blue-900/20";
       case "yellow_card":
         return "border-l-yellow-400 bg-yellow-50 dark:bg-yellow-900/20";
       case "red_card":

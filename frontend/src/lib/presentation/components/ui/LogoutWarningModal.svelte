@@ -117,7 +117,7 @@
                 <div class="flex items-start mb-4">
                     <div class="flex-shrink-0">
                         <svg
-                            class="h-6 w-6 text-amber-500"
+                            class="h-6 w-6 text-blue-500"
                             fill="none"
                             viewBox="0 0 24 24"
                             stroke="currentColor"
@@ -240,7 +240,7 @@
                 <div class="flex items-start mb-4">
                     <div class="flex-shrink-0">
                         <svg
-                            class="h-6 w-6 text-amber-500"
+                            class="h-6 w-6 text-blue-500"
                             fill="none"
                             viewBox="0 0 24 24"
                             stroke="currentColor"

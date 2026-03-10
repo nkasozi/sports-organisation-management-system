@@ -106,6 +106,7 @@ import type { PlayerPosition } from "../../core/entities/PlayerPosition";
 import type { TeamStaffRole } from "../../core/entities/TeamStaffRole";
 import type { GameOfficialRole } from "../../core/entities/GameOfficialRole";
 import type { CompetitionFormat } from "../../core/entities/CompetitionFormat";
+import { hydrate_competition_format_input } from "../../core/entities/CompetitionFormat";
 import {
   EventBus,
   set_user_context,
@@ -149,6 +150,79 @@ export function is_seeding_already_complete(): boolean {
 function mark_seeding_complete(): void {
   if (typeof window === "undefined") return;
   localStorage.setItem(SEEDING_COMPLETE_KEY, "true");
+}
+
+function build_competition_format_repair_signature(
+  input: Pick<
+    CompetitionFormat,
+    | "group_stage_config"
+    | "knockout_stage_config"
+    | "league_config"
+    | "stage_templates"
+  >,
+): string {
+  return JSON.stringify({
+    group_stage_config: input.group_stage_config,
+    knockout_stage_config: input.knockout_stage_config,
+    league_config: input.league_config,
+    stage_templates: input.stage_templates,
+  });
+}
+
+async function repair_seeded_competition_formats(): Promise<boolean> {
+  const competition_format_repository = get_competition_format_repository();
+
+  try {
+    const competition_formats_result =
+      await competition_format_repository.find_all(undefined, {
+        page_size: 100,
+      });
+
+    if (!competition_formats_result.success) {
+      console.warn(
+        `[Seeding] Failed to load competition formats for repair: ${competition_formats_result.error}`,
+      );
+      return false;
+    }
+
+    for (const competition_format of competition_formats_result.data.items) {
+      const repaired_input = hydrate_competition_format_input({
+        ...competition_format,
+      });
+
+      const existing_signature = build_competition_format_repair_signature(
+        competition_format,
+      );
+      const repaired_signature = build_competition_format_repair_signature(
+        repaired_input,
+      );
+
+      if (existing_signature === repaired_signature) {
+        continue;
+      }
+
+      const update_result = await competition_format_repository.update(
+        competition_format.id,
+        {
+          group_stage_config: repaired_input.group_stage_config,
+          knockout_stage_config: repaired_input.knockout_stage_config,
+          league_config: repaired_input.league_config,
+          stage_templates: repaired_input.stage_templates,
+        },
+      );
+
+      if (!update_result.success) {
+        console.warn(
+          `[Seeding] Failed to repair competition format ${competition_format.code}: ${update_result.error}`,
+        );
+      }
+    }
+
+    return true;
+  } catch (error) {
+    console.warn(`[Seeding] Competition format repair failed: ${error}`);
+    return false;
+  }
 }
 
 async function find_position_id_by_code(
@@ -265,6 +339,7 @@ function emit_entity_created_events<T extends { id: string }>(
 
 export async function seed_all_data_if_needed(): Promise<boolean> {
   if (is_seeding_already_complete()) {
+    await repair_seeded_competition_formats();
     await load_and_set_current_user();
     return true;
   }
@@ -599,6 +674,7 @@ export async function seed_all_data_if_needed(): Promise<boolean> {
     (l) => `Link: ${l.title}`,
   );
 
+  await repair_seeded_competition_formats();
   clear_user_context();
   mark_seeding_complete();
 
@@ -638,6 +714,7 @@ async function handle_convex_with_local_fallback(
   on_progress: ProgressCallback,
 ): Promise<SeedResult> {
   if (is_seeding_already_complete()) {
+    await repair_seeded_competition_formats();
     await load_and_set_current_user();
     return {
       success: true,
@@ -664,6 +741,7 @@ async function handle_convex_with_local_fallback(
     console.log(
       `[Seeding] Convex seeding succeeded: ${convex_result.total_records} records from ${convex_result.tables_fetched} tables`,
     );
+    await repair_seeded_competition_formats();
     await load_and_set_current_user();
     mark_seeding_complete();
     return {
@@ -708,6 +786,7 @@ async function handle_convex_mandatory(
     console.log(
       `[Seeding] Convex pull succeeded: ${convex_result.total_records} records from ${convex_result.tables_fetched} tables`,
     );
+    await repair_seeded_competition_formats();
     await load_and_set_current_user();
     mark_seeding_complete();
     return {
@@ -722,6 +801,7 @@ async function handle_convex_mandatory(
     console.log(
       "[Seeding] Convex unavailable but local data exists — entering offline mode",
     );
+    await repair_seeded_competition_formats();
     await load_and_set_current_user();
     return {
       success: true,

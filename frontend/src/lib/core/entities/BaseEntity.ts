@@ -42,7 +42,8 @@ export interface FieldMetadata<T extends BaseEntity = any> {
     | "foreign_key"
     | "file"
     | "sub_entity"
-    | "official_assignment_array";
+    | "official_assignment_array"
+    | "stage_template_array";
   is_required: boolean;
   is_read_only: boolean;
   is_read_only_on_edit?: boolean;

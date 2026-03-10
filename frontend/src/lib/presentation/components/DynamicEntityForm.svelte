@@ -20,6 +20,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
   import { get_competition_team_use_cases } from "../../core/usecases/CompetitionTeamUseCases";
   import SearchableSelectField from "./ui/SearchableSelectField.svelte";
   import DynamicEntityList from "./DynamicEntityList.svelte";
+  import CompetitionFormatStageTemplateArray from "./competition/CompetitionFormatStageTemplateArray.svelte";
   import type { SubEntityFilter } from "$lib/core/types/SubEntityFilter";
   import { build_entity_display_label } from "../logic/dynamicFormLogic";
   import { detect_jersey_color_clashes } from "../../core/entities/Fixture";
@@ -59,6 +60,12 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
     type GenderMismatchInput,
     type FixtureTeamGenderMismatchInput,
   } from "../../core/services/genderMismatchCheck";
+  import type {
+    CompetitionFormatStageTemplate,
+    FormatType,
+    LeagueConfig,
+  } from "$lib/core/entities/CompetitionFormat";
+  import { build_stage_template_defaults } from "$lib/presentation/logic/competitionFormatStageTemplateLogic";
 
   export let entity_type: string;
   export let entity_data: Partial<BaseEntity> | null = null;
@@ -301,6 +308,22 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
       }
     }
 
+    if (
+      is_competition_format_entity_type() &&
+      "stage_templates" in new_form_data
+    ) {
+      const current_stage_templates = Array.isArray(
+        new_form_data["stage_templates"],
+      )
+        ? (new_form_data["stage_templates"] as CompetitionFormatStageTemplate[])
+        : [];
+
+      if (current_stage_templates.length === 0) {
+        new_form_data["stage_templates"] =
+          get_default_stage_templates_for_form_data(new_form_data);
+      }
+    }
+
     form_data = new_form_data;
     validation_errors = {};
     return new_form_data;
@@ -320,7 +343,26 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
     if (field.field_type === "foreign_key") return "";
     if (field.field_type === "official_assignment_array")
       return [create_empty_official_assignment()];
+    if (field.field_type === "stage_template_array") return [];
     return "";
+  }
+
+  function is_competition_format_entity_type(): boolean {
+    return (
+      entity_type.toLowerCase().replace(/[\s_-]/g, "") === "competitionformat"
+    );
+  }
+
+  function get_default_stage_templates_for_form_data(
+    current_form_data: Record<string, unknown>,
+  ): CompetitionFormatStageTemplate[] {
+    const format_type =
+      (current_form_data["format_type"] as FormatType | undefined) ?? "league";
+    const league_config =
+      (current_form_data["league_config"] as LeagueConfig | null | undefined) ??
+      null;
+
+    return build_stage_template_defaults(format_type, league_config);
   }
 
   function is_field_visible_by_visible_when_condition(
@@ -1715,7 +1757,10 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
         is_required &&
         (field_value === "" ||
           field_value === null ||
-          field_value === undefined)
+          field_value === undefined ||
+          (field.field_type === "stage_template_array" &&
+            Array.isArray(field_value) &&
+            field_value.length === 0))
       ) {
         errors[field.field_name] = `${field.display_name} is required`;
         continue;
@@ -1882,9 +1927,17 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
 
   function update_form_field_value(
     field_name: string,
-    value: string | OfficialAssignment[],
+    value: unknown,
   ): boolean {
     form_data[field_name] = value;
+
+    if (is_competition_format_entity_type() && field_name === "format_type") {
+      form_data["stage_templates"] = get_default_stage_templates_for_form_data({
+        ...form_data,
+        format_type: value,
+      });
+    }
+
     clear_dependent_enum_values(field_name);
     clear_fields_hidden_by_visible_when(field_name);
     form_data = form_data;
@@ -2158,6 +2211,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
           {#each get_sorted_fields_for_display(entity_metadata.fields, is_edit_mode, form_data) as field (field.field_name)}
             <div
               class="space-y-2 {field.field_type === 'file' ||
+              field.field_type === 'stage_template_array' ||
               (field.field_type === 'string' &&
                 (field.field_name.includes('description') ||
                   field.field_name.includes('address') ||
@@ -2550,6 +2604,27 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
                     void check_official_team_conflicts();
                   }}
                 />
+              {:else if field.field_type === "stage_template_array"}
+                <CompetitionFormatStageTemplateArray
+                  stage_templates={form_data[field.field_name] || []}
+                  format_type={(form_data["format_type"] as
+                    | FormatType
+                    | undefined) ?? "league"}
+                  league_config={(form_data["league_config"] as
+                    | LeagueConfig
+                    | null
+                    | undefined) ?? null}
+                  disabled={should_field_be_read_only(
+                    field,
+                    authorization_restricted_fields,
+                  )}
+                  error={validation_errors[field.field_name] || ""}
+                  on:change={(event) =>
+                    update_form_field_value(
+                      field.field_name,
+                      event.detail.stage_templates,
+                    )}
+                />
               {/if}
 
               <!-- Field validation error display -->
@@ -2609,11 +2684,11 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
         <!-- Jersey Color Clash Warnings -->
         {#if color_clash_warnings.length > 0}
           <div
-            class="mt-4 p-4 rounded-lg border border-orange-300 dark:border-orange-600 bg-orange-50 dark:bg-orange-900/30"
+            class="mt-4 p-4 rounded-lg border border-blue-300 dark:border-blue-600 bg-blue-50 dark:bg-blue-900/30"
           >
             <div class="flex items-start gap-3">
               <svg
-                class="w-5 h-5 text-orange-600 dark:text-orange-400 flex-shrink-0 mt-0.5"
+                class="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -2627,12 +2702,12 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
               </svg>
               <div>
                 <div
-                  class="text-sm font-semibold text-orange-800 dark:text-orange-200"
+                  class="text-sm font-semibold text-blue-800 dark:text-blue-200"
                 >
                   Jersey Color Clash Detected
                 </div>
                 <ul
-                  class="mt-1 text-sm text-orange-700 dark:text-orange-300 list-disc list-inside"
+                  class="mt-1 text-sm text-blue-700 dark:text-blue-300 list-disc list-inside"
                 >
                   {#each color_clash_warnings as warning}
                     <li>{warning}</li>

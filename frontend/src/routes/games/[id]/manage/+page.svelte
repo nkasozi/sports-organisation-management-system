@@ -407,7 +407,7 @@
       case "penalty_scored":
         return "border-l-green-500 bg-green-50 dark:bg-green-900/20";
       case "own_goal":
-        return "border-l-orange-500 bg-orange-50 dark:bg-orange-900/20";
+        return "border-l-blue-500 bg-blue-50 dark:bg-blue-900/20";
       case "yellow_card":
         return "border-l-yellow-400 bg-yellow-50 dark:bg-yellow-900/20";
       case "red_card":
@@ -557,7 +557,7 @@
           <div class="flex justify-center gap-3 max-w-4xl mx-auto flex-wrap">
             {#if fixture.current_period === "first_half" && !is_clock_running}
               <button
-                class="px-4 py-2 bg-orange-600 hover:bg-orange-700 rounded-lg text-sm font-medium"
+                class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-sm font-medium"
                 on:click={end_current_period}
               >
                 ⏹️ End 1st Half
@@ -571,7 +571,7 @@
               </button>
             {:else if fixture.current_period === "second_half" && !is_clock_running}
               <button
-                class="px-4 py-2 bg-orange-600 hover:bg-orange-700 rounded-lg text-sm font-medium"
+                class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-sm font-medium"
                 on:click={end_current_period}
               >
                 ⏹️ End 2nd Half
