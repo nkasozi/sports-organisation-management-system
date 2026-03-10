@@ -3,6 +3,7 @@ import type { Team } from "../../core/entities/Team";
 import type { TeamStaff } from "../../core/entities/TeamStaff";
 import type { Competition } from "../../core/entities/Competition";
 import type { CompetitionTeam } from "../../core/entities/CompetitionTeam";
+import type { CompetitionStage } from "../../core/entities/CompetitionStage";
 import type { PlayerTeamMembership } from "../../core/entities/PlayerTeamMembership";
 import type { Official } from "../../core/entities/Official";
 import type { Fixture } from "../../core/entities/Fixture";
@@ -50,6 +51,25 @@ export const SEED_COMPETITION_IDS = {
   NATIONAL_HOCKEY_LEAGUE_2026: "comp_default_3",
   UNIVERSITY_HOCKEY_CHAMPIONSHIP_2026: "comp_default_4",
 };
+
+export const SEED_STAGE_IDS = {
+  EASTER_CUP_POOL_STAGE: "stage_default_1",
+  EASTER_CUP_SEMI_FINALS: "stage_default_2",
+  EASTER_CUP_FINAL: "stage_default_3",
+  UGANDA_CUP_ROUND_OF_16: "stage_default_4",
+  UGANDA_CUP_QUARTER_FINALS: "stage_default_5",
+  UGANDA_CUP_SEMI_FINALS: "stage_default_6",
+  UGANDA_CUP_FINAL: "stage_default_7",
+  NHL_LEAGUE_SEASON: "stage_default_8",
+  UNIVERSITY_ROUND_ROBIN: "stage_default_9",
+};
+
+export interface SeedCompetitionFormatIds {
+  easter_cup_format_id: string;
+  uganda_cup_format_id: string;
+  nhl_format_id: string;
+  university_format_id: string;
+}
 
 export const SEED_PLAYER_IDS = {
   DENIS_ONYANGO: "player_default_1",
@@ -2543,7 +2563,7 @@ export function create_seed_team_staff(
 }
 
 export function create_seed_competitions(
-  competition_format_id: string,
+  format_ids: SeedCompetitionFormatIds,
 ): Competition[] {
   const now = generate_current_timestamp();
   const next_month = new Date();
@@ -2558,7 +2578,7 @@ export function create_seed_competitions(
       description:
         "Annual Easter hockey tournament - Uganda's most prestigious knockout competition",
       organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
-      competition_format_id: competition_format_id,
+      competition_format_id: format_ids.easter_cup_format_id,
       team_ids: [
         SEED_TEAM_IDS.WEATHERHEAD_HC,
         SEED_TEAM_IDS.KAMPALA_HC,
@@ -2591,7 +2611,7 @@ export function create_seed_competitions(
       description:
         "The national knockout cup competition open to all registered hockey clubs",
       organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
-      competition_format_id: competition_format_id,
+      competition_format_id: format_ids.uganda_cup_format_id,
       team_ids: [
         SEED_TEAM_IDS.WEATHERHEAD_HC,
         SEED_TEAM_IDS.KAMPALA_HC,
@@ -2622,7 +2642,7 @@ export function create_seed_competitions(
       description:
         "Full season league competition - the premier hockey league in Uganda",
       organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
-      competition_format_id: competition_format_id,
+      competition_format_id: format_ids.nhl_format_id,
       team_ids: [
         SEED_TEAM_IDS.WEATHERHEAD_HC,
         SEED_TEAM_IDS.KAMPALA_HC,
@@ -2653,7 +2673,7 @@ export function create_seed_competitions(
       description:
         "Championship competition for university hockey teams across Uganda",
       organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
-      competition_format_id: competition_format_id,
+      competition_format_id: format_ids.university_format_id,
       team_ids: [
         SEED_TEAM_IDS.MAKERERE_UNIVERSITY_HC,
         SEED_TEAM_IDS.KYAMBOGO_UNIVERSITY_HC,
@@ -2670,6 +2690,103 @@ export function create_seed_competitions(
       prize_pool: 2000000,
       location: "University Sports Grounds",
       rule_overrides: { min_players_on_field: 1 },
+      status: "active",
+      created_at: now,
+      updated_at: now,
+    },
+  ];
+}
+
+export function create_seed_competition_stages(): CompetitionStage[] {
+  const now = generate_current_timestamp();
+
+  return [
+    {
+      id: SEED_STAGE_IDS.EASTER_CUP_POOL_STAGE,
+      competition_id: SEED_COMPETITION_IDS.EASTER_CUP_2026,
+      name: "Pool Stage",
+      stage_type: "group_stage",
+      stage_order: 1,
+      status: "active",
+      created_at: now,
+      updated_at: now,
+    },
+    {
+      id: SEED_STAGE_IDS.EASTER_CUP_SEMI_FINALS,
+      competition_id: SEED_COMPETITION_IDS.EASTER_CUP_2026,
+      name: "Semi Finals",
+      stage_type: "knockout_stage",
+      stage_order: 2,
+      status: "active",
+      created_at: now,
+      updated_at: now,
+    },
+    {
+      id: SEED_STAGE_IDS.EASTER_CUP_FINAL,
+      competition_id: SEED_COMPETITION_IDS.EASTER_CUP_2026,
+      name: "Final",
+      stage_type: "one_off_stage",
+      stage_order: 3,
+      status: "active",
+      created_at: now,
+      updated_at: now,
+    },
+    {
+      id: SEED_STAGE_IDS.UGANDA_CUP_ROUND_OF_16,
+      competition_id: SEED_COMPETITION_IDS.UGANDA_CUP_2026,
+      name: "Round of 16",
+      stage_type: "knockout_stage",
+      stage_order: 1,
+      status: "active",
+      created_at: now,
+      updated_at: now,
+    },
+    {
+      id: SEED_STAGE_IDS.UGANDA_CUP_QUARTER_FINALS,
+      competition_id: SEED_COMPETITION_IDS.UGANDA_CUP_2026,
+      name: "Quarter Finals",
+      stage_type: "knockout_stage",
+      stage_order: 2,
+      status: "active",
+      created_at: now,
+      updated_at: now,
+    },
+    {
+      id: SEED_STAGE_IDS.UGANDA_CUP_SEMI_FINALS,
+      competition_id: SEED_COMPETITION_IDS.UGANDA_CUP_2026,
+      name: "Semi Finals",
+      stage_type: "knockout_stage",
+      stage_order: 3,
+      status: "active",
+      created_at: now,
+      updated_at: now,
+    },
+    {
+      id: SEED_STAGE_IDS.UGANDA_CUP_FINAL,
+      competition_id: SEED_COMPETITION_IDS.UGANDA_CUP_2026,
+      name: "Final",
+      stage_type: "one_off_stage",
+      stage_order: 4,
+      status: "active",
+      created_at: now,
+      updated_at: now,
+    },
+    {
+      id: SEED_STAGE_IDS.NHL_LEAGUE_SEASON,
+      competition_id: SEED_COMPETITION_IDS.NATIONAL_HOCKEY_LEAGUE_2026,
+      name: "League Season",
+      stage_type: "league_stage",
+      stage_order: 1,
+      status: "active",
+      created_at: now,
+      updated_at: now,
+    },
+    {
+      id: SEED_STAGE_IDS.UNIVERSITY_ROUND_ROBIN,
+      competition_id: SEED_COMPETITION_IDS.UNIVERSITY_HOCKEY_CHAMPIONSHIP_2026,
+      name: "Round Robin",
+      stage_type: "league_stage",
+      stage_order: 1,
       status: "active",
       created_at: now,
       updated_at: now,
@@ -4123,6 +4240,7 @@ export function create_seed_fixtures(
       current_minute: 0,
       match_day: 1,
       notes: "Season opener - Weatherhead vs Kampala HC derby",
+      stage_id: SEED_STAGE_IDS.NHL_LEAGUE_SEASON,
       status: "scheduled",
       created_at: now,
       updated_at: now,
@@ -4157,6 +4275,7 @@ export function create_seed_fixtures(
       current_minute: 0,
       match_day: 1,
       notes: "Rockets vs Wananchi - Battle of the veterans",
+      stage_id: SEED_STAGE_IDS.NHL_LEAGUE_SEASON,
       status: "scheduled",
       created_at: now,
       updated_at: now,
@@ -4196,6 +4315,7 @@ export function create_seed_fixtures(
       current_minute: 0,
       match_day: 1,
       notes: "Easter Cup 2026 opening match",
+      stage_id: SEED_STAGE_IDS.EASTER_CUP_POOL_STAGE,
       status: "scheduled",
       created_at: now,
       updated_at: now,
@@ -4230,6 +4350,7 @@ export function create_seed_fixtures(
       current_minute: 0,
       match_day: 1,
       notes: "University Championship - Makerere vs Kyambogo rivalry match",
+      stage_id: SEED_STAGE_IDS.UNIVERSITY_ROUND_ROBIN,
       status: "scheduled",
       created_at: now,
       updated_at: now,
@@ -4424,6 +4545,7 @@ export function create_seed_fixtures(
       current_minute: 70,
       match_day: 1,
       notes: "Thrilling NHL opener - Rockets edge Wananchi 3-2",
+      stage_id: SEED_STAGE_IDS.NHL_LEAGUE_SEASON,
       status: "completed",
       created_at: now,
       updated_at: now,
@@ -4609,6 +4731,7 @@ export function create_seed_fixtures(
       current_minute: 70,
       match_day: 2,
       notes: "NHL Round 2 - Weatherhead beat 10-man Kampala 2-1",
+      stage_id: SEED_STAGE_IDS.NHL_LEAGUE_SEASON,
       status: "completed",
       created_at: now,
       updated_at: now,
@@ -4827,6 +4950,7 @@ export function create_seed_fixtures(
       current_minute: 70,
       match_day: 1,
       notes: "Easter Cup - Rockets dominate 10-man Wananchi 4-2",
+      stage_id: SEED_STAGE_IDS.EASTER_CUP_POOL_STAGE,
       status: "completed",
       created_at: now,
       updated_at: now,

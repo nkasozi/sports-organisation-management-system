@@ -33,3 +33,4 @@ export * from "./InBrowserGameEventTypeRepository";
 export * from "./InBrowserCompetitionFormatRepository";
 export * from "./InBrowserCompetitionTeamRepository";
 export * from "./InBrowserPlayerTeamTransferHistoryRepository";
+export * from "./InBrowserCompetitionStageRepository";

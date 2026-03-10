@@ -66,6 +66,7 @@ export class InBrowserCompetitionFormatRepository
       min_teams_required: input.min_teams_required,
       max_teams_allowed: input.max_teams_allowed,
       status: input.status,
+      stage_templates: input.stage_templates ?? [],
     };
   }
 
@@ -172,6 +173,7 @@ export function create_default_competition_formats_data(): CompetitionFormat[] {
     min_teams_required: input.min_teams_required,
     max_teams_allowed: input.max_teams_allowed,
     status: input.status,
+    stage_templates: input.stage_templates ?? [],
   }));
 }
 

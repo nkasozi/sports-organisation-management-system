@@ -34,9 +34,10 @@ import type { OfficialAssociatedTeam } from "../../core/entities/OfficialAssocia
 import type { PlayerTeamTransferHistory } from "../../core/entities/PlayerTeamTransferHistory";
 import type { LiveGameLog } from "../../core/entities/LiveGameLog";
 import type { GameEventLog } from "../../core/entities/GameEventLog";
+import type { CompetitionStage } from "../../core/entities/CompetitionStage";
 
 const DATABASE_NAME = "SportsOrgManagementDB";
-const DATABASE_VERSION = 1;
+const DATABASE_VERSION = 2;
 
 class SportsOrgDatabase extends Dexie {
   organizations!: Table<Organization, string>;
@@ -74,6 +75,7 @@ class SportsOrgDatabase extends Dexie {
   player_team_transfer_histories!: Table<PlayerTeamTransferHistory, string>;
   live_game_logs!: Table<LiveGameLog, string>;
   game_event_logs!: Table<GameEventLog, string>;
+  competition_stages!: Table<CompetitionStage, string>;
 
   constructor() {
     super(DATABASE_NAME);
@@ -86,7 +88,7 @@ class SportsOrgDatabase extends Dexie {
       players: "id, first_name, last_name, email, date_of_birth, created_at",
       officials: "id, first_name, last_name, email, created_at",
       fixtures:
-        "id, competition_id, home_team_id, away_team_id, venue_id, scheduled_date, status, created_at",
+        "id, competition_id, home_team_id, away_team_id, venue_id, stage_id, scheduled_date, status, created_at",
       sports: "id, name, created_at",
       team_staff: "id, team_id, role_id, first_name, last_name, created_at",
       team_staff_roles: "id, name, sport_id, created_at",
@@ -125,6 +127,8 @@ class SportsOrgDatabase extends Dexie {
         "id, organization_id, fixture_id, game_status, started_at, ended_at, created_at",
       game_event_logs:
         "id, organization_id, live_game_log_id, fixture_id, event_type, minute, team_side, player_id, created_at",
+      competition_stages:
+        "id, competition_id, stage_order, created_at",
     });
   }
 }

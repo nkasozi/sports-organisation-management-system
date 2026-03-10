@@ -31,6 +31,19 @@ vi.mock("$lib/adapters/initialization/brandingSyncService", () => ({
   sync_branding_with_profile: vi.fn().mockResolvedValue(undefined),
 }));
 
+vi.mock("$lib/adapters/iam/clerkAuthService", () => {
+  const make_readable = <T>(value: T) => ({
+    subscribe: (subscriber: (next_value: T) => void) => {
+      subscriber(value);
+      return () => {};
+    },
+  });
+  return {
+    is_clerk_loaded: make_readable(true),
+    is_signed_in: make_readable(true),
+  };
+});
+
 function create_test_profiles(): UserProfile[] {
   return [
     {

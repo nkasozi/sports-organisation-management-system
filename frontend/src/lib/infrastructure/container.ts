@@ -34,6 +34,7 @@ import type {
   JerseyColorRepository,
   LiveGameLogRepository,
   GameEventLogRepository,
+  CompetitionStageRepository,
 } from "../core/interfaces/ports";
 
 import { get_organization_repository } from "../adapters/repositories/InBrowserOrganizationRepository";
@@ -71,6 +72,7 @@ import { get_official_associated_team_repository } from "../adapters/repositorie
 import { get_jersey_color_repository } from "../adapters/repositories/InBrowserJerseyColorRepository";
 import { get_live_game_log_repository } from "../adapters/repositories/InBrowserLiveGameLogRepository";
 import { get_game_event_log_repository } from "../adapters/repositories/InBrowserGameEventLogRepository";
+import { get_competition_stage_repository } from "../adapters/repositories/InBrowserCompetitionStageRepository";
 
 import type { OrganizationUseCasesPort } from "../core/interfaces/ports";
 import type { CompetitionUseCasesPort } from "../core/interfaces/ports";
@@ -99,6 +101,8 @@ import {
   create_audit_log_use_cases,
   type AuditLogUseCases,
 } from "../core/usecases/AuditLogUseCases";
+import { create_competition_stage_use_cases } from "../core/usecases/CompetitionStageUseCases";
+import type { CompetitionStageUseCasesPort } from "../core/interfaces/ports";
 
 export interface RepositoryContainer {
   organization_repository: OrganizationRepository;
@@ -136,6 +140,7 @@ export interface RepositoryContainer {
   jersey_color_repository: JerseyColorRepository;
   live_game_log_repository: LiveGameLogRepository;
   game_event_log_repository: GameEventLogRepository;
+  competition_stage_repository: CompetitionStageRepository;
 }
 
 export interface UseCasesContainer {
@@ -150,6 +155,7 @@ export interface UseCasesContainer {
   calendar_token_use_cases: CalendarTokenUseCasesPort;
   system_user_use_cases: SystemUserUseCases;
   audit_log_use_cases: AuditLogUseCases;
+  competition_stage_use_cases: CompetitionStageUseCasesPort;
 }
 
 let repository_container_instance: RepositoryContainer | null = null;
@@ -210,6 +216,7 @@ function create_in_browser_repository_container(): RepositoryContainer {
     jersey_color_repository: get_jersey_color_repository(),
     live_game_log_repository: get_live_game_log_repository(),
     game_event_log_repository: get_game_event_log_repository(),
+    competition_stage_repository: get_competition_stage_repository(),
   };
 }
 
@@ -251,6 +258,10 @@ function create_use_cases_container(
     ),
     audit_log_use_cases: create_audit_log_use_cases(
       repositories.audit_log_repository,
+    ),
+    competition_stage_use_cases: create_competition_stage_use_cases(
+      repositories.competition_stage_repository,
+      repositories.fixture_repository,
     ),
   };
 }

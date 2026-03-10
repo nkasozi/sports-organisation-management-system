@@ -39,6 +39,7 @@ function create_test_fixture(overrides: Partial<Fixture> = {}): Fixture {
     round_number: 1,
     round_name: "Round 1",
     match_day: 1,
+    stage_id: "stage-1",
     status: "scheduled",
     home_team_score: 0,
     away_team_score: 0,
@@ -67,6 +68,7 @@ function create_valid_input(
     round_number: 1,
     round_name: "Round 1",
     match_day: 1,
+    stage_id: "stage-1",
     status: "scheduled",
     assigned_officials: [],
     notes: "",
@@ -287,6 +289,7 @@ describe("FixtureUseCases", () => {
         default_time: "15:00",
         venue_rotation: "home_away",
         rounds: 1,
+        stage_id_per_round: { 1: "stage-1" },
       });
 
       expect(result.success).toBe(true);
@@ -302,6 +305,7 @@ describe("FixtureUseCases", () => {
         default_time: "15:00",
         venue_rotation: "home_away",
         rounds: 1,
+        stage_id_per_round: {},
       });
 
       expect(result.success).toBe(false);
@@ -317,6 +321,7 @@ describe("FixtureUseCases", () => {
         default_time: "15:00",
         venue_rotation: "home_away",
         rounds: 1,
+        stage_id_per_round: {},
       });
 
       expect(result.success).toBe(false);
@@ -332,6 +337,7 @@ describe("FixtureUseCases", () => {
         default_time: "15:00",
         venue_rotation: "home_away",
         rounds: 1,
+        stage_id_per_round: {},
       });
 
       expect(result.success).toBe(false);

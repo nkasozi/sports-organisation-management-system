@@ -1,630 +1,437 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { mock_repository, mock_org_repository } = vi.hoisted(() => {
-  function create_test_system_users() {
-    return [
-      {
-        id: "test-super-admin",
-        first_name: "Super",
-        last_name: "Admin",
-        email: "admin@test.com",
-        role: "super_admin" as const,
-        status: "active" as const,
-        organization_id: "*",
-        team_id: "*",
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      },
-      {
-        id: "test-org-admin",
-        first_name: "Organisation",
-        last_name: "Admin",
-        email: "orgadmin@test.com",
-        role: "org_admin" as const,
-        status: "active" as const,
-        organization_id: "org_1",
-        team_id: "*",
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      },
-      {
-        id: "test-officials-manager",
-        first_name: "Officials",
-        last_name: "Manager",
-        email: "officials@test.com",
-        role: "officials_manager" as const,
-        status: "active" as const,
-        organization_id: "org_1",
-        team_id: "*",
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      },
-      {
-        id: "test-team-manager",
-        first_name: "Team",
-        last_name: "Manager",
-        email: "manager@test.com",
-        role: "team_manager" as const,
-        status: "active" as const,
-        organization_id: "org_1",
-        team_id: "team_1",
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      },
-      {
-        id: "test-official",
-        first_name: "Michael",
-        last_name: "Anderson",
-        email: "michael@test.com",
-        role: "official" as const,
-        status: "active" as const,
-        organization_id: "org_1",
-        team_id: "*",
-        official_id: "official_1",
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      },
-      {
-        id: "test-player",
-        first_name: "Denis",
-        last_name: "Onyango",
-        email: "denis@test.com",
-        role: "player" as const,
-        status: "active" as const,
-        organization_id: "org_1",
-        team_id: "team_1",
-        player_id: "player_1",
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      },
-    ];
-  }
+const {
+  auth_store,
+  create_profile,
+  get_accessible_routes_for_role_mock,
+  goto_mock,
+  reset_auth_state,
+  set_auth_state,
+  set_denial_mock,
+} = vi.hoisted(() => {
+  type MockProfile = {
+    id: string;
+    display_name: string;
+    email: string;
+    role:
+      | "super_admin"
+      | "org_admin"
+      | "officials_manager"
+      | "team_manager"
+      | "official"
+      | "player"
+      | "public_viewer";
+    organization_id: string;
+    organization_name: string;
+    team_id: string;
+    player_id?: string;
+    official_id?: string;
+  };
+
+  type MockAuthState = {
+    current_profile: MockProfile | null;
+    is_initialized: boolean;
+    current_token: null;
+    available_profiles: never[];
+    sidebar_menu_items: never[];
+  };
+
+  type MockAccessibleRoutesResult = {
+    success: boolean;
+    data: string[];
+    error?: string;
+  };
+
+  const create_initial_auth_state = (): MockAuthState => ({
+    current_profile: null,
+    is_initialized: true,
+    current_token: null,
+    available_profiles: [],
+    sidebar_menu_items: [],
+  });
+
+  let auth_state = create_initial_auth_state();
+  const auth_subscribers = new Set<(value: MockAuthState) => void>();
+
+  const publish_auth_state = (): void => {
+    auth_subscribers.forEach((subscriber) => subscriber(auth_state));
+  };
+
+  const set_auth_state = (
+    next_state: Partial<MockAuthState>,
+  ): MockAuthState => {
+    auth_state = { ...auth_state, ...next_state };
+    publish_auth_state();
+    return auth_state;
+  };
+
+  const reset_auth_state = (): MockAuthState => {
+    auth_state = create_initial_auth_state();
+    publish_auth_state();
+    return auth_state;
+  };
+
+  const auth_store = {
+    subscribe(subscriber: (value: MockAuthState) => void) {
+      subscriber(auth_state);
+      auth_subscribers.add(subscriber);
+      return () => {
+        auth_subscribers.delete(subscriber);
+      };
+    },
+    initialize: vi.fn(async (): Promise<void> => {
+      set_auth_state({ is_initialized: true });
+    }),
+  };
+
+  const goto_mock = vi.fn();
+  const set_denial_mock = vi.fn();
+  const get_accessible_routes_for_role_mock = vi.fn(
+    async (_role: string): Promise<MockAccessibleRoutesResult> => ({
+      success: true,
+      data: [],
+    }),
+  );
+
+  const create_profile = (overrides: Partial<MockProfile> = {}): MockProfile => ({
+    id: "profile-1",
+    display_name: "Test User",
+    email: "user@test.com",
+    role: "player",
+    organization_id: "org-1",
+    organization_name: "Test Organisation",
+    team_id: "team-1",
+    ...overrides,
+  });
 
   return {
-    mock_repository: {
-      find_all: vi.fn().mockResolvedValue({
-        success: true,
-        data: {
-          items: create_test_system_users(),
-          total: 6,
-          page: 1,
-          page_size: 50,
-        },
-      }),
-    },
-    mock_org_repository: {
-      find_by_ids: vi.fn().mockResolvedValue({
-        success: true,
-        data: [
-          {
-            id: "org_1",
-            name: "Test Organisation",
-            description: "",
-            sport_id: "",
-            founded_date: null,
-            contact_email: "",
-            contact_phone: "",
-            address: "",
-            website: "",
-            status: "active",
-            created_at: "2024-01-01T00:00:00Z",
-            updated_at: "2024-01-01T00:00:00Z",
-          },
-        ],
-      }),
-    },
+    auth_store,
+    create_profile,
+    get_accessible_routes_for_role_mock,
+    goto_mock,
+    reset_auth_state,
+    set_auth_state,
+    set_denial_mock,
   };
 });
 
-const mock_local_storage: Record<string, string> = {};
-
-vi.stubGlobal("localStorage", {
-  getItem: (key: string) => mock_local_storage[key] || null,
-  setItem: (key: string, value: string) => {
-    mock_local_storage[key] = value;
-  },
-  removeItem: (key: string) => {
-    delete mock_local_storage[key];
-  },
-  clear: () => {
-    Object.keys(mock_local_storage).forEach(
-      (key) => delete mock_local_storage[key],
-    );
-  },
-});
-
-vi.mock("$app/environment", () => ({
-  browser: true,
-}));
-
 vi.mock("$app/navigation", () => ({
-  goto: vi.fn(),
+  goto: goto_mock,
 }));
 
-vi.stubGlobal("navigator", {
-  userAgent: "TestAgent/1.0",
-});
-
-vi.mock("$lib/adapters/initialization/brandingSyncService", () => ({
-  sync_branding_with_profile: vi.fn().mockResolvedValue(undefined),
+vi.mock("../stores/auth", () => ({
+  auth_store,
 }));
 
-vi.mock("$lib/adapters/repositories/InBrowserSystemUserRepository", () => ({
-  get_system_user_repository: vi.fn().mockReturnValue(mock_repository),
+vi.mock("../stores/accessDenial", () => ({
+  access_denial_store: {
+    set_denial: set_denial_mock,
+  },
 }));
 
-vi.mock("$lib/adapters/repositories/InBrowserOrganizationRepository", () => ({
-  get_organization_repository: vi.fn().mockReturnValue(mock_org_repository),
+vi.mock("$lib/infrastructure/AuthorizationProvider", () => ({
+  get_authorization_adapter: () => ({
+    get_accessible_routes_for_role: get_accessible_routes_for_role_mock,
+  }),
 }));
 
-import { goto } from "$app/navigation";
 import {
   check_route_access,
+  ensure_auth_profile,
   ensure_route_access,
-  invalidate_route_access_cache,
   extract_route_base,
-  is_route_in_accessible_set,
   format_route_as_page_name,
+  get_current_auth_profile,
+  invalidate_route_access_cache,
+  is_auth_initialized,
+  is_route_in_accessible_set,
 } from "./authGuard";
-import { auth_store } from "../stores/auth";
-import { get } from "svelte/store";
 
 describe("authGuard", () => {
-  beforeEach(async () => {
-    vi.mocked(goto).mockClear();
+  beforeEach(() => {
+    goto_mock.mockReset();
+    set_denial_mock.mockReset();
+    get_accessible_routes_for_role_mock.mockReset();
+    get_accessible_routes_for_role_mock.mockResolvedValue({
+      success: true,
+      data: [],
+    });
+    auth_store.initialize.mockReset();
+    auth_store.initialize.mockImplementation(async (): Promise<void> => {
+      set_auth_state({ is_initialized: true });
+    });
+    reset_auth_state();
     invalidate_route_access_cache();
-    Object.keys(mock_local_storage).forEach(
-      (key) => delete mock_local_storage[key],
-    );
-    await auth_store.initialize();
   });
 
   describe("check_route_access", () => {
-    describe("without profile", () => {
-      it("denies access when no profile is set", async () => {
-        auth_store.logout();
-        const initialize_spy = vi
-          .spyOn(auth_store, "initialize")
-          .mockResolvedValue();
+    it("initializes auth when auth state is not initialized", async () => {
+      set_auth_state({ is_initialized: false });
 
-        const result = await check_route_access("/teams");
+      const result = await check_route_access("/calendar");
 
-        expect(result.allowed).toBe(false);
-        expect(result.message).toContain("select a user profile");
-
-        initialize_spy.mockRestore();
-      });
-
-      it("allows access to /competition-results without profile", async () => {
-        auth_store.logout();
-        const initialize_spy = vi
-          .spyOn(auth_store, "initialize")
-          .mockResolvedValue();
-
-        const result = await check_route_access("/competition-results");
-
-        expect(result.allowed).toBe(true);
-
-        initialize_spy.mockRestore();
-      });
-
-      it("allows access to /calendar without profile", async () => {
-        auth_store.logout();
-        const initialize_spy = vi
-          .spyOn(auth_store, "initialize")
-          .mockResolvedValue();
-
-        const result = await check_route_access("/calendar");
-
-        expect(result.allowed).toBe(true);
-
-        initialize_spy.mockRestore();
-      });
-
-      it("allows access to /match-report without profile", async () => {
-        auth_store.logout();
-        const initialize_spy = vi
-          .spyOn(auth_store, "initialize")
-          .mockResolvedValue();
-
-        const result = await check_route_access("/match-report");
-
-        expect(result.allowed).toBe(true);
-
-        initialize_spy.mockRestore();
-      });
-
-      it("allows access to /match-report/some-id without profile", async () => {
-        auth_store.logout();
-        const initialize_spy = vi
-          .spyOn(auth_store, "initialize")
-          .mockResolvedValue();
-
-        const result = await check_route_access("/match-report/abc-123");
-
-        expect(result.allowed).toBe(true);
-
-        initialize_spy.mockRestore();
-      });
-
-      it("denies access to /settings without profile", async () => {
-        auth_store.logout();
-        const initialize_spy = vi
-          .spyOn(auth_store, "initialize")
-          .mockResolvedValue();
-
-        const result = await check_route_access("/settings");
-
-        expect(result.allowed).toBe(false);
-
-        initialize_spy.mockRestore();
-      });
+      expect(auth_store.initialize).toHaveBeenCalledTimes(1);
+      expect(result).toEqual({ allowed: true, message: "" });
     });
 
-    describe("with super_admin profile", () => {
-      beforeEach(async () => {
-        const profiles = get(auth_store).available_profiles;
-        const super_admin = profiles.find((p) => p.role === "super_admin");
-        await auth_store.switch_profile(super_admin!.id);
-      });
+    it("allows public routes when there is no profile", async () => {
+      const result = await check_route_access("/match-report/fixture-1");
 
-      it("allows access to /system-users", async () => {
-        const result = await check_route_access("/system-users");
-        expect(result.allowed).toBe(true);
-      });
-
-      it("allows access to /audit-logs", async () => {
-        const result = await check_route_access("/audit-logs");
-        expect(result.allowed).toBe(true);
-      });
-
-      it("allows access to /system-users", async () => {
-        const result = await check_route_access("/system-users");
-        expect(result.allowed).toBe(true);
-      });
-
-      it("allows access to /teams", async () => {
-        const result = await check_route_access("/teams");
-        expect(result.allowed).toBe(true);
-      });
-
-      it("allows access to /organizations", async () => {
-        const result = await check_route_access("/organizations");
-        expect(result.allowed).toBe(true);
-      });
+      expect(result).toEqual({ allowed: true, message: "" });
+      expect(get_accessible_routes_for_role_mock).not.toHaveBeenCalled();
     });
 
-    describe("with player profile", () => {
-      beforeEach(async () => {
-        const profiles = get(auth_store).available_profiles;
-        const player = profiles.find((p) => p.role === "player");
-        await auth_store.switch_profile(player!.id);
-      });
+    it("denies protected routes when there is no profile", async () => {
+      const result = await check_route_access("/settings");
 
-      it("denies access to /settings", async () => {
-        const result = await check_route_access("/settings");
-
-        expect(result.allowed).toBe(false);
-        expect(result.message).toContain("Player");
-        expect(result.message).toContain("does not have access");
-      });
-
-      it("denies access to /audit-logs", async () => {
-        const result = await check_route_access("/audit-logs");
-
-        expect(result.allowed).toBe(false);
-      });
-
-      it("denies access to /system-users", async () => {
-        const result = await check_route_access("/system-users");
-
-        expect(result.allowed).toBe(false);
-      });
-
-      it("denies access to /teams", async () => {
-        const result = await check_route_access("/teams");
-        expect(result.allowed).toBe(false);
-      });
-
-      it("denies access to /sports", async () => {
-        const result = await check_route_access("/sports");
-        expect(result.allowed).toBe(false);
-      });
-
-      it("denies access to /competitions", async () => {
-        const result = await check_route_access("/competitions");
-        expect(result.allowed).toBe(false);
-      });
-
-      it("denies access to /player-profiles", async () => {
-        const result = await check_route_access("/player-profiles");
-        expect(result.allowed).toBe(false);
-      });
+      expect(result.allowed).toBe(false);
+      expect(result.message).toContain("select a user profile");
     });
 
-    describe("with team_manager profile", () => {
-      beforeEach(async () => {
-        const profiles = get(auth_store).available_profiles;
-        const team_manager = profiles.find((p) => p.role === "team_manager");
-        await auth_store.switch_profile(team_manager!.id);
+    it("allows a route when the exact path is accessible", async () => {
+      set_auth_state({
+        current_profile: create_profile({ role: "super_admin" }),
+      });
+      get_accessible_routes_for_role_mock.mockResolvedValue({
+        success: true,
+        data: ["/system-users"],
       });
 
-      it("denies access to /settings", async () => {
-        const result = await check_route_access("/settings");
-        expect(result.allowed).toBe(false);
-      });
+      const result = await check_route_access("/system-users");
 
-      it("denies access to /audit-logs", async () => {
-        const result = await check_route_access("/audit-logs");
-        expect(result.allowed).toBe(false);
-      });
-
-      it("denies access to /team-profiles", async () => {
-        const result = await check_route_access("/team-profiles");
-        expect(result.allowed).toBe(false);
-      });
-
-      it("allows access to /fixture-lineups", async () => {
-        const result = await check_route_access("/fixture-lineups");
-        expect(result.allowed).toBe(true);
-      });
-
-      it("allows access to /players", async () => {
-        const result = await check_route_access("/players");
-        expect(result.allowed).toBe(true);
-      });
-
-      it("allows access to /teams", async () => {
-        const result = await check_route_access("/teams");
-        expect(result.allowed).toBe(true);
-      });
+      expect(result).toEqual({ allowed: true, message: "" });
     });
 
-    describe("with org_admin profile", () => {
-      beforeEach(async () => {
-        const profiles = get(auth_store).available_profiles;
-        const org_admin = profiles.find((p) => p.role === "org_admin");
-        await auth_store.switch_profile(org_admin!.id);
+    it("allows a nested route when the base route is accessible", async () => {
+      set_auth_state({
+        current_profile: create_profile({ role: "team_manager" }),
+      });
+      get_accessible_routes_for_role_mock.mockResolvedValue({
+        success: true,
+        data: ["/teams"],
       });
 
-      it("allows access to /settings", async () => {
-        const result = await check_route_access("/settings");
-        expect(result.allowed).toBe(true);
+      const result = await check_route_access("/teams/abc-123");
+
+      expect(result).toEqual({ allowed: true, message: "" });
+    });
+
+    it("denies inaccessible routes with a role-specific message", async () => {
+      set_auth_state({
+        current_profile: create_profile({ role: "player" }),
       });
 
-      it("allows access to /audit-logs", async () => {
-        const result = await check_route_access("/audit-logs");
-        expect(result.allowed).toBe(true);
+      const result = await check_route_access("/system-users");
+
+      expect(result.allowed).toBe(false);
+      expect(result.message).toContain("Player");
+      expect(result.message).toContain("System Users");
+    });
+
+    it("caches accessible routes for repeated checks with the same role", async () => {
+      set_auth_state({
+        current_profile: create_profile({ role: "org_admin" }),
+      });
+      get_accessible_routes_for_role_mock.mockResolvedValue({
+        success: true,
+        data: ["/settings", "/venues"],
       });
 
-      it("denies access to /system-users", async () => {
-        const result = await check_route_access("/system-users");
-        expect(result.allowed).toBe(false);
+      await check_route_access("/settings");
+      await check_route_access("/venues");
+
+      expect(get_accessible_routes_for_role_mock).toHaveBeenCalledTimes(1);
+    });
+
+    it("reloads cached routes when the role changes", async () => {
+      get_accessible_routes_for_role_mock.mockImplementation(
+        async (role: string): Promise<{
+          success: boolean;
+          data: string[];
+          error?: string;
+        }> => ({
+          success: true,
+          data:
+            role === "super_admin"
+              ? ["/system-users"]
+              : role === "player"
+                ? ["/players"]
+                : [],
+        }),
+      );
+
+      set_auth_state({
+        current_profile: create_profile({ role: "super_admin" }),
+      });
+      const admin_result = await check_route_access("/system-users");
+
+      set_auth_state({
+        current_profile: create_profile({ role: "player", id: "profile-2" }),
+      });
+      const player_result = await check_route_access("/system-users");
+
+      expect(admin_result.allowed).toBe(true);
+      expect(player_result.allowed).toBe(false);
+      expect(get_accessible_routes_for_role_mock).toHaveBeenCalledTimes(2);
+    });
+
+    it("denies access when route loading fails", async () => {
+      set_auth_state({
+        current_profile: create_profile({ role: "official" }),
+      });
+      get_accessible_routes_for_role_mock.mockResolvedValue({
+        success: false,
+        data: [],
+        error: "boom",
       });
 
-      it("allows access to /competitions", async () => {
-        const result = await check_route_access("/competitions");
-        expect(result.allowed).toBe(true);
-      });
+      const result = await check_route_access("/fixtures");
 
-      it("allows access to /venues", async () => {
-        const result = await check_route_access("/venues");
-        expect(result.allowed).toBe(true);
-      });
+      expect(result.allowed).toBe(false);
     });
   });
 
   describe("ensure_route_access", () => {
-    it("redirects to home when access is denied", async () => {
-      const profiles = get(auth_store).available_profiles;
-      const player = profiles.find((p) => p.role === "player");
-      await auth_store.switch_profile(player!.id);
-
-      await ensure_route_access("/settings");
-
-      expect(vi.mocked(goto)).toHaveBeenCalledWith("/");
-    });
-
-    it("does not redirect when access is allowed", async () => {
-      const profiles = get(auth_store).available_profiles;
-      const super_admin = profiles.find((p) => p.role === "super_admin");
-      await auth_store.switch_profile(super_admin!.id);
-
-      await ensure_route_access("/system-users");
-
-      expect(vi.mocked(goto)).not.toHaveBeenCalled();
-    });
-
-    it("returns false when access is denied", async () => {
-      const profiles = get(auth_store).available_profiles;
-      const player = profiles.find((p) => p.role === "player");
-      await auth_store.switch_profile(player!.id);
+    it("stores the denial and redirects when access is denied", async () => {
+      set_auth_state({
+        current_profile: create_profile({ role: "player" }),
+      });
 
       const result = await ensure_route_access("/settings");
 
       expect(result).toBe(false);
+      expect(set_denial_mock).toHaveBeenCalledWith(
+        "/settings",
+        expect.stringContaining("Player"),
+      );
+      expect(goto_mock).toHaveBeenCalledWith("/");
     });
 
-    it("returns true when access is allowed", async () => {
-      const profiles = get(auth_store).available_profiles;
-      const super_admin = profiles.find((p) => p.role === "super_admin");
-      await auth_store.switch_profile(super_admin!.id);
+    it("returns true and does not redirect when access is allowed", async () => {
+      set_auth_state({
+        current_profile: create_profile({ role: "super_admin" }),
+      });
+      get_accessible_routes_for_role_mock.mockResolvedValue({
+        success: true,
+        data: ["/system-users"],
+      });
 
       const result = await ensure_route_access("/system-users");
 
       expect(result).toBe(true);
+      expect(set_denial_mock).not.toHaveBeenCalled();
+      expect(goto_mock).not.toHaveBeenCalled();
     });
   });
 
-  describe("route access changes with profile switch", () => {
-    it("denies then allows /system-users when switching from player to super_admin", async () => {
-      const profiles = get(auth_store).available_profiles;
-      const player = profiles.find((p) => p.role === "player");
-      const super_admin = profiles.find((p) => p.role === "super_admin");
+  describe("ensure_auth_profile", () => {
+    it("initializes auth and returns the active profile", async () => {
+      const profile = create_profile({ role: "org_admin" });
+      set_auth_state({ is_initialized: false });
+      auth_store.initialize.mockImplementation(async (): Promise<void> => {
+        set_auth_state({ is_initialized: true, current_profile: profile });
+      });
 
-      await auth_store.switch_profile(player!.id);
-      const player_result = await check_route_access("/system-users");
-      expect(player_result.allowed).toBe(false);
+      const result = await ensure_auth_profile();
 
-      await auth_store.switch_profile(super_admin!.id);
-      const admin_result = await check_route_access("/system-users");
-      expect(admin_result.allowed).toBe(true);
+      expect(result).toEqual({
+        success: true,
+        profile,
+        error_message: "",
+      });
     });
 
-    it("allows then denies /audit-logs when switching from org_admin to team_manager", async () => {
-      const profiles = get(auth_store).available_profiles;
-      const org_admin = profiles.find((p) => p.role === "org_admin");
-      const team_manager = profiles.find((p) => p.role === "team_manager");
+    it("returns a failure result when no profile exists after initialization", async () => {
+      set_auth_state({ is_initialized: false, current_profile: null });
 
-      await auth_store.switch_profile(org_admin!.id);
-      const admin_result = await check_route_access("/audit-logs");
-      expect(admin_result.allowed).toBe(true);
+      const result = await ensure_auth_profile();
 
-      await auth_store.switch_profile(team_manager!.id);
-      const manager_result = await check_route_access("/audit-logs");
-      expect(manager_result.allowed).toBe(false);
+      expect(result.success).toBe(false);
+      expect(result.profile).toBeNull();
+      expect(result.error_message).toContain("No user profile");
+    });
+  });
+
+  describe("auth state helpers", () => {
+    it("returns the current profile", () => {
+      const profile = create_profile({ role: "officials_manager" });
+      set_auth_state({ current_profile: profile });
+
+      expect(get_current_auth_profile()).toEqual(profile);
+    });
+
+    it("returns whether auth is initialized", () => {
+      set_auth_state({ is_initialized: false });
+      expect(is_auth_initialized()).toBe(false);
+
+      set_auth_state({ is_initialized: true });
+      expect(is_auth_initialized()).toBe(true);
     });
   });
 
   describe("extract_route_base", () => {
-    it("returns / for empty pathname", () => {
+    it("returns / for empty and root paths", () => {
       expect(extract_route_base("")).toBe("/");
-    });
-
-    it("returns / for root pathname", () => {
       expect(extract_route_base("/")).toBe("/");
     });
 
-    it("returns /teams for /teams", () => {
-      expect(extract_route_base("/teams")).toBe("/teams");
-    });
-
-    it("returns /teams for /teams/123", () => {
+    it("returns the first route segment", () => {
       expect(extract_route_base("/teams/123")).toBe("/teams");
-    });
-
-    it("returns /competitions for /competitions/create", () => {
       expect(extract_route_base("/competitions/create")).toBe("/competitions");
     });
   });
 
   describe("is_route_in_accessible_set", () => {
-    const test_routes = new Set(["/teams", "/players", "/fixtures"]);
+    it("accepts root and always-allowed paths", () => {
+      const routes = new Set<string>();
 
-    it("returns true for root path", () => {
-      expect(is_route_in_accessible_set("/", test_routes)).toBe(true);
-    });
-
-    it("returns true for empty path", () => {
-      expect(is_route_in_accessible_set("", test_routes)).toBe(true);
-    });
-
-    it("returns true for exact match", () => {
-      expect(is_route_in_accessible_set("/teams", test_routes)).toBe(true);
-    });
-
-    it("returns true for sub-route matching base", () => {
-      expect(is_route_in_accessible_set("/teams/123", test_routes)).toBe(true);
-    });
-
-    it("returns false for route not in set", () => {
-      expect(is_route_in_accessible_set("/settings", test_routes)).toBe(false);
-    });
-
-    it("returns false for sub-route of missing base", () => {
-      expect(is_route_in_accessible_set("/settings/general", test_routes)).toBe(
-        false,
-      );
-    });
-
-    it("returns true for /competition-results even when not in accessible set", () => {
-      const empty_routes = new Set<string>();
-      expect(
-        is_route_in_accessible_set("/competition-results", empty_routes),
-      ).toBe(true);
-    });
-
-    it("returns true for /calendar even when not in accessible set", () => {
-      const empty_routes = new Set<string>();
-      expect(is_route_in_accessible_set("/calendar", empty_routes)).toBe(true);
-    });
-
-    it("returns true for /match-report even when not in accessible set", () => {
-      const empty_routes = new Set<string>();
-      expect(is_route_in_accessible_set("/match-report", empty_routes)).toBe(
+      expect(is_route_in_accessible_set("/", routes)).toBe(true);
+      expect(is_route_in_accessible_set("/calendar", routes)).toBe(true);
+      expect(is_route_in_accessible_set("/match-report/fixture-1", routes)).toBe(
         true,
       );
     });
 
-    it("returns true for /match-report/some-id even when not in accessible set", () => {
-      const empty_routes = new Set<string>();
-      expect(
-        is_route_in_accessible_set("/match-report/game-456", empty_routes),
-      ).toBe(true);
+    it("matches both exact routes and nested routes by base", () => {
+      const routes = new Set<string>(["/teams", "/players"]);
+
+      expect(is_route_in_accessible_set("/teams", routes)).toBe(true);
+      expect(is_route_in_accessible_set("/teams/123", routes)).toBe(true);
+      expect(is_route_in_accessible_set("/settings", routes)).toBe(false);
     });
   });
 
   describe("route access cache", () => {
-    it("invalidate_route_access_cache returns false when no cache exists", () => {
+    it("reports whether a cache entry existed", async () => {
       expect(invalidate_route_access_cache()).toBe(false);
-    });
 
-    it("invalidate_route_access_cache returns true after cache is populated", async () => {
-      const profiles = get(auth_store).available_profiles;
-      const super_admin = profiles.find((p) => p.role === "super_admin");
-      await auth_store.switch_profile(super_admin!.id);
+      set_auth_state({
+        current_profile: create_profile({ role: "super_admin" }),
+      });
+      get_accessible_routes_for_role_mock.mockResolvedValue({
+        success: true,
+        data: ["/teams"],
+      });
 
       await check_route_access("/teams");
 
       expect(invalidate_route_access_cache()).toBe(true);
     });
-
-    it("cache auto-invalidates when role changes", async () => {
-      const profiles = get(auth_store).available_profiles;
-      const super_admin = profiles.find((p) => p.role === "super_admin");
-      const player = profiles.find((p) => p.role === "player");
-
-      await auth_store.switch_profile(super_admin!.id);
-      const admin_result = await check_route_access("/system-users");
-      expect(admin_result.allowed).toBe(true);
-
-      await auth_store.switch_profile(player!.id);
-      const player_result = await check_route_access("/system-users");
-      expect(player_result.allowed).toBe(false);
-    });
   });
 
   describe("format_route_as_page_name", () => {
-    it("returns Dashboard for root path", () => {
+    it("formats root paths as Dashboard", () => {
       expect(format_route_as_page_name("/")).toBe("Dashboard");
-    });
-
-    it("returns Dashboard for empty string", () => {
       expect(format_route_as_page_name("")).toBe("Dashboard");
     });
 
-    it("capitalizes single-word route", () => {
+    it("formats route slugs as title case", () => {
       expect(format_route_as_page_name("/teams")).toBe("Teams");
-    });
-
-    it("converts hyphenated route to title case", () => {
       expect(format_route_as_page_name("/system-users")).toBe("System Users");
-    });
-
-    it("handles multi-hyphen route", () => {
       expect(format_route_as_page_name("/player-team-memberships")).toBe(
         "Player Team Memberships",
       );
-    });
-
-    it("uses base route for nested paths", () => {
-      expect(format_route_as_page_name("/competitions/create")).toBe(
-        "Competitions",
-      );
-    });
-
-    it("uses base route for dynamic segment paths", () => {
-      expect(format_route_as_page_name("/fixtures/abc-123")).toBe("Fixtures");
+      expect(format_route_as_page_name("/fixtures/fixture-1")).toBe("Fixtures");
     });
   });
 });

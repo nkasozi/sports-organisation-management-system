@@ -80,6 +80,7 @@ export interface Fixture extends BaseEntity {
   current_minute: number;
   match_day: number;
   notes: string;
+  stage_id: string;
   status: FixtureStatus;
   home_team_name?: string;
   away_team_name?: string;
@@ -123,6 +124,7 @@ export function create_empty_fixture_input(
     assigned_officials: [],
     match_day: 1,
     notes: "",
+    stage_id: "",
     status: "scheduled",
   };
 }
@@ -162,7 +164,50 @@ export function validate_fixture_input(input: CreateFixtureInput): string[] {
     validation_errors.push("Round number must be at least 1");
   }
 
+  if (!input.stage_id || input.stage_id.trim().length === 0) {
+    validation_errors.push("Stage is required");
+  }
+
   return validation_errors;
+}
+
+export function derive_groups_from_fixtures(
+  fixtures: Pick<Fixture, "home_team_id" | "away_team_id">[],
+): string[][] {
+  const parent: Record<string, string> = {};
+
+  function find_root(team_id: string): string {
+    if (parent[team_id] === undefined) {
+      parent[team_id] = team_id;
+    }
+    if (parent[team_id] !== team_id) {
+      parent[team_id] = find_root(parent[team_id]);
+    }
+    return parent[team_id];
+  }
+
+  function union_teams(a: string, b: string): void {
+    const root_a = find_root(a);
+    const root_b = find_root(b);
+    if (root_a !== root_b) {
+      parent[root_b] = root_a;
+    }
+  }
+
+  for (const fixture of fixtures) {
+    union_teams(fixture.home_team_id, fixture.away_team_id);
+  }
+
+  const groups: Record<string, string[]> = {};
+  for (const team_id of Object.keys(parent)) {
+    const root = find_root(team_id);
+    if (!groups[root]) {
+      groups[root] = [];
+    }
+    groups[root].push(team_id);
+  }
+
+  return Object.values(groups).map((group) => group.sort());
 }
 
 export interface OfficialValidationResult {
@@ -243,6 +288,7 @@ export interface FixtureGenerationConfig {
   venue_rotation: "home_away" | "neutral" | "single_venue";
   single_venue?: string;
   rounds: number;
+  stage_id_per_round: Record<number, string>;
 }
 
 export function generate_round_robin_fixtures(
@@ -298,6 +344,7 @@ export function generate_round_robin_fixtures(
         assigned_officials: [],
         match_day,
         notes: "",
+        stage_id: config.stage_id_per_round[round_number] ?? "",
         status: "scheduled",
       });
     }

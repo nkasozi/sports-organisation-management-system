@@ -84,6 +84,18 @@ async function enrich_fixtures_with_team_names(
   }
 }
 
+function find_unmapped_rounds(config: FixtureGenerationConfig): number[] {
+  const total_rounds = config.rounds;
+  const unmapped: number[] = [];
+  for (let round = 1; round <= total_rounds; round++) {
+    const stage_id = config.stage_id_per_round[round];
+    if (!stage_id || stage_id.trim().length === 0) {
+      unmapped.push(round);
+    }
+  }
+  return unmapped;
+}
+
 export function create_fixture_use_cases(
   repository: FixtureRepository,
 ): FixtureUseCases {
@@ -209,6 +221,13 @@ export function create_fixture_use_cases(
       }
       if (!config.start_date) {
         return create_failure_result("Start date is required");
+      }
+
+      const unmapped_rounds = find_unmapped_rounds(config);
+      if (unmapped_rounds.length > 0) {
+        return create_failure_result(
+          `All rounds must be mapped to a stage. Missing stage mappings for rounds: ${unmapped_rounds.join(", ")}`,
+        );
       }
 
       const fixture_inputs = generate_round_robin_fixtures(config);

@@ -36,3 +36,5 @@ export type FilterableRepository<
   TUpdateInput,
   TFilter,
 > = Repository<TEntity, TCreateInput, TUpdateInput, TFilter>;
+
+export type { PaginatedAsyncResult } from "../../../../types/Result";

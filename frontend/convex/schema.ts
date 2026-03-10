@@ -272,8 +272,21 @@ export default defineSchema({
     home_team_jersey: v.optional(jersey_color_assignment_validator),
     away_team_jersey: v.optional(jersey_color_assignment_validator),
     officials_jersey: v.optional(jersey_color_assignment_validator),
+    stage_id: v.optional(v.string()),
     ...timestamp_fields,
   }).index("by_local_id", ["local_id"]),
+
+  competition_stages: defineTable({
+    ...sync_metadata_fields,
+    competition_id: v.string(),
+    name: v.string(),
+    stage_type: v.string(),
+    stage_order: v.number(),
+    status: v.optional(v.string()),
+    ...timestamp_fields,
+  })
+    .index("by_local_id", ["local_id"])
+    .index("by_competition", ["competition_id"]),
 
   sports: defineTable({
     ...sync_metadata_fields,
@@ -530,6 +543,15 @@ export default defineSchema({
     max_teams_allowed: v.optional(v.number()),
     rules: v.optional(v.string()),
     status: v.optional(v.string()),
+    stage_templates: v.optional(
+      v.array(
+        v.object({
+          name: v.string(),
+          stage_type: v.string(),
+          stage_order: v.number(),
+        }),
+      ),
+    ),
     ...timestamp_fields,
   }).index("by_local_id", ["local_id"]),
 

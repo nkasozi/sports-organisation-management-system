@@ -75,6 +75,7 @@
   let loading_state: LoadingState = "loading";
   let fixtures_loading: boolean = false;
   let error_message: string = "";
+  let is_using_cached_data: boolean = false;
 
   let active_tab: "standings" | "fixtures" | "results" | "stats" = "standings";
 
@@ -353,7 +354,10 @@
     loading_state = "loading";
 
     try {
-      await fetch_public_data_from_convex("competition_results");
+      const fetch_result = await fetch_public_data_from_convex(
+        "competition_results",
+      );
+      is_using_cached_data = !fetch_result.success;
       organizations = await load_organizations();
 
       if (has_shareable_params && organizations.length > 0) {
@@ -876,6 +880,29 @@
 </svelte:head>
 
 <div class="w-full">
+  {#if is_using_cached_data}
+    <div
+      class="mx-4 mt-4 mb-2 flex items-center gap-2 rounded-md border border-amber-400 bg-amber-50 px-4 py-2.5 text-sm text-amber-800 dark:border-amber-600 dark:bg-amber-950 dark:text-amber-200"
+    >
+      <svg
+        class="h-4 w-4 shrink-0"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+        stroke-width="2"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"
+        />
+      </svg>
+      <span
+        >Showing locally cached data — connect to the internet to get the latest
+        results.</span
+      >
+    </div>
+  {/if}
   <LoadingStateWrapper
     state={loading_state}
     loading_text="Loading data..."

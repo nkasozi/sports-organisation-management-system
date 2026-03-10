@@ -9,6 +9,10 @@ import {
 } from "../repositories/InBrowserGameOfficialRoleRepository";
 import { get_competition_format_repository } from "../repositories/InBrowserCompetitionFormatRepository";
 import {
+  get_competition_stage_repository,
+  InBrowserCompetitionStageRepository,
+} from "../repositories/InBrowserCompetitionStageRepository";
+import {
   get_player_repository,
   InBrowserPlayerRepository,
 } from "../repositories/InBrowserPlayerRepository";
@@ -80,6 +84,7 @@ import {
   create_seed_team_staff,
   create_seed_competitions,
   create_seed_competition_teams,
+  create_seed_competition_stages,
   create_seed_player_team_memberships,
   create_seed_officials,
   create_seed_fixtures,
@@ -95,6 +100,7 @@ import {
   create_seed_identification_types,
   SEED_ORGANIZATION_IDS,
   SEED_SYSTEM_USER_IDS,
+  type SeedCompetitionFormatIds,
 } from "../../infrastructure/utils/SeedDataGenerator";
 import type { PlayerPosition } from "../../core/entities/PlayerPosition";
 import type { TeamStaffRole } from "../../core/entities/TeamStaffRole";
@@ -133,7 +139,7 @@ interface SeedResult {
   error_message: string;
 }
 
-const SEEDING_COMPLETE_KEY = "sports_org_seeding_complete_v11";
+const SEEDING_COMPLETE_KEY = "sports_org_seeding_complete_v12";
 
 export function is_seeding_already_complete(): boolean {
   if (typeof window === "undefined") return true;
@@ -403,6 +409,28 @@ export async function seed_all_data_if_needed(): Promise<boolean> {
     competition_formats,
   );
 
+  const world_cup_style_format_id = await find_competition_format_id_by_code(
+    "world_cup_style",
+    competition_formats,
+  );
+
+  const cup_tournament_format_id = await find_competition_format_id_by_code(
+    "cup_tournament",
+    competition_formats,
+  );
+
+  const single_round_robin_format_id = await find_competition_format_id_by_code(
+    "single_round_robin",
+    competition_formats,
+  );
+
+  const competition_format_ids: SeedCompetitionFormatIds = {
+    easter_cup_format_id: world_cup_style_format_id,
+    uganda_cup_format_id: cup_tournament_format_id,
+    nhl_format_id: league_format_id,
+    university_format_id: single_round_robin_format_id,
+  };
+
   const seed_players = create_seed_players(
     position_ids,
     SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
@@ -461,9 +489,19 @@ export async function seed_all_data_if_needed(): Promise<boolean> {
     (o) => `${o.first_name} ${o.last_name}`,
   );
 
-  const seed_competitions = create_seed_competitions(league_format_id);
+  const seed_competitions = create_seed_competitions(competition_format_ids);
   await competition_repository.seed_with_data(seed_competitions);
   emit_entity_created_events("competition", seed_competitions, (c) => c.name);
+
+  const competition_stage_repository =
+    get_competition_stage_repository() as InBrowserCompetitionStageRepository;
+  const seed_competition_stages = create_seed_competition_stages();
+  await competition_stage_repository.seed_with_data(seed_competition_stages);
+  emit_entity_created_events(
+    "competition_stage",
+    seed_competition_stages,
+    (s) => `${s.name} (${s.competition_id})`,
+  );
 
   const competition_team_repository =
     get_competition_team_repository() as InBrowserCompetitionTeamRepository;

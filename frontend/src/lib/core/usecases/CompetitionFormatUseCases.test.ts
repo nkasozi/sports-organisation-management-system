@@ -45,6 +45,7 @@ function create_test_format(
     },
     min_teams_required: 2,
     max_teams_allowed: 20,
+    stage_templates: [],
     status: "active",
     created_at: "2024-01-01T00:00:00Z",
     updated_at: "2024-01-01T00:00:00Z",
@@ -73,6 +74,7 @@ function create_valid_input(
     league_config: null,
     min_teams_required: 4,
     max_teams_allowed: 64,
+    stage_templates: [],
     status: "active",
     ...overrides,
   };

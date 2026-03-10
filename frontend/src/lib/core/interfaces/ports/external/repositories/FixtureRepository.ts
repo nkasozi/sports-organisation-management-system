@@ -18,6 +18,7 @@ export interface FixtureFilter {
   status?: FixtureStatus;
   scheduled_date_from?: string;
   scheduled_date_to?: string;
+  stage_id?: string;
 }
 
 export interface FixtureRepository extends FilterableRepository<

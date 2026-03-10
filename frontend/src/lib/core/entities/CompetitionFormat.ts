@@ -1,4 +1,6 @@
 import type { BaseEntity, EntityStatus } from "./BaseEntity";
+import type { StageType } from "./CompetitionStage";
+import { create_default_stage_templates } from "./CompetitionStage";
 
 export type FormatType =
   | "league"
@@ -45,6 +47,12 @@ export interface LeagueConfig {
   playoff_spots: number;
 }
 
+export interface CompetitionFormatStageTemplate {
+  name: string;
+  stage_type: StageType;
+  stage_order: number;
+}
+
 export interface CompetitionFormat extends BaseEntity {
   name: string;
   code: string;
@@ -54,6 +62,7 @@ export interface CompetitionFormat extends BaseEntity {
   group_stage_config: GroupStageConfig | null;
   knockout_stage_config: KnockoutStageConfig | null;
   league_config: LeagueConfig | null;
+  stage_templates: CompetitionFormatStageTemplate[];
   min_teams_required: number;
   max_teams_allowed: number;
   status: EntityStatus;
@@ -147,6 +156,7 @@ export function create_empty_competition_format_input(): CreateCompetitionFormat
       relegation_spots: 0,
       playoff_spots: 0,
     },
+    stage_templates: [],
     min_teams_required: 2,
     max_teams_allowed: 32,
     status: "active",
@@ -245,6 +255,7 @@ export function get_default_competition_formats(): CreateCompetitionFormatInput[
       group_stage_config: null,
       knockout_stage_config: null,
       league_config: create_default_league_config(),
+      stage_templates: create_default_stage_templates("league", create_default_league_config()),
       min_teams_required: 4,
       max_teams_allowed: 24,
       status: "active",
@@ -258,6 +269,7 @@ export function get_default_competition_formats(): CreateCompetitionFormatInput[
       group_stage_config: null,
       knockout_stage_config: null,
       league_config: { ...create_default_league_config(), number_of_rounds: 1 },
+      stage_templates: create_default_stage_templates("round_robin"),
       min_teams_required: 3,
       max_teams_allowed: 16,
       status: "active",
@@ -276,6 +288,7 @@ export function get_default_competition_formats(): CreateCompetitionFormatInput[
       group_stage_config: create_default_group_stage_config(),
       knockout_stage_config: create_default_knockout_stage_config(),
       league_config: null,
+      stage_templates: create_default_stage_templates("groups_knockout"),
       min_teams_required: 8,
       max_teams_allowed: 32,
       status: "active",
@@ -292,6 +305,7 @@ export function get_default_competition_formats(): CreateCompetitionFormatInput[
         third_place_match: false,
       },
       league_config: null,
+      stage_templates: create_default_stage_templates("straight_knockout"),
       min_teams_required: 4,
       max_teams_allowed: 64,
       status: "active",
@@ -309,6 +323,7 @@ export function get_default_competition_formats(): CreateCompetitionFormatInput[
         away_goals_rule: true,
       },
       league_config: null,
+      stage_templates: create_default_stage_templates("groups_knockout"),
       min_teams_required: 16,
       max_teams_allowed: 32,
       status: "active",

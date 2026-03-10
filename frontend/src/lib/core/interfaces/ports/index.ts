@@ -244,3 +244,8 @@ export type {
   AuditLogFilter,
   UpdateAuditLogInput,
 } from "./external/repositories/AuditLogRepository";
+export type {
+  CompetitionStageRepository,
+  CompetitionStageFilter,
+} from "./external/repositories/CompetitionStageRepository";
+export type { CompetitionStageUseCasesPort } from "./internal/usecases/CompetitionStageUseCasesPort";

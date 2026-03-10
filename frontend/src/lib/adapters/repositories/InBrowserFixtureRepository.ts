@@ -65,6 +65,7 @@ export class InBrowserFixtureRepository
       current_minute: 0,
       match_day: input.match_day,
       notes: input.notes,
+      stage_id: input.stage_id,
       status: input.status,
     };
   }

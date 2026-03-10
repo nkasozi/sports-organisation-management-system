@@ -29,6 +29,7 @@ import {
   initialize_clerk,
   get_session_token,
   is_signed_in,
+  is_clerk_loaded,
 } from "$lib/adapters/iam/clerkAuthService";
 import { get_authentication_adapter } from "$lib/adapters/iam/LocalAuthenticationAdapter";
 import { get_authorization_adapter } from "$lib/infrastructure/AuthorizationProvider";
@@ -186,6 +187,19 @@ export async function initialize_app_data(
   initialize_audit_event_handlers();
 
   await initialize_clerk();
+
+  const clerk_already_loaded = get(is_clerk_loaded);
+  if (!clerk_already_loaded) {
+    console.log("[AppInitializer] Waiting for Clerk to settle before reading sign-in state...");
+    await new Promise<void>((resolve) => {
+      const unsub = is_clerk_loaded.subscribe((loaded) => {
+        if (!loaded) return;
+        unsub();
+        resolve();
+      });
+    });
+  }
+
   const convex_client = initialize_convex_client();
   const user_is_signed_in = get(is_signed_in);
 

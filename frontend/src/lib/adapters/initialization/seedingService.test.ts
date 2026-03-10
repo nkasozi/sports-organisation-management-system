@@ -164,6 +164,7 @@ vi.mock("../../infrastructure/utils/SeedDataGenerator", () => ({
   create_seed_teams: vi.fn().mockReturnValue([]),
   create_seed_team_staff: vi.fn().mockReturnValue([]),
   create_seed_competitions: vi.fn().mockReturnValue([]),
+  create_seed_competition_stages: vi.fn().mockReturnValue([]),
   create_seed_competition_teams: vi.fn().mockReturnValue([]),
   create_seed_player_team_memberships: vi.fn().mockReturnValue([]),
   create_seed_officials: vi.fn().mockReturnValue([]),
@@ -261,7 +262,7 @@ describe("seed_from_convex_or_local — convex_first_with_local_fallback strateg
   });
 
   it("returns local_fallback_success when seeding already complete", async () => {
-    mock_local_storage["sports_org_seeding_complete_v11"] = "true";
+    mock_local_storage["sports_org_seeding_complete_v12"] = "true";
 
     const result = await seed_from_convex_or_local(
       on_progress,
@@ -306,7 +307,7 @@ describe("seed_from_convex_or_local — convex_first_with_local_fallback strateg
       "convex_first_with_local_fallback",
     );
 
-    expect(mock_local_storage["sports_org_seeding_complete_v11"]).toBe("true");
+    expect(mock_local_storage["sports_org_seeding_complete_v12"]).toBe("true");
   });
 
   it("falls back to local seeding when convex fails", async () => {
@@ -410,7 +411,7 @@ describe("seed_from_convex_or_local — convex_mandatory strategy", () => {
   });
 
   it("enters offline mode when convex fails but local data exists", async () => {
-    mock_local_storage["sports_org_seeding_complete_v11"] = "true";
+    mock_local_storage["sports_org_seeding_complete_v12"] = "true";
 
     const result = await seed_from_convex_or_local(
       on_progress,

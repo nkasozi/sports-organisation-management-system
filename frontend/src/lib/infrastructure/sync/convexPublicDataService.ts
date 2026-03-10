@@ -58,6 +58,8 @@ const MATCH_REPORT_TABLES: TableName[] = [
   "player_team_memberships",
 ];
 
+const TABLE_FETCH_TIMEOUT_MS = 8000;
+
 function get_tables_for_page(
   page_type: "competition_results" | "calendar" | "match_report",
 ): TableName[] {
@@ -90,9 +92,17 @@ async function fetch_and_store_table(
   ) => Promise<unknown>,
   table_name: TableName,
 ): Promise<number> {
-  const remote_records = (await convex_query("sync:get_all_records", {
-    table_name,
-  })) as ConvexRecord[];
+  const query_promise = convex_query("sync:get_all_records", { table_name });
+  const timeout_promise = new Promise<never>((_, reject) =>
+    setTimeout(
+      () => reject(new Error(`fetch_timed_out: ${table_name}`)),
+      TABLE_FETCH_TIMEOUT_MS,
+    ),
+  );
+  const remote_records = (await Promise.race([
+    query_promise,
+    timeout_promise,
+  ])) as ConvexRecord[];
 
   if (!remote_records || remote_records.length === 0) {
     return 0;
@@ -116,6 +126,18 @@ async function fetch_and_store_table(
 export async function fetch_public_data_from_convex(
   page_type: "competition_results" | "calendar" | "match_report",
 ): Promise<PublicDataFetchResult> {
+  if (typeof navigator !== "undefined" && !navigator.onLine) {
+    console.warn(
+      `[PublicData] Device is offline, skipping Convex fetch for ${page_type}`,
+    );
+    return {
+      success: false,
+      tables_fetched: 0,
+      total_records: 0,
+      error: "offline",
+    };
+  }
+
   const manager = get_sync_manager();
   const convex_client = manager.get_convex_client();
 

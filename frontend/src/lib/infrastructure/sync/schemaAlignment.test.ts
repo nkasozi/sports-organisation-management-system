@@ -49,6 +49,7 @@ const ENTITY_TO_TABLE_MAP: Record<string, string> = {
   OfficialAssociatedTeam: "official_associated_teams",
   PlayerTeamTransferHistory: "player_team_transfer_histories",
   GameEventType: "game_event_types",
+  CompetitionStage: "competition_stages",
 };
 
 function extract_interface_fields(file_content: string): string[] {

@@ -31,7 +31,7 @@ import type {
 import { get_authorization_adapter } from "$lib/infrastructure/AuthorizationProvider";
 import { sync_branding_with_profile } from "$lib/adapters/initialization/brandingSyncService";
 import { load_profiles_from_repository } from "./profileLoader";
-import { is_signed_in } from "$lib/adapters/iam/clerkAuthService";
+import { is_signed_in, is_clerk_loaded } from "$lib/adapters/iam/clerkAuthService";
 import type {
   SharedEntityType,
   SharedEntityCategoryMap,
@@ -332,6 +332,21 @@ function create_auth_store() {
   }
 
   async function initialize(): Promise<void> {
+    const current_state = get({ subscribe });
+    if (current_state.is_initialized) return;
+
+    const clerk_already_loaded = get(is_clerk_loaded);
+    if (!clerk_already_loaded) {
+      console.log("[AuthStore] Waiting for Clerk to load before initializing...");
+      await new Promise<void>((resolve) => {
+        const unsub = is_clerk_loaded.subscribe((loaded) => {
+          if (!loaded) return;
+          unsub();
+          resolve();
+        });
+      });
+    }
+
     const repository = get_system_user_repository();
     const organization_repository = get_organization_repository();
     const loaded_profiles = await load_profiles_from_repository(
