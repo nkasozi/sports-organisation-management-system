@@ -15,7 +15,7 @@ import type {
   QueryOptions,
 } from "../../core/interfaces/ports";
 import type { BaseEntity } from "../../core/entities/BaseEntity";
-import type { PaginatedAsyncResult } from "../../core/types/Result";
+import type { PaginatedAsyncResult, Result } from "../../core/types/Result";
 import {
   create_success_result,
   create_failure_result,
@@ -192,13 +192,13 @@ export async function get_sport_by_code(code: string): Promise<Sport | null> {
   return repository.find_by_code(code);
 }
 
-export async function create_sport(input: CreateSportInput): Promise<Sport> {
+export async function create_sport(input: CreateSportInput): Promise<Result<Sport>> {
   const repository = get_concrete_repository();
   const result = await repository.create(input);
   if (!result.success) {
-    throw new Error(result.error || "Failed to create sport");
+    return { success: false, error: result.error || "Failed to create sport" };
   }
-  return result.data;
+  return { success: true, data: result.data };
 }
 
 export async function update_sport(

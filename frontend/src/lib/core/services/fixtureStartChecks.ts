@@ -17,6 +17,8 @@ import type { Player } from "../entities/Player";
 import type { PlayerTeamMembership } from "../entities/PlayerTeamMembership";
 import type { PlayerPosition } from "../entities/PlayerPosition";
 import type { SquadGenerationStrategy } from "../entities/Competition";
+import type { Result } from "../types/Result";
+import { create_success_result, create_failure_result } from "../types/Result";
 
 export type CheckStatus = "pending" | "checking" | "passed" | "failed";
 
@@ -46,9 +48,9 @@ export async function check_fixture_can_start(
   fixture: Fixture,
   official_use_cases: FixtureDetailsSetupUseCases,
   lineup_use_cases: FixtureLineupUseCases,
-): Promise<FixtureCanStartResult> {
+): Promise<Result<FixtureCanStartResult>> {
   if (!fixture.id) {
-    throw new Error("Fixture must have an ID");
+    return create_failure_result("Fixture must have an ID");
   }
 
   console.log("[DEBUG fixtureStartChecks] Checking fixture:", fixture.id);
@@ -131,7 +133,7 @@ export async function check_fixture_can_start(
         : "Submit the lineup in Team Fixture Lineups page",
   };
 
-  return {
+  return create_success_result({
     can_start:
       officials_check.status === "passed" &&
       home_lineup_check.status === "passed" &&
@@ -139,7 +141,7 @@ export async function check_fixture_can_start(
     officials_check,
     home_lineup_check,
     away_lineup_check,
-  };
+  });
 }
 
 export async function auto_generate_lineups_if_possible(

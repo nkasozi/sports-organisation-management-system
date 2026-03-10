@@ -23,6 +23,7 @@
   import {
     initial_sync_store,
     has_session_been_synced,
+    clear_session_sync_flag,
   } from "$lib/presentation/stores/initialSyncStore";
   import { sync_store } from "$lib/presentation/stores/syncStore";
   import {
@@ -38,6 +39,12 @@
   } from "$lib/adapters/initialization/seedingService";
   import { ClerkProvider } from "svelte-clerk";
   import { auth_store } from "$lib/presentation/stores/auth";
+  import { sign_out } from "$lib/adapters/iam/clerkAuthService";
+  import type { Result } from "$lib/core/types/Result";
+  import {
+    create_success_result,
+    create_failure_result,
+  } from "$lib/core/types/Result";
 
   injectAnalytics();
 
@@ -103,14 +110,14 @@
       .replace(/\b\w/g, (char) => char.toUpperCase());
   }
 
-  async function run_initial_sync_if_needed(): Promise<void> {
+  async function run_initial_sync_if_needed(): Promise<Result<boolean>> {
     if (has_session_been_synced()) {
       console.log("[Layout] Session already synced, skipping initial sync");
-      return;
+      return create_success_result(true);
     }
     if (!get(is_signed_in)) {
       console.log("[Layout] User not signed in, skipping initial sync");
-      return;
+      return create_success_result(false);
     }
 
     const current_sync_state = get(initial_sync_store);
@@ -118,11 +125,31 @@
       console.log(
         "[Layout] Sync already in progress, skipping duplicate request",
       );
-      return;
+      return create_success_result(false);
     }
 
     console.log("[Layout] Starting initial sync from Convex...");
     initial_sync_store.start_sync();
+
+    let sync_unsub: (() => void) | null = null;
+
+    const cleanup_on_failure = async (
+      error_message: string,
+    ): Promise<Result<boolean>> => {
+      console.error("[Layout] Initial sync failed:", error_message);
+
+      if (sync_unsub) {
+        sync_unsub();
+        sync_unsub = null;
+      }
+
+      initial_sync_store.reset();
+      clear_session_sync_flag();
+
+      await sign_out();
+      await goto(`/sign-in?error=${encodeURIComponent(error_message)}`);
+      return create_failure_result(error_message);
+    };
 
     initial_sync_store.update_progress("Stopping background processes...", 5);
     stop_background_sync();
@@ -139,7 +166,6 @@
     initial_sync_store.update_progress("Starting data sync...", 20);
     set_pulling_from_remote(false);
 
-    let sync_unsub: (() => void) | null = null;
     sync_unsub = sync_store.subscribe((state) => {
       if (state.current_progress) {
         const progress = state.current_progress;
@@ -154,8 +180,17 @@
       }
     });
 
-    await sync_store.sync_now();
-    await sync_store.sync_now();
+    const first_sync_result = await sync_store.sync_now();
+    if (!first_sync_result.success && first_sync_result.errors.length > 0) {
+      const error_msg =
+        first_sync_result.errors[0]?.error || "Unknown sync error";
+      return cleanup_on_failure(`Sync failed: ${error_msg}`);
+    }
+
+    const second_sync_result = await sync_store.sync_now();
+    if (!second_sync_result.success && second_sync_result.errors.length > 0) {
+      console.warn("[Layout] Second sync pass had errors, continuing anyway");
+    }
 
     if (sync_unsub) {
       sync_unsub();
@@ -171,6 +206,8 @@
 
     initial_sync_store.complete_sync();
     await new Promise((r) => setTimeout(r, 500));
+
+    return create_success_result(true);
   }
 
   function cleanup_subscriptions(): void {

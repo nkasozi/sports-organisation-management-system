@@ -26,42 +26,42 @@ export async function auto_create_fixture_details_setup(
     fixture.id,
   );
 
-  try {
-    const populated_data = await build_auto_populated_input(
-      fixture,
-      dependencies,
-    );
+  const populated_data_result = await build_auto_populated_input(
+    fixture,
+    dependencies,
+  );
 
-    console.log(
-      "[DEBUG fixtureDetailsAutoSetup] Auto-populated data built, creating fixture details setup",
-    );
-
-    const create_result =
-      await dependencies.fixture_details_setup_use_cases.create(populated_data);
-
-    if (!create_result.success) {
-      console.log(
-        "[DEBUG fixtureDetailsAutoSetup] Failed to create fixture details setup:",
-        create_result.error,
-      );
-      return create_result;
-    }
-
-    console.log(
-      "[DEBUG fixtureDetailsAutoSetup] Successfully created fixture details setup:",
-      create_result.data.id,
-    );
-
-    return create_result;
-  } catch (err: any) {
-    return { success: false, error: err?.message || String(err) };
+  if (!populated_data_result.success) {
+    return { success: false, error: populated_data_result.error };
   }
+
+  console.log(
+    "[DEBUG fixtureDetailsAutoSetup] Auto-populated data built, creating fixture details setup",
+  );
+
+  const create_result =
+    await dependencies.fixture_details_setup_use_cases.create(populated_data_result.data);
+
+  if (!create_result.success) {
+    console.log(
+      "[DEBUG fixtureDetailsAutoSetup] Failed to create fixture details setup:",
+      create_result.error,
+    );
+    return create_result;
+  }
+
+  console.log(
+    "[DEBUG fixtureDetailsAutoSetup] Successfully created fixture details setup:",
+    create_result.data.id,
+  );
+
+  return create_result;
 }
 
 async function build_auto_populated_input(
   fixture: Fixture,
   dependencies: AutoSetupDependencies,
-): Promise<CreateFixtureDetailsSetupInput> {
+): Promise<Result<CreateFixtureDetailsSetupInput>> {
   const {
     jersey_color_use_cases,
     official_use_cases,
@@ -127,19 +127,22 @@ async function build_auto_populated_input(
     );
   }
   if (errors.length > 0) {
-    throw new Error(errors.join(", "));
+    return { success: false, error: errors.join(", ") };
   }
 
   return {
-    organization_id: fixture.organization_id,
-    fixture_id: fixture.id,
-    home_team_jersey_id: home_team_jersey_id!,
-    away_team_jersey_id: away_team_jersey_id!,
-    official_jersey_id: official_jersey_id!,
-    assigned_officials,
-    assignment_notes: "",
-    confirmation_status: "confirmed",
-    status: "active",
+    success: true,
+    data: {
+      organization_id: fixture.organization_id,
+      fixture_id: fixture.id,
+      home_team_jersey_id: home_team_jersey_id!,
+      away_team_jersey_id: away_team_jersey_id!,
+      official_jersey_id: official_jersey_id!,
+      assigned_officials,
+      assignment_notes: "",
+      confirmation_status: "confirmed",
+      status: "active",
+    },
   };
 }
 

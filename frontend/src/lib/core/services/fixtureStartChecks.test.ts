@@ -5,6 +5,7 @@ import {
   type FixtureCanStartResult,
   type LineupGenerationResult,
 } from "./fixtureStartChecks";
+import { is_success } from "../types/Result";
 
 describe("fixtureStartChecks", () => {
   describe("check_fixture_can_start", () => {
@@ -33,10 +34,12 @@ describe("fixtureStartChecks", () => {
         lineup_use_cases,
       );
 
-      expect(result.can_start).toBe(true);
-      expect(result.officials_check.status).toBe("passed");
-      expect(result.home_lineup_check.status).toBe("passed");
-      expect(result.away_lineup_check.status).toBe("passed");
+      expect(result.success).toBe(true);
+      if (!is_success(result)) return;
+      expect(result.data.can_start).toBe(true);
+      expect(result.data.officials_check.status).toBe("passed");
+      expect(result.data.home_lineup_check.status).toBe("passed");
+      expect(result.data.away_lineup_check.status).toBe("passed");
     });
 
     it("should fail when no officials assigned", async () => {
@@ -55,10 +58,12 @@ describe("fixtureStartChecks", () => {
         lineup_use_cases,
       );
 
-      expect(result.can_start).toBe(false);
-      expect(result.officials_check.status).toBe("failed");
-      expect(result.officials_check.message).toContain("No officials assigned");
-      expect(result.officials_check.fix_suggestion).toContain(
+      expect(result.success).toBe(true);
+      if (!is_success(result)) return;
+      expect(result.data.can_start).toBe(false);
+      expect(result.data.officials_check.status).toBe("failed");
+      expect(result.data.officials_check.message).toContain("No officials assigned");
+      expect(result.data.officials_check.fix_suggestion).toContain(
         "Fixture Details Setup",
       );
     });
@@ -87,9 +92,11 @@ describe("fixtureStartChecks", () => {
         lineup_use_cases,
       );
 
-      expect(result.can_start).toBe(false);
-      expect(result.home_lineup_check.status).toBe("failed");
-      expect(result.home_lineup_check.message).toContain("home team lineup");
+      expect(result.success).toBe(true);
+      if (!is_success(result)) return;
+      expect(result.data.can_start).toBe(false);
+      expect(result.data.home_lineup_check.status).toBe("failed");
+      expect(result.data.home_lineup_check.message).toContain("home team lineup");
     });
 
     it("should fail when away team lineup missing", async () => {
@@ -116,9 +123,11 @@ describe("fixtureStartChecks", () => {
         lineup_use_cases,
       );
 
-      expect(result.can_start).toBe(false);
-      expect(result.away_lineup_check.status).toBe("failed");
-      expect(result.away_lineup_check.message).toContain("away team lineup");
+      expect(result.success).toBe(true);
+      if (!is_success(result)) return;
+      expect(result.data.can_start).toBe(false);
+      expect(result.data.away_lineup_check.status).toBe("failed");
+      expect(result.data.away_lineup_check.message).toContain("away team lineup");
     });
 
     it("should fail when lineups are in draft status", async () => {
@@ -146,9 +155,11 @@ describe("fixtureStartChecks", () => {
         lineup_use_cases,
       );
 
-      expect(result.can_start).toBe(false);
-      expect(result.home_lineup_check.status).toBe("failed");
-      expect(result.home_lineup_check.message).toContain("not submitted");
+      expect(result.success).toBe(true);
+      if (!is_success(result)) return;
+      expect(result.data.can_start).toBe(false);
+      expect(result.data.home_lineup_check.status).toBe("failed");
+      expect(result.data.home_lineup_check.message).toContain("not submitted");
     });
   });
 

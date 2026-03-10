@@ -77,21 +77,20 @@ export async function create_sport(
     return { success: false, error: validation_errors.join(", ") };
   }
 
-  try {
-    const existing_sport = await repo_get_sport_by_code(input.code);
-    if (existing_sport) {
-      return {
-        success: false,
-        error: `Sport with code '${input.code}' already exists`,
-      };
-    }
-
-    const sport = await repo_create_sport(input);
-    return { success: true, data: sport };
-  } catch (error) {
-    console.error("[SportService] Failed to create sport:", error);
-    return { success: false, error: "Failed to create sport" };
+  const existing_sport = await repo_get_sport_by_code(input.code);
+  if (existing_sport) {
+    return {
+      success: false,
+      error: `Sport with code '${input.code}' already exists`,
+    };
   }
+
+  const result = await repo_create_sport(input);
+  if (!result.success) {
+    console.error("[SportService] Failed to create sport:", result.error);
+    return { success: false, error: result.error };
+  }
+  return { success: true, data: result.data };
 }
 
 export async function update_sport(

@@ -137,11 +137,14 @@ export class InBrowserAuditLogRepository
         console.log(
           `[AuditLog] Fetched ${convex_result.data.length} logs from Convex`,
         );
+        const page_size = convex_result.page_size;
+        const total_count = convex_result.total_count;
         return create_success_result({
           items: convex_result.data,
-          total_count: convex_result.total_count,
+          total_count: total_count,
           page_number: convex_result.page_number,
-          page_size: convex_result.page_size,
+          page_size: page_size,
+          total_pages: Math.ceil(total_count / page_size),
         });
       }
 

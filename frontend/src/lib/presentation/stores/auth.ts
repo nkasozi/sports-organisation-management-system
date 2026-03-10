@@ -5,6 +5,7 @@ import type {
   AuthTokenPayload,
   UserRole,
 } from "$lib/core/interfaces/ports";
+import type { Result } from "$lib/core/types/Result";
 import {
   set_user_context,
   clear_user_context,
@@ -267,7 +268,7 @@ function create_auth_store() {
 
   async function generate_token_for_profile(
     profile: UserProfile,
-  ): Promise<AuthToken> {
+  ): Promise<Result<AuthToken>> {
     const auth_adapter = get_authentication_adapter(
       get_system_user_repository(),
     );
@@ -285,10 +286,10 @@ function create_auth_store() {
       console.error(
         `[AuthStore] Failed to generate token: ${token_result.error}`,
       );
-      throw new Error(token_result.error);
+      return { success: false, error: token_result.error };
     }
 
-    return token_result.data;
+    return { success: true, data: token_result.data };
   }
 
   function sync_user_context_with_event_bus(profile: UserProfile | null): void {
@@ -405,7 +406,12 @@ function create_auth_store() {
         available_profiles.find((p) => p.id === default_profile_id) ||
         real_profiles[0] ||
         available_profiles[0];
-      current_token = await generate_token_for_profile(current_profile);
+      const token_result = await generate_token_for_profile(current_profile);
+      if (!token_result.success) {
+        console.error(`[AuthStore] Failed to initialize: ${token_result.error}`);
+        return;
+      }
+      current_token = token_result.data;
       save_token(current_token.raw_token);
       save_profile_id(current_profile.id);
       console.log(
@@ -471,7 +477,12 @@ function create_auth_store() {
       return false;
     }
 
-    const new_token = await generate_token_for_profile(target_profile);
+    const token_result = await generate_token_for_profile(target_profile);
+    if (!token_result.success) {
+      console.error(`[AuthStore] Failed to switch profile: ${token_result.error}`);
+      return false;
+    }
+    const new_token = token_result.data;
     save_token(new_token.raw_token);
     save_profile_id(target_profile.id);
 

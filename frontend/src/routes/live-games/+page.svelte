@@ -318,11 +318,26 @@
 
     console.log("[DEBUG] Running pre-flight checks...");
 
-    const officials_check = await check_fixture_can_start(
+    const fixture_check_result = await check_fixture_can_start(
       fixture,
       fixture_details_setup_use_cases,
       fixture_lineup_use_cases,
     );
+
+    if (!fixture_check_result.success) {
+      console.log("[DEBUG] Fixture check failed:", fixture_check_result.error);
+      checks[checks.length - 1] = {
+        check_name: "officials",
+        status: "failed",
+        message: fixture_check_result.error,
+        fix_suggestion: null,
+      };
+      update_checks(fixture.id, checks);
+      set_is_starting(fixture.id, false);
+      return;
+    }
+
+    const officials_check = fixture_check_result.data;
 
     console.log("[DEBUG] Officials check result:", officials_check);
     console.log(
