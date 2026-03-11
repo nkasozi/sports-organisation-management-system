@@ -5,7 +5,10 @@ import type {
 } from "../../../../entities/FixtureDetailsSetup";
 import type { FixtureDetailsSetupFilter } from "../../external/repositories/FixtureDetailsSetupRepository";
 import type { QueryOptions } from "../../external/repositories/Repository";
-import type { AsyncResult, PaginatedAsyncResult } from "../../../../types/Result";
+import type {
+  AsyncResult,
+  PaginatedAsyncResult,
+} from "../../../../types/Result";
 
 export interface FixtureDetailsSetupUseCasesPort {
   create(

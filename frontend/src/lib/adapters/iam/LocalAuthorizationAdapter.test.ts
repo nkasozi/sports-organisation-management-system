@@ -316,9 +316,7 @@ describe("get_sidebar_menu_for_role", () => {
 
     expect(menu.length).toBeGreaterThan(0);
 
-    const all_items = menu.flatMap(
-      (group: SidebarMenuGroup) => group.items,
-    );
+    const all_items = menu.flatMap((group: SidebarMenuGroup) => group.items);
     const hrefs = all_items.map((item: { href: string }) => item.href);
 
     expect(hrefs).toContain("/competition-results");
@@ -333,9 +331,7 @@ describe("get_sidebar_menu_for_role", () => {
     );
     expect(administration_group).toBeUndefined();
 
-    const all_items = menu.flatMap(
-      (group: SidebarMenuGroup) => group.items,
-    );
+    const all_items = menu.flatMap((group: SidebarMenuGroup) => group.items);
     const hrefs = all_items.map((item: { href: string }) => item.href);
 
     expect(hrefs).not.toContain("/system-users");

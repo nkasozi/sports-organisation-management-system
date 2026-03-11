@@ -1,5 +1,8 @@
 import type { FilterableRepository, QueryOptions } from "./Repository";
-import type { AsyncResult, PaginatedAsyncResult } from "../../../../types/Result";
+import type {
+  AsyncResult,
+  PaginatedAsyncResult,
+} from "../../../../types/Result";
 import type {
   CalendarToken,
   CreateCalendarTokenInput,

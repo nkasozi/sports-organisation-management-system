@@ -40,7 +40,9 @@ export async function auto_create_fixture_details_setup(
   );
 
   const create_result =
-    await dependencies.fixture_details_setup_use_cases.create(populated_data_result.data);
+    await dependencies.fixture_details_setup_use_cases.create(
+      populated_data_result.data,
+    );
 
   if (!create_result.success) {
     console.log(

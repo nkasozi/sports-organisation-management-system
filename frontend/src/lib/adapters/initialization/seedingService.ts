@@ -190,12 +190,10 @@ async function repair_seeded_competition_formats(): Promise<boolean> {
         ...competition_format,
       });
 
-      const existing_signature = build_competition_format_repair_signature(
-        competition_format,
-      );
-      const repaired_signature = build_competition_format_repair_signature(
-        repaired_input,
-      );
+      const existing_signature =
+        build_competition_format_repair_signature(competition_format);
+      const repaired_signature =
+        build_competition_format_repair_signature(repaired_input);
 
       if (existing_signature === repaired_signature) {
         continue;
@@ -221,6 +219,79 @@ async function repair_seeded_competition_formats(): Promise<boolean> {
     return true;
   } catch (error) {
     console.warn(`[Seeding] Competition format repair failed: ${error}`);
+    return false;
+  }
+}
+
+async function repair_seeded_fixture_stage_ids(): Promise<boolean> {
+  const fixture_repository = get_fixture_repository();
+  const competition_stage_repository = get_competition_stage_repository();
+
+  try {
+    const stages_result = await competition_stage_repository.find_all(
+      undefined,
+      { page_size: 500 },
+    );
+
+    if (!stages_result.success) {
+      console.warn(
+        `[Seeding] Failed to load competition stages for fixture repair: ${stages_result.error}`,
+      );
+      return false;
+    }
+
+    const sorted_stages = [...stages_result.data.items].sort(
+      (a, b) => a.stage_order - b.stage_order,
+    );
+
+    const default_stage_per_competition = new Map<string, string>();
+    for (const stage of sorted_stages) {
+      if (!default_stage_per_competition.has(stage.competition_id)) {
+        default_stage_per_competition.set(stage.competition_id, stage.id);
+      }
+    }
+
+    const fixtures_result = await fixture_repository.find_all(undefined, {
+      page_size: 500,
+    });
+
+    if (!fixtures_result.success) {
+      console.warn(
+        `[Seeding] Failed to load fixtures for stage repair: ${fixtures_result.error}`,
+      );
+      return false;
+    }
+
+    for (const fixture of fixtures_result.data.items) {
+      if (fixture.stage_id && fixture.stage_id.trim().length > 0) {
+        continue;
+      }
+
+      const default_stage_id = default_stage_per_competition.get(
+        fixture.competition_id,
+      );
+
+      if (!default_stage_id) {
+        console.warn(
+          `[Seeding] No stage found for competition ${fixture.competition_id}, skipping fixture ${fixture.id}`,
+        );
+        continue;
+      }
+
+      const update_result = await fixture_repository.update(fixture.id, {
+        stage_id: default_stage_id,
+      });
+
+      if (!update_result.success) {
+        console.warn(
+          `[Seeding] Failed to repair stage_id for fixture ${fixture.id}: ${update_result.error}`,
+        );
+      }
+    }
+
+    return true;
+  } catch (error) {
+    console.warn(`[Seeding] Fixture stage repair failed: ${error}`);
     return false;
   }
 }
@@ -340,6 +411,7 @@ function emit_entity_created_events<T extends { id: string }>(
 export async function seed_all_data_if_needed(): Promise<boolean> {
   if (is_seeding_already_complete()) {
     await repair_seeded_competition_formats();
+    await repair_seeded_fixture_stage_ids();
     await load_and_set_current_user();
     return true;
   }
@@ -675,6 +747,7 @@ export async function seed_all_data_if_needed(): Promise<boolean> {
   );
 
   await repair_seeded_competition_formats();
+  await repair_seeded_fixture_stage_ids();
   clear_user_context();
   mark_seeding_complete();
 
@@ -715,6 +788,7 @@ async function handle_convex_with_local_fallback(
 ): Promise<SeedResult> {
   if (is_seeding_already_complete()) {
     await repair_seeded_competition_formats();
+    await repair_seeded_fixture_stage_ids();
     await load_and_set_current_user();
     return {
       success: true,
@@ -742,6 +816,7 @@ async function handle_convex_with_local_fallback(
       `[Seeding] Convex seeding succeeded: ${convex_result.total_records} records from ${convex_result.tables_fetched} tables`,
     );
     await repair_seeded_competition_formats();
+    await repair_seeded_fixture_stage_ids();
     await load_and_set_current_user();
     mark_seeding_complete();
     return {
@@ -787,6 +862,7 @@ async function handle_convex_mandatory(
       `[Seeding] Convex pull succeeded: ${convex_result.total_records} records from ${convex_result.tables_fetched} tables`,
     );
     await repair_seeded_competition_formats();
+    await repair_seeded_fixture_stage_ids();
     await load_and_set_current_user();
     mark_seeding_complete();
     return {
@@ -802,6 +878,7 @@ async function handle_convex_mandatory(
       "[Seeding] Convex unavailable but local data exists — entering offline mode",
     );
     await repair_seeded_competition_formats();
+    await repair_seeded_fixture_stage_ids();
     await load_and_set_current_user();
     return {
       success: true,

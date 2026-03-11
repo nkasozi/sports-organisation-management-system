@@ -31,7 +31,10 @@ import type {
 import { get_authorization_adapter } from "$lib/infrastructure/AuthorizationProvider";
 import { sync_branding_with_profile } from "$lib/adapters/initialization/brandingSyncService";
 import { load_profiles_from_repository } from "./profileLoader";
-import { is_signed_in, is_clerk_loaded } from "$lib/adapters/iam/clerkAuthService";
+import {
+  is_signed_in,
+  is_clerk_loaded,
+} from "$lib/adapters/iam/clerkAuthService";
 import type {
   SharedEntityType,
   SharedEntityCategoryMap,
@@ -337,7 +340,9 @@ function create_auth_store() {
 
     const clerk_already_loaded = get(is_clerk_loaded);
     if (!clerk_already_loaded) {
-      console.log("[AuthStore] Waiting for Clerk to load before initializing...");
+      console.log(
+        "[AuthStore] Waiting for Clerk to load before initializing...",
+      );
       await new Promise<void>((resolve) => {
         const unsub = is_clerk_loaded.subscribe((loaded) => {
           if (!loaded) return;
@@ -353,7 +358,8 @@ function create_auth_store() {
       repository,
       organization_repository,
     );
-    const available_profiles = build_profiles_with_public_viewer(loaded_profiles);
+    const available_profiles =
+      build_profiles_with_public_viewer(loaded_profiles);
     const saved_profile_id = load_saved_profile_id();
     const saved_token_raw = load_saved_token();
     const user_is_signed_in = get(is_signed_in);
@@ -362,11 +368,14 @@ function create_auth_store() {
     let current_token: AuthToken | null = null;
 
     if (!user_is_signed_in) {
-      console.log("[AuthStore] User not signed in, defaulting to public viewer");
+      console.log(
+        "[AuthStore] User not signed in, defaulting to public viewer",
+      );
       const public_profile = available_profiles.find(
         (p) => p.id === "public-viewer",
       )!;
-      const sidebar_menu_items = await load_sidebar_menu_for_role("public_viewer");
+      const sidebar_menu_items =
+        await load_sidebar_menu_for_role("public_viewer");
       set({
         current_token: null,
         current_profile: public_profile,
@@ -423,7 +432,9 @@ function create_auth_store() {
         available_profiles[0];
       const token_result = await generate_token_for_profile(current_profile);
       if (!token_result.success) {
-        console.error(`[AuthStore] Failed to initialize: ${token_result.error}`);
+        console.error(
+          `[AuthStore] Failed to initialize: ${token_result.error}`,
+        );
         return;
       }
       current_token = token_result.data;
@@ -459,7 +470,8 @@ function create_auth_store() {
       repository,
       organization_repository,
     );
-    const refreshed_profiles = build_profiles_with_public_viewer(loaded_profiles);
+    const refreshed_profiles =
+      build_profiles_with_public_viewer(loaded_profiles);
 
     const state = get({ subscribe });
     const previous_count = state.available_profiles.length;
@@ -494,7 +506,9 @@ function create_auth_store() {
 
     const token_result = await generate_token_for_profile(target_profile);
     if (!token_result.success) {
-      console.error(`[AuthStore] Failed to switch profile: ${token_result.error}`);
+      console.error(
+        `[AuthStore] Failed to switch profile: ${token_result.error}`,
+      );
       return false;
     }
     const new_token = token_result.data;

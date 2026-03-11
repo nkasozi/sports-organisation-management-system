@@ -127,8 +127,7 @@ class SportsOrgDatabase extends Dexie {
         "id, organization_id, fixture_id, game_status, started_at, ended_at, created_at",
       game_event_logs:
         "id, organization_id, live_game_log_id, fixture_id, event_type, minute, team_side, player_id, created_at",
-      competition_stages:
-        "id, competition_id, stage_order, created_at",
+      competition_stages: "id, competition_id, stage_order, created_at",
     });
   }
 }

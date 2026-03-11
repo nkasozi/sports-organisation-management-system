@@ -69,7 +69,9 @@ export function create_competition_format_use_cases(
         return create_failure_result(validation.errors.join(", "));
       }
 
-      const existing_result = await repository.find_by_code(hydrated_input.code);
+      const existing_result = await repository.find_by_code(
+        hydrated_input.code,
+      );
       if (!existing_result.success) {
         return create_failure_result(existing_result.error);
       }

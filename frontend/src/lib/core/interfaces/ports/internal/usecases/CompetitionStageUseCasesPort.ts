@@ -8,13 +8,12 @@ import type {
 } from "../../../../entities/CompetitionStage";
 import type { CompetitionStageFilter } from "../../external/repositories/CompetitionStageRepository";
 
-export interface CompetitionStageUseCasesPort
-  extends BaseUseCasesPort<
-    CompetitionStage,
-    CreateCompetitionStageInput,
-    UpdateCompetitionStageInput,
-    CompetitionStageFilter
-  > {
+export interface CompetitionStageUseCasesPort extends BaseUseCasesPort<
+  CompetitionStage,
+  CreateCompetitionStageInput,
+  UpdateCompetitionStageInput,
+  CompetitionStageFilter
+> {
   list_stages_by_competition(
     competition_id: string,
     options?: QueryOptions,

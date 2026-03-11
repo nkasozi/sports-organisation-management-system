@@ -30,10 +30,9 @@ export function create_competition_stage_lifecycle(
       competition_format_id: string,
     ): Promise<AsyncResult<boolean>> {
       const existing_stages_result =
-        await competition_stage_repository.find_by_competition(
-          competition_id,
-          { page_size: 100 },
-        );
+        await competition_stage_repository.find_by_competition(competition_id, {
+          page_size: 100,
+        });
       if (!existing_stages_result.success) {
         return create_failure_result(existing_stages_result.error);
       }
@@ -76,18 +75,16 @@ export function create_competition_stage_lifecycle(
       competition_id: string,
       competition_format_id: string,
     ): Promise<AsyncResult<boolean>> {
-      const can_replace_result = await this.can_replace_stages_for_competition(
-        competition_id,
-      );
+      const can_replace_result =
+        await this.can_replace_stages_for_competition(competition_id);
       if (!can_replace_result.success) {
         return can_replace_result;
       }
 
       const existing_stages_result =
-        await competition_stage_repository.find_by_competition(
-          competition_id,
-          { page_size: 100 },
-        );
+        await competition_stage_repository.find_by_competition(competition_id, {
+          page_size: 100,
+        });
       if (!existing_stages_result.success) {
         return create_failure_result(existing_stages_result.error);
       }

@@ -186,11 +186,15 @@ export async function initialize_clerk(): Promise<boolean> {
     }
 
     if (!clerk.loaded) {
-      console.warn("[Clerk] Clerk did not finish loading in time, proceeding anyway");
+      console.warn(
+        "[Clerk] Clerk did not finish loading in time, proceeding anyway",
+      );
     }
 
     if (clerk.user && !clerk.session) {
-      console.log("[Clerk] User exists but session not ready, waiting for session...");
+      console.log(
+        "[Clerk] User exists but session not ready, waiting for session...",
+      );
       while (!clerk.session && elapsed_ms < max_wait_ms) {
         await new Promise((resolve) => setTimeout(resolve, poll_interval_ms));
         elapsed_ms += poll_interval_ms;

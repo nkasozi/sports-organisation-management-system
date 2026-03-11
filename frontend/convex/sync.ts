@@ -27,7 +27,9 @@ export function is_global_table(table_name: string): boolean {
 
 function is_global_record(record: Record<string, unknown>): boolean {
   const org_id = record.organization_id;
-  return org_id === undefined || org_id === null || org_id === "*" || org_id === "";
+  return (
+    org_id === undefined || org_id === null || org_id === "*" || org_id === ""
+  );
 }
 
 function get_entity_type_from_table(table_name: string): string {

@@ -93,7 +93,9 @@ const {
     }),
   );
 
-  const create_profile = (overrides: Partial<MockProfile> = {}): MockProfile => ({
+  const create_profile = (
+    overrides: Partial<MockProfile> = {},
+  ): MockProfile => ({
     id: "profile-1",
     display_name: "Test User",
     email: "user@test.com",
@@ -245,7 +247,9 @@ describe("authGuard", () => {
 
     it("reloads cached routes when the role changes", async () => {
       get_accessible_routes_for_role_mock.mockImplementation(
-        async (role: string): Promise<{
+        async (
+          role: string,
+        ): Promise<{
           success: boolean;
           data: string[];
           error?: string;
@@ -387,9 +391,9 @@ describe("authGuard", () => {
 
       expect(is_route_in_accessible_set("/", routes)).toBe(true);
       expect(is_route_in_accessible_set("/calendar", routes)).toBe(true);
-      expect(is_route_in_accessible_set("/match-report/fixture-1", routes)).toBe(
-        true,
-      );
+      expect(
+        is_route_in_accessible_set("/match-report/fixture-1", routes),
+      ).toBe(true);
     });
 
     it("matches both exact routes and nested routes by base", () => {

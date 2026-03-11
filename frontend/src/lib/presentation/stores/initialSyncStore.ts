@@ -29,7 +29,9 @@ export function mark_session_synced(): void {
 export function clear_session_sync_flag(): void {
   if (typeof window === "undefined") return;
   sessionStorage.removeItem(SESSION_SYNC_KEY);
-  console.log("[InitialSync] Session sync flag cleared - next login will trigger full sync");
+  console.log(
+    "[InitialSync] Session sync flag cleared - next login will trigger full sync",
+  );
 }
 
 function create_initial_sync_store() {

@@ -5,7 +5,10 @@ import type {
 } from "../../../../entities/OfficialAssociatedTeam";
 import type { OfficialAssociatedTeamFilter } from "../../external/repositories/OfficialAssociatedTeamRepository";
 import type { QueryOptions } from "../../external/repositories/Repository";
-import type { AsyncResult, PaginatedAsyncResult } from "../../../../types/Result";
+import type {
+  AsyncResult,
+  PaginatedAsyncResult,
+} from "../../../../types/Result";
 
 export interface OfficialAssociatedTeamUseCasesPort {
   create(

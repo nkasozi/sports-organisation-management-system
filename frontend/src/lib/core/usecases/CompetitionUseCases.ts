@@ -103,9 +103,11 @@ export function create_competition_use_cases_with_stage_lifecycle(
       }
 
       const next_competition_format_id =
-        input.competition_format_id ?? existing_result.data.competition_format_id;
+        input.competition_format_id ??
+        existing_result.data.competition_format_id;
       const format_has_changed =
-        next_competition_format_id !== existing_result.data.competition_format_id;
+        next_competition_format_id !==
+        existing_result.data.competition_format_id;
 
       if (format_has_changed) {
         const can_replace_stages_result =

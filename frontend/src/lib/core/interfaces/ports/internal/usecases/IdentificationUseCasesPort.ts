@@ -6,7 +6,10 @@ import type {
 } from "../../../../entities/Identification";
 import type { IdentificationFilter } from "../../external/repositories/IdentificationRepository";
 import type { QueryOptions } from "../../external/repositories/Repository";
-import type { AsyncResult, PaginatedAsyncResult } from "../../../../types/Result";
+import type {
+  AsyncResult,
+  PaginatedAsyncResult,
+} from "../../../../types/Result";
 
 export interface IdentificationUseCasesPort {
   create(input: CreateIdentificationInput): AsyncResult<Identification>;

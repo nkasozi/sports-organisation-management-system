@@ -5,11 +5,7 @@ export default defineConfig({
   plugins: [sveltekit()],
   test: {
     environment: "node",
-    exclude: [
-      '**/node_modules/**',
-      '**/.svelte-kit/**',
-      '**/dist/**'
-    ],
+    exclude: ["**/node_modules/**", "**/.svelte-kit/**", "**/dist/**"],
     // This helps with the hanging issue too
     teardownTimeout: 1000,
     include: ["src/**/*.test.ts"],

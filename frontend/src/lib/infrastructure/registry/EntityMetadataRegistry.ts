@@ -1538,6 +1538,19 @@ class EntityMetadataRegistry {
           },
         },
         {
+          field_name: "stage_id" satisfies keyof Fixture,
+          display_name: "Stage",
+          field_type: "foreign_key",
+          is_required: true,
+          is_read_only: false,
+          foreign_key_entity: "competitionstage",
+          show_in_list: false,
+          foreign_key_filter: {
+            depends_on_field: "competition_id",
+            filter_type: "stages_from_competition",
+          },
+        },
+        {
           field_name: "home_team_id" satisfies keyof Fixture,
           display_name: "Home Team",
           field_type: "foreign_key",

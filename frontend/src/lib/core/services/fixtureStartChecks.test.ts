@@ -62,7 +62,9 @@ describe("fixtureStartChecks", () => {
       if (!is_success(result)) return;
       expect(result.data.can_start).toBe(false);
       expect(result.data.officials_check.status).toBe("failed");
-      expect(result.data.officials_check.message).toContain("No officials assigned");
+      expect(result.data.officials_check.message).toContain(
+        "No officials assigned",
+      );
       expect(result.data.officials_check.fix_suggestion).toContain(
         "Fixture Details Setup",
       );
@@ -96,7 +98,9 @@ describe("fixtureStartChecks", () => {
       if (!is_success(result)) return;
       expect(result.data.can_start).toBe(false);
       expect(result.data.home_lineup_check.status).toBe("failed");
-      expect(result.data.home_lineup_check.message).toContain("home team lineup");
+      expect(result.data.home_lineup_check.message).toContain(
+        "home team lineup",
+      );
     });
 
     it("should fail when away team lineup missing", async () => {
@@ -127,7 +131,9 @@ describe("fixtureStartChecks", () => {
       if (!is_success(result)) return;
       expect(result.data.can_start).toBe(false);
       expect(result.data.away_lineup_check.status).toBe("failed");
-      expect(result.data.away_lineup_check.message).toContain("away team lineup");
+      expect(result.data.away_lineup_check.message).toContain(
+        "away team lineup",
+      );
     });
 
     it("should fail when lineups are in draft status", async () => {

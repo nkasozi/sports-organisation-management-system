@@ -75,8 +75,14 @@ const {
   create_empty_repo,
   mock_competition_formats,
   mock_competition_format_repository,
+  mock_fixtures,
+  mock_fixture_repository,
+  mock_competition_stages,
+  mock_competition_stage_repository,
 } = vi.hoisted(() => {
   const mock_competition_formats: Array<Record<string, unknown>> = [];
+  const mock_fixtures: Array<Record<string, unknown>> = [];
+  const mock_competition_stages: Array<Record<string, unknown>> = [];
 
   return {
     create_empty_repo: () => ({
@@ -92,6 +98,38 @@ const {
       update: vi.fn().mockResolvedValue({ success: true, data: null }),
     }),
     mock_competition_formats,
+    mock_fixtures,
+    mock_fixture_repository: {
+      seed_with_data: vi.fn().mockResolvedValue(undefined),
+      find_all: vi.fn().mockImplementation(async () => ({
+        success: true,
+        data: {
+          items: [...mock_fixtures],
+          total_count: mock_fixtures.length,
+        },
+      })),
+      update: vi
+        .fn()
+        .mockImplementation(async (id: string, updates: object) => ({
+          success: true,
+          data: {
+            ...(mock_fixtures.find((f) => f.id === id) ?? {}),
+            ...updates,
+            id,
+          },
+        })),
+    },
+    mock_competition_stages,
+    mock_competition_stage_repository: {
+      seed_with_data: vi.fn().mockResolvedValue(undefined),
+      find_all: vi.fn().mockImplementation(async () => ({
+        success: true,
+        data: {
+          items: [...mock_competition_stages],
+          total_count: mock_competition_stages.length,
+        },
+      })),
+    },
     mock_competition_format_repository: {
       seed_with_data: vi.fn().mockResolvedValue(undefined),
       find_all: vi.fn().mockImplementation(async () => ({
@@ -159,8 +197,12 @@ vi.mock("../repositories/InBrowserPlayerTeamMembershipRepository", () => ({
   InBrowserPlayerTeamMembershipRepository: vi.fn(),
 }));
 vi.mock("../repositories/InBrowserFixtureRepository", () => ({
-  get_fixture_repository: create_empty_repo,
+  get_fixture_repository: () => mock_fixture_repository,
   InBrowserFixtureRepository: vi.fn(),
+}));
+vi.mock("../repositories/InBrowserCompetitionStageRepository", () => ({
+  get_competition_stage_repository: () => mock_competition_stage_repository,
+  InBrowserCompetitionStageRepository: vi.fn(),
 }));
 vi.mock("../repositories/InBrowserFixtureLineupRepository", () => ({
   get_fixture_lineup_repository: create_empty_repo,
@@ -249,6 +291,11 @@ beforeEach(() => {
   mock_competition_formats.splice(0, mock_competition_formats.length);
   mock_competition_format_repository.find_all.mockClear();
   mock_competition_format_repository.update.mockClear();
+  mock_fixtures.splice(0, mock_fixtures.length);
+  mock_fixture_repository.find_all.mockClear();
+  mock_fixture_repository.update.mockClear();
+  mock_competition_stages.splice(0, mock_competition_stages.length);
+  mock_competition_stage_repository.find_all.mockClear();
 });
 
 describe("seed_from_convex_or_local — skip_seeding strategy", () => {
@@ -585,5 +632,86 @@ describe("seed_from_convex_or_local — convex_mandatory strategy", () => {
       m.message.includes("Pulling data from server"),
     );
     expect(pull_msg).toBeDefined();
+  });
+});
+
+describe("repair fixture stage IDs when seeded data already exists", () => {
+  let on_progress: (message: string, percentage: number) => void;
+
+  beforeEach(() => {
+    on_progress = () => {};
+    Object.keys(mock_local_storage).forEach(
+      (key) => delete mock_local_storage[key],
+    );
+  });
+
+  it("assigns the stage_id to fixtures that have no stage set", async () => {
+    mock_local_storage["sports_org_seeding_complete_v13"] = "true";
+    mock_competition_stages.push({
+      id: "stage-1",
+      competition_id: "comp-1",
+      stage_order: 1,
+      name: "League Stage",
+    });
+    mock_fixtures.push({
+      id: "fixture-1",
+      competition_id: "comp-1",
+      stage_id: "",
+    });
+
+    await seed_from_convex_or_local(
+      on_progress,
+      "convex_first_with_local_fallback",
+    );
+
+    expect(mock_fixture_repository.update).toHaveBeenCalledWith(
+      "fixture-1",
+      expect.objectContaining({ stage_id: "stage-1" }),
+    );
+  });
+
+  it("skips fixtures that already have a valid stage_id", async () => {
+    mock_local_storage["sports_org_seeding_complete_v13"] = "true";
+    mock_competition_stages.push({
+      id: "stage-1",
+      competition_id: "comp-1",
+      stage_order: 1,
+      name: "League Stage",
+    });
+    mock_fixtures.push({
+      id: "fixture-1",
+      competition_id: "comp-1",
+      stage_id: "stage-1",
+    });
+
+    await seed_from_convex_or_local(
+      on_progress,
+      "convex_first_with_local_fallback",
+    );
+
+    expect(mock_fixture_repository.update).not.toHaveBeenCalled();
+  });
+
+  it("picks the stage with the lowest stage_order when multiple stages exist", async () => {
+    mock_local_storage["sports_org_seeding_complete_v13"] = "true";
+    mock_competition_stages.push(
+      { id: "stage-2", competition_id: "comp-1", stage_order: 2, name: "Knockouts" },
+      { id: "stage-1", competition_id: "comp-1", stage_order: 1, name: "Group Stage" },
+    );
+    mock_fixtures.push({
+      id: "fixture-1",
+      competition_id: "comp-1",
+      stage_id: "",
+    });
+
+    await seed_from_convex_or_local(
+      on_progress,
+      "convex_first_with_local_fallback",
+    );
+
+    expect(mock_fixture_repository.update).toHaveBeenCalledWith(
+      "fixture-1",
+      expect.objectContaining({ stage_id: "stage-1" }),
+    );
   });
 });

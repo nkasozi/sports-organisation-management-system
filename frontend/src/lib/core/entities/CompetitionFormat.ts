@@ -264,13 +264,15 @@ export function hydrate_competition_format_input(
   input: CreateCompetitionFormatInput,
 ): CreateCompetitionFormatInput {
   const league_config = requires_league_config(input.format_type)
-    ? input.league_config ?? create_default_league_config()
+    ? (input.league_config ?? create_default_league_config())
     : null;
   const group_stage_config = requires_group_stage_config(input.format_type)
-    ? input.group_stage_config ?? create_default_group_stage_config()
+    ? (input.group_stage_config ?? create_default_group_stage_config())
     : null;
-  const knockout_stage_config = requires_knockout_stage_config(input.format_type)
-    ? input.knockout_stage_config ?? create_default_knockout_stage_config()
+  const knockout_stage_config = requires_knockout_stage_config(
+    input.format_type,
+  )
+    ? (input.knockout_stage_config ?? create_default_knockout_stage_config())
     : null;
 
   return {
@@ -291,9 +293,11 @@ function requires_group_stage_config(format_type: FormatType): boolean {
 }
 
 function requires_knockout_stage_config(format_type: FormatType): boolean {
-  return ["groups_knockout", "straight_knockout", "double_elimination"].includes(
-    format_type,
-  );
+  return [
+    "groups_knockout",
+    "straight_knockout",
+    "double_elimination",
+  ].includes(format_type);
 }
 
 function requires_league_config(format_type: FormatType): boolean {

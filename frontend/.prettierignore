@@ -1,0 +1,5 @@
+.svelte-kit/
+.vercel/
+build/
+dist/
+node_modules/

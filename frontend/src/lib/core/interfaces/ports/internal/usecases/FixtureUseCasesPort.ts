@@ -8,7 +8,10 @@ import type {
 } from "../../../../entities/Fixture";
 import type { FixtureFilter } from "../../external/repositories/FixtureRepository";
 import type { QueryOptions } from "../../external/repositories/Repository";
-import type { AsyncResult, PaginatedAsyncResult } from "../../../../types/Result";
+import type {
+  AsyncResult,
+  PaginatedAsyncResult,
+} from "../../../../types/Result";
 import type { BaseUseCasesPort } from "./BaseUseCasesPort";
 
 export interface FixtureUseCasesPort extends BaseUseCasesPort<

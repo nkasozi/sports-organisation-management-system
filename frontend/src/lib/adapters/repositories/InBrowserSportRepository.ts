@@ -192,7 +192,9 @@ export async function get_sport_by_code(code: string): Promise<Sport | null> {
   return repository.find_by_code(code);
 }
 
-export async function create_sport(input: CreateSportInput): Promise<Result<Sport>> {
+export async function create_sport(
+  input: CreateSportInput,
+): Promise<Result<Sport>> {
   const repository = get_concrete_repository();
   const result = await repository.create(input);
   if (!result.success) {

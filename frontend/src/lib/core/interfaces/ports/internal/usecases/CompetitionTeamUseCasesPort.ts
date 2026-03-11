@@ -5,7 +5,10 @@ import type {
 } from "../../../../entities/CompetitionTeam";
 import type { CompetitionTeamFilter } from "../../external/repositories/CompetitionTeamRepository";
 import type { QueryOptions } from "../../external/repositories/Repository";
-import type { AsyncResult, PaginatedAsyncResult } from "../../../../types/Result";
+import type {
+  AsyncResult,
+  PaginatedAsyncResult,
+} from "../../../../types/Result";
 import type { BaseUseCasesPort } from "./BaseUseCasesPort";
 
 export interface CompetitionTeamUseCasesPort extends BaseUseCasesPort<

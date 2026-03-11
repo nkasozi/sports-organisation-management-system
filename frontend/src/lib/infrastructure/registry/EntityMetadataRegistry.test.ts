@@ -36,6 +36,22 @@ describe("EntityMetadataRegistry", () => {
       expect(metadata?.entity_name).toBe("fixture");
     });
 
+    it("fixture metadata includes a required stage field filtered by competition", () => {
+      const metadata = entityMetadataRegistry.get_entity_metadata("fixture");
+      const stage_field = metadata?.fields.find(
+        (f) => f.field_name === "stage_id",
+      );
+
+      expect(stage_field).toBeDefined();
+      expect(stage_field?.is_required).toBe(true);
+      expect(stage_field?.foreign_key_filter?.filter_type).toBe(
+        "stages_from_competition",
+      );
+      expect(stage_field?.foreign_key_filter?.depends_on_field).toBe(
+        "competition_id",
+      );
+    });
+
     it("returns metadata for competition entity", () => {
       const metadata =
         entityMetadataRegistry.get_entity_metadata("competition");

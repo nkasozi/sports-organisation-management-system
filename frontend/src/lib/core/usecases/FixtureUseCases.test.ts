@@ -180,6 +180,14 @@ describe("FixtureUseCases", () => {
 
       expect(result.success).toBe(false);
     });
+
+    it("should fail for missing stage_id", async () => {
+      const input = create_valid_input({ stage_id: "" });
+
+      const result = await use_cases.create(input);
+
+      expect(result.success).toBe(false);
+    });
   });
 
   describe("list_fixtures_by_competition", () => {

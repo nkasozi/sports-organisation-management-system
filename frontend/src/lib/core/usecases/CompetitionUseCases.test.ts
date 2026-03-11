@@ -82,7 +82,9 @@ function create_valid_input(
 describe("CompetitionUseCases", () => {
   let mock_repository: CompetitionRepository;
   let mock_stage_lifecycle: CompetitionStageLifecyclePort;
-  let use_cases: ReturnType<typeof create_competition_use_cases_with_stage_lifecycle>;
+  let use_cases: ReturnType<
+    typeof create_competition_use_cases_with_stage_lifecycle
+  >;
 
   beforeEach(() => {
     mock_repository = create_mock_repository();
@@ -288,10 +290,9 @@ describe("CompetitionUseCases", () => {
       expect(
         mock_stage_lifecycle.can_replace_stages_for_competition,
       ).toHaveBeenCalledWith("comp-123");
-      expect(mock_stage_lifecycle.replace_stages_for_competition).toHaveBeenCalledWith(
-        "comp-123",
-        "format-new",
-      );
+      expect(
+        mock_stage_lifecycle.replace_stages_for_competition,
+      ).toHaveBeenCalledWith("comp-123", "format-new");
     });
   });
 

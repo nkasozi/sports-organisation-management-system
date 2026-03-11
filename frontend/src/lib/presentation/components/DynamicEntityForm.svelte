@@ -606,6 +606,11 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
       return;
     }
 
+    if (filter_config.filter_type === "stages_from_competition") {
+      await load_stages_from_competition(field, dependency_value);
+      return;
+    }
+
     if (filter_config.filter_type === "fixtures_from_organization") {
       await load_fixtures_from_organization(field, dependency_value);
       return;
@@ -779,6 +784,63 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
     foreign_key_options = {
       ...foreign_key_options,
       [field.field_name]: filtered_competitions,
+    };
+
+    filtered_fields_loading = {
+      ...filtered_fields_loading,
+      [field.field_name]: false,
+    };
+  }
+
+  async function load_stages_from_competition(
+    field: FieldMetadata,
+    competition_id: string,
+  ): Promise<void> {
+    const stage_use_cases = get_use_cases_for_entity_type("competitionstage");
+    if (!stage_use_cases) {
+      console.warn("[FILTERED_FK] Missing competition stage use cases");
+      foreign_key_options[field.field_name] = [];
+      filtered_fields_loading = {
+        ...filtered_fields_loading,
+        [field.field_name]: false,
+      };
+      return;
+    }
+
+    const stages_result = await stage_use_cases.list(
+      { competition_id },
+      { page_size: 100 },
+    );
+    if (!stages_result.success) {
+      console.warn(
+        "[FILTERED_FK] Failed to load competition stages:",
+        competition_id,
+      );
+      foreign_key_options[field.field_name] = [];
+      filtered_fields_loading = {
+        ...filtered_fields_loading,
+        [field.field_name]: false,
+      };
+      return;
+    }
+
+    const stages_data = stages_result.data as unknown;
+    const all_stages: BaseEntity[] = Array.isArray(stages_data)
+      ? (stages_data as BaseEntity[])
+      : Array.isArray((stages_data as { items?: unknown })?.items)
+        ? ((stages_data as { items: unknown[] })
+            .items as unknown as BaseEntity[])
+        : [];
+
+    console.debug("[FILTERED_FK] Loaded competition stages", {
+      field: field.field_name,
+      competition_id,
+      stage_count: all_stages.length,
+    });
+
+    foreign_key_options = {
+      ...foreign_key_options,
+      [field.field_name]: all_stages,
     };
 
     filtered_fields_loading = {

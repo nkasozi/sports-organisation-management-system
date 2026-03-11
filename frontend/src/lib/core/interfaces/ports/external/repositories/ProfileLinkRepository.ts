@@ -4,7 +4,10 @@ import type {
   UpdateProfileLinkInput,
 } from "../../../../entities/ProfileLink";
 import type { FilterableRepository, QueryOptions } from "./Repository";
-import type { AsyncResult, PaginatedAsyncResult } from "../../../../types/Result";
+import type {
+  AsyncResult,
+  PaginatedAsyncResult,
+} from "../../../../types/Result";
 
 export interface ProfileLinkFilter {
   profile_id?: string;

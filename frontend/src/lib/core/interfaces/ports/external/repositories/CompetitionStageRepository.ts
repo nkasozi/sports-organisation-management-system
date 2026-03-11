@@ -15,13 +15,12 @@ export interface CompetitionStageFilter {
   status?: EntityStatus;
 }
 
-export interface CompetitionStageRepository
-  extends FilterableRepository<
-    CompetitionStage,
-    CreateCompetitionStageInput,
-    UpdateCompetitionStageInput,
-    CompetitionStageFilter
-  > {
+export interface CompetitionStageRepository extends FilterableRepository<
+  CompetitionStage,
+  CreateCompetitionStageInput,
+  UpdateCompetitionStageInput,
+  CompetitionStageFilter
+> {
   find_by_competition(
     competition_id: string,
     options?: QueryOptions,

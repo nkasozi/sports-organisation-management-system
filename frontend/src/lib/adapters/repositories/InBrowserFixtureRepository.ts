@@ -98,6 +98,12 @@ export class InBrowserFixtureRepository
       );
     }
 
+    if (filter.stage_id) {
+      filtered_entities = filtered_entities.filter(
+        (fixture) => fixture.stage_id === filter.stage_id,
+      );
+    }
+
     if (filter.home_team_id) {
       filtered_entities = filtered_entities.filter(
         (fixture) => fixture.home_team_id === filter.home_team_id,

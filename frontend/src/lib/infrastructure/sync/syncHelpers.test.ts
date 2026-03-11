@@ -114,11 +114,33 @@ describe("values_equal", () => {
   });
 
   it("returns true for identical nested arrays", () => {
-    expect(values_equal([[1, 2], [3, 4]], [[1, 2], [3, 4]])).toBe(true);
+    expect(
+      values_equal(
+        [
+          [1, 2],
+          [3, 4],
+        ],
+        [
+          [1, 2],
+          [3, 4],
+        ],
+      ),
+    ).toBe(true);
   });
 
   it("returns false for different nested arrays", () => {
-    expect(values_equal([[1, 2], [3, 4]], [[1, 2], [3, 5]])).toBe(false);
+    expect(
+      values_equal(
+        [
+          [1, 2],
+          [3, 4],
+        ],
+        [
+          [1, 2],
+          [3, 5],
+        ],
+      ),
+    ).toBe(false);
   });
 
   it("returns true for identical objects", () => {

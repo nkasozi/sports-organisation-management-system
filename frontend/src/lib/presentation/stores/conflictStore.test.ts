@@ -9,7 +9,9 @@ vi.mock("$lib/infrastructure/sync/conflictAuditService", () => ({
   log_conflict_resolution: vi.fn().mockResolvedValue(true),
 }));
 
-function create_mock_conflict(overrides: Partial<ConflictRecord> = {}): ConflictRecord {
+function create_mock_conflict(
+  overrides: Partial<ConflictRecord> = {},
+): ConflictRecord {
   return {
     id: "conflict_teams_team_1_123456",
     table_name: "teams",
@@ -173,9 +175,18 @@ describe("Conflict resolution flow", () => {
 describe("Multiple conflicts handling", () => {
   it("conflicts can have different ids when created with different local_ids", () => {
     const conflicts = [
-      create_mock_conflict({ id: "conflict_teams_team_1_111", local_id: "team_1" }),
-      create_mock_conflict({ id: "conflict_teams_team_2_222", local_id: "team_2" }),
-      create_mock_conflict({ id: "conflict_teams_team_3_333", local_id: "team_3" }),
+      create_mock_conflict({
+        id: "conflict_teams_team_1_111",
+        local_id: "team_1",
+      }),
+      create_mock_conflict({
+        id: "conflict_teams_team_2_222",
+        local_id: "team_2",
+      }),
+      create_mock_conflict({
+        id: "conflict_teams_team_3_333",
+        local_id: "team_3",
+      }),
     ];
 
     const ids = conflicts.map((c) => c.id);

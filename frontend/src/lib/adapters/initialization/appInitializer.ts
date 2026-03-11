@@ -190,7 +190,9 @@ export async function initialize_app_data(
 
   const clerk_already_loaded = get(is_clerk_loaded);
   if (!clerk_already_loaded) {
-    console.log("[AppInitializer] Waiting for Clerk to settle before reading sign-in state...");
+    console.log(
+      "[AppInitializer] Waiting for Clerk to settle before reading sign-in state...",
+    );
     await new Promise<void>((resolve) => {
       const unsub = is_clerk_loaded.subscribe((loaded) => {
         if (!loaded) return;

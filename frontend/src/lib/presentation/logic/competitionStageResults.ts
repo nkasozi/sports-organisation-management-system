@@ -185,7 +185,9 @@ export function build_competition_stage_results_sections(
   const team_map = new Map(teams.map((team) => [team.id, team]));
   const sections: CompetitionStageResultsSection[] = [];
 
-  for (const stage of [...stages].sort((left, right) => left.stage_order - right.stage_order)) {
+  for (const stage of [...stages].sort(
+    (left, right) => left.stage_order - right.stage_order,
+  )) {
     const stage_fixtures = fixtures.filter(
       (fixture) => fixture.stage_id === stage.id,
     );

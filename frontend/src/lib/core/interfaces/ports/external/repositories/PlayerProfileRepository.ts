@@ -1,5 +1,8 @@
 import type { FilterableRepository, QueryOptions } from "./Repository";
-import type { PaginatedAsyncResult, AsyncResult } from "../../../../types/Result";
+import type {
+  PaginatedAsyncResult,
+  AsyncResult,
+} from "../../../../types/Result";
 import type {
   PlayerProfile,
   CreatePlayerProfileInput,

@@ -10,13 +10,14 @@ export function build_stage_template_defaults(
   format_type: FormatType,
   league_config: LeagueConfig | null = null,
 ): CompetitionFormatStageTemplate[] {
-  return create_default_stage_templates(format_type, league_config ?? undefined).map(
-    (template, index) => ({
-      name: template.name,
-      stage_type: template.stage_type,
-      stage_order: index + 1,
-    }),
-  );
+  return create_default_stage_templates(
+    format_type,
+    league_config ?? undefined,
+  ).map((template, index) => ({
+    name: template.name,
+    stage_type: template.stage_type,
+    stage_order: index + 1,
+  }));
 }
 
 export function create_empty_stage_template(
