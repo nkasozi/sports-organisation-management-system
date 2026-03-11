@@ -1286,8 +1286,8 @@ class EntityMetadataRegistry {
           foreign_key_entity: "team",
           show_in_list: true,
           foreign_key_filter: {
-            depends_on_field: "organization_id",
-            filter_type: "teams_from_organization",
+            depends_on_field: "player_id",
+            filter_type: "teams_from_player_memberships",
           },
         },
         {
@@ -1300,17 +1300,19 @@ class EntityMetadataRegistry {
           foreign_key_entity: "team",
           show_in_list: true,
           foreign_key_filter: {
-            depends_on_field: "organization_id",
-            filter_type: "teams_from_organization",
+            depends_on_field: "player_id",
+            filter_type: "teams_excluding_player_memberships",
           },
         },
         {
           field_name: "transfer_date" satisfies keyof PlayerTeamTransferHistory,
           display_name: "Transfer Date",
           field_type: "date",
-          is_required: true,
+          is_required: false,
           is_read_only: false,
           show_in_list: true,
+          hide_on_create: true,
+          hide_on_edit: true,
         },
         {
           field_name: "status" satisfies keyof PlayerTeamTransferHistory,
@@ -1318,8 +1320,8 @@ class EntityMetadataRegistry {
           field_type: "enum",
           is_required: true,
           is_read_only: false,
-          hide_on_create: true,
-          enum_values: ["pending", "confirmed", "rejected"],
+          is_read_only_on_create: true,
+          enum_values: ["pending", "approved", "declined"],
           show_in_list: true,
         },
         {
@@ -1329,6 +1331,8 @@ class EntityMetadataRegistry {
           is_required: false,
           is_read_only: false,
           show_in_list: false,
+          hide_on_create: true,
+          hide_on_edit: true,
         },
         {
           field_name: "notes" satisfies keyof PlayerTeamTransferHistory,

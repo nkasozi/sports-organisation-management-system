@@ -47,9 +47,11 @@ export interface FieldMetadata<T extends BaseEntity = any> {
   is_required: boolean;
   is_read_only: boolean;
   is_read_only_on_edit?: boolean;
+  is_read_only_on_create?: boolean;
   show_in_list?: boolean;
   show_in_form?: boolean;
   hide_on_create?: boolean;
+  hide_on_edit?: boolean;
   placeholder?: string;
   enum_values?: string[];
   enum_options?: { value: string; label: string }[];
@@ -75,6 +77,8 @@ export interface ForeignKeyFilterConfig {
     | "players_from_organization"
     | "officials_from_organization"
     | "live_game_logs_from_organization"
+    | "teams_from_player_memberships"
+    | "teams_excluding_player_memberships"
     | "exclude_selected_field";
   holder_type?: string;
   team_side?: "home" | "away";

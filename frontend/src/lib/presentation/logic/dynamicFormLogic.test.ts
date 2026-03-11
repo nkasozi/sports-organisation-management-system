@@ -5,6 +5,7 @@ import type {
   ValidationRule,
   BaseEntity,
 } from "../../core/entities/BaseEntity";
+import type { SubEntityFilter } from "../../core/types/SubEntityFilter";
 import {
   determine_if_edit_mode,
   build_form_title,
@@ -18,6 +19,17 @@ import {
   build_entity_display_label,
   get_display_value_for_foreign_key,
   initialize_form_data_from_metadata,
+  format_entity_display_name,
+  is_field_visible_by_visible_when_condition,
+  is_field_controlled_by_sub_entity_filter,
+  should_field_be_read_only,
+  format_enum_label,
+  has_enum_options,
+  is_jersey_color_field,
+  build_foreign_key_select_options,
+  build_foreign_entity_route,
+  build_foreign_entity_cta_label,
+  find_dependent_enum_fields,
 } from "./dynamicFormLogic";
 
 function create_field_metadata(
@@ -762,4 +774,305 @@ describe("dynamicFormLogic", () => {
       expect(result.new_field).toBe("");
     });
   });
+
+  describe("format_entity_display_name", () => {
+    it("converts CamelCase to spaced title case", () => {
+      expect(format_entity_display_name("CompetitionFormat")).toBe(
+        "Competition Format",
+      );
+    });
+
+    it("converts snake_case to title case", () => {
+      expect(format_entity_display_name("player_profile")).toBe(
+        "Player Profile",
+      );
+    });
+
+    it("returns Entity for empty string", () => {
+      expect(format_entity_display_name("")).toBe("Entity");
+    });
+
+    it("returns single word capitalised", () => {
+      expect(format_entity_display_name("team")).toBe("Team");
+    });
+  });
+
+  describe("is_field_visible_by_visible_when_condition", () => {
+    it("returns true when field has no visible_when condition", () => {
+      const field = create_field_metadata();
+      expect(is_field_visible_by_visible_when_condition(field, {})).toBe(true);
+    });
+
+    it("returns true when dependency value matches", () => {
+      const field = create_field_metadata({
+        visible_when: {
+          depends_on_field: "status",
+          visible_when_values: ["approved"],
+        },
+      } as any);
+      expect(
+        is_field_visible_by_visible_when_condition(field, { status: "approved" }),
+      ).toBe(true);
+    });
+
+    it("returns false when dependency value does not match", () => {
+      const field = create_field_metadata({
+        visible_when: {
+          depends_on_field: "status",
+          visible_when_values: ["approved"],
+        },
+      } as any);
+      expect(
+        is_field_visible_by_visible_when_condition(field, { status: "pending" }),
+      ).toBe(false);
+    });
+
+    it("returns false when dependency value is missing", () => {
+      const field = create_field_metadata({
+        visible_when: {
+          depends_on_field: "status",
+          visible_when_values: ["approved"],
+        },
+      } as any);
+      expect(is_field_visible_by_visible_when_condition(field, {})).toBe(false);
+    });
+  });
+
+  describe("is_field_controlled_by_sub_entity_filter", () => {
+    it("returns false when filter is null", () => {
+      expect(is_field_controlled_by_sub_entity_filter("player_id", null)).toBe(
+        false,
+      );
+    });
+
+    it("returns true when field matches foreign_key_field", () => {
+      const filter: SubEntityFilter = {
+        foreign_key_field: "player_id",
+        foreign_key_value: "p1",
+      };
+      expect(is_field_controlled_by_sub_entity_filter("player_id", filter)).toBe(
+        true,
+      );
+    });
+
+    it("returns true when field matches holder_type_field", () => {
+      const filter: SubEntityFilter = {
+        foreign_key_field: "player_id",
+        foreign_key_value: "p1",
+        holder_type_field: "entity_type",
+        holder_type_value: "player",
+      };
+      expect(
+        is_field_controlled_by_sub_entity_filter("entity_type", filter),
+      ).toBe(true);
+    });
+
+    it("returns false for an unrelated field", () => {
+      const filter: SubEntityFilter = {
+        foreign_key_field: "player_id",
+        foreign_key_value: "p1",
+      };
+      expect(is_field_controlled_by_sub_entity_filter("name", filter)).toBe(
+        false,
+      );
+    });
+  });
+
+  describe("should_field_be_read_only", () => {
+    const empty_auth: Set<string> = new Set();
+
+    it("returns true when field is_read_only", () => {
+      const field = create_field_metadata({ is_read_only: true });
+      expect(should_field_be_read_only(field, false, empty_auth, null)).toBe(
+        true,
+      );
+    });
+
+    it("returns true when is_read_only_on_edit in edit mode", () => {
+      const field = create_field_metadata({
+        is_read_only_on_edit: true,
+      } as any);
+      expect(should_field_be_read_only(field, true, empty_auth, null)).toBe(
+        true,
+      );
+    });
+
+    it("returns false when is_read_only_on_edit but not in edit mode", () => {
+      const field = create_field_metadata({
+        is_read_only_on_edit: true,
+      } as any);
+      expect(should_field_be_read_only(field, false, empty_auth, null)).toBe(
+        false,
+      );
+    });
+
+    it("returns true when field is in auth restricted set", () => {
+      const field = create_field_metadata({ field_name: "organization_id" });
+      const restricted = new Set(["organization_id"]);
+      expect(should_field_be_read_only(field, false, restricted, null)).toBe(
+        true,
+      );
+    });
+  });
+
+  describe("format_enum_label", () => {
+    it("converts snake_case to Title Case", () => {
+      expect(format_enum_label("pending_approval")).toBe("Pending Approval");
+    });
+
+    it("capitalises single word", () => {
+      expect(format_enum_label("approved")).toBe("Approved");
+    });
+
+    it("handles multiple words", () => {
+      expect(format_enum_label("not_yet_started")).toBe("Not Yet Started");
+    });
+  });
+
+  describe("has_enum_options", () => {
+    it("returns true when enum_options is populated", () => {
+      const field = create_field_metadata({
+        enum_options: [{ value: "a", label: "A" }],
+      } as any);
+      expect(has_enum_options(field)).toBe(true);
+    });
+
+    it("returns true when enum_values is populated", () => {
+      const field = create_field_metadata({ enum_values: ["a", "b"] });
+      expect(has_enum_options(field)).toBe(true);
+    });
+
+    it("returns true when enum_dependency is set", () => {
+      const field = create_field_metadata({
+        enum_dependency: { depends_on_field: "role", options_map: {} },
+      } as any);
+      expect(has_enum_options(field)).toBe(true);
+    });
+
+    it("returns false when no enum config", () => {
+      const field = create_field_metadata();
+      expect(has_enum_options(field)).toBe(false);
+    });
+  });
+
+  describe("is_jersey_color_field", () => {
+    it("returns true when foreign_key_entity is jerseycolor", () => {
+      const field = create_field_metadata({
+        foreign_key_entity: "JerseyColor",
+      });
+      expect(is_jersey_color_field(field)).toBe(true);
+    });
+
+    it("returns false for non-jersey field", () => {
+      const field = create_field_metadata({ foreign_key_entity: "Team" });
+      expect(is_jersey_color_field(field)).toBe(false);
+    });
+
+    it("returns false when foreign_key_entity is undefined", () => {
+      const field = create_field_metadata();
+      expect(is_jersey_color_field(field)).toBe(false);
+    });
+  });
+
+  describe("build_foreign_key_select_options", () => {
+    it("returns options mapped from entities", () => {
+      const field = create_field_metadata({
+        field_name: "team_id",
+        foreign_key_entity: "Team",
+      });
+      const options_map = {
+        team_id: [
+          {
+            id: "t1",
+            name: "Arsenal",
+            created_at: "",
+            updated_at: "",
+          } as BaseEntity,
+        ],
+      };
+
+      const result = build_foreign_key_select_options(field, options_map);
+
+      expect(result).toHaveLength(1);
+      expect(result[0].value).toBe("t1");
+      expect(result[0].label).toBe("Arsenal");
+    });
+
+    it("filters out entities with empty ids", () => {
+      const field = create_field_metadata({ field_name: "team_id" });
+      const options_map = {
+        team_id: [{ id: "", name: "Empty", created_at: "", updated_at: "" } as BaseEntity],
+      };
+
+      const result = build_foreign_key_select_options(field, options_map);
+
+      expect(result).toHaveLength(0);
+    });
+
+    it("returns empty array when no options for field", () => {
+      const field = create_field_metadata({ field_name: "team_id" });
+      const result = build_foreign_key_select_options(field, {});
+      expect(result).toHaveLength(0);
+    });
+  });
+
+  describe("build_foreign_entity_route", () => {
+    it.each([
+      ["player", "/players"],
+      ["team", "/teams"],
+      ["organization", "/organizations"],
+      ["competition", "/competitions"],
+      ["fixture", "/fixtures"],
+      ["playerposition", "/player-positions"],
+      ["venue", "/venues"],
+      ["unknown", ""],
+      [undefined, ""],
+    ])("%s -> %s", (entity_type, expected) => {
+      expect(build_foreign_entity_route(entity_type)).toBe(expected);
+    });
+  });
+
+  describe("build_foreign_entity_cta_label", () => {
+    it("returns labelled string for known entity types", () => {
+      expect(build_foreign_entity_cta_label("player")).toBe("Create Players");
+      expect(build_foreign_entity_cta_label("team")).toBe("Create Teams");
+    });
+
+    it("returns generic Create for unknown type", () => {
+      expect(build_foreign_entity_cta_label("unknown")).toBe("Create");
+      expect(build_foreign_entity_cta_label(undefined)).toBe("Create");
+    });
+  });
+
+  describe("find_dependent_enum_fields", () => {
+    it("returns fields that depend on the given parent field", () => {
+      const metadata = create_entity_metadata({
+        fields: [
+          create_field_metadata({ field_name: "role" }),
+          create_field_metadata({
+            field_name: "sub_role",
+            enum_dependency: {
+              depends_on_field: "role",
+              options_map: {},
+            },
+          } as any),
+          create_field_metadata({ field_name: "name" }),
+        ],
+      });
+
+      const result = find_dependent_enum_fields(metadata, "role");
+
+      expect(result).toHaveLength(1);
+      expect(result[0].field_name).toBe("sub_role");
+    });
+
+    it("returns empty array when no dependent fields exist", () => {
+      const metadata = create_entity_metadata({
+        fields: [create_field_metadata({ field_name: "name" })],
+      });
+
+      expect(find_dependent_enum_fields(metadata, "role")).toHaveLength(0);
+    });
+  });
 });
+

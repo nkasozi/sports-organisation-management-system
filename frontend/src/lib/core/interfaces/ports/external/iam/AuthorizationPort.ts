@@ -286,6 +286,19 @@ export const ENTITY_DATA_CATEGORY_MAP: SharedEntityCategoryMap = {
   teamprofile: "public_level",
 };
 
+export const ENTITY_LEVEL_DISABLED_OPERATIONS: Partial<
+  Record<SharedEntityType, ("create" | "edit" | "delete")[]>
+> = {
+  playerteamtransferhistory: ["delete"],
+  playerteammembership: ["edit"],
+};
+
+export function get_entity_level_disabled_operations(
+  entity_type: SharedEntityType,
+): ("create" | "edit" | "delete")[] {
+  return ENTITY_LEVEL_DISABLED_OPERATIONS[entity_type] ?? [];
+}
+
 export function normalize_to_entity_type(raw: string): SharedEntityType {
   return raw.toLowerCase().replace(/[\s_-]/g, "") as SharedEntityType;
 }

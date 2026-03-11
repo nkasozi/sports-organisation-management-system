@@ -15,7 +15,32 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
   import { get_use_cases_for_entity_type } from "../../infrastructure/registry/entityUseCasesRegistry";
   import type { SubEntityFilter } from "$lib/core/types/SubEntityFilter";
   import DynamicEntityForm from "./DynamicEntityForm.svelte";
-  import { get_display_value_for_entity_field } from "../logic/dynamicListLogic";
+  import {
+    get_display_value_for_entity_field,
+    extract_items_from_result_data,
+    extract_total_count_from_result_data,
+    extract_error_message_from_result,
+    build_default_visible_column_names,
+    check_if_all_entities_selected,
+    check_if_some_entities_selected,
+    determine_if_bulk_actions_available,
+    build_filter_from_sub_entity_config,
+    apply_filters_and_sorting,
+    toggle_sort_direction,
+    toggle_column_in_set,
+    build_csv_content,
+    build_csv_filename,
+    get_selected_entities_from_list,
+    clear_filter_state,
+    toggle_select_all_entities,
+    toggle_single_entity_selection as compute_entity_selection_toggle,
+    get_column_responsive_class,
+    normalize_entity_type_for_filter,
+    build_entity_authorization_filter,
+    apply_id_filter_to_entities,
+    merge_entity_list_filters,
+    type EntityAuthFilterResult,
+  } from "../logic/dynamicListLogic";
   import {
     save_column_preferences,
     load_column_preferences,
@@ -27,11 +52,13 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
   } from "$lib/core/types/EntityHandlers";
   import { is_functionality_disabled } from "$lib/core/types/EntityHandlers";
   import BulkImportModal from "./BulkImportModal.svelte";
-  import { auth_store } from "../stores/auth";
+  import SearchableSelectField from "./ui/SearchableSelectField.svelte";
   import {
-    build_authorization_list_filter,
-    type UserScopeProfile,
-  } from "$lib/core/interfaces/ports";
+    build_entity_display_label,
+    format_entity_display_name,
+  } from "../logic/dynamicFormLogic";
+  import { auth_store } from "../stores/auth";
+  import { type UserScopeProfile } from "$lib/core/interfaces/ports";
   import { get_authorization_adapter } from "$lib/infrastructure/AuthorizationProvider";
   import { ensure_auth_profile } from "../logic/authGuard";
 
@@ -114,53 +141,14 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
     filter_values,
     sort_column,
     sort_direction,
+    entity_metadata,
+    foreign_key_options,
   );
   $: visible_column_list = get_visible_column_list(
     visible_columns,
     entity_metadata,
   );
 
-  function extract_items_from_result_data(
-    data: BaseEntity[] | { items: BaseEntity[]; total_count: number },
-  ): BaseEntity[] {
-    if (Array.isArray(data)) {
-      return data;
-    }
-    if (data && typeof data === "object" && "items" in data) {
-      return data.items;
-    }
-    return [];
-  }
-
-  function extract_total_count_from_result_data(
-    data: BaseEntity[] | { items: BaseEntity[]; total_count: number },
-  ): number {
-    if (Array.isArray(data)) {
-      return data.length;
-    }
-    if (data && typeof data === "object" && "total_count" in data) {
-      return data.total_count;
-    }
-    return 0;
-  }
-
-  function extract_error_message_from_result(result: {
-    success: boolean;
-    error?: string;
-    error_message?: string;
-  }): string {
-    if (!result.success) {
-      if ("error_message" in result && result.error_message) {
-        return result.error_message;
-      }
-      if ("error" in result && result.error) {
-        return result.error;
-      }
-    }
-    return "Unknown error";
-  }
-
-  // Load entities when component mounts
   onMount(async () => {
     console.log(`[ENTITY_LIST] onMount - entity_type: "${entity_type}"`);
     initialize_default_columns();
@@ -200,24 +188,6 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
     foreign_key_options = new_options;
   }
 
-  function build_default_visible_column_names(
-    fields: FieldMetadata[],
-    max_columns: number,
-  ): string[] {
-    const displayable_fields = fields.filter(
-      (f: FieldMetadata) => f.field_type !== "sub_entity",
-    );
-    const explicitly_enabled_fields = displayable_fields.filter(
-      (f: FieldMetadata) => f.show_in_list === true,
-    );
-    const preferred_fields =
-      explicitly_enabled_fields.length > 0
-        ? explicitly_enabled_fields
-        : displayable_fields;
-    return preferred_fields
-      .slice(0, Math.max(0, max_columns))
-      .map((f: FieldMetadata) => f.field_name);
-  }
 
   function initialize_default_columns(): void {
     if (!entity_metadata) return;
@@ -264,144 +234,42 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
     );
   }
 
-  function get_column_responsive_class(
-    column_index: number,
-    total_columns: number,
-  ): string {
-    if (column_index === 0) return "";
-    if (column_index === 1) return "hidden sm:table-cell";
-    if (column_index === 2) return "hidden md:table-cell";
-    return "hidden lg:table-cell";
-  }
-
-  function apply_filters_and_sorting(
-    entity_list: BaseEntity[],
-    filters: Record<string, string>,
-    sort_col: string,
-    sort_dir: "asc" | "desc",
-  ): BaseEntity[] {
-    let result = [...entity_list];
-
-    const active_filters = Object.entries(filters).filter(
-      ([_, value]) => value.trim() !== "",
-    );
-
-    if (active_filters.length > 0) {
-      result = result.filter((entity) => {
-        return active_filters.every(([field, filter_value]) => {
-          const field_meta = entity_metadata?.fields.find(
-            (f: { field_name: string }) => f.field_name === field,
-          );
-          if (
-            field_meta &&
-            field_meta.field_type === "foreign_key" &&
-            field_meta.foreign_key_entity
-          ) {
-            if (!filter_value) return true;
-            const raw_value = (entity as unknown as Record<string, unknown>)[
-              field
-            ];
-            return String(raw_value ?? "") === filter_value;
-          } else {
-            const entity_value = get_display_value_for_entity_field(
-              entity,
-              field,
-              foreign_key_options,
-            ).toLowerCase();
-            return entity_value.includes(filter_value.toLowerCase());
-          }
-        });
-      });
-    }
-
-    if (sort_col) {
-      result.sort((a, b) => {
-        const a_value = get_display_value_for_entity_field(
-          a,
-          sort_col,
-          foreign_key_options,
-        );
-        const b_value = get_display_value_for_entity_field(
-          b,
-          sort_col,
-          foreign_key_options,
-        );
-
-        const comparison = a_value.localeCompare(b_value, undefined, {
-          numeric: true,
-        });
-        return sort_dir === "asc" ? comparison : -comparison;
-      });
-    }
-
-    return result;
-  }
-
   function toggle_sort_by_column(column: string): void {
-    if (sort_column === column) {
-      sort_direction = sort_direction === "asc" ? "desc" : "asc";
-    } else {
-      sort_column = column;
-      sort_direction = "asc";
-    }
+    const result = toggle_sort_direction(sort_column, column, sort_direction);
+    sort_column = result.sort_column;
+    sort_direction = result.sort_direction;
   }
 
   function toggle_column_visibility(field_name: string): void {
-    if (visible_columns.has(field_name)) {
-      visible_columns.delete(field_name);
-    } else {
-      visible_columns.add(field_name);
-    }
-    visible_columns = visible_columns;
+    visible_columns = toggle_column_in_set(visible_columns, field_name);
     save_column_preferences(entity_type, sub_entity_filter, visible_columns);
   }
 
   function export_to_csv(): void {
-    const headers = visible_column_list.map((field_name) => {
-      return (
-        entity_metadata?.fields.find(
-          (f: { field_name: string; display_name: string }) =>
-            f.field_name === field_name,
-        )?.display_name || field_name
-      );
-    });
-
-    const csv_rows = [headers.join(",")];
-
-    filtered_entities.forEach((entity) => {
-      const row = visible_column_list.map((field_name) => {
-        const value = get_display_value_for_entity_field(
-          entity,
-          field_name,
-          foreign_key_options,
-        );
-        return `"${value.replace(/"/g, '""')}"`;
-      });
-      csv_rows.push(row.join(","));
-    });
-
-    const csv_content = csv_rows.join("\n");
+    const csv_content = build_csv_content(
+      filtered_entities,
+      visible_column_list,
+      entity_metadata,
+      foreign_key_options,
+    );
+    const filename = build_csv_filename(entity_type, new Date());
     const blob = new Blob([csv_content], { type: "text/csv;charset=utf-8;" });
     const link = document.createElement("a");
     const url = URL.createObjectURL(blob);
-
     link.setAttribute("href", url);
-    link.setAttribute(
-      "download",
-      `${entity_type}_export_${new Date().toISOString().split("T")[0]}.csv`,
-    );
+    link.setAttribute("download", filename);
     link.style.visibility = "hidden";
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-
     show_export_modal = false;
   }
 
   function clear_all_filters(): void {
-    filter_values = {};
-    sort_column = "";
-    sort_direction = "asc";
+    const cleared = clear_filter_state();
+    filter_values = cleared.filter_values;
+    sort_column = cleared.sort_column;
+    sort_direction = cleared.sort_direction;
   }
 
   function get_entity_metadata_for_type(type: string): any {
@@ -420,171 +288,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
     return metadata;
   }
 
-  function format_entity_display_name(raw_name: string): string {
-    if (typeof raw_name !== "string" || raw_name.length === 0) return "Entity";
-    const with_spaces = raw_name
-      .replace(/([a-z])([A-Z])/g, "$1 $2")
-      .replace(/_/g, " ");
-    return with_spaces
-      .split(" ")
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-      .join(" ");
-  }
 
-  function check_if_all_entities_selected(
-    entity_list: BaseEntity[],
-    selected_ids: Set<string>,
-  ): boolean {
-    if (entity_list.length === 0) return false;
-    return entity_list.every((entity) => selected_ids.has(entity.id));
-  }
-
-  function check_if_some_entities_selected(selected_ids: Set<string>): boolean {
-    return selected_ids.size > 0;
-  }
-
-  function determine_if_bulk_actions_available(
-    has_selection: boolean,
-    actions_enabled: boolean,
-  ): boolean {
-    return has_selection && actions_enabled;
-  }
-
-  function build_filter_from_sub_entity_config(
-    filter_config: SubEntityFilter | null,
-  ): Record<string, string> | undefined {
-    if (!filter_config) return undefined;
-
-    const filter: Record<string, string> = {};
-    filter[filter_config.foreign_key_field] = filter_config.foreign_key_value;
-
-    if (filter_config.holder_type_field && filter_config.holder_type_value) {
-      filter[filter_config.holder_type_field] = filter_config.holder_type_value;
-    }
-
-    return filter;
-  }
-
-  function normalize_entity_type_for_filter(type: string): string {
-    return type.toLowerCase().replace(/[\s_-]/g, "");
-  }
-
-  function build_authorization_filter(): Record<string, string> | null {
-    const auth_state = get(auth_store);
-
-    if (!auth_state.current_profile) {
-      console.error(
-        "[DynamicEntityList] No auth profile found after initialization - failing safely",
-      );
-      auth_profile_missing = true;
-      return null;
-    }
-
-    auth_profile_missing = false;
-
-    if (!entity_metadata) {
-      console.debug(
-        "[DynamicEntityList] No entity_metadata, returning empty filter",
-      );
-      return {};
-    }
-
-    const entity_fields = entity_metadata.fields.map(
-      (f: FieldMetadata) => f.field_name,
-    );
-
-    const filter = build_authorization_list_filter(
-      auth_state.current_profile as UserScopeProfile,
-      entity_fields,
-    );
-
-    const normalized_type = normalize_entity_type_for_filter(entity_type);
-    const player_id = auth_state.current_profile.player_id;
-    const team_id = auth_state.current_profile.team_id;
-    const has_valid_player_id = player_id && player_id !== "*";
-    const has_valid_team_id = team_id && team_id !== "*";
-
-    console.debug("[DynamicEntityList] Auth filter building:", {
-      normalized_type,
-      player_id,
-      has_valid_player_id,
-      team_id,
-      has_valid_team_id,
-      base_filter: { ...filter },
-    });
-
-    if (normalized_type === "player" && has_valid_player_id) {
-      filter["id"] = player_id;
-    }
-
-    if (normalized_type === "player" && has_valid_team_id) {
-      filter["team_id"] = team_id;
-    }
-
-    if (normalized_type === "playerteammembership" && has_valid_player_id) {
-      filter["player_id"] = player_id;
-    }
-
-    if (normalized_type === "playerprofile" && has_valid_player_id) {
-      filter["player_id"] = player_id;
-    }
-
-    if (normalized_type === "fixture" && has_valid_team_id) {
-      filter["team_id"] = team_id;
-    }
-
-    if (normalized_type === "team" && has_valid_team_id) {
-      filter["id"] = team_id;
-    }
-
-    if (normalized_type === "teamprofile" && has_valid_team_id) {
-      filter["team_id"] = team_id;
-    }
-
-    const official_id = auth_state.current_profile.official_id;
-    const has_valid_official_id = official_id && official_id !== "*";
-
-    if (normalized_type === "official" && has_valid_official_id) {
-      filter["id"] = official_id;
-    }
-
-    console.debug("[DynamicEntityList] Final auth filter:", filter);
-    return filter;
-  }
-
-  function apply_id_filter_if_present(
-    loaded_entities: BaseEntity[],
-    filter: Record<string, string> | undefined,
-  ): BaseEntity[] {
-    if (!filter || !filter.id) return loaded_entities;
-
-    const filtered = loaded_entities.filter(
-      (entity) => entity.id === filter.id,
-    );
-    console.debug(
-      `[DynamicEntityList] Applied id filter "${filter.id}": ${loaded_entities.length} -> ${filtered.length} entities`,
-    );
-    return filtered;
-  }
-
-  function merge_filters(
-    sub_entity_filter_result: Record<string, string> | undefined,
-    auth_filter: Record<string, string> | null,
-  ): Record<string, string> | undefined {
-    if (auth_filter === null) return undefined;
-
-    const has_sub_filter =
-      sub_entity_filter_result &&
-      Object.keys(sub_entity_filter_result).length > 0;
-    const has_auth_filter = Object.keys(auth_filter).length > 0;
-
-    if (!has_sub_filter && !has_auth_filter) return undefined;
-
-    return {
-      ...(sub_entity_filter_result || {}),
-      ...auth_filter,
-    };
-  }
 
   async function load_all_entities_for_display(): Promise<void> {
     console.log(`[ENTITY_LIST] Loading entities for type: "${entity_type}"`);
@@ -592,8 +296,19 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
     error_message = "";
 
     try {
+      const auth_state = get(auth_store);
       const sub_filter = build_filter_from_sub_entity_config(sub_entity_filter);
-      const auth_filter = build_authorization_filter();
+      const auth_build_result = build_entity_authorization_filter(
+        auth_state.current_profile as UserScopeProfile | null,
+        entity_metadata,
+        entity_type,
+      );
+      if (auth_build_result.profile_missing) {
+        console.error("[DynamicEntityList] No auth profile found after initialization - failing safely");
+      }
+      auth_profile_missing = auth_build_result.profile_missing;
+      console.debug("[DynamicEntityList] Final auth filter:", auth_build_result.filter);
+      const auth_filter = auth_build_result.filter;
 
       if (auth_profile_missing) {
         entities = [];
@@ -602,8 +317,6 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
         is_loading = false;
         return;
       }
-
-      const auth_state = get(auth_store);
       const normalized_type = entity_type.toLowerCase().replace(/[\s_-]/g, "");
       if (auth_state.current_token) {
         const authorization_check =
@@ -624,7 +337,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
         }
       }
 
-      const filter = merge_filters(sub_filter, auth_filter);
+      const filter = merge_entity_list_filters(sub_filter, auth_filter);
 
       console.debug(
         `[DynamicEntityList] Applied filters for "${entity_type}":`,
@@ -639,7 +352,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
 
         if (result.success && result.data) {
           let loaded_entities = extract_items_from_result_data(result.data);
-          loaded_entities = apply_id_filter_if_present(loaded_entities, filter);
+          loaded_entities = apply_id_filter_to_entities(loaded_entities, filter);
           entities = loaded_entities;
           console.debug(
             `[DynamicEntityList] ✅ Custom handler loaded ${entities.length} ${entity_type} entities`,
@@ -696,7 +409,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
 
       if (result.success) {
         let loaded_entities = extract_items_from_result_data(result.data);
-        loaded_entities = apply_id_filter_if_present(loaded_entities, filter);
+        loaded_entities = apply_id_filter_to_entities(loaded_entities, filter);
         entities = loaded_entities;
         console.debug(
           `[DynamicEntityList] ✅ Loaded ${entities.length} ${entity_type} entities`,
@@ -966,27 +679,19 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
   }
 
   function toggle_all_entity_selection(): void {
-    if (all_selected) {
-      selected_entity_ids.clear();
-    } else {
-      selected_entity_ids = new Set(entities.map((entity) => entity.id));
-    }
-    selected_entity_ids = selected_entity_ids; // Trigger reactivity
+    selected_entity_ids = toggle_select_all_entities(filtered_entities, all_selected);
+    selected_entity_ids = selected_entity_ids;
     dispatch_selection_changed();
   }
 
   function toggle_single_entity_selection(entity_id: string): void {
-    if (selected_entity_ids.has(entity_id)) {
-      selected_entity_ids.delete(entity_id);
-    } else {
-      selected_entity_ids.add(entity_id);
-    }
-    selected_entity_ids = selected_entity_ids; // Trigger reactivity
+    selected_entity_ids = compute_entity_selection_toggle(selected_entity_ids, entity_id);
+    selected_entity_ids = selected_entity_ids;
     dispatch_selection_changed();
   }
 
   function get_selected_entities_list(): BaseEntity[] {
-    return entities.filter((entity) => selected_entity_ids.has(entity.id));
+    return get_selected_entities_from_list(entities, selected_entity_ids);
   }
 
   function dispatch_selection_changed(): void {
@@ -1028,18 +733,6 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
     );
 
     return [id_field, ...metadata_fields];
-  }
-
-  function build_full_name_from_entity(entity: any): string {
-    const first_name = entity.first_name;
-    const last_name = entity.last_name;
-    if (typeof first_name === "string" || typeof last_name === "string") {
-      return [first_name, last_name]
-        .filter((part) => typeof part === "string" && part.trim().length > 0)
-        .join(" ")
-        .trim();
-    }
-    return "";
   }
 
   function refresh_entity_list(): void {
@@ -1301,7 +994,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
         {#if bulk_create_handler && !is_create_disabled}
           <button
             type="button"
-            class="btn {button_color_class} w-auto"
+            class="btn w-auto bg-purple-600 hover:bg-purple-700 text-white"
             on:click={bulk_create_handler}
           >
             Bulk Create
@@ -1348,31 +1041,37 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
                   {field.display_name}
                 </label>
                 {#if field.field_type === "foreign_key" && field.foreign_key_entity}
-                  <select
-                    id="filter_{field.field_name}"
-                    class="select-styled w-full"
-                    bind:value={filter_values[field.field_name]}
-                  >
-                    <option value="">Any</option>
-                    {#each foreign_key_options[field.field_name] || [] as option}
-                      <option value={option.id}
-                        >{option.name ||
-                          option.display_name ||
-                          option.id}</option
-                      >
-                    {/each}
-                  </select>
+                  <SearchableSelectField
+                    name="filter_{field.field_name}"
+                    value={filter_values[field.field_name] ?? ""}
+                    options={[
+                      { value: "", label: "Any" },
+                      ...(foreign_key_options[field.field_name] || []).map(
+                        (option) => ({
+                          value: option.id,
+                          label: build_entity_display_label(option),
+                        }),
+                      ),
+                    ]}
+                    placeholder="Any"
+                    on:change={(e) =>
+                      (filter_values[field.field_name] = e.detail.value)}
+                  />
                 {:else if field.field_type === "enum" && field.enum_values}
-                  <select
-                    id="filter_{field.field_name}"
-                    class="select-styled w-full"
-                    bind:value={filter_values[field.field_name]}
-                  >
-                    <option value="">Any</option>
-                    {#each field.enum_values as option}
-                      <option value={option}>{option}</option>
-                    {/each}
-                  </select>
+                  <SearchableSelectField
+                    name="filter_{field.field_name}"
+                    value={filter_values[field.field_name] ?? ""}
+                    options={[
+                      { value: "", label: "Any" },
+                      ...field.enum_values.map((option) => ({
+                        value: option,
+                        label: option.charAt(0).toUpperCase() + option.slice(1),
+                      })),
+                    ]}
+                    placeholder="Any"
+                    on:change={(e) =>
+                      (filter_values[field.field_name] = e.detail.value)}
+                  />
                 {:else if field.field_type === "date"}
                   <input
                     id="filter_{field.field_name}"
@@ -1505,7 +1204,6 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
                 <th
                   class="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 {get_column_responsive_class(
                     column_index,
-                    visible_column_list.length,
                   )}"
                   on:click={() => toggle_sort_by_column(field_name)}
                 >
@@ -1574,7 +1272,6 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
                   <td
                     class="px-3 py-4 text-sm text-accent-900 dark:text-accent-100 {get_column_responsive_class(
                       column_index,
-                      visible_column_list.length,
                     )}"
                   >
                     <div class="max-w-xs truncate">

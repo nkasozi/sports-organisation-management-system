@@ -8,5 +8,4 @@
 
 <EntityCrudWrapper
   entity_type="PlayerTeamTransferHistory"
-  disabled_functionalities={["edit", "delete"]}
 />

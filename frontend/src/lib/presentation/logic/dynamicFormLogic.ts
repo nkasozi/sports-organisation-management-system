@@ -323,3 +323,152 @@ export function initialize_form_data_from_metadata(
 
   return new_form_data;
 }
+
+export function format_entity_display_name(raw_name: string): string {
+  if (typeof raw_name !== "string" || raw_name.length === 0) return "Entity";
+  const with_spaces = raw_name
+    .replace(/([a-z])([A-Z])/g, "$1 $2")
+    .replace(/_/g, " ");
+  return with_spaces
+    .split(" ")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(" ");
+}
+
+export function is_field_visible_by_visible_when_condition(
+  field: FieldMetadata,
+  current_form_data: Record<string, any>,
+): boolean {
+  if (!field.visible_when) return true;
+  const dependency_value =
+    current_form_data[field.visible_when.depends_on_field];
+  if (!dependency_value) return false;
+  return field.visible_when.visible_when_values.includes(dependency_value);
+}
+
+export function is_field_controlled_by_sub_entity_filter(
+  field_name: string,
+  filter: SubEntityFilter | null,
+): boolean {
+  if (!filter) return false;
+  if (field_name === filter.foreign_key_field) return true;
+  if (filter.holder_type_field && field_name === filter.holder_type_field)
+    return true;
+  return false;
+}
+
+export function should_field_be_read_only(
+  field: FieldMetadata,
+  is_edit_mode: boolean,
+  auth_restricted_fields: Set<string>,
+  sub_entity_filter: SubEntityFilter | null,
+): boolean {
+  if (field.is_read_only) return true;
+  if (field.is_read_only_on_edit && is_edit_mode) return true;
+  if (field.is_read_only_on_create && !is_edit_mode) return true;
+  if (auth_restricted_fields.has(field.field_name)) return true;
+  return is_field_controlled_by_sub_entity_filter(
+    field.field_name,
+    sub_entity_filter,
+  );
+}
+
+export function convert_file_to_base64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = (error) => reject(error);
+    reader.readAsDataURL(file);
+  });
+}
+
+export function format_enum_label(value: string): string {
+  return value
+    .split("_")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(" ");
+}
+
+export function has_enum_options(field: FieldMetadata): boolean {
+  if (field.enum_options && field.enum_options.length > 0) return true;
+  if (field.enum_values && field.enum_values.length > 0) return true;
+  if (field.enum_dependency) return true;
+  return false;
+}
+
+export function is_jersey_color_field(field: FieldMetadata): boolean {
+  return field.foreign_key_entity?.toLowerCase() === "jerseycolor";
+}
+
+export function build_foreign_key_select_options(
+  field: FieldMetadata,
+  options_map: Record<string, BaseEntity[]>,
+): { value: string; label: string; color_swatch?: string }[] {
+  const entities = options_map[field.field_name] || [];
+  const is_jersey_field = is_jersey_color_field(field);
+
+  return entities
+    .map((entity) => {
+      const entity_id = String((entity as BaseEntity).id ?? "").trim();
+      if (entity_id.length === 0) return null;
+
+      const option: { value: string; label: string; color_swatch?: string } = {
+        value: entity_id,
+        label: String(build_entity_display_label(entity)),
+      };
+
+      if (is_jersey_field) {
+        const jersey = entity as unknown as { main_color?: string };
+        if (jersey.main_color) option.color_swatch = jersey.main_color;
+      }
+
+      return option;
+    })
+    .filter(
+      (
+        opt,
+      ): opt is { value: string; label: string; color_swatch?: string } =>
+        Boolean(opt),
+    );
+}
+
+export function build_foreign_entity_route(
+  entity_type: string | undefined,
+): string {
+  const normalized =
+    typeof entity_type === "string" ? entity_type.toLowerCase() : "";
+  if (normalized === "player") return "/players";
+  if (normalized === "team") return "/teams";
+  if (normalized === "organization") return "/organizations";
+  if (normalized === "competition") return "/competitions";
+  if (normalized === "fixture") return "/fixtures";
+  if (normalized === "playerposition") return "/player-positions";
+  if (normalized === "venue") return "/venues";
+  return "";
+}
+
+export function build_foreign_entity_cta_label(
+  entity_type: string | undefined,
+): string {
+  const normalized =
+    typeof entity_type === "string" ? entity_type.toLowerCase() : "";
+  if (normalized === "player") return "Create Players";
+  if (normalized === "team") return "Create Teams";
+  if (normalized === "organization") return "Create Organizations";
+  if (normalized === "competition") return "Create Competitions";
+  if (normalized === "fixture") return "Create Fixtures";
+  if (normalized === "playerposition") return "Create Player Positions";
+  if (normalized === "venue") return "Create Venues";
+  return "Create";
+}
+
+export function find_dependent_enum_fields(
+  metadata: EntityMetadata,
+  parent_field_name: string,
+): FieldMetadata[] {
+  return metadata.fields.filter(
+    (field) =>
+      field.enum_dependency &&
+      field.enum_dependency.depends_on_field === parent_field_name,
+  );
+}

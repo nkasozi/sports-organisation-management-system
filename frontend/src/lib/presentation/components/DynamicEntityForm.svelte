@@ -22,7 +22,29 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
   import DynamicEntityList from "./DynamicEntityList.svelte";
   import CompetitionFormatStageTemplateArray from "./competition/CompetitionFormatStageTemplateArray.svelte";
   import type { SubEntityFilter } from "$lib/core/types/SubEntityFilter";
-  import { build_entity_display_label } from "../logic/dynamicFormLogic";
+  import {
+    build_entity_display_label,
+    determine_if_edit_mode,
+    build_form_title,
+    get_sub_entity_fields,
+    build_sub_entity_filter,
+    get_default_value_for_field_type as get_base_default_value_for_field_type,
+    get_input_type_for_field,
+    validate_field_against_rules,
+    initialize_form_data_from_metadata,
+    format_entity_display_name,
+    is_field_visible_by_visible_when_condition,
+    is_field_controlled_by_sub_entity_filter,
+    should_field_be_read_only as compute_field_read_only_state,
+    convert_file_to_base64,
+    format_enum_label,
+    has_enum_options,
+    is_jersey_color_field,
+    build_foreign_key_select_options,
+    build_foreign_entity_route,
+    build_foreign_entity_cta_label,
+    find_dependent_enum_fields as find_dependent_enum_fields_from_logic,
+  } from "../logic/dynamicFormLogic";
   import { detect_jersey_color_clashes } from "../../core/entities/Fixture";
   import type { JerseyColor } from "../../core/entities/JerseyColor";
   import type {
@@ -39,6 +61,11 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
   import { get_official_associated_team_use_cases } from "../../core/usecases/OfficialAssociatedTeamUseCases";
   import { get_fixture_use_cases } from "../../core/usecases/FixtureUseCases";
   import { get_team_use_cases } from "../../core/usecases/TeamUseCases";
+  import { get_player_team_membership_use_cases } from "../../core/usecases/PlayerTeamMembershipUseCases";
+  import {
+    apply_player_transfer_membership_change,
+    type TransferApprovalDetails,
+  } from "../logic/playerTransferApprovalLogic";
   import { auth_store, check_action_authorization } from "../stores/auth";
   import { get } from "svelte/store";
   import {
@@ -66,6 +93,10 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
     LeagueConfig,
   } from "$lib/core/entities/CompetitionFormat";
   import { build_stage_template_defaults } from "$lib/presentation/logic/competitionFormatStageTemplateLogic";
+  import {
+    fetch_unfiltered_foreign_key_options,
+    fetch_filtered_entities_for_field,
+  } from "$lib/presentation/logic/dynamicFormDataLoader";
 
   export let entity_type: string;
   export let entity_data: Partial<BaseEntity> | null = null;
@@ -107,6 +138,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
   let auth_error_message: string = "";
   let permission_denied: boolean = false;
   let permission_denied_message: string = "";
+  let save_error_message: string = "";
 
   onMount(async () => {
     const auth_result = await ensure_auth_profile();
@@ -144,7 +176,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
   $: entity_metadata = get_entity_metadata_for_type(entity_type);
   $: is_edit_mode = determine_if_edit_mode(entity_data);
   $: form_title = build_form_title(
-    entity_metadata?.display_name || "",
+    entity_metadata?.display_name || format_entity_display_name(entity_type),
     is_edit_mode,
   );
   $: sub_entity_fields = get_sub_entity_fields(entity_metadata);
@@ -171,60 +203,11 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
 
   function get_entity_metadata_for_type(type: string): EntityMetadata | null {
     const normalized_type = type.toLowerCase();
-    const metadata =
-      entityMetadataRegistry.get_entity_metadata(normalized_type);
+    const metadata = entityMetadataRegistry.get_entity_metadata(normalized_type);
     if (!metadata) {
-      console.error(
-        `No metadata found for entity type: ${type} (normalized: ${normalized_type})`,
-      );
+      console.error(`No metadata found for entity type: ${type} (normalized: ${normalized_type})`);
     }
     return metadata;
-  }
-
-  function determine_if_edit_mode(data: Partial<BaseEntity> | null): boolean {
-    return data !== null && data.id !== undefined;
-  }
-
-  function format_entity_display_name(raw_name: string): string {
-    if (typeof raw_name !== "string" || raw_name.length === 0) return "Entity";
-    const with_spaces = raw_name
-      .replace(/([a-z])([A-Z])/g, "$1 $2")
-      .replace(/_/g, " ");
-    return with_spaces
-      .split(" ")
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-      .join(" ");
-  }
-
-  function build_form_title(display_name: string, edit_mode: boolean): string {
-    const action = edit_mode ? "Edit" : "Create";
-    const formatted_name =
-      display_name.length > 0
-        ? display_name
-        : format_entity_display_name(entity_type);
-    return `${action} ${formatted_name}`;
-  }
-
-  function get_sub_entity_fields(
-    metadata: EntityMetadata | null,
-  ): FieldMetadata[] {
-    if (!metadata) return [];
-    return metadata.fields.filter((field) => field.field_type === "sub_entity");
-  }
-
-  function build_sub_entity_filter(
-    field: FieldMetadata,
-    parent_entity: Partial<BaseEntity> | null,
-  ): SubEntityFilter | null {
-    if (!field.sub_entity_config || !parent_entity?.id) return null;
-
-    const config = field.sub_entity_config;
-    return {
-      foreign_key_field: config.foreign_key_field,
-      foreign_key_value: parent_entity.id,
-      holder_type_field: config.holder_type_field,
-      holder_type_value: config.holder_type_value,
-    };
   }
 
   function build_sub_entity_crud_handlers(
@@ -365,18 +348,19 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
     return build_stage_template_defaults(format_type, league_config);
   }
 
-  function is_field_visible_by_visible_when_condition(
+  function should_field_be_read_only(
     field: FieldMetadata,
-    current_form_data: Record<string, any>,
+    auth_restricted_fields: Set<string>,
   ): boolean {
-    if (!field.visible_when) return true;
-    const dependency_value =
-      current_form_data[field.visible_when.depends_on_field];
-    if (!dependency_value) return false;
-    return field.visible_when.visible_when_values.includes(dependency_value);
+    return compute_field_read_only_state(
+      field,
+      is_edit_mode,
+      auth_restricted_fields,
+      sub_entity_filter,
+    );
   }
 
-  function get_sorted_fields_for_display(
+  function get_form_sorted_fields_for_display(
     fields: FieldMetadata[],
     in_edit_mode: boolean,
     current_form_data: Record<string, any>,
@@ -386,15 +370,9 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
     );
     const visible_fields = renderable_fields.filter((f) => {
       if (!in_edit_mode && f.hide_on_create) return false;
-      if (
-        is_field_controlled_by_sub_entity_filter(
-          f.field_name,
-          sub_entity_filter,
-        )
-      )
-        return false;
-      if (!is_field_visible_by_visible_when_condition(f, current_form_data))
-        return false;
+      if (in_edit_mode && f.hide_on_edit) return false;
+      if (is_field_controlled_by_sub_entity_filter(f.field_name, sub_entity_filter)) return false;
+      if (!is_field_visible_by_visible_when_condition(f, current_form_data)) return false;
       return true;
     });
     const file_fields = visible_fields.filter((f) => f.field_type === "file");
@@ -408,30 +386,6 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
     return result;
   }
 
-  function is_field_controlled_by_sub_entity_filter(
-    field_name: string,
-    filter: SubEntityFilter | null,
-  ): boolean {
-    if (!filter) return false;
-    if (field_name === filter.foreign_key_field) return true;
-    if (filter.holder_type_field && field_name === filter.holder_type_field)
-      return true;
-    return false;
-  }
-
-  function should_field_be_read_only(
-    field: FieldMetadata,
-    auth_restricted_fields: Set<string>,
-  ): boolean {
-    if (field.is_read_only) return true;
-    if (field.is_read_only_on_edit && is_edit_mode) return true;
-    if (auth_restricted_fields.has(field.field_name)) return true;
-    return is_field_controlled_by_sub_entity_filter(
-      field.field_name,
-      sub_entity_filter,
-    );
-  }
-
   function is_field_restricted_by_authorization(field_name: string): boolean {
     return authorization_restricted_fields.has(field_name);
   }
@@ -440,23 +394,6 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
     return get_authorization_preselect_values(
       current_auth_profile as UserScopeProfile | null,
     );
-  }
-
-  function get_input_type_for_field(field: FieldMetadata): string {
-    if (field.field_type === "number") return "number";
-    if (field.field_type === "date") return "date";
-    if (field.field_type === "file") return "file";
-    if (field.field_name.includes("email")) return "email";
-    if (field.field_name.includes("phone") || field.field_name.includes("tel"))
-      return "tel";
-    if (field.field_name.includes("icon")) return "text";
-    if (
-      field.field_name.includes("url") ||
-      field.field_name.includes("website") ||
-      field.field_name.includes("link")
-    )
-      return "url";
-    return "text";
   }
 
   async function handle_file_input_change(
@@ -482,15 +419,6 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
     }
   }
 
-  function convert_file_to_base64(file: File): Promise<string> {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = (error) => reject(error);
-      reader.readAsDataURL(file);
-    });
-  }
-
   function hide_broken_image(event: Event): boolean {
     const image_element = event.currentTarget as HTMLImageElement | null;
     if (!image_element) return false;
@@ -502,78 +430,10 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
     fields: FieldMetadata[],
   ): Promise<void> {
     is_loading = true;
-    const new_options: Record<string, BaseEntity[]> = {};
-
-    for (const field of fields) {
-      if (field.field_type === "foreign_key" && field.foreign_key_entity) {
-        if (field.foreign_key_filter) {
-          continue;
-        }
-        const options_result = await load_foreign_key_options_for_field(
-          field.foreign_key_entity,
-        );
-        if (options_result.success) {
-          console.debug("[DEBUG] Loaded options_result.data", {
-            data: options_result.data,
-          });
-          new_options[field.field_name] = options_result.data;
-        }
-      }
-    }
-
+    const new_options = await fetch_unfiltered_foreign_key_options(fields);
     foreign_key_options = { ...foreign_key_options, ...new_options };
-    console.debug("[DEBUG] Loaded foreign_key_options", {
-      options: foreign_key_options,
-    });
+    console.debug("[DEBUG] Loaded foreign_key_options", { options: foreign_key_options });
     is_loading = false;
-  }
-
-  async function load_foreign_key_options_for_field(
-    foreign_entity_type: string,
-  ): Promise<{ success: boolean; data: BaseEntity[] }> {
-    try {
-      const normalized_type = foreign_entity_type.toLowerCase();
-      const use_cases = get_use_cases_for_entity_type(normalized_type);
-      if (!use_cases || typeof use_cases.list !== "function") {
-        console.warn(
-          `No usable list method found for entity type: ${foreign_entity_type}`,
-        );
-        return { success: false, data: [] };
-      }
-      const result = await use_cases.list();
-      if (!result.success) {
-        const error_msg =
-          "error_message" in result
-            ? result.error_message
-            : "error" in result
-              ? result.error
-              : "Unknown error";
-        console.warn(
-          `Failed to load options for ${foreign_entity_type}:`,
-          error_msg,
-        );
-        return { success: false, data: [] };
-      }
-
-      const data = result.data as unknown;
-      const entities: BaseEntity[] = Array.isArray(data)
-        ? (data as BaseEntity[])
-        : Array.isArray((data as { items?: unknown })?.items)
-          ? ((data as { items: unknown[] }).items as unknown as BaseEntity[])
-          : [];
-
-      console.debug("[DEBUG] Loaded foreign key options", {
-        foreign_entity_type,
-        count: entities.length,
-      });
-      return { success: true, data: entities };
-    } catch (error) {
-      console.error(
-        `Error loading foreign key options for ${foreign_entity_type}:`,
-        error,
-      );
-      return { success: false, data: [] };
-    }
   }
 
   async function load_filtered_foreign_key_options(
@@ -582,650 +442,32 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
   ): Promise<void> {
     if (!field.foreign_key_filter || !dependency_value) {
       foreign_key_options[field.field_name] = [];
-      filtered_fields_loading = {
-        ...filtered_fields_loading,
-        [field.field_name]: false,
-      };
+      filtered_fields_loading = { ...filtered_fields_loading, [field.field_name]: false };
       return;
     }
 
-    filtered_fields_loading = {
-      ...filtered_fields_loading,
-      [field.field_name]: true,
-    };
+    filtered_fields_loading = { ...filtered_fields_loading, [field.field_name]: true };
 
-    const filter_config = field.foreign_key_filter;
-
-    if (filter_config.filter_type === "teams_from_competition") {
-      await load_teams_from_competition(field, dependency_value);
-      return;
-    }
-
-    if (filter_config.filter_type === "competitions_from_organization") {
-      await load_competitions_from_organization(field, dependency_value);
-      return;
-    }
-
-    if (filter_config.filter_type === "stages_from_competition") {
-      await load_stages_from_competition(field, dependency_value);
-      return;
-    }
-
-    if (filter_config.filter_type === "fixtures_from_organization") {
-      await load_fixtures_from_organization(field, dependency_value);
-      return;
-    }
-
-    if (filter_config.filter_type === "teams_from_organization") {
-      await load_teams_from_organization(field, dependency_value);
-      return;
-    }
-
-    if (filter_config.filter_type === "players_from_organization") {
-      await load_players_from_organization(field, dependency_value);
-      return;
-    }
-
-    if (filter_config.filter_type === "officials_from_organization") {
-      await load_officials_from_organization(field, dependency_value);
-      return;
-    }
-
-    if (filter_config.filter_type === "live_game_logs_from_organization") {
-      await load_live_game_logs_from_organization(field, dependency_value);
-      return;
-    }
-
-    await load_filtered_jersey_options_internal(field, dependency_value);
-  }
-
-  async function load_teams_from_competition(
-    field: FieldMetadata,
-    competition_id: string,
-  ): Promise<void> {
-    const comp_teams_result =
-      await competition_team_use_cases.list_teams_in_competition(
-        competition_id,
-        { page_size: 100 },
-      );
-
-    if (!comp_teams_result.success) {
-      console.warn(
-        "[FILTERED_FK] Failed to load competition teams:",
-        competition_id,
-      );
-      foreign_key_options[field.field_name] = [];
-      all_competition_teams_cache = [];
-      filtered_fields_loading = {
-        ...filtered_fields_loading,
-        [field.field_name]: false,
-      };
-      return;
-    }
-
-    const competition_teams = comp_teams_result.data.items;
-    competition_team_ids = new Set(
-      competition_teams.map((ct: { team_id: any }) => ct.team_id),
+    const result = await fetch_filtered_entities_for_field(
+      field,
+      dependency_value,
+      foreign_key_options["player_id"] || [],
+      form_data,
     );
 
-    const team_use_cases = get_use_cases_for_entity_type("team");
-    if (!team_use_cases) {
-      console.warn("[FILTERED_FK] Missing team use cases");
-      all_competition_teams_cache = [];
-      filtered_fields_loading = {
-        ...filtered_fields_loading,
-        [field.field_name]: false,
-      };
-      return;
+    foreign_key_options = { ...foreign_key_options, [field.field_name]: result.entities };
+
+    if (result.all_competition_teams) all_competition_teams_cache = result.all_competition_teams;
+    if (result.competition_team_ids) competition_team_ids = result.competition_team_ids;
+    if (result.auto_select_team_id && !form_data[field.field_name]) {
+      form_data = { ...form_data, [field.field_name]: result.auto_select_team_id };
     }
 
-    const all_teams_result = await team_use_cases.list();
-    if (!all_teams_result.success) {
-      console.warn("[FILTERED_FK] Failed to load teams");
-      all_competition_teams_cache = [];
-      filtered_fields_loading = {
-        ...filtered_fields_loading,
-        [field.field_name]: false,
-      };
-      return;
+    filtered_fields_loading = { ...filtered_fields_loading, [field.field_name]: false };
+
+    if (field.field_name.includes("jersey")) {
+      check_jersey_color_clashes();
     }
-
-    const all_teams_data = all_teams_result.data as unknown;
-    const all_teams: BaseEntity[] = Array.isArray(all_teams_data)
-      ? (all_teams_data as BaseEntity[])
-      : Array.isArray((all_teams_data as { items?: unknown })?.items)
-        ? ((all_teams_data as { items: unknown[] })
-            .items as unknown as BaseEntity[])
-        : [];
-
-    const filtered_teams = all_teams.filter((team) =>
-      competition_team_ids.has(team.id),
-    );
-
-    all_competition_teams_cache = [...filtered_teams];
-
-    const exclude_field = field.foreign_key_filter?.exclude_field;
-    const exclude_value = exclude_field ? form_data[exclude_field] : null;
-
-    const final_teams = exclude_value
-      ? filtered_teams.filter((team) => team.id !== exclude_value)
-      : filtered_teams;
-
-    console.debug("[FILTERED_FK] Loaded competition teams", {
-      field: field.field_name,
-      competition_id,
-      total_competition_teams: competition_teams.length,
-      filtered_count: final_teams.length,
-      exclude_field,
-      exclude_value,
-    });
-
-    foreign_key_options = {
-      ...foreign_key_options,
-      [field.field_name]: final_teams,
-    };
-
-    filtered_fields_loading = {
-      ...filtered_fields_loading,
-      [field.field_name]: false,
-    };
-  }
-
-  async function load_competitions_from_organization(
-    field: FieldMetadata,
-    organization_id: string,
-  ): Promise<void> {
-    const competition_use_cases = get_use_cases_for_entity_type("competition");
-    if (!competition_use_cases) {
-      console.warn("[FILTERED_FK] Missing competition use cases");
-      foreign_key_options[field.field_name] = [];
-      filtered_fields_loading = {
-        ...filtered_fields_loading,
-        [field.field_name]: false,
-      };
-      return;
-    }
-
-    const competitions_result = await competition_use_cases.list();
-    if (!competitions_result.success) {
-      console.warn(
-        "[FILTERED_FK] Failed to load competitions:",
-        organization_id,
-      );
-      foreign_key_options[field.field_name] = [];
-      filtered_fields_loading = {
-        ...filtered_fields_loading,
-        [field.field_name]: false,
-      };
-      return;
-    }
-
-    const all_competitions_data = competitions_result.data as unknown;
-    const all_competitions: BaseEntity[] = Array.isArray(all_competitions_data)
-      ? (all_competitions_data as BaseEntity[])
-      : Array.isArray((all_competitions_data as { items?: unknown })?.items)
-        ? ((all_competitions_data as { items: unknown[] })
-            .items as unknown as BaseEntity[])
-        : [];
-
-    const filtered_competitions = all_competitions.filter(
-      (comp) =>
-        (comp as unknown as { organization_id: string }).organization_id ===
-        organization_id,
-    );
-
-    console.debug("[FILTERED_FK] Loaded organization competitions", {
-      field: field.field_name,
-      organization_id,
-      total_competitions: all_competitions.length,
-      filtered_count: filtered_competitions.length,
-    });
-
-    foreign_key_options = {
-      ...foreign_key_options,
-      [field.field_name]: filtered_competitions,
-    };
-
-    filtered_fields_loading = {
-      ...filtered_fields_loading,
-      [field.field_name]: false,
-    };
-  }
-
-  async function load_stages_from_competition(
-    field: FieldMetadata,
-    competition_id: string,
-  ): Promise<void> {
-    const stage_use_cases = get_use_cases_for_entity_type("competitionstage");
-    if (!stage_use_cases) {
-      console.warn("[FILTERED_FK] Missing competition stage use cases");
-      foreign_key_options[field.field_name] = [];
-      filtered_fields_loading = {
-        ...filtered_fields_loading,
-        [field.field_name]: false,
-      };
-      return;
-    }
-
-    const stages_result = await stage_use_cases.list(
-      { competition_id },
-      { page_size: 100 },
-    );
-    if (!stages_result.success) {
-      console.warn(
-        "[FILTERED_FK] Failed to load competition stages:",
-        competition_id,
-      );
-      foreign_key_options[field.field_name] = [];
-      filtered_fields_loading = {
-        ...filtered_fields_loading,
-        [field.field_name]: false,
-      };
-      return;
-    }
-
-    const stages_data = stages_result.data as unknown;
-    const all_stages: BaseEntity[] = Array.isArray(stages_data)
-      ? (stages_data as BaseEntity[])
-      : Array.isArray((stages_data as { items?: unknown })?.items)
-        ? ((stages_data as { items: unknown[] })
-            .items as unknown as BaseEntity[])
-        : [];
-
-    console.debug("[FILTERED_FK] Loaded competition stages", {
-      field: field.field_name,
-      competition_id,
-      stage_count: all_stages.length,
-    });
-
-    foreign_key_options = {
-      ...foreign_key_options,
-      [field.field_name]: all_stages,
-    };
-
-    filtered_fields_loading = {
-      ...filtered_fields_loading,
-      [field.field_name]: false,
-    };
-  }
-
-  async function load_fixtures_from_organization(
-    field: FieldMetadata,
-    organization_id: string,
-  ): Promise<void> {
-    const fixture_use_cases = get_use_cases_for_entity_type("fixture");
-    if (!fixture_use_cases) {
-      console.warn("[FILTERED_FK] Missing fixture use cases");
-      foreign_key_options[field.field_name] = [];
-      filtered_fields_loading = {
-        ...filtered_fields_loading,
-        [field.field_name]: false,
-      };
-      return;
-    }
-
-    const fixtures_result = await fixture_use_cases.list();
-    if (!fixtures_result.success) {
-      console.warn("[FILTERED_FK] Failed to load fixtures:", organization_id);
-      foreign_key_options[field.field_name] = [];
-      filtered_fields_loading = {
-        ...filtered_fields_loading,
-        [field.field_name]: false,
-      };
-      return;
-    }
-
-    const all_fixtures_data = fixtures_result.data as unknown;
-    const all_fixtures: BaseEntity[] = Array.isArray(all_fixtures_data)
-      ? (all_fixtures_data as BaseEntity[])
-      : Array.isArray((all_fixtures_data as { items?: unknown })?.items)
-        ? ((all_fixtures_data as { items: unknown[] })
-            .items as unknown as BaseEntity[])
-        : [];
-
-    const filtered_fixtures = all_fixtures.filter(
-      (fixture) =>
-        (fixture as unknown as { organization_id: string }).organization_id ===
-        organization_id,
-    );
-
-    console.debug("[FILTERED_FK] Loaded organization fixtures", {
-      field: field.field_name,
-      organization_id,
-      total_fixtures: all_fixtures.length,
-      filtered_count: filtered_fixtures.length,
-    });
-
-    foreign_key_options = {
-      ...foreign_key_options,
-      [field.field_name]: filtered_fixtures,
-    };
-
-    filtered_fields_loading = {
-      ...filtered_fields_loading,
-      [field.field_name]: false,
-    };
-  }
-
-  async function load_teams_from_organization(
-    field: FieldMetadata,
-    organization_id: string,
-  ): Promise<void> {
-    const team_use_cases = get_use_cases_for_entity_type("team");
-    if (!team_use_cases) {
-      console.warn("[FILTERED_FK] Missing team use cases");
-      foreign_key_options[field.field_name] = [];
-      filtered_fields_loading = {
-        ...filtered_fields_loading,
-        [field.field_name]: false,
-      };
-      return;
-    }
-
-    const teams_result = await team_use_cases.list();
-    if (!teams_result.success) {
-      console.warn("[FILTERED_FK] Failed to load teams:", organization_id);
-      foreign_key_options[field.field_name] = [];
-      filtered_fields_loading = {
-        ...filtered_fields_loading,
-        [field.field_name]: false,
-      };
-      return;
-    }
-
-    const all_teams_data = teams_result.data as unknown;
-    const all_teams: BaseEntity[] = Array.isArray(all_teams_data)
-      ? (all_teams_data as BaseEntity[])
-      : Array.isArray((all_teams_data as { items?: unknown })?.items)
-        ? ((all_teams_data as { items: unknown[] })
-            .items as unknown as BaseEntity[])
-        : [];
-
-    const filtered_teams = all_teams.filter(
-      (team) =>
-        (team as unknown as { organization_id: string }).organization_id ===
-        organization_id,
-    );
-
-    console.debug("[FILTERED_FK] Loaded organization teams", {
-      field: field.field_name,
-      organization_id,
-      total_teams: all_teams.length,
-      filtered_count: filtered_teams.length,
-    });
-
-    foreign_key_options = {
-      ...foreign_key_options,
-      [field.field_name]: filtered_teams,
-    };
-
-    filtered_fields_loading = {
-      ...filtered_fields_loading,
-      [field.field_name]: false,
-    };
-  }
-
-  async function load_players_from_organization(
-    field: FieldMetadata,
-    organization_id: string,
-  ): Promise<void> {
-    const player_use_cases = get_use_cases_for_entity_type("player");
-    if (!player_use_cases) {
-      console.warn("[FILTERED_FK] Missing player use cases");
-      foreign_key_options[field.field_name] = [];
-      filtered_fields_loading = {
-        ...filtered_fields_loading,
-        [field.field_name]: false,
-      };
-      return;
-    }
-
-    const players_result = await player_use_cases.list();
-    if (!players_result.success) {
-      console.warn("[FILTERED_FK] Failed to load players:", organization_id);
-      foreign_key_options[field.field_name] = [];
-      filtered_fields_loading = {
-        ...filtered_fields_loading,
-        [field.field_name]: false,
-      };
-      return;
-    }
-
-    const all_players_data = players_result.data as unknown;
-    const all_players: BaseEntity[] = Array.isArray(all_players_data)
-      ? (all_players_data as BaseEntity[])
-      : Array.isArray((all_players_data as { items?: unknown })?.items)
-        ? ((all_players_data as { items: unknown[] })
-            .items as unknown as BaseEntity[])
-        : [];
-
-    const filtered_players = all_players.filter(
-      (player) =>
-        (player as unknown as { organization_id: string }).organization_id ===
-        organization_id,
-    );
-
-    console.debug("[FILTERED_FK] Loaded organization players", {
-      field: field.field_name,
-      organization_id,
-      total_players: all_players.length,
-      filtered_count: filtered_players.length,
-    });
-
-    foreign_key_options = {
-      ...foreign_key_options,
-      [field.field_name]: filtered_players,
-    };
-
-    filtered_fields_loading = {
-      ...filtered_fields_loading,
-      [field.field_name]: false,
-    };
-  }
-
-  async function load_officials_from_organization(
-    field: FieldMetadata,
-    organization_id: string,
-  ): Promise<void> {
-    const official_use_cases = get_use_cases_for_entity_type("official");
-    if (!official_use_cases) {
-      console.warn("[FILTERED_FK] Missing official use cases");
-      foreign_key_options[field.field_name] = [];
-      filtered_fields_loading = {
-        ...filtered_fields_loading,
-        [field.field_name]: false,
-      };
-      return;
-    }
-
-    const officials_result = await official_use_cases.list({ organization_id });
-    if (!officials_result.success) {
-      console.warn("[FILTERED_FK] Failed to load officials:", organization_id);
-      foreign_key_options[field.field_name] = [];
-      filtered_fields_loading = {
-        ...filtered_fields_loading,
-        [field.field_name]: false,
-      };
-      return;
-    }
-
-    const all_officials_data = officials_result.data as unknown;
-    const filtered_officials: BaseEntity[] = Array.isArray(all_officials_data)
-      ? (all_officials_data as BaseEntity[])
-      : Array.isArray((all_officials_data as { items?: unknown })?.items)
-        ? ((all_officials_data as { items: unknown[] })
-            .items as unknown as BaseEntity[])
-        : [];
-
-    console.debug("[FILTERED_FK] Loaded organization officials", {
-      field: field.field_name,
-      organization_id,
-      filtered_count: filtered_officials.length,
-    });
-
-    foreign_key_options = {
-      ...foreign_key_options,
-      [field.field_name]: filtered_officials,
-    };
-
-    filtered_fields_loading = {
-      ...filtered_fields_loading,
-      [field.field_name]: false,
-    };
-  }
-
-  async function load_live_game_logs_from_organization(
-    field: FieldMetadata,
-    organization_id: string,
-  ): Promise<void> {
-    const live_game_log_use_cases =
-      get_use_cases_for_entity_type("livegamelog");
-    if (!live_game_log_use_cases) {
-      console.warn("[FILTERED_FK] Missing live game log use cases");
-      foreign_key_options[field.field_name] = [];
-      filtered_fields_loading = {
-        ...filtered_fields_loading,
-        [field.field_name]: false,
-      };
-      return;
-    }
-
-    const live_game_logs_result = await live_game_log_use_cases.list();
-    if (!live_game_logs_result.success) {
-      console.warn(
-        "[FILTERED_FK] Failed to load live game logs:",
-        organization_id,
-      );
-      foreign_key_options[field.field_name] = [];
-      filtered_fields_loading = {
-        ...filtered_fields_loading,
-        [field.field_name]: false,
-      };
-      return;
-    }
-
-    const all_live_game_logs_data = live_game_logs_result.data as unknown;
-    const all_live_game_logs: BaseEntity[] = Array.isArray(
-      all_live_game_logs_data,
-    )
-      ? (all_live_game_logs_data as BaseEntity[])
-      : Array.isArray((all_live_game_logs_data as { items?: unknown })?.items)
-        ? ((all_live_game_logs_data as { items: unknown[] })
-            .items as unknown as BaseEntity[])
-        : [];
-
-    const filtered_live_game_logs = all_live_game_logs.filter(
-      (log) =>
-        (log as unknown as { organization_id: string }).organization_id ===
-        organization_id,
-    );
-
-    console.debug("[FILTERED_FK] Loaded organization live game logs", {
-      field: field.field_name,
-      organization_id,
-      total_live_game_logs: all_live_game_logs.length,
-      filtered_count: filtered_live_game_logs.length,
-    });
-
-    foreign_key_options = {
-      ...foreign_key_options,
-      [field.field_name]: filtered_live_game_logs,
-    };
-
-    filtered_fields_loading = {
-      ...filtered_fields_loading,
-      [field.field_name]: false,
-    };
-  }
-
-  async function load_filtered_jersey_options_internal(
-    field: FieldMetadata,
-    fixture_id: string,
-  ): Promise<void> {
-    const filter_config = field.foreign_key_filter;
-    if (!filter_config) return;
-
-    const fixture_use_cases = get_use_cases_for_entity_type("fixture");
-    const jersey_use_cases = get_use_cases_for_entity_type("jerseycolor");
-
-    if (!fixture_use_cases || !jersey_use_cases) {
-      console.warn("[FILTERED_FK] Missing use cases for filtered foreign key");
-      filtered_fields_loading = {
-        ...filtered_fields_loading,
-        [field.field_name]: false,
-      };
-      return;
-    }
-
-    const fixture_result = await fixture_use_cases.get_by_id(fixture_id);
-    if (!fixture_result.success || !fixture_result.data) {
-      console.warn("[FILTERED_FK] Could not load fixture:", fixture_id);
-      filtered_fields_loading = {
-        ...filtered_fields_loading,
-        [field.field_name]: false,
-      };
-      return;
-    }
-
-    const fixture = fixture_result.data as any;
-    let filter_holder_id = "";
-    let filter_holder_type = "";
-
-    if (filter_config.filter_type === "team_jersey_from_fixture") {
-      filter_holder_type = "team";
-      filter_holder_id =
-        filter_config.team_side === "home"
-          ? fixture.home_team_id
-          : fixture.away_team_id;
-    } else if (
-      filter_config.filter_type === "official_jersey_from_competition"
-    ) {
-      filter_holder_type = "competition_official";
-      filter_holder_id = fixture.competition_id;
-    }
-
-    if (!filter_holder_id) {
-      console.warn("[FILTERED_FK] No holder ID found for filter");
-      foreign_key_options[field.field_name] = [];
-      filtered_fields_loading = {
-        ...filtered_fields_loading,
-        [field.field_name]: false,
-      };
-      return;
-    }
-
-    const jersey_result = await jersey_use_cases.list({
-      holder_type: filter_holder_type,
-      holder_id: filter_holder_id,
-    });
-
-    if (jersey_result.success) {
-      const data = jersey_result.data as unknown;
-      const jerseys: BaseEntity[] = Array.isArray(data)
-        ? (data as BaseEntity[])
-        : Array.isArray((data as { items?: unknown })?.items)
-          ? ((data as { items: unknown[] }).items as unknown as BaseEntity[])
-          : [];
-
-      console.debug("[FILTERED_FK] Loaded filtered jersey options", {
-        field: field.field_name,
-        filter_type: filter_config.filter_type,
-        holder_type: filter_holder_type,
-        holder_id: filter_holder_id,
-        count: jerseys.length,
-      });
-
-      foreign_key_options = {
-        ...foreign_key_options,
-        [field.field_name]: jerseys,
-      };
-    }
-
-    filtered_fields_loading = {
-      ...filtered_fields_loading,
-      [field.field_name]: false,
-    };
-    check_jersey_color_clashes();
   }
 
   let all_competition_teams_cache: BaseEntity[] = [];
@@ -1339,6 +581,24 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
     if (is_fixture_entity && is_fixture_team_field) {
       void run_fixture_team_gender_mismatch_check();
     }
+
+    const is_transfer_entity =
+      entity_type.toLowerCase() === "playerteamtransferhistory";
+    if (is_transfer_entity && changed_field_name === "status") {
+      auto_fill_transfer_approval_fields(new_value);
+    }
+  }
+
+  function auto_fill_transfer_approval_fields(new_status: string): void {
+    if (new_status !== "approved") return;
+
+    form_data["transfer_date"] = new Date().toISOString().split("T")[0];
+    form_data["approved_by"] = current_auth_profile?.display_name ?? "";
+
+    console.debug("[TRANSFER] Auto-filled approval fields", {
+      transfer_date: form_data["transfer_date"],
+      approved_by: form_data["approved_by"],
+    });
   }
 
   async function load_filtered_options_for_initialized_data(
@@ -1695,6 +955,9 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
     }
 
     is_save_in_progress = true;
+    save_error_message = "";
+    const is_player_transfer_being_approved =
+      check_if_player_transfer_is_being_approved();
     validation_errors = {};
 
     const validation_result = validate_form_data_against_metadata(
@@ -1769,6 +1032,14 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
           { id: saved_entity.id, was_new_entity, entity: saved_entity },
         );
 
+        if (is_player_transfer_being_approved) {
+          await execute_player_transfer_membership_change(saved_entity);
+        }
+
+        if (is_transfer_entity_and_status_just_changed_to_declined()) {
+          console.debug("[TRANSFER] Transfer declined — no membership changes made");
+        }
+
         if (is_inline_mode) {
           dispatch("inline_save_success", { entity: saved_entity });
         } else if (view_callbacks?.on_save_completed) {
@@ -1781,6 +1052,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
         if (!save_result.success) {
           const error_msg = save_result.error || "Unknown error occurred";
           console.error("[DynamicEntityForm] Save failed:", error_msg);
+          save_error_message = error_msg;
         }
         validation_errors = {};
       }
@@ -1791,6 +1063,39 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
         error,
       );
     }
+  }
+
+  function check_if_player_transfer_is_being_approved(): boolean {
+    return (
+      entity_type.toLowerCase() === "playerteamtransferhistory" &&
+      is_edit_mode &&
+      (entity_data as Record<string, unknown>)?.["status"] !== "approved" &&
+      form_data["status"] === "approved"
+    );
+  }
+
+  function is_transfer_entity_and_status_just_changed_to_declined(): boolean {
+    return (
+      entity_type.toLowerCase() === "playerteamtransferhistory" &&
+      is_edit_mode &&
+      (entity_data as Record<string, unknown>)?.["status"] !== "declined" &&
+      form_data["status"] === "declined"
+    );
+  }
+
+  async function execute_player_transfer_membership_change(
+    saved_transfer: BaseEntity,
+  ): Promise<boolean> {
+    const transfer = saved_transfer as unknown as TransferApprovalDetails;
+    const result = await apply_player_transfer_membership_change(
+      get_player_team_membership_use_cases(),
+      transfer,
+    );
+    if (!result.success) {
+      save_error_message = result.error;
+      return false;
+    }
+    return true;
   }
 
   function validate_form_data_against_metadata(
@@ -1848,50 +1153,6 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
       is_valid: Object.keys(errors).length === 0,
       errors,
     };
-  }
-
-  function validate_field_against_rules(
-    value: any,
-    rules: any[],
-  ): { is_valid: boolean; error_message: string } {
-    for (const rule of rules) {
-      if (
-        rule.rule_type === "min_length" &&
-        typeof value === "string" &&
-        value.length < rule.rule_value
-      ) {
-        return { is_valid: false, error_message: rule.error_message };
-      }
-      if (
-        rule.rule_type === "max_length" &&
-        typeof value === "string" &&
-        value.length > rule.rule_value
-      ) {
-        return { is_valid: false, error_message: rule.error_message };
-      }
-      if (
-        rule.rule_type === "min_value" &&
-        typeof value === "number" &&
-        value < rule.rule_value
-      ) {
-        return { is_valid: false, error_message: rule.error_message };
-      }
-      if (
-        rule.rule_type === "max_value" &&
-        typeof value === "number" &&
-        value > rule.rule_value
-      ) {
-        return { is_valid: false, error_message: rule.error_message };
-      }
-      if (
-        rule.rule_type === "pattern" &&
-        typeof value === "string" &&
-        !new RegExp(rule.rule_value).test(value)
-      ) {
-        return { is_valid: false, error_message: rule.error_message };
-      }
-    }
-    return { is_valid: true, error_message: "" };
   }
 
   function handle_cancel_action(): void {
@@ -1956,11 +1217,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
     parent_field_name: string,
   ): FieldMetadata[] {
     if (!entity_metadata) return [];
-    return entity_metadata.fields.filter(
-      (field) =>
-        field.enum_dependency &&
-        field.enum_dependency.depends_on_field === parent_field_name,
-    );
+    return find_dependent_enum_fields_from_logic(entity_metadata, parent_field_name);
   }
 
   function clear_dependent_enum_values(parent_field_name: string): void {
@@ -2006,13 +1263,6 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
     return true;
   }
 
-  function format_enum_label(value: string): string {
-    return value
-      .split("_")
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-      .join(" ");
-  }
-
   function build_enum_select_options(
     field: FieldMetadata,
   ): { value: string; label: string }[] {
@@ -2048,84 +1298,8 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
     }));
   }
 
-  function has_enum_options(field: FieldMetadata): boolean {
-    if (field.enum_options && field.enum_options.length > 0) return true;
-    if (field.enum_values && field.enum_values.length > 0) return true;
-    if (field.enum_dependency) return true;
-    return false;
-  }
-
-  function is_jersey_color_field(field: FieldMetadata): boolean {
-    return field.foreign_key_entity?.toLowerCase() === "jerseycolor";
-  }
-
-  function build_foreign_key_select_options(
-    field: FieldMetadata,
-    options_map: Record<string, BaseEntity[]>,
-  ): { value: string; label: string; color_swatch?: string }[] {
-    const entities = options_map[field.field_name] || [];
-    const is_jersey_field = is_jersey_color_field(field);
-
-    const options = entities
-      .map((entity) => {
-        const entity_id = String((entity as BaseEntity).id ?? "").trim();
-        if (entity_id.length === 0) return null;
-
-        const option: { value: string; label: string; color_swatch?: string } =
-          {
-            value: entity_id,
-            label: String(build_entity_display_label(entity)),
-          };
-
-        if (is_jersey_field) {
-          const jersey = entity as unknown as { main_color?: string };
-          if (jersey.main_color) {
-            option.color_swatch = jersey.main_color;
-          }
-        }
-
-        return option;
-      })
-      .filter(
-        (
-          option,
-        ): option is { value: string; label: string; color_swatch?: string } =>
-          Boolean(option),
-      );
-
-    return options;
-  }
-
   function get_foreign_key_option_count(field_name: string): number {
     return (foreign_key_options[field_name] || []).length;
-  }
-
-  function build_foreign_entity_route(entity_type: string | undefined): string {
-    const normalized =
-      typeof entity_type === "string" ? entity_type.toLowerCase() : "";
-    if (normalized === "player") return "/players";
-    if (normalized === "team") return "/teams";
-    if (normalized === "organization") return "/organizations";
-    if (normalized === "competition") return "/competitions";
-    if (normalized === "fixture") return "/fixtures";
-    if (normalized === "playerposition") return "/player-positions";
-    if (normalized === "venue") return "/venues";
-    return "";
-  }
-
-  function build_foreign_entity_cta_label(
-    entity_type: string | undefined,
-  ): string {
-    const normalized =
-      typeof entity_type === "string" ? entity_type.toLowerCase() : "";
-    if (normalized === "player") return "Create Players";
-    if (normalized === "team") return "Create Teams";
-    if (normalized === "organization") return "Create Organizations";
-    if (normalized === "competition") return "Create Competitions";
-    if (normalized === "fixture") return "Create Fixtures";
-    if (normalized === "playerposition") return "Create Player Positions";
-    if (normalized === "venue") return "Create Venues";
-    return "Create";
   }
 
   function navigate_to_foreign_entity(
@@ -2239,6 +1413,31 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
         </div>
       {/if}
 
+      {#if save_error_message}
+        <div
+          class="p-4 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 rounded-lg"
+        >
+          <div class="flex items-start gap-3">
+            <svg
+              class="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+            <p class="text-sm text-red-800 dark:text-red-200">
+              {save_error_message}
+            </p>
+          </div>
+        </div>
+      {/if}
+
       {#if info_message}
         <div
           class="p-4 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 rounded-lg"
@@ -2270,7 +1469,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
       >
         <!-- Dynamic field generation based on metadata -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-          {#each get_sorted_fields_for_display(entity_metadata.fields, is_edit_mode, form_data) as field (field.field_name)}
+          {#each get_form_sorted_fields_for_display(entity_metadata.fields, is_edit_mode, form_data) as field (field.field_name)}
             <div
               class="space-y-2 {field.field_type === 'file' ||
               field.field_type === 'stage_template_array' ||
@@ -2889,6 +2088,35 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
                   {/each}
                 </ul>
               </div>
+            </div>
+          </div>
+        {/if}
+
+        <!-- Transfer approval notice for create mode -->
+        {#if entity_type.toLowerCase() === "playerteamtransferhistory" && !is_edit_mode}
+          <div
+            class="p-4 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 rounded-lg"
+          >
+            <div class="flex items-start gap-3">
+              <svg
+                class="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              <p class="text-sm text-blue-800 dark:text-blue-200">
+                This transfer will be created with a <strong>Pending</strong> status.
+                You will need to open the transfer record and change the status to
+                <strong>Approved</strong> to complete the transfer and update the
+                player's team membership.
+              </p>
             </div>
           </div>
         {/if}

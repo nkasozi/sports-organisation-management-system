@@ -22,6 +22,7 @@ Uses explicit handlers instead of events for predictable data flow
     check_entity_permission,
     get_entity_data_category,
     normalize_to_entity_type,
+    get_entity_level_disabled_operations,
   } from "$lib/core/interfaces/ports";
   import type { SharedEntityType } from "$convex/shared_permission_definitions";
   import type { UserProfile } from "../../presentation/stores/auth";
@@ -101,6 +102,13 @@ Uses explicit handlers instead of events for predictable data flow
     }
     if (!check_entity_permission(profile.role, normalized, "delete")) {
       disabled_actions.push("delete");
+    }
+
+    const entity_restrictions = get_entity_level_disabled_operations(normalized);
+    for (const restricted_op of entity_restrictions) {
+      if (!disabled_actions.includes(restricted_op)) {
+        disabled_actions.push(restricted_op);
+      }
     }
 
     console.log(

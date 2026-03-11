@@ -1,6 +1,6 @@
 import type { BaseEntity } from "./BaseEntity";
 
-export type PlayerTeamTransferStatus = "pending" | "confirmed" | "rejected";
+export type PlayerTeamTransferStatus = "pending" | "approved" | "declined";
 
 export interface PlayerTeamTransferHistory extends BaseEntity {
   organization_id: string;
@@ -65,7 +65,7 @@ export function validate_player_team_transfer_history_input(
   }
 
   if (!input.transfer_date || input.transfer_date.trim().length === 0) {
-    validation_errors.push("Transfer date is required");
+    input.transfer_date = new Date().toISOString().split("T")[0];
   }
 
   if (!input.status || input.status.trim().length === 0) {

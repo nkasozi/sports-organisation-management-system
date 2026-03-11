@@ -29,6 +29,8 @@ import {
   clear_filter_state,
   toggle_select_all_entities,
   toggle_single_entity_selection,
+  get_column_responsive_class,
+  normalize_entity_type_for_filter,
 } from "./dynamicListLogic";
 
 function create_test_entity(
@@ -1013,5 +1015,48 @@ describe("toggle_single_entity_selection", () => {
     const result = toggle_single_entity_selection(original, "2");
     expect(original.has("2")).toBe(false);
     expect(result.has("2")).toBe(true);
+  });
+});
+
+describe("get_column_responsive_class", () => {
+  it("returns empty string for first column", () => {
+    expect(get_column_responsive_class(0)).toBe("");
+  });
+
+  it("returns sm hide class for second column", () => {
+    expect(get_column_responsive_class(1)).toBe("hidden sm:table-cell");
+  });
+
+  it("returns md hide class for third column", () => {
+    expect(get_column_responsive_class(2)).toBe("hidden md:table-cell");
+  });
+
+  it("returns lg hide class for fourth column and beyond", () => {
+    expect(get_column_responsive_class(3)).toBe("hidden lg:table-cell");
+    expect(get_column_responsive_class(10)).toBe("hidden lg:table-cell");
+  });
+});
+
+describe("normalize_entity_type_for_filter", () => {
+  it("lowercases and removes spaces", () => {
+    expect(normalize_entity_type_for_filter("Player Profile")).toBe(
+      "playerprofile",
+    );
+  });
+
+  it("removes underscores", () => {
+    expect(normalize_entity_type_for_filter("player_team_membership")).toBe(
+      "playerteammembership",
+    );
+  });
+
+  it("removes hyphens", () => {
+    expect(normalize_entity_type_for_filter("player-transfer")).toBe(
+      "playertransfer",
+    );
+  });
+
+  it("lowercases already clean strings", () => {
+    expect(normalize_entity_type_for_filter("Team")).toBe("team");
   });
 });

@@ -88,6 +88,7 @@ export {
   get_authorization_preselect_values,
   build_authorization_list_filter,
   is_field_restricted_by_authorization,
+  get_entity_level_disabled_operations,
 } from "./external/iam/AuthorizationPort";
 
 export type {
