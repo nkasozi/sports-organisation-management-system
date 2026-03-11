@@ -146,7 +146,7 @@ function get_resolution_description(action: ConflictResolutionAction): string {
   }
 }
 
-export async function log_multiple_conflicts_detected(
+async function log_multiple_conflicts_detected(
   conflicts: ConflictRecord[],
   context: ConflictAuditContext = {},
 ): Promise<{ success_count: number; failure_count: number }> {

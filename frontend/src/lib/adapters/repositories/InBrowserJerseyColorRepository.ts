@@ -113,7 +113,7 @@ export class InBrowserJerseyColorRepository
   }
 }
 
-export function create_default_jersey_colors(): JerseyColor[] {
+function create_default_jersey_colors(): JerseyColor[] {
   const now = new Date().toISOString();
 
   return [
@@ -199,16 +199,6 @@ export function get_jersey_color_repository(): JerseyColorRepository {
     singleton_instance = new InBrowserJerseyColorRepository();
   }
   return singleton_instance;
-}
-
-export async function initialize_jersey_color_repository(): Promise<void> {
-  const repository =
-    get_jersey_color_repository() as InBrowserJerseyColorRepository;
-  const has_data = await repository.has_data();
-
-  if (!has_data) {
-    await repository.seed_with_data(create_default_jersey_colors());
-  }
 }
 
 export async function reset_jersey_color_repository(): Promise<void> {

@@ -32,7 +32,7 @@ export type CreateQualificationInput = Omit<
 
 export type UpdateQualificationInput = Partial<CreateQualificationInput>;
 
-export const CERTIFICATION_LEVEL_OPTIONS = [
+const CERTIFICATION_LEVEL_OPTIONS = [
   { value: "trainee", label: "Trainee" },
   { value: "local", label: "Local" },
   { value: "regional", label: "Regional" },
@@ -42,7 +42,7 @@ export const CERTIFICATION_LEVEL_OPTIONS = [
   { value: "other", label: "Other" },
 ];
 
-export const HOLDER_TYPE_OPTIONS = [
+const HOLDER_TYPE_OPTIONS = [
   { value: "official", label: "Official" },
   { value: "team_staff", label: "Team Staff" },
 ];
@@ -123,13 +123,13 @@ export function get_days_until_expiry(expiry_date: string): number | null {
   return diff_days;
 }
 
-export function get_qualification_display_name(
+function get_qualification_display_name(
   qualification: Qualification,
 ): string {
   return `${qualification.certification_name} (${qualification.certification_level})`;
 }
 
-export function get_expiry_status_color(expiry_date: string): string {
+function get_expiry_status_color(expiry_date: string): string {
   const days = get_days_until_expiry(expiry_date);
   if (days === null) return "gray";
   if (days < 0) return "red";

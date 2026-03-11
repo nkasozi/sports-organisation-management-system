@@ -417,7 +417,7 @@ export async function pull_table_from_convex(
   }
 }
 
-export async function sync_all_tables(
+async function sync_all_tables(
   convex_client: ConvexClient,
   direction: SyncDirection = "bidirectional",
   enabled_tables: string[] = [...TABLE_NAMES],
@@ -688,7 +688,7 @@ export async function sync_all_tables(
   };
 }
 
-export async function sync_single_table(
+async function sync_single_table(
   convex_client: ConvexClient,
   table_name: string,
   direction: SyncDirection = "bidirectional",
@@ -918,7 +918,7 @@ export async function resolve_conflict(
   }
 }
 
-export async function resolve_multiple_conflicts(
+async function resolve_multiple_conflicts(
   convex_client: ConvexClient,
   requests: ConflictResolutionRequest[],
 ): Promise<{

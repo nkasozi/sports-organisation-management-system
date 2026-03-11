@@ -185,7 +185,7 @@ export function create_activity_from_competition(
   };
 }
 
-export function get_activity_status_display(status: ActivityStatus): {
+function get_activity_status_display(status: ActivityStatus): {
   label: string;
   color: string;
 } {
@@ -216,7 +216,7 @@ export function get_activity_status_display(status: ActivityStatus): {
   return status_map[status];
 }
 
-export function calculate_activity_duration_minutes(
+function calculate_activity_duration_minutes(
   start_datetime: string,
   end_datetime: string,
 ): number {
@@ -225,11 +225,11 @@ export function calculate_activity_duration_minutes(
   return Math.round((end_date.getTime() - start_date.getTime()) / (1000 * 60));
 }
 
-export function is_activity_recurring(activity: Activity): boolean {
+function is_activity_recurring(activity: Activity): boolean {
   return activity.recurrence !== null && activity.recurrence.pattern !== "none";
 }
 
-export function is_activity_from_external_source(activity: Activity): boolean {
+function is_activity_from_external_source(activity: Activity): boolean {
   return activity.source_type !== "manual";
 }
 

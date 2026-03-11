@@ -262,7 +262,7 @@ export class InBrowserPlayerRepository
   }
 }
 
-export function create_default_players(): Player[] {
+function create_default_players(): Player[] {
   const now = new Date().toISOString();
 
   return [
@@ -361,15 +361,6 @@ export function get_player_repository(): PlayerRepository {
     singleton_instance = new InBrowserPlayerRepository(membership_repository);
   }
   return singleton_instance;
-}
-
-export async function initialize_player_repository(): Promise<void> {
-  const repository = get_player_repository() as InBrowserPlayerRepository;
-  const has_data = await repository.has_data();
-
-  if (!has_data) {
-    await repository.seed_with_data(create_default_players());
-  }
 }
 
 export async function reset_player_repository(): Promise<void> {

@@ -78,11 +78,11 @@ export function create_competition_team_with_stats(
   };
 }
 
-export function calculate_goal_difference(team: CompetitionTeam): number {
+function calculate_goal_difference(team: CompetitionTeam): number {
   return team.goals_for - team.goals_against;
 }
 
-export function calculate_points(
+function calculate_points(
   wins: number,
   draws: number,
   points_per_win: number = 3,
@@ -91,7 +91,7 @@ export function calculate_points(
   return wins * points_per_win + draws * points_per_draw;
 }
 
-export function update_competition_team_after_match(
+function update_competition_team_after_match(
   team: CompetitionTeam,
   goals_scored: number,
   goals_conceded: number,
@@ -144,7 +144,7 @@ export function validate_competition_team_input(
   return validation_errors;
 }
 
-export function sort_teams_by_standings(
+function sort_teams_by_standings(
   teams: CompetitionTeam[],
 ): CompetitionTeam[] {
   return [...teams].sort((a, b) => {

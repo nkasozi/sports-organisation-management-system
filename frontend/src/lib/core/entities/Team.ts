@@ -51,7 +51,7 @@ export function get_team_initials(team: Team): string {
 export type CreateTeamInput = Omit<Team, "id" | "created_at" | "updated_at">;
 export type UpdateTeamInput = Partial<CreateTeamInput>;
 
-export function create_empty_team_input(
+function create_empty_team_input(
   organization_id: string = "",
 ): CreateTeamInput {
   return {

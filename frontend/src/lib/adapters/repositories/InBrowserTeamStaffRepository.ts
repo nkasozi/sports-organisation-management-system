@@ -203,7 +203,7 @@ export class InBrowserTeamStaffRepository
   }
 }
 
-export function create_default_team_staff(): TeamStaff[] {
+function create_default_team_staff(): TeamStaff[] {
   const now = new Date().toISOString();
 
   return [
@@ -280,16 +280,6 @@ export function get_team_staff_repository(): TeamStaffRepository {
     singleton_instance = new InBrowserTeamStaffRepository();
   }
   return singleton_instance;
-}
-
-export async function initialize_team_staff_repository(): Promise<void> {
-  const repository =
-    get_team_staff_repository() as InBrowserTeamStaffRepository;
-  const has_data = await repository.has_data();
-
-  if (!has_data) {
-    await repository.seed_with_data(create_default_team_staff());
-  }
 }
 
 export async function reset_team_staff_repository(): Promise<void> {

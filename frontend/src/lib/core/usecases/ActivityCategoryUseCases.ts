@@ -153,7 +153,7 @@ export function create_activity_category_use_cases(
   };
 }
 
-export function get_activity_category_use_cases(): ActivityCategoryUseCases {
+function get_activity_category_use_cases(): ActivityCategoryUseCases {
   const container = get_repository_container();
   return create_activity_category_use_cases(
     container.activity_category_repository,

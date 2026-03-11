@@ -17,7 +17,7 @@ export type CreateGameOfficialRoleInput = Omit<
 >;
 export type UpdateGameOfficialRoleInput = Partial<CreateGameOfficialRoleInput>;
 
-export function create_empty_game_official_role_input(
+function create_empty_game_official_role_input(
   sport_id: string | null = null,
 ): CreateGameOfficialRoleInput {
   return {
@@ -32,7 +32,7 @@ export function create_empty_game_official_role_input(
   };
 }
 
-export function get_default_football_official_roles(): CreateGameOfficialRoleInput[] {
+function get_default_football_official_roles(): CreateGameOfficialRoleInput[] {
   return [
     {
       name: "Referee",
@@ -112,7 +112,7 @@ export function get_default_football_official_roles_with_ids(): GameOfficialRole
   }));
 }
 
-export function validate_game_official_role_input(
+function validate_game_official_role_input(
   input: CreateGameOfficialRoleInput,
 ): string[] {
   const validation_errors: string[] = [];

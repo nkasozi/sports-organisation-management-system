@@ -201,4 +201,3 @@ function create_branding_store() {
 }
 
 export const branding_store = create_branding_store();
-export { DEFAULT_PLATFORM_BRANDING };

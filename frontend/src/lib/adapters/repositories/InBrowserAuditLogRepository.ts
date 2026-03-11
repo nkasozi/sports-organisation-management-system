@@ -24,7 +24,7 @@ import {
 
 const ENTITY_PREFIX = "aud";
 
-export class InBrowserAuditLogRepository
+class InBrowserAuditLogRepository
   extends InBrowserBaseRepository<
     AuditLog,
     CreateAuditLogInput,
@@ -167,64 +167,6 @@ export class InBrowserAuditLogRepository
   }
 }
 
-export function create_default_audit_logs(): AuditLog[] {
-  const now = new Date().toISOString();
-
-  return [
-    {
-      id: "aud_default_1",
-      entity_type: "organization",
-      entity_id: "org_default_1",
-      entity_display_name: "Uganda Hockey Association",
-      action: "create",
-      user_id: "usr_system",
-      user_email: "system@sportsorg.local",
-      user_display_name: "System",
-      organization_id: "*",
-      changes: [],
-      timestamp: now,
-      ip_address: "127.0.0.1",
-      user_agent: "System Initialization",
-      created_at: now,
-      updated_at: now,
-    },
-    {
-      id: "aud_default_2",
-      entity_type: "sport",
-      entity_id: "spt_field_hockey",
-      entity_display_name: "Field Hockey",
-      action: "create",
-      user_id: "usr_system",
-      user_email: "system@sportsorg.local",
-      user_display_name: "System",
-      organization_id: "*",
-      changes: [],
-      timestamp: now,
-      ip_address: "127.0.0.1",
-      user_agent: "System Initialization",
-      created_at: now,
-      updated_at: now,
-    },
-    {
-      id: "aud_default_3",
-      entity_type: "competition",
-      entity_id: "cmp_default_1",
-      entity_display_name: "National Hockey League 2025",
-      action: "create",
-      user_id: "usr_admin_1",
-      user_email: "admin@ugandahockey.org",
-      user_display_name: "Admin User",
-      organization_id: "org_default_1",
-      changes: [],
-      timestamp: now,
-      ip_address: "192.168.1.100",
-      user_agent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)",
-      created_at: now,
-      updated_at: now,
-    },
-  ];
-}
-
 let singleton_instance: InBrowserAuditLogRepository | null = null;
 
 export function get_audit_log_repository(): InBrowserAuditLogRepository {
@@ -232,19 +174,4 @@ export function get_audit_log_repository(): InBrowserAuditLogRepository {
     singleton_instance = new InBrowserAuditLogRepository();
   }
   return singleton_instance;
-}
-
-export async function initialize_audit_log_repository(): Promise<void> {
-  const repository = get_audit_log_repository();
-  const has_data = await repository.has_data();
-
-  if (!has_data) {
-    await repository.seed_with_data(create_default_audit_logs());
-  }
-}
-
-export async function reset_audit_log_repository(): Promise<void> {
-  const repository = get_audit_log_repository();
-  await repository.clear_all_data();
-  await repository.seed_with_data(create_default_audit_logs());
 }

@@ -132,7 +132,7 @@ export class InBrowserCompetitionRepository
   }
 }
 
-export function create_default_competitions(): Competition[] {
+function create_default_competitions(): Competition[] {
   const now = new Date().toISOString();
 
   return [
@@ -265,16 +265,6 @@ export function get_competition_repository(): CompetitionRepository {
     singleton_instance = new InBrowserCompetitionRepository();
   }
   return singleton_instance;
-}
-
-export async function initialize_competition_repository(): Promise<void> {
-  const repository =
-    get_competition_repository() as InBrowserCompetitionRepository;
-  const has_data = await repository.has_data();
-
-  if (!has_data) {
-    await repository.seed_with_data(create_default_competitions());
-  }
 }
 
 export async function reset_competition_repository(): Promise<void> {

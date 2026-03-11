@@ -50,7 +50,7 @@ export async function get_sport_by_id(
   }
 }
 
-export async function get_sport_by_code(
+async function get_sport_by_code(
   code: string,
 ): Promise<SportServiceResult<Sport>> {
   if (!code || code.trim() === "") {
@@ -69,7 +69,7 @@ export async function get_sport_by_code(
   }
 }
 
-export async function create_sport(
+async function create_sport(
   input: CreateSportInput,
 ): Promise<SportServiceResult<Sport>> {
   const validation_errors = validate_sport_input(input);
@@ -93,7 +93,7 @@ export async function create_sport(
   return { success: true, data: result.data };
 }
 
-export async function update_sport(
+async function update_sport(
   id: string,
   input: UpdateSportInput,
 ): Promise<SportServiceResult<Sport>> {
@@ -129,7 +129,7 @@ export async function update_sport(
   }
 }
 
-export async function delete_sport(
+async function delete_sport(
   id: string,
 ): Promise<SportServiceResult<boolean>> {
   if (!id || id.trim() === "") {
@@ -148,7 +148,7 @@ export async function delete_sport(
   }
 }
 
-export async function get_active_sports(): Promise<
+async function get_active_sports(): Promise<
   SportServiceResult<Sport[]>
 > {
   try {
@@ -160,7 +160,7 @@ export async function get_active_sports(): Promise<
   }
 }
 
-export function get_effective_official_requirements(
+function get_effective_official_requirements(
   sport: Sport,
   competition_overrides?: OfficialRequirement[],
 ): OfficialRequirement[] {
@@ -181,7 +181,7 @@ export function get_effective_official_requirements(
   return Array.from(merged_requirements.values());
 }
 
-export function get_official_requirement_source(
+function get_official_requirement_source(
   role_id: string,
   sport: Sport,
   competition_overrides?: OfficialRequirement[],

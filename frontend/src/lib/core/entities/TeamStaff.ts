@@ -28,7 +28,7 @@ export type CreateTeamStaffInput = Omit<
 >;
 export type UpdateTeamStaffInput = Partial<CreateTeamStaffInput>;
 
-export function get_team_staff_avatar(staff: TeamStaff): string {
+function get_team_staff_avatar(staff: TeamStaff): string {
   return staff.profile_image_url && staff.profile_image_url.trim() !== ""
     ? staff.profile_image_url
     : DEFAULT_STAFF_AVATAR;
@@ -38,7 +38,7 @@ export function get_team_staff_full_name(staff: TeamStaff): string {
   return `${staff.first_name} ${staff.last_name}`.trim();
 }
 
-export function get_team_staff_initials(staff: TeamStaff): string {
+function get_team_staff_initials(staff: TeamStaff): string {
   const first_initial = staff.first_name
     ? staff.first_name.charAt(0).toUpperCase()
     : "";
@@ -48,7 +48,7 @@ export function get_team_staff_initials(staff: TeamStaff): string {
   return `${first_initial}${last_initial}` || "??";
 }
 
-export function create_empty_team_staff_input(
+function create_empty_team_staff_input(
   organization_id: string = "",
   team_id: string = "",
   role_id: string = "",

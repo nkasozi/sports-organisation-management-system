@@ -105,7 +105,7 @@ export class InBrowserPlayerTeamMembershipRepository
   }
 }
 
-export function create_default_player_team_memberships(): PlayerTeamMembership[] {
+function create_default_player_team_memberships(): PlayerTeamMembership[] {
   const now = new Date().toISOString();
 
   return [
@@ -163,16 +163,6 @@ export function get_player_team_membership_repository(): PlayerTeamMembershipRep
     singleton_instance = new InBrowserPlayerTeamMembershipRepository();
   }
   return singleton_instance;
-}
-
-export async function initialize_player_team_membership_repository(): Promise<void> {
-  const repository =
-    get_player_team_membership_repository() as InBrowserPlayerTeamMembershipRepository;
-  const has_data = await repository.has_data();
-
-  if (!has_data) {
-    await repository.seed_with_data(create_default_player_team_memberships());
-  }
 }
 
 export async function reset_player_team_membership_repository(): Promise<void> {

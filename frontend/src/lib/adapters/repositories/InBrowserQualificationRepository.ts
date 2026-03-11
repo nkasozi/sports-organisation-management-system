@@ -20,7 +20,7 @@ import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
 
 const ENTITY_PREFIX = "qual";
 
-export class InBrowserQualificationRepository
+class InBrowserQualificationRepository
   extends InBrowserBaseRepository<
     Qualification,
     CreateQualificationInput,
@@ -122,7 +122,7 @@ export class InBrowserQualificationRepository
   }
 }
 
-export function create_default_qualifications(): Qualification[] {
+function create_default_qualifications(): Qualification[] {
   const now = new Date().toISOString();
   const one_year_from_now = new Date();
   one_year_from_now.setFullYear(one_year_from_now.getFullYear() + 1);
@@ -171,16 +171,6 @@ export function get_qualification_repository(): QualificationRepository {
     singleton_instance = new InBrowserQualificationRepository();
   }
   return singleton_instance;
-}
-
-export async function initialize_qualification_repository(): Promise<void> {
-  const repository =
-    get_qualification_repository() as InBrowserQualificationRepository;
-  const has_data = await repository.has_data();
-
-  if (!has_data) {
-    await repository.seed_with_data(create_default_qualifications());
-  }
 }
 
 export async function reset_qualification_repository(): Promise<void> {

@@ -19,7 +19,7 @@ import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
 
 const ENTITY_PREFIX = "oat";
 
-export class InBrowserOfficialAssociatedTeamRepository
+class InBrowserOfficialAssociatedTeamRepository
   extends InBrowserBaseRepository<
     OfficialAssociatedTeam,
     CreateOfficialAssociatedTeamInput,
@@ -108,7 +108,7 @@ export class InBrowserOfficialAssociatedTeamRepository
   }
 }
 
-export function create_default_official_associated_teams(): OfficialAssociatedTeam[] {
+function create_default_official_associated_teams(): OfficialAssociatedTeam[] {
   return [];
 }
 
@@ -119,28 +119,4 @@ export function get_official_associated_team_repository(): OfficialAssociatedTea
     singleton_instance = new InBrowserOfficialAssociatedTeamRepository();
   }
   return singleton_instance;
-}
-
-export async function initialize_official_associated_team_repository(): Promise<void> {
-  const repository =
-    get_official_associated_team_repository() as InBrowserOfficialAssociatedTeamRepository;
-  const result = await repository.find_all(undefined, {
-    page_number: 1,
-    page_size: 1,
-  });
-
-  if (result.success && result.data?.items?.length === 0) {
-    const default_items = create_default_official_associated_teams();
-    for (const item of default_items) {
-      await repository.create({
-        official_id: item.official_id,
-        team_id: item.team_id,
-        association_type: item.association_type,
-        start_date: item.start_date,
-        end_date: item.end_date,
-        notes: item.notes,
-        status: item.status,
-      });
-    }
-  }
 }

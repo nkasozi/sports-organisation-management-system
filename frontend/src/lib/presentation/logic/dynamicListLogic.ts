@@ -138,7 +138,7 @@ export function build_filter_from_sub_entity_config(
   return filter;
 }
 
-export function format_enum_style_string(value: string): string {
+function format_enum_style_string(value: string): string {
   return value
     .split("_")
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())

@@ -77,25 +77,17 @@ export type {
   DataAuthorizationResult,
 } from "./external/iam/AuthorizationPort";
 export {
-  DATA_PERMISSION_MAP,
-  ENTITY_DATA_CATEGORY_MAP,
   normalize_to_entity_type,
   get_entity_data_category,
   get_role_permissions,
   check_data_permission,
   check_entity_permission,
-  authorize_entity_action,
-  get_allowed_actions_for_entity,
-  get_disabled_crud_for_entity,
-  has_unrestricted_scope,
   is_scope_restricted,
   get_scope_value,
   get_authorization_restricted_fields,
   get_authorization_preselect_values,
   build_authorization_list_filter,
   is_field_restricted_by_authorization,
-  is_unrestricted_value,
-  is_restricted_value,
 } from "./external/iam/AuthorizationPort";
 
 export type {

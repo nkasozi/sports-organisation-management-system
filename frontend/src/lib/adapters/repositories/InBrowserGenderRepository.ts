@@ -82,29 +82,6 @@ export class InBrowserGenderRepository
   }
 }
 
-export function create_default_genders(): Gender[] {
-  const now = new Date().toISOString();
-
-  return [
-    {
-      id: "gender_default_male",
-      name: "Male",
-      description: "Male gender",
-      status: "active",
-      created_at: now,
-      updated_at: now,
-    },
-    {
-      id: "gender_default_female",
-      name: "Female",
-      description: "Female gender",
-      status: "active",
-      created_at: now,
-      updated_at: now,
-    },
-  ];
-}
-
 let singleton_instance: InBrowserGenderRepository | null = null;
 
 export function get_gender_repository(): GenderRepository {
@@ -112,19 +89,4 @@ export function get_gender_repository(): GenderRepository {
     singleton_instance = new InBrowserGenderRepository();
   }
   return singleton_instance;
-}
-
-export async function initialize_gender_repository(): Promise<void> {
-  const repository = get_gender_repository() as InBrowserGenderRepository;
-  const has_data = await repository.has_data();
-
-  if (!has_data) {
-    await repository.seed_with_data(create_default_genders());
-  }
-}
-
-export async function reset_gender_repository(): Promise<void> {
-  const repository = get_gender_repository() as InBrowserGenderRepository;
-  await repository.clear_all_data();
-  await repository.seed_with_data(create_default_genders());
 }

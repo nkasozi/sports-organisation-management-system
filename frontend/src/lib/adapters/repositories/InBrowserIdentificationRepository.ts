@@ -20,7 +20,7 @@ import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
 
 const ENTITY_PREFIX = "ident";
 
-export class InBrowserIdentificationRepository
+class InBrowserIdentificationRepository
   extends InBrowserBaseRepository<
     Identification,
     CreateIdentificationInput,
@@ -115,69 +115,6 @@ export class InBrowserIdentificationRepository
   }
 }
 
-export function create_default_identifications(): Identification[] {
-  const now = new Date().toISOString();
-
-  return [
-    {
-      id: "ident_default_1",
-      holder_type: "player",
-      holder_id: "player_default_1",
-      identification_type_id: "ident_type_default_1",
-      identifier_value: "NIN-1234567890",
-      document_image_url: "",
-      issue_date: "2020-01-15",
-      expiry_date: "2030-01-15",
-      notes: "National ID Card",
-      status: "active",
-      created_at: now,
-      updated_at: now,
-    },
-    {
-      id: "ident_default_2",
-      holder_type: "player",
-      holder_id: "player_default_2",
-      identification_type_id: "ident_type_default_2",
-      identifier_value: "PASS-AB123456",
-      document_image_url: "",
-      issue_date: "2022-06-01",
-      expiry_date: "2032-06-01",
-      notes: "Passport",
-      status: "active",
-      created_at: now,
-      updated_at: now,
-    },
-    {
-      id: "ident_default_3",
-      holder_type: "team_staff",
-      holder_id: "staff_default_1",
-      identification_type_id: "ident_type_default_1",
-      identifier_value: "NIN-9876543210",
-      document_image_url: "",
-      issue_date: "2019-03-20",
-      expiry_date: "2029-03-20",
-      notes: "National ID Card",
-      status: "active",
-      created_at: now,
-      updated_at: now,
-    },
-    {
-      id: "ident_default_4",
-      holder_type: "official",
-      holder_id: "official_default_1",
-      identification_type_id: "ident_type_default_1",
-      identifier_value: "NIN-5555555555",
-      document_image_url: "",
-      issue_date: "2021-08-10",
-      expiry_date: "2031-08-10",
-      notes: "National ID Card",
-      status: "active",
-      created_at: now,
-      updated_at: now,
-    },
-  ];
-}
-
 let singleton_instance: InBrowserIdentificationRepository | null = null;
 
 export function get_identification_repository(): IdentificationRepository {
@@ -185,21 +122,4 @@ export function get_identification_repository(): IdentificationRepository {
     singleton_instance = new InBrowserIdentificationRepository();
   }
   return singleton_instance;
-}
-
-export async function initialize_identification_repository(): Promise<void> {
-  const repository =
-    get_identification_repository() as InBrowserIdentificationRepository;
-  const has_data = await repository.has_data();
-
-  if (!has_data) {
-    await repository.seed_with_data(create_default_identifications());
-  }
-}
-
-export async function reset_identification_repository(): Promise<void> {
-  const repository =
-    get_identification_repository() as InBrowserIdentificationRepository;
-  await repository.clear_all_data();
-  await repository.seed_with_data(create_default_identifications());
 }

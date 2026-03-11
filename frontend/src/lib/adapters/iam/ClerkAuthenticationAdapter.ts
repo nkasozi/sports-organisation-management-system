@@ -196,7 +196,7 @@ function map_clerk_service_user_to_clerk_user_info(
   };
 }
 
-export function create_clerk_session_provider(): ClerkSessionProvider {
+function create_clerk_session_provider(): ClerkSessionProvider {
   return {
     get_session_token,
     get_current_user(): ClerkUserInfo | null {

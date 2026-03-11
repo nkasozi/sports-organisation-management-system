@@ -10,47 +10,10 @@ import { get_fixture_lineup_use_cases } from "../../core/usecases/FixtureLineupU
 
 const use_cases = get_fixture_lineup_use_cases();
 
-export async function create_fixture_lineup(
-  input: CreateFixtureLineupInput,
-): AsyncResult<FixtureLineup> {
-  return use_cases.create(input);
-}
-
 export async function get_fixture_lineup_by_id(
   id: string,
 ): AsyncResult<FixtureLineup> {
   return use_cases.get_by_id(id);
-}
-
-export async function update_fixture_lineup(
-  id: string,
-  input: UpdateFixtureLineupInput,
-): AsyncResult<FixtureLineup> {
-  return use_cases.update(id, input);
-}
-
-export async function delete_fixture_lineup(id: string): AsyncResult<boolean> {
-  return use_cases.delete(id);
-}
-
-export async function list_fixture_lineups(
-  filter?: FixtureLineupFilter,
-  pagination?: { page: number; page_size: number },
-): Promise<EntityListResult<FixtureLineup>> {
-  return use_cases.list(filter, pagination);
-}
-
-export async function get_lineups_for_fixture(
-  fixture_id: string,
-): Promise<EntityListResult<FixtureLineup>> {
-  return use_cases.get_lineups_for_fixture(fixture_id);
-}
-
-export async function get_lineup_for_team_in_fixture(
-  fixture_id: string,
-  team_id: string,
-): AsyncResult<FixtureLineup> {
-  return use_cases.get_lineup_for_team_in_fixture(fixture_id, team_id);
 }
 
 export async function submit_lineup(id: string): AsyncResult<FixtureLineup> {

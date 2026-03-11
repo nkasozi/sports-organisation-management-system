@@ -20,7 +20,7 @@ import type { JerseyColorUseCasesPort } from "$lib/core/interfaces/ports";
 
 export type JerseyColorUseCases = JerseyColorUseCasesPort;
 
-export function create_jersey_color_use_cases(
+function create_jersey_color_use_cases(
   repository: JerseyColorRepository,
 ): JerseyColorUseCases {
   return {

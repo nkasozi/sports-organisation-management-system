@@ -266,19 +266,19 @@ function create_use_cases_container(
   };
 }
 
-export function reset_container(): void {
+function reset_container(): void {
   repository_container_instance = null;
   use_cases_container_instance = null;
 }
 
-export function inject_test_repository_container(
+function inject_test_repository_container(
   test_container: RepositoryContainer,
 ): void {
   repository_container_instance = test_container;
   use_cases_container_instance = null;
 }
 
-export function inject_test_use_cases_container(
+function inject_test_use_cases_container(
   test_container: UseCasesContainer,
 ): void {
   use_cases_container_instance = test_container;

@@ -21,7 +21,7 @@ import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
 
 const ENTITY_PREFIX = "livegame";
 
-export class InBrowserLiveGameLogRepository
+class InBrowserLiveGameLogRepository
   extends InBrowserBaseRepository<
     LiveGameLog,
     CreateLiveGameLogInput,
@@ -236,10 +236,6 @@ export class InBrowserLiveGameLogRepository
       options,
     );
   }
-}
-
-export function create_default_live_game_logs(): LiveGameLog[] {
-  return [];
 }
 
 let singleton_instance: InBrowserLiveGameLogRepository | null = null;

@@ -23,7 +23,7 @@ export const SEED_ORGANIZATION_IDS = {
   UGANDA_HOCKEY_ASSOCIATION: "org_default_1",
 };
 
-export const SEED_TEAM_IDS = {
+const SEED_TEAM_IDS = {
   WEATHERHEAD_HC: "team_default_1",
   KAMPALA_HC: "team_default_2",
   ROCKETS_HC: "team_default_3",
@@ -38,21 +38,21 @@ export const SEED_TEAM_IDS = {
   ROCKETS_HC_WOMEN: "team_default_12",
 };
 
-export const SEED_COMPETITION_FORMAT_IDS = {
+const SEED_COMPETITION_FORMAT_IDS = {
   STANDARD_LEAGUE: "format_standard_league",
   SINGLE_ELIMINATION: "format_single_elimination",
   DOUBLE_ELIMINATION: "format_double_elimination",
   GROUP_STAGE_KNOCKOUT: "format_group_knockout",
 };
 
-export const SEED_COMPETITION_IDS = {
+const SEED_COMPETITION_IDS = {
   EASTER_CUP_2026: "comp_default_1",
   UGANDA_CUP_2026: "comp_default_2",
   NATIONAL_HOCKEY_LEAGUE_2026: "comp_default_3",
   UNIVERSITY_HOCKEY_CHAMPIONSHIP_2026: "comp_default_4",
 };
 
-export const SEED_STAGE_IDS = {
+const SEED_STAGE_IDS = {
   EASTER_CUP_POOL_STAGE: "stage_default_1",
   EASTER_CUP_SEMI_FINALS: "stage_default_2",
   EASTER_CUP_FINAL: "stage_default_3",
@@ -71,7 +71,7 @@ export interface SeedCompetitionFormatIds {
   university_format_id: string;
 }
 
-export const SEED_PLAYER_IDS = {
+const SEED_PLAYER_IDS = {
   DENIS_ONYANGO: "player_default_1",
   BRIAN_SSALI: "player_default_2",
   JOSEPH_MUSOKE: "player_default_3",
@@ -165,7 +165,7 @@ export const SEED_PLAYER_IDS = {
   ROCKETS_WOMEN_P11: "player_default_91",
 };
 
-export const SEED_STAFF_IDS = {
+const SEED_STAFF_IDS = {
   HEAD_COACH_1: "staff_default_1",
   ASSISTANT_COACH_1: "staff_default_2",
   HEAD_COACH_2: "staff_default_3",
@@ -173,14 +173,14 @@ export const SEED_STAFF_IDS = {
   MANAGER_1: "staff_default_5",
 };
 
-export const SEED_OFFICIAL_IDS = {
+const SEED_OFFICIAL_IDS = {
   MICHAEL_ANDERSON: "official_default_1",
   SARAH_JOHNSON: "official_default_2",
   JAMES_WILLIAMS: "official_default_3",
   EMILY_DAVIS: "official_default_4",
 };
 
-export const SEED_FIXTURE_IDS = {
+const SEED_FIXTURE_IDS = {
   FIXTURE_1: "fixture_default_1",
   FIXTURE_2: "fixture_default_2",
   EASTER_CUP_GROUP_A_1: "fixture_default_3",
@@ -197,7 +197,7 @@ export const SEED_FIXTURE_IDS = {
   EASTER_CUP_FINAL: "fixture_default_14",
 };
 
-export const SEED_FIXTURE_LINEUP_IDS = {
+const SEED_FIXTURE_LINEUP_IDS = {
   COMPLETED_GAME_HOME_LINEUP: "lineup_default_1",
   COMPLETED_GAME_AWAY_LINEUP: "lineup_default_2",
   COMPLETED_GAME_2_HOME_LINEUP: "lineup_default_3",
@@ -222,7 +222,7 @@ export const SEED_FIXTURE_LINEUP_IDS = {
   EASTER_CUP_FINAL_AWAY_LINEUP: "lineup_default_22",
 };
 
-export const SEED_VENUE_IDS = {
+const SEED_VENUE_IDS = {
   LUGOGO_HOCKEY_STADIUM: "venue_default_1",
   KYAMBOGO_HOCKEY_PITCH: "venue_default_2",
   MAKERERE_HOCKEY_GROUND: "venue_default_3",
@@ -230,7 +230,7 @@ export const SEED_VENUE_IDS = {
   JINJA_HOCKEY_GROUND: "venue_default_5",
 };
 
-export const SEED_JERSEY_COLOR_IDS = {
+const SEED_JERSEY_COLOR_IDS = {
   WEATHERHEAD_HOME: "jersey_default_1",
   WEATHERHEAD_AWAY: "jersey_default_2",
   KAMPALA_HC_HOME: "jersey_default_3",
@@ -257,13 +257,13 @@ export const SEED_JERSEY_COLOR_IDS = {
   STRIKERS_AWAY: "jersey_default_24",
 };
 
-export const SEED_PLAYER_PROFILE_IDS = {
+const SEED_PLAYER_PROFILE_IDS = {
   DENIS_ONYANGO_PROFILE: "profile_default_1",
   BRIAN_SSALI_PROFILE: "profile_default_2",
   SARAH_NAMUGWANYA_PROFILE: "profile_default_3",
 };
 
-export const SEED_TEAM_PROFILE_IDS = {
+const SEED_TEAM_PROFILE_IDS = {
   WEATHERHEAD_HC_PROFILE: "team_profile_default_1",
   KAMPALA_HC_PROFILE: "team_profile_default_2",
   ROCKETS_HC_PROFILE: "team_profile_default_3",
@@ -283,7 +283,7 @@ export const SEED_SYSTEM_USER_IDS = {
   PLAYER_DENIS_ONYANGO: "system_user_default_6",
 };
 
-export const SEED_IDENTIFICATION_TYPE_IDS = {
+const SEED_IDENTIFICATION_TYPE_IDS = {
   NATIONAL_ID: "id_type_default_1",
   PASSPORT: "id_type_default_2",
   DRIVING_LICENSE: "id_type_default_3",
@@ -291,7 +291,7 @@ export const SEED_IDENTIFICATION_TYPE_IDS = {
   FEDERATION_ID: "id_type_default_5",
 };
 
-export const SEED_GENDER_IDS = {
+const SEED_GENDER_IDS = {
   MALE: "gender_default_male",
   FEMALE: "gender_default_female",
 };
@@ -8883,7 +8883,7 @@ export function create_seed_player_profiles(): import("../../core/entities/Playe
   ];
 }
 
-export const SEED_PROFILE_LINK_IDS = {
+const SEED_PROFILE_LINK_IDS = {
   DENIS_TWITTER: "profile-link-001",
   DENIS_INSTAGRAM: "profile-link-002",
   DENIS_WEBSITE: "profile-link-003",
@@ -9068,7 +9068,7 @@ export function create_seed_team_profiles(): import("../../core/entities/TeamPro
   ];
 }
 
-export const SEED_TEAM_PROFILE_LINK_IDS = {
+const SEED_TEAM_PROFILE_LINK_IDS = {
   WEATHERHEAD_TWITTER: "team_link_001",
   WEATHERHEAD_INSTAGRAM: "team_link_002",
   WEATHERHEAD_WEBSITE: "team_link_003",

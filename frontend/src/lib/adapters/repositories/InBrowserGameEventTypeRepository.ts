@@ -25,7 +25,7 @@ import { get_default_game_event_types } from "../../core/entities/GameEventType"
 
 const ENTITY_PREFIX = "game_event_type";
 
-export class InBrowserGameEventTypeRepository
+class InBrowserGameEventTypeRepository
   extends InBrowserBaseRepository<
     GameEventType,
     CreateGameEventTypeInput,
@@ -267,7 +267,7 @@ export class InBrowserGameEventTypeRepository
   }
 }
 
-export function create_default_game_event_types(): GameEventType[] {
+function create_default_game_event_types(): GameEventType[] {
   const now = new Date().toISOString();
   const default_inputs = get_default_game_event_types();
 
@@ -296,16 +296,6 @@ export function get_game_event_type_repository(): GameEventTypeRepository {
     singleton_instance = new InBrowserGameEventTypeRepository();
   }
   return singleton_instance;
-}
-
-export async function initialize_game_event_type_repository(): Promise<void> {
-  const repository =
-    get_game_event_type_repository() as InBrowserGameEventTypeRepository;
-  const has_data = await repository.has_data();
-
-  if (!has_data) {
-    await repository.seed_with_data(create_default_game_event_types());
-  }
 }
 
 export async function reset_game_event_type_repository(): Promise<void> {

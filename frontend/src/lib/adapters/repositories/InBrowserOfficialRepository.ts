@@ -128,7 +128,7 @@ export class InBrowserOfficialRepository
   }
 }
 
-export function create_default_officials(): Official[] {
+function create_default_officials(): Official[] {
   const now = new Date().toISOString();
 
   return [
@@ -199,15 +199,6 @@ export function get_official_repository(): OfficialRepository {
     singleton_instance = new InBrowserOfficialRepository();
   }
   return singleton_instance;
-}
-
-export async function initialize_official_repository(): Promise<void> {
-  const repository = get_official_repository() as InBrowserOfficialRepository;
-  const has_data = await repository.has_data();
-
-  if (!has_data) {
-    await repository.seed_with_data(create_default_officials());
-  }
 }
 
 export async function reset_official_repository(): Promise<void> {

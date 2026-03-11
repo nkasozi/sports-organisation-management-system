@@ -104,7 +104,7 @@ export type UpdateFixtureInput = Partial<
   Omit<Fixture, "id" | "created_at" | "updated_at">
 >;
 
-export function create_empty_fixture_input(
+function create_empty_fixture_input(
   organization_id: string = "",
   competition_id: string = "",
 ): CreateFixtureInput {
@@ -171,7 +171,7 @@ export function validate_fixture_input(input: CreateFixtureInput): string[] {
   return validation_errors;
 }
 
-export function derive_groups_from_fixtures(
+function derive_groups_from_fixtures(
   fixtures: Pick<Fixture, "home_team_id" | "away_team_id">[],
 ): string[][] {
   const parent: Record<string, string> = {};
@@ -231,7 +231,7 @@ export interface OfficialValidationWarning {
   message: string;
 }
 
-export function validate_fixture_officials(
+function validate_fixture_officials(
   assigned_officials: AssignedOfficial[],
   official_requirements: OfficialRequirement[],
   rule_source: "sport" | "competition" = "sport",
@@ -361,7 +361,7 @@ export function generate_round_robin_fixtures(
   return fixtures;
 }
 
-export const FIXTURE_STATUS_OPTIONS = [
+const FIXTURE_STATUS_OPTIONS = [
   { value: "scheduled", label: "Scheduled" },
   { value: "in_progress", label: "In Progress" },
   { value: "completed", label: "Completed" },

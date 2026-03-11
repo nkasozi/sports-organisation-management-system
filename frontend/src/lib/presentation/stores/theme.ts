@@ -294,12 +294,12 @@ function get_initial_theme(): ThemeConfig {
 
 export const theme_store = writable<ThemeConfig>(get_initial_theme());
 
-export const primary_palette = derived(
+const primary_palette = derived(
   theme_store,
   ($theme) => COLOR_PALETTES[$theme.primary_color],
 );
 
-export const secondary_palette = derived(
+const secondary_palette = derived(
   theme_store,
   ($theme) => COLOR_PALETTES[$theme.secondary_color],
 );
@@ -375,14 +375,14 @@ export function toggle_theme_mode(): void {
   }));
 }
 
-export function set_primary_color(color: ThemeColorName): void {
+function set_primary_color(color: ThemeColorName): void {
   theme_store.update((current_theme) => ({
     ...current_theme,
     primary_color: color,
   }));
 }
 
-export function set_secondary_color(color: ThemeColorName): void {
+function set_secondary_color(color: ThemeColorName): void {
   theme_store.update((current_theme) => ({
     ...current_theme,
     secondary_color: color,
@@ -437,11 +437,11 @@ export function reset_theme_to_default(): void {
   theme_store.set(DEFAULT_THEME);
 }
 
-export function get_available_colors(): ThemeColorName[] {
+function get_available_colors(): ThemeColorName[] {
   return Object.keys(COLOR_PALETTES) as ThemeColorName[];
 }
 
-export function get_color_palette(color: ThemeColorName): ColorPalette {
+function get_color_palette(color: ThemeColorName): ColorPalette {
   return COLOR_PALETTES[color];
 }
 

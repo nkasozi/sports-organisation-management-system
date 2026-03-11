@@ -56,7 +56,7 @@ export function create_empty_fixture_lineup_input(
   };
 }
 
-export function create_lineup_player(
+function create_lineup_player(
   id: string,
   first_name: string,
   last_name: string,
@@ -86,7 +86,7 @@ export function get_lineup_player_display_name(player: LineupPlayer): string {
   return `#${jersey} ${captain_badge}${name} ${position_suffix}`.trim();
 }
 
-export function validate_fixture_lineup_input(
+function validate_fixture_lineup_input(
   input: CreateFixtureLineupInput | UpdateFixtureLineupInput,
   min_players: number,
   max_players: number,
@@ -147,7 +147,7 @@ export function get_time_on_display(
   return time_on;
 }
 
-export function is_player_time_on_minute(
+function is_player_time_on_minute(
   time_on: PlayerTimeOnStatus | undefined,
 ): boolean {
   if (!time_on) return false;

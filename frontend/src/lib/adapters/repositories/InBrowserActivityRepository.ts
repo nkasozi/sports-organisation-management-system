@@ -22,7 +22,7 @@ import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
 
 const ENTITY_PREFIX = "activity";
 
-export class InBrowserActivityRepository
+class InBrowserActivityRepository
   extends InBrowserBaseRepository<
     Activity,
     CreateActivityInput,
@@ -211,73 +211,6 @@ export class InBrowserActivityRepository
   }
 }
 
-export function create_default_activities(): Activity[] {
-  const now = new Date().toISOString();
-
-  return [
-    {
-      id: "activity_default_1",
-      title: "Team Training Session",
-      description: "Regular weekly training session for all team members",
-      organization_id: "org_default_1",
-      category_id: "activity_category_training",
-      category_type: "training",
-      start_datetime: new Date(Date.now() + 86400000).toISOString(),
-      end_datetime: new Date(Date.now() + 86400000 + 7200000).toISOString(),
-      is_all_day: false,
-      location: "Lugogo Hockey Stadium",
-      venue_id: "venue_default_1",
-      team_ids: ["team_default_1"],
-      competition_id: null,
-      fixture_id: null,
-      source_type: "manual",
-      source_id: null,
-      status: "scheduled",
-      recurrence: {
-        pattern: "weekly",
-        interval: 1,
-        end_date: null,
-        days_of_week: [2, 4],
-      },
-      reminders: [
-        { id: "reminder_1_day", minutes_before: 1440, is_enabled: true },
-        { id: "reminder_1_hour", minutes_before: 60, is_enabled: false },
-      ],
-      color_override: null,
-      notes: "Bring all necessary equipment",
-      created_at: now,
-      updated_at: now,
-    },
-    {
-      id: "activity_default_2",
-      title: "Team Meeting",
-      description: "Monthly team strategy and review meeting",
-      organization_id: "org_default_1",
-      category_id: "activity_category_meeting",
-      category_type: "meeting",
-      start_datetime: new Date(Date.now() + 172800000).toISOString(),
-      end_datetime: new Date(Date.now() + 172800000 + 3600000).toISOString(),
-      is_all_day: false,
-      location: "Conference Room A",
-      venue_id: null,
-      team_ids: ["team_default_1"],
-      competition_id: null,
-      fixture_id: null,
-      source_type: "manual",
-      source_id: null,
-      status: "scheduled",
-      recurrence: null,
-      reminders: [
-        { id: "reminder_1_day", minutes_before: 1440, is_enabled: true },
-      ],
-      color_override: null,
-      notes: "Agenda will be shared via email",
-      created_at: now,
-      updated_at: now,
-    },
-  ];
-}
-
 let singleton_instance: InBrowserActivityRepository | null = null;
 
 export function get_activity_repository(): ActivityRepository {
@@ -285,19 +218,4 @@ export function get_activity_repository(): ActivityRepository {
     singleton_instance = new InBrowserActivityRepository();
   }
   return singleton_instance;
-}
-
-export async function initialize_activity_repository(): Promise<void> {
-  const repository = get_activity_repository() as InBrowserActivityRepository;
-  const has_data = await repository.has_data();
-
-  if (!has_data) {
-    await repository.seed_with_data(create_default_activities());
-  }
-}
-
-export async function reset_activity_repository(): Promise<void> {
-  const repository = get_activity_repository() as InBrowserActivityRepository;
-  await repository.clear_all_data();
-  await repository.seed_with_data(create_default_activities());
 }

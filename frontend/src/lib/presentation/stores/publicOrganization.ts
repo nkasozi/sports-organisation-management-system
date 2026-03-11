@@ -79,12 +79,12 @@ function create_public_organization_store() {
 
 export const public_organization_store = create_public_organization_store();
 
-export const public_organization_id = derived(
+const public_organization_id = derived(
   public_organization_store,
   ($store) => $store.organization_id,
 );
 
-export const public_organization_name = derived(
+const public_organization_name = derived(
   public_organization_store,
   ($store) => $store.organization_name,
 );

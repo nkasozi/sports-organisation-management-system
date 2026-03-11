@@ -341,11 +341,11 @@ export function get_use_cases_for_entity_type(
   return wrap_use_cases_with_events(normalized_type, use_cases);
 }
 
-export function get_all_registered_entity_types(): EntityTypeKey[] {
+function get_all_registered_entity_types(): EntityTypeKey[] {
   return [...VALID_ENTITY_TYPE_KEYS];
 }
 
-export function is_valid_entity_type(
+function is_valid_entity_type(
   entity_type: string,
 ): entity_type is EntityTypeKey {
   return VALID_ENTITY_TYPE_KEYS.includes(

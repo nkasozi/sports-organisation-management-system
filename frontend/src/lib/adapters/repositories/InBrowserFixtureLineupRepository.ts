@@ -189,7 +189,7 @@ export class InBrowserFixtureLineupRepository
   }
 }
 
-export function create_default_fixture_lineups(): FixtureLineup[] {
+function create_default_fixture_lineups(): FixtureLineup[] {
   return [];
 }
 
@@ -200,16 +200,6 @@ export function get_fixture_lineup_repository(): InBrowserFixtureLineupRepositor
     singleton_instance = new InBrowserFixtureLineupRepository();
   }
   return singleton_instance;
-}
-
-export async function initialize_fixture_lineup_repository(): Promise<boolean> {
-  const repository = get_fixture_lineup_repository();
-  const has_data = await repository.has_data();
-
-  if (!has_data) {
-    await repository.seed_with_data(create_default_fixture_lineups());
-  }
-  return true;
 }
 
 export async function reset_fixture_lineup_repository(): Promise<boolean> {

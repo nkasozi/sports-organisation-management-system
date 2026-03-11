@@ -139,7 +139,7 @@ export class InBrowserProfileLinkRepository
   }
 }
 
-export function create_default_profile_links(): ProfileLink[] {
+function create_default_profile_links(): ProfileLink[] {
   const now = new Date().toISOString();
 
   return [
@@ -197,16 +197,6 @@ export function get_profile_link_repository(): ProfileLinkRepository {
     singleton_instance = new InBrowserProfileLinkRepository();
   }
   return singleton_instance;
-}
-
-export async function initialize_profile_link_repository(): Promise<void> {
-  const repository =
-    get_profile_link_repository() as InBrowserProfileLinkRepository;
-  const has_data = await repository.has_data();
-
-  if (!has_data) {
-    await repository.seed_with_data(create_default_profile_links());
-  }
 }
 
 export async function reset_profile_link_repository(): Promise<void> {

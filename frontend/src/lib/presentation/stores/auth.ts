@@ -779,7 +779,7 @@ function create_auth_store() {
 
 export const auth_store = create_auth_store();
 
-export const current_auth_token = derived(
+const current_auth_token = derived(
   auth_store,
   ($auth) => $auth.current_token,
 );
@@ -808,7 +808,7 @@ export const current_profile_initials = derived(auth_store, ($auth) => {
   return name.substring(0, 2).toUpperCase();
 });
 
-export const available_profiles = derived(
+const available_profiles = derived(
   auth_store,
   ($auth) => $auth.available_profiles,
 );
@@ -832,7 +832,7 @@ export const sidebar_menu_items = derived(auth_store, ($auth) => {
   return $auth.sidebar_menu_items;
 });
 
-export const feature_access = derived(auth_store, ($auth) => {
+const feature_access = derived(auth_store, ($auth) => {
   if (!$auth.is_initialized || !$auth.current_profile) {
     return {
       can_reset_demo: false,
@@ -857,7 +857,7 @@ export const feature_access = derived(auth_store, ($auth) => {
   };
 });
 
-export function get_entity_authorization_level(
+function get_entity_authorization_level(
   entity_type: string,
 ): EntityAuthorizationMap {
   return auth_store.get_authorization_level(entity_type);

@@ -196,7 +196,7 @@ export function set_user_context(context: UserContext | undefined): void {
   current_user_context = context;
 }
 
-export function get_current_user_context(): UserContext | undefined {
+function get_current_user_context(): UserContext | undefined {
   return current_user_context;
 }
 

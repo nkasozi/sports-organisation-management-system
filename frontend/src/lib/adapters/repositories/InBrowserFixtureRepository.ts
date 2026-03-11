@@ -250,7 +250,7 @@ export class InBrowserFixtureRepository
   }
 }
 
-export function create_default_fixtures(): Fixture[] {
+function create_default_fixtures(): Fixture[] {
   return [];
 }
 
@@ -261,15 +261,6 @@ export function get_fixture_repository(): FixtureRepository {
     singleton_instance = new InBrowserFixtureRepository();
   }
   return singleton_instance;
-}
-
-export async function initialize_fixture_repository(): Promise<void> {
-  const repository = get_fixture_repository() as InBrowserFixtureRepository;
-  const has_data = await repository.has_data();
-
-  if (!has_data) {
-    await repository.seed_with_data(create_default_fixtures());
-  }
 }
 
 export async function reset_fixture_repository(): Promise<void> {

@@ -233,6 +233,6 @@ export function stop_realtime_sync(): boolean {
   return stopped;
 }
 
-export function get_realtime_sync_instance(): ConvexRealtimeSync | null {
+function get_realtime_sync_instance(): ConvexRealtimeSync | null {
   return realtime_sync_instance;
 }

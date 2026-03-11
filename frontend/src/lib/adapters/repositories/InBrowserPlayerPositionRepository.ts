@@ -21,7 +21,7 @@ import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
 
 const ENTITY_PREFIX = "player_position";
 
-export class InBrowserPlayerPositionRepository
+class InBrowserPlayerPositionRepository
   extends InBrowserBaseRepository<
     PlayerPosition,
     CreatePlayerPositionInput,
@@ -230,7 +230,7 @@ export class InBrowserPlayerPositionRepository
   }
 }
 
-export function create_default_player_positions(): PlayerPosition[] {
+function create_default_player_positions(): PlayerPosition[] {
   const now = new Date().toISOString();
 
   return [
@@ -426,16 +426,6 @@ export function get_player_position_repository(): PlayerPositionRepository {
     singleton_instance = new InBrowserPlayerPositionRepository();
   }
   return singleton_instance;
-}
-
-export async function initialize_player_position_repository(): Promise<void> {
-  const repository =
-    get_player_position_repository() as InBrowserPlayerPositionRepository;
-  const has_data = await repository.has_data();
-
-  if (!has_data) {
-    await repository.seed_with_data(create_default_player_positions());
-  }
 }
 
 export async function reset_player_position_repository(): Promise<void> {

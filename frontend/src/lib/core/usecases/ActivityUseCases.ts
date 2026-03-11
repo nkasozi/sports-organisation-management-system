@@ -479,7 +479,7 @@ export function create_activity_use_cases(
   };
 }
 
-export function get_activity_use_cases(): ActivityUseCases {
+function get_activity_use_cases(): ActivityUseCases {
   const container = get_repository_container();
   return create_activity_use_cases({
     activity_repository: container.activity_repository,

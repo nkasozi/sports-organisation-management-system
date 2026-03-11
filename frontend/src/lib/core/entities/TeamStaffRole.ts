@@ -16,7 +16,7 @@ export type CreateTeamStaffRoleInput = Omit<
 >;
 export type UpdateTeamStaffRoleInput = Partial<CreateTeamStaffRoleInput>;
 
-export function create_empty_team_staff_role_input(): CreateTeamStaffRoleInput {
+function create_empty_team_staff_role_input(): CreateTeamStaffRoleInput {
   return {
     name: "",
     code: "",
@@ -28,7 +28,7 @@ export function create_empty_team_staff_role_input(): CreateTeamStaffRoleInput {
   };
 }
 
-export function get_default_team_staff_roles(): CreateTeamStaffRoleInput[] {
+function get_default_team_staff_roles(): CreateTeamStaffRoleInput[] {
   return [
     {
       name: "Head Coach",

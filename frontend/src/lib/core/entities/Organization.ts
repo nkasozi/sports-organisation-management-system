@@ -18,7 +18,7 @@ export type CreateOrganizationInput = Omit<
 >;
 export type UpdateOrganizationInput = Partial<CreateOrganizationInput>;
 
-export function create_empty_organization_input(): CreateOrganizationInput {
+function create_empty_organization_input(): CreateOrganizationInput {
   return {
     name: "",
     description: "",

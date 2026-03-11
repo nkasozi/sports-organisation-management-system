@@ -33,7 +33,7 @@ export type CreateOfficialAssociatedTeamInput = Omit<
 export type UpdateOfficialAssociatedTeamInput =
   Partial<CreateOfficialAssociatedTeamInput>;
 
-export function create_empty_official_associated_team_input(
+function create_empty_official_associated_team_input(
   official_id: string = "",
 ): CreateOfficialAssociatedTeamInput {
   return {
@@ -87,7 +87,7 @@ export function validate_official_associated_team_input(
   return validation_errors;
 }
 
-export function get_association_type_label(
+function get_association_type_label(
   association_type: OfficialTeamAssociationType,
 ): string {
   const option = OFFICIAL_TEAM_ASSOCIATION_TYPE_OPTIONS.find(

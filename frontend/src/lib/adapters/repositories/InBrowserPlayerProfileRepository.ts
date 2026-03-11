@@ -142,7 +142,7 @@ export class InBrowserPlayerProfileRepository
   }
 }
 
-export function create_default_player_profiles(): PlayerProfile[] {
+function create_default_player_profiles(): PlayerProfile[] {
   const now = new Date().toISOString();
 
   return [
@@ -180,16 +180,6 @@ export function get_player_profile_repository(): PlayerProfileRepository {
     singleton_instance = new InBrowserPlayerProfileRepository();
   }
   return singleton_instance;
-}
-
-export async function initialize_player_profile_repository(): Promise<void> {
-  const repository =
-    get_player_profile_repository() as InBrowserPlayerProfileRepository;
-  const has_data = await repository.has_data();
-
-  if (!has_data) {
-    await repository.seed_with_data(create_default_player_profiles());
-  }
 }
 
 export async function reset_player_profile_repository(): Promise<void> {

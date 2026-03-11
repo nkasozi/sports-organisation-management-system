@@ -21,7 +21,7 @@ export function has_session_been_synced(): boolean {
   return sessionStorage.getItem(SESSION_SYNC_KEY) === "true";
 }
 
-export function mark_session_synced(): void {
+function mark_session_synced(): void {
   if (typeof window === "undefined") return;
   sessionStorage.setItem(SESSION_SYNC_KEY, "true");
 }

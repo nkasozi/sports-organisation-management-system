@@ -13,7 +13,7 @@ export type CreateGenderInput = Omit<
 
 export type UpdateGenderInput = Partial<CreateGenderInput>;
 
-export function create_empty_gender_input(): CreateGenderInput {
+function create_empty_gender_input(): CreateGenderInput {
   return {
     name: "",
     description: "",
@@ -31,6 +31,6 @@ export function validate_gender_input(input: CreateGenderInput): string[] {
   return validation_errors;
 }
 
-export function get_gender_display_name(gender: Gender): string {
+function get_gender_display_name(gender: Gender): string {
   return gender.name;
 }

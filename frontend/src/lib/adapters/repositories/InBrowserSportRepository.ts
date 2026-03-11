@@ -53,7 +53,7 @@ function create_default_sports(): Sport[] {
   return [football, basketball, field_hockey];
 }
 
-export class InBrowserSportRepository
+class InBrowserSportRepository
   extends InBrowserBaseRepository<
     Sport,
     CreateSportInput,
@@ -154,7 +154,7 @@ function get_concrete_repository(): InBrowserSportRepository {
   return singleton_instance;
 }
 
-export async function ensure_default_sports_exist(): Promise<void> {
+async function ensure_default_sports_exist(): Promise<void> {
   const repository = get_concrete_repository();
   const has_data = await repository.has_data();
 

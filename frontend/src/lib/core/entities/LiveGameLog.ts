@@ -49,7 +49,7 @@ export type UpdateLiveGameLogInput = Partial<
   Omit<LiveGameLog, "id" | "created_at" | "updated_at" | "fixture_id">
 >;
 
-export function create_empty_live_game_log_input(
+function create_empty_live_game_log_input(
   organization_id: string = "",
   fixture_id: string = "",
 ): CreateLiveGameLogInput {
@@ -66,7 +66,7 @@ export function create_empty_live_game_log_input(
   };
 }
 
-export function validate_live_game_log_input(
+function validate_live_game_log_input(
   input: CreateLiveGameLogInput | UpdateLiveGameLogInput,
 ): { is_valid: boolean; errors: Record<string, string> } {
   const errors: Record<string, string> = {};
@@ -116,14 +116,14 @@ export function validate_live_game_log_input(
   };
 }
 
-export function get_live_game_log_display(log: LiveGameLog): string {
+function get_live_game_log_display(log: LiveGameLog): string {
   const score = `${log.home_team_score} - ${log.away_team_score}`;
   const minute = log.current_minute > 0 ? `${log.current_minute}'` : "";
   const status_label = get_live_game_status_label(log.game_status);
   return `${score} ${minute} (${status_label})`.trim();
 }
 
-export function get_live_game_status_label(status: LiveGameStatus): string {
+function get_live_game_status_label(status: LiveGameStatus): string {
   const labels: Record<LiveGameStatus, string> = {
     pre_game: "Pre-Game",
     in_progress: "In Progress",

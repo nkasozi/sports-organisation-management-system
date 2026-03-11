@@ -25,7 +25,7 @@ interface JsPDFWithAutoTable extends jsPDF {
   lastAutoTable?: { finalY: number };
 }
 
-export function generate_match_report_pdf(data: MatchReportData): jsPDF {
+function generate_match_report_pdf(data: MatchReportData): jsPDF {
   const doc = new jsPDF() as JsPDFWithAutoTable;
   let y_position = 10;
 
@@ -760,7 +760,7 @@ function draw_single_report_on_doc(
   draw_remarks_section(doc, data, y_position);
 }
 
-export function generate_all_match_reports_pdf(
+function generate_all_match_reports_pdf(
   reports: MatchReportData[],
 ): jsPDF {
   const doc = new jsPDF() as JsPDFWithAutoTable;

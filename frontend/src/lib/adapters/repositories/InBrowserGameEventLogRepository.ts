@@ -21,7 +21,7 @@ import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
 
 const ENTITY_PREFIX = "gameevent";
 
-export class InBrowserGameEventLogRepository
+class InBrowserGameEventLogRepository
   extends InBrowserBaseRepository<
     GameEventLog,
     CreateGameEventLogInput,
@@ -263,10 +263,6 @@ export class InBrowserGameEventLogRepository
       reviewed_at: now,
     });
   }
-}
-
-export function create_default_game_event_logs(): GameEventLog[] {
-  return [];
 }
 
 let singleton_instance: InBrowserGameEventLogRepository | null = null;

@@ -22,7 +22,7 @@ import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
 
 const ENTITY_PREFIX = "cal_token";
 
-export class InBrowserCalendarTokenRepository
+class InBrowserCalendarTokenRepository
   extends InBrowserBaseRepository<
     CalendarToken,
     CreateCalendarTokenInput,
@@ -180,28 +180,6 @@ export class InBrowserCalendarTokenRepository
   }
 }
 
-export function create_default_calendar_tokens(): CalendarToken[] {
-  const now = new Date().toISOString();
-
-  return [
-    {
-      id: "cal_token_default_1",
-      token: "sample_token_abc123def456",
-      user_id: "user_default_1",
-      organization_id: "org_default_1",
-      feed_type: "all",
-      entity_id: null,
-      entity_name: null,
-      reminder_minutes_before: 30,
-      is_active: true,
-      last_accessed_at: null,
-      access_count: 0,
-      created_at: now,
-      updated_at: now,
-    },
-  ];
-}
-
 let singleton_instance: InBrowserCalendarTokenRepository | null = null;
 
 export function get_calendar_token_repository(): CalendarTokenRepository {
@@ -209,21 +187,4 @@ export function get_calendar_token_repository(): CalendarTokenRepository {
     singleton_instance = new InBrowserCalendarTokenRepository();
   }
   return singleton_instance;
-}
-
-export async function initialize_calendar_token_repository(): Promise<void> {
-  const repository =
-    get_calendar_token_repository() as InBrowserCalendarTokenRepository;
-  const has_data = await repository.has_data();
-
-  if (!has_data) {
-    await repository.seed_with_data(create_default_calendar_tokens());
-  }
-}
-
-export async function reset_calendar_token_repository(): Promise<void> {
-  const repository =
-    get_calendar_token_repository() as InBrowserCalendarTokenRepository;
-  await repository.clear_all_data();
-  await repository.seed_with_data(create_default_calendar_tokens());
 }

@@ -394,4 +394,3 @@ export function reset_initialization(): void {
   initialized = false;
 }
 
-export { is_seeding_already_complete };

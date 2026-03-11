@@ -36,13 +36,6 @@
         return true;
     }
 
-    function handle_reset_to_format_defaults(): boolean {
-        if (disabled) return false;
-        return emit_change(
-            build_stage_template_defaults(format_type, league_config),
-        );
-    }
-
     function handle_add_stage_template(): boolean {
         if (disabled) return false;
         return emit_change(add_stage_template(displayed_stage_templates));
@@ -93,53 +86,78 @@
 </script>
 
 <div class="space-y-4">
-    <div
-        class="flex flex-col gap-3 rounded-lg border border-accent-200 bg-accent-50/40 p-4 dark:border-accent-700 dark:bg-accent-900/30 sm:flex-row sm:items-center sm:justify-between"
-    >
-        <div>
-            <p class="text-sm font-medium text-accent-900 dark:text-accent-100">
-                Stage Template
-            </p>
-            <p class="text-sm text-accent-600 dark:text-accent-300">
-                This format defines the initial stages copied into each
-                competition.
-            </p>
-        </div>
-        <button
-            type="button"
-            class="btn btn-outline w-full sm:w-auto"
-            on:click={handle_reset_to_format_defaults}
-            {disabled}
+    <div class="flex items-center justify-between gap-3">
+        <span
+            class="block text-sm font-medium text-accent-700 dark:text-accent-300"
         >
-            Reset From Format Type
-        </button>
+            Stage Templates
+        </span>
+        <div class="flex items-center gap-2">
+            <button
+                type="button"
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg
+                       bg-accent-600 text-white hover:bg-accent-700
+                       disabled:opacity-50 disabled:cursor-not-allowed
+                       transition-colors duration-200"
+                on:click={handle_add_stage_template}
+                {disabled}
+            >
+                <svg
+                    class="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                >
+                    <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M12 4v16m8-8H4"
+                    />
+                </svg>
+                Add Stage
+            </button>
+        </div>
     </div>
+
+    {#if error}
+        <p class="text-sm text-red-600 dark:text-red-300">{error}</p>
+    {/if}
 
     <div class="space-y-3">
         {#each displayed_stage_templates as stage_template, template_index (template_index)}
             <div
-                class="rounded-lg border border-accent-200 bg-white p-4 dark:border-accent-700 dark:bg-accent-900/60"
+                class="p-4 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50"
             >
-                <div class="mb-3 flex items-center justify-between gap-3">
-                    <div>
-                        <p
-                            class="text-sm font-semibold text-accent-900 dark:text-accent-100"
-                        >
-                            Stage {template_index + 1}
-                        </p>
-                        <p class="text-xs text-accent-500 dark:text-accent-400">
-                            Order {template_index + 1}
-                        </p>
-                    </div>
+                <div class="flex items-start justify-between mb-3">
+                    <span
+                        class="text-sm font-medium text-gray-600 dark:text-gray-400"
+                    >
+                        Stage {template_index + 1}
+                    </span>
                     <button
                         type="button"
-                        class="btn btn-outline px-3 py-2 text-xs"
+                        class="p-1 text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300
+                               hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
                         on:click={() =>
                             handle_remove_stage_template(template_index)}
                         disabled={disabled ||
                             displayed_stage_templates.length <= 1}
+                        title="Remove this stage"
                     >
-                        Remove
+                        <svg
+                            class="w-5 h-5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                            />
+                        </svg>
                     </button>
                 </div>
 
@@ -196,22 +214,5 @@
                 </div>
             </div>
         {/each}
-    </div>
-
-    <div
-        class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
-    >
-        <button
-            type="button"
-            class="btn btn-outline w-full sm:w-auto"
-            on:click={handle_add_stage_template}
-            {disabled}
-        >
-            Add Stage
-        </button>
-
-        {#if error}
-            <p class="text-sm text-red-600 dark:text-red-300">{error}</p>
-        {/if}
     </div>
 </div>

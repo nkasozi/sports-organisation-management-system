@@ -28,7 +28,7 @@ export type CreateActivityCategoryInput = Omit<
 
 export type UpdateActivityCategoryInput = Partial<CreateActivityCategoryInput>;
 
-export const ACTIVITY_CATEGORY_COLORS = [
+const ACTIVITY_CATEGORY_COLORS = [
   "#EF4444",
   "#F97316",
   "#F59E0B",
@@ -46,7 +46,7 @@ export const ACTIVITY_CATEGORY_COLORS = [
   "#F43F5E",
 ] as const;
 
-export const ACTIVITY_CATEGORY_ICONS = [
+const ACTIVITY_CATEGORY_ICONS = [
   "trophy",
   "calendar",
   "users",

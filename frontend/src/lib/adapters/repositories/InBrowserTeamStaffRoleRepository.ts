@@ -163,7 +163,7 @@ export class InBrowserTeamStaffRoleRepository
   }
 }
 
-export function create_default_team_staff_roles(): TeamStaffRole[] {
+function create_default_team_staff_roles(): TeamStaffRole[] {
   const now = new Date().toISOString();
 
   return [
@@ -298,16 +298,6 @@ export function get_team_staff_role_repository(): TeamStaffRoleRepository {
     singleton_instance = new InBrowserTeamStaffRoleRepository();
   }
   return singleton_instance;
-}
-
-export async function initialize_team_staff_role_repository(): Promise<void> {
-  const repository =
-    get_team_staff_role_repository() as InBrowserTeamStaffRoleRepository;
-  const has_data = await repository.has_data();
-
-  if (!has_data) {
-    await repository.seed_with_data(create_default_team_staff_roles());
-  }
 }
 
 export async function reset_team_staff_role_repository(): Promise<void> {

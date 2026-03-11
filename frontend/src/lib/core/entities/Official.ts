@@ -22,13 +22,13 @@ export interface Official extends BaseEntity {
   status: OfficialStatus;
 }
 
-export function get_official_avatar(official: Official): string {
+function get_official_avatar(official: Official): string {
   return official.profile_image_url && official.profile_image_url.trim() !== ""
     ? official.profile_image_url
     : DEFAULT_OFFICIAL_AVATAR;
 }
 
-export function get_official_initials(official: Official): string {
+function get_official_initials(official: Official): string {
   const first_initial = official.first_name
     ? official.first_name.charAt(0).toUpperCase()
     : "";
@@ -48,7 +48,7 @@ export function get_official_full_name(official: Official): string {
   return `${official.first_name} ${official.last_name}`.trim();
 }
 
-export function create_empty_official_input(
+function create_empty_official_input(
   organization_id: string = "",
 ): CreateOfficialInput {
   return {

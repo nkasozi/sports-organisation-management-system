@@ -16,7 +16,7 @@ import type { FixtureDetailsSetupUseCasesPort } from "../interfaces/ports";
 
 export type FixtureDetailsSetupUseCases = FixtureDetailsSetupUseCasesPort;
 
-export function create_fixture_details_setup_use_cases(
+function create_fixture_details_setup_use_cases(
   repository: FixtureDetailsSetupRepository,
 ): FixtureDetailsSetupUseCases {
   return {

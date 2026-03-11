@@ -34,7 +34,7 @@ let is_reloading = false;
 let is_navigating = false;
 let pending_state: ClerkSessionState | null = null;
 
-export function set_reloading(): void {
+function set_reloading(): void {
   is_reloading = true;
 }
 
@@ -113,7 +113,7 @@ function sync_clerk_state_immediate(): void {
   clerk_store.set(new_state);
 }
 
-export function update_clerk_session_state(
+function update_clerk_session_state(
   is_signed_in: boolean,
   user_id: string | null,
   user_email: string | null,
@@ -247,7 +247,7 @@ export async function get_session_token(): Promise<string | null> {
   }
 }
 
-export function sign_in_with_redirect(): void {
+function sign_in_with_redirect(): void {
   if (!clerk_instance) {
     console.error("[Clerk] Not initialized");
     return;
@@ -273,7 +273,7 @@ export const clerk_session: Readable<ClerkSessionState> = {
   subscribe: clerk_store.subscribe,
 };
 
-export const clerk_user: Readable<ClerkUser | null> = derived(
+const clerk_user: Readable<ClerkUser | null> = derived(
   clerk_store,
   ($state) => $state.user,
 );

@@ -24,7 +24,7 @@ export type UpdateVenueInput = Partial<CreateVenueInput>;
 export const DEFAULT_VENUE_IMAGE =
   "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%234B5563'/%3E%3Cpath d='M20 70h60v10H20zM15 60h70L50 30z' fill='%239CA3AF'/%3E%3Crect x='40' y='50' width='20' height='20' fill='%236B7280'/%3E%3C/svg%3E";
 
-export function create_empty_venue_input(): CreateVenueInput {
+function create_empty_venue_input(): CreateVenueInput {
   return {
     organization_id: "",
     name: "",
@@ -67,7 +67,7 @@ function is_valid_email(email: string): boolean {
   return email_regex.test(email);
 }
 
-export function get_venue_image(venue: Venue): string {
+function get_venue_image(venue: Venue): string {
   return venue.image_url && venue.image_url.trim() !== ""
     ? venue.image_url
     : DEFAULT_VENUE_IMAGE;

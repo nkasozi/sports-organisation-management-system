@@ -20,7 +20,7 @@ import { get_sport_id_by_code_sync } from "./InBrowserSportRepository";
 
 const ENTITY_PREFIX = "org";
 
-export class InBrowserOrganizationRepository
+class InBrowserOrganizationRepository
   extends InBrowserBaseRepository<
     Organization,
     CreateOrganizationInput,
@@ -102,7 +102,7 @@ export class InBrowserOrganizationRepository
   }
 }
 
-export function create_default_organizations(): Organization[] {
+function create_default_organizations(): Organization[] {
   const now = new Date().toISOString();
   const field_hockey_sport_id = get_sport_id_by_code_sync("FIELD_HOCKEY") || "";
 
@@ -132,16 +132,6 @@ export function get_organization_repository(): OrganizationRepository {
     singleton_instance = new InBrowserOrganizationRepository();
   }
   return singleton_instance;
-}
-
-export async function initialize_organization_repository(): Promise<void> {
-  const repository =
-    get_organization_repository() as InBrowserOrganizationRepository;
-  const has_data = await repository.has_data();
-
-  if (!has_data) {
-    await repository.seed_with_data(create_default_organizations());
-  }
 }
 
 export async function reset_organization_repository(): Promise<void> {

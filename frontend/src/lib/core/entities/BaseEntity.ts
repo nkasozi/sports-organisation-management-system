@@ -109,14 +109,14 @@ export interface EntityListResult<T = any> {
 }
 
 // Helper function to generate UUID with entity prefix
-export function generate_entity_id(entity_prefix: string): string {
+function generate_entity_id(entity_prefix: string): string {
   const timestamp = Date.now();
   const random_part = Math.random().toString(36).substring(2, 15);
   return `${entity_prefix}-${timestamp}-${random_part}`;
 }
 
 // Helper function to create base entity fields
-export function create_base_entity_timestamp_fields(): Pick<
+function create_base_entity_timestamp_fields(): Pick<
   BaseEntity,
   "created_at" | "updated_at"
 > {
@@ -128,7 +128,7 @@ export function create_base_entity_timestamp_fields(): Pick<
 }
 
 // Helper function to update timestamp on entity modification
-export function update_entity_timestamp<T extends BaseEntity>(entity: T): T {
+function update_entity_timestamp<T extends BaseEntity>(entity: T): T {
   return {
     ...entity,
     updated_at: new Date().toISOString(),

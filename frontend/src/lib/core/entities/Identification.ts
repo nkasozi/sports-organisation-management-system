@@ -21,13 +21,13 @@ export type CreateIdentificationInput = Omit<
 
 export type UpdateIdentificationInput = Partial<CreateIdentificationInput>;
 
-export const IDENTIFICATION_HOLDER_TYPE_OPTIONS = [
+const IDENTIFICATION_HOLDER_TYPE_OPTIONS = [
   { value: "player", label: "Player" },
   { value: "team_staff", label: "Team Staff" },
   { value: "official", label: "Official" },
 ];
 
-export function create_empty_identification_input(
+function create_empty_identification_input(
   holder_type?: IdentificationHolderType,
   holder_id?: string,
 ): CreateIdentificationInput {

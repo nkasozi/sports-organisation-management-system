@@ -196,5 +196,4 @@ export function get_audit_log_use_cases(): AuditLogUseCases {
   return create_audit_log_use_cases(container.audit_log_repository);
 }
 
-export { compute_field_changes };
 export type { AuditAction, FieldChange, AuditLogFilter };

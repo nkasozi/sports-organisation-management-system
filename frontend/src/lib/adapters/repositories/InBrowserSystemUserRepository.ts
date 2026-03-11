@@ -254,7 +254,7 @@ export class InBrowserSystemUserRepository
   }
 }
 
-export function create_default_system_users(): SystemUser[] {
+function create_default_system_users(): SystemUser[] {
   const now = new Date().toISOString();
 
   return [
@@ -301,15 +301,6 @@ export function get_system_user_repository(): InBrowserSystemUserRepository {
     singleton_instance = new InBrowserSystemUserRepository();
   }
   return singleton_instance;
-}
-
-export async function initialize_system_user_repository(): Promise<void> {
-  const repository = get_system_user_repository();
-  const has_data = await repository.has_data();
-
-  if (!has_data) {
-    await repository.seed_with_data(create_default_system_users());
-  }
 }
 
 export async function reset_system_user_repository(): Promise<void> {

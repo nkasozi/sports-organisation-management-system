@@ -3,7 +3,7 @@ import type { AsyncResult } from "../types/Result";
 
 export type CrudFunctionality = "create" | "edit" | "delete";
 
-export const CRUD_FUNCTIONALITIES = {
+const CRUD_FUNCTIONALITIES = {
   CREATE: "create" as CrudFunctionality,
   EDIT: "edit" as CrudFunctionality,
   DELETE: "delete" as CrudFunctionality,

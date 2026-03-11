@@ -110,7 +110,7 @@ export class InBrowserVenueRepository
   }
 }
 
-export function create_default_venues(): Venue[] {
+function create_default_venues(): Venue[] {
   const now = new Date().toISOString();
 
   return [
@@ -184,15 +184,6 @@ export function get_venue_repository(): VenueRepository {
     singleton_instance = new InBrowserVenueRepository();
   }
   return singleton_instance;
-}
-
-export async function initialize_venue_repository(): Promise<void> {
-  const repository = get_venue_repository() as InBrowserVenueRepository;
-  const has_data = await repository.has_data();
-
-  if (!has_data) {
-    await repository.seed_with_data(create_default_venues());
-  }
 }
 
 export async function reset_venue_repository(): Promise<void> {

@@ -140,7 +140,7 @@ export class InBrowserTeamProfileRepository
   }
 }
 
-export function create_default_team_profiles(): TeamProfile[] {
+function create_default_team_profiles(): TeamProfile[] {
   const now = new Date().toISOString();
 
   return [
@@ -178,16 +178,6 @@ export function get_team_profile_repository(): TeamProfileRepository {
     singleton_instance = new InBrowserTeamProfileRepository();
   }
   return singleton_instance;
-}
-
-export async function initialize_team_profile_repository(): Promise<void> {
-  const repository =
-    get_team_profile_repository() as InBrowserTeamProfileRepository;
-  const has_data = await repository.has_data();
-
-  if (!has_data) {
-    await repository.seed_with_data(create_default_team_profiles());
-  }
 }
 
 export async function reset_team_profile_repository(): Promise<void> {

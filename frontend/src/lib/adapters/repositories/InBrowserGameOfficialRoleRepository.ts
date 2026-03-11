@@ -205,7 +205,7 @@ export class InBrowserGameOfficialRoleRepository
   }
 }
 
-export function create_default_game_official_roles(): GameOfficialRole[] {
+function create_default_game_official_roles(): GameOfficialRole[] {
   return get_default_football_official_roles_with_ids();
 }
 
@@ -216,16 +216,6 @@ export function get_game_official_role_repository(): GameOfficialRoleRepository 
     singleton_instance = new InBrowserGameOfficialRoleRepository();
   }
   return singleton_instance;
-}
-
-export async function initialize_game_official_role_repository(): Promise<void> {
-  const repository =
-    get_game_official_role_repository() as InBrowserGameOfficialRoleRepository;
-  const has_data = await repository.has_data();
-
-  if (!has_data) {
-    await repository.seed_with_data(create_default_game_official_roles());
-  }
 }
 
 export async function reset_game_official_role_repository(): Promise<void> {

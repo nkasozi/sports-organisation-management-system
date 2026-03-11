@@ -37,13 +37,13 @@ export function is_success<TData, TError>(
   return result.success === true;
 }
 
-export function is_failure<TData, TError>(
+function is_failure<TData, TError>(
   result: Result<TData, TError>,
 ): result is { success: false; error: TError } {
   return result.success === false;
 }
 
-export function map_result<TData, TNewData, TError>(
+function map_result<TData, TNewData, TError>(
   result: Result<TData, TError>,
   transform_function: (data: TData) => TNewData,
 ): Result<TNewData, TError> {
@@ -53,7 +53,7 @@ export function map_result<TData, TNewData, TError>(
   return create_success_result(transform_function(result.data));
 }
 
-export async function map_async_result<TData, TNewData, TError>(
+async function map_async_result<TData, TNewData, TError>(
   result_promise: AsyncResult<TData, TError>,
   transform_function: (data: TData) => TNewData,
 ): AsyncResult<TNewData, TError> {

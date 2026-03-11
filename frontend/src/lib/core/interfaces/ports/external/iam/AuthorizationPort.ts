@@ -319,7 +319,7 @@ export function check_entity_permission(
   return check_data_permission(role, category, action);
 }
 
-export function authorize_entity_action(
+function authorize_entity_action(
   role: UserRole,
   entity_type: SharedEntityType,
   action: DataAction,
@@ -336,7 +336,7 @@ export function authorize_entity_action(
   };
 }
 
-export function get_allowed_actions_for_entity(
+function get_allowed_actions_for_entity(
   role: UserRole,
   entity_type: SharedEntityType,
 ): DataAction[] {
@@ -350,7 +350,7 @@ export function get_allowed_actions_for_entity(
   return allowed_actions;
 }
 
-export function get_disabled_crud_for_entity(
+function get_disabled_crud_for_entity(
   role: UserRole,
   entity_type: SharedEntityType,
 ): ("create" | "read" | "update" | "delete")[] {
@@ -364,7 +364,7 @@ export function get_disabled_crud_for_entity(
   return disabled;
 }
 
-export function has_unrestricted_scope(
+function has_unrestricted_scope(
   profile: UserScopeProfile | null,
   dimension: ScopeDimension,
 ): boolean {
@@ -456,12 +456,12 @@ export function is_field_restricted_by_authorization(
   return restricted.has(field_name);
 }
 
-export function is_unrestricted_value(
+function is_unrestricted_value(
   value: string | undefined | null,
 ): boolean {
   return value === ANY_VALUE || !value;
 }
 
-export function is_restricted_value(value: string | undefined | null): boolean {
+function is_restricted_value(value: string | undefined | null): boolean {
   return !is_unrestricted_value(value);
 }

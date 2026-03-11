@@ -157,7 +157,7 @@ export class InBrowserCompetitionTeamRepository
   }
 }
 
-export function create_default_competition_teams(): CompetitionTeam[] {
+function create_default_competition_teams(): CompetitionTeam[] {
   const now = new Date().toISOString();
 
   return [
@@ -211,16 +211,6 @@ export function get_competition_team_repository(): CompetitionTeamRepository {
     singleton_instance = new InBrowserCompetitionTeamRepository();
   }
   return singleton_instance;
-}
-
-export async function initialize_competition_team_repository(): Promise<void> {
-  const repository =
-    get_competition_team_repository() as InBrowserCompetitionTeamRepository;
-  const has_data = await repository.has_data();
-
-  if (!has_data) {
-    await repository.seed_with_data(create_default_competition_teams());
-  }
 }
 
 export async function reset_competition_team_repository(): Promise<void> {

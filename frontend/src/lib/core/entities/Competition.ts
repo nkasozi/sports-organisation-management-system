@@ -175,7 +175,7 @@ export function validate_competition_input(
 
   return validation_errors;
 }
-export function merge_sport_and_competition_rules(
+function merge_sport_and_competition_rules(
   sport_rules: Partial<CompetitionRuleOverrides>,
   competition_overrides: CompetitionRuleOverrides,
 ): CompetitionRuleOverrides {

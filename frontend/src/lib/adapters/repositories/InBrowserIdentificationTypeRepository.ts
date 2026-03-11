@@ -83,49 +83,6 @@ export class InBrowserIdentificationTypeRepository
   }
 }
 
-export function create_default_identification_types(): IdentificationType[] {
-  const now = new Date().toISOString();
-
-  return [
-    {
-      id: "id_type_default_1",
-      name: "National ID",
-      identifier_field_label: "National ID Number",
-      description: "Government-issued national identification card",
-      status: "active",
-      created_at: now,
-      updated_at: now,
-    },
-    {
-      id: "id_type_default_2",
-      name: "Passport",
-      identifier_field_label: "Passport Number",
-      description: "International travel document",
-      status: "active",
-      created_at: now,
-      updated_at: now,
-    },
-    {
-      id: "id_type_default_3",
-      name: "Driver's License",
-      identifier_field_label: "License Number",
-      description: "Government-issued driving permit",
-      status: "active",
-      created_at: now,
-      updated_at: now,
-    },
-    {
-      id: "id_type_default_4",
-      name: "Birth Certificate",
-      identifier_field_label: "Certificate Number",
-      description: "Official document recording birth",
-      status: "active",
-      created_at: now,
-      updated_at: now,
-    },
-  ];
-}
-
 let singleton_instance: InBrowserIdentificationTypeRepository | null = null;
 
 export function get_identification_type_repository(): IdentificationTypeRepository {
@@ -133,21 +90,4 @@ export function get_identification_type_repository(): IdentificationTypeReposito
     singleton_instance = new InBrowserIdentificationTypeRepository();
   }
   return singleton_instance;
-}
-
-export async function initialize_identification_type_repository(): Promise<void> {
-  const repository =
-    get_identification_type_repository() as InBrowserIdentificationTypeRepository;
-  const has_data = await repository.has_data();
-
-  if (!has_data) {
-    await repository.seed_with_data(create_default_identification_types());
-  }
-}
-
-export async function reset_identification_type_repository(): Promise<void> {
-  const repository =
-    get_identification_type_repository() as InBrowserIdentificationTypeRepository;
-  await repository.clear_all_data();
-  await repository.seed_with_data(create_default_identification_types());
 }

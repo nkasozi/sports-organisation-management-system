@@ -30,7 +30,7 @@ import {
 
 const ENTITY_PREFIX = "comp_fmt";
 
-export class InBrowserCompetitionFormatRepository
+class InBrowserCompetitionFormatRepository
   extends InBrowserBaseRepository<
     CompetitionFormat,
     CreateCompetitionFormatInput,
@@ -155,7 +155,7 @@ export class InBrowserCompetitionFormatRepository
   }
 }
 
-export function create_default_competition_formats_data(): CompetitionFormat[] {
+function create_default_competition_formats_data(): CompetitionFormat[] {
   const now = new Date().toISOString();
   const default_inputs = get_default_competition_formats();
 
@@ -186,16 +186,6 @@ export function get_competition_format_repository(): CompetitionFormatRepository
     singleton_instance = new InBrowserCompetitionFormatRepository();
   }
   return singleton_instance;
-}
-
-export async function initialize_competition_format_repository(): Promise<void> {
-  const repository =
-    get_competition_format_repository() as InBrowserCompetitionFormatRepository;
-  const has_data = await repository.has_data();
-
-  if (!has_data) {
-    await repository.seed_with_data(create_default_competition_formats_data());
-  }
 }
 
 export async function reset_competition_format_repository(): Promise<void> {

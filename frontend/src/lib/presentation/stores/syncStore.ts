@@ -249,7 +249,7 @@ export const sync_percentage: Readable<number> = derived(
   ($sync_store) => $sync_store.current_progress?.percentage ?? 0,
 );
 
-export const sync_status: Readable<SyncStatus> = derived(
+const sync_status: Readable<SyncStatus> = derived(
   sync_store,
   ($sync_store) => ($sync_store.is_syncing ? "syncing" : "idle"),
 );
@@ -264,7 +264,7 @@ export const sync_error: Readable<string | null> = derived(
   ($sync_store) => $sync_store.error_message,
 );
 
-export const has_pending_conflicts: Readable<boolean> = derived(
+const has_pending_conflicts: Readable<boolean> = derived(
   sync_store,
   ($sync_store) => $sync_store.has_pending_conflicts,
 );

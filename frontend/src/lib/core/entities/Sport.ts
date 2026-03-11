@@ -101,7 +101,7 @@ export interface Sport extends BaseEntity {
 export type CreateSportInput = Omit<Sport, "id" | "created_at" | "updated_at">;
 export type UpdateSportInput = Partial<CreateSportInput>;
 
-export function create_default_card_types(): CardType[] {
+function create_default_card_types(): CardType[] {
   return [
     {
       id: "yellow_card",
@@ -126,7 +126,7 @@ export function create_default_card_types(): CardType[] {
   ];
 }
 
-export function create_default_foul_categories(): FoulCategory[] {
+function create_default_foul_categories(): FoulCategory[] {
   return [
     {
       id: "minor_foul",
@@ -163,7 +163,7 @@ export function create_default_foul_categories(): FoulCategory[] {
   ];
 }
 
-export function create_default_football_periods(): SportGamePeriod[] {
+function create_default_football_periods(): SportGamePeriod[] {
   return [
     {
       id: "first_half",
@@ -189,7 +189,7 @@ export function create_default_football_periods(): SportGamePeriod[] {
   ];
 }
 
-export function create_default_official_requirements(): OfficialRequirement[] {
+function create_default_official_requirements(): OfficialRequirement[] {
   return [
     {
       role_id: "referee",
@@ -226,7 +226,7 @@ export function create_default_official_requirements(): OfficialRequirement[] {
   ];
 }
 
-export function create_default_overtime_rules(): OvertimeRule {
+function create_default_overtime_rules(): OvertimeRule {
   return {
     is_enabled: true,
     trigger_condition: "knockout_draw",
@@ -261,7 +261,7 @@ export function create_default_overtime_rules(): OvertimeRule {
   };
 }
 
-export function create_default_scoring_rules(): ScoringRule[] {
+function create_default_scoring_rules(): ScoringRule[] {
   return [
     {
       event_type: "goal",
@@ -281,7 +281,7 @@ export function create_default_scoring_rules(): ScoringRule[] {
   ];
 }
 
-export function create_default_substitution_rules(): SubstitutionRule {
+function create_default_substitution_rules(): SubstitutionRule {
   return {
     max_substitutions_per_game: 5,
     max_substitution_windows: 3,
@@ -773,7 +773,7 @@ export function validate_sport_input(input: CreateSportInput): string[] {
   return validation_errors;
 }
 
-export function calculate_total_game_duration(
+function calculate_total_game_duration(
   periods: SportGamePeriod[],
 ): number {
   return periods
@@ -781,7 +781,7 @@ export function calculate_total_game_duration(
     .reduce((total, period) => total + period.duration_minutes, 0);
 }
 
-export function get_mandatory_official_count(
+function get_mandatory_official_count(
   requirements: OfficialRequirement[],
 ): number {
   return requirements

@@ -21,7 +21,7 @@ export type CreatePlayerTeamTransferHistoryInput = Omit<
 export type UpdatePlayerTeamTransferHistoryInput =
   Partial<CreatePlayerTeamTransferHistoryInput>;
 
-export function create_empty_player_team_transfer_history_input(
+function create_empty_player_team_transfer_history_input(
   organization_id: string = "",
   player_id: string = "",
   from_team_id: string = "",

@@ -67,7 +67,7 @@ export type UpdateGameEventLogInput = Partial<
   >
 >;
 
-export function create_empty_game_event_log_input(
+function create_empty_game_event_log_input(
   organization_id: string = "",
   live_game_log_id: string = "",
   fixture_id: string = "",
@@ -93,7 +93,7 @@ export function create_empty_game_event_log_input(
   };
 }
 
-export function validate_game_event_log_input(
+function validate_game_event_log_input(
   input: CreateGameEventLogInput | UpdateGameEventLogInput,
 ): { is_valid: boolean; errors: Record<string, string> } {
   const errors: Record<string, string> = {};
@@ -136,7 +136,7 @@ export function validate_game_event_log_input(
   };
 }
 
-export function get_game_event_log_display(event: GameEventLog): string {
+function get_game_event_log_display(event: GameEventLog): string {
   const minute_display =
     event.stoppage_time_minute !== null
       ? `${event.minute}+${event.stoppage_time_minute}'`
@@ -146,7 +146,7 @@ export function get_game_event_log_display(event: GameEventLog): string {
   return `${minute_display} ${type_label} - ${player_display}`;
 }
 
-export function get_event_type_label(event_type: GameEventLogType): string {
+function get_event_type_label(event_type: GameEventLogType): string {
   const labels: Record<GameEventLogType, string> = {
     goal: "Goal",
     own_goal: "Own Goal",
@@ -169,7 +169,7 @@ export function get_event_type_label(event_type: GameEventLogType): string {
   return labels[event_type] || event_type;
 }
 
-export function get_event_type_icon(event_type: GameEventLogType): string {
+function get_event_type_icon(event_type: GameEventLogType): string {
   const icons: Record<GameEventLogType, string> = {
     goal: "⚽",
     own_goal: "🥅",

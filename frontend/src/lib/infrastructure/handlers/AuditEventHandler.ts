@@ -179,6 +179,6 @@ export function initialize_audit_event_handlers(): void {
   is_initialized = true;
 }
 
-export function reset_audit_event_handlers(): void {
+function reset_audit_event_handlers(): void {
   is_initialized = false;
 }

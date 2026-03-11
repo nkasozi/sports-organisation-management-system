@@ -106,7 +106,7 @@ function transform_convex_audit_log(record: unknown): AuditLog {
   };
 }
 
-export async function get_recent_audit_logs_from_convex(
+async function get_recent_audit_logs_from_convex(
   days: number = 2,
 ): Promise<AuditLog[]> {
   const manager = get_sync_manager();

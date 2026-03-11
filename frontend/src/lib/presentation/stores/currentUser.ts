@@ -108,11 +108,11 @@ function create_current_user_store() {
 
 export const current_user_store = create_current_user_store();
 
-export const current_user_display_name = derived(current_user_store, ($user) =>
+const current_user_display_name = derived(current_user_store, ($user) =>
   $user ? `${$user.first_name} ${$user.last_name}` : "Guest",
 );
 
-export const current_user_initials = derived(current_user_store, ($user) => {
+const current_user_initials = derived(current_user_store, ($user) => {
   if (!$user) return "?";
   const first_initial = $user.first_name?.charAt(0).toUpperCase() || "";
   const last_initial = $user.last_name?.charAt(0).toUpperCase() || "";

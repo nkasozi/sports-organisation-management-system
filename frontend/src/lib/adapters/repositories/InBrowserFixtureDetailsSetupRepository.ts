@@ -19,7 +19,7 @@ import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
 
 const ENTITY_PREFIX = "fixture-details-setup";
 
-export class InBrowserFixtureDetailsSetupRepository
+class InBrowserFixtureDetailsSetupRepository
   extends InBrowserBaseRepository<
     FixtureDetailsSetup,
     CreateFixtureDetailsSetupInput,
@@ -124,7 +124,7 @@ export class InBrowserFixtureDetailsSetupRepository
   }
 }
 
-export function create_default_fixture_details_setups(): FixtureDetailsSetup[] {
+function create_default_fixture_details_setups(): FixtureDetailsSetup[] {
   return [];
 }
 
@@ -135,16 +135,6 @@ export function get_fixture_details_setup_repository(): FixtureDetailsSetupRepos
     singleton_instance = new InBrowserFixtureDetailsSetupRepository();
   }
   return singleton_instance;
-}
-
-export async function initialize_fixture_details_setup_repository(): Promise<void> {
-  const repository =
-    get_fixture_details_setup_repository() as InBrowserFixtureDetailsSetupRepository;
-  const has_data = await repository.has_data();
-
-  if (!has_data) {
-    await repository.seed_with_data(create_default_fixture_details_setups());
-  }
 }
 
 export async function reset_fixture_details_setup_repository(): Promise<void> {

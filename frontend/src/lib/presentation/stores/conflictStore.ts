@@ -224,12 +224,12 @@ export const pending_conflicts = derived(
   ($store) => $store.pending_conflicts,
 );
 
-export const has_pending_conflicts = derived(
+const has_pending_conflicts = derived(
   conflict_store,
   ($store) => $store.pending_conflicts.length > 0,
 );
 
-export const pending_conflict_count = derived(
+const pending_conflict_count = derived(
   conflict_store,
   ($store) => $store.pending_conflicts.length,
 );
