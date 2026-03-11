@@ -95,6 +95,10 @@ export const upsert_record = mutation({
       version,
     };
 
+    // strip Convex system fields — they must not be set on patch/insert
+    delete (record_data as Record<string, unknown>)._id;
+    delete (record_data as Record<string, unknown>)._creationTime;
+
     if (existing) {
       if (existing.version >= version) {
         return { success: true, action: "skipped", reason: "server_newer" };
@@ -274,8 +278,12 @@ export const batch_upsert = mutation({
         .withIndex("by_local_id", (q) => q.eq("local_id", record.local_id))
         .first();
 
+      const sanitized_data = { ...record.data } as Record<string, unknown>;
+      delete sanitized_data._id;
+      delete sanitized_data._creationTime;
+
       const record_data = {
-        ...record.data,
+        ...sanitized_data,
         local_id: record.local_id,
         synced_at,
         version: record.version,

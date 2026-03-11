@@ -371,6 +371,7 @@ export async function pull_table_from_convex(
 
         const local_data = { ...remote_record } as Record<string, unknown>;
         delete local_data._id;
+        delete local_data._creationTime;
         delete local_data.local_id;
         delete local_data.synced_at;
         delete local_data.version;

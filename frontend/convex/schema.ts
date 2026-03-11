@@ -168,6 +168,14 @@ export default defineSchema({
         min_players_on_field: v.optional(v.number()),
         max_squad_size: v.optional(v.number()),
         custom_rules: v.optional(v.record(v.string(), v.string())),
+        points_config_override: v.optional(
+          v.object({
+            points_for_win: v.optional(v.number()),
+            points_for_draw: v.optional(v.number()),
+            points_for_loss: v.optional(v.number()),
+          }),
+        ),
+        tie_breakers_override: v.optional(v.array(v.string())),
       }),
     ),
     status: v.optional(v.string()),
