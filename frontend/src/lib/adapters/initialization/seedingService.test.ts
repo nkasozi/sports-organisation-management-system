@@ -350,7 +350,7 @@ describe("seed_from_convex_or_local — convex_first_with_local_fallback strateg
   });
 
   it("returns local_fallback_success when seeding already complete", async () => {
-    mock_local_storage["sports_org_seeding_complete_v12"] = "true";
+    mock_local_storage["sports_org_seeding_complete_v13"] = "true";
 
     const result = await seed_from_convex_or_local(
       on_progress,
@@ -363,7 +363,7 @@ describe("seed_from_convex_or_local — convex_first_with_local_fallback strateg
   });
 
   it("repairs competition format stage fields when local seeded data already exists", async () => {
-    mock_local_storage["sports_org_seeding_complete_v12"] = "true";
+    mock_local_storage["sports_org_seeding_complete_v13"] = "true";
     mock_competition_formats.push({
       id: "format-2",
       created_at: "2024-01-01T00:00:00.000Z",
@@ -432,7 +432,7 @@ describe("seed_from_convex_or_local — convex_first_with_local_fallback strateg
       "convex_first_with_local_fallback",
     );
 
-    expect(mock_local_storage["sports_org_seeding_complete_v12"]).toBe("true");
+    expect(mock_local_storage["sports_org_seeding_complete_v13"]).toBe("true");
   });
 
   it("repairs competition format stage fields after successful convex seed", async () => {
@@ -582,7 +582,7 @@ describe("seed_from_convex_or_local — convex_mandatory strategy", () => {
   });
 
   it("enters offline mode when convex fails but local data exists", async () => {
-    mock_local_storage["sports_org_seeding_complete_v12"] = "true";
+    mock_local_storage["sports_org_seeding_complete_v13"] = "true";
 
     const result = await seed_from_convex_or_local(
       on_progress,

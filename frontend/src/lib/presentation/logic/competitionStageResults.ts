@@ -1,6 +1,11 @@
 import type { CompetitionStage } from "$lib/core/entities/CompetitionStage";
 import type { Fixture } from "$lib/core/entities/Fixture";
 import type { Team } from "$lib/core/entities/Team";
+import {
+  type PointsConfig,
+  type TieBreaker,
+  DEFAULT_POINTS_CONFIG,
+} from "$lib/core/entities/CompetitionFormat";
 
 export interface TeamStanding {
   team_id: string;
@@ -29,9 +34,108 @@ export interface CompetitionStageResultsSection {
   inferred_groups: InferredStageGroup[];
 }
 
+function calculate_head_to_head(
+  team_a_id: string,
+  team_b_id: string,
+  completed_fixtures: Fixture[],
+): { team_a_points: number; team_b_points: number; team_a_gd: number; team_b_gd: number } {
+  const h2h_fixtures = completed_fixtures.filter(
+    (f) =>
+      (f.home_team_id === team_a_id && f.away_team_id === team_b_id) ||
+      (f.home_team_id === team_b_id && f.away_team_id === team_a_id),
+  );
+
+  let team_a_points = 0;
+  let team_b_points = 0;
+  let team_a_gd = 0;
+  let team_b_gd = 0;
+
+  for (const fixture of h2h_fixtures) {
+    const home_goals = fixture.home_team_score ?? 0;
+    const away_goals = fixture.away_team_score ?? 0;
+
+    if (fixture.home_team_id === team_a_id) {
+      team_a_gd += home_goals - away_goals;
+      team_b_gd += away_goals - home_goals;
+      if (home_goals > away_goals) team_a_points += 3;
+      else if (home_goals === away_goals) {
+        team_a_points += 1;
+        team_b_points += 1;
+      } else team_b_points += 3;
+    } else {
+      team_b_gd += home_goals - away_goals;
+      team_a_gd += away_goals - home_goals;
+      if (home_goals > away_goals) team_b_points += 3;
+      else if (home_goals === away_goals) {
+        team_a_points += 1;
+        team_b_points += 1;
+      } else team_a_points += 3;
+    }
+  }
+
+  return { team_a_points, team_b_points, team_a_gd, team_b_gd };
+}
+
+function apply_single_tiebreaker(
+  left: TeamStanding,
+  right: TeamStanding,
+  completed_fixtures: Fixture[],
+  tiebreaker: TieBreaker,
+): number {
+  switch (tiebreaker) {
+    case "goal_difference":
+      return right.goal_difference - left.goal_difference;
+    case "goals_scored":
+      return right.goals_for - left.goals_for;
+    case "away_goals": {
+      const left_away_goals = completed_fixtures
+        .filter((f) => f.away_team_id === left.team_id)
+        .reduce((sum, f) => sum + (f.away_team_score ?? 0), 0);
+      const right_away_goals = completed_fixtures
+        .filter((f) => f.away_team_id === right.team_id)
+        .reduce((sum, f) => sum + (f.away_team_score ?? 0), 0);
+      return right_away_goals - left_away_goals;
+    }
+    case "head_to_head": {
+      const h2h = calculate_head_to_head(
+        left.team_id,
+        right.team_id,
+        completed_fixtures,
+      );
+      if (h2h.team_b_points !== h2h.team_a_points)
+        return h2h.team_b_points - h2h.team_a_points;
+      return h2h.team_b_gd - h2h.team_a_gd;
+    }
+    default:
+      return 0;
+  }
+}
+
+function sort_standings_by_tiebreakers(
+  standings: TeamStanding[],
+  completed_fixtures: Fixture[],
+  tie_breakers: TieBreaker[],
+): TeamStanding[] {
+  return [...standings].sort((left, right) => {
+    if (right.points !== left.points) return right.points - left.points;
+    for (const tiebreaker of tie_breakers) {
+      const result = apply_single_tiebreaker(
+        left,
+        right,
+        completed_fixtures,
+        tiebreaker,
+      );
+      if (result !== 0) return result;
+    }
+    return 0;
+  });
+}
+
 export function calculate_team_standings(
   fixtures: Fixture[],
   teams: Team[],
+  points_config: PointsConfig = DEFAULT_POINTS_CONFIG,
+  tie_breakers: TieBreaker[] = ["goal_difference", "goals_scored"],
 ): TeamStanding[] {
   const standings_map = new Map<string, TeamStanding>();
 
@@ -75,36 +179,34 @@ export function calculate_team_standings(
     if (home_goals > away_goals) {
       home_standing.won += 1;
       away_standing.lost += 1;
-      home_standing.points += 3;
+      home_standing.points += points_config.points_for_win;
+      away_standing.points += points_config.points_for_loss;
       continue;
     }
 
     if (away_goals > home_goals) {
       away_standing.won += 1;
       home_standing.lost += 1;
-      away_standing.points += 3;
+      away_standing.points += points_config.points_for_win;
+      home_standing.points += points_config.points_for_loss;
       continue;
     }
 
     home_standing.drawn += 1;
     away_standing.drawn += 1;
-    home_standing.points += 1;
-    away_standing.points += 1;
+    home_standing.points += points_config.points_for_draw;
+    away_standing.points += points_config.points_for_draw;
   }
 
   for (const standing of standings_map.values()) {
     standing.goal_difference = standing.goals_for - standing.goals_against;
   }
 
-  return [...standings_map.values()].sort((left, right) => {
-    if (right.points !== left.points) {
-      return right.points - left.points;
-    }
-    if (right.goal_difference !== left.goal_difference) {
-      return right.goal_difference - left.goal_difference;
-    }
-    return right.goals_for - left.goals_for;
-  });
+  return sort_standings_by_tiebreakers(
+    [...standings_map.values()],
+    completed_fixtures,
+    tie_breakers,
+  );
 }
 
 export function infer_group_stage_team_groups(fixtures: Fixture[]): string[][] {
@@ -181,6 +283,8 @@ export function build_competition_stage_results_sections(
   stages: CompetitionStage[],
   fixtures: Fixture[],
   teams: Team[],
+  points_config: PointsConfig = DEFAULT_POINTS_CONFIG,
+  tie_breakers: TieBreaker[] = ["goal_difference", "goals_scored"],
 ): CompetitionStageResultsSection[] {
   const team_map = new Map(teams.map((team) => [team.id, team]));
   const sections: CompetitionStageResultsSection[] = [];
@@ -209,7 +313,12 @@ export function build_competition_stage_results_sections(
             label: `Group ${String.fromCharCode(65 + index)}`,
             team_ids,
             fixtures: group_fixtures,
-            standings: calculate_team_standings(group_fixtures, group_teams),
+            standings: calculate_team_standings(
+              group_fixtures,
+              group_teams,
+              points_config,
+              tie_breakers,
+            ),
           };
         },
       );
@@ -238,7 +347,12 @@ export function build_competition_stage_results_sections(
       stage,
       fixtures: stage_fixtures,
       standings: can_show_stage_standings
-        ? calculate_team_standings(stage_fixtures, stage_teams)
+        ? calculate_team_standings(
+            stage_fixtures,
+            stage_teams,
+            points_config,
+            tie_breakers,
+          )
         : [],
       inferred_groups: [],
     });

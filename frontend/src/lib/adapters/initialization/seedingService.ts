@@ -140,7 +140,7 @@ interface SeedResult {
   error_message: string;
 }
 
-const SEEDING_COMPLETE_KEY = "sports_org_seeding_complete_v12";
+const SEEDING_COMPLETE_KEY = "sports_org_seeding_complete_v13";
 
 export function is_seeding_already_complete(): boolean {
   if (typeof window === "undefined") return true;
@@ -159,6 +159,7 @@ function build_competition_format_repair_signature(
     | "knockout_stage_config"
     | "league_config"
     | "stage_templates"
+    | "points_config"
   >,
 ): string {
   return JSON.stringify({
@@ -166,6 +167,7 @@ function build_competition_format_repair_signature(
     knockout_stage_config: input.knockout_stage_config,
     league_config: input.league_config,
     stage_templates: input.stage_templates,
+    points_config: input.points_config,
   });
 }
 
@@ -206,6 +208,7 @@ async function repair_seeded_competition_formats(): Promise<boolean> {
           knockout_stage_config: repaired_input.knockout_stage_config,
           league_config: repaired_input.league_config,
           stage_templates: repaired_input.stage_templates,
+          points_config: repaired_input.points_config,
         },
       );
 

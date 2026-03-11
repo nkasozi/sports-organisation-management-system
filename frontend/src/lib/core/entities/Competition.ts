@@ -8,6 +8,7 @@ import type {
   ScoringRule,
   SubstitutionRule,
 } from "./Sport";
+import type { PointsConfig, TieBreaker } from "./CompetitionFormat";
 
 export type CompetitionDerivedStatus = "upcoming" | "active" | "completed";
 
@@ -25,6 +26,8 @@ export interface CompetitionRuleOverrides {
   max_players_on_field?: number;
   min_players_on_field?: number;
   max_squad_size?: number;
+  points_config_override?: Partial<PointsConfig>;
+  tie_breakers_override?: TieBreaker[];
   custom_rules?: Record<string, unknown>;
 }
 

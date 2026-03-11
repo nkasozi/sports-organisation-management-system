@@ -539,6 +539,13 @@ export default defineSchema({
         v.null(),
       ),
     ),
+    points_config: v.optional(
+      v.object({
+        points_for_win: v.number(),
+        points_for_draw: v.number(),
+        points_for_loss: v.number(),
+      }),
+    ),
     min_teams_required: v.optional(v.number()),
     max_teams_allowed: v.optional(v.number()),
     rules: v.optional(v.string()),

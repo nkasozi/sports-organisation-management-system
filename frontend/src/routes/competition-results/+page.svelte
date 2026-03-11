@@ -60,6 +60,11 @@
     calculate_team_standings,
     type TeamStanding,
   } from "$lib/presentation/logic/competitionStageResults";
+  import {
+    type PointsConfig,
+    type TieBreaker,
+    DEFAULT_POINTS_CONFIG,
+  } from "$lib/core/entities/CompetitionFormat";
 
   const competition_use_cases = get_competition_use_cases();
   const fixture_use_cases = get_fixture_use_cases();
@@ -266,11 +271,51 @@
     red_cards: number;
   }
 
-  $: standings = calculate_team_standings(fixtures, teams);
+  function derive_effective_points_config(
+    format: CompetitionFormat | null,
+    competition: Competition | null,
+  ): PointsConfig {
+    const base_config = format?.points_config ?? DEFAULT_POINTS_CONFIG;
+    const override = competition?.rule_overrides?.points_config_override;
+    if (!override) return base_config;
+    return {
+      points_for_win: override.points_for_win ?? base_config.points_for_win,
+      points_for_draw: override.points_for_draw ?? base_config.points_for_draw,
+      points_for_loss: override.points_for_loss ?? base_config.points_for_loss,
+    };
+  }
+
+  function derive_effective_tie_breakers(
+    format: CompetitionFormat | null,
+    competition: Competition | null,
+  ): TieBreaker[] {
+    const override = competition?.rule_overrides?.tie_breakers_override;
+    return (
+      override ?? format?.tie_breakers ?? ["goal_difference", "goals_scored"]
+    );
+  }
+
+  $: effective_points_config = derive_effective_points_config(
+    competition_format,
+    selected_competition,
+  );
+  $: effective_tie_breakers = derive_effective_tie_breakers(
+    competition_format,
+    selected_competition,
+  );
+
+  $: standings = calculate_team_standings(
+    fixtures,
+    teams,
+    effective_points_config,
+    effective_tie_breakers,
+  );
   $: stage_results_sections = build_competition_stage_results_sections(
     competition_stages,
     fixtures,
     teams,
+    effective_points_config,
+    effective_tie_breakers,
   );
   $: competition_stage_map = new Map(
     competition_stages.map((stage) => [stage.id, stage]),

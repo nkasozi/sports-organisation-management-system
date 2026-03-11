@@ -37,6 +37,18 @@ export interface KnockoutStageConfig {
   penalty_shootout_enabled: boolean;
 }
 
+export interface PointsConfig {
+  points_for_win: number;
+  points_for_draw: number;
+  points_for_loss: number;
+}
+
+export const DEFAULT_POINTS_CONFIG: PointsConfig = {
+  points_for_win: 3,
+  points_for_draw: 1,
+  points_for_loss: 0,
+};
+
 export interface LeagueConfig {
   number_of_rounds: number;
   points_for_win: number;
@@ -58,6 +70,7 @@ export interface CompetitionFormat extends BaseEntity {
   code: string;
   description: string;
   format_type: FormatType;
+  points_config: PointsConfig;
   tie_breakers: TieBreaker[];
   group_stage_config: GroupStageConfig | null;
   knockout_stage_config: KnockoutStageConfig | null;
@@ -144,6 +157,7 @@ export function create_empty_competition_format_input(): CreateCompetitionFormat
     code: "",
     description: "",
     format_type: "league",
+    points_config: { ...DEFAULT_POINTS_CONFIG },
     tie_breakers: ["goal_difference", "head_to_head", "goals_scored"],
     group_stage_config: null,
     knockout_stage_config: null,
@@ -275,8 +289,11 @@ export function hydrate_competition_format_input(
     ? (input.knockout_stage_config ?? create_default_knockout_stage_config())
     : null;
 
+  const points_config: PointsConfig = input.points_config ?? { ...DEFAULT_POINTS_CONFIG };
+
   return {
     ...input,
+    points_config,
     league_config,
     group_stage_config,
     knockout_stage_config,
@@ -328,6 +345,7 @@ export function get_default_competition_formats(): CreateCompetitionFormatInput[
       code: "standard_league",
       description: "Traditional league format with home and away fixtures",
       format_type: "league",
+      points_config: { points_for_win: 3, points_for_draw: 1, points_for_loss: 0 },
       tie_breakers: ["goal_difference", "head_to_head", "goals_scored"],
       group_stage_config: null,
       knockout_stage_config: null,
@@ -342,6 +360,7 @@ export function get_default_competition_formats(): CreateCompetitionFormatInput[
       code: "single_round_robin",
       description: "Each team plays every other team once",
       format_type: "round_robin",
+      points_config: { points_for_win: 3, points_for_draw: 1, points_for_loss: 0 },
       tie_breakers: ["goal_difference", "goals_scored"],
       group_stage_config: null,
       knockout_stage_config: null,
@@ -356,6 +375,7 @@ export function get_default_competition_formats(): CreateCompetitionFormatInput[
       code: "world_cup_style",
       description: "Group stage followed by knockout rounds",
       format_type: "groups_knockout",
+      points_config: { points_for_win: 3, points_for_draw: 1, points_for_loss: 0 },
       tie_breakers: [
         "goal_difference",
         "goals_scored",
@@ -375,6 +395,7 @@ export function get_default_competition_formats(): CreateCompetitionFormatInput[
       code: "cup_tournament",
       description: "Single elimination knockout tournament",
       format_type: "straight_knockout",
+      points_config: { points_for_win: 3, points_for_draw: 1, points_for_loss: 0 },
       tie_breakers: ["draw"],
       group_stage_config: null,
       knockout_stage_config: {
@@ -392,6 +413,7 @@ export function get_default_competition_formats(): CreateCompetitionFormatInput[
       code: "champions_league_style",
       description: "Group stage with two-legged knockout rounds",
       format_type: "groups_knockout",
+      points_config: { points_for_win: 3, points_for_draw: 1, points_for_loss: 0 },
       tie_breakers: ["goal_difference", "away_goals", "goals_scored"],
       group_stage_config: create_default_group_stage_config(),
       knockout_stage_config: {
