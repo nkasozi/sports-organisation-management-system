@@ -50,20 +50,29 @@ function reset_first_time_flag(): void {
   localStorage.removeItem(FIRST_TIME_DETECTION_KEY);
 }
 
-export async function reset_all_data(): Promise<boolean> {
+export async function reset_all_data(
+  on_progress?: (message: string, percentage: number) => void,
+): Promise<boolean> {
   if (typeof window === "undefined") return false;
 
+  const report = (message: string, percentage: number): void => {
+    on_progress?.(message, percentage);
+  };
+
+  report("Stopping background sync...", 5);
   stop_background_sync();
   set_pulling_from_remote(true);
 
+  report("Clearing server data...", 10);
   await clear_all_synced_tables_in_convex();
 
+  report("Clearing local storage...", 20);
   localStorage.clear();
   reset_sync_metadata();
-
   reset_seeding_flag();
   reset_first_time_flag();
 
+  report("Resetting data stores...", 35);
   await reset_sport_repository();
   await reset_organization_repository();
   await reset_team_repository();
@@ -89,6 +98,7 @@ export async function reset_all_data(): Promise<boolean> {
   await reset_qualification_repository();
   await reset_system_user_repository();
 
+  report("Reloading fresh demo data...", 65);
   await get_all_sports();
   get_organization_repository();
   get_team_repository();
@@ -99,8 +109,10 @@ export async function reset_all_data(): Promise<boolean> {
   const game_event_repo = get_game_event_type_repository();
   await game_event_repo.find_all();
 
+  report("Seeding demo data...", 80);
   await seed_all_data_if_needed();
 
+  report("Finishing up...", 95);
   set_pulling_from_remote(false);
   start_background_sync();
 

@@ -1232,6 +1232,118 @@
                           {/each}
                         </div>
                       {/if}
+                    {:else if stage_section.stage.stage_type === "knockout_stage" || stage_section.stage.stage_type === "one_off_stage"}
+                      {#if stage_section.fixtures.length === 0}
+                        <div
+                          class="text-center py-8 text-accent-500 dark:text-accent-400"
+                        >
+                          No fixtures assigned to this stage yet.
+                        </div>
+                      {:else}
+                        <div class="space-y-3">
+                          {#each stage_section.fixtures.sort((a, b) => new Date(a.scheduled_date).getTime() - new Date(b.scheduled_date).getTime()) as fixture}
+                            {@const home_score = fixture.home_team_score ?? 0}
+                            {@const away_score = fixture.away_team_score ?? 0}
+                            <div
+                              class="w-full p-3 sm:p-4 bg-gray-50 dark:bg-gray-800 rounded-lg transition-colors"
+                            >
+                              <div
+                                class="text-xs text-center text-gray-500 dark:text-gray-400 mb-2"
+                              >
+                                {format_date(fixture.scheduled_date)}
+                              </div>
+                              <div
+                                class="flex items-center justify-between gap-2"
+                              >
+                                <div class="flex-1 text-right">
+                                  <span
+                                    class="text-sm sm:text-base font-medium line-clamp-1 {home_score >
+                                      away_score &&
+                                    fixture.status === 'completed'
+                                      ? 'text-green-600 dark:text-green-400'
+                                      : 'text-accent-900 dark:text-accent-100'}"
+                                  >
+                                    {get_team_name(fixture.home_team_id)}
+                                  </span>
+                                </div>
+                                <div class="flex-shrink-0 px-2 sm:px-4">
+                                  {#if fixture.status === "completed" || fixture.status === "in_progress"}
+                                    <div
+                                      class="flex items-center gap-1 sm:gap-2 text-xl sm:text-2xl font-bold"
+                                    >
+                                      <span
+                                        class={home_score > away_score
+                                          ? "text-green-600 dark:text-green-400"
+                                          : "text-accent-900 dark:text-accent-100"}
+                                      >
+                                        {home_score}
+                                      </span>
+                                      <span
+                                        class="text-gray-400 text-base sm:text-lg"
+                                        >-</span
+                                      >
+                                      <span
+                                        class={away_score > home_score
+                                          ? "text-green-600 dark:text-green-400"
+                                          : "text-accent-900 dark:text-accent-100"}
+                                      >
+                                        {away_score}
+                                      </span>
+                                    </div>
+                                  {:else}
+                                    <span
+                                      class="text-sm font-bold text-gray-400 px-2"
+                                      >VS</span
+                                    >
+                                  {/if}
+                                </div>
+                                <div class="flex-1 text-left">
+                                  <span
+                                    class="text-sm sm:text-base font-medium line-clamp-1 {away_score >
+                                      home_score &&
+                                    fixture.status === 'completed'
+                                      ? 'text-green-600 dark:text-green-400'
+                                      : 'text-accent-900 dark:text-accent-100'}"
+                                  >
+                                    {get_team_name(fixture.away_team_id)}
+                                  </span>
+                                </div>
+                              </div>
+                              <div
+                                class="flex justify-center mt-3 pt-2 border-t border-gray-200 dark:border-gray-700"
+                              >
+                                <button
+                                  type="button"
+                                  class="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+                                  on:click={() =>
+                                    goto(`/match-report/${fixture.id}`)}
+                                >
+                                  <svg
+                                    class="w-4 h-4"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                  >
+                                    <path
+                                      stroke-linecap="round"
+                                      stroke-linejoin="round"
+                                      stroke-width="2"
+                                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                                    />
+                                    <path
+                                      stroke-linecap="round"
+                                      stroke-linejoin="round"
+                                      stroke-width="2"
+                                      d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                                    />
+                                  </svg>
+                                  View Details
+                                </button>
+                              </div>
+                            </div>
+                          {/each}
+                        </div>
+                      {/if}
                     {:else}
                       <CompetitionStandingsTable
                         standings={stage_section.standings}

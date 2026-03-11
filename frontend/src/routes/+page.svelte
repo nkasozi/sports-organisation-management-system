@@ -33,6 +33,8 @@
 
   let loading = true;
   let is_resetting = false;
+  let reset_status_message = "Clearing demo data...";
+  let reset_progress = 0;
   let error_message = "";
   let access_denial_message = "";
   let stats = {
@@ -294,9 +296,16 @@
 
   async function handle_reset_data(): Promise<boolean> {
     if (is_resetting) return false;
+    reset_status_message = "Clearing demo data...";
+    reset_progress = 0;
     is_resetting = true;
     await tick();
-    const reset_result = await reset_all_data();
+    const reset_result = await reset_all_data(
+      (message: string, percentage: number) => {
+        reset_status_message = message;
+        reset_progress = percentage;
+      },
+    );
     if (!reset_result) {
       is_resetting = false;
       return false;
@@ -320,10 +329,9 @@
 
 {#if is_resetting}
   <FullScreenOverlay
-    title="Resetting Demo"
-    subtitle="Clearing and re-seeding all data"
-    status_message="Resetting demo data..."
-    progress_percentage={0}
+    title="Resetting Demo Data"
+    status_message={reset_status_message}
+    progress_percentage={reset_progress}
   />
 {/if}
 

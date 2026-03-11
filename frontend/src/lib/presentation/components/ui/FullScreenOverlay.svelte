@@ -8,13 +8,15 @@
 </script>
 
 <div
-  class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/30"
+  class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 backdrop-blur-sm"
   transition:fade={{ duration: 300 }}
 >
   <div class="text-center space-y-8 px-6 max-w-md">
     <div class="flex justify-center">
       <div class="relative">
-        <div class="w-20 h-20 rounded-full border-4 border-white/20"></div>
+        <div
+          class="w-20 h-20 rounded-full border-4 border-theme-primary-200/30 dark:border-theme-primary-800/30"
+        ></div>
         <div
           class="absolute inset-0 w-20 h-20 rounded-full border-4 border-transparent border-t-theme-primary-500 animate-spin"
         ></div>
@@ -45,23 +47,23 @@
 
     {#if progress_percentage > 0}
       <div class="w-full max-w-xs mx-auto">
-        <div class="h-2 bg-white/20 rounded-full overflow-hidden">
+        <div class="h-2 bg-accent-700 rounded-full overflow-hidden">
           <div
             class="h-full bg-theme-primary-500 rounded-full transition-all duration-500 ease-out"
             style="width: {progress_percentage}%"
           ></div>
         </div>
-        <p class="text-xs text-white/70 mt-2">
+        <p class="text-xs text-accent-400 mt-2">
           {progress_percentage}% complete
         </p>
       </div>
     {/if}
 
     {#if subtitle}
-      <p class="text-xs text-white/60">{subtitle}</p>
+      <p class="text-xs text-accent-500">{subtitle}</p>
     {:else}
-      <div class="text-xs text-white/60 space-y-1">
-        {#if status_message.includes("Syncing")}
+      <div class="text-xs text-accent-500 space-y-1">
+        {#if status_message.includes("server") || status_message.includes("Pulling")}
           <p>Syncing data from the server</p>
         {:else if status_message.includes("demo") || status_message.includes("offline")}
           <p>Loading local demo data for offline use</p>

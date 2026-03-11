@@ -140,7 +140,7 @@ interface SeedResult {
   error_message: string;
 }
 
-const SEEDING_COMPLETE_KEY = "sports_org_seeding_complete_v13";
+const SEEDING_COMPLETE_KEY = "sports_org_seeding_complete_v14";
 
 export function is_seeding_already_complete(): boolean {
   if (typeof window === "undefined") return true;
