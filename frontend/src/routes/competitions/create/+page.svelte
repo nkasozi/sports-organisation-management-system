@@ -29,7 +29,6 @@
   import { auth_store } from "$lib/presentation/stores/auth";
   import {
     is_scope_restricted,
-    build_authorization_list_filter,
     type UserScopeProfile,
   } from "$lib/core/interfaces/ports";
   import type { SquadGenerationStrategy } from "$lib/core/entities/Competition";
@@ -52,7 +51,7 @@
   let selected_sport: Sport | null = null;
   let is_loading_organizations: boolean = true;
   let is_loading_formats: boolean = true;
-  let is_loading_teams: boolean = true;
+  let is_loading_teams: boolean = false;
   let is_saving: boolean = false;
   let errors: Record<string, string> = {};
   let error_message: string = "";
@@ -146,11 +145,7 @@
       }
     }
 
-    await Promise.all([
-      load_organizations(),
-      load_competition_formats(),
-      load_teams(),
-    ]);
+    await Promise.all([load_organizations(), load_competition_formats()]);
   });
 
   async function load_organizations(): Promise<void> {
@@ -206,39 +201,25 @@
     is_loading_formats = false;
   }
 
-  async function load_teams(): Promise<void> {
+  async function load_teams_for_organization(
+    organization_id: string,
+  ): Promise<void> {
     is_loading_teams = true;
-    const auth_filter: Record<string, string> = {};
-    if (current_auth_profile) {
-      const filter = build_authorization_list_filter(
-        current_auth_profile as UserScopeProfile,
-        ["organization_id"],
-      );
-      Object.assign(auth_filter, filter);
-    }
-    const result = await team_use_cases.list(auth_filter, {
-      page_number: 1,
-      page_size: 200,
-    });
-
+    const result = await team_use_cases.list(
+      { organization_id },
+      { page_number: 1, page_size: 200 },
+    );
     if (result.success) {
       all_teams = result.data;
-      update_team_options();
-    }
-    is_loading_teams = false;
-  }
-
-  function update_team_options(): void {
-    team_options = all_teams
-      .filter((team) =>
-        form_data.organization_id
-          ? team.organization_id === form_data.organization_id
-          : true,
-      )
-      .map((team) => ({
+      team_options = all_teams.map((team) => ({
         value: team.id,
         label: team.name,
       }));
+    } else {
+      all_teams = [];
+      team_options = [];
+    }
+    is_loading_teams = false;
   }
 
   async function handle_organization_change(
@@ -251,8 +232,10 @@
   async function trigger_organization_side_effects(
     organization_id: string,
   ): Promise<void> {
-    selected_team_ids.clear();
-    update_team_options();
+    selected_team_ids = new Set();
+    all_teams = [];
+    team_options = [];
+    await load_teams_for_organization(organization_id);
 
     form_data.rule_overrides = {};
     selected_sport = null;
@@ -603,7 +586,28 @@
             </p>
           {/if}
 
-          {#if is_loading_teams}
+          {#if !form_data.organization_id}
+            <div
+              class="flex items-start gap-2 rounded-md border border-accent-300 bg-accent-50 dark:bg-accent-800 dark:border-accent-600 px-3 py-3 text-accent-700 dark:text-accent-300"
+            >
+              <svg
+                class="h-5 w-5 flex-shrink-0 text-accent-400 mt-0.5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              <p class="text-sm">
+                Select an organisation above to load available teams.
+              </p>
+            </div>
+          {:else if is_loading_teams}
             <div class="text-center py-8 text-accent-500">Loading teams...</div>
           {:else if team_options.length === 0}
             <div
@@ -622,10 +626,10 @@
               >
               <div>
                 <p class="text-sm font-medium">
-                  No teams available for the selected organization.
+                  No teams available for the selected organisation.
                 </p>
                 <p class="text-sm text-yellow-800">
-                  Create teams under the organization to add them here.
+                  Create teams under the organisation to add them here.
                 </p>
               </div>
             </div>

@@ -16,11 +16,9 @@
     "format": "prettier --write ."
   },
   "devDependencies": {
-    "@sveltejs/adapter-auto": "^3.0.0",
     "@sveltejs/adapter-vercel": "^5.0.0",
     "@sveltejs/kit": "^2.53.0",
     "@sveltejs/vite-plugin-svelte": "^4.0.0",
-    "@types/eslint": "^9.6.0",
     "@typescript-eslint/eslint-plugin": "^8.0.0",
     "@typescript-eslint/parser": "^8.0.0",
     "autoprefixer": "^10.4.16",
@@ -29,7 +27,6 @@
     "eslint-plugin-svelte": "^2.36.0",
     "postcss": "^8.4.32",
     "prettier": "^3.1.1",
-    "prettier-plugin-svelte": "^3.1.2",
     "svelte": "^5.0.0",
     "svelte-check": "^4.0.0",
     "tailwindcss": "^3.3.6",
@@ -44,7 +41,6 @@
     "@schedule-x/drag-and-drop": "^3.7.3",
     "@schedule-x/event-modal": "^4.1.0",
     "@schedule-x/theme-default": "^4.1.0",
-    "@tailwindcss/forms": "^0.5.7",
     "@vercel/analytics": "^1.6.1",
     "convex": "^1.31.7",
     "dexie": "^4.3.0",

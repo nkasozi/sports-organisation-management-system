@@ -7,9 +7,6 @@
   $: error_param = $page.url.searchParams.get("error");
   $: has_server_error = error_param === "server_unavailable";
   $: has_sync_error = error_param && error_param !== "server_unavailable";
-  $: sync_error_message = has_sync_error
-    ? decodeURIComponent(error_param || "")
-    : "";
 
   const feature_highlights = [
     {
@@ -243,7 +240,8 @@
               <span class="text-sm font-semibold">Sync Error</span>
             </div>
             <p class="text-xs text-blue-700/80 dark:text-blue-200/80">
-              {sync_error_message}. Please sign in again to retry.
+              There was a problem syncing your data. Please sign in again to
+              retry.
             </p>
           </div>
         {/if}

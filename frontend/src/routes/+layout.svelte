@@ -147,7 +147,7 @@
       clear_session_sync_flag();
 
       await sign_out();
-      await goto(`/sign-in?error=${encodeURIComponent(error_message)}`);
+      await goto(`/sign-in?error=sync_failed`);
       return create_failure_result(error_message);
     };
 

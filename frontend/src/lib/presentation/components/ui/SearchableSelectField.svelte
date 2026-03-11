@@ -41,6 +41,10 @@
   $: selected_option = find_select_option_by_value(options, value);
   $: should_show_label = label.trim().length > 0;
 
+  $: if (input_element && !is_open) {
+    input_element.value = selected_option ? selected_option.label : "";
+  }
+
   function open_dropdown(): Promise<boolean> {
     if (disabled || is_loading) return Promise.resolve(false);
     is_open = true;
