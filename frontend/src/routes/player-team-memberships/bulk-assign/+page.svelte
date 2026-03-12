@@ -74,7 +74,7 @@
     unassigned_players,
     assigned_players_on_other_teams,
   );
-  $: gender_filter_active = !!(selected_team?.gender_id);
+  $: gender_filter_active = !!selected_team?.gender_id;
   $: target_gender_label = selected_team?.gender_id
     ? (gender_name_map.get(selected_team.gender_id) ?? "Unknown") + " only"
     : "";
@@ -183,15 +183,20 @@
       return;
     }
 
-    teams = teams_result.data;
+    teams = teams_result.data?.items || [];
 
-    const genders_result = await gender_use_cases.list({}, { page_number: 1, page_size: 50 });
+    const genders_result = await gender_use_cases.list(
+      {},
+      { page_number: 1, page_size: 50 },
+    );
     if (genders_result.success) {
-      gender_name_map = new Map(genders_result.data.items.map((g) => [g.id, g.name]));
+      gender_name_map = new Map(
+        genders_result.data.items.map((g) => [g.id, g.name]),
+      );
     }
-    const all_players = players_result.data;
+    const all_players = players_result.data?.items || [];
     const all_memberships = memberships_result.success
-      ? memberships_result.data
+      ? memberships_result.data?.items || []
       : [];
 
     all_player_assignments = build_player_assignments(
@@ -460,7 +465,9 @@
               Players Without a Team ({unassigned_players.length})
             </h2>
             {#if gender_filter_active}
-              <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300">
+              <span
+                class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300"
+              >
                 {target_gender_label}
               </span>
             {/if}
@@ -471,8 +478,12 @@
         </div>
         <div class="divide-y divide-accent-200 dark:divide-accent-700">
           {#if filtered_unassigned_players.length === 0}
-            <div class="p-6 text-center text-accent-500 dark:text-accent-400 text-sm">
-              {search_query ? "No unassigned players match your search." : "All players are currently assigned to a team."}
+            <div
+              class="p-6 text-center text-accent-500 dark:text-accent-400 text-sm"
+            >
+              {search_query
+                ? "No unassigned players match your search."
+                : "All players are currently assigned to a team."}
             </div>
           {:else}
             {#each filtered_unassigned_players as assignment}
@@ -551,7 +562,9 @@
               Players Already on Other Teams ({assigned_players_on_other_teams.length})
             </h2>
             {#if gender_filter_active}
-              <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300">
+              <span
+                class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300"
+              >
                 {target_gender_label}
               </span>
             {/if}
@@ -562,8 +575,12 @@
         </div>
         <div class="divide-y divide-accent-200 dark:divide-accent-700">
           {#if filtered_assigned_players.length === 0}
-            <div class="p-6 text-center text-accent-500 dark:text-accent-400 text-sm">
-              {search_query ? "No players on other teams match your search." : "No players are currently on other teams."}
+            <div
+              class="p-6 text-center text-accent-500 dark:text-accent-400 text-sm"
+            >
+              {search_query
+                ? "No players on other teams match your search."
+                : "No players are currently on other teams."}
             </div>
           {:else}
             {#each filtered_assigned_players as assignment}

@@ -318,9 +318,9 @@
     }
 
     competition = competition_result.data;
-    organizations = org_result.success ? org_result.data : [];
+    organizations = org_result.success ? org_result.data?.items || [] : [];
     competition_formats = formats_result.success
-      ? formats_result.data.filter(
+      ? (formats_result.data?.items || []).filter(
           (format: CompetitionFormat) => format.status === "active",
         )
       : [];

@@ -106,7 +106,8 @@ describe("FixtureUseCases", () => {
 
       expect(result.success).toBe(true);
       if (!result.success) return;
-      expect(result.data).toHaveLength(2);
+      expect(result.data.items).toHaveLength(2);
+      expect(result.data.total_count).toBe(2);
     });
 
     it("should apply filter when provided", async () => {

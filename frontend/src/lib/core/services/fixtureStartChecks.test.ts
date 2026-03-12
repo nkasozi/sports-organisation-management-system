@@ -584,8 +584,7 @@ function create_mock_lineup_use_cases(lineups: any[]) {
   return {
     list: async () => ({
       success: true,
-      data: lineups,
-      total_count: lineups.length,
+      data: { items: lineups, total_count: lineups.length, page_number: 1, page_size: 100, total_pages: 1 },
     }),
     create: async (input: any) => ({
       success: true,
@@ -598,8 +597,7 @@ function create_mock_membership_use_cases(memberships: any[]) {
   return {
     list: async () => ({
       success: true,
-      data: memberships,
-      total_count: memberships.length,
+      data: { items: memberships, total_count: memberships.length, page_number: 1, page_size: 100, total_pages: 1 },
     }),
   } as any;
 }
@@ -617,8 +615,7 @@ function create_mock_player_use_cases(memberships: any[]) {
     },
     list: async () => ({
       success: true,
-      data: players,
-      total_count: players.length,
+      data: { items: players, total_count: players.length, page_number: 1, page_size: 100, total_pages: 1 },
     }),
   } as any;
 }
@@ -627,12 +624,11 @@ function create_mock_player_position_use_cases() {
   return {
     list: async () => ({
       success: true,
-      data: [
+      data: { items: [
         { id: "pos-1", name: "Forward", code: "FW" },
         { id: "pos-2", name: "Midfielder", code: "MF" },
         { id: "pos-3", name: "Defender", code: "DF" },
-      ],
-      total_count: 3,
+      ], total_count: 3, page_number: 1, page_size: 100, total_pages: 1 },
     }),
   } as any;
 }

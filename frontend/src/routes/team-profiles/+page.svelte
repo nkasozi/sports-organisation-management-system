@@ -68,7 +68,7 @@
     const filter = build_profile_authorization_filter();
     const teams_result = await team_use_cases.list(filter);
     if (teams_result.success) {
-      foreign_key_options["team_id"] = teams_result.data.map(
+      foreign_key_options["team_id"] = (teams_result.data?.items || []).map(
         (t: { id: any; name: any }) => ({
           value: t.id,
           label: t.name,

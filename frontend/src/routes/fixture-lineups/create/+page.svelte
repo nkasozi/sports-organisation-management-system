@@ -260,20 +260,20 @@
     ]);
 
     if (fixtures_result.success) {
-      fixtures = fixtures_result.data;
+      fixtures = fixtures_result.data?.items || [];
     }
 
     if (teams_result.success) {
-      all_teams = teams_result.data;
-      teams = teams_result.data;
+      all_teams = teams_result.data?.items || [];
+      teams = teams_result.data?.items || [];
     }
 
     if (competitions_result.success) {
-      all_competitions = competitions_result.data;
+      all_competitions = competitions_result.data?.items || [];
     }
 
     if (organizations_result.success) {
-      organizations = organizations_result.data;
+      organizations = organizations_result.data?.items || [];
       if (preselect_values.organization_id) {
         selected_organization =
           organizations.find(

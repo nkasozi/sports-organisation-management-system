@@ -82,7 +82,7 @@
     const auth_filter = build_org_auth_filter();
     const result = await organization_use_cases.list(auth_filter);
     if (!result.success) return [];
-    return result.data;
+    return result.data?.items || [];
   }
 
   async function handle_organization_change(): Promise<boolean> {
@@ -274,7 +274,7 @@
       return [];
     }
 
-    return all_fixtures_result.data.filter(
+    return all_fixtures_result.data.items.filter(
       (fixture: Fixture) =>
         fixture.status !== "completed" && fixture.status !== "cancelled",
     );

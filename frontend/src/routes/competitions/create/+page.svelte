@@ -173,7 +173,7 @@
     });
 
     if (result.success) {
-      organizations = result.data;
+      organizations = result.data?.items || [];
       organization_options = organizations.map((org) => ({
         value: org.id,
         label: org.name,
@@ -190,7 +190,7 @@
     });
 
     if (result.success) {
-      competition_formats = result.data.filter(
+      competition_formats = (result.data?.items || []).filter(
         (format: CompetitionFormat) => format.status === "active",
       );
       competition_format_options = competition_formats.map((format) => ({
@@ -210,7 +210,7 @@
       { page_number: 1, page_size: 200 },
     );
     if (result.success) {
-      all_teams = result.data;
+      all_teams = result.data?.items || [];
       team_options = all_teams.map((team) => ({
         value: team.id,
         label: team.name,

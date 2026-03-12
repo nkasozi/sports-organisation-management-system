@@ -167,7 +167,7 @@
     if (!result.success) {
       throw new Error(result.error_message || "Failed to load organizations");
     }
-    return result.data;
+    return result.data?.items || [];
   }
 
   async function load_teams_for_organization(
@@ -177,7 +177,7 @@
     if (!result.success) {
       return [];
     }
-    return result.data;
+    return result.data?.items || [];
   }
 
   async function load_competitions_for_organization(
@@ -189,7 +189,7 @@
     if (!result.success) {
       return [];
     }
-    return result.data;
+    return result.data?.items || [];
   }
 
   async function load_categories_for_organization(

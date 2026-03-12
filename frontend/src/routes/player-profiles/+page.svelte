@@ -69,7 +69,7 @@
     const filter = build_profile_authorization_filter();
     const players_result = await player_use_cases.list(filter);
     if (players_result.success) {
-      foreign_key_options["player_id"] = players_result.data.map(
+      foreign_key_options["player_id"] = (players_result.data?.items || []).map(
         (p: { id: any; first_name: any; last_name: any }) => ({
           value: p.id,
           label: `${p.first_name} ${p.last_name}`,

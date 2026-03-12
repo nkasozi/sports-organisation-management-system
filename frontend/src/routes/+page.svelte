@@ -262,25 +262,29 @@
     stats = {
       organizations:
         dashboard_filters.organization_count_override ??
-        (org_result.success ? org_result.total_count : 0),
-      competitions: comp_result.success ? comp_result.total_count : 0,
-      teams: team_result.success ? team_result.total_count : 0,
-      players: player_result.success ? player_result.total_count : 0,
+        (org_result.success ? (org_result.data?.total_count ?? 0) : 0),
+      competitions: comp_result.success
+        ? (comp_result.data?.total_count ?? 0)
+        : 0,
+      teams: team_result.success ? (team_result.data?.total_count ?? 0) : 0,
+      players: player_result.success
+        ? (player_result.data?.total_count ?? 0)
+        : 0,
     };
 
     if (comp_result.success && comp_result.data) {
-      recent_competitions = comp_result.data.slice(0, 3);
+      recent_competitions = comp_result.data.items.slice(0, 3);
       await load_sport_names_for_competitions(recent_competitions);
     }
 
     if (team_result.success && team_result.data) {
       teams_map = new Map(
-        team_result.data.map((team: Team) => [team.id, team]),
+        team_result.data.items.map((team: Team) => [team.id, team]),
       );
     }
 
     if (fixture_result.success && fixture_result.data) {
-      upcoming_fixtures = fixture_result.data
+      upcoming_fixtures = fixture_result.data.items
         .sort(
           (a: Fixture, b: Fixture) =>
             new Date(a.scheduled_date).getTime() -

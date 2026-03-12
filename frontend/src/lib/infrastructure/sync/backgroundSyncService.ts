@@ -4,6 +4,8 @@ import {
 } from "$lib/adapters/repositories/database";
 import { sync_store } from "$lib/presentation/stores/syncStore";
 import { get_pulling_from_remote, set_pulling_from_remote } from "./syncState";
+import { is_signed_in } from "$lib/adapters/iam/clerkAuthService";
+import { get } from "svelte/store";
 
 export { set_pulling_from_remote };
 
@@ -104,6 +106,11 @@ function trigger_debounced_sync(): void {
 }
 
 async function execute_sync(): Promise<boolean> {
+  if (!get(is_signed_in)) {
+    console.log("[BackgroundSync] User not signed in — skipping sync");
+    return false;
+  }
+
   if (!state.is_online) {
     state.has_pending_changes = true;
     console.log("[BackgroundSync] Offline — marking changes as pending");
@@ -135,6 +142,7 @@ async function execute_sync(): Promise<boolean> {
 
 function on_dexie_write(table_name: string): void {
   if (get_pulling_from_remote()) return;
+  if (!get(is_signed_in)) return;
   console.log(`[BackgroundSync] Dexie write detected on table: ${table_name}`);
   state.has_pending_changes = true;
   trigger_debounced_sync();
@@ -217,9 +225,11 @@ export function start_background_sync(): boolean {
 
   console.log("[BackgroundSync] Started — listening for Dexie database writes");
 
-  if (state.is_online) {
-    console.log("[BackgroundSync] Online — triggering initial sync");
+  if (state.is_online && get(is_signed_in)) {
+    console.log("[BackgroundSync] Online and authenticated — triggering initial sync");
     trigger_debounced_sync();
+  } else if (!get(is_signed_in)) {
+    console.log("[BackgroundSync] Started without active session — sync deferred until sign-in");
   }
 
   return true;

@@ -172,7 +172,9 @@
     );
 
     if (all_fixtures_result.success) {
-      team_fixtures_all_competitions = all_fixtures_result.data.filter(
+      team_fixtures_all_competitions = (
+        all_fixtures_result.data?.items || []
+      ).filter(
         (f: Fixture) =>
           f.home_team_id === team_id || f.away_team_id === team_id,
       );
@@ -403,7 +405,7 @@
     if (!result.success) {
       throw new Error(result.error_message || "Failed to load organizations");
     }
-    return result.data;
+    return result.data?.items || [];
   }
 
   async function load_competitions_for_organization(
@@ -417,7 +419,7 @@
       competitions = [];
       return;
     }
-    competitions = result.data;
+    competitions = result.data?.items || [];
 
     if (competitions.length > 0) {
       selected_competition_id = competitions[0].id;
@@ -534,7 +536,9 @@
         selected_competition_id,
         { page_number: 1, page_size: 100 },
       );
-    competition_stages = stage_result.success ? stage_result.data : [];
+    competition_stages = stage_result.success
+      ? stage_result.data?.items || []
+      : [];
     if (comp_teams_result.success) {
       const team_ids = comp_teams_result.data.items.map(
         (ct: { team_id: string }) => ct.team_id,

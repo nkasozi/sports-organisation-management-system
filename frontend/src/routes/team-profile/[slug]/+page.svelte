@@ -114,7 +114,7 @@
 
     const result = await profile_link_use_cases.list_by_profile(profile.id);
     if (result.success) {
-      profile_links = result.data;
+      profile_links = result.data?.items || [];
     }
   }
 
@@ -123,7 +123,7 @@
 
     const teams_result = await team_use_cases.list();
     if (teams_result.success) {
-      for (const t of teams_result.data) {
+      for (const t of teams_result.data?.items || []) {
         teams_map.set(t.id, t);
       }
     }
@@ -131,7 +131,7 @@
     const fixtures_result = await fixture_use_cases.list();
     if (!fixtures_result.success) return;
 
-    const team_fixtures = fixtures_result.data.filter(
+    const team_fixtures = (fixtures_result.data?.items || []).filter(
       (f: Fixture) =>
         f.home_team_id === team!.id || f.away_team_id === team!.id,
     );
@@ -140,7 +140,7 @@
     if (!competitions_result.success) return;
 
     const competition_map = new Map<string, Competition>();
-    for (const comp of competitions_result.data) {
+    for (const comp of competitions_result.data?.items || []) {
       competition_map.set(comp.id, comp);
     }
 

@@ -60,11 +60,11 @@
     }
 
     if (teams_result.success && teams_result.data) {
-      teams = teams_result.data;
+      teams = teams_result.data?.items || [];
     }
 
     if (competitions_result.success && competitions_result.data) {
-      competitions = competitions_result.data;
+      competitions = competitions_result.data?.items || [];
     }
 
     is_loading = false;

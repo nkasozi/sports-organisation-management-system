@@ -3,6 +3,8 @@ import {
   type SportsOrgDatabase,
 } from "../../adapters/repositories/database";
 import { set_pulling_from_remote } from "./syncState";
+import { is_signed_in } from "../../adapters/iam/clerkAuthService";
+import { get } from "svelte/store";
 import type { Table } from "dexie";
 
 export type SyncDirection = "push" | "pull" | "bidirectional";
@@ -706,6 +708,11 @@ export function reset_sync_metadata(): void {
 }
 
 export async function clear_all_synced_tables_in_convex(): Promise<boolean> {
+  if (!get(is_signed_in)) {
+    console.warn("[Sync:Reset] User not signed in — skipping remote clear");
+    return false;
+  }
+
   const manager = get_sync_manager();
   const convex_client = (
     manager as unknown as { convex_client: ConvexClient | null }

@@ -42,6 +42,8 @@ import {
   start_background_sync,
   set_pulling_from_remote,
 } from "$lib/infrastructure/sync/backgroundSyncService";
+import { is_signed_in } from "$lib/adapters/iam/clerkAuthService";
+import { get } from "svelte/store";
 
 const FIRST_TIME_DETECTION_KEY = "sports_org_app_initialized";
 
@@ -63,8 +65,15 @@ export async function reset_all_data(
   stop_background_sync();
   set_pulling_from_remote(true);
 
-  report("Clearing server data...", 10);
-  await clear_all_synced_tables_in_convex();
+  const user_is_signed_in = get(is_signed_in);
+
+  if (user_is_signed_in) {
+    report("Clearing server data...", 10);
+    await clear_all_synced_tables_in_convex();
+  } else {
+    report("Skipping server clear (not signed in)...", 10);
+    console.log("[DataReset] User not signed in — skipping Convex clear");
+  }
 
   report("Clearing local storage...", 20);
   localStorage.clear();
@@ -114,7 +123,12 @@ export async function reset_all_data(
 
   report("Finishing up...", 95);
   set_pulling_from_remote(false);
-  start_background_sync();
+
+  if (get(is_signed_in)) {
+    start_background_sync();
+  } else {
+    console.log("[DataReset] User not signed in — skipping background sync start");
+  }
 
   return true;
 }

@@ -103,10 +103,10 @@
     const orgs_result = await use_cases.organization_use_cases.list({});
     if (
       orgs_result.success &&
-      orgs_result.data &&
-      orgs_result.data.length > 0
+      orgs_result.data?.items &&
+      orgs_result.data.items.length > 0
     ) {
-      organizations = orgs_result.data;
+      organizations = orgs_result.data.items;
       selected_organization_id = organizations[0].id;
     }
 

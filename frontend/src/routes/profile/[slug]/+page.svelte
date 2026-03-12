@@ -181,7 +181,7 @@
 
     const result = await profile_link_use_cases.list_by_profile(profile.id);
     if (result.success) {
-      social_media_links = result.data;
+      social_media_links = result.data?.items || [];
       website_links = [];
       video_links = [];
     }
@@ -195,14 +195,14 @@
     const memberships_result = await membership_use_cases.list();
     if (!memberships_result.success) return;
 
-    const player_memberships = memberships_result.data.filter(
+    const player_memberships = (memberships_result.data?.items || []).filter(
       (m: PlayerTeamMembership) => m.player_id === player!.id,
     );
 
     const teams_result = await team_use_cases.list();
     const teams_map = new Map<string, Team>();
     if (teams_result.success) {
-      for (const team of teams_result.data) {
+      for (const team of teams_result.data?.items || []) {
         teams_map.set(team.id, team);
       }
     }
@@ -210,7 +210,7 @@
     const fixtures_result = await fixture_use_cases.list();
     if (!fixtures_result.success) return;
 
-    const all_fixtures = fixtures_result.data;
+    const all_fixtures = fixtures_result.data?.items || [];
 
     const new_team_stats: TeamStats[] = [];
     let cumulative_overall = create_empty_stats();

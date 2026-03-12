@@ -110,7 +110,7 @@ describe("TeamStaffUseCases", () => {
       const result = await use_cases.list();
 
       expect(result.success).toBe(true);
-      expect(mock_repository.find_all).toHaveBeenCalledWith(undefined);
+      expect(mock_repository.find_all).toHaveBeenCalledWith(undefined, undefined);
     });
 
     it("should pass team_id filter to repository when provided", async () => {
@@ -134,7 +134,7 @@ describe("TeamStaffUseCases", () => {
 
       expect(result.success).toBe(true);
       if (!result.success) return;
-      expect(mock_repository.find_all).toHaveBeenCalledWith(filter);
+      expect(mock_repository.find_all).toHaveBeenCalledWith(filter, undefined);
       expect(result.data.items).toHaveLength(1);
     });
 
@@ -154,7 +154,7 @@ describe("TeamStaffUseCases", () => {
       const result = await use_cases.list(filter);
 
       expect(result.success).toBe(true);
-      expect(mock_repository.find_all).toHaveBeenCalledWith(filter);
+      expect(mock_repository.find_all).toHaveBeenCalledWith(filter, undefined);
     });
 
     it("should pass combined team_id and organization_id filter to repository", async () => {
@@ -173,7 +173,7 @@ describe("TeamStaffUseCases", () => {
       const result = await use_cases.list(filter);
 
       expect(result.success).toBe(true);
-      expect(mock_repository.find_all).toHaveBeenCalledWith(filter);
+      expect(mock_repository.find_all).toHaveBeenCalledWith(filter, undefined);
     });
   });
 

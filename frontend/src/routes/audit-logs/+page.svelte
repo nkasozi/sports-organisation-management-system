@@ -67,8 +67,8 @@
       return [];
     }
 
-    total_count = result.total_count;
-    return result.data;
+    total_count = result.data?.total_count || 0;
+    return result.data?.items || [];
   }
 
   function format_timestamp(timestamp: string): string {
