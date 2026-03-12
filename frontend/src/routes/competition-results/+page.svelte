@@ -386,7 +386,9 @@
 
   function can_user_change_organizations(): boolean {
     const role = get_current_user_role();
-    return role === "super_admin";
+    if (role === "super_admin") return true;
+    const url_params = extract_url_params();
+    return role === "public_viewer" && url_params.org_id.length === 0;
   }
 
   function build_auth_filter(): Record<string, string> {
@@ -437,6 +439,22 @@
 
   async function handle_organization_change(): Promise<void> {
     if (!selected_organization_id) return;
+
+    const is_public = get(is_public_viewer);
+    const url_params = extract_url_params();
+    if (is_public && url_params.org_id.length === 0) {
+      const selected_org = organizations.find(
+        (o) => o.id === selected_organization_id,
+      );
+      if (selected_org) {
+        public_organization_store.set_organization(
+          selected_org.id,
+          selected_org.name,
+        );
+        await sync_branding_for_org(selected_org);
+      }
+    }
+
     fixtures_loading = true;
     await load_competitions_for_organization(selected_organization_id);
     fixtures_loading = false;
@@ -493,7 +511,13 @@
           await load_competitions_for_organization(selected_organization_id);
         }
       } else if (organizations.length > 0) {
-        selected_organization_id = organizations[0].id;
+        const saved_org_id = get(public_organization_store).organization_id;
+        const preferred_org = saved_org_id
+          ? organizations.find((o) => o.id === saved_org_id)
+          : null;
+        selected_organization_id = preferred_org
+          ? preferred_org.id
+          : organizations[0].id;
         await load_competitions_for_organization(selected_organization_id);
       }
 

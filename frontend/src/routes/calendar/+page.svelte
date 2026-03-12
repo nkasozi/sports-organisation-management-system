@@ -38,6 +38,8 @@
   import { DEFAULT_REMINDERS } from "$lib/core/entities/Activity";
   import { fetch_public_data_from_convex } from "$lib/infrastructure/sync/convexPublicDataService";
   import { is_public_viewer } from "$lib/presentation/stores/auth";
+  import { page } from "$app/stores";
+  import { public_organization_store } from "$lib/presentation/stores/publicOrganization";
 
   type LoadingState = "idle" | "loading" | "success" | "error";
 
@@ -102,9 +104,15 @@
     return role === "super_admin" || role === "org_admin";
   }
 
+  function extract_url_org_id(): string {
+    const current_page = get(page);
+    return current_page.url.searchParams.get("org") ?? "";
+  }
+
   function can_user_change_organizations(): boolean {
     const role = get_current_user_role();
-    return role === "super_admin";
+    if (role === "super_admin") return true;
+    return role === "public_viewer" && extract_url_org_id().length === 0;
   }
 
   function show_toast(
@@ -607,6 +615,19 @@
   async function handle_organization_change(): Promise<void> {
     if (!selected_organization_id) return;
 
+    const is_public = get(is_public_viewer);
+    if (is_public && extract_url_org_id().length === 0) {
+      const selected_org = organizations.find(
+        (o) => o.id === selected_organization_id,
+      );
+      if (selected_org) {
+        public_organization_store.set_organization(
+          selected_org.id,
+          selected_org.name,
+        );
+      }
+    }
+
     loading_state = "loading";
 
     try {
@@ -747,7 +768,15 @@
       organizations = await load_organizations();
 
       if (organizations.length > 0) {
-        selected_organization_id = organizations[0].id;
+        const url_org_id = extract_url_org_id();
+        const saved_org_id = get(public_organization_store).organization_id;
+        const preferred_id = url_org_id || saved_org_id;
+        const preferred_org = preferred_id
+          ? organizations.find((o) => o.id === preferred_id)
+          : null;
+        selected_organization_id = preferred_org
+          ? preferred_org.id
+          : organizations[0].id;
         await handle_organization_change();
       }
 
