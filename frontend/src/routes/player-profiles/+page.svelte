@@ -59,7 +59,7 @@
       return false;
     }
 
-    profiles = result.data as PlayerProfile[];
+    profiles = (result.data?.items || []) as PlayerProfile[];
     await load_foreign_key_options();
     is_loading = false;
     return true;

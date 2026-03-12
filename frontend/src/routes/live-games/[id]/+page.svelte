@@ -643,7 +643,7 @@
       status: "active",
     });
 
-    const active_memberships = (memberships_result.data || []).filter(
+    const active_memberships = (memberships_result.data?.items || []).filter(
       (m: any) => m.status === "active",
     );
 

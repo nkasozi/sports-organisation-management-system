@@ -58,7 +58,7 @@
       return false;
     }
 
-    profiles = result.data as TeamProfile[];
+    profiles = (result.data?.items || []) as TeamProfile[];
     await load_foreign_key_options();
     is_loading = false;
     return true;

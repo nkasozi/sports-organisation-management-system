@@ -23,8 +23,8 @@
     loading = true;
     const result = await profile_use_cases.list({ team_id });
 
-    if (result.success && result.data.length > 0) {
-      profile = result.data[0];
+    if (result.success && (result.data?.items?.length ?? 0) > 0) {
+      profile = result.data?.items?.[0] ?? null;
       update_preview_url();
     }
 
