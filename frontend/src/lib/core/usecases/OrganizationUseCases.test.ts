@@ -86,8 +86,9 @@ describe("OrganizationUseCases", () => {
       const result = await use_cases.list();
 
       expect(result.success).toBe(true);
-      expect(result.data).toHaveLength(2);
-      expect(result.total_count).toBe(2);
+      if (!result.success) return;
+      expect(result.data.items).toHaveLength(2);
+      expect(result.data.total_count).toBe(2);
     });
 
     it("should apply filter when provided", async () => {
@@ -118,7 +119,8 @@ describe("OrganizationUseCases", () => {
       const result = await use_cases.list();
 
       expect(result.success).toBe(false);
-      expect(result.error_message).toBe("Database error");
+      if (result.success) return;
+      expect(result.error).toBe("Database error");
     });
   });
 

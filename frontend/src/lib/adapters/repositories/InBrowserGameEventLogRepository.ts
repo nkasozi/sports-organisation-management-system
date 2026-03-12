@@ -8,11 +8,8 @@ import {
   is_scoring_event,
   is_card_event,
 } from "../../core/entities/GameEventLog";
-import type {
-  BaseEntity,
-  EntityListResult,
-} from "../../core/entities/BaseEntity";
-import type { AsyncResult } from "../../core/types/Result";
+import type { BaseEntity } from "../../core/entities/BaseEntity";
+import type { AsyncResult, PaginatedAsyncResult } from "../../core/types/Result";
 import type {
   GameEventLogRepository,
   GameEventLogFilter,
@@ -134,119 +131,68 @@ class InBrowserGameEventLogRepository
     return filtered;
   }
 
-  private async find_all_as_entity_list(
-    filter?: GameEventLogFilter,
+  private build_query_options(
     pagination?: { page: number; page_size: number },
-  ): Promise<EntityListResult<GameEventLog>> {
-    const query_options = pagination
+  ) {
+    return pagination
       ? { page_number: pagination.page, page_size: pagination.page_size }
       : undefined;
-    const result = await this.find_all(filter, query_options);
-    if (!result.success) {
-      return {
-        success: false,
-        data: [],
-        total_count: 0,
-        error_message: result.error,
-      };
-    }
-    return {
-      success: true,
-      data: result.data.items,
-      total_count: result.data.total_count,
-    };
   }
 
   async get_events_for_live_game(
     live_game_log_id: string,
     options?: { page: number; page_size: number },
-  ): Promise<EntityListResult<GameEventLog>> {
-    return this.find_all_as_entity_list(
+  ): PaginatedAsyncResult<GameEventLog> {
+    return this.find_all(
       { live_game_log_id, voided: false },
-      options,
+      this.build_query_options(options),
     );
   }
 
   async get_events_for_fixture(
     fixture_id: string,
     options?: { page: number; page_size: number },
-  ): Promise<EntityListResult<GameEventLog>> {
-    return this.find_all_as_entity_list({ fixture_id, voided: false }, options);
+  ): PaginatedAsyncResult<GameEventLog> {
+    return this.find_all(
+      { fixture_id, voided: false },
+      this.build_query_options(options),
+    );
   }
 
   async get_events_for_player(
     player_id: string,
     options?: { page: number; page_size: number },
-  ): Promise<EntityListResult<GameEventLog>> {
-    return this.find_all_as_entity_list({ player_id, voided: false }, options);
+  ): PaginatedAsyncResult<GameEventLog> {
+    return this.find_all(
+      { player_id, voided: false },
+      this.build_query_options(options),
+    );
   }
 
   async get_scoring_events_for_live_game(
     live_game_log_id: string,
-  ): Promise<EntityListResult<GameEventLog>> {
-    try {
-      const result = await this.find_all_as_entity_list({
-        live_game_log_id,
-        voided: false,
-      });
-
-      if (!result.success) {
-        return result;
-      }
-
-      const scoring_events = result.data.filter((event) =>
-        is_scoring_event(event.event_type),
-      );
-
-      return {
-        success: true,
-        data: scoring_events,
-        total_count: scoring_events.length,
-      };
-    } catch (error) {
-      const error_message =
-        error instanceof Error ? error.message : "Unknown error occurred";
-      return {
-        success: false,
-        data: [],
-        total_count: 0,
-        error_message: `Failed to get scoring events: ${error_message}`,
-      };
+  ): AsyncResult<GameEventLog[]> {
+    const result = await this.find_all({ live_game_log_id, voided: false });
+    if (!result.success) {
+      return { success: false, error: result.error };
     }
+    const scoring_events = result.data.items.filter((event) =>
+      is_scoring_event(event.event_type),
+    );
+    return { success: true, data: scoring_events };
   }
 
   async get_card_events_for_live_game(
     live_game_log_id: string,
-  ): Promise<EntityListResult<GameEventLog>> {
-    try {
-      const result = await this.find_all_as_entity_list({
-        live_game_log_id,
-        voided: false,
-      });
-
-      if (!result.success) {
-        return result;
-      }
-
-      const card_events = result.data.filter((event) =>
-        is_card_event(event.event_type),
-      );
-
-      return {
-        success: true,
-        data: card_events,
-        total_count: card_events.length,
-      };
-    } catch (error) {
-      const error_message =
-        error instanceof Error ? error.message : "Unknown error occurred";
-      return {
-        success: false,
-        data: [],
-        total_count: 0,
-        error_message: `Failed to get card events: ${error_message}`,
-      };
+  ): AsyncResult<GameEventLog[]> {
+    const result = await this.find_all({ live_game_log_id, voided: false });
+    if (!result.success) {
+      return { success: false, error: result.error };
     }
+    const card_events = result.data.items.filter((event) =>
+      is_card_event(event.event_type),
+    );
+    return { success: true, data: card_events };
   }
 
   async void_event(

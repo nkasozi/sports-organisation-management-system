@@ -7,13 +7,12 @@ import { validate_competition_stage_input } from "../entities/CompetitionStage";
 import type {
   CompetitionStageRepository,
   CompetitionStageFilter,
+  QueryOptions,
 } from "../interfaces/ports";
 import type { FixtureRepository } from "../interfaces/ports";
-import type { AsyncResult } from "../types/Result";
+import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
 import { create_failure_result, create_success_result } from "../types/Result";
 import type { CompetitionStageUseCasesPort } from "../interfaces/ports";
-import type { QueryOptions } from "../interfaces/ports";
-import type { EntityListResult } from "./BaseUseCases";
 import { get_repository_container } from "../../infrastructure/container";
 
 export type CompetitionStageUseCases = CompetitionStageUseCasesPort;
@@ -51,21 +50,8 @@ export function create_competition_stage_use_cases(
     async list(
       filter?: CompetitionStageFilter,
       options?: QueryOptions,
-    ): Promise<EntityListResult<CompetitionStage>> {
-      const result = await repository.find_all(filter, options);
-      if (!result.success) {
-        return {
-          success: false,
-          data: [],
-          total_count: 0,
-          error_message: result.error,
-        };
-      }
-      return {
-        success: true,
-        data: result.data?.items || [],
-        total_count: result.data?.total_count || 0,
-      };
+    ): PaginatedAsyncResult<CompetitionStage> {
+      return repository.find_all(filter, options);
     },
 
     async update(
@@ -103,34 +89,23 @@ export function create_competition_stage_use_cases(
     async list_stages_by_competition(
       competition_id: string,
       options?: QueryOptions,
-    ): Promise<EntityListResult<CompetitionStage>> {
+    ): PaginatedAsyncResult<CompetitionStage> {
       if (!competition_id || competition_id.trim().length === 0) {
-        return {
-          success: false,
-          data: [],
-          total_count: 0,
-          error_message: "Competition ID is required",
-        };
+        return { success: false, error: "Competition ID is required" };
       }
       const result = await repository.find_by_competition(
         competition_id,
         options,
       );
       if (!result.success) {
-        return {
-          success: false,
-          data: [],
-          total_count: 0,
-          error_message: result.error,
-        };
+        return result;
       }
       const sorted_stages = [...(result.data?.items || [])].sort(
         (a, b) => a.stage_order - b.stage_order,
       );
       return {
         success: true,
-        data: sorted_stages,
-        total_count: result.data?.total_count || 0,
+        data: { ...result.data, items: sorted_stages },
       };
     },
 

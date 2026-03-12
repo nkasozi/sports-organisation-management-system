@@ -8,8 +8,7 @@ import type {
   ProfileLinkFilter,
 } from "../interfaces/ports";
 import type { QueryOptions } from "../interfaces/ports";
-import type { EntityListResult } from "../entities/BaseEntity";
-import type { AsyncResult } from "../types/Result";
+import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
 import { create_failure_result } from "../types/Result";
 import { validate_profile_link_input } from "../entities/ProfileLink";
 import { get_repository_container } from "../../infrastructure/container";
@@ -18,7 +17,7 @@ export interface ProfileLinkUseCases {
   list(
     filter?: ProfileLinkFilter | Record<string, string>,
     options?: QueryOptions,
-  ): Promise<EntityListResult<ProfileLink>>;
+  ): PaginatedAsyncResult<ProfileLink>;
   get_by_id(id: string): AsyncResult<ProfileLink>;
   create(input: CreateProfileLinkInput): AsyncResult<ProfileLink>;
   update(id: string, input: UpdateProfileLinkInput): AsyncResult<ProfileLink>;
@@ -26,7 +25,7 @@ export interface ProfileLinkUseCases {
   list_by_profile(
     profile_id: string,
     options?: QueryOptions,
-  ): Promise<EntityListResult<ProfileLink>>;
+  ): PaginatedAsyncResult<ProfileLink>;
 }
 
 export function create_profile_link_use_cases(
@@ -36,24 +35,9 @@ export function create_profile_link_use_cases(
     async list(
       filter?: ProfileLinkFilter | Record<string, string>,
       options?: QueryOptions,
-    ): Promise<EntityListResult<ProfileLink>> {
+    ): PaginatedAsyncResult<ProfileLink> {
       if (!filter) {
-        const result = await repository.find_all(undefined, options);
-
-        if (!result.success) {
-          return {
-            success: false,
-            data: [],
-            total_count: 0,
-            error_message: result.error,
-          };
-        }
-
-        return {
-          success: true,
-          data: result.data?.items || [],
-          total_count: result.data?.total_count || 0,
-        };
+        return repository.find_all(undefined, options);
       }
 
       const typed_filter: ProfileLinkFilter = {
@@ -62,22 +46,7 @@ export function create_profile_link_use_cases(
         status: filter?.status,
       };
 
-      const result = await repository.find_all(typed_filter, options);
-
-      if (!result.success) {
-        return {
-          success: false,
-          data: [],
-          total_count: 0,
-          error_message: result.error,
-        };
-      }
-
-      return {
-        success: true,
-        data: result.data?.items || [],
-        total_count: result.data?.total_count || 0,
-      };
+      return repository.find_all(typed_filter, options);
     },
 
     async get_by_id(id: string): AsyncResult<ProfileLink> {
@@ -119,23 +88,8 @@ export function create_profile_link_use_cases(
     async list_by_profile(
       profile_id: string,
       options?: QueryOptions,
-    ): Promise<EntityListResult<ProfileLink>> {
-      const result = await repository.find_by_profile_id(profile_id, options);
-
-      if (!result.success) {
-        return {
-          success: false,
-          data: [],
-          total_count: 0,
-          error_message: result.error,
-        };
-      }
-
-      return {
-        success: true,
-        data: result.data?.items || [],
-        total_count: result.data?.total_count || 0,
-      };
+    ): PaginatedAsyncResult<ProfileLink> {
+      return repository.find_by_profile_id(profile_id, options);
     },
   };
 }

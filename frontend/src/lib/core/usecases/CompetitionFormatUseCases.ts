@@ -9,14 +9,13 @@ import type {
   CompetitionFormatFilter,
 } from "../interfaces/ports";
 import type { QueryOptions } from "../interfaces/ports";
-import type { AsyncResult, PaginatedResult } from "../types/Result";
+import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
 import { create_failure_result, create_success_result } from "../types/Result";
 import {
   hydrate_competition_format_input,
   validate_competition_format_input,
 } from "../entities/CompetitionFormat";
 import { get_repository_container } from "../../infrastructure/container";
-import type { EntityListResult } from "./BaseUseCases";
 import type { CompetitionFormatUseCasesPort } from "../interfaces/ports";
 
 export type CompetitionFormatUseCases = CompetitionFormatUseCasesPort;
@@ -27,26 +26,9 @@ export function create_competition_format_use_cases(
   return {
     async list(
       filter?: CompetitionFormatFilter,
-      pagination?: { page: number; page_size: number },
-    ): Promise<EntityListResult<CompetitionFormat>> {
-      const page_number = pagination?.page ?? 1;
-      const page_size = pagination?.page_size ?? 10;
-      const query_options = { page_number, page_size };
-
-      const formats_result = await repository.find_all(filter, query_options);
-      if (!formats_result.success) {
-        return {
-          success: false,
-          data: [],
-          total_count: 0,
-          error_message: formats_result.error,
-        };
-      }
-      return {
-        success: true,
-        data: formats_result.data?.items || [],
-        total_count: formats_result.data?.total_count || 0,
-      };
+      pagination?: QueryOptions,
+    ): PaginatedAsyncResult<CompetitionFormat> {
+      return repository.find_all(filter, pagination);
     },
 
     async get_by_id(id: string): AsyncResult<CompetitionFormat> {

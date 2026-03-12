@@ -93,7 +93,8 @@ describe("OfficialUseCases", () => {
       const result = await use_cases.list();
 
       expect(result.success).toBe(true);
-      expect(result.data).toHaveLength(2);
+      if (!result.success) return;
+      expect(result.data.items).toHaveLength(2);
     });
 
     it("should apply filter when provided", async () => {

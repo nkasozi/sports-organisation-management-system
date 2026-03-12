@@ -3,6 +3,7 @@ import {
   get_sync_manager,
   initialize_sync_manager,
   type SyncConfig,
+  type SyncDirection,
   type SyncProgress,
   type SyncResult,
   type SyncStatus,
@@ -108,7 +109,7 @@ function create_sync_store() {
       }));
     },
 
-    sync_now: async (): Promise<SyncResult> => {
+    sync_now: async (direction?: SyncDirection): Promise<SyncResult> => {
       update((state) => ({
         ...state,
         is_syncing: true,
@@ -118,7 +119,7 @@ function create_sync_store() {
 
       try {
         const manager = get_sync_manager();
-        const result = await manager.sync_now(handle_progress);
+        const result = await manager.sync_now(handle_progress, direction);
         handle_sync_complete(result);
         return result;
       } catch (error) {

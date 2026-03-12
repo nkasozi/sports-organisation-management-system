@@ -1,7 +1,7 @@
-import type { BaseEntity, EntityListResult } from "../entities/BaseEntity";
-import type { AsyncResult } from "../types/Result";
+import type { BaseEntity } from "../entities/BaseEntity";
+import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
 
-export type { EntityListResult, AsyncResult };
+export type { AsyncResult, PaginatedAsyncResult };
 
 export interface BaseUseCases<
   T extends BaseEntity,
@@ -14,7 +14,7 @@ export interface BaseUseCases<
   list(
     filter?: Filter,
     pagination?: { page: number; page_size: number },
-  ): Promise<EntityListResult<T>>;
+  ): PaginatedAsyncResult<T>;
   update(id: string, input: UpdateInput): AsyncResult<T>;
   delete(id: string): AsyncResult<boolean>;
 }

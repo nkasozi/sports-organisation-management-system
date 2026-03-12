@@ -16,7 +16,7 @@ import {
 } from "../entities/Fixture";
 import { get_repository_container } from "../../infrastructure/container";
 import { EventBus } from "$lib/infrastructure/events/EventBus";
-import type { EntityListResult } from "./BaseUseCases";
+
 import type { FixtureUseCasesPort } from "../interfaces/ports";
 import type { Team } from "../entities/Team";
 
@@ -103,25 +103,11 @@ export function create_fixture_use_cases(
     async list(
       filter?: FixtureFilter,
       options?: QueryOptions,
-    ): Promise<EntityListResult<Fixture>> {
+    ): PaginatedAsyncResult<Fixture> {
       const result = await repository.find_all(filter, options);
-      if (!result.success) {
-        return {
-          success: false,
-          data: [],
-          total_count: 0,
-          error_message: result.error,
-        };
-      }
-
-      const fixtures = result.data?.items || [];
-      const enriched_fixtures = await enrich_fixtures_with_team_names(fixtures);
-
-      return {
-        success: true,
-        data: enriched_fixtures,
-        total_count: result.data?.total_count || 0,
-      };
+      if (!result.success) return result;
+      const enriched_fixtures = await enrich_fixtures_with_team_names(result.data.items);
+      return create_success_result({ ...result.data, items: enriched_fixtures });
     },
 
     async get_by_id(id: string): AsyncResult<Fixture> {

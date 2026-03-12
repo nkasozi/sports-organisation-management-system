@@ -3,8 +3,7 @@ import type {
   CreateSportInput,
   UpdateSportInput,
 } from "../entities/Sport";
-import type { AsyncResult } from "../types/Result";
-import type { EntityListResult } from "../entities/BaseEntity";
+import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
 import type { SportRepository, SportFilter } from "../interfaces/ports";
 import type { QueryOptions } from "../interfaces/ports";
 import { create_success_result, create_failure_result } from "../types/Result";
@@ -20,22 +19,8 @@ export function create_sport_use_cases(
     async list(
       filter?: SportFilter,
       options?: QueryOptions,
-    ): Promise<EntityListResult<Sport>> {
-      const result = await repository.find_all(filter, options);
-
-      if (!result.success) {
-        return {
-          success: false,
-          data: [],
-          total_count: 0,
-          error_message: result.error,
-        };
-      }
-      return {
-        success: true,
-        data: result.data?.items || [],
-        total_count: result.data?.total_count || 0,
-      };
+    ): PaginatedAsyncResult<Sport> {
+      return repository.find_all(filter, options);
     },
 
     async get_by_id(id: string): AsyncResult<Sport> {
@@ -86,7 +71,7 @@ export function create_sport_use_cases(
       return create_success_result(result.data);
     },
 
-    async delete_sports(ids: string[]): Promise<AsyncResult<number>> {
+    async delete_sports(ids: string[]): AsyncResult<number> {
       if (!ids || ids.length === 0) {
         return create_failure_result("At least one sport ID is required");
       }

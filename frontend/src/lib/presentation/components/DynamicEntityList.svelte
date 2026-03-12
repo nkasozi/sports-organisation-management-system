@@ -8,7 +8,6 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
   import { get } from "svelte/store";
   import type {
     BaseEntity,
-    EntityListResult,
     FieldMetadata,
   } from "../../core/entities/BaseEntity";
   import { entityMetadataRegistry } from "../../infrastructure/registry/EntityMetadataRegistry";
@@ -53,6 +52,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
   import { is_functionality_disabled } from "$lib/core/types/EntityHandlers";
   import BulkImportModal from "./BulkImportModal.svelte";
   import SearchableSelectField from "./ui/SearchableSelectField.svelte";
+  import Pagination from "./ui/Pagination.svelte";
   import {
     build_entity_display_label,
     format_entity_display_name,
@@ -73,6 +73,9 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
   export let button_color_class: string = "btn-primary-action";
   export let info_message: string | null = null;
   export let disabled_functionalities: CrudFunctionality[] = [];
+
+  const DEFAULT_PAGE_SIZE = 10;
+  const PAGE_SIZE_OPTIONS = [10, 20, 50];
 
   export let on_total_count_changed: ((count: number) => void) | null = null;
   export let on_selection_changed: ((selected: BaseEntity[]) => void) | null =
@@ -98,6 +101,8 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
 
   let entities: BaseEntity[] = [];
   let filtered_entities: BaseEntity[] = [];
+  let current_page: number = 1;
+  let items_per_page: number = DEFAULT_PAGE_SIZE;
   let is_loading: boolean = false;
   let error_message: string = "";
   let selected_entity_ids: Set<string> = new Set();
@@ -144,6 +149,18 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
     entity_metadata,
     foreign_key_options,
   );
+  $: {
+    filtered_entities;
+    current_page = 1;
+  }
+  $: total_pages = Math.max(
+    1,
+    Math.ceil(filtered_entities.length / items_per_page),
+  );
+  $: paginated_entities = filtered_entities.slice(
+    (current_page - 1) * items_per_page,
+    current_page * items_per_page,
+  );
   $: visible_column_list = get_visible_column_list(
     visible_columns,
     entity_metadata,
@@ -187,7 +204,6 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
     }
     foreign_key_options = new_options;
   }
-
 
   function initialize_default_columns(): void {
     if (!entity_metadata) return;
@@ -288,8 +304,6 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
     return metadata;
   }
 
-
-
   async function load_all_entities_for_display(): Promise<void> {
     console.log(`[ENTITY_LIST] Loading entities for type: "${entity_type}"`);
     is_loading = true;
@@ -304,10 +318,15 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
         entity_type,
       );
       if (auth_build_result.profile_missing) {
-        console.error("[DynamicEntityList] No auth profile found after initialization - failing safely");
+        console.error(
+          "[DynamicEntityList] No auth profile found after initialization - failing safely",
+        );
       }
       auth_profile_missing = auth_build_result.profile_missing;
-      console.debug("[DynamicEntityList] Final auth filter:", auth_build_result.filter);
+      console.debug(
+        "[DynamicEntityList] Final auth filter:",
+        auth_build_result.filter,
+      );
       const auth_filter = auth_build_result.filter;
 
       if (auth_profile_missing) {
@@ -352,7 +371,10 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
 
         if (result.success && result.data) {
           let loaded_entities = extract_items_from_result_data(result.data);
-          loaded_entities = apply_id_filter_to_entities(loaded_entities, filter);
+          loaded_entities = apply_id_filter_to_entities(
+            loaded_entities,
+            filter,
+          );
           entities = loaded_entities;
           console.debug(
             `[DynamicEntityList] ✅ Custom handler loaded ${entities.length} ${entity_type} entities`,
@@ -679,13 +701,19 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
   }
 
   function toggle_all_entity_selection(): void {
-    selected_entity_ids = toggle_select_all_entities(filtered_entities, all_selected);
+    selected_entity_ids = toggle_select_all_entities(
+      filtered_entities,
+      all_selected,
+    );
     selected_entity_ids = selected_entity_ids;
     dispatch_selection_changed();
   }
 
   function toggle_single_entity_selection(entity_id: string): void {
-    selected_entity_ids = compute_entity_selection_toggle(selected_entity_ids, entity_id);
+    selected_entity_ids = compute_entity_selection_toggle(
+      selected_entity_ids,
+      entity_id,
+    );
     selected_entity_ids = selected_entity_ids;
     dispatch_selection_changed();
   }
@@ -828,6 +856,9 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
         <p class="text-sm text-accent-600 dark:text-accent-400">
           {filtered_entities.length} of {entities.length}
           {entities.length === 1 ? "item" : "items"}
+          {#if filtered_entities.length > items_per_page}
+            &nbsp;· page {current_page} of {total_pages}
+          {/if}
         </p>
 
         {#if columns_restored_from_cache}
@@ -1252,7 +1283,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
           <tbody
             class="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700"
           >
-            {#each filtered_entities as entity}
+            {#each paginated_entities as entity}
               <tr class="hover:bg-gray-50 dark:hover:bg-gray-800">
                 {#if show_actions}
                   <td
@@ -1316,6 +1347,19 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
           </tbody>
         </table>
       </div>
+
+      <Pagination
+        {current_page}
+        {total_pages}
+        total_items={filtered_entities.length}
+        {items_per_page}
+        page_size_options={PAGE_SIZE_OPTIONS}
+        on:page_change={(e) => (current_page = e.detail.page)}
+        on:page_size_change={(e) => {
+          items_per_page = e.detail.size;
+          current_page = 1;
+        }}
+      />
     {/if}
   </div>
 

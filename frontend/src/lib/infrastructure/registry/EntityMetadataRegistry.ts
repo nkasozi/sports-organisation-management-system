@@ -908,7 +908,7 @@ class EntityMetadataRegistry {
           field_name: "gender_id" satisfies keyof Team,
           display_name: "Team Gender Category",
           field_type: "foreign_key",
-          is_required: false,
+          is_required: true,
           is_read_only: false,
           foreign_key_entity: "gender",
           show_in_list: true,

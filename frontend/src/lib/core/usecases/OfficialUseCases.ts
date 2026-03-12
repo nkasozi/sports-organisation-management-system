@@ -6,7 +6,6 @@ import type {
 import type { OfficialRepository, OfficialFilter } from "../interfaces/ports";
 import type { QueryOptions } from "../interfaces/ports";
 import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
-import type { EntityListResult } from "../entities/BaseEntity";
 import type { OfficialUseCasesPort } from "../interfaces/ports";
 import { create_success_result, create_failure_result } from "../types/Result";
 import { validate_official_input } from "../entities/Official";
@@ -21,21 +20,8 @@ export function create_official_use_cases(
     async list(
       filter?: OfficialFilter,
       options?: QueryOptions,
-    ): Promise<EntityListResult<Official>> {
-      const result = await repository.find_all(filter, options);
-      if (!result.success) {
-        return {
-          success: false,
-          data: [],
-          total_count: 0,
-          error_message: result.error,
-        };
-      }
-      return {
-        success: true,
-        data: result.data?.items || [],
-        total_count: result.data?.total_count || 0,
-      };
+    ): PaginatedAsyncResult<Official> {
+      return repository.find_all(filter, options);
     },
 
     async get_by_id(id: string): AsyncResult<Official> {

@@ -17,10 +17,9 @@ import type { QueryOptions } from "../interfaces/ports";
 import type {
   AsyncResult,
   PaginatedAsyncResult,
-  PaginatedResult,
 } from "../types/Result";
 import { create_success_result, create_failure_result } from "../types/Result";
-import type { EntityListResult } from "../entities/BaseEntity";
+
 import type {
   CalendarTokenUseCasesPort,
   CalendarFeedInfo,
@@ -44,28 +43,8 @@ export function create_calendar_token_use_cases(
     async list(
       filter?: CalendarTokenFilter,
       options?: QueryOptions,
-    ): Promise<EntityListResult<CalendarToken>> {
-      const result = await calendar_token_repository.find_all(
-        filter ?? {},
-        options,
-      );
-
-      if (!result.success) {
-        return {
-          success: false,
-          data: [],
-          total_count: 0,
-          error_message:
-            "error" in result ? result.error : "Failed to list tokens",
-        };
-      }
-
-      const paginated_data = result.data as PaginatedResult<CalendarToken>;
-      return {
-        success: true,
-        data: paginated_data.items,
-        total_count: paginated_data.total_count,
-      };
+    ): PaginatedAsyncResult<CalendarToken> {
+      return calendar_token_repository.find_all(filter ?? {}, options);
     },
 
     async get_by_id(id: string): AsyncResult<CalendarToken> {

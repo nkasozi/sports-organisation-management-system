@@ -4,8 +4,7 @@ import type {
   UpdateLiveGameLogInput,
 } from "../../../../entities/LiveGameLog";
 import type { LiveGameLogFilter } from "../../external/repositories/LiveGameLogRepository";
-import type { EntityListResult } from "../../../../entities/BaseEntity";
-import type { AsyncResult } from "../../../../types/Result";
+import type { AsyncResult, PaginatedAsyncResult } from "../../../../types/Result";
 import type { BaseUseCasesPort } from "./BaseUseCasesPort";
 
 export interface LiveGameLogUseCasesPort extends BaseUseCasesPort<
@@ -18,7 +17,7 @@ export interface LiveGameLogUseCasesPort extends BaseUseCasesPort<
 
   get_active_games(
     organization_id?: string,
-  ): Promise<EntityListResult<LiveGameLog>>;
+  ): AsyncResult<LiveGameLog[]>;
 
   start_game(id: string, user_id: string): AsyncResult<LiveGameLog>;
 
@@ -51,10 +50,10 @@ export interface LiveGameLogUseCasesPort extends BaseUseCasesPort<
   list_by_organization(
     organization_id: string,
     options?: { page: number; page_size: number },
-  ): Promise<EntityListResult<LiveGameLog>>;
+  ): PaginatedAsyncResult<LiveGameLog>;
 
   list_completed_games(
     organization_id?: string,
     options?: { page: number; page_size: number },
-  ): Promise<EntityListResult<LiveGameLog>>;
+  ): PaginatedAsyncResult<LiveGameLog>;
 }

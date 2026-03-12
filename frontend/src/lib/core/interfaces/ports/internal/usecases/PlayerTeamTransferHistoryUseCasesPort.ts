@@ -20,24 +20,24 @@ export interface PlayerTeamTransferHistoryUseCasesPort extends BaseUseCasesPort<
   list_transfers_by_player(
     player_id: string,
     options?: QueryOptions,
-  ): Promise<PaginatedAsyncResult<PlayerTeamTransferHistory>>;
+  ): PaginatedAsyncResult<PlayerTeamTransferHistory>;
 
   list_transfers_by_team(
     team_id: string,
     options?: QueryOptions,
-  ): Promise<PaginatedAsyncResult<PlayerTeamTransferHistory>>;
+  ): PaginatedAsyncResult<PlayerTeamTransferHistory>;
 
   list_pending_transfers(
     options?: QueryOptions,
-  ): Promise<PaginatedAsyncResult<PlayerTeamTransferHistory>>;
+  ): PaginatedAsyncResult<PlayerTeamTransferHistory>;
 
   confirm_transfer(
     transfer_id: string,
-  ): Promise<AsyncResult<PlayerTeamTransferHistory>>;
+  ): AsyncResult<PlayerTeamTransferHistory>;
 
   reject_transfer(
     transfer_id: string,
-  ): Promise<AsyncResult<PlayerTeamTransferHistory>>;
+  ): AsyncResult<PlayerTeamTransferHistory>;
 
-  delete_transfers(ids: string[]): Promise<AsyncResult<number>>;
+  delete_transfers(ids: string[]): AsyncResult<number>;
 }

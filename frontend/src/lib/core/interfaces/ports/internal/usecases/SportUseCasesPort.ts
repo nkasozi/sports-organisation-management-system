@@ -11,5 +11,5 @@ export interface SportUseCasesPort extends BaseUseCasesPort<
   CreateSportInput,
   UpdateSportInput
 > {
-  delete_sports(ids: string[]): Promise<AsyncResult<number>>;
+  delete_sports(ids: string[]): AsyncResult<number>;
 }

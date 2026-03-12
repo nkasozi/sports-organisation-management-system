@@ -91,8 +91,9 @@ describe("ProfileLinkUseCases", () => {
       const result = await use_cases.list();
 
       expect(result.success).toBe(true);
-      expect(result.data.length).toBe(2);
-      expect(result.total_count).toBe(2);
+      if (!result.success) return;
+      expect(result.data.items).toHaveLength(2);
+      expect(result.data.total_count).toBe(2);
       expect(mock_repository.find_all).toHaveBeenCalledOnce();
     });
 
@@ -107,7 +108,8 @@ describe("ProfileLinkUseCases", () => {
       const result = await use_cases.list({ profile_id: "profile_1" });
 
       expect(result.success).toBe(true);
-      expect(result.data.length).toBe(1);
+      if (!result.success) return;
+      expect(result.data.items).toHaveLength(1);
       expect(mock_repository.find_all).toHaveBeenCalledWith(
         expect.objectContaining({ profile_id: "profile_1" }),
         undefined,
@@ -123,7 +125,8 @@ describe("ProfileLinkUseCases", () => {
       const result = await use_cases.list({ platform: "twitter" });
 
       expect(result.success).toBe(true);
-      expect(result.data.length).toBe(1);
+      if (!result.success) return;
+      expect(result.data.items).toHaveLength(1);
       expect(mock_repository.find_all).toHaveBeenCalledWith(
         expect.objectContaining({ platform: "twitter" }),
         undefined,
@@ -149,8 +152,8 @@ describe("ProfileLinkUseCases", () => {
       const result = await use_cases.list();
 
       expect(result.success).toBe(false);
-      expect(result.error_message).toBe("Database error");
-      expect(result.data.length).toBe(0);
+      if (result.success) return;
+      expect(result.error).toBe("Database error");
     });
   });
 
@@ -207,7 +210,8 @@ describe("ProfileLinkUseCases", () => {
       const result = await use_cases.list_by_profile("profile_1");
 
       expect(result.success).toBe(true);
-      expect(result.data.length).toBe(2);
+      if (!result.success) return;
+      expect(result.data.items).toHaveLength(2);
       expect(mock_repository.find_by_profile_id).toHaveBeenCalledWith(
         "profile_1",
         undefined,
@@ -223,7 +227,7 @@ describe("ProfileLinkUseCases", () => {
 
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(result.error_message).toBe("Database error");
+        expect(result.error).toBe("Database error");
       }
     });
   });

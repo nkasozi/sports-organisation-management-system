@@ -33,9 +33,8 @@ import { get_competition_stage_use_cases } from "$lib/core/usecases/CompetitionS
 import { EventBus } from "$lib/infrastructure/events/EventBus";
 import type {
   BaseEntity,
-  EntityListResult,
 } from "$lib/core/entities/BaseEntity";
-import type { AsyncResult } from "$lib/core/types/Result";
+import type { AsyncResult, PaginatedAsyncResult } from "$lib/core/types/Result";
 
 const VALID_ENTITY_TYPE_KEYS = [
   "organization",
@@ -80,11 +79,7 @@ export interface GenericEntityUseCases<T extends BaseEntity = BaseEntity> {
   list(
     filter?: Record<string, unknown>,
     options?: { page?: number; page_size?: number },
-  ): Promise<
-    | EntityListResult<T>
-    | { success: true; data: { items: T[]; total_count: number } }
-    | { success: false; error: string }
-  >;
+  ): PaginatedAsyncResult<T>;
   update(id: string, input: Record<string, unknown>): AsyncResult<T>;
   delete(id: string): AsyncResult<boolean>;
 }

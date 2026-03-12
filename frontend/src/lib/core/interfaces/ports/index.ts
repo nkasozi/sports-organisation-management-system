@@ -1,7 +1,6 @@
 export type {
   BaseUseCasesPort,
   AsyncResult,
-  EntityListResult,
 } from "./internal/usecases/BaseUseCasesPort";
 export type { PlayerUseCasesPort } from "./internal/usecases/PlayerUseCasesPort";
 export type { TeamUseCasesPort } from "./internal/usecases/TeamUseCasesPort";

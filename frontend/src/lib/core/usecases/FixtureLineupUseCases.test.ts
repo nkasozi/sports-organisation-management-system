@@ -101,7 +101,8 @@ describe("FixtureLineupUseCases", () => {
       const result = await use_cases.list();
 
       expect(result.success).toBe(true);
-      expect(result.data).toHaveLength(2);
+      if (!result.success) return;
+      expect(result.data.items).toHaveLength(2);
     });
 
     it("should apply filter when provided", async () => {
@@ -240,8 +241,13 @@ describe("FixtureLineupUseCases", () => {
     it("should return lineups for fixture", async () => {
       vi.mocked(mock_repository.find_by_fixture).mockResolvedValue({
         success: true,
-        data: [create_test_lineup()],
-        total_count: 1,
+        data: {
+          items: [create_test_lineup()],
+          total_count: 1,
+          page_number: 1,
+          page_size: 10,
+          total_pages: 1,
+        },
       });
 
       const result = await use_cases.list_lineups_by_fixture("fixture-123");
@@ -264,8 +270,13 @@ describe("FixtureLineupUseCases", () => {
     it("should return lineups for fixture and team", async () => {
       vi.mocked(mock_repository.find_by_fixture_and_team).mockResolvedValue({
         success: true,
-        data: [create_test_lineup()],
-        total_count: 1,
+        data: {
+          items: [create_test_lineup()],
+          total_count: 1,
+          page_number: 1,
+          page_size: 10,
+          total_pages: 1,
+        },
       });
 
       const result = await use_cases.list_lineups_by_fixture_and_team(

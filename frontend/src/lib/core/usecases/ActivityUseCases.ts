@@ -19,7 +19,6 @@ import type { ActivityCategoryRepository } from "../interfaces/ports";
 import type { QueryOptions } from "../interfaces/ports";
 import type { PaginatedAsyncResult, AsyncResult } from "../types/Result";
 import { create_success_result, create_failure_result } from "../types/Result";
-import type { EntityListResult } from "../entities/BaseEntity";
 import type {
   ActivityUseCasesPort,
   CalendarDateRange,
@@ -92,23 +91,8 @@ export function create_activity_use_cases(
     async list(
       filter?: ActivityFilter,
       options?: QueryOptions,
-    ): Promise<EntityListResult<Activity>> {
-      const result = await activity_repository.find_all(filter, options);
-
-      if (!result.success) {
-        return {
-          success: false,
-          data: [],
-          total_count: 0,
-          error_message: result.error,
-        };
-      }
-
-      return {
-        success: true,
-        data: result.data?.items || [],
-        total_count: result.data?.total_count || 0,
-      };
+    ): PaginatedAsyncResult<Activity> {
+      return activity_repository.find_all(filter, options);
     },
 
     async get_by_id(id: string): AsyncResult<Activity> {
@@ -176,7 +160,7 @@ export function create_activity_use_cases(
     async list_by_organization(
       organization_id: string,
       options?: QueryOptions,
-    ): Promise<PaginatedAsyncResult<Activity>> {
+    ): PaginatedAsyncResult<Activity> {
       if (!organization_id || organization_id.trim().length === 0) {
         return { success: false, error: "Organization ID is required" };
       }
@@ -188,7 +172,7 @@ export function create_activity_use_cases(
       organization_id: string,
       date_range: CalendarDateRange,
       options?: QueryOptions,
-    ): Promise<PaginatedAsyncResult<Activity>> {
+    ): PaginatedAsyncResult<Activity> {
       if (!organization_id || organization_id.trim().length === 0) {
         return { success: false, error: "Organization ID is required" };
       }
@@ -205,7 +189,7 @@ export function create_activity_use_cases(
       organization_id: string,
       category_id: string,
       options?: QueryOptions,
-    ): Promise<PaginatedAsyncResult<Activity>> {
+    ): PaginatedAsyncResult<Activity> {
       return activity_repository.find_by_category(
         organization_id,
         category_id,
@@ -217,7 +201,7 @@ export function create_activity_use_cases(
       organization_id: string,
       team_id: string,
       options?: QueryOptions,
-    ): Promise<PaginatedAsyncResult<Activity>> {
+    ): PaginatedAsyncResult<Activity> {
       return activity_repository.find_by_team(
         organization_id,
         team_id,
@@ -228,7 +212,7 @@ export function create_activity_use_cases(
     async list_by_competition(
       competition_id: string,
       options?: QueryOptions,
-    ): Promise<PaginatedAsyncResult<Activity>> {
+    ): PaginatedAsyncResult<Activity> {
       return activity_repository.find_by_competition(competition_id, options);
     },
 

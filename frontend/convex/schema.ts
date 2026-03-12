@@ -750,11 +750,11 @@ export default defineSchema({
 
   system_users: defineTable({
     ...sync_metadata_fields,
-    email: v.optional(v.string()),
+    email: v.string(),
     first_name: v.optional(v.string()),
     last_name: v.optional(v.string()),
     name: v.optional(v.string()),
-    role: v.optional(v.string()),
+    role: v.string(),
     organization_id: v.optional(v.string()),
     team_id: v.optional(v.string()),
     player_id: v.optional(v.string()),
@@ -764,7 +764,9 @@ export default defineSchema({
     status: v.optional(v.string()),
     last_login_at: v.optional(v.string()),
     ...timestamp_fields,
-  }).index("by_local_id", ["local_id"]),
+  })
+    .index("by_local_id", ["local_id"])
+    .index("by_email", ["email"]),
 
   identification_types: defineTable({
     ...sync_metadata_fields,

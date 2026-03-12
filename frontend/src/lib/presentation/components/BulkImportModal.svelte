@@ -359,6 +359,24 @@
     return { entity_input, errors: [] };
   }
 
+  function validate_required_fields_in_record(
+    record: Record<string, string>,
+    resolved_values: Record<string, string> = {},
+  ): string[] {
+    const missing_fields: string[] = [];
+    const merged_record = { ...record, ...resolved_values };
+
+    for (const field of importable_fields) {
+      if (!field.is_required) continue;
+      const value = merged_record[field.field_name];
+      if (value === undefined || value === null || value.trim() === "") {
+        missing_fields.push(field.display_name);
+      }
+    }
+
+    return missing_fields;
+  }
+
   async function handle_start_import(): Promise<void> {
     if (!selected_file) return;
 
@@ -422,6 +440,30 @@
           original_data: record,
           success: false,
           error_message: combined_errors,
+        });
+        continue;
+      }
+
+      const resolved_for_validation = name_columns.reduce(
+        (acc, col) => {
+          const resolved_id = entity_input[col.id_column];
+          if (resolved_id) acc[col.id_column] = String(resolved_id);
+          return acc;
+        },
+        {} as Record<string, string>,
+      );
+      const missing_required_fields = validate_required_fields_in_record(
+        record,
+        resolved_for_validation,
+      );
+
+      if (missing_required_fields.length > 0) {
+        failure_count++;
+        import_results.push({
+          row_number,
+          original_data: record,
+          success: false,
+          error_message: `Missing required field(s): ${missing_required_fields.join(", ")}`,
         });
         continue;
       }

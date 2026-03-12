@@ -4,11 +4,8 @@ import type {
   CreateFixtureLineupInput,
   UpdateFixtureLineupInput,
 } from "../../core/entities/FixtureLineup";
-import type {
-  BaseEntity,
-  EntityListResult,
-} from "../../core/entities/BaseEntity";
-import type { AsyncResult } from "../../core/types/Result";
+import type { BaseEntity } from "../../core/entities/BaseEntity";
+import type { AsyncResult, PaginatedAsyncResult } from "../../core/types/Result";
 import {
   create_success_result,
   create_failure_result,
@@ -118,74 +115,56 @@ export class InBrowserFixtureLineupRepository
     return filtered;
   }
 
-  private async find_all_as_entity_list(
-    filter?: FixtureLineupFilter,
+  private build_query_options(
     pagination?: { page: number; page_size: number },
-  ): Promise<EntityListResult<FixtureLineup>> {
-    const query_options = pagination
+  ) {
+    return pagination
       ? { page_number: pagination.page, page_size: pagination.page_size }
       : undefined;
-    const result = await this.find_all(filter, query_options);
-    if (!result.success) {
-      return {
-        success: false,
-        data: [],
-        total_count: 0,
-        error_message: result.error,
-      };
-    }
-    return {
-      success: true,
-      data: result.data.items,
-      total_count: result.data.total_count,
-    };
   }
 
   async get_lineups_for_fixture(
     fixture_id: string,
-  ): Promise<EntityListResult<FixtureLineup>> {
-    return this.find_all_as_entity_list({ fixture_id });
+  ): AsyncResult<FixtureLineup[]> {
+    const result = await this.find_all({ fixture_id });
+    if (!result.success) {
+      return { success: false, error: result.error };
+    }
+    return { success: true, data: result.data.items };
   }
 
   async get_lineup_for_team_in_fixture(
     fixture_id: string,
     team_id: string,
   ): AsyncResult<FixtureLineup> {
-    try {
-      const result = await this.find_all_as_entity_list({
-        fixture_id,
-        team_id,
-      });
-
-      if (!result.success || result.data.length === 0) {
-        return create_failure_result(
-          "No lineup found for this team in this fixture",
-        );
-      }
-
-      return create_success_result(result.data[0]);
-    } catch (error) {
-      const error_message =
-        error instanceof Error ? error.message : "Unknown error occurred";
+    const result = await this.find_all({ fixture_id, team_id });
+    if (!result.success) {
+      return create_failure_result(result.error);
+    }
+    if (result.data.items.length === 0) {
       return create_failure_result(
-        `Failed to get lineup for team in fixture: ${error_message}`,
+        "No lineup found for this team in this fixture",
       );
     }
+    return create_success_result(result.data.items[0]);
   }
 
   async find_by_fixture(
     fixture_id: string,
     options?: { page: number; page_size: number },
-  ): Promise<EntityListResult<FixtureLineup>> {
-    return this.find_all_as_entity_list({ fixture_id }, options);
+  ): PaginatedAsyncResult<FixtureLineup> {
+    return this.find_all({ fixture_id }, this.build_query_options(options));
   }
 
   async find_by_fixture_and_team(
     fixture_id: string,
     team_id: string,
     options?: { page: number; page_size: number },
-  ): Promise<EntityListResult<FixtureLineup>> {
-    return this.find_all_as_entity_list({ fixture_id, team_id }, options);
+  ): PaginatedAsyncResult<FixtureLineup> {
+    return this.find_all(
+      { fixture_id, team_id },
+      this.build_query_options(options),
+    );
   }
 }
 

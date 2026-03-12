@@ -5,8 +5,7 @@ import type {
 } from "../entities/SystemUser";
 import { validate_system_user_input } from "../entities/SystemUser";
 import type { Repository, QueryOptions } from "../interfaces/ports";
-import type { EntityListResult } from "../entities/BaseEntity";
-import type { AsyncResult } from "../types/Result";
+import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
 import { create_success_result, create_failure_result } from "../types/Result";
 import { get_repository_container } from "../../infrastructure/container";
 
@@ -20,7 +19,7 @@ export interface SystemUserUseCases {
   list(
     filter?: SystemUserFilter,
     options?: QueryOptions,
-  ): Promise<EntityListResult<SystemUser>>;
+  ): PaginatedAsyncResult<SystemUser>;
   get_by_id(id: string): AsyncResult<SystemUser>;
   create(input: CreateSystemUserInput): AsyncResult<SystemUser>;
   update(id: string, input: UpdateSystemUserInput): AsyncResult<SystemUser>;
@@ -39,28 +38,19 @@ export function create_system_user_use_cases(
     async list(
       filter?: SystemUserFilter,
       options?: QueryOptions,
-    ): Promise<EntityListResult<SystemUser>> {
+    ): PaginatedAsyncResult<SystemUser> {
       const result = await repository.find_all(undefined, options);
 
       if (!result.success) {
-        return {
-          success: false,
-          data: [],
-          total_count: 0,
-          error_message: result.error,
-        };
+        return result;
       }
 
-      let users = result.data?.items || [];
-
-      if (filter) {
-        users = filter_system_users(users, filter);
-      }
+      const all_users = result.data?.items || [];
+      const filtered_users = filter ? filter_system_users(all_users, filter) : all_users;
 
       return {
         success: true,
-        data: users,
-        total_count: users.length,
+        data: { ...result.data, items: filtered_users, total_count: filtered_users.length },
       };
     },
 

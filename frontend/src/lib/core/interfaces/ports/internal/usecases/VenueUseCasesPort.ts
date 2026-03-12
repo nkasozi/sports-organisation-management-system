@@ -13,5 +13,5 @@ export interface VenueUseCasesPort extends BaseUseCasesPort<
   UpdateVenueInput,
   VenueFilter
 > {
-  delete_venues(ids: string[]): Promise<AsyncResult<number>>;
+  delete_venues(ids: string[]): AsyncResult<number>;
 }

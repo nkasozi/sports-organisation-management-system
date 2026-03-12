@@ -14,7 +14,6 @@ import type {
 import type { QueryOptions } from "../interfaces/ports";
 import type { PaginatedAsyncResult, AsyncResult } from "../types/Result";
 import { create_success_result, create_failure_result } from "../types/Result";
-import type { EntityListResult } from "../entities/BaseEntity";
 import type { ActivityCategoryUseCasesPort } from "../interfaces/ports";
 import { get_repository_container } from "../../infrastructure/container";
 
@@ -27,23 +26,8 @@ export function create_activity_category_use_cases(
     async list(
       filter?: ActivityCategoryFilter,
       options?: QueryOptions,
-    ): Promise<EntityListResult<ActivityCategory>> {
-      const result = await repository.find_all(filter, options);
-
-      if (!result.success) {
-        return {
-          success: false,
-          data: [],
-          total_count: 0,
-          error_message: result.error,
-        };
-      }
-
-      return {
-        success: true,
-        data: result.data?.items || [],
-        total_count: result.data?.total_count || 0,
-      };
+    ): PaginatedAsyncResult<ActivityCategory> {
+      return repository.find_all(filter, options);
     },
 
     async get_by_id(id: string): AsyncResult<ActivityCategory> {
@@ -101,7 +85,7 @@ export function create_activity_category_use_cases(
     async list_by_organization(
       organization_id: string,
       options?: QueryOptions,
-    ): Promise<PaginatedAsyncResult<ActivityCategory>> {
+    ): PaginatedAsyncResult<ActivityCategory> {
       if (!organization_id || organization_id.trim().length === 0) {
         return {
           success: false,
@@ -114,16 +98,16 @@ export function create_activity_category_use_cases(
 
     async ensure_default_categories_exist(
       organization_id: string,
-    ): Promise<{ success: boolean; categories_created: number }> {
+    ): AsyncResult<{ categories_created: number }> {
       if (!organization_id || organization_id.trim().length === 0) {
-        return { success: false, categories_created: 0 };
+        return { success: false, error: "Organization ID is required" };
       }
 
       const existing_result =
         await repository.find_by_organization(organization_id);
 
       if (!existing_result.success) {
-        return { success: false, categories_created: 0 };
+        return { success: false, error: existing_result.error };
       }
 
       const existing_categories = existing_result.data?.items || [];
@@ -148,7 +132,7 @@ export function create_activity_category_use_cases(
         }
       }
 
-      return { success: true, categories_created };
+      return { success: true, data: { categories_created } };
     },
   };
 }

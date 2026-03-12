@@ -775,6 +775,7 @@ export class ConvexSyncManager {
 
   async sync_now(
     on_progress?: (progress: SyncProgress) => void,
+    direction_override?: SyncDirection,
   ): Promise<SyncResult> {
     if (!this.convex_client) {
       console.error(
@@ -807,13 +808,14 @@ export class ConvexSyncManager {
     }
 
     this.is_syncing = true;
+    const effective_direction = direction_override ?? this.config.direction;
     console.log(
-      `[Sync:Manager] sync_now starting \u2014 direction: ${this.config.direction}, tables: ${this.config.enabled_tables.length}`,
+      `[Sync:Manager] sync_now starting \u2014 direction: ${effective_direction}, tables: ${this.config.enabled_tables.length}`,
     );
 
     const result = await sync_all_tables(
       this.convex_client,
-      this.config.direction,
+      effective_direction,
       this.config.enabled_tables,
       on_progress,
     );

@@ -14,6 +14,7 @@
     current_profile_display_name,
     current_profile_initials,
     other_available_profiles,
+    can_switch_profiles,
     is_auth_initialized,
     type UserProfile,
   } from "$lib/presentation/stores/auth";
@@ -318,7 +319,7 @@
                   </p>
                 </div>
 
-                {#if $other_available_profiles.length > 0}
+                {#if $can_switch_profiles && $other_available_profiles.length > 0}
                   <div class="relative">
                     <button
                       type="button"

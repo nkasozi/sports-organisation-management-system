@@ -4,8 +4,7 @@ import type {
   UpdateLiveGameLogInput,
   LiveGameStatus,
 } from "../../../../entities/LiveGameLog";
-import type { EntityListResult } from "../../../../entities/BaseEntity";
-import type { AsyncResult } from "../../../../types/Result";
+import type { AsyncResult, PaginatedAsyncResult } from "../../../../types/Result";
 import type { Repository } from "./Repository";
 
 export interface LiveGameLogFilter {
@@ -25,15 +24,15 @@ export interface LiveGameLogRepository extends Repository<
 
   get_active_games(
     organization_id?: string,
-  ): Promise<EntityListResult<LiveGameLog>>;
+  ): AsyncResult<LiveGameLog[]>;
 
   find_by_organization(
     organization_id: string,
     options?: { page: number; page_size: number },
-  ): Promise<EntityListResult<LiveGameLog>>;
+  ): PaginatedAsyncResult<LiveGameLog>;
 
   find_completed_games(
     organization_id?: string,
     options?: { page: number; page_size: number },
-  ): Promise<EntityListResult<LiveGameLog>>;
+  ): PaginatedAsyncResult<LiveGameLog>;
 }

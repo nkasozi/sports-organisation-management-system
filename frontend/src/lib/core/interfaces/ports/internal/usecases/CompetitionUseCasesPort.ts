@@ -17,9 +17,9 @@ export interface CompetitionUseCasesPort extends BaseUseCasesPort<
   UpdateCompetitionInput,
   CompetitionFilter
 > {
-  delete_competitions(ids: string[]): Promise<AsyncResult<number>>;
+  delete_competitions(ids: string[]): AsyncResult<number>;
   list_competitions_by_organization(
     organization_id: string,
     options?: QueryOptions,
-  ): Promise<PaginatedAsyncResult<Competition>>;
+  ): PaginatedAsyncResult<Competition>;
 }

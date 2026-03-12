@@ -34,16 +34,21 @@
     const user = clerk.user;
 
     const is_signed_in = !!session;
-    const user_id = user?.id ?? null;
     const user_email = user?.emailAddresses?.[0]?.emailAddress ?? null;
 
-    if (
-      !is_signed_in ||
-      !user_id ||
-      !user_email ||
-      authorization_checked ||
-      is_auth_page
-    ) {
+    if (!is_signed_in || authorization_checked || is_auth_page) {
+      is_checking = false;
+      return;
+    }
+
+    if (!user_email) {
+      console.error(
+        "[AuthChecker] Signed-in user has no email address — cannot authenticate",
+      );
+      const error_message = encodeURIComponent(
+        "Your account has no email address. Authentication requires an email. Please contact your administrator.",
+      );
+      await goto(`/unauthorized?message=${error_message}`);
       is_checking = false;
       return;
     }
@@ -60,18 +65,17 @@
 
     try {
       const convex = new ConvexClient(PUBLIC_CONVEX_URL);
-      const result = await convex.mutation(
-        "authorization:link_clerk_user_to_profile" as any,
+      const result = await convex.query(
+        "authorization:check_user_access" as any,
         {
           email: user_email,
-          clerk_user_id: user_id,
         },
       );
 
       if (!result.success) {
-        console.error("[AuthChecker] Authorization failed:", result.message);
+        console.error("[AuthChecker] Authorization failed:", result.error);
         const error_message = encodeURIComponent(
-          result.message || "Access denied",
+          result.error || "Access denied",
         );
         await goto(`/unauthorized?message=${error_message}`);
         return;
@@ -79,7 +83,9 @@
 
       console.log(
         "[AuthChecker] User authorized:",
-        result.profile?.display_name,
+        result.data.email,
+        "role:",
+        result.data.role,
       );
     } catch (error) {
       console.error("[AuthChecker] Authorization check failed:", error);

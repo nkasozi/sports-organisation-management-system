@@ -12,7 +12,7 @@ import type { QueryOptions } from "../interfaces/ports";
 import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
 import { create_success_result, create_failure_result } from "../types/Result";
 import { get_repository_container } from "../../infrastructure/container";
-import type { EntityListResult } from "./BaseUseCases";
+
 import type { CompetitionTeamUseCasesPort } from "../interfaces/ports";
 
 export type CompetitionTeamUseCases = CompetitionTeamUseCasesPort;
@@ -24,21 +24,8 @@ export function create_competition_team_use_cases(
     async list(
       filter?: CompetitionTeamFilter,
       options?: QueryOptions,
-    ): Promise<EntityListResult<CompetitionTeam>> {
-      const result = await repository.find_all(filter, options);
-      if (!result.success) {
-        return {
-          success: false,
-          data: [],
-          total_count: 0,
-          error_message: result.error,
-        };
-      }
-      return {
-        success: true,
-        data: result.data?.items || [],
-        total_count: result.data?.total_count || 0,
-      };
+    ): PaginatedAsyncResult<CompetitionTeam> {
+      return repository.find_all(filter, options);
     },
 
     async get_by_id(id: string): AsyncResult<CompetitionTeam> {

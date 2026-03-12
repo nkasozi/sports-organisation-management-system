@@ -8,10 +8,9 @@ import type {
   GameOfficialRoleFilter,
 } from "../interfaces/ports";
 import type { QueryOptions } from "../interfaces/ports";
-import type { AsyncResult, PaginatedResult } from "../types/Result";
+import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
 import { create_failure_result, create_success_result } from "../types/Result";
 import { get_repository_container } from "../../infrastructure/container";
-import type { EntityListResult } from "./BaseUseCases";
 import type { GameOfficialRoleUseCasesPort } from "../interfaces/ports";
 
 export type GameOfficialRoleUseCases = GameOfficialRoleUseCasesPort;
@@ -22,26 +21,9 @@ export function create_game_official_role_use_cases(
   return {
     async list(
       filter?: GameOfficialRoleFilter,
-      pagination?: { page: number; page_size: number },
-    ): Promise<EntityListResult<GameOfficialRole>> {
-      const query_options = {
-        page_number: pagination?.page ?? 1,
-        page_size: pagination?.page_size ?? 10,
-      };
-      const result = await repository.find_all(filter, query_options);
-      if (!result.success) {
-        return {
-          success: false,
-          data: [],
-          total_count: 0,
-          error_message: result.error,
-        };
-      }
-      return {
-        success: true,
-        data: result.data?.items || [],
-        total_count: result.data?.total_count || 0,
-      };
+      pagination?: QueryOptions,
+    ): PaginatedAsyncResult<GameOfficialRole> {
+      return repository.find_all(filter, pagination);
     },
 
     async get_by_id(id: string): AsyncResult<GameOfficialRole> {

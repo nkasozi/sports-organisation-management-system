@@ -214,7 +214,8 @@ describe("AuditLogUseCases", () => {
       const result = await use_cases.list();
 
       expect(result.success).toBe(true);
-      expect(result.data.length).toBe(2);
+      if (!result.success) return;
+      expect(result.data.items).toHaveLength(2);
     });
 
     it("should filter by entity_type", async () => {
@@ -228,8 +229,9 @@ describe("AuditLogUseCases", () => {
       const result = await use_cases.list({ entity_type: "player" });
 
       expect(result.success).toBe(true);
-      expect(result.data.length).toBe(1);
-      expect(result.data[0].entity_type).toBe("player");
+      if (!result.success) return;
+      expect(result.data.items).toHaveLength(1);
+      expect(result.data.items[0].entity_type).toBe("player");
     });
 
     it("should filter by action", async () => {
@@ -241,8 +243,9 @@ describe("AuditLogUseCases", () => {
       const result = await use_cases.list({ action: "create" });
 
       expect(result.success).toBe(true);
-      expect(result.data.length).toBe(1);
-      expect(result.data[0].action).toBe("create");
+      if (!result.success) return;
+      expect(result.data.items).toHaveLength(1);
+      expect(result.data.items[0].action).toBe("create");
     });
   });
 
@@ -285,21 +288,24 @@ describe("AuditLogUseCases", () => {
       const result = await use_cases.get_entity_history("player", "player_123");
 
       expect(result.success).toBe(true);
-      expect(result.data.length).toBe(2);
+      if (!result.success) return;
+      expect(result.data.items).toHaveLength(2);
     });
 
     it("should fail with empty entity_type", async () => {
       const result = await use_cases.get_entity_history("", "player_123");
 
       expect(result.success).toBe(false);
-      expect(result.error_message).toContain("Entity type is required");
+      if (result.success) return;
+      expect(result.error).toContain("Entity type is required");
     });
 
     it("should fail with empty entity_id", async () => {
       const result = await use_cases.get_entity_history("player", "");
 
       expect(result.success).toBe(false);
-      expect(result.error_message).toContain("Entity ID is required");
+      if (result.success) return;
+      expect(result.error).toContain("Entity ID is required");
     });
   });
 
@@ -320,14 +326,16 @@ describe("AuditLogUseCases", () => {
       const result = await use_cases.get_user_activity("user_456");
 
       expect(result.success).toBe(true);
-      expect(result.data.length).toBe(2);
+      if (!result.success) return;
+      expect(result.data.items).toHaveLength(2);
     });
 
     it("should fail with empty user_id", async () => {
       const result = await use_cases.get_user_activity("");
 
       expect(result.success).toBe(false);
-      expect(result.error_message).toContain("User ID is required");
+      if (result.success) return;
+      expect(result.error).toContain("User ID is required");
     });
   });
 });

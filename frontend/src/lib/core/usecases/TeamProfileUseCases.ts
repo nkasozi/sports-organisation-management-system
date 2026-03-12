@@ -8,8 +8,7 @@ import type {
   TeamProfileFilter,
 } from "../interfaces/ports";
 import type { QueryOptions } from "../interfaces/ports";
-import type { EntityListResult } from "../entities/BaseEntity";
-import type { AsyncResult } from "../types/Result";
+import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
 import { create_failure_result } from "../types/Result";
 import { validate_team_profile_input } from "../entities/TeamProfile";
 import { get_repository_container } from "../../infrastructure/container";
@@ -18,7 +17,7 @@ export interface TeamProfileUseCases {
   list(
     filter?: TeamProfileFilter | Record<string, string>,
     options?: QueryOptions,
-  ): Promise<EntityListResult<TeamProfile>>;
+  ): PaginatedAsyncResult<TeamProfile>;
   get_by_id(id: string): AsyncResult<TeamProfile>;
   get_by_team_id(team_id: string): AsyncResult<TeamProfile>;
   get_by_slug(slug: string): AsyncResult<TeamProfile>;
@@ -27,7 +26,7 @@ export interface TeamProfileUseCases {
   delete(id: string): AsyncResult<boolean>;
   list_public_profiles(
     options?: QueryOptions,
-  ): Promise<EntityListResult<TeamProfile>>;
+  ): PaginatedAsyncResult<TeamProfile>;
 }
 
 export function create_team_profile_use_cases(
@@ -37,24 +36,9 @@ export function create_team_profile_use_cases(
     async list(
       filter?: TeamProfileFilter | Record<string, string>,
       options?: QueryOptions,
-    ): Promise<EntityListResult<TeamProfile>> {
+    ): PaginatedAsyncResult<TeamProfile> {
       if (!filter) {
-        const result = await repository.find_all(undefined, options);
-
-        if (!result.success) {
-          return {
-            success: false,
-            data: [],
-            total_count: 0,
-            error_message: result.error,
-          };
-        }
-
-        return {
-          success: true,
-          data: result.data?.items || [],
-          total_count: result.data?.total_count || 0,
-        };
+        return repository.find_all(undefined, options);
       }
 
       const typed_filter: TeamProfileFilter = {
@@ -63,22 +47,7 @@ export function create_team_profile_use_cases(
         status: filter?.status as TeamProfileFilter["status"],
       };
 
-      const result = await repository.find_all(typed_filter, options);
-
-      if (!result.success) {
-        return {
-          success: false,
-          data: [],
-          total_count: 0,
-          error_message: result.error,
-        };
-      }
-
-      return {
-        success: true,
-        data: result.data?.items || [],
-        total_count: result.data?.total_count || 0,
-      };
+      return repository.find_all(typed_filter, options);
     },
 
     async get_by_id(id: string): AsyncResult<TeamProfile> {
@@ -138,23 +107,8 @@ export function create_team_profile_use_cases(
 
     async list_public_profiles(
       options?: QueryOptions,
-    ): Promise<EntityListResult<TeamProfile>> {
-      const result = await repository.find_public_profiles(options);
-
-      if (!result.success) {
-        return {
-          success: false,
-          data: [],
-          total_count: 0,
-          error_message: result.error,
-        };
-      }
-
-      return {
-        success: true,
-        data: result.data?.items || [],
-        total_count: result.data?.total_count || 0,
-      };
+    ): PaginatedAsyncResult<TeamProfile> {
+      return repository.find_public_profiles(options);
     },
   };
 }

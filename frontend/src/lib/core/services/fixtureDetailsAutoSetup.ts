@@ -112,8 +112,8 @@ async function build_auto_populated_input(
   );
   if (
     roles_result.success &&
-    roles_result.data.length > 0 &&
-    (!officials_result.success || !officials_result.data.length)
+    (roles_result.data?.items?.length ?? 0) > 0 &&
+    (!officials_result.success || !officials_result.data?.items?.length)
   ) {
     errors.push(
       `No Officials found for Organization (${fixture.organization_id})`,
@@ -121,8 +121,8 @@ async function build_auto_populated_input(
   }
   if (
     officials_result.success &&
-    officials_result.data.length > 0 &&
-    (!roles_result.success || !roles_result.data.length)
+    (officials_result.data?.items?.length ?? 0) > 0 &&
+    (!roles_result.success || !roles_result.data?.items?.length)
   ) {
     errors.push(
       `No Official Roles found for Competition (${fixture.competition_id})`,
@@ -158,11 +158,11 @@ function extract_first_jersey_id(result: {
 }
 
 function build_official_assignments(
-  officials_result: { success: boolean; data: { id: string }[] },
-  roles_result: { success: boolean; data: { id: string }[] },
+  officials_result: { success: boolean; data?: { items?: { id: string }[] } },
+  roles_result: { success: boolean; data?: { items?: { id: string }[] } },
 ): OfficialAssignment[] {
-  const officials = officials_result.success ? officials_result.data || [] : [];
-  const roles = roles_result.success ? roles_result.data || [] : [];
+  const officials = officials_result.success ? officials_result.data?.items || [] : [];
+  const roles = roles_result.success ? roles_result.data?.items || [] : [];
 
   if (officials.length === 0 || roles.length === 0) return [];
 

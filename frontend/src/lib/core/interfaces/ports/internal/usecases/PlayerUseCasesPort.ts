@@ -18,11 +18,11 @@ export interface PlayerUseCasesPort extends BaseUseCasesPort<
   UpdatePlayerInput,
   PlayerFilter
 > {
-  delete_players(ids: string[]): Promise<AsyncResult<number>>;
+  delete_players(ids: string[]): AsyncResult<number>;
   list_players_by_team(
     team_id: string,
     options?: QueryOptions,
-  ): Promise<PaginatedAsyncResult<Player>>;
+  ): PaginatedAsyncResult<Player>;
 }
 
 export type {
@@ -33,5 +33,4 @@ export type {
   QueryOptions,
   AsyncResult,
   PaginatedAsyncResult,
-  EntityListResult,
 };

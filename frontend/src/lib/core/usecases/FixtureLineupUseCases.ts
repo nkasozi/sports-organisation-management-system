@@ -7,8 +7,7 @@ import type {
   FixtureLineupRepository,
   FixtureLineupFilter,
 } from "../interfaces/ports";
-import type { EntityListResult } from "../entities/BaseEntity";
-import type { AsyncResult } from "../types/Result";
+import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
 import { create_failure_result } from "../types/Result";
 import type { FixtureLineupUseCasesPort } from "../interfaces/ports";
 import { get_repository_container } from "../../infrastructure/container";
@@ -91,26 +90,13 @@ export function create_fixture_lineup_use_cases(
     async list(
       filter?: FixtureLineupFilter,
       pagination?: { page: number; page_size: number },
-    ): Promise<EntityListResult<FixtureLineup>> {
-      const result = await repository.find_all(filter, pagination);
-      if (!result.success) {
-        return {
-          success: false,
-          data: [],
-          total_count: 0,
-          error_message: result.error,
-        };
-      }
-      return {
-        success: true,
-        data: result.data?.items || [],
-        total_count: result.data?.total_count || 0,
-      };
+    ): PaginatedAsyncResult<FixtureLineup> {
+      return repository.find_all(filter, pagination);
     },
 
     async get_lineups_for_fixture(
       fixture_id: string,
-    ): Promise<EntityListResult<FixtureLineup>> {
+    ): AsyncResult<FixtureLineup[]> {
       return repository.get_lineups_for_fixture(fixture_id);
     },
 
@@ -124,14 +110,9 @@ export function create_fixture_lineup_use_cases(
     async list_lineups_by_fixture(
       fixture_id: string,
       options?: { page: number; page_size: number },
-    ): Promise<EntityListResult<FixtureLineup>> {
+    ): PaginatedAsyncResult<FixtureLineup> {
       if (!fixture_id || fixture_id.trim().length === 0) {
-        return {
-          success: false,
-          data: [],
-          total_count: 0,
-          error_message: "Fixture ID is required",
-        };
+        return create_failure_result("Fixture ID is required");
       }
       return repository.find_by_fixture(fixture_id, options);
     },
@@ -140,22 +121,12 @@ export function create_fixture_lineup_use_cases(
       fixture_id: string,
       team_id: string,
       options?: { page: number; page_size: number },
-    ): Promise<EntityListResult<FixtureLineup>> {
+    ): PaginatedAsyncResult<FixtureLineup> {
       if (!fixture_id || fixture_id.trim().length === 0) {
-        return {
-          success: false,
-          data: [],
-          total_count: 0,
-          error_message: "Fixture ID is required",
-        };
+        return create_failure_result("Fixture ID is required");
       }
       if (!team_id || team_id.trim().length === 0) {
-        return {
-          success: false,
-          data: [],
-          total_count: 0,
-          error_message: "Team ID is required",
-        };
+        return create_failure_result("Team ID is required");
       }
       return repository.find_by_fixture_and_team(fixture_id, team_id, options);
     },

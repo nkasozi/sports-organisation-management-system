@@ -8,8 +8,7 @@ import type {
   LiveGameLogRepository,
   LiveGameLogFilter,
 } from "../interfaces/ports";
-import type { EntityListResult } from "../entities/BaseEntity";
-import type { AsyncResult } from "../types/Result";
+import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
 import { create_failure_result } from "../types/Result";
 import type { LiveGameLogUseCasesPort } from "../interfaces/ports";
 import { get_repository_container } from "../../infrastructure/container";
@@ -107,21 +106,8 @@ export function create_live_game_log_use_cases(
     async list(
       filter?: LiveGameLogFilter,
       pagination?: { page: number; page_size: number },
-    ): Promise<EntityListResult<LiveGameLog>> {
-      const result = await repository.find_all(filter, pagination);
-      if (!result.success) {
-        return {
-          success: false,
-          data: [],
-          total_count: 0,
-          error_message: result.error,
-        };
-      }
-      return {
-        success: true,
-        data: result.data?.items || [],
-        total_count: result.data?.total_count || 0,
-      };
+    ): PaginatedAsyncResult<LiveGameLog> {
+      return repository.find_all(filter, pagination);
     },
 
     async get_live_game_log_for_fixture(
@@ -135,7 +121,7 @@ export function create_live_game_log_use_cases(
 
     async get_active_games(
       organization_id?: string,
-    ): Promise<EntityListResult<LiveGameLog>> {
+    ): AsyncResult<LiveGameLog[]> {
       return repository.get_active_games(organization_id);
     },
 
@@ -377,14 +363,14 @@ export function create_live_game_log_use_cases(
     async list_by_organization(
       organization_id: string,
       options?: { page: number; page_size: number },
-    ): Promise<EntityListResult<LiveGameLog>> {
+    ): PaginatedAsyncResult<LiveGameLog> {
       return repository.find_by_organization(organization_id, options);
     },
 
     async list_completed_games(
       organization_id?: string,
       options?: { page: number; page_size: number },
-    ): Promise<EntityListResult<LiveGameLog>> {
+    ): PaginatedAsyncResult<LiveGameLog> {
       return repository.find_completed_games(organization_id, options);
     },
   };

@@ -105,8 +105,9 @@ describe("TeamUseCases", () => {
       const result = await use_cases.list();
 
       expect(result.success).toBe(true);
-      expect(result.data).toHaveLength(2);
-      expect(result.total_count).toBe(2);
+      if (!result.success) return;
+      expect(result.data.items).toHaveLength(2);
+      expect(result.data.total_count).toBe(2);
       expect(mock_repository.find_all).toHaveBeenCalledOnce();
     });
 
@@ -122,7 +123,8 @@ describe("TeamUseCases", () => {
       const result = await use_cases.list(filter);
 
       expect(result.success).toBe(true);
-      expect(result.data).toHaveLength(1);
+      if (!result.success) return;
+      expect(result.data.items).toHaveLength(1);
       expect(mock_repository.find_all).toHaveBeenCalledWith(filter, undefined);
     });
 
@@ -135,8 +137,8 @@ describe("TeamUseCases", () => {
       const result = await use_cases.list();
 
       expect(result.success).toBe(false);
-      expect(result.data).toEqual([]);
-      expect(result.error_message).toBe("Database connection failed");
+      if (result.success) return;
+      expect(result.error).toBe("Database connection failed");
     });
   });
 

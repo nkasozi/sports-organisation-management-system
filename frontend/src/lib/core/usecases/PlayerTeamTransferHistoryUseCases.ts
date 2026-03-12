@@ -12,7 +12,6 @@ import type { PlayerTeamMembershipRepository } from "../interfaces/ports";
 import type { QueryOptions } from "../interfaces/ports";
 import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
 import { create_failure_result, create_success_result } from "../types/Result";
-import type { EntityListResult } from "./BaseUseCases";
 import { get_repository_container } from "../../infrastructure/container";
 import type { PlayerTeamTransferHistoryUseCasesPort } from "../interfaces/ports";
 import { EventBus } from "$lib/infrastructure/events/EventBus";
@@ -28,23 +27,8 @@ export function create_player_team_transfer_history_use_cases(
     async list(
       filter?: PlayerTeamTransferHistoryFilter,
       options?: QueryOptions,
-    ): Promise<EntityListResult<PlayerTeamTransferHistory>> {
-      const result = await repository.find_all(filter, options);
-
-      if (!result.success) {
-        return {
-          success: false,
-          data: [],
-          total_count: 0,
-          error_message: result.error,
-        };
-      }
-
-      return {
-        success: true,
-        data: result.data?.items || [],
-        total_count: result.data?.total_count || 0,
-      };
+    ): PaginatedAsyncResult<PlayerTeamTransferHistory> {
+      return repository.find_all(filter, options);
     },
 
     async get_by_id(id: string): AsyncResult<PlayerTeamTransferHistory> {
@@ -110,7 +94,7 @@ export function create_player_team_transfer_history_use_cases(
     async list_transfers_by_player(
       player_id: string,
       options?: QueryOptions,
-    ): Promise<PaginatedAsyncResult<PlayerTeamTransferHistory>> {
+    ): PaginatedAsyncResult<PlayerTeamTransferHistory> {
       if (!player_id || player_id.trim().length === 0) {
         return create_failure_result("Player ID is required");
       }
@@ -121,7 +105,7 @@ export function create_player_team_transfer_history_use_cases(
     async list_transfers_by_team(
       team_id: string,
       options?: QueryOptions,
-    ): Promise<PaginatedAsyncResult<PlayerTeamTransferHistory>> {
+    ): PaginatedAsyncResult<PlayerTeamTransferHistory> {
       if (!team_id || team_id.trim().length === 0) {
         return create_failure_result("Team ID is required");
       }
@@ -131,13 +115,13 @@ export function create_player_team_transfer_history_use_cases(
 
     async list_pending_transfers(
       options?: QueryOptions,
-    ): Promise<PaginatedAsyncResult<PlayerTeamTransferHistory>> {
+    ): PaginatedAsyncResult<PlayerTeamTransferHistory> {
       return repository.find_pending_transfers(options);
     },
 
     async confirm_transfer(
       transfer_id: string,
-    ): Promise<AsyncResult<PlayerTeamTransferHistory>> {
+    ): AsyncResult<PlayerTeamTransferHistory> {
       if (!transfer_id || transfer_id.trim().length === 0) {
         return create_failure_result("Transfer ID is required");
       }
@@ -241,7 +225,7 @@ export function create_player_team_transfer_history_use_cases(
       }
 
       const update_result = await repository.update(transfer_id, {
-        status: "confirmed",
+        status: "approved",
       });
 
       if (!update_result.success) {
@@ -270,7 +254,7 @@ export function create_player_team_transfer_history_use_cases(
 
     async reject_transfer(
       transfer_id: string,
-    ): Promise<AsyncResult<PlayerTeamTransferHistory>> {
+    ): AsyncResult<PlayerTeamTransferHistory> {
       if (!transfer_id || transfer_id.trim().length === 0) {
         return create_failure_result("Transfer ID is required");
       }
@@ -291,7 +275,7 @@ export function create_player_team_transfer_history_use_cases(
       }
 
       const update_result = await repository.update(transfer_id, {
-        status: "rejected",
+        status: "declined",
       });
 
       if (!update_result.success) {
@@ -318,7 +302,7 @@ export function create_player_team_transfer_history_use_cases(
       return create_success_result(update_result.data!);
     },
 
-    async delete_transfers(ids: string[]): Promise<AsyncResult<number>> {
+    async delete_transfers(ids: string[]): AsyncResult<number> {
       if (!ids || ids.length === 0) {
         return create_failure_result("At least one transfer ID is required");
       }

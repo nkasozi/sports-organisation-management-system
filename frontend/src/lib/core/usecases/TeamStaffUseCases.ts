@@ -6,11 +6,10 @@ import type {
 import type { TeamStaffRole } from "../entities/TeamStaffRole";
 import type { TeamStaffFilter } from "../interfaces/ports";
 import type { QueryOptions } from "../interfaces/ports";
-import type { AsyncResult, PaginatedResult } from "../types/Result";
+import type { AsyncResult, PaginatedAsyncResult, PaginatedResult } from "../types/Result";
 import { create_failure_result, create_success_result } from "../types/Result";
 import { validate_team_staff_input } from "../entities/TeamStaff";
 import { get_repository_container } from "../../infrastructure/container";
-import type { EntityListResult } from "./BaseUseCases";
 import type { TeamStaffUseCasesPort } from "../interfaces/ports";
 
 export type TeamStaffUseCases = TeamStaffUseCasesPort;
@@ -25,22 +24,9 @@ export function create_team_staff_use_cases(
   return {
     async list(
       filter?: TeamStaffFilter,
-      pagination?: { page: number; page_size: number },
-    ): Promise<EntityListResult<TeamStaff>> {
-      const result = await staff_repository.find_all(filter);
-      if (!result.success) {
-        return {
-          success: false,
-          data: [],
-          total_count: 0,
-          error_message: result.error,
-        };
-      }
-      return {
-        success: true,
-        data: result.data?.items || [],
-        total_count: result.data?.total_count || 0,
-      };
+      pagination?: QueryOptions,
+    ): PaginatedAsyncResult<TeamStaff> {
+      return staff_repository.find_all(filter, pagination);
     },
 
     async get_by_id(id: string): AsyncResult<TeamStaff> {

@@ -2,7 +2,6 @@ import type { Team, CreateTeamInput, UpdateTeamInput } from "../entities/Team";
 import type { TeamRepository, TeamFilter } from "../interfaces/ports";
 import type { QueryOptions } from "../interfaces/ports";
 import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
-import type { EntityListResult } from "../entities/BaseEntity";
 import type { TeamUseCasesPort } from "../interfaces/ports";
 import { create_success_result, create_failure_result } from "../types/Result";
 import { validate_team_input } from "../entities/Team";
@@ -17,22 +16,8 @@ export function create_team_use_cases(
     async list(
       filter?: TeamFilter,
       options?: QueryOptions,
-    ): Promise<EntityListResult<Team>> {
-      const result = await repository.find_all(filter, options);
-
-      if (!result.success) {
-        return {
-          success: false,
-          data: [],
-          total_count: 0,
-          error_message: result.error,
-        };
-      }
-      return {
-        success: true,
-        data: result.data?.items || [],
-        total_count: result.data?.total_count || 0,
-      };
+    ): PaginatedAsyncResult<Team> {
+      return repository.find_all(filter, options);
     },
 
     async get_by_id(id: string): AsyncResult<Team> {
@@ -64,7 +49,7 @@ export function create_team_use_cases(
       return repository.delete_by_id(id);
     },
 
-    async delete_teams(ids: string[]): Promise<AsyncResult<number>> {
+    async delete_teams(ids: string[]): AsyncResult<number> {
       if (!ids || ids.length === 0) {
         return create_failure_result("At least one team ID is required");
       }
@@ -74,7 +59,7 @@ export function create_team_use_cases(
     async list_teams_by_organization(
       organization_id: string,
       options?: QueryOptions,
-    ): Promise<PaginatedAsyncResult<Team>> {
+    ): PaginatedAsyncResult<Team> {
       if (!organization_id || organization_id.trim().length === 0) {
         return create_failure_result("Organization ID is required");
       }

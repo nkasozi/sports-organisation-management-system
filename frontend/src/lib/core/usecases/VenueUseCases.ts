@@ -5,8 +5,7 @@ import type {
 } from "../entities/Venue";
 import type { VenueRepository, VenueFilter } from "../interfaces/ports";
 import type { QueryOptions } from "../interfaces/ports";
-import type { AsyncResult } from "../types/Result";
-import type { EntityListResult } from "../entities/BaseEntity";
+import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
 import type { VenueUseCasesPort } from "../interfaces/ports";
 import { create_success_result, create_failure_result } from "../types/Result";
 import { validate_venue_input } from "../entities/Venue";
@@ -21,21 +20,8 @@ export function create_venue_use_cases(
     async list(
       filter?: VenueFilter,
       options?: QueryOptions,
-    ): Promise<EntityListResult<Venue>> {
-      const result = await repository.find_all(filter, options);
-      if (!result.success) {
-        return {
-          success: false,
-          data: [],
-          total_count: 0,
-          error_message: result.error,
-        };
-      }
-      return {
-        success: true,
-        data: result.data?.items || [],
-        total_count: result.data?.total_count || 0,
-      };
+    ): PaginatedAsyncResult<Venue> {
+      return repository.find_all(filter, options);
     },
 
     async get_by_id(id: string): AsyncResult<Venue> {
@@ -67,7 +53,7 @@ export function create_venue_use_cases(
       return repository.delete_by_id(id);
     },
 
-    async delete_venues(ids: string[]): Promise<AsyncResult<number>> {
+    async delete_venues(ids: string[]): AsyncResult<number> {
       if (!ids || ids.length === 0) {
         return create_failure_result("At least one venue ID is required");
       }

@@ -200,7 +200,8 @@ describe("SystemUserUseCases", () => {
       const result = await use_cases.list();
 
       expect(result.success).toBe(true);
-      expect(result.data.length).toBe(2);
+      if (!result.success) return;
+      expect(result.data.items).toHaveLength(2);
     });
 
     it("should filter users by role", async () => {
@@ -212,8 +213,9 @@ describe("SystemUserUseCases", () => {
       const result = await use_cases.list({ role: "org_admin" });
 
       expect(result.success).toBe(true);
-      expect(result.data.length).toBe(1);
-      expect(result.data[0].role).toBe("org_admin");
+      if (!result.success) return;
+      expect(result.data.items).toHaveLength(1);
+      expect(result.data.items[0].role).toBe("org_admin");
     });
   });
 

@@ -10,8 +10,7 @@ import type {
   GameEventLogRepository,
   GameEventLogFilter,
 } from "../interfaces/ports";
-import type { EntityListResult } from "../entities/BaseEntity";
-import type { AsyncResult } from "../types/Result";
+import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
 import { create_failure_result } from "../types/Result";
 import type { GameEventLogUseCasesPort } from "../interfaces/ports";
 import { get_repository_container } from "../../infrastructure/container";
@@ -86,34 +85,16 @@ export function create_game_event_log_use_cases(
     async list(
       filter?: GameEventLogFilter,
       pagination?: { page: number; page_size: number },
-    ): Promise<EntityListResult<GameEventLog>> {
-      const result = await repository.find_all(filter, pagination);
-      if (!result.success) {
-        return {
-          success: false,
-          data: [],
-          total_count: 0,
-          error_message: result.error,
-        };
-      }
-      return {
-        success: true,
-        data: result.data?.items || [],
-        total_count: result.data?.total_count || 0,
-      };
+    ): PaginatedAsyncResult<GameEventLog> {
+      return repository.find_all(filter, pagination);
     },
 
     async get_events_for_live_game(
       live_game_log_id: string,
       options?: { page: number; page_size: number },
-    ): Promise<EntityListResult<GameEventLog>> {
+    ): PaginatedAsyncResult<GameEventLog> {
       if (!live_game_log_id || live_game_log_id.trim().length === 0) {
-        return {
-          success: false,
-          data: [],
-          total_count: 0,
-          error_message: "Live game log ID is required",
-        };
+        return create_failure_result("Live game log ID is required");
       }
       return repository.get_events_for_live_game(live_game_log_id, options);
     },
@@ -121,14 +102,9 @@ export function create_game_event_log_use_cases(
     async get_events_for_fixture(
       fixture_id: string,
       options?: { page: number; page_size: number },
-    ): Promise<EntityListResult<GameEventLog>> {
+    ): PaginatedAsyncResult<GameEventLog> {
       if (!fixture_id || fixture_id.trim().length === 0) {
-        return {
-          success: false,
-          data: [],
-          total_count: 0,
-          error_message: "Fixture ID is required",
-        };
+        return create_failure_result("Fixture ID is required");
       }
       return repository.get_events_for_fixture(fixture_id, options);
     },
@@ -136,42 +112,27 @@ export function create_game_event_log_use_cases(
     async get_events_for_player(
       player_id: string,
       options?: { page: number; page_size: number },
-    ): Promise<EntityListResult<GameEventLog>> {
+    ): PaginatedAsyncResult<GameEventLog> {
       if (!player_id || player_id.trim().length === 0) {
-        return {
-          success: false,
-          data: [],
-          total_count: 0,
-          error_message: "Player ID is required",
-        };
+        return create_failure_result("Player ID is required");
       }
       return repository.get_events_for_player(player_id, options);
     },
 
     async get_scoring_events_for_live_game(
       live_game_log_id: string,
-    ): Promise<EntityListResult<GameEventLog>> {
+    ): AsyncResult<GameEventLog[]> {
       if (!live_game_log_id || live_game_log_id.trim().length === 0) {
-        return {
-          success: false,
-          data: [],
-          total_count: 0,
-          error_message: "Live game log ID is required",
-        };
+        return create_failure_result("Live game log ID is required");
       }
       return repository.get_scoring_events_for_live_game(live_game_log_id);
     },
 
     async get_card_events_for_live_game(
       live_game_log_id: string,
-    ): Promise<EntityListResult<GameEventLog>> {
+    ): AsyncResult<GameEventLog[]> {
       if (!live_game_log_id || live_game_log_id.trim().length === 0) {
-        return {
-          success: false,
-          data: [],
-          total_count: 0,
-          error_message: "Live game log ID is required",
-        };
+        return create_failure_result("Live game log ID is required");
       }
       return repository.get_card_events_for_live_game(live_game_log_id);
     },

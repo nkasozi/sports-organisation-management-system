@@ -4,8 +4,7 @@ import type {
   UpdateGameEventLogInput,
 } from "../../../../entities/GameEventLog";
 import type { GameEventLogFilter } from "../../external/repositories/GameEventLogRepository";
-import type { EntityListResult } from "../../../../entities/BaseEntity";
-import type { AsyncResult } from "../../../../types/Result";
+import type { AsyncResult, PaginatedAsyncResult } from "../../../../types/Result";
 import type { BaseUseCasesPort } from "./BaseUseCasesPort";
 
 export interface GameEventLogUseCasesPort extends BaseUseCasesPort<
@@ -17,25 +16,25 @@ export interface GameEventLogUseCasesPort extends BaseUseCasesPort<
   get_events_for_live_game(
     live_game_log_id: string,
     options?: { page: number; page_size: number },
-  ): Promise<EntityListResult<GameEventLog>>;
+  ): PaginatedAsyncResult<GameEventLog>;
 
   get_events_for_fixture(
     fixture_id: string,
     options?: { page: number; page_size: number },
-  ): Promise<EntityListResult<GameEventLog>>;
+  ): PaginatedAsyncResult<GameEventLog>;
 
   get_events_for_player(
     player_id: string,
     options?: { page: number; page_size: number },
-  ): Promise<EntityListResult<GameEventLog>>;
+  ): PaginatedAsyncResult<GameEventLog>;
 
   get_scoring_events_for_live_game(
     live_game_log_id: string,
-  ): Promise<EntityListResult<GameEventLog>>;
+  ): AsyncResult<GameEventLog[]>;
 
   get_card_events_for_live_game(
     live_game_log_id: string,
-  ): Promise<EntityListResult<GameEventLog>>;
+  ): AsyncResult<GameEventLog[]>;
 
   void_event(
     id: string,

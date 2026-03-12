@@ -32,12 +32,12 @@ export const search_audit_logs = query({
       page_size = AUDIT_LOG_PAGE_SIZE,
     } = args;
 
-    const user = await try_auth(ctx);
+    const auth_result = await try_auth(ctx);
 
     let all_logs = await ctx.db.query("audit_logs").collect();
 
-    if (user) {
-      const scope_filter = build_scope_filter(user, "auditlog");
+    if (auth_result.success) {
+      const scope_filter = build_scope_filter(auth_result.data, "auditlog");
       if (scope_filter.organization_id) {
         all_logs = all_logs.filter(
           (log) => log.organization_id === scope_filter.organization_id,
@@ -126,8 +126,8 @@ export const get_recent_audit_logs = query({
 
     let all_logs = await ctx.db.query("audit_logs").collect();
 
-    if (user) {
-      const scope_filter = build_scope_filter(user, "auditlog");
+    if (user.success) {
+      const scope_filter = build_scope_filter(user.data, "auditlog");
       if (scope_filter.organization_id) {
         all_logs = all_logs.filter(
           (log) => log.organization_id === scope_filter.organization_id,

@@ -82,7 +82,7 @@ export async function check_fixture_can_start(
   const lineups_result = await lineup_use_cases.list({
     fixture_id: fixture.id,
   });
-  const lineups = lineups_result.data || [];
+  const lineups = lineups_result.success ? lineups_result.data.items : [];
 
   const home_lineup = lineups.find(
     (l: any) => l.team_id === fixture.home_team_id,
@@ -267,7 +267,7 @@ export async function auto_generate_lineups_if_possible(
     status: "active",
   });
 
-  const active_memberships = (memberships_result.data || []).filter(
+  const active_memberships = (memberships_result.success ? memberships_result.data.items : []).filter(
     (m: PlayerTeamMembership) => m.status === "active",
   );
 
@@ -316,7 +316,7 @@ export async function auto_generate_lineups_if_possible(
   const player_promises = player_ids.map((player_id: string) =>
     player_use_cases.get_by_id(player_id),
   );
-  const player_results = await Promise.all(player_promises);
+  const player_results: Result<Player, string>[] = await Promise.all(player_promises);
 
   const players: Player[] = player_results
     .filter(
@@ -334,7 +334,7 @@ export async function auto_generate_lineups_if_possible(
     page_number: 1,
     page_size: 100,
   });
-  const positions = positions_result.data || [];
+  const positions = positions_result.success ? positions_result.data.items : [];
   console.log(
     "[fixtureStartChecks] Fetched",
     positions.length,
@@ -569,7 +569,7 @@ async function find_previous_lineup_for_team(
     return { success: false };
   }
 
-  const completed_fixtures = fixtures_result.data
+  const completed_fixtures = (fixtures_result.data?.items ?? [])
     .filter((fixture: Fixture) => fixture.id !== current_fixture.id)
     .sort((fixture_a: Fixture, fixture_b: Fixture) => {
       const date_a = fixture_a.scheduled_date || fixture_a.created_at || "";
@@ -597,8 +597,7 @@ async function find_previous_lineup_for_team(
 
   if (
     !lineups_result.success ||
-    !lineups_result.data ||
-    lineups_result.data.length === 0
+    !lineups_result.data?.items?.length
   ) {
     console.log(
       "[fixtureStartChecks] No lineup found for team in previous fixture",
@@ -606,7 +605,7 @@ async function find_previous_lineup_for_team(
     return { success: false };
   }
 
-  const previous_lineup = lineups_result.data[0];
+  const previous_lineup = lineups_result.data!.items[0];
   console.log(
     "[fixtureStartChecks] Found previous lineup with",
     previous_lineup.selected_players.length,

@@ -93,8 +93,9 @@ describe("TeamProfileUseCases", () => {
       const result = await use_cases.list();
 
       expect(result.success).toBe(true);
-      expect(result.data.length).toBe(2);
-      expect(result.total_count).toBe(2);
+      if (!result.success) return;
+      expect(result.data.items).toHaveLength(2);
+      expect(result.data.total_count).toBe(2);
       expect(mock_repository.find_all).toHaveBeenCalledOnce();
     });
 
@@ -107,7 +108,8 @@ describe("TeamProfileUseCases", () => {
       const result = await use_cases.list({ team_id: "team_1" });
 
       expect(result.success).toBe(true);
-      expect(result.data.length).toBe(1);
+      if (!result.success) return;
+      expect(result.data.items).toHaveLength(1);
       expect(mock_repository.find_all).toHaveBeenCalledWith(
         expect.objectContaining({ team_id: "team_1" }),
         undefined,
@@ -125,7 +127,8 @@ describe("TeamProfileUseCases", () => {
       const result = await use_cases.list({ visibility: "public" });
 
       expect(result.success).toBe(true);
-      expect(result.data.length).toBe(1);
+      if (!result.success) return;
+      expect(result.data.items).toHaveLength(1);
       expect(mock_repository.find_all).toHaveBeenCalledWith(
         expect.objectContaining({ visibility: "public" }),
         undefined,
@@ -151,8 +154,8 @@ describe("TeamProfileUseCases", () => {
       const result = await use_cases.list();
 
       expect(result.success).toBe(false);
-      expect(result.error_message).toBe("Database error");
-      expect(result.data.length).toBe(0);
+      if (result.success) return;
+      expect(result.error).toBe("Database error");
     });
   });
 
@@ -432,7 +435,8 @@ describe("TeamProfileUseCases", () => {
       const result = await use_cases.list_public_profiles();
 
       expect(result.success).toBe(true);
-      expect(result.data.length).toBe(1);
+      if (!result.success) return;
+      expect(result.data.items).toHaveLength(1);
       expect(mock_repository.find_public_profiles).toHaveBeenCalledOnce();
     });
 
@@ -457,7 +461,8 @@ describe("TeamProfileUseCases", () => {
       const result = await use_cases.list_public_profiles();
 
       expect(result.success).toBe(false);
-      expect(result.error_message).toBe("Database error");
+      if (result.success) return;
+      expect(result.error).toBe("Database error");
     });
   });
 });

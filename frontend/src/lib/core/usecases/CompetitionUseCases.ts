@@ -9,7 +9,6 @@ import type {
 } from "../interfaces/ports";
 import type { QueryOptions } from "../interfaces/ports";
 import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
-import type { EntityListResult } from "../entities/BaseEntity";
 import type { CompetitionUseCasesPort } from "../interfaces/ports";
 import { create_success_result, create_failure_result } from "../types/Result";
 import { validate_competition_input } from "../entities/Competition";
@@ -41,21 +40,8 @@ export function create_competition_use_cases_with_stage_lifecycle(
     async list(
       filter?: CompetitionFilter,
       options?: QueryOptions,
-    ): Promise<EntityListResult<Competition>> {
-      const result = await repository.find_all(filter, options);
-      if (!result.success) {
-        return {
-          success: false,
-          data: [],
-          total_count: 0,
-          error_message: result.error,
-        };
-      }
-      return {
-        success: true,
-        data: result.data?.items || [],
-        total_count: result.data?.total_count || 0,
-      };
+    ): PaginatedAsyncResult<Competition> {
+      return repository.find_all(filter, options);
     },
 
     async get_by_id(id: string): AsyncResult<Competition> {
@@ -152,7 +138,7 @@ export function create_competition_use_cases_with_stage_lifecycle(
       return repository.delete_by_id(id);
     },
 
-    async delete_competitions(ids: string[]): Promise<AsyncResult<number>> {
+    async delete_competitions(ids: string[]): AsyncResult<number> {
       if (!ids || ids.length === 0) {
         return create_failure_result("At least one competition ID is required");
       }
@@ -183,7 +169,7 @@ export function create_competition_use_cases_with_stage_lifecycle(
     async list_competitions_by_organization(
       organization_id: string,
       options?: QueryOptions,
-    ): Promise<PaginatedAsyncResult<Competition>> {
+    ): PaginatedAsyncResult<Competition> {
       if (!organization_id || organization_id.trim().length === 0) {
         return create_failure_result("Organization ID is required");
       }

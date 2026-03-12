@@ -9,7 +9,6 @@ import type {
 } from "../interfaces/ports";
 import type { QueryOptions } from "../interfaces/ports";
 import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
-import type { EntityListResult } from "../entities/BaseEntity";
 import type { OrganizationUseCasesPort } from "../interfaces/ports";
 import { create_success_result, create_failure_result } from "../types/Result";
 import { validate_organization_input } from "../entities/Organization";
@@ -24,21 +23,8 @@ export function create_organization_use_cases(
     async list(
       filter?: OrganizationFilter,
       options?: QueryOptions,
-    ): Promise<EntityListResult<Organization>> {
-      const result = await repository.find_all(filter, options);
-      if (!result.success) {
-        return {
-          success: false,
-          data: [],
-          total_count: 0,
-          error_message: result.error,
-        };
-      }
-      return {
-        success: true,
-        data: result.data?.items || [],
-        total_count: result.data?.total_count || 0,
-      };
+    ): PaginatedAsyncResult<Organization> {
+      return repository.find_all(filter, options);
     },
 
     async get_by_id(id: string): AsyncResult<Organization> {
@@ -73,7 +59,7 @@ export function create_organization_use_cases(
       return repository.delete_by_id(id);
     },
 
-    async delete_organizations(ids: string[]): Promise<AsyncResult<number>> {
+    async delete_organizations(ids: string[]): AsyncResult<number> {
       if (!ids || ids.length === 0) {
         return create_failure_result(
           "At least one organization ID is required",

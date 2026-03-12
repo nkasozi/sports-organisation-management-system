@@ -42,30 +42,30 @@ export interface ActivityUseCasesPort extends BaseUseCasesPort<
   list_by_organization(
     organization_id: string,
     options?: QueryOptions,
-  ): Promise<PaginatedAsyncResult<Activity>>;
+  ): PaginatedAsyncResult<Activity>;
 
   list_by_date_range(
     organization_id: string,
     date_range: CalendarDateRange,
     options?: QueryOptions,
-  ): Promise<PaginatedAsyncResult<Activity>>;
+  ): PaginatedAsyncResult<Activity>;
 
   list_by_category(
     organization_id: string,
     category_id: string,
     options?: QueryOptions,
-  ): Promise<PaginatedAsyncResult<Activity>>;
+  ): PaginatedAsyncResult<Activity>;
 
   list_by_team(
     organization_id: string,
     team_id: string,
     options?: QueryOptions,
-  ): Promise<PaginatedAsyncResult<Activity>>;
+  ): PaginatedAsyncResult<Activity>;
 
   list_by_competition(
     competition_id: string,
     options?: QueryOptions,
-  ): Promise<PaginatedAsyncResult<Activity>>;
+  ): PaginatedAsyncResult<Activity>;
 
   get_calendar_events(
     organization_id: string,

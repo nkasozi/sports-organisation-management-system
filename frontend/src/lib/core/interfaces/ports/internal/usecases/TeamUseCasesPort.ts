@@ -17,9 +17,9 @@ export interface TeamUseCasesPort extends BaseUseCasesPort<
   UpdateTeamInput,
   TeamFilter
 > {
-  delete_teams(ids: string[]): Promise<AsyncResult<number>>;
+  delete_teams(ids: string[]): AsyncResult<number>;
   list_teams_by_organization(
     organization_id: string,
     options?: QueryOptions,
-  ): Promise<PaginatedAsyncResult<Team>>;
+  ): PaginatedAsyncResult<Team>;
 }

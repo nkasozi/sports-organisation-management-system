@@ -35,52 +35,18 @@ import {
   is_signed_in,
   is_clerk_loaded,
 } from "$lib/adapters/iam/clerkAuthService";
+import {
+  SHARED_ENTITY_CATEGORY_MAP,
+  SHARED_ROLE_PERMISSIONS,
+} from "$convex/shared_permission_definitions";
 import type {
   SharedEntityType,
-  SharedEntityCategoryMap,
+  SharedCrudPermissions,
 } from "$convex/shared_permission_definitions";
 import { normalize_to_entity_type } from "$lib/core/interfaces/ports/external/iam/AuthorizationPort";
 
-const ENTITY_DATA_CATEGORY_MAP: SharedEntityCategoryMap = {
-  organization: "root_level",
-  sport: "root_level",
-  gender: "root_level",
-  competitionformat: "root_level",
-  identificationtype: "root_level",
-  gameofficialrole: "root_level",
-  gameeventtype: "root_level",
-  teamstaffrole: "root_level",
-  playerposition: "root_level",
-  help: "root_level",
-  settings: "org_administrator_level",
-  systemsettings: "org_administrator_level",
-  auditlog: "org_administrator_level",
-  systemuser: "org_administrator_level",
-  competition: "organisation_level",
-  team: "team_level",
-  official: "organisation_level",
-  venue: "organisation_level",
-  fixture: "organisation_level",
-  fixturedetailssetup: "organisation_level",
-  livegamelog: "organisation_level",
-  gameeventlog: "organisation_level",
-  playerteammembership: "organisation_level",
-  playerteamtransferhistory: "organisation_level",
-  teamstaff: "team_level",
-  fixturelineup: "player_level",
-  competitionteam: "team_level",
-  player: "player_level",
-  playerprofile: "public_level",
-  identification: "public_level",
-  qualification: "public_level",
-  jerseycolor: "public_level",
-  profilelink: "public_level",
-  activitycategory: "public_level",
-  teamprofile: "public_level",
-};
-
 function get_entity_data_category(entity_type: SharedEntityType): DataCategory {
-  return ENTITY_DATA_CATEGORY_MAP[entity_type] || "organisation_level";
+  return SHARED_ENTITY_CATEGORY_MAP[entity_type] || "organisation_level";
 }
 
 function check_entity_permission(
@@ -94,107 +60,32 @@ function check_entity_permission(
   return category_permissions[action];
 }
 
-const NO_PERMISSIONS: CategoryPermissions = {
-  create: false,
-  read: false,
-  update: false,
-  delete: false,
-};
-
-const FULL_PERMISSIONS: CategoryPermissions = {
-  create: true,
-  read: true,
-  update: true,
-  delete: true,
-};
-
-const READ_ONLY_PERMISSIONS: CategoryPermissions = {
-  create: false,
-  read: true,
-  update: false,
-  delete: false,
-};
-
-const READ_UPDATE_PERMISSIONS: CategoryPermissions = {
-  create: false,
-  read: true,
-  update: true,
-  delete: false,
-};
-
-const CREATE_READ_UPDATE_NO_DELETE_PERMISSIONS: CategoryPermissions = {
-  create: true,
-  read: true,
-  update: true,
-  delete: false,
-};
-
-const ROLE_PERMISSION_MAP: Record<
-  UserRole,
-  Record<DataCategory, CategoryPermissions>
-> = {
-  super_admin: {
-    root_level: FULL_PERMISSIONS,
-    org_administrator_level: FULL_PERMISSIONS,
-    organisation_level: FULL_PERMISSIONS,
-    team_level: FULL_PERMISSIONS,
-    player_level: FULL_PERMISSIONS,
-    public_level: FULL_PERMISSIONS,
-  },
-  org_admin: {
-    root_level: READ_ONLY_PERMISSIONS,
-    org_administrator_level: FULL_PERMISSIONS,
-    organisation_level: FULL_PERMISSIONS,
-    team_level: FULL_PERMISSIONS,
-    player_level: FULL_PERMISSIONS,
-    public_level: FULL_PERMISSIONS,
-  },
-  officials_manager: {
-    root_level: READ_ONLY_PERMISSIONS,
-    org_administrator_level: NO_PERMISSIONS,
-    organisation_level: READ_UPDATE_PERMISSIONS,
-    team_level: CREATE_READ_UPDATE_NO_DELETE_PERMISSIONS,
-    player_level: READ_ONLY_PERMISSIONS,
-    public_level: FULL_PERMISSIONS,
-  },
-  team_manager: {
-    root_level: READ_ONLY_PERMISSIONS,
-    org_administrator_level: NO_PERMISSIONS,
-    organisation_level: READ_ONLY_PERMISSIONS,
-    team_level: READ_UPDATE_PERMISSIONS,
-    player_level: CREATE_READ_UPDATE_NO_DELETE_PERMISSIONS,
-    public_level: FULL_PERMISSIONS,
-  },
-  official: {
-    root_level: READ_ONLY_PERMISSIONS,
-    org_administrator_level: NO_PERMISSIONS,
-    organisation_level: READ_UPDATE_PERMISSIONS,
-    team_level: READ_ONLY_PERMISSIONS,
-    player_level: READ_ONLY_PERMISSIONS,
-    public_level: FULL_PERMISSIONS,
-  },
-  player: {
-    root_level: READ_ONLY_PERMISSIONS,
-    org_administrator_level: NO_PERMISSIONS,
-    organisation_level: READ_ONLY_PERMISSIONS,
-    team_level: READ_ONLY_PERMISSIONS,
-    player_level: READ_UPDATE_PERMISSIONS,
-    public_level: FULL_PERMISSIONS,
-  },
-  public_viewer: {
-    root_level: READ_ONLY_PERMISSIONS,
-    org_administrator_level: NO_PERMISSIONS,
-    organisation_level: READ_ONLY_PERMISSIONS,
-    team_level: READ_ONLY_PERMISSIONS,
-    player_level: READ_ONLY_PERMISSIONS,
-    public_level: READ_ONLY_PERMISSIONS,
-  },
-};
+function adapt_shared_permissions(
+  shared: SharedCrudPermissions,
+): CategoryPermissions {
+  return {
+    create: shared.can_create,
+    read: shared.can_read,
+    update: shared.can_update,
+    delete: shared.can_delete,
+  };
+}
 
 function get_role_permissions_sync(
   role: UserRole,
 ): Record<DataCategory, CategoryPermissions> {
-  return ROLE_PERMISSION_MAP[role] || ROLE_PERMISSION_MAP.player;
+  const shared_perms =
+    SHARED_ROLE_PERMISSIONS[role] || SHARED_ROLE_PERMISSIONS.player;
+  return {
+    root_level: adapt_shared_permissions(shared_perms.root_level),
+    org_administrator_level: adapt_shared_permissions(
+      shared_perms.org_administrator_level,
+    ),
+    organisation_level: adapt_shared_permissions(shared_perms.organisation_level),
+    team_level: adapt_shared_permissions(shared_perms.team_level),
+    player_level: adapt_shared_permissions(shared_perms.player_level),
+    public_level: adapt_shared_permissions(shared_perms.public_level),
+  };
 }
 
 export interface UserProfile {
@@ -646,6 +537,7 @@ function create_auth_store() {
         can_reset_demo: false,
         can_view_audit_logs: false,
         can_access_dashboard: false,
+        can_switch_profiles: false,
         audit_logs_scope: "none",
       };
     }
@@ -654,10 +546,13 @@ function create_auth_store() {
     const is_super_admin = role === "super_admin";
     const is_org_admin = role === "org_admin";
 
+    const is_not_signed_in = role === "public_viewer";
+
     return {
       can_reset_demo: is_super_admin,
       can_view_audit_logs: is_super_admin || is_org_admin,
       can_access_dashboard: true,
+      can_switch_profiles: is_super_admin || is_not_signed_in,
       audit_logs_scope: is_super_admin
         ? "all"
         : is_org_admin
@@ -838,17 +733,20 @@ const feature_access = derived(auth_store, ($auth) => {
       can_reset_demo: false,
       can_view_audit_logs: false,
       can_access_dashboard: false,
+      can_switch_profiles: false,
       audit_logs_scope: "none" as const,
     };
   }
   const role = $auth.current_profile.role;
   const is_super_admin = role === "super_admin";
   const is_org_admin = role === "org_admin";
+  const is_not_signed_in = role === "public_viewer";
 
   return {
     can_reset_demo: is_super_admin,
     can_view_audit_logs: is_super_admin || is_org_admin,
     can_access_dashboard: true,
+    can_switch_profiles: is_super_admin || is_not_signed_in,
     audit_logs_scope: is_super_admin
       ? ("all" as const)
       : is_org_admin
@@ -856,6 +754,13 @@ const feature_access = derived(auth_store, ($auth) => {
         : ("none" as const),
   };
 });
+
+export const can_switch_profiles = derived(
+  auth_store,
+  ($auth) =>
+    $auth.current_profile?.role === "super_admin" ||
+    $auth.current_profile?.role === "public_viewer",
+);
 
 function get_entity_authorization_level(
   entity_type: string,

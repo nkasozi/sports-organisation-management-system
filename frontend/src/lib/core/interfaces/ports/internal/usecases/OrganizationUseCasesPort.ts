@@ -13,5 +13,5 @@ export interface OrganizationUseCasesPort extends BaseUseCasesPort<
   UpdateOrganizationInput,
   OrganizationFilter
 > {
-  delete_organizations(ids: string[]): Promise<AsyncResult<number>>;
+  delete_organizations(ids: string[]): AsyncResult<number>;
 }

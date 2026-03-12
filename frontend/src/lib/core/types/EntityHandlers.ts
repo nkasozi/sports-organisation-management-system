@@ -1,5 +1,5 @@
-import type { BaseEntity, EntityListResult } from "../entities/BaseEntity";
-import type { AsyncResult } from "../types/Result";
+import type { BaseEntity } from "../entities/BaseEntity";
+import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
 
 export type CrudFunctionality = "create" | "edit" | "delete";
 
@@ -31,11 +31,7 @@ export type EntityDeleteHandler = (id: string) => AsyncResult<boolean>;
 export type EntityListHandler<TEntity extends BaseEntity = BaseEntity> = (
   filter?: Record<string, string>,
   options?: { page_number?: number; page_size?: number },
-) => Promise<
-  | EntityListResult<TEntity>
-  | { success: true; data: { items: TEntity[]; total_count: number } }
-  | { success: false; error: string }
->;
+) => PaginatedAsyncResult<TEntity>;
 
 export type EntityGetByIdHandler<TEntity extends BaseEntity = BaseEntity> = (
   id: string,

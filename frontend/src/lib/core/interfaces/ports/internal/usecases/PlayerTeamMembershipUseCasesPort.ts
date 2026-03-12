@@ -20,10 +20,10 @@ export interface PlayerTeamMembershipUseCasesPort extends BaseUseCasesPort<
   list_memberships_by_team(
     team_id: string,
     options?: QueryOptions,
-  ): Promise<PaginatedAsyncResult<PlayerTeamMembership>>;
+  ): PaginatedAsyncResult<PlayerTeamMembership>;
   list_memberships_by_player(
     player_id: string,
     options?: QueryOptions,
-  ): Promise<PaginatedAsyncResult<PlayerTeamMembership>>;
-  delete_memberships(ids: string[]): Promise<AsyncResult<number>>;
+  ): PaginatedAsyncResult<PlayerTeamMembership>;
+  delete_memberships(ids: string[]): AsyncResult<number>;
 }

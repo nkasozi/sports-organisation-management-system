@@ -11,7 +11,7 @@ import type {
 import type { QueryOptions } from "../interfaces/ports";
 import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
 import { create_success_result, create_failure_result } from "../types/Result";
-import type { EntityListResult } from "./BaseUseCases";
+
 import { get_repository_container } from "../../infrastructure/container";
 import type { PlayerTeamMembershipUseCasesPort } from "../interfaces/ports";
 
@@ -24,23 +24,8 @@ export function create_player_team_membership_use_cases(
     async list(
       filter?: PlayerTeamMembershipFilter,
       options?: QueryOptions,
-    ): Promise<EntityListResult<PlayerTeamMembership>> {
-      const result = await repository.find_all(filter, options);
-
-      if (!result.success) {
-        return {
-          success: false,
-          data: [],
-          total_count: 0,
-          error_message: result.error,
-        };
-      }
-
-      return {
-        success: true,
-        data: result.data?.items || [],
-        total_count: result.data?.total_count || 0,
-      };
+    ): PaginatedAsyncResult<PlayerTeamMembership> {
+      return repository.find_all(filter, options);
     },
 
     async get_by_id(id: string): AsyncResult<PlayerTeamMembership> {
@@ -85,7 +70,7 @@ export function create_player_team_membership_use_cases(
     async list_memberships_by_team(
       team_id: string,
       options?: QueryOptions,
-    ): Promise<PaginatedAsyncResult<PlayerTeamMembership>> {
+    ): PaginatedAsyncResult<PlayerTeamMembership> {
       if (!team_id || team_id.trim().length === 0) {
         return create_failure_result("Team ID is required");
       }
@@ -96,7 +81,7 @@ export function create_player_team_membership_use_cases(
     async list_memberships_by_player(
       player_id: string,
       options?: QueryOptions,
-    ): Promise<PaginatedAsyncResult<PlayerTeamMembership>> {
+    ): PaginatedAsyncResult<PlayerTeamMembership> {
       if (!player_id || player_id.trim().length === 0) {
         return create_failure_result("Player ID is required");
       }
@@ -104,7 +89,7 @@ export function create_player_team_membership_use_cases(
       return repository.find_by_player(player_id, options);
     },
 
-    async delete_memberships(ids: string[]): Promise<AsyncResult<number>> {
+    async delete_memberships(ids: string[]): AsyncResult<number> {
       if (!ids || ids.length === 0) {
         return create_failure_result("At least one membership ID is required");
       }

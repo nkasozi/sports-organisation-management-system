@@ -4,7 +4,6 @@ import type {
   UpdateFixtureLineupInput,
 } from "../../core/entities/FixtureLineup";
 import type { FixtureLineupFilter } from "../../core/interfaces/ports";
-import type { EntityListResult } from "../../core/entities/BaseEntity";
 import type { AsyncResult } from "../../core/types/Result";
 import { get_fixture_lineup_use_cases } from "../../core/usecases/FixtureLineupUseCases";
 

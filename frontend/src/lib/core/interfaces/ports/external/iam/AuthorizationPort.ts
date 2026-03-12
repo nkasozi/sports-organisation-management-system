@@ -79,6 +79,7 @@ export interface FeatureAccess {
   can_reset_demo: boolean;
   can_view_audit_logs: boolean;
   can_access_dashboard: boolean;
+  can_switch_profiles: boolean;
   audit_logs_scope: "all" | "organization" | "team" | "none";
 }
 

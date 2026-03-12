@@ -180,14 +180,14 @@
       }
     });
 
-    const first_sync_result = await sync_store.sync_now();
+    const first_sync_result = await sync_store.sync_now("pull");
     if (!first_sync_result.success && first_sync_result.errors.length > 0) {
       const error_msg =
         first_sync_result.errors[0]?.error || "Unknown sync error";
       return cleanup_on_failure(`Sync failed: ${error_msg}`);
     }
 
-    const second_sync_result = await sync_store.sync_now();
+    const second_sync_result = await sync_store.sync_now("pull");
     if (!second_sync_result.success && second_sync_result.errors.length > 0) {
       console.warn("[Layout] Second sync pass had errors, continuing anyway");
     }

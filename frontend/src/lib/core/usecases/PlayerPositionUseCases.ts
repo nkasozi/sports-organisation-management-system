@@ -10,7 +10,6 @@ import type { QueryOptions } from "../interfaces/ports";
 import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
 import { create_failure_result, create_success_result } from "../types/Result";
 import { get_repository_container } from "../../infrastructure/container";
-import type { EntityListResult } from "./BaseUseCases";
 import type { PlayerPositionUseCasesPort } from "../interfaces/ports";
 
 export type PlayerPositionUseCases = PlayerPositionUseCasesPort;
@@ -21,28 +20,9 @@ export function create_player_position_use_cases(
   return {
     async list(
       filter?: PlayerPositionFilter,
-      pagination?: { page: number; page_size: number },
-    ): Promise<EntityListResult<PlayerPosition>> {
-      const page_number = pagination?.page ?? 1;
-      const page_size = pagination?.page_size ?? 10;
-      const query_options = { page_number, page_size };
-
-      const positions_result = await repository.find_all(filter, query_options);
-
-      if (!positions_result.success) {
-        return {
-          success: false,
-          data: [],
-          total_count: 0,
-          error_message: positions_result.error,
-        };
-      }
-
-      return {
-        success: true,
-        data: positions_result.data?.items || [],
-        total_count: positions_result.data?.total_count || 0,
-      };
+      pagination?: QueryOptions,
+    ): PaginatedAsyncResult<PlayerPosition> {
+      return repository.find_all(filter, pagination);
     },
 
     async get_by_id(id: string): AsyncResult<PlayerPosition> {
@@ -148,29 +128,11 @@ export function create_player_position_use_cases(
 
     async list_positions_by_sport(
       sport_type: string,
-    ): Promise<EntityListResult<PlayerPosition>> {
+    ): AsyncResult<PlayerPosition[]> {
       if (!sport_type || sport_type.trim() === "") {
-        return {
-          success: false,
-          data: [],
-          total_count: 0,
-          error_message: "Sport type is required",
-        };
+        return { success: false, error: "Sport type is required" };
       }
-      const positions_result = await repository.find_by_sport_type(sport_type);
-      if (!positions_result.success) {
-        return {
-          success: false,
-          data: [],
-          total_count: 0,
-          error_message: positions_result.error,
-        };
-      }
-      return {
-        success: true,
-        data: positions_result.data,
-        total_count: positions_result.data.length,
-      };
+      return repository.find_by_sport_type(sport_type);
     },
   };
 }

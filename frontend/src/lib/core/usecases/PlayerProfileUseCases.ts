@@ -8,8 +8,7 @@ import type {
   PlayerProfileFilter,
 } from "../interfaces/ports";
 import type { QueryOptions } from "../interfaces/ports";
-import type { EntityListResult } from "../entities/BaseEntity";
-import type { AsyncResult } from "../types/Result";
+import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
 import { create_failure_result } from "../types/Result";
 import { validate_player_profile_input } from "../entities/PlayerProfile";
 import { get_repository_container } from "../../infrastructure/container";
@@ -18,7 +17,7 @@ export interface PlayerProfileUseCases {
   list(
     filter?: PlayerProfileFilter | Record<string, string>,
     options?: QueryOptions,
-  ): Promise<EntityListResult<PlayerProfile>>;
+  ): PaginatedAsyncResult<PlayerProfile>;
   get_by_id(id: string): AsyncResult<PlayerProfile>;
   get_by_player_id(player_id: string): AsyncResult<PlayerProfile>;
   get_by_slug(slug: string): AsyncResult<PlayerProfile>;
@@ -30,7 +29,7 @@ export interface PlayerProfileUseCases {
   delete(id: string): AsyncResult<boolean>;
   list_public_profiles(
     options?: QueryOptions,
-  ): Promise<EntityListResult<PlayerProfile>>;
+  ): PaginatedAsyncResult<PlayerProfile>;
 }
 
 export function create_player_profile_use_cases(
@@ -40,24 +39,9 @@ export function create_player_profile_use_cases(
     async list(
       filter?: PlayerProfileFilter | Record<string, string>,
       options?: QueryOptions,
-    ): Promise<EntityListResult<PlayerProfile>> {
+    ): PaginatedAsyncResult<PlayerProfile> {
       if (!filter) {
-        const result = await repository.find_all(undefined, options);
-
-        if (!result.success) {
-          return {
-            success: false,
-            data: [],
-            total_count: 0,
-            error_message: result.error,
-          };
-        }
-
-        return {
-          success: true,
-          data: result.data?.items || [],
-          total_count: result.data?.total_count || 0,
-        };
+        return repository.find_all(undefined, options);
       }
 
       const typed_filter: PlayerProfileFilter = {
@@ -66,22 +50,7 @@ export function create_player_profile_use_cases(
         status: filter?.status as PlayerProfileFilter["status"],
       };
 
-      const result = await repository.find_all(typed_filter, options);
-
-      if (!result.success) {
-        return {
-          success: false,
-          data: [],
-          total_count: 0,
-          error_message: result.error,
-        };
-      }
-
-      return {
-        success: true,
-        data: result.data?.items || [],
-        total_count: result.data?.total_count || 0,
-      };
+      return repository.find_all(typed_filter, options);
     },
 
     async get_by_id(id: string): AsyncResult<PlayerProfile> {
@@ -153,23 +122,8 @@ export function create_player_profile_use_cases(
 
     async list_public_profiles(
       options?: QueryOptions,
-    ): Promise<EntityListResult<PlayerProfile>> {
-      const result = await repository.find_public_profiles(options);
-
-      if (!result.success) {
-        return {
-          success: false,
-          data: [],
-          total_count: 0,
-          error_message: result.error,
-        };
-      }
-
-      return {
-        success: true,
-        data: result.data?.items || [],
-        total_count: result.data?.total_count || 0,
-      };
+    ): PaginatedAsyncResult<PlayerProfile> {
+      return repository.find_public_profiles(options);
     },
   };
 }

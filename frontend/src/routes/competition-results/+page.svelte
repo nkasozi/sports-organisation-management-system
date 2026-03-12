@@ -51,6 +51,7 @@
   import { is_public_viewer } from "$lib/presentation/stores/auth";
   import { fetch_public_data_from_convex } from "$lib/infrastructure/sync/convexPublicDataService";
   import CompetitionStandingsTable from "$lib/presentation/components/competition/CompetitionStandingsTable.svelte";
+  import Pagination from "$lib/presentation/components/ui/Pagination.svelte";
   import {
     build_competition_stage_results_sections,
     calculate_team_standings,
@@ -92,6 +93,35 @@
   let is_using_cached_data: boolean = false;
 
   let active_tab: "standings" | "fixtures" | "results" | "stats" = "standings";
+
+  const FIXTURES_PAGE_SIZE_OPTIONS = [10, 20, 50];
+  const DEFAULT_FIXTURES_PER_PAGE = 10;
+  let upcoming_page = 1;
+  let upcoming_per_page = DEFAULT_FIXTURES_PER_PAGE;
+  let results_page = 1;
+  let results_per_page = DEFAULT_FIXTURES_PER_PAGE;
+
+  $: upcoming_total_pages = Math.max(
+    1,
+    Math.ceil(upcoming_fixtures.length / upcoming_per_page),
+  );
+  $: paginated_upcoming = upcoming_fixtures.slice(
+    (upcoming_page - 1) * upcoming_per_page,
+    upcoming_page * upcoming_per_page,
+  );
+  $: results_total_pages = Math.max(
+    1,
+    Math.ceil(completed_fixtures.length / results_per_page),
+  );
+  $: paginated_completed = completed_fixtures.slice(
+    (results_page - 1) * results_per_page,
+    results_page * results_per_page,
+  );
+  $: {
+    active_tab;
+    upcoming_page = 1;
+    results_page = 1;
+  }
 
   type CardSortMode = "total" | "yellow" | "red";
   let stats_team_filter: string = "all";
@@ -202,6 +232,27 @@
   $: displayed_team_fixtures = show_all_competitions_fixtures
     ? team_fixtures_all_competitions
     : team_fixtures_in_competition;
+
+  let team_fixtures_page = 1;
+  let team_fixtures_per_page = 10;
+
+  $: sorted_team_fixtures = [...displayed_team_fixtures].sort(
+    (a, b) =>
+      new Date(a.scheduled_date).getTime() -
+      new Date(b.scheduled_date).getTime(),
+  );
+  $: team_fixtures_total_pages = Math.max(
+    1,
+    Math.ceil(sorted_team_fixtures.length / team_fixtures_per_page),
+  );
+  $: paginated_team_fixtures = sorted_team_fixtures.slice(
+    (team_fixtures_page - 1) * team_fixtures_per_page,
+    team_fixtures_page * team_fixtures_per_page,
+  );
+  $: {
+    displayed_team_fixtures;
+    team_fixtures_page = 1;
+  }
 
   function sync_branding_for_org(org: Organization): boolean {
     branding_store.set_organization_context(
@@ -1511,7 +1562,7 @@
                   </div>
                 </div>
 
-                <div class="p-4 max-h-[400px] overflow-y-auto">
+                <div class="p-4">
                   {#if team_fixtures_loading}
                     <div class="flex items-center justify-center py-8">
                       <div
@@ -1526,7 +1577,7 @@
                     </div>
                   {:else}
                     <div class="space-y-3">
-                      {#each displayed_team_fixtures.sort((a, b) => new Date(a.scheduled_date).getTime() - new Date(b.scheduled_date).getTime()) as fixture}
+                      {#each paginated_team_fixtures as fixture}
                         {@const is_home =
                           fixture.home_team_id === selected_team_id}
                         {@const home_score = fixture.home_team_score ?? 0}
@@ -1692,6 +1743,20 @@
                         </div>
                       {/each}
                     </div>
+
+                    <Pagination
+                      current_page={team_fixtures_page}
+                      total_pages={team_fixtures_total_pages}
+                      total_items={sorted_team_fixtures.length}
+                      items_per_page={team_fixtures_per_page}
+                      page_size_options={FIXTURES_PAGE_SIZE_OPTIONS}
+                      on:page_change={(e) =>
+                        (team_fixtures_page = e.detail.page)}
+                      on:page_size_change={(e) => {
+                        team_fixtures_per_page = e.detail.size;
+                        team_fixtures_page = 1;
+                      }}
+                    />
                   {/if}
                 </div>
               </div>
@@ -1703,7 +1768,7 @@
               </div>
             {:else}
               <div class="space-y-3">
-                {#each upcoming_fixtures as fixture}
+                {#each paginated_upcoming as fixture}
                   {@const fixture_stage_name = get_fixture_stage_name(
                     fixture.stage_id,
                   )}
@@ -1811,6 +1876,19 @@
                   </div>
                 {/each}
               </div>
+
+              <Pagination
+                current_page={upcoming_page}
+                total_pages={upcoming_total_pages}
+                total_items={upcoming_fixtures.length}
+                items_per_page={upcoming_per_page}
+                page_size_options={FIXTURES_PAGE_SIZE_OPTIONS}
+                on:page_change={(e) => (upcoming_page = e.detail.page)}
+                on:page_size_change={(e) => {
+                  upcoming_per_page = e.detail.size;
+                  upcoming_page = 1;
+                }}
+              />
             {/if}
           {:else if active_tab === "results"}
             {#if completed_fixtures.length === 0}
@@ -1871,7 +1949,7 @@
                 </button>
               </div>
               <div class="space-y-3">
-                {#each completed_fixtures as fixture}
+                {#each paginated_completed as fixture}
                   {@const home_score = fixture.home_team_score ?? 0}
                   {@const away_score = fixture.away_team_score ?? 0}
                   {@const fixture_stage_name = get_fixture_stage_name(
@@ -2027,6 +2105,19 @@
                   </div>
                 {/each}
               </div>
+
+              <Pagination
+                current_page={results_page}
+                total_pages={results_total_pages}
+                total_items={completed_fixtures.length}
+                items_per_page={results_per_page}
+                page_size_options={FIXTURES_PAGE_SIZE_OPTIONS}
+                on:page_change={(e) => (results_page = e.detail.page)}
+                on:page_size_change={(e) => {
+                  results_per_page = e.detail.size;
+                  results_page = 1;
+                }}
+              />
             {/if}
           {:else if active_tab === "stats"}
             <div class="space-y-4 sm:space-y-6">

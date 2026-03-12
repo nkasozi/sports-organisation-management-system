@@ -123,7 +123,8 @@ describe("PlayerTeamTransferHistoryUseCases", () => {
       const result = await use_cases.list();
 
       expect(result.success).toBe(true);
-      expect(result.data.length).toBe(1);
+      if (!result.success) return;
+      expect(result.data.items).toHaveLength(1);
     });
   });
 
@@ -223,7 +224,7 @@ describe("PlayerTeamTransferHistoryUseCases", () => {
 
       vi.mocked(mock_transfer_repository.update).mockResolvedValue({
         success: true,
-        data: { ...pending_transfer, status: "confirmed" },
+        data: { ...pending_transfer, status: "approved" },
       });
 
       const result = await use_cases.confirm_transfer("transfer-123");
@@ -238,12 +239,12 @@ describe("PlayerTeamTransferHistoryUseCases", () => {
       );
       expect(mock_transfer_repository.update).toHaveBeenCalledWith(
         "transfer-123",
-        { status: "confirmed" },
+        { status: "approved" },
       );
     });
 
     it("should fail to confirm already confirmed transfer", async () => {
-      const confirmed_transfer = create_test_transfer({ status: "confirmed" });
+      const confirmed_transfer = create_test_transfer({ status: "approved" });
 
       vi.mocked(mock_transfer_repository.find_by_id).mockResolvedValue({
         success: true,
@@ -284,7 +285,7 @@ describe("PlayerTeamTransferHistoryUseCases", () => {
 
       vi.mocked(mock_transfer_repository.update).mockResolvedValue({
         success: true,
-        data: { ...pending_transfer, status: "confirmed" },
+        data: { ...pending_transfer, status: "approved" },
       });
 
       const result = await use_cases.confirm_transfer("transfer-123");
@@ -321,7 +322,7 @@ describe("PlayerTeamTransferHistoryUseCases", () => {
 
       vi.mocked(mock_transfer_repository.update).mockResolvedValue({
         success: true,
-        data: { ...pending_transfer, status: "rejected" },
+        data: { ...pending_transfer, status: "declined" },
       });
 
       const result = await use_cases.reject_transfer("transfer-123");
@@ -329,12 +330,12 @@ describe("PlayerTeamTransferHistoryUseCases", () => {
       expect(result.success).toBe(true);
       expect(mock_transfer_repository.update).toHaveBeenCalledWith(
         "transfer-123",
-        { status: "rejected" },
+        { status: "declined" },
       );
     });
 
     it("should fail to reject already confirmed transfer", async () => {
-      const confirmed_transfer = create_test_transfer({ status: "confirmed" });
+      const confirmed_transfer = create_test_transfer({ status: "approved" });
 
       vi.mocked(mock_transfer_repository.find_by_id).mockResolvedValue({
         success: true,

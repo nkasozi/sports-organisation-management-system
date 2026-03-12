@@ -7,8 +7,7 @@ import type {
 import { compute_field_changes } from "../entities/AuditLog";
 import type { AuditLogRepository, AuditLogFilter } from "../interfaces/ports";
 import type { QueryOptions } from "../interfaces/ports";
-import type { EntityListResult } from "../entities/BaseEntity";
-import type { AsyncResult } from "../types/Result";
+import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
 import { create_success_result, create_failure_result } from "../types/Result";
 import { get_repository_container } from "../../infrastructure/container";
 
@@ -16,7 +15,7 @@ export interface AuditLogUseCases {
   list(
     filter?: AuditLogFilter,
     options?: QueryOptions,
-  ): Promise<EntityListResult<AuditLog>>;
+  ): PaginatedAsyncResult<AuditLog>;
   get_by_id(id: string): AsyncResult<AuditLog>;
   create(input: CreateAuditLogInput): AsyncResult<AuditLog>;
   update(id: string, input: Record<string, unknown>): AsyncResult<AuditLog>;
@@ -25,11 +24,11 @@ export interface AuditLogUseCases {
     entity_type: string,
     entity_id: string,
     options?: QueryOptions,
-  ): Promise<EntityListResult<AuditLog>>;
+  ): PaginatedAsyncResult<AuditLog>;
   get_user_activity(
     user_id: string,
     options?: QueryOptions,
-  ): Promise<EntityListResult<AuditLog>>;
+  ): PaginatedAsyncResult<AuditLog>;
 }
 
 export function create_audit_log_use_cases(
@@ -39,23 +38,8 @@ export function create_audit_log_use_cases(
     async list(
       filter?: AuditLogFilter,
       options?: QueryOptions,
-    ): Promise<EntityListResult<AuditLog>> {
-      const result = await repository.find_all(filter, options);
-
-      if (!result.success) {
-        return {
-          success: false,
-          data: [],
-          total_count: 0,
-          error_message: result.error,
-        };
-      }
-
-      return {
-        success: true,
-        data: result.data?.items || [],
-        total_count: result.data?.total_count || 0,
-      };
+    ): PaginatedAsyncResult<AuditLog> {
+      return repository.find_all(filter, options);
     },
 
     async get_by_id(id: string): AsyncResult<AuditLog> {
@@ -95,76 +79,27 @@ export function create_audit_log_use_cases(
       entity_type: string,
       entity_id: string,
       options?: QueryOptions,
-    ): Promise<EntityListResult<AuditLog>> {
+    ): PaginatedAsyncResult<AuditLog> {
       if (!entity_type || entity_type.trim().length === 0) {
-        return {
-          success: false,
-          data: [],
-          total_count: 0,
-          error_message: "Entity type is required",
-        };
+        return create_failure_result("Entity type is required");
       }
 
       if (!entity_id || entity_id.trim().length === 0) {
-        return {
-          success: false,
-          data: [],
-          total_count: 0,
-          error_message: "Entity ID is required",
-        };
+        return create_failure_result("Entity ID is required");
       }
 
-      const result = await repository.find_by_entity(
-        entity_type,
-        entity_id,
-        options,
-      );
-
-      if (!result.success) {
-        return {
-          success: false,
-          data: [],
-          total_count: 0,
-          error_message: result.error,
-        };
-      }
-
-      return {
-        success: true,
-        data: result.data?.items || [],
-        total_count: result.data?.total_count || 0,
-      };
+      return repository.find_by_entity(entity_type, entity_id, options);
     },
 
     async get_user_activity(
       user_id: string,
       options?: QueryOptions,
-    ): Promise<EntityListResult<AuditLog>> {
+    ): PaginatedAsyncResult<AuditLog> {
       if (!user_id || user_id.trim().length === 0) {
-        return {
-          success: false,
-          data: [],
-          total_count: 0,
-          error_message: "User ID is required",
-        };
+        return create_failure_result("User ID is required");
       }
 
-      const result = await repository.find_all({ user_id }, options);
-
-      if (!result.success) {
-        return {
-          success: false,
-          data: [],
-          total_count: 0,
-          error_message: result.error,
-        };
-      }
-
-      return {
-        success: true,
-        data: result.data?.items || [],
-        total_count: result.data?.total_count || 0,
-      };
+      return repository.find_all({ user_id }, options);
     },
   };
 }

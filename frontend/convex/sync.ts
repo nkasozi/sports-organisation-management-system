@@ -1,12 +1,14 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import {
+  require_auth,
   require_permission,
   try_auth,
   build_scope_filter,
-  AuthenticationError,
-  AuthorizationError,
+  check_permission,
+  get_entity_data_category,
 } from "./lib/auth_middleware";
+import type { UserRole } from "./lib/auth_middleware";
 
 export const GLOBAL_TABLES = [
   "sports",
@@ -67,25 +69,10 @@ export const upsert_record = mutation({
       .withIndex("by_local_id", (q) => q.eq("local_id", local_id))
       .first();
 
-    try {
-      const action = existing ? "update" : "create";
-      await require_permission(ctx, entity_type, action);
-    } catch (error) {
-      if (error instanceof AuthenticationError) {
-        return {
-          success: false,
-          error: "authentication_required",
-          message: error.message,
-        };
-      }
-      if (error instanceof AuthorizationError) {
-        return {
-          success: false,
-          error: "unauthorized",
-          message: error.message,
-        };
-      }
-      throw error;
+    const action = existing ? "update" : "create";
+    const perm_result = await require_permission(ctx, entity_type, action);
+    if (!perm_result.success) {
+      return { success: false, error: perm_result.error };
     }
 
     const record_data = {
@@ -120,14 +107,12 @@ export const get_changes_since = query({
   handler: async (ctx, args) => {
     const { table_name, since_timestamp } = args;
     const entity_type = get_entity_type_from_table(table_name);
-
     const user = await try_auth(ctx);
-
     const table = ctx.db.query(table_name as any);
     let all_records = await table.collect();
 
-    if (user && !is_global_table(table_name)) {
-      const scope_filter = build_scope_filter(user, entity_type);
+    if (user.success && !is_global_table(table_name)) {
+      const scope_filter = build_scope_filter(user.data, entity_type);
       if (scope_filter.organization_id) {
         const user_org_id = scope_filter.organization_id;
 
@@ -169,24 +154,9 @@ export const delete_record = mutation({
     const { table_name, local_id } = args;
     const entity_type = get_entity_type_from_table(table_name);
 
-    try {
-      await require_permission(ctx, entity_type, "delete");
-    } catch (error) {
-      if (error instanceof AuthenticationError) {
-        return {
-          success: false,
-          error: "authentication_required",
-          message: error.message,
-        };
-      }
-      if (error instanceof AuthorizationError) {
-        return {
-          success: false,
-          error: "unauthorized",
-          message: error.message,
-        };
-      }
-      throw error;
+    const perm_result = await require_permission(ctx, entity_type, "delete");
+    if (!perm_result.success) {
+      return { success: false, error: perm_result.error };
     }
 
     const table = ctx.db.query(table_name as any);
@@ -220,41 +190,28 @@ export const batch_upsert = mutation({
     const entity_type = get_entity_type_from_table(table_name);
     const synced_at = new Date().toISOString();
 
-    try {
-      let has_write_permission = false;
-      try {
-        await require_permission(ctx, entity_type, "create");
-        has_write_permission = true;
-      } catch (create_error) {
-        if (create_error instanceof AuthorizationError) {
-          await require_permission(ctx, entity_type, "update");
-          has_write_permission = true;
-        } else {
-          throw create_error;
-        }
-      }
-    } catch (error) {
-      if (error instanceof AuthenticationError) {
-        return {
-          success: false,
-          error: "authentication_required",
-          message: error.message,
-          results: [],
-          has_conflicts: false,
-          conflicts: [],
-        };
-      }
-      if (error instanceof AuthorizationError) {
-        return {
-          success: false,
-          error: "unauthorized",
-          message: error.message,
-          results: [],
-          has_conflicts: false,
-          conflicts: [],
-        };
-      }
-      throw error;
+    const auth_result = await require_auth(ctx);
+    if (!auth_result.success) {
+      return {
+        success: false,
+        error: auth_result.error,
+        results: [],
+        has_conflicts: false,
+        conflicts: [],
+      };
+    }
+    const user_role = auth_result.data.role as UserRole;
+    const data_category = get_entity_data_category(entity_type);
+    const can_create = check_permission(user_role, data_category, "create");
+    const can_update = check_permission(user_role, data_category, "update");
+    if (!can_create && !can_update) {
+      return {
+        success: false,
+        error: `Role "${user_role}" does not have create or update permission for "${entity_type}"`,
+        results: [],
+        has_conflicts: false,
+        conflicts: [],
+      };
     }
 
     const results: Array<{
@@ -281,6 +238,23 @@ export const batch_upsert = mutation({
       const sanitized_data = { ...record.data } as Record<string, unknown>;
       delete sanitized_data._id;
       delete sanitized_data._creationTime;
+
+      if (table_name === "system_users") {
+        if (!sanitized_data.email) {
+          console.warn(
+            `[Sync] Skipping system_users record without email: local_id=${record.local_id}`,
+          );
+          results.push({
+            local_id: record.local_id,
+            success: false,
+            action: "skipped_no_email",
+          });
+          continue;
+        }
+        if (!sanitized_data.role) {
+          sanitized_data.role = "player";
+        }
+      }
 
       const record_data = {
         ...sanitized_data,
@@ -542,24 +516,9 @@ export const force_resolve_conflict = mutation({
 
     const entity_type = get_entity_type_from_table(table_name);
 
-    try {
-      await require_permission(ctx, entity_type, "update");
-    } catch (error) {
-      if (error instanceof AuthenticationError) {
-        return {
-          success: false,
-          error: "authentication_required",
-          message: error.message,
-        };
-      }
-      if (error instanceof AuthorizationError) {
-        return {
-          success: false,
-          error: "unauthorized",
-          message: error.message,
-        };
-      }
-      throw error;
+    const perm_result = await require_permission(ctx, entity_type, "update");
+    if (!perm_result.success) {
+      return { success: false, error: perm_result.error };
     }
 
     const synced_at = new Date().toISOString();
@@ -615,26 +574,13 @@ export const clear_table = mutation({
     const { table_name } = args;
     const entity_type = get_entity_type_from_table(table_name);
 
-    try {
-      await require_permission(ctx, entity_type, "delete");
-    } catch (error) {
-      if (error instanceof AuthenticationError) {
-        return {
-          success: false,
-          error: "authentication_required",
-          message: error.message,
-          deleted_count: 0,
-        };
-      }
-      if (error instanceof AuthorizationError) {
-        return {
-          success: false,
-          error: "unauthorized",
-          message: error.message,
-          deleted_count: 0,
-        };
-      }
-      throw error;
+    const perm_result = await require_permission(ctx, entity_type, "delete");
+    if (!perm_result.success) {
+      return {
+        success: false,
+        error: perm_result.error,
+        deleted_count: 0,
+      };
     }
 
     const all_records = await ctx.db.query(table_name as any).collect();

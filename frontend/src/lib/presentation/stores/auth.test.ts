@@ -117,6 +117,7 @@ import {
   current_user_role,
   current_user_role_display,
   current_profile_display_name,
+  can_switch_profiles,
 } from "./auth";
 import { get_sidebar_menu_for_role } from "$lib/adapters/iam/LocalAuthorizationAdapter";
 import type { UserRole } from "$lib/core/interfaces/ports";
@@ -376,6 +377,74 @@ describe("auth_store integration", () => {
       expect(auth_level.authorizations.get("create")).toBe("none");
       expect(auth_level.authorizations.get("list")).toBe("full");
       expect(auth_level.authorizations.get("delete")).toBe("none");
+    });
+  });
+  describe("can_switch_profiles derived store", () => {
+    it("returns false when no profile is set", () => {
+      auth_store.logout();
+      expect(get(can_switch_profiles)).toBe(false);
+    });
+
+    it("returns true when current profile is super_admin", async () => {
+      const profiles = get(auth_store).available_profiles;
+      const super_admin_profile = profiles.find(
+        (p) => p.role === "super_admin",
+      );
+      await auth_store.switch_profile(super_admin_profile!.id);
+      expect(get(can_switch_profiles)).toBe(true);
+    });
+
+    it("returns true when not signed in (public_viewer demo mode)", async () => {
+      const profiles = get(auth_store).available_profiles;
+      const public_viewer_profile = profiles.find(
+        (p) => p.role === "public_viewer",
+      );
+      await auth_store.switch_profile(public_viewer_profile!.id);
+      expect(get(can_switch_profiles)).toBe(true);
+    });
+
+    it("returns false for org_admin", async () => {
+      const profiles = get(auth_store).available_profiles;
+      const org_admin_profile = profiles.find((p) => p.role === "org_admin");
+      await auth_store.switch_profile(org_admin_profile!.id);
+      expect(get(can_switch_profiles)).toBe(false);
+    });
+
+    it("returns false for team_manager", async () => {
+      const profiles = get(auth_store).available_profiles;
+      const team_manager_profile = profiles.find(
+        (p) => p.role === "team_manager",
+      );
+      await auth_store.switch_profile(team_manager_profile!.id);
+      expect(get(can_switch_profiles)).toBe(false);
+    });
+
+    it("returns false for player", async () => {
+      const profiles = get(auth_store).available_profiles;
+      const player_profile = profiles.find((p) => p.role === "player");
+      await auth_store.switch_profile(player_profile!.id);
+      expect(get(can_switch_profiles)).toBe(false);
+    });
+
+    it("returns false for official", async () => {
+      const profiles = get(auth_store).available_profiles;
+      const official_profile = profiles.find((p) => p.role === "official");
+      await auth_store.switch_profile(official_profile!.id);
+      expect(get(can_switch_profiles)).toBe(false);
+    });
+
+    it("updates when switching from super_admin to player", async () => {
+      const profiles = get(auth_store).available_profiles;
+      const super_admin_profile = profiles.find(
+        (p) => p.role === "super_admin",
+      );
+      const player_profile = profiles.find((p) => p.role === "player");
+
+      await auth_store.switch_profile(super_admin_profile!.id);
+      expect(get(can_switch_profiles)).toBe(true);
+
+      await auth_store.switch_profile(player_profile!.id);
+      expect(get(can_switch_profiles)).toBe(false);
     });
   });
 });

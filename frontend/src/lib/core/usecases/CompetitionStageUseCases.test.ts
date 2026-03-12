@@ -139,9 +139,9 @@ describe("CompetitionStageUseCases", () => {
       const result = await use_cases.list_stages_by_competition("comp-123");
       expect(result.success).toBe(true);
       if (result.success) {
-        expect(result.data[0].name).toBe("Pool Stage");
-        expect(result.data[1].name).toBe("Semi Finals");
-        expect(result.data[2].name).toBe("Final");
+        expect(result.data.items[0].name).toBe("Pool Stage");
+        expect(result.data.items[1].name).toBe("Semi Finals");
+        expect(result.data.items[2].name).toBe("Final");
       }
     });
 
