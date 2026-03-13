@@ -17,7 +17,11 @@ import type { FixtureRepository } from "../interfaces/ports";
 import type { TeamRepository } from "../interfaces/ports";
 import type { ActivityCategoryRepository } from "../interfaces/ports";
 import type { QueryOptions } from "../interfaces/ports";
-import type { PaginatedAsyncResult, AsyncResult, Result } from "../types/Result";
+import type {
+  PaginatedAsyncResult,
+  AsyncResult,
+  Result,
+} from "../types/Result";
 import { create_success_result, create_failure_result } from "../types/Result";
 import type {
   ActivityUseCasesPort,

@@ -100,7 +100,8 @@ function create_conflict_store() {
       (c) => c.id === conflict_id,
     );
 
-    if (!conflict) return create_failure_result(`Conflict not found: ${conflict_id}`);
+    if (!conflict)
+      return create_failure_result(`Conflict not found: ${conflict_id}`);
 
     const resolution: ConflictResolution = {
       conflict_id,

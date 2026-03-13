@@ -37,14 +37,28 @@ describe("auto_create_fixture_details_setup", () => {
         }),
       } as any,
       official_use_cases: {
-        list: vi
-          .fn()
-          .mockResolvedValue({ success: true, data: { items: [{ id: "official-1" }], total_count: 1, page_number: 1, page_size: 100, total_pages: 1 } }),
+        list: vi.fn().mockResolvedValue({
+          success: true,
+          data: {
+            items: [{ id: "official-1" }],
+            total_count: 1,
+            page_number: 1,
+            page_size: 100,
+            total_pages: 1,
+          },
+        }),
       } as any,
       game_official_role_use_cases: {
-        list: vi
-          .fn()
-          .mockResolvedValue({ success: true, data: { items: [{ id: "role-1" }], total_count: 1, page_number: 1, page_size: 100, total_pages: 1 } }),
+        list: vi.fn().mockResolvedValue({
+          success: true,
+          data: {
+            items: [{ id: "role-1" }],
+            total_count: 1,
+            page_number: 1,
+            page_size: 100,
+            total_pages: 1,
+          },
+        }),
       } as any,
     };
   });
@@ -96,12 +110,26 @@ describe("auto_create_fixture_details_setup", () => {
   });
 
   it("returns empty assigned_officials if no officials or roles", async () => {
-    dependencies.official_use_cases.list = vi
-      .fn()
-      .mockResolvedValue({ success: true, data: { items: [], total_count: 0, page_number: 1, page_size: 100, total_pages: 0 } });
-    dependencies.game_official_role_use_cases.list = vi
-      .fn()
-      .mockResolvedValue({ success: true, data: { items: [], total_count: 0, page_number: 1, page_size: 100, total_pages: 0 } });
+    dependencies.official_use_cases.list = vi.fn().mockResolvedValue({
+      success: true,
+      data: {
+        items: [],
+        total_count: 0,
+        page_number: 1,
+        page_size: 100,
+        total_pages: 0,
+      },
+    });
+    dependencies.game_official_role_use_cases.list = vi.fn().mockResolvedValue({
+      success: true,
+      data: {
+        items: [],
+        total_count: 0,
+        page_number: 1,
+        page_size: 100,
+        total_pages: 0,
+      },
+    });
     const result = await auto_create_fixture_details_setup(
       fixture,
       dependencies,
@@ -164,9 +192,16 @@ describe("auto_create_fixture_details_setup", () => {
   });
 
   it("fails if officials are missing", async () => {
-    dependencies.official_use_cases.list = vi
-      .fn()
-      .mockResolvedValue({ success: true, data: { items: [], total_count: 0, page_number: 1, page_size: 100, total_pages: 0 } });
+    dependencies.official_use_cases.list = vi.fn().mockResolvedValue({
+      success: true,
+      data: {
+        items: [],
+        total_count: 0,
+        page_number: 1,
+        page_size: 100,
+        total_pages: 0,
+      },
+    });
     const result = await auto_create_fixture_details_setup(
       fixture,
       dependencies,
@@ -176,9 +211,16 @@ describe("auto_create_fixture_details_setup", () => {
   });
 
   it("fails if official roles are missing", async () => {
-    dependencies.game_official_role_use_cases.list = vi
-      .fn()
-      .mockResolvedValue({ success: true, data: { items: [], total_count: 0, page_number: 1, page_size: 100, total_pages: 0 } });
+    dependencies.game_official_role_use_cases.list = vi.fn().mockResolvedValue({
+      success: true,
+      data: {
+        items: [],
+        total_count: 0,
+        page_number: 1,
+        page_size: 100,
+        total_pages: 0,
+      },
+    });
     const result = await auto_create_fixture_details_setup(
       fixture,
       dependencies,

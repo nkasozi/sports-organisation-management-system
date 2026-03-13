@@ -228,16 +228,16 @@ export class LocalAuthenticationAdapter implements AuthenticationPort {
     return { is_valid: true, payload, system_user };
   }
 
-  private parse_token_payload(
-    raw_token: string,
-  ): Result<AuthTokenPayload> {
+  private parse_token_payload(raw_token: string): Result<AuthTokenPayload> {
     if (!raw_token || raw_token.trim().length === 0) {
       return create_failure_result("Token is empty");
     }
 
     const parts = raw_token.split(".");
     if (parts.length !== 3) {
-      return create_failure_result("Token format is invalid (expected 3 parts)");
+      return create_failure_result(
+        "Token format is invalid (expected 3 parts)",
+      );
     }
 
     try {

@@ -415,4 +415,3 @@ export function reset_initialization(): void {
   }
   initialized = false;
 }
-

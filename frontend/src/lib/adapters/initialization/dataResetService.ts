@@ -115,7 +115,9 @@ export async function reset_all_data(
   if (get(is_signed_in)) {
     start_background_sync();
   } else {
-    console.log("[DataReset] User not signed in — skipping background sync start");
+    console.log(
+      "[DataReset] User not signed in — skipping background sync start",
+    );
   }
 
   return true;

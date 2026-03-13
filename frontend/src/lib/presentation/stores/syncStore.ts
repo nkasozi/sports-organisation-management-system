@@ -119,7 +119,10 @@ function create_sync_store() {
       }));
     },
 
-    sync_now: async (direction?: SyncDirection, hints?: SyncHints): Promise<SyncResult> => {
+    sync_now: async (
+      direction?: SyncDirection,
+      hints?: SyncHints,
+    ): Promise<SyncResult> => {
       update((state) => ({
         ...state,
         is_syncing: true,
@@ -129,7 +132,11 @@ function create_sync_store() {
 
       try {
         const manager = get_sync_manager();
-        const result = await manager.sync_now(handle_progress, direction, hints);
+        const result = await manager.sync_now(
+          handle_progress,
+          direction,
+          hints,
+        );
         handle_sync_complete(result);
         return result;
       } catch (error) {
@@ -283,9 +290,8 @@ export const sync_percentage: Readable<number> = derived(
   ($sync_store) => $sync_store.current_progress?.percentage ?? 0,
 );
 
-const sync_status: Readable<SyncStatus> = derived(
-  sync_store,
-  ($sync_store) => ($sync_store.is_syncing ? "syncing" : "idle"),
+const sync_status: Readable<SyncStatus> = derived(sync_store, ($sync_store) =>
+  $sync_store.is_syncing ? "syncing" : "idle",
 );
 
 export const last_sync_time: Readable<string | null> = derived(

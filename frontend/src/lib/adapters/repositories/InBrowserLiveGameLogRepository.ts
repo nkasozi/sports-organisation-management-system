@@ -5,7 +5,10 @@ import type {
   UpdateLiveGameLogInput,
 } from "../../core/entities/LiveGameLog";
 import type { BaseEntity } from "../../core/entities/BaseEntity";
-import type { AsyncResult, PaginatedAsyncResult } from "../../core/types/Result";
+import type {
+  AsyncResult,
+  PaginatedAsyncResult,
+} from "../../core/types/Result";
 import {
   create_success_result,
   create_failure_result,
@@ -127,9 +130,10 @@ class InBrowserLiveGameLogRepository
     return filtered;
   }
 
-  private build_query_options(
-    pagination?: { page: number; page_size: number },
-  ) {
+  private build_query_options(pagination?: {
+    page: number;
+    page_size: number;
+  }) {
     return pagination
       ? { page_number: pagination.page, page_size: pagination.page_size }
       : undefined;
@@ -148,10 +152,10 @@ class InBrowserLiveGameLogRepository
     return create_success_result(result.data.items[0]);
   }
 
-  async get_active_games(
-    organization_id?: string,
-  ): AsyncResult<LiveGameLog[]> {
-    const filter: LiveGameLogFilter = organization_id ? { organization_id } : {};
+  async get_active_games(organization_id?: string): AsyncResult<LiveGameLog[]> {
+    const filter: LiveGameLogFilter = organization_id
+      ? { organization_id }
+      : {};
     const result = await this.find_all(filter);
     if (!result.success) {
       return { success: false, error: result.error };
@@ -173,7 +177,10 @@ class InBrowserLiveGameLogRepository
     organization_id: string,
     options?: { page: number; page_size: number },
   ): PaginatedAsyncResult<LiveGameLog> {
-    return this.find_all({ organization_id }, this.build_query_options(options));
+    return this.find_all(
+      { organization_id },
+      this.build_query_options(options),
+    );
   }
 
   async find_completed_games(

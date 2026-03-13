@@ -46,11 +46,17 @@ export function create_system_user_use_cases(
       }
 
       const all_users = result.data?.items || [];
-      const filtered_users = filter ? filter_system_users(all_users, filter) : all_users;
+      const filtered_users = filter
+        ? filter_system_users(all_users, filter)
+        : all_users;
 
       return {
         success: true,
-        data: { ...result.data, items: filtered_users, total_count: filtered_users.length },
+        data: {
+          ...result.data,
+          items: filtered_users,
+          total_count: filtered_users.length,
+        },
       };
     },
 

@@ -87,9 +87,7 @@ export function create_organization_use_cases_with_default_seeder(
 
   return {
     ...base,
-    async create(
-      input: CreateOrganizationInput,
-    ): AsyncResult<Organization> {
+    async create(input: CreateOrganizationInput): AsyncResult<Organization> {
       const result = await base.create(input);
 
       if (!result.success) return result;
@@ -110,9 +108,8 @@ export function get_organization_with_defaults_use_cases(): OrganizationUseCases
   return create_organization_use_cases_with_default_seeder(
     container.organization_repository,
     async (organization_id: string) => {
-      const { seed_default_lookup_entities_for_organization } = await import(
-        "../../adapters/initialization/organizationDefaultsSeeder"
-      );
+      const { seed_default_lookup_entities_for_organization } =
+        await import("../../adapters/initialization/organizationDefaultsSeeder");
       await seed_default_lookup_entities_for_organization(organization_id);
     },
   );
@@ -124,9 +121,7 @@ function await_import() {
       organization_id: string,
     ) => {
       const { seed_default_lookup_entities_for_organization: seeder } =
-        await import(
-          "../../adapters/initialization/organizationDefaultsSeeder"
-        );
+        await import("../../adapters/initialization/organizationDefaultsSeeder");
       return seeder(organization_id);
     },
   };

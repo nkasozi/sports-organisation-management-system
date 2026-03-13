@@ -62,7 +62,10 @@ export function validate_player_position_input(
   };
 }
 
-function get_default_player_positions(): Omit<CreatePlayerPositionInput, "organization_id">[] {
+function get_default_player_positions(): Omit<
+  CreatePlayerPositionInput,
+  "organization_id"
+>[] {
   return [
     {
       name: "Goalkeeper",

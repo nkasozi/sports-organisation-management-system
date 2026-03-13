@@ -63,6 +63,11 @@ export const seed_admin_user = mutation({
       updated_at: now,
     });
 
-    return { success: true, action: "created", email: normalized_email, id: inserted_id };
+    return {
+      success: true,
+      action: "created",
+      email: normalized_email,
+      id: inserted_id,
+    };
   },
 });

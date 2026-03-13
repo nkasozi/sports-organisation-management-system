@@ -549,7 +549,8 @@ async function sync_all_tables(
     const remote_latest = remote_state.latest_modified_at || EPOCH_TIMESTAMP;
     const local_is_ahead = local_latest > remote_latest;
     const remote_is_ahead = remote_latest > local_latest;
-    const are_in_sync = !local_is_ahead && !remote_is_ahead && remote_latest !== EPOCH_TIMESTAMP;
+    const are_in_sync =
+      !local_is_ahead && !remote_is_ahead && remote_latest !== EPOCH_TIMESTAMP;
 
     console.log(
       `[Sync] ${table_name} — local: ${all_local_records.length} records (latest: ${local_latest}), remote: ${remote_state.record_count} records (latest: ${remote_latest}), ${local_is_ahead ? "LOCAL ahead" : remote_is_ahead ? "REMOTE ahead" : "IN SYNC"}`,
@@ -865,7 +866,10 @@ export async function clear_all_demo_data_in_convex(): Promise<boolean> {
     "[Sync:Reset] Clearing all demo data in Convex (system_users preserved)...",
   );
 
-  const result = (await convex_client.mutation("sync:clear_all_demo_data", {})) as {
+  const result = (await convex_client.mutation(
+    "sync:clear_all_demo_data",
+    {},
+  )) as {
     success: boolean;
     deleted_count: number;
     error?: string;
@@ -900,7 +904,9 @@ export async function pull_system_users_from_convex(): Promise<boolean> {
     return false;
   }
 
-  console.log("[Sync:SystemUsers] Pulling all system_users from Convex (full fetch for auth recovery)...");
+  console.log(
+    "[Sync:SystemUsers] Pulling all system_users from Convex (full fetch for auth recovery)...",
+  );
   const result = await pull_table_from_convex(
     convex_client,
     table,

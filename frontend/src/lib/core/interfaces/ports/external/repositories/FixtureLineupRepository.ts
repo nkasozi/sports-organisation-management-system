@@ -3,7 +3,10 @@ import type {
   CreateFixtureLineupInput,
   UpdateFixtureLineupInput,
 } from "../../../../entities/FixtureLineup";
-import type { AsyncResult, PaginatedAsyncResult } from "../../../../types/Result";
+import type {
+  AsyncResult,
+  PaginatedAsyncResult,
+} from "../../../../types/Result";
 import type { Repository } from "./Repository";
 
 export interface FixtureLineupFilter {
@@ -20,9 +23,7 @@ export interface FixtureLineupRepository extends Repository<
   UpdateFixtureLineupInput,
   FixtureLineupFilter
 > {
-  get_lineups_for_fixture(
-    fixture_id: string,
-  ): AsyncResult<FixtureLineup[]>;
+  get_lineups_for_fixture(fixture_id: string): AsyncResult<FixtureLineup[]>;
 
   get_lineup_for_team_in_fixture(
     fixture_id: string,

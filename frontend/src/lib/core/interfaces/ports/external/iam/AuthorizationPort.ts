@@ -185,7 +185,9 @@ export function get_entity_data_category(
   return SHARED_ENTITY_CATEGORY_MAP[entity_type] || "organisation_level";
 }
 
-function shared_to_category_permissions(shared: SharedCrudPermissions): CategoryPermissions {
+function shared_to_category_permissions(
+  shared: SharedCrudPermissions,
+): CategoryPermissions {
   return {
     create: shared.can_create,
     read: shared.can_read,
@@ -195,7 +197,8 @@ function shared_to_category_permissions(shared: SharedCrudPermissions): Category
 }
 
 export function get_role_permissions(role: UserRole): RolePermissionMap {
-  const shared = SHARED_ROLE_PERMISSIONS[role] ?? SHARED_ROLE_PERMISSIONS.player;
+  const shared =
+    SHARED_ROLE_PERMISSIONS[role] ?? SHARED_ROLE_PERMISSIONS.player;
   return Object.fromEntries(
     Object.entries(shared).map(([category, perms]) => [
       category,
@@ -360,9 +363,7 @@ export function is_field_restricted_by_authorization(
   return restricted.has(field_name);
 }
 
-function is_unrestricted_value(
-  value: string | undefined | null,
-): boolean {
+function is_unrestricted_value(value: string | undefined | null): boolean {
   return value === ANY_VALUE || !value;
 }
 

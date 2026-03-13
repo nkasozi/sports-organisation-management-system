@@ -811,7 +811,9 @@ describe("dynamicFormLogic", () => {
         },
       } as any);
       expect(
-        is_field_visible_by_visible_when_condition(field, { status: "approved" }),
+        is_field_visible_by_visible_when_condition(field, {
+          status: "approved",
+        }),
       ).toBe(true);
     });
 
@@ -823,7 +825,9 @@ describe("dynamicFormLogic", () => {
         },
       } as any);
       expect(
-        is_field_visible_by_visible_when_condition(field, { status: "pending" }),
+        is_field_visible_by_visible_when_condition(field, {
+          status: "pending",
+        }),
       ).toBe(false);
     });
 
@@ -850,9 +854,9 @@ describe("dynamicFormLogic", () => {
         foreign_key_field: "player_id",
         foreign_key_value: "p1",
       };
-      expect(is_field_controlled_by_sub_entity_filter("player_id", filter)).toBe(
-        true,
-      );
+      expect(
+        is_field_controlled_by_sub_entity_filter("player_id", filter),
+      ).toBe(true);
     });
 
     it("returns true when field matches holder_type_field", () => {
@@ -1001,7 +1005,14 @@ describe("dynamicFormLogic", () => {
     it("filters out entities with empty ids", () => {
       const field = create_field_metadata({ field_name: "team_id" });
       const options_map = {
-        team_id: [{ id: "", name: "Empty", created_at: "", updated_at: "" } as BaseEntity],
+        team_id: [
+          {
+            id: "",
+            name: "Empty",
+            created_at: "",
+            updated_at: "",
+          } as BaseEntity,
+        ],
       };
 
       const result = build_foreign_key_select_options(field, options_map);
@@ -1075,4 +1086,3 @@ describe("dynamicFormLogic", () => {
     });
   });
 });
-

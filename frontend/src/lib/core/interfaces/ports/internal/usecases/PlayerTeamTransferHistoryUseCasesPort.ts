@@ -31,13 +31,9 @@ export interface PlayerTeamTransferHistoryUseCasesPort extends BaseUseCasesPort<
     options?: QueryOptions,
   ): PaginatedAsyncResult<PlayerTeamTransferHistory>;
 
-  confirm_transfer(
-    transfer_id: string,
-  ): AsyncResult<PlayerTeamTransferHistory>;
+  confirm_transfer(transfer_id: string): AsyncResult<PlayerTeamTransferHistory>;
 
-  reject_transfer(
-    transfer_id: string,
-  ): AsyncResult<PlayerTeamTransferHistory>;
+  reject_transfer(transfer_id: string): AsyncResult<PlayerTeamTransferHistory>;
 
   delete_transfers(ids: string[]): AsyncResult<number>;
 }

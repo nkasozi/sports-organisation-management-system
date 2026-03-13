@@ -106,8 +106,13 @@ export function create_fixture_use_cases(
     ): PaginatedAsyncResult<Fixture> {
       const result = await repository.find_all(filter, options);
       if (!result.success) return result;
-      const enriched_fixtures = await enrich_fixtures_with_team_names(result.data.items);
-      return create_success_result({ ...result.data, items: enriched_fixtures });
+      const enriched_fixtures = await enrich_fixtures_with_team_names(
+        result.data.items,
+      );
+      return create_success_result({
+        ...result.data,
+        items: enriched_fixtures,
+      });
     },
 
     async get_by_id(id: string): AsyncResult<Fixture> {

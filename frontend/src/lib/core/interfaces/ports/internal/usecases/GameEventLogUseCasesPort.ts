@@ -4,7 +4,10 @@ import type {
   UpdateGameEventLogInput,
 } from "../../../../entities/GameEventLog";
 import type { GameEventLogFilter } from "../../external/repositories/GameEventLogRepository";
-import type { AsyncResult, PaginatedAsyncResult } from "../../../../types/Result";
+import type {
+  AsyncResult,
+  PaginatedAsyncResult,
+} from "../../../../types/Result";
 import type { BaseUseCasesPort } from "./BaseUseCasesPort";
 
 export interface GameEventLogUseCasesPort extends BaseUseCasesPort<

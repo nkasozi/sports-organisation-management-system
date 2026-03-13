@@ -185,7 +185,9 @@ async function run_network_restoration_sync(): Promise<void> {
   }
 
   if (!orchestrator) {
-    console.warn("[BackgroundSync] No orchestrator — skipping restoration sync");
+    console.warn(
+      "[BackgroundSync] No orchestrator — skipping restoration sync",
+    );
     if (state.has_pending_changes) {
       trigger_debounced_sync();
     }
@@ -205,7 +207,9 @@ async function run_network_restoration_sync(): Promise<void> {
   const websocket_was_running = remote_subscriber?.is_running() ?? false;
 
   if (websocket_was_running) {
-    console.log("[BackgroundSync] Pausing WebSocket subscriptions for restoration sync");
+    console.log(
+      "[BackgroundSync] Pausing WebSocket subscriptions for restoration sync",
+    );
     restoration_handlers?.stop_remote_sync();
   }
 
@@ -247,7 +251,9 @@ function install_dexie_hooks(database: SportsOrgDatabase): boolean {
     const table = (database as unknown as Record<string, unknown>)[
       table_name
     ] as {
-      hook: (event: string) => { subscribe: (fn: (primKey: unknown) => void) => void };
+      hook: (event: string) => {
+        subscribe: (fn: (primKey: unknown) => void) => void;
+      };
     };
 
     if (!table?.hook) continue;
@@ -361,9 +367,9 @@ export function has_pending_unsynced_changes(): boolean {
   return state.has_pending_changes;
 }
 
-export async function flush_pending_changes(): AsyncResult<
-  { skipped_offline: boolean }
-> {
+export async function flush_pending_changes(): AsyncResult<{
+  skipped_offline: boolean;
+}> {
   if (!state.has_pending_changes) {
     return create_success_result({ skipped_offline: false });
   }
@@ -387,7 +393,9 @@ export function create_local_change_publisher(): LocalChangePublisherPort {
       const started = start_background_sync();
       return started
         ? create_success_result(true)
-        : create_failure_result("Background sync already running or not in browser");
+        : create_failure_result(
+            "Background sync already running or not in browser",
+          );
     },
     stop: () => {
       const stopped = stop_background_sync();

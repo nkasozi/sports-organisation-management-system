@@ -14,10 +14,7 @@ import type {
   CalendarTokenFilter,
 } from "../interfaces/ports";
 import type { QueryOptions } from "../interfaces/ports";
-import type {
-  AsyncResult,
-  PaginatedAsyncResult,
-} from "../types/Result";
+import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
 import { create_success_result, create_failure_result } from "../types/Result";
 
 import type {

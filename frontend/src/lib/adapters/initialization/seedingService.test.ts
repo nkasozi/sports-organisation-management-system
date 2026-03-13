@@ -158,7 +158,9 @@ vi.mock("../repositories/InBrowserPlayerPositionRepository", () => ({
   get_player_position_repository: create_empty_repo,
 }));
 vi.mock("./organizationDefaultsSeeder", () => ({
-  seed_default_lookup_entities_for_organization: vi.fn().mockResolvedValue(undefined),
+  seed_default_lookup_entities_for_organization: vi
+    .fn()
+    .mockResolvedValue(undefined),
 }));
 vi.mock("../repositories/InBrowserTeamStaffRoleRepository", () => ({
   get_team_staff_role_repository: create_empty_repo,
@@ -698,8 +700,18 @@ describe("repair fixture stage IDs when seeded data already exists", () => {
   it("picks the stage with the lowest stage_order when multiple stages exist", async () => {
     mock_local_storage["sports_org_seeding_complete_v15"] = "true";
     mock_competition_stages.push(
-      { id: "stage-2", competition_id: "comp-1", stage_order: 2, name: "Knockouts" },
-      { id: "stage-1", competition_id: "comp-1", stage_order: 1, name: "Group Stage" },
+      {
+        id: "stage-2",
+        competition_id: "comp-1",
+        stage_order: 2,
+        name: "Knockouts",
+      },
+      {
+        id: "stage-1",
+        competition_id: "comp-1",
+        stage_order: 1,
+        name: "Group Stage",
+      },
     );
     mock_fixtures.push({
       id: "fixture-1",

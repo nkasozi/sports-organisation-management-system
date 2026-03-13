@@ -24,7 +24,11 @@ describe("PaginatedResult contract", () => {
   describe("result shape from list()", () => {
     it("list() returns result.data.items — NOT a plain array at result.data", async () => {
       const repo = {
-        find_all: vi.fn().mockResolvedValue(make_paginated_success([{ id: "1", name: "Org A" }])),
+        find_all: vi
+          .fn()
+          .mockResolvedValue(
+            make_paginated_success([{ id: "1", name: "Org A" }]),
+          ),
         find_by_id: vi.fn(),
         create: vi.fn(),
         update: vi.fn(),
@@ -85,7 +89,11 @@ describe("PaginatedResult contract", () => {
 
     it("competition list() returns paginated shape", async () => {
       const repo = {
-        find_all: vi.fn().mockResolvedValue(make_paginated_success([{ id: "comp-1", name: "Cup" }])),
+        find_all: vi
+          .fn()
+          .mockResolvedValue(
+            make_paginated_success([{ id: "comp-1", name: "Cup" }]),
+          ),
         find_by_id: vi.fn(),
         create: vi.fn(),
         update: vi.fn(),
@@ -94,11 +102,15 @@ describe("PaginatedResult contract", () => {
         find_by_ids: vi.fn(),
         count: vi.fn(),
       } as any;
-      const stage_lifecycle = { replace_stages_for_competition: vi.fn() } as any;
-      const { create_competition_use_cases_with_stage_lifecycle } = await import(
-        "../usecases/CompetitionUseCases"
+      const stage_lifecycle = {
+        replace_stages_for_competition: vi.fn(),
+      } as any;
+      const { create_competition_use_cases_with_stage_lifecycle } =
+        await import("../usecases/CompetitionUseCases");
+      const use_cases = create_competition_use_cases_with_stage_lifecycle(
+        repo,
+        stage_lifecycle,
       );
-      const use_cases = create_competition_use_cases_with_stage_lifecycle(repo, stage_lifecycle);
       const result = await use_cases.list();
 
       expect(result.success).toBe(true);
@@ -110,7 +122,11 @@ describe("PaginatedResult contract", () => {
 
     it("team list() returns paginated shape", async () => {
       const repo = {
-        find_all: vi.fn().mockResolvedValue(make_paginated_success([{ id: "team-1", name: "Eagles" }])),
+        find_all: vi
+          .fn()
+          .mockResolvedValue(
+            make_paginated_success([{ id: "team-1", name: "Eagles" }]),
+          ),
         find_by_id: vi.fn(),
         create: vi.fn(),
         update: vi.fn(),
@@ -130,7 +146,9 @@ describe("PaginatedResult contract", () => {
 
     it("fixture list() returns paginated shape", async () => {
       const repo = {
-        find_all: vi.fn().mockResolvedValue(make_paginated_success([{ id: "fix-1" }])),
+        find_all: vi
+          .fn()
+          .mockResolvedValue(make_paginated_success([{ id: "fix-1" }])),
         find_by_id: vi.fn(),
         create: vi.fn(),
         update: vi.fn(),
@@ -155,7 +173,11 @@ describe("PaginatedResult contract", () => {
 
     it("total_count lives on result.data.total_count — NOT result.total_count", async () => {
       const repo = {
-        find_all: vi.fn().mockResolvedValue(make_paginated_success([{ id: "p-1" }, { id: "p-2" }])),
+        find_all: vi
+          .fn()
+          .mockResolvedValue(
+            make_paginated_success([{ id: "p-1" }, { id: "p-2" }]),
+          ),
         find_by_id: vi.fn(),
         create: vi.fn(),
         update: vi.fn(),

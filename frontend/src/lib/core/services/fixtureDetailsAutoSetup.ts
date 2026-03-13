@@ -161,7 +161,9 @@ function build_official_assignments(
   officials_result: { success: boolean; data?: { items?: { id: string }[] } },
   roles_result: { success: boolean; data?: { items?: { id: string }[] } },
 ): OfficialAssignment[] {
-  const officials = officials_result.success ? officials_result.data?.items || [] : [];
+  const officials = officials_result.success
+    ? officials_result.data?.items || []
+    : [];
   const roles = roles_result.success ? roles_result.data?.items || [] : [];
 
   if (officials.length === 0 || roles.length === 0) return [];

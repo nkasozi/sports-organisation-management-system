@@ -75,7 +75,11 @@ function create_test_format(
       relegation_spots: 0,
       playoff_spots: 0,
     },
-    points_config: { points_for_win: 3, points_for_draw: 1, points_for_loss: 0 },
+    points_config: {
+      points_for_win: 3,
+      points_for_draw: 1,
+      points_for_loss: 0,
+    },
     stage_templates: [
       { name: "Round 1", stage_type: "league_stage", stage_order: 1 },
       { name: "Round 2", stage_type: "league_stage", stage_order: 2 },

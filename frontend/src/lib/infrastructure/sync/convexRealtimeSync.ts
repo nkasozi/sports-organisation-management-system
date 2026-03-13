@@ -256,7 +256,8 @@ export function get_realtime_sync_adapter(): RemoteChangeSubscriberPort {
   return {
     start: () => {
       const instance = get_realtime_sync_instance();
-      if (!instance) return create_failure_result("Realtime sync not initialized");
+      if (!instance)
+        return create_failure_result("Realtime sync not initialized");
       const started = instance.start();
       return started
         ? create_success_result(true)

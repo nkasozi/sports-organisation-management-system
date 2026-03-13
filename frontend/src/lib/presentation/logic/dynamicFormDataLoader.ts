@@ -29,19 +29,27 @@ export async function fetch_entities_for_type(
   filter?: Record<string, string>,
   page_size: number = 1000,
 ): Promise<BaseEntity[]> {
-  const use_cases_result = get_use_cases_for_entity_type(entity_type.toLowerCase());
-  if (!use_cases_result.success || typeof use_cases_result.data.list !== "function") {
-    console.warn(`[DataLoader] No list method found for entity type: ${entity_type}`);
+  const use_cases_result = get_use_cases_for_entity_type(
+    entity_type.toLowerCase(),
+  );
+  if (
+    !use_cases_result.success ||
+    typeof use_cases_result.data.list !== "function"
+  ) {
+    console.warn(
+      `[DataLoader] No list method found for entity type: ${entity_type}`,
+    );
     return [];
   }
   const use_cases = use_cases_result.data;
   const result = await use_cases.list(filter, { page_size });
   if (!result.success) {
-    const error_msg = "error_message" in result
-      ? (result as { error_message: string }).error_message
-      : "error" in result
-        ? (result as { error: string }).error
-        : "Unknown error";
+    const error_msg =
+      "error_message" in result
+        ? (result as { error_message: string }).error_message
+        : "error" in result
+          ? (result as { error: string }).error
+          : "Unknown error";
     console.warn(`[DataLoader] Failed to load ${entity_type}:`, error_msg);
     return [];
   }
@@ -58,10 +66,14 @@ export async function fetch_unfiltered_foreign_key_options(
 ): Promise<Record<string, BaseEntity[]>> {
   const new_options: Record<string, BaseEntity[]> = {};
   for (const field of fields) {
-    if (field.field_type !== "foreign_key" || !field.foreign_key_entity) continue;
+    if (field.field_type !== "foreign_key" || !field.foreign_key_entity)
+      continue;
     if (field.foreign_key_filter) continue;
     const entities = await fetch_entities_for_type(field.foreign_key_entity);
-    console.debug("[DataLoader] Loaded FK options", { field: field.field_name, count: entities.length });
+    console.debug("[DataLoader] Loaded FK options", {
+      field: field.field_name,
+      count: entities.length,
+    });
     new_options[field.field_name] = entities;
   }
   return new_options;
@@ -79,13 +91,16 @@ export async function fetch_teams_from_competition(
   };
 
   const competition_team_use_cases = get_competition_team_use_cases();
-  const comp_teams_result = await competition_team_use_cases.list_teams_in_competition(
-    competition_id,
-    { page_size: 100 },
-  );
+  const comp_teams_result =
+    await competition_team_use_cases.list_teams_in_competition(competition_id, {
+      page_size: 100,
+    });
 
   if (!comp_teams_result.success) {
-    console.warn("[DataLoader] Failed to load competition teams:", competition_id);
+    console.warn(
+      "[DataLoader] Failed to load competition teams:",
+      competition_id,
+    );
     return empty_result;
   }
 
@@ -96,11 +111,16 @@ export async function fetch_teams_from_competition(
 
   const all_teams = await fetch_entities_for_type("team");
   if (all_teams.length === 0) {
-    console.warn("[DataLoader] Failed to load teams for competition:", competition_id);
+    console.warn(
+      "[DataLoader] Failed to load teams for competition:",
+      competition_id,
+    );
     return { ...empty_result, competition_team_ids };
   }
 
-  const filtered_teams = all_teams.filter((team) => competition_team_ids.has(team.id));
+  const filtered_teams = all_teams.filter((team) =>
+    competition_team_ids.has(team.id),
+  );
   const exclude_value = exclude_field ? form_data[exclude_field] : null;
   const final_teams = exclude_value
     ? filtered_teams.filter((team) => team.id !== exclude_value)
@@ -114,7 +134,11 @@ export async function fetch_teams_from_competition(
     exclude_value,
   });
 
-  return { teams: final_teams, all_competition_teams: filtered_teams, competition_team_ids };
+  return {
+    teams: final_teams,
+    all_competition_teams: filtered_teams,
+    competition_team_ids,
+  };
 }
 
 export async function fetch_entities_filtered_by_organization(
@@ -124,7 +148,8 @@ export async function fetch_entities_filtered_by_organization(
   const all_entities = await fetch_entities_for_type(entity_type);
   return all_entities.filter(
     (entity) =>
-      (entity as unknown as { organization_id?: string }).organization_id === organization_id,
+      (entity as unknown as { organization_id?: string }).organization_id ===
+      organization_id,
   );
 }
 
@@ -152,7 +177,9 @@ export async function fetch_teams_from_player_memberships(
   const player_team_ids = new Set(
     memberships.map((m) => (m as unknown as { team_id: string }).team_id),
   );
-  const membership_teams = all_teams.filter((team) => player_team_ids.has(team.id));
+  const membership_teams = all_teams.filter((team) =>
+    player_team_ids.has(team.id),
+  );
 
   console.debug("[DataLoader] Loaded player membership teams", {
     player_id,
@@ -183,7 +210,9 @@ export async function fetch_teams_excluding_player_memberships(
   );
 
   const selected_player = cached_players.find((p) => p.id === player_id);
-  const player_gender_id = (selected_player as unknown as { gender_id?: string })?.gender_id;
+  const player_gender_id = (
+    selected_player as unknown as { gender_id?: string }
+  )?.gender_id;
 
   console.debug("[DataLoader] Resolved player gender from cache", {
     player_id,
@@ -192,7 +221,10 @@ export async function fetch_teams_excluding_player_memberships(
   });
 
   const available_teams = all_teams.filter((team) => {
-    const t = team as unknown as { organization_id?: string; gender_id?: string };
+    const t = team as unknown as {
+      organization_id?: string;
+      gender_id?: string;
+    };
     const is_in_org = !organization_id || t.organization_id === organization_id;
     const is_not_player_team = !player_team_ids.has(team.id);
     const is_matching_gender =
@@ -243,7 +275,9 @@ export async function fetch_filtered_jersey_options(
   if (filter_config.filter_type === "team_jersey_from_fixture") {
     filter_holder_type = "team";
     filter_holder_id =
-      filter_config.team_side === "home" ? fixture.home_team_id : fixture.away_team_id;
+      filter_config.team_side === "home"
+        ? fixture.home_team_id
+        : fixture.away_team_id;
   } else if (filter_config.filter_type === "official_jersey_from_competition") {
     filter_holder_type = "competition_official";
     filter_holder_id = fixture.competition_id;
@@ -289,7 +323,11 @@ export async function fetch_filtered_entities_for_field(
   const organization_id = form_data["organization_id"] as string | undefined;
 
   if (filter_type === "teams_from_competition") {
-    const result = await fetch_teams_from_competition(dependency_value, form_data, exclude_field);
+    const result = await fetch_teams_from_competition(
+      dependency_value,
+      form_data,
+      exclude_field,
+    );
     return {
       entities: result.teams,
       all_competition_teams: result.all_competition_teams,
@@ -298,7 +336,12 @@ export async function fetch_filtered_entities_for_field(
   }
 
   if (filter_type === "competitions_from_organization") {
-    return { entities: await fetch_entities_filtered_by_organization("competition", dependency_value) };
+    return {
+      entities: await fetch_entities_filtered_by_organization(
+        "competition",
+        dependency_value,
+      ),
+    };
   }
 
   if (filter_type === "stages_from_competition") {
@@ -306,15 +349,30 @@ export async function fetch_filtered_entities_for_field(
   }
 
   if (filter_type === "fixtures_from_organization") {
-    return { entities: await fetch_entities_filtered_by_organization("fixture", dependency_value) };
+    return {
+      entities: await fetch_entities_filtered_by_organization(
+        "fixture",
+        dependency_value,
+      ),
+    };
   }
 
   if (filter_type === "teams_from_organization") {
-    return { entities: await fetch_entities_filtered_by_organization("team", dependency_value) };
+    return {
+      entities: await fetch_entities_filtered_by_organization(
+        "team",
+        dependency_value,
+      ),
+    };
   }
 
   if (filter_type === "players_from_organization") {
-    return { entities: await fetch_entities_filtered_by_organization("player", dependency_value) };
+    return {
+      entities: await fetch_entities_filtered_by_organization(
+        "player",
+        dependency_value,
+      ),
+    };
   }
 
   if (filter_type === "teams_from_player_memberships") {
@@ -322,7 +380,10 @@ export async function fetch_filtered_entities_for_field(
       dependency_value,
       form_data[field.field_name],
     );
-    return { entities: result.teams, auto_select_team_id: result.auto_select_team_id };
+    return {
+      entities: result.teams,
+      auto_select_team_id: result.auto_select_team_id,
+    };
   }
 
   if (filter_type === "teams_excluding_player_memberships") {
@@ -336,19 +397,34 @@ export async function fetch_filtered_entities_for_field(
   }
 
   if (filter_type === "officials_from_organization") {
-    return { entities: await fetch_officials_from_organization(dependency_value) };
+    return {
+      entities: await fetch_officials_from_organization(dependency_value),
+    };
   }
 
   if (filter_type === "lookup_from_organization") {
     const entity_type = field.foreign_key_entity!;
-    return { entities: await fetch_entities_filtered_by_organization(entity_type, dependency_value) };
+    return {
+      entities: await fetch_entities_filtered_by_organization(
+        entity_type,
+        dependency_value,
+      ),
+    };
   }
 
   if (filter_type === "live_game_logs_from_organization") {
-    return { entities: await fetch_entities_filtered_by_organization("livegamelog", dependency_value) };
+    return {
+      entities: await fetch_entities_filtered_by_organization(
+        "livegamelog",
+        dependency_value,
+      ),
+    };
   }
 
-  const jersey_result = await fetch_filtered_jersey_options(field, dependency_value);
+  const jersey_result = await fetch_filtered_jersey_options(
+    field,
+    dependency_value,
+  );
   return { entities: jersey_result.jerseys };
 }
 
@@ -377,9 +453,14 @@ export async function fetch_venue_name_for_team(
   }
   const venue_use_cases = venue_use_cases_result.data;
 
-  const venue_result = await venue_use_cases.get_by_id(selected_team.home_venue_id);
+  const venue_result = await venue_use_cases.get_by_id(
+    selected_team.home_venue_id,
+  );
   if (!venue_result.success || !venue_result.data) {
-    console.warn("[DataLoader] Failed to load venue:", selected_team.home_venue_id);
+    console.warn(
+      "[DataLoader] Failed to load venue:",
+      selected_team.home_venue_id,
+    );
     return null;
   }
 

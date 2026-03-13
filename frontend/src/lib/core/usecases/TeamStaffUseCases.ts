@@ -6,7 +6,11 @@ import type {
 import type { TeamStaffRole } from "../entities/TeamStaffRole";
 import type { TeamStaffFilter } from "../interfaces/ports";
 import type { QueryOptions } from "../interfaces/ports";
-import type { AsyncResult, PaginatedAsyncResult, PaginatedResult } from "../types/Result";
+import type {
+  AsyncResult,
+  PaginatedAsyncResult,
+  PaginatedResult,
+} from "../types/Result";
 import { create_failure_result, create_success_result } from "../types/Result";
 import { validate_team_staff_input } from "../entities/TeamStaff";
 import { get_repository_container } from "../../infrastructure/container";

@@ -1,6 +1,9 @@
 import type { PlayerTeamMembershipUseCases } from "../../core/usecases/PlayerTeamMembershipUseCases";
 import type { AsyncResult } from "../../core/types/Result";
-import { create_success_result, create_failure_result } from "../../core/types/Result";
+import {
+  create_success_result,
+  create_failure_result,
+} from "../../core/types/Result";
 import type { BaseEntity } from "../../core/entities/BaseEntity";
 
 export interface TransferApprovalDetails {
@@ -34,7 +37,10 @@ export async function apply_player_transfer_membership_change(
     );
   }
 
-  const create_result = await create_new_team_membership(membership_use_cases, transfer);
+  const create_result = await create_new_team_membership(
+    membership_use_cases,
+    transfer,
+  );
   if (!create_result.success) {
     return create_failure_result(create_result.error);
   }

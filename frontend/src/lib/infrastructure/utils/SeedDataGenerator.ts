@@ -5160,7 +5160,8 @@ export function create_seed_fixtures(
       current_period: "finished",
       current_minute: 70,
       match_day: 2,
-      notes: "Easter Cup Group A - Weatherhead keep clean sheet against Simba 2-0",
+      notes:
+        "Easter Cup Group A - Weatherhead keep clean sheet against Simba 2-0",
       stage_id: SEED_STAGE_IDS.EASTER_CUP_POOL_STAGE,
       status: "completed",
       created_at: now,
@@ -5273,7 +5274,8 @@ export function create_seed_fixtures(
       current_period: "finished",
       current_minute: 70,
       match_day: 3,
-      notes: "Easter Cup Group A - Kampala edge Simba 2-1 to secure second place",
+      notes:
+        "Easter Cup Group A - Kampala edge Simba 2-1 to secure second place",
       stage_id: SEED_STAGE_IDS.EASTER_CUP_POOL_STAGE,
       status: "completed",
       created_at: now,
@@ -5499,7 +5501,8 @@ export function create_seed_fixtures(
       current_period: "finished",
       current_minute: 70,
       match_day: 3,
-      notes: "Easter Cup Group B - Rockets put three past Strikers to top the group",
+      notes:
+        "Easter Cup Group B - Rockets put three past Strikers to top the group",
       stage_id: SEED_STAGE_IDS.EASTER_CUP_POOL_STAGE,
       status: "completed",
       created_at: now,
@@ -5612,7 +5615,8 @@ export function create_seed_fixtures(
       current_period: "finished",
       current_minute: 70,
       match_day: 1,
-      notes: "Easter Cup SF1 - Weatherhead cruise into the final with a dominant 3-0 win",
+      notes:
+        "Easter Cup SF1 - Weatherhead cruise into the final with a dominant 3-0 win",
       stage_id: SEED_STAGE_IDS.EASTER_CUP_SEMI_FINALS,
       status: "completed",
       created_at: now,
@@ -5725,7 +5729,8 @@ export function create_seed_fixtures(
       current_period: "finished",
       current_minute: 70,
       match_day: 2,
-      notes: "Easter Cup SF2 - Rockets edge past brave Kampala 2-1 in a thriller",
+      notes:
+        "Easter Cup SF2 - Rockets edge past brave Kampala 2-1 in a thriller",
       stage_id: SEED_STAGE_IDS.EASTER_CUP_SEMI_FINALS,
       status: "completed",
       created_at: now,
@@ -5786,7 +5791,8 @@ export function create_seed_fixtures(
           team_side: "away",
           player_name: "Daniel Wasswa",
           secondary_player_name: "Moses Alowo",
-          description: "Rockets draw first blood - Daniel Wasswa finishes coolly",
+          description:
+            "Rockets draw first blood - Daniel Wasswa finishes coolly",
           recorded_at: "2026-04-06T15:14:00Z",
         },
         {
@@ -5830,7 +5836,8 @@ export function create_seed_fixtures(
           team_side: "away",
           player_name: "George Mugabi",
           secondary_player_name: "Carol Adoko",
-          description: "WINNER! George Mugabi breaks Weatherhead hearts with a late strike",
+          description:
+            "WINNER! George Mugabi breaks Weatherhead hearts with a late strike",
           recorded_at: "2026-04-06T16:24:00Z",
         },
         {
@@ -5848,7 +5855,8 @@ export function create_seed_fixtures(
       current_period: "finished",
       current_minute: 70,
       match_day: 1,
-      notes: "Easter Cup 2026 Final - Rockets HC lift the trophy with a late George Mugabi winner",
+      notes:
+        "Easter Cup 2026 Final - Rockets HC lift the trophy with a late George Mugabi winner",
       stage_id: SEED_STAGE_IDS.EASTER_CUP_FINAL,
       status: "completed",
       created_at: now,

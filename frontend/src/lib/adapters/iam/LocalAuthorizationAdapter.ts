@@ -708,9 +708,7 @@ export class LocalAuthorizationAdapter implements AuthorizationPort {
     return parts.join(":");
   }
 
-  private async get_role_for_email(
-    email: string,
-  ): Promise<Result<UserRole>> {
+  private async get_role_for_email(email: string): Promise<Result<UserRole>> {
     const user_result = await this.system_user_repository.find_by_email(email);
 
     if (!user_result.success || user_result.data.items.length === 0) {

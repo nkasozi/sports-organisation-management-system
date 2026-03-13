@@ -60,7 +60,9 @@ function get_category_label(category: EventCategory): string {
   return found?.label ?? category;
 }
 
-export function get_default_game_event_types(organization_id: string): CreateGameEventTypeInput[] {
+export function get_default_game_event_types(
+  organization_id: string,
+): CreateGameEventTypeInput[] {
   return [
     {
       name: "Goal",

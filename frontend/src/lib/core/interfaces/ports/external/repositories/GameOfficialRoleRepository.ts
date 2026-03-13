@@ -1,5 +1,8 @@
 import type { Repository, QueryOptions } from "./Repository";
-import type { AsyncResult, PaginatedAsyncResult } from "../../../../types/Result";
+import type {
+  AsyncResult,
+  PaginatedAsyncResult,
+} from "../../../../types/Result";
 import type {
   GameOfficialRole,
   CreateGameOfficialRoleInput,

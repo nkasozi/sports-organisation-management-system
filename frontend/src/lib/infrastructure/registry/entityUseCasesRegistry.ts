@@ -31,10 +31,12 @@ import { get_live_game_log_use_cases } from "$lib/core/usecases/LiveGameLogUseCa
 import { get_game_event_log_use_cases } from "$lib/core/usecases/GameEventLogUseCases";
 import { get_competition_stage_use_cases } from "$lib/core/usecases/CompetitionStageUseCases";
 import { EventBus } from "$lib/infrastructure/events/EventBus";
+import type { BaseEntity } from "$lib/core/entities/BaseEntity";
 import type {
-  BaseEntity,
-} from "$lib/core/entities/BaseEntity";
-import type { AsyncResult, PaginatedAsyncResult, Result } from "$lib/core/types/Result";
+  AsyncResult,
+  PaginatedAsyncResult,
+  Result,
+} from "$lib/core/types/Result";
 import {
   create_success_result,
   create_failure_result,

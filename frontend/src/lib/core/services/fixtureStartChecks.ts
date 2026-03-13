@@ -267,9 +267,9 @@ export async function auto_generate_lineups_if_possible(
     status: "active",
   });
 
-  const active_memberships = (memberships_result.success ? memberships_result.data.items : []).filter(
-    (m: PlayerTeamMembership) => m.status === "active",
-  );
+  const active_memberships = (
+    memberships_result.success ? memberships_result.data.items : []
+  ).filter((m: PlayerTeamMembership) => m.status === "active");
 
   console.log(
     "[fixtureStartChecks] Found",
@@ -316,7 +316,8 @@ export async function auto_generate_lineups_if_possible(
   const player_promises = player_ids.map((player_id: string) =>
     player_use_cases.get_by_id(player_id),
   );
-  const player_results: Result<Player, string>[] = await Promise.all(player_promises);
+  const player_results: Result<Player, string>[] =
+    await Promise.all(player_promises);
 
   const players: Player[] = player_results
     .filter(
@@ -595,10 +596,7 @@ async function find_previous_lineup_for_team(
     team_id: team_id,
   });
 
-  if (
-    !lineups_result.success ||
-    !lineups_result.data?.items?.length
-  ) {
+  if (!lineups_result.success || !lineups_result.data?.items?.length) {
     console.log(
       "[fixtureStartChecks] No lineup found for team in previous fixture",
     );

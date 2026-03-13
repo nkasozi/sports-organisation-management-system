@@ -144,9 +144,7 @@ export function validate_competition_team_input(
   return validation_errors;
 }
 
-function sort_teams_by_standings(
-  teams: CompetitionTeam[],
-): CompetitionTeam[] {
+function sort_teams_by_standings(teams: CompetitionTeam[]): CompetitionTeam[] {
   return [...teams].sort((a, b) => {
     if (b.points !== a.points) return b.points - a.points;
     if (b.goal_difference !== a.goal_difference)

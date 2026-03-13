@@ -15,10 +15,7 @@ export interface BaseUseCasesPort<
 > {
   create(input: CreateInput): AsyncResult<T>;
   get_by_id(id: string): AsyncResult<T>;
-  list(
-    filter?: Filter,
-    pagination?: QueryOptions,
-  ): PaginatedAsyncResult<T>;
+  list(filter?: Filter, pagination?: QueryOptions): PaginatedAsyncResult<T>;
   update(id: string, input: UpdateInput): AsyncResult<T>;
   delete(id: string): AsyncResult<boolean>;
 }

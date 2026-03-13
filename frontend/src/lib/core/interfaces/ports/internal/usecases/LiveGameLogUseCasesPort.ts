@@ -4,7 +4,10 @@ import type {
   UpdateLiveGameLogInput,
 } from "../../../../entities/LiveGameLog";
 import type { LiveGameLogFilter } from "../../external/repositories/LiveGameLogRepository";
-import type { AsyncResult, PaginatedAsyncResult } from "../../../../types/Result";
+import type {
+  AsyncResult,
+  PaginatedAsyncResult,
+} from "../../../../types/Result";
 import type { BaseUseCasesPort } from "./BaseUseCasesPort";
 
 export interface LiveGameLogUseCasesPort extends BaseUseCasesPort<
@@ -15,9 +18,7 @@ export interface LiveGameLogUseCasesPort extends BaseUseCasesPort<
 > {
   get_live_game_log_for_fixture(fixture_id: string): AsyncResult<LiveGameLog>;
 
-  get_active_games(
-    organization_id?: string,
-  ): AsyncResult<LiveGameLog[]>;
+  get_active_games(organization_id?: string): AsyncResult<LiveGameLog[]>;
 
   start_game(id: string, user_id: string): AsyncResult<LiveGameLog>;
 

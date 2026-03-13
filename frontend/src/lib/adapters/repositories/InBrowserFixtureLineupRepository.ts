@@ -5,7 +5,10 @@ import type {
   UpdateFixtureLineupInput,
 } from "../../core/entities/FixtureLineup";
 import type { BaseEntity } from "../../core/entities/BaseEntity";
-import type { AsyncResult, PaginatedAsyncResult } from "../../core/types/Result";
+import type {
+  AsyncResult,
+  PaginatedAsyncResult,
+} from "../../core/types/Result";
 import {
   create_success_result,
   create_failure_result,
@@ -115,9 +118,10 @@ export class InBrowserFixtureLineupRepository
     return filtered;
   }
 
-  private build_query_options(
-    pagination?: { page: number; page_size: number },
-  ) {
+  private build_query_options(pagination?: {
+    page: number;
+    page_size: number;
+  }) {
     return pagination
       ? { page_number: pagination.page, page_size: pagination.page_size }
       : undefined;

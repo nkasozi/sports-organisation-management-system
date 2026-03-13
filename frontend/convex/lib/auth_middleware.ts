@@ -57,7 +57,8 @@ export async function require_auth(
     );
     return {
       success: false,
-      error: "No email in authentication token — check Clerk JWT template configuration",
+      error:
+        "No email in authentication token — check Clerk JWT template configuration",
     };
   }
 
@@ -66,7 +67,8 @@ export async function require_auth(
     .withIndex("by_email", (q: any) => q.eq("email", email.toLowerCase()))
     .first()) as SystemUserRecord | null;
 
-  if (!system_user) return { success: false, error: "User not found in system" };
+  if (!system_user)
+    return { success: false, error: "User not found in system" };
   if (system_user.status === "inactive")
     return { success: false, error: "User account is deactivated" };
 

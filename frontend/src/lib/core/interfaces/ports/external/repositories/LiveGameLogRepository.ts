@@ -4,7 +4,10 @@ import type {
   UpdateLiveGameLogInput,
   LiveGameStatus,
 } from "../../../../entities/LiveGameLog";
-import type { AsyncResult, PaginatedAsyncResult } from "../../../../types/Result";
+import type {
+  AsyncResult,
+  PaginatedAsyncResult,
+} from "../../../../types/Result";
 import type { Repository } from "./Repository";
 
 export interface LiveGameLogFilter {
@@ -22,9 +25,7 @@ export interface LiveGameLogRepository extends Repository<
 > {
   get_live_game_log_for_fixture(fixture_id: string): AsyncResult<LiveGameLog>;
 
-  get_active_games(
-    organization_id?: string,
-  ): AsyncResult<LiveGameLog[]>;
+  get_active_games(organization_id?: string): AsyncResult<LiveGameLog[]>;
 
   find_by_organization(
     organization_id: string,

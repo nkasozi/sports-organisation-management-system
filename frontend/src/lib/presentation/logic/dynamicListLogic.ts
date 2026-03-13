@@ -4,9 +4,7 @@ import type {
   EntityMetadata,
 } from "../../core/entities/BaseEntity";
 import type { SubEntityFilter } from "../../core/types/SubEntityFilter";
-import {
-  build_entity_display_label,
-} from "./dynamicFormLogic";
+import { build_entity_display_label } from "./dynamicFormLogic";
 import {
   build_authorization_list_filter,
   type UserScopeProfile,
@@ -558,7 +556,9 @@ export function build_entity_authorization_filter(
     return { filter: {}, profile_missing: false };
   }
 
-  const entity_fields = entity_metadata.fields.map((f: FieldMetadata) => f.field_name);
+  const entity_fields = entity_metadata.fields.map(
+    (f: FieldMetadata) => f.field_name,
+  );
   const filter = build_authorization_list_filter(auth_profile, entity_fields);
   const normalized_type = normalize_entity_type_for_filter(entity_type);
   const player_id = auth_profile.player_id;
@@ -566,17 +566,24 @@ export function build_entity_authorization_filter(
   const has_valid_player_id = player_id && player_id !== "*";
   const has_valid_team_id = team_id && team_id !== "*";
 
-  if (normalized_type === "player" && has_valid_player_id) filter["id"] = player_id;
-  if (normalized_type === "player" && has_valid_team_id) filter["team_id"] = team_id;
-  if (normalized_type === "playerteammembership" && has_valid_player_id) filter["player_id"] = player_id;
-  if (normalized_type === "playerprofile" && has_valid_player_id) filter["player_id"] = player_id;
-  if (normalized_type === "fixture" && has_valid_team_id) filter["team_id"] = team_id;
+  if (normalized_type === "player" && has_valid_player_id)
+    filter["id"] = player_id;
+  if (normalized_type === "player" && has_valid_team_id)
+    filter["team_id"] = team_id;
+  if (normalized_type === "playerteammembership" && has_valid_player_id)
+    filter["player_id"] = player_id;
+  if (normalized_type === "playerprofile" && has_valid_player_id)
+    filter["player_id"] = player_id;
+  if (normalized_type === "fixture" && has_valid_team_id)
+    filter["team_id"] = team_id;
   if (normalized_type === "team" && has_valid_team_id) filter["id"] = team_id;
-  if (normalized_type === "teamprofile" && has_valid_team_id) filter["team_id"] = team_id;
+  if (normalized_type === "teamprofile" && has_valid_team_id)
+    filter["team_id"] = team_id;
 
   const official_id = auth_profile.official_id;
   const has_valid_official_id = official_id && official_id !== "*";
-  if (normalized_type === "official" && has_valid_official_id) filter["id"] = official_id;
+  if (normalized_type === "official" && has_valid_official_id)
+    filter["id"] = official_id;
 
   return { filter, profile_missing: false };
 }
@@ -600,15 +607,19 @@ export function merge_entity_list_filters(
   return { ...(sub_filter || {}), ...auth_filter };
 }
 
-export function build_full_name_from_entity(entity: Record<string, unknown>): string {
+export function build_full_name_from_entity(
+  entity: Record<string, unknown>,
+): string {
   const first_name = entity.first_name;
   const last_name = entity.last_name;
   if (typeof first_name === "string" || typeof last_name === "string") {
     return [first_name, last_name]
-      .filter((part) => typeof part === "string" && (part as string).trim().length > 0)
+      .filter(
+        (part) =>
+          typeof part === "string" && (part as string).trim().length > 0,
+      )
       .join(" ")
       .trim();
   }
   return "";
 }
-

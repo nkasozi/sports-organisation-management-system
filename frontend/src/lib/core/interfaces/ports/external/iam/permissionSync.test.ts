@@ -25,7 +25,9 @@ describe("permission single source of truth", () => {
     });
 
     it("covers every key in SHARED_ENTITY_CATEGORY_MAP", () => {
-      for (const entity_type of Object.keys(SHARED_ENTITY_CATEGORY_MAP) as SharedEntityType[]) {
+      for (const entity_type of Object.keys(
+        SHARED_ENTITY_CATEGORY_MAP,
+      ) as SharedEntityType[]) {
         expect(get_entity_data_category(entity_type)).toBe(
           SHARED_ENTITY_CATEGORY_MAP[entity_type],
         );
@@ -39,7 +41,9 @@ describe("permission single source of truth", () => {
         it(`${role}/${category}: can_create/read/update/delete maps to create/read/update/delete`, () => {
           const local_perms = get_role_permissions(role as UserRole)[category];
           const shared_perms =
-            SHARED_ROLE_PERMISSIONS[role as keyof typeof SHARED_ROLE_PERMISSIONS][
+            SHARED_ROLE_PERMISSIONS[
+              role as keyof typeof SHARED_ROLE_PERMISSIONS
+            ][
               category as keyof (typeof SHARED_ROLE_PERMISSIONS)[keyof typeof SHARED_ROLE_PERMISSIONS]
             ];
 

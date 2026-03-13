@@ -351,7 +351,8 @@ async function load_and_set_current_user(): Promise<Result<SystemUser>> {
     return create_failure_result("No Clerk session active");
   }
 
-  const by_email_result = await system_user_repository.find_by_email(clerk_email);
+  const by_email_result =
+    await system_user_repository.find_by_email(clerk_email);
 
   if (!by_email_result.success || by_email_result.data.items.length === 0) {
     console.warn(

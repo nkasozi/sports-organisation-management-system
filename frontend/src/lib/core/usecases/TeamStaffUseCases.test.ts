@@ -111,7 +111,10 @@ describe("TeamStaffUseCases", () => {
       const result = await use_cases.list();
 
       expect(result.success).toBe(true);
-      expect(mock_repository.find_all).toHaveBeenCalledWith(undefined, undefined);
+      expect(mock_repository.find_all).toHaveBeenCalledWith(
+        undefined,
+        undefined,
+      );
     });
 
     it("should pass team_id filter to repository when provided", async () => {

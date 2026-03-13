@@ -760,9 +760,7 @@ function draw_single_report_on_doc(
   draw_remarks_section(doc, data, y_position);
 }
 
-function generate_all_match_reports_pdf(
-  reports: MatchReportData[],
-): jsPDF {
+function generate_all_match_reports_pdf(reports: MatchReportData[]): jsPDF {
   const doc = new jsPDF() as JsPDFWithAutoTable;
 
   for (let i = 0; i < reports.length; i++) {

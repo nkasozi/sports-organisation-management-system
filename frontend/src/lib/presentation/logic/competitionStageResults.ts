@@ -38,7 +38,12 @@ function calculate_head_to_head(
   team_a_id: string,
   team_b_id: string,
   completed_fixtures: Fixture[],
-): { team_a_points: number; team_b_points: number; team_a_gd: number; team_b_gd: number } {
+): {
+  team_a_points: number;
+  team_b_points: number;
+  team_a_gd: number;
+  team_b_gd: number;
+} {
   const h2h_fixtures = completed_fixtures.filter(
     (f) =>
       (f.home_team_id === team_a_id && f.away_team_id === team_b_id) ||

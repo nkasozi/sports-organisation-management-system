@@ -1263,7 +1263,10 @@ describe("get_remote_state_for_table with SyncHints", () => {
 
   it("returns cached value when cache contains the table and fresh not requested", () => {
     const cache = { players: "2024-06-01T00:00:00.000Z" };
-    const fetcher = vi.fn(() => ({ record_count: 10, latest_modified_at: "2024-01-01T00:00:00.000Z" }));
+    const fetcher = vi.fn(() => ({
+      record_count: 10,
+      latest_modified_at: "2024-01-01T00:00:00.000Z",
+    }));
 
     const result = get_remote_state_for_table("players", cache, false, fetcher);
 
@@ -1273,7 +1276,10 @@ describe("get_remote_state_for_table with SyncHints", () => {
 
   it("fetches fresh when use_fresh_timestamps is true even if cache present", () => {
     const cache = { players: "2024-06-01T00:00:00.000Z" };
-    const fetcher = vi.fn(() => ({ record_count: 5, latest_modified_at: "2024-09-01T00:00:00.000Z" }));
+    const fetcher = vi.fn(() => ({
+      record_count: 5,
+      latest_modified_at: "2024-09-01T00:00:00.000Z",
+    }));
 
     const result = get_remote_state_for_table("players", cache, true, fetcher);
 
@@ -1283,7 +1289,10 @@ describe("get_remote_state_for_table with SyncHints", () => {
 
   it("fetches fresh when table not in cache", () => {
     const cache = { competitions: "2024-01-01T00:00:00.000Z" };
-    const fetcher = vi.fn(() => ({ record_count: 3, latest_modified_at: "2024-05-01T00:00:00.000Z" }));
+    const fetcher = vi.fn(() => ({
+      record_count: 3,
+      latest_modified_at: "2024-05-01T00:00:00.000Z",
+    }));
 
     const result = get_remote_state_for_table("players", cache, false, fetcher);
 
@@ -1293,7 +1302,10 @@ describe("get_remote_state_for_table with SyncHints", () => {
 
   it("returns null latest when cache has null value for table", () => {
     const cache: Record<string, string | null> = { players: null };
-    const fetcher = vi.fn(() => ({ record_count: 0, latest_modified_at: null }));
+    const fetcher = vi.fn(() => ({
+      record_count: 0,
+      latest_modified_at: null,
+    }));
 
     const result = get_remote_state_for_table("players", cache, false, fetcher);
 
@@ -1302,9 +1314,17 @@ describe("get_remote_state_for_table with SyncHints", () => {
   });
 
   it("fetches fresh when no cache provided at all", () => {
-    const fetcher = vi.fn(() => ({ record_count: 2, latest_modified_at: "2024-03-01T00:00:00.000Z" }));
+    const fetcher = vi.fn(() => ({
+      record_count: 2,
+      latest_modified_at: "2024-03-01T00:00:00.000Z",
+    }));
 
-    const result = get_remote_state_for_table("players", undefined, undefined, fetcher);
+    const result = get_remote_state_for_table(
+      "players",
+      undefined,
+      undefined,
+      fetcher,
+    );
 
     expect(result.latest_modified_at).toBe("2024-03-01T00:00:00.000Z");
     expect(fetcher).toHaveBeenCalledOnce();
@@ -1319,51 +1339,64 @@ describe("skip-when-in-sync optimization", () => {
   ): boolean {
     const local_is_ahead = local_latest > remote_latest;
     const remote_is_ahead = remote_latest > local_latest;
-    const are_in_sync = !local_is_ahead && !remote_is_ahead && remote_latest !== EPOCH_TIMESTAMP;
+    const are_in_sync =
+      !local_is_ahead && !remote_is_ahead && remote_latest !== EPOCH_TIMESTAMP;
     return are_in_sync && direction === "bidirectional";
   }
 
   it("skips bidirectional sync when local and remote timestamps are equal", () => {
-    expect(should_skip_table(
-      "2024-06-01T00:00:00.000Z",
-      "2024-06-01T00:00:00.000Z",
-      "bidirectional",
-    )).toBe(true);
+    expect(
+      should_skip_table(
+        "2024-06-01T00:00:00.000Z",
+        "2024-06-01T00:00:00.000Z",
+        "bidirectional",
+      ),
+    ).toBe(true);
   });
 
   it("does not skip when local is ahead", () => {
-    expect(should_skip_table(
-      "2024-09-01T00:00:00.000Z",
-      "2024-06-01T00:00:00.000Z",
-      "bidirectional",
-    )).toBe(false);
+    expect(
+      should_skip_table(
+        "2024-09-01T00:00:00.000Z",
+        "2024-06-01T00:00:00.000Z",
+        "bidirectional",
+      ),
+    ).toBe(false);
   });
 
   it("does not skip when remote is ahead", () => {
-    expect(should_skip_table(
-      "2024-01-01T00:00:00.000Z",
-      "2024-06-01T00:00:00.000Z",
-      "bidirectional",
-    )).toBe(false);
+    expect(
+      should_skip_table(
+        "2024-01-01T00:00:00.000Z",
+        "2024-06-01T00:00:00.000Z",
+        "bidirectional",
+      ),
+    ).toBe(false);
   });
 
   it("does not skip for push direction even if timestamps match", () => {
-    expect(should_skip_table(
-      "2024-06-01T00:00:00.000Z",
-      "2024-06-01T00:00:00.000Z",
-      "push",
-    )).toBe(false);
+    expect(
+      should_skip_table(
+        "2024-06-01T00:00:00.000Z",
+        "2024-06-01T00:00:00.000Z",
+        "push",
+      ),
+    ).toBe(false);
   });
 
   it("does not skip for pull direction even if timestamps match", () => {
-    expect(should_skip_table(
-      "2024-06-01T00:00:00.000Z",
-      "2024-06-01T00:00:00.000Z",
-      "pull",
-    )).toBe(false);
+    expect(
+      should_skip_table(
+        "2024-06-01T00:00:00.000Z",
+        "2024-06-01T00:00:00.000Z",
+        "pull",
+      ),
+    ).toBe(false);
   });
 
   it("does not skip when both timestamps are EPOCH (never synced table)", () => {
-    expect(should_skip_table(EPOCH_TIMESTAMP, EPOCH_TIMESTAMP, "bidirectional")).toBe(false);
+    expect(
+      should_skip_table(EPOCH_TIMESTAMP, EPOCH_TIMESTAMP, "bidirectional"),
+    ).toBe(false);
   });
 });

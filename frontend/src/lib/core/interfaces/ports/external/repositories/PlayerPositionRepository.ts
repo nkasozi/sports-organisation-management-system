@@ -1,5 +1,12 @@
-import type { Repository, FilterableRepository, QueryOptions } from "./Repository";
-import type { AsyncResult, PaginatedAsyncResult } from "../../../../types/Result";
+import type {
+  Repository,
+  FilterableRepository,
+  QueryOptions,
+} from "./Repository";
+import type {
+  AsyncResult,
+  PaginatedAsyncResult,
+} from "../../../../types/Result";
 import type {
   PlayerPosition,
   CreatePlayerPositionInput,

@@ -38,7 +38,8 @@ export async function seed_default_lookup_entities_for_organization(
     `[OrganizationDefaults] Seeding default lookup entities for org: ${organization_id}`,
   );
 
-  const gender_repository = get_gender_repository() as InBrowserGenderRepository;
+  const gender_repository =
+    get_gender_repository() as InBrowserGenderRepository;
   const identification_type_repository =
     get_identification_type_repository() as InBrowserIdentificationTypeRepository;
   const player_position_repository =

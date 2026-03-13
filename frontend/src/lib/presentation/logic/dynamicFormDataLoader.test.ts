@@ -1,4 +1,11 @@
-import { describe, it, expect, vi, beforeEach, type MockedFunction } from "vitest";
+import {
+  describe,
+  it,
+  expect,
+  vi,
+  beforeEach,
+  type MockedFunction,
+} from "vitest";
 import type { BaseEntity, FieldMetadata } from "../../core/entities/BaseEntity";
 import { get_use_cases_for_entity_type } from "../../infrastructure/registry/entityUseCasesRegistry";
 import { get_competition_team_use_cases } from "../../core/usecases/CompetitionTeamUseCases";
@@ -25,11 +32,21 @@ const mock_get_competition_team_use_cases =
     typeof get_competition_team_use_cases
   >;
 
-function create_base_entity(id: string, overrides: Record<string, unknown> = {}): BaseEntity {
-  return { id, created_at: "2024-01-01T00:00:00Z", updated_at: "2024-01-01T00:00:00Z", ...overrides };
+function create_base_entity(
+  id: string,
+  overrides: Record<string, unknown> = {},
+): BaseEntity {
+  return {
+    id,
+    created_at: "2024-01-01T00:00:00Z",
+    updated_at: "2024-01-01T00:00:00Z",
+    ...overrides,
+  };
 }
 
-function create_field_metadata(overrides: Partial<FieldMetadata> = {}): FieldMetadata {
+function create_field_metadata(
+  overrides: Partial<FieldMetadata> = {},
+): FieldMetadata {
   return {
     field_name: "test_field",
     display_name: "Test Field",
@@ -44,11 +61,13 @@ function make_list_use_cases(entities: BaseEntity[], success = true) {
   return {
     success: true as const,
     data: {
-      list: vi.fn().mockResolvedValue(
-        success
-          ? { success: true, data: { items: entities } }
-          : { success: false, error: "fetch error" },
-      ),
+      list: vi
+        .fn()
+        .mockResolvedValue(
+          success
+            ? { success: true, data: { items: entities } }
+            : { success: false, error: "fetch error" },
+        ),
       get_by_id: vi.fn(),
     } as any,
   };
@@ -118,7 +137,10 @@ describe("fetch_entities_for_type", () => {
   });
 
   it("returns empty array when use cases missing", async () => {
-    mock_get_use_cases.mockReturnValue({ success: false, error: "Unknown entity type" });
+    mock_get_use_cases.mockReturnValue({
+      success: false,
+      error: "Unknown entity type",
+    });
 
     const result = await fetch_entities_for_type("unknown_type");
     expect(result).toHaveLength(0);
@@ -132,12 +154,20 @@ describe("fetch_entities_for_type", () => {
   });
 
   it("passes filter and page_size to the use case list method", async () => {
-    const list_mock = vi.fn().mockResolvedValue({ success: true, data: { items: [] } });
-    mock_get_use_cases.mockReturnValue({ success: true as const, data: { list: list_mock } as any });
+    const list_mock = vi
+      .fn()
+      .mockResolvedValue({ success: true, data: { items: [] } });
+    mock_get_use_cases.mockReturnValue({
+      success: true as const,
+      data: { list: list_mock } as any,
+    });
 
     await fetch_entities_for_type("team", { organization_id: "org_1" }, 50);
 
-    expect(list_mock).toHaveBeenCalledWith({ organization_id: "org_1" }, { page_size: 50 });
+    expect(list_mock).toHaveBeenCalledWith(
+      { organization_id: "org_1" },
+      { page_size: 50 },
+    );
   });
 });
 
@@ -147,7 +177,11 @@ describe("fetch_unfiltered_foreign_key_options", () => {
     mock_get_use_cases.mockReturnValue(make_list_use_cases([player_a]));
 
     const fields: FieldMetadata[] = [
-      create_field_metadata({ field_name: "player_id", field_type: "foreign_key", foreign_key_entity: "player" }),
+      create_field_metadata({
+        field_name: "player_id",
+        field_type: "foreign_key",
+        foreign_key_entity: "player",
+      }),
     ];
 
     const result = await fetch_unfiltered_foreign_key_options(fields);
@@ -157,8 +191,13 @@ describe("fetch_unfiltered_foreign_key_options", () => {
   });
 
   it("skips fields that have a foreign_key_filter", async () => {
-    const list_mock = vi.fn().mockResolvedValue({ success: true, data: { items: [] } });
-    mock_get_use_cases.mockReturnValue({ success: true as const, data: { list: list_mock } as any });
+    const list_mock = vi
+      .fn()
+      .mockResolvedValue({ success: true, data: { items: [] } });
+    mock_get_use_cases.mockReturnValue({
+      success: true as const,
+      data: { list: list_mock } as any,
+    });
 
     const fields: FieldMetadata[] = [
       create_field_metadata({
@@ -176,8 +215,13 @@ describe("fetch_unfiltered_foreign_key_options", () => {
   });
 
   it("skips non-foreign_key fields", async () => {
-    const list_mock = vi.fn().mockResolvedValue({ success: true, data: { items: [] } });
-    mock_get_use_cases.mockReturnValue({ success: true as const, data: { list: list_mock } as any });
+    const list_mock = vi
+      .fn()
+      .mockResolvedValue({ success: true, data: { items: [] } });
+    mock_get_use_cases.mockReturnValue({
+      success: true as const,
+      data: { list: list_mock } as any,
+    });
 
     const fields: FieldMetadata[] = [
       create_field_metadata({ field_name: "name", field_type: "string" }),
@@ -204,8 +248,16 @@ describe("fetch_unfiltered_foreign_key_options", () => {
     }));
 
     const fields: FieldMetadata[] = [
-      create_field_metadata({ field_name: "player_id", field_type: "foreign_key", foreign_key_entity: "player" }),
-      create_field_metadata({ field_name: "team_id", field_type: "foreign_key", foreign_key_entity: "team" }),
+      create_field_metadata({
+        field_name: "player_id",
+        field_type: "foreign_key",
+        foreign_key_entity: "player",
+      }),
+      create_field_metadata({
+        field_name: "team_id",
+        field_type: "foreign_key",
+        foreign_key_entity: "team",
+      }),
     ];
 
     const result = await fetch_unfiltered_foreign_key_options(fields);
@@ -218,11 +270,20 @@ describe("fetch_unfiltered_foreign_key_options", () => {
 
 describe("fetch_entities_filtered_by_organization", () => {
   it("returns only entities matching the organization_id", async () => {
-    const team_in_org = create_base_entity("team_1", { organization_id: "org_1" });
-    const team_other = create_base_entity("team_2", { organization_id: "org_2" });
-    mock_get_use_cases.mockReturnValue(make_list_use_cases([team_in_org, team_other]));
+    const team_in_org = create_base_entity("team_1", {
+      organization_id: "org_1",
+    });
+    const team_other = create_base_entity("team_2", {
+      organization_id: "org_2",
+    });
+    mock_get_use_cases.mockReturnValue(
+      make_list_use_cases([team_in_org, team_other]),
+    );
 
-    const result = await fetch_entities_filtered_by_organization("team", "org_1");
+    const result = await fetch_entities_filtered_by_organization(
+      "team",
+      "org_1",
+    );
 
     expect(result).toHaveLength(1);
     expect(result[0].id).toBe("team_1");
@@ -232,25 +293,41 @@ describe("fetch_entities_filtered_by_organization", () => {
     const team = create_base_entity("team_1", { organization_id: "org_2" });
     mock_get_use_cases.mockReturnValue(make_list_use_cases([team]));
 
-    const result = await fetch_entities_filtered_by_organization("team", "org_1");
+    const result = await fetch_entities_filtered_by_organization(
+      "team",
+      "org_1",
+    );
     expect(result).toHaveLength(0);
   });
 });
 
 describe("fetch_stages_from_competition", () => {
   it("passes competition_id filter to list call", async () => {
-    const list_mock = vi.fn().mockResolvedValue({ success: true, data: { items: [] } });
-    mock_get_use_cases.mockReturnValue({ success: true as const, data: { list: list_mock } as any });
+    const list_mock = vi
+      .fn()
+      .mockResolvedValue({ success: true, data: { items: [] } });
+    mock_get_use_cases.mockReturnValue({
+      success: true as const,
+      data: { list: list_mock } as any,
+    });
 
     await fetch_stages_from_competition("comp_1");
 
-    expect(list_mock).toHaveBeenCalledWith({ competition_id: "comp_1" }, { page_size: 100 });
+    expect(list_mock).toHaveBeenCalledWith(
+      { competition_id: "comp_1" },
+      { page_size: 100 },
+    );
   });
 
   it("returns stage entities for the competition", async () => {
     const stage_a = create_base_entity("stage_a");
-    const list_mock = vi.fn().mockResolvedValue({ success: true, data: { items: [stage_a] } });
-    mock_get_use_cases.mockReturnValue({ success: true as const, data: { list: list_mock } as any });
+    const list_mock = vi
+      .fn()
+      .mockResolvedValue({ success: true, data: { items: [stage_a] } });
+    mock_get_use_cases.mockReturnValue({
+      success: true as const,
+      data: { list: list_mock } as any,
+    });
 
     const result = await fetch_stages_from_competition("comp_1");
     expect(result).toHaveLength(1);
@@ -281,7 +358,9 @@ describe("fetch_teams_from_competition", () => {
 
   it("returns empty result when competition_team fetch fails", async () => {
     mock_get_competition_team_use_cases.mockReturnValue({
-      list_teams_in_competition: vi.fn().mockResolvedValue({ success: false, error: "not found" }),
+      list_teams_in_competition: vi
+        .fn()
+        .mockResolvedValue({ success: false, error: "not found" }),
     } as any);
 
     const result = await fetch_teams_from_competition("comp_1", {});
@@ -303,7 +382,11 @@ describe("fetch_teams_from_competition", () => {
 
     mock_get_use_cases.mockReturnValue(make_list_use_cases([team_a, team_b]));
 
-    const result = await fetch_teams_from_competition("comp_1", { away_team_id: "team_b" }, "away_team_id");
+    const result = await fetch_teams_from_competition(
+      "comp_1",
+      { away_team_id: "team_b" },
+      "away_team_id",
+    );
 
     expect(result.teams).toHaveLength(1);
     expect(result.teams[0].id).toBe("team_a");
@@ -328,7 +411,10 @@ describe("fetch_teams_from_player_memberships", () => {
       } as any,
     }));
 
-    const result = await fetch_teams_from_player_memberships("player_1", undefined);
+    const result = await fetch_teams_from_player_memberships(
+      "player_1",
+      undefined,
+    );
 
     expect(result.teams).toHaveLength(1);
     expect(result.teams[0].id).toBe("team_a");
@@ -349,7 +435,10 @@ describe("fetch_teams_from_player_memberships", () => {
       } as any,
     }));
 
-    const result = await fetch_teams_from_player_memberships("player_1", undefined);
+    const result = await fetch_teams_from_player_memberships(
+      "player_1",
+      undefined,
+    );
 
     expect(result.auto_select_team_id).toBe("team_a");
   });
@@ -369,7 +458,10 @@ describe("fetch_teams_from_player_memberships", () => {
       } as any,
     }));
 
-    const result = await fetch_teams_from_player_memberships("player_1", "team_existing");
+    const result = await fetch_teams_from_player_memberships(
+      "player_1",
+      "team_existing",
+    );
 
     expect(result.auto_select_team_id).toBeUndefined();
   });
@@ -392,15 +484,23 @@ describe("fetch_teams_excluding_player_memberships", () => {
       } as any,
     }));
 
-    const result = await fetch_teams_excluding_player_memberships("player_1", [], undefined);
+    const result = await fetch_teams_excluding_player_memberships(
+      "player_1",
+      [],
+      undefined,
+    );
 
     expect(result).toHaveLength(1);
     expect(result[0].id).toBe("team_b");
   });
 
   it("filters by organization_id when provided", async () => {
-    const team_in_org = create_base_entity("team_in_org", { organization_id: "org_1" });
-    const team_other_org = create_base_entity("team_other", { organization_id: "org_2" });
+    const team_in_org = create_base_entity("team_in_org", {
+      organization_id: "org_1",
+    });
+    const team_other_org = create_base_entity("team_other", {
+      organization_id: "org_2",
+    });
 
     let call_index = 0;
     mock_get_use_cases.mockImplementation(() => ({
@@ -408,12 +508,18 @@ describe("fetch_teams_excluding_player_memberships", () => {
       data: {
         list: vi.fn().mockResolvedValue({
           success: true,
-          data: { items: call_index++ === 0 ? [] : [team_in_org, team_other_org] },
+          data: {
+            items: call_index++ === 0 ? [] : [team_in_org, team_other_org],
+          },
         }),
       } as any,
     }));
 
-    const result = await fetch_teams_excluding_player_memberships("player_1", [], "org_1");
+    const result = await fetch_teams_excluding_player_memberships(
+      "player_1",
+      [],
+      "org_1",
+    );
 
     expect(result).toHaveLength(1);
     expect(result[0].id).toBe("team_in_org");
@@ -421,8 +527,12 @@ describe("fetch_teams_excluding_player_memberships", () => {
 
   it("filters by gender when player has a gender and team has a gender", async () => {
     const player = create_base_entity("player_1", { gender_id: "gender_male" });
-    const team_male = create_base_entity("team_a", { gender_id: "gender_male" });
-    const team_female = create_base_entity("team_b", { gender_id: "gender_female" });
+    const team_male = create_base_entity("team_a", {
+      gender_id: "gender_male",
+    });
+    const team_female = create_base_entity("team_b", {
+      gender_id: "gender_female",
+    });
     const cached_players = [player as BaseEntity];
 
     let call_index = 0;
@@ -436,7 +546,11 @@ describe("fetch_teams_excluding_player_memberships", () => {
       } as any,
     }));
 
-    const result = await fetch_teams_excluding_player_memberships("player_1", cached_players, undefined);
+    const result = await fetch_teams_excluding_player_memberships(
+      "player_1",
+      cached_players,
+      undefined,
+    );
 
     expect(result).toHaveLength(1);
     expect(result[0].id).toBe("team_a");
@@ -450,10 +564,17 @@ describe("fetch_filtered_entities_for_field", () => {
 
     const field = create_field_metadata({
       field_name: "competition_id",
-      foreign_key_filter: { filter_type: "competitions_from_organization" } as any,
+      foreign_key_filter: {
+        filter_type: "competitions_from_organization",
+      } as any,
     });
 
-    const result = await fetch_filtered_entities_for_field(field, "org_1", [], {});
+    const result = await fetch_filtered_entities_for_field(
+      field,
+      "org_1",
+      [],
+      {},
+    );
 
     expect(result.entities).toHaveLength(1);
     expect(result.entities[0].id).toBe("comp_1");
@@ -461,18 +582,31 @@ describe("fetch_filtered_entities_for_field", () => {
 
   it("delegates stages_from_competition to fetch_stages_from_competition", async () => {
     const stage = create_base_entity("stage_1");
-    const list_mock = vi.fn().mockResolvedValue({ success: true, data: { items: [stage] } });
-    mock_get_use_cases.mockReturnValue({ success: true as const, data: { list: list_mock } as any });
+    const list_mock = vi
+      .fn()
+      .mockResolvedValue({ success: true, data: { items: [stage] } });
+    mock_get_use_cases.mockReturnValue({
+      success: true as const,
+      data: { list: list_mock } as any,
+    });
 
     const field = create_field_metadata({
       field_name: "stage_id",
       foreign_key_filter: { filter_type: "stages_from_competition" } as any,
     });
 
-    const result = await fetch_filtered_entities_for_field(field, "comp_1", [], {});
+    const result = await fetch_filtered_entities_for_field(
+      field,
+      "comp_1",
+      [],
+      {},
+    );
 
     expect(result.entities).toHaveLength(1);
-    expect(list_mock).toHaveBeenCalledWith({ competition_id: "comp_1" }, { page_size: 100 });
+    expect(list_mock).toHaveBeenCalledWith(
+      { competition_id: "comp_1" },
+      { page_size: 100 },
+    );
   });
 
   it("delegates teams_from_competition and returns cache fields", async () => {
@@ -490,7 +624,12 @@ describe("fetch_filtered_entities_for_field", () => {
       foreign_key_filter: { filter_type: "teams_from_competition" } as any,
     });
 
-    const result = await fetch_filtered_entities_for_field(field, "comp_1", [], {});
+    const result = await fetch_filtered_entities_for_field(
+      field,
+      "comp_1",
+      [],
+      {},
+    );
 
     expect(result.entities).toHaveLength(1);
     expect(result.all_competition_teams).toBeDefined();
@@ -514,10 +653,17 @@ describe("fetch_filtered_entities_for_field", () => {
 
     const field = create_field_metadata({
       field_name: "team_id",
-      foreign_key_filter: { filter_type: "teams_from_player_memberships" } as any,
+      foreign_key_filter: {
+        filter_type: "teams_from_player_memberships",
+      } as any,
     });
 
-    const result = await fetch_filtered_entities_for_field(field, "player_1", [], {});
+    const result = await fetch_filtered_entities_for_field(
+      field,
+      "player_1",
+      [],
+      {},
+    );
 
     expect(result.entities).toHaveLength(1);
     expect(result.auto_select_team_id).toBe("team_a");

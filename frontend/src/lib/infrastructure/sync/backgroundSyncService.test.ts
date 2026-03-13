@@ -289,18 +289,25 @@ describe("port configuration", () => {
   });
 
   it("configure_restoration_handlers stores the handlers and returns success", () => {
-    let stored_handlers: { stop_remote_sync: () => void; start_remote_sync: () => void } | null = null;
+    let stored_handlers: {
+      stop_remote_sync: () => void;
+      start_remote_sync: () => void;
+    } | null = null;
 
-    function configure_restoration_handlers(
-      handlers: { stop_remote_sync: () => void; start_remote_sync: () => void },
-    ) {
+    function configure_restoration_handlers(handlers: {
+      stop_remote_sync: () => void;
+      start_remote_sync: () => void;
+    }) {
       stored_handlers = handlers;
       return { success: true as const, data: true };
     }
 
     const stop_fn = vi.fn();
     const start_fn = vi.fn();
-    const result = configure_restoration_handlers({ stop_remote_sync: stop_fn, start_remote_sync: start_fn });
+    const result = configure_restoration_handlers({
+      stop_remote_sync: stop_fn,
+      start_remote_sync: start_fn,
+    });
 
     expect(result.success).toBe(true);
     expect(stored_handlers).not.toBeNull();
@@ -321,7 +328,16 @@ describe("execute_push_sync behavior", () => {
       sync_now: async (direction: string, hints: Record<string, unknown>) => {
         called_direction = direction;
         called_hints = hints;
-        return { success: true as const, data: { records_pushed: 3, records_pulled: 0, tables_synced: 2, duration_ms: 100, conflicts: [] } };
+        return {
+          success: true as const,
+          data: {
+            records_pushed: 3,
+            records_pulled: 0,
+            tables_synced: 2,
+            duration_ms: 100,
+            conflicts: [],
+          },
+        };
       },
       is_configured: () => true,
     };
@@ -338,15 +354,22 @@ describe("execute_push_sync behavior", () => {
       subscriber: typeof mock_remote_subscriber,
     ): Promise<boolean> {
       const cache = subscriber.get_cached_table_timestamps();
-      const result = await orchestrator.sync_now("push", { remote_timestamp_cache: cache });
+      const result = await orchestrator.sync_now("push", {
+        remote_timestamp_cache: cache,
+      });
       return result.success;
     }
 
-    const success = await execute_push_sync_with_ports(mock_orchestrator, mock_remote_subscriber);
+    const success = await execute_push_sync_with_ports(
+      mock_orchestrator,
+      mock_remote_subscriber,
+    );
 
     expect(success).toBe(true);
     expect(called_direction).toBe("push");
-    expect((called_hints as Record<string, unknown>)?.remote_timestamp_cache).toEqual(timestamp_cache);
+    expect(
+      (called_hints as Record<string, unknown>)?.remote_timestamp_cache,
+    ).toEqual(timestamp_cache);
   });
 
   it("marks pending changes when orchestrator returns failure", async () => {
@@ -360,7 +383,9 @@ describe("execute_push_sync behavior", () => {
       is_configured: () => true,
     };
 
-    async function execute_push_and_track(orchestrator: typeof mock_orchestrator): Promise<boolean> {
+    async function execute_push_and_track(
+      orchestrator: typeof mock_orchestrator,
+    ): Promise<boolean> {
       const result = await orchestrator.sync_now();
       if (!result.success) {
         has_pending_changes = true;
@@ -393,13 +418,21 @@ describe("network restoration sync behavior", () => {
     };
 
     const mock_orchestrator = {
-      sync_now: vi.fn(async (_direction?: string, _hints?: Record<string, unknown>) => {
-        call_order.push("bidirectional_sync");
-        return {
-          success: true as const,
-          data: { records_pushed: 5, records_pulled: 3, tables_synced: 34, duration_ms: 800, conflicts: [] },
-        };
-      }),
+      sync_now: vi.fn(
+        async (_direction?: string, _hints?: Record<string, unknown>) => {
+          call_order.push("bidirectional_sync");
+          return {
+            success: true as const,
+            data: {
+              records_pushed: 5,
+              records_pulled: 3,
+              tables_synced: 34,
+              duration_ms: 800,
+              conflicts: [],
+            },
+          };
+        },
+      ),
       is_configured: () => true,
     };
 
@@ -422,7 +455,9 @@ describe("network restoration sync behavior", () => {
       }
 
       try {
-        await orchestrator.sync_now("bidirectional", { use_fresh_timestamps: true });
+        await orchestrator.sync_now("bidirectional", {
+          use_fresh_timestamps: true,
+        });
       } finally {
         if (websocket_was_running) {
           handlers.start_remote_sync();
@@ -430,9 +465,17 @@ describe("network restoration sync behavior", () => {
       }
     }
 
-    await run_network_restoration_sync(mock_orchestrator, mock_handlers, mock_subscriber);
+    await run_network_restoration_sync(
+      mock_orchestrator,
+      mock_handlers,
+      mock_subscriber,
+    );
 
-    expect(call_order).toEqual(["stop_websocket", "bidirectional_sync", "start_websocket"]);
+    expect(call_order).toEqual([
+      "stop_websocket",
+      "bidirectional_sync",
+      "start_websocket",
+    ]);
   });
 
   it("always restarts WebSocket even when bidirectional sync fails", async () => {
@@ -442,10 +485,12 @@ describe("network restoration sync behavior", () => {
     };
 
     const mock_orchestrator = {
-      sync_now: vi.fn(async (_direction?: string, _hints?: Record<string, unknown>) => ({
-        success: false as const,
-        error: { failed_tables: [], message: "Sync failed" },
-      })),
+      sync_now: vi.fn(
+        async (_direction?: string, _hints?: Record<string, unknown>) => ({
+          success: false as const,
+          error: { failed_tables: [], message: "Sync failed" },
+        }),
+      ),
       is_configured: () => true,
     };
 
@@ -455,13 +500,18 @@ describe("network restoration sync behavior", () => {
     ): Promise<void> {
       handlers.stop_remote_sync();
       try {
-        await orchestrator.sync_now("bidirectional", { use_fresh_timestamps: true });
+        await orchestrator.sync_now("bidirectional", {
+          use_fresh_timestamps: true,
+        });
       } finally {
         handlers.start_remote_sync();
       }
     }
 
-    await run_restoration_with_guaranteed_restart(mock_orchestrator, mock_handlers);
+    await run_restoration_with_guaranteed_restart(
+      mock_orchestrator,
+      mock_handlers,
+    );
 
     expect(mock_handlers.stop_remote_sync).toHaveBeenCalledOnce();
     expect(mock_handlers.start_remote_sync).toHaveBeenCalledOnce();
@@ -471,14 +521,27 @@ describe("network restoration sync behavior", () => {
     let called_hints: Record<string, unknown> | undefined;
 
     const mock_orchestrator = {
-      sync_now: vi.fn(async (_direction: string, hints: Record<string, unknown>) => {
-        called_hints = hints;
-        return { success: true as const, data: { records_pushed: 0, records_pulled: 0, tables_synced: 0, duration_ms: 0, conflicts: [] } };
-      }),
+      sync_now: vi.fn(
+        async (_direction: string, hints: Record<string, unknown>) => {
+          called_hints = hints;
+          return {
+            success: true as const,
+            data: {
+              records_pushed: 0,
+              records_pulled: 0,
+              tables_synced: 0,
+              duration_ms: 0,
+              conflicts: [],
+            },
+          };
+        },
+      ),
       is_configured: () => true,
     };
 
-    await mock_orchestrator.sync_now("bidirectional", { use_fresh_timestamps: true });
+    await mock_orchestrator.sync_now("bidirectional", {
+      use_fresh_timestamps: true,
+    });
 
     expect(called_hints?.use_fresh_timestamps).toBe(true);
   });
@@ -486,7 +549,10 @@ describe("network restoration sync behavior", () => {
 
 describe("flush_pending_changes returns AsyncResult", () => {
   it("resolves with skipped_offline=false when no pending changes", async () => {
-    async function flush_when_no_pending(): Promise<{ success: boolean; data?: { skipped_offline: boolean } }> {
+    async function flush_when_no_pending(): Promise<{
+      success: boolean;
+      data?: { skipped_offline: boolean };
+    }> {
       return { success: true, data: { skipped_offline: false } };
     }
 
@@ -496,7 +562,10 @@ describe("flush_pending_changes returns AsyncResult", () => {
   });
 
   it("resolves with skipped_offline=true when offline", async () => {
-    async function flush_when_offline(): Promise<{ success: boolean; data?: { skipped_offline: boolean } }> {
+    async function flush_when_offline(): Promise<{
+      success: boolean;
+      data?: { skipped_offline: boolean };
+    }> {
       return { success: true, data: { skipped_offline: true } };
     }
 
@@ -506,8 +575,14 @@ describe("flush_pending_changes returns AsyncResult", () => {
   });
 
   it("resolves with failure when push sync fails", async () => {
-    async function flush_with_failed_sync(): Promise<{ success: boolean; error?: string }> {
-      return { success: false, error: "Flush failed — check logs for push sync errors" };
+    async function flush_with_failed_sync(): Promise<{
+      success: boolean;
+      error?: string;
+    }> {
+      return {
+        success: false,
+        error: "Flush failed — check logs for push sync errors",
+      };
     }
 
     const result = await flush_with_failed_sync();
@@ -540,7 +615,11 @@ describe("create_local_change_publisher factory", () => {
   });
 
   it("get_status returns LocalSyncStatus shape", () => {
-    function get_status(is_running: boolean, has_pending_changes: boolean, is_online: boolean) {
+    function get_status(
+      is_running: boolean,
+      has_pending_changes: boolean,
+      is_online: boolean,
+    ) {
       return { is_running, has_pending_changes, is_online };
     }
 

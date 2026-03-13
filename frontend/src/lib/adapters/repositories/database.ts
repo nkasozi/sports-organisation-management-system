@@ -95,7 +95,8 @@ class SportsOrgDatabase extends Dexie {
       game_official_roles: "id, name, organization_id, sport_id, created_at",
       venues: "id, name, city, country, created_at",
       jersey_colors: "id, name, hex_code, created_at",
-      player_positions: "id, name, organization_id, abbreviation, sport_id, created_at",
+      player_positions:
+        "id, name, organization_id, abbreviation, sport_id, created_at",
       player_profiles: "id, player_id, slug, created_at",
       team_profiles: "id, team_id, slug, created_at",
       profile_links: "id, profile_type, profile_id, platform, created_at",
@@ -118,7 +119,8 @@ class SportsOrgDatabase extends Dexie {
       identifications:
         "id, entity_type, entity_id, identification_type_id, created_at",
       qualifications: "id, entity_type, entity_id, name, created_at",
-      game_event_types: "id, name, organization_id, sport_id, category, created_at",
+      game_event_types:
+        "id, name, organization_id, sport_id, category, created_at",
       official_associated_teams:
         "id, official_id, team_id, association_type, status, created_at",
       player_team_transfer_histories:

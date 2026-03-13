@@ -201,7 +201,11 @@ describe("competitionStageResults", () => {
   });
 
   it("uses head_to_head tie-breaker when points and goal_difference are equal", () => {
-    const tie_breakers: TieBreaker[] = ["goal_difference", "head_to_head", "goals_scored"];
+    const tie_breakers: TieBreaker[] = [
+      "goal_difference",
+      "head_to_head",
+      "goals_scored",
+    ];
 
     const standings = calculate_team_standings(
       [

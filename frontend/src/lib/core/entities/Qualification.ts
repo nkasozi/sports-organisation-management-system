@@ -123,9 +123,7 @@ export function get_days_until_expiry(expiry_date: string): number | null {
   return diff_days;
 }
 
-function get_qualification_display_name(
-  qualification: Qualification,
-): string {
+function get_qualification_display_name(qualification: Qualification): string {
   return `${qualification.certification_name} (${qualification.certification_level})`;
 }
 

@@ -425,9 +425,7 @@ export function build_foreign_key_select_options(
       return option;
     })
     .filter(
-      (
-        opt,
-      ): opt is { value: string; label: string; color_swatch?: string } =>
+      (opt): opt is { value: string; label: string; color_swatch?: string } =>
         Boolean(opt),
     );
 }

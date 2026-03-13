@@ -50,7 +50,8 @@ async function get_system_user_from_context(ctx: {
     );
     return {
       success: false,
-      error: "No email in authentication token — check Clerk JWT template configuration",
+      error:
+        "No email in authentication token — check Clerk JWT template configuration",
     };
   }
 
@@ -59,7 +60,8 @@ async function get_system_user_from_context(ctx: {
     .withIndex("by_email", (q: any) => q.eq("email", email.toLowerCase()))
     .first();
 
-  if (!system_user) return { success: false, error: "User not found in system" };
+  if (!system_user)
+    return { success: false, error: "User not found in system" };
   if (system_user.status === "inactive")
     return { success: false, error: "User account is deactivated" };
 
@@ -156,7 +158,10 @@ export const check_user_access = query({
       };
     }
 
-    return { success: true, data: { email: system_user.email, role: system_user.role } };
+    return {
+      success: true,
+      data: { email: system_user.email, role: system_user.role },
+    };
   },
 });
 
@@ -174,7 +179,8 @@ export const check_entity_authorized = query({
   },
   handler: async (ctx, args): Promise<ConvexResult<AuthorizationResult>> => {
     const user_result = await get_system_user_from_context(ctx);
-    if (!user_result.success) return { success: false, error: user_result.error };
+    if (!user_result.success)
+      return { success: false, error: user_result.error };
 
     const user = user_result.data;
     const data_category = get_entity_data_category(args.entity_type);
@@ -204,7 +210,8 @@ export const get_allowed_entity_actions = query({
   },
   handler: async (ctx, args): Promise<ConvexResult<DataAction[]>> => {
     const user_result = await get_system_user_from_context(ctx);
-    if (!user_result.success) return { success: false, error: user_result.error };
+    if (!user_result.success)
+      return { success: false, error: user_result.error };
 
     const user = user_result.data;
     const data_category = get_entity_data_category(args.entity_type);
@@ -212,7 +219,10 @@ export const get_allowed_entity_actions = query({
       SHARED_ROLE_PERMISSIONS[user.role]?.[data_category];
     if (!category_permissions) return { success: true, data: [] };
 
-    return { success: true, data: get_actions_from_permissions(category_permissions) };
+    return {
+      success: true,
+      data: get_actions_from_permissions(category_permissions),
+    };
   },
 });
 
@@ -223,7 +233,8 @@ export const get_disabled_entity_actions = query({
   handler: async (ctx, args): Promise<ConvexResult<DataAction[]>> => {
     const all_actions: DataAction[] = ["create", "read", "update", "delete"];
     const user_result = await get_system_user_from_context(ctx);
-    if (!user_result.success) return { success: false, error: user_result.error };
+    if (!user_result.success)
+      return { success: false, error: user_result.error };
 
     const user = user_result.data;
     const data_category = get_entity_data_category(args.entity_type);
@@ -240,7 +251,8 @@ export const get_sidebar_menu = query({
     ctx,
   ): Promise<ConvexResult<Array<{ group_name: string; items: any[] }>>> => {
     const user_result = await get_system_user_from_context(ctx);
-    if (!user_result.success) return { success: false, error: user_result.error };
+    if (!user_result.success)
+      return { success: false, error: user_result.error };
 
     const user = user_result.data;
     const menu_items = await ctx.db
@@ -289,7 +301,8 @@ export const get_user_scope_filter = query({
     args,
   ): Promise<ConvexResult<Record<string, string | undefined>>> => {
     const user_result = await get_system_user_from_context(ctx);
-    if (!user_result.success) return { success: false, error: user_result.error };
+    if (!user_result.success)
+      return { success: false, error: user_result.error };
 
     const user = user_result.data;
 
@@ -376,7 +389,8 @@ export const can_access_route = query({
     args,
   ): Promise<ConvexResult<{ user_role: string; can_access: boolean }>> => {
     const user_result = await get_system_user_from_context(ctx);
-    if (!user_result.success) return { success: false, error: user_result.error };
+    if (!user_result.success)
+      return { success: false, error: user_result.error };
 
     const user = user_result.data;
     const menu_items = await ctx.db
@@ -459,4 +473,3 @@ export const seed_super_admin = mutation({
     };
   },
 });
-

@@ -74,7 +74,9 @@ interface ConvexGetProfileResponse {
   error?: string;
 }
 
-async function fetch_current_user_profile_from_convex(): Promise<Result<ConvexUserProfile>> {
+async function fetch_current_user_profile_from_convex(): Promise<
+  Result<ConvexUserProfile>
+> {
   const convex_client = get_sync_manager().get_convex_client();
 
   if (!convex_client) {
@@ -88,12 +90,16 @@ async function fetch_current_user_profile_from_convex(): Promise<Result<ConvexUs
     )) as ConvexGetProfileResponse;
 
     if (!response.success || !response.data?.email) {
-      return { success: false, error: response.error ?? "Profile not found in Convex" };
+      return {
+        success: false,
+        error: response.error ?? "Profile not found in Convex",
+      };
     }
 
     return { success: true, data: response.data };
   } catch (error) {
-    const error_message = error instanceof Error ? error.message : String(error);
+    const error_message =
+      error instanceof Error ? error.message : String(error);
     console.warn(`[AuthStore] Convex profile query failed: ${error_message}`);
     return { success: false, error: error_message };
   }
@@ -130,7 +136,9 @@ function get_role_permissions_sync(
 ): Result<Record<DataCategory, CategoryPermissions>> {
   const shared_perms = SHARED_ROLE_PERMISSIONS[role];
   if (!shared_perms) {
-    console.error(`[AuthStore] Unknown role: "${role}" — this should never happen`);
+    console.error(
+      `[AuthStore] Unknown role: "${role}" — this should never happen`,
+    );
     return { success: false, error: `Unknown role: "${role}"` };
   }
   return {
@@ -140,7 +148,9 @@ function get_role_permissions_sync(
       org_administrator_level: adapt_shared_permissions(
         shared_perms.org_administrator_level,
       ),
-      organisation_level: adapt_shared_permissions(shared_perms.organisation_level),
+      organisation_level: adapt_shared_permissions(
+        shared_perms.organisation_level,
+      ),
       team_level: adapt_shared_permissions(shared_perms.team_level),
       player_level: adapt_shared_permissions(shared_perms.player_level),
       public_level: adapt_shared_permissions(shared_perms.public_level),
@@ -343,7 +353,9 @@ function create_auth_store() {
 
     const clerk_matched_profile = convex_email_result.success
       ? (available_profiles.find(
-          (p) => p.email.toLowerCase() === convex_email_result.data.email.toLowerCase(),
+          (p) =>
+            p.email.toLowerCase() ===
+            convex_email_result.data.email.toLowerCase(),
         ) ?? null)
       : null;
 
@@ -419,8 +431,9 @@ function create_auth_store() {
           repository,
           organization_repository,
         );
-        const refreshed_available_profiles =
-          build_profiles_with_public_viewer(refreshed_profiles_raw);
+        const refreshed_available_profiles = build_profiles_with_public_viewer(
+          refreshed_profiles_raw,
+        );
         resolved_profile =
           refreshed_available_profiles.find(
             (p) =>
@@ -635,7 +648,11 @@ function create_auth_store() {
     const permissions_result = get_role_permissions_sync(role);
     if (!permissions_result.success) {
       console.error(`[AuthStore] ${permissions_result.error}`);
-      return { is_authorized: false, authorization_level: "none", error_message: permissions_result.error };
+      return {
+        is_authorized: false,
+        authorization_level: "none",
+        error_message: permissions_result.error,
+      };
     }
     const permissions = permissions_result.data;
     const data_action = map_authorizable_action_to_data_action(action);
@@ -707,7 +724,9 @@ function create_auth_store() {
     if (!data_action) return false;
 
     const normalized = normalize_to_entity_type(entity_type);
-    const permissions_result = get_role_permissions_sync(state.current_profile.role);
+    const permissions_result = get_role_permissions_sync(
+      state.current_profile.role,
+    );
     if (!permissions_result.success) {
       console.error(`[AuthStore] ${permissions_result.error}`);
       return true;
@@ -747,7 +766,9 @@ function create_auth_store() {
     }
 
     const normalized = normalize_to_entity_type(entity_type);
-    const permissions_result = get_role_permissions_sync(state.current_profile.role);
+    const permissions_result = get_role_permissions_sync(
+      state.current_profile.role,
+    );
     if (!permissions_result.success) {
       console.error(`[AuthStore] ${permissions_result.error}`);
       return ["create", "edit", "delete", "list", "view"];
@@ -821,10 +842,7 @@ function create_auth_store() {
 
 export const auth_store = create_auth_store();
 
-const current_auth_token = derived(
-  auth_store,
-  ($auth) => $auth.current_token,
-);
+const current_auth_token = derived(auth_store, ($auth) => $auth.current_token);
 
 export const current_user_role = derived(
   auth_store,
@@ -836,9 +854,12 @@ export const current_user_role_display = derived(auth_store, ($auth) => {
   return role ? USER_ROLE_DISPLAY_NAMES[role] : "Unknown";
 });
 
-export const current_profile_organization_name = derived(auth_store, ($auth) => {
-  return $auth.current_profile?.organization_name ?? "";
-});
+export const current_profile_organization_name = derived(
+  auth_store,
+  ($auth) => {
+    return $auth.current_profile?.organization_name ?? "";
+  },
+);
 
 export const current_profile_display_name = derived(auth_store, ($auth) => {
   return $auth.current_profile?.display_name ?? "Guest";

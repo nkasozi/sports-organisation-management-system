@@ -34,7 +34,10 @@ function create_empty_game_official_role_input(
   };
 }
 
-function get_default_football_official_roles(): Omit<CreateGameOfficialRoleInput, "organization_id">[] {
+function get_default_football_official_roles(): Omit<
+  CreateGameOfficialRoleInput,
+  "organization_id"
+>[] {
   return [
     {
       name: "Referee",
@@ -103,7 +106,9 @@ function get_default_football_official_roles(): Omit<CreateGameOfficialRoleInput
   ];
 }
 
-export function get_default_football_official_roles_with_ids(organization_id: string): GameOfficialRole[] {
+export function get_default_football_official_roles_with_ids(
+  organization_id: string,
+): GameOfficialRole[] {
   const now = new Date().toISOString();
   const input_roles = get_default_football_official_roles();
   return input_roles.map((input, index) => ({

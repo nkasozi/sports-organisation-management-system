@@ -13,9 +13,7 @@ export interface PlayerPositionUseCasesPort extends BaseUseCasesPort<
   UpdatePlayerPositionInput,
   PlayerPositionFilter
 > {
-  list_positions_by_sport(
-    sport_type: string,
-  ): AsyncResult<PlayerPosition[]>;
+  list_positions_by_sport(sport_type: string): AsyncResult<PlayerPosition[]>;
   find_by_code(code: string): AsyncResult<PlayerPosition | null>;
   find_by_sport_type(sport_type: string): AsyncResult<PlayerPosition[]>;
   find_by_category(

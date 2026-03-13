@@ -129,9 +129,7 @@ async function update_sport(
   }
 }
 
-async function delete_sport(
-  id: string,
-): Promise<SportServiceResult<boolean>> {
+async function delete_sport(id: string): Promise<SportServiceResult<boolean>> {
   if (!id || id.trim() === "") {
     return { success: false, error: "Sport ID is required" };
   }
@@ -148,9 +146,7 @@ async function delete_sport(
   }
 }
 
-async function get_active_sports(): Promise<
-  SportServiceResult<Sport[]>
-> {
+async function get_active_sports(): Promise<SportServiceResult<Sport[]>> {
   try {
     const sports = await repo_get_active_sports();
     return { success: true, data: sports };
