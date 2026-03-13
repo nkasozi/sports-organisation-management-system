@@ -339,6 +339,11 @@ export async function fetch_filtered_entities_for_field(
     return { entities: await fetch_officials_from_organization(dependency_value) };
   }
 
+  if (filter_type === "lookup_from_organization") {
+    const entity_type = field.foreign_key_entity!;
+    return { entities: await fetch_entities_filtered_by_organization(entity_type, dependency_value) };
+  }
+
   if (filter_type === "live_game_logs_from_organization") {
     return { entities: await fetch_entities_filtered_by_organization("livegamelog", dependency_value) };
   }

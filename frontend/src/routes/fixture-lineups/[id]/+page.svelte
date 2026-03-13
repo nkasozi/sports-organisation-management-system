@@ -139,10 +139,15 @@
         page_number: 1,
         page_size: 5000,
       }),
-      player_position_use_cases.list(undefined, {
-        page_number: 1,
-        page_size: 500,
-      }),
+      player_position_use_cases.list(
+        get(auth_store).current_profile?.organization_id &&
+          get(auth_store).current_profile?.organization_id !== "*"
+          ? {
+              organization_id: get(auth_store).current_profile!.organization_id,
+            }
+          : undefined,
+        { page_number: 1, page_size: 500 },
+      ),
     ]);
 
     if (fixture_result.success && fixture_result.data) {

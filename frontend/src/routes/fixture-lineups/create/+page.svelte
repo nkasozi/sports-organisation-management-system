@@ -574,10 +574,13 @@
           page_number: 1,
           page_size: 5000,
         }),
-        player_position_use_cases.list(undefined, {
-          page_number: 1,
-          page_size: 500,
-        }),
+        player_position_use_cases.list(
+          current_auth_profile?.organization_id &&
+            current_auth_profile.organization_id !== "*"
+            ? { organization_id: current_auth_profile.organization_id }
+            : undefined,
+          { page_number: 1, page_size: 500 },
+        ),
       ]);
 
     selected_team = team_result.success ? (team_result.data ?? null) : null;

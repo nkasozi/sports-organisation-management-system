@@ -75,7 +75,10 @@
         page_number: 1,
         page_size: 500,
       }),
-      role_use_cases.list(undefined, { page_number: 1, page_size: 100 }),
+      role_use_cases.list(org_id ? { organization_id: org_id } : undefined, {
+        page_number: 1,
+        page_size: 100,
+      }),
     ]);
 
     console.log("[OFFICIALS] Loading officials result:", officials_result);

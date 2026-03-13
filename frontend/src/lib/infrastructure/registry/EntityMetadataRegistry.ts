@@ -138,6 +138,10 @@ class EntityMetadataRegistry {
           is_required: true,
           is_read_only: false,
           show_in_list: true,
+          foreign_key_filter: {
+            depends_on_field: "organization_id",
+            filter_type: "lookup_from_organization",
+          },
         },
         {
           field_name: "nationality" satisfies keyof TeamStaff,
@@ -921,6 +925,10 @@ class EntityMetadataRegistry {
           is_read_only: false,
           foreign_key_entity: "gender",
           show_in_list: true,
+          foreign_key_filter: {
+            depends_on_field: "organization_id",
+            filter_type: "lookup_from_organization",
+          },
         },
         {
           field_name: "short_name" satisfies keyof Team,
@@ -1054,6 +1062,10 @@ class EntityMetadataRegistry {
           is_read_only: false,
           foreign_key_entity: "gender",
           show_in_list: true,
+          foreign_key_filter: {
+            depends_on_field: "organization_id",
+            filter_type: "lookup_from_organization",
+          },
         },
         {
           field_name: "position_id" satisfies keyof Player,
@@ -1063,6 +1075,10 @@ class EntityMetadataRegistry {
           is_read_only: false,
           foreign_key_entity: "playerposition",
           show_in_list: true,
+          foreign_key_filter: {
+            depends_on_field: "organization_id",
+            filter_type: "lookup_from_organization",
+          },
         },
         {
           field_name: "date_of_birth" satisfies keyof Player,
@@ -1408,6 +1424,10 @@ class EntityMetadataRegistry {
           is_read_only: false,
           foreign_key_entity: "gender",
           show_in_list: true,
+          foreign_key_filter: {
+            depends_on_field: "organization_id",
+            filter_type: "lookup_from_organization",
+          },
         },
         {
           field_name: "email" satisfies keyof Official,

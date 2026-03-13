@@ -54,7 +54,12 @@
         { organization_id: fixture.organization_id },
         { page_number: 1, page_size: 100 },
       ),
-      game_official_role_use_cases.list({}, { page_number: 1, page_size: 100 }),
+      game_official_role_use_cases.list(
+        fixture.organization_id
+          ? { organization_id: fixture.organization_id }
+          : {},
+        { page_number: 1, page_size: 100 },
+      ),
     ]);
 
     if (

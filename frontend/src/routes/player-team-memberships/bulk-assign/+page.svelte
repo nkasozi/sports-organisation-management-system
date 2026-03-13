@@ -185,10 +185,16 @@
 
     teams = teams_result.data?.items || [];
 
-    const genders_result = await gender_use_cases.list(
-      {},
-      { page_number: 1, page_size: 50 },
-    );
+    const auth_state = get(auth_store);
+    const user_org_id = auth_state.current_profile?.organization_id;
+    const gender_filter =
+      user_org_id && user_org_id !== "*"
+        ? { organization_id: user_org_id }
+        : {};
+    const genders_result = await gender_use_cases.list(gender_filter, {
+      page_number: 1,
+      page_size: 50,
+    });
     if (genders_result.success) {
       gender_name_map = new Map(
         genders_result.data.items.map((g) => [g.id, g.name]),

@@ -79,6 +79,7 @@ export interface ForeignKeyFilterConfig {
     | "live_game_logs_from_organization"
     | "teams_from_player_memberships"
     | "teams_excluding_player_memberships"
+    | "lookup_from_organization"
     | "exclude_selected_field";
   holder_type?: string;
   team_side?: "home" | "away";

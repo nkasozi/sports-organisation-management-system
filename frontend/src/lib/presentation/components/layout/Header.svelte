@@ -321,12 +321,17 @@
                     {$current_profile_display_name}
                   </p>
                   <p class="text-xs text-gray-500 dark:text-accent-400 mt-1">
-                    <span class="font-medium text-gray-600 dark:text-accent-300">Role:</span>
+                    <span class="font-medium text-gray-600 dark:text-accent-300"
+                      >Role:</span
+                    >
                     {$current_user_role_display}
                   </p>
                   {#if $current_profile_organization_name}
                     <p class="text-xs text-gray-500 dark:text-accent-400 mt-1">
-                      <span class="font-medium text-gray-600 dark:text-accent-300">Org:</span>
+                      <span
+                        class="font-medium text-gray-600 dark:text-accent-300"
+                        >Org:</span
+                      >
                       {$current_profile_organization_name}
                     </p>
                   {/if}
