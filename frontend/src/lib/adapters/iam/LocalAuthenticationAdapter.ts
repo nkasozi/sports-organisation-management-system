@@ -194,13 +194,14 @@ export class LocalAuthenticationAdapter implements AuthenticationPort {
       return { is_valid: false, error_message: "Token has been tampered with" };
     }
 
-    const payload = this.parse_token_payload(raw_token);
-    if (!payload) {
+    const payload_result = this.parse_token_payload(raw_token);
+    if (!payload_result.success) {
       return {
         is_valid: false,
-        error_message: "Failed to decode token payload",
+        error_message: payload_result.error,
       };
     }
+    const payload = payload_result.data;
 
     if (Date.now() > payload.expires_at) {
       console.warn("[LocalAuthenticationAdapter] Token has expired");
@@ -227,25 +228,29 @@ export class LocalAuthenticationAdapter implements AuthenticationPort {
     return { is_valid: true, payload, system_user };
   }
 
-  private parse_token_payload(raw_token: string): AuthTokenPayload | null {
+  private parse_token_payload(
+    raw_token: string,
+  ): Result<AuthTokenPayload> {
     if (!raw_token || raw_token.trim().length === 0) {
-      return null;
+      return create_failure_result("Token is empty");
     }
 
     const parts = raw_token.split(".");
     if (parts.length !== 3) {
-      return null;
+      return create_failure_result("Token format is invalid (expected 3 parts)");
     }
 
     try {
       const decoded_payload = base64_url_decode(parts[1]);
-      return JSON.parse(decoded_payload) as AuthTokenPayload;
+      return create_success_result(
+        JSON.parse(decoded_payload) as AuthTokenPayload,
+      );
     } catch (error) {
       console.error(
         "[LocalAuthenticationAdapter] Failed to decode token:",
         error,
       );
-      return null;
+      return create_failure_result("Failed to decode token payload");
     }
   }
 }

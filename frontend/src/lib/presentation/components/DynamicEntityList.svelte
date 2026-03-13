@@ -185,11 +185,13 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
     const new_options: Record<string, any[]> = {};
     for (const field of fields) {
       if (field.field_type === "foreign_key" && field.foreign_key_entity) {
-        const use_cases = get_use_cases_for_entity_type(
+        const fk_use_cases_result = get_use_cases_for_entity_type(
           field.foreign_key_entity,
         );
-        if (use_cases && typeof use_cases.list === "function") {
-          const result = await use_cases.list(undefined, { page_size: 100 });
+        if (fk_use_cases_result.success) {
+          const result = await fk_use_cases_result.data.list(undefined, {
+            page_size: 100,
+          });
           if (result.success && result.data) {
             new_options[field.field_name] = extract_items_from_result_data(
               result.data,
@@ -391,28 +393,19 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
         return;
       }
 
-      const use_cases = get_use_cases_for_entity_type(entity_type);
+      const list_use_cases_result = get_use_cases_for_entity_type(entity_type);
       console.log(
         `[ENTITY_LIST] Use cases for "${entity_type}":`,
-        use_cases ? "Found" : "NOT FOUND",
+        list_use_cases_result.success ? "Found" : "NOT FOUND",
       );
 
-      if (!use_cases) {
+      if (!list_use_cases_result.success) {
         error_message = `No use cases found for entity type: ${entity_type}`;
         console.error(`[ENTITY_LIST] ERROR:`, error_message);
         return;
       }
 
-      if (typeof use_cases.list !== "function") {
-        error_message = `Use cases for ${entity_type} must implement the list() method`;
-        console.error(
-          `[ENTITY_LIST] ERROR:`,
-          error_message,
-          "Available methods:",
-          Object.keys(use_cases),
-        );
-        return;
-      }
+      const use_cases = list_use_cases_result.data;
 
       console.log(
         `[ENTITY_LIST] Calling list() for "${entity_type}" with filter:`,
@@ -598,12 +591,14 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
           return;
         }
 
-        const use_cases = get_use_cases_for_entity_type(entity_type);
-        if (!use_cases) {
+        const delete_use_cases_result =
+          get_use_cases_for_entity_type(entity_type);
+        if (!delete_use_cases_result.success) {
           error_message = `No use cases found for entity type: ${entity_type}`;
           return;
         }
 
+        const use_cases = delete_use_cases_result.data;
         const delete_method = use_cases.delete;
         if (!delete_method) {
           error_message = `No delete method found for entity type: ${entity_type}`;
@@ -644,12 +639,14 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
           return;
         }
 
-        const use_cases = get_use_cases_for_entity_type(entity_type);
-        if (!use_cases) {
+        const batch_use_cases_result =
+          get_use_cases_for_entity_type(entity_type);
+        if (!batch_use_cases_result.success) {
           error_message = `No use cases found for entity type: ${entity_type}`;
           return;
         }
 
+        const use_cases = batch_use_cases_result.data;
         const use_cases_with_extras = use_cases as typeof use_cases & {
           delete_multiple?: (
             ids: string[],

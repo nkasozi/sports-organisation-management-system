@@ -253,7 +253,7 @@ export const ENTITY_DATA_CATEGORY_MAP: SharedEntityCategoryMap = {
   organization: "root_level",
   sport: "root_level",
   gender: "root_level",
-  competitionformat: "root_level",
+  competitionformat: "organisation_level",
   identificationtype: "root_level",
   gameofficialrole: "root_level",
   gameeventtype: "root_level",

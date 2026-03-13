@@ -7,6 +7,10 @@ import type {
 } from "$lib/core/interfaces/ports";
 import type { Result } from "$lib/core/types/Result";
 import {
+  create_success_result,
+  create_failure_result,
+} from "$lib/core/types/Result";
+import {
   set_user_context,
   clear_user_context,
 } from "$lib/infrastructure/events/EventBus";
@@ -34,6 +38,7 @@ import { load_profiles_from_repository } from "./profileLoader";
 import {
   is_signed_in,
   is_clerk_loaded,
+  clerk_session,
 } from "$lib/adapters/iam/clerkAuthService";
 import {
   SHARED_ENTITY_CATEGORY_MAP,
@@ -44,6 +49,38 @@ import type {
   SharedCrudPermissions,
 } from "$convex/shared_permission_definitions";
 import { normalize_to_entity_type } from "$lib/core/interfaces/ports/external/iam/AuthorizationPort";
+import { get_sync_manager } from "$lib/infrastructure/sync/convexSyncService";
+
+interface ConvexGetProfileResponse {
+  success: boolean;
+  data?: { email: string; role: string };
+  error?: string;
+}
+
+async function fetch_current_user_email_from_convex(): Promise<Result<string>> {
+  const convex_client = get_sync_manager().get_convex_client();
+
+  if (!convex_client) {
+    return { success: false, error: "Convex client not initialized" };
+  }
+
+  try {
+    const response = (await convex_client.query(
+      "authorization:get_current_user_profile",
+      {},
+    )) as ConvexGetProfileResponse;
+
+    if (!response.success || !response.data?.email) {
+      return { success: false, error: response.error ?? "Profile not found in Convex" };
+    }
+
+    return { success: true, data: response.data.email };
+  } catch (error) {
+    const error_message = error instanceof Error ? error.message : String(error);
+    console.warn(`[AuthStore] Convex profile query failed: ${error_message}`);
+    return { success: false, error: error_message };
+  }
+}
 
 function get_entity_data_category(entity_type: SharedEntityType): DataCategory {
   return SHARED_ENTITY_CATEGORY_MAP[entity_type] || "organisation_level";
@@ -73,18 +110,24 @@ function adapt_shared_permissions(
 
 function get_role_permissions_sync(
   role: UserRole,
-): Record<DataCategory, CategoryPermissions> {
-  const shared_perms =
-    SHARED_ROLE_PERMISSIONS[role] || SHARED_ROLE_PERMISSIONS.player;
+): Result<Record<DataCategory, CategoryPermissions>> {
+  const shared_perms = SHARED_ROLE_PERMISSIONS[role];
+  if (!shared_perms) {
+    console.error(`[AuthStore] Unknown role: "${role}" — this should never happen`);
+    return { success: false, error: `Unknown role: "${role}"` };
+  }
   return {
-    root_level: adapt_shared_permissions(shared_perms.root_level),
-    org_administrator_level: adapt_shared_permissions(
-      shared_perms.org_administrator_level,
-    ),
-    organisation_level: adapt_shared_permissions(shared_perms.organisation_level),
-    team_level: adapt_shared_permissions(shared_perms.team_level),
-    player_level: adapt_shared_permissions(shared_perms.player_level),
-    public_level: adapt_shared_permissions(shared_perms.public_level),
+    success: true,
+    data: {
+      root_level: adapt_shared_permissions(shared_perms.root_level),
+      org_administrator_level: adapt_shared_permissions(
+        shared_perms.org_administrator_level,
+      ),
+      organisation_level: adapt_shared_permissions(shared_perms.organisation_level),
+      team_level: adapt_shared_permissions(shared_perms.team_level),
+      player_level: adapt_shared_permissions(shared_perms.player_level),
+      public_level: adapt_shared_permissions(shared_perms.public_level),
+    },
   };
 }
 
@@ -225,9 +268,9 @@ function create_auth_store() {
     return [create_public_viewer_profile(), ...loaded_profiles];
   }
 
-  async function initialize(): Promise<void> {
+  async function initialize(): Promise<Result<true>> {
     const current_state = get({ subscribe });
-    if (current_state.is_initialized) return;
+    if (current_state.is_initialized) return create_success_result(true);
 
     const clerk_already_loaded = get(is_clerk_loaded);
     if (!clerk_already_loaded) {
@@ -251,7 +294,6 @@ function create_auth_store() {
     );
     const available_profiles =
       build_profiles_with_public_viewer(loaded_profiles);
-    const saved_profile_id = load_saved_profile_id();
     const saved_token_raw = load_saved_token();
     const user_is_signed_in = get(is_signed_in);
 
@@ -274,7 +316,29 @@ function create_auth_store() {
         sidebar_menu_items,
         is_initialized: true,
       });
-      return;
+      return create_success_result(true);
+    }
+
+    const clerk_state = get(clerk_session);
+    const clerk_email = clerk_state.user?.email_address?.toLowerCase() ?? null;
+
+    const convex_email_result = await fetch_current_user_email_from_convex();
+
+    const clerk_matched_profile = convex_email_result.success
+      ? (available_profiles.find(
+          (p) => p.email.toLowerCase() === convex_email_result.data.toLowerCase(),
+        ) ?? null)
+      : null;
+
+    if (!convex_email_result.success) {
+      console.warn(
+        `[AuthStore] Convex unavailable during profile lookup: ${convex_email_result.error}`,
+      );
+    } else if (!clerk_matched_profile) {
+      console.warn(
+        `[AuthStore] No local profile found matching Convex email: ${convex_email_result.data}. ` +
+          "This user may not have been synced yet.",
+      );
     }
 
     if (saved_token_raw) {
@@ -289,12 +353,18 @@ function create_auth_store() {
         verify_result.data.payload
       ) {
         const verification = verify_result.data;
-        current_profile =
+        const token_profile =
           available_profiles.find(
             (p) => p.id === verification.payload?.user_id,
-          ) || null;
+          ) ?? null;
 
-        if (current_profile && verification.payload) {
+        const token_matches_clerk_user =
+          clerk_email === null ||
+          (token_profile !== null &&
+            token_profile.email.toLowerCase() === clerk_email);
+
+        if (token_profile && token_matches_clerk_user && verification.payload) {
+          current_profile = token_profile;
           current_token = {
             payload: verification.payload,
             signature: saved_token_raw.split(".")[2],
@@ -303,6 +373,13 @@ function create_auth_store() {
           console.log(
             `[AuthStore] Restored session for profile: ${current_profile.display_name}`,
           );
+        } else {
+          console.warn(
+            `[AuthStore] Saved token belongs to a different user ` +
+              `(token: ${token_profile?.email ?? "unknown"}, clerk: ${clerk_email}). ` +
+              "Clearing stale token.",
+          );
+          clear_auth_storage();
         }
       } else {
         console.warn(
@@ -313,26 +390,31 @@ function create_auth_store() {
     }
 
     if (!current_profile) {
-      const real_profiles = available_profiles.filter(
-        (p) => p.id !== "public-viewer",
-      );
-      const default_profile_id = saved_profile_id || real_profiles[0]?.id;
-      current_profile =
-        available_profiles.find((p) => p.id === default_profile_id) ||
-        real_profiles[0] ||
-        available_profiles[0];
+      if (!clerk_matched_profile) {
+        const failure_reason = !convex_email_result.success
+          ? `Convex unavailable: ${convex_email_result.error}`
+          : `no local profile found for Convex email: ${convex_email_result.data}`;
+        console.error(
+          `[AuthStore] Cannot initialize: ${failure_reason}. ` +
+            "Waiting for sync to complete.",
+        );
+        return create_failure_result(failure_reason);
+      }
+
+      current_profile = clerk_matched_profile;
+
       const token_result = await generate_token_for_profile(current_profile);
       if (!token_result.success) {
         console.error(
-          `[AuthStore] Failed to initialize: ${token_result.error}`,
+          `[AuthStore] Failed to generate token: ${token_result.error}`,
         );
-        return;
+        return create_failure_result(token_result.error);
       }
       current_token = token_result.data;
       save_token(current_token.raw_token);
       save_profile_id(current_profile.id);
       console.log(
-        `[AuthStore] Initialized with profile: ${current_profile.display_name}`,
+        `[AuthStore] Initialized with profile: ${current_profile.display_name} (role: ${current_profile.role})`,
       );
     }
 
@@ -351,6 +433,7 @@ function create_auth_store() {
     });
 
     await sync_branding_with_profile(current_profile);
+    return create_success_result(true);
   }
 
   async function refresh_profiles(): Promise<boolean> {
@@ -465,7 +548,12 @@ function create_auth_store() {
     }
 
     const role = state.current_profile.role;
-    const permissions = get_role_permissions_sync(role);
+    const permissions_result = get_role_permissions_sync(role);
+    if (!permissions_result.success) {
+      console.error(`[AuthStore] ${permissions_result.error}`);
+      return { entity_type, authorizations: new Map() };
+    }
+    const permissions = permissions_result.data;
     const authorizations = new Map<AuthorizableAction, AuthorizationLevel>();
 
     const normalized = normalize_to_entity_type(entity_type);
@@ -502,7 +590,12 @@ function create_auth_store() {
     }
 
     const role = state.current_profile.role;
-    const permissions = get_role_permissions_sync(role);
+    const permissions_result = get_role_permissions_sync(role);
+    if (!permissions_result.success) {
+      console.error(`[AuthStore] ${permissions_result.error}`);
+      return { is_authorized: false, authorization_level: "none", error_message: permissions_result.error };
+    }
+    const permissions = permissions_result.data;
     const data_action = map_authorizable_action_to_data_action(action);
 
     if (!data_action) {
@@ -572,12 +665,16 @@ function create_auth_store() {
     if (!data_action) return false;
 
     const normalized = normalize_to_entity_type(entity_type);
-    const permissions = get_role_permissions_sync(state.current_profile.role);
+    const permissions_result = get_role_permissions_sync(state.current_profile.role);
+    if (!permissions_result.success) {
+      console.error(`[AuthStore] ${permissions_result.error}`);
+      return true;
+    }
     return !check_entity_permission(
       state.current_profile.role,
       normalized,
       data_action,
-      permissions,
+      permissions_result.data,
     );
   }
 
@@ -608,7 +705,12 @@ function create_auth_store() {
     }
 
     const normalized = normalize_to_entity_type(entity_type);
-    const permissions = get_role_permissions_sync(state.current_profile.role);
+    const permissions_result = get_role_permissions_sync(state.current_profile.role);
+    if (!permissions_result.success) {
+      console.error(`[AuthStore] ${permissions_result.error}`);
+      return ["create", "edit", "delete", "list", "view"];
+    }
+    const permissions = permissions_result.data;
     const disabled_actions: AuthorizableAction[] = [];
 
     if (
@@ -663,6 +765,9 @@ function create_auth_store() {
     refresh_profiles,
     get_current_role,
     logout,
+    reset_initialized_state: (): void => {
+      update((s) => ({ ...s, is_initialized: false }));
+    },
     get_sidebar_menu_items,
     get_authorization_level,
     is_authorized_to_execute,

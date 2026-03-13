@@ -17,7 +17,7 @@ import type { FixtureRepository } from "../interfaces/ports";
 import type { TeamRepository } from "../interfaces/ports";
 import type { ActivityCategoryRepository } from "../interfaces/ports";
 import type { QueryOptions } from "../interfaces/ports";
-import type { PaginatedAsyncResult, AsyncResult } from "../types/Result";
+import type { PaginatedAsyncResult, AsyncResult, Result } from "../types/Result";
 import { create_success_result, create_failure_result } from "../types/Result";
 import type {
   ActivityUseCasesPort,
@@ -47,9 +47,9 @@ export function create_activity_use_cases(
     team_repository,
   } = dependencies;
 
-  async function get_or_create_fixture_category(
+  async function get_fixture_category_id(
     organization_id: string,
-  ): Promise<string | null> {
+  ): Promise<Result<string>> {
     const categories_result =
       await activity_category_repository.find_by_category_type(
         organization_id,
@@ -61,15 +61,17 @@ export function create_activity_use_cases(
       categories_result.data?.items &&
       categories_result.data.items.length > 0
     ) {
-      return categories_result.data.items[0].id;
+      return create_success_result(categories_result.data.items[0].id);
     }
 
-    return null;
+    return create_failure_result(
+      `No fixture category found for organization: ${organization_id}`,
+    );
   }
 
-  async function get_or_create_competition_category(
+  async function get_competition_category_id(
     organization_id: string,
-  ): Promise<string | null> {
+  ): Promise<Result<string>> {
     const categories_result =
       await activity_category_repository.find_by_category_type(
         organization_id,
@@ -81,10 +83,12 @@ export function create_activity_use_cases(
       categories_result.data?.items &&
       categories_result.data.items.length > 0
     ) {
-      return categories_result.data.items[0].id;
+      return create_success_result(categories_result.data.items[0].id);
     }
 
-    return null;
+    return create_failure_result(
+      `No competition category found for organization: ${organization_id}`,
+    );
   }
 
   return {
@@ -279,14 +283,16 @@ export function create_activity_use_cases(
     async sync_competitions_to_activities(
       organization_id: string,
     ): AsyncResult<{ created: number; updated: number }> {
-      const competition_category_id =
-        await get_or_create_competition_category(organization_id);
+      const competition_category_result =
+        await get_competition_category_id(organization_id);
 
-      if (!competition_category_id) {
+      if (!competition_category_result.success) {
         return create_failure_result(
-          "Competition category not found. Please ensure default categories are created.",
+          `Competition category not found. Please ensure default categories are created.`,
         );
       }
+
+      const competition_category_id = competition_category_result.data;
 
       const competitions_result =
         await competition_repository.find_by_organization(organization_id);
@@ -358,15 +364,17 @@ export function create_activity_use_cases(
         competition_id,
       );
 
-      const fixture_category_id =
-        await get_or_create_fixture_category(organization_id);
+      const fixture_category_result =
+        await get_fixture_category_id(organization_id);
 
-      if (!fixture_category_id) {
+      if (!fixture_category_result.success) {
         console.log("[ActivityUseCases] No fixture category found");
         return create_failure_result(
-          "Fixture category not found. Please ensure default categories are created.",
+          `Fixture category not found. Please ensure default categories are created.`,
         );
       }
+
+      const fixture_category_id = fixture_category_result.data;
 
       const fixtures_result = competition_id
         ? await fixture_repository.find_by_competition(competition_id)

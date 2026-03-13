@@ -156,8 +156,8 @@ async function handle_access_denied(
 
 let is_initialized = false;
 
-export function initialize_audit_event_handlers(): void {
-  if (is_initialized) return;
+export function initialize_audit_event_handlers(): boolean {
+  if (is_initialized) return false;
 
   EventBus.subscribe<EntityCreatedPayload>(
     "entity_created",
@@ -177,6 +177,7 @@ export function initialize_audit_event_handlers(): void {
   );
 
   is_initialized = true;
+  return true;
 }
 
 function reset_audit_event_handlers(): void {

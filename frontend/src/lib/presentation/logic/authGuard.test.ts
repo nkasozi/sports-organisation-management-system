@@ -79,8 +79,9 @@ const {
         auth_subscribers.delete(subscriber);
       };
     },
-    initialize: vi.fn(async (): Promise<void> => {
+    initialize: vi.fn(async (): Promise<{ success: true; data: true }> => {
       set_auth_state({ is_initialized: true });
+      return { success: true, data: true };
     }),
   };
 
@@ -159,9 +160,12 @@ describe("authGuard", () => {
       data: [],
     });
     auth_store.initialize.mockReset();
-    auth_store.initialize.mockImplementation(async (): Promise<void> => {
-      set_auth_state({ is_initialized: true });
-    });
+    auth_store.initialize.mockImplementation(
+      async (): Promise<{ success: true; data: true }> => {
+        set_auth_state({ is_initialized: true });
+        return { success: true, data: true };
+      },
+    );
     reset_auth_state();
     invalidate_route_access_cache();
   });
@@ -332,9 +336,12 @@ describe("authGuard", () => {
     it("initializes auth and returns the active profile", async () => {
       const profile = create_profile({ role: "org_admin" });
       set_auth_state({ is_initialized: false });
-      auth_store.initialize.mockImplementation(async (): Promise<void> => {
-        set_auth_state({ is_initialized: true, current_profile: profile });
-      });
+      auth_store.initialize.mockImplementation(
+        async (): Promise<{ success: true; data: true }> => {
+          set_auth_state({ is_initialized: true, current_profile: profile });
+          return { success: true, data: true };
+        },
+      );
 
       const result = await ensure_auth_profile();
 

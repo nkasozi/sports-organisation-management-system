@@ -203,6 +203,7 @@
     await new Promise((r) => setTimeout(r, 400));
 
     initial_sync_store.update_progress("Loading user profiles...", 96);
+    auth_store.reset_initialized_state();
     await auth_store.initialize();
 
     initial_sync_store.complete_sync();

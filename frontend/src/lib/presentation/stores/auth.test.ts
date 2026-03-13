@@ -31,6 +31,18 @@ vi.mock("$lib/adapters/initialization/brandingSyncService", () => ({
   sync_branding_with_profile: vi.fn().mockResolvedValue(undefined),
 }));
 
+vi.mock("$lib/infrastructure/sync/convexSyncService", () => ({
+  get_sync_manager: () => ({
+    get_convex_client: () => ({
+      query: vi.fn().mockResolvedValue({
+        success: true,
+        data: { email: "admin@test.com", role: "super_admin" },
+      }),
+      mutation: vi.fn(),
+    }),
+  }),
+}));
+
 vi.mock("$lib/adapters/iam/clerkAuthService", () => {
   const make_readable = <T>(value: T) => ({
     subscribe: (subscriber: (next_value: T) => void) => {
@@ -41,6 +53,12 @@ vi.mock("$lib/adapters/iam/clerkAuthService", () => {
   return {
     is_clerk_loaded: make_readable(true),
     is_signed_in: make_readable(true),
+    clerk_session: make_readable({
+      is_loaded: true,
+      is_signed_in: true,
+      user: { email_address: "admin@test.com" },
+      session_id: "test-session",
+    }),
   };
 });
 

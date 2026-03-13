@@ -203,9 +203,12 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
 
   function get_entity_metadata_for_type(type: string): EntityMetadata | null {
     const normalized_type = type.toLowerCase();
-    const metadata = entityMetadataRegistry.get_entity_metadata(normalized_type);
+    const metadata =
+      entityMetadataRegistry.get_entity_metadata(normalized_type);
     if (!metadata) {
-      console.error(`No metadata found for entity type: ${type} (normalized: ${normalized_type})`);
+      console.error(
+        `No metadata found for entity type: ${type} (normalized: ${normalized_type})`,
+      );
     }
     return metadata;
   }
@@ -214,15 +217,17 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
     child_entity_type: string,
     sub_filter: SubEntityFilter,
   ): EntityCrudHandlers {
-    const child_use_cases = get_use_cases_for_entity_type(child_entity_type);
+    const child_use_cases_result =
+      get_use_cases_for_entity_type(child_entity_type);
 
-    if (!child_use_cases) {
+    if (!child_use_cases_result.success) {
       console.error(
         `[SUB_ENTITY] No use cases found for child entity type: ${child_entity_type}`,
       );
       return {};
     }
 
+    const child_use_cases = child_use_cases_result.data;
     return {
       create: async (input: Record<string, unknown>) => {
         const enriched_input = {
@@ -371,8 +376,15 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
     const visible_fields = renderable_fields.filter((f) => {
       if (!in_edit_mode && f.hide_on_create) return false;
       if (in_edit_mode && f.hide_on_edit) return false;
-      if (is_field_controlled_by_sub_entity_filter(f.field_name, sub_entity_filter)) return false;
-      if (!is_field_visible_by_visible_when_condition(f, current_form_data)) return false;
+      if (
+        is_field_controlled_by_sub_entity_filter(
+          f.field_name,
+          sub_entity_filter,
+        )
+      )
+        return false;
+      if (!is_field_visible_by_visible_when_condition(f, current_form_data))
+        return false;
       return true;
     });
     const file_fields = visible_fields.filter((f) => f.field_type === "file");
@@ -432,7 +444,9 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
     is_loading = true;
     const new_options = await fetch_unfiltered_foreign_key_options(fields);
     foreign_key_options = { ...foreign_key_options, ...new_options };
-    console.debug("[DEBUG] Loaded foreign_key_options", { options: foreign_key_options });
+    console.debug("[DEBUG] Loaded foreign_key_options", {
+      options: foreign_key_options,
+    });
     is_loading = false;
   }
 
@@ -442,11 +456,17 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
   ): Promise<void> {
     if (!field.foreign_key_filter || !dependency_value) {
       foreign_key_options[field.field_name] = [];
-      filtered_fields_loading = { ...filtered_fields_loading, [field.field_name]: false };
+      filtered_fields_loading = {
+        ...filtered_fields_loading,
+        [field.field_name]: false,
+      };
       return;
     }
 
-    filtered_fields_loading = { ...filtered_fields_loading, [field.field_name]: true };
+    filtered_fields_loading = {
+      ...filtered_fields_loading,
+      [field.field_name]: true,
+    };
 
     const result = await fetch_filtered_entities_for_field(
       field,
@@ -455,15 +475,26 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
       form_data,
     );
 
-    foreign_key_options = { ...foreign_key_options, [field.field_name]: result.entities };
+    foreign_key_options = {
+      ...foreign_key_options,
+      [field.field_name]: result.entities,
+    };
 
-    if (result.all_competition_teams) all_competition_teams_cache = result.all_competition_teams;
-    if (result.competition_team_ids) competition_team_ids = result.competition_team_ids;
+    if (result.all_competition_teams)
+      all_competition_teams_cache = result.all_competition_teams;
+    if (result.competition_team_ids)
+      competition_team_ids = result.competition_team_ids;
     if (result.auto_select_team_id && !form_data[field.field_name]) {
-      form_data = { ...form_data, [field.field_name]: result.auto_select_team_id };
+      form_data = {
+        ...form_data,
+        [field.field_name]: result.auto_select_team_id,
+      };
     }
 
-    filtered_fields_loading = { ...filtered_fields_loading, [field.field_name]: false };
+    filtered_fields_loading = {
+      ...filtered_fields_loading,
+      [field.field_name]: false,
+    };
 
     if (field.field_name.includes("jersey")) {
       check_jersey_color_clashes();
@@ -511,13 +542,13 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
       return;
     }
 
-    const venue_use_cases = get_use_cases_for_entity_type("venue");
-    if (!venue_use_cases) {
+    const venue_use_cases_result = get_use_cases_for_entity_type("venue");
+    if (!venue_use_cases_result.success) {
       console.warn("[AUTO_VENUE] Missing venue use cases");
       return;
     }
 
-    const venue_result = await venue_use_cases.get_by_id(
+    const venue_result = await venue_use_cases_result.data.get_by_id(
       selected_team.home_venue_id,
     );
     if (!venue_result.success || !venue_result.data) {
@@ -761,9 +792,9 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
         );
 
       let official_name = "Unknown Official";
-      const official_uc = get_use_cases_for_entity_type("official");
-      if (official_uc?.get_by_id) {
-        const official_result = await official_uc.get_by_id(
+      const official_uc_result = get_use_cases_for_entity_type("official");
+      if (official_uc_result.success) {
+        const official_result = await official_uc_result.data.get_by_id(
           assignment.official_id,
         );
         if (official_result.success && official_result.data) {
@@ -832,14 +863,22 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
       return;
     }
 
-    const player_use_cases = get_use_cases_for_entity_type("player");
-    const team_uc = get_use_cases_for_entity_type("team");
-    const gender_use_cases = get_use_cases_for_entity_type("gender");
+    const player_use_cases_result = get_use_cases_for_entity_type("player");
+    const team_use_cases_result = get_use_cases_for_entity_type("team");
+    const gender_use_cases_result = get_use_cases_for_entity_type("gender");
 
-    if (!player_use_cases || !team_uc || !gender_use_cases) {
+    if (
+      !player_use_cases_result.success ||
+      !team_use_cases_result.success ||
+      !gender_use_cases_result.success
+    ) {
       console.debug("[GENDER_CHECK] Missing use cases, skipping check");
       return;
     }
+
+    const player_use_cases = player_use_cases_result.data;
+    const team_uc = team_use_cases_result.data;
+    const gender_use_cases = gender_use_cases_result.data;
 
     const [player_result, team_result] = await Promise.all([
       player_use_cases.get_by_id(player_id),
@@ -893,12 +932,15 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
       return;
     }
 
-    const gender_use_cases = get_use_cases_for_entity_type("gender");
+    const fixture_gender_use_cases_result =
+      get_use_cases_for_entity_type("gender");
 
-    if (!gender_use_cases) {
+    if (!fixture_gender_use_cases_result.success) {
       console.debug("[FIXTURE_GENDER_CHECK] Missing use cases, skipping check");
       return;
     }
+
+    const gender_use_cases = fixture_gender_use_cases_result.data;
 
     const [home_team_result, away_team_result] = await Promise.all([
       team_use_cases.get_by_id(home_team_id),
@@ -981,12 +1023,14 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
           save_result = await crud_handlers.update(entity_data.id, form_data);
         } else {
           const normalized_type = entity_type.toLowerCase();
-          const use_cases = get_use_cases_for_entity_type(normalized_type);
-          if (!use_cases) {
+          const update_use_cases_result =
+            get_use_cases_for_entity_type(normalized_type);
+          if (!update_use_cases_result.success) {
             console.error(`No use cases found for entity type: ${entity_type}`);
             is_save_in_progress = false;
             return;
           }
+          const use_cases = update_use_cases_result.data;
           if (typeof use_cases.update !== "function") {
             console.error(
               `Method update not found on use cases for ${entity_type}`,
@@ -1004,12 +1048,14 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
           save_result = await crud_handlers.create(form_data);
         } else {
           const normalized_type = entity_type.toLowerCase();
-          const use_cases = get_use_cases_for_entity_type(normalized_type);
-          if (!use_cases) {
+          const create_use_cases_result =
+            get_use_cases_for_entity_type(normalized_type);
+          if (!create_use_cases_result.success) {
             console.error(`No use cases found for entity type: ${entity_type}`);
             is_save_in_progress = false;
             return;
           }
+          const use_cases = create_use_cases_result.data;
           if (typeof use_cases.create !== "function") {
             console.error(
               `Method create not found on use cases for ${entity_type}`,
@@ -1037,7 +1083,9 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
         }
 
         if (is_transfer_entity_and_status_just_changed_to_declined()) {
-          console.debug("[TRANSFER] Transfer declined — no membership changes made");
+          console.debug(
+            "[TRANSFER] Transfer declined — no membership changes made",
+          );
         }
 
         if (is_inline_mode) {
@@ -1217,7 +1265,10 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
     parent_field_name: string,
   ): FieldMetadata[] {
     if (!entity_metadata) return [];
-    return find_dependent_enum_fields_from_logic(entity_metadata, parent_field_name);
+    return find_dependent_enum_fields_from_logic(
+      entity_metadata,
+      parent_field_name,
+    );
   }
 
   function clear_dependent_enum_values(parent_field_name: string): void {
@@ -2112,8 +2163,9 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
                 />
               </svg>
               <p class="text-sm text-blue-800 dark:text-blue-200">
-                This transfer will be created with a <strong>Pending</strong> status.
-                You will need to open the transfer record and change the status to
+                This transfer will be created with a <strong>Pending</strong>
+                status. You will need to open the transfer record and change the
+                status to
                 <strong>Approved</strong> to complete the transfer and update the
                 player's team membership.
               </p>

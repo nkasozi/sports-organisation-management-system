@@ -29,11 +29,12 @@ export async function fetch_entities_for_type(
   filter?: Record<string, string>,
   page_size: number = 1000,
 ): Promise<BaseEntity[]> {
-  const use_cases = get_use_cases_for_entity_type(entity_type.toLowerCase());
-  if (!use_cases || typeof use_cases.list !== "function") {
+  const use_cases_result = get_use_cases_for_entity_type(entity_type.toLowerCase());
+  if (!use_cases_result.success || typeof use_cases_result.data.list !== "function") {
     console.warn(`[DataLoader] No list method found for entity type: ${entity_type}`);
     return [];
   }
+  const use_cases = use_cases_result.data;
   const result = await use_cases.list(filter, { page_size });
   if (!result.success) {
     const error_msg = "error_message" in result
@@ -218,13 +219,16 @@ export async function fetch_filtered_jersey_options(
   const filter_config = field.foreign_key_filter;
   if (!filter_config) return empty;
 
-  const fixture_use_cases = get_use_cases_for_entity_type("fixture");
-  const jersey_use_cases = get_use_cases_for_entity_type("jerseycolor");
+  const fixture_use_cases_result = get_use_cases_for_entity_type("fixture");
+  const jersey_use_cases_result = get_use_cases_for_entity_type("jerseycolor");
 
-  if (!fixture_use_cases || !jersey_use_cases) {
+  if (!fixture_use_cases_result.success || !jersey_use_cases_result.success) {
     console.warn("[DataLoader] Missing use cases for filtered jersey options");
     return empty;
   }
+
+  const fixture_use_cases = fixture_use_cases_result.data;
+  const jersey_use_cases = jersey_use_cases_result.data;
 
   const fixture_result = await fixture_use_cases.get_by_id(fixture_id);
   if (!fixture_result.success || !fixture_result.data) {
@@ -361,11 +365,12 @@ export async function fetch_venue_name_for_team(
 
   if (!selected_team?.home_venue_id) return null;
 
-  const venue_use_cases = get_use_cases_for_entity_type("venue");
-  if (!venue_use_cases) {
+  const venue_use_cases_result = get_use_cases_for_entity_type("venue");
+  if (!venue_use_cases_result.success) {
     console.warn("[DataLoader] Missing venue use cases");
     return null;
   }
+  const venue_use_cases = venue_use_cases_result.data;
 
   const venue_result = await venue_use_cases.get_by_id(selected_team.home_venue_id);
   if (!venue_result.success || !venue_result.data) {

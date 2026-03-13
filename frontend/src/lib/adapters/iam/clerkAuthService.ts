@@ -3,6 +3,11 @@ import { PUBLIC_CLERK_PUBLISHABLE_KEY } from "$env/static/public";
 import { writable, derived, type Readable } from "svelte/store";
 import type { Clerk } from "@clerk/clerk-js";
 import { goto } from "$app/navigation";
+import {
+  create_success_result,
+  create_failure_result,
+} from "$lib/core/types/Result";
+import type { Result } from "$lib/core/types/Result";
 
 export interface ClerkUser {
   id: string;
@@ -247,21 +252,14 @@ export async function get_session_token(): Promise<string | null> {
   }
 }
 
-function sign_in_with_redirect(): void {
+export async function sign_out(): Promise<Result<true>> {
   if (!clerk_instance) {
     console.error("[Clerk] Not initialized");
-    return;
-  }
-  clerk_instance.redirectToSignIn();
-}
-
-export async function sign_out(): Promise<void> {
-  if (!clerk_instance) {
-    console.error("[Clerk] Not initialized");
-    return;
+    return create_failure_result("Clerk not initialized");
   }
   await clerk_instance.signOut();
   sync_clerk_state();
+  return create_success_result(true);
 }
 
 export function destroy_clerk(): void {

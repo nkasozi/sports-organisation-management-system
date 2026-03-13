@@ -78,6 +78,8 @@ import {
 } from "../repositories/InBrowserTeamProfileRepository";
 import { get_system_user_repository } from "../repositories/InBrowserSystemUserRepository";
 import { get_repository_container } from "../../infrastructure/container";
+import { get } from "svelte/store";
+import { clerk_session } from "../../adapters/iam/clerkAuthService";
 import {
   create_seed_players,
   create_seed_teams,
@@ -119,6 +121,11 @@ import {
   type ProgressCallback,
   type DataSource,
 } from "../../infrastructure/sync/convexSeedingService";
+import type { Result } from "../../core/types/Result";
+import {
+  create_success_result,
+  create_failure_result,
+} from "../../core/types/Result";
 
 type SeedingStrategy =
   | "skip_seeding"
@@ -331,54 +338,47 @@ async function find_competition_format_id_by_code(
   return format?.id ?? "";
 }
 
-async function load_and_set_current_user(): Promise<SystemUser | null> {
+async function load_and_set_current_user(): Promise<Result<SystemUser>> {
   const container = get_repository_container();
   const system_user_repository = container.system_user_repository;
 
-  const admin_result = await system_user_repository.find_by_id(
-    SEED_SYSTEM_USER_IDS.SYSTEM_ADMINISTRATOR,
-  );
+  const clerk_state = get(clerk_session);
+  const clerk_email = clerk_state.user?.email_address?.toLowerCase() ?? null;
 
-  if (admin_result.success && admin_result.data) {
-    set_user_context({
-      user_id: admin_result.data.id,
-      user_email: admin_result.data.email,
-      user_display_name: `${admin_result.data.first_name} ${admin_result.data.last_name}`,
-      organization_id: admin_result.data.organization_id,
-    });
-
-    current_user_store.set_user(admin_result.data);
-    return admin_result.data;
+  if (!clerk_email) {
+    console.log(
+      "[Seeding] No Clerk session active — skipping current user resolution",
+    );
+    return create_failure_result("No Clerk session active");
   }
 
-  const existing_users_result = await system_user_repository.find_all(
-    undefined,
-    {
-      page_size: 100,
-    },
-  );
+  const by_email_result = await system_user_repository.find_by_email(clerk_email);
 
-  if (!existing_users_result.success) return null;
+  if (!by_email_result.success || by_email_result.data.items.length === 0) {
+    console.warn(
+      `[Seeding] No system user found in local DB for Clerk email: ${clerk_email}. ` +
+        "Sync may not have completed yet.",
+    );
+    return create_failure_result(
+      `No system user found for email: ${clerk_email}`,
+    );
+  }
 
-  const super_admin = existing_users_result.data.items.find(
-    (user) => user.role === "super_admin",
-  );
-
-  if (!super_admin) return null;
-
+  const matched_user = by_email_result.data.items[0];
   set_user_context({
-    user_id: super_admin.id,
-    user_email: super_admin.email,
-    user_display_name: `${super_admin.first_name} ${super_admin.last_name}`,
-    organization_id: super_admin.organization_id,
+    user_id: matched_user.id,
+    user_email: matched_user.email,
+    user_display_name: `${matched_user.first_name} ${matched_user.last_name}`,
+    organization_id: matched_user.organization_id,
   });
-
-  current_user_store.set_user(super_admin);
-
-  return super_admin;
+  current_user_store.set_user(matched_user);
+  console.log(
+    `[Seeding] Current user resolved: ${matched_user.email} (role: ${matched_user.role})`,
+  );
+  return create_success_result(matched_user);
 }
 
-async function seed_super_admin_user(): Promise<SystemUser | null> {
+async function seed_super_admin_user(): Promise<Result<SystemUser>> {
   const system_user_repository = get_system_user_repository();
 
   const seed_users = create_seed_system_users();
@@ -390,10 +390,10 @@ async function seed_super_admin_user(): Promise<SystemUser | null> {
 
   if (!super_admin) {
     console.error("Failed to seed super admin user");
-    return null;
+    return create_failure_result("Failed to seed super admin user");
   }
 
-  return super_admin;
+  return create_success_result(super_admin);
 }
 
 function emit_entity_created_events<T extends { id: string }>(
@@ -415,17 +415,26 @@ export async function seed_all_data_if_needed(): Promise<boolean> {
   if (is_seeding_already_complete()) {
     await repair_seeded_competition_formats();
     await repair_seeded_fixture_stage_ids();
-    await load_and_set_current_user();
+    const current_user_result_1 = await load_and_set_current_user();
+    if (!current_user_result_1.success) {
+      console.warn(
+        `[Seeding] Could not resolve current user: ${current_user_result_1.error}`,
+      );
+    }
     return true;
   }
   if (typeof window === "undefined") return false;
 
-  const super_admin = await seed_super_admin_user();
+  const super_admin_result = await seed_super_admin_user();
 
-  if (!super_admin) {
-    console.error("[SEED] Failed to create super admin, aborting seeding");
+  if (!super_admin_result.success) {
+    console.error(
+      `[SEED] Failed to create super admin, aborting seeding: ${super_admin_result.error}`,
+    );
     return false;
   }
+
+  const super_admin = super_admin_result.data;
 
   set_user_context({
     user_id: super_admin.id,
@@ -792,7 +801,12 @@ async function handle_convex_with_local_fallback(
   if (is_seeding_already_complete()) {
     await repair_seeded_competition_formats();
     await repair_seeded_fixture_stage_ids();
-    await load_and_set_current_user();
+    const current_user_result_2 = await load_and_set_current_user();
+    if (!current_user_result_2.success) {
+      console.warn(
+        `[Seeding] Could not resolve current user: ${current_user_result_2.error}`,
+      );
+    }
     return {
       success: true,
       data_source: "local",
@@ -820,7 +834,12 @@ async function handle_convex_with_local_fallback(
     );
     await repair_seeded_competition_formats();
     await repair_seeded_fixture_stage_ids();
-    await load_and_set_current_user();
+    const current_user_result_3 = await load_and_set_current_user();
+    if (!current_user_result_3.success) {
+      console.warn(
+        `[Seeding] Could not resolve current user: ${current_user_result_3.error}`,
+      );
+    }
     mark_seeding_complete();
     return {
       success: true,
@@ -866,7 +885,12 @@ async function handle_convex_mandatory(
     );
     await repair_seeded_competition_formats();
     await repair_seeded_fixture_stage_ids();
-    await load_and_set_current_user();
+    const current_user_result_4 = await load_and_set_current_user();
+    if (!current_user_result_4.success) {
+      console.warn(
+        `[Seeding] Could not resolve current user: ${current_user_result_4.error}`,
+      );
+    }
     mark_seeding_complete();
     return {
       success: true,
@@ -882,7 +906,12 @@ async function handle_convex_mandatory(
     );
     await repair_seeded_competition_formats();
     await repair_seeded_fixture_stage_ids();
-    await load_and_set_current_user();
+    const current_user_result_5 = await load_and_set_current_user();
+    if (!current_user_result_5.success) {
+      console.warn(
+        `[Seeding] Could not resolve current user: ${current_user_result_5.error}`,
+      );
+    }
     return {
       success: true,
       data_source: "local",

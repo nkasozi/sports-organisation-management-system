@@ -633,12 +633,11 @@ function get_all_routes_from_menu(menu: SidebarMenuGroup[]): Set<string> {
 }
 
 export function get_allowed_routes_for_role(role: UserRole): Set<string> {
-  const menu = ROLE_MENUS[role] || PLAYER_MENU;
-  return get_all_routes_from_menu(menu);
+  return get_all_routes_from_menu(ROLE_MENUS[role]);
 }
 
 export function get_sidebar_menu_for_role(role: UserRole): SidebarMenuGroup[] {
-  return ROLE_MENUS[role] || PLAYER_MENU;
+  return ROLE_MENUS[role];
 }
 
 const ALWAYS_ALLOWED_ROUTE_BASES: Set<string> = new Set(["/", "/match-report"]);
@@ -709,14 +708,16 @@ export class LocalAuthorizationAdapter implements AuthorizationPort {
     return parts.join(":");
   }
 
-  private async get_role_for_email(email: string): Promise<UserRole | null> {
+  private async get_role_for_email(
+    email: string,
+  ): Promise<Result<UserRole>> {
     const user_result = await this.system_user_repository.find_by_email(email);
 
     if (!user_result.success || user_result.data.items.length === 0) {
       console.warn(
         `[LocalAuthorizationAdapter] User not found for email: ${email}`,
       );
-      return null;
+      return create_failure_result(`User not found for email: ${email}`);
     }
 
     const system_user = user_result.data.items[0];
@@ -725,10 +726,10 @@ export class LocalAuthorizationAdapter implements AuthorizationPort {
       console.warn(
         `[LocalAuthorizationAdapter] User account is inactive: ${email}`,
       );
-      return null;
+      return create_failure_result(`User account is inactive: ${email}`);
     }
 
-    return system_user.role as UserRole;
+    return create_success_result(system_user.role as UserRole);
   }
 
   async get_profile_permissions(
@@ -762,14 +763,18 @@ export class LocalAuthorizationAdapter implements AuthorizationPort {
       });
     }
 
-    const role = await this.get_role_for_email(verification.payload.email);
+    const role_result = await this.get_role_for_email(
+      verification.payload.email,
+    );
 
-    if (!role) {
+    if (!role_result.success) {
       return create_failure_result({
         failure_type: "token_invalid",
-        message: "User not found or account is inactive",
+        message: role_result.error,
       });
     }
+
+    const role = role_result.data;
 
     const role_permissions = get_role_permissions(role);
 
@@ -838,14 +843,18 @@ export class LocalAuthorizationAdapter implements AuthorizationPort {
       });
     }
 
-    const role = await this.get_role_for_email(verification.payload.email);
+    const role_result = await this.get_role_for_email(
+      verification.payload.email,
+    );
 
-    if (!role) {
+    if (!role_result.success) {
       return create_failure_result({
         failure_type: "token_invalid",
-        message: "User not found or account is inactive",
+        message: role_result.error,
       });
     }
+
+    const role = role_result.data;
 
     const menu_items = get_sidebar_menu_for_role(role);
 
@@ -886,14 +895,18 @@ export class LocalAuthorizationAdapter implements AuthorizationPort {
       });
     }
 
-    const role = await this.get_role_for_email(verification.payload.email);
+    const role_result = await this.get_role_for_email(
+      verification.payload.email,
+    );
 
-    if (!role) {
+    if (!role_result.success) {
       return create_failure_result({
         route,
-        message: "User not found or account is inactive",
+        message: role_result.error,
       });
     }
+
+    const role = role_result.data;
 
     const access_check = can_role_access_route(role, route);
 
@@ -949,15 +962,19 @@ export class LocalAuthorizationAdapter implements AuthorizationPort {
       });
     }
 
-    const role = await this.get_role_for_email(verification.payload.email);
+    const role_result = await this.get_role_for_email(
+      verification.payload.email,
+    );
 
-    if (!role) {
+    if (!role_result.success) {
       return create_success_result({
         is_authorized: false,
         failure_reason: "token_invalid" as const,
-        reason: "User not found or account is inactive",
+        reason: role_result.error,
       });
     }
+
+    const role = role_result.data;
 
     const normalized = normalize_to_entity_type(entity_type);
     const category = get_entity_data_category(normalized);
@@ -1027,13 +1044,15 @@ export class LocalAuthorizationAdapter implements AuthorizationPort {
       return create_success_result([]);
     }
 
-    const role = await this.get_role_for_email(
+    const role_result = await this.get_role_for_email(
       verification_result.data.payload.email,
     );
 
-    if (!role) {
+    if (!role_result.success) {
       return create_success_result([]);
     }
+
+    const role = role_result.data;
 
     const normalized_allowed = normalize_to_entity_type(entity_type);
     const category = get_entity_data_category(normalized_allowed);
@@ -1078,11 +1097,11 @@ export class LocalAuthorizationAdapter implements AuthorizationPort {
       ] as DataAction[]);
     }
 
-    const role = await this.get_role_for_email(
+    const role_result_disabled = await this.get_role_for_email(
       verification_result.data.payload.email,
     );
 
-    if (!role) {
+    if (!role_result_disabled.success) {
       return create_success_result([
         "create",
         "read",
@@ -1090,6 +1109,8 @@ export class LocalAuthorizationAdapter implements AuthorizationPort {
         "delete",
       ] as DataAction[]);
     }
+
+    const role = role_result_disabled.data;
 
     const normalized_disabled = normalize_to_entity_type(entity_type);
     const category = get_entity_data_category(normalized_disabled);

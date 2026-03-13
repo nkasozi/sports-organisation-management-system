@@ -287,10 +287,10 @@
         continue;
       }
 
-      const use_cases = get_use_cases_for_entity_type(
+      const name_resolver_result = get_use_cases_for_entity_type(
         entity_type.toLowerCase(),
       );
-      if (!use_cases) {
+      if (!name_resolver_result.success) {
         errors.push({
           column_name: name_column,
           error_message: `Error: Unknown entity type "${entity_type}". Cause: Cannot resolve name for this entity type. Solution: Use the ID column (${id_column}) instead.`,
@@ -301,7 +301,7 @@
       const resolution_result = await resolve_entity_name_to_id({
         entity_name: name_value,
         entity_type,
-        use_cases,
+        use_cases: name_resolver_result.data,
       });
 
       if (resolution_result.success && resolution_result.resolved_id) {
@@ -389,8 +389,10 @@
     const file_content = await selected_file.text();
     const records = parse_csv_content(file_content);
 
-    const use_cases = get_use_cases_for_entity_type(entity_type.toLowerCase());
-    if (!use_cases) {
+    const import_use_cases_result = get_use_cases_for_entity_type(
+      entity_type.toLowerCase(),
+    );
+    if (!import_use_cases_result.success) {
       import_results = [
         {
           row_number: 0,
@@ -404,6 +406,8 @@
       is_processing = false;
       return;
     }
+
+    const use_cases = import_use_cases_result.data;
 
     const first_record = records[0];
     const name_columns = first_record

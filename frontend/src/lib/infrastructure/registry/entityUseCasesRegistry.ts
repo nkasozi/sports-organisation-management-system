@@ -34,7 +34,11 @@ import { EventBus } from "$lib/infrastructure/events/EventBus";
 import type {
   BaseEntity,
 } from "$lib/core/entities/BaseEntity";
-import type { AsyncResult, PaginatedAsyncResult } from "$lib/core/types/Result";
+import type { AsyncResult, PaginatedAsyncResult, Result } from "$lib/core/types/Result";
+import {
+  create_success_result,
+  create_failure_result,
+} from "$lib/core/types/Result";
 
 const VALID_ENTITY_TYPE_KEYS = [
   "organization",
@@ -315,25 +319,29 @@ function wrap_use_cases_with_events(
 
 export function get_use_cases_for_entity_type(
   entity_type: string,
-): GenericEntityUseCases | null {
+): Result<GenericEntityUseCases> {
   if (typeof entity_type !== "string" || entity_type.length === 0) {
     console.error(
       "Invalid or missing entity type for use case lookup:",
       entity_type,
     );
-    return null;
+    return create_failure_result(
+      `Invalid or missing entity type: "${entity_type}"`,
+    );
   }
 
   const normalized_type = entity_type.toLowerCase();
 
   if (!is_valid_entity_type(normalized_type)) {
     console.warn(`Unknown entity type requested: ${entity_type}`);
-    return null;
+    return create_failure_result(`Unknown entity type: "${entity_type}"`);
   }
 
   const getter = USE_CASES_REGISTRY[normalized_type];
   const use_cases = getter();
-  return wrap_use_cases_with_events(normalized_type, use_cases);
+  return create_success_result(
+    wrap_use_cases_with_events(normalized_type, use_cases),
+  );
 }
 
 function get_all_registered_entity_types(): EntityTypeKey[] {

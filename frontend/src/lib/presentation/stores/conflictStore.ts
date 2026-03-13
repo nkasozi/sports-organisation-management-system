@@ -13,6 +13,11 @@ import {
   log_conflict_detected,
   log_conflict_resolution,
 } from "$lib/infrastructure/sync/conflictAuditService";
+import type { Result } from "$lib/core/types/Result";
+import {
+  create_success_result,
+  create_failure_result,
+} from "$lib/core/types/Result";
 
 export interface ConflictStoreState {
   pending_conflicts: ConflictRecord[];
@@ -89,13 +94,13 @@ function create_conflict_store() {
     conflict_id: string,
     action: ConflictResolutionAction,
     merged_data?: Record<string, unknown>,
-  ): ConflictResolution | null {
+  ): Result<ConflictResolution> {
     const current_state = get({ subscribe });
     const conflict = current_state.pending_conflicts.find(
       (c) => c.id === conflict_id,
     );
 
-    if (!conflict) return null;
+    if (!conflict) return create_failure_result(`Conflict not found: ${conflict_id}`);
 
     const resolution: ConflictResolution = {
       conflict_id,
@@ -128,7 +133,7 @@ function create_conflict_store() {
       resolved_conflicts: [...state.resolved_conflicts, resolution],
     }));
 
-    return resolution;
+    return create_success_result(resolution);
   }
 
   function get_resolved_data_for_action_internal(
@@ -151,12 +156,13 @@ function create_conflict_store() {
   function resolve_current_conflict(
     action: ConflictResolutionAction,
     merged_data?: Record<string, unknown>,
-  ): ConflictResolution | null {
+  ): Result<ConflictResolution> {
     const current_state = get({ subscribe });
     const current_conflict =
       current_state.pending_conflicts[current_state.current_conflict_index];
 
-    if (!current_conflict) return null;
+    if (!current_conflict)
+      return create_failure_result("No current conflict to resolve");
 
     return resolve_conflict(current_conflict.id, action, merged_data);
   }

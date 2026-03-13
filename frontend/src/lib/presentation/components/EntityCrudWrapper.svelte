@@ -104,7 +104,8 @@ Uses explicit handlers instead of events for predictable data flow
       disabled_actions.push("delete");
     }
 
-    const entity_restrictions = get_entity_level_disabled_operations(normalized);
+    const entity_restrictions =
+      get_entity_level_disabled_operations(normalized);
     for (const restricted_op of entity_restrictions) {
       if (!disabled_actions.includes(restricted_op)) {
         disabled_actions.push(restricted_op);
@@ -163,14 +164,15 @@ Uses explicit handlers instead of events for predictable data flow
   function build_crud_handlers_for_entity_type(
     normalized_type: string,
   ): EntityCrudHandlers | null {
-    const use_cases = get_use_cases_for_entity_type(normalized_type);
-    if (!use_cases) {
+    const use_cases_result = get_use_cases_for_entity_type(normalized_type);
+    if (!use_cases_result.success) {
       console.warn(
         `[EntityCrudWrapper] No use cases found for entity type: ${normalized_type}`,
       );
       return null;
     }
 
+    const use_cases = use_cases_result.data;
     return {
       create: use_cases.create
         ? async (input: Record<string, unknown>) => use_cases.create(input)

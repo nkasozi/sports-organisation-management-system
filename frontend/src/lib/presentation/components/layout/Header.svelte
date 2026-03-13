@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { createEventDispatcher, onMount } from "svelte";
+  import { createEventDispatcher } from "svelte";
   import { goto, invalidateAll } from "$app/navigation";
   import { is_signed_in, sign_out } from "$lib/adapters/iam/clerkAuthService";
   import {
@@ -90,10 +90,6 @@
       await goto("/", { replaceState: true });
     }
   }
-
-  onMount(() => {
-    void auth_store.initialize();
-  });
 
   function split_organization_name(name: string): {
     prefix: string;

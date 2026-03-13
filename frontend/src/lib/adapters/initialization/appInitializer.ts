@@ -53,6 +53,11 @@ import {
   get_realtime_sync_adapter,
 } from "$lib/infrastructure/sync/convexRealtimeSync";
 import type { SubscribableConvexClient } from "$lib/infrastructure/cache/AuthCacheInvalidator";
+import type { Result } from "$lib/core/types/Result";
+import {
+  create_success_result,
+  create_failure_result,
+} from "$lib/core/types/Result";
 
 let initialized = false;
 let auth_cache_invalidator: AuthCacheInvalidator | null = null;
@@ -73,14 +78,14 @@ async function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-function initialize_convex_client(): ConvexClient | null {
+function initialize_convex_client(): Result<ConvexClient> {
   const convex_url = PUBLIC_CONVEX_URL;
 
   if (!convex_url) {
     console.log(
       "[Convex] No PUBLIC_CONVEX_URL configured, skipping Convex initialization",
     );
-    return null;
+    return create_failure_result("No PUBLIC_CONVEX_URL configured");
   }
 
   try {
@@ -101,10 +106,12 @@ function initialize_convex_client(): ConvexClient | null {
       "[Convex] Client initialized successfully with URL:",
       convex_url,
     );
-    return client;
+    return create_success_result(client);
   } catch (error) {
     console.error("[Convex] Failed to initialize client:", error);
-    return null;
+    return create_failure_result(
+      `Failed to initialize Convex client: ${error instanceof Error ? error.message : String(error)}`,
+    );
   }
 }
 
@@ -206,11 +213,11 @@ export async function initialize_app_data(
     });
   }
 
-  const convex_client = initialize_convex_client();
+  const convex_client_result = initialize_convex_client();
   const user_is_signed_in = get(is_signed_in);
 
-  if (convex_client) {
-    start_auth_cache_invalidation(convex_client);
+  if (convex_client_result.success) {
+    start_auth_cache_invalidation(convex_client_result.data);
   }
 
   if (is_first_time) {
@@ -236,7 +243,8 @@ export async function initialize_app_data(
     return "redirect_to_login";
   }
 
-  if (convex_client) {
+  if (convex_client_result.success) {
+    const convex_client = convex_client_result.data;
     start_realtime_sync(
       convex_client as unknown as SubscribableConvexClient,
       {
