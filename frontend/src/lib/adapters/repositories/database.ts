@@ -37,7 +37,7 @@ import type { GameEventLog } from "../../core/entities/GameEventLog";
 import type { CompetitionStage } from "../../core/entities/CompetitionStage";
 
 const DATABASE_NAME = "SportsOrgManagementDB";
-const DATABASE_VERSION = 2;
+const DATABASE_VERSION = 3;
 
 class SportsOrgDatabase extends Dexie {
   organizations!: Table<Organization, string>;
@@ -91,11 +91,11 @@ class SportsOrgDatabase extends Dexie {
         "id, competition_id, home_team_id, away_team_id, venue_id, stage_id, scheduled_date, status, created_at",
       sports: "id, name, created_at",
       team_staff: "id, team_id, role_id, first_name, last_name, created_at",
-      team_staff_roles: "id, name, sport_id, created_at",
-      game_official_roles: "id, name, sport_id, created_at",
+      team_staff_roles: "id, name, organization_id, sport_id, created_at",
+      game_official_roles: "id, name, organization_id, sport_id, created_at",
       venues: "id, name, city, country, created_at",
       jersey_colors: "id, name, hex_code, created_at",
-      player_positions: "id, name, abbreviation, sport_id, created_at",
+      player_positions: "id, name, organization_id, abbreviation, sport_id, created_at",
       player_profiles: "id, player_id, slug, created_at",
       team_profiles: "id, team_id, slug, created_at",
       profile_links: "id, profile_type, profile_id, platform, created_at",
@@ -113,12 +113,12 @@ class SportsOrgDatabase extends Dexie {
       activity_categories: "id, name, color, created_at",
       audit_logs: "id, action, entity_type, entity_id, user_id, created_at",
       system_users: "id, email, role, organization_id, created_at",
-      identification_types: "id, name, country, created_at",
-      genders: "id, name, status, created_at",
+      identification_types: "id, name, organization_id, created_at",
+      genders: "id, name, organization_id, status, created_at",
       identifications:
         "id, entity_type, entity_id, identification_type_id, created_at",
       qualifications: "id, entity_type, entity_id, name, created_at",
-      game_event_types: "id, name, sport_id, category, created_at",
+      game_event_types: "id, name, organization_id, sport_id, category, created_at",
       official_associated_teams:
         "id, official_id, team_id, association_type, status, created_at",
       player_team_transfer_histories:

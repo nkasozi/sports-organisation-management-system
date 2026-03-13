@@ -64,6 +64,7 @@ import {
   get_gender_repository,
   InBrowserGenderRepository,
 } from "../repositories/InBrowserGenderRepository";
+import { seed_default_lookup_entities_for_organization } from "./organizationDefaultsSeeder";
 import {
   get_player_profile_repository,
   InBrowserPlayerProfileRepository,
@@ -98,8 +99,6 @@ import {
   create_seed_team_profiles,
   create_seed_team_profile_links,
   create_seed_system_users,
-  create_seed_genders,
-  create_seed_identification_types,
   SEED_ORGANIZATION_IDS,
   SEED_SYSTEM_USER_IDS,
   type SeedCompetitionFormatIds,
@@ -147,7 +146,7 @@ interface SeedResult {
   error_message: string;
 }
 
-const SEEDING_COMPLETE_KEY = "sports_org_seeding_complete_v14";
+const SEEDING_COMPLETE_KEY = "sports_org_seeding_complete_v15";
 
 export function is_seeding_already_complete(): boolean {
   if (typeof window === "undefined") return true;
@@ -472,12 +471,10 @@ export async function seed_all_data_if_needed(): Promise<boolean> {
   const fixture_repository =
     get_fixture_repository() as InBrowserFixtureRepository;
   const venue_repository = get_venue_repository() as InBrowserVenueRepository;
-  const gender_repository =
-    get_gender_repository() as InBrowserGenderRepository;
 
-  const seed_genders = create_seed_genders();
-  await gender_repository.seed_with_data(seed_genders);
-  emit_entity_created_events("gender", seed_genders, (gender) => gender.name);
+  await seed_default_lookup_entities_for_organization(
+    SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
+  );
 
   const positions_result = await player_position_repository.find_all(
     undefined,
@@ -709,18 +706,6 @@ export async function seed_all_data_if_needed(): Promise<boolean> {
     "jersey_color",
     seed_jersey_colors,
     (j) => `${j.nickname} (${j.main_color})`,
-  );
-
-  const identification_type_repository =
-    get_identification_type_repository() as InBrowserIdentificationTypeRepository;
-  const seed_identification_types = create_seed_identification_types();
-  await identification_type_repository.seed_with_data(
-    seed_identification_types,
-  );
-  emit_entity_created_events(
-    "identificationtype",
-    seed_identification_types,
-    (t) => t.name,
   );
 
   const player_profile_repository =

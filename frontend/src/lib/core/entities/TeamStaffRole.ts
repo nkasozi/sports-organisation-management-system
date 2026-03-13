@@ -8,6 +8,7 @@ export interface TeamStaffRole extends BaseEntity {
   is_primary_contact: boolean;
   display_order: number;
   status: EntityStatus;
+  organization_id: string;
 }
 
 export type CreateTeamStaffRoleInput = Omit<
@@ -25,10 +26,11 @@ function create_empty_team_staff_role_input(): CreateTeamStaffRoleInput {
     is_primary_contact: false,
     display_order: 0,
     status: "active",
+    organization_id: "",
   };
 }
 
-function get_default_team_staff_roles(): CreateTeamStaffRoleInput[] {
+function get_default_team_staff_roles(): Omit<CreateTeamStaffRoleInput, "organization_id">[] {
   return [
     {
       name: "Head Coach",

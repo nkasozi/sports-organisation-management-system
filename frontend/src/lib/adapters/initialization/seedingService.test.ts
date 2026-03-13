@@ -157,6 +157,9 @@ const {
 vi.mock("../repositories/InBrowserPlayerPositionRepository", () => ({
   get_player_position_repository: create_empty_repo,
 }));
+vi.mock("./organizationDefaultsSeeder", () => ({
+  seed_default_lookup_entities_for_organization: vi.fn().mockResolvedValue(undefined),
+}));
 vi.mock("../repositories/InBrowserTeamStaffRoleRepository", () => ({
   get_team_staff_role_repository: create_empty_repo,
   InBrowserTeamStaffRoleRepository: vi.fn(),
@@ -350,7 +353,7 @@ describe("seed_from_convex_or_local — convex_first_with_local_fallback strateg
   });
 
   it("returns local_fallback_success when seeding already complete", async () => {
-    mock_local_storage["sports_org_seeding_complete_v14"] = "true";
+    mock_local_storage["sports_org_seeding_complete_v15"] = "true";
 
     const result = await seed_from_convex_or_local(
       on_progress,
@@ -363,7 +366,7 @@ describe("seed_from_convex_or_local — convex_first_with_local_fallback strateg
   });
 
   it("repairs competition format stage fields when local seeded data already exists", async () => {
-    mock_local_storage["sports_org_seeding_complete_v14"] = "true";
+    mock_local_storage["sports_org_seeding_complete_v15"] = "true";
     mock_competition_formats.push({
       id: "format-2",
       created_at: "2024-01-01T00:00:00.000Z",
@@ -432,7 +435,7 @@ describe("seed_from_convex_or_local — convex_first_with_local_fallback strateg
       "convex_first_with_local_fallback",
     );
 
-    expect(mock_local_storage["sports_org_seeding_complete_v14"]).toBe("true");
+    expect(mock_local_storage["sports_org_seeding_complete_v15"]).toBe("true");
   });
 
   it("repairs competition format stage fields after successful convex seed", async () => {
@@ -582,7 +585,7 @@ describe("seed_from_convex_or_local — convex_mandatory strategy", () => {
   });
 
   it("enters offline mode when convex fails but local data exists", async () => {
-    mock_local_storage["sports_org_seeding_complete_v14"] = "true";
+    mock_local_storage["sports_org_seeding_complete_v15"] = "true";
 
     const result = await seed_from_convex_or_local(
       on_progress,
@@ -646,7 +649,7 @@ describe("repair fixture stage IDs when seeded data already exists", () => {
   });
 
   it("assigns the stage_id to fixtures that have no stage set", async () => {
-    mock_local_storage["sports_org_seeding_complete_v14"] = "true";
+    mock_local_storage["sports_org_seeding_complete_v15"] = "true";
     mock_competition_stages.push({
       id: "stage-1",
       competition_id: "comp-1",
@@ -671,7 +674,7 @@ describe("repair fixture stage IDs when seeded data already exists", () => {
   });
 
   it("skips fixtures that already have a valid stage_id", async () => {
-    mock_local_storage["sports_org_seeding_complete_v14"] = "true";
+    mock_local_storage["sports_org_seeding_complete_v15"] = "true";
     mock_competition_stages.push({
       id: "stage-1",
       competition_id: "comp-1",
@@ -693,7 +696,7 @@ describe("repair fixture stage IDs when seeded data already exists", () => {
   });
 
   it("picks the stage with the lowest stage_order when multiple stages exist", async () => {
-    mock_local_storage["sports_org_seeding_complete_v14"] = "true";
+    mock_local_storage["sports_org_seeding_complete_v15"] = "true";
     mock_competition_stages.push(
       { id: "stage-2", competition_id: "comp-1", stage_order: 2, name: "Knockouts" },
       { id: "stage-1", competition_id: "comp-1", stage_order: 1, name: "Group Stage" },

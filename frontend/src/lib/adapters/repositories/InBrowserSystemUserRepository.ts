@@ -254,46 +254,6 @@ export class InBrowserSystemUserRepository
   }
 }
 
-function create_default_system_users(): SystemUser[] {
-  const now = new Date().toISOString();
-
-  return [
-    {
-      id: "usr_default_1",
-      email: "admin@ugandahockey.org",
-      first_name: "System",
-      last_name: "Administrator",
-      role: "super_admin",
-      organization_id: "*",
-      status: "active",
-      created_at: now,
-      updated_at: now,
-    },
-    {
-      id: "usr_default_2",
-      email: "manager@ugandahockey.org",
-      first_name: "Organisation",
-      last_name: "Admin",
-      role: "org_admin",
-      organization_id: "org_default_1",
-      status: "active",
-      created_at: now,
-      updated_at: now,
-    },
-    {
-      id: "usr_default_3",
-      email: "official@ugandahockey.org",
-      first_name: "Officials",
-      last_name: "Manager",
-      role: "officials_manager",
-      organization_id: "org_default_1",
-      status: "active",
-      created_at: now,
-      updated_at: now,
-    },
-  ];
-}
-
 let singleton_instance: InBrowserSystemUserRepository | null = null;
 
 export function get_system_user_repository(): InBrowserSystemUserRepository {
@@ -306,5 +266,4 @@ export function get_system_user_repository(): InBrowserSystemUserRepository {
 export async function reset_system_user_repository(): Promise<void> {
   const repository = get_system_user_repository();
   await repository.clear_all_data();
-  await repository.seed_with_data(create_default_system_users());
 }

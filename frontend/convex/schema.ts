@@ -356,6 +356,7 @@ export default defineSchema({
 
   team_staff_roles: defineTable({
     ...sync_metadata_fields,
+    organization_id: v.string(),
     name: v.string(),
     code: v.optional(v.string()),
     sport_id: v.optional(v.union(v.string(), v.null())),
@@ -369,6 +370,7 @@ export default defineSchema({
 
   game_official_roles: defineTable({
     ...sync_metadata_fields,
+    organization_id: v.string(),
     name: v.string(),
     code: v.optional(v.string()),
     sport_id: v.optional(v.union(v.string(), v.null())),
@@ -421,6 +423,7 @@ export default defineSchema({
 
   player_positions: defineTable({
     ...sync_metadata_fields,
+    organization_id: v.string(),
     name: v.string(),
     code: v.optional(v.string()),
     category: v.optional(v.string()),
@@ -770,6 +773,7 @@ export default defineSchema({
 
   identification_types: defineTable({
     ...sync_metadata_fields,
+    organization_id: v.string(),
     name: v.string(),
     identifier_field_label: v.optional(v.string()),
     country: v.optional(v.string()),
@@ -821,6 +825,7 @@ export default defineSchema({
 
   game_event_types: defineTable({
     ...sync_metadata_fields,
+    organization_id: v.string(),
     name: v.string(),
     code: v.optional(v.string()),
     sport_id: v.optional(v.union(v.string(), v.null())),
@@ -838,6 +843,7 @@ export default defineSchema({
 
   genders: defineTable({
     ...sync_metadata_fields,
+    organization_id: v.string(),
     name: v.string(),
     description: v.optional(v.string()),
     status: v.optional(v.string()),

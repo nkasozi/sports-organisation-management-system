@@ -437,6 +437,15 @@ class EntityMetadataRegistry {
           is_read_only: false,
           show_in_list: true,
         },
+        {
+          field_name: "organization_id" satisfies keyof PlayerPosition,
+          display_name: "Organization",
+          field_type: "foreign_key",
+          is_required: true,
+          is_read_only: false,
+          foreign_key_entity: "organization",
+          show_in_list: true,
+        },
       ],
     });
   }
@@ -2292,6 +2301,15 @@ class EntityMetadataRegistry {
           is_read_only: false,
           show_in_list: true,
         },
+        {
+          field_name: "organization_id" satisfies keyof GameEventType,
+          display_name: "Organization",
+          field_type: "foreign_key",
+          is_required: true,
+          is_read_only: false,
+          foreign_key_entity: "organization",
+          show_in_list: true,
+        },
       ],
     });
   }
@@ -2367,6 +2385,15 @@ class EntityMetadataRegistry {
           is_read_only: false,
           show_in_list: true,
         },
+        {
+          field_name: "organization_id" satisfies keyof GameOfficialRole,
+          display_name: "Organization",
+          field_type: "foreign_key",
+          is_required: true,
+          is_read_only: false,
+          foreign_key_entity: "organization",
+          show_in_list: true,
+        },
       ],
     });
   }
@@ -2438,6 +2465,15 @@ class EntityMetadataRegistry {
           is_read_only: false,
           show_in_list: true,
         },
+        {
+          field_name: "organization_id" satisfies keyof TeamStaffRole,
+          display_name: "Organization",
+          field_type: "foreign_key",
+          is_required: true,
+          is_read_only: false,
+          foreign_key_entity: "organization",
+          show_in_list: true,
+        },
       ],
     });
   }
@@ -2495,6 +2531,15 @@ class EntityMetadataRegistry {
           is_read_only: false,
           show_in_list: true,
         },
+        {
+          field_name: "organization_id" satisfies keyof IdentificationType,
+          display_name: "Organization",
+          field_type: "foreign_key",
+          is_required: true,
+          is_read_only: false,
+          foreign_key_entity: "organization",
+          show_in_list: true,
+        },
       ],
     });
   }
@@ -2533,6 +2578,15 @@ class EntityMetadataRegistry {
           enum_values: ["active", "inactive"],
           is_required: true,
           is_read_only: false,
+          show_in_list: true,
+        },
+        {
+          field_name: "organization_id" satisfies keyof Gender,
+          display_name: "Organization",
+          field_type: "foreign_key",
+          is_required: true,
+          is_read_only: false,
+          foreign_key_entity: "organization",
           show_in_list: true,
         },
       ],

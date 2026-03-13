@@ -57,6 +57,7 @@ export class InBrowserGameOfficialRoleRepository
       is_head_official: input.is_head_official,
       display_order: input.display_order,
       status: input.status,
+      organization_id: input.organization_id,
     };
   }
 
@@ -103,6 +104,12 @@ export class InBrowserGameOfficialRoleRepository
       filtered = filtered.filter((role) => role.status === filter.status);
     }
 
+    if (filter.organization_id) {
+      filtered = filtered.filter(
+        (role) => role.organization_id === filter.organization_id,
+      );
+    }
+
     return filtered;
   }
 
@@ -142,6 +149,12 @@ export class InBrowserGameOfficialRoleRepository
         if (filter.status) {
           filtered_entities = filtered_entities.filter(
             (role) => role.status === filter.status,
+          );
+        }
+
+        if (filter.organization_id) {
+          filtered_entities = filtered_entities.filter(
+            (role) => role.organization_id === filter.organization_id,
           );
         }
       }
@@ -203,10 +216,19 @@ export class InBrowserGameOfficialRoleRepository
       return create_failure_result(`Failed to find head officials: ${error}`);
     }
   }
+
+  async find_by_organization(
+    organization_id: string,
+    options?: QueryOptions,
+  ): PaginatedAsyncResult<GameOfficialRole> {
+    return this.find_all({ organization_id }, options);
+  }
 }
 
-function create_default_game_official_roles(): GameOfficialRole[] {
-  return get_default_football_official_roles_with_ids();
+export function create_default_game_official_roles_for_organization(
+  organization_id: string,
+): GameOfficialRole[] {
+  return get_default_football_official_roles_with_ids(organization_id);
 }
 
 let singleton_instance: InBrowserGameOfficialRoleRepository | null = null;
@@ -222,5 +244,4 @@ export async function reset_game_official_role_repository(): Promise<void> {
   const repository =
     get_game_official_role_repository() as InBrowserGameOfficialRoleRepository;
   await repository.clear_all_data();
-  await repository.seed_with_data(create_default_game_official_roles());
 }

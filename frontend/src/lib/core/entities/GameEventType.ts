@@ -19,6 +19,7 @@ export interface GameEventType extends BaseEntity {
   display_order: number;
   sport_id: string | null;
   status: EntityStatus;
+  organization_id: string;
 }
 
 export type CreateGameEventTypeInput = Omit<
@@ -42,6 +43,7 @@ function create_empty_game_event_type_input(
     display_order: 0,
     sport_id,
     status: "active",
+    organization_id: "",
   };
 }
 
@@ -58,7 +60,7 @@ function get_category_label(category: EventCategory): string {
   return found?.label ?? category;
 }
 
-export function get_default_game_event_types(): CreateGameEventTypeInput[] {
+export function get_default_game_event_types(organization_id: string): CreateGameEventTypeInput[] {
   return [
     {
       name: "Goal",
@@ -72,6 +74,7 @@ export function get_default_game_event_types(): CreateGameEventTypeInput[] {
       display_order: 1,
       sport_id: null,
       status: "active",
+      organization_id,
     },
     {
       name: "Own Goal",
@@ -85,6 +88,7 @@ export function get_default_game_event_types(): CreateGameEventTypeInput[] {
       display_order: 2,
       sport_id: null,
       status: "active",
+      organization_id,
     },
     {
       name: "Penalty Scored",
@@ -98,6 +102,7 @@ export function get_default_game_event_types(): CreateGameEventTypeInput[] {
       display_order: 3,
       sport_id: null,
       status: "active",
+      organization_id,
     },
     {
       name: "Penalty Missed",
@@ -111,6 +116,7 @@ export function get_default_game_event_types(): CreateGameEventTypeInput[] {
       display_order: 4,
       sport_id: null,
       status: "active",
+      organization_id,
     },
     {
       name: "Yellow Card",
@@ -124,6 +130,7 @@ export function get_default_game_event_types(): CreateGameEventTypeInput[] {
       display_order: 5,
       sport_id: null,
       status: "active",
+      organization_id,
     },
     {
       name: "Red Card",
@@ -137,6 +144,7 @@ export function get_default_game_event_types(): CreateGameEventTypeInput[] {
       display_order: 6,
       sport_id: null,
       status: "active",
+      organization_id,
     },
     {
       name: "Second Yellow Card",
@@ -150,6 +158,7 @@ export function get_default_game_event_types(): CreateGameEventTypeInput[] {
       display_order: 7,
       sport_id: null,
       status: "active",
+      organization_id,
     },
     {
       name: "Green Card",
@@ -163,6 +172,7 @@ export function get_default_game_event_types(): CreateGameEventTypeInput[] {
       display_order: 8,
       sport_id: null,
       status: "active",
+      organization_id,
     },
     {
       name: "Substitution",
@@ -176,6 +186,7 @@ export function get_default_game_event_types(): CreateGameEventTypeInput[] {
       display_order: 9,
       sport_id: null,
       status: "active",
+      organization_id,
     },
     {
       name: "Foul",
@@ -189,6 +200,7 @@ export function get_default_game_event_types(): CreateGameEventTypeInput[] {
       display_order: 10,
       sport_id: null,
       status: "active",
+      organization_id,
     },
     {
       name: "Offside",
@@ -202,6 +214,7 @@ export function get_default_game_event_types(): CreateGameEventTypeInput[] {
       display_order: 11,
       sport_id: null,
       status: "active",
+      organization_id,
     },
     {
       name: "Corner Kick",
@@ -215,6 +228,7 @@ export function get_default_game_event_types(): CreateGameEventTypeInput[] {
       display_order: 12,
       sport_id: null,
       status: "active",
+      organization_id,
     },
     {
       name: "Penalty Corner",
@@ -228,6 +242,7 @@ export function get_default_game_event_types(): CreateGameEventTypeInput[] {
       display_order: 13,
       sport_id: null,
       status: "active",
+      organization_id,
     },
     {
       name: "Free Kick",
@@ -241,6 +256,7 @@ export function get_default_game_event_types(): CreateGameEventTypeInput[] {
       display_order: 14,
       sport_id: null,
       status: "active",
+      organization_id,
     },
     {
       name: "Injury",
@@ -254,6 +270,7 @@ export function get_default_game_event_types(): CreateGameEventTypeInput[] {
       display_order: 15,
       sport_id: null,
       status: "active",
+      organization_id,
     },
     {
       name: "VAR Review",
@@ -267,6 +284,7 @@ export function get_default_game_event_types(): CreateGameEventTypeInput[] {
       display_order: 16,
       sport_id: null,
       status: "active",
+      organization_id,
     },
     {
       name: "Period Start",
@@ -280,6 +298,7 @@ export function get_default_game_event_types(): CreateGameEventTypeInput[] {
       display_order: 17,
       sport_id: null,
       status: "active",
+      organization_id,
     },
     {
       name: "Period End",
@@ -293,6 +312,7 @@ export function get_default_game_event_types(): CreateGameEventTypeInput[] {
       display_order: 18,
       sport_id: null,
       status: "active",
+      organization_id,
     },
   ];
 }

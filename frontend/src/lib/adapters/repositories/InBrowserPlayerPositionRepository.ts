@@ -21,7 +21,7 @@ import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
 
 const ENTITY_PREFIX = "player_position";
 
-class InBrowserPlayerPositionRepository
+export class InBrowserPlayerPositionRepository
   extends InBrowserBaseRepository<
     PlayerPosition,
     CreatePlayerPositionInput,
@@ -54,6 +54,7 @@ class InBrowserPlayerPositionRepository
       display_order: input.display_order,
       is_available: input.is_available,
       status: input.status,
+      organization_id: input.organization_id,
     };
   }
 
@@ -101,6 +102,12 @@ class InBrowserPlayerPositionRepository
     if (filter.status) {
       filtered = filtered.filter(
         (position) => position.status === filter.status,
+      );
+    }
+
+    if (filter.organization_id) {
+      filtered = filtered.filter(
+        (position) => position.organization_id === filter.organization_id,
       );
     }
 
@@ -208,6 +215,12 @@ class InBrowserPlayerPositionRepository
         );
       }
 
+      if (filter.organization_id) {
+        filtered_entities = filtered_entities.filter(
+          (position) => position.organization_id === filter.organization_id,
+        );
+      }
+
       filtered_entities.sort((a, b) => a.display_order - b.display_order);
 
       const total_count = filtered_entities.length;
@@ -228,14 +241,23 @@ class InBrowserPlayerPositionRepository
       );
     }
   }
+
+  async find_by_organization(
+    organization_id: string,
+    options?: QueryOptions,
+  ): PaginatedAsyncResult<PlayerPosition> {
+    return this.find_all({ organization_id }, options);
+  }
 }
 
-function create_default_player_positions(): PlayerPosition[] {
+export function create_default_player_positions_for_organization(
+  organization_id: string,
+): PlayerPosition[] {
   const now = new Date().toISOString();
 
   return [
     {
-      id: "player_position_hockey_gk",
+      id: `player_position_hockey_gk_${organization_id}`,
       name: "Goalkeeper",
       code: "GK",
       category: "goalkeeper",
@@ -244,11 +266,12 @@ function create_default_player_positions(): PlayerPosition[] {
       display_order: 1,
       is_available: true,
       status: "active",
+      organization_id,
       created_at: now,
       updated_at: now,
     },
     {
-      id: "player_position_hockey_sw",
+      id: `player_position_hockey_sw_${organization_id}`,
       name: "Sweeper",
       code: "SW",
       category: "defender",
@@ -257,11 +280,12 @@ function create_default_player_positions(): PlayerPosition[] {
       display_order: 2,
       is_available: true,
       status: "active",
+      organization_id,
       created_at: now,
       updated_at: now,
     },
     {
-      id: "player_position_hockey_cb",
+      id: `player_position_hockey_cb_${organization_id}`,
       name: "Center Back",
       code: "CB",
       category: "defender",
@@ -270,11 +294,12 @@ function create_default_player_positions(): PlayerPosition[] {
       display_order: 3,
       is_available: true,
       status: "active",
+      organization_id,
       created_at: now,
       updated_at: now,
     },
     {
-      id: "player_position_hockey_lb",
+      id: `player_position_hockey_lb_${organization_id}`,
       name: "Left Back",
       code: "LB",
       category: "defender",
@@ -283,11 +308,12 @@ function create_default_player_positions(): PlayerPosition[] {
       display_order: 4,
       is_available: true,
       status: "active",
+      organization_id,
       created_at: now,
       updated_at: now,
     },
     {
-      id: "player_position_hockey_rb",
+      id: `player_position_hockey_rb_${organization_id}`,
       name: "Right Back",
       code: "RB",
       category: "defender",
@@ -296,11 +322,12 @@ function create_default_player_positions(): PlayerPosition[] {
       display_order: 5,
       is_available: true,
       status: "active",
+      organization_id,
       created_at: now,
       updated_at: now,
     },
     {
-      id: "player_position_hockey_cdm",
+      id: `player_position_hockey_cdm_${organization_id}`,
       name: "Defensive Midfielder",
       code: "CDM",
       category: "midfielder",
@@ -309,11 +336,12 @@ function create_default_player_positions(): PlayerPosition[] {
       display_order: 6,
       is_available: true,
       status: "active",
+      organization_id,
       created_at: now,
       updated_at: now,
     },
     {
-      id: "player_position_hockey_cm",
+      id: `player_position_hockey_cm_${organization_id}`,
       name: "Center Midfielder",
       code: "CM",
       category: "midfielder",
@@ -322,11 +350,12 @@ function create_default_player_positions(): PlayerPosition[] {
       display_order: 7,
       is_available: true,
       status: "active",
+      organization_id,
       created_at: now,
       updated_at: now,
     },
     {
-      id: "player_position_hockey_lm",
+      id: `player_position_hockey_lm_${organization_id}`,
       name: "Left Midfielder",
       code: "LM",
       category: "midfielder",
@@ -335,11 +364,12 @@ function create_default_player_positions(): PlayerPosition[] {
       display_order: 8,
       is_available: true,
       status: "active",
+      organization_id,
       created_at: now,
       updated_at: now,
     },
     {
-      id: "player_position_hockey_rm",
+      id: `player_position_hockey_rm_${organization_id}`,
       name: "Right Midfielder",
       code: "RM",
       category: "midfielder",
@@ -348,11 +378,12 @@ function create_default_player_positions(): PlayerPosition[] {
       display_order: 9,
       is_available: true,
       status: "active",
+      organization_id,
       created_at: now,
       updated_at: now,
     },
     {
-      id: "player_position_hockey_lw",
+      id: `player_position_hockey_lw_${organization_id}`,
       name: "Left Wing",
       code: "LW",
       category: "forward",
@@ -361,11 +392,12 @@ function create_default_player_positions(): PlayerPosition[] {
       display_order: 10,
       is_available: true,
       status: "active",
+      organization_id,
       created_at: now,
       updated_at: now,
     },
     {
-      id: "player_position_hockey_rw",
+      id: `player_position_hockey_rw_${organization_id}`,
       name: "Right Wing",
       code: "RW",
       category: "forward",
@@ -374,11 +406,12 @@ function create_default_player_positions(): PlayerPosition[] {
       display_order: 11,
       is_available: true,
       status: "active",
+      organization_id,
       created_at: now,
       updated_at: now,
     },
     {
-      id: "player_position_hockey_cf",
+      id: `player_position_hockey_cf_${organization_id}`,
       name: "Center Forward",
       code: "CF",
       category: "forward",
@@ -387,11 +420,12 @@ function create_default_player_positions(): PlayerPosition[] {
       display_order: 12,
       is_available: true,
       status: "active",
+      organization_id,
       created_at: now,
       updated_at: now,
     },
     {
-      id: "player_position_hockey_st",
+      id: `player_position_hockey_st_${organization_id}`,
       name: "Striker",
       code: "ST",
       category: "forward",
@@ -400,11 +434,12 @@ function create_default_player_positions(): PlayerPosition[] {
       display_order: 13,
       is_available: true,
       status: "active",
+      organization_id,
       created_at: now,
       updated_at: now,
     },
     {
-      id: "player_position_hockey_if",
+      id: `player_position_hockey_if_${organization_id}`,
       name: "Inside Forward",
       code: "IF",
       category: "forward",
@@ -413,6 +448,7 @@ function create_default_player_positions(): PlayerPosition[] {
       display_order: 14,
       is_available: true,
       status: "active",
+      organization_id,
       created_at: now,
       updated_at: now,
     },
@@ -432,5 +468,4 @@ export async function reset_player_position_repository(): Promise<void> {
   const repository =
     get_player_position_repository() as InBrowserPlayerPositionRepository;
   await repository.clear_all_data();
-  await repository.seed_with_data(create_default_player_positions());
 }

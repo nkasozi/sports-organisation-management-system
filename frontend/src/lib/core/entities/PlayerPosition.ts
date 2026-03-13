@@ -16,6 +16,7 @@ export interface PlayerPosition extends BaseEntity {
   display_order: number;
   is_available: boolean;
   status: "active" | "inactive";
+  organization_id: string;
 }
 
 export type CreatePlayerPositionInput = Omit<
@@ -31,6 +32,7 @@ export interface PlayerPositionFilter {
   sport_type?: string;
   is_available?: boolean;
   status?: "active" | "inactive";
+  organization_id?: string;
 }
 
 export function validate_player_position_input(
@@ -60,7 +62,7 @@ export function validate_player_position_input(
   };
 }
 
-function get_default_player_positions(): CreatePlayerPositionInput[] {
+function get_default_player_positions(): Omit<CreatePlayerPositionInput, "organization_id">[] {
   return [
     {
       name: "Goalkeeper",

@@ -1,5 +1,5 @@
-import type { Repository } from "./Repository";
-import type { AsyncResult } from "../../../../types/Result";
+import type { Repository, QueryOptions } from "./Repository";
+import type { AsyncResult, PaginatedAsyncResult } from "../../../../types/Result";
 import type {
   TeamStaffRole,
   CreateTeamStaffRoleInput,
@@ -10,6 +10,7 @@ export interface TeamStaffRoleFilter {
   name_contains?: string;
   category?: TeamStaffRole["category"];
   status?: TeamStaffRole["status"];
+  organization_id?: string;
 }
 
 export interface TeamStaffRoleRepository extends Repository<
@@ -21,6 +22,10 @@ export interface TeamStaffRoleRepository extends Repository<
   find_by_category(
     category: TeamStaffRole["category"],
   ): AsyncResult<TeamStaffRole[]>;
+  find_by_organization(
+    organization_id: string,
+    options?: QueryOptions,
+  ): PaginatedAsyncResult<TeamStaffRole>;
 }
 
 export type {

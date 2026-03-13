@@ -4,6 +4,7 @@ export interface Gender extends BaseEntity {
   name: string;
   description: string;
   status: EntityStatus;
+  organization_id: string;
 }
 
 export type CreateGenderInput = Omit<
@@ -18,6 +19,7 @@ function create_empty_gender_input(): CreateGenderInput {
     name: "",
     description: "",
     status: "active",
+    organization_id: "",
   };
 }
 

@@ -6,4 +6,4 @@
   <title>Genders - Sports Management</title>
 </svelte:head>
 
-<EntityCrudWrapper entity_type="gender" />
+<EntityCrudWrapper entity_type="Gender" />

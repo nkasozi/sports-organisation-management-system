@@ -1,4 +1,4 @@
-import { get_organization_use_cases } from "$lib/core/usecases/OrganizationUseCases";
+import { get_organization_with_defaults_use_cases } from "$lib/core/usecases/OrganizationUseCases";
 import { get_competition_use_cases } from "$lib/core/usecases/CompetitionUseCases";
 import { get_team_use_cases } from "$lib/core/usecases/TeamUseCases";
 import { get_player_use_cases } from "$lib/core/usecases/PlayerUseCases";
@@ -93,7 +93,7 @@ type UseCasesGetter = () => GenericEntityUseCases;
 function create_use_cases_registry(): Record<EntityTypeKey, UseCasesGetter> {
   const registry_definition = {
     ["organization" satisfies EntityTypeKey]:
-      get_organization_use_cases as UseCasesGetter,
+      get_organization_with_defaults_use_cases as UseCasesGetter,
     ["competition" satisfies EntityTypeKey]:
       get_competition_use_cases as UseCasesGetter,
     ["team" satisfies EntityTypeKey]: get_team_use_cases as UseCasesGetter,

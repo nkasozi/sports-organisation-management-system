@@ -1,5 +1,5 @@
-import type { Repository } from "./Repository";
-import type { AsyncResult } from "../../../../types/Result";
+import type { Repository, QueryOptions } from "./Repository";
+import type { AsyncResult, PaginatedAsyncResult } from "../../../../types/Result";
 import type {
   GameOfficialRole,
   CreateGameOfficialRoleInput,
@@ -12,6 +12,7 @@ export interface GameOfficialRoleFilter {
   is_on_field?: boolean;
   is_head_official?: boolean;
   status?: GameOfficialRole["status"];
+  organization_id?: string;
 }
 
 export interface GameOfficialRoleRepository extends Repository<
@@ -22,6 +23,10 @@ export interface GameOfficialRoleRepository extends Repository<
 > {
   find_by_sport(sport_id: string | null): AsyncResult<GameOfficialRole[]>;
   find_head_officials(): AsyncResult<GameOfficialRole[]>;
+  find_by_organization(
+    organization_id: string,
+    options?: QueryOptions,
+  ): PaginatedAsyncResult<GameOfficialRole>;
 }
 
 export type {

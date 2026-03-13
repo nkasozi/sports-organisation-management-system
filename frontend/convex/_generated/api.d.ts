@@ -8,6 +8,7 @@
  * @module
  */
 
+import type * as admin_seed from "../admin_seed.js";
 import type * as audit_logs from "../audit_logs.js";
 import type * as authorization from "../authorization.js";
 import type * as crons from "../crons.js";
@@ -23,6 +24,7 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  admin_seed: typeof admin_seed;
   audit_logs: typeof audit_logs;
   authorization: typeof authorization;
   crons: typeof crons;

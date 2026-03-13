@@ -48,6 +48,7 @@ export class InBrowserIdentificationTypeRepository
       identifier_field_label: input.identifier_field_label,
       description: input.description,
       status: input.status,
+      organization_id: input.organization_id,
     };
   }
 
@@ -73,6 +74,13 @@ export class InBrowserIdentificationTypeRepository
       );
     }
 
+    if (filter.organization_id) {
+      filtered = filtered.filter(
+        (identification_type) =>
+          identification_type.organization_id === filter.organization_id,
+      );
+    }
+
     return filtered;
   }
 
@@ -80,6 +88,13 @@ export class InBrowserIdentificationTypeRepository
     options?: QueryOptions,
   ): PaginatedAsyncResult<IdentificationType> {
     return this.find_all({ status: "active" }, options);
+  }
+
+  async find_by_organization(
+    organization_id: string,
+    options?: QueryOptions,
+  ): PaginatedAsyncResult<IdentificationType> {
+    return this.find_all({ organization_id }, options);
   }
 }
 

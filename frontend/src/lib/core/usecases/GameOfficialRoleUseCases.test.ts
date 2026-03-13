@@ -18,6 +18,7 @@ function create_mock_repository(): GameOfficialRoleRepository {
     count: vi.fn(),
     find_by_sport: vi.fn(),
     find_head_officials: vi.fn(),
+    find_by_organization: vi.fn(),
   };
 }
 
@@ -34,6 +35,7 @@ function create_test_role(
     is_head_official: true,
     display_order: 1,
     status: "active",
+    organization_id: "test-org-1",
     created_at: "2024-01-01T00:00:00Z",
     updated_at: "2024-01-01T00:00:00Z",
     ...overrides,
@@ -52,6 +54,7 @@ function create_valid_input(
     is_head_official: false,
     display_order: 2,
     status: "active",
+    organization_id: "test-org-1",
     ...overrides,
   };
 }

@@ -20,6 +20,7 @@ function create_mock_repository(): GameEventTypeRepository {
     find_by_category: vi.fn(),
     find_by_code: vi.fn(),
     find_scoring_events: vi.fn(),
+    find_by_organization: vi.fn(),
   };
 }
 
@@ -39,6 +40,7 @@ function create_test_event_type(
     display_order: 1,
     sport_id: "sport-123",
     status: "active",
+    organization_id: "test-org-1",
     created_at: "2024-01-01T00:00:00Z",
     updated_at: "2024-01-01T00:00:00Z",
     ...overrides,
@@ -60,6 +62,7 @@ function create_valid_input(
     display_order: 2,
     sport_id: "sport-123",
     status: "active",
+    organization_id: "test-org-1",
     ...overrides,
   };
 }

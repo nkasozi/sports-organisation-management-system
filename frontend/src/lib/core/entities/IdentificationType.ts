@@ -5,6 +5,7 @@ export interface IdentificationType extends BaseEntity {
   identifier_field_label: string;
   description: string;
   status: EntityStatus;
+  organization_id: string;
 }
 
 export type CreateIdentificationTypeInput = Omit<
@@ -21,6 +22,7 @@ function create_empty_identification_type_input(): CreateIdentificationTypeInput
     identifier_field_label: "",
     description: "",
     status: "active",
+    organization_id: "",
   };
 }
 

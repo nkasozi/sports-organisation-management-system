@@ -9,6 +9,7 @@ export interface GameOfficialRole extends BaseEntity {
   is_head_official: boolean;
   display_order: number;
   status: EntityStatus;
+  organization_id: string;
 }
 
 export type CreateGameOfficialRoleInput = Omit<
@@ -29,10 +30,11 @@ function create_empty_game_official_role_input(
     is_head_official: false,
     display_order: 0,
     status: "active",
+    organization_id: "",
   };
 }
 
-function get_default_football_official_roles(): CreateGameOfficialRoleInput[] {
+function get_default_football_official_roles(): Omit<CreateGameOfficialRoleInput, "organization_id">[] {
   return [
     {
       name: "Referee",
@@ -101,14 +103,15 @@ function get_default_football_official_roles(): CreateGameOfficialRoleInput[] {
   ];
 }
 
-export function get_default_football_official_roles_with_ids(): GameOfficialRole[] {
+export function get_default_football_official_roles_with_ids(organization_id: string): GameOfficialRole[] {
   const now = new Date().toISOString();
   const input_roles = get_default_football_official_roles();
   return input_roles.map((input, index) => ({
-    id: `role_default_${index + 1}`,
+    ...input,
+    id: `role_default_${index + 1}_${organization_id}`,
     created_at: now,
     updated_at: now,
-    ...input,
+    organization_id,
   }));
 }
 

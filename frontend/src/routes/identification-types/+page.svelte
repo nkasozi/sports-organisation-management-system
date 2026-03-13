@@ -6,4 +6,4 @@
   <title>Identification Types - Sports Management</title>
 </svelte:head>
 
-<EntityCrudWrapper entity_type="identificationtype" />
+<EntityCrudWrapper entity_type="IdentificationType" />

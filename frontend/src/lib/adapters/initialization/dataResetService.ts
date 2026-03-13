@@ -7,10 +7,7 @@ import { reset_official_repository } from "../repositories/InBrowserOfficialRepo
 import { reset_sport_repository } from "../repositories/InBrowserSportRepository";
 import { reset_fixture_repository } from "../repositories/InBrowserFixtureRepository";
 import { reset_team_staff_repository } from "../repositories/InBrowserTeamStaffRepository";
-import {
-  reset_game_event_type_repository,
-  get_game_event_type_repository,
-} from "../repositories/InBrowserGameEventTypeRepository";
+import { reset_game_event_type_repository } from "../repositories/InBrowserGameEventTypeRepository";
 import { reset_player_position_repository } from "../repositories/InBrowserPlayerPositionRepository";
 import { reset_team_staff_role_repository } from "../repositories/InBrowserTeamStaffRoleRepository";
 import { reset_game_official_role_repository } from "../repositories/InBrowserGameOfficialRoleRepository";
@@ -34,7 +31,7 @@ import { get_official_repository } from "../repositories/InBrowserOfficialReposi
 import { get_all_sports } from "../persistence/sportService";
 import { reset_seeding_flag, seed_all_data_if_needed } from "./seedingService";
 import {
-  clear_all_synced_tables_in_convex,
+  clear_all_demo_data_in_convex,
   reset_sync_metadata,
 } from "$lib/infrastructure/sync/convexSyncService";
 import {
@@ -69,7 +66,7 @@ export async function reset_all_data(
 
   if (user_is_signed_in) {
     report("Clearing server data...", 10);
-    await clear_all_synced_tables_in_convex();
+    await clear_all_demo_data_in_convex();
   } else {
     report("Skipping server clear (not signed in)...", 10);
     console.log("[DataReset] User not signed in — skipping Convex clear");
@@ -109,15 +106,6 @@ export async function reset_all_data(
 
   report("Reloading fresh demo data...", 65);
   await get_all_sports();
-  get_organization_repository();
-  get_team_repository();
-  get_competition_repository();
-  get_player_repository();
-  get_player_team_membership_repository();
-  get_official_repository();
-  const game_event_repo = get_game_event_type_repository();
-  await game_event_repo.find_all();
-
   report("Seeding demo data...", 80);
   await seed_all_data_if_needed();
 

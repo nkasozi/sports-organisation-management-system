@@ -133,6 +133,7 @@ describe("teamPlayers", () => {
         display_order: 1,
         is_available: true,
         status: "active",
+        organization_id: "test-org-1",
       },
     ];
 

@@ -629,6 +629,70 @@ const ALL_SYNCED_TABLE_NAMES = [
   "official_associated_teams",
 ] as const;
 
+const DEMO_DATA_TABLE_NAMES = [
+  "organizations",
+  "competitions",
+  "teams",
+  "players",
+  "officials",
+  "fixtures",
+  "sports",
+  "team_staff",
+  "team_staff_roles",
+  "game_official_roles",
+  "venues",
+  "jersey_colors",
+  "player_positions",
+  "player_profiles",
+  "team_profiles",
+  "profile_links",
+  "calendar_tokens",
+  "competition_formats",
+  "competition_teams",
+  "player_team_memberships",
+  "fixture_details_setups",
+  "fixture_lineups",
+  "activities",
+  "activity_categories",
+  "identification_types",
+  "identifications",
+  "qualifications",
+  "game_event_types",
+  "genders",
+  "live_game_logs",
+  "game_event_logs",
+  "player_team_transfer_histories",
+  "official_associated_teams",
+] as const;
+
+export const clear_all_demo_data = mutation({
+  args: {},
+  handler: async (ctx, _args) => {
+    const perm_result = await require_permission(ctx, "organization", "delete");
+    if (!perm_result.success) {
+      return { success: false, error: perm_result.error, deleted_count: 0 };
+    }
+
+    let total_deleted = 0;
+    for (const table_name of DEMO_DATA_TABLE_NAMES) {
+      try {
+        const records = await ctx.db.query(table_name as any).collect();
+        for (const record of records) {
+          await ctx.db.delete(record._id);
+          total_deleted++;
+        }
+      } catch (error) {
+        console.warn(`[clear_all_demo_data] Skipping ${table_name}: ${error}`);
+      }
+    }
+
+    console.log(
+      `[clear_all_demo_data] Done. Deleted ${total_deleted} records (system_users preserved)`,
+    );
+    return { success: true, deleted_count: total_deleted };
+  },
+});
+
 export const get_all_tables_latest_timestamps = query({
   args: {},
   handler: async (ctx, _args) => {

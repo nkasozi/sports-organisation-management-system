@@ -20,6 +20,7 @@ function create_mock_repository(): PlayerPositionRepository {
     find_by_sport_type: vi.fn(),
     find_by_category: vi.fn(),
     find_available_positions: vi.fn(),
+    find_by_organization: vi.fn(),
   };
 }
 
@@ -36,6 +37,7 @@ function create_test_position(
     display_order: 1,
     is_available: true,
     status: "active",
+    organization_id: "test-org-1",
     created_at: "2024-01-01T00:00:00Z",
     updated_at: "2024-01-01T00:00:00Z",
     ...overrides,
@@ -54,6 +56,7 @@ function create_valid_input(
     display_order: 10,
     is_available: true,
     status: "active",
+    organization_id: "test-org-1",
     ...overrides,
   };
 }

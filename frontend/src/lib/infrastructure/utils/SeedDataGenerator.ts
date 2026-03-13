@@ -284,16 +284,16 @@ export const SEED_SYSTEM_USER_IDS = {
 };
 
 const SEED_IDENTIFICATION_TYPE_IDS = {
-  NATIONAL_ID: "id_type_default_1",
-  PASSPORT: "id_type_default_2",
-  DRIVING_LICENSE: "id_type_default_3",
-  PLAYER_REGISTRATION_NUMBER: "id_type_default_4",
-  FEDERATION_ID: "id_type_default_5",
+  NATIONAL_ID: `id_type_default_1_${SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION}`,
+  PASSPORT: `id_type_default_2_${SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION}`,
+  DRIVING_LICENSE: `id_type_default_3_${SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION}`,
+  PLAYER_REGISTRATION_NUMBER: `id_type_default_4_${SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION}`,
+  FEDERATION_ID: `id_type_default_5_${SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION}`,
 };
 
 const SEED_GENDER_IDS = {
-  MALE: "gender_default_male",
-  FEMALE: "gender_default_female",
+  MALE: `gender_default_male_${SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION}`,
+  FEMALE: `gender_default_female_${SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION}`,
 };
 
 function generate_current_timestamp(): string {
@@ -4197,23 +4197,25 @@ export function create_seed_officials(organization_id: string): Official[] {
   }));
 }
 
-export function create_seed_genders(): Gender[] {
+export function create_seed_genders(organization_id: string): Gender[] {
   const now = generate_current_timestamp();
 
   return [
     {
-      id: SEED_GENDER_IDS.MALE,
+      id: `gender_default_male_${organization_id}`,
       name: "Male",
       description: "Male gender",
       status: "active",
+      organization_id,
       created_at: now,
       updated_at: now,
     },
     {
-      id: SEED_GENDER_IDS.FEMALE,
+      id: `gender_default_female_${organization_id}`,
       name: "Female",
       description: "Female gender",
       status: "active",
+      organization_id,
       created_at: now,
       updated_at: now,
     },
@@ -9236,52 +9238,59 @@ export function create_seed_system_users(): SystemUser[] {
   ];
 }
 
-export function create_seed_identification_types(): IdentificationType[] {
+export function create_seed_identification_types(
+  organization_id: string,
+): IdentificationType[] {
   const now = generate_current_timestamp();
 
   return [
     {
-      id: SEED_IDENTIFICATION_TYPE_IDS.NATIONAL_ID,
+      id: `id_type_default_1_${organization_id}`,
       name: "National ID",
       identifier_field_label: "National ID Number",
       description: "Government-issued national identification card",
       status: "active",
+      organization_id,
       created_at: now,
       updated_at: now,
     },
     {
-      id: SEED_IDENTIFICATION_TYPE_IDS.PASSPORT,
+      id: `id_type_default_2_${organization_id}`,
       name: "Passport",
       identifier_field_label: "Passport Number",
       description: "International travel passport",
       status: "active",
+      organization_id,
       created_at: now,
       updated_at: now,
     },
     {
-      id: SEED_IDENTIFICATION_TYPE_IDS.DRIVING_LICENSE,
+      id: `id_type_default_3_${organization_id}`,
       name: "Driving License",
       identifier_field_label: "License Number",
       description: "Government-issued driving permit",
       status: "active",
+      organization_id,
       created_at: now,
       updated_at: now,
     },
     {
-      id: SEED_IDENTIFICATION_TYPE_IDS.PLAYER_REGISTRATION_NUMBER,
+      id: `id_type_default_4_${organization_id}`,
       name: "Player Registration Number",
       identifier_field_label: "Registration Number",
       description: "Federation-assigned player registration number",
       status: "active",
+      organization_id,
       created_at: now,
       updated_at: now,
     },
     {
-      id: SEED_IDENTIFICATION_TYPE_IDS.FEDERATION_ID,
+      id: `id_type_default_5_${organization_id}`,
       name: "Federation ID",
       identifier_field_label: "Federation ID Number",
       description: "National hockey federation identification",
       status: "active",
+      organization_id,
       created_at: now,
       updated_at: now,
     },

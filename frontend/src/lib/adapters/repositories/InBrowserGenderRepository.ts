@@ -47,6 +47,7 @@ export class InBrowserGenderRepository
       name: input.name,
       description: input.description,
       status: input.status,
+      organization_id: input.organization_id,
     };
   }
 
@@ -72,6 +73,12 @@ export class InBrowserGenderRepository
       );
     }
 
+    if (filter.organization_id) {
+      filtered_entities = filtered_entities.filter(
+        (gender) => gender.organization_id === filter.organization_id,
+      );
+    }
+
     return filtered_entities;
   }
 
@@ -79,6 +86,13 @@ export class InBrowserGenderRepository
     options?: QueryOptions,
   ): PaginatedAsyncResult<Gender> {
     return this.find_all({ status: "active" }, options);
+  }
+
+  async find_by_organization(
+    organization_id: string,
+    options?: QueryOptions,
+  ): PaginatedAsyncResult<Gender> {
+    return this.find_all({ organization_id }, options);
   }
 }
 

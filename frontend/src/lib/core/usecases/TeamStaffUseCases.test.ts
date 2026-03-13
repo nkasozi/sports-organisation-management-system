@@ -30,6 +30,7 @@ function create_mock_roles_repository(): TeamStaffRoleRepository {
     find_by_ids: vi.fn(),
     count: vi.fn(),
     find_by_category: vi.fn(),
+    find_by_organization: vi.fn(),
   };
 }
 

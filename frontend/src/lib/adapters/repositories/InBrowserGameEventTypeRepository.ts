@@ -25,7 +25,7 @@ import { get_default_game_event_types } from "../../core/entities/GameEventType"
 
 const ENTITY_PREFIX = "game_event_type";
 
-class InBrowserGameEventTypeRepository
+export class InBrowserGameEventTypeRepository
   extends InBrowserBaseRepository<
     GameEventType,
     CreateGameEventTypeInput,
@@ -61,6 +61,7 @@ class InBrowserGameEventTypeRepository
       display_order: input.display_order,
       sport_id: input.sport_id,
       status: input.status,
+      organization_id: input.organization_id,
     };
   }
 
@@ -125,6 +126,12 @@ class InBrowserGameEventTypeRepository
       );
     }
 
+    if (filter.organization_id) {
+      filtered = filtered.filter(
+        (event_type) => event_type.organization_id === filter.organization_id,
+      );
+    }
+
     return filtered;
   }
 
@@ -179,6 +186,13 @@ class InBrowserGameEventTypeRepository
         if (filter.status) {
           filtered_entities = filtered_entities.filter(
             (event_type) => event_type.status === filter.status,
+          );
+        }
+
+        if (filter.organization_id) {
+          filtered_entities = filtered_entities.filter(
+            (event_type) =>
+              event_type.organization_id === filter.organization_id,
           );
         }
       }
@@ -265,14 +279,23 @@ class InBrowserGameEventTypeRepository
       return create_failure_result(`Failed to find scoring events: ${error}`);
     }
   }
+
+  async find_by_organization(
+    organization_id: string,
+    options?: QueryOptions,
+  ): PaginatedAsyncResult<GameEventType> {
+    return this.find_all({ organization_id }, options);
+  }
 }
 
-function create_default_game_event_types(): GameEventType[] {
+export function create_default_game_event_types_for_organization(
+  organization_id: string,
+): GameEventType[] {
   const now = new Date().toISOString();
-  const default_inputs = get_default_game_event_types();
+  const default_inputs = get_default_game_event_types(organization_id);
 
   return default_inputs.map((input, index) => ({
-    id: `game_event_type_default_${index + 1}`,
+    id: `game_event_type_default_${index + 1}_${organization_id}`,
     created_at: now,
     updated_at: now,
     name: input.name,
@@ -286,6 +309,7 @@ function create_default_game_event_types(): GameEventType[] {
     display_order: input.display_order,
     sport_id: input.sport_id,
     status: input.status,
+    organization_id,
   }));
 }
 
@@ -302,5 +326,4 @@ export async function reset_game_event_type_repository(): Promise<void> {
   const repository =
     get_game_event_type_repository() as InBrowserGameEventTypeRepository;
   await repository.clear_all_data();
-  await repository.seed_with_data(create_default_game_event_types());
 }

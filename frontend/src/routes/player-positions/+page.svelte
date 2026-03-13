@@ -6,4 +6,4 @@
   <title>Player Positions - Sports Management</title>
 </svelte:head>
 
-<EntityCrudWrapper entity_type="playerposition" />
+<EntityCrudWrapper entity_type="PlayerPosition" />

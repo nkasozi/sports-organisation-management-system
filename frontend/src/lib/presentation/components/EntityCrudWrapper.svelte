@@ -32,6 +32,7 @@ Uses explicit handlers instead of events for predictable data flow
   export let entity_type: string;
   export let initial_view: "list" | "create" | "edit" = "list";
   export let initial_create_data: Record<string, unknown> | null = null;
+  export let locked_filter: Record<string, unknown> | null = null;
   export let is_mobile_view: boolean = true;
   export let show_list_actions: boolean = true;
   export let bulk_create_handler: (() => void) | null = null;
@@ -73,6 +74,7 @@ Uses explicit handlers instead of events for predictable data flow
     );
   $: crud_handlers = build_crud_handlers_for_entity_type(
     normalized_entity_type,
+    locked_filter,
   );
   $: list_view_callbacks = build_list_view_callbacks(
     effective_disabled_functionalities,
@@ -163,6 +165,7 @@ Uses explicit handlers instead of events for predictable data flow
 
   function build_crud_handlers_for_entity_type(
     normalized_type: string,
+    filter_override: Record<string, unknown> | null,
   ): EntityCrudHandlers | null {
     const use_cases_result = get_use_cases_for_entity_type(normalized_type);
     if (!use_cases_result.success) {
@@ -188,7 +191,7 @@ Uses explicit handlers instead of events for predictable data flow
         ? async (
             filter?: Record<string, string>,
             options?: { page_number?: number; page_size?: number },
-          ) => use_cases.list(filter, options)
+          ) => use_cases.list({ ...filter_override, ...filter }, options)
         : undefined,
       get_by_id: use_cases.get_by_id
         ? async (id: string) => use_cases.get_by_id(id)

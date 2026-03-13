@@ -811,6 +811,45 @@ export async function clear_all_synced_tables_in_convex(): Promise<boolean> {
   return true;
 }
 
+export async function clear_all_demo_data_in_convex(): Promise<boolean> {
+  if (!get(is_signed_in)) {
+    console.warn("[Sync:Reset] User not signed in — skipping remote clear");
+    return false;
+  }
+
+  const manager = get_sync_manager();
+  const convex_client = (
+    manager as unknown as { convex_client: ConvexClient | null }
+  ).convex_client;
+
+  if (!convex_client) {
+    console.warn(
+      "[Sync:Reset] Convex client not configured, skipping remote clear",
+    );
+    return false;
+  }
+
+  console.log(
+    "[Sync:Reset] Clearing all demo data in Convex (system_users preserved)...",
+  );
+
+  const result = (await convex_client.mutation("sync:clear_all_demo_data", {})) as {
+    success: boolean;
+    deleted_count: number;
+    error?: string;
+  };
+
+  if (result.success) {
+    console.log(
+      `[Sync:Reset] Done. Deleted ${result.deleted_count} demo records (system_users preserved)`,
+    );
+  } else {
+    console.error(`[Sync:Reset] clear_all_demo_data failed: ${result.error}`);
+  }
+
+  return result.success;
+}
+
 export class ConvexSyncManager {
   private convex_client: ConvexClient | null = null;
   private sync_interval_id: number | null = null;
