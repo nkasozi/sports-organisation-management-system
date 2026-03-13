@@ -39,6 +39,7 @@ import {
   start_background_sync,
   set_pulling_from_remote,
 } from "$lib/infrastructure/sync/backgroundSyncService";
+import { clear_session_sync_flag } from "$lib/presentation/stores/initialSyncStore";
 import { is_signed_in } from "$lib/adapters/iam/clerkAuthService";
 import { get } from "svelte/store";
 
@@ -74,6 +75,7 @@ export async function reset_all_data(
 
   report("Clearing local storage...", 20);
   localStorage.clear();
+  clear_session_sync_flag();
   reset_sync_metadata();
   reset_seeding_flag();
   reset_first_time_flag();

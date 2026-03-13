@@ -180,6 +180,6 @@ export function initialize_audit_event_handlers(): boolean {
   return true;
 }
 
-function reset_audit_event_handlers(): void {
+export function reset_audit_event_handlers(): void {
   is_initialized = false;
 }
