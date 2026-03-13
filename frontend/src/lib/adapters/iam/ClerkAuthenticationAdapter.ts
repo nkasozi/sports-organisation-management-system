@@ -17,7 +17,6 @@ import {
 const CLERK_VERIFICATION_CACHE_MAX_ENTRIES = 50;
 const CLERK_VERIFICATION_CACHE_TTL_MS = 30 * 60 * 1000;
 const TOKEN_EXPIRY_SECONDS = 365 * 24 * 60 * 60;
-const DEFAULT_ROLE = "player" as const;
 
 export interface ClerkUserInfo {
   id: string;
@@ -55,7 +54,6 @@ function build_verification_payload_from_clerk_user(
     display_name:
       clerk_user.full_name ||
       `${clerk_user.first_name} ${clerk_user.last_name}`.trim(),
-    role: DEFAULT_ROLE,
     organization_id: "*",
     team_id: "*",
     issued_at: now_in_seconds,
@@ -116,7 +114,7 @@ export class ClerkAuthenticationAdapter implements AuthenticationPort {
     const payload = build_auth_token_payload(payload_input);
 
     console.log(
-      `[ClerkAuthenticationAdapter] Generated token for user: ${payload.email}, role: ${payload.role}`,
+      `[ClerkAuthenticationAdapter] Generated token for user: ${payload.email}`,
     );
 
     return create_success_result({

@@ -38,7 +38,6 @@ describe("ClerkAuthenticationAdapter", () => {
         user_id: "clerk-user-123",
         email: "testuser@example.com",
         display_name: "Test User",
-        role: "super_admin",
         organization_id: "org-1",
         team_id: "team-1",
       });
@@ -49,7 +48,6 @@ describe("ClerkAuthenticationAdapter", () => {
       expect(token.raw_token).toBe("mock-clerk-jwt-token-abc123");
       expect(token.payload.user_id).toBe("clerk-user-123");
       expect(token.payload.email).toBe("testuser@example.com");
-      expect(token.payload.role).toBe("super_admin");
       expect(token.payload.organization_id).toBe("org-1");
       expect(token.payload.team_id).toBe("team-1");
       expect(mock_provider.get_session_token).toHaveBeenCalled();
@@ -68,7 +66,6 @@ describe("ClerkAuthenticationAdapter", () => {
         user_id: "clerk-user-123",
         email: "testuser@example.com",
         display_name: "Test User",
-        role: "super_admin",
         organization_id: "org-1",
         team_id: "team-1",
       });
@@ -83,7 +80,6 @@ describe("ClerkAuthenticationAdapter", () => {
         user_id: "clerk-user-123",
         email: "testuser@example.com",
         display_name: "Test User",
-        role: "org_admin",
         organization_id: "org-1",
         team_id: "team-1",
       });
@@ -185,12 +181,13 @@ describe("ClerkAuthenticationAdapter", () => {
       expect(flaky_provider.is_signed_in).toHaveBeenCalledTimes(2);
     });
 
-    it("should include default role in verification payload", async () => {
+    it("should include user identity in verification payload without a role", async () => {
       const result = await adapter.verify_token("clerk-token");
 
       expect(result.success).toBe(true);
       if (!result.success) return;
-      expect(result.data.payload?.role).toBeDefined();
+      expect(result.data.payload?.user_id).toBe("clerk-user-123");
+      expect(result.data.payload?.email).toBe("testuser@example.com");
     });
   });
 

@@ -1,4 +1,8 @@
-import type { AuthenticationPort, UserRole } from "$lib/core/interfaces/ports";
+import type {
+  AuthenticationPort,
+  UserRole,
+  SystemUserRepository,
+} from "$lib/core/interfaces/ports";
 import type {
   AuthorizationPort,
   SidebarMenuGroup,
@@ -679,13 +683,16 @@ export function can_role_access_route(
 
 export class LocalAuthorizationAdapter implements AuthorizationPort {
   private auth_port: AuthenticationPort;
+  private system_user_repository: SystemUserRepository;
   private authorization_cache: AuthCache<unknown>;
 
   constructor(
     auth_port: AuthenticationPort,
+    system_user_repository: SystemUserRepository,
     authorization_cache?: AuthCache<unknown>,
   ) {
     this.auth_port = auth_port;
+    this.system_user_repository = system_user_repository;
     this.authorization_cache =
       authorization_cache ??
       create_auth_cache<unknown>({
@@ -700,6 +707,28 @@ export class LocalAuthorizationAdapter implements AuthorizationPort {
 
   private build_cache_key(...parts: string[]): string {
     return parts.join(":");
+  }
+
+  private async get_role_for_email(email: string): Promise<UserRole | null> {
+    const user_result = await this.system_user_repository.find_by_email(email);
+
+    if (!user_result.success || user_result.data.items.length === 0) {
+      console.warn(
+        `[LocalAuthorizationAdapter] User not found for email: ${email}`,
+      );
+      return null;
+    }
+
+    const system_user = user_result.data.items[0];
+
+    if (system_user.status === "inactive") {
+      console.warn(
+        `[LocalAuthorizationAdapter] User account is inactive: ${email}`,
+      );
+      return null;
+    }
+
+    return system_user.role as UserRole;
   }
 
   async get_profile_permissions(
@@ -733,7 +762,15 @@ export class LocalAuthorizationAdapter implements AuthorizationPort {
       });
     }
 
-    const role = verification.payload.role;
+    const role = await this.get_role_for_email(verification.payload.email);
+
+    if (!role) {
+      return create_failure_result({
+        failure_type: "token_invalid",
+        message: "User not found or account is inactive",
+      });
+    }
+
     const role_permissions = get_role_permissions(role);
 
     const categories: DataCategory[] = [
@@ -801,7 +838,15 @@ export class LocalAuthorizationAdapter implements AuthorizationPort {
       });
     }
 
-    const role = verification.payload.role;
+    const role = await this.get_role_for_email(verification.payload.email);
+
+    if (!role) {
+      return create_failure_result({
+        failure_type: "token_invalid",
+        message: "User not found or account is inactive",
+      });
+    }
+
     const menu_items = get_sidebar_menu_for_role(role);
 
     console.log(
@@ -841,7 +886,15 @@ export class LocalAuthorizationAdapter implements AuthorizationPort {
       });
     }
 
-    const role = verification.payload.role;
+    const role = await this.get_role_for_email(verification.payload.email);
+
+    if (!role) {
+      return create_failure_result({
+        route,
+        message: "User not found or account is inactive",
+      });
+    }
+
     const access_check = can_role_access_route(role, route);
 
     if (!access_check.allowed) {
@@ -896,7 +949,16 @@ export class LocalAuthorizationAdapter implements AuthorizationPort {
       });
     }
 
-    const role = verification.payload.role;
+    const role = await this.get_role_for_email(verification.payload.email);
+
+    if (!role) {
+      return create_success_result({
+        is_authorized: false,
+        failure_reason: "token_invalid" as const,
+        reason: "User not found or account is inactive",
+      });
+    }
+
     const normalized = normalize_to_entity_type(entity_type);
     const category = get_entity_data_category(normalized);
     const is_authorized = check_data_permission(role, category, action);
@@ -965,7 +1027,14 @@ export class LocalAuthorizationAdapter implements AuthorizationPort {
       return create_success_result([]);
     }
 
-    const role = verification_result.data.payload.role;
+    const role = await this.get_role_for_email(
+      verification_result.data.payload.email,
+    );
+
+    if (!role) {
+      return create_success_result([]);
+    }
+
     const normalized_allowed = normalize_to_entity_type(entity_type);
     const category = get_entity_data_category(normalized_allowed);
     const permissions = get_role_permissions(role)[category];
@@ -1009,7 +1078,19 @@ export class LocalAuthorizationAdapter implements AuthorizationPort {
       ] as DataAction[]);
     }
 
-    const role = verification_result.data.payload.role;
+    const role = await this.get_role_for_email(
+      verification_result.data.payload.email,
+    );
+
+    if (!role) {
+      return create_success_result([
+        "create",
+        "read",
+        "update",
+        "delete",
+      ] as DataAction[]);
+    }
+
     const normalized_disabled = normalize_to_entity_type(entity_type);
     const category = get_entity_data_category(normalized_disabled);
     const permissions = get_role_permissions(role)[category];

@@ -7,11 +7,11 @@ let authorization_adapter_instance: AuthorizationPort | null = null;
 
 export function get_authorization_adapter(): AuthorizationPort {
   if (!authorization_adapter_instance) {
-    const auth_adapter = get_authentication_adapter(
-      get_system_user_repository(),
-    );
+    const system_user_repository = get_system_user_repository();
+    const auth_adapter = get_authentication_adapter(system_user_repository);
     authorization_adapter_instance = new LocalAuthorizationAdapter(
       auth_adapter,
+      system_user_repository,
     );
   }
   return authorization_adapter_instance;

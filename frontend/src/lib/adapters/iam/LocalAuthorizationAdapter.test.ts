@@ -6,11 +6,11 @@ import {
   get_allowed_routes_for_role,
 } from "./LocalAuthorizationAdapter";
 import type { UserRole } from "$lib/core/interfaces/ports";
-import type { SidebarMenuGroup } from "$lib/core/interfaces/ports";
+import type { SidebarMenuGroup, SystemUserRepository } from "$lib/core/interfaces/ports";
 import type { AuthenticationPort } from "$lib/core/interfaces/ports";
 
 function create_mock_auth_port(
-  role: UserRole,
+  email: string,
   is_valid: boolean = true,
   error_message?: string,
 ): AuthenticationPort {
@@ -22,10 +22,9 @@ function create_mock_auth_port(
         is_valid,
         payload: is_valid
           ? {
-              user_id: `test-${role}-123`,
-              email: `${role}@test.com`,
-              display_name: `Test ${role}`,
-              role,
+              user_id: "test-user-123",
+              email,
+              display_name: "Test User",
               organization_id: "org-1",
               team_id: "team-1",
               issued_at: Date.now(),
@@ -35,15 +34,56 @@ function create_mock_auth_port(
         error_message,
       },
     }),
-    decode_token_payload: vi.fn(),
   } as unknown as AuthenticationPort;
+}
+
+function create_mock_system_user_repository(
+  role: UserRole,
+  email: string = `${role}@test.com`,
+): SystemUserRepository {
+  return {
+    find_by_email: vi.fn().mockResolvedValue({
+      success: true,
+      data: {
+        items: [
+          {
+            id: `test-${role}-123`,
+            email,
+            first_name: "Test",
+            last_name: role,
+            role,
+            status: "active",
+            organization_id: "org-1",
+            team_id: "team-1",
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          },
+        ],
+        total: 1,
+        page: 1,
+        page_size: 10,
+        has_next_page: false,
+      },
+    }),
+    find_all: vi.fn(),
+    find_by_id: vi.fn(),
+    find_by_ids: vi.fn(),
+    create: vi.fn(),
+    update: vi.fn(),
+    delete: vi.fn(),
+    find_by_role: vi.fn(),
+    find_active_users: vi.fn(),
+    find_admins: vi.fn(),
+    find_with_filter: vi.fn(),
+  } as unknown as SystemUserRepository;
 }
 
 describe("LocalAuthorizationAdapter", () => {
   describe("get_profile_permissions", () => {
     it("should return full permissions for super_admin", async () => {
-      const mock_auth = create_mock_auth_port("super_admin");
-      const adapter = new LocalAuthorizationAdapter(mock_auth);
+      const mock_auth = create_mock_auth_port("super_admin@test.com");
+      const mock_repo = create_mock_system_user_repository("super_admin");
+      const adapter = new LocalAuthorizationAdapter(mock_auth, mock_repo);
 
       const result = await adapter.get_profile_permissions("valid-token");
 
@@ -64,8 +104,9 @@ describe("LocalAuthorizationAdapter", () => {
     });
 
     it("should return read-only root permissions for org_admin", async () => {
-      const mock_auth = create_mock_auth_port("org_admin");
-      const adapter = new LocalAuthorizationAdapter(mock_auth);
+      const mock_auth = create_mock_auth_port("org_admin@test.com");
+      const mock_repo = create_mock_system_user_repository("org_admin");
+      const adapter = new LocalAuthorizationAdapter(mock_auth, mock_repo);
 
       const result = await adapter.get_profile_permissions("valid-token");
 
@@ -83,8 +124,9 @@ describe("LocalAuthorizationAdapter", () => {
     });
 
     it("should return limited permissions for player", async () => {
-      const mock_auth = create_mock_auth_port("player");
-      const adapter = new LocalAuthorizationAdapter(mock_auth);
+      const mock_auth = create_mock_auth_port("player@test.com");
+      const mock_repo = create_mock_system_user_repository("player");
+      const adapter = new LocalAuthorizationAdapter(mock_auth, mock_repo);
 
       const result = await adapter.get_profile_permissions("valid-token");
 
@@ -108,11 +150,12 @@ describe("LocalAuthorizationAdapter", () => {
 
     it("should return failure for invalid token", async () => {
       const mock_auth = create_mock_auth_port(
-        "player",
+        "player@test.com",
         false,
         "Token is invalid",
       );
-      const adapter = new LocalAuthorizationAdapter(mock_auth);
+      const mock_repo = create_mock_system_user_repository("player");
+      const adapter = new LocalAuthorizationAdapter(mock_auth, mock_repo);
 
       const result = await adapter.get_profile_permissions("invalid-token");
 
@@ -125,11 +168,12 @@ describe("LocalAuthorizationAdapter", () => {
 
     it("should return token_expired failure for expired token", async () => {
       const mock_auth = create_mock_auth_port(
-        "player",
+        "player@test.com",
         false,
         "Token has expired",
       );
-      const adapter = new LocalAuthorizationAdapter(mock_auth);
+      const mock_repo = create_mock_system_user_repository("player");
+      const adapter = new LocalAuthorizationAdapter(mock_auth, mock_repo);
 
       const result = await adapter.get_profile_permissions("expired-token");
 
@@ -142,8 +186,9 @@ describe("LocalAuthorizationAdapter", () => {
 
   describe("get_sidebar_menu_for_profile", () => {
     it("should return full menu for super_admin", async () => {
-      const mock_auth = create_mock_auth_port("super_admin");
-      const adapter = new LocalAuthorizationAdapter(mock_auth);
+      const mock_auth = create_mock_auth_port("super_admin@test.com");
+      const mock_repo = create_mock_system_user_repository("super_admin");
+      const adapter = new LocalAuthorizationAdapter(mock_auth, mock_repo);
 
       const result = await adapter.get_sidebar_menu_for_profile("valid-token");
 
@@ -162,8 +207,9 @@ describe("LocalAuthorizationAdapter", () => {
     });
 
     it("should return limited menu for player", async () => {
-      const mock_auth = create_mock_auth_port("player");
-      const adapter = new LocalAuthorizationAdapter(mock_auth);
+      const mock_auth = create_mock_auth_port("player@test.com");
+      const mock_repo = create_mock_system_user_repository("player");
+      const adapter = new LocalAuthorizationAdapter(mock_auth, mock_repo);
 
       const result = await adapter.get_sidebar_menu_for_profile("valid-token");
 
@@ -181,8 +227,9 @@ describe("LocalAuthorizationAdapter", () => {
     });
 
     it("should return failure for invalid token", async () => {
-      const mock_auth = create_mock_auth_port("player", false);
-      const adapter = new LocalAuthorizationAdapter(mock_auth);
+      const mock_auth = create_mock_auth_port("player@test.com", false);
+      const mock_repo = create_mock_system_user_repository("player");
+      const adapter = new LocalAuthorizationAdapter(mock_auth, mock_repo);
 
       const result =
         await adapter.get_sidebar_menu_for_profile("invalid-token");
@@ -193,8 +240,9 @@ describe("LocalAuthorizationAdapter", () => {
 
   describe("can_profile_access_route", () => {
     it("should allow super_admin to access system-users route", async () => {
-      const mock_auth = create_mock_auth_port("super_admin");
-      const adapter = new LocalAuthorizationAdapter(mock_auth);
+      const mock_auth = create_mock_auth_port("super_admin@test.com");
+      const mock_repo = create_mock_system_user_repository("super_admin");
+      const adapter = new LocalAuthorizationAdapter(mock_auth, mock_repo);
 
       const result = await adapter.can_profile_access_route(
         "valid-token",
@@ -209,8 +257,9 @@ describe("LocalAuthorizationAdapter", () => {
     });
 
     it("should allow org_admin to access settings", async () => {
-      const mock_auth = create_mock_auth_port("org_admin");
-      const adapter = new LocalAuthorizationAdapter(mock_auth);
+      const mock_auth = create_mock_auth_port("org_admin@test.com");
+      const mock_repo = create_mock_system_user_repository("org_admin");
+      const adapter = new LocalAuthorizationAdapter(mock_auth, mock_repo);
 
       const result = await adapter.can_profile_access_route(
         "valid-token",
@@ -224,8 +273,9 @@ describe("LocalAuthorizationAdapter", () => {
     });
 
     it("should deny player access to settings", async () => {
-      const mock_auth = create_mock_auth_port("player");
-      const adapter = new LocalAuthorizationAdapter(mock_auth);
+      const mock_auth = create_mock_auth_port("player@test.com");
+      const mock_repo = create_mock_system_user_repository("player");
+      const adapter = new LocalAuthorizationAdapter(mock_auth, mock_repo);
 
       const result = await adapter.can_profile_access_route(
         "valid-token",
@@ -240,8 +290,9 @@ describe("LocalAuthorizationAdapter", () => {
     });
 
     it("should allow all roles to access home route", async () => {
-      const mock_auth = create_mock_auth_port("player");
-      const adapter = new LocalAuthorizationAdapter(mock_auth);
+      const mock_auth = create_mock_auth_port("player@test.com");
+      const mock_repo = create_mock_system_user_repository("player");
+      const adapter = new LocalAuthorizationAdapter(mock_auth, mock_repo);
 
       const result = await adapter.can_profile_access_route("valid-token", "/");
 
@@ -252,8 +303,9 @@ describe("LocalAuthorizationAdapter", () => {
     });
 
     it("should return failure for invalid token", async () => {
-      const mock_auth = create_mock_auth_port("player", false);
-      const adapter = new LocalAuthorizationAdapter(mock_auth);
+      const mock_auth = create_mock_auth_port("player@test.com", false);
+      const mock_repo = create_mock_system_user_repository("player");
+      const adapter = new LocalAuthorizationAdapter(mock_auth, mock_repo);
 
       const result = await adapter.can_profile_access_route(
         "invalid-token",

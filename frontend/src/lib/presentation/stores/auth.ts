@@ -171,7 +171,6 @@ function create_auth_store() {
       user_id: profile.id,
       email: profile.email,
       display_name: profile.display_name,
-      role: profile.role,
       organization_id: profile.organization_id,
       team_id: profile.team_id,
     });
