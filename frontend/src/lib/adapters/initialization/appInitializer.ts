@@ -43,10 +43,14 @@ import { get_system_user_repository } from "$lib/adapters/repositories/InBrowser
 import {
   start_background_sync,
   stop_background_sync,
+  configure_orchestrator,
+  configure_restoration_handlers,
+  configure_remote_subscriber,
 } from "$lib/infrastructure/sync/backgroundSyncService";
 import {
   start_realtime_sync,
   stop_realtime_sync,
+  get_realtime_sync_adapter,
 } from "$lib/infrastructure/sync/convexRealtimeSync";
 import type { SubscribableConvexClient } from "$lib/infrastructure/cache/AuthCacheInvalidator";
 
@@ -232,8 +236,6 @@ export async function initialize_app_data(
     return "redirect_to_login";
   }
 
-  start_background_sync();
-
   if (convex_client) {
     start_realtime_sync(
       convex_client as unknown as SubscribableConvexClient,
@@ -248,6 +250,18 @@ export async function initialize_app_data(
     console.log(
       "[AppInitializer] Real-time sync started via Convex subscriptions",
     );
+
+    const realtime_adapter = get_realtime_sync_adapter();
+    const orchestrator = sync_store.get_sync_orchestrator();
+
+    configure_orchestrator(orchestrator);
+    configure_remote_subscriber(realtime_adapter);
+    configure_restoration_handlers({
+      stop_remote_sync: () => realtime_adapter.stop(),
+      start_remote_sync: () => realtime_adapter.start(),
+    });
+
+    console.log("[AppInitializer] Sync ports wired");
   }
 
   initialized = true;

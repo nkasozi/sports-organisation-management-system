@@ -112,7 +112,8 @@
 
   async function run_initial_sync_if_needed(): Promise<Result<boolean>> {
     if (has_session_been_synced()) {
-      console.log("[Layout] Session already synced, skipping initial sync");
+      console.log("[Layout] Session already synced, starting background sync");
+      start_background_sync();
       return create_success_result(true);
     }
     if (!get(is_signed_in)) {

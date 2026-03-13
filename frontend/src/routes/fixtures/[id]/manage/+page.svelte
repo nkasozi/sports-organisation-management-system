@@ -225,7 +225,7 @@
     ]);
 
     const position_name_by_id = build_position_name_by_id_map(
-      positions_result.success ? positions_result.data : [],
+      positions_result.success ? positions_result.data.items : [],
     );
 
     home_players =
@@ -333,7 +333,7 @@
 
     if (!lineup_result.success) {
       show_toast(
-        `Unable to verify fixture lineups: ${lineup_result.error_message ?? "Unknown error"}`,
+        `Unable to verify fixture lineups: ${lineup_result.error ?? "Unknown error"}`,
         "error",
       );
       return false;

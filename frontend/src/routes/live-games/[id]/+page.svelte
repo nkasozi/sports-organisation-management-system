@@ -643,9 +643,9 @@
       status: "active",
     });
 
-    const active_memberships = (memberships_result.data?.items || []).filter(
-      (m: any) => m.status === "active",
-    );
+    const active_memberships = (
+      memberships_result.success ? memberships_result.data.items : []
+    ).filter((m: any) => m.status === "active");
 
     if (active_memberships.length === 0) {
       show_toast(

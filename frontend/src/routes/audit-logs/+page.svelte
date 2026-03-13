@@ -63,7 +63,7 @@
     is_loading = false;
 
     if (!result.success) {
-      error_message = result.error_message || "Failed to load audit logs";
+      error_message = result.error || "Failed to load audit logs";
       return [];
     }
 

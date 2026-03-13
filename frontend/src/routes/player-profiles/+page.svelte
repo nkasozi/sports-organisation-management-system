@@ -54,7 +54,7 @@
     const result = await profile_use_cases.list(filter);
 
     if (!result.success) {
-      error_message = result.error_message || "Failed to load profiles";
+      error_message = result.error || "Failed to load profiles";
       is_loading = false;
       return false;
     }

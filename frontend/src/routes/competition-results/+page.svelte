@@ -405,7 +405,7 @@
     const auth_filter = build_auth_filter();
     const result = await organization_use_cases.list(auth_filter);
     if (!result.success) {
-      throw new Error(result.error_message || "Failed to load organizations");
+      throw new Error(result.error || "Failed to load organizations");
     }
     return result.data?.items || [];
   }

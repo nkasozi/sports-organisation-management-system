@@ -38,6 +38,7 @@ describe("ClerkAuthenticationAdapter", () => {
         user_id: "clerk-user-123",
         email: "testuser@example.com",
         display_name: "Test User",
+        role: "team_manager",
         organization_id: "org-1",
         team_id: "team-1",
       });
@@ -66,6 +67,7 @@ describe("ClerkAuthenticationAdapter", () => {
         user_id: "clerk-user-123",
         email: "testuser@example.com",
         display_name: "Test User",
+        role: "team_manager",
         organization_id: "org-1",
         team_id: "team-1",
       });
@@ -80,6 +82,7 @@ describe("ClerkAuthenticationAdapter", () => {
         user_id: "clerk-user-123",
         email: "testuser@example.com",
         display_name: "Test User",
+        role: "team_manager",
         organization_id: "org-1",
         team_id: "team-1",
       });

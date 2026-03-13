@@ -54,6 +54,7 @@ function build_verification_payload_from_clerk_user(
     display_name:
       clerk_user.full_name ||
       `${clerk_user.first_name} ${clerk_user.last_name}`.trim(),
+    role: "public_viewer",
     organization_id: "*",
     team_id: "*",
     issued_at: now_in_seconds,

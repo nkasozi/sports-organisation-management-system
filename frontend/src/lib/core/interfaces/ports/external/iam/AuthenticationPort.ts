@@ -36,6 +36,7 @@ export interface AuthTokenPayload {
   user_id: string;
   email: string;
   display_name: string;
+  role: UserRole;
   organization_id: string;
   team_id: string;
   issued_at: number;

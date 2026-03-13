@@ -241,3 +241,15 @@ export type {
   CompetitionStageFilter,
 } from "./external/repositories/CompetitionStageRepository";
 export type { CompetitionStageUseCasesPort } from "./internal/usecases/CompetitionStageUseCasesPort";
+export type {
+  SyncDirection,
+  SyncMetrics,
+  SyncTableError,
+  SyncHints,
+  SyncOrchestratorPort,
+  RemoteTableTimestamp,
+  RemoteChangeSubscriberPort,
+  SyncRestorationHandlers,
+  LocalSyncStatus,
+  LocalChangePublisherPort,
+} from "./external/sync/index";

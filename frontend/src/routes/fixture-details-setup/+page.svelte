@@ -90,9 +90,9 @@
     }
 
     const officials = officials_result.success
-      ? officials_result.data || []
+      ? officials_result.data.items || []
       : [];
-    const roles = roles_result.success ? roles_result.data || [] : [];
+    const roles = roles_result.success ? roles_result.data.items || [] : [];
 
     if (officials.length > 0 && roles.length > 0) {
       const assigned_officials: OfficialAssignment[] = [];

@@ -50,7 +50,7 @@
 
         const result = await flush_pending_changes();
 
-        if (result.skipped_offline) {
+        if (result.success && result.data.skipped_offline) {
             modal_state = "offline";
             return;
         }

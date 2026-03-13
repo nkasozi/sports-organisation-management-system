@@ -332,7 +332,7 @@
         ) || null;
     }
 
-    const all_teams = teams_result.success ? teams_result.data : [];
+    const all_teams = teams_result.success ? teams_result.data.items : [];
     competition_team_entries = comp_teams_result.success
       ? comp_teams_result.data.items
       : [];

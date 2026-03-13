@@ -16,6 +16,16 @@ import type {
   ConflictRecord,
   ConflictResolutionAction,
 } from "$lib/infrastructure/sync/conflictTypes";
+import type {
+  SyncOrchestratorPort,
+  SyncMetrics,
+  SyncTableError,
+  SyncHints,
+} from "$lib/core/interfaces/ports";
+import {
+  create_success_result,
+  create_failure_result,
+} from "$lib/core/types/Result";
 
 interface SyncState {
   is_configured: boolean;
@@ -109,7 +119,7 @@ function create_sync_store() {
       }));
     },
 
-    sync_now: async (direction?: SyncDirection): Promise<SyncResult> => {
+    sync_now: async (direction?: SyncDirection, hints?: SyncHints): Promise<SyncResult> => {
       update((state) => ({
         ...state,
         is_syncing: true,
@@ -119,7 +129,7 @@ function create_sync_store() {
 
       try {
         const manager = get_sync_manager();
-        const result = await manager.sync_now(handle_progress, direction);
+        const result = await manager.sync_now(handle_progress, direction, hints);
         handle_sync_complete(result);
         return result;
       } catch (error) {
@@ -137,6 +147,29 @@ function create_sync_store() {
         handle_sync_complete(failed_result);
         return failed_result;
       }
+    },
+
+    get_sync_orchestrator(): SyncOrchestratorPort {
+      return {
+        sync_now: async (direction?: SyncDirection, hints?: SyncHints) => {
+          const result = await this.sync_now(direction, hints);
+          if (!result.success) {
+            return create_failure_result<SyncTableError>({
+              failed_tables: result.errors,
+              message: result.errors[0]?.error ?? "Sync failed",
+            });
+          }
+          const metrics: SyncMetrics = {
+            tables_synced: result.tables_synced,
+            records_pushed: result.records_pushed,
+            records_pulled: result.records_pulled,
+            duration_ms: result.duration_ms,
+            conflicts: result.conflicts,
+          };
+          return create_success_result(metrics);
+        },
+        is_configured: () => get_sync_manager().is_configured(),
+      };
     },
 
     start_auto_sync: () => {

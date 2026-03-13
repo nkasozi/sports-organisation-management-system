@@ -6,8 +6,9 @@ import { set_pulling_from_remote } from "./syncState";
 import { is_signed_in } from "../../adapters/iam/clerkAuthService";
 import { get } from "svelte/store";
 import type { Table } from "dexie";
+import type { SyncDirection, SyncHints } from "$lib/core/interfaces/ports";
 
-export type SyncDirection = "push" | "pull" | "bidirectional";
+export type { SyncDirection };
 export type SyncStatus = "idle" | "syncing" | "success" | "error" | "conflict";
 
 export interface SyncProgress {
@@ -420,12 +421,25 @@ export async function pull_table_from_convex(
   }
 }
 
+async function get_remote_state_for_table(
+  convex_client: ConvexClient,
+  table_name: string,
+  hints: SyncHints | undefined,
+): Promise<RemoteTableState> {
+  const cached = hints?.remote_timestamp_cache?.[table_name];
+  if (cached !== undefined && !hints?.use_fresh_timestamps) {
+    return { record_count: 0, latest_modified_at: cached ?? null };
+  }
+  return get_remote_latest_modified_at(convex_client, table_name);
+}
+
 async function sync_all_tables(
   convex_client: ConvexClient,
   direction: SyncDirection = "bidirectional",
   enabled_tables: string[] = [...TABLE_NAMES],
   on_progress?: (progress: SyncProgress) => void,
   detect_conflicts: boolean = true,
+  hints?: SyncHints,
 ): Promise<SyncResult> {
   const start_time = Date.now();
   const database = get_database();
@@ -516,9 +530,10 @@ async function sync_all_tables(
       latest_modified_at: null,
     };
     try {
-      remote_state = await get_remote_latest_modified_at(
+      remote_state = await get_remote_state_for_table(
         convex_client,
         table_name,
+        hints,
       );
     } catch (error) {
       const error_message =
@@ -534,10 +549,31 @@ async function sync_all_tables(
     const remote_latest = remote_state.latest_modified_at || EPOCH_TIMESTAMP;
     const local_is_ahead = local_latest > remote_latest;
     const remote_is_ahead = remote_latest > local_latest;
+    const are_in_sync = !local_is_ahead && !remote_is_ahead && remote_latest !== EPOCH_TIMESTAMP;
 
     console.log(
       `[Sync] ${table_name} — local: ${all_local_records.length} records (latest: ${local_latest}), remote: ${remote_state.record_count} records (latest: ${remote_latest}), ${local_is_ahead ? "LOCAL ahead" : remote_is_ahead ? "REMOTE ahead" : "IN SYNC"}`,
     );
+
+    if (are_in_sync && direction === "bidirectional") {
+      console.log(`[Sync] ${table_name} — already in sync, skipping`);
+      tables_synced++;
+      tables_completed++;
+      const percentage = Math.round((tables_completed / total_tables) * 100);
+      if (on_progress) {
+        on_progress({
+          table_name,
+          total_records: all_local_records.length,
+          synced_records: 0,
+          status: "success",
+          error_message: null,
+          tables_completed,
+          total_tables,
+          percentage,
+        });
+      }
+      continue;
+    }
 
     if (local_is_ahead || direction === "push") {
       if (direction !== "pull") {
@@ -594,24 +630,46 @@ async function sync_all_tables(
         }
       }
     } else {
-      const pull_result = await pull_table_from_convex(
-        convex_client,
-        table,
-        table_name as TableName,
-        local_latest,
-      );
+      if (remote_is_ahead) {
+        const pull_result = await pull_table_from_convex(
+          convex_client,
+          table,
+          table_name as TableName,
+          local_latest,
+        );
 
-      if (!pull_result.success) {
-        errors.push({
-          table_name,
-          error: pull_result.error || "Pull failed",
-        });
-        progress.status = "error";
-        progress.error_message = pull_result.error;
-        table_had_error = true;
-      } else {
-        total_pulled += pull_result.records_pulled;
-        progress.synced_records += pull_result.records_pulled;
+        if (!pull_result.success) {
+          errors.push({
+            table_name,
+            error: pull_result.error || "Pull failed",
+          });
+          progress.status = "error";
+          progress.error_message = pull_result.error;
+          table_had_error = true;
+        } else {
+          total_pulled += pull_result.records_pulled;
+          progress.synced_records += pull_result.records_pulled;
+        }
+      } else if (direction === "pull") {
+        const pull_result = await pull_table_from_convex(
+          convex_client,
+          table,
+          table_name as TableName,
+          local_latest,
+        );
+
+        if (!pull_result.success) {
+          errors.push({
+            table_name,
+            error: pull_result.error || "Pull failed",
+          });
+          progress.status = "error";
+          progress.error_message = pull_result.error;
+          table_had_error = true;
+        } else {
+          total_pulled += pull_result.records_pulled;
+          progress.synced_records += pull_result.records_pulled;
+        }
       }
 
       if (!table_had_error && direction !== "pull") {
@@ -783,6 +841,7 @@ export class ConvexSyncManager {
   async sync_now(
     on_progress?: (progress: SyncProgress) => void,
     direction_override?: SyncDirection,
+    hints?: SyncHints,
   ): Promise<SyncResult> {
     if (!this.convex_client) {
       console.error(
@@ -825,6 +884,8 @@ export class ConvexSyncManager {
       effective_direction,
       this.config.enabled_tables,
       on_progress,
+      undefined,
+      hints,
     );
 
     this.is_syncing = false;

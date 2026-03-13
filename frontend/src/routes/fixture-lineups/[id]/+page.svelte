@@ -168,7 +168,9 @@
       memberships_result.success && memberships_result.data
         ? memberships_result.data.items
         : [];
-    const positions = positions_result.success ? positions_result.data : [];
+    const positions = positions_result.success
+      ? positions_result.data.items
+      : [];
 
     const position_name_by_id = build_position_name_by_id(positions);
     team_players = build_team_players(

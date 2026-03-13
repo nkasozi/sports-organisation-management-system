@@ -444,7 +444,7 @@
 
     teams_with_existing_lineups = new Map();
     if (existing_lineups_result.success && existing_lineups_result.data) {
-      for (const lineup of existing_lineups_result.data) {
+      for (const lineup of existing_lineups_result.data.items) {
         const team_for_lineup = teams.find((t) => t.id === lineup.team_id);
         const team_label = team_for_lineup
           ? fixture_team_label_by_team_id.get(team_for_lineup.id) ||
@@ -575,7 +575,9 @@
       memberships_result.success && memberships_result.data
         ? memberships_result.data.items
         : [];
-    const positions = positions_result.success ? positions_result.data : [];
+    const positions = positions_result.success
+      ? positions_result.data.items
+      : [];
 
     const position_name_by_id = build_position_name_by_id(positions);
     team_players = build_team_players(

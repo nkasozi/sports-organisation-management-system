@@ -591,3 +591,73 @@ export const clear_table = mutation({
     return { success: true, deleted_count: all_records.length };
   },
 });
+
+const ALL_SYNCED_TABLE_NAMES = [
+  "organizations",
+  "competitions",
+  "teams",
+  "players",
+  "officials",
+  "fixtures",
+  "sports",
+  "team_staff",
+  "team_staff_roles",
+  "game_official_roles",
+  "venues",
+  "jersey_colors",
+  "player_positions",
+  "player_profiles",
+  "team_profiles",
+  "profile_links",
+  "calendar_tokens",
+  "competition_formats",
+  "competition_teams",
+  "player_team_memberships",
+  "fixture_details_setups",
+  "fixture_lineups",
+  "activities",
+  "activity_categories",
+  "system_users",
+  "identification_types",
+  "identifications",
+  "qualifications",
+  "game_event_types",
+  "genders",
+  "live_game_logs",
+  "game_event_logs",
+  "player_team_transfer_histories",
+  "official_associated_teams",
+] as const;
+
+export const get_all_tables_latest_timestamps = query({
+  args: {},
+  handler: async (ctx, _args) => {
+    const result: Record<
+      string,
+      { record_count: number; latest_modified_at: string | null }
+    > = {};
+
+    for (const table_name of ALL_SYNCED_TABLE_NAMES) {
+      const records = await ctx.db.query(table_name as any).collect();
+
+      let latest_modified_at = "";
+      for (const record of records) {
+        const timestamp =
+          (record as any).updated_at ||
+          (record as any).modified_at ||
+          (record as any).created_at ||
+          "";
+        if (timestamp > latest_modified_at) {
+          latest_modified_at = timestamp;
+        }
+      }
+
+      result[table_name] = {
+        record_count: records.length,
+        latest_modified_at: latest_modified_at || null,
+      };
+    }
+
+    return result;
+  },
+});

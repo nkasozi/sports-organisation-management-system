@@ -7,6 +7,11 @@ import {
   type TableName,
 } from "./convexSyncService";
 import { get_database } from "../../adapters/repositories/database";
+import type { RemoteChangeSubscriberPort } from "$lib/core/interfaces/ports";
+import {
+  create_success_result,
+  create_failure_result,
+} from "$lib/core/types/Result";
 
 export interface TableChangeInfo {
   table_name: string;
@@ -39,6 +44,7 @@ export interface ConvexRealtimeSync {
   is_running(): boolean;
   get_watched_tables(): string[];
   get_table_status(table_name: string): TableWatchStatus | null;
+  get_all_table_statuses(): Record<string, string | null>;
 }
 
 interface TableTrackingState {
@@ -164,12 +170,21 @@ export function create_convex_realtime_sync(
     };
   }
 
+  function get_all_table_statuses_map(): Record<string, string | null> {
+    const result: Record<string, string | null> = {};
+    for (const [table_name, state] of table_tracking.entries()) {
+      result[table_name] = state.latest_timestamp;
+    }
+    return result;
+  }
+
   return {
     start,
     stop,
     is_running: is_running_check,
     get_watched_tables,
     get_table_status,
+    get_all_table_statuses: get_all_table_statuses_map,
   };
 }
 
@@ -235,4 +250,26 @@ export function stop_realtime_sync(): boolean {
 
 function get_realtime_sync_instance(): ConvexRealtimeSync | null {
   return realtime_sync_instance;
+}
+
+export function get_realtime_sync_adapter(): RemoteChangeSubscriberPort {
+  return {
+    start: () => {
+      const instance = get_realtime_sync_instance();
+      if (!instance) return create_failure_result("Realtime sync not initialized");
+      const started = instance.start();
+      return started
+        ? create_success_result(true)
+        : create_failure_result("Realtime sync already running");
+    },
+    stop: () => {
+      const stopped = stop_realtime_sync();
+      return stopped
+        ? create_success_result(true)
+        : create_failure_result("Realtime sync was not running");
+    },
+    is_running: () => realtime_sync_instance?.is_running() ?? false,
+    get_cached_table_timestamps: () =>
+      realtime_sync_instance?.get_all_table_statuses() ?? {},
+  };
 }
