@@ -5,6 +5,11 @@ import type { AuthCache } from "$lib/infrastructure/cache/AuthCache";
 import type {
   SharedEntityType,
   SharedEntityCategoryMap,
+  SharedCrudPermissions,
+} from "$convex/shared_permission_definitions";
+import {
+  SHARED_ENTITY_CATEGORY_MAP,
+  SHARED_ROLE_PERMISSIONS,
 } from "$convex/shared_permission_definitions";
 
 export type DataAction = "create" | "read" | "update" | "delete";
@@ -157,136 +162,6 @@ export interface DataAuthorizationResult {
   reason?: string;
 }
 
-const NO_PERMISSIONS: CategoryPermissions = {
-  create: false,
-  read: false,
-  update: false,
-  delete: false,
-};
-
-const FULL_PERMISSIONS: CategoryPermissions = {
-  create: true,
-  read: true,
-  update: true,
-  delete: true,
-};
-
-const READ_ONLY_PERMISSIONS: CategoryPermissions = {
-  create: false,
-  read: true,
-  update: false,
-  delete: false,
-};
-
-const CREATE_READ_UPDATE_NO_DELETE_PERMISSIONS: CategoryPermissions = {
-  create: true,
-  read: true,
-  update: true,
-  delete: false,
-};
-
-export const DATA_PERMISSION_MAP: FullPermissionMap = {
-  super_admin: {
-    root_level: FULL_PERMISSIONS,
-    org_administrator_level: FULL_PERMISSIONS,
-    organisation_level: FULL_PERMISSIONS,
-    team_level: FULL_PERMISSIONS,
-    player_level: FULL_PERMISSIONS,
-    public_level: FULL_PERMISSIONS,
-  },
-  org_admin: {
-    root_level: READ_ONLY_PERMISSIONS,
-    org_administrator_level: FULL_PERMISSIONS,
-    organisation_level: FULL_PERMISSIONS,
-    team_level: FULL_PERMISSIONS,
-    player_level: FULL_PERMISSIONS,
-    public_level: FULL_PERMISSIONS,
-  },
-  officials_manager: {
-    root_level: READ_ONLY_PERMISSIONS,
-    org_administrator_level: NO_PERMISSIONS,
-    organisation_level: CREATE_READ_UPDATE_NO_DELETE_PERMISSIONS,
-    team_level: CREATE_READ_UPDATE_NO_DELETE_PERMISSIONS,
-    player_level: READ_ONLY_PERMISSIONS,
-    public_level: FULL_PERMISSIONS,
-  },
-  team_manager: {
-    root_level: READ_ONLY_PERMISSIONS,
-    org_administrator_level: NO_PERMISSIONS,
-    organisation_level: READ_ONLY_PERMISSIONS,
-    team_level: { create: false, read: true, update: true, delete: false },
-    player_level: { create: true, read: true, update: true, delete: false },
-    public_level: FULL_PERMISSIONS,
-  },
-  official: {
-    root_level: READ_ONLY_PERMISSIONS,
-    org_administrator_level: NO_PERMISSIONS,
-    organisation_level: {
-      create: false,
-      read: true,
-      update: true,
-      delete: false,
-    },
-    team_level: READ_ONLY_PERMISSIONS,
-    player_level: READ_ONLY_PERMISSIONS,
-    public_level: FULL_PERMISSIONS,
-  },
-  player: {
-    root_level: READ_ONLY_PERMISSIONS,
-    org_administrator_level: NO_PERMISSIONS,
-    organisation_level: READ_ONLY_PERMISSIONS,
-    team_level: READ_ONLY_PERMISSIONS,
-    player_level: { create: false, read: true, update: true, delete: false },
-    public_level: FULL_PERMISSIONS,
-  },
-  public_viewer: {
-    root_level: READ_ONLY_PERMISSIONS,
-    org_administrator_level: NO_PERMISSIONS,
-    organisation_level: READ_ONLY_PERMISSIONS,
-    team_level: READ_ONLY_PERMISSIONS,
-    player_level: READ_ONLY_PERMISSIONS,
-    public_level: READ_ONLY_PERMISSIONS,
-  },
-};
-
-export const ENTITY_DATA_CATEGORY_MAP: SharedEntityCategoryMap = {
-  organization: "root_level",
-  sport: "root_level",
-  gender: "root_level",
-  competitionformat: "organisation_level",
-  identificationtype: "root_level",
-  gameofficialrole: "root_level",
-  gameeventtype: "root_level",
-  teamstaffrole: "root_level",
-  playerposition: "root_level",
-  help: "root_level",
-  settings: "org_administrator_level",
-  systemsettings: "org_administrator_level",
-  auditlog: "org_administrator_level",
-  systemuser: "org_administrator_level",
-  competition: "organisation_level",
-  team: "team_level",
-  official: "organisation_level",
-  venue: "organisation_level",
-  fixture: "organisation_level",
-  fixturedetailssetup: "organisation_level",
-  livegamelog: "organisation_level",
-  gameeventlog: "organisation_level",
-  playerteammembership: "organisation_level",
-  playerteamtransferhistory: "organisation_level",
-  teamstaff: "team_level",
-  fixturelineup: "player_level",
-  competitionteam: "team_level",
-  player: "player_level",
-  playerprofile: "public_level",
-  identification: "public_level",
-  qualification: "public_level",
-  jerseycolor: "public_level",
-  profilelink: "public_level",
-  activitycategory: "public_level",
-  teamprofile: "public_level",
-};
-
 export const ENTITY_LEVEL_DISABLED_OPERATIONS: Partial<
   Record<SharedEntityType, ("create" | "edit" | "delete")[]>
 > = {
@@ -307,11 +182,26 @@ export function normalize_to_entity_type(raw: string): SharedEntityType {
 export function get_entity_data_category(
   entity_type: SharedEntityType,
 ): DataCategory {
-  return ENTITY_DATA_CATEGORY_MAP[entity_type] || "organisation_level";
+  return SHARED_ENTITY_CATEGORY_MAP[entity_type] || "organisation_level";
+}
+
+function shared_to_category_permissions(shared: SharedCrudPermissions): CategoryPermissions {
+  return {
+    create: shared.can_create,
+    read: shared.can_read,
+    update: shared.can_update,
+    delete: shared.can_delete,
+  };
 }
 
 export function get_role_permissions(role: UserRole): RolePermissionMap {
-  return DATA_PERMISSION_MAP[role] || DATA_PERMISSION_MAP.player;
+  const shared = SHARED_ROLE_PERMISSIONS[role] ?? SHARED_ROLE_PERMISSIONS.player;
+  return Object.fromEntries(
+    Object.entries(shared).map(([category, perms]) => [
+      category,
+      shared_to_category_permissions(perms),
+    ]),
+  ) as RolePermissionMap;
 }
 
 export function check_data_permission(

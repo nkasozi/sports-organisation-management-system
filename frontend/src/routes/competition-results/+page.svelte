@@ -402,12 +402,17 @@
   }
 
   async function load_organizations(): Promise<Organization[]> {
-    const auth_filter = build_auth_filter();
-    const result = await organization_use_cases.list(auth_filter);
-    if (!result.success) {
-      throw new Error(result.error || "Failed to load organizations");
-    }
-    return result.data?.items || [];
+    const auth_state = get(auth_store);
+    const role = auth_state.current_profile?.role || "public_viewer";
+    const user_org_id = auth_state.current_profile?.organization_id;
+
+    const result = await organization_use_cases.list({});
+    if (!result.success) return [];
+    const all_orgs = result.data?.items || [];
+
+    if (role === "super_admin") return all_orgs;
+    if (!user_org_id || user_org_id === "*") return [];
+    return all_orgs.filter((org) => org.id === user_org_id);
   }
 
   async function load_competitions_for_organization(

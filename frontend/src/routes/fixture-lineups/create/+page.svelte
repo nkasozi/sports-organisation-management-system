@@ -253,10 +253,13 @@
         page_number: 1,
         page_size: 200,
       }),
-      organization_use_cases.list(auth_filter, {
-        page_number: 1,
-        page_size: 200,
-      }),
+      organization_use_cases.list(
+        {},
+        {
+          page_number: 1,
+          page_size: 200,
+        },
+      ),
     ]);
 
     if (fixtures_result.success) {
@@ -273,7 +276,19 @@
     }
 
     if (organizations_result.success) {
-      organizations = organizations_result.data?.items || [];
+      const all_fetched_orgs = organizations_result.data?.items || [];
+      const org_auth_state = get(auth_store);
+      const org_role = org_auth_state.current_profile?.role || "public_viewer";
+      const user_org_id = org_auth_state.current_profile?.organization_id;
+      if (org_role === "super_admin") {
+        organizations = all_fetched_orgs;
+      } else if (user_org_id && user_org_id !== "*") {
+        organizations = all_fetched_orgs.filter(
+          (org) => org.id === user_org_id,
+        );
+      } else {
+        organizations = [];
+      }
       if (preselect_values.organization_id) {
         selected_organization =
           organizations.find(

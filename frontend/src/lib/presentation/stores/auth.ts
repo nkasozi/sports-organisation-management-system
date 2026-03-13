@@ -49,15 +49,32 @@ import type {
   SharedCrudPermissions,
 } from "$convex/shared_permission_definitions";
 import { normalize_to_entity_type } from "$lib/core/interfaces/ports/external/iam/AuthorizationPort";
-import { get_sync_manager } from "$lib/infrastructure/sync/convexSyncService";
+import {
+  get_sync_manager,
+  write_convex_user_to_local_dexie,
+} from "$lib/infrastructure/sync/convexSyncService";
+
+interface ConvexUserProfile {
+  local_id?: string;
+  email: string;
+  first_name?: string;
+  last_name?: string;
+  name?: string;
+  role: string;
+  organization_id?: string;
+  team_id?: string;
+  player_id?: string;
+  official_id?: string;
+  status?: string;
+}
 
 interface ConvexGetProfileResponse {
   success: boolean;
-  data?: { email: string; role: string };
+  data?: ConvexUserProfile;
   error?: string;
 }
 
-async function fetch_current_user_email_from_convex(): Promise<Result<string>> {
+async function fetch_current_user_profile_from_convex(): Promise<Result<ConvexUserProfile>> {
   const convex_client = get_sync_manager().get_convex_client();
 
   if (!convex_client) {
@@ -74,7 +91,7 @@ async function fetch_current_user_email_from_convex(): Promise<Result<string>> {
       return { success: false, error: response.error ?? "Profile not found in Convex" };
     }
 
-    return { success: true, data: response.data.email };
+    return { success: true, data: response.data };
   } catch (error) {
     const error_message = error instanceof Error ? error.message : String(error);
     console.warn(`[AuthStore] Convex profile query failed: ${error_message}`);
@@ -322,11 +339,11 @@ function create_auth_store() {
     const clerk_state = get(clerk_session);
     const clerk_email = clerk_state.user?.email_address?.toLowerCase() ?? null;
 
-    const convex_email_result = await fetch_current_user_email_from_convex();
+    const convex_email_result = await fetch_current_user_profile_from_convex();
 
     const clerk_matched_profile = convex_email_result.success
       ? (available_profiles.find(
-          (p) => p.email.toLowerCase() === convex_email_result.data.toLowerCase(),
+          (p) => p.email.toLowerCase() === convex_email_result.data.email.toLowerCase(),
         ) ?? null)
       : null;
 
@@ -336,8 +353,8 @@ function create_auth_store() {
       );
     } else if (!clerk_matched_profile) {
       console.warn(
-        `[AuthStore] No local profile found matching Convex email: ${convex_email_result.data}. ` +
-          "This user may not have been synced yet.",
+        `[AuthStore] No local profile found matching Convex email: ${convex_email_result.data.email}. ` +
+          "Writing user from Convex directly to local Dexie...",
       );
     }
 
@@ -390,18 +407,43 @@ function create_auth_store() {
     }
 
     if (!current_profile) {
-      if (!clerk_matched_profile) {
+      let resolved_profile = clerk_matched_profile;
+
+      if (!resolved_profile && convex_email_result.success) {
+        console.log(
+          `[AuthStore] User ${convex_email_result.data.email} not found locally — writing Convex user directly to Dexie...`,
+        );
+        await write_convex_user_to_local_dexie(convex_email_result.data);
+
+        const refreshed_profiles_raw = await load_profiles_from_repository(
+          repository,
+          organization_repository,
+        );
+        const refreshed_available_profiles =
+          build_profiles_with_public_viewer(refreshed_profiles_raw);
+        resolved_profile =
+          refreshed_available_profiles.find(
+            (p) =>
+              p.email.toLowerCase() ===
+              convex_email_result.data.email.toLowerCase(),
+          ) ?? null;
+
+        if (resolved_profile) {
+          console.log(
+            `[AuthStore] Profile created from Convex data: ${resolved_profile.display_name}`,
+          );
+        }
+      }
+
+      if (!resolved_profile) {
         const failure_reason = !convex_email_result.success
           ? `Convex unavailable: ${convex_email_result.error}`
-          : `no local profile found for Convex email: ${convex_email_result.data}`;
-        console.error(
-          `[AuthStore] Cannot initialize: ${failure_reason}. ` +
-            "Waiting for sync to complete.",
-        );
+          : `no local profile found for Convex email: ${convex_email_result.data.email} — user may not exist in the system`;
+        console.error(`[AuthStore] Cannot initialize: ${failure_reason}.`);
         return create_failure_result(failure_reason);
       }
 
-      current_profile = clerk_matched_profile;
+      current_profile = resolved_profile;
 
       const token_result = await generate_token_for_profile(current_profile);
       if (!token_result.success) {
@@ -792,6 +834,10 @@ export const current_user_role = derived(
 export const current_user_role_display = derived(auth_store, ($auth) => {
   const role = $auth.current_profile?.role;
   return role ? USER_ROLE_DISPLAY_NAMES[role] : "Unknown";
+});
+
+export const current_profile_organization_name = derived(auth_store, ($auth) => {
+  return $auth.current_profile?.organization_name ?? "";
 });
 
 export const current_profile_display_name = derived(auth_store, ($auth) => {

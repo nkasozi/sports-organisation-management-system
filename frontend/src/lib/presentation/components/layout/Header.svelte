@@ -13,6 +13,7 @@
     current_user_role_display,
     current_profile_display_name,
     current_profile_initials,
+    current_profile_organization_name,
     other_available_profiles,
     can_switch_profiles,
     is_auth_initialized,
@@ -252,40 +253,49 @@
             on:click|stopPropagation={toggle_user_menu}
           >
             <div
-              class="h-8 w-8 rounded-full flex items-center justify-center overflow-hidden {has_profile_picture
-                ? ''
-                : 'bg-theme-secondary-600'}"
+              class="flex items-center space-x-2 p-2 rounded-md text-black hover:bg-theme-primary-400 dark:hover:bg-theme-primary-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-black transition-colors duration-200"
             >
               {#if has_profile_picture}
                 <img
                   src={$current_user_store?.profile_picture_base64}
                   alt="Profile"
-                  class="h-full w-full object-cover"
+                  class="h-8 w-8 rounded-full object-cover flex-shrink-0"
                 />
               {:else}
-                <span class="text-white font-medium text-sm"
-                  >{$current_profile_initials}</span
+                <div
+                  class="h-8 w-8 rounded-full flex-shrink-0 flex items-center justify-center bg-theme-secondary-600"
                 >
+                  <span class="text-white font-medium text-sm"
+                    >{$current_profile_initials}</span
+                  >
+                </div>
               {/if}
+              <div class="hidden md:flex flex-col items-start leading-tight">
+                <span class="text-sm font-semibold"
+                  >{$current_profile_display_name}</span
+                >
+                {#if $current_profile_organization_name}
+                  <span class="text-xs text-black/70"
+                    >{$current_profile_organization_name}</span
+                  >
+                {/if}
+              </div>
+              <svg
+                class="hidden md:block h-4 w-4 flex-shrink-0 transition-transform duration-200 {user_menu_open
+                  ? 'rotate-180'
+                  : ''}"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M19 9l-7 7-7-7"
+                />
+              </svg>
             </div>
-            <span class="hidden md:block text-sm font-medium"
-              >{$current_profile_display_name}</span
-            >
-            <svg
-              class="hidden md:block h-4 w-4 transition-transform duration-200 {user_menu_open
-                ? 'rotate-180'
-                : ''}"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M19 9l-7 7-7-7"
-              />
-            </svg>
           </button>
 
           {#if user_menu_open}
@@ -306,13 +316,20 @@
                     Signed in as
                   </p>
                   <p
-                    class="text-sm font-semibold text-gray-900 dark:text-accent-100 mt-0.5"
+                    class="text-sm font-semibold text-gray-900 dark:text-accent-100 mt-1"
                   >
                     {$current_profile_display_name}
                   </p>
-                  <p class="text-xs text-gray-500 dark:text-accent-400">
+                  <p class="text-xs text-gray-500 dark:text-accent-400 mt-1">
+                    <span class="font-medium text-gray-600 dark:text-accent-300">Role:</span>
                     {$current_user_role_display}
                   </p>
+                  {#if $current_profile_organization_name}
+                    <p class="text-xs text-gray-500 dark:text-accent-400 mt-1">
+                      <span class="font-medium text-gray-600 dark:text-accent-300">Org:</span>
+                      {$current_profile_organization_name}
+                    </p>
+                  {/if}
                 </div>
 
                 {#if $can_switch_profiles && $other_available_profiles.length > 0}

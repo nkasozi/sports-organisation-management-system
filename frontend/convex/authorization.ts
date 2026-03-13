@@ -23,6 +23,7 @@ export interface AuthorizationResult {
 }
 
 export interface SystemUser {
+  local_id?: string;
   email: string;
   name?: string;
   first_name?: string;
@@ -65,6 +66,7 @@ async function get_system_user_from_context(ctx: {
   return {
     success: true,
     data: {
+      local_id: system_user.local_id,
       email: system_user.email,
       name: system_user.name,
       first_name: system_user.first_name,

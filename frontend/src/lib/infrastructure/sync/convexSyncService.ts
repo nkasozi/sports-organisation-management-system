@@ -765,6 +765,38 @@ export function reset_sync_metadata(): void {
   localStorage.removeItem("convex_sync_metadata");
 }
 
+export async function delete_record_in_convex(
+  table_name: string,
+  local_id: string,
+): Promise<boolean> {
+  if (!get(is_signed_in)) return false;
+
+  const convex_client = (
+    get_sync_manager() as unknown as { convex_client: ConvexClient | null }
+  ).convex_client;
+
+  if (!convex_client) return false;
+
+  try {
+    const result = (await convex_client.mutation("sync:delete_record", {
+      table_name,
+      local_id,
+    })) as { success: boolean; action: string; error?: string };
+
+    if (result.success) {
+      console.log(`[Sync:Delete] ${table_name}/${local_id} — ${result.action}`);
+    } else {
+      console.warn(
+        `[Sync:Delete] ${table_name}/${local_id} — failed: ${result.error}`,
+      );
+    }
+    return result.success;
+  } catch (error) {
+    console.warn(`[Sync:Delete] ${table_name}/${local_id} — error: ${error}`);
+    return false;
+  }
+}
+
 export async function clear_all_synced_tables_in_convex(): Promise<boolean> {
   if (!get(is_signed_in)) {
     console.warn("[Sync:Reset] User not signed in — skipping remote clear");
@@ -848,6 +880,79 @@ export async function clear_all_demo_data_in_convex(): Promise<boolean> {
   }
 
   return result.success;
+}
+
+export async function pull_system_users_from_convex(): Promise<boolean> {
+  const convex_client = (
+    get_sync_manager() as unknown as { convex_client: ConvexClient | null }
+  ).convex_client;
+
+  if (!convex_client) {
+    console.warn("[Sync:SystemUsers] Convex client not configured");
+    return false;
+  }
+
+  const database = get_database();
+  const table = get_table_from_database(database, "system_users");
+
+  if (!table) {
+    console.warn("[Sync:SystemUsers] system_users table not found in database");
+    return false;
+  }
+
+  console.log("[Sync:SystemUsers] Pulling all system_users from Convex (full fetch for auth recovery)...");
+  const result = await pull_table_from_convex(
+    convex_client,
+    table,
+    "system_users",
+    EPOCH_TIMESTAMP,
+  );
+
+  if (result.success) {
+    console.log(
+      `[Sync:SystemUsers] Pulled ${result.records_pulled} record(s) from Convex`,
+    );
+  } else {
+    console.warn(`[Sync:SystemUsers] Pull failed: ${result.error}`);
+  }
+
+  return result.success;
+}
+
+export async function write_convex_user_to_local_dexie(convex_user: {
+  local_id?: string;
+  email: string;
+  first_name?: string;
+  last_name?: string;
+  name?: string;
+  role: string;
+  organization_id?: string;
+  team_id?: string;
+  player_id?: string;
+  official_id?: string;
+  status?: string;
+}): Promise<string> {
+  const database = get_database();
+  const now = new Date().toISOString();
+  const user_id = convex_user.local_id ?? `usr_${Date.now()}`;
+  console.log(
+    `[Sync:SystemUsers] Writing Convex user ${convex_user.email} directly to local Dexie (id: ${user_id})`,
+  );
+  await database.system_users.put({
+    id: user_id,
+    email: convex_user.email.toLowerCase(),
+    first_name: convex_user.first_name ?? "",
+    last_name: convex_user.last_name ?? "",
+    role: convex_user.role as any,
+    status: (convex_user.status ?? "active") as any,
+    organization_id: convex_user.organization_id ?? "",
+    team_id: convex_user.team_id,
+    player_id: convex_user.player_id,
+    official_id: convex_user.official_id,
+    created_at: now,
+    updated_at: now,
+  } as any);
+  return user_id;
 }
 
 export class ConvexSyncManager {

@@ -5,6 +5,10 @@ import {
   can_role_access_route,
   get_allowed_routes_for_role,
 } from "./LocalAuthorizationAdapter";
+import {
+  SHARED_ENTITY_CATEGORY_MAP,
+  SHARED_ROLE_PERMISSIONS,
+} from "$convex/shared_permission_definitions";
 import type { UserRole } from "$lib/core/interfaces/ports";
 import type { SidebarMenuGroup, SystemUserRepository } from "$lib/core/interfaces/ports";
 import type { AuthenticationPort } from "$lib/core/interfaces/ports";
@@ -482,6 +486,59 @@ describe("can_role_access_route", () => {
     for (const route of denied_routes) {
       const result = can_role_access_route("public_viewer", route);
       expect(result.allowed).toBe(false);
+    }
+  });
+});
+
+describe("entity category mapping — org_admin create/update permissions", () => {
+  const ORG_ADMIN_MANAGED_ENTITIES = [
+    "gender",
+    "identificationtype",
+    "gameofficialrole",
+    "gameeventtype",
+    "teamstaffrole",
+    "playerposition",
+  ] as const;
+
+  it("org_admin should have full permissions on lookup/reference entities", () => {
+    for (const entity of ORG_ADMIN_MANAGED_ENTITIES) {
+      const category = SHARED_ENTITY_CATEGORY_MAP[entity];
+      const permissions = SHARED_ROLE_PERMISSIONS["org_admin"][category];
+      expect(
+        permissions.can_create,
+        `org_admin cannot create '${entity}' (mapped to '${category}') — update SHARED_ENTITY_CATEGORY_MAP`,
+      ).toBe(true);
+      expect(
+        permissions.can_update,
+        `org_admin cannot update '${entity}' (mapped to '${category}') — update SHARED_ENTITY_CATEGORY_MAP`,
+      ).toBe(true);
+    }
+  });
+
+  it("super_admin should retain full permissions on all entity categories", () => {
+    for (const entity of ORG_ADMIN_MANAGED_ENTITIES) {
+      const category = SHARED_ENTITY_CATEGORY_MAP[entity];
+      const permissions = SHARED_ROLE_PERMISSIONS["super_admin"][category];
+      expect(permissions.can_create, `super_admin lost create on '${entity}'`).toBe(true);
+      expect(permissions.can_delete, `super_admin lost delete on '${entity}'`).toBe(true);
+    }
+  });
+
+  it("non-admin roles should not be able to create or delete lookup entities", () => {
+    const restricted_roles = ["team_manager", "official", "player", "public_viewer"] as const;
+    for (const entity of ORG_ADMIN_MANAGED_ENTITIES) {
+      const category = SHARED_ENTITY_CATEGORY_MAP[entity];
+      for (const role of restricted_roles) {
+        const permissions = SHARED_ROLE_PERMISSIONS[role][category];
+        expect(
+          permissions.can_create,
+          `role '${role}' should not create '${entity}'`,
+        ).toBe(false);
+        expect(
+          permissions.can_delete,
+          `role '${role}' should not delete '${entity}'`,
+        ).toBe(false);
+      }
     }
   });
 });

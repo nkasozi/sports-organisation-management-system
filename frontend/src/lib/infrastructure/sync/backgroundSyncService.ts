@@ -3,6 +3,7 @@ import {
   type SportsOrgDatabase,
 } from "$lib/adapters/repositories/database";
 import { get_pulling_from_remote, set_pulling_from_remote } from "./syncState";
+import { delete_record_in_convex } from "./convexSyncService";
 import { is_signed_in } from "$lib/adapters/iam/clerkAuthService";
 import { get } from "svelte/store";
 import type {
@@ -246,7 +247,7 @@ function install_dexie_hooks(database: SportsOrgDatabase): boolean {
     const table = (database as unknown as Record<string, unknown>)[
       table_name
     ] as {
-      hook: (event: string) => { subscribe: (fn: () => void) => void };
+      hook: (event: string) => { subscribe: (fn: (primKey: unknown) => void) => void };
     };
 
     if (!table?.hook) continue;
@@ -259,8 +260,12 @@ function install_dexie_hooks(database: SportsOrgDatabase): boolean {
       on_dexie_write(table_name);
     });
 
-    table.hook("deleting").subscribe(() => {
-      on_dexie_write(table_name);
+    table.hook("deleting").subscribe((primKey: unknown) => {
+      const local_id = typeof primKey === "string" ? primKey : String(primKey);
+      console.log(
+        `[BackgroundSync] Dexie delete detected on ${table_name}: local_id=${local_id}`,
+      );
+      delete_record_in_convex(table_name, local_id);
     });
   }
 

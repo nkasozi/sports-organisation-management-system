@@ -290,10 +290,13 @@
       formats_result,
     ] = await Promise.all([
       competition_use_cases.get_by_id(competition_id),
-      organization_use_cases.list(auth_filter, {
-        page_number: 1,
-        page_size: 100,
-      }),
+      organization_use_cases.list(
+        {},
+        {
+          page_number: 1,
+          page_size: 100,
+        },
+      ),
       team_use_cases.list(auth_filter, { page_number: 1, page_size: 100 }),
       competition_team_use_cases.list_teams_in_competition(competition_id, {
         page_number: 1,
@@ -318,7 +321,19 @@
     }
 
     competition = competition_result.data;
-    organizations = org_result.success ? org_result.data?.items || [] : [];
+    const all_fetched_orgs = org_result.success
+      ? org_result.data?.items || []
+      : [];
+    const org_auth_state = get(auth_store);
+    const org_role = org_auth_state.current_profile?.role || "public_viewer";
+    const user_org_id = org_auth_state.current_profile?.organization_id;
+    if (org_role === "super_admin") {
+      organizations = all_fetched_orgs;
+    } else if (user_org_id && user_org_id !== "*") {
+      organizations = all_fetched_orgs.filter((org) => org.id === user_org_id);
+    } else {
+      organizations = [];
+    }
     competition_formats = formats_result.success
       ? (formats_result.data?.items || []).filter(
           (format: CompetitionFormat) => format.status === "active",

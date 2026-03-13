@@ -79,10 +79,18 @@
   }
 
   async function load_organizations(): Promise<Organization[]> {
-    const auth_filter = build_org_auth_filter();
-    const result = await organization_use_cases.list(auth_filter);
+    const auth_state = get(auth_store);
+    const role = auth_state.current_profile?.role || "public_viewer";
+    const user_org_id = auth_state.current_profile?.organization_id;
+
+    const result = await organization_use_cases.list({});
     if (!result.success) return [];
-    return result.data?.items || [];
+    const all_orgs = result.data?.items || [];
+
+    if (role === "super_admin") return all_orgs;
+
+    if (!user_org_id || user_org_id === "*") return [];
+    return all_orgs.filter((org) => org.id === user_org_id);
   }
 
   async function handle_organization_change(): Promise<boolean> {
