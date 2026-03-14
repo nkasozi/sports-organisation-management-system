@@ -23,11 +23,11 @@ export interface BrandingConfig {
 }
 
 const DEFAULT_PLATFORM_BRANDING: BrandingConfig = {
-  organization_name: "Sports Organisation",
+  organization_name: "Sport-Sync",
   organization_logo_url: "",
   organization_tagline:
     "Professional sports management platform for competitions, teams, players and officials.",
-  organization_email: "info@sportsorg.local",
+  organization_email: "info@sport-sync.local",
   organization_address: "Sports Management HQ",
   social_media_links: [
     { platform: "twitter", url: "" },

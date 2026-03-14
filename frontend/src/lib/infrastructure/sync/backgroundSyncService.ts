@@ -1,6 +1,6 @@
 import {
   get_database,
-  type SportsOrgDatabase,
+  type SportSyncDatabase,
 } from "$lib/adapters/repositories/database";
 import { get_pulling_from_remote, set_pulling_from_remote } from "./syncState";
 import { delete_record_in_convex } from "./convexSyncService";
@@ -246,7 +246,7 @@ function on_dexie_write(table_name: string): void {
   trigger_debounced_sync();
 }
 
-function install_dexie_hooks(database: SportsOrgDatabase): boolean {
+function install_dexie_hooks(database: SportSyncDatabase): boolean {
   for (const table_name of SYNCED_TABLE_NAMES) {
     const table = (database as unknown as Record<string, unknown>)[
       table_name

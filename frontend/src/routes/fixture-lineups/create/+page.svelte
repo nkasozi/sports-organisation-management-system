@@ -968,7 +968,7 @@
 </script>
 
 <svelte:head>
-  <title>Create Fixture Lineup - Sports Organisation Management</title>
+  <title>Create Fixture Lineup - Sport-Sync</title>
 </svelte:head>
 
 <div class="space-y-6">

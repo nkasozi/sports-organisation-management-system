@@ -749,7 +749,7 @@
       <footer
         class="text-center mt-8 py-4 text-sm text-gray-500 dark:text-gray-400"
       >
-        <p>Powered by Sports Organization Management System</p>
+        <p>Powered by Sport-Sync</p>
       </footer>
     </div>
   {/if}

@@ -1,7 +1,7 @@
 {
   "name": "sports-organisation-frontend",
   "version": "1.0.0",
-  "description": "Frontend for Sports Organisation Management System",
+  "description": "Frontend for Sport-Sync",
   "type": "module",
   "scripts": {
     "dev": "vite dev --host",

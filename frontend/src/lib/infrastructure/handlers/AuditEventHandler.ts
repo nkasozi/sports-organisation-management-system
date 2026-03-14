@@ -36,11 +36,11 @@ async function handle_entity_created(
     action: "create",
     changes: [],
     user_id: payload.user_context?.user_id ?? "system",
-    user_email: payload.user_context?.user_email ?? "system@sportsorg.local",
+    user_email: payload.user_context?.user_email ?? "system@sport-sync.local",
     user_display_name: payload.user_context?.user_display_name ?? "System",
     organization_id: payload.user_context?.organization_id ?? "*",
     ip_address: "127.0.0.1",
-    user_agent: "SportsOrgApp/1.0",
+    user_agent: "SportSyncApp/1.0",
   };
 
   await audit_log_repository.create(audit_input);
@@ -67,11 +67,11 @@ async function handle_entity_updated(
     action: "update",
     changes,
     user_id: payload.user_context?.user_id ?? "system",
-    user_email: payload.user_context?.user_email ?? "system@sportsorg.local",
+    user_email: payload.user_context?.user_email ?? "system@sport-sync.local",
     user_display_name: payload.user_context?.user_display_name ?? "System",
     organization_id: payload.user_context?.organization_id ?? "*",
     ip_address: "127.0.0.1",
-    user_agent: "SportsOrgApp/1.0",
+    user_agent: "SportSyncApp/1.0",
   };
 
   await audit_log_repository.create(audit_input);
@@ -90,11 +90,11 @@ async function handle_entity_deleted(
     action: "delete",
     changes: [],
     user_id: payload.user_context?.user_id ?? "system",
-    user_email: payload.user_context?.user_email ?? "system@sportsorg.local",
+    user_email: payload.user_context?.user_email ?? "system@sport-sync.local",
     user_display_name: payload.user_context?.user_display_name ?? "System",
     organization_id: payload.user_context?.organization_id ?? "*",
     ip_address: "127.0.0.1",
-    user_agent: "SportsOrgApp/1.0",
+    user_agent: "SportSyncApp/1.0",
   };
 
   await audit_log_repository.create(audit_input);
@@ -148,7 +148,7 @@ async function handle_access_denied(
     user_display_name: payload.user_context?.user_display_name ?? "Anonymous",
     organization_id: payload.user_context?.organization_id ?? "*",
     ip_address: "127.0.0.1",
-    user_agent: "SportsOrgApp/1.0",
+    user_agent: "SportSyncApp/1.0",
   };
 
   await audit_log_repository.create(audit_input);

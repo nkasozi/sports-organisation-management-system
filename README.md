@@ -1,6 +1,6 @@
-# Sports Organisation Management System
+# Sport-Sync
 
-A comprehensive web application for managing sports organizations, competitions, teams, players, and live games. Built with SvelteKit and Convex, following Hexagonal Architecture for clean separation of concerns.
+A comprehensive web application for managing Sport-Sync, competitions, teams, players, and live games. Built with SvelteKit and Convex, following Hexagonal Architecture for clean separation of concerns.
 
 ## Technology Stack
 

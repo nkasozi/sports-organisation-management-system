@@ -85,7 +85,7 @@ export function build_match_report_data(
     : new Date().getFullYear().toString();
 
   return {
-    league_name: ctx.organization_name || "SPORTS ORGANIZATION",
+    league_name: ctx.organization_name || "SPORT-SYNC",
     organization_logo_url: ctx.organization_logo_url || "",
     competition_name: ctx.competition?.name?.toUpperCase() || "COMPETITION",
     fixture_year,

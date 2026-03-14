@@ -268,10 +268,10 @@ describe("Audit log input structure", () => {
       action: "sync_conflict_detected" as const,
       changes: build_conflict_changes(conflict.field_differences),
       user_id: "system",
-      user_email: "system@sportsorg.local",
+      user_email: "system@sport-sync.local",
       user_display_name: "System",
       ip_address: "127.0.0.1",
-      user_agent: "SportsOrgApp/SyncService",
+      user_agent: "SportSyncApp/SyncService",
     };
 
     expect(audit_input.entity_type).toBe("Teams");
@@ -306,7 +306,7 @@ describe("Audit log input structure", () => {
       user_email: "user@example.com",
       user_display_name: "Jane Doe",
       ip_address: "127.0.0.1",
-      user_agent: "SportsOrgApp/SyncService",
+      user_agent: "SportSyncApp/SyncService",
     };
 
     expect(audit_input.action).toBe("sync_conflict_resolved");
@@ -348,11 +348,11 @@ describe("Context handling", () => {
     const context: Record<string, string> = {};
 
     const user_id = context.user_id ?? "system";
-    const user_email = context.user_email ?? "system@sportsorg.local";
+    const user_email = context.user_email ?? "system@sport-sync.local";
     const user_display_name = context.user_display_name ?? "System";
 
     expect(user_id).toBe("system");
-    expect(user_email).toBe("system@sportsorg.local");
+    expect(user_email).toBe("system@sport-sync.local");
     expect(user_display_name).toBe("System");
   });
 
@@ -364,7 +364,7 @@ describe("Context handling", () => {
     };
 
     const user_id = context.user_id ?? "system";
-    const user_email = context.user_email ?? "system@sportsorg.local";
+    const user_email = context.user_email ?? "system@sport-sync.local";
     const user_display_name = context.user_display_name ?? "System";
 
     expect(user_id).toBe("user_123");
@@ -380,11 +380,11 @@ describe("Context handling", () => {
     };
 
     const user_id = context.user_id ?? "system";
-    const user_email = context.user_email ?? "system@sportsorg.local";
+    const user_email = context.user_email ?? "system@sport-sync.local";
     const user_display_name = context.user_display_name ?? "System";
 
     expect(user_id).toBe("user_123");
-    expect(user_email).toBe("system@sportsorg.local");
+    expect(user_email).toBe("system@sport-sync.local");
     expect(user_display_name).toBe("System");
   });
 });

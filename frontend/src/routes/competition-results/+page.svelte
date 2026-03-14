@@ -782,7 +782,7 @@
         }
       }
 
-      let organization_name = "SPORTS ORGANIZATION";
+      let organization_name = "SPORT-SYNC";
       if (selected_competition?.organization_id) {
         const org_result = await organization_use_cases.get_by_id(
           selected_competition.organization_id,
@@ -957,7 +957,7 @@
     downloading_all_reports = true;
 
     try {
-      let organization_name = "SPORTS ORGANIZATION";
+      let organization_name = "SPORT-SYNC";
       if (selected_competition?.organization_id) {
         const org_result = await organization_use_cases.get_by_id(
           selected_competition.organization_id,

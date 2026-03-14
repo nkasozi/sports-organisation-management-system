@@ -56,7 +56,7 @@
       >
         <li>Personal Data (name, email address, organization details)</li>
         <li>Usage Data (access logs, browser type, pages visited)</li>
-        <li>Sports Organization Data (teams, players, competitions)</li>
+        <li>Sport-Sync Data (teams, players, competitions)</li>
       </ul>
     </section>
 

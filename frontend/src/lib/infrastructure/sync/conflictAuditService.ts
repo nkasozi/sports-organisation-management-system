@@ -52,11 +52,11 @@ export async function log_conflict_detected(
       action: "sync_conflict_detected",
       changes: build_conflict_changes(conflict.field_differences),
       user_id: context.user_id ?? "system",
-      user_email: context.user_email ?? "system@sportsorg.local",
+      user_email: context.user_email ?? "system@sport-sync.local",
       user_display_name: context.user_display_name ?? "System",
       organization_id: context.organization_id ?? "*",
       ip_address: "127.0.0.1",
-      user_agent: "SportsOrgApp/SyncService",
+      user_agent: "SportSyncApp/SyncService",
     };
 
     await audit_log_repository.create(audit_input);
@@ -118,11 +118,11 @@ export async function log_conflict_resolution(
       action: "sync_conflict_resolved",
       changes,
       user_id: context.user_id ?? "system",
-      user_email: context.user_email ?? "system@sportsorg.local",
+      user_email: context.user_email ?? "system@sport-sync.local",
       user_display_name: context.user_display_name ?? "System",
       organization_id: context.organization_id ?? "*",
       ip_address: "127.0.0.1",
-      user_agent: "SportsOrgApp/SyncService",
+      user_agent: "SportSyncApp/SyncService",
     };
 
     await audit_log_repository.create(audit_input);

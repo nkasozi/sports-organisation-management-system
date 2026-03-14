@@ -15,7 +15,7 @@ import {
   create_timestamp_fields,
   update_timestamp,
 } from "../../core/entities/BaseEntity";
-import { get_database, type SportsOrgDatabase } from "./database";
+import { get_database, type SportSyncDatabase } from "./database";
 
 export abstract class InBrowserBaseRepository<
   TEntity extends BaseEntity,
@@ -25,7 +25,7 @@ export abstract class InBrowserBaseRepository<
 > implements Repository<TEntity, TCreateInput, TUpdateInput, TFilter> {
   protected entity_prefix: string;
 
-  protected get database(): SportsOrgDatabase {
+  protected get database(): SportSyncDatabase {
     return get_database();
   }
 

@@ -843,7 +843,7 @@
 
     downloading_report = true;
 
-    let organization_name = "SPORTS ORGANIZATION";
+    let organization_name = "SPORT-SYNC";
     if (competition?.organization_id) {
       const org_result = await organization_use_cases.get_by_id(
         competition.organization_id,

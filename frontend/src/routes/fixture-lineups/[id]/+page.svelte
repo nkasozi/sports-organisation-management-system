@@ -270,7 +270,7 @@
 </script>
 
 <svelte:head>
-  <title>Lineup Details - Sports Organisation Management</title>
+  <title>Lineup Details - Sport-Sync</title>
 </svelte:head>
 
 <div class="space-y-6">

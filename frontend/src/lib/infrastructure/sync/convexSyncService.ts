@@ -1,6 +1,6 @@
 import {
   get_database,
-  type SportsOrgDatabase,
+  type SportSyncDatabase,
 } from "../../adapters/repositories/database";
 import { set_pulling_from_remote } from "./syncState";
 import { is_signed_in } from "../../adapters/iam/clerkAuthService";
@@ -181,7 +181,7 @@ export function get_local_latest_modified_at(
 }
 
 export function get_table_from_database(
-  database: SportsOrgDatabase,
+  database: SportSyncDatabase,
   table_name: TableName,
 ): Table<
   { id: string; updated_at?: string; created_at?: string },

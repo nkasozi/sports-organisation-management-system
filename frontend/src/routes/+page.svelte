@@ -324,7 +324,7 @@
 </script>
 
 <svelte:head>
-  <title>Dashboard - Sports Organisation Management</title>
+  <title>Dashboard - Sport-Sync</title>
   <meta
     name="description"
     content="Overview of your sports organization management system"

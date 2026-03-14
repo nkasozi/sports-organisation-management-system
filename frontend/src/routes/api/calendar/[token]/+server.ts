@@ -40,7 +40,7 @@ export const GET: RequestHandler = async ({ params }) => {
   const organization_name =
     organization_result.success && organization_result.data
       ? organization_result.data.name
-      : "Sports Organisation";
+      : "Sport-Sync";
 
   const current_year = new Date().getFullYear();
   const start_date = `${current_year}-01-01`;
