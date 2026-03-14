@@ -2,6 +2,10 @@
 @tailwind components;
 @tailwind utilities;
 
+@view-transition {
+  navigation: auto;
+}
+
 :root {
   --color-primary-50: #fef2f2;
   --color-primary-100: #fee2e2;

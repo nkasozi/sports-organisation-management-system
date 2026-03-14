@@ -27,6 +27,11 @@ import {
   create_default_team_staff_roles_for_organization,
 } from "../repositories/InBrowserTeamStaffRoleRepository";
 import {
+  get_competition_format_repository,
+  InBrowserCompetitionFormatRepository,
+  create_default_competition_formats_for_organization,
+} from "../repositories/InBrowserCompetitionFormatRepository";
+import {
   create_seed_genders,
   create_seed_identification_types,
 } from "../../infrastructure/utils/SeedDataGenerator";
@@ -44,6 +49,7 @@ export interface OrgSeedResult {
   game_official_roles_seeded: number;
   game_event_types_seeded: number;
   team_staff_roles_seeded: number;
+  competition_formats_seeded: number;
 }
 
 async function seed_genders(
@@ -138,6 +144,22 @@ async function seed_team_staff_roles(
   return result;
 }
 
+async function seed_competition_formats(
+  organization_id: string,
+  repository: InBrowserCompetitionFormatRepository,
+): AsyncResult<number> {
+  console.log(`[OrganizationDefaults] Seeding competition formats for org: ${organization_id}`);
+  const result = await repository.seed_with_data(
+    create_default_competition_formats_for_organization(organization_id),
+  );
+  if (!result.success) {
+    console.error(`[OrganizationDefaults] Competition formats seeding failed: ${result.error}`);
+    return create_failure_result(`CompetitionFormats: ${result.error}`);
+  }
+  console.log(`[OrganizationDefaults] Competition formats seeded: ${result.data} records`);
+  return result;
+}
+
 export async function seed_default_lookup_entities_for_organization(
   organization_id: string,
 ): AsyncResult<OrgSeedResult> {
@@ -149,6 +171,7 @@ export async function seed_default_lookup_entities_for_organization(
   const game_official_role_repository = get_game_official_role_repository() as InBrowserGameOfficialRoleRepository;
   const game_event_type_repository = get_game_event_type_repository() as InBrowserGameEventTypeRepository;
   const team_staff_role_repository = get_team_staff_role_repository() as InBrowserTeamStaffRoleRepository;
+  const competition_format_repository = get_competition_format_repository() as InBrowserCompetitionFormatRepository;
 
   const genders_result = await seed_genders(organization_id, gender_repository);
   if (!genders_result.success) {
@@ -177,7 +200,12 @@ export async function seed_default_lookup_entities_for_organization(
 
   const team_staff_roles_result = await seed_team_staff_roles(organization_id, team_staff_role_repository);
   if (!team_staff_roles_result.success) {
-    return create_failure_result(`Org seeding aborted at step 6/6 (team staff roles): ${team_staff_roles_result.error}`);
+    return create_failure_result(`Org seeding aborted at step 6/7 (team staff roles): ${team_staff_roles_result.error}`);
+  }
+
+  const competition_formats_result = await seed_competition_formats(organization_id, competition_format_repository);
+  if (!competition_formats_result.success) {
+    return create_failure_result(`Org seeding aborted at step 7/7 (competition formats): ${competition_formats_result.error}`);
   }
 
   const summary: OrgSeedResult = {
@@ -188,10 +216,11 @@ export async function seed_default_lookup_entities_for_organization(
     game_official_roles_seeded: game_official_roles_result.data,
     game_event_types_seeded: game_event_types_result.data,
     team_staff_roles_seeded: team_staff_roles_result.data,
+    competition_formats_seeded: competition_formats_result.data,
   };
 
   console.log(
-    `[OrganizationDefaults] All 6 steps completed for org: ${organization_id}`,
+    `[OrganizationDefaults] All 7 steps completed for org: ${organization_id}`,
     summary,
   );
   return create_success_result(summary);

@@ -23,6 +23,7 @@ import {
 import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
 import {
   get_default_competition_formats,
+  get_default_competition_formats_for_organization,
   create_default_league_config,
   create_default_group_stage_config,
   create_default_knockout_stage_config,
@@ -30,7 +31,7 @@ import {
 
 const ENTITY_PREFIX = "comp_fmt";
 
-class InBrowserCompetitionFormatRepository
+export class InBrowserCompetitionFormatRepository
   extends InBrowserBaseRepository<
     CompetitionFormat,
     CreateCompetitionFormatInput,
@@ -68,6 +69,7 @@ class InBrowserCompetitionFormatRepository
       status: input.status,
       points_config: input.points_config,
       stage_templates: input.stage_templates ?? [],
+      organization_id: input.organization_id,
     };
   }
 
@@ -112,6 +114,12 @@ class InBrowserCompetitionFormatRepository
       );
     }
 
+    if (filter.organization_id) {
+      filtered_entities = filtered_entities.filter(
+        (format) => format.organization_id === filter.organization_id,
+      );
+    }
+
     return filtered_entities;
   }
 
@@ -153,6 +161,13 @@ class InBrowserCompetitionFormatRepository
       return create_failure_result(`Failed to find active formats: ${error}`);
     }
   }
+
+  async find_by_organization(
+    organization_id: string,
+    options?: import("../../core/interfaces/ports").QueryOptions,
+  ): ReturnType<import("../../core/interfaces/ports").CompetitionFormatRepository["find_by_organization"]> {
+    return this.find_all({ organization_id }, options);
+  }
 }
 
 function create_default_competition_formats_data(): CompetitionFormat[] {
@@ -193,4 +208,10 @@ export async function reset_competition_format_repository(): Promise<void> {
     get_competition_format_repository() as InBrowserCompetitionFormatRepository;
   await repository.clear_all_data();
   await repository.seed_with_data(create_default_competition_formats_data());
+}
+
+export function create_default_competition_formats_for_organization(
+  organization_id: string,
+): CompetitionFormat[] {
+  return get_default_competition_formats_for_organization(organization_id);
 }

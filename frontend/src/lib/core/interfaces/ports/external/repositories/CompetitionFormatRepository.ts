@@ -13,6 +13,7 @@ export interface CompetitionFormatFilter {
   format_type?: FormatType;
   auto_generate_fixtures?: boolean;
   status?: CompetitionFormat["status"];
+  organization_id?: string;
 }
 
 export interface CompetitionFormatRepository extends FilterableRepository<
@@ -26,6 +27,10 @@ export interface CompetitionFormatRepository extends FilterableRepository<
   ): AsyncResult<CompetitionFormat[]>;
   find_by_code(code: string): AsyncResult<CompetitionFormat | null>;
   find_active_formats(): AsyncResult<CompetitionFormat[]>;
+  find_by_organization(
+    organization_id: string,
+    options?: import("./Repository").QueryOptions,
+  ): import("../../../../types/Result").PaginatedAsyncResult<CompetitionFormat>;
 }
 
 export type {

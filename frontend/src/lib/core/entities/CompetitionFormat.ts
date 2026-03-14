@@ -79,6 +79,7 @@ export interface CompetitionFormat extends BaseEntity {
   min_teams_required: number;
   max_teams_allowed: number;
   status: EntityStatus;
+  organization_id?: string;
 }
 
 export type CreateCompetitionFormatInput = Omit<
@@ -337,6 +338,20 @@ function normalize_stage_templates(
     name: template.name,
     stage_type: template.stage_type,
     stage_order: index + 1,
+  }));
+}
+
+export function get_default_competition_formats_for_organization(
+  organization_id: string,
+): CompetitionFormat[] {
+  const now = new Date().toISOString();
+  const default_inputs = get_default_competition_formats();
+  return default_inputs.map((input, index) => ({
+    ...input,
+    id: `comp_fmt_default_${index + 1}_${organization_id}`,
+    created_at: now,
+    updated_at: now,
+    organization_id,
   }));
 }
 
