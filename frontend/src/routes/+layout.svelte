@@ -196,15 +196,13 @@
       return cleanup_on_failure(`Sync failed: ${error_msg}`);
     }
 
-    const second_sync_result = await sync_store.sync_now("pull");
-    if (!second_sync_result.success && second_sync_result.errors.length > 0) {
-      console.warn("[Layout] Second sync pass had errors, continuing anyway");
-    }
-
     if (sync_unsub) {
       sync_unsub();
       sync_unsub = null;
     }
+
+    initial_sync_store.update_progress("Resolving references...", 88);
+    await sync_store.sync_now("pull");
 
     initial_sync_store.update_progress("Finalizing...", 92);
     start_background_sync();

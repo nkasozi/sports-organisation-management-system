@@ -19,6 +19,7 @@ function create_mock_repository(): CompetitionFormatRepository {
     find_by_format_type: vi.fn(),
     find_by_code: vi.fn(),
     find_active_formats: vi.fn(),
+    find_by_organization: vi.fn(),
   };
 }
 
@@ -52,6 +53,7 @@ function create_test_format(
     max_teams_allowed: 20,
     stage_templates: [],
     status: "active",
+    organization_id: "",
     created_at: "2024-01-01T00:00:00Z",
     updated_at: "2024-01-01T00:00:00Z",
     ...overrides,
@@ -86,6 +88,7 @@ function create_valid_input(
     max_teams_allowed: 64,
     stage_templates: [],
     status: "active",
+    organization_id: "",
     ...overrides,
   };
 }

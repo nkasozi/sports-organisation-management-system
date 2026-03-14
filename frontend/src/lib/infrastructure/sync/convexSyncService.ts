@@ -7,7 +7,9 @@ import { is_signed_in } from "../../adapters/iam/clerkAuthService";
 import { current_user_role } from "../../presentation/stores/auth";
 import { get } from "svelte/store";
 import type { Table } from "dexie";
-import type { SyncDirection, SyncHints } from "$lib/core/interfaces/ports";
+import type { SyncDirection, SyncHints, UserRole } from "$lib/core/interfaces/ports";
+import { check_entity_permission } from "$lib/core/interfaces/ports";
+import type { SharedEntityType } from "$convex/shared_permission_definitions";
 
 export type { SyncDirection };
 export type SyncStatus = "idle" | "syncing" | "success" | "error" | "conflict";
@@ -102,7 +104,55 @@ export const TABLE_NAMES = [
 
 export type TableName = (typeof TABLE_NAMES)[number];
 
-const SUPER_ADMIN_ONLY_PUSH_TABLES = new Set(["organizations", "sports"]);
+const TABLE_NAME_TO_ENTITY_TYPE: Partial<Record<TableName, SharedEntityType>> = {
+  organizations: "organization",
+  sports: "sport",
+  competitions: "competition",
+  teams: "team",
+  players: "player",
+  officials: "official",
+  fixtures: "fixture",
+  team_staff: "teamstaff",
+  team_staff_roles: "teamstaffrole",
+  game_official_roles: "gameofficialrole",
+  venues: "venue",
+  jersey_colors: "jerseycolor",
+  player_positions: "playerposition",
+  player_profiles: "playerprofile",
+  team_profiles: "teamprofile",
+  profile_links: "profilelink",
+  competition_formats: "competitionformat",
+  competition_teams: "competitionteam",
+  player_team_memberships: "playerteammembership",
+  fixture_details_setups: "fixturedetailssetup",
+  fixture_lineups: "fixturelineup",
+  activity_categories: "activitycategory",
+  system_users: "systemuser",
+  identification_types: "identificationtype",
+  identifications: "identification",
+  qualifications: "qualification",
+  game_event_types: "gameeventtype",
+  genders: "gender",
+  live_game_logs: "livegamelog",
+  game_event_logs: "gameeventlog",
+  player_team_transfer_histories: "playerteamtransferhistory",
+};
+
+function role_can_push_table(role: UserRole, table_name: TableName): boolean {
+  const entity_type = TABLE_NAME_TO_ENTITY_TYPE[table_name];
+  if (!entity_type) return true;
+  return (
+    check_entity_permission(role, entity_type, "create") ||
+    check_entity_permission(role, entity_type, "update")
+  );
+}
+
+function get_push_excluded_tables(role: UserRole | null): Set<string> {
+  if (!role) return new Set(TABLE_NAMES);
+  return new Set(
+    TABLE_NAMES.filter((table_name) => !role_can_push_table(role, table_name)),
+  );
+}
 
 const EPOCH_TIMESTAMP = "1970-01-01T00:00:00.000Z";
 
@@ -464,9 +514,7 @@ async function sync_all_tables(
   let tables_completed = 0;
 
   const role = get(current_user_role);
-  const push_excluded_tables = role !== "super_admin"
-    ? SUPER_ADMIN_ONLY_PUSH_TABLES
-    : new Set<string>();
+  const push_excluded_tables = get_push_excluded_tables(role);
 
   console.log(
     `[Sync] ===== Starting sync: direction=${direction}, tables=${total_tables}, role=${role} =====`,

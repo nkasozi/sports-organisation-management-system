@@ -196,6 +196,7 @@ export default defineSchema({
     logo_url: v.optional(v.string()),
     primary_color: v.optional(v.string()),
     secondary_color: v.optional(v.string()),
+    jersey_colors: v.optional(v.string()),
     home_venue_id: v.optional(v.string()),
     website: v.optional(v.string()),
     founded_year: v.optional(v.number()),
@@ -561,6 +562,7 @@ export default defineSchema({
     max_teams_allowed: v.optional(v.number()),
     rules: v.optional(v.string()),
     status: v.optional(v.string()),
+    organization_id: v.optional(v.string()),
     stage_templates: v.optional(
       v.array(
         v.object({
@@ -571,7 +573,9 @@ export default defineSchema({
       ),
     ),
     ...timestamp_fields,
-  }).index("by_local_id", ["local_id"]),
+  })
+    .index("by_local_id", ["local_id"])
+    .index("by_organization", ["organization_id"]),
 
   competition_teams: defineTable({
     ...sync_metadata_fields,
