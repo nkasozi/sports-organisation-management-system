@@ -21,7 +21,6 @@ import { reset_profile_link_repository } from "../repositories/InBrowserProfileL
 import { reset_qualification_repository } from "../repositories/InBrowserQualificationRepository";
 import { reset_fixture_details_setup_repository } from "../repositories/InBrowserFixtureDetailsSetupRepository";
 import { reset_fixture_lineup_repository } from "../repositories/InBrowserFixtureLineupRepository";
-import { reset_system_user_repository } from "../repositories/InBrowserSystemUserRepository";
 import { get_organization_repository } from "../repositories/InBrowserOrganizationRepository";
 import { get_team_repository } from "../repositories/InBrowserTeamRepository";
 import { get_competition_repository } from "../repositories/InBrowserCompetitionRepository";
@@ -104,7 +103,6 @@ export async function reset_all_data(
   await reset_team_profile_repository();
   await reset_profile_link_repository();
   await reset_qualification_repository();
-  await reset_system_user_repository();
 
   report("Reloading fresh demo data...", 65);
   await get_all_sports();

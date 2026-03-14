@@ -56,7 +56,7 @@ vi.mock("../../infrastructure/container", () => ({
 
 vi.mock("../repositories/InBrowserSystemUserRepository", () => ({
   get_system_user_repository: () => ({
-    seed_with_data: vi.fn().mockResolvedValue(undefined),
+    seed_with_data: vi.fn().mockResolvedValue({ success: true, data: 0 }),
     find_by_id: vi.fn().mockResolvedValue({
       success: true,
       data: {
@@ -86,7 +86,7 @@ const {
 
   return {
     create_empty_repo: () => ({
-      seed_with_data: vi.fn().mockResolvedValue(undefined),
+      seed_with_data: vi.fn().mockResolvedValue({ success: true, data: 0 }),
       find_all: vi.fn().mockResolvedValue({
         success: true,
         data: { items: [], total_count: 0 },
@@ -100,7 +100,7 @@ const {
     mock_competition_formats,
     mock_fixtures,
     mock_fixture_repository: {
-      seed_with_data: vi.fn().mockResolvedValue(undefined),
+      seed_with_data: vi.fn().mockResolvedValue({ success: true, data: 0 }),
       find_all: vi.fn().mockImplementation(async () => ({
         success: true,
         data: {
@@ -121,7 +121,7 @@ const {
     },
     mock_competition_stages,
     mock_competition_stage_repository: {
-      seed_with_data: vi.fn().mockResolvedValue(undefined),
+      seed_with_data: vi.fn().mockResolvedValue({ success: true, data: 0 }),
       find_all: vi.fn().mockImplementation(async () => ({
         success: true,
         data: {
@@ -131,7 +131,7 @@ const {
       })),
     },
     mock_competition_format_repository: {
-      seed_with_data: vi.fn().mockResolvedValue(undefined),
+      seed_with_data: vi.fn().mockResolvedValue({ success: true, data: 0 }),
       find_all: vi.fn().mockImplementation(async () => ({
         success: true,
         data: {
@@ -160,7 +160,7 @@ vi.mock("../repositories/InBrowserPlayerPositionRepository", () => ({
 vi.mock("./organizationDefaultsSeeder", () => ({
   seed_default_lookup_entities_for_organization: vi
     .fn()
-    .mockResolvedValue(undefined),
+    .mockResolvedValue({ success: true, data: { organization_id: "test", genders_seeded: 2, identification_types_seeded: 2, player_positions_seeded: 2, game_official_roles_seeded: 2, game_event_types_seeded: 2, team_staff_roles_seeded: 2 } }),
 }));
 vi.mock("../repositories/InBrowserTeamStaffRoleRepository", () => ({
   get_team_staff_role_repository: create_empty_repo,

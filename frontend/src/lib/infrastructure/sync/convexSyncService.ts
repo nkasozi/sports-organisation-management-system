@@ -4,6 +4,7 @@ import {
 } from "../../adapters/repositories/database";
 import { set_pulling_from_remote } from "./syncState";
 import { is_signed_in } from "../../adapters/iam/clerkAuthService";
+import { current_user_role } from "../../presentation/stores/auth";
 import { get } from "svelte/store";
 import type { Table } from "dexie";
 import type { SyncDirection, SyncHints } from "$lib/core/interfaces/ports";
@@ -100,6 +101,8 @@ export const TABLE_NAMES = [
 ] as const;
 
 export type TableName = (typeof TABLE_NAMES)[number];
+
+const SUPER_ADMIN_ONLY_PUSH_TABLES = new Set(["organizations", "sports"]);
 
 const EPOCH_TIMESTAMP = "1970-01-01T00:00:00.000Z";
 
@@ -460,8 +463,13 @@ async function sync_all_tables(
   const total_tables = valid_tables.length;
   let tables_completed = 0;
 
+  const role = get(current_user_role);
+  const push_excluded_tables = role !== "super_admin"
+    ? SUPER_ADMIN_ONLY_PUSH_TABLES
+    : new Set<string>();
+
   console.log(
-    `[Sync] ===== Starting sync: direction=${direction}, tables=${total_tables} =====`,
+    `[Sync] ===== Starting sync: direction=${direction}, tables=${total_tables}, role=${role} =====`,
   );
 
   if (direction !== "pull") {
@@ -577,7 +585,7 @@ async function sync_all_tables(
     }
 
     if (local_is_ahead || direction === "push") {
-      if (direction !== "pull") {
+      if (direction !== "pull" && !push_excluded_tables.has(table_name)) {
         const push_result = await push_table_to_convex(
           convex_client,
           table_name as TableName,
@@ -673,7 +681,7 @@ async function sync_all_tables(
         }
       }
 
-      if (!table_had_error && direction !== "pull") {
+      if (!table_had_error && direction !== "pull" && !push_excluded_tables.has(table_name)) {
         const refreshed_records = await table.toArray();
         const push_result = await push_table_to_convex(
           convex_client,

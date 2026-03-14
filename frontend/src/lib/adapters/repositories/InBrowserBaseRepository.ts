@@ -270,12 +270,23 @@ export abstract class InBrowserBaseRepository<
     }
   }
 
-  async seed_with_data(entities: TEntity[]): Promise<void> {
+  async seed_with_data(entities: TEntity[]): AsyncResult<number> {
     try {
       const table = this.get_table();
       await table.bulkPut(entities);
+      console.log(
+        `[${this.entity_prefix}] Seeded ${entities.length} records successfully`,
+      );
+      return create_success_result(entities.length);
     } catch (error) {
-      console.error(`[${this.entity_prefix}] Failed to seed data:`, error);
+      const error_message =
+        error instanceof Error ? error.message : "Unknown error";
+      console.error(
+        `[${this.entity_prefix}] Failed to seed data: ${error_message}`,
+      );
+      return create_failure_result(
+        `Failed to seed ${this.entity_prefix}: ${error_message}`,
+      );
     }
   }
 

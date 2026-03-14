@@ -1,12 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { seed_default_lookup_entities_for_organization } from "./organizationDefaultsSeeder";
 
-const mock_gender_seed = vi.fn().mockResolvedValue(undefined);
-const mock_identification_type_seed = vi.fn().mockResolvedValue(undefined);
-const mock_player_position_seed = vi.fn().mockResolvedValue(undefined);
-const mock_game_official_role_seed = vi.fn().mockResolvedValue(undefined);
-const mock_game_event_type_seed = vi.fn().mockResolvedValue(undefined);
-const mock_team_staff_role_seed = vi.fn().mockResolvedValue(undefined);
+const success_result = { success: true, data: 2 };
+const mock_gender_seed = vi.fn().mockResolvedValue(success_result);
+const mock_identification_type_seed = vi.fn().mockResolvedValue(success_result);
+const mock_player_position_seed = vi.fn().mockResolvedValue(success_result);
+const mock_game_official_role_seed = vi.fn().mockResolvedValue(success_result);
+const mock_game_event_type_seed = vi.fn().mockResolvedValue(success_result);
+const mock_team_staff_role_seed = vi.fn().mockResolvedValue(success_result);
 
 vi.mock("../repositories/InBrowserGenderRepository", () => ({
   get_gender_repository: vi.fn(() => ({
@@ -182,9 +183,56 @@ describe("seed_default_lookup_entities_for_organization", () => {
     ).toHaveBeenCalledWith("org-staff-test");
   });
 
-  it("resolves successfully without errors", async () => {
-    await expect(
-      seed_default_lookup_entities_for_organization("org-success"),
-    ).resolves.toBeUndefined();
+  it("resolves with a success result", async () => {
+    const result = await seed_default_lookup_entities_for_organization("org-success");
+
+    expect(result.success).toBe(true);
+  });
+
+  it("returns OrgSeedResult with all six seeded counts when all steps succeed", async () => {
+    const result = await seed_default_lookup_entities_for_organization("org-counts");
+
+    expect(result.success).toBe(true);
+    if (!result.success) return;
+    expect(result.data.organization_id).toBe("org-counts");
+    expect(result.data.genders_seeded).toBe(2);
+    expect(result.data.identification_types_seeded).toBe(2);
+    expect(result.data.player_positions_seeded).toBe(2);
+    expect(result.data.game_official_roles_seeded).toBe(2);
+    expect(result.data.game_event_types_seeded).toBe(2);
+    expect(result.data.team_staff_roles_seeded).toBe(2);
+  });
+
+  it("returns a failure result when gender seeding fails", async () => {
+    mock_gender_seed.mockResolvedValueOnce({ success: false, error: "Gender DB error" });
+
+    const result = await seed_default_lookup_entities_for_organization("org-fail");
+
+    expect(result.success).toBe(false);
+    if (result.success) return;
+    expect(result.error).toContain("Gender");
+  });
+
+  it("stops after first failure and does not call subsequent repositories", async () => {
+    mock_gender_seed.mockResolvedValueOnce({ success: false, error: "Gender DB error" });
+
+    await seed_default_lookup_entities_for_organization("org-stop");
+
+    expect(mock_gender_seed).toHaveBeenCalledTimes(1);
+    expect(mock_identification_type_seed).not.toHaveBeenCalled();
+    expect(mock_player_position_seed).not.toHaveBeenCalled();
+    expect(mock_game_official_role_seed).not.toHaveBeenCalled();
+    expect(mock_game_event_type_seed).not.toHaveBeenCalled();
+    expect(mock_team_staff_role_seed).not.toHaveBeenCalled();
+  });
+
+  it("stops at identification types failure and does not call subsequent repositories", async () => {
+    mock_identification_type_seed.mockResolvedValueOnce({ success: false, error: "ID type DB error" });
+
+    await seed_default_lookup_entities_for_organization("org-stop-2");
+
+    expect(mock_gender_seed).toHaveBeenCalledTimes(1);
+    expect(mock_identification_type_seed).toHaveBeenCalledTimes(1);
+    expect(mock_player_position_seed).not.toHaveBeenCalled();
   });
 });

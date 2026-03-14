@@ -77,9 +77,6 @@ vi.mock("../repositories/InBrowserFixtureDetailsSetupRepository", () => ({
 vi.mock("../repositories/InBrowserFixtureLineupRepository", () => ({
   reset_fixture_lineup_repository: vi.fn().mockResolvedValue(undefined),
 }));
-vi.mock("../repositories/InBrowserSystemUserRepository", () => ({
-  reset_system_user_repository: vi.fn().mockResolvedValue(undefined),
-}));
 vi.mock("../persistence/sportService", () => ({
   get_all_sports: vi.fn().mockResolvedValue([]),
 }));

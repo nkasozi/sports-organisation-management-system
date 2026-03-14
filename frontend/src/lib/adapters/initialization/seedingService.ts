@@ -1,4 +1,7 @@
-import { get_player_position_repository } from "../repositories/InBrowserPlayerPositionRepository";
+import {
+  get_player_position_repository,
+  InBrowserPlayerPositionRepository,
+} from "../repositories/InBrowserPlayerPositionRepository";
 import {
   get_team_staff_role_repository,
   InBrowserTeamStaffRoleRepository,
@@ -120,7 +123,7 @@ import {
   type ProgressCallback,
   type DataSource,
 } from "../../infrastructure/sync/convexSeedingService";
-import type { Result } from "../../core/types/Result";
+import type { Result, AsyncResult } from "../../core/types/Result";
 import {
   create_success_result,
   create_failure_result,
@@ -144,6 +147,58 @@ interface SeedResult {
   data_source: DataSource;
   outcome: SeedOutcome;
   error_message: string;
+}
+
+interface PositionIds {
+  gk: string;
+  sw: string;
+  cb: string;
+  lb: string;
+  rb: string;
+  cdm: string;
+  cm: string;
+  lm: string;
+  rm: string;
+  lw: string;
+  rw: string;
+  cf: string;
+}
+
+interface SeedVenueIds {
+  dragon_stadium_id: string;
+  thunder_arena_id: string;
+  eagle_nest_id: string;
+  storm_center_id: string;
+  international_hockey_arena_id: string;
+}
+
+interface SeedEntityIdLookups {
+  position_ids: PositionIds;
+  head_coach_role_id: string;
+  assistant_coach_role_id: string;
+  physio_role_id: string;
+  team_manager_role_id: string;
+  referee_role_id: string;
+  assistant_referee_role_id: string;
+  competition_format_ids: SeedCompetitionFormatIds;
+}
+
+interface DemoSeedingRepos {
+  player: InBrowserPlayerRepository;
+  venue: InBrowserVenueRepository;
+  team: InBrowserTeamRepository;
+  team_staff: InBrowserTeamStaffRepository;
+  official: InBrowserOfficialRepository;
+  competition: InBrowserCompetitionRepository;
+  competition_stage: InBrowserCompetitionStageRepository;
+  competition_team: InBrowserCompetitionTeamRepository;
+  player_membership: InBrowserPlayerTeamMembershipRepository;
+  fixture: InBrowserFixtureRepository;
+  fixture_lineup: InBrowserFixtureLineupRepository;
+  jersey_color: InBrowserJerseyColorRepository;
+  player_profile: InBrowserPlayerProfileRepository;
+  team_profile: InBrowserTeamProfileRepository;
+  profile_link: InBrowserProfileLinkRepository;
 }
 
 const SEEDING_COMPLETE_KEY = "sports_org_seeding_complete_v15";
@@ -177,164 +232,152 @@ function build_competition_format_repair_signature(
   });
 }
 
-async function repair_seeded_competition_formats(): Promise<boolean> {
+async function repair_seeded_competition_formats(): Promise<Result<boolean>> {
   const competition_format_repository = get_competition_format_repository();
 
-  try {
-    const competition_formats_result =
-      await competition_format_repository.find_all(undefined, {
-        page_size: 100,
-      });
+  const competition_formats_result =
+    await competition_format_repository.find_all(undefined, {
+      page_size: 100,
+    });
 
-    if (!competition_formats_result.success) {
-      console.warn(
-        `[Seeding] Failed to load competition formats for repair: ${competition_formats_result.error}`,
-      );
-      return false;
-    }
-
-    for (const competition_format of competition_formats_result.data.items) {
-      const repaired_input = hydrate_competition_format_input({
-        ...competition_format,
-      });
-
-      const existing_signature =
-        build_competition_format_repair_signature(competition_format);
-      const repaired_signature =
-        build_competition_format_repair_signature(repaired_input);
-
-      if (existing_signature === repaired_signature) {
-        continue;
-      }
-
-      const update_result = await competition_format_repository.update(
-        competition_format.id,
-        {
-          group_stage_config: repaired_input.group_stage_config,
-          knockout_stage_config: repaired_input.knockout_stage_config,
-          league_config: repaired_input.league_config,
-          stage_templates: repaired_input.stage_templates,
-          points_config: repaired_input.points_config,
-        },
-      );
-
-      if (!update_result.success) {
-        console.warn(
-          `[Seeding] Failed to repair competition format ${competition_format.code}: ${update_result.error}`,
-        );
-      }
-    }
-
-    return true;
-  } catch (error) {
-    console.warn(`[Seeding] Competition format repair failed: ${error}`);
-    return false;
+  if (!competition_formats_result.success) {
+    console.warn(
+      `[Seeding] Failed to load competition formats for repair: ${competition_formats_result.error}`,
+    );
+    return create_failure_result(competition_formats_result.error);
   }
+
+  for (const competition_format of competition_formats_result.data.items) {
+    const repaired_input = hydrate_competition_format_input({
+      ...competition_format,
+    });
+
+    const existing_signature =
+      build_competition_format_repair_signature(competition_format);
+    const repaired_signature =
+      build_competition_format_repair_signature(repaired_input);
+
+    if (existing_signature === repaired_signature) {
+      continue;
+    }
+
+    const update_result = await competition_format_repository.update(
+      competition_format.id,
+      {
+        group_stage_config: repaired_input.group_stage_config,
+        knockout_stage_config: repaired_input.knockout_stage_config,
+        league_config: repaired_input.league_config,
+        stage_templates: repaired_input.stage_templates,
+        points_config: repaired_input.points_config,
+      },
+    );
+
+    if (!update_result.success) {
+      console.warn(
+        `[Seeding] Failed to repair competition format ${competition_format.code}: ${update_result.error}`,
+      );
+    }
+  }
+
+  console.log("[Seeding] Competition format repair completed");
+  return create_success_result(true);
 }
 
-async function repair_seeded_fixture_stage_ids(): Promise<boolean> {
+async function repair_seeded_fixture_stage_ids(): Promise<Result<boolean>> {
   const fixture_repository = get_fixture_repository();
   const competition_stage_repository = get_competition_stage_repository();
 
-  try {
-    const stages_result = await competition_stage_repository.find_all(
-      undefined,
-      { page_size: 500 },
+  const stages_result = await competition_stage_repository.find_all(
+    undefined,
+    { page_size: 500 },
+  );
+
+  if (!stages_result.success) {
+    console.warn(
+      `[Seeding] Failed to load competition stages for fixture repair: ${stages_result.error}`,
+    );
+    return create_failure_result(stages_result.error);
+  }
+
+  const sorted_stages = [...stages_result.data.items].sort(
+    (a, b) => a.stage_order - b.stage_order,
+  );
+
+  const default_stage_per_competition = new Map<string, string>();
+  for (const stage of sorted_stages) {
+    if (!default_stage_per_competition.has(stage.competition_id)) {
+      default_stage_per_competition.set(stage.competition_id, stage.id);
+    }
+  }
+
+  const fixtures_result = await fixture_repository.find_all(undefined, {
+    page_size: 500,
+  });
+
+  if (!fixtures_result.success) {
+    console.warn(
+      `[Seeding] Failed to load fixtures for stage repair: ${fixtures_result.error}`,
+    );
+    return create_failure_result(fixtures_result.error);
+  }
+
+  for (const fixture of fixtures_result.data.items) {
+    if (fixture.stage_id && fixture.stage_id.trim().length > 0) {
+      continue;
+    }
+
+    const default_stage_id = default_stage_per_competition.get(
+      fixture.competition_id,
     );
 
-    if (!stages_result.success) {
+    if (!default_stage_id) {
       console.warn(
-        `[Seeding] Failed to load competition stages for fixture repair: ${stages_result.error}`,
+        `[Seeding] No stage found for competition ${fixture.competition_id}, skipping fixture ${fixture.id}`,
       );
-      return false;
+      continue;
     }
 
-    const sorted_stages = [...stages_result.data.items].sort(
-      (a, b) => a.stage_order - b.stage_order,
-    );
-
-    const default_stage_per_competition = new Map<string, string>();
-    for (const stage of sorted_stages) {
-      if (!default_stage_per_competition.has(stage.competition_id)) {
-        default_stage_per_competition.set(stage.competition_id, stage.id);
-      }
-    }
-
-    const fixtures_result = await fixture_repository.find_all(undefined, {
-      page_size: 500,
+    const update_result = await fixture_repository.update(fixture.id, {
+      stage_id: default_stage_id,
     });
 
-    if (!fixtures_result.success) {
+    if (!update_result.success) {
       console.warn(
-        `[Seeding] Failed to load fixtures for stage repair: ${fixtures_result.error}`,
+        `[Seeding] Failed to repair stage_id for fixture ${fixture.id}: ${update_result.error}`,
       );
-      return false;
     }
-
-    for (const fixture of fixtures_result.data.items) {
-      if (fixture.stage_id && fixture.stage_id.trim().length > 0) {
-        continue;
-      }
-
-      const default_stage_id = default_stage_per_competition.get(
-        fixture.competition_id,
-      );
-
-      if (!default_stage_id) {
-        console.warn(
-          `[Seeding] No stage found for competition ${fixture.competition_id}, skipping fixture ${fixture.id}`,
-        );
-        continue;
-      }
-
-      const update_result = await fixture_repository.update(fixture.id, {
-        stage_id: default_stage_id,
-      });
-
-      if (!update_result.success) {
-        console.warn(
-          `[Seeding] Failed to repair stage_id for fixture ${fixture.id}: ${update_result.error}`,
-        );
-      }
-    }
-
-    return true;
-  } catch (error) {
-    console.warn(`[Seeding] Fixture stage repair failed: ${error}`);
-    return false;
   }
+
+  console.log("[Seeding] Fixture stage ID repair completed");
+  return create_success_result(true);
 }
 
-async function find_position_id_by_code(
+function find_position_id_by_code(
   code: string,
   positions: PlayerPosition[],
-): Promise<string> {
-  const position = positions.find((p) => p.code === code);
-  return position?.id ?? "";
+): string {
+  return positions.find((p) => p.code === code)?.id ?? "";
 }
 
-async function find_staff_role_id_by_code(
+function find_staff_role_id_by_code(
   code: string,
   roles: TeamStaffRole[],
-): Promise<string> {
-  const role = roles.find((r) => r.code === code);
-  return role?.id ?? "";
+): string {
+  return roles.find((r) => r.code === code)?.id ?? "";
 }
 
-async function find_official_role_id_by_code(
+function find_official_role_id_by_code(
   code: string,
   roles: GameOfficialRole[],
-): Promise<string> {
-  const role = roles.find((r) => r.code === code);
-  return role?.id ?? "";
+): string {
+  return roles.find((r) => r.code === code)?.id ?? "";
 }
 
-async function find_competition_format_id_by_code(
+function find_competition_format_id_by_code(
   code: string,
   formats: CompetitionFormat[],
-): Promise<string> {
-  const format = formats.find((f) => f.code === code);
-  return format?.id ?? "";
+): string {
+  return formats.find((f) => f.code === code)?.id ?? "";
 }
 
 async function load_and_set_current_user(): Promise<Result<SystemUser>> {
@@ -411,40 +454,427 @@ function emit_entity_created_events<T extends { id: string }>(
   }
 }
 
-export async function seed_all_data_if_needed(): Promise<boolean> {
-  if (is_seeding_already_complete()) {
-    await repair_seeded_competition_formats();
-    await repair_seeded_fixture_stage_ids();
-    const current_user_result_1 = await load_and_set_current_user();
-    if (!current_user_result_1.success) {
-      console.warn(
-        `[Seeding] Could not resolve current user: ${current_user_result_1.error}`,
-      );
+async function load_seed_entity_id_lookups(
+  player_position_repository: InBrowserPlayerPositionRepository,
+  team_staff_role_repository: InBrowserTeamStaffRoleRepository,
+  official_role_repository: InBrowserGameOfficialRoleRepository,
+  competition_format_repository: ReturnType<typeof get_competition_format_repository>,
+): Promise<Result<SeedEntityIdLookups>> {
+  console.log("[Seeding] Loading entity ID lookups from seeded data");
+
+  const positions_result = await player_position_repository.find_all(undefined, { page_size: 100 });
+  if (!positions_result.success) return create_failure_result(`Failed to load positions: ${positions_result.error}`);
+
+  const staff_roles_result = await team_staff_role_repository.find_all_with_filter(undefined, { page_size: 100 });
+  if (!staff_roles_result.success) return create_failure_result(`Failed to load staff roles: ${staff_roles_result.error}`);
+
+  const official_roles_result = await official_role_repository.find_all_with_filter(undefined, { page_size: 100 });
+  if (!official_roles_result.success) return create_failure_result(`Failed to load official roles: ${official_roles_result.error}`);
+
+  const formats_result = await competition_format_repository.find_all(undefined, { page_size: 100 });
+  if (!formats_result.success) return create_failure_result(`Failed to load competition formats: ${formats_result.error}`);
+
+  const positions = positions_result.data.items;
+  const staff_roles = staff_roles_result.data.items;
+  const official_roles = official_roles_result.data.items;
+  const formats = formats_result.data.items;
+
+  const lookups: SeedEntityIdLookups = {
+    position_ids: {
+      gk: find_position_id_by_code("GK", positions),
+      sw: find_position_id_by_code("SW", positions),
+      cb: find_position_id_by_code("CB", positions),
+      lb: find_position_id_by_code("LB", positions),
+      rb: find_position_id_by_code("RB", positions),
+      cdm: find_position_id_by_code("CDM", positions),
+      cm: find_position_id_by_code("CM", positions),
+      lm: find_position_id_by_code("LM", positions),
+      rm: find_position_id_by_code("RM", positions),
+      lw: find_position_id_by_code("LW", positions),
+      rw: find_position_id_by_code("RW", positions),
+      cf: find_position_id_by_code("CF", positions),
+    },
+    head_coach_role_id: find_staff_role_id_by_code("HC", staff_roles),
+    assistant_coach_role_id: find_staff_role_id_by_code("AC", staff_roles),
+    physio_role_id: find_staff_role_id_by_code("PHYSIO", staff_roles),
+    team_manager_role_id: find_staff_role_id_by_code("TM", staff_roles),
+    referee_role_id: find_official_role_id_by_code("REF", official_roles),
+    assistant_referee_role_id: find_official_role_id_by_code("AR", official_roles),
+    competition_format_ids: {
+      easter_cup_format_id: find_competition_format_id_by_code("world_cup_style", formats),
+      uganda_cup_format_id: find_competition_format_id_by_code("cup_tournament", formats),
+      nhl_format_id: find_competition_format_id_by_code("standard_league", formats),
+      university_format_id: find_competition_format_id_by_code("single_round_robin", formats),
+    },
+  };
+
+  console.log("[Seeding] Entity ID lookups loaded successfully");
+  return create_success_result(lookups);
+}
+
+function build_demo_seeding_repos(): DemoSeedingRepos {
+  return {
+    player: get_player_repository() as InBrowserPlayerRepository,
+    venue: get_venue_repository() as InBrowserVenueRepository,
+    team: get_team_repository() as InBrowserTeamRepository,
+    team_staff: get_team_staff_repository() as InBrowserTeamStaffRepository,
+    official: get_official_repository() as InBrowserOfficialRepository,
+    competition: get_competition_repository() as InBrowserCompetitionRepository,
+    competition_stage: get_competition_stage_repository() as InBrowserCompetitionStageRepository,
+    competition_team: get_competition_team_repository() as InBrowserCompetitionTeamRepository,
+    player_membership: get_player_team_membership_repository() as InBrowserPlayerTeamMembershipRepository,
+    fixture: get_fixture_repository() as InBrowserFixtureRepository,
+    fixture_lineup: get_fixture_lineup_repository() as InBrowserFixtureLineupRepository,
+    jersey_color: get_jersey_color_repository() as InBrowserJerseyColorRepository,
+    player_profile: get_player_profile_repository() as InBrowserPlayerProfileRepository,
+    team_profile: get_team_profile_repository() as InBrowserTeamProfileRepository,
+    profile_link: get_profile_link_repository() as InBrowserProfileLinkRepository,
+  };
+}
+
+async function seed_demo_players(
+  organization_id: string,
+  player_repository: InBrowserPlayerRepository,
+  position_ids: PositionIds,
+): Promise<Result<number>> {
+  console.log(`[Seeding] Seeding demo players for org: ${organization_id}`);
+  const seed_players = create_seed_players(position_ids, organization_id);
+  for (const player of seed_players) {
+    const result = await player_repository.seed_with_data([player]);
+    if (!result.success) {
+      console.error(`[Seeding] Player seeding failed: ${result.error}`);
+      return create_failure_result(`Player seeding failed: ${result.error}`);
     }
-    return true;
   }
-  if (typeof window === "undefined") return false;
+  emit_entity_created_events("player", seed_players, (p) => `${p.first_name} ${p.last_name}`);
+  console.log(`[Seeding] Seeded ${seed_players.length} players`);
+  return create_success_result(seed_players.length);
+}
+
+async function seed_demo_venues(
+  organization_id: string,
+  venue_repository: InBrowserVenueRepository,
+): Promise<Result<SeedVenueIds>> {
+  console.log(`[Seeding] Seeding demo venues for org: ${organization_id}`);
+  const seed_venues = create_seed_venues(organization_id);
+  const result = await venue_repository.seed_with_data(seed_venues);
+  if (!result.success) {
+    console.error(`[Seeding] Venue seeding failed: ${result.error}`);
+    return create_failure_result(`Venue seeding failed: ${result.error}`);
+  }
+  emit_entity_created_events("venue", seed_venues, (v) => v.name);
+  console.log(`[Seeding] Seeded ${seed_venues.length} venues`);
+  return create_success_result({
+    dragon_stadium_id: seed_venues[0]?.id ?? "",
+    thunder_arena_id: seed_venues[1]?.id ?? "",
+    eagle_nest_id: seed_venues[2]?.id ?? "",
+    storm_center_id: seed_venues[3]?.id ?? "",
+    international_hockey_arena_id: seed_venues[4]?.id ?? "",
+  });
+}
+
+async function seed_demo_teams(
+  team_repository: InBrowserTeamRepository,
+  venue_ids: SeedVenueIds,
+): Promise<Result<number>> {
+  console.log("[Seeding] Seeding demo teams");
+  const seed_teams = create_seed_teams(
+    venue_ids.dragon_stadium_id,
+    venue_ids.thunder_arena_id,
+    venue_ids.eagle_nest_id,
+    venue_ids.storm_center_id,
+    venue_ids.international_hockey_arena_id,
+  );
+  const result = await team_repository.seed_with_data(seed_teams);
+  if (!result.success) {
+    console.error(`[Seeding] Team seeding failed: ${result.error}`);
+    return create_failure_result(`Team seeding failed: ${result.error}`);
+  }
+  emit_entity_created_events("team", seed_teams, (t) => t.name);
+  console.log(`[Seeding] Seeded ${seed_teams.length} teams`);
+  return create_success_result(seed_teams.length);
+}
+
+async function seed_demo_team_staff(
+  team_staff_repository: InBrowserTeamStaffRepository,
+  entity_id_lookups: SeedEntityIdLookups,
+): Promise<Result<number>> {
+  console.log("[Seeding] Seeding demo team staff");
+  const seed_staff = create_seed_team_staff(
+    entity_id_lookups.head_coach_role_id,
+    entity_id_lookups.assistant_coach_role_id,
+    entity_id_lookups.physio_role_id,
+    entity_id_lookups.team_manager_role_id,
+  );
+  const result = await team_staff_repository.seed_with_data(seed_staff);
+  if (!result.success) {
+    console.error(`[Seeding] Team staff seeding failed: ${result.error}`);
+    return create_failure_result(`Team staff seeding failed: ${result.error}`);
+  }
+  emit_entity_created_events("team_staff", seed_staff, (s) => `${s.first_name} ${s.last_name}`);
+  console.log(`[Seeding] Seeded ${seed_staff.length} team staff`);
+  return create_success_result(seed_staff.length);
+}
+
+async function seed_demo_officials(
+  organization_id: string,
+  official_repository: InBrowserOfficialRepository,
+): Promise<Result<number>> {
+  console.log(`[Seeding] Seeding demo officials for org: ${organization_id}`);
+  const seed_officials = create_seed_officials(organization_id);
+  const result = await official_repository.seed_with_data(seed_officials);
+  if (!result.success) {
+    console.error(`[Seeding] Official seeding failed: ${result.error}`);
+    return create_failure_result(`Official seeding failed: ${result.error}`);
+  }
+  emit_entity_created_events("official", seed_officials, (o) => `${o.first_name} ${o.last_name}`);
+  console.log(`[Seeding] Seeded ${seed_officials.length} officials`);
+  return create_success_result(seed_officials.length);
+}
+
+async function seed_demo_competitions(
+  competition_repository: InBrowserCompetitionRepository,
+  entity_id_lookups: SeedEntityIdLookups,
+): Promise<Result<number>> {
+  console.log("[Seeding] Seeding demo competitions");
+  const seed_competitions = create_seed_competitions(entity_id_lookups.competition_format_ids);
+  const result = await competition_repository.seed_with_data(seed_competitions);
+  if (!result.success) {
+    console.error(`[Seeding] Competition seeding failed: ${result.error}`);
+    return create_failure_result(`Competition seeding failed: ${result.error}`);
+  }
+  emit_entity_created_events("competition", seed_competitions, (c) => c.name);
+  console.log(`[Seeding] Seeded ${seed_competitions.length} competitions`);
+  return create_success_result(seed_competitions.length);
+}
+
+async function seed_demo_competition_stages(
+  competition_stage_repository: InBrowserCompetitionStageRepository,
+): Promise<Result<number>> {
+  console.log("[Seeding] Seeding demo competition stages");
+  const seed_competition_stages = create_seed_competition_stages();
+  const result = await competition_stage_repository.seed_with_data(seed_competition_stages);
+  if (!result.success) {
+    console.error(`[Seeding] Competition stage seeding failed: ${result.error}`);
+    return create_failure_result(`Competition stage seeding failed: ${result.error}`);
+  }
+  emit_entity_created_events("competition_stage", seed_competition_stages, (s) => `${s.name} (${s.competition_id})`);
+  console.log(`[Seeding] Seeded ${seed_competition_stages.length} competition stages`);
+  return create_success_result(seed_competition_stages.length);
+}
+
+async function seed_demo_competition_teams(
+  competition_team_repository: InBrowserCompetitionTeamRepository,
+): Promise<Result<number>> {
+  console.log("[Seeding] Seeding demo competition teams");
+  const seed_competition_teams = create_seed_competition_teams();
+  const result = await competition_team_repository.seed_with_data(seed_competition_teams);
+  if (!result.success) {
+    console.error(`[Seeding] Competition team seeding failed: ${result.error}`);
+    return create_failure_result(`Competition team seeding failed: ${result.error}`);
+  }
+  emit_entity_created_events("competition_team", seed_competition_teams, (ct) => `Team ${ct.team_id} in Competition ${ct.competition_id}`);
+  console.log(`[Seeding] Seeded ${seed_competition_teams.length} competition teams`);
+  return create_success_result(seed_competition_teams.length);
+}
+
+async function seed_demo_player_memberships(
+  player_membership_repository: InBrowserPlayerTeamMembershipRepository,
+): Promise<Result<number>> {
+  console.log("[Seeding] Seeding demo player memberships");
+  const seed_memberships = create_seed_player_team_memberships();
+  const result = await player_membership_repository.seed_with_data(seed_memberships);
+  if (!result.success) {
+    console.error(`[Seeding] Player membership seeding failed: ${result.error}`);
+    return create_failure_result(`Player membership seeding failed: ${result.error}`);
+  }
+  emit_entity_created_events("player_team_membership", seed_memberships, (m) => `Player ${m.player_id} -> Team ${m.team_id}`);
+  console.log(`[Seeding] Seeded ${seed_memberships.length} player memberships`);
+  return create_success_result(seed_memberships.length);
+}
+
+async function seed_demo_fixtures(
+  fixture_repository: InBrowserFixtureRepository,
+  entity_id_lookups: SeedEntityIdLookups,
+): Promise<Result<number>> {
+  console.log("[Seeding] Seeding demo fixtures");
+  const seed_fixtures = create_seed_fixtures(
+    entity_id_lookups.referee_role_id,
+    entity_id_lookups.assistant_referee_role_id,
+  );
+  const result = await fixture_repository.seed_with_data(seed_fixtures);
+  if (!result.success) {
+    console.error(`[Seeding] Fixture seeding failed: ${result.error}`);
+    return create_failure_result(`Fixture seeding failed: ${result.error}`);
+  }
+  emit_entity_created_events("fixture", seed_fixtures, (f) => `${f.venue} - Round ${f.round_number}`);
+  console.log(`[Seeding] Seeded ${seed_fixtures.length} fixtures`);
+  return create_success_result(seed_fixtures.length);
+}
+
+async function seed_demo_fixture_lineups(
+  fixture_lineup_repository: InBrowserFixtureLineupRepository,
+): Promise<Result<number>> {
+  console.log("[Seeding] Seeding demo fixture lineups");
+  const seed_lineups = create_seed_fixture_lineups();
+  const result = await fixture_lineup_repository.seed_with_data(seed_lineups);
+  if (!result.success) {
+    console.error(`[Seeding] Fixture lineup seeding failed: ${result.error}`);
+    return create_failure_result(`Fixture lineup seeding failed: ${result.error}`);
+  }
+  emit_entity_created_events("fixture_lineup", seed_lineups, (l) => `Lineup for fixture ${l.fixture_id} - Team ${l.team_id}`);
+  console.log(`[Seeding] Seeded ${seed_lineups.length} fixture lineups`);
+  return create_success_result(seed_lineups.length);
+}
+
+async function seed_demo_jersey_colors(
+  jersey_color_repository: InBrowserJerseyColorRepository,
+): Promise<Result<number>> {
+  console.log("[Seeding] Seeding demo jersey colors");
+  const seed_jersey_colors = create_seed_jersey_colors();
+  const result = await jersey_color_repository.seed_with_data(seed_jersey_colors);
+  if (!result.success) {
+    console.error(`[Seeding] Jersey color seeding failed: ${result.error}`);
+    return create_failure_result(`Jersey color seeding failed: ${result.error}`);
+  }
+  emit_entity_created_events("jersey_color", seed_jersey_colors, (j) => `${j.nickname} (${j.main_color})`);
+  console.log(`[Seeding] Seeded ${seed_jersey_colors.length} jersey colors`);
+  return create_success_result(seed_jersey_colors.length);
+}
+
+async function seed_demo_player_profiles(
+  player_profile_repository: InBrowserPlayerProfileRepository,
+): Promise<Result<number>> {
+  console.log("[Seeding] Seeding demo player profiles");
+  const seed_player_profiles = create_seed_player_profiles();
+  const result = await player_profile_repository.seed_with_data(seed_player_profiles);
+  if (!result.success) {
+    console.error(`[Seeding] Player profile seeding failed: ${result.error}`);
+    return create_failure_result(`Player profile seeding failed: ${result.error}`);
+  }
+  emit_entity_created_events("player_profile", seed_player_profiles, (p) => `Profile: ${p.profile_slug}`);
+  console.log(`[Seeding] Seeded ${seed_player_profiles.length} player profiles`);
+  return create_success_result(seed_player_profiles.length);
+}
+
+async function seed_demo_team_profiles(
+  team_profile_repository: InBrowserTeamProfileRepository,
+): Promise<Result<number>> {
+  console.log("[Seeding] Seeding demo team profiles");
+  const seed_team_profiles = create_seed_team_profiles();
+  const result = await team_profile_repository.seed_with_data(seed_team_profiles);
+  if (!result.success) {
+    console.error(`[Seeding] Team profile seeding failed: ${result.error}`);
+    return create_failure_result(`Team profile seeding failed: ${result.error}`);
+  }
+  emit_entity_created_events("team_profile", seed_team_profiles, (p) => `Team Profile: ${p.profile_slug}`);
+  console.log(`[Seeding] Seeded ${seed_team_profiles.length} team profiles`);
+  return create_success_result(seed_team_profiles.length);
+}
+
+async function seed_demo_profile_links(
+  profile_link_repository: InBrowserProfileLinkRepository,
+): Promise<Result<number>> {
+  console.log("[Seeding] Seeding demo profile links");
+  const all_profile_links = [...create_seed_profile_links(), ...create_seed_team_profile_links()];
+  const result = await profile_link_repository.seed_with_data(all_profile_links);
+  if (!result.success) {
+    console.error(`[Seeding] Profile link seeding failed: ${result.error}`);
+    return create_failure_result(`Profile link seeding failed: ${result.error}`);
+  }
+  emit_entity_created_events("profile_link", all_profile_links, (l) => `Link: ${l.title}`);
+  console.log(`[Seeding] Seeded ${all_profile_links.length} profile links`);
+  return create_success_result(all_profile_links.length);
+}
+
+async function seed_all_demo_entities(
+  organization_id: string,
+  entity_id_lookups: SeedEntityIdLookups,
+  repos: DemoSeedingRepos,
+): Promise<Result<boolean>> {
+  const players_result = await seed_demo_players(organization_id, repos.player, entity_id_lookups.position_ids);
+  if (!players_result.success) return create_failure_result(players_result.error);
+
+  const venues_result = await seed_demo_venues(organization_id, repos.venue);
+  if (!venues_result.success) return create_failure_result(venues_result.error);
+
+  const teams_result = await seed_demo_teams(repos.team, venues_result.data);
+  if (!teams_result.success) return create_failure_result(teams_result.error);
+
+  const staff_result = await seed_demo_team_staff(repos.team_staff, entity_id_lookups);
+  if (!staff_result.success) return create_failure_result(staff_result.error);
+
+  const officials_result = await seed_demo_officials(organization_id, repos.official);
+  if (!officials_result.success) return create_failure_result(officials_result.error);
+
+  const competitions_result = await seed_demo_competitions(repos.competition, entity_id_lookups);
+  if (!competitions_result.success) return create_failure_result(competitions_result.error);
+
+  const stages_result = await seed_demo_competition_stages(repos.competition_stage);
+  if (!stages_result.success) return create_failure_result(stages_result.error);
+
+  const comp_teams_result = await seed_demo_competition_teams(repos.competition_team);
+  if (!comp_teams_result.success) return create_failure_result(comp_teams_result.error);
+
+  const memberships_result = await seed_demo_player_memberships(repos.player_membership);
+  if (!memberships_result.success) return create_failure_result(memberships_result.error);
+
+  const fixtures_result = await seed_demo_fixtures(repos.fixture, entity_id_lookups);
+  if (!fixtures_result.success) return create_failure_result(fixtures_result.error);
+
+  const lineups_result = await seed_demo_fixture_lineups(repos.fixture_lineup);
+  if (!lineups_result.success) return create_failure_result(lineups_result.error);
+
+  const jersey_colors_result = await seed_demo_jersey_colors(repos.jersey_color);
+  if (!jersey_colors_result.success) return create_failure_result(jersey_colors_result.error);
+
+  const player_profiles_result = await seed_demo_player_profiles(repos.player_profile);
+  if (!player_profiles_result.success) return create_failure_result(player_profiles_result.error);
+
+  const team_profiles_result = await seed_demo_team_profiles(repos.team_profile);
+  if (!team_profiles_result.success) return create_failure_result(team_profiles_result.error);
+
+  const profile_links_result = await seed_demo_profile_links(repos.profile_link);
+  if (!profile_links_result.success) return create_failure_result(profile_links_result.error);
+
+  return create_success_result(true);
+}
+
+export async function seed_all_data_if_needed(): Promise<Result<boolean>> {
+  if (is_seeding_already_complete()) {
+    const formats_repair_result = await repair_seeded_competition_formats();
+    if (!formats_repair_result.success) {
+      console.warn(`[Seeding] Competition format repair failed: ${formats_repair_result.error}`);
+    }
+    const fixtures_repair_result = await repair_seeded_fixture_stage_ids();
+    if (!fixtures_repair_result.success) {
+      console.warn(`[Seeding] Fixture stage repair failed: ${fixtures_repair_result.error}`);
+    }
+    const current_user_result = await load_and_set_current_user();
+    if (!current_user_result.success) {
+      console.warn(`[Seeding] Could not resolve current user: ${current_user_result.error}`);
+    }
+    return create_success_result(true);
+  }
+
+  if (typeof window === "undefined") {
+    return create_failure_result("Not in browser environment");
+  }
 
   const super_admin_result = await seed_super_admin_user();
-
   if (!super_admin_result.success) {
-    console.error(
-      `[SEED] Failed to create super admin, aborting seeding: ${super_admin_result.error}`,
-    );
-    return false;
+    console.error(`[SEED] Failed to create super admin: ${super_admin_result.error}`);
+    return create_failure_result(super_admin_result.error);
   }
 
   const super_admin = super_admin_result.data;
-
   set_user_context({
     user_id: super_admin.id,
     user_email: super_admin.email,
     user_display_name: `${super_admin.first_name} ${super_admin.last_name}`,
     organization_id: super_admin.organization_id,
   });
-
   current_user_store.set_user(super_admin);
-
   EventBus.emit_entity_created(
     "system_user",
     super_admin.id,
@@ -452,304 +882,43 @@ export async function seed_all_data_if_needed(): Promise<boolean> {
     super_admin as unknown as Record<string, unknown>,
   );
 
-  const player_position_repository = get_player_position_repository();
-  const team_staff_role_repository =
-    get_team_staff_role_repository() as InBrowserTeamStaffRoleRepository;
-  const official_role_repository =
-    get_game_official_role_repository() as InBrowserGameOfficialRoleRepository;
-  const competition_format_repository = get_competition_format_repository();
-  const player_repository =
-    get_player_repository() as InBrowserPlayerRepository;
-  const team_repository = get_team_repository() as InBrowserTeamRepository;
-  const team_staff_repository =
-    get_team_staff_repository() as InBrowserTeamStaffRepository;
-  const official_repository =
-    get_official_repository() as InBrowserOfficialRepository;
-  const competition_repository =
-    get_competition_repository() as InBrowserCompetitionRepository;
-  const player_team_membership_repository =
-    get_player_team_membership_repository() as InBrowserPlayerTeamMembershipRepository;
-  const fixture_repository =
-    get_fixture_repository() as InBrowserFixtureRepository;
-  const venue_repository = get_venue_repository() as InBrowserVenueRepository;
-
-  await seed_default_lookup_entities_for_organization(
+  const org_seed_result = await seed_default_lookup_entities_for_organization(
     SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
   );
-
-  const positions_result = await player_position_repository.find_all(
-    undefined,
-    {
-      page_size: 100,
-    },
-  );
-  const positions = positions_result.success ? positions_result.data.items : [];
-
-  const staff_roles_result =
-    await team_staff_role_repository.find_all_with_filter(undefined, {
-      page_size: 100,
-    });
-  const staff_roles = staff_roles_result.success
-    ? staff_roles_result.data.items
-    : [];
-
-  const official_roles_result =
-    await official_role_repository.find_all_with_filter(undefined, {
-      page_size: 100,
-    });
-  const official_roles = official_roles_result.success
-    ? official_roles_result.data.items
-    : [];
-
-  const competition_formats_result =
-    await competition_format_repository.find_all(undefined, { page_size: 100 });
-  const competition_formats = competition_formats_result.success
-    ? competition_formats_result.data.items
-    : [];
-
-  const position_id_gk = await find_position_id_by_code("GK", positions);
-  const position_id_sw = await find_position_id_by_code("SW", positions);
-  const position_id_cb = await find_position_id_by_code("CB", positions);
-  const position_id_lb = await find_position_id_by_code("LB", positions);
-  const position_id_rb = await find_position_id_by_code("RB", positions);
-  const position_id_cdm = await find_position_id_by_code("CDM", positions);
-  const position_id_cm = await find_position_id_by_code("CM", positions);
-  const position_id_lm = await find_position_id_by_code("LM", positions);
-  const position_id_rm = await find_position_id_by_code("RM", positions);
-  const position_id_lw = await find_position_id_by_code("LW", positions);
-  const position_id_rw = await find_position_id_by_code("RW", positions);
-  const position_id_cf = await find_position_id_by_code("CF", positions);
-
-  const position_ids = {
-    gk: position_id_gk,
-    sw: position_id_sw,
-    cb: position_id_cb,
-    lb: position_id_lb,
-    rb: position_id_rb,
-    cdm: position_id_cdm,
-    cm: position_id_cm,
-    lm: position_id_lm,
-    rm: position_id_rm,
-    lw: position_id_lw,
-    rw: position_id_rw,
-    cf: position_id_cf,
-  };
-
-  const head_coach_role_id = await find_staff_role_id_by_code(
-    "HC",
-    staff_roles,
-  );
-  const assistant_coach_role_id = await find_staff_role_id_by_code(
-    "AC",
-    staff_roles,
-  );
-  const physio_role_id = await find_staff_role_id_by_code(
-    "PHYSIO",
-    staff_roles,
-  );
-  const team_manager_role_id = await find_staff_role_id_by_code(
-    "TM",
-    staff_roles,
-  );
-
-  const referee_role_id = await find_official_role_id_by_code(
-    "REF",
-    official_roles,
-  );
-  const assistant_referee_role_id = await find_official_role_id_by_code(
-    "AR",
-    official_roles,
-  );
-
-  const league_format_id = await find_competition_format_id_by_code(
-    "standard_league",
-    competition_formats,
-  );
-
-  const world_cup_style_format_id = await find_competition_format_id_by_code(
-    "world_cup_style",
-    competition_formats,
-  );
-
-  const cup_tournament_format_id = await find_competition_format_id_by_code(
-    "cup_tournament",
-    competition_formats,
-  );
-
-  const single_round_robin_format_id = await find_competition_format_id_by_code(
-    "single_round_robin",
-    competition_formats,
-  );
-
-  const competition_format_ids: SeedCompetitionFormatIds = {
-    easter_cup_format_id: world_cup_style_format_id,
-    uganda_cup_format_id: cup_tournament_format_id,
-    nhl_format_id: league_format_id,
-    university_format_id: single_round_robin_format_id,
-  };
-
-  const seed_players = create_seed_players(
-    position_ids,
-    SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
-  );
-  for (const player of seed_players) {
-    await player_repository.seed_with_data([player]);
+  if (!org_seed_result.success) {
+    return create_failure_result(`Org defaults seeding failed: ${org_seed_result.error}`);
   }
-  emit_entity_created_events(
-    "player",
-    seed_players,
-    (p) => `${p.first_name} ${p.last_name}`,
-  );
 
-  const seed_venues = create_seed_venues(
+  const lookups_result = await load_seed_entity_id_lookups(
+    get_player_position_repository() as InBrowserPlayerPositionRepository,
+    get_team_staff_role_repository() as InBrowserTeamStaffRoleRepository,
+    get_game_official_role_repository() as InBrowserGameOfficialRoleRepository,
+    get_competition_format_repository(),
+  );
+  if (!lookups_result.success) {
+    return create_failure_result(`Entity ID lookup failed: ${lookups_result.error}`);
+  }
+
+  const entities_result = await seed_all_demo_entities(
     SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
+    lookups_result.data,
+    build_demo_seeding_repos(),
   );
-  await venue_repository.seed_with_data(seed_venues);
-  emit_entity_created_events("venue", seed_venues, (v) => v.name);
+  if (!entities_result.success) {
+    return create_failure_result(entities_result.error);
+  }
 
-  const dragon_stadium_id = seed_venues[0]?.id || "";
-  const thunder_arena_id = seed_venues[1]?.id || "";
-  const eagle_nest_id = seed_venues[2]?.id || "";
-  const storm_center_id = seed_venues[3]?.id || "";
-  const international_hockey_arena_id = seed_venues[4]?.id || "";
-
-  const seed_teams = create_seed_teams(
-    dragon_stadium_id,
-    thunder_arena_id,
-    eagle_nest_id,
-    storm_center_id,
-    international_hockey_arena_id,
-  );
-  await team_repository.seed_with_data(seed_teams);
-  emit_entity_created_events("team", seed_teams, (t) => t.name);
-
-  const seed_staff = create_seed_team_staff(
-    head_coach_role_id,
-    assistant_coach_role_id,
-    physio_role_id,
-    team_manager_role_id,
-  );
-  await team_staff_repository.seed_with_data(seed_staff);
-  emit_entity_created_events(
-    "team_staff",
-    seed_staff,
-    (s) => `${s.first_name} ${s.last_name}`,
-  );
-
-  const seed_officials = create_seed_officials(
-    SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
-  );
-  await official_repository.seed_with_data(seed_officials);
-  emit_entity_created_events(
-    "official",
-    seed_officials,
-    (o) => `${o.first_name} ${o.last_name}`,
-  );
-
-  const seed_competitions = create_seed_competitions(competition_format_ids);
-  await competition_repository.seed_with_data(seed_competitions);
-  emit_entity_created_events("competition", seed_competitions, (c) => c.name);
-
-  const competition_stage_repository =
-    get_competition_stage_repository() as InBrowserCompetitionStageRepository;
-  const seed_competition_stages = create_seed_competition_stages();
-  await competition_stage_repository.seed_with_data(seed_competition_stages);
-  emit_entity_created_events(
-    "competition_stage",
-    seed_competition_stages,
-    (s) => `${s.name} (${s.competition_id})`,
-  );
-
-  const competition_team_repository =
-    get_competition_team_repository() as InBrowserCompetitionTeamRepository;
-  const seed_competition_teams = create_seed_competition_teams();
-  await competition_team_repository.seed_with_data(seed_competition_teams);
-  emit_entity_created_events(
-    "competition_team",
-    seed_competition_teams,
-    (ct) => `Team ${ct.team_id} in Competition ${ct.competition_id}`,
-  );
-
-  const seed_memberships = create_seed_player_team_memberships();
-  await player_team_membership_repository.seed_with_data(seed_memberships);
-  emit_entity_created_events(
-    "player_team_membership",
-    seed_memberships,
-    (m) => `Player ${m.player_id} -> Team ${m.team_id}`,
-  );
-
-  const seed_fixtures = create_seed_fixtures(
-    referee_role_id,
-    assistant_referee_role_id,
-  );
-  await fixture_repository.seed_with_data(seed_fixtures);
-  emit_entity_created_events(
-    "fixture",
-    seed_fixtures,
-    (f) => `${f.venue} - Round ${f.round_number}`,
-  );
-
-  const fixture_lineup_repository =
-    get_fixture_lineup_repository() as InBrowserFixtureLineupRepository;
-  const seed_lineups = create_seed_fixture_lineups();
-  await fixture_lineup_repository.seed_with_data(seed_lineups);
-  emit_entity_created_events(
-    "fixture_lineup",
-    seed_lineups,
-    (l) => `Lineup for fixture ${l.fixture_id} - Team ${l.team_id}`,
-  );
-
-  const jersey_color_repository =
-    get_jersey_color_repository() as InBrowserJerseyColorRepository;
-  const seed_jersey_colors = create_seed_jersey_colors();
-  await jersey_color_repository.seed_with_data(seed_jersey_colors);
-  emit_entity_created_events(
-    "jersey_color",
-    seed_jersey_colors,
-    (j) => `${j.nickname} (${j.main_color})`,
-  );
-
-  const player_profile_repository =
-    get_player_profile_repository() as InBrowserPlayerProfileRepository;
-  const seed_player_profiles = create_seed_player_profiles();
-  await player_profile_repository.seed_with_data(seed_player_profiles);
-  emit_entity_created_events(
-    "player_profile",
-    seed_player_profiles,
-    (p) => `Profile: ${p.profile_slug}`,
-  );
-
-  const team_profile_repository =
-    get_team_profile_repository() as InBrowserTeamProfileRepository;
-  const seed_team_profiles = create_seed_team_profiles();
-  await team_profile_repository.seed_with_data(seed_team_profiles);
-  emit_entity_created_events(
-    "team_profile",
-    seed_team_profiles,
-    (p) => `Team Profile: ${p.profile_slug}`,
-  );
-
-  const profile_link_repository =
-    get_profile_link_repository() as InBrowserProfileLinkRepository;
-  const seed_player_profile_links = create_seed_profile_links();
-  const seed_team_profile_links = create_seed_team_profile_links();
-  const all_profile_links = [
-    ...seed_player_profile_links,
-    ...seed_team_profile_links,
-  ];
-  await profile_link_repository.seed_with_data(all_profile_links);
-  emit_entity_created_events(
-    "profile_link",
-    all_profile_links,
-    (l) => `Link: ${l.title}`,
-  );
-
-  await repair_seeded_competition_formats();
-  await repair_seeded_fixture_stage_ids();
+  const formats_repair_result = await repair_seeded_competition_formats();
+  if (!formats_repair_result.success) {
+    console.warn(`[Seeding] Competition format repair failed: ${formats_repair_result.error}`);
+  }
+  const fixtures_repair_result = await repair_seeded_fixture_stage_ids();
+  if (!fixtures_repair_result.success) {
+    console.warn(`[Seeding] Fixture stage repair failed: ${fixtures_repair_result.error}`);
+  }
   clear_user_context();
   mark_seeding_complete();
-
-  return true;
+  return create_success_result(true);
 }
 
 export function reset_seeding_flag(): void {
@@ -785,8 +954,14 @@ async function handle_convex_with_local_fallback(
   on_progress: ProgressCallback,
 ): Promise<SeedResult> {
   if (is_seeding_already_complete()) {
-    await repair_seeded_competition_formats();
-    await repair_seeded_fixture_stage_ids();
+    const formats_repair_result_1 = await repair_seeded_competition_formats();
+    if (!formats_repair_result_1.success) {
+      console.warn(`[Seeding] Competition format repair failed: ${formats_repair_result_1.error}`);
+    }
+    const fixtures_repair_result_1 = await repair_seeded_fixture_stage_ids();
+    if (!fixtures_repair_result_1.success) {
+      console.warn(`[Seeding] Fixture stage repair failed: ${fixtures_repair_result_1.error}`);
+    }
     const current_user_result_2 = await load_and_set_current_user();
     if (!current_user_result_2.success) {
       console.warn(
@@ -818,8 +993,14 @@ async function handle_convex_with_local_fallback(
     console.log(
       `[Seeding] Convex seeding succeeded: ${convex_result.total_records} records from ${convex_result.tables_fetched} tables`,
     );
-    await repair_seeded_competition_formats();
-    await repair_seeded_fixture_stage_ids();
+    const formats_repair_result_2 = await repair_seeded_competition_formats();
+    if (!formats_repair_result_2.success) {
+      console.warn(`[Seeding] Competition format repair failed: ${formats_repair_result_2.error}`);
+    }
+    const fixtures_repair_result_2 = await repair_seeded_fixture_stage_ids();
+    if (!fixtures_repair_result_2.success) {
+      console.warn(`[Seeding] Fixture stage repair failed: ${fixtures_repair_result_2.error}`);
+    }
     const current_user_result_3 = await load_and_set_current_user();
     if (!current_user_result_3.success) {
       console.warn(
@@ -837,7 +1018,8 @@ async function handle_convex_with_local_fallback(
 
   console.log("[Seeding] Convex unavailable, falling back to local demo data");
   on_progress("Server unavailable, loading demo data...", 40);
-  const local_success = await seed_all_data_if_needed();
+  const local_seed_result = await seed_all_data_if_needed();
+  const local_success = local_seed_result.success;
 
   return {
     success: local_success,
@@ -869,8 +1051,14 @@ async function handle_convex_mandatory(
     console.log(
       `[Seeding] Convex pull succeeded: ${convex_result.total_records} records from ${convex_result.tables_fetched} tables`,
     );
-    await repair_seeded_competition_formats();
-    await repair_seeded_fixture_stage_ids();
+    const formats_repair_result_3 = await repair_seeded_competition_formats();
+    if (!formats_repair_result_3.success) {
+      console.warn(`[Seeding] Competition format repair failed: ${formats_repair_result_3.error}`);
+    }
+    const fixtures_repair_result_3 = await repair_seeded_fixture_stage_ids();
+    if (!fixtures_repair_result_3.success) {
+      console.warn(`[Seeding] Fixture stage repair failed: ${fixtures_repair_result_3.error}`);
+    }
     const current_user_result_4 = await load_and_set_current_user();
     if (!current_user_result_4.success) {
       console.warn(
@@ -890,8 +1078,14 @@ async function handle_convex_mandatory(
     console.log(
       "[Seeding] Convex unavailable but local data exists — entering offline mode",
     );
-    await repair_seeded_competition_formats();
-    await repair_seeded_fixture_stage_ids();
+    const formats_repair_result_4 = await repair_seeded_competition_formats();
+    if (!formats_repair_result_4.success) {
+      console.warn(`[Seeding] Competition format repair failed: ${formats_repair_result_4.error}`);
+    }
+    const fixtures_repair_result_4 = await repair_seeded_fixture_stage_ids();
+    if (!fixtures_repair_result_4.success) {
+      console.warn(`[Seeding] Fixture stage repair failed: ${fixtures_repair_result_4.error}`);
+    }
     const current_user_result_5 = await load_and_set_current_user();
     if (!current_user_result_5.success) {
       console.warn(

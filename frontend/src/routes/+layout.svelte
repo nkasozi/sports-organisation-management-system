@@ -37,6 +37,9 @@
     reset_seeding_flag,
     seed_all_data_if_needed,
   } from "$lib/adapters/initialization/seedingService";
+  import { reset_sport_repository } from "$lib/adapters/repositories/InBrowserSportRepository";
+  import { reset_organization_repository } from "$lib/adapters/repositories/InBrowserOrganizationRepository";
+  import { reset_competition_format_repository } from "$lib/adapters/repositories/InBrowserCompetitionFormatRepository";
   import { ClerkProvider } from "svelte-clerk";
   import { auth_store } from "$lib/presentation/stores/auth";
   import { sign_out } from "$lib/adapters/iam/clerkAuthService";
@@ -160,6 +163,11 @@
     await reset_database();
     reset_sync_metadata();
     reset_seeding_flag();
+
+    initial_sync_store.update_progress("Seeding default configurations...", 13);
+    await reset_sport_repository();
+    await reset_organization_repository();
+    await reset_competition_format_repository();
 
     initial_sync_store.update_progress("Seeding base configurations...", 15);
     await seed_all_data_if_needed();
