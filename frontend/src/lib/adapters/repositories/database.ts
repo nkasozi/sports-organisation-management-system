@@ -36,10 +36,10 @@ import type { LiveGameLog } from "../../core/entities/LiveGameLog";
 import type { GameEventLog } from "../../core/entities/GameEventLog";
 import type { CompetitionStage } from "../../core/entities/CompetitionStage";
 
-const DATABASE_NAME = "SportsOrgManagementDB";
+const DATABASE_NAME = "SportSyncDB";
 const DATABASE_VERSION = 3;
 
-class SportsOrgDatabase extends Dexie {
+class SportSyncDatabase extends Dexie {
   organizations!: Table<Organization, string>;
   competitions!: Table<Competition, string>;
   teams!: Table<Team, string>;
@@ -134,11 +134,11 @@ class SportsOrgDatabase extends Dexie {
   }
 }
 
-let database_instance: SportsOrgDatabase | null = null;
+let database_instance: SportSyncDatabase | null = null;
 
-export function get_database(): SportsOrgDatabase {
+export function get_database(): SportSyncDatabase {
   if (!database_instance) {
-    database_instance = new SportsOrgDatabase();
+    database_instance = new SportSyncDatabase();
   }
   return database_instance;
 }
@@ -146,11 +146,11 @@ export function get_database(): SportsOrgDatabase {
 export function reset_database(): Promise<void> {
   if (database_instance) {
     return database_instance.delete().then(() => {
-      database_instance = new SportsOrgDatabase();
+      database_instance = new SportSyncDatabase();
       localStorage.removeItem("convex_sync_metadata");
     });
   }
   return Promise.resolve();
 }
 
-export type { SportsOrgDatabase };
+export type { SportSyncDatabase };

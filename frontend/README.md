@@ -1,10 +1,10 @@
-# Sports Organisation Management System - Frontend
+# Sport-Sync - Frontend
 
-A SvelteKit-based frontend for managing sports organizations, competitions, teams, players, and games. Built with TypeScript and Tailwind CSS, following Hexagonal Architecture (Ports and Adapters pattern) for clean separation of concerns and testability.
+A SvelteKit-based frontend for managing Sport-Sync, competitions, teams, players, and games. Built with TypeScript and Tailwind CSS, following Hexagonal Architecture (Ports and Adapters pattern) for clean separation of concerns and testability.
 
 ## The Problem
 
-Managing sports organizations involves complex workflows: registering teams, managing player rosters, scheduling fixtures, recording live game events, and tracking standings. Traditional implementations often result in:
+Managing Sport-Sync involves complex workflows: registering teams, managing player rosters, scheduling fixtures, recording live game events, and tracking standings. Traditional implementations often result in:
 
 - Duplicated CRUD code for each entity
 - Tightly coupled components that are hard to test

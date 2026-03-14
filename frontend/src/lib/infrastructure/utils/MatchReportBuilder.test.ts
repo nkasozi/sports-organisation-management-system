@@ -126,7 +126,7 @@ describe("build_match_report_data", () => {
   it("defaults league_name when organization_name absent", () => {
     const ctx = make_basic_context();
     const report = build_match_report_data(ctx);
-    expect(report.league_name).toBe("SPORTS ORGANIZATION");
+    expect(report.league_name).toBe("SPORT-SYNC");
   });
 
   it("populates home and away team names", () => {

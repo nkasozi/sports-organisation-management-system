@@ -1,4 +1,4 @@
-# Sports Organisation Management System - Backend
+# Sport-Sync - Backend
 
 🚧 **Coming Soon** 🚧
 

@@ -47,7 +47,7 @@
     items: NavigationItem[];
   }
 
-  $: calendar_menu_item_name = `${$branding_store.organization_name} ${new Date().getFullYear()} Activities Calendar`;
+  $: calendar_menu_item_name = `${new Date().getFullYear()} Activities Calendar`;
 
   function transform_menu_items_with_calendar_name(
     groups: NavigationGroup[],

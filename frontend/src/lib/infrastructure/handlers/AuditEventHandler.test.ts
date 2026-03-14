@@ -96,7 +96,7 @@ describe("handle_entity_created", () => {
 
     const call_arg = mock_create_audit_log.mock.calls[0][0];
     expect(call_arg.user_id).toBe("system");
-    expect(call_arg.user_email).toBe("system@sportsorg.local");
+    expect(call_arg.user_email).toBe("system@sport-sync.local");
     expect(call_arg.organization_id).toBe("*");
   });
 });

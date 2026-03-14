@@ -749,7 +749,7 @@
           Management System.
         </p>
         <a
-          href="mailto:support@sportsorg.com"
+          href="mailto:support@sport-sync.com"
           class="inline-flex items-center mt-3 text-sm font-medium text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300"
         >
           Contact Support
