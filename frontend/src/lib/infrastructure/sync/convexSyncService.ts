@@ -1002,7 +1002,6 @@ export async function write_convex_user_to_local_dexie(convex_user: {
   status?: string;
 }): Promise<string> {
   const database = get_database();
-  const now = new Date().toISOString();
   const user_id = convex_user.local_id ?? `usr_${Date.now()}`;
   console.log(
     `[Sync:SystemUsers] Writing Convex user ${convex_user.email} directly to local Dexie (id: ${user_id})`,
@@ -1018,8 +1017,8 @@ export async function write_convex_user_to_local_dexie(convex_user: {
     team_id: convex_user.team_id,
     player_id: convex_user.player_id,
     official_id: convex_user.official_id,
-    created_at: now,
-    updated_at: now,
+    created_at: EPOCH_TIMESTAMP,
+    updated_at: EPOCH_TIMESTAMP,
   } as any);
   return user_id;
 }
