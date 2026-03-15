@@ -39,6 +39,7 @@ import {
   set_pulling_from_remote,
 } from "$lib/infrastructure/sync/backgroundSyncService";
 import { clear_session_sync_flag } from "$lib/presentation/stores/initialSyncStore";
+import { sync_store } from "$lib/presentation/stores/syncStore";
 import { is_signed_in } from "$lib/adapters/iam/clerkAuthService";
 import { get } from "svelte/store";
 
@@ -114,6 +115,8 @@ export async function reset_all_data(
 
   if (get(is_signed_in)) {
     start_background_sync();
+    report("Pushing data to server...", 97);
+    await sync_store.sync_now("push");
   } else {
     console.log(
       "[DataReset] User not signed in — skipping background sync start",
