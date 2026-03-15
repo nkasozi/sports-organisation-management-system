@@ -31,16 +31,21 @@ vi.mock("$lib/adapters/initialization/brandingSyncService", () => ({
   sync_branding_with_profile: vi.fn().mockResolvedValue(undefined),
 }));
 
+const { mock_convex_query } = vi.hoisted(() => ({
+  mock_convex_query: vi.fn().mockResolvedValue({
+    success: true,
+    data: { email: "admin@test.com", role: "super_admin" },
+  }),
+}));
+
 vi.mock("$lib/infrastructure/sync/convexSyncService", () => ({
   get_sync_manager: () => ({
     get_convex_client: () => ({
-      query: vi.fn().mockResolvedValue({
-        success: true,
-        data: { email: "admin@test.com", role: "super_admin" },
-      }),
+      query: mock_convex_query,
       mutation: vi.fn(),
     }),
   }),
+  write_convex_user_to_local_dexie: vi.fn().mockResolvedValue(undefined),
 }));
 
 vi.mock("$lib/adapters/iam/clerkAuthService", () => {
@@ -503,5 +508,64 @@ describe("auth_store persistence", () => {
 
     expect(mock_local_storage["sports-org-current-profile-id"]).toBeUndefined();
     expect(mock_local_storage["sports-org-auth-token"]).toBeUndefined();
+  });
+});
+
+describe("auth_store — Convex unavailable fallback", () => {
+  beforeEach(() => {
+    Object.keys(mock_local_storage).forEach(
+      (key) => delete mock_local_storage[key],
+    );
+    auth_store.logout();
+    mock_convex_query.mockResolvedValue({
+      success: true,
+      data: { email: "admin@test.com", role: "super_admin" },
+    });
+  });
+
+  afterEach(() => {
+    auth_store.logout();
+    mock_convex_query.mockResolvedValue({
+      success: true,
+      data: { email: "admin@test.com", role: "super_admin" },
+    });
+  });
+
+  it("succeeds using clerk email when Convex throws Not authenticated", async () => {
+    mock_convex_query.mockRejectedValueOnce(new Error("Not authenticated"));
+
+    const result = await auth_store.initialize();
+
+    expect(result.success).toBe(true);
+    const state = get(auth_store);
+    expect(state.is_initialized).toBe(true);
+    expect(state.current_profile).not.toBeNull();
+    expect(state.current_profile?.email).toBe("admin@test.com");
+  });
+
+  it("succeeds using clerk email when Convex returns a failed response", async () => {
+    mock_convex_query.mockResolvedValueOnce({
+      success: false,
+      error: "Not authenticated",
+    });
+
+    const result = await auth_store.initialize();
+
+    expect(result.success).toBe(true);
+    const state = get(auth_store);
+    expect(state.is_initialized).toBe(true);
+    expect(state.current_profile?.email).toBe("admin@test.com");
+  });
+
+  it("initializes is_initialized to false before the fallback succeeds", async () => {
+    mock_convex_query.mockRejectedValueOnce(new Error("Not authenticated"));
+
+    const state_before = get(auth_store);
+    expect(state_before.is_initialized).toBe(false);
+
+    await auth_store.initialize();
+
+    const state_after = get(auth_store);
+    expect(state_after.is_initialized).toBe(true);
   });
 });

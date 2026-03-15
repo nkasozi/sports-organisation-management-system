@@ -33,10 +33,7 @@
   } from "$lib/infrastructure/sync/backgroundSyncService";
   import { reset_database } from "$lib/adapters/repositories/database";
   import { reset_sync_metadata } from "$lib/infrastructure/sync/convexSyncService";
-  import {
-    reset_seeding_flag,
-    seed_all_data_if_needed,
-  } from "$lib/adapters/initialization/seedingService";
+  import { seed_all_data_if_needed } from "$lib/adapters/initialization/seedingService";
   import { reset_sport_repository } from "$lib/adapters/repositories/InBrowserSportRepository";
   import { reset_organization_repository } from "$lib/adapters/repositories/InBrowserOrganizationRepository";
   import { reset_competition_format_repository } from "$lib/adapters/repositories/InBrowserCompetitionFormatRepository";
@@ -162,7 +159,6 @@
     initial_sync_store.update_progress("Clearing local data...", 10);
     await reset_database();
     reset_sync_metadata();
-    reset_seeding_flag();
 
     initial_sync_store.update_progress("Seeding default configurations...", 13);
     await reset_sport_repository();
