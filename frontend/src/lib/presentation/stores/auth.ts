@@ -51,7 +51,6 @@ import type {
 import { normalize_to_entity_type } from "$lib/core/interfaces/ports/external/iam/AuthorizationPort";
 import {
   get_sync_manager,
-  write_convex_user_to_local_dexie,
 } from "$lib/infrastructure/sync/convexSyncService";
 
 interface ConvexUserProfile {
@@ -74,7 +73,7 @@ interface ConvexGetProfileResponse {
   error?: string;
 }
 
-async function fetch_current_user_profile_from_convex(): Promise<
+export async function fetch_current_user_profile_from_convex(): Promise<
   Result<ConvexUserProfile>
 > {
   const convex_client = get_sync_manager().get_convex_client();
@@ -349,39 +348,11 @@ function create_auth_store() {
     const clerk_state = get(clerk_session);
     const clerk_email = clerk_state.user?.email_address?.toLowerCase() ?? null;
 
-    const convex_email_result = await fetch_current_user_profile_from_convex();
-
     const clerk_local_profile = clerk_email
       ? (available_profiles.find(
           (p) => p.email.toLowerCase() === clerk_email,
         ) ?? null)
       : null;
-
-    const clerk_matched_profile = convex_email_result.success
-      ? (available_profiles.find(
-          (p) =>
-            p.email.toLowerCase() ===
-            convex_email_result.data.email.toLowerCase(),
-        ) ?? null)
-      : clerk_local_profile;
-
-    if (!convex_email_result.success) {
-      console.warn(
-        `[AuthStore] Convex unavailable during profile lookup: ${convex_email_result.error}`,
-      );
-      if (clerk_matched_profile) {
-        console.log("[AuthStore] Resolved profile via Clerk email fallback", {
-          event: "auth_clerk_email_fallback",
-          clerk_email,
-          resolved_profile_role: clerk_matched_profile.role,
-        });
-      }
-    } else if (!clerk_matched_profile) {
-      console.warn(
-        `[AuthStore] No local profile found matching Convex email: ${convex_email_result.data.email}. ` +
-          "Writing user from Convex directly to local Dexie...",
-      );
-    }
 
     if (saved_token_raw) {
       const auth_adapter = get_authentication_adapter(
@@ -432,40 +403,14 @@ function create_auth_store() {
     }
 
     if (!current_profile) {
-      let resolved_profile = clerk_matched_profile;
-
-      if (!resolved_profile && convex_email_result.success) {
-        console.log(
-          `[AuthStore] User ${convex_email_result.data.email} not found locally — writing Convex user directly to Dexie...`,
-        );
-        await write_convex_user_to_local_dexie(convex_email_result.data);
-
-        const refreshed_profiles_raw = await load_profiles_from_repository(
-          repository,
-          organization_repository,
-        );
-        const refreshed_available_profiles = build_profiles_with_public_viewer(
-          refreshed_profiles_raw,
-        );
-        resolved_profile =
-          refreshed_available_profiles.find(
-            (p) =>
-              p.email.toLowerCase() ===
-              convex_email_result.data.email.toLowerCase(),
-          ) ?? null;
-
-        if (resolved_profile) {
-          console.log(
-            `[AuthStore] Profile created from Convex data: ${resolved_profile.display_name}`,
-          );
-        }
-      }
+      const resolved_profile = clerk_local_profile;
 
       if (!resolved_profile) {
-        const failure_reason = !convex_email_result.success
-          ? `Convex unavailable: ${convex_email_result.error}`
-          : `no local profile found for Convex email: ${convex_email_result.data.email} — user may not exist in the system`;
-        console.error(`[AuthStore] Cannot initialize: ${failure_reason}.`);
+        const failure_reason = `no local profile found for Clerk email: ${clerk_email} — user may not be registered in the system`;
+        console.error("[AuthStore] Cannot initialize", {
+          event: "auth_local_profile_not_found",
+          clerk_email,
+        });
         return create_failure_result(failure_reason);
       }
 
@@ -473,17 +418,20 @@ function create_auth_store() {
 
       const token_result = await generate_token_for_profile(current_profile);
       if (!token_result.success) {
-        console.error(
-          `[AuthStore] Failed to generate token: ${token_result.error}`,
-        );
+        console.error("[AuthStore] Failed to generate token", {
+          event: "auth_token_generation_failed",
+          error: token_result.error,
+        });
         return create_failure_result(token_result.error);
       }
       current_token = token_result.data;
       save_token(current_token.raw_token);
       save_profile_id(current_profile.id);
-      console.log(
-        `[AuthStore] Initialized with profile: ${current_profile.display_name} (role: ${current_profile.role})`,
-      );
+      console.log("[AuthStore] Initialized profile via Clerk email match", {
+        event: "auth_initialized_from_clerk_email",
+        display_name: current_profile.display_name,
+        role: current_profile.role,
+      });
     }
 
     sync_user_context_with_event_bus(current_profile);

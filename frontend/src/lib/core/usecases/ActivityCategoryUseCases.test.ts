@@ -64,6 +64,7 @@ describe("get_by_id", () => {
     const result = await use_cases.get_by_id("");
 
     expect(result.success).toBe(false);
+    if (result.success) return;
     expect(result.error).toBeTruthy();
   });
 
@@ -96,6 +97,7 @@ describe("create", () => {
     const result = await use_cases.create(make_create_input({ name: "" }));
 
     expect(result.success).toBe(false);
+    if (result.success) return;
     expect(result.error).toBeTruthy();
   });
 
@@ -191,6 +193,7 @@ describe("delete", () => {
     const result = await use_cases.delete("cat-1");
 
     expect(result.success).toBe(false);
+    if (result.success) return;
     expect(result.error).toContain("system-generated");
   });
 
@@ -231,6 +234,7 @@ describe("delete", () => {
     const result = await use_cases.delete("cat-missing");
 
     expect(result.success).toBe(false);
+    if (result.success) return;
     expect(result.error).toBe("Not found");
   });
 });
@@ -242,6 +246,7 @@ describe("list_by_organization", () => {
     const result = await use_cases.list_by_organization("");
 
     expect(result.success).toBe(false);
+    if (result.success) return;
     expect(result.error).toBeTruthy();
   });
 
@@ -300,6 +305,7 @@ describe("ensure_default_categories_exist", () => {
     const result = await use_cases.ensure_default_categories_exist("org-1");
 
     expect(result.success).toBe(true);
+    if (!result.success) return;
     expect(result.data?.categories_created).toBeGreaterThan(0);
   });
 
@@ -330,6 +336,7 @@ describe("ensure_default_categories_exist", () => {
 
     expect(result.success).toBe(true);
     const expected_missing_count = 8 - 2;
+    if (!result.success) return;
     expect(result.data?.categories_created).toBe(expected_missing_count);
   });
 
@@ -362,6 +369,7 @@ describe("ensure_default_categories_exist", () => {
     const result = await use_cases.ensure_default_categories_exist("org-1");
 
     expect(result.success).toBe(true);
+    if (!result.success) return;
     expect(result.data?.categories_created).toBe(0);
     expect(repo.create).not.toHaveBeenCalled();
   });
@@ -380,6 +388,7 @@ describe("ensure_default_categories_exist", () => {
     const result = await use_cases.ensure_default_categories_exist("org-1");
 
     expect(result.success).toBe(true);
+    if (!result.success) return;
     expect(result.data?.categories_created).toBe(1);
   });
 
@@ -404,6 +413,7 @@ describe("ensure_default_categories_exist", () => {
     const result = await use_cases.ensure_default_categories_exist("org-1");
 
     expect(result.success).toBe(true);
+    if (!result.success) return;
     expect(result.data?.categories_created).toBe(8);
   });
 });

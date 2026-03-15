@@ -34,12 +34,16 @@
   import { reset_database } from "$lib/adapters/repositories/database";
   import { reset_sync_metadata } from "$lib/infrastructure/sync/convexSyncService";
   import { seed_all_data_if_needed } from "$lib/adapters/initialization/seedingService";
-  import { reset_sport_repository } from "$lib/adapters/repositories/InBrowserSportRepository";
-  import { reset_organization_repository } from "$lib/adapters/repositories/InBrowserOrganizationRepository";
-  import { reset_competition_format_repository } from "$lib/adapters/repositories/InBrowserCompetitionFormatRepository";
   import { ClerkProvider } from "svelte-clerk";
-  import { auth_store } from "$lib/presentation/stores/auth";
+  import {
+    auth_store,
+    fetch_current_user_profile_from_convex,
+  } from "$lib/presentation/stores/auth";
   import { sign_out } from "$lib/adapters/iam/clerkAuthService";
+  import {
+    write_convex_user_to_local_dexie,
+    pull_user_scoped_record_from_convex,
+  } from "$lib/infrastructure/sync/convexSyncService";
   import type { Result } from "$lib/core/types/Result";
   import {
     create_success_result,
@@ -110,43 +114,67 @@
       .replace(/\b\w/g, (char) => char.toUpperCase());
   }
 
-  async function run_initial_sync_if_needed(): Promise<Result<boolean>> {
-    if (has_session_been_synced()) {
-      console.log("[Layout] Session already synced, starting background sync");
-      start_background_sync();
-      return create_success_result(true);
-    }
-    if (!get(is_signed_in)) {
-      console.log("[Layout] User not signed in, skipping initial sync");
-      return create_success_result(false);
-    }
+  async function handle_first_time_anonymous_user(): Promise<Result<boolean>> {
+    initial_sync_store.start_sync();
+    initial_sync_store.update_progress("Loading offline data...", 20);
+    await seed_all_data_if_needed();
+    initial_sync_store.update_progress("Setting up your profile...", 85);
+    auth_store.reset_initialized_state();
+    await auth_store.initialize();
+    initial_sync_store.complete_sync();
+    console.log("[Layout] First-time anonymous user setup complete", {
+      event: "anonymous_first_time_setup_complete",
+    });
+    return create_success_result(true);
+  }
 
+  async function handle_returning_anonymous_user(): Promise<Result<boolean>> {
+    auth_store.reset_initialized_state();
+    await auth_store.initialize();
+    console.log("[Layout] Returning anonymous user session restored", {
+      event: "anonymous_returning_session_restored",
+    });
+    return create_success_result(true);
+  }
+
+  async function handle_verified_user_page_reload(): Promise<Result<boolean>> {
+    auth_store.reset_initialized_state();
+    await auth_store.initialize();
+    start_background_sync();
+    console.log("[Layout] Verified user page reload — session restored", {
+      event: "verified_user_page_reload_complete",
+    });
+    return create_success_result(true);
+  }
+
+  async function log_verified_user_in(): Promise<Result<boolean>> {
     const current_sync_state = get(initial_sync_store);
     if (current_sync_state.is_syncing) {
       console.log(
         "[Layout] Sync already in progress, skipping duplicate request",
+        {
+          event: "sync_duplicate_skipped",
+        },
       );
       return create_success_result(false);
     }
 
-    console.log("[Layout] Starting initial sync from Convex...");
     initial_sync_store.start_sync();
-
     let sync_unsub: (() => void) | null = null;
 
     const cleanup_on_failure = async (
       error_message: string,
     ): Promise<Result<boolean>> => {
-      console.error("[Layout] Initial sync failed:", error_message);
-
+      console.error("[Layout] Login sync failed", {
+        event: "login_sync_failed",
+        error: error_message,
+      });
       if (sync_unsub) {
         sync_unsub();
         sync_unsub = null;
       }
-
       initial_sync_store.reset();
       clear_session_sync_flag();
-
       await sign_out();
       await goto(`/sign-in?error=sync_failed`);
       return create_failure_result(error_message);
@@ -154,35 +182,68 @@
 
     initial_sync_store.update_progress("Stopping background processes...", 5);
     stop_background_sync();
-    set_pulling_from_remote(true);
 
+    initial_sync_store.update_progress("Looking up your profile...", 8);
+    const profile_result = await fetch_current_user_profile_from_convex();
+
+    if (!profile_result.success || !profile_result.data) {
+      console.warn("[Layout] No Convex profile found for signed-in user", {
+        event: "login_profile_not_found",
+        error: !profile_result.success
+          ? profile_result.error
+          : "no_profile_data",
+      });
+      initial_sync_store.reset();
+      clear_session_sync_flag();
+      await sign_out();
+      await goto("/unauthorized");
+      return create_failure_result("No profile found for this account.");
+    }
+
+    const convex_profile = profile_result.data;
+    initial_sync_store.update_progress(
+      "Profile found. Preparing your workspace...",
+      9,
+    );
+
+    set_pulling_from_remote(true);
     initial_sync_store.update_progress("Clearing local data...", 10);
     await reset_database();
     reset_sync_metadata();
 
-    initial_sync_store.update_progress("Seeding default configurations...", 13);
-    await reset_sport_repository();
-    await reset_organization_repository();
-    await reset_competition_format_repository();
+    initial_sync_store.update_progress("Setting up your account...", 17);
+    await write_convex_user_to_local_dexie(convex_profile);
 
-    initial_sync_store.update_progress("Seeding base configurations...", 15);
-    await seed_all_data_if_needed();
+    if (
+      convex_profile.organization_id &&
+      convex_profile.organization_id !== "*"
+    ) {
+      initial_sync_store.update_progress("Loading your organisation...", 18);
+      await pull_user_scoped_record_from_convex(
+        "organizations",
+        convex_profile.organization_id,
+      );
+    }
+
+    if (convex_profile.team_id) {
+      initial_sync_store.update_progress("Loading your team...", 19);
+      await pull_user_scoped_record_from_convex(
+        "teams",
+        convex_profile.team_id,
+      );
+    }
 
     initial_sync_store.update_progress("Starting data sync...", 20);
     set_pulling_from_remote(false);
 
     sync_unsub = sync_store.subscribe((state) => {
-      if (state.current_progress) {
-        const progress = state.current_progress;
-        const base_percentage = 20;
-        const sync_range = 70;
-        const scaled_percentage =
-          base_percentage +
-          Math.round((progress.percentage / 100) * sync_range);
-        const table_display = format_table_name(progress.table_name);
-        const message = `Syncing ${table_display} (${progress.tables_completed}/${progress.total_tables})`;
-        initial_sync_store.update_progress(message, scaled_percentage);
-      }
+      if (!state.current_progress) return;
+      const progress = state.current_progress;
+      const scaled_percentage =
+        20 + Math.round((progress.percentage / 100) * 68);
+      const table_display = format_table_name(progress.table_name);
+      const message = `Syncing ${table_display} (${progress.tables_completed}/${progress.total_tables})`;
+      initial_sync_store.update_progress(message, scaled_percentage);
     });
 
     const first_sync_result = await sync_store.sync_now("pull");
@@ -200,17 +261,20 @@
     initial_sync_store.update_progress("Resolving references...", 88);
     await sync_store.sync_now("pull");
 
-    initial_sync_store.update_progress("Finalizing...", 92);
+    initial_sync_store.update_progress("Almost ready...", 92);
     start_background_sync();
     await new Promise((r) => setTimeout(r, 400));
 
-    initial_sync_store.update_progress("Loading user profiles...", 96);
+    initial_sync_store.update_progress("Loading your profile...", 96);
     auth_store.reset_initialized_state();
     await auth_store.initialize();
 
     initial_sync_store.complete_sync();
     await new Promise((r) => setTimeout(r, 500));
 
+    console.log("[Layout] Verified user login sync complete", {
+      event: "verified_user_login_sync_complete",
+    });
     return create_success_result(true);
   }
 
@@ -269,9 +333,12 @@
       if (!app_ready) return;
 
       console.log(
-        "[Layout] User signed in detected, triggering initial sync...",
+        "[Layout] User signed in detected, triggering login sync...",
+        {
+          event: "user_sign_in_detected",
+        },
       );
-      await run_initial_sync_if_needed();
+      await log_verified_user_in();
     });
 
     const init_result = await initialize_app_data({ current_path });
@@ -283,7 +350,19 @@
       return;
     }
 
-    await run_initial_sync_if_needed();
+    const user_is_signed_in = get(is_signed_in);
+    const session_already_synced = has_session_been_synced();
+
+    if (user_is_signed_in && !session_already_synced) {
+      await log_verified_user_in();
+    } else if (user_is_signed_in && session_already_synced) {
+      await handle_verified_user_page_reload();
+    } else if (!user_is_signed_in && !session_already_synced) {
+      await handle_first_time_anonymous_user();
+    } else {
+      await handle_returning_anonymous_user();
+    }
+
     app_ready = true;
 
     const initial_path = get(page).url.pathname;

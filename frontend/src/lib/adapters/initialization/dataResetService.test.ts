@@ -168,6 +168,7 @@ describe("reset_all_data", () => {
     });
     vi.mocked(seed_all_data_if_needed).mockImplementation(async () => {
       call_order.push("seeding");
+      return { success: true as const, data: true };
     });
 
     await reset_all_data();
@@ -225,7 +226,7 @@ describe("reset_all_data", () => {
   it("re-seeds default data after clearing repositories", async () => {
     const call_order: string[] = [];
     vi.mocked(reset_organization_repository).mockImplementation(async () => { call_order.push("reset_org"); });
-    vi.mocked(seed_all_data_if_needed).mockImplementation(async () => { call_order.push("seed"); });
+    vi.mocked(seed_all_data_if_needed).mockImplementation(async () => { call_order.push("seed"); return { success: true as const, data: true }; });
 
     await reset_all_data();
 

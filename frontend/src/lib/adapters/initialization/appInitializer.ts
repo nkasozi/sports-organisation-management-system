@@ -172,7 +172,7 @@ function determine_seeding_strategy(
     return "skip_seeding";
   }
   if (!user_is_signed_in) {
-    return "convex_first_with_local_fallback";
+    return "local_only";
   }
   return "convex_mandatory";
 }
@@ -307,6 +307,23 @@ async function run_seeding_with_strategy(
       await delay(400);
     }
     return "success";
+  }
+
+  if (strategy === "local_only") {
+    console.log("[AppInitializer] Anonymous user — seeding locally only");
+    if (is_first_time) {
+      first_time_setup_store.update_progress("Loading offline data...", 30);
+      await delay(300);
+    }
+    const progress_callback = is_first_time
+      ? (message: string, percentage: number) =>
+          first_time_setup_store.update_progress(message, percentage)
+      : (_message: string, _percentage: number) => {};
+    const seed_result = await seed_from_convex_or_local(
+      progress_callback,
+      "local_only",
+    );
+    return handle_seed_result(seed_result, is_first_time);
   }
 
   if (is_first_time) {

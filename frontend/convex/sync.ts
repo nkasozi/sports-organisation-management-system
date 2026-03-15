@@ -391,6 +391,43 @@ export const get_all_records = query({
   },
 });
 
+export const get_record_by_local_id = query({
+  args: {
+    table_name: v.string(),
+    local_id: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const { table_name, local_id } = args;
+    const auth_result = await require_auth(ctx);
+    if (!auth_result.success) {
+      return null;
+    }
+
+    const caller = auth_result.data;
+
+    if (table_name === "organizations") {
+      const is_super_admin = caller.organization_id === "*";
+      const is_own_org = caller.organization_id === local_id;
+      if (!is_super_admin && !is_own_org) {
+        return null;
+      }
+    }
+
+    if (table_name === "teams") {
+      const is_super_admin = caller.organization_id === "*";
+      const is_own_team = caller.team_id === local_id;
+      if (!is_super_admin && !is_own_team) {
+        return null;
+      }
+    }
+
+    return await ctx.db
+      .query(table_name as any)
+      .withIndex("by_local_id", (q) => q.eq("local_id", local_id))
+      .first();
+  },
+});
+
 export const get_latest_modified_at = query({
   args: {
     table_name: v.string(),
