@@ -145,7 +145,7 @@
       }
     }
 
-    await Promise.all([load_organizations(), load_competition_formats()]);
+    await load_organizations();
   });
 
   async function load_organizations(): Promise<void> {
@@ -182,12 +182,14 @@
     is_loading_organizations = false;
   }
 
-  async function load_competition_formats(): Promise<void> {
+  async function load_competition_formats(
+    organization_id?: string,
+  ): Promise<void> {
     is_loading_formats = true;
-    const result = await competition_format_use_cases.list(undefined, {
-      page_number: 1,
-      page_size: 100,
-    });
+    const result = await competition_format_use_cases.list(
+      organization_id ? { organization_id } : undefined,
+      { page_number: 1, page_size: 100 },
+    );
 
     if (result.success) {
       competition_formats = (result.data?.items || []).filter(
@@ -235,7 +237,15 @@
     selected_team_ids = new Set();
     all_teams = [];
     team_options = [];
-    await load_teams_for_organization(organization_id);
+    competition_formats = [];
+    competition_format_options = [];
+    form_data.competition_format_id = "";
+    selected_format = null;
+
+    await Promise.all([
+      load_teams_for_organization(organization_id),
+      load_competition_formats(organization_id),
+    ]);
 
     form_data.rule_overrides = {};
     selected_sport = null;

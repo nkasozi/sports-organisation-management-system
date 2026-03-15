@@ -43,6 +43,7 @@ const SYNCED_TABLE_NAMES = [
   "profile_links",
   "calendar_tokens",
   "competition_formats",
+  "competition_stages",
   "competition_teams",
   "player_team_memberships",
   "fixture_details_setups",

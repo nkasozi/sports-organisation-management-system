@@ -22,11 +22,7 @@ import {
 } from "../../core/types/Result";
 import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
 import {
-  get_default_competition_formats,
   get_default_competition_formats_for_organization,
-  create_default_league_config,
-  create_default_group_stage_config,
-  create_default_knockout_stage_config,
 } from "../../core/entities/CompetitionFormat";
 
 const ENTITY_PREFIX = "comp_fmt";
@@ -170,30 +166,6 @@ export class InBrowserCompetitionFormatRepository
   }
 }
 
-function create_default_competition_formats_data(): CompetitionFormat[] {
-  const now = new Date().toISOString();
-  const default_inputs = get_default_competition_formats();
-
-  return default_inputs.map((input, index) => ({
-    id: `comp_fmt_default_${index + 1}`,
-    created_at: now,
-    updated_at: now,
-    name: input.name,
-    code: input.code,
-    description: input.description,
-    format_type: input.format_type,
-    points_config: input.points_config,
-    tie_breakers: input.tie_breakers,
-    group_stage_config: input.group_stage_config,
-    knockout_stage_config: input.knockout_stage_config,
-    league_config: input.league_config,
-    min_teams_required: input.min_teams_required,
-    max_teams_allowed: input.max_teams_allowed,
-    status: input.status,
-    stage_templates: input.stage_templates ?? [],
-  }));
-}
-
 let singleton_instance: InBrowserCompetitionFormatRepository | null = null;
 
 export function get_competition_format_repository(): CompetitionFormatRepository {
@@ -207,7 +179,6 @@ export async function reset_competition_format_repository(): Promise<void> {
   const repository =
     get_competition_format_repository() as InBrowserCompetitionFormatRepository;
   await repository.clear_all_data();
-  await repository.seed_with_data(create_default_competition_formats_data());
 }
 
 export function create_default_competition_formats_for_organization(
