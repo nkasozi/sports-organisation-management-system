@@ -572,11 +572,9 @@ inject_test_use_cases_container({
 - ✅ Notification system
 - ✅ Export/import functionality
 - ✅ PWA offline support
+- ✅ Real-time WebSocket updates for Live Games
+- ✅ Authentication with Clerk
 
-### In Development
-
-- 🚧 Real-time WebSocket updates
-- 🚧 Authentication with Auth0
 
 ## Contributing
 
