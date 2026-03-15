@@ -50,6 +50,7 @@ export type SharedEntityType =
   | "teamstaff"
   | "fixturelineup"
   | "competitionteam"
+  | "competitionstage"
   | "player"
   | "playerprofile"
   | "identification"
@@ -196,6 +197,7 @@ export const SHARED_ENTITY_CATEGORY_MAP: SharedEntityCategoryMap = {
   teamstaff: "team_level",
   fixturelineup: "player_level",
   competitionteam: "team_level",
+  competitionstage: "organisation_level",
   player: "player_level",
   playerprofile: "public_level",
   identification: "public_level",
