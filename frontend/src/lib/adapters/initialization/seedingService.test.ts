@@ -12,10 +12,14 @@ let mock_convex_seed_result = {
 let seed_all_data_called = false;
 let load_current_user_called = false;
 
-vi.mock("../../infrastructure/sync/convexSeedingService", () => ({
-  try_seed_all_tables_from_convex: vi.fn().mockImplementation(async () => {
+const { mock_try_seed_all_tables_from_convex } = vi.hoisted(() => ({
+  mock_try_seed_all_tables_from_convex: vi.fn().mockImplementation(async () => {
     return mock_convex_seed_result;
   }),
+}));
+
+vi.mock("../../infrastructure/sync/convexSeedingService", () => ({
+  try_seed_all_tables_from_convex: mock_try_seed_all_tables_from_convex,
 }));
 
 vi.mock("../../infrastructure/events/EventBus", () => ({
@@ -306,6 +310,7 @@ beforeEach(() => {
   mock_fixture_repository.update.mockClear();
   mock_competition_stages.splice(0, mock_competition_stages.length);
   mock_competition_stage_repository.find_all.mockClear();
+  mock_try_seed_all_tables_from_convex.mockClear();
 });
 
 describe("seed_from_convex_or_local — skip_seeding strategy", () => {
@@ -372,43 +377,6 @@ describe("seed_from_convex_or_local — convex_first_with_local_fallback strateg
     expect(result.data_source).toBe("local");
   });
 
-  it("repairs competition format stage fields when local seeded data already exists", async () => {
-    mock_local_storage["sports_org_seeding_complete_v15"] = "true";
-    mock_competition_formats.push({
-      id: "format-2",
-      created_at: "2024-01-01T00:00:00.000Z",
-      updated_at: "2024-01-01T00:00:00.000Z",
-      name: "Standard League",
-      code: "standard_league",
-      description: "League format",
-      format_type: "league",
-      tie_breakers: ["goal_difference", "head_to_head", "goals_scored"],
-      group_stage_config: null,
-      knockout_stage_config: null,
-      league_config: null,
-      stage_templates: [],
-      min_teams_required: 4,
-      max_teams_allowed: 24,
-      status: "active",
-    });
-
-    await seed_from_convex_or_local(
-      on_progress,
-      "convex_first_with_local_fallback",
-    );
-
-    expect(mock_competition_format_repository.update).toHaveBeenCalledWith(
-      "format-2",
-      expect.objectContaining({
-        league_config: expect.objectContaining({ number_of_rounds: 2 }),
-        stage_templates: expect.arrayContaining([
-          expect.objectContaining({ name: "Round 1", stage_order: 1 }),
-          expect.objectContaining({ name: "Round 2", stage_order: 2 }),
-        ]),
-      }),
-    );
-  });
-
   it("uses convex data when convex seeding succeeds", async () => {
     mock_convex_seed_result = {
       success: true,
@@ -443,52 +411,6 @@ describe("seed_from_convex_or_local — convex_first_with_local_fallback strateg
     );
 
     expect(mock_local_storage["sports_org_seeding_complete_v15"]).toBe("true");
-  });
-
-  it("repairs competition format stage fields after successful convex seed", async () => {
-    mock_competition_formats.push({
-      id: "format-1",
-      created_at: "2024-01-01T00:00:00.000Z",
-      updated_at: "2024-01-01T00:00:00.000Z",
-      name: "World Cup Style",
-      code: "world_cup_style",
-      description: "Groups then knockout",
-      format_type: "groups_knockout",
-      tie_breakers: ["goal_difference", "head_to_head", "goals_scored"],
-      group_stage_config: null,
-      knockout_stage_config: null,
-      league_config: null,
-      stage_templates: [],
-      min_teams_required: 8,
-      max_teams_allowed: 32,
-      status: "active",
-    });
-    mock_convex_seed_result = {
-      success: true,
-      data_source: "convex",
-      tables_fetched: 10,
-      total_records: 50,
-      failed_tables: [],
-    };
-
-    await seed_from_convex_or_local(
-      on_progress,
-      "convex_first_with_local_fallback",
-    );
-
-    expect(mock_competition_format_repository.update).toHaveBeenCalledWith(
-      "format-1",
-      expect.objectContaining({
-        group_stage_config: expect.objectContaining({ number_of_groups: 4 }),
-        knockout_stage_config: expect.objectContaining({ number_of_rounds: 4 }),
-        league_config: null,
-        stage_templates: expect.arrayContaining([
-          expect.objectContaining({ name: "Pool Stage", stage_order: 1 }),
-          expect.objectContaining({ name: "Semi Finals", stage_order: 2 }),
-          expect.objectContaining({ name: "Final", stage_order: 3 }),
-        ]),
-      }),
-    );
   });
 
   it("falls back to local seeding when convex fails", async () => {
@@ -645,97 +567,6 @@ describe("seed_from_convex_or_local — convex_mandatory strategy", () => {
   });
 });
 
-describe("repair fixture stage IDs when seeded data already exists", () => {
-  let on_progress: (message: string, percentage: number) => void;
-
-  beforeEach(() => {
-    on_progress = () => {};
-    Object.keys(mock_local_storage).forEach(
-      (key) => delete mock_local_storage[key],
-    );
-  });
-
-  it("assigns the stage_id to fixtures that have no stage set", async () => {
-    mock_local_storage["sports_org_seeding_complete_v15"] = "true";
-    mock_competition_stages.push({
-      id: "stage-1",
-      competition_id: "comp-1",
-      stage_order: 1,
-      name: "League Stage",
-    });
-    mock_fixtures.push({
-      id: "fixture-1",
-      competition_id: "comp-1",
-      stage_id: "",
-    });
-
-    await seed_from_convex_or_local(
-      on_progress,
-      "convex_first_with_local_fallback",
-    );
-
-    expect(mock_fixture_repository.update).toHaveBeenCalledWith(
-      "fixture-1",
-      expect.objectContaining({ stage_id: "stage-1" }),
-    );
-  });
-
-  it("skips fixtures that already have a valid stage_id", async () => {
-    mock_local_storage["sports_org_seeding_complete_v15"] = "true";
-    mock_competition_stages.push({
-      id: "stage-1",
-      competition_id: "comp-1",
-      stage_order: 1,
-      name: "League Stage",
-    });
-    mock_fixtures.push({
-      id: "fixture-1",
-      competition_id: "comp-1",
-      stage_id: "stage-1",
-    });
-
-    await seed_from_convex_or_local(
-      on_progress,
-      "convex_first_with_local_fallback",
-    );
-
-    expect(mock_fixture_repository.update).not.toHaveBeenCalled();
-  });
-
-  it("picks the stage with the lowest stage_order when multiple stages exist", async () => {
-    mock_local_storage["sports_org_seeding_complete_v15"] = "true";
-    mock_competition_stages.push(
-      {
-        id: "stage-2",
-        competition_id: "comp-1",
-        stage_order: 2,
-        name: "Knockouts",
-      },
-      {
-        id: "stage-1",
-        competition_id: "comp-1",
-        stage_order: 1,
-        name: "Group Stage",
-      },
-    );
-    mock_fixtures.push({
-      id: "fixture-1",
-      competition_id: "comp-1",
-      stage_id: "",
-    });
-
-    await seed_from_convex_or_local(
-      on_progress,
-      "convex_first_with_local_fallback",
-    );
-
-    expect(mock_fixture_repository.update).toHaveBeenCalledWith(
-      "fixture-1",
-      expect.objectContaining({ stage_id: "stage-1" }),
-    );
-  });
-});
-
 describe("seed_all_data_if_needed — login-flow guard (regression: stale seeded data overwriting Convex)", () => {
   beforeEach(() => {
     Object.keys(mock_local_storage).forEach(
@@ -765,5 +596,62 @@ describe("seed_all_data_if_needed — login-flow guard (regression: stale seeded
 
     expect(result.success).toBe(true);
     expect(mock_system_user_seed_with_data).toHaveBeenCalled();
+  });
+});
+
+describe("seed_from_convex_or_local — local_only strategy", () => {
+  let progress_messages: Array<{ message: string; percentage: number }>;
+  let on_progress: (message: string, percentage: number) => void;
+
+  beforeEach(() => {
+    progress_messages = [];
+    on_progress = (message: string, percentage: number) => {
+      progress_messages.push({ message, percentage });
+    };
+    Object.keys(mock_local_storage).forEach((key) => delete mock_local_storage[key]);
+    mock_system_user_seed_with_data.mockClear();
+  });
+
+  it("returns local_fallback_success outcome", async () => {
+    const result = await seed_from_convex_or_local(on_progress, "local_only");
+
+    expect(result.success).toBe(true);
+    expect(result.outcome).toBe("local_fallback_success");
+    expect(result.data_source).toBe("local");
+  });
+
+  it("does NOT call try_seed_all_tables_from_convex", async () => {
+    await seed_from_convex_or_local(on_progress, "local_only");
+
+    expect(mock_try_seed_all_tables_from_convex).not.toHaveBeenCalled();
+  });
+
+  it("calls seed_all_data_if_needed for local seeding", async () => {
+    const result = await seed_from_convex_or_local(on_progress, "local_only");
+
+    expect(mock_system_user_seed_with_data).toHaveBeenCalled();
+    expect(result.success).toBe(true);
+  });
+
+  it("reports offline data progress messages", async () => {
+    await seed_from_convex_or_local(on_progress, "local_only");
+
+    const loading_message = progress_messages.find(
+      (m) => m.message.toLowerCase().includes("offline"),
+    );
+    expect(loading_message).toBeDefined();
+  });
+
+  it("succeeds even when try_seed_all_tables_from_convex would fail", async () => {
+    mock_try_seed_all_tables_from_convex.mockResolvedValueOnce({
+      success: false,
+      error: "network error",
+    });
+
+    const result = await seed_from_convex_or_local(on_progress, "local_only");
+
+    expect(result.success).toBe(true);
+    expect(result.outcome).toBe("local_fallback_success");
+    expect(mock_try_seed_all_tables_from_convex).not.toHaveBeenCalled();
   });
 });

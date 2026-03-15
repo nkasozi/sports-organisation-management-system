@@ -18,6 +18,7 @@ function create_mock_format_repository(): CompetitionFormatRepository {
     find_by_format_type: vi.fn(),
     find_by_code: vi.fn(),
     find_active_formats: vi.fn(),
+    find_by_organization: vi.fn(),
   };
 }
 

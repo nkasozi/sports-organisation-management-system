@@ -10,6 +10,11 @@ import type { Table } from "dexie";
 import type { SyncDirection, SyncHints, UserRole } from "$lib/core/interfaces/ports";
 import { check_entity_permission } from "$lib/core/interfaces/ports";
 import type { SharedEntityType } from "$convex/shared_permission_definitions";
+import type { Result } from "$lib/core/types/Result";
+import {
+  create_success_result,
+  create_failure_result,
+} from "$lib/core/types/Result";
 
 export type { SyncDirection };
 export type SyncStatus = "idle" | "syncing" | "success" | "error" | "conflict";
@@ -1015,6 +1020,50 @@ export async function write_convex_user_to_local_dexie(convex_user: {
     updated_at: now,
   } as any);
   return user_id;
+}
+
+export async function pull_user_scoped_record_from_convex(
+  table_name: "organizations" | "teams",
+  local_id: string,
+): Promise<Result<boolean>> {
+  const convex_client = get_sync_manager().get_convex_client();
+
+  if (!convex_client) {
+    return create_failure_result("Convex client not initialized");
+  }
+
+  try {
+    const record = await convex_client.query("sync:get_record_by_local_id", {
+      table_name,
+      local_id,
+    });
+
+    if (!record) {
+      return create_success_result(false);
+    }
+
+    const database = get_database();
+    const table = get_table_from_database(database, table_name);
+
+    if (!table) {
+      return create_failure_result(`Table ${table_name} not found in database`);
+    }
+
+    const raw = record as Record<string, unknown>;
+    const local_data = { ...raw };
+    delete local_data._id;
+    delete local_data._creationTime;
+    delete local_data.local_id;
+    delete local_data.synced_at;
+    delete local_data.version;
+    local_data.id = local_id;
+
+    await table.put(local_data as unknown as { id: string; updated_at?: string; created_at?: string });
+    return create_success_result(true);
+  } catch (error) {
+    const error_message = error instanceof Error ? error.message : String(error);
+    return create_failure_result(`Failed to pull ${table_name} record: ${error_message}`);
+  }
 }
 
 export class ConvexSyncManager {

@@ -110,7 +110,6 @@ import type { PlayerPosition } from "../../core/entities/PlayerPosition";
 import type { TeamStaffRole } from "../../core/entities/TeamStaffRole";
 import type { GameOfficialRole } from "../../core/entities/GameOfficialRole";
 import type { CompetitionFormat } from "../../core/entities/CompetitionFormat";
-import { hydrate_competition_format_input } from "../../core/entities/CompetitionFormat";
 import {
   EventBus,
   set_user_context,
@@ -129,10 +128,11 @@ import {
   create_failure_result,
 } from "../../core/types/Result";
 
-type SeedingStrategy =
+export type SeedingStrategy =
   | "skip_seeding"
   | "convex_first_with_local_fallback"
-  | "convex_mandatory";
+  | "convex_mandatory"
+  | "local_only";
 
 type SeedOutcome =
   | "skipped"
@@ -211,145 +211,6 @@ export function is_seeding_already_complete(): boolean {
 function mark_seeding_complete(): void {
   if (typeof window === "undefined") return;
   localStorage.setItem(SEEDING_COMPLETE_KEY, "true");
-}
-
-function build_competition_format_repair_signature(
-  input: Pick<
-    CompetitionFormat,
-    | "group_stage_config"
-    | "knockout_stage_config"
-    | "league_config"
-    | "stage_templates"
-    | "points_config"
-  >,
-): string {
-  return JSON.stringify({
-    group_stage_config: input.group_stage_config,
-    knockout_stage_config: input.knockout_stage_config,
-    league_config: input.league_config,
-    stage_templates: input.stage_templates,
-    points_config: input.points_config,
-  });
-}
-
-async function repair_seeded_competition_formats(): Promise<Result<boolean>> {
-  const competition_format_repository = get_competition_format_repository();
-
-  const competition_formats_result =
-    await competition_format_repository.find_all(undefined, {
-      page_size: 100,
-    });
-
-  if (!competition_formats_result.success) {
-    console.warn(
-      `[Seeding] Failed to load competition formats for repair: ${competition_formats_result.error}`,
-    );
-    return create_failure_result(competition_formats_result.error);
-  }
-
-  for (const competition_format of competition_formats_result.data.items) {
-    const repaired_input = hydrate_competition_format_input({
-      ...competition_format,
-    });
-
-    const existing_signature =
-      build_competition_format_repair_signature(competition_format);
-    const repaired_signature =
-      build_competition_format_repair_signature(repaired_input);
-
-    if (existing_signature === repaired_signature) {
-      continue;
-    }
-
-    const update_result = await competition_format_repository.update(
-      competition_format.id,
-      {
-        group_stage_config: repaired_input.group_stage_config,
-        knockout_stage_config: repaired_input.knockout_stage_config,
-        league_config: repaired_input.league_config,
-        stage_templates: repaired_input.stage_templates,
-        points_config: repaired_input.points_config,
-      },
-    );
-
-    if (!update_result.success) {
-      console.warn(
-        `[Seeding] Failed to repair competition format ${competition_format.code}: ${update_result.error}`,
-      );
-    }
-  }
-
-  console.log("[Seeding] Competition format repair completed");
-  return create_success_result(true);
-}
-
-async function repair_seeded_fixture_stage_ids(): Promise<Result<boolean>> {
-  const fixture_repository = get_fixture_repository();
-  const competition_stage_repository = get_competition_stage_repository();
-
-  const stages_result = await competition_stage_repository.find_all(
-    undefined,
-    { page_size: 500 },
-  );
-
-  if (!stages_result.success) {
-    console.warn(
-      `[Seeding] Failed to load competition stages for fixture repair: ${stages_result.error}`,
-    );
-    return create_failure_result(stages_result.error);
-  }
-
-  const sorted_stages = [...stages_result.data.items].sort(
-    (a, b) => a.stage_order - b.stage_order,
-  );
-
-  const default_stage_per_competition = new Map<string, string>();
-  for (const stage of sorted_stages) {
-    if (!default_stage_per_competition.has(stage.competition_id)) {
-      default_stage_per_competition.set(stage.competition_id, stage.id);
-    }
-  }
-
-  const fixtures_result = await fixture_repository.find_all(undefined, {
-    page_size: 500,
-  });
-
-  if (!fixtures_result.success) {
-    console.warn(
-      `[Seeding] Failed to load fixtures for stage repair: ${fixtures_result.error}`,
-    );
-    return create_failure_result(fixtures_result.error);
-  }
-
-  for (const fixture of fixtures_result.data.items) {
-    if (fixture.stage_id && fixture.stage_id.trim().length > 0) {
-      continue;
-    }
-
-    const default_stage_id = default_stage_per_competition.get(
-      fixture.competition_id,
-    );
-
-    if (!default_stage_id) {
-      console.warn(
-        `[Seeding] No stage found for competition ${fixture.competition_id}, skipping fixture ${fixture.id}`,
-      );
-      continue;
-    }
-
-    const update_result = await fixture_repository.update(fixture.id, {
-      stage_id: default_stage_id,
-    });
-
-    if (!update_result.success) {
-      console.warn(
-        `[Seeding] Failed to repair stage_id for fixture ${fixture.id}: ${update_result.error}`,
-      );
-    }
-  }
-
-  console.log("[Seeding] Fixture stage ID repair completed");
-  return create_success_result(true);
 }
 
 function find_position_id_by_code(
@@ -842,14 +703,6 @@ async function seed_all_demo_entities(
 
 export async function seed_all_data_if_needed(): Promise<Result<boolean>> {
   if (is_seeding_already_complete()) {
-    const formats_repair_result = await repair_seeded_competition_formats();
-    if (!formats_repair_result.success) {
-      console.warn(`[Seeding] Competition format repair failed: ${formats_repair_result.error}`);
-    }
-    const fixtures_repair_result = await repair_seeded_fixture_stage_ids();
-    if (!fixtures_repair_result.success) {
-      console.warn(`[Seeding] Fixture stage repair failed: ${fixtures_repair_result.error}`);
-    }
     const current_user_result = await load_and_set_current_user();
     if (!current_user_result.success) {
       console.warn(`[Seeding] Could not resolve current user: ${current_user_result.error}`);
@@ -908,14 +761,6 @@ export async function seed_all_data_if_needed(): Promise<Result<boolean>> {
     return create_failure_result(entities_result.error);
   }
 
-  const formats_repair_result = await repair_seeded_competition_formats();
-  if (!formats_repair_result.success) {
-    console.warn(`[Seeding] Competition format repair failed: ${formats_repair_result.error}`);
-  }
-  const fixtures_repair_result = await repair_seeded_fixture_stage_ids();
-  if (!fixtures_repair_result.success) {
-    console.warn(`[Seeding] Fixture stage repair failed: ${fixtures_repair_result.error}`);
-  }
   clear_user_context();
   mark_seeding_complete();
   return create_success_result(true);
@@ -933,6 +778,8 @@ export async function seed_from_convex_or_local(
   switch (strategy) {
     case "skip_seeding":
       return handle_skip_seeding();
+    case "local_only":
+      return handle_local_only_seeding(on_progress);
     case "convex_first_with_local_fallback":
       return handle_convex_with_local_fallback(on_progress);
     case "convex_mandatory":
@@ -950,18 +797,41 @@ function handle_skip_seeding(): SeedResult {
   };
 }
 
+async function handle_local_only_seeding(
+  on_progress: ProgressCallback,
+): Promise<SeedResult> {
+  on_progress("Loading offline data...", 20);
+  const local_seed_result = await seed_all_data_if_needed();
+
+  if (!local_seed_result.success) {
+    console.error("[Seeding] Local-only seeding failed", {
+      event: "local_only_seeding_failed",
+      error: local_seed_result.error,
+    });
+    return {
+      success: false,
+      data_source: "none",
+      outcome: "failed",
+      error_message: local_seed_result.error,
+    };
+  }
+
+  on_progress("Offline data ready", 90);
+  console.log("[Seeding] Local-only seeding completed", {
+    event: "local_only_seeding_completed",
+  });
+  return {
+    success: true,
+    data_source: "local",
+    outcome: "local_fallback_success",
+    error_message: "",
+  };
+}
+
 async function handle_convex_with_local_fallback(
   on_progress: ProgressCallback,
 ): Promise<SeedResult> {
   if (is_seeding_already_complete()) {
-    const formats_repair_result_1 = await repair_seeded_competition_formats();
-    if (!formats_repair_result_1.success) {
-      console.warn(`[Seeding] Competition format repair failed: ${formats_repair_result_1.error}`);
-    }
-    const fixtures_repair_result_1 = await repair_seeded_fixture_stage_ids();
-    if (!fixtures_repair_result_1.success) {
-      console.warn(`[Seeding] Fixture stage repair failed: ${fixtures_repair_result_1.error}`);
-    }
     const current_user_result_2 = await load_and_set_current_user();
     if (!current_user_result_2.success) {
       console.warn(
@@ -993,14 +863,6 @@ async function handle_convex_with_local_fallback(
     console.log(
       `[Seeding] Convex seeding succeeded: ${convex_result.total_records} records from ${convex_result.tables_fetched} tables`,
     );
-    const formats_repair_result_2 = await repair_seeded_competition_formats();
-    if (!formats_repair_result_2.success) {
-      console.warn(`[Seeding] Competition format repair failed: ${formats_repair_result_2.error}`);
-    }
-    const fixtures_repair_result_2 = await repair_seeded_fixture_stage_ids();
-    if (!fixtures_repair_result_2.success) {
-      console.warn(`[Seeding] Fixture stage repair failed: ${fixtures_repair_result_2.error}`);
-    }
     const current_user_result_3 = await load_and_set_current_user();
     if (!current_user_result_3.success) {
       console.warn(
@@ -1051,14 +913,6 @@ async function handle_convex_mandatory(
     console.log(
       `[Seeding] Convex pull succeeded: ${convex_result.total_records} records from ${convex_result.tables_fetched} tables`,
     );
-    const formats_repair_result_3 = await repair_seeded_competition_formats();
-    if (!formats_repair_result_3.success) {
-      console.warn(`[Seeding] Competition format repair failed: ${formats_repair_result_3.error}`);
-    }
-    const fixtures_repair_result_3 = await repair_seeded_fixture_stage_ids();
-    if (!fixtures_repair_result_3.success) {
-      console.warn(`[Seeding] Fixture stage repair failed: ${fixtures_repair_result_3.error}`);
-    }
     const current_user_result_4 = await load_and_set_current_user();
     if (!current_user_result_4.success) {
       console.warn(
@@ -1078,14 +932,6 @@ async function handle_convex_mandatory(
     console.log(
       "[Seeding] Convex unavailable but local data exists — entering offline mode",
     );
-    const formats_repair_result_4 = await repair_seeded_competition_formats();
-    if (!formats_repair_result_4.success) {
-      console.warn(`[Seeding] Competition format repair failed: ${formats_repair_result_4.error}`);
-    }
-    const fixtures_repair_result_4 = await repair_seeded_fixture_stage_ids();
-    if (!fixtures_repair_result_4.success) {
-      console.warn(`[Seeding] Fixture stage repair failed: ${fixtures_repair_result_4.error}`);
-    }
     const current_user_result_5 = await load_and_set_current_user();
     if (!current_user_result_5.success) {
       console.warn(
@@ -1113,4 +959,4 @@ async function handle_convex_mandatory(
   };
 }
 
-export type { SeedResult, DataSource, SeedingStrategy, SeedOutcome };
+export type { SeedResult, DataSource, SeedOutcome };
