@@ -54,9 +54,13 @@ vi.mock("../../infrastructure/container", () => ({
   }),
 }));
 
+const { mock_system_user_seed_with_data } = vi.hoisted(() => ({
+  mock_system_user_seed_with_data: vi.fn().mockResolvedValue({ success: true, data: 0 }),
+}));
+
 vi.mock("../repositories/InBrowserSystemUserRepository", () => ({
   get_system_user_repository: () => ({
-    seed_with_data: vi.fn().mockResolvedValue({ success: true, data: 0 }),
+    seed_with_data: mock_system_user_seed_with_data,
     find_by_id: vi.fn().mockResolvedValue({
       success: true,
       data: {
@@ -290,6 +294,7 @@ vi.stubGlobal("localStorage", {
 import {
   seed_from_convex_or_local,
   reset_seeding_flag,
+  seed_all_data_if_needed,
 } from "./seedingService";
 
 beforeEach(() => {
@@ -728,5 +733,37 @@ describe("repair fixture stage IDs when seeded data already exists", () => {
       "fixture-1",
       expect.objectContaining({ stage_id: "stage-1" }),
     );
+  });
+});
+
+describe("seed_all_data_if_needed — login-flow guard (regression: stale seeded data overwriting Convex)", () => {
+  beforeEach(() => {
+    Object.keys(mock_local_storage).forEach(
+      (key) => delete mock_local_storage[key],
+    );
+    mock_system_user_seed_with_data.mockClear();
+  });
+
+  it("does NOT seed demo system users when seeding flag is already set", async () => {
+    mock_local_storage["sports_org_seeding_complete_v15"] = "true";
+
+    await seed_all_data_if_needed();
+
+    expect(mock_system_user_seed_with_data).not.toHaveBeenCalled();
+  });
+
+  it("returns success without demo seeding when seeding is already complete", async () => {
+    mock_local_storage["sports_org_seeding_complete_v15"] = "true";
+
+    const result = await seed_all_data_if_needed();
+
+    expect(result.success).toBe(true);
+  });
+
+  it("DOES seed system users the first time (flag absent)", async () => {
+    const result = await seed_all_data_if_needed();
+
+    expect(result.success).toBe(true);
+    expect(mock_system_user_seed_with_data).toHaveBeenCalled();
   });
 });

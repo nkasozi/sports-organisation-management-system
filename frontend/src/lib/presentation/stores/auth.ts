@@ -351,18 +351,31 @@ function create_auth_store() {
 
     const convex_email_result = await fetch_current_user_profile_from_convex();
 
+    const clerk_local_profile = clerk_email
+      ? (available_profiles.find(
+          (p) => p.email.toLowerCase() === clerk_email,
+        ) ?? null)
+      : null;
+
     const clerk_matched_profile = convex_email_result.success
       ? (available_profiles.find(
           (p) =>
             p.email.toLowerCase() ===
             convex_email_result.data.email.toLowerCase(),
         ) ?? null)
-      : null;
+      : clerk_local_profile;
 
     if (!convex_email_result.success) {
       console.warn(
         `[AuthStore] Convex unavailable during profile lookup: ${convex_email_result.error}`,
       );
+      if (clerk_matched_profile) {
+        console.log("[AuthStore] Resolved profile via Clerk email fallback", {
+          event: "auth_clerk_email_fallback",
+          clerk_email,
+          resolved_profile_role: clerk_matched_profile.role,
+        });
+      }
     } else if (!clerk_matched_profile) {
       console.warn(
         `[AuthStore] No local profile found matching Convex email: ${convex_email_result.data.email}. ` +
