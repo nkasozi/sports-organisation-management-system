@@ -2178,6 +2178,15 @@ class EntityMetadataRegistry {
           is_read_only: false,
           show_in_list: true,
         },
+        {
+          field_name: "organization_id" satisfies keyof CompetitionFormat,
+          display_name: "Organization",
+          field_type: "foreign_key",
+          is_required: true,
+          is_read_only: false,
+          foreign_key_entity: "organization",
+          show_in_list: true,
+        },
       ],
     });
   }
