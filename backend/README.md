@@ -1,7 +1,3 @@
 # Sport-Sync - Backend
 
-🚧 **Coming Soon** 🚧
-
-The backend implementation is planned but not yet started.
-
-Check back later for updates.
+See the [frontend README](../frontend/README.md) for details about the backend implementation and integration.
