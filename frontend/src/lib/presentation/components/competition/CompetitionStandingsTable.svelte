@@ -169,7 +169,7 @@
                         >
                         <td class="px-3 py-3 text-center">
                             <div
-                                class="flex items-center justify-center gap-0.5"
+                                class="flex items-center justify-center gap-1.5"
                             >
                                 {#each standing.form as form_result}
                                     <span
@@ -270,7 +270,7 @@
                             {standing.points}
                         </div>
                     </div>
-                    <div class="flex items-center gap-0.5">
+                    <div class="flex items-center gap-1.5">
                         {#each standing.form.slice(-3) as form_result}
                             <span
                                 class="inline-flex items-center justify-center w-4 h-4 rounded-full text-[9px] font-bold
@@ -304,7 +304,9 @@
 
     {#if show_legend}
         <div class="mt-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-            <div class="text-xs font-bold text-gray-700 dark:text-gray-300 mb-2 uppercase tracking-wider">
+            <div
+                class="text-xs font-bold text-gray-700 dark:text-gray-300 mb-2 uppercase tracking-wider"
+            >
                 Key
             </div>
             <div
@@ -380,7 +382,6 @@
                     Live match
                 </span>
             </div>
-            
         </div>
     {/if}
 {/if}
