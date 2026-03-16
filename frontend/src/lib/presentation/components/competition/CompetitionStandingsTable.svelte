@@ -8,6 +8,7 @@
         "No teams registered for this section yet.";
     export let show_legend: boolean = true;
     export let highlight_top_count: number = 3;
+    export let live_team_ids: Set<string> = new Set();
 
     const dispatch = createEventDispatcher<{
         teamclick: { team_id: string; team_name: string };
@@ -35,7 +36,7 @@
                     >
                     <th
                         class="px-3 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
-                        >P</th
+                        >MP</th
                     >
                     <th
                         class="px-3 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
@@ -64,6 +65,10 @@
                     <th
                         class="px-3 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider font-bold"
                         >Pts</th
+                    >
+                    <th
+                        class="px-3 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+                        >Last 5</th
                     >
                 </tr>
             </thead>
@@ -94,6 +99,18 @@
                             class="px-3 py-3 text-sm font-medium text-accent-900 dark:text-accent-100 hover:text-primary-600 dark:hover:text-primary-400"
                         >
                             <span class="flex items-center gap-2">
+                                {#if live_team_ids.has(standing.team_id)}
+                                    <span
+                                        class="relative flex h-2.5 w-2.5 flex-shrink-0"
+                                    >
+                                        <span
+                                            class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"
+                                        ></span>
+                                        <span
+                                            class="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"
+                                        ></span>
+                                    </span>
+                                {/if}
                                 {standing.team_name}
                                 <svg
                                     class="w-3.5 h-3.5 text-gray-400"
@@ -150,6 +167,26 @@
                             class="px-3 py-3 text-sm text-center font-bold text-accent-900 dark:text-accent-100"
                             >{standing.points}</td
                         >
+                        <td class="px-3 py-3 text-center">
+                            <div
+                                class="flex items-center justify-center gap-0.5"
+                            >
+                                {#each standing.form as form_result}
+                                    <span
+                                        class="inline-flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold
+                                            {form_result === 'W'
+                                            ? 'bg-green-500 text-white'
+                                            : form_result === 'D'
+                                              ? 'bg-gray-400 text-white'
+                                              : 'bg-red-500 text-white'}"
+                                    >
+                                        {form_result === "L"
+                                            ? "✕"
+                                            : form_result}
+                                    </span>
+                                {/each}
+                            </div>
+                        </td>
                     </tr>
                 {/each}
             </tbody>
@@ -176,16 +213,30 @@
                     >
                         {index + 1}
                     </span>
-                    <span
-                        class="font-medium text-accent-900 dark:text-accent-100 truncate max-w-[120px] text-left"
-                    >
-                        {standing.team_name}
+                    <span class="flex items-center gap-1.5">
+                        {#if live_team_ids.has(standing.team_id)}
+                            <span
+                                class="relative flex h-2.5 w-2.5 flex-shrink-0"
+                            >
+                                <span
+                                    class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"
+                                ></span>
+                                <span
+                                    class="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"
+                                ></span>
+                            </span>
+                        {/if}
+                        <span
+                            class="font-medium text-accent-900 dark:text-accent-100 truncate max-w-[120px] text-left"
+                        >
+                            {standing.team_name}
+                        </span>
                     </span>
                 </div>
-                <div class="flex items-center gap-4 text-sm">
+                <div class="flex items-center gap-3 text-sm">
                     <div class="text-center">
                         <div class="text-xs text-gray-500 dark:text-gray-400">
-                            P
+                            MP
                         </div>
                         <div
                             class="font-medium text-gray-700 dark:text-gray-300"
@@ -219,6 +270,20 @@
                             {standing.points}
                         </div>
                     </div>
+                    <div class="flex items-center gap-0.5">
+                        {#each standing.form.slice(-3) as form_result}
+                            <span
+                                class="inline-flex items-center justify-center w-4 h-4 rounded-full text-[9px] font-bold
+                                    {form_result === 'W'
+                                    ? 'bg-green-500 text-white'
+                                    : form_result === 'D'
+                                      ? 'bg-gray-400 text-white'
+                                      : 'bg-red-500 text-white'}"
+                            >
+                                {form_result === "L" ? "✕" : form_result}
+                            </span>
+                        {/each}
+                    </div>
                     <svg
                         class="w-4 h-4 text-gray-400"
                         fill="none"
@@ -238,20 +303,16 @@
     </div>
 
     {#if show_legend}
-        <div
-            class="mt-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg text-center"
-        >
-            <div
-                class="text-xs text-gray-500 dark:text-gray-400 font-bold mb-2"
-            >
-                Legend
+        <div class="mt-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+            <div class="text-xs font-bold text-gray-700 dark:text-gray-300 mb-2 uppercase tracking-wider">
+                Key
             </div>
             <div
-                class="flex flex-wrap justify-center gap-x-4 gap-y-1 text-xs text-gray-600 dark:text-gray-400"
+                class="grid grid-cols-4 gap-x-4 gap-y-1 text-xs text-gray-600 dark:text-gray-400 mb-3"
             >
                 <span
-                    ><strong class="text-gray-700 dark:text-gray-300">P</strong> =
-                    Played</span
+                    ><strong class="text-gray-700 dark:text-gray-300">MP</strong
+                    > = Matches Played</span
                 >
                 <span
                     ><strong class="text-gray-700 dark:text-gray-300">W</strong> =
@@ -283,9 +344,43 @@
                     > = Points</span
                 >
             </div>
-            <div class="mt-2 text-xs text-gray-500 dark:text-gray-400 italic">
-                Click on a team to view their fixtures
+            <div
+                class="grid grid-cols-4 gap-x-4 gap-y-1.5 pt-2 border-t border-gray-200 dark:border-gray-700 text-xs text-gray-600 dark:text-gray-400"
+            >
+                <span class="flex items-center gap-1.5">
+                    <span
+                        class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-green-500 text-white text-[10px] font-bold"
+                        >W</span
+                    >
+                    Win
+                </span>
+                <span class="flex items-center gap-1.5">
+                    <span
+                        class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-gray-400 text-white text-[10px] font-bold"
+                        >D</span
+                    >
+                    Draw
+                </span>
+                <span class="flex items-center gap-1.5">
+                    <span
+                        class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-red-500 text-white text-[10px] font-bold"
+                        >✕</span
+                    >
+                    Loss
+                </span>
+                <span class="flex items-center gap-1.5">
+                    <span class="relative flex h-2.5 w-2.5 flex-shrink-0">
+                        <span
+                            class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"
+                        ></span>
+                        <span
+                            class="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"
+                        ></span>
+                    </span>
+                    Live match
+                </span>
             </div>
+            
         </div>
     {/if}
 {/if}

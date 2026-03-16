@@ -367,6 +367,9 @@
     (f) => f.status === "scheduled" || f.status === "in_progress",
   );
   $: in_progress_fixtures = fixtures.filter((f) => f.status === "in_progress");
+  $: live_team_ids = new Set(
+    in_progress_fixtures.flatMap((f) => [f.home_team_id, f.away_team_id]),
+  );
   $: player_stats = calculate_player_stats(fixtures);
   $: stats_available_teams = derive_stats_available_teams(player_stats);
   $: stats_filtered_scorers = filter_and_sort_scorers(
@@ -1282,6 +1285,7 @@
               <CompetitionStandingsTable
                 {standings}
                 {selected_team_id}
+                {live_team_ids}
                 empty_message="No teams registered for this competition yet."
                 on:teamclick={handle_standings_team_click}
               />
@@ -1342,6 +1346,7 @@
                               <CompetitionStandingsTable
                                 standings={inferred_group.standings}
                                 {selected_team_id}
+                                {live_team_ids}
                                 empty_message="No completed fixtures in this inferred group yet."
                                 show_legend={false}
                                 on:teamclick={handle_standings_team_click}
@@ -1466,6 +1471,7 @@
                       <CompetitionStandingsTable
                         standings={stage_section.standings}
                         {selected_team_id}
+                        {live_team_ids}
                         empty_message="No standings are available for this stage yet."
                         show_legend={false}
                         on:teamclick={handle_standings_team_click}
@@ -1474,21 +1480,17 @@
                   </section>
                 {/each}
 
-                <div
-                  class="mt-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg text-center"
-                >
-                  <div
-                    class="text-xs text-gray-500 dark:text-gray-400 font-bold mb-2"
-                  >
-                    Legend
+                <div class="mt-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                  <div class="text-xs font-bold text-gray-700 dark:text-gray-300 mb-2 uppercase tracking-wider">
+                    Key
                   </div>
                   <div
-                    class="flex flex-wrap justify-center gap-x-4 gap-y-1 text-xs text-gray-600 dark:text-gray-400"
+                    class="grid grid-cols-4 gap-x-4 gap-y-1 text-xs text-gray-600 dark:text-gray-400 mb-3"
                   >
                     <span
                       ><strong class="text-gray-700 dark:text-gray-300"
-                        >P</strong
-                      > = Played</span
+                        >MP</strong
+                      > = Matches Played</span
                     >
                     <span
                       ><strong class="text-gray-700 dark:text-gray-300"
@@ -1527,9 +1529,40 @@
                     >
                   </div>
                   <div
-                    class="mt-2 text-xs text-gray-500 dark:text-gray-400 italic"
+                    class="grid grid-cols-4 gap-x-4 gap-y-1.5 pt-2 border-t border-gray-200 dark:border-gray-700 text-xs text-gray-600 dark:text-gray-400"
                   >
-                    Click on a team to view their fixtures
+                    <span class="flex items-center gap-1.5">
+                      <span
+                        class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-green-500 text-white text-[10px] font-bold"
+                        >W</span
+                      >
+                      Win
+                    </span>
+                    <span class="flex items-center gap-1.5">
+                      <span
+                        class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-gray-400 text-white text-[10px] font-bold"
+                        >D</span
+                      >
+                      Draw
+                    </span>
+                    <span class="flex items-center gap-1.5">
+                      <span
+                        class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-red-500 text-white text-[10px] font-bold"
+                        >✕</span
+                      >
+                      Loss
+                    </span>
+                    <span class="flex items-center gap-1.5">
+                      <span class="relative flex h-2.5 w-2.5 flex-shrink-0">
+                        <span
+                          class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"
+                        ></span>
+                        <span
+                          class="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"
+                        ></span>
+                      </span>
+                      Live match
+                    </span>
                   </div>
                 </div>
               </div>
