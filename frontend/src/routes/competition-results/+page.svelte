@@ -1481,7 +1481,9 @@
                 {/each}
 
                 <div class="mt-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                  <div class="text-xs font-bold text-gray-700 dark:text-gray-300 mb-2 uppercase tracking-wider">
+                  <div
+                    class="text-xs font-bold text-gray-700 dark:text-gray-300 mb-2 uppercase tracking-wider"
+                  >
                     Key
                   </div>
                   <div
