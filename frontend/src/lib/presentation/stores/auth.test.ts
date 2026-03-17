@@ -2,22 +2,25 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { get } from "svelte/store";
 import type { UserProfile } from "./auth";
 
-const mock_local_storage: Record<string, string> = {};
+const mock_app_settings_store: Record<string, string> = {};
 
-vi.stubGlobal("localStorage", {
-  getItem: (key: string) => mock_local_storage[key] || null,
-  setItem: (key: string, value: string) => {
-    mock_local_storage[key] = value;
-  },
-  removeItem: (key: string) => {
-    delete mock_local_storage[key];
-  },
-  clear: () => {
-    Object.keys(mock_local_storage).forEach(
-      (key) => delete mock_local_storage[key],
-    );
-  },
-});
+vi.mock("$lib/infrastructure/container", () => ({
+  get_app_settings_storage: () => ({
+    get_setting: (key: string) => Promise.resolve(mock_app_settings_store[key] ?? null),
+    set_setting: (key: string, value: string) => {
+      mock_app_settings_store[key] = value;
+      return Promise.resolve();
+    },
+    remove_setting: (key: string) => {
+      delete mock_app_settings_store[key];
+      return Promise.resolve();
+    },
+    clear_all_settings: () => {
+      Object.keys(mock_app_settings_store).forEach((k) => delete mock_app_settings_store[k]);
+      return Promise.resolve();
+    },
+  }),
+}));
 
 vi.mock("$app/environment", () => ({
   browser: true,
@@ -147,19 +150,19 @@ import type { UserRole } from "$lib/core/interfaces/ports";
 
 describe("auth_store integration", () => {
   beforeEach(async () => {
-    Object.keys(mock_local_storage).forEach(
-      (key) => delete mock_local_storage[key],
+    Object.keys(mock_app_settings_store).forEach(
+      (key) => delete mock_app_settings_store[key],
     );
     await auth_store.initialize();
   });
 
-  afterEach(() => {
-    auth_store.logout();
+  afterEach(async () => {
+    await auth_store.logout();
   });
 
   describe("sidebar_menu_items derived store", () => {
-    it("returns empty array when no profile is set", () => {
-      auth_store.logout();
+    it("returns empty array when no profile is set", async () => {
+      await auth_store.logout();
       const menu = get(sidebar_menu_items);
       expect(menu).toEqual([]);
     });
@@ -238,8 +241,8 @@ describe("auth_store integration", () => {
   });
 
   describe("current_user_role derived store", () => {
-    it("returns null when no profile is set", () => {
-      auth_store.logout();
+    it("returns null when no profile is set", async () => {
+      await auth_store.logout();
       const role = get(current_user_role);
       expect(role).toBeNull();
     });
@@ -272,8 +275,8 @@ describe("auth_store integration", () => {
   });
 
   describe("current_user_role_display derived store", () => {
-    it("returns Unknown when no profile is set", () => {
-      auth_store.logout();
+    it("returns Unknown when no profile is set", async () => {
+      await auth_store.logout();
       const display = get(current_user_role_display);
       expect(display).toBe("Unknown");
     });
@@ -292,8 +295,8 @@ describe("auth_store integration", () => {
   });
 
   describe("current_profile_display_name derived store", () => {
-    it("returns Guest when no profile is set", () => {
-      auth_store.logout();
+    it("returns Guest when no profile is set", async () => {
+      await auth_store.logout();
       const name = get(current_profile_display_name);
       expect(name).toBe("Guest");
     });
@@ -403,21 +406,17 @@ describe("auth_store integration", () => {
     });
   });
   describe("can_switch_profiles derived store", () => {
-    it("returns false when no profile is set", () => {
-      auth_store.logout();
+    it("returns false after initialization in signed-in mode", () => {
       expect(get(can_switch_profiles)).toBe(false);
     });
 
-    it("returns true when current profile is super_admin", async () => {
-      const profiles = get(auth_store).available_profiles;
-      const super_admin_profile = profiles.find(
-        (p) => p.role === "super_admin",
-      );
-      await auth_store.switch_profile(super_admin_profile!.id);
-      expect(get(can_switch_profiles)).toBe(true);
+    it("returns false when no profile is set", async () => {
+      await auth_store.logout();
+      expect(get(can_switch_profiles)).toBe(false);
     });
 
-    it("returns true when not signed in (public_viewer demo mode)", async () => {
+    it("returns true when explicitly in demo session as public_viewer", async () => {
+      auth_store.mark_as_demo_session();
       const profiles = get(auth_store).available_profiles;
       const public_viewer_profile = profiles.find(
         (p) => p.role === "public_viewer",
@@ -426,37 +425,52 @@ describe("auth_store integration", () => {
       expect(get(can_switch_profiles)).toBe(true);
     });
 
-    it("returns false for org_admin", async () => {
+    it("stays true in demo session when switching to super_admin demo", async () => {
+      auth_store.mark_as_demo_session();
+      const profiles = get(auth_store).available_profiles;
+      const super_admin_profile = profiles.find(
+        (p) => p.role === "super_admin",
+      );
+      await auth_store.switch_profile(super_admin_profile!.id);
+      expect(get(can_switch_profiles)).toBe(true);
+    });
+
+    it("stays true in demo session when switching to org_admin demo", async () => {
+      auth_store.mark_as_demo_session();
       const profiles = get(auth_store).available_profiles;
       const org_admin_profile = profiles.find((p) => p.role === "org_admin");
       await auth_store.switch_profile(org_admin_profile!.id);
-      expect(get(can_switch_profiles)).toBe(false);
+      expect(get(can_switch_profiles)).toBe(true);
     });
 
-    it("returns false for team_manager", async () => {
+    it("stays true in demo session when switching to team_manager demo", async () => {
+      auth_store.mark_as_demo_session();
       const profiles = get(auth_store).available_profiles;
       const team_manager_profile = profiles.find(
         (p) => p.role === "team_manager",
       );
       await auth_store.switch_profile(team_manager_profile!.id);
-      expect(get(can_switch_profiles)).toBe(false);
+      expect(get(can_switch_profiles)).toBe(true);
     });
 
-    it("returns false for player", async () => {
+    it("stays true in demo session when switching to player demo", async () => {
+      auth_store.mark_as_demo_session();
       const profiles = get(auth_store).available_profiles;
       const player_profile = profiles.find((p) => p.role === "player");
       await auth_store.switch_profile(player_profile!.id);
-      expect(get(can_switch_profiles)).toBe(false);
+      expect(get(can_switch_profiles)).toBe(true);
     });
 
-    it("returns false for official", async () => {
+    it("stays true in demo session when switching to official demo", async () => {
+      auth_store.mark_as_demo_session();
       const profiles = get(auth_store).available_profiles;
       const official_profile = profiles.find((p) => p.role === "official");
       await auth_store.switch_profile(official_profile!.id);
-      expect(get(can_switch_profiles)).toBe(false);
+      expect(get(can_switch_profiles)).toBe(true);
     });
 
-    it("updates when switching from super_admin to player", async () => {
+    it("stays true across multiple demo profile switches", async () => {
+      auth_store.mark_as_demo_session();
       const profiles = get(auth_store).available_profiles;
       const super_admin_profile = profiles.find(
         (p) => p.role === "super_admin",
@@ -467,6 +481,12 @@ describe("auth_store integration", () => {
       expect(get(can_switch_profiles)).toBe(true);
 
       await auth_store.switch_profile(player_profile!.id);
+      expect(get(can_switch_profiles)).toBe(true);
+    });
+
+    it("returns false after logout even when previously in demo mode", async () => {
+      auth_store.mark_as_demo_session();
+      await auth_store.logout();
       expect(get(can_switch_profiles)).toBe(false);
     });
   });
@@ -474,8 +494,8 @@ describe("auth_store integration", () => {
 
 describe("auth_store persistence", () => {
   beforeEach(() => {
-    Object.keys(mock_local_storage).forEach(
-      (key) => delete mock_local_storage[key],
+    Object.keys(mock_app_settings_store).forEach(
+      (key) => delete mock_app_settings_store[key],
     );
   });
 
@@ -485,7 +505,7 @@ describe("auth_store persistence", () => {
 
     await auth_store.switch_profile(profiles[0].id);
 
-    expect(mock_local_storage["sports-org-current-profile-id"]).toBe(
+    expect(mock_app_settings_store["sports-org-current-profile-id"]).toBe(
       profiles[0].id,
     );
   });
@@ -496,7 +516,7 @@ describe("auth_store persistence", () => {
 
     await auth_store.switch_profile(profiles[0].id);
 
-    expect(mock_local_storage["sports-org-auth-token"]).toBeDefined();
+    expect(mock_app_settings_store["sports-org-auth-token"]).toBeDefined();
   });
 
   it("clears localStorage on logout", async () => {
@@ -504,27 +524,27 @@ describe("auth_store persistence", () => {
     const profiles = get(auth_store).available_profiles;
     await auth_store.switch_profile(profiles[0].id);
 
-    auth_store.logout();
+    await auth_store.logout();
 
-    expect(mock_local_storage["sports-org-current-profile-id"]).toBeUndefined();
-    expect(mock_local_storage["sports-org-auth-token"]).toBeUndefined();
+    expect(mock_app_settings_store["sports-org-current-profile-id"]).toBeUndefined();
+    expect(mock_app_settings_store["sports-org-auth-token"]).toBeUndefined();
   });
 });
 
 describe("auth_store — Convex unavailable fallback", () => {
-  beforeEach(() => {
-    Object.keys(mock_local_storage).forEach(
-      (key) => delete mock_local_storage[key],
+  beforeEach(async () => {
+    Object.keys(mock_app_settings_store).forEach(
+      (key) => delete mock_app_settings_store[key],
     );
-    auth_store.logout();
+    await auth_store.logout();
     mock_convex_query.mockResolvedValue({
       success: true,
       data: { email: "admin@test.com", role: "super_admin" },
     });
   });
 
-  afterEach(() => {
-    auth_store.logout();
+  afterEach(async () => {
+    await auth_store.logout();
     mock_convex_query.mockResolvedValue({
       success: true,
       data: { email: "admin@test.com", role: "super_admin" },

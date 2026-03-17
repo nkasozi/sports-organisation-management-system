@@ -342,7 +342,7 @@
                   {/if}
                 </div>
 
-                {#if $can_switch_profiles && $other_available_profiles.length > 0}
+                {#if !$is_signed_in && $other_available_profiles.length > 0}
                   <div class="relative">
                     <button
                       type="button"

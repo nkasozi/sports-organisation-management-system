@@ -7,7 +7,7 @@ export async function sync_branding_with_profile(
   profile: UserProfile | null,
 ): Promise<boolean> {
   if (!profile) {
-    branding_store.set_organization_context(null);
+    await branding_store.set_organization_context(null);
     return true;
   }
 
@@ -16,7 +16,7 @@ export async function sync_branding_with_profile(
     !profile.organization_id || profile.organization_id === ANY_VALUE;
 
   if (is_super_admin || has_no_org_context) {
-    branding_store.set_organization_context(null);
+    await branding_store.set_organization_context(null);
     console.log(
       "[BrandingSync] Set to platform branding (super_admin or no org context)",
     );
@@ -30,12 +30,12 @@ export async function sync_branding_with_profile(
     console.warn(
       `[BrandingSync] Could not load organization ${profile.organization_id}, using platform branding`,
     );
-    branding_store.set_organization_context(null);
+    await branding_store.set_organization_context(null);
     return false;
   }
 
   const org = org_result.data;
-  branding_store.set_organization_context(
+  await branding_store.set_organization_context(
     org.id,
     org.name,
     org.contact_email,

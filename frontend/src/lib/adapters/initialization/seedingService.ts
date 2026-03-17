@@ -1,3 +1,5 @@
+import { get_app_settings_storage } from "$lib/infrastructure/container";
+import type { AppSettingsPort } from "$lib/core/interfaces/ports";
 import {
   get_player_position_repository,
   InBrowserPlayerPositionRepository,
@@ -203,14 +205,16 @@ interface DemoSeedingRepos {
 
 const SEEDING_COMPLETE_KEY = "sports_org_seeding_complete_v15";
 
-export function is_seeding_already_complete(): boolean {
-  if (typeof window === "undefined") return true;
-  return localStorage.getItem(SEEDING_COMPLETE_KEY) === "true";
+export async function is_seeding_already_complete(
+  app_settings: AppSettingsPort = get_app_settings_storage(),
+): Promise<boolean> {
+  return (await app_settings.get_setting(SEEDING_COMPLETE_KEY)) === "true";
 }
 
-function mark_seeding_complete(): void {
-  if (typeof window === "undefined") return;
-  localStorage.setItem(SEEDING_COMPLETE_KEY, "true");
+async function mark_seeding_complete(
+  app_settings: AppSettingsPort = get_app_settings_storage(),
+): Promise<void> {
+  await app_settings.set_setting(SEEDING_COMPLETE_KEY, "true");
 }
 
 function find_position_id_by_code(
@@ -275,7 +279,7 @@ async function load_and_set_current_user(): Promise<Result<SystemUser>> {
     user_display_name: `${matched_user.first_name} ${matched_user.last_name}`,
     organization_id: matched_user.organization_id,
   });
-  current_user_store.set_user(matched_user);
+  current_user_store.set_user(matched_user).catch(() => {});
   console.log(
     `[Seeding] Current user resolved: ${matched_user.email} (role: ${matched_user.role})`,
   );
@@ -702,7 +706,7 @@ async function seed_all_demo_entities(
 }
 
 export async function seed_all_data_if_needed(): Promise<Result<boolean>> {
-  if (is_seeding_already_complete()) {
+  if (await is_seeding_already_complete()) {
     const current_user_result = await load_and_set_current_user();
     if (!current_user_result.success) {
       console.warn(`[Seeding] Could not resolve current user: ${current_user_result.error}`);
@@ -727,7 +731,7 @@ export async function seed_all_data_if_needed(): Promise<Result<boolean>> {
     user_display_name: `${super_admin.first_name} ${super_admin.last_name}`,
     organization_id: super_admin.organization_id,
   });
-  current_user_store.set_user(super_admin);
+  current_user_store.set_user(super_admin).catch(() => {});
   EventBus.emit_entity_created(
     "system_user",
     super_admin.id,
@@ -762,13 +766,14 @@ export async function seed_all_data_if_needed(): Promise<Result<boolean>> {
   }
 
   clear_user_context();
-  mark_seeding_complete();
+  await mark_seeding_complete();
   return create_success_result(true);
 }
 
-export function reset_seeding_flag(): void {
-  if (typeof window === "undefined") return;
-  localStorage.removeItem(SEEDING_COMPLETE_KEY);
+export async function reset_seeding_flag(
+  app_settings: AppSettingsPort = get_app_settings_storage(),
+): Promise<void> {
+  await app_settings.remove_setting(SEEDING_COMPLETE_KEY);
 }
 
 export async function seed_from_convex_or_local(
@@ -831,7 +836,7 @@ async function handle_local_only_seeding(
 async function handle_convex_with_local_fallback(
   on_progress: ProgressCallback,
 ): Promise<SeedResult> {
-  if (is_seeding_already_complete()) {
+  if (await is_seeding_already_complete()) {
     const current_user_result_2 = await load_and_set_current_user();
     if (!current_user_result_2.success) {
       console.warn(
@@ -869,7 +874,7 @@ async function handle_convex_with_local_fallback(
         `[Seeding] Could not resolve current user: ${current_user_result_3.error}`,
       );
     }
-    mark_seeding_complete();
+    await mark_seeding_complete();
     return {
       success: true,
       data_source: "convex",
@@ -894,7 +899,7 @@ async function handle_convex_with_local_fallback(
 async function handle_convex_mandatory(
   on_progress: ProgressCallback,
 ): Promise<SeedResult> {
-  const seeding_already_done = is_seeding_already_complete();
+  const seeding_already_done = await is_seeding_already_complete();
 
   if (typeof window === "undefined") {
     return {
@@ -919,7 +924,7 @@ async function handle_convex_mandatory(
         `[Seeding] Could not resolve current user: ${current_user_result_4.error}`,
       );
     }
-    mark_seeding_complete();
+    await mark_seeding_complete();
     return {
       success: true,
       data_source: "convex",

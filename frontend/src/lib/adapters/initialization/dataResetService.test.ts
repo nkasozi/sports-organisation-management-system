@@ -81,12 +81,10 @@ vi.mock("../persistence/sportService", () => ({
   get_all_sports: vi.fn().mockResolvedValue([]),
 }));
 vi.mock("./seedingService", () => ({
-  reset_seeding_flag: vi.fn(),
   seed_all_data_if_needed: vi.fn().mockResolvedValue(undefined),
 }));
 vi.mock("$lib/infrastructure/sync/convexSyncService", () => ({
   clear_all_demo_data_in_convex: vi.fn().mockResolvedValue(true),
-  reset_sync_metadata: vi.fn(),
 }));
 vi.mock("$lib/infrastructure/sync/backgroundSyncService", () => ({
   stop_background_sync: vi.fn().mockReturnValue(true),
@@ -105,32 +103,38 @@ vi.mock("$lib/adapters/iam/clerkAuthService", () => ({
   },
 }));
 
+const mock_app_settings_store: Record<string, string> = {};
+const mock_clear_all_settings = vi.fn(() => {
+  Object.keys(mock_app_settings_store).forEach((k) => delete mock_app_settings_store[k]);
+  return Promise.resolve();
+});
+
+vi.mock("$lib/infrastructure/container", () => ({
+  get_app_settings_storage: () => ({
+    get_setting: (key: string) => Promise.resolve(mock_app_settings_store[key] ?? null),
+    set_setting: (key: string, value: string) => { mock_app_settings_store[key] = value; return Promise.resolve(); },
+    remove_setting: (key: string) => { delete mock_app_settings_store[key]; return Promise.resolve(); },
+    clear_all_settings: mock_clear_all_settings,
+  }),
+}));
+
 import { reset_all_data } from "./dataResetService";
-import { clear_all_demo_data_in_convex, reset_sync_metadata } from "$lib/infrastructure/sync/convexSyncService";
+import { clear_all_demo_data_in_convex } from "$lib/infrastructure/sync/convexSyncService";
 import { stop_background_sync, start_background_sync, set_pulling_from_remote } from "$lib/infrastructure/sync/backgroundSyncService";
 import { clear_session_sync_flag } from "$lib/presentation/stores/initialSyncStore";
-import { reset_seeding_flag, seed_all_data_if_needed } from "./seedingService";
+import { seed_all_data_if_needed } from "./seedingService";
 import { reset_sport_repository } from "../repositories/InBrowserSportRepository";
 import { reset_organization_repository } from "../repositories/InBrowserOrganizationRepository";
 
 describe("reset_all_data", () => {
   const setup_window = () => {
     (globalThis as Record<string, unknown>).window = globalThis;
-    (globalThis as Record<string, unknown>).localStorage = {
-      clear: vi.fn(),
-      removeItem: vi.fn(),
-      getItem: vi.fn().mockReturnValue(null),
-      setItem: vi.fn(),
-    };
-    (globalThis as Record<string, unknown>).sessionStorage = {
-      removeItem: vi.fn(),
-      getItem: vi.fn().mockReturnValue(null),
-      setItem: vi.fn(),
-    };
   };
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mock_clear_all_settings.mockClear();
+    Object.keys(mock_app_settings_store).forEach((k) => delete mock_app_settings_store[k]);
     mock_is_signed_in = false;
     setup_window();
   });
@@ -195,11 +199,9 @@ describe("reset_all_data", () => {
     expect(clear_all_demo_data_in_convex).not.toHaveBeenCalled();
   });
 
-  it("clears localStorage", async () => {
+  it("clears all app settings via the settings port", async () => {
     await reset_all_data();
-    expect((globalThis as Record<string, unknown>).localStorage).toBeTruthy();
-    const local_storage = (globalThis as Record<string, unknown>).localStorage as { clear: ReturnType<typeof vi.fn> };
-    expect(local_storage.clear).toHaveBeenCalledOnce();
+    expect(mock_clear_all_settings).toHaveBeenCalledOnce();
   });
 
   it("clears the session sync flag so post-reload runs a full initial sync", async () => {
@@ -211,16 +213,6 @@ describe("reset_all_data", () => {
     mock_is_signed_in = false;
     await reset_all_data();
     expect(clear_session_sync_flag).toHaveBeenCalledOnce();
-  });
-
-  it("resets sync metadata", async () => {
-    await reset_all_data();
-    expect(reset_sync_metadata).toHaveBeenCalledOnce();
-  });
-
-  it("resets the seeding flag so default data is re-seeded", async () => {
-    await reset_all_data();
-    expect(reset_seeding_flag).toHaveBeenCalledOnce();
   });
 
   it("re-seeds default data after clearing repositories", async () => {

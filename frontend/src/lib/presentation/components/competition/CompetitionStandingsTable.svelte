@@ -22,53 +22,49 @@
 {#if standings.length === 0}
     <div class="text-center py-8 text-accent-500">{empty_message}</div>
 {:else}
-    <div class="hidden sm:block overflow-x-auto">
+    <div class="overflow-x-auto -mx-4 sm:mx-0">
         <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
             <thead class="bg-gray-50 dark:bg-gray-800">
                 <tr>
                     <th
-                        class="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
-                        >#</th
-                    >
-                    <th
-                        class="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+                        class="sticky left-0 z-10 bg-gray-50 dark:bg-gray-800 px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider border-r border-gray-200 dark:border-gray-700 min-w-[160px]"
                         >Team</th
                     >
                     <th
-                        class="px-3 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+                        class="px-3 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap"
                         >MP</th
                     >
                     <th
-                        class="px-3 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+                        class="px-3 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap"
                         >W</th
                     >
                     <th
-                        class="px-3 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+                        class="px-3 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap"
                         >D</th
                     >
                     <th
-                        class="px-3 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+                        class="px-3 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap"
                         >L</th
                     >
                     <th
-                        class="px-3 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden md:table-cell"
+                        class="px-3 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap"
                         >GF</th
                     >
                     <th
-                        class="px-3 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden md:table-cell"
+                        class="px-3 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap"
                         >GA</th
                     >
                     <th
-                        class="px-3 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+                        class="px-3 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap"
                         >GD</th
                     >
                     <th
-                        class="px-3 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider font-bold"
+                        class="px-3 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider font-bold whitespace-nowrap"
                         >Pts</th
                     >
                     <th
-                        class="px-3 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
-                        >Last 5</th
+                        class="px-3 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap"
+                        >Form</th
                     >
                 </tr>
             </thead>
@@ -88,17 +84,19 @@
                             )}
                     >
                         <td
-                            class="px-3 py-3 text-sm font-medium {index <
-                            highlight_top_count
-                                ? 'text-green-600'
-                                : 'text-gray-600 dark:text-gray-400'}"
-                        >
-                            {index + 1}
-                        </td>
-                        <td
-                            class="px-3 py-3 text-sm font-medium text-accent-900 dark:text-accent-100 hover:text-primary-600 dark:hover:text-primary-400"
+                            class="sticky left-0 z-10 border-r border-gray-200 dark:border-gray-700 px-3 py-3 text-sm {selected_team_id ===
+                            standing.team_id
+                                ? 'bg-primary-50 dark:bg-primary-900/20'
+                                : 'bg-white dark:bg-gray-900'}"
                         >
                             <span class="flex items-center gap-2">
+                                <span
+                                    class="flex-shrink-0 w-6 h-6 flex items-center justify-center text-xs font-bold rounded-full {index <
+                                    highlight_top_count
+                                        ? 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-400'
+                                        : 'bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-400'}"
+                                    >{index + 1}</span
+                                >
                                 {#if live_team_ids.has(standing.team_id)}
                                     <span
                                         class="relative flex h-2.5 w-2.5 flex-shrink-0"
@@ -111,9 +109,13 @@
                                         ></span>
                                     </span>
                                 {/if}
-                                {standing.team_name}
+                                <span
+                                    class="font-medium text-accent-900 dark:text-accent-100 hover:text-primary-600 dark:hover:text-primary-400 truncate max-w-[120px]"
+                                >
+                                    {standing.team_name}
+                                </span>
                                 <svg
-                                    class="w-3.5 h-3.5 text-gray-400"
+                                    class="w-3.5 h-3.5 flex-shrink-0 text-gray-400"
                                     fill="none"
                                     viewBox="0 0 24 24"
                                     stroke="currentColor"
@@ -128,46 +130,45 @@
                             </span>
                         </td>
                         <td
-                            class="px-3 py-3 text-sm text-center text-gray-600 dark:text-gray-400"
+                            class="px-3 py-3 text-sm text-center whitespace-nowrap text-gray-600 dark:text-gray-400"
                             >{standing.played}</td
                         >
                         <td
-                            class="px-3 py-3 text-sm text-center text-gray-600 dark:text-gray-400"
+                            class="px-3 py-3 text-sm text-center whitespace-nowrap text-gray-600 dark:text-gray-400"
                             >{standing.won}</td
                         >
                         <td
-                            class="px-3 py-3 text-sm text-center text-gray-600 dark:text-gray-400"
+                            class="px-3 py-3 text-sm text-center whitespace-nowrap text-gray-600 dark:text-gray-400"
                             >{standing.drawn}</td
                         >
                         <td
-                            class="px-3 py-3 text-sm text-center text-gray-600 dark:text-gray-400"
+                            class="px-3 py-3 text-sm text-center whitespace-nowrap text-gray-600 dark:text-gray-400"
                             >{standing.lost}</td
                         >
                         <td
-                            class="px-3 py-3 text-sm text-center text-gray-600 dark:text-gray-400 hidden md:table-cell"
+                            class="px-3 py-3 text-sm text-center whitespace-nowrap text-gray-600 dark:text-gray-400"
                             >{standing.goals_for}</td
                         >
                         <td
-                            class="px-3 py-3 text-sm text-center text-gray-600 dark:text-gray-400 hidden md:table-cell"
+                            class="px-3 py-3 text-sm text-center whitespace-nowrap text-gray-600 dark:text-gray-400"
                             >{standing.goals_against}</td
                         >
                         <td
-                            class="px-3 py-3 text-sm text-center {standing.goal_difference >
+                            class="px-3 py-3 text-sm text-center whitespace-nowrap {standing.goal_difference >
                             0
                                 ? 'text-green-600'
                                 : standing.goal_difference < 0
                                   ? 'text-red-600'
                                   : 'text-gray-600 dark:text-gray-400'}"
-                        >
-                            {standing.goal_difference > 0
+                            >{standing.goal_difference > 0
                                 ? "+"
-                                : ""}{standing.goal_difference}
-                        </td>
+                                : ""}{standing.goal_difference}</td
+                        >
                         <td
-                            class="px-3 py-3 text-sm text-center font-bold text-accent-900 dark:text-accent-100"
+                            class="px-3 py-3 text-sm text-center whitespace-nowrap font-bold text-accent-900 dark:text-accent-100"
                             >{standing.points}</td
                         >
-                        <td class="px-3 py-3 text-center">
+                        <td class="px-3 py-3 text-center whitespace-nowrap">
                             <div
                                 class="flex items-center justify-center gap-1.5"
                             >
@@ -191,115 +192,6 @@
                 {/each}
             </tbody>
         </table>
-    </div>
-
-    <div class="sm:hidden space-y-2">
-        {#each standings as standing, index}
-            <button
-                type="button"
-                class="w-full flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg transition-colors {selected_team_id ===
-                standing.team_id
-                    ? 'ring-2 ring-primary-500 bg-primary-50 dark:bg-primary-900/20'
-                    : ''}"
-                on:click={() =>
-                    handle_team_click(standing.team_id, standing.team_name)}
-            >
-                <div class="flex items-center gap-3">
-                    <span
-                        class="w-6 h-6 flex items-center justify-center text-sm font-bold rounded-full {index <
-                        highlight_top_count
-                            ? 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-400'
-                            : 'bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-400'}"
-                    >
-                        {index + 1}
-                    </span>
-                    <span class="flex items-center gap-1.5">
-                        {#if live_team_ids.has(standing.team_id)}
-                            <span
-                                class="relative flex h-2.5 w-2.5 flex-shrink-0"
-                            >
-                                <span
-                                    class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"
-                                ></span>
-                                <span
-                                    class="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"
-                                ></span>
-                            </span>
-                        {/if}
-                        <span
-                            class="font-medium text-accent-900 dark:text-accent-100 truncate max-w-[120px] text-left"
-                        >
-                            {standing.team_name}
-                        </span>
-                    </span>
-                </div>
-                <div class="flex items-center gap-3 text-sm">
-                    <div class="text-center">
-                        <div class="text-xs text-gray-500 dark:text-gray-400">
-                            MP
-                        </div>
-                        <div
-                            class="font-medium text-gray-700 dark:text-gray-300"
-                        >
-                            {standing.played}
-                        </div>
-                    </div>
-                    <div class="text-center">
-                        <div class="text-xs text-gray-500 dark:text-gray-400">
-                            GD
-                        </div>
-                        <div
-                            class="font-medium {standing.goal_difference > 0
-                                ? 'text-green-600'
-                                : standing.goal_difference < 0
-                                  ? 'text-red-600'
-                                  : 'text-gray-700 dark:text-gray-300'}"
-                        >
-                            {standing.goal_difference > 0
-                                ? "+"
-                                : ""}{standing.goal_difference}
-                        </div>
-                    </div>
-                    <div class="text-center min-w-[32px]">
-                        <div class="text-xs text-gray-500 dark:text-gray-400">
-                            Pts
-                        </div>
-                        <div
-                            class="font-bold text-accent-900 dark:text-accent-100"
-                        >
-                            {standing.points}
-                        </div>
-                    </div>
-                    <div class="flex items-center gap-1.5">
-                        {#each standing.form.slice(-3) as form_result}
-                            <span
-                                class="inline-flex items-center justify-center w-4 h-4 rounded-full text-[9px] font-bold
-                                    {form_result === 'W'
-                                    ? 'bg-green-500 text-white'
-                                    : form_result === 'D'
-                                      ? 'bg-gray-400 text-white'
-                                      : 'bg-red-500 text-white'}"
-                            >
-                                {form_result === "L" ? "✕" : form_result}
-                            </span>
-                        {/each}
-                    </div>
-                    <svg
-                        class="w-4 h-4 text-gray-400"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                        stroke-width="2"
-                    >
-                        <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            d="m8.25 4.5 7.5 7.5-7.5 7.5"
-                        />
-                    </svg>
-                </div>
-            </button>
-        {/each}
     </div>
 
     {#if show_legend}

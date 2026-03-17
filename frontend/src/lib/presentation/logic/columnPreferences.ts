@@ -1,4 +1,6 @@
 import type { SubEntityFilter } from "$lib/core/types/SubEntityFilter";
+import type { AppSettingsPort } from "$lib/core/interfaces/ports";
+import { get_app_settings_storage } from "$lib/infrastructure/container";
 
 const COLUMN_PREFERENCES_PREFIX = "col_prefs_";
 
@@ -24,18 +26,18 @@ export function build_column_cache_key(
   return key;
 }
 
-export function save_column_preferences(
+export async function save_column_preferences(
   entity_type: string,
   sub_entity_filter: SubEntityFilter | null,
   visible_columns: Set<string>,
-  storage: Storage = localStorage,
-): boolean {
+  storage: AppSettingsPort = get_app_settings_storage(),
+): Promise<boolean> {
   if (visible_columns.size === 0) return false;
 
   const cache_key = build_column_cache_key(entity_type, sub_entity_filter);
   const column_names = Array.from(visible_columns);
 
-  storage.setItem(cache_key, JSON.stringify(column_names));
+  await storage.set_setting(cache_key, JSON.stringify(column_names));
 
   console.log(
     `[ColumnPrefs] Saved ${column_names.length} column preferences for ${entity_type} (key: ${cache_key})`,
@@ -44,14 +46,14 @@ export function save_column_preferences(
   return true;
 }
 
-export function load_column_preferences(
+export async function load_column_preferences(
   entity_type: string,
   sub_entity_filter: SubEntityFilter | null,
   available_field_names: string[],
-  storage: Storage = localStorage,
-): ColumnPreferenceResult {
+  storage: AppSettingsPort = get_app_settings_storage(),
+): Promise<ColumnPreferenceResult> {
   const cache_key = build_column_cache_key(entity_type, sub_entity_filter);
-  const stored_value = storage.getItem(cache_key);
+  const stored_value = await storage.get_setting(cache_key);
 
   if (!stored_value) return { restored: false, columns: null };
 
@@ -82,15 +84,15 @@ export function load_column_preferences(
   }
 }
 
-export function clear_column_preferences(
+export async function clear_column_preferences(
   entity_type: string,
   sub_entity_filter: SubEntityFilter | null,
-  storage: Storage = localStorage,
-): boolean {
+  storage: AppSettingsPort = get_app_settings_storage(),
+): Promise<boolean> {
   const cache_key = build_column_cache_key(entity_type, sub_entity_filter);
-  const existed = storage.getItem(cache_key) !== null;
+  const existed = (await storage.get_setting(cache_key)) !== null;
 
-  storage.removeItem(cache_key);
+  await storage.remove_setting(cache_key);
 
   return existed;
 }

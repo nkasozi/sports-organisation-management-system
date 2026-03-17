@@ -205,11 +205,11 @@
     show_toast("Theme reset to defaults", "success");
   }
 
-  function handle_header_pattern_change(
+  async function handle_header_pattern_change(
     style: "solid_color" | "pattern",
-  ): void {
+  ): Promise<void> {
     header_pattern = style;
-    branding_store.update((config) => ({
+    await branding_store.update((config) => ({
       ...config,
       header_pattern: style,
     }));
@@ -221,11 +221,11 @@
     );
   }
 
-  function handle_footer_pattern_change(
+  async function handle_footer_pattern_change(
     style: "solid_color" | "pattern",
-  ): void {
+  ): Promise<void> {
     footer_pattern = style;
-    branding_store.update((config) => ({
+    await branding_store.update((config) => ({
       ...config,
       footer_pattern: style,
     }));
@@ -237,9 +237,9 @@
     );
   }
 
-  function handle_panel_borders_toggle(enabled: boolean): void {
+  async function handle_panel_borders_toggle(enabled: boolean): Promise<void> {
     show_panel_borders = enabled;
-    branding_store.update((config) => ({
+    await branding_store.update((config) => ({
       ...config,
       show_panel_borders: enabled,
     }));
@@ -268,10 +268,12 @@
     reader.onload = (e) => {
       const result = e.target?.result as string;
       background_pattern_url = result;
-      branding_store.update((config) => ({
-        ...config,
-        background_pattern_url: result,
-      }));
+      branding_store
+        .update((config) => ({
+          ...config,
+          background_pattern_url: result,
+        }))
+        .catch(() => {});
       show_toast("Custom pattern uploaded", "success");
     };
     reader.onerror = () => {
@@ -280,17 +282,17 @@
     reader.readAsDataURL(file);
   }
 
-  function reset_to_default_pattern(): void {
+  async function reset_to_default_pattern(): Promise<void> {
     background_pattern_url = "/african-mosaic-bg.svg";
-    branding_store.update((config) => ({
+    await branding_store.update((config) => ({
       ...config,
       background_pattern_url: "/african-mosaic-bg.svg",
     }));
     show_toast("Reset to default pattern", "success");
   }
 
-  function handle_save_organization_settings(): void {
-    branding_store.set({
+  async function handle_save_organization_settings(): Promise<void> {
+    await branding_store.set({
       organization_name: organization_name,
       organization_logo_url: organization_logo_url,
       organization_tagline: organization_tagline,
@@ -354,8 +356,8 @@
     );
   }
 
-  function save_social_media_settings(): void {
-    branding_store.update_social_media_links(social_media_links);
+  async function save_social_media_settings(): Promise<void> {
+    await branding_store.update_social_media_links(social_media_links);
     show_toast("Social media settings saved", "success");
   }
 

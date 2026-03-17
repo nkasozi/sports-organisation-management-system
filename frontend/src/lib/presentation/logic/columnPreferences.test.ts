@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import type { AppSettingsPort } from "$lib/core/interfaces/ports";
 import {
   build_column_cache_key,
   save_column_preferences,
@@ -7,25 +8,22 @@ import {
   type ColumnPreferenceResult,
 } from "./columnPreferences";
 
-function create_mock_storage(): Storage {
+function create_mock_storage(): AppSettingsPort {
   const store: Record<string, string> = {};
   return {
-    getItem: vi.fn((key: string) => store[key] ?? null),
-    setItem: vi.fn((key: string, value: string) => {
+    get_setting: vi.fn((key: string) => Promise.resolve(store[key] ?? null)),
+    set_setting: vi.fn((key: string, value: string) => {
       store[key] = value;
+      return Promise.resolve();
     }),
-    removeItem: vi.fn((key: string) => {
+    remove_setting: vi.fn((key: string) => {
       delete store[key];
+      return Promise.resolve();
     }),
-    clear: vi.fn(() => {
-      for (const key of Object.keys(store)) {
-        delete store[key];
-      }
+    clear_all_settings: vi.fn(() => {
+      Object.keys(store).forEach((k) => delete store[k]);
+      return Promise.resolve();
     }),
-    get length() {
-      return Object.keys(store).length;
-    },
-    key: vi.fn((index: number) => Object.keys(store)[index] ?? null),
   };
 }
 
@@ -58,32 +56,32 @@ describe("build_column_cache_key", () => {
 });
 
 describe("save_column_preferences", () => {
-  let storage: Storage;
+  let storage: AppSettingsPort;
 
   beforeEach(() => {
     storage = create_mock_storage();
   });
 
-  it("saves column names as JSON array", () => {
+  it("saves column names as JSON array", async () => {
     const columns = new Set(["name", "status", "created_at"]);
 
-    const saved = save_column_preferences("Team", null, columns, storage);
+    const saved = await save_column_preferences("Team", null, columns, storage);
 
     expect(saved).toBe(true);
-    expect(storage.setItem).toHaveBeenCalledWith(
+    expect(storage.set_setting).toHaveBeenCalledWith(
       "col_prefs_Team",
       JSON.stringify(["name", "status", "created_at"]),
     );
   });
 
-  it("saves with sub_entity_filter context", () => {
+  it("saves with sub_entity_filter context", async () => {
     const columns = new Set(["player_id", "team_id"]);
     const filter = {
       foreign_key_field: "team_id",
       foreign_key_value: "t-1",
     };
 
-    const saved = save_column_preferences(
+    const saved = await save_column_preferences(
       "PlayerTeamMembership",
       filter,
       columns,
@@ -91,31 +89,31 @@ describe("save_column_preferences", () => {
     );
 
     expect(saved).toBe(true);
-    expect(storage.setItem).toHaveBeenCalledWith(
+    expect(storage.set_setting).toHaveBeenCalledWith(
       "col_prefs_PlayerTeamMembership_team_id",
       JSON.stringify(["player_id", "team_id"]),
     );
   });
 
-  it("returns false for empty column set", () => {
-    const saved = save_column_preferences("Team", null, new Set(), storage);
+  it("returns false for empty column set", async () => {
+    const saved = await save_column_preferences("Team", null, new Set(), storage);
 
     expect(saved).toBe(false);
-    expect(storage.setItem).not.toHaveBeenCalled();
+    expect(storage.set_setting).not.toHaveBeenCalled();
   });
 });
 
 describe("load_column_preferences", () => {
-  let storage: Storage;
+  let storage: AppSettingsPort;
 
   beforeEach(() => {
     storage = create_mock_storage();
   });
 
-  it("returns restored columns when cached data exists", () => {
-    storage.setItem("col_prefs_Team", JSON.stringify(["name", "status"]));
+  it("returns restored columns when cached data exists", async () => {
+    await storage.set_setting("col_prefs_Team", JSON.stringify(["name", "status"]));
 
-    const result = load_column_preferences(
+    const result = await load_column_preferences(
       "Team",
       null,
       ["name", "status", "city"],
@@ -126,13 +124,13 @@ describe("load_column_preferences", () => {
     expect(result.columns).toEqual(new Set(["name", "status"]));
   });
 
-  it("filters out columns that no longer exist in available fields", () => {
-    storage.setItem(
+  it("filters out columns that no longer exist in available fields", async () => {
+    await storage.set_setting(
       "col_prefs_Team",
       JSON.stringify(["name", "deleted_field", "status"]),
     );
 
-    const result = load_column_preferences(
+    const result = await load_column_preferences(
       "Team",
       null,
       ["name", "status", "city"],
@@ -143,8 +141,8 @@ describe("load_column_preferences", () => {
     expect(result.columns).toEqual(new Set(["name", "status"]));
   });
 
-  it("returns not-restored when no cached data exists", () => {
-    const result = load_column_preferences(
+  it("returns not-restored when no cached data exists", async () => {
+    const result = await load_column_preferences(
       "Team",
       null,
       ["name", "status"],
@@ -155,10 +153,10 @@ describe("load_column_preferences", () => {
     expect(result.columns).toBeNull();
   });
 
-  it("returns not-restored when cached data is invalid JSON", () => {
-    storage.setItem("col_prefs_Team", "not-valid-json");
+  it("returns not-restored when cached data is invalid JSON", async () => {
+    await storage.set_setting("col_prefs_Team", "not-valid-json");
 
-    const result = load_column_preferences(
+    const result = await load_column_preferences(
       "Team",
       null,
       ["name", "status"],
@@ -169,13 +167,13 @@ describe("load_column_preferences", () => {
     expect(result.columns).toBeNull();
   });
 
-  it("returns not-restored when all cached columns are gone from available fields", () => {
-    storage.setItem(
+  it("returns not-restored when all cached columns are gone from available fields", async () => {
+    await storage.set_setting(
       "col_prefs_Team",
       JSON.stringify(["old_field_1", "old_field_2"]),
     );
 
-    const result = load_column_preferences(
+    const result = await load_column_preferences(
       "Team",
       null,
       ["name", "status"],
@@ -186,18 +184,18 @@ describe("load_column_preferences", () => {
     expect(result.columns).toBeNull();
   });
 
-  it("loads with sub_entity_filter context", () => {
+  it("loads with sub_entity_filter context", async () => {
     const filter = {
       foreign_key_field: "team_id",
       foreign_key_value: "t-1",
     };
 
-    storage.setItem(
+    await storage.set_setting(
       "col_prefs_PlayerTeamMembership_team_id",
       JSON.stringify(["player_id"]),
     );
 
-    const result = load_column_preferences(
+    const result = await await load_column_preferences(
       "PlayerTeamMembership",
       filter,
       ["player_id", "team_id", "status"],
@@ -210,23 +208,23 @@ describe("load_column_preferences", () => {
 });
 
 describe("clear_column_preferences", () => {
-  let storage: Storage;
+  let storage: AppSettingsPort;
 
   beforeEach(() => {
     storage = create_mock_storage();
   });
 
-  it("removes cached preferences for entity", () => {
-    storage.setItem("col_prefs_Team", JSON.stringify(["name"]));
+  it("removes cached preferences for entity", async () => {
+    await storage.set_setting("col_prefs_Team", JSON.stringify(["name"]));
 
-    const cleared = clear_column_preferences("Team", null, storage);
+    const cleared = await clear_column_preferences("Team", null, storage);
 
     expect(cleared).toBe(true);
-    expect(storage.removeItem).toHaveBeenCalledWith("col_prefs_Team");
+    expect(storage.remove_setting).toHaveBeenCalledWith("col_prefs_Team");
   });
 
-  it("returns false when no preferences existed", () => {
-    const cleared = clear_column_preferences("Team", null, storage);
+  it("returns false when no preferences existed", async () => {
+    const cleared = await clear_column_preferences("Team", null, storage);
 
     expect(cleared).toBe(false);
   });

@@ -1,5 +1,6 @@
 import { writable, derived, get } from "svelte/store";
 import { browser } from "$app/environment";
+import { get_app_settings_storage } from "$lib/infrastructure/container";
 import type {
   AuthToken,
   AuthTokenPayload,
@@ -175,35 +176,31 @@ interface AuthState {
   available_profiles: UserProfile[];
   sidebar_menu_items: SidebarMenuGroup[];
   is_initialized: boolean;
+  is_demo_session: boolean;
 }
 
 const AUTH_STORAGE_KEY = "sports-org-auth-token";
 const PROFILE_STORAGE_KEY = "sports-org-current-profile-id";
 
-function load_saved_profile_id(): string | null {
-  if (!browser) return null;
-  return localStorage.getItem(PROFILE_STORAGE_KEY);
+async function load_saved_profile_id(): Promise<string | null> {
+  return get_app_settings_storage().get_setting(PROFILE_STORAGE_KEY);
 }
 
-function save_profile_id(profile_id: string): void {
-  if (!browser) return;
-  localStorage.setItem(PROFILE_STORAGE_KEY, profile_id);
+async function save_profile_id(profile_id: string): Promise<void> {
+  await get_app_settings_storage().set_setting(PROFILE_STORAGE_KEY, profile_id);
 }
 
-function load_saved_token(): string | null {
-  if (!browser) return null;
-  return localStorage.getItem(AUTH_STORAGE_KEY);
+async function load_saved_token(): Promise<string | null> {
+  return get_app_settings_storage().get_setting(AUTH_STORAGE_KEY);
 }
 
-function save_token(raw_token: string): void {
-  if (!browser) return;
-  localStorage.setItem(AUTH_STORAGE_KEY, raw_token);
+async function save_token(raw_token: string): Promise<void> {
+  await get_app_settings_storage().set_setting(AUTH_STORAGE_KEY, raw_token);
 }
 
-function clear_auth_storage(): void {
-  if (!browser) return;
-  localStorage.removeItem(AUTH_STORAGE_KEY);
-  localStorage.removeItem(PROFILE_STORAGE_KEY);
+async function clear_auth_storage(): Promise<void> {
+  await get_app_settings_storage().remove_setting(AUTH_STORAGE_KEY);
+  await get_app_settings_storage().remove_setting(PROFILE_STORAGE_KEY);
 }
 
 function create_public_viewer_profile(): UserProfile {
@@ -225,6 +222,7 @@ function create_auth_store() {
     available_profiles: [],
     sidebar_menu_items: [],
     is_initialized: false,
+    is_demo_session: false,
   };
 
   const { subscribe, set, update } = writable<AuthState>(initial_state);
@@ -320,7 +318,7 @@ function create_auth_store() {
     );
     const available_profiles =
       build_profiles_with_public_viewer(loaded_profiles);
-    const saved_token_raw = load_saved_token();
+    const saved_token_raw = await load_saved_token();
     const user_is_signed_in = get(is_signed_in);
 
     let current_profile: UserProfile | null = null;
@@ -360,6 +358,7 @@ function create_auth_store() {
               available_profiles,
               sidebar_menu_items,
               is_initialized: true,
+              is_demo_session: true,
             });
             await sync_branding_with_profile(switched_profile);
             console.log(
@@ -378,7 +377,7 @@ function create_auth_store() {
           "[AuthStore] Saved token invalid or profile missing — clearing and defaulting to public viewer",
           { event: "auth_saved_token_invalid_on_anonymous_restore" },
         );
-        clear_auth_storage();
+        await clear_auth_storage();
       }
 
       console.log(
@@ -396,6 +395,7 @@ function create_auth_store() {
         available_profiles,
         sidebar_menu_items,
         is_initialized: true,
+        is_demo_session: true,
       });
       return create_success_result(true);
     }
@@ -447,13 +447,13 @@ function create_auth_store() {
               `(token: ${token_profile?.email ?? "unknown"}, clerk: ${clerk_email}). ` +
               "Clearing stale token.",
           );
-          clear_auth_storage();
+          await clear_auth_storage();
         }
       } else {
         console.warn(
           "[AuthStore] Saved token is invalid or expired, clearing storage",
         );
-        clear_auth_storage();
+        await clear_auth_storage();
       }
     }
 
@@ -480,8 +480,8 @@ function create_auth_store() {
         return create_failure_result(token_result.error);
       }
       current_token = token_result.data;
-      save_token(current_token.raw_token);
-      save_profile_id(current_profile.id);
+      await save_token(current_token.raw_token);
+      await save_profile_id(current_profile.id);
       console.log("[AuthStore] Initialized profile via Clerk email match", {
         event: "auth_initialized_from_clerk_email",
         display_name: current_profile.display_name,
@@ -501,6 +501,7 @@ function create_auth_store() {
       available_profiles,
       sidebar_menu_items,
       is_initialized: true,
+      is_demo_session: false,
     });
 
     await sync_branding_with_profile(current_profile);
@@ -557,8 +558,8 @@ function create_auth_store() {
       return false;
     }
     const new_token = token_result.data;
-    save_token(new_token.raw_token);
-    save_profile_id(target_profile.id);
+    await save_token(new_token.raw_token);
+    await save_profile_id(target_profile.id);
 
     sync_user_context_with_event_bus(target_profile);
 
@@ -586,8 +587,8 @@ function create_auth_store() {
     return state.current_profile?.role || null;
   }
 
-  function logout(): void {
-    clear_auth_storage();
+  async function logout(): Promise<void> {
+    await clear_auth_storage();
     clear_user_context();
     set({
       current_token: null,
@@ -595,6 +596,7 @@ function create_auth_store() {
       available_profiles: [],
       sidebar_menu_items: [],
       is_initialized: false,
+      is_demo_session: false,
     });
     console.log("[AuthStore] Logged out");
   }
@@ -714,13 +716,11 @@ function create_auth_store() {
     const is_super_admin = role === "super_admin";
     const is_org_admin = role === "org_admin";
 
-    const is_not_signed_in = role === "public_viewer";
-
     return {
       can_reset_demo: is_super_admin,
       can_view_audit_logs: is_super_admin || is_org_admin,
       can_access_dashboard: true,
-      can_switch_profiles: is_super_admin || is_not_signed_in,
+      can_switch_profiles: state.is_demo_session,
       audit_logs_scope: is_super_admin
         ? "all"
         : is_org_admin
@@ -845,7 +845,11 @@ function create_auth_store() {
     get_current_role,
     logout,
     reset_initialized_state: (): void => {
-      update((s) => ({ ...s, is_initialized: false }));
+      update((s) => ({ ...s, is_initialized: false, is_demo_session: false }));
+    },
+    mark_as_demo_session: (): boolean => {
+      update((s) => ({ ...s, is_demo_session: true }));
+      return true;
     },
     get_sidebar_menu_items,
     get_authorization_level,
@@ -928,13 +932,12 @@ const feature_access = derived(auth_store, ($auth) => {
   const role = $auth.current_profile.role;
   const is_super_admin = role === "super_admin";
   const is_org_admin = role === "org_admin";
-  const is_not_signed_in = role === "public_viewer";
 
   return {
     can_reset_demo: is_super_admin,
     can_view_audit_logs: is_super_admin || is_org_admin,
     can_access_dashboard: true,
-    can_switch_profiles: is_super_admin || is_not_signed_in,
+    can_switch_profiles: $auth.is_demo_session,
     audit_logs_scope: is_super_admin
       ? ("all" as const)
       : is_org_admin
@@ -945,9 +948,7 @@ const feature_access = derived(auth_store, ($auth) => {
 
 export const can_switch_profiles = derived(
   auth_store,
-  ($auth) =>
-    $auth.current_profile?.role === "super_admin" ||
-    $auth.current_profile?.role === "public_viewer",
+  ($auth) => $auth.is_demo_session,
 );
 
 function get_entity_authorization_level(

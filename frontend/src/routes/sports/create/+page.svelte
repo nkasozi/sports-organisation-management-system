@@ -245,7 +245,9 @@
     ></div>
   </div>
 {:else if error_message}
-  <div class="card p-8 text-center">
+  <div
+    class="bg-white dark:bg-accent-800 shadow-sm border-y border-accent-200 dark:border-accent-700 -mx-4 px-4 py-8 text-center sm:mx-0 sm:p-8 sm:border sm:rounded-lg"
+  >
     <svg
       class="mx-auto h-12 w-12 text-red-400"
       fill="none"
@@ -344,7 +346,7 @@
     </div>
 
     <div
-      class="bg-white dark:bg-accent-800 rounded-lg shadow-sm border border-accent-200 dark:border-accent-700 overflow-hidden"
+      class="bg-white dark:bg-accent-800 shadow-sm border-y border-accent-200 dark:border-accent-700 -mx-4 sm:mx-0 sm:border sm:rounded-lg overflow-hidden"
     >
       <div
         class="flex overflow-x-auto border-b border-accent-200 dark:border-accent-700"
@@ -363,7 +365,7 @@
         {/each}
       </div>
 
-      <form class="p-6" on:submit|preventDefault={handle_submit}>
+      <form class="px-4 py-6 sm:px-6" on:submit|preventDefault={handle_submit}>
         {#if active_section === "basic"}
           <div class="space-y-6">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">

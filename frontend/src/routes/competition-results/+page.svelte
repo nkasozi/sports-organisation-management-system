@@ -30,6 +30,7 @@
   import { auth_store } from "$lib/presentation/stores/auth";
   import {
     build_authorization_list_filter,
+    get_scope_value,
     type UserScopeProfile,
   } from "$lib/core/interfaces/ports";
   import type {
@@ -256,8 +257,8 @@
     team_fixtures_page = 1;
   }
 
-  function sync_branding_for_org(org: Organization): boolean {
-    branding_store.set_organization_context(
+  async function sync_branding_for_org(org: Organization): Promise<boolean> {
+    await branding_store.set_organization_context(
       org.id,
       org.name,
       org.contact_email,
@@ -406,16 +407,15 @@
 
   async function load_organizations(): Promise<Organization[]> {
     const auth_state = get(auth_store);
-    const role = auth_state.current_profile?.role || "public_viewer";
-    const user_org_id = auth_state.current_profile?.organization_id;
+    const profile = auth_state.current_profile as UserScopeProfile | null;
+    const org_scope = get_scope_value(profile, "organization_id");
 
     const result = await organization_use_cases.list({});
     if (!result.success) return [];
     const all_orgs = result.data?.items || [];
 
-    if (role === "super_admin") return all_orgs;
-    if (!user_org_id || user_org_id === "*") return [];
-    return all_orgs.filter((org) => org.id === user_org_id);
+    if (!org_scope) return all_orgs;
+    return all_orgs.filter((org) => org.id === org_scope);
   }
 
   async function load_competitions_for_organization(
@@ -455,7 +455,7 @@
         (o) => o.id === selected_organization_id,
       );
       if (selected_org) {
-        public_organization_store.set_organization(
+        await public_organization_store.set_organization(
           selected_org.id,
           selected_org.name,
         );
@@ -498,7 +498,7 @@
         );
         if (matching_org) {
           selected_organization_id = matching_org.id;
-          public_organization_store.set_organization(
+          await public_organization_store.set_organization(
             matching_org.id,
             matching_org.name,
           );
@@ -1053,7 +1053,9 @@
     {error_message}
   >
     {#if organizations.length === 0}
-      <div class="card p-8 sm:p-12 text-center">
+      <div
+        class="bg-white dark:bg-accent-800 shadow-sm border-y border-accent-200 dark:border-accent-700 -mx-4 px-4 py-8 text-center sm:mx-0 sm:p-12 sm:border sm:rounded-lg"
+      >
         <svg
           class="mx-auto h-12 w-12 text-accent-400"
           fill="none"
@@ -1084,7 +1086,9 @@
         </button>
       </div>
     {:else if competitions.length === 0}
-      <div class="card p-8 sm:p-12 text-center">
+      <div
+        class="bg-white dark:bg-accent-800 shadow-sm border-y border-accent-200 dark:border-accent-700 -mx-4 px-4 py-8 text-center sm:mx-0 sm:p-12 sm:border sm:rounded-lg"
+      >
         <svg
           class="mx-auto h-12 w-12 text-accent-400"
           fill="none"
@@ -1115,7 +1119,9 @@
         </button>
       </div>
     {:else}
-      <div class="card p-4 sm:p-6 space-y-6 overflow-hidden">
+      <div
+        class="bg-white dark:bg-accent-800 shadow-sm border-y border-accent-200 dark:border-accent-700 -mx-4 px-4 pt-4 pb-6 space-y-6 sm:mx-0 sm:px-6 sm:border sm:rounded-lg overflow-hidden"
+      >
         <div
           class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 border-b border-gray-200 dark:border-gray-700 pb-4"
         >

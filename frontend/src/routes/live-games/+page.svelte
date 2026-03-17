@@ -32,6 +32,8 @@
   import { auth_store } from "$lib/presentation/stores/auth";
   import {
     build_authorization_list_filter,
+    get_scope_value,
+    ANY_VALUE,
     type UserScopeProfile,
   } from "$lib/core/interfaces/ports";
 
@@ -65,8 +67,9 @@
 
   function can_user_change_organizations(): boolean {
     const auth_state = get(auth_store);
-    const role = auth_state.current_profile?.role || "player";
-    return role === "super_admin";
+    const profile = auth_state.current_profile as UserScopeProfile | null;
+    if (!profile) return false;
+    return profile.organization_id === ANY_VALUE;
   }
 
   function build_org_auth_filter(): Record<string, string> {
@@ -80,17 +83,15 @@
 
   async function load_organizations(): Promise<Organization[]> {
     const auth_state = get(auth_store);
-    const role = auth_state.current_profile?.role || "public_viewer";
-    const user_org_id = auth_state.current_profile?.organization_id;
+    const profile = auth_state.current_profile as UserScopeProfile | null;
+    const org_scope = get_scope_value(profile, "organization_id");
 
     const result = await organization_use_cases.list({});
     if (!result.success) return [];
     const all_orgs = result.data?.items || [];
 
-    if (role === "super_admin") return all_orgs;
-
-    if (!user_org_id || user_org_id === "*") return [];
-    return all_orgs.filter((org) => org.id === user_org_id);
+    if (!org_scope) return all_orgs;
+    return all_orgs.filter((org) => org.id === org_scope);
   }
 
   async function handle_organization_change(): Promise<boolean> {

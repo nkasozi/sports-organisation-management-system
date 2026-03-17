@@ -32,8 +32,11 @@
     set_pulling_from_remote,
   } from "$lib/infrastructure/sync/backgroundSyncService";
   import { reset_database } from "$lib/adapters/repositories/database";
-  import { reset_sync_metadata } from "$lib/infrastructure/sync/convexSyncService";
   import { seed_all_data_if_needed } from "$lib/adapters/initialization/seedingService";
+  import { initialize_theme } from "$lib/presentation/stores/theme";
+  import { branding_store } from "$lib/presentation/stores/branding";
+  import { public_organization_store } from "$lib/presentation/stores/publicOrganization";
+  import { current_user_store } from "$lib/presentation/stores/currentUser";
   import { ClerkProvider } from "svelte-clerk";
   import {
     auth_store,
@@ -43,6 +46,7 @@
   import {
     write_convex_user_to_local_dexie,
     pull_user_scoped_record_from_convex,
+    reset_sync_metadata,
   } from "$lib/infrastructure/sync/convexSyncService";
   import type { Result } from "$lib/core/types/Result";
   import {
@@ -209,7 +213,7 @@
     set_pulling_from_remote(true);
     initial_sync_store.update_progress("Clearing local data...", 10);
     await reset_database();
-    reset_sync_metadata();
+    await reset_sync_metadata();
 
     initial_sync_store.update_progress("Setting up your account...", 17);
     await write_convex_user_to_local_dexie(convex_profile);
@@ -296,6 +300,11 @@
   onMount(async () => {
     current_path = get(page).url.pathname;
 
+    await initialize_theme();
+    await branding_store.initialize();
+    await public_organization_store.initialize();
+    await current_user_store.initialize();
+
     unsubscribe_navigating = navigating.subscribe((nav) => {
       set_navigating(nav !== null);
     });
@@ -351,7 +360,7 @@
     }
 
     const user_is_signed_in = get(is_signed_in);
-    const session_already_synced = has_session_been_synced();
+    const session_already_synced = await has_session_been_synced();
 
     if (user_is_signed_in && !session_already_synced) {
       await log_verified_user_in();
