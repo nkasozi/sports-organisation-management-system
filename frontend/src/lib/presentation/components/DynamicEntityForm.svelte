@@ -1423,7 +1423,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
   {:else}
     <div
       class={is_mobile_view
-        ? "card p-4 sm:p-6 space-y-4"
+        ? "bg-white dark:bg-accent-800 shadow-sm border-y border-accent-200 dark:border-accent-700 -mx-4 px-4 pt-4 pb-6 space-y-4 sm:mx-0 sm:px-6 sm:border sm:rounded-lg"
         : "card p-4 sm:p-6 space-y-6"}
     >
       <div class="border-b border-gray-200 dark:border-gray-700 pb-4">
@@ -2164,8 +2164,8 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
               </svg>
               <p class="text-sm text-blue-800 dark:text-blue-200">
                 This transfer will be created with a <strong>Pending</strong>
-                status. You will need to open the transfer record and change the
-                status to
+                status. You will need to open the transfer record and change the status
+                to
                 <strong>Approved</strong> to complete the transfer and update the
                 player's team membership.
               </p>
