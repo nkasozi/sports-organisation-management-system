@@ -32,7 +32,7 @@
     set_pulling_from_remote,
   } from "$lib/infrastructure/sync/backgroundSyncService";
   import { reset_database } from "$lib/adapters/repositories/database";
-  import { seed_all_data_if_needed } from "$lib/adapters/initialization/seedingService";
+  import { reset_all_data } from "$lib/adapters/initialization/dataResetService";
   import { initialize_theme } from "$lib/presentation/stores/theme";
   import { branding_store } from "$lib/presentation/stores/branding";
   import { public_organization_store } from "$lib/presentation/stores/publicOrganization";
@@ -121,7 +121,9 @@
   async function handle_first_time_anonymous_user(): Promise<Result<boolean>> {
     initial_sync_store.start_sync();
     initial_sync_store.update_progress("Loading offline data...", 20);
-    await seed_all_data_if_needed();
+    await reset_all_data((message, percentage) =>
+      initial_sync_store.update_progress(message, percentage),
+    );
     initial_sync_store.update_progress("Setting up your profile...", 85);
     auth_store.reset_initialized_state();
     await auth_store.initialize();

@@ -1,10 +1,8 @@
-import { reset_organization_repository } from "../repositories/InBrowserOrganizationRepository";
 import { reset_team_repository } from "../repositories/InBrowserTeamRepository";
 import { reset_competition_repository } from "../repositories/InBrowserCompetitionRepository";
 import { reset_player_repository } from "../repositories/InBrowserPlayerRepository";
 import { reset_player_team_membership_repository } from "../repositories/InBrowserPlayerTeamMembershipRepository";
 import { reset_official_repository } from "../repositories/InBrowserOfficialRepository";
-import { reset_sport_repository } from "../repositories/InBrowserSportRepository";
 import { reset_fixture_repository } from "../repositories/InBrowserFixtureRepository";
 import { reset_team_staff_repository } from "../repositories/InBrowserTeamStaffRepository";
 import { reset_game_event_type_repository } from "../repositories/InBrowserGameEventTypeRepository";
@@ -21,13 +19,6 @@ import { reset_profile_link_repository } from "../repositories/InBrowserProfileL
 import { reset_qualification_repository } from "../repositories/InBrowserQualificationRepository";
 import { reset_fixture_details_setup_repository } from "../repositories/InBrowserFixtureDetailsSetupRepository";
 import { reset_fixture_lineup_repository } from "../repositories/InBrowserFixtureLineupRepository";
-import { get_organization_repository } from "../repositories/InBrowserOrganizationRepository";
-import { get_team_repository } from "../repositories/InBrowserTeamRepository";
-import { get_competition_repository } from "../repositories/InBrowserCompetitionRepository";
-import { get_player_repository } from "../repositories/InBrowserPlayerRepository";
-import { get_player_team_membership_repository } from "../repositories/InBrowserPlayerTeamMembershipRepository";
-import { get_official_repository } from "../repositories/InBrowserOfficialRepository";
-import { get_all_sports } from "../persistence/sportService";
 import { seed_all_data_if_needed } from "./seedingService";
 import { clear_all_demo_data_in_convex } from "$lib/infrastructure/sync/convexSyncService";
 import {
@@ -69,8 +60,6 @@ export async function reset_all_data(
   await clear_session_sync_flag();
 
   report("Resetting data stores...", 35);
-  await reset_sport_repository();
-  await reset_organization_repository();
   await reset_team_repository();
   await reset_competition_repository();
   await reset_player_repository();
@@ -93,9 +82,7 @@ export async function reset_all_data(
   await reset_profile_link_repository();
   await reset_qualification_repository();
 
-  report("Reloading fresh demo data...", 65);
-  await get_all_sports();
-  report("Seeding demo data...", 80);
+  report("Seeding demo data...", 65);
   await seed_all_data_if_needed();
 
   report("Finishing up...", 95);

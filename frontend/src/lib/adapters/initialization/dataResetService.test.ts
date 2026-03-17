@@ -136,8 +136,7 @@ import {
 } from "$lib/infrastructure/sync/backgroundSyncService";
 import { clear_session_sync_flag } from "$lib/presentation/stores/initialSyncStore";
 import { seed_all_data_if_needed } from "./seedingService";
-import { reset_sport_repository } from "../repositories/InBrowserSportRepository";
-import { reset_organization_repository } from "../repositories/InBrowserOrganizationRepository";
+import { reset_team_repository } from "../repositories/InBrowserTeamRepository";
 
 describe("reset_all_data", () => {
   const setup_window = () => {
@@ -176,14 +175,15 @@ describe("reset_all_data", () => {
       call_order.push("stop");
       return true;
     });
-    vi.mocked(reset_sport_repository).mockImplementation(async () => {
-      call_order.push("reset_sport");
+    vi.mocked(seed_all_data_if_needed).mockImplementation(async () => {
+      call_order.push("seed");
+      return { success: true as const, data: true };
     });
 
     await reset_all_data();
 
     expect(call_order.indexOf("stop")).toBeLessThan(
-      call_order.indexOf("reset_sport"),
+      call_order.indexOf("seed"),
     );
   });
 
@@ -239,8 +239,8 @@ describe("reset_all_data", () => {
 
   it("re-seeds default data after clearing repositories", async () => {
     const call_order: string[] = [];
-    vi.mocked(reset_organization_repository).mockImplementation(async () => {
-      call_order.push("reset_org");
+    vi.mocked(reset_team_repository).mockImplementation(async () => {
+      call_order.push("reset_team");
     });
     vi.mocked(seed_all_data_if_needed).mockImplementation(async () => {
       call_order.push("seed");
@@ -249,7 +249,7 @@ describe("reset_all_data", () => {
 
     await reset_all_data();
 
-    expect(call_order.indexOf("reset_org")).toBeLessThan(
+    expect(call_order.indexOf("reset_team")).toBeLessThan(
       call_order.indexOf("seed"),
     );
   });
