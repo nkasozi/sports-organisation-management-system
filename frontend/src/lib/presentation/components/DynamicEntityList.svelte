@@ -837,7 +837,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
 
   <div
     class={is_mobile_view
-      ? "card p-4 sm:p-6 space-y-4 overflow-x-auto"
+      ? "bg-white dark:bg-accent-800 shadow-sm border-y border-accent-200 dark:border-accent-700 -mx-4 px-4 pt-4 pb-6 space-y-4 sm:mx-0 sm:px-6 sm:border sm:rounded-lg"
       : "card p-4 sm:p-6 space-y-6 overflow-x-auto"}
   >
     <!-- Header with title and actions -->
@@ -931,7 +931,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
         {/if}
       </div>
 
-      <div class="flex flex-wrap gap-2 w-full sm:w-auto">
+      <div class="flex flex-wrap gap-x-2 gap-y-4 w-full sm:w-auto">
         <button
           type="button"
           class="btn btn-outline w-auto"
@@ -1211,7 +1211,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
 
       <!-- Entity list -->
     {:else}
-      <div class="overflow-x-auto">
+      <div class="overflow-x-auto -mx-4 sm:mx-0">
         <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
           <thead class="bg-gray-50 dark:bg-gray-800">
             <tr>

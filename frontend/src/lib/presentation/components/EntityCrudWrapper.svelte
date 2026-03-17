@@ -417,7 +417,7 @@ Uses explicit handlers instead of events for predictable data flow
   </div>
 
   <div class="flex justify-center w-full">
-    <div class="crud-content w-full max-w-6xl px-4 sm:px-6">
+    <div class="crud-content w-full max-w-6xl sm:px-6">
       {#if current_view === "list"}
         <DynamicEntityList
           bind:this={entity_list_component}
