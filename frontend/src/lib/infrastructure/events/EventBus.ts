@@ -44,11 +44,24 @@ export interface AccessDeniedPayload {
   };
 }
 
+export interface PageViewedPayload {
+  page_path: string;
+  page_title: string;
+  timestamp: string;
+  user_context?: {
+    user_id: string;
+    user_email: string;
+    user_display_name: string;
+    organization_id: string;
+  };
+}
+
 export type EventType =
   | "entity_created"
   | "entity_updated"
   | "entity_deleted"
-  | "access_denied";
+  | "access_denied"
+  | "page_viewed";
 
 class EventBusImpl {
   private handlers: Map<EventType, Set<EventHandler<unknown>>> = new Map();
@@ -168,6 +181,16 @@ class EventBusImpl {
       user_context: base_context ? { ...base_context, role } : undefined,
     };
     this.emit("access_denied", payload);
+  }
+
+  emit_page_viewed(page_path: string, page_title: string): void {
+    const payload: PageViewedPayload = {
+      page_path,
+      page_title,
+      timestamp: new Date().toISOString(),
+      user_context: get_current_user_context(),
+    };
+    this.emit("page_viewed", payload);
   }
 
   enable(): void {

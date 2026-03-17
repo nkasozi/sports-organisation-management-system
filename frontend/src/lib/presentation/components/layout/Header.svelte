@@ -12,6 +12,7 @@
     auth_store,
     current_user_role_display,
     current_profile_display_name,
+    current_profile_email,
     current_profile_initials,
     current_profile_organization_name,
     other_available_profiles,
@@ -325,6 +326,17 @@
                   >
                     {$current_profile_display_name}
                   </p>
+                  {#if $current_profile_email}
+                    <p
+                      class="text-xs text-gray-500 dark:text-accent-400 mt-0.5 truncate"
+                    >
+                      <span
+                        class="font-medium text-gray-600 dark:text-accent-300"
+                        >Email:</span
+                      >
+                      {$current_profile_email}
+                    </p>
+                  {/if}
                   <p class="text-xs text-gray-500 dark:text-accent-400 mt-1">
                     <span class="font-medium text-gray-600 dark:text-accent-300"
                       >Role:</span
