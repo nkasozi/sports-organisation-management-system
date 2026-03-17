@@ -1,14 +1,26 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 
 const mock_app_settings_store: Record<string, string> = {};
-const mock_remove_setting = vi.fn((key: string) => { delete mock_app_settings_store[key]; return Promise.resolve(); });
+const mock_remove_setting = vi.fn((key: string) => {
+  delete mock_app_settings_store[key];
+  return Promise.resolve();
+});
 
 vi.mock("$lib/infrastructure/container", () => ({
   get_app_settings_storage: () => ({
-    get_setting: (key: string) => Promise.resolve(mock_app_settings_store[key] ?? null),
-    set_setting: (key: string, value: string) => { mock_app_settings_store[key] = value; return Promise.resolve(); },
+    get_setting: (key: string) =>
+      Promise.resolve(mock_app_settings_store[key] ?? null),
+    set_setting: (key: string, value: string) => {
+      mock_app_settings_store[key] = value;
+      return Promise.resolve();
+    },
     remove_setting: mock_remove_setting,
-    clear_all_settings: () => { Object.keys(mock_app_settings_store).forEach((k) => delete mock_app_settings_store[k]); return Promise.resolve(); },
+    clear_all_settings: () => {
+      Object.keys(mock_app_settings_store).forEach(
+        (k) => delete mock_app_settings_store[k],
+      );
+      return Promise.resolve();
+    },
   }),
 }));
 
@@ -985,7 +997,9 @@ describe("get_last_sync_timestamp", () => {
 
 describe("reset_sync_metadata", () => {
   it("removes convex_sync_metadata via AppSettingsPort", async () => {
-    mock_app_settings_store["convex_sync_metadata"] = JSON.stringify({ last_synced: "2024-01-01T00:00:00.000Z" });
+    mock_app_settings_store["convex_sync_metadata"] = JSON.stringify({
+      last_synced: "2024-01-01T00:00:00.000Z",
+    });
     mock_remove_setting.mockClear();
 
     const { reset_sync_metadata } = await import("./convexSyncService");

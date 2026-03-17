@@ -18,7 +18,9 @@ const initial_state: InitialSyncState = {
 const SESSION_SYNC_KEY = "sports_org_session_synced";
 
 export async function has_session_been_synced(): Promise<boolean> {
-  return (await get_app_settings_storage().get_setting(SESSION_SYNC_KEY)) === "true";
+  return (
+    (await get_app_settings_storage().get_setting(SESSION_SYNC_KEY)) === "true"
+  );
 }
 
 async function mark_session_synced(): Promise<void> {

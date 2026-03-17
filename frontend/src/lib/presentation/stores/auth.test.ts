@@ -6,7 +6,8 @@ const mock_app_settings_store: Record<string, string> = {};
 
 vi.mock("$lib/infrastructure/container", () => ({
   get_app_settings_storage: () => ({
-    get_setting: (key: string) => Promise.resolve(mock_app_settings_store[key] ?? null),
+    get_setting: (key: string) =>
+      Promise.resolve(mock_app_settings_store[key] ?? null),
     set_setting: (key: string, value: string) => {
       mock_app_settings_store[key] = value;
       return Promise.resolve();
@@ -16,7 +17,9 @@ vi.mock("$lib/infrastructure/container", () => ({
       return Promise.resolve();
     },
     clear_all_settings: () => {
-      Object.keys(mock_app_settings_store).forEach((k) => delete mock_app_settings_store[k]);
+      Object.keys(mock_app_settings_store).forEach(
+        (k) => delete mock_app_settings_store[k],
+      );
       return Promise.resolve();
     },
   }),
@@ -526,7 +529,9 @@ describe("auth_store persistence", () => {
 
     await auth_store.logout();
 
-    expect(mock_app_settings_store["sports-org-current-profile-id"]).toBeUndefined();
+    expect(
+      mock_app_settings_store["sports-org-current-profile-id"],
+    ).toBeUndefined();
     expect(mock_app_settings_store["sports-org-auth-token"]).toBeUndefined();
   });
 });

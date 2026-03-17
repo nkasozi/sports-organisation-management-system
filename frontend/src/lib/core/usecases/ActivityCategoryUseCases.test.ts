@@ -8,16 +8,22 @@ import type { ActivityCategoryRepository } from "../interfaces/ports";
 
 function make_mock_repository(): ActivityCategoryRepository {
   return {
-    find_all: vi.fn().mockResolvedValue({ success: true, data: { items: [], total: 0 } }),
+    find_all: vi
+      .fn()
+      .mockResolvedValue({ success: true, data: { items: [], total: 0 } }),
     find_by_id: vi.fn().mockResolvedValue({ success: true, data: null }),
     create: vi.fn().mockResolvedValue({ success: true, data: null }),
     update: vi.fn().mockResolvedValue({ success: true, data: null }),
     delete_by_id: vi.fn().mockResolvedValue({ success: true, data: true }),
-    find_by_organization: vi.fn().mockResolvedValue({ success: true, data: { items: [], total: 0 } }),
+    find_by_organization: vi
+      .fn()
+      .mockResolvedValue({ success: true, data: { items: [], total: 0 } }),
   } as unknown as ActivityCategoryRepository;
 }
 
-function make_category(overrides: Partial<ActivityCategory> = {}): ActivityCategory {
+function make_category(
+  overrides: Partial<ActivityCategory> = {},
+): ActivityCategory {
   return {
     id: "cat-1",
     created_at: "2026-01-01T00:00:00Z",
@@ -33,7 +39,9 @@ function make_category(overrides: Partial<ActivityCategory> = {}): ActivityCateg
   };
 }
 
-function make_create_input(overrides: Partial<CreateActivityCategoryInput> = {}): CreateActivityCategoryInput {
+function make_create_input(
+  overrides: Partial<CreateActivityCategoryInput> = {},
+): CreateActivityCategoryInput {
   return {
     name: "Custom Events",
     description: "Custom event category",
@@ -53,13 +61,18 @@ describe("list", () => {
 
     await use_cases.list({ organization_id: "org-1" });
 
-    expect(repo.find_all).toHaveBeenCalledWith({ organization_id: "org-1" }, undefined);
+    expect(repo.find_all).toHaveBeenCalledWith(
+      { organization_id: "org-1" },
+      undefined,
+    );
   });
 });
 
 describe("get_by_id", () => {
   it("returns failure when id is empty string", async () => {
-    const use_cases = create_activity_category_use_cases(make_mock_repository());
+    const use_cases = create_activity_category_use_cases(
+      make_mock_repository(),
+    );
 
     const result = await use_cases.get_by_id("");
 
@@ -69,7 +82,9 @@ describe("get_by_id", () => {
   });
 
   it("returns failure when id is whitespace only", async () => {
-    const use_cases = create_activity_category_use_cases(make_mock_repository());
+    const use_cases = create_activity_category_use_cases(
+      make_mock_repository(),
+    );
 
     const result = await use_cases.get_by_id("   ");
 
@@ -92,7 +107,9 @@ describe("get_by_id", () => {
 
 describe("create", () => {
   it("returns failure when name is missing", async () => {
-    const use_cases = create_activity_category_use_cases(make_mock_repository());
+    const use_cases = create_activity_category_use_cases(
+      make_mock_repository(),
+    );
 
     const result = await use_cases.create(make_create_input({ name: "" }));
 
@@ -102,7 +119,9 @@ describe("create", () => {
   });
 
   it("returns failure when organization_id is missing", async () => {
-    const use_cases = create_activity_category_use_cases(make_mock_repository());
+    const use_cases = create_activity_category_use_cases(
+      make_mock_repository(),
+    );
 
     const result = await use_cases.create(
       make_create_input({ organization_id: "" }),
@@ -112,7 +131,9 @@ describe("create", () => {
   });
 
   it("returns failure when color is missing", async () => {
-    const use_cases = create_activity_category_use_cases(make_mock_repository());
+    const use_cases = create_activity_category_use_cases(
+      make_mock_repository(),
+    );
 
     const result = await use_cases.create(make_create_input({ color: "" }));
 
@@ -120,7 +141,9 @@ describe("create", () => {
   });
 
   it("returns failure when category_type is missing", async () => {
-    const use_cases = create_activity_category_use_cases(make_mock_repository());
+    const use_cases = create_activity_category_use_cases(
+      make_mock_repository(),
+    );
 
     const result = await use_cases.create(
       make_create_input({ category_type: "" as "custom" }),
@@ -130,7 +153,9 @@ describe("create", () => {
   });
 
   it("returns failure when name exceeds 100 characters", async () => {
-    const use_cases = create_activity_category_use_cases(make_mock_repository());
+    const use_cases = create_activity_category_use_cases(
+      make_mock_repository(),
+    );
 
     const result = await use_cases.create(
       make_create_input({ name: "a".repeat(101) }),
@@ -156,7 +181,9 @@ describe("create", () => {
 
 describe("update", () => {
   it("returns failure when id is empty", async () => {
-    const use_cases = create_activity_category_use_cases(make_mock_repository());
+    const use_cases = create_activity_category_use_cases(
+      make_mock_repository(),
+    );
 
     const result = await use_cases.update("", { name: "Renamed" });
 
@@ -175,7 +202,9 @@ describe("update", () => {
 
 describe("delete", () => {
   it("returns failure when id is empty", async () => {
-    const use_cases = create_activity_category_use_cases(make_mock_repository());
+    const use_cases = create_activity_category_use_cases(
+      make_mock_repository(),
+    );
 
     const result = await use_cases.delete("");
 
@@ -241,7 +270,9 @@ describe("delete", () => {
 
 describe("list_by_organization", () => {
   it("returns failure when organization_id is empty", async () => {
-    const use_cases = create_activity_category_use_cases(make_mock_repository());
+    const use_cases = create_activity_category_use_cases(
+      make_mock_repository(),
+    );
 
     const result = await use_cases.list_by_organization("");
 
@@ -251,7 +282,9 @@ describe("list_by_organization", () => {
   });
 
   it("returns failure when organization_id is whitespace only", async () => {
-    const use_cases = create_activity_category_use_cases(make_mock_repository());
+    const use_cases = create_activity_category_use_cases(
+      make_mock_repository(),
+    );
 
     const result = await use_cases.list_by_organization("   ");
 
@@ -270,7 +303,9 @@ describe("list_by_organization", () => {
 
 describe("ensure_default_categories_exist", () => {
   it("returns failure when organization_id is empty", async () => {
-    const use_cases = create_activity_category_use_cases(make_mock_repository());
+    const use_cases = create_activity_category_use_cases(
+      make_mock_repository(),
+    );
 
     const result = await use_cases.ensure_default_categories_exist("");
 

@@ -87,8 +87,15 @@ function create_branding_store() {
       : PLATFORM_STORAGE_KEY;
   }
 
-  async function persist_config(storage_key: string, config: BrandingConfig): Promise<void> {
-    await save_branding_to_storage(storage_key, config, get_app_settings_storage());
+  async function persist_config(
+    storage_key: string,
+    config: BrandingConfig,
+  ): Promise<void> {
+    await save_branding_to_storage(
+      storage_key,
+      config,
+      get_app_settings_storage(),
+    );
   }
 
   return {
@@ -98,7 +105,9 @@ function create_branding_store() {
       if (!browser) return;
       const app_settings = get_app_settings_storage();
       current_org_id = await app_settings.get_setting(CURRENT_ORG_ID_KEY);
-      const key = current_org_id ? get_org_storage_key(current_org_id) : PLATFORM_STORAGE_KEY;
+      const key = current_org_id
+        ? get_org_storage_key(current_org_id)
+        : PLATFORM_STORAGE_KEY;
       const loaded = await load_branding_from_storage(key, app_settings);
       set(loaded || DEFAULT_PLATFORM_BRANDING);
     },
@@ -121,21 +130,33 @@ function create_branding_store() {
       }
 
       if (!org_id) {
-        const platform_branding = await load_branding_from_storage(PLATFORM_STORAGE_KEY, app_settings);
+        const platform_branding = await load_branding_from_storage(
+          PLATFORM_STORAGE_KEY,
+          app_settings,
+        );
         set(platform_branding || DEFAULT_PLATFORM_BRANDING);
         return;
       }
 
-      let org_branding = await load_branding_from_storage(get_org_storage_key(org_id), app_settings);
+      let org_branding = await load_branding_from_storage(
+        get_org_storage_key(org_id),
+        app_settings,
+      );
 
       if (!org_branding && org_name) {
         org_branding = {
           ...DEFAULT_PLATFORM_BRANDING,
           organization_name: org_name,
-          organization_email: org_email || DEFAULT_PLATFORM_BRANDING.organization_email,
-          organization_address: org_address || DEFAULT_PLATFORM_BRANDING.organization_address,
+          organization_email:
+            org_email || DEFAULT_PLATFORM_BRANDING.organization_email,
+          organization_address:
+            org_address || DEFAULT_PLATFORM_BRANDING.organization_address,
         };
-        await save_branding_to_storage(get_org_storage_key(org_id), org_branding, app_settings);
+        await save_branding_to_storage(
+          get_org_storage_key(org_id),
+          org_branding,
+          app_settings,
+        );
       }
 
       set(org_branding || DEFAULT_PLATFORM_BRANDING);
@@ -150,7 +171,9 @@ function create_branding_store() {
       set(config);
     },
 
-    update: async (updater: (config: BrandingConfig) => BrandingConfig): Promise<void> => {
+    update: async (
+      updater: (config: BrandingConfig) => BrandingConfig,
+    ): Promise<void> => {
       const current_config = get({ subscribe });
       const updated = updater(current_config);
       await persist_config(get_current_storage_key(), updated);
@@ -171,7 +194,9 @@ function create_branding_store() {
       set(updated);
     },
 
-    update_social_media_links: async (links: SocialMediaLink[]): Promise<void> => {
+    update_social_media_links: async (
+      links: SocialMediaLink[],
+    ): Promise<void> => {
       const current_config = get({ subscribe });
       const updated = { ...current_config, social_media_links: links };
       await persist_config(get_current_storage_key(), updated);
@@ -180,7 +205,9 @@ function create_branding_store() {
 
     reset_to_default: async (): Promise<void> => {
       if (browser) {
-        await get_app_settings_storage().remove_setting(get_current_storage_key());
+        await get_app_settings_storage().remove_setting(
+          get_current_storage_key(),
+        );
       }
       set(DEFAULT_PLATFORM_BRANDING);
     },

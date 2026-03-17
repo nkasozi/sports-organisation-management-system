@@ -575,7 +575,6 @@ inject_test_use_cases_container({
 - ✅ Real-time WebSocket updates for Live Games
 - ✅ Authentication with Clerk
 
-
 ## Contributing
 
 The hexagonal architecture makes it easy to:

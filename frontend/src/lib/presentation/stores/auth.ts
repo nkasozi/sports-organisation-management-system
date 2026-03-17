@@ -50,9 +50,7 @@ import type {
   SharedCrudPermissions,
 } from "$convex/shared_permission_definitions";
 import { normalize_to_entity_type } from "$lib/core/interfaces/ports/external/iam/AuthorizationPort";
-import {
-  get_sync_manager,
-} from "$lib/infrastructure/sync/convexSyncService";
+import { get_sync_manager } from "$lib/infrastructure/sync/convexSyncService";
 
 interface ConvexUserProfile {
   local_id?: string;

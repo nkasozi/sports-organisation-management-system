@@ -149,7 +149,9 @@ describe("user context in payloads", () => {
     EventBus.emit_entity_created("Team", "team-1", "Harare City", {});
 
     expect(captured_payload?.user_context?.user_id).toBe("u-1");
-    expect(captured_payload?.user_context?.user_email).toBe("alice@example.com");
+    expect(captured_payload?.user_context?.user_email).toBe(
+      "alice@example.com",
+    );
   });
 
   it("emit_entity_created has no user_context when context has been cleared", () => {
@@ -302,8 +304,6 @@ describe("emit adds a timestamp to convenience payloads", () => {
 
     EventBus.emit_entity_created("Sport", "sport-1", "Hockey", {});
 
-    expect(captured?.timestamp).toMatch(
-      /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/,
-    );
+    expect(captured?.timestamp).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/);
   });
 });

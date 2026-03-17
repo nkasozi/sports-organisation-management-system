@@ -21,9 +21,7 @@ import {
   create_failure_result,
 } from "../../core/types/Result";
 import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
-import {
-  get_default_competition_formats_for_organization,
-} from "../../core/entities/CompetitionFormat";
+import { get_default_competition_formats_for_organization } from "../../core/entities/CompetitionFormat";
 
 const ENTITY_PREFIX = "comp_fmt";
 
@@ -161,7 +159,9 @@ export class InBrowserCompetitionFormatRepository
   async find_by_organization(
     organization_id: string,
     options?: import("../../core/interfaces/ports").QueryOptions,
-  ): ReturnType<import("../../core/interfaces/ports").CompetitionFormatRepository["find_by_organization"]> {
+  ): ReturnType<
+    import("../../core/interfaces/ports").CompetitionFormatRepository["find_by_organization"]
+  > {
     return this.find_all({ organization_id }, options);
   }
 }
