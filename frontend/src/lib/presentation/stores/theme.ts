@@ -272,7 +272,9 @@ const DEFAULT_THEME: ThemeConfig = {
 };
 
 function get_system_preference_theme(): ThemeConfig {
-  const prefers_dark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+  const prefers_dark = window.matchMedia(
+    "(prefers-color-scheme: dark)",
+  ).matches;
   return { ...DEFAULT_THEME, mode: prefers_dark ? "dark" : "light" };
 }
 
@@ -281,7 +283,9 @@ export const theme_store = writable<ThemeConfig>(DEFAULT_THEME);
 export async function initialize_theme(): Promise<void> {
   if (!browser) return;
 
-  const stored_theme_json = await get_app_settings_storage().get_setting("sports-org-theme-v2");
+  const stored_theme_json = await get_app_settings_storage().get_setting(
+    "sports-org-theme-v2",
+  );
 
   if (stored_theme_json) {
     try {
@@ -289,9 +293,12 @@ export async function initialize_theme(): Promise<void> {
       theme_store.set({ ...DEFAULT_THEME, ...parsed });
       return;
     } catch {
-      console.warn("[theme] Failed to parse stored theme, falling back to system preference", {
-        event: "theme_parse_failed",
-      });
+      console.warn(
+        "[theme] Failed to parse stored theme, falling back to system preference",
+        {
+          event: "theme_parse_failed",
+        },
+      );
     }
   }
 
@@ -349,15 +356,24 @@ function apply_theme_to_document(theme_config: ThemeConfig): void {
 async function save_theme_to_storage(theme_config: ThemeConfig): Promise<void> {
   if (!browser) return;
 
-  await get_app_settings_storage().set_setting("sports-org-theme-v2", JSON.stringify(theme_config));
-  console.debug("[theme] Saved theme", { event: "theme_saved", mode: theme_config.mode });
+  await get_app_settings_storage().set_setting(
+    "sports-org-theme-v2",
+    JSON.stringify(theme_config),
+  );
+  console.debug("[theme] Saved theme", {
+    event: "theme_saved",
+    mode: theme_config.mode,
+  });
 }
 
 if (browser) {
   theme_store.subscribe((theme_config: ThemeConfig) => {
     apply_theme_to_document(theme_config);
     save_theme_to_storage(theme_config).catch((error) => {
-      console.warn("[theme] Failed to persist theme", { event: "theme_save_failed", error });
+      console.warn("[theme] Failed to persist theme", {
+        event: "theme_save_failed",
+        error,
+      });
     });
   });
 

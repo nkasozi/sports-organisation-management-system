@@ -57,7 +57,9 @@ describe("handle_entity_created", () => {
   it("writes an audit log with action 'create'", async () => {
     initialize_audit_event_handlers();
 
-    EventBus.emit_entity_created("Team", "team-1", "City FC", { name: "City FC" });
+    EventBus.emit_entity_created("Team", "team-1", "City FC", {
+      name: "City FC",
+    });
 
     await Promise.resolve();
 

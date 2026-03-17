@@ -46,7 +46,10 @@ function create_current_user_store() {
       };
 
       if (browser) {
-        await get_app_settings_storage().set_setting(storage_key, JSON.stringify(current_user));
+        await get_app_settings_storage().set_setting(
+          storage_key,
+          JSON.stringify(current_user),
+        );
       }
 
       set(current_user);
@@ -64,12 +67,17 @@ function create_current_user_store() {
       if (!user) return;
       const updated = { ...user, profile_picture_base64: base64 };
       if (browser) {
-        await get_app_settings_storage().set_setting(storage_key, JSON.stringify(updated));
+        await get_app_settings_storage().set_setting(
+          storage_key,
+          JSON.stringify(updated),
+        );
       }
       set(updated);
     },
 
-    update_from_entity_data: async (entity_data: Record<string, unknown>): Promise<void> => {
+    update_from_entity_data: async (
+      entity_data: Record<string, unknown>,
+    ): Promise<void> => {
       const user = get({ subscribe });
       if (!user) return;
       const updated: CurrentUser = {
@@ -83,7 +91,10 @@ function create_current_user_store() {
           user.profile_picture_base64,
       };
       if (browser) {
-        await get_app_settings_storage().set_setting(storage_key, JSON.stringify(updated));
+        await get_app_settings_storage().set_setting(
+          storage_key,
+          JSON.stringify(updated),
+        );
       }
       set(updated);
     },

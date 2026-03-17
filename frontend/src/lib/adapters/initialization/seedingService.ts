@@ -323,21 +323,47 @@ async function load_seed_entity_id_lookups(
   player_position_repository: InBrowserPlayerPositionRepository,
   team_staff_role_repository: InBrowserTeamStaffRoleRepository,
   official_role_repository: InBrowserGameOfficialRoleRepository,
-  competition_format_repository: ReturnType<typeof get_competition_format_repository>,
+  competition_format_repository: ReturnType<
+    typeof get_competition_format_repository
+  >,
 ): Promise<Result<SeedEntityIdLookups>> {
   console.log("[Seeding] Loading entity ID lookups from seeded data");
 
-  const positions_result = await player_position_repository.find_all(undefined, { page_size: 100 });
-  if (!positions_result.success) return create_failure_result(`Failed to load positions: ${positions_result.error}`);
+  const positions_result = await player_position_repository.find_all(
+    undefined,
+    { page_size: 100 },
+  );
+  if (!positions_result.success)
+    return create_failure_result(
+      `Failed to load positions: ${positions_result.error}`,
+    );
 
-  const staff_roles_result = await team_staff_role_repository.find_all_with_filter(undefined, { page_size: 100 });
-  if (!staff_roles_result.success) return create_failure_result(`Failed to load staff roles: ${staff_roles_result.error}`);
+  const staff_roles_result =
+    await team_staff_role_repository.find_all_with_filter(undefined, {
+      page_size: 100,
+    });
+  if (!staff_roles_result.success)
+    return create_failure_result(
+      `Failed to load staff roles: ${staff_roles_result.error}`,
+    );
 
-  const official_roles_result = await official_role_repository.find_all_with_filter(undefined, { page_size: 100 });
-  if (!official_roles_result.success) return create_failure_result(`Failed to load official roles: ${official_roles_result.error}`);
+  const official_roles_result =
+    await official_role_repository.find_all_with_filter(undefined, {
+      page_size: 100,
+    });
+  if (!official_roles_result.success)
+    return create_failure_result(
+      `Failed to load official roles: ${official_roles_result.error}`,
+    );
 
-  const formats_result = await competition_format_repository.find_all(undefined, { page_size: 100 });
-  if (!formats_result.success) return create_failure_result(`Failed to load competition formats: ${formats_result.error}`);
+  const formats_result = await competition_format_repository.find_all(
+    undefined,
+    { page_size: 100 },
+  );
+  if (!formats_result.success)
+    return create_failure_result(
+      `Failed to load competition formats: ${formats_result.error}`,
+    );
 
   const positions = positions_result.data.items;
   const staff_roles = staff_roles_result.data.items;
@@ -364,12 +390,27 @@ async function load_seed_entity_id_lookups(
     physio_role_id: find_staff_role_id_by_code("PHYSIO", staff_roles),
     team_manager_role_id: find_staff_role_id_by_code("TM", staff_roles),
     referee_role_id: find_official_role_id_by_code("REF", official_roles),
-    assistant_referee_role_id: find_official_role_id_by_code("AR", official_roles),
+    assistant_referee_role_id: find_official_role_id_by_code(
+      "AR",
+      official_roles,
+    ),
     competition_format_ids: {
-      easter_cup_format_id: find_competition_format_id_by_code("world_cup_style", formats),
-      uganda_cup_format_id: find_competition_format_id_by_code("cup_tournament", formats),
-      nhl_format_id: find_competition_format_id_by_code("standard_league", formats),
-      university_format_id: find_competition_format_id_by_code("single_round_robin", formats),
+      easter_cup_format_id: find_competition_format_id_by_code(
+        "world_cup_style",
+        formats,
+      ),
+      uganda_cup_format_id: find_competition_format_id_by_code(
+        "cup_tournament",
+        formats,
+      ),
+      nhl_format_id: find_competition_format_id_by_code(
+        "standard_league",
+        formats,
+      ),
+      university_format_id: find_competition_format_id_by_code(
+        "single_round_robin",
+        formats,
+      ),
     },
   };
 
@@ -385,15 +426,23 @@ function build_demo_seeding_repos(): DemoSeedingRepos {
     team_staff: get_team_staff_repository() as InBrowserTeamStaffRepository,
     official: get_official_repository() as InBrowserOfficialRepository,
     competition: get_competition_repository() as InBrowserCompetitionRepository,
-    competition_stage: get_competition_stage_repository() as InBrowserCompetitionStageRepository,
-    competition_team: get_competition_team_repository() as InBrowserCompetitionTeamRepository,
-    player_membership: get_player_team_membership_repository() as InBrowserPlayerTeamMembershipRepository,
+    competition_stage:
+      get_competition_stage_repository() as InBrowserCompetitionStageRepository,
+    competition_team:
+      get_competition_team_repository() as InBrowserCompetitionTeamRepository,
+    player_membership:
+      get_player_team_membership_repository() as InBrowserPlayerTeamMembershipRepository,
     fixture: get_fixture_repository() as InBrowserFixtureRepository,
-    fixture_lineup: get_fixture_lineup_repository() as InBrowserFixtureLineupRepository,
-    jersey_color: get_jersey_color_repository() as InBrowserJerseyColorRepository,
-    player_profile: get_player_profile_repository() as InBrowserPlayerProfileRepository,
-    team_profile: get_team_profile_repository() as InBrowserTeamProfileRepository,
-    profile_link: get_profile_link_repository() as InBrowserProfileLinkRepository,
+    fixture_lineup:
+      get_fixture_lineup_repository() as InBrowserFixtureLineupRepository,
+    jersey_color:
+      get_jersey_color_repository() as InBrowserJerseyColorRepository,
+    player_profile:
+      get_player_profile_repository() as InBrowserPlayerProfileRepository,
+    team_profile:
+      get_team_profile_repository() as InBrowserTeamProfileRepository,
+    profile_link:
+      get_profile_link_repository() as InBrowserProfileLinkRepository,
   };
 }
 
@@ -411,7 +460,11 @@ async function seed_demo_players(
       return create_failure_result(`Player seeding failed: ${result.error}`);
     }
   }
-  emit_entity_created_events("player", seed_players, (p) => `${p.first_name} ${p.last_name}`);
+  emit_entity_created_events(
+    "player",
+    seed_players,
+    (p) => `${p.first_name} ${p.last_name}`,
+  );
   console.log(`[Seeding] Seeded ${seed_players.length} players`);
   return create_success_result(seed_players.length);
 }
@@ -476,7 +529,11 @@ async function seed_demo_team_staff(
     console.error(`[Seeding] Team staff seeding failed: ${result.error}`);
     return create_failure_result(`Team staff seeding failed: ${result.error}`);
   }
-  emit_entity_created_events("team_staff", seed_staff, (s) => `${s.first_name} ${s.last_name}`);
+  emit_entity_created_events(
+    "team_staff",
+    seed_staff,
+    (s) => `${s.first_name} ${s.last_name}`,
+  );
   console.log(`[Seeding] Seeded ${seed_staff.length} team staff`);
   return create_success_result(seed_staff.length);
 }
@@ -492,7 +549,11 @@ async function seed_demo_officials(
     console.error(`[Seeding] Official seeding failed: ${result.error}`);
     return create_failure_result(`Official seeding failed: ${result.error}`);
   }
-  emit_entity_created_events("official", seed_officials, (o) => `${o.first_name} ${o.last_name}`);
+  emit_entity_created_events(
+    "official",
+    seed_officials,
+    (o) => `${o.first_name} ${o.last_name}`,
+  );
   console.log(`[Seeding] Seeded ${seed_officials.length} officials`);
   return create_success_result(seed_officials.length);
 }
@@ -502,7 +563,9 @@ async function seed_demo_competitions(
   entity_id_lookups: SeedEntityIdLookups,
 ): Promise<Result<number>> {
   console.log("[Seeding] Seeding demo competitions");
-  const seed_competitions = create_seed_competitions(entity_id_lookups.competition_format_ids);
+  const seed_competitions = create_seed_competitions(
+    entity_id_lookups.competition_format_ids,
+  );
   const result = await competition_repository.seed_with_data(seed_competitions);
   if (!result.success) {
     console.error(`[Seeding] Competition seeding failed: ${result.error}`);
@@ -518,13 +581,25 @@ async function seed_demo_competition_stages(
 ): Promise<Result<number>> {
   console.log("[Seeding] Seeding demo competition stages");
   const seed_competition_stages = create_seed_competition_stages();
-  const result = await competition_stage_repository.seed_with_data(seed_competition_stages);
+  const result = await competition_stage_repository.seed_with_data(
+    seed_competition_stages,
+  );
   if (!result.success) {
-    console.error(`[Seeding] Competition stage seeding failed: ${result.error}`);
-    return create_failure_result(`Competition stage seeding failed: ${result.error}`);
+    console.error(
+      `[Seeding] Competition stage seeding failed: ${result.error}`,
+    );
+    return create_failure_result(
+      `Competition stage seeding failed: ${result.error}`,
+    );
   }
-  emit_entity_created_events("competition_stage", seed_competition_stages, (s) => `${s.name} (${s.competition_id})`);
-  console.log(`[Seeding] Seeded ${seed_competition_stages.length} competition stages`);
+  emit_entity_created_events(
+    "competition_stage",
+    seed_competition_stages,
+    (s) => `${s.name} (${s.competition_id})`,
+  );
+  console.log(
+    `[Seeding] Seeded ${seed_competition_stages.length} competition stages`,
+  );
   return create_success_result(seed_competition_stages.length);
 }
 
@@ -533,13 +608,23 @@ async function seed_demo_competition_teams(
 ): Promise<Result<number>> {
   console.log("[Seeding] Seeding demo competition teams");
   const seed_competition_teams = create_seed_competition_teams();
-  const result = await competition_team_repository.seed_with_data(seed_competition_teams);
+  const result = await competition_team_repository.seed_with_data(
+    seed_competition_teams,
+  );
   if (!result.success) {
     console.error(`[Seeding] Competition team seeding failed: ${result.error}`);
-    return create_failure_result(`Competition team seeding failed: ${result.error}`);
+    return create_failure_result(
+      `Competition team seeding failed: ${result.error}`,
+    );
   }
-  emit_entity_created_events("competition_team", seed_competition_teams, (ct) => `Team ${ct.team_id} in Competition ${ct.competition_id}`);
-  console.log(`[Seeding] Seeded ${seed_competition_teams.length} competition teams`);
+  emit_entity_created_events(
+    "competition_team",
+    seed_competition_teams,
+    (ct) => `Team ${ct.team_id} in Competition ${ct.competition_id}`,
+  );
+  console.log(
+    `[Seeding] Seeded ${seed_competition_teams.length} competition teams`,
+  );
   return create_success_result(seed_competition_teams.length);
 }
 
@@ -548,12 +633,21 @@ async function seed_demo_player_memberships(
 ): Promise<Result<number>> {
   console.log("[Seeding] Seeding demo player memberships");
   const seed_memberships = create_seed_player_team_memberships();
-  const result = await player_membership_repository.seed_with_data(seed_memberships);
+  const result =
+    await player_membership_repository.seed_with_data(seed_memberships);
   if (!result.success) {
-    console.error(`[Seeding] Player membership seeding failed: ${result.error}`);
-    return create_failure_result(`Player membership seeding failed: ${result.error}`);
+    console.error(
+      `[Seeding] Player membership seeding failed: ${result.error}`,
+    );
+    return create_failure_result(
+      `Player membership seeding failed: ${result.error}`,
+    );
   }
-  emit_entity_created_events("player_team_membership", seed_memberships, (m) => `Player ${m.player_id} -> Team ${m.team_id}`);
+  emit_entity_created_events(
+    "player_team_membership",
+    seed_memberships,
+    (m) => `Player ${m.player_id} -> Team ${m.team_id}`,
+  );
   console.log(`[Seeding] Seeded ${seed_memberships.length} player memberships`);
   return create_success_result(seed_memberships.length);
 }
@@ -572,7 +666,11 @@ async function seed_demo_fixtures(
     console.error(`[Seeding] Fixture seeding failed: ${result.error}`);
     return create_failure_result(`Fixture seeding failed: ${result.error}`);
   }
-  emit_entity_created_events("fixture", seed_fixtures, (f) => `${f.venue} - Round ${f.round_number}`);
+  emit_entity_created_events(
+    "fixture",
+    seed_fixtures,
+    (f) => `${f.venue} - Round ${f.round_number}`,
+  );
   console.log(`[Seeding] Seeded ${seed_fixtures.length} fixtures`);
   return create_success_result(seed_fixtures.length);
 }
@@ -585,9 +683,15 @@ async function seed_demo_fixture_lineups(
   const result = await fixture_lineup_repository.seed_with_data(seed_lineups);
   if (!result.success) {
     console.error(`[Seeding] Fixture lineup seeding failed: ${result.error}`);
-    return create_failure_result(`Fixture lineup seeding failed: ${result.error}`);
+    return create_failure_result(
+      `Fixture lineup seeding failed: ${result.error}`,
+    );
   }
-  emit_entity_created_events("fixture_lineup", seed_lineups, (l) => `Lineup for fixture ${l.fixture_id} - Team ${l.team_id}`);
+  emit_entity_created_events(
+    "fixture_lineup",
+    seed_lineups,
+    (l) => `Lineup for fixture ${l.fixture_id} - Team ${l.team_id}`,
+  );
   console.log(`[Seeding] Seeded ${seed_lineups.length} fixture lineups`);
   return create_success_result(seed_lineups.length);
 }
@@ -597,12 +701,19 @@ async function seed_demo_jersey_colors(
 ): Promise<Result<number>> {
   console.log("[Seeding] Seeding demo jersey colors");
   const seed_jersey_colors = create_seed_jersey_colors();
-  const result = await jersey_color_repository.seed_with_data(seed_jersey_colors);
+  const result =
+    await jersey_color_repository.seed_with_data(seed_jersey_colors);
   if (!result.success) {
     console.error(`[Seeding] Jersey color seeding failed: ${result.error}`);
-    return create_failure_result(`Jersey color seeding failed: ${result.error}`);
+    return create_failure_result(
+      `Jersey color seeding failed: ${result.error}`,
+    );
   }
-  emit_entity_created_events("jersey_color", seed_jersey_colors, (j) => `${j.nickname} (${j.main_color})`);
+  emit_entity_created_events(
+    "jersey_color",
+    seed_jersey_colors,
+    (j) => `${j.nickname} (${j.main_color})`,
+  );
   console.log(`[Seeding] Seeded ${seed_jersey_colors.length} jersey colors`);
   return create_success_result(seed_jersey_colors.length);
 }
@@ -612,13 +723,22 @@ async function seed_demo_player_profiles(
 ): Promise<Result<number>> {
   console.log("[Seeding] Seeding demo player profiles");
   const seed_player_profiles = create_seed_player_profiles();
-  const result = await player_profile_repository.seed_with_data(seed_player_profiles);
+  const result =
+    await player_profile_repository.seed_with_data(seed_player_profiles);
   if (!result.success) {
     console.error(`[Seeding] Player profile seeding failed: ${result.error}`);
-    return create_failure_result(`Player profile seeding failed: ${result.error}`);
+    return create_failure_result(
+      `Player profile seeding failed: ${result.error}`,
+    );
   }
-  emit_entity_created_events("player_profile", seed_player_profiles, (p) => `Profile: ${p.profile_slug}`);
-  console.log(`[Seeding] Seeded ${seed_player_profiles.length} player profiles`);
+  emit_entity_created_events(
+    "player_profile",
+    seed_player_profiles,
+    (p) => `Profile: ${p.profile_slug}`,
+  );
+  console.log(
+    `[Seeding] Seeded ${seed_player_profiles.length} player profiles`,
+  );
   return create_success_result(seed_player_profiles.length);
 }
 
@@ -627,12 +747,19 @@ async function seed_demo_team_profiles(
 ): Promise<Result<number>> {
   console.log("[Seeding] Seeding demo team profiles");
   const seed_team_profiles = create_seed_team_profiles();
-  const result = await team_profile_repository.seed_with_data(seed_team_profiles);
+  const result =
+    await team_profile_repository.seed_with_data(seed_team_profiles);
   if (!result.success) {
     console.error(`[Seeding] Team profile seeding failed: ${result.error}`);
-    return create_failure_result(`Team profile seeding failed: ${result.error}`);
+    return create_failure_result(
+      `Team profile seeding failed: ${result.error}`,
+    );
   }
-  emit_entity_created_events("team_profile", seed_team_profiles, (p) => `Team Profile: ${p.profile_slug}`);
+  emit_entity_created_events(
+    "team_profile",
+    seed_team_profiles,
+    (p) => `Team Profile: ${p.profile_slug}`,
+  );
   console.log(`[Seeding] Seeded ${seed_team_profiles.length} team profiles`);
   return create_success_result(seed_team_profiles.length);
 }
@@ -641,13 +768,23 @@ async function seed_demo_profile_links(
   profile_link_repository: InBrowserProfileLinkRepository,
 ): Promise<Result<number>> {
   console.log("[Seeding] Seeding demo profile links");
-  const all_profile_links = [...create_seed_profile_links(), ...create_seed_team_profile_links()];
-  const result = await profile_link_repository.seed_with_data(all_profile_links);
+  const all_profile_links = [
+    ...create_seed_profile_links(),
+    ...create_seed_team_profile_links(),
+  ];
+  const result =
+    await profile_link_repository.seed_with_data(all_profile_links);
   if (!result.success) {
     console.error(`[Seeding] Profile link seeding failed: ${result.error}`);
-    return create_failure_result(`Profile link seeding failed: ${result.error}`);
+    return create_failure_result(
+      `Profile link seeding failed: ${result.error}`,
+    );
   }
-  emit_entity_created_events("profile_link", all_profile_links, (l) => `Link: ${l.title}`);
+  emit_entity_created_events(
+    "profile_link",
+    all_profile_links,
+    (l) => `Link: ${l.title}`,
+  );
   console.log(`[Seeding] Seeded ${all_profile_links.length} profile links`);
   return create_success_result(all_profile_links.length);
 }
@@ -657,8 +794,13 @@ async function seed_all_demo_entities(
   entity_id_lookups: SeedEntityIdLookups,
   repos: DemoSeedingRepos,
 ): Promise<Result<boolean>> {
-  const players_result = await seed_demo_players(organization_id, repos.player, entity_id_lookups.position_ids);
-  if (!players_result.success) return create_failure_result(players_result.error);
+  const players_result = await seed_demo_players(
+    organization_id,
+    repos.player,
+    entity_id_lookups.position_ids,
+  );
+  if (!players_result.success)
+    return create_failure_result(players_result.error);
 
   const venues_result = await seed_demo_venues(organization_id, repos.venue);
   if (!venues_result.success) return create_failure_result(venues_result.error);
@@ -666,41 +808,77 @@ async function seed_all_demo_entities(
   const teams_result = await seed_demo_teams(repos.team, venues_result.data);
   if (!teams_result.success) return create_failure_result(teams_result.error);
 
-  const staff_result = await seed_demo_team_staff(repos.team_staff, entity_id_lookups);
+  const staff_result = await seed_demo_team_staff(
+    repos.team_staff,
+    entity_id_lookups,
+  );
   if (!staff_result.success) return create_failure_result(staff_result.error);
 
-  const officials_result = await seed_demo_officials(organization_id, repos.official);
-  if (!officials_result.success) return create_failure_result(officials_result.error);
+  const officials_result = await seed_demo_officials(
+    organization_id,
+    repos.official,
+  );
+  if (!officials_result.success)
+    return create_failure_result(officials_result.error);
 
-  const competitions_result = await seed_demo_competitions(repos.competition, entity_id_lookups);
-  if (!competitions_result.success) return create_failure_result(competitions_result.error);
+  const competitions_result = await seed_demo_competitions(
+    repos.competition,
+    entity_id_lookups,
+  );
+  if (!competitions_result.success)
+    return create_failure_result(competitions_result.error);
 
-  const stages_result = await seed_demo_competition_stages(repos.competition_stage);
+  const stages_result = await seed_demo_competition_stages(
+    repos.competition_stage,
+  );
   if (!stages_result.success) return create_failure_result(stages_result.error);
 
-  const comp_teams_result = await seed_demo_competition_teams(repos.competition_team);
-  if (!comp_teams_result.success) return create_failure_result(comp_teams_result.error);
+  const comp_teams_result = await seed_demo_competition_teams(
+    repos.competition_team,
+  );
+  if (!comp_teams_result.success)
+    return create_failure_result(comp_teams_result.error);
 
-  const memberships_result = await seed_demo_player_memberships(repos.player_membership);
-  if (!memberships_result.success) return create_failure_result(memberships_result.error);
+  const memberships_result = await seed_demo_player_memberships(
+    repos.player_membership,
+  );
+  if (!memberships_result.success)
+    return create_failure_result(memberships_result.error);
 
-  const fixtures_result = await seed_demo_fixtures(repos.fixture, entity_id_lookups);
-  if (!fixtures_result.success) return create_failure_result(fixtures_result.error);
+  const fixtures_result = await seed_demo_fixtures(
+    repos.fixture,
+    entity_id_lookups,
+  );
+  if (!fixtures_result.success)
+    return create_failure_result(fixtures_result.error);
 
   const lineups_result = await seed_demo_fixture_lineups(repos.fixture_lineup);
-  if (!lineups_result.success) return create_failure_result(lineups_result.error);
+  if (!lineups_result.success)
+    return create_failure_result(lineups_result.error);
 
-  const jersey_colors_result = await seed_demo_jersey_colors(repos.jersey_color);
-  if (!jersey_colors_result.success) return create_failure_result(jersey_colors_result.error);
+  const jersey_colors_result = await seed_demo_jersey_colors(
+    repos.jersey_color,
+  );
+  if (!jersey_colors_result.success)
+    return create_failure_result(jersey_colors_result.error);
 
-  const player_profiles_result = await seed_demo_player_profiles(repos.player_profile);
-  if (!player_profiles_result.success) return create_failure_result(player_profiles_result.error);
+  const player_profiles_result = await seed_demo_player_profiles(
+    repos.player_profile,
+  );
+  if (!player_profiles_result.success)
+    return create_failure_result(player_profiles_result.error);
 
-  const team_profiles_result = await seed_demo_team_profiles(repos.team_profile);
-  if (!team_profiles_result.success) return create_failure_result(team_profiles_result.error);
+  const team_profiles_result = await seed_demo_team_profiles(
+    repos.team_profile,
+  );
+  if (!team_profiles_result.success)
+    return create_failure_result(team_profiles_result.error);
 
-  const profile_links_result = await seed_demo_profile_links(repos.profile_link);
-  if (!profile_links_result.success) return create_failure_result(profile_links_result.error);
+  const profile_links_result = await seed_demo_profile_links(
+    repos.profile_link,
+  );
+  if (!profile_links_result.success)
+    return create_failure_result(profile_links_result.error);
 
   return create_success_result(true);
 }
@@ -709,7 +887,9 @@ export async function seed_all_data_if_needed(): Promise<Result<boolean>> {
   if (await is_seeding_already_complete()) {
     const current_user_result = await load_and_set_current_user();
     if (!current_user_result.success) {
-      console.warn(`[Seeding] Could not resolve current user: ${current_user_result.error}`);
+      console.warn(
+        `[Seeding] Could not resolve current user: ${current_user_result.error}`,
+      );
     }
     return create_success_result(true);
   }
@@ -720,7 +900,9 @@ export async function seed_all_data_if_needed(): Promise<Result<boolean>> {
 
   const super_admin_result = await seed_super_admin_user();
   if (!super_admin_result.success) {
-    console.error(`[SEED] Failed to create super admin: ${super_admin_result.error}`);
+    console.error(
+      `[SEED] Failed to create super admin: ${super_admin_result.error}`,
+    );
     return create_failure_result(super_admin_result.error);
   }
 
@@ -743,7 +925,9 @@ export async function seed_all_data_if_needed(): Promise<Result<boolean>> {
     SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
   );
   if (!org_seed_result.success) {
-    return create_failure_result(`Org defaults seeding failed: ${org_seed_result.error}`);
+    return create_failure_result(
+      `Org defaults seeding failed: ${org_seed_result.error}`,
+    );
   }
 
   const lookups_result = await load_seed_entity_id_lookups(
@@ -753,7 +937,9 @@ export async function seed_all_data_if_needed(): Promise<Result<boolean>> {
     get_competition_format_repository(),
   );
   if (!lookups_result.success) {
-    return create_failure_result(`Entity ID lookup failed: ${lookups_result.error}`);
+    return create_failure_result(
+      `Entity ID lookup failed: ${lookups_result.error}`,
+    );
   }
 
   const entities_result = await seed_all_demo_entities(

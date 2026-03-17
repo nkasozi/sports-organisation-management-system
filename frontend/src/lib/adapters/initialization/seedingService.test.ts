@@ -12,12 +12,15 @@ let mock_convex_seed_result = {
 let seed_all_data_called = false;
 let load_current_user_called = false;
 
-const { mock_try_seed_all_tables_from_convex, mock_app_settings_store } = vi.hoisted(() => ({
-  mock_try_seed_all_tables_from_convex: vi.fn().mockImplementation(async () => {
-    return mock_convex_seed_result;
-  }),
-  mock_app_settings_store: {} as Record<string, string>,
-}));
+const { mock_try_seed_all_tables_from_convex, mock_app_settings_store } =
+  vi.hoisted(() => ({
+    mock_try_seed_all_tables_from_convex: vi
+      .fn()
+      .mockImplementation(async () => {
+        return mock_convex_seed_result;
+      }),
+    mock_app_settings_store: {} as Record<string, string>,
+  }));
 
 vi.mock("../../infrastructure/sync/convexSeedingService", () => ({
   try_seed_all_tables_from_convex: mock_try_seed_all_tables_from_convex,
@@ -58,7 +61,8 @@ vi.mock("../../infrastructure/container", () => ({
     },
   }),
   get_app_settings_storage: () => ({
-    get_setting: (key: string) => Promise.resolve(mock_app_settings_store[key] ?? null),
+    get_setting: (key: string) =>
+      Promise.resolve(mock_app_settings_store[key] ?? null),
     set_setting: (key: string, value: string) => {
       mock_app_settings_store[key] = value;
       return Promise.resolve();
@@ -68,14 +72,18 @@ vi.mock("../../infrastructure/container", () => ({
       return Promise.resolve();
     },
     clear_all_settings: () => {
-      Object.keys(mock_app_settings_store).forEach((k) => delete mock_app_settings_store[k]);
+      Object.keys(mock_app_settings_store).forEach(
+        (k) => delete mock_app_settings_store[k],
+      );
       return Promise.resolve();
     },
   }),
 }));
 
 const { mock_system_user_seed_with_data } = vi.hoisted(() => ({
-  mock_system_user_seed_with_data: vi.fn().mockResolvedValue({ success: true, data: 0 }),
+  mock_system_user_seed_with_data: vi
+    .fn()
+    .mockResolvedValue({ success: true, data: 0 }),
 }));
 
 vi.mock("../repositories/InBrowserSystemUserRepository", () => ({
@@ -184,7 +192,18 @@ vi.mock("../repositories/InBrowserPlayerPositionRepository", () => ({
 vi.mock("./organizationDefaultsSeeder", () => ({
   seed_default_lookup_entities_for_organization: vi
     .fn()
-    .mockResolvedValue({ success: true, data: { organization_id: "test", genders_seeded: 2, identification_types_seeded: 2, player_positions_seeded: 2, game_official_roles_seeded: 2, game_event_types_seeded: 2, team_staff_roles_seeded: 2 } }),
+    .mockResolvedValue({
+      success: true,
+      data: {
+        organization_id: "test",
+        genders_seeded: 2,
+        identification_types_seeded: 2,
+        player_positions_seeded: 2,
+        game_official_roles_seeded: 2,
+        game_event_types_seeded: 2,
+        team_staff_roles_seeded: 2,
+      },
+    }),
 }));
 vi.mock("../repositories/InBrowserTeamStaffRoleRepository", () => ({
   get_team_staff_role_repository: create_empty_repo,
@@ -415,7 +434,9 @@ describe("seed_from_convex_or_local — convex_first_with_local_fallback strateg
       "convex_first_with_local_fallback",
     );
 
-    expect(mock_app_settings_store["sports_org_seeding_complete_v15"]).toBe("true");
+    expect(mock_app_settings_store["sports_org_seeding_complete_v15"]).toBe(
+      "true",
+    );
   });
 
   it("falls back to local seeding when convex fails", async () => {
@@ -613,7 +634,9 @@ describe("seed_from_convex_or_local — local_only strategy", () => {
     on_progress = (message: string, percentage: number) => {
       progress_messages.push({ message, percentage });
     };
-    Object.keys(mock_app_settings_store).forEach((key) => delete mock_app_settings_store[key]);
+    Object.keys(mock_app_settings_store).forEach(
+      (key) => delete mock_app_settings_store[key],
+    );
     mock_system_user_seed_with_data.mockClear();
   });
 
@@ -641,8 +664,8 @@ describe("seed_from_convex_or_local — local_only strategy", () => {
   it("reports offline data progress messages", async () => {
     await seed_from_convex_or_local(on_progress, "local_only");
 
-    const loading_message = progress_messages.find(
-      (m) => m.message.toLowerCase().includes("offline"),
+    const loading_message = progress_messages.find((m) =>
+      m.message.toLowerCase().includes("offline"),
     );
     expect(loading_message).toBeDefined();
   });

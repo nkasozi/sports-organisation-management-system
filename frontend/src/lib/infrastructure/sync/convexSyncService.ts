@@ -7,7 +7,11 @@ import { is_signed_in } from "../../adapters/iam/clerkAuthService";
 import { current_user_role } from "../../presentation/stores/auth";
 import { get } from "svelte/store";
 import type { Table } from "dexie";
-import type { SyncDirection, SyncHints, UserRole } from "$lib/core/interfaces/ports";
+import type {
+  SyncDirection,
+  SyncHints,
+  UserRole,
+} from "$lib/core/interfaces/ports";
 import { check_entity_permission } from "$lib/core/interfaces/ports";
 import type { SharedEntityType } from "$convex/shared_permission_definitions";
 import type { Result } from "$lib/core/types/Result";
@@ -111,39 +115,40 @@ export const TABLE_NAMES = [
 
 export type TableName = (typeof TABLE_NAMES)[number];
 
-const TABLE_NAME_TO_ENTITY_TYPE: Partial<Record<TableName, SharedEntityType>> = {
-  organizations: "organization",
-  sports: "sport",
-  competitions: "competition",
-  teams: "team",
-  players: "player",
-  officials: "official",
-  fixtures: "fixture",
-  team_staff: "teamstaff",
-  team_staff_roles: "teamstaffrole",
-  game_official_roles: "gameofficialrole",
-  venues: "venue",
-  jersey_colors: "jerseycolor",
-  player_positions: "playerposition",
-  player_profiles: "playerprofile",
-  team_profiles: "teamprofile",
-  profile_links: "profilelink",
-  competition_formats: "competitionformat",
-  competition_teams: "competitionteam",
-  player_team_memberships: "playerteammembership",
-  fixture_details_setups: "fixturedetailssetup",
-  fixture_lineups: "fixturelineup",
-  activity_categories: "activitycategory",
-  system_users: "systemuser",
-  identification_types: "identificationtype",
-  identifications: "identification",
-  qualifications: "qualification",
-  game_event_types: "gameeventtype",
-  genders: "gender",
-  live_game_logs: "livegamelog",
-  game_event_logs: "gameeventlog",
-  player_team_transfer_histories: "playerteamtransferhistory",
-};
+const TABLE_NAME_TO_ENTITY_TYPE: Partial<Record<TableName, SharedEntityType>> =
+  {
+    organizations: "organization",
+    sports: "sport",
+    competitions: "competition",
+    teams: "team",
+    players: "player",
+    officials: "official",
+    fixtures: "fixture",
+    team_staff: "teamstaff",
+    team_staff_roles: "teamstaffrole",
+    game_official_roles: "gameofficialrole",
+    venues: "venue",
+    jersey_colors: "jerseycolor",
+    player_positions: "playerposition",
+    player_profiles: "playerprofile",
+    team_profiles: "teamprofile",
+    profile_links: "profilelink",
+    competition_formats: "competitionformat",
+    competition_teams: "competitionteam",
+    player_team_memberships: "playerteammembership",
+    fixture_details_setups: "fixturedetailssetup",
+    fixture_lineups: "fixturelineup",
+    activity_categories: "activitycategory",
+    system_users: "systemuser",
+    identification_types: "identificationtype",
+    identifications: "identification",
+    qualifications: "qualification",
+    game_event_types: "gameeventtype",
+    genders: "gender",
+    live_game_logs: "livegamelog",
+    game_event_logs: "gameeventlog",
+    player_team_transfer_histories: "playerteamtransferhistory",
+  };
 
 function role_can_push_table(role: UserRole, table_name: TableName): boolean {
   const entity_type = TABLE_NAME_TO_ENTITY_TYPE[table_name];
@@ -737,7 +742,11 @@ async function sync_all_tables(
         }
       }
 
-      if (!table_had_error && direction !== "pull" && !push_excluded_tables.has(table_name)) {
+      if (
+        !table_had_error &&
+        direction !== "pull" &&
+        !push_excluded_tables.has(table_name)
+      ) {
         const refreshed_records = await table.toArray();
         const push_result = await push_table_to_convex(
           convex_client,
@@ -828,7 +837,9 @@ export function get_last_sync_timestamp(): string {
 
 export async function reset_sync_metadata(): Promise<void> {
   await get_app_settings_storage().remove_setting("convex_sync_metadata");
-  console.debug("[ConvexSync] Reset sync metadata", { event: "sync_metadata_reset" });
+  console.debug("[ConvexSync] Reset sync metadata", {
+    event: "sync_metadata_reset",
+  });
 }
 
 export async function delete_record_in_convex(
@@ -1061,11 +1072,20 @@ export async function pull_user_scoped_record_from_convex(
     delete local_data.version;
     local_data.id = local_id;
 
-    await table.put(local_data as unknown as { id: string; updated_at?: string; created_at?: string });
+    await table.put(
+      local_data as unknown as {
+        id: string;
+        updated_at?: string;
+        created_at?: string;
+      },
+    );
     return create_success_result(true);
   } catch (error) {
-    const error_message = error instanceof Error ? error.message : String(error);
-    return create_failure_result(`Failed to pull ${table_name} record: ${error_message}`);
+    const error_message =
+      error instanceof Error ? error.message : String(error);
+    return create_failure_result(
+      `Failed to pull ${table_name} record: ${error_message}`,
+    );
   }
 }
 

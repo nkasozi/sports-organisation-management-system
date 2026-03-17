@@ -59,10 +59,7 @@ function make_competition(overrides: Partial<Competition> = {}): Competition {
   } as unknown as Competition;
 }
 
-function make_official(
-  first_name: string,
-  last_name: string,
-): Official {
+function make_official(first_name: string, last_name: string): Official {
   return {
     id: `off-${first_name}`,
     created_at: "2026-01-01T00:00:00Z",
@@ -73,7 +70,9 @@ function make_official(
   } as unknown as Official;
 }
 
-function make_basic_context(overrides: Partial<MatchReportBuildContext> = {}): MatchReportBuildContext {
+function make_basic_context(
+  overrides: Partial<MatchReportBuildContext> = {},
+): MatchReportBuildContext {
   return {
     fixture: make_fixture(),
     home_team: make_team("Harare City"),
@@ -98,7 +97,10 @@ describe("build_match_report_data", () => {
 
   it("defaults final score to 0 when fixture scores are null", () => {
     const ctx = make_basic_context({
-      fixture: make_fixture({ home_team_score: null as unknown as number, away_team_score: null as unknown as number }),
+      fixture: make_fixture({
+        home_team_score: null as unknown as number,
+        away_team_score: null as unknown as number,
+      }),
     });
     const report = build_match_report_data(ctx);
     expect(report.final_score.home).toBe(0);
@@ -106,7 +108,9 @@ describe("build_match_report_data", () => {
   });
 
   it("sets competition name in uppercase", () => {
-    const ctx = make_basic_context({ competition: make_competition({ name: "Premier Cup" }) });
+    const ctx = make_basic_context({
+      competition: make_competition({ name: "Premier Cup" }),
+    });
     const report = build_match_report_data(ctx);
     expect(report.competition_name).toBe("PREMIER CUP");
   });
@@ -118,7 +122,9 @@ describe("build_match_report_data", () => {
   });
 
   it("uses organization_name as league_name", () => {
-    const ctx = make_basic_context({ organization_name: "Zimbabwe Hockey Union" });
+    const ctx = make_basic_context({
+      organization_name: "Zimbabwe Hockey Union",
+    });
     const report = build_match_report_data(ctx);
     expect(report.league_name).toBe("Zimbabwe Hockey Union");
   });
@@ -144,14 +150,18 @@ describe("build_match_report_data", () => {
   });
 
   it("uses fixture scheduled_time for push_back_time", () => {
-    const ctx = make_basic_context({ fixture: make_fixture({ scheduled_time: "15:30" }) });
+    const ctx = make_basic_context({
+      fixture: make_fixture({ scheduled_time: "15:30" }),
+    });
     const report = build_match_report_data(ctx);
     expect(report.push_back_time).toBe("15:30");
     expect(report.scheduled_push_back).toBe("15:30");
   });
 
   it("defaults scheduled_time to 00:00 when absent", () => {
-    const ctx = make_basic_context({ fixture: make_fixture({ scheduled_time: null as unknown as string }) });
+    const ctx = make_basic_context({
+      fixture: make_fixture({ scheduled_time: null as unknown as string }),
+    });
     const report = build_match_report_data(ctx);
     expect(report.push_back_time).toBe("00:00");
   });
@@ -163,7 +173,9 @@ describe("build_match_report_data", () => {
   });
 
   it("falls back to fixture.venue when venue_name prop absent", () => {
-    const ctx = make_basic_context({ fixture: make_fixture({ venue: "Old Hararians" }) });
+    const ctx = make_basic_context({
+      fixture: make_fixture({ venue: "Old Hararians" }),
+    });
     const report = build_match_report_data(ctx);
     expect(report.venue_name).toBe("Old Hararians");
   });
@@ -175,7 +187,9 @@ describe("build_match_report_data", () => {
   });
 
   it("populates fixture year from scheduled_date", () => {
-    const ctx = make_basic_context({ fixture: make_fixture({ scheduled_date: "2026-03-14" }) });
+    const ctx = make_basic_context({
+      fixture: make_fixture({ scheduled_date: "2026-03-14" }),
+    });
     const report = build_match_report_data(ctx);
     expect(report.fixture_year).toBe("2026");
   });
@@ -187,7 +201,9 @@ describe("build_match_report_data", () => {
   });
 
   it("populates pool from fixture.round_name", () => {
-    const ctx = make_basic_context({ fixture: make_fixture({ round_name: "Group B" }) });
+    const ctx = make_basic_context({
+      fixture: make_fixture({ round_name: "Group B" }),
+    });
     const report = build_match_report_data(ctx);
     expect(report.pool).toBe("Group B");
   });
@@ -196,7 +212,10 @@ describe("build_match_report_data", () => {
     const ctx = make_basic_context({
       assigned_officials: [
         { official: make_official("John", "Doe"), role_name: "referee" },
-        { official: make_official("Jane", "Smith"), role_name: "assistant_referee" },
+        {
+          official: make_official("Jane", "Smith"),
+          role_name: "assistant_referee",
+        },
       ],
     });
     const report = build_match_report_data(ctx);
@@ -209,7 +228,10 @@ describe("build_match_report_data", () => {
   it("maps unknown official roles using the raw string", () => {
     const ctx = make_basic_context({
       assigned_officials: [
-        { official: make_official("A", "B"), role_name: "video_review_officer" },
+        {
+          official: make_official("A", "B"),
+          role_name: "video_review_officer",
+        },
       ],
     });
     const report = build_match_report_data(ctx);
@@ -217,7 +239,9 @@ describe("build_match_report_data", () => {
   });
 
   it("includes fixture notes as remarks", () => {
-    const ctx = make_basic_context({ fixture: make_fixture({ notes: "Match postponed once" }) });
+    const ctx = make_basic_context({
+      fixture: make_fixture({ notes: "Match postponed once" }),
+    });
     const report = build_match_report_data(ctx);
     expect(report.remarks).toBe("Match postponed once");
   });
@@ -232,7 +256,14 @@ describe("build_match_report_data", () => {
   });
 
   it("uses custom card_types when provided", () => {
-    const custom_cards = [{ id: "custom", name: "Custom", color: "#000", event_type: "custom_card" }];
+    const custom_cards = [
+      {
+        id: "custom",
+        name: "Custom",
+        color: "#000",
+        event_type: "custom_card",
+      },
+    ];
     const ctx = make_basic_context({ card_types: custom_cards });
     const report = build_match_report_data(ctx);
     expect(report.card_types).toEqual(custom_cards);
@@ -247,7 +278,16 @@ describe("build_match_report_data", () => {
   it("score_by_period adds extra time periods when extra time goals exist", () => {
     const fixture = make_fixture({
       game_events: [
-        { id: "e1", event_type: "goal", team_side: "home", minute: 100, player_id: "p1", jersey_number: 10, created_at: "", notes: "" } as any,
+        {
+          id: "e1",
+          event_type: "goal",
+          team_side: "home",
+          minute: 100,
+          player_id: "p1",
+          jersey_number: 10,
+          created_at: "",
+          notes: "",
+        } as any,
       ],
     });
     const ctx = make_basic_context({ fixture });
@@ -259,25 +299,56 @@ describe("build_match_report_data", () => {
   it("goal events increment home score correctly", () => {
     const fixture = make_fixture({
       game_events: [
-        { id: "e1", event_type: "goal", team_side: "home", minute: 20, player_id: "p1", jersey_number: 9, created_at: "", notes: "" } as any,
-        { id: "e2", event_type: "goal", team_side: "home", minute: 40, player_id: "p2", jersey_number: 7, created_at: "", notes: "" } as any,
+        {
+          id: "e1",
+          event_type: "goal",
+          team_side: "home",
+          minute: 20,
+          player_id: "p1",
+          jersey_number: 9,
+          created_at: "",
+          notes: "",
+        } as any,
+        {
+          id: "e2",
+          event_type: "goal",
+          team_side: "home",
+          minute: 40,
+          player_id: "p2",
+          jersey_number: 7,
+          created_at: "",
+          notes: "",
+        } as any,
       ],
     });
     const ctx = make_basic_context({ fixture });
     const report = build_match_report_data(ctx);
-    const half_time = report.score_by_period.find((p) => p.period_name === "Half-time");
+    const half_time = report.score_by_period.find(
+      (p) => p.period_name === "Half-time",
+    );
     expect(half_time?.home_score).toBe(2);
   });
 
   it("own_goal event credits home team even if team_side is away", () => {
     const fixture = make_fixture({
       game_events: [
-        { id: "e1", event_type: "own_goal", team_side: "away", minute: 30, player_id: "p1", jersey_number: 5, created_at: "", notes: "" } as any,
+        {
+          id: "e1",
+          event_type: "own_goal",
+          team_side: "away",
+          minute: 30,
+          player_id: "p1",
+          jersey_number: 5,
+          created_at: "",
+          notes: "",
+        } as any,
       ],
     });
     const ctx = make_basic_context({ fixture });
     const report = build_match_report_data(ctx);
-    const half_time = report.score_by_period.find((p) => p.period_name === "Half-time");
+    const half_time = report.score_by_period.find(
+      (p) => p.period_name === "Half-time",
+    );
     expect(half_time?.home_score).toBe(1);
     expect(half_time?.away_score).toBe(0);
   });
@@ -289,7 +360,9 @@ describe("build_match_report_data", () => {
     });
     const report = build_match_report_data(ctx);
     expect(report.home_team.staff).toEqual([{ role: "Coach", name: "Bob" }]);
-    expect(report.away_team.staff).toEqual([{ role: "Manager", name: "Alice" }]);
+    expect(report.away_team.staff).toEqual([
+      { role: "Manager", name: "Alice" },
+    ]);
   });
 
   it("defaults staff to empty arrays when not provided", () => {
@@ -306,7 +379,9 @@ describe("build_match_report_data", () => {
   });
 
   it("organization_logo_url uses provided value", () => {
-    const ctx = make_basic_context({ organization_logo_url: "https://example.com/logo.png" });
+    const ctx = make_basic_context({
+      organization_logo_url: "https://example.com/logo.png",
+    });
     const report = build_match_report_data(ctx);
     expect(report.organization_logo_url).toBe("https://example.com/logo.png");
   });
@@ -314,24 +389,40 @@ describe("build_match_report_data", () => {
 
 describe("generate_match_report_filename", () => {
   it("produces a .pdf filename", () => {
-    const name = generate_match_report_filename("Harare City", "Dynamos FC", "2026-03-14");
+    const name = generate_match_report_filename(
+      "Harare City",
+      "Dynamos FC",
+      "2026-03-14",
+    );
     expect(name).toMatch(/\.pdf$/);
   });
 
   it("replaces special characters in team names with underscores", () => {
-    const name = generate_match_report_filename("Team A & B", "Team C/D", "2026-03-14");
+    const name = generate_match_report_filename(
+      "Team A & B",
+      "Team C/D",
+      "2026-03-14",
+    );
     expect(name).not.toContain("&");
     expect(name).not.toContain("/");
     expect(name).not.toContain(" ");
   });
 
   it("replaces special characters in date with underscores", () => {
-    const name = generate_match_report_filename("HomeTeam", "AwayTeam", "2026-03-14");
+    const name = generate_match_report_filename(
+      "HomeTeam",
+      "AwayTeam",
+      "2026-03-14",
+    );
     expect(name).not.toContain("-");
   });
 
   it("includes both team names in the filename", () => {
-    const name = generate_match_report_filename("HarareCity", "DynamosFC", "20260314");
+    const name = generate_match_report_filename(
+      "HarareCity",
+      "DynamosFC",
+      "20260314",
+    );
     expect(name).toContain("HarareCity");
     expect(name).toContain("DynamosFC");
   });

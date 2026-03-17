@@ -49,9 +49,9 @@ vi.mock("../repositories/InBrowserGameEventTypeRepository", () => ({
     seed_with_data: mock_game_event_type_seed,
   })),
   InBrowserGameEventTypeRepository: vi.fn(),
-  create_default_game_event_types_for_organization: vi.fn(
-    (org_id: string) => [{ name: "Goal", organization_id: org_id }],
-  ),
+  create_default_game_event_types_for_organization: vi.fn((org_id: string) => [
+    { name: "Goal", organization_id: org_id },
+  ]),
 }));
 
 vi.mock("../repositories/InBrowserTeamStaffRoleRepository", () => ({
@@ -59,9 +59,9 @@ vi.mock("../repositories/InBrowserTeamStaffRoleRepository", () => ({
     seed_with_data: mock_team_staff_role_seed,
   })),
   InBrowserTeamStaffRoleRepository: vi.fn(),
-  create_default_team_staff_roles_for_organization: vi.fn(
-    (org_id: string) => [{ name: "Coach", organization_id: org_id }],
-  ),
+  create_default_team_staff_roles_for_organization: vi.fn((org_id: string) => [
+    { name: "Coach", organization_id: org_id },
+  ]),
 }));
 
 vi.mock("../repositories/InBrowserCompetitionFormatRepository", () => ({
@@ -160,21 +160,19 @@ describe("seed_default_lookup_entities_for_organization", () => {
   });
 
   it("passes the correct organization_id to player position seeder", async () => {
-    const { create_default_player_positions_for_organization } = await import(
-      "../repositories/InBrowserPlayerPositionRepository"
-    );
+    const { create_default_player_positions_for_organization } =
+      await import("../repositories/InBrowserPlayerPositionRepository");
 
     await seed_default_lookup_entities_for_organization("org-positions-test");
 
-    expect(create_default_player_positions_for_organization).toHaveBeenCalledWith(
-      "org-positions-test",
-    );
+    expect(
+      create_default_player_positions_for_organization,
+    ).toHaveBeenCalledWith("org-positions-test");
   });
 
   it("passes the correct organization_id to game event type seeder", async () => {
-    const { create_default_game_event_types_for_organization } = await import(
-      "../repositories/InBrowserGameEventTypeRepository"
-    );
+    const { create_default_game_event_types_for_organization } =
+      await import("../repositories/InBrowserGameEventTypeRepository");
 
     await seed_default_lookup_entities_for_organization("org-events-test");
 
@@ -184,9 +182,8 @@ describe("seed_default_lookup_entities_for_organization", () => {
   });
 
   it("passes the correct organization_id to team staff role seeder", async () => {
-    const { create_default_team_staff_roles_for_organization } = await import(
-      "../repositories/InBrowserTeamStaffRoleRepository"
-    );
+    const { create_default_team_staff_roles_for_organization } =
+      await import("../repositories/InBrowserTeamStaffRoleRepository");
 
     await seed_default_lookup_entities_for_organization("org-staff-test");
 
@@ -196,13 +193,15 @@ describe("seed_default_lookup_entities_for_organization", () => {
   });
 
   it("resolves with a success result", async () => {
-    const result = await seed_default_lookup_entities_for_organization("org-success");
+    const result =
+      await seed_default_lookup_entities_for_organization("org-success");
 
     expect(result.success).toBe(true);
   });
 
   it("returns OrgSeedResult with all six seeded counts when all steps succeed", async () => {
-    const result = await seed_default_lookup_entities_for_organization("org-counts");
+    const result =
+      await seed_default_lookup_entities_for_organization("org-counts");
 
     expect(result.success).toBe(true);
     if (!result.success) return;
@@ -217,9 +216,13 @@ describe("seed_default_lookup_entities_for_organization", () => {
   });
 
   it("returns a failure result when gender seeding fails", async () => {
-    mock_gender_seed.mockResolvedValueOnce({ success: false, error: "Gender DB error" });
+    mock_gender_seed.mockResolvedValueOnce({
+      success: false,
+      error: "Gender DB error",
+    });
 
-    const result = await seed_default_lookup_entities_for_organization("org-fail");
+    const result =
+      await seed_default_lookup_entities_for_organization("org-fail");
 
     expect(result.success).toBe(false);
     if (result.success) return;
@@ -227,7 +230,10 @@ describe("seed_default_lookup_entities_for_organization", () => {
   });
 
   it("stops after first failure and does not call subsequent repositories", async () => {
-    mock_gender_seed.mockResolvedValueOnce({ success: false, error: "Gender DB error" });
+    mock_gender_seed.mockResolvedValueOnce({
+      success: false,
+      error: "Gender DB error",
+    });
 
     await seed_default_lookup_entities_for_organization("org-stop");
 
@@ -240,7 +246,10 @@ describe("seed_default_lookup_entities_for_organization", () => {
   });
 
   it("stops at identification types failure and does not call subsequent repositories", async () => {
-    mock_identification_type_seed.mockResolvedValueOnce({ success: false, error: "ID type DB error" });
+    mock_identification_type_seed.mockResolvedValueOnce({
+      success: false,
+      error: "ID type DB error",
+    });
 
     await seed_default_lookup_entities_for_organization("org-stop-2");
 
@@ -261,25 +270,30 @@ describe("seed_default_lookup_entities_for_organization", () => {
     const seeded = mock_competition_format_seed.mock.calls[0][0] as Array<{
       organization_id: string;
     }>;
-    expect(seeded.every((item) => item.organization_id === "org-abc")).toBe(true);
+    expect(seeded.every((item) => item.organization_id === "org-abc")).toBe(
+      true,
+    );
   });
 
   it("passes the correct organization_id to competition format seeder", async () => {
-    const { create_default_competition_formats_for_organization } = await import(
-      "../repositories/InBrowserCompetitionFormatRepository"
-    );
+    const { create_default_competition_formats_for_organization } =
+      await import("../repositories/InBrowserCompetitionFormatRepository");
 
     await seed_default_lookup_entities_for_organization("org-formats-test");
 
-    expect(create_default_competition_formats_for_organization).toHaveBeenCalledWith(
-      "org-formats-test",
-    );
+    expect(
+      create_default_competition_formats_for_organization,
+    ).toHaveBeenCalledWith("org-formats-test");
   });
 
   it("stops at competition formats failure and returns a failure result", async () => {
-    mock_competition_format_seed.mockResolvedValueOnce({ success: false, error: "Format DB error" });
+    mock_competition_format_seed.mockResolvedValueOnce({
+      success: false,
+      error: "Format DB error",
+    });
 
-    const result = await seed_default_lookup_entities_for_organization("org-fmt-fail");
+    const result =
+      await seed_default_lookup_entities_for_organization("org-fmt-fail");
 
     expect(result.success).toBe(false);
     if (result.success) return;

@@ -22,7 +22,10 @@ async function save_public_org(
 
   const app_settings = get_app_settings_storage();
   await app_settings.set_setting(PUBLIC_ORG_STORAGE_KEY, organization_id);
-  await app_settings.set_setting(PUBLIC_ORG_NAME_STORAGE_KEY, organization_name);
+  await app_settings.set_setting(
+    PUBLIC_ORG_NAME_STORAGE_KEY,
+    organization_name,
+  );
   return true;
 }
 
@@ -37,8 +40,7 @@ async function clear_public_org(): Promise<boolean> {
 
 function create_public_organization_store() {
   const initial_state = load_saved_public_org();
-  const { subscribe, set } =
-    writable<PublicOrganizationState>(initial_state);
+  const { subscribe, set } = writable<PublicOrganizationState>(initial_state);
 
   async function set_organization(
     organization_id: string,
@@ -54,7 +56,9 @@ function create_public_organization_store() {
     return true;
   }
 
-  async function detect_from_url_params(search_params: URLSearchParams): Promise<boolean> {
+  async function detect_from_url_params(
+    search_params: URLSearchParams,
+  ): Promise<boolean> {
     const org_id = search_params.get("org") ?? "";
     if (!org_id) return false;
 
@@ -70,8 +74,10 @@ function create_public_organization_store() {
   async function initialize(): Promise<void> {
     if (!browser) return;
     const app_settings = get_app_settings_storage();
-    const saved_id = (await app_settings.get_setting(PUBLIC_ORG_STORAGE_KEY)) ?? "";
-    const saved_name = (await app_settings.get_setting(PUBLIC_ORG_NAME_STORAGE_KEY)) ?? "";
+    const saved_id =
+      (await app_settings.get_setting(PUBLIC_ORG_STORAGE_KEY)) ?? "";
+    const saved_name =
+      (await app_settings.get_setting(PUBLIC_ORG_NAME_STORAGE_KEY)) ?? "";
     set({ organization_id: saved_id, organization_name: saved_name });
   }
 

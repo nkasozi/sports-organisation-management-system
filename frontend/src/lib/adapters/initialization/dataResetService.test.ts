@@ -105,22 +105,35 @@ vi.mock("$lib/adapters/iam/clerkAuthService", () => ({
 
 const mock_app_settings_store: Record<string, string> = {};
 const mock_clear_all_settings = vi.fn(() => {
-  Object.keys(mock_app_settings_store).forEach((k) => delete mock_app_settings_store[k]);
+  Object.keys(mock_app_settings_store).forEach(
+    (k) => delete mock_app_settings_store[k],
+  );
   return Promise.resolve();
 });
 
 vi.mock("$lib/infrastructure/container", () => ({
   get_app_settings_storage: () => ({
-    get_setting: (key: string) => Promise.resolve(mock_app_settings_store[key] ?? null),
-    set_setting: (key: string, value: string) => { mock_app_settings_store[key] = value; return Promise.resolve(); },
-    remove_setting: (key: string) => { delete mock_app_settings_store[key]; return Promise.resolve(); },
+    get_setting: (key: string) =>
+      Promise.resolve(mock_app_settings_store[key] ?? null),
+    set_setting: (key: string, value: string) => {
+      mock_app_settings_store[key] = value;
+      return Promise.resolve();
+    },
+    remove_setting: (key: string) => {
+      delete mock_app_settings_store[key];
+      return Promise.resolve();
+    },
     clear_all_settings: mock_clear_all_settings,
   }),
 }));
 
 import { reset_all_data } from "./dataResetService";
 import { clear_all_demo_data_in_convex } from "$lib/infrastructure/sync/convexSyncService";
-import { stop_background_sync, start_background_sync, set_pulling_from_remote } from "$lib/infrastructure/sync/backgroundSyncService";
+import {
+  stop_background_sync,
+  start_background_sync,
+  set_pulling_from_remote,
+} from "$lib/infrastructure/sync/backgroundSyncService";
 import { clear_session_sync_flag } from "$lib/presentation/stores/initialSyncStore";
 import { seed_all_data_if_needed } from "./seedingService";
 import { reset_sport_repository } from "../repositories/InBrowserSportRepository";
@@ -134,7 +147,9 @@ describe("reset_all_data", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mock_clear_all_settings.mockClear();
-    Object.keys(mock_app_settings_store).forEach((k) => delete mock_app_settings_store[k]);
+    Object.keys(mock_app_settings_store).forEach(
+      (k) => delete mock_app_settings_store[k],
+    );
     mock_is_signed_in = false;
     setup_window();
   });
@@ -157,12 +172,19 @@ describe("reset_all_data", () => {
 
   it("stops background sync before doing anything else", async () => {
     const call_order: string[] = [];
-    vi.mocked(stop_background_sync).mockImplementation(() => { call_order.push("stop"); return true; });
-    vi.mocked(reset_sport_repository).mockImplementation(async () => { call_order.push("reset_sport"); });
+    vi.mocked(stop_background_sync).mockImplementation(() => {
+      call_order.push("stop");
+      return true;
+    });
+    vi.mocked(reset_sport_repository).mockImplementation(async () => {
+      call_order.push("reset_sport");
+    });
 
     await reset_all_data();
 
-    expect(call_order.indexOf("stop")).toBeLessThan(call_order.indexOf("reset_sport"));
+    expect(call_order.indexOf("stop")).toBeLessThan(
+      call_order.indexOf("reset_sport"),
+    );
   });
 
   it("sets pulling_from_remote to true before resetting and false after", async () => {
@@ -217,12 +239,19 @@ describe("reset_all_data", () => {
 
   it("re-seeds default data after clearing repositories", async () => {
     const call_order: string[] = [];
-    vi.mocked(reset_organization_repository).mockImplementation(async () => { call_order.push("reset_org"); });
-    vi.mocked(seed_all_data_if_needed).mockImplementation(async () => { call_order.push("seed"); return { success: true as const, data: true }; });
+    vi.mocked(reset_organization_repository).mockImplementation(async () => {
+      call_order.push("reset_org");
+    });
+    vi.mocked(seed_all_data_if_needed).mockImplementation(async () => {
+      call_order.push("seed");
+      return { success: true as const, data: true };
+    });
 
     await reset_all_data();
 
-    expect(call_order.indexOf("reset_org")).toBeLessThan(call_order.indexOf("seed"));
+    expect(call_order.indexOf("reset_org")).toBeLessThan(
+      call_order.indexOf("seed"),
+    );
   });
 
   it("starts background sync after reset when user is signed in", async () => {

@@ -6,7 +6,8 @@ const mock_app_settings_store: Record<string, string> = {};
 
 vi.mock("$lib/infrastructure/container", () => ({
   get_app_settings_storage: () => ({
-    get_setting: (key: string) => Promise.resolve(mock_app_settings_store[key] ?? null),
+    get_setting: (key: string) =>
+      Promise.resolve(mock_app_settings_store[key] ?? null),
     set_setting: (key: string, value: string) => {
       mock_app_settings_store[key] = value;
       return Promise.resolve();
@@ -16,7 +17,9 @@ vi.mock("$lib/infrastructure/container", () => ({
       return Promise.resolve();
     },
     clear_all_settings: () => {
-      Object.keys(mock_app_settings_store).forEach((k) => delete mock_app_settings_store[k]);
+      Object.keys(mock_app_settings_store).forEach(
+        (k) => delete mock_app_settings_store[k],
+      );
       return Promise.resolve();
     },
   }),
@@ -31,7 +34,9 @@ import { get } from "svelte/store";
 
 describe("has_session_been_synced", () => {
   beforeEach(() => {
-    Object.keys(mock_app_settings_store).forEach((k) => delete mock_app_settings_store[k]);
+    Object.keys(mock_app_settings_store).forEach(
+      (k) => delete mock_app_settings_store[k],
+    );
   });
 
   it("returns false when session flag is not set", async () => {
@@ -51,7 +56,9 @@ describe("has_session_been_synced", () => {
 
 describe("clear_session_sync_flag", () => {
   beforeEach(() => {
-    Object.keys(mock_app_settings_store).forEach((k) => delete mock_app_settings_store[k]);
+    Object.keys(mock_app_settings_store).forEach(
+      (k) => delete mock_app_settings_store[k],
+    );
   });
 
   it("removes the session sync flag", async () => {
@@ -79,7 +86,9 @@ describe("clear_session_sync_flag", () => {
 
 describe("initial_sync_store", () => {
   beforeEach(() => {
-    Object.keys(mock_app_settings_store).forEach((k) => delete mock_app_settings_store[k]);
+    Object.keys(mock_app_settings_store).forEach(
+      (k) => delete mock_app_settings_store[k],
+    );
     initial_sync_store.reset();
   });
 

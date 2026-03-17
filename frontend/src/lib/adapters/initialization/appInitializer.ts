@@ -1,6 +1,9 @@
 import { PUBLIC_CONVEX_URL } from "$env/static/public";
 import { get } from "svelte/store";
-import { get_repository_container, get_app_settings_storage } from "$lib/infrastructure/container";
+import {
+  get_repository_container,
+  get_app_settings_storage,
+} from "$lib/infrastructure/container";
 import { get_organization_use_cases } from "$lib/core/usecases/OrganizationUseCases";
 import { get_competition_use_cases } from "$lib/core/usecases/CompetitionUseCases";
 import { get_team_use_cases } from "$lib/core/usecases/TeamUseCases";
@@ -65,11 +68,17 @@ let auth_cache_invalidator: AuthCacheInvalidator | null = null;
 const FIRST_TIME_DETECTION_KEY = "sports_org_app_initialized";
 
 async function is_first_time_use(): Promise<boolean> {
-  return (await get_app_settings_storage().get_setting(FIRST_TIME_DETECTION_KEY)) !== "true";
+  return (
+    (await get_app_settings_storage().get_setting(FIRST_TIME_DETECTION_KEY)) !==
+    "true"
+  );
 }
 
 async function mark_app_initialized(): Promise<void> {
-  await get_app_settings_storage().set_setting(FIRST_TIME_DETECTION_KEY, "true");
+  await get_app_settings_storage().set_setting(
+    FIRST_TIME_DETECTION_KEY,
+    "true",
+  );
 }
 
 async function delay(ms: number): Promise<void> {
@@ -167,7 +176,11 @@ function determine_seeding_strategy(
   current_path: string,
   seeding_already_complete: boolean,
 ): SeedingStrategy {
-  if (!user_is_signed_in && get_is_public_content_page(current_path) && seeding_already_complete) {
+  if (
+    !user_is_signed_in &&
+    get_is_public_content_page(current_path) &&
+    seeding_already_complete
+  ) {
     return "skip_seeding";
   }
   if (!user_is_signed_in) {

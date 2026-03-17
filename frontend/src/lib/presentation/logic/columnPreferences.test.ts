@@ -96,7 +96,12 @@ describe("save_column_preferences", () => {
   });
 
   it("returns false for empty column set", async () => {
-    const saved = await save_column_preferences("Team", null, new Set(), storage);
+    const saved = await save_column_preferences(
+      "Team",
+      null,
+      new Set(),
+      storage,
+    );
 
     expect(saved).toBe(false);
     expect(storage.set_setting).not.toHaveBeenCalled();
@@ -111,7 +116,10 @@ describe("load_column_preferences", () => {
   });
 
   it("returns restored columns when cached data exists", async () => {
-    await storage.set_setting("col_prefs_Team", JSON.stringify(["name", "status"]));
+    await storage.set_setting(
+      "col_prefs_Team",
+      JSON.stringify(["name", "status"]),
+    );
 
     const result = await load_column_preferences(
       "Team",
