@@ -18,6 +18,8 @@ import {
 import {
   USER_ROLE_DISPLAY_NAMES,
   USER_ROLE_ORDER,
+  ANY_VALUE,
+  check_data_permission,
 } from "$lib/core/interfaces/ports";
 import { get_authentication_adapter } from "$lib/adapters/iam/LocalAuthenticationAdapter";
 import { get_system_user_repository } from "$lib/adapters/repositories/InBrowserSystemUserRepository";
@@ -711,17 +713,22 @@ function create_auth_store() {
     }
 
     const role = state.current_profile.role;
-    const is_super_admin = role === "super_admin";
-    const is_org_admin = role === "org_admin";
+    const organization_id = state.current_profile.organization_id;
+    const has_unrestricted_org_scope = organization_id === ANY_VALUE;
+    const can_manage_org = check_data_permission(
+      role,
+      "org_administrator_level",
+      "read",
+    );
 
     return {
-      can_reset_demo: is_super_admin,
-      can_view_audit_logs: is_super_admin || is_org_admin,
+      can_reset_demo: check_data_permission(role, "root_level", "delete"),
+      can_view_audit_logs: can_manage_org,
       can_access_dashboard: true,
       can_switch_profiles: state.is_demo_session,
-      audit_logs_scope: is_super_admin
+      audit_logs_scope: has_unrestricted_org_scope
         ? "all"
-        : is_org_admin
+        : can_manage_org
           ? "organization"
           : "none",
     };
@@ -908,10 +915,11 @@ export const is_auth_initialized = derived(
   ($auth) => $auth.is_initialized,
 );
 
-export const is_public_viewer = derived(
-  auth_store,
-  ($auth) => $auth.current_profile?.role === "public_viewer",
-);
+export const is_public_viewer = derived(auth_store, ($auth) => {
+  const role = $auth.current_profile?.role;
+  if (!role) return false;
+  return !check_data_permission(role, "public_level", "create");
+});
 
 export const sidebar_menu_items = derived(auth_store, ($auth) => {
   return $auth.sidebar_menu_items;
@@ -928,17 +936,22 @@ const feature_access = derived(auth_store, ($auth) => {
     };
   }
   const role = $auth.current_profile.role;
-  const is_super_admin = role === "super_admin";
-  const is_org_admin = role === "org_admin";
+  const organization_id = $auth.current_profile.organization_id;
+  const has_unrestricted_org_scope = organization_id === ANY_VALUE;
+  const can_manage_org = check_data_permission(
+    role,
+    "org_administrator_level",
+    "read",
+  );
 
   return {
-    can_reset_demo: is_super_admin,
-    can_view_audit_logs: is_super_admin || is_org_admin,
+    can_reset_demo: check_data_permission(role, "root_level", "delete"),
+    can_view_audit_logs: can_manage_org,
     can_access_dashboard: true,
     can_switch_profiles: $auth.is_demo_session,
-    audit_logs_scope: is_super_admin
+    audit_logs_scope: has_unrestricted_org_scope
       ? ("all" as const)
-      : is_org_admin
+      : can_manage_org
         ? ("organization" as const)
         : ("none" as const),
   };

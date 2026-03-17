@@ -4,19 +4,19 @@ import { build_dashboard_filters } from "./dashboardStatsLogic";
 describe("build_dashboard_filters", () => {
   describe("super_admin role", () => {
     it("returns no organization filter for super_admin", () => {
-      const filters = build_dashboard_filters("super_admin", "org_123");
+      const filters = build_dashboard_filters("super_admin", "*");
 
       expect(filters.organization_filter).toBeUndefined();
     });
 
     it("returns fixture filter without organization_id for super_admin", () => {
-      const filters = build_dashboard_filters("super_admin", "org_123");
+      const filters = build_dashboard_filters("super_admin", "*");
 
       expect(filters.fixture_filter).toEqual({ status: "scheduled" });
     });
 
     it("returns null organization count override for super_admin", () => {
-      const filters = build_dashboard_filters("super_admin", "org_123");
+      const filters = build_dashboard_filters("super_admin", "*");
 
       expect(filters.organization_count_override).toBeNull();
     });

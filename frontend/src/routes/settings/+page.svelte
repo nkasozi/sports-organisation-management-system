@@ -7,6 +7,7 @@
     ensure_route_access,
   } from "$lib/presentation/logic/authGuard";
   import { auth_store } from "$lib/presentation/stores/auth";
+  import { ANY_VALUE } from "$lib/core/interfaces/ports";
   import {
     theme_store,
     toggle_theme_mode,
@@ -52,7 +53,7 @@
 
   $: current_profile = $auth_store.current_profile;
   $: is_platform_branding =
-    !current_profile || current_profile.role === "super_admin";
+    !current_profile || current_profile.organization_id === ANY_VALUE;
   $: branding_context_label = is_platform_branding
     ? "Platform Branding"
     : `${$branding_store.organization_name} Branding`;

@@ -1,6 +1,14 @@
 import { v } from "convex/values";
 import { mutation } from "./_generated/server";
 
+const PLATFORM_WIDE_SCOPE = "*";
+
+function check_caller_platform_access(
+  organization_id: string | undefined,
+): boolean {
+  return organization_id === PLATFORM_WIDE_SCOPE;
+}
+
 export const seed_admin_user = mutation({
   args: {
     email: v.string(),
@@ -22,7 +30,9 @@ export const seed_admin_user = mutation({
       }
       const caller_email = identity.email.toLowerCase();
       const caller = all_users.find((u: any) => u.email === caller_email);
-      if (!caller || caller.role !== "super_admin") {
+      const has_platform_access =
+        caller && check_caller_platform_access(caller.organization_id);
+      if (!has_platform_access) {
         return {
           success: false,
           error: "Only super admins can seed admin users",

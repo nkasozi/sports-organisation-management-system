@@ -43,6 +43,7 @@
   import {
     build_authorization_list_filter,
     type UserScopeProfile,
+    ANY_VALUE,
   } from "$lib/core/interfaces/ports";
   import type { SquadGenerationStrategy } from "$lib/core/entities/Competition";
 
@@ -325,11 +326,11 @@
       ? org_result.data?.items || []
       : [];
     const org_auth_state = get(auth_store);
-    const org_role = org_auth_state.current_profile?.role || "public_viewer";
     const user_org_id = org_auth_state.current_profile?.organization_id;
-    if (org_role === "super_admin") {
+    const has_unrestricted_scope = user_org_id === ANY_VALUE;
+    if (has_unrestricted_scope) {
       organizations = all_fetched_orgs;
-    } else if (user_org_id && user_org_id !== "*") {
+    } else if (user_org_id && user_org_id !== ANY_VALUE) {
       organizations = all_fetched_orgs.filter((org) => org.id === user_org_id);
     } else {
       organizations = [];

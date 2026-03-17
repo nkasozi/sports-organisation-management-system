@@ -141,7 +141,7 @@ export function build_scope_filter(
   const role = user.role as UserRole;
   const normalized_entity = entity_type.toLowerCase().replace(/[\s_-]/g, "");
 
-  if (role === "super_admin") return {};
+  if (user.organization_id === "*") return {};
 
   if (role === "org_admin" || role === "officials_manager") {
     return { organization_id: user.organization_id };

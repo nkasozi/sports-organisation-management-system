@@ -32,6 +32,8 @@
     build_authorization_list_filter,
     get_scope_value,
     type UserScopeProfile,
+    ANY_VALUE,
+    check_data_permission,
   } from "$lib/core/interfaces/ports";
   import type {
     MatchStaffEntry,
@@ -383,16 +385,16 @@
     stats_card_sort,
   );
 
-  function get_current_user_role(): string {
-    const auth_state = get(auth_store);
-    return auth_state.current_profile?.role || "player";
-  }
-
   function can_user_change_organizations(): boolean {
-    const role = get_current_user_role();
-    if (role === "super_admin") return true;
+    const auth_state = get(auth_store);
+    const organization_id = auth_state.current_profile?.organization_id || "";
+    if (organization_id === ANY_VALUE) return true;
+    const role = auth_state.current_profile?.role || "player";
     const url_params = extract_url_params();
-    return role === "public_viewer" && url_params.org_id.length === 0;
+    return (
+      !check_data_permission(role, "public_level", "create") &&
+      url_params.org_id.length === 0
+    );
   }
 
   function build_auth_filter(): Record<string, string> {

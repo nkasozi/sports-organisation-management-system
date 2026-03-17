@@ -42,6 +42,7 @@
   import {
     build_authorization_list_filter,
     get_authorization_preselect_values,
+    ANY_VALUE,
   } from "$lib/core/interfaces/ports";
   import { get_authorization_adapter } from "$lib/infrastructure/AuthorizationProvider";
 
@@ -278,11 +279,11 @@
     if (organizations_result.success) {
       const all_fetched_orgs = organizations_result.data?.items || [];
       const org_auth_state = get(auth_store);
-      const org_role = org_auth_state.current_profile?.role || "public_viewer";
       const user_org_id = org_auth_state.current_profile?.organization_id;
-      if (org_role === "super_admin") {
+      const has_unrestricted_scope = user_org_id === ANY_VALUE;
+      if (has_unrestricted_scope) {
         organizations = all_fetched_orgs;
-      } else if (user_org_id && user_org_id !== "*") {
+      } else if (user_org_id && user_org_id !== ANY_VALUE) {
         organizations = all_fetched_orgs.filter(
           (org) => org.id === user_org_id,
         );

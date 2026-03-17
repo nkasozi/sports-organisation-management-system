@@ -306,7 +306,7 @@ export const get_user_scope_filter = query({
 
     const user = user_result.data;
 
-    if (user.role === "super_admin") return { success: true, data: {} };
+    if (user.organization_id === "*") return { success: true, data: {} };
 
     if (user.role === "org_admin") {
       return { success: true, data: { organization_id: user.organization_id } };
@@ -352,7 +352,7 @@ export const update_user_role = mutation({
       return { success: false, error: admin_result.error };
     }
     const admin_user = admin_result.data;
-    if (admin_user.role !== "super_admin" && admin_user.role !== "org_admin") {
+    if (!check_role_permission(admin_user.role, "org_administrator_level", "read")) {
       return { success: false, error: "Unauthorized to update user roles" };
     }
 

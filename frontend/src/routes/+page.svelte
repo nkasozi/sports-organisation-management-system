@@ -18,6 +18,7 @@
   import { branding_store } from "$lib/presentation/stores/branding";
   import { auth_store } from "$lib/presentation/stores/auth";
   import { build_dashboard_filters } from "$lib/presentation/logic/dashboardStatsLogic";
+  import { ANY_VALUE, check_data_permission } from "$lib/core/interfaces/ports";
   import { ErrorDisplay } from "$lib/presentation/components/ui";
   import FullScreenOverlay from "$lib/presentation/components/ui/FullScreenOverlay.svelte";
   import type { Competition } from "$lib/core/entities/Competition";
@@ -51,10 +52,14 @@
   let sport_names: Record<string, string> = {};
   let competition_sport_names: Record<string, string> = {};
 
-  $: current_user_role = $auth_store.current_profile?.role || "player";
-  $: user_is_super_admin = current_user_role === "super_admin";
-  $: user_has_org_admin_access =
-    current_user_role === "super_admin" || current_user_role === "org_admin";
+  $: current_user_organization_id =
+    $auth_store.current_profile?.organization_id || "";
+  $: user_is_super_admin = current_user_organization_id === ANY_VALUE;
+  $: user_has_org_admin_access = check_data_permission(
+    $auth_store.current_profile?.role || "player",
+    "org_administrator_level",
+    "read",
+  );
 
   function get_competition_initials(name: string): string {
     return name

@@ -1,4 +1,5 @@
 import type { FixtureStatus } from "$lib/core/entities/Fixture";
+import { ANY_VALUE } from "$lib/core/interfaces/ports";
 
 export interface DashboardFilters {
   organization_filter: { organization_id: string } | undefined;
@@ -10,9 +11,9 @@ export function build_dashboard_filters(
   role: string,
   organization_id: string,
 ): DashboardFilters {
-  const is_super_admin = role === "super_admin";
+  const has_unrestricted_org_scope = !organization_id || organization_id === ANY_VALUE;
 
-  if (is_super_admin) {
+  if (has_unrestricted_org_scope) {
     return {
       organization_filter: undefined,
       fixture_filter: { status: "scheduled" },
