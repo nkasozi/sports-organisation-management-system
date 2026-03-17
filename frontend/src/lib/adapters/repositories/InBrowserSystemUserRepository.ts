@@ -10,7 +10,9 @@ import type {
   QueryOptions,
   SystemUserRepository,
   SystemUserFilter,
+  UserRole,
 } from "../../core/interfaces/ports";
+import { check_data_permission, ANY_VALUE } from "../../core/interfaces/ports";
 import type {
   PaginatedAsyncResult,
   AsyncResult,
@@ -22,14 +24,18 @@ import {
 import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
 
 const ENTITY_PREFIX = "usr";
-const ALL_ORGANIZATIONS_SCOPE = "*";
+const ALL_ORGANIZATIONS_SCOPE = ANY_VALUE;
 
 export function resolve_organization_id_for_role(
   organization_id: string,
   role: SystemUserRole,
 ): string {
-  if (role === "super_admin") return ALL_ORGANIZATIONS_SCOPE;
-  return organization_id || "";
+  const has_platform_wide_scope = check_data_permission(
+    role as UserRole,
+    "root_level",
+    "delete",
+  );
+  return has_platform_wide_scope ? ALL_ORGANIZATIONS_SCOPE : organization_id || "";
 }
 
 export class InBrowserSystemUserRepository
@@ -230,8 +236,12 @@ export class InBrowserSystemUserRepository
     try {
       let filtered_entities = await this.database.system_users.toArray();
 
-      filtered_entities = filtered_entities.filter(
-        (user) => user.role === "org_admin" || user.role === "super_admin",
+      filtered_entities = filtered_entities.filter((user) =>
+        check_data_permission(
+          user.role as UserRole,
+          "org_administrator_level",
+          "read",
+        ),
       );
 
       const total_count = filtered_entities.length;

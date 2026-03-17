@@ -34,7 +34,6 @@
     const auth_state = get(auth_store);
     const current_profile = auth_state.current_profile;
     if (!current_profile) return null;
-    if (current_profile.role === "super_admin") return null;
     return get_scope_value(
       current_profile as UserScopeProfile,
       "organization_id",

@@ -11,14 +11,13 @@ export async function sync_branding_with_profile(
     return true;
   }
 
-  const is_super_admin = profile.role === "super_admin";
   const has_no_org_context =
     !profile.organization_id || profile.organization_id === ANY_VALUE;
 
-  if (is_super_admin || has_no_org_context) {
+  if (has_no_org_context) {
     await branding_store.set_organization_context(null);
     console.log(
-      "[BrandingSync] Set to platform branding (super_admin or no org context)",
+      "[BrandingSync] Set to platform branding (unrestricted or no org context)",
     );
     return true;
   }
