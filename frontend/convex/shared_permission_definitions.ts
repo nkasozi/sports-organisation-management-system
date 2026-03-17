@@ -175,7 +175,7 @@ export const SHARED_ENTITY_CATEGORY_MAP: SharedEntityCategoryMap = {
   gender: "org_administrator_level",
   competitionformat: "organisation_level",
   identificationtype: "org_administrator_level",
-  gameofficialrole: "org_administrator_level",
+  gameofficialrole: "organisation_level",
   gameeventtype: "org_administrator_level",
   teamstaffrole: "org_administrator_level",
   playerposition: "org_administrator_level",

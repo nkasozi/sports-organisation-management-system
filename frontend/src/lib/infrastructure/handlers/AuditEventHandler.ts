@@ -4,6 +4,7 @@ import {
   type EntityUpdatedPayload,
   type EntityDeletedPayload,
   type AccessDeniedPayload,
+  type PageViewedPayload,
 } from "../events/EventBus";
 import { get_repository_container } from "../container";
 import type {
@@ -156,6 +157,27 @@ async function handle_access_denied(
 
 let is_initialized = false;
 
+async function handle_page_viewed(payload: PageViewedPayload): Promise<void> {
+  const container = get_repository_container();
+  const audit_log_repository = container.audit_log_repository;
+
+  const audit_input: CreateAuditLogInput = {
+    entity_type: "page",
+    entity_id: payload.page_path,
+    entity_display_name: payload.page_title,
+    action: "page_view",
+    changes: [],
+    user_id: payload.user_context?.user_id ?? "anonymous",
+    user_email: payload.user_context?.user_email ?? "anonymous@unknown",
+    user_display_name: payload.user_context?.user_display_name ?? "Anonymous",
+    organization_id: payload.user_context?.organization_id ?? "*",
+    ip_address: "127.0.0.1",
+    user_agent: "SportSyncApp/1.0",
+  };
+
+  await audit_log_repository.create(audit_input);
+}
+
 export function initialize_audit_event_handlers(): boolean {
   if (is_initialized) return false;
 
@@ -175,6 +197,7 @@ export function initialize_audit_event_handlers(): boolean {
     "access_denied",
     handle_access_denied,
   );
+  EventBus.subscribe<PageViewedPayload>("page_viewed", handle_page_viewed);
 
   is_initialized = true;
   return true;

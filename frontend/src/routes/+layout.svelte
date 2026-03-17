@@ -38,6 +38,7 @@
   import { public_organization_store } from "$lib/presentation/stores/publicOrganization";
   import { current_user_store } from "$lib/presentation/stores/currentUser";
   import { ClerkProvider } from "svelte-clerk";
+  import { EventBus } from "$lib/infrastructure/events/EventBus";
   import {
     auth_store,
     fetch_current_user_profile_from_convex,
@@ -72,6 +73,7 @@
   let unsubscribe_sync: (() => void) | null = null;
   let unsubscribe_signed_in: (() => void) | null = null;
   let previous_signed_in_state = false;
+  const layout_mount_id = Math.random().toString(36).slice(2, 8);
 
   function get_is_public_profile_page(path: string): boolean {
     return path.startsWith("/profile/") || path.startsWith("/team-profile/");
@@ -110,6 +112,12 @@
     if (is_route_guard_exempt(pathname)) return;
 
     await ensure_route_access(pathname);
+
+    const user_is_signed_in = get(is_signed_in);
+    if (!user_is_signed_in) return;
+
+    const page_title = document.title || pathname;
+    EventBus.emit_page_viewed(pathname, page_title);
   });
 
   function format_table_name(table_name: string): string {
@@ -301,6 +309,12 @@
 
   onMount(async () => {
     current_path = get(page).url.pathname;
+    console.log("[Layout-DIAG] onMount fired", {
+      event: "layout_on_mount",
+      mount_id: layout_mount_id,
+      path: current_path,
+      timestamp: Date.now(),
+    });
 
     await initialize_theme();
     await branding_store.initialize();
@@ -383,6 +397,11 @@
   });
 
   onDestroy(() => {
+    console.log("[Layout-DIAG] onDestroy fired", {
+      event: "layout_on_destroy",
+      mount_id: layout_mount_id,
+      timestamp: Date.now(),
+    });
     cleanup_subscriptions();
     reset_initialization();
   });
