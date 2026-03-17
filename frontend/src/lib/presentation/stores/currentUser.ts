@@ -5,6 +5,7 @@ import {
   EventBus,
   type EntityUpdatedPayload,
 } from "$lib/infrastructure/events/EventBus";
+import { get_app_settings_storage } from "$lib/infrastructure/container";
 
 export interface CurrentUser {
   id: string;
@@ -17,28 +18,24 @@ export interface CurrentUser {
 
 const storage_key = "sports-org-current-user";
 
-function load_initial_user(): CurrentUser | null {
-  if (!browser) return null;
-
-  const stored = localStorage.getItem(storage_key);
-  if (!stored) return null;
-
-  try {
-    return JSON.parse(stored);
-  } catch {
-    return null;
-  }
-}
-
 function create_current_user_store() {
-  const { subscribe, set, update } = writable<CurrentUser | null>(
-    load_initial_user(),
-  );
+  const { subscribe, set, update } = writable<CurrentUser | null>(null);
 
   return {
     subscribe,
 
-    set_user: (user: SystemUser): void => {
+    initialize: async (): Promise<void> => {
+      if (!browser) return;
+      const stored = await get_app_settings_storage().get_setting(storage_key);
+      if (!stored) return;
+      try {
+        set(JSON.parse(stored) as CurrentUser);
+      } catch {
+        /* ignore corrupt data */
+      }
+    },
+
+    set_user: async (user: SystemUser): Promise<void> => {
       const current_user: CurrentUser = {
         id: user.id,
         email: user.email,
@@ -49,54 +46,46 @@ function create_current_user_store() {
       };
 
       if (browser) {
-        localStorage.setItem(storage_key, JSON.stringify(current_user));
+        await get_app_settings_storage().set_setting(storage_key, JSON.stringify(current_user));
       }
 
       set(current_user);
     },
 
-    clear: (): void => {
+    clear: async (): Promise<void> => {
       if (browser) {
-        localStorage.removeItem(storage_key);
+        await get_app_settings_storage().remove_setting(storage_key);
       }
       set(null);
     },
 
-    update_profile_picture: (base64: string): void => {
-      update((user) => {
-        if (!user) return null;
-
-        const updated = { ...user, profile_picture_base64: base64 };
-
-        if (browser) {
-          localStorage.setItem(storage_key, JSON.stringify(updated));
-        }
-
-        return updated;
-      });
+    update_profile_picture: async (base64: string): Promise<void> => {
+      const user = get({ subscribe });
+      if (!user) return;
+      const updated = { ...user, profile_picture_base64: base64 };
+      if (browser) {
+        await get_app_settings_storage().set_setting(storage_key, JSON.stringify(updated));
+      }
+      set(updated);
     },
 
-    update_from_entity_data: (entity_data: Record<string, unknown>): void => {
-      update((user) => {
-        if (!user) return null;
-
-        const updated: CurrentUser = {
-          id: user.id,
-          email: (entity_data.email as string) ?? user.email,
-          first_name: (entity_data.first_name as string) ?? user.first_name,
-          last_name: (entity_data.last_name as string) ?? user.last_name,
-          role: (entity_data.role as SystemUserRole) ?? user.role,
-          profile_picture_base64:
-            (entity_data.profile_picture_base64 as string) ??
-            user.profile_picture_base64,
-        };
-
-        if (browser) {
-          localStorage.setItem(storage_key, JSON.stringify(updated));
-        }
-
-        return updated;
-      });
+    update_from_entity_data: async (entity_data: Record<string, unknown>): Promise<void> => {
+      const user = get({ subscribe });
+      if (!user) return;
+      const updated: CurrentUser = {
+        id: user.id,
+        email: (entity_data.email as string) ?? user.email,
+        first_name: (entity_data.first_name as string) ?? user.first_name,
+        last_name: (entity_data.last_name as string) ?? user.last_name,
+        role: (entity_data.role as SystemUserRole) ?? user.role,
+        profile_picture_base64:
+          (entity_data.profile_picture_base64 as string) ??
+          user.profile_picture_base64,
+      };
+      if (browser) {
+        await get_app_settings_storage().set_setting(storage_key, JSON.stringify(updated));
+      }
+      set(updated);
     },
 
     get_current_user_id: (): string | null => {

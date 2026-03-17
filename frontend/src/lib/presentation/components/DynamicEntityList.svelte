@@ -167,7 +167,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
 
   onMount(async () => {
     console.log(`[ENTITY_LIST] onMount - entity_type: "${entity_type}"`);
-    initialize_default_columns();
+    await initialize_default_columns();
     const auth_result = await ensure_auth_profile();
     if (!auth_result.success) {
       auth_profile_missing = true;
@@ -206,14 +206,14 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
     foreign_key_options = new_options;
   }
 
-  function initialize_default_columns(): void {
+  async function initialize_default_columns(): Promise<void> {
     if (!entity_metadata) return;
 
     const all_fields = get_all_available_fields();
     const available_field_names = all_fields.map(
       (f: FieldMetadata) => f.field_name,
     );
-    const cached_result = load_column_preferences(
+    const cached_result = await load_column_preferences(
       entity_type,
       sub_entity_filter,
       available_field_names,
@@ -259,7 +259,11 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
 
   function toggle_column_visibility(field_name: string): void {
     visible_columns = toggle_column_in_set(visible_columns, field_name);
-    save_column_preferences(entity_type, sub_entity_filter, visible_columns);
+    save_column_preferences(
+      entity_type,
+      sub_entity_filter,
+      visible_columns,
+    ).catch(() => {});
   }
 
   function export_to_csv(): void {

@@ -1,3 +1,4 @@
+export type { AppSettingsPort } from "./internal/AppSettingsPort";
 export type {
   BaseUseCasesPort,
   AsyncResult,

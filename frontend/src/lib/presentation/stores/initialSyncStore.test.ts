@@ -2,23 +2,25 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 
 const SESSION_SYNC_KEY = "sports_org_session_synced";
 
-function setup_session_storage(initial_value: string | null = null): void {
-  const store: Record<string, string> = {};
-  if (initial_value !== null) {
-    store[SESSION_SYNC_KEY] = initial_value;
-  }
+const mock_app_settings_store: Record<string, string> = {};
 
-  (globalThis as Record<string, unknown>).window = globalThis;
-  (globalThis as Record<string, unknown>).sessionStorage = {
-    getItem: vi.fn((key: string) => store[key] ?? null),
-    setItem: vi.fn((key: string, value: string) => {
-      store[key] = value;
-    }),
-    removeItem: vi.fn((key: string) => {
-      delete store[key];
-    }),
-  };
-}
+vi.mock("$lib/infrastructure/container", () => ({
+  get_app_settings_storage: () => ({
+    get_setting: (key: string) => Promise.resolve(mock_app_settings_store[key] ?? null),
+    set_setting: (key: string, value: string) => {
+      mock_app_settings_store[key] = value;
+      return Promise.resolve();
+    },
+    remove_setting: (key: string) => {
+      delete mock_app_settings_store[key];
+      return Promise.resolve();
+    },
+    clear_all_settings: () => {
+      Object.keys(mock_app_settings_store).forEach((k) => delete mock_app_settings_store[k]);
+      return Promise.resolve();
+    },
+  }),
+}));
 
 import {
   has_session_been_synced,
@@ -29,85 +31,55 @@ import { get } from "svelte/store";
 
 describe("has_session_been_synced", () => {
   beforeEach(() => {
-    vi.resetModules();
+    Object.keys(mock_app_settings_store).forEach((k) => delete mock_app_settings_store[k]);
   });
 
-  it("returns true when window is undefined (SSR — assume synced to avoid loops)", () => {
-    const original_window = (globalThis as Record<string, unknown>).window;
-    delete (globalThis as Record<string, unknown>).window;
-
-    expect(has_session_been_synced()).toBe(true);
-
-    (globalThis as Record<string, unknown>).window = original_window;
+  it("returns false when session flag is not set", async () => {
+    expect(await has_session_been_synced()).toBe(false);
   });
 
-  it("returns false when session flag is not set", () => {
-    setup_session_storage(null);
-    expect(has_session_been_synced()).toBe(false);
+  it("returns false when session flag is set to a non-true value", async () => {
+    mock_app_settings_store[SESSION_SYNC_KEY] = "false";
+    expect(await has_session_been_synced()).toBe(false);
   });
 
-  it("returns false when session flag is set to a non-true value", () => {
-    setup_session_storage("false");
-    expect(has_session_been_synced()).toBe(false);
-  });
-
-  it("returns true when session flag is set to 'true'", () => {
-    setup_session_storage("true");
-    expect(has_session_been_synced()).toBe(true);
+  it("returns true when session flag is set to 'true'", async () => {
+    mock_app_settings_store[SESSION_SYNC_KEY] = "true";
+    expect(await has_session_been_synced()).toBe(true);
   });
 });
 
 describe("clear_session_sync_flag", () => {
   beforeEach(() => {
-    vi.resetModules();
+    Object.keys(mock_app_settings_store).forEach((k) => delete mock_app_settings_store[k]);
   });
 
-  it("is a no-op when window is undefined (SSR)", () => {
-    const original_window = (globalThis as Record<string, unknown>).window;
-    delete (globalThis as Record<string, unknown>).window;
+  it("removes the session sync flag", async () => {
+    mock_app_settings_store[SESSION_SYNC_KEY] = "true";
+    expect(await has_session_been_synced()).toBe(true);
 
-    expect(() => clear_session_sync_flag()).not.toThrow();
+    await clear_session_sync_flag();
 
-    (globalThis as Record<string, unknown>).window = original_window;
+    expect(mock_app_settings_store[SESSION_SYNC_KEY]).toBeUndefined();
   });
 
-  it("removes the session sync flag from sessionStorage", () => {
-    setup_session_storage("true");
-    expect(has_session_been_synced()).toBe(true);
+  it("after clearing, has_session_been_synced returns false", async () => {
+    mock_app_settings_store[SESSION_SYNC_KEY] = "true";
+    expect(await has_session_been_synced()).toBe(true);
 
-    clear_session_sync_flag();
-
-    const session_storage = (globalThis as Record<string, unknown>).sessionStorage as {
-      removeItem: ReturnType<typeof vi.fn>;
-    };
-    expect(session_storage.removeItem).toHaveBeenCalledWith(SESSION_SYNC_KEY);
+    await clear_session_sync_flag();
+    expect(await has_session_been_synced()).toBe(false);
   });
 
-  it("after clearing, has_session_been_synced returns false", () => {
-    const store: Record<string, string> = { [SESSION_SYNC_KEY]: "true" };
-    (globalThis as Record<string, unknown>).window = globalThis;
-    (globalThis as Record<string, unknown>).sessionStorage = {
-      getItem: vi.fn((key: string) => store[key] ?? null),
-      setItem: vi.fn((key: string, value: string) => { store[key] = value; }),
-      removeItem: vi.fn((key: string) => { delete store[key]; }),
-    };
-
-    expect(has_session_been_synced()).toBe(true);
-    clear_session_sync_flag();
-    expect(has_session_been_synced()).toBe(false);
-  });
-
-  it("can be called multiple times without error", () => {
-    setup_session_storage(null);
-    expect(() => {
-      clear_session_sync_flag();
-      clear_session_sync_flag();
-    }).not.toThrow();
+  it("can be called multiple times without error", async () => {
+    await expect(clear_session_sync_flag()).resolves.toBeUndefined();
+    await expect(clear_session_sync_flag()).resolves.toBeUndefined();
   });
 });
 
 describe("initial_sync_store", () => {
   beforeEach(() => {
+    Object.keys(mock_app_settings_store).forEach((k) => delete mock_app_settings_store[k]);
     initial_sync_store.reset();
   });
 
@@ -136,17 +108,9 @@ describe("initial_sync_store", () => {
     expect(state.progress_percentage).toBe(45);
   });
 
-  it("complete_sync sets is_syncing false, sync_complete true, and progress to 100", () => {
-    const store: Record<string, string> = {};
-    (globalThis as Record<string, unknown>).window = globalThis;
-    (globalThis as Record<string, unknown>).sessionStorage = {
-      getItem: vi.fn((key: string) => store[key] ?? null),
-      setItem: vi.fn((key: string, value: string) => { store[key] = value; }),
-      removeItem: vi.fn((key: string) => { delete store[key]; }),
-    };
-
+  it("complete_sync sets is_syncing false, sync_complete true, and progress to 100", async () => {
     initial_sync_store.start_sync();
-    initial_sync_store.complete_sync();
+    await initial_sync_store.complete_sync();
 
     const state = get(initial_sync_store);
     expect(state.is_syncing).toBe(false);
@@ -154,24 +118,13 @@ describe("initial_sync_store", () => {
     expect(state.progress_percentage).toBe(100);
   });
 
-  it("complete_sync marks the session as synced in sessionStorage", () => {
-    const store: Record<string, string> = {};
-    (globalThis as Record<string, unknown>).window = globalThis;
-    (globalThis as Record<string, unknown>).sessionStorage = {
-      getItem: vi.fn((key: string) => store[key] ?? null),
-      setItem: vi.fn((key: string, value: string) => { store[key] = value; }),
-      removeItem: vi.fn((key: string) => { delete store[key]; }),
-    };
+  it("complete_sync marks the session as synced in AppSettingsPort", async () => {
+    await initial_sync_store.complete_sync();
 
-    initial_sync_store.complete_sync();
-
-    const session_storage = (globalThis as Record<string, unknown>).sessionStorage as {
-      setItem: ReturnType<typeof vi.fn>;
-    };
-    expect(session_storage.setItem).toHaveBeenCalledWith(SESSION_SYNC_KEY, "true");
+    expect(mock_app_settings_store[SESSION_SYNC_KEY]).toBe("true");
   });
 
-  it("reset returns store to initial state without affecting sessionStorage", () => {
+  it("reset returns store to initial state", () => {
     initial_sync_store.start_sync();
     initial_sync_store.update_progress("Loading...", 60);
     initial_sync_store.reset();
@@ -183,16 +136,8 @@ describe("initial_sync_store", () => {
     expect(state.status_message).toBe("");
   });
 
-  it("full login sync cycle: start → progress updates → complete sets synced flag", () => {
-    const store: Record<string, string> = {};
-    (globalThis as Record<string, unknown>).window = globalThis;
-    (globalThis as Record<string, unknown>).sessionStorage = {
-      getItem: vi.fn((key: string) => store[key] ?? null),
-      setItem: vi.fn((key: string, value: string) => { store[key] = value; }),
-      removeItem: vi.fn((key: string) => { delete store[key]; }),
-    };
-
-    expect(has_session_been_synced()).toBe(false);
+  it("full login sync cycle: start → progress updates → complete sets synced flag", async () => {
+    expect(await has_session_been_synced()).toBe(false);
 
     initial_sync_store.start_sync();
     expect(get(initial_sync_store).is_syncing).toBe(true);
@@ -200,24 +145,16 @@ describe("initial_sync_store", () => {
     initial_sync_store.update_progress("Syncing players...", 50);
     expect(get(initial_sync_store).progress_percentage).toBe(50);
 
-    initial_sync_store.complete_sync();
+    await initial_sync_store.complete_sync();
     expect(get(initial_sync_store).sync_complete).toBe(true);
-    expect(has_session_been_synced()).toBe(true);
+    expect(await has_session_been_synced()).toBe(true);
   });
 
-  it("full reset cycle: complete → clear_flag → has_session_been_synced returns false", () => {
-    const store: Record<string, string> = {};
-    (globalThis as Record<string, unknown>).window = globalThis;
-    (globalThis as Record<string, unknown>).sessionStorage = {
-      getItem: vi.fn((key: string) => store[key] ?? null),
-      setItem: vi.fn((key: string, value: string) => { store[key] = value; }),
-      removeItem: vi.fn((key: string) => { delete store[key]; }),
-    };
+  it("full reset cycle: complete → clear_flag → has_session_been_synced returns false", async () => {
+    await initial_sync_store.complete_sync();
+    expect(await has_session_been_synced()).toBe(true);
 
-    initial_sync_store.complete_sync();
-    expect(has_session_been_synced()).toBe(true);
-
-    clear_session_sync_flag();
-    expect(has_session_been_synced()).toBe(false);
+    await clear_session_sync_flag();
+    expect(await has_session_been_synced()).toBe(false);
   });
 });

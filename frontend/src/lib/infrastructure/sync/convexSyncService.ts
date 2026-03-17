@@ -15,6 +15,7 @@ import {
   create_success_result,
   create_failure_result,
 } from "$lib/core/types/Result";
+import { get_app_settings_storage } from "$lib/infrastructure/container";
 
 export type { SyncDirection };
 export type SyncStatus = "idle" | "syncing" | "success" | "error" | "conflict";
@@ -825,8 +826,9 @@ export function get_last_sync_timestamp(): string {
   return EPOCH_TIMESTAMP;
 }
 
-export function reset_sync_metadata(): void {
-  localStorage.removeItem("convex_sync_metadata");
+export async function reset_sync_metadata(): Promise<void> {
+  await get_app_settings_storage().remove_setting("convex_sync_metadata");
+  console.debug("[ConvexSync] Reset sync metadata", { event: "sync_metadata_reset" });
 }
 
 export async function delete_record_in_convex(

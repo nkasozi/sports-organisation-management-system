@@ -214,17 +214,6 @@
       return;
     }
 
-    const debug_count = localStorage.getItem("debug_officials_count");
-    if (debug_count) {
-      console.log("[DEBUG] Officials count after reset:", debug_count);
-      const storage_data = localStorage.getItem("sports_org_officials");
-      if (storage_data) {
-        const officials = JSON.parse(storage_data);
-        console.log("[DEBUG] Officials in localStorage:", officials);
-      }
-      localStorage.removeItem("debug_officials_count");
-    }
-
     const user_role = $auth_store.current_profile?.role || "player";
     const user_organization_id =
       $auth_store.current_profile?.organization_id || "";

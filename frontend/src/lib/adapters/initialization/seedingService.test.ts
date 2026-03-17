@@ -12,10 +12,11 @@ let mock_convex_seed_result = {
 let seed_all_data_called = false;
 let load_current_user_called = false;
 
-const { mock_try_seed_all_tables_from_convex } = vi.hoisted(() => ({
+const { mock_try_seed_all_tables_from_convex, mock_app_settings_store } = vi.hoisted(() => ({
   mock_try_seed_all_tables_from_convex: vi.fn().mockImplementation(async () => {
     return mock_convex_seed_result;
   }),
+  mock_app_settings_store: {} as Record<string, string>,
 }));
 
 vi.mock("../../infrastructure/sync/convexSeedingService", () => ({
@@ -32,7 +33,7 @@ vi.mock("../../infrastructure/events/EventBus", () => ({
 
 vi.mock("../../presentation/stores/currentUser", () => ({
   current_user_store: {
-    set_user: vi.fn(),
+    set_user: vi.fn().mockResolvedValue(undefined),
   },
 }));
 
@@ -54,6 +55,21 @@ vi.mock("../../infrastructure/container", () => ({
         success: true,
         data: { items: [] },
       }),
+    },
+  }),
+  get_app_settings_storage: () => ({
+    get_setting: (key: string) => Promise.resolve(mock_app_settings_store[key] ?? null),
+    set_setting: (key: string, value: string) => {
+      mock_app_settings_store[key] = value;
+      return Promise.resolve();
+    },
+    remove_setting: (key: string) => {
+      delete mock_app_settings_store[key];
+      return Promise.resolve();
+    },
+    clear_all_settings: () => {
+      Object.keys(mock_app_settings_store).forEach((k) => delete mock_app_settings_store[k]);
+      return Promise.resolve();
     },
   }),
 }));
@@ -282,18 +298,7 @@ vi.mock("../../infrastructure/utils/SeedDataGenerator", () => ({
   SEED_SYSTEM_USER_IDS: { SYSTEM_ADMINISTRATOR: "admin-1" },
 }));
 
-const mock_local_storage: Record<string, string> = {};
-
 vi.stubGlobal("window", globalThis);
-vi.stubGlobal("localStorage", {
-  getItem: (key: string) => mock_local_storage[key] ?? null,
-  setItem: (key: string, value: string) => {
-    mock_local_storage[key] = value;
-  },
-  removeItem: (key: string) => {
-    delete mock_local_storage[key];
-  },
-});
 
 import {
   seed_from_convex_or_local,
@@ -322,8 +327,8 @@ describe("seed_from_convex_or_local — skip_seeding strategy", () => {
     on_progress = (message: string, percentage: number) => {
       progress_messages.push({ message, percentage });
     };
-    Object.keys(mock_local_storage).forEach(
-      (key) => delete mock_local_storage[key],
+    Object.keys(mock_app_settings_store).forEach(
+      (key) => delete mock_app_settings_store[key],
     );
   });
 
@@ -352,8 +357,8 @@ describe("seed_from_convex_or_local — convex_first_with_local_fallback strateg
     on_progress = (message: string, percentage: number) => {
       progress_messages.push({ message, percentage });
     };
-    Object.keys(mock_local_storage).forEach(
-      (key) => delete mock_local_storage[key],
+    Object.keys(mock_app_settings_store).forEach(
+      (key) => delete mock_app_settings_store[key],
     );
     mock_convex_seed_result = {
       success: false,
@@ -365,7 +370,7 @@ describe("seed_from_convex_or_local — convex_first_with_local_fallback strateg
   });
 
   it("returns local_fallback_success when seeding already complete", async () => {
-    mock_local_storage["sports_org_seeding_complete_v15"] = "true";
+    mock_app_settings_store["sports_org_seeding_complete_v15"] = "true";
 
     const result = await seed_from_convex_or_local(
       on_progress,
@@ -410,7 +415,7 @@ describe("seed_from_convex_or_local — convex_first_with_local_fallback strateg
       "convex_first_with_local_fallback",
     );
 
-    expect(mock_local_storage["sports_org_seeding_complete_v15"]).toBe("true");
+    expect(mock_app_settings_store["sports_org_seeding_complete_v15"]).toBe("true");
   });
 
   it("falls back to local seeding when convex fails", async () => {
@@ -482,8 +487,8 @@ describe("seed_from_convex_or_local — convex_mandatory strategy", () => {
     on_progress = (message: string, percentage: number) => {
       progress_messages.push({ message, percentage });
     };
-    Object.keys(mock_local_storage).forEach(
-      (key) => delete mock_local_storage[key],
+    Object.keys(mock_app_settings_store).forEach(
+      (key) => delete mock_app_settings_store[key],
     );
     mock_convex_seed_result = {
       success: false,
@@ -514,7 +519,7 @@ describe("seed_from_convex_or_local — convex_mandatory strategy", () => {
   });
 
   it("enters offline mode when convex fails but local data exists", async () => {
-    mock_local_storage["sports_org_seeding_complete_v15"] = "true";
+    mock_app_settings_store["sports_org_seeding_complete_v15"] = "true";
 
     const result = await seed_from_convex_or_local(
       on_progress,
@@ -569,14 +574,14 @@ describe("seed_from_convex_or_local — convex_mandatory strategy", () => {
 
 describe("seed_all_data_if_needed — login-flow guard (regression: stale seeded data overwriting Convex)", () => {
   beforeEach(() => {
-    Object.keys(mock_local_storage).forEach(
-      (key) => delete mock_local_storage[key],
+    Object.keys(mock_app_settings_store).forEach(
+      (key) => delete mock_app_settings_store[key],
     );
     mock_system_user_seed_with_data.mockClear();
   });
 
   it("does NOT seed demo system users when seeding flag is already set", async () => {
-    mock_local_storage["sports_org_seeding_complete_v15"] = "true";
+    mock_app_settings_store["sports_org_seeding_complete_v15"] = "true";
 
     await seed_all_data_if_needed();
 
@@ -584,7 +589,7 @@ describe("seed_all_data_if_needed — login-flow guard (regression: stale seeded
   });
 
   it("returns success without demo seeding when seeding is already complete", async () => {
-    mock_local_storage["sports_org_seeding_complete_v15"] = "true";
+    mock_app_settings_store["sports_org_seeding_complete_v15"] = "true";
 
     const result = await seed_all_data_if_needed();
 
@@ -608,7 +613,7 @@ describe("seed_from_convex_or_local — local_only strategy", () => {
     on_progress = (message: string, percentage: number) => {
       progress_messages.push({ message, percentage });
     };
-    Object.keys(mock_local_storage).forEach((key) => delete mock_local_storage[key]);
+    Object.keys(mock_app_settings_store).forEach((key) => delete mock_app_settings_store[key]);
     mock_system_user_seed_with_data.mockClear();
   });
 

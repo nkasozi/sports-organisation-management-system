@@ -28,11 +28,8 @@ import { get_player_repository } from "../repositories/InBrowserPlayerRepository
 import { get_player_team_membership_repository } from "../repositories/InBrowserPlayerTeamMembershipRepository";
 import { get_official_repository } from "../repositories/InBrowserOfficialRepository";
 import { get_all_sports } from "../persistence/sportService";
-import { reset_seeding_flag, seed_all_data_if_needed } from "./seedingService";
-import {
-  clear_all_demo_data_in_convex,
-  reset_sync_metadata,
-} from "$lib/infrastructure/sync/convexSyncService";
+import { seed_all_data_if_needed } from "./seedingService";
+import { clear_all_demo_data_in_convex } from "$lib/infrastructure/sync/convexSyncService";
 import {
   stop_background_sync,
   start_background_sync,
@@ -42,13 +39,7 @@ import { clear_session_sync_flag } from "$lib/presentation/stores/initialSyncSto
 import { sync_store } from "$lib/presentation/stores/syncStore";
 import { is_signed_in } from "$lib/adapters/iam/clerkAuthService";
 import { get } from "svelte/store";
-
-const FIRST_TIME_DETECTION_KEY = "sports_org_app_initialized";
-
-function reset_first_time_flag(): void {
-  if (typeof window === "undefined") return;
-  localStorage.removeItem(FIRST_TIME_DETECTION_KEY);
-}
+import { get_app_settings_storage } from "$lib/infrastructure/container";
 
 export async function reset_all_data(
   on_progress?: (message: string, percentage: number) => void,
@@ -73,12 +64,9 @@ export async function reset_all_data(
     console.log("[DataReset] User not signed in — skipping Convex clear");
   }
 
-  report("Clearing local storage...", 20);
-  localStorage.clear();
-  clear_session_sync_flag();
-  reset_sync_metadata();
-  reset_seeding_flag();
-  reset_first_time_flag();
+  report("Clearing app settings...", 20);
+  await get_app_settings_storage().clear_all_settings();
+  await clear_session_sync_flag();
 
   report("Resetting data stores...", 35);
   await reset_sport_repository();

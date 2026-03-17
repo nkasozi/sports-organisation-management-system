@@ -1,4 +1,5 @@
 import { writable } from "svelte/store";
+import { get_app_settings_storage } from "$lib/infrastructure/container";
 
 export interface InitialSyncState {
   is_syncing: boolean;
@@ -16,21 +17,19 @@ const initial_state: InitialSyncState = {
 
 const SESSION_SYNC_KEY = "sports_org_session_synced";
 
-export function has_session_been_synced(): boolean {
-  if (typeof window === "undefined") return true;
-  return sessionStorage.getItem(SESSION_SYNC_KEY) === "true";
+export async function has_session_been_synced(): Promise<boolean> {
+  return (await get_app_settings_storage().get_setting(SESSION_SYNC_KEY)) === "true";
 }
 
-function mark_session_synced(): void {
-  if (typeof window === "undefined") return;
-  sessionStorage.setItem(SESSION_SYNC_KEY, "true");
+async function mark_session_synced(): Promise<void> {
+  await get_app_settings_storage().set_setting(SESSION_SYNC_KEY, "true");
 }
 
-export function clear_session_sync_flag(): void {
-  if (typeof window === "undefined") return;
-  sessionStorage.removeItem(SESSION_SYNC_KEY);
+export async function clear_session_sync_flag(): Promise<void> {
+  await get_app_settings_storage().remove_setting(SESSION_SYNC_KEY);
   console.log(
     "[InitialSync] Session sync flag cleared - next login will trigger full sync",
+    { event: "session_sync_flag_cleared" },
   );
 }
 
@@ -57,8 +56,8 @@ function create_initial_sync_store() {
       }));
     },
 
-    complete_sync: (): void => {
-      mark_session_synced();
+    complete_sync: async (): Promise<void> => {
+      await mark_session_synced();
       set({
         is_syncing: false,
         status_message: "Ready!",

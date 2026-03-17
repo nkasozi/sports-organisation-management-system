@@ -103,6 +103,8 @@ import {
 } from "../core/usecases/AuditLogUseCases";
 import { create_competition_stage_use_cases } from "../core/usecases/CompetitionStageUseCases";
 import type { CompetitionStageUseCasesPort } from "../core/interfaces/ports";
+import type { AppSettingsPort } from "../core/interfaces/ports";
+import { DexieAppSettingsAdapter } from "../adapters/persistence/DexieAppSettingsAdapter";
 
 export interface RepositoryContainer {
   organization_repository: OrganizationRepository;
@@ -276,6 +278,15 @@ function inject_test_repository_container(
 ): void {
   repository_container_instance = test_container;
   use_cases_container_instance = null;
+}
+
+let app_settings_storage_instance: AppSettingsPort | null = null;
+
+export function get_app_settings_storage(): AppSettingsPort {
+  if (!app_settings_storage_instance) {
+    app_settings_storage_instance = new DexieAppSettingsAdapter();
+  }
+  return app_settings_storage_instance;
 }
 
 function inject_test_use_cases_container(

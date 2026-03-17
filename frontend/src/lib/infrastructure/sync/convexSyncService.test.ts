@@ -1,5 +1,17 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 
+const mock_app_settings_store: Record<string, string> = {};
+const mock_remove_setting = vi.fn((key: string) => { delete mock_app_settings_store[key]; return Promise.resolve(); });
+
+vi.mock("$lib/infrastructure/container", () => ({
+  get_app_settings_storage: () => ({
+    get_setting: (key: string) => Promise.resolve(mock_app_settings_store[key] ?? null),
+    set_setting: (key: string, value: string) => { mock_app_settings_store[key] = value; return Promise.resolve(); },
+    remove_setting: mock_remove_setting,
+    clear_all_settings: () => { Object.keys(mock_app_settings_store).forEach((k) => delete mock_app_settings_store[k]); return Promise.resolve(); },
+  }),
+}));
+
 const EPOCH_TIMESTAMP = "1970-01-01T00:00:00.000Z";
 
 interface RemoteTableState {
@@ -972,20 +984,14 @@ describe("get_last_sync_timestamp", () => {
 });
 
 describe("reset_sync_metadata", () => {
-  it("removes convex_sync_metadata from localStorage", async () => {
-    const mock_remove_item = vi.fn();
-    vi.stubGlobal("localStorage", {
-      getItem: vi.fn(),
-      setItem: vi.fn(),
-      removeItem: mock_remove_item,
-    });
+  it("removes convex_sync_metadata via AppSettingsPort", async () => {
+    mock_app_settings_store["convex_sync_metadata"] = JSON.stringify({ last_synced: "2024-01-01T00:00:00.000Z" });
+    mock_remove_setting.mockClear();
 
     const { reset_sync_metadata } = await import("./convexSyncService");
-    reset_sync_metadata();
+    await reset_sync_metadata();
 
-    expect(mock_remove_item).toHaveBeenCalledWith("convex_sync_metadata");
-
-    vi.unstubAllGlobals();
+    expect(mock_remove_setting).toHaveBeenCalledWith("convex_sync_metadata");
   });
 });
 

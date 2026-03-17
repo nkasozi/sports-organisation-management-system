@@ -1,5 +1,6 @@
 import { writable, derived } from "svelte/store";
 import { browser } from "$app/environment";
+import { get_app_settings_storage } from "$lib/infrastructure/container";
 
 const PUBLIC_ORG_STORAGE_KEY = "sports-org-public-org-id";
 const PUBLIC_ORG_NAME_STORAGE_KEY = "sports-org-public-org-name";
@@ -10,45 +11,42 @@ interface PublicOrganizationState {
 }
 
 function load_saved_public_org(): PublicOrganizationState {
-  if (!browser) return { organization_id: "", organization_name: "" };
-
-  const saved_id = localStorage.getItem(PUBLIC_ORG_STORAGE_KEY) ?? "";
-  const saved_name = localStorage.getItem(PUBLIC_ORG_NAME_STORAGE_KEY) ?? "";
-
-  return { organization_id: saved_id, organization_name: saved_name };
+  return { organization_id: "", organization_name: "" };
 }
 
-function save_public_org(
+async function save_public_org(
   organization_id: string,
   organization_name: string,
-): boolean {
+): Promise<boolean> {
   if (!browser) return false;
 
-  localStorage.setItem(PUBLIC_ORG_STORAGE_KEY, organization_id);
-  localStorage.setItem(PUBLIC_ORG_NAME_STORAGE_KEY, organization_name);
+  const app_settings = get_app_settings_storage();
+  await app_settings.set_setting(PUBLIC_ORG_STORAGE_KEY, organization_id);
+  await app_settings.set_setting(PUBLIC_ORG_NAME_STORAGE_KEY, organization_name);
   return true;
 }
 
-function clear_public_org(): boolean {
+async function clear_public_org(): Promise<boolean> {
   if (!browser) return false;
 
-  localStorage.removeItem(PUBLIC_ORG_STORAGE_KEY);
-  localStorage.removeItem(PUBLIC_ORG_NAME_STORAGE_KEY);
+  const app_settings = get_app_settings_storage();
+  await app_settings.remove_setting(PUBLIC_ORG_STORAGE_KEY);
+  await app_settings.remove_setting(PUBLIC_ORG_NAME_STORAGE_KEY);
   return true;
 }
 
 function create_public_organization_store() {
   const initial_state = load_saved_public_org();
-  const { subscribe, set, update } =
+  const { subscribe, set } =
     writable<PublicOrganizationState>(initial_state);
 
-  function set_organization(
+  async function set_organization(
     organization_id: string,
     organization_name: string,
-  ): boolean {
+  ): Promise<boolean> {
     if (!organization_id) return false;
 
-    save_public_org(organization_id, organization_name);
+    await save_public_org(organization_id, organization_name);
     set({ organization_id, organization_name });
     console.log(
       `[PublicOrg] Set public organization: ${organization_name} (${organization_id})`,
@@ -56,17 +54,25 @@ function create_public_organization_store() {
     return true;
   }
 
-  function detect_from_url_params(search_params: URLSearchParams): boolean {
+  async function detect_from_url_params(search_params: URLSearchParams): Promise<boolean> {
     const org_id = search_params.get("org") ?? "";
     if (!org_id) return false;
 
     return set_organization(org_id, "");
   }
 
-  function clear(): boolean {
-    clear_public_org();
+  async function clear(): Promise<boolean> {
+    await clear_public_org();
     set({ organization_id: "", organization_name: "" });
     return true;
+  }
+
+  async function initialize(): Promise<void> {
+    if (!browser) return;
+    const app_settings = get_app_settings_storage();
+    const saved_id = (await app_settings.get_setting(PUBLIC_ORG_STORAGE_KEY)) ?? "";
+    const saved_name = (await app_settings.get_setting(PUBLIC_ORG_NAME_STORAGE_KEY)) ?? "";
+    set({ organization_id: saved_id, organization_name: saved_name });
   }
 
   return {
@@ -74,6 +80,7 @@ function create_public_organization_store() {
     set_organization,
     detect_from_url_params,
     clear,
+    initialize,
   };
 }
 

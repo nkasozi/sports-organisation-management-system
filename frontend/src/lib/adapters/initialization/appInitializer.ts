@@ -1,6 +1,6 @@
 import { PUBLIC_CONVEX_URL } from "$env/static/public";
 import { get } from "svelte/store";
-import { get_repository_container } from "$lib/infrastructure/container";
+import { get_repository_container, get_app_settings_storage } from "$lib/infrastructure/container";
 import { get_organization_use_cases } from "$lib/core/usecases/OrganizationUseCases";
 import { get_competition_use_cases } from "$lib/core/usecases/CompetitionUseCases";
 import { get_team_use_cases } from "$lib/core/usecases/TeamUseCases";
@@ -64,14 +64,12 @@ let auth_cache_invalidator: AuthCacheInvalidator | null = null;
 
 const FIRST_TIME_DETECTION_KEY = "sports_org_app_initialized";
 
-function is_first_time_use(): boolean {
-  if (typeof window === "undefined") return false;
-  return localStorage.getItem(FIRST_TIME_DETECTION_KEY) !== "true";
+async function is_first_time_use(): Promise<boolean> {
+  return (await get_app_settings_storage().get_setting(FIRST_TIME_DETECTION_KEY)) !== "true";
 }
 
-function mark_app_initialized(): void {
-  if (typeof window === "undefined") return;
-  localStorage.setItem(FIRST_TIME_DETECTION_KEY, "true");
+async function mark_app_initialized(): Promise<void> {
+  await get_app_settings_storage().set_setting(FIRST_TIME_DETECTION_KEY, "true");
 }
 
 async function delay(ms: number): Promise<void> {
@@ -167,8 +165,9 @@ function get_is_public_content_page(path: string): boolean {
 function determine_seeding_strategy(
   user_is_signed_in: boolean,
   current_path: string,
+  seeding_already_complete: boolean,
 ): SeedingStrategy {
-  if (!user_is_signed_in && get_is_public_content_page(current_path)) {
+  if (!user_is_signed_in && get_is_public_content_page(current_path) && seeding_already_complete) {
     return "skip_seeding";
   }
   if (!user_is_signed_in) {
@@ -183,7 +182,7 @@ export async function initialize_app_data(
   if (initialized) return "success";
   if (typeof window === "undefined") return "success";
 
-  const is_first_time = is_first_time_use();
+  const is_first_time = await is_first_time_use();
 
   if (is_first_time) {
     first_time_setup_store.set_first_time(true);
@@ -229,9 +228,11 @@ export async function initialize_app_data(
   }
   initialize_all_use_cases();
 
+  const seeding_already_complete = await is_seeding_already_complete();
   const strategy = determine_seeding_strategy(
     user_is_signed_in,
     options.current_path,
+    seeding_already_complete,
   );
   console.log(
     `[AppInitializer] Seeding strategy: ${strategy} (signed_in=${user_is_signed_in}, path=${options.current_path})`,
@@ -302,7 +303,7 @@ async function run_seeding_with_strategy(
     if (is_first_time) {
       first_time_setup_store.update_progress("Preparing public view...", 90);
       await delay(200);
-      mark_app_initialized();
+      await mark_app_initialized();
       first_time_setup_store.complete_setup();
       await delay(400);
     }
@@ -418,7 +419,7 @@ async function handle_seed_result(
 async function finalize_first_time_setup(): Promise<void> {
   first_time_setup_store.update_progress("Finalizing setup...", 95);
   await delay(400);
-  mark_app_initialized();
+  await mark_app_initialized();
   first_time_setup_store.complete_setup();
   await delay(600);
 }

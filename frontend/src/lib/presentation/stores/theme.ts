@@ -1,5 +1,6 @@
 import { writable, derived } from "svelte/store";
 import { browser } from "$app/environment";
+import { get_app_settings_storage } from "$lib/infrastructure/container";
 
 export type ThemeColorName =
   | "amber"
@@ -270,29 +271,32 @@ const DEFAULT_THEME: ThemeConfig = {
   secondary_color: "blue",
 };
 
-function get_initial_theme(): ThemeConfig {
-  if (!browser) return DEFAULT_THEME;
-
-  try {
-    const stored_theme = localStorage.getItem("sports-org-theme-v2");
-    if (stored_theme) {
-      return { ...DEFAULT_THEME, ...JSON.parse(stored_theme) };
-    }
-
-    const prefers_dark = window.matchMedia(
-      "(prefers-color-scheme: dark)",
-    ).matches;
-    return {
-      ...DEFAULT_THEME,
-      mode: prefers_dark ? "dark" : "light",
-    };
-  } catch (error) {
-    console.warn("[theme] Failed to load theme from localStorage:", error);
-    return DEFAULT_THEME;
-  }
+function get_system_preference_theme(): ThemeConfig {
+  const prefers_dark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+  return { ...DEFAULT_THEME, mode: prefers_dark ? "dark" : "light" };
 }
 
-export const theme_store = writable<ThemeConfig>(get_initial_theme());
+export const theme_store = writable<ThemeConfig>(DEFAULT_THEME);
+
+export async function initialize_theme(): Promise<void> {
+  if (!browser) return;
+
+  const stored_theme_json = await get_app_settings_storage().get_setting("sports-org-theme-v2");
+
+  if (stored_theme_json) {
+    try {
+      const parsed = JSON.parse(stored_theme_json) as Partial<ThemeConfig>;
+      theme_store.set({ ...DEFAULT_THEME, ...parsed });
+      return;
+    } catch {
+      console.warn("[theme] Failed to parse stored theme, falling back to system preference", {
+        event: "theme_parse_failed",
+      });
+    }
+  }
+
+  theme_store.set(get_system_preference_theme());
+}
 
 const primary_palette = derived(
   theme_store,
@@ -342,20 +346,19 @@ function apply_theme_to_document(theme_config: ThemeConfig): void {
   html_element.style.setProperty("--color-secondary-950", secondary[950]);
 }
 
-function save_theme_to_storage(theme_config: ThemeConfig): void {
+async function save_theme_to_storage(theme_config: ThemeConfig): Promise<void> {
   if (!browser) return;
 
-  try {
-    localStorage.setItem("sports-org-theme-v2", JSON.stringify(theme_config));
-  } catch (error) {
-    console.warn("[theme] Failed to save theme to localStorage:", error);
-  }
+  await get_app_settings_storage().set_setting("sports-org-theme-v2", JSON.stringify(theme_config));
+  console.debug("[theme] Saved theme", { event: "theme_saved", mode: theme_config.mode });
 }
 
 if (browser) {
   theme_store.subscribe((theme_config: ThemeConfig) => {
     apply_theme_to_document(theme_config);
-    save_theme_to_storage(theme_config);
+    save_theme_to_storage(theme_config).catch((error) => {
+      console.warn("[theme] Failed to persist theme", { event: "theme_save_failed", error });
+    });
   });
 
   window

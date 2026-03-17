@@ -419,7 +419,7 @@
   </div>
 
   <div
-    class="bg-white dark:bg-accent-800 rounded-lg shadow-sm border border-accent-200 dark:border-accent-700"
+    class="bg-white dark:bg-accent-800 shadow-sm border-y border-accent-200 dark:border-accent-700 -mx-4 sm:mx-0 sm:border sm:rounded-lg"
   >
     <div class="border-b border-accent-200 dark:border-accent-700">
       <nav class="flex -mb-px overflow-x-auto" aria-label="Tabs">
@@ -446,7 +446,10 @@
       </nav>
     </div>
 
-    <form class="p-6 space-y-6" on:submit|preventDefault={handle_submit}>
+    <form
+      class="px-4 py-6 space-y-6 sm:px-6"
+      on:submit|preventDefault={handle_submit}
+    >
       {#if active_tab === "details"}
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div class="md:col-span-2">
