@@ -190,20 +190,18 @@ vi.mock("../repositories/InBrowserPlayerPositionRepository", () => ({
   get_player_position_repository: create_empty_repo,
 }));
 vi.mock("./organizationDefaultsSeeder", () => ({
-  seed_default_lookup_entities_for_organization: vi
-    .fn()
-    .mockResolvedValue({
-      success: true,
-      data: {
-        organization_id: "test",
-        genders_seeded: 2,
-        identification_types_seeded: 2,
-        player_positions_seeded: 2,
-        game_official_roles_seeded: 2,
-        game_event_types_seeded: 2,
-        team_staff_roles_seeded: 2,
-      },
-    }),
+  seed_default_lookup_entities_for_organization: vi.fn().mockResolvedValue({
+    success: true,
+    data: {
+      organization_id: "test",
+      genders_seeded: 2,
+      identification_types_seeded: 2,
+      player_positions_seeded: 2,
+      game_official_roles_seeded: 2,
+      game_event_types_seeded: 2,
+      team_staff_roles_seeded: 2,
+    },
+  }),
 }));
 vi.mock("../repositories/InBrowserTeamStaffRoleRepository", () => ({
   get_team_staff_role_repository: create_empty_repo,

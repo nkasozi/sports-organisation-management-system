@@ -39,9 +39,24 @@ const SPORT_ID_BY_CODE: Record<string, string> = {
 function create_default_sports(): Sport[] {
   const now = new Date().toISOString();
   return [
-    { id: DEFAULT_SPORT_IDS.FOOTBALL, created_at: now, updated_at: now, ...create_football_sport_preset() },
-    { id: DEFAULT_SPORT_IDS.BASKETBALL, created_at: now, updated_at: now, ...create_basketball_sport_preset() },
-    { id: DEFAULT_SPORT_IDS.FIELD_HOCKEY, created_at: now, updated_at: now, ...create_field_hockey_sport_preset() },
+    {
+      id: DEFAULT_SPORT_IDS.FOOTBALL,
+      created_at: now,
+      updated_at: now,
+      ...create_football_sport_preset(),
+    },
+    {
+      id: DEFAULT_SPORT_IDS.BASKETBALL,
+      created_at: now,
+      updated_at: now,
+      ...create_basketball_sport_preset(),
+    },
+    {
+      id: DEFAULT_SPORT_IDS.FIELD_HOCKEY,
+      created_at: now,
+      updated_at: now,
+      ...create_field_hockey_sport_preset(),
+    },
   ];
 }
 
