@@ -35,7 +35,9 @@ export function resolve_organization_id_for_role(
     "root_level",
     "delete",
   );
-  return has_platform_wide_scope ? ALL_ORGANIZATIONS_SCOPE : organization_id || "";
+  return has_platform_wide_scope
+    ? ALL_ORGANIZATIONS_SCOPE
+    : organization_id || "";
 }
 
 export class InBrowserSystemUserRepository

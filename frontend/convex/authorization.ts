@@ -352,7 +352,9 @@ export const update_user_role = mutation({
       return { success: false, error: admin_result.error };
     }
     const admin_user = admin_result.data;
-    if (!check_role_permission(admin_user.role, "org_administrator_level", "read")) {
+    if (
+      !check_role_permission(admin_user.role, "org_administrator_level", "read")
+    ) {
       return { success: false, error: "Unauthorized to update user roles" };
     }
 

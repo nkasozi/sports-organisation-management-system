@@ -11,7 +11,8 @@ export function build_dashboard_filters(
   role: string,
   organization_id: string,
 ): DashboardFilters {
-  const has_unrestricted_org_scope = !organization_id || organization_id === ANY_VALUE;
+  const has_unrestricted_org_scope =
+    !organization_id || organization_id === ANY_VALUE;
 
   if (has_unrestricted_org_scope) {
     return {

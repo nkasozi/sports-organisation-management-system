@@ -182,9 +182,7 @@ describe("reset_all_data", () => {
 
     await reset_all_data();
 
-    expect(call_order.indexOf("stop")).toBeLessThan(
-      call_order.indexOf("seed"),
-    );
+    expect(call_order.indexOf("stop")).toBeLessThan(call_order.indexOf("seed"));
   });
 
   it("sets pulling_from_remote to true before resetting and false after", async () => {
