@@ -109,33 +109,37 @@
       </div>
     {:else if !$is_signed_in}
       <div
-        class="bg-violet-50 dark:bg-violet-950/60 border-b border-violet-200 dark:border-violet-800 w-full pt-4 pb-2 text-center"
+        class="bg-violet-50 dark:bg-violet-950/60 border-b border-violet-200 dark:border-violet-800 w-full py-2 text-center"
       >
-        <p
-          class="text-xs sm:text-sm text-violet-700 dark:text-violet-300 inline-flex items-center gap-1.5"
-        >
-          <svg
-            class="w-4 h-4 text-violet-600 dark:text-violet-400 flex-shrink-0"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
+        <div class="flex flex-col items-center gap-0.5 px-6">
+          <div class="flex items-center gap-1.5">
+            <svg
+              class="w-3.5 h-3.5 text-violet-600 dark:text-violet-400 flex-shrink-0"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+            <span
+              class="text-sm font-medium text-violet-700 dark:text-violet-300"
+              >You are not signed in.</span
+            >
+          </div>
+          <span class="text-sm text-violet-600 dark:text-violet-400"
+            >Changes you make will be overridden when you sign in.</span
           >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
-          You are not signed in. Any changes you make will be overridden when you
-          sign in.
           <a
             href="/sign-in"
-            class="font-medium hover:text-violet-900 dark:hover:text-violet-100 underline"
+            class="text-sm font-semibold text-violet-800 dark:text-violet-200 underline hover:text-violet-900 dark:hover:text-violet-100"
+            style="min-height: 0px;">Sign in</a
           >
-            Sign in
-          </a>
-        </p>
+        </div>
       </div>
     {/if}
 

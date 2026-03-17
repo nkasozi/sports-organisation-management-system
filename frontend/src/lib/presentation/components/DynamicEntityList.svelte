@@ -33,7 +33,6 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
     clear_filter_state,
     toggle_select_all_entities,
     toggle_single_entity_selection as compute_entity_selection_toggle,
-    get_column_responsive_class,
     normalize_entity_type_for_filter,
     build_entity_authorization_filter,
     apply_id_filter_to_entities,
@@ -1217,7 +1216,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
             <tr>
               {#if show_actions}
                 <th
-                  class="px-3 py-3 text-left sticky left-0 bg-gray-50 dark:bg-gray-800 z-10"
+                  class="px-3 py-3 text-left sticky left-0 bg-gray-50 dark:bg-gray-800 z-10 border-r border-gray-200 dark:border-gray-700"
                 >
                   <input
                     type="checkbox"
@@ -1230,9 +1229,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
 
               {#each visible_column_list as field_name, column_index}
                 <th
-                  class="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 {get_column_responsive_class(
-                    column_index,
-                  )}"
+                  class="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 whitespace-nowrap"
                   on:click={() => toggle_sort_by_column(field_name)}
                 >
                   <div class="flex items-center gap-1">
@@ -1269,7 +1266,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
 
               {#if show_actions && (!is_edit_disabled || !is_delete_disabled)}
                 <th
-                  class="px-3 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider sticky right-0 bg-gray-50 dark:bg-gray-800 z-10"
+                  class="px-3 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider sticky right-0 bg-gray-50 dark:bg-gray-800 z-10 border-l border-gray-200 dark:border-gray-700"
                 >
                   Actions
                 </th>
@@ -1284,7 +1281,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
               <tr class="hover:bg-gray-50 dark:hover:bg-gray-800">
                 {#if show_actions}
                   <td
-                    class="px-3 py-4 sticky left-0 bg-white dark:bg-gray-900 z-10"
+                    class="px-3 py-4 sticky left-0 bg-white dark:bg-gray-900 z-10 border-r border-gray-200 dark:border-gray-700"
                   >
                     <input
                       type="checkbox"
@@ -1298,9 +1295,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
 
                 {#each visible_column_list as field_name, column_index}
                   <td
-                    class="px-3 py-4 text-sm text-accent-900 dark:text-accent-100 {get_column_responsive_class(
-                      column_index,
-                    )}"
+                    class="px-3 py-4 text-sm text-accent-900 dark:text-accent-100 whitespace-nowrap"
                   >
                     <div class="max-w-xs truncate">
                       {get_display_value_for_entity_field(
@@ -1315,7 +1310,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
 
                 {#if show_actions && (!is_edit_disabled || !is_delete_disabled)}
                   <td
-                    class="px-3 py-4 text-right text-sm sticky right-0 bg-white dark:bg-gray-900 z-10"
+                    class="px-3 py-4 text-right text-sm sticky right-0 bg-white dark:bg-gray-900 z-10 border-l border-gray-200 dark:border-gray-700"
                   >
                     <div class="flex flex-row gap-2 justify-end items-center">
                       {#if !is_edit_disabled}
