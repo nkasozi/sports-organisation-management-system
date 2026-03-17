@@ -1,5 +1,7 @@
 import { get_app_settings_storage } from "$lib/infrastructure/container";
 import type { AppSettingsPort } from "$lib/core/interfaces/ports";
+import { reset_sport_repository } from "../repositories/InBrowserSportRepository";
+import { reset_organization_repository } from "../repositories/InBrowserOrganizationRepository";
 import {
   get_player_position_repository,
   InBrowserPlayerPositionRepository,
@@ -897,6 +899,9 @@ export async function seed_all_data_if_needed(): Promise<Result<boolean>> {
   if (typeof window === "undefined") {
     return create_failure_result("Not in browser environment");
   }
+
+  await reset_sport_repository();
+  await reset_organization_repository();
 
   const super_admin_result = await seed_super_admin_user();
   if (!super_admin_result.success) {

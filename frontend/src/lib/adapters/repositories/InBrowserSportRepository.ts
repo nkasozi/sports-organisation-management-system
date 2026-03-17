@@ -24,33 +24,25 @@ import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
 
 const ENTITY_PREFIX = "sport";
 
-let default_sports_cache: Sport[] | null = null;
+export const DEFAULT_SPORT_IDS = {
+  FOOTBALL: "sport-football-default",
+  BASKETBALL: "sport-basketball-default",
+  FIELD_HOCKEY: "sport-field-hockey-default",
+};
+
+const SPORT_ID_BY_CODE: Record<string, string> = {
+  FOOTBALL: DEFAULT_SPORT_IDS.FOOTBALL,
+  BASKETBALL: DEFAULT_SPORT_IDS.BASKETBALL,
+  FIELD_HOCKEY: DEFAULT_SPORT_IDS.FIELD_HOCKEY,
+};
 
 function create_default_sports(): Sport[] {
   const now = new Date().toISOString();
-
-  const football: Sport = {
-    id: `${ENTITY_PREFIX}-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
-    created_at: now,
-    updated_at: now,
-    ...create_football_sport_preset(),
-  };
-
-  const basketball: Sport = {
-    id: `${ENTITY_PREFIX}-${Date.now() + 1}-${Math.random().toString(36).substring(2, 9)}`,
-    created_at: now,
-    updated_at: now,
-    ...create_basketball_sport_preset(),
-  };
-
-  const field_hockey: Sport = {
-    id: `${ENTITY_PREFIX}-${Date.now() + 2}-${Math.random().toString(36).substring(2, 9)}`,
-    created_at: now,
-    updated_at: now,
-    ...create_field_hockey_sport_preset(),
-  };
-
-  return [football, basketball, field_hockey];
+  return [
+    { id: DEFAULT_SPORT_IDS.FOOTBALL, created_at: now, updated_at: now, ...create_football_sport_preset() },
+    { id: DEFAULT_SPORT_IDS.BASKETBALL, created_at: now, updated_at: now, ...create_basketball_sport_preset() },
+    { id: DEFAULT_SPORT_IDS.FIELD_HOCKEY, created_at: now, updated_at: now, ...create_field_hockey_sport_preset() },
+  ];
 }
 
 class InBrowserSportRepository
@@ -128,14 +120,7 @@ class InBrowserSportRepository
 }
 
 export function get_sport_id_by_code_sync(code: string): string | null {
-  if (!default_sports_cache) {
-    default_sports_cache = create_default_sports();
-  }
-
-  const sport = default_sports_cache.find(
-    (s) => s.code.toLowerCase() === code.toLowerCase(),
-  );
-  return sport ? sport.id : null;
+  return SPORT_ID_BY_CODE[code.toUpperCase()] ?? null;
 }
 
 let singleton_instance: InBrowserSportRepository | null = null;
@@ -157,21 +142,15 @@ function get_concrete_repository(): InBrowserSportRepository {
 async function ensure_default_sports_exist(): Promise<void> {
   const repository = get_concrete_repository();
   const has_data = await repository.has_data();
-
   if (!has_data) {
-    if (!default_sports_cache) {
-      default_sports_cache = create_default_sports();
-    }
-    await repository.seed_with_data(default_sports_cache);
+    await repository.seed_with_data(create_default_sports());
   }
 }
 
 export async function reset_sport_repository(): Promise<void> {
   const repository = get_concrete_repository();
   await repository.clear_all_data();
-  default_sports_cache = null;
-  default_sports_cache = create_default_sports();
-  await repository.seed_with_data(default_sports_cache);
+  await repository.seed_with_data(create_default_sports());
 }
 
 export async function get_all_sports(): Promise<Sport[]> {

@@ -134,6 +134,14 @@ export function get_organization_repository(): OrganizationRepository {
   return singleton_instance;
 }
 
+export async function ensure_default_organization_exists(): Promise<void> {
+  const repository = get_organization_repository() as InBrowserOrganizationRepository;
+  const has_data = await repository.has_data();
+  if (!has_data) {
+    await repository.seed_with_data(create_default_organizations());
+  }
+}
+
 export async function reset_organization_repository(): Promise<void> {
   const repository =
     get_organization_repository() as InBrowserOrganizationRepository;
