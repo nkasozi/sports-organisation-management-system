@@ -327,8 +327,63 @@ function create_auth_store() {
     let current_token: AuthToken | null = null;
 
     if (!user_is_signed_in) {
+      if (saved_token_raw) {
+        const local_auth_adapter = get_authentication_adapter(
+          get_system_user_repository(),
+        );
+        const verify_result =
+          await local_auth_adapter.verify_token(saved_token_raw);
+
+        if (
+          verify_result.success &&
+          verify_result.data.is_valid &&
+          verify_result.data.payload
+        ) {
+          const switched_profile =
+            available_profiles.find(
+              (p) => p.id === verify_result.data.payload?.user_id,
+            ) ?? null;
+
+          if (switched_profile) {
+            const restored_token: AuthToken = {
+              payload: verify_result.data.payload,
+              signature: saved_token_raw.split(".")[2],
+              raw_token: saved_token_raw,
+            };
+            sync_user_context_with_event_bus(switched_profile);
+            const sidebar_menu_items = await load_sidebar_menu_for_role(
+              switched_profile.role,
+            );
+            set({
+              current_token: restored_token,
+              current_profile: switched_profile,
+              available_profiles,
+              sidebar_menu_items,
+              is_initialized: true,
+            });
+            await sync_branding_with_profile(switched_profile);
+            console.log(
+              "[AuthStore] Restored switched profile from saved token",
+              {
+                event: "auth_switched_profile_restored",
+                display_name: switched_profile.display_name,
+                role: switched_profile.role,
+              },
+            );
+            return create_success_result(true);
+          }
+        }
+
+        console.warn(
+          "[AuthStore] Saved token invalid or profile missing — clearing and defaulting to public viewer",
+          { event: "auth_saved_token_invalid_on_anonymous_restore" },
+        );
+        clear_auth_storage();
+      }
+
       console.log(
         "[AuthStore] User not signed in, defaulting to public viewer",
+        { event: "auth_defaulted_to_public_viewer" },
       );
       const public_profile = available_profiles.find(
         (p) => p.id === "public-viewer",
