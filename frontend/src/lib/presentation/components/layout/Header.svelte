@@ -22,6 +22,7 @@
   import SyncStatusIndicator from "$lib/presentation/components/SyncStatusIndicator.svelte";
   import LogoutWarningModal from "$lib/presentation/components/ui/LogoutWarningModal.svelte";
   import { clear_session_sync_flag } from "$lib/presentation/stores/initialSyncStore";
+  import { invalidate_route_access_cache } from "$lib/presentation/logic/authGuard";
 
   export let sidebar_open = false;
 
@@ -85,11 +86,15 @@
   async function handle_profile_switch(profile: UserProfile): Promise<void> {
     close_user_menu();
     const success = await auth_store.switch_profile(profile.id);
-    if (success) {
-      console.log(`[Header] Switched to profile: ${profile.display_name}`);
-      await invalidateAll();
-      await goto("/", { replaceState: true });
-    }
+    if (!success) return;
+    console.log(`[Header] Switched to profile: ${profile.display_name}`, {
+      event: "profile_switch_completed",
+      display_name: profile.display_name,
+      role: profile.role,
+    });
+    invalidate_route_access_cache();
+    await invalidateAll();
+    await goto("/", { replaceState: true });
   }
 
   function split_organization_name(name: string): {
