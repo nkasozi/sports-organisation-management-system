@@ -19,6 +19,18 @@
     set_navigating,
   } from "$lib/adapters/iam/clerkAuthService";
   import { ensure_route_access } from "$lib/presentation/logic/authGuard";
+  import {
+    get_is_public_profile_page,
+    get_is_public_content_page,
+    get_is_auth_page,
+    is_route_guard_exempt,
+    determine_session_action,
+    is_in_app_navigation,
+    format_table_name,
+    scale_sync_percentage,
+    build_sync_progress_message,
+    should_pull_org_from_server,
+  } from "$lib/presentation/logic/layoutLogic";
   import { get } from "svelte/store";
   import {
     initial_sync_store,
@@ -75,43 +87,22 @@
   let previous_signed_in_state = false;
   const layout_mount_id = Math.random().toString(36).slice(2, 8);
 
-  function get_is_public_profile_page(path: string): boolean {
-    return path.startsWith("/profile/") || path.startsWith("/team-profile/");
-  }
+  afterNavigate(async ({ to, type }) => {
+    console.log("[Layout-DIAG] afterNavigate", {
+      type,
+      path: to?.url?.pathname,
+      app_ready,
+    });
 
-  function get_is_public_content_page(path: string): boolean {
-    return (
-      path.startsWith("/competition-results") ||
-      path.startsWith("/calendar") ||
-      path.startsWith("/match-report")
-    );
-  }
-
-  function get_is_auth_page(path: string): boolean {
-    return path.startsWith("/sign-in") || path === "/unauthorized";
-  }
-
-  function is_route_guard_exempt(path: string): boolean {
-    return (
-      path === "/" ||
-      path.startsWith("/sign-in") ||
-      path === "/unauthorized" ||
-      path.startsWith("/api/") ||
-      path === "/privacy" ||
-      path === "/terms" ||
-      path === "/contact" ||
-      get_is_public_content_page(path)
-    );
-  }
-
-  afterNavigate(async ({ to }) => {
     if (!app_ready) return;
     if (!to?.url?.pathname) return;
 
     const pathname = to.url.pathname;
     if (is_route_guard_exempt(pathname)) return;
 
-    await ensure_route_access(pathname);
+    if (!is_in_app_navigation(type)) {
+      await ensure_route_access(pathname);
+    }
 
     const user_is_signed_in = get(is_signed_in);
     if (!user_is_signed_in) return;
@@ -119,12 +110,6 @@
     const page_title = document.title || pathname;
     EventBus.emit_page_viewed(pathname, page_title);
   });
-
-  function format_table_name(table_name: string): string {
-    return table_name
-      .replace(/_/g, " ")
-      .replace(/\b\w/g, (char) => char.toUpperCase());
-  }
 
   async function handle_first_time_anonymous_user(): Promise<Result<boolean>> {
     initial_sync_store.start_sync();
@@ -228,14 +213,11 @@
     initial_sync_store.update_progress("Setting up your account...", 17);
     await write_convex_user_to_local_dexie(convex_profile);
 
-    if (
-      convex_profile.organization_id &&
-      convex_profile.organization_id !== "*"
-    ) {
+    if (should_pull_org_from_server(convex_profile.organization_id)) {
       initial_sync_store.update_progress("Loading your organisation...", 18);
       await pull_user_scoped_record_from_convex(
         "organizations",
-        convex_profile.organization_id,
+        convex_profile.organization_id!,
       );
     }
 
@@ -253,10 +235,12 @@
     sync_unsub = sync_store.subscribe((state) => {
       if (!state.current_progress) return;
       const progress = state.current_progress;
-      const scaled_percentage =
-        20 + Math.round((progress.percentage / 100) * 68);
-      const table_display = format_table_name(progress.table_name);
-      const message = `Syncing ${table_display} (${progress.tables_completed}/${progress.total_tables})`;
+      const scaled_percentage = scale_sync_percentage(progress.percentage);
+      const message = build_sync_progress_message(
+        progress.table_name,
+        progress.tables_completed,
+        progress.total_tables,
+      );
       initial_sync_store.update_progress(message, scaled_percentage);
     });
 
@@ -366,7 +350,11 @@
       await log_verified_user_in();
     });
 
-    const init_result = await initialize_app_data({ current_path });
+    const session_already_synced = await has_session_been_synced();
+    const init_result = await initialize_app_data({
+      current_path,
+      session_already_synced,
+    });
 
     if (init_result === "redirect_to_login") {
       app_ready = true;
@@ -376,13 +364,16 @@
     }
 
     const user_is_signed_in = get(is_signed_in);
-    const session_already_synced = await has_session_been_synced();
+    const session_action = determine_session_action(
+      user_is_signed_in,
+      session_already_synced,
+    );
 
-    if (user_is_signed_in && !session_already_synced) {
+    if (session_action === "login_sync") {
       await log_verified_user_in();
-    } else if (user_is_signed_in && session_already_synced) {
+    } else if (session_action === "verified_page_reload") {
       await handle_verified_user_page_reload();
-    } else if (!user_is_signed_in && !session_already_synced) {
+    } else if (session_action === "first_time_anonymous") {
       await handle_first_time_anonymous_user();
     } else {
       await handle_returning_anonymous_user();
