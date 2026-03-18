@@ -52,7 +52,9 @@ function make_fixture(overrides: Partial<Fixture> = {}): Fixture {
   } as Fixture;
 }
 
-function make_stage(overrides: Partial<CompetitionStage> = {}): CompetitionStage {
+function make_stage(
+  overrides: Partial<CompetitionStage> = {},
+): CompetitionStage {
   return {
     id: "stage_1",
     organization_id: "org_1",
@@ -84,7 +86,12 @@ describe("build_leaderboard_entries", () => {
     const stage = make_stage();
     const name_map = new Map([["off_1", "Jane Smith"]]);
 
-    const entries = build_leaderboard_entries([rating], [fixture], [stage], name_map);
+    const entries = build_leaderboard_entries(
+      [rating],
+      [fixture],
+      [stage],
+      name_map,
+    );
 
     expect(entries).toHaveLength(1);
     expect(entries[0].official_id).toBe("off_1");
@@ -105,17 +112,43 @@ describe("build_leaderboard_entries", () => {
     const stage = make_stage();
     const name_map = new Map([["off_1", "Elite Official"]]);
 
-    const entries = build_leaderboard_entries([rating], [fixture], [stage], name_map);
+    const entries = build_leaderboard_entries(
+      [rating],
+      [fixture],
+      [stage],
+      name_map,
+    );
 
     expect(entries[0].tier).toBe("elite");
   });
 
   it("sorts entries descending by composite_score", () => {
-    const high_rating = make_rating({ id: "opr_a", official_id: "off_a", fixture_id: "fix_1", overall: 9, decision_accuracy: 9, game_control: 9, communication: 9, fitness: 9 });
-    const low_rating = make_rating({ id: "opr_b", official_id: "off_b", fixture_id: "fix_1", overall: 4, decision_accuracy: 4, game_control: 4, communication: 4, fitness: 4 });
+    const high_rating = make_rating({
+      id: "opr_a",
+      official_id: "off_a",
+      fixture_id: "fix_1",
+      overall: 9,
+      decision_accuracy: 9,
+      game_control: 9,
+      communication: 9,
+      fitness: 9,
+    });
+    const low_rating = make_rating({
+      id: "opr_b",
+      official_id: "off_b",
+      fixture_id: "fix_1",
+      overall: 4,
+      decision_accuracy: 4,
+      game_control: 4,
+      communication: 4,
+      fitness: 4,
+    });
     const fixture = make_fixture();
     const stage = make_stage();
-    const name_map = new Map([["off_a", "High Scorer"], ["off_b", "Low Scorer"]]);
+    const name_map = new Map([
+      ["off_a", "High Scorer"],
+      ["off_b", "Low Scorer"],
+    ]);
 
     const entries = build_leaderboard_entries(
       [low_rating, high_rating],
@@ -129,20 +162,34 @@ describe("build_leaderboard_entries", () => {
   });
 
   it("applies manual_importance_override from fixture", () => {
-    const high_weight_fixture = make_fixture({ id: "fix_2", manual_importance_override: 3.0 });
-    const low_weight_fixture = make_fixture({ id: "fix_1", manual_importance_override: 1.0 });
+    const high_weight_fixture = make_fixture({
+      id: "fix_2",
+      manual_importance_override: 3.0,
+    });
+    const low_weight_fixture = make_fixture({
+      id: "fix_1",
+      manual_importance_override: 1.0,
+    });
 
     const official_a_low_fixture_rating = make_rating({
       id: "opr_a",
       official_id: "off_a",
       fixture_id: "fix_1",
-      overall: 5, decision_accuracy: 5, game_control: 5, communication: 5, fitness: 5,
+      overall: 5,
+      decision_accuracy: 5,
+      game_control: 5,
+      communication: 5,
+      fitness: 5,
     });
     const official_a_high_fixture_rating = make_rating({
       id: "opr_b",
       official_id: "off_a",
       fixture_id: "fix_2",
-      overall: 9, decision_accuracy: 9, game_control: 9, communication: 9, fitness: 9,
+      overall: 9,
+      decision_accuracy: 9,
+      game_control: 9,
+      communication: 9,
+      fitness: 9,
     });
 
     const stage = make_stage();
@@ -163,14 +210,35 @@ describe("build_leaderboard_entries", () => {
     const fixture = make_fixture();
     const stage = make_stage();
 
-    const entries = build_leaderboard_entries([rating], [fixture], [stage], new Map());
+    const entries = build_leaderboard_entries(
+      [rating],
+      [fixture],
+      [stage],
+      new Map(),
+    );
 
     expect(entries[0].official_name).toBe("Unknown");
   });
 
   it("aggregates multiple ratings for the same official", () => {
-    const rating_a = make_rating({ id: "opr_a", rater_user_id: "user_1", overall: 6, decision_accuracy: 6, game_control: 6, communication: 6, fitness: 6 });
-    const rating_b = make_rating({ id: "opr_b", rater_user_id: "user_2", overall: 8, decision_accuracy: 8, game_control: 8, communication: 8, fitness: 8 });
+    const rating_a = make_rating({
+      id: "opr_a",
+      rater_user_id: "user_1",
+      overall: 6,
+      decision_accuracy: 6,
+      game_control: 6,
+      communication: 6,
+      fitness: 6,
+    });
+    const rating_b = make_rating({
+      id: "opr_b",
+      rater_user_id: "user_2",
+      overall: 8,
+      decision_accuracy: 8,
+      game_control: 8,
+      communication: 8,
+      fitness: 8,
+    });
     const fixture = make_fixture();
     const stage = make_stage();
     const name_map = new Map([["off_1", "Multi-rated Official"]]);
@@ -193,7 +261,9 @@ describe("get_tier_badge_classes", () => {
     expect(get_tier_badge_classes("elite").length).toBeGreaterThan(0);
     expect(get_tier_badge_classes("strong").length).toBeGreaterThan(0);
     expect(get_tier_badge_classes("adequate").length).toBeGreaterThan(0);
-    expect(get_tier_badge_classes("needs_development").length).toBeGreaterThan(0);
+    expect(get_tier_badge_classes("needs_development").length).toBeGreaterThan(
+      0,
+    );
   });
 
   it("returns different classes for different tiers", () => {

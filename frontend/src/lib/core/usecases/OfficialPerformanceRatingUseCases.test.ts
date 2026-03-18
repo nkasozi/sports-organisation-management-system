@@ -70,7 +70,9 @@ function create_valid_input(
 
 describe("OfficialPerformanceRatingUseCases", () => {
   let mock_repository: OfficialPerformanceRatingRepository;
-  let use_cases: ReturnType<typeof create_official_performance_rating_use_cases>;
+  let use_cases: ReturnType<
+    typeof create_official_performance_rating_use_cases
+  >;
 
   beforeEach(() => {
     mock_repository = create_mock_repository();
@@ -91,21 +93,27 @@ describe("OfficialPerformanceRatingUseCases", () => {
     });
 
     it("fails without reaching repository when official_id is empty", async () => {
-      const result = await use_cases.create(create_valid_input({ official_id: "" }));
+      const result = await use_cases.create(
+        create_valid_input({ official_id: "" }),
+      );
 
       expect(result.success).toBe(false);
       expect(mock_repository.create).not.toHaveBeenCalled();
     });
 
     it("fails without reaching repository when fixture_id is empty", async () => {
-      const result = await use_cases.create(create_valid_input({ fixture_id: "" }));
+      const result = await use_cases.create(
+        create_valid_input({ fixture_id: "" }),
+      );
 
       expect(result.success).toBe(false);
       expect(mock_repository.create).not.toHaveBeenCalled();
     });
 
     it("fails without reaching repository when a dimension is out of range", async () => {
-      const result = await use_cases.create(create_valid_input({ overall: 11 }));
+      const result = await use_cases.create(
+        create_valid_input({ overall: 11 }),
+      );
 
       expect(result.success).toBe(false);
       expect(mock_repository.create).not.toHaveBeenCalled();
@@ -126,7 +134,9 @@ describe("OfficialPerformanceRatingUseCases", () => {
       const result = await use_cases.update("opr_001", { overall: 9 });
 
       expect(result.success).toBe(true);
-      expect(mock_repository.update).toHaveBeenCalledWith("opr_001", { overall: 9 });
+      expect(mock_repository.update).toHaveBeenCalledWith("opr_001", {
+        overall: 9,
+      });
     });
 
     it("fails when rating is not found", async () => {
@@ -183,7 +193,13 @@ describe("OfficialPerformanceRatingUseCases", () => {
     it("calls find_all with no filter when no filter given", async () => {
       vi.mocked(mock_repository.find_all).mockResolvedValue({
         success: true,
-        data: { items: [], total_count: 0, page_number: 1, page_size: 100, total_pages: 0 },
+        data: {
+          items: [],
+          total_count: 0,
+          page_number: 1,
+          page_size: 100,
+          total_pages: 0,
+        },
       });
 
       await use_cases.list();
@@ -197,7 +213,13 @@ describe("OfficialPerformanceRatingUseCases", () => {
     it("passes typed filter to find_all when filter given", async () => {
       vi.mocked(mock_repository.find_all).mockResolvedValue({
         success: true,
-        data: { items: [], total_count: 0, page_number: 1, page_size: 100, total_pages: 0 },
+        data: {
+          items: [],
+          total_count: 0,
+          page_number: 1,
+          page_size: 100,
+          total_pages: 0,
+        },
       });
 
       await use_cases.list({ official_id: "off_1" });
@@ -211,7 +233,13 @@ describe("OfficialPerformanceRatingUseCases", () => {
     it("delegates to find_by_official", async () => {
       vi.mocked(mock_repository.find_by_official).mockResolvedValue({
         success: true,
-        data: { items: [], total_count: 0, page_number: 1, page_size: 200, total_pages: 0 },
+        data: {
+          items: [],
+          total_count: 0,
+          page_number: 1,
+          page_size: 200,
+          total_pages: 0,
+        },
       });
 
       await use_cases.list_by_official("off_1");
@@ -227,7 +255,13 @@ describe("OfficialPerformanceRatingUseCases", () => {
     it("delegates to find_by_fixture", async () => {
       vi.mocked(mock_repository.find_by_fixture).mockResolvedValue({
         success: true,
-        data: { items: [], total_count: 0, page_number: 1, page_size: 200, total_pages: 0 },
+        data: {
+          items: [],
+          total_count: 0,
+          page_number: 1,
+          page_size: 200,
+          total_pages: 0,
+        },
       });
 
       await use_cases.list_by_fixture("fix_1");
@@ -259,7 +293,8 @@ describe("OfficialPerformanceRatingUseCases", () => {
         data: create_test_rating(),
       });
 
-      const result = await use_cases.submit_or_update_rating(create_valid_input());
+      const result =
+        await use_cases.submit_or_update_rating(create_valid_input());
 
       expect(result.success).toBe(true);
       expect(mock_repository.create).toHaveBeenCalledOnce();
@@ -295,7 +330,8 @@ describe("OfficialPerformanceRatingUseCases", () => {
         error: "database error",
       });
 
-      const result = await use_cases.submit_or_update_rating(create_valid_input());
+      const result =
+        await use_cases.submit_or_update_rating(create_valid_input());
 
       expect(result.success).toBe(false);
       expect(mock_repository.create).not.toHaveBeenCalled();

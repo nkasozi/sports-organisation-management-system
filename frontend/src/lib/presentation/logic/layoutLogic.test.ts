@@ -39,7 +39,9 @@ describe("get_is_public_profile_page", () => {
 describe("get_is_public_content_page", () => {
   it("returns true for /competition-results and sub-paths", () => {
     expect(get_is_public_content_page("/competition-results")).toBe(true);
-    expect(get_is_public_content_page("/competition-results/league-1")).toBe(true);
+    expect(get_is_public_content_page("/competition-results/league-1")).toBe(
+      true,
+    );
   });
 
   it("returns true for /calendar and sub-paths", () => {
@@ -158,7 +160,9 @@ describe("is_in_app_navigation", () => {
 
 describe("format_table_name", () => {
   it("converts underscores to spaces", () => {
-    expect(format_table_name("game_official_roles")).toBe("Game Official Roles");
+    expect(format_table_name("game_official_roles")).toBe(
+      "Game Official Roles",
+    );
   });
 
   it("capitalizes the first letter of each word", () => {

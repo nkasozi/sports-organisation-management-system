@@ -26,15 +26,15 @@
   );
 
   async function load_fixture(): Promise<void> {
-    const auth_result = await ensure_auth_profile($auth_store);
-    if (!auth_result.is_authenticated) {
+    const auth_result = await ensure_auth_profile();
+    if (!auth_result.success || !auth_result.profile) {
       goto("/sign-in");
       return;
     }
 
     const result = await fixture_use_cases.get_by_id(fixture_id);
     if (!result.success || !result.data) {
-      error_message = result.error ?? "Fixture not found";
+      error_message = !result.success ? result.error : "Fixture not found";
       is_loading = false;
       return;
     }
