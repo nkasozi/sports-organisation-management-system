@@ -2,7 +2,6 @@
     import { onMount } from "svelte";
     import { goto } from "$app/navigation";
     import { ensure_auth_profile } from "$lib/presentation/logic/authGuard";
-    import { auth_store } from "$lib/presentation/stores/auth";
     import { get_official_performance_rating_use_cases } from "$lib/core/usecases/OfficialPerformanceRatingUseCases";
     import { get_official_use_cases } from "$lib/core/usecases/OfficialUseCases";
     import { get_fixture_use_cases } from "$lib/core/usecases/FixtureUseCases";
@@ -25,8 +24,6 @@
     let error_message = "";
     let selected_official: OfficialLeaderboardEntry | null = null;
 
-    $: current_profile = $auth_store.current_profile;
-
     async function load_leaderboard(): Promise<void> {
         const auth_result = await ensure_auth_profile();
         if (!auth_result.success || !auth_result.profile) {
@@ -34,7 +31,7 @@
             return;
         }
 
-        const org_id = current_profile?.organization_id ?? "";
+        const org_id = auth_result.profile.organization_id;
 
         const [
             ratings_result,
