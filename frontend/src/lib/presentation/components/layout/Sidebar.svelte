@@ -1,6 +1,7 @@
 <script lang="ts">
   import { createEventDispatcher } from "svelte";
   import { page } from "$app/stores";
+  import { goto } from "$app/navigation";
   import { branding_store } from "$lib/presentation/stores/branding";
   import { current_user_store } from "$lib/presentation/stores/currentUser";
   import {
@@ -73,11 +74,11 @@
     dispatch("close-sidebar");
   }
 
-  function handle_nav_click(): void {
-    // Close sidebar on mobile after navigation
+  function handle_nav_click(href: string): void {
     if (window.innerWidth < 1024) {
       close_sidebar();
     }
+    goto(href);
   }
 
   // Reactive statement to check current page
@@ -227,7 +228,7 @@
               style={is_active
                 ? "background-color: var(--color-primary-100); color: var(--color-primary-700); border-color: var(--color-primary-500);"
                 : ""}
-              on:click={handle_nav_click}
+              on:click|preventDefault={() => handle_nav_click(item.href)}
               title={sidebar_open ? "" : item.name}
             >
               <svg
