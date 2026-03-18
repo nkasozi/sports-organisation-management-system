@@ -258,16 +258,13 @@ export async function initialize_app_data(
     seeding_already_complete,
     options.session_already_synced,
   );
-  console.log(
-    `[AppInitializer] Seeding strategy: ${strategy}`,
-    {
-      event: "seeding_strategy_determined",
-      strategy,
-      signed_in: user_is_signed_in,
-      session_synced: options.session_already_synced,
-      path: options.current_path,
-    },
-  );
+  console.log(`[AppInitializer] Seeding strategy: ${strategy}`, {
+    event: "seeding_strategy_determined",
+    strategy,
+    signed_in: user_is_signed_in,
+    session_synced: options.session_already_synced,
+    path: options.current_path,
+  });
 
   const seed_outcome = await run_seeding_with_strategy(strategy, is_first_time);
 

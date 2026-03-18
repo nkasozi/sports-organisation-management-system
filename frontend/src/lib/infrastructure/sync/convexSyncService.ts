@@ -111,6 +111,7 @@ export const TABLE_NAMES = [
   "game_event_logs",
   "player_team_transfer_histories",
   "official_associated_teams",
+  "official_performance_ratings",
 ] as const;
 
 export type TableName = (typeof TABLE_NAMES)[number];
@@ -148,6 +149,7 @@ const TABLE_NAME_TO_ENTITY_TYPE: Partial<Record<TableName, SharedEntityType>> =
     live_game_logs: "livegamelog",
     game_event_logs: "gameeventlog",
     player_team_transfer_histories: "playerteamtransferhistory",
+    official_performance_ratings: "officialperformancerating",
   };
 
 function role_can_push_table(role: UserRole, table_name: TableName): boolean {
@@ -239,6 +241,7 @@ export function get_table_from_database(
     game_event_logs: database.game_event_logs,
     player_team_transfer_histories: database.player_team_transfer_histories,
     official_associated_teams: database.official_associated_teams,
+    official_performance_ratings: database.official_performance_ratings,
   };
 
   return table_map[table_name] || null;
