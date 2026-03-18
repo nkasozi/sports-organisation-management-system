@@ -35,6 +35,7 @@ import type {
   LiveGameLogRepository,
   GameEventLogRepository,
   CompetitionStageRepository,
+  OfficialPerformanceRatingRepository,
 } from "../core/interfaces/ports";
 
 import { get_organization_repository } from "../adapters/repositories/InBrowserOrganizationRepository";
@@ -69,6 +70,7 @@ import { get_player_profile_repository } from "../adapters/repositories/InBrowse
 import { get_team_profile_repository } from "../adapters/repositories/InBrowserTeamProfileRepository";
 import { get_profile_link_repository } from "../adapters/repositories/InBrowserProfileLinkRepository";
 import { get_official_associated_team_repository } from "../adapters/repositories/InBrowserOfficialAssociatedTeamRepository";
+import { get_official_performance_rating_repository } from "../adapters/repositories/InBrowserOfficialPerformanceRatingRepository";
 import { get_jersey_color_repository } from "../adapters/repositories/InBrowserJerseyColorRepository";
 import { get_live_game_log_repository } from "../adapters/repositories/InBrowserLiveGameLogRepository";
 import { get_game_event_log_repository } from "../adapters/repositories/InBrowserGameEventLogRepository";
@@ -139,6 +141,7 @@ export interface RepositoryContainer {
   team_profile_repository: TeamProfileRepository;
   profile_link_repository: ProfileLinkRepository;
   official_associated_team_repository: OfficialAssociatedTeamRepository;
+  official_performance_rating_repository: OfficialPerformanceRatingRepository;
   jersey_color_repository: JerseyColorRepository;
   live_game_log_repository: LiveGameLogRepository;
   game_event_log_repository: GameEventLogRepository;
@@ -215,6 +218,8 @@ function create_in_browser_repository_container(): RepositoryContainer {
     profile_link_repository: get_profile_link_repository(),
     official_associated_team_repository:
       get_official_associated_team_repository(),
+    official_performance_rating_repository:
+      get_official_performance_rating_repository(),
     jersey_color_repository: get_jersey_color_repository(),
     live_game_log_repository: get_live_game_log_repository(),
     game_event_log_repository: get_game_event_log_repository(),

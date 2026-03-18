@@ -35,6 +35,7 @@ import type { PlayerTeamTransferHistory } from "../../core/entities/PlayerTeamTr
 import type { LiveGameLog } from "../../core/entities/LiveGameLog";
 import type { GameEventLog } from "../../core/entities/GameEventLog";
 import type { CompetitionStage } from "../../core/entities/CompetitionStage";
+import type { OfficialPerformanceRating } from "../../core/entities/OfficialPerformanceRating";
 
 const DATABASE_NAME = "SportSyncDB";
 const DATABASE_VERSION = 4;
@@ -76,6 +77,7 @@ class SportSyncDatabase extends Dexie {
   live_game_logs!: Table<LiveGameLog, string>;
   game_event_logs!: Table<GameEventLog, string>;
   competition_stages!: Table<CompetitionStage, string>;
+  official_performance_ratings!: Table<OfficialPerformanceRating, string>;
   app_settings!: Table<{ key: string; value: string }, string>;
 
   constructor() {
@@ -135,6 +137,11 @@ class SportSyncDatabase extends Dexie {
 
     this.version(4).stores({
       app_settings: "key",
+    });
+
+    this.version(5).stores({
+      official_performance_ratings:
+        "id, organization_id, official_id, fixture_id, rater_user_id, rater_role, submitted_at, created_at",
     });
   }
 }

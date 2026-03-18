@@ -27,6 +27,7 @@ import { get_player_profile_use_cases } from "$lib/core/usecases/PlayerProfileUs
 import { get_team_profile_use_cases } from "$lib/core/usecases/TeamProfileUseCases";
 import { get_profile_link_use_cases } from "$lib/core/usecases/ProfileLinkUseCases";
 import { get_official_associated_team_use_cases } from "$lib/core/usecases/OfficialAssociatedTeamUseCases";
+import { get_official_performance_rating_use_cases } from "$lib/core/usecases/OfficialPerformanceRatingUseCases";
 import { get_live_game_log_use_cases } from "$lib/core/usecases/LiveGameLogUseCases";
 import { get_game_event_log_use_cases } from "$lib/core/usecases/GameEventLogUseCases";
 import { get_competition_stage_use_cases } from "$lib/core/usecases/CompetitionStageUseCases";
@@ -75,6 +76,7 @@ const VALID_ENTITY_TYPE_KEYS = [
   "officialassociatedteam",
   "livegamelog",
   "gameeventlog",
+  "officialperformancerating",
 ] as const;
 
 export type EntityTypeKey = (typeof VALID_ENTITY_TYPE_KEYS)[number];
@@ -153,6 +155,8 @@ function create_use_cases_registry(): Record<EntityTypeKey, UseCasesGetter> {
       get_live_game_log_use_cases as UseCasesGetter,
     ["gameeventlog" satisfies EntityTypeKey]:
       get_game_event_log_use_cases as UseCasesGetter,
+    ["officialperformancerating" satisfies EntityTypeKey]:
+      get_official_performance_rating_use_cases as UseCasesGetter,
   } satisfies Record<EntityTypeKey, UseCasesGetter>;
 
   return registry_definition;

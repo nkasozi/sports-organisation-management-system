@@ -282,6 +282,7 @@ export default defineSchema({
     away_team_jersey: v.optional(jersey_color_assignment_validator),
     officials_jersey: v.optional(jersey_color_assignment_validator),
     stage_id: v.optional(v.string()),
+    manual_importance_override: v.optional(v.union(v.number(), v.null())),
     ...timestamp_fields,
   }).index("by_local_id", ["local_id"]),
 
@@ -939,6 +940,33 @@ export default defineSchema({
     .index("by_local_id", ["local_id"])
     .index("by_official", ["official_id"])
     .index("by_team", ["team_id"]),
+
+  official_performance_ratings: defineTable({
+    ...sync_metadata_fields,
+    organization_id: v.string(),
+    official_id: v.string(),
+    fixture_id: v.string(),
+    rater_user_id: v.string(),
+    rater_role: v.string(),
+    overall: v.number(),
+    decision_accuracy: v.number(),
+    game_control: v.number(),
+    communication: v.number(),
+    fitness: v.number(),
+    notes: v.optional(v.string()),
+    submitted_at: v.string(),
+    status: v.optional(v.string()),
+    ...timestamp_fields,
+  })
+    .index("by_local_id", ["local_id"])
+    .index("by_official", ["official_id"])
+    .index("by_fixture", ["fixture_id"])
+    .index("by_rater", ["rater_user_id"])
+    .index("by_official_fixture_rater", [
+      "official_id",
+      "fixture_id",
+      "rater_user_id",
+    ]),
 
   sync_metadata: defineTable({
     table_name: v.string(),
