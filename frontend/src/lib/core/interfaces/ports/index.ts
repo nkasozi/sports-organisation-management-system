@@ -36,6 +36,7 @@ export type { GameEventLogUseCasesPort } from "./internal/usecases/GameEventLogU
 export type { JerseyColorUseCasesPort } from "./internal/usecases/JerseyColorUseCasesPort";
 export type { LiveGameLogUseCasesPort } from "./internal/usecases/LiveGameLogUseCasesPort";
 export type { OfficialAssociatedTeamUseCasesPort } from "./internal/usecases/OfficialAssociatedTeamUseCasesPort";
+export type { OfficialPerformanceRatingUseCasesPort } from "./internal/usecases/OfficialPerformanceRatingUseCasesPort";
 export type {
   CalendarTokenUseCasesPort,
   CalendarFeedInfo,
@@ -204,6 +205,10 @@ export type {
   OfficialAssociatedTeamRepository,
   OfficialAssociatedTeamFilter,
 } from "./external/repositories/OfficialAssociatedTeamRepository";
+export type {
+  OfficialPerformanceRatingRepository,
+  OfficialPerformanceRatingFilter,
+} from "./external/repositories/OfficialPerformanceRatingRepository";
 export type {
   PlayerProfileRepository,
   PlayerProfileFilter,

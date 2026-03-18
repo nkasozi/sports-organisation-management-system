@@ -58,7 +58,8 @@ export type SharedEntityType =
   | "jerseycolor"
   | "profilelink"
   | "activitycategory"
-  | "teamprofile";
+  | "teamprofile"
+  | "officialperformancerating";
 
 export interface SharedEntityCategory {
   entity_type: SharedEntityType;
@@ -206,6 +207,7 @@ export const SHARED_ENTITY_CATEGORY_MAP: SharedEntityCategoryMap = {
   profilelink: "public_level",
   activitycategory: "public_level",
   teamprofile: "public_level",
+  officialperformancerating: "organisation_level",
 };
 
 export const SHARED_ENTITY_CATEGORIES: SharedEntityCategory[] = (
