@@ -39,6 +39,7 @@ import type { ProfileLink } from "../../core/entities/ProfileLink";
 import { PROFILE_LINK_PLATFORM_OPTIONS } from "../../core/entities/ProfileLink";
 import type { OfficialAssociatedTeam } from "../../core/entities/OfficialAssociatedTeam";
 import { OFFICIAL_TEAM_ASSOCIATION_TYPE_OPTIONS } from "../../core/entities/OfficialAssociatedTeam";
+import type { OfficialPerformanceRating } from "../../core/entities/OfficialPerformanceRating";
 import type { LiveGameLog } from "../../core/entities/LiveGameLog";
 import {
   LIVE_GAME_STATUS_OPTIONS,
@@ -630,6 +631,7 @@ class EntityMetadataRegistry {
     this.register_official_associated_team_metadata();
     this.register_live_game_log_metadata();
     this.register_game_event_log_metadata();
+    this.register_official_performance_rating_metadata();
   }
 
   private register_organization_metadata(): void {
@@ -1699,6 +1701,15 @@ class EntityMetadataRegistry {
           is_required: false,
           is_read_only: false,
           hide_on_create: true,
+        },
+        {
+          field_name: "manual_importance_override" satisfies keyof Fixture,
+          display_name: "Importance Weight Override (1–3)",
+          field_type: "number",
+          is_required: false,
+          is_read_only: false,
+          hide_on_create: true,
+          show_in_list: false,
         },
       ],
     });
@@ -3552,7 +3563,115 @@ class EntityMetadataRegistry {
       ],
     });
   }
+
+  private register_official_performance_rating_metadata(): void {
+    this.metadata_map.set("officialperformancerating", {
+      entity_name: "officialperformancerating",
+      display_name: "Official Performance Rating",
+      fields: [
+        {
+          field_name: "official_id" satisfies keyof OfficialPerformanceRating,
+          display_name: "Official",
+          field_type: "foreign_key",
+          foreign_key_entity: "official",
+          is_required: true,
+          is_read_only: false,
+          show_in_list: true,
+          foreign_key_filter: {
+            depends_on_field: "organization_id",
+            filter_type: "officials_from_organization",
+          },
+        },
+        {
+          field_name: "fixture_id" satisfies keyof OfficialPerformanceRating,
+          display_name: "Fixture",
+          field_type: "foreign_key",
+          foreign_key_entity: "fixture",
+          is_required: true,
+          is_read_only: false,
+          show_in_list: true,
+          foreign_key_filter: {
+            depends_on_field: "organization_id",
+            filter_type: "fixtures_from_organization",
+          },
+        },
+        {
+          field_name: "rater_role" satisfies keyof OfficialPerformanceRating,
+          display_name: "Rater Role",
+          field_type: "string",
+          is_required: true,
+          is_read_only: true,
+          show_in_list: true,
+        },
+        {
+          field_name: "overall" satisfies keyof OfficialPerformanceRating,
+          display_name: "Overall (1–10)",
+          field_type: "number",
+          is_required: true,
+          is_read_only: false,
+          show_in_list: true,
+        },
+        {
+          field_name:
+            "decision_accuracy" satisfies keyof OfficialPerformanceRating,
+          display_name: "Decision Accuracy (1–10)",
+          field_type: "number",
+          is_required: true,
+          is_read_only: false,
+          show_in_list: false,
+        },
+        {
+          field_name: "game_control" satisfies keyof OfficialPerformanceRating,
+          display_name: "Game Control (1–10)",
+          field_type: "number",
+          is_required: true,
+          is_read_only: false,
+          show_in_list: false,
+        },
+        {
+          field_name: "communication" satisfies keyof OfficialPerformanceRating,
+          display_name: "Communication (1–10)",
+          field_type: "number",
+          is_required: true,
+          is_read_only: false,
+          show_in_list: false,
+        },
+        {
+          field_name: "fitness" satisfies keyof OfficialPerformanceRating,
+          display_name: "Fitness & Mobility (1–10)",
+          field_type: "number",
+          is_required: true,
+          is_read_only: false,
+          show_in_list: false,
+        },
+        {
+          field_name: "notes" satisfies keyof OfficialPerformanceRating,
+          display_name: "Notes",
+          field_type: "string",
+          is_required: false,
+          is_read_only: false,
+          show_in_list: false,
+        },
+        {
+          field_name: "submitted_at" satisfies keyof OfficialPerformanceRating,
+          display_name: "Submitted At",
+          field_type: "string",
+          is_required: false,
+          is_read_only: true,
+          show_in_list: true,
+        },
+        {
+          field_name: "status" satisfies keyof OfficialPerformanceRating,
+          display_name: "Status",
+          field_type: "enum",
+          is_required: true,
+          is_read_only: false,
+          enum_values: ["active", "inactive"],
+          show_in_list: false,
+        },
+      ],
+    });
+  }
 }
 
-// Export the registry instance
 export const entityMetadataRegistry = new EntityMetadataRegistry();

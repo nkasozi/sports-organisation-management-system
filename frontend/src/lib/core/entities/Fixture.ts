@@ -87,6 +87,7 @@ export interface Fixture extends BaseEntity {
   home_team_jersey?: JerseyColorAssignment;
   away_team_jersey?: JerseyColorAssignment;
   officials_jersey?: JerseyColorAssignment;
+  manual_importance_override?: number | null;
 }
 
 export type CreateFixtureInput = Omit<
