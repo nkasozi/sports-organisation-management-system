@@ -51,7 +51,10 @@ function build_fixture_weight_map(
 function group_ratings_by_official(
   ratings: OfficialPerformanceRating[],
   fixture_weight_map: Map<string, number>,
-): Map<string, Array<OfficialPerformanceRating & { importance_weight: number }>> {
+): Map<
+  string,
+  Array<OfficialPerformanceRating & { importance_weight: number }>
+> {
   const grouped = new Map<
     string,
     Array<OfficialPerformanceRating & { importance_weight: number }>

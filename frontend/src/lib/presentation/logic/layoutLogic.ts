@@ -40,8 +40,10 @@ export function determine_session_action(
   session_already_synced: boolean,
 ): SessionAction {
   if (user_is_signed_in && !session_already_synced) return "login_sync";
-  if (user_is_signed_in && session_already_synced) return "verified_page_reload";
-  if (!user_is_signed_in && !session_already_synced) return "first_time_anonymous";
+  if (user_is_signed_in && session_already_synced)
+    return "verified_page_reload";
+  if (!user_is_signed_in && !session_already_synced)
+    return "first_time_anonymous";
   return "returning_anonymous";
 }
 

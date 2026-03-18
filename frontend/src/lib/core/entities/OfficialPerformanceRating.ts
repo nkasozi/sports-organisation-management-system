@@ -52,9 +52,7 @@ export type PerformanceTier =
   | "adequate"
   | "needs_development";
 
-export function get_performance_tier(
-  composite_score: number,
-): PerformanceTier {
+export function get_performance_tier(composite_score: number): PerformanceTier {
   if (composite_score >= 8.5) return "elite";
   if (composite_score >= 7.0) return "strong";
   if (composite_score >= 5.5) return "adequate";
@@ -71,9 +69,7 @@ export function get_tier_label(tier: PerformanceTier): string {
   return labels[tier];
 }
 
-export function compute_composite_score(
-  rating: RatingDimensions,
-): number {
+export function compute_composite_score(rating: RatingDimensions): number {
   const dimension_sum =
     rating.overall +
     rating.decision_accuracy +
@@ -174,7 +170,12 @@ export function validate_rating_input(
 
   for (const field of dimension_fields) {
     const value = input[field];
-    if (typeof value !== "number" || Number.isNaN(value) || value < 1 || value > 10) {
+    if (
+      typeof value !== "number" ||
+      Number.isNaN(value) ||
+      value < 1 ||
+      value > 10
+    ) {
       errors.push(`${field} must be a number between 1 and 10`);
     }
   }

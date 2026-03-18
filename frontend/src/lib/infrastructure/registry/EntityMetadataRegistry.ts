@@ -1703,8 +1703,7 @@ class EntityMetadataRegistry {
           hide_on_create: true,
         },
         {
-          field_name:
-            "manual_importance_override" satisfies keyof Fixture,
+          field_name: "manual_importance_override" satisfies keyof Fixture,
           display_name: "Importance Weight Override (1–3)",
           field_type: "number",
           is_required: false,
@@ -3571,8 +3570,7 @@ class EntityMetadataRegistry {
       display_name: "Official Performance Rating",
       fields: [
         {
-          field_name:
-            "official_id" satisfies keyof OfficialPerformanceRating,
+          field_name: "official_id" satisfies keyof OfficialPerformanceRating,
           display_name: "Official",
           field_type: "foreign_key",
           foreign_key_entity: "official",
@@ -3585,8 +3583,7 @@ class EntityMetadataRegistry {
           },
         },
         {
-          field_name:
-            "fixture_id" satisfies keyof OfficialPerformanceRating,
+          field_name: "fixture_id" satisfies keyof OfficialPerformanceRating,
           display_name: "Fixture",
           field_type: "foreign_key",
           foreign_key_entity: "fixture",
@@ -3599,8 +3596,7 @@ class EntityMetadataRegistry {
           },
         },
         {
-          field_name:
-            "rater_role" satisfies keyof OfficialPerformanceRating,
+          field_name: "rater_role" satisfies keyof OfficialPerformanceRating,
           display_name: "Rater Role",
           field_type: "string",
           is_required: true,
@@ -3625,8 +3621,7 @@ class EntityMetadataRegistry {
           show_in_list: false,
         },
         {
-          field_name:
-            "game_control" satisfies keyof OfficialPerformanceRating,
+          field_name: "game_control" satisfies keyof OfficialPerformanceRating,
           display_name: "Game Control (1–10)",
           field_type: "number",
           is_required: true,
@@ -3634,8 +3629,7 @@ class EntityMetadataRegistry {
           show_in_list: false,
         },
         {
-          field_name:
-            "communication" satisfies keyof OfficialPerformanceRating,
+          field_name: "communication" satisfies keyof OfficialPerformanceRating,
           display_name: "Communication (1–10)",
           field_type: "number",
           is_required: true,
@@ -3659,8 +3653,7 @@ class EntityMetadataRegistry {
           show_in_list: false,
         },
         {
-          field_name:
-            "submitted_at" satisfies keyof OfficialPerformanceRating,
+          field_name: "submitted_at" satisfies keyof OfficialPerformanceRating,
           display_name: "Submitted At",
           field_type: "string",
           is_required: false,

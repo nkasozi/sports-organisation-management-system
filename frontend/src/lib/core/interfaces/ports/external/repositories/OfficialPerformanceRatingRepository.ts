@@ -18,13 +18,12 @@ export interface OfficialPerformanceRatingFilter {
   status?: string;
 }
 
-export interface OfficialPerformanceRatingRepository
-  extends Repository<
-    OfficialPerformanceRating,
-    CreateOfficialPerformanceRatingInput,
-    UpdateOfficialPerformanceRatingInput,
-    OfficialPerformanceRatingFilter
-  > {
+export interface OfficialPerformanceRatingRepository extends Repository<
+  OfficialPerformanceRating,
+  CreateOfficialPerformanceRatingInput,
+  UpdateOfficialPerformanceRatingInput,
+  OfficialPerformanceRatingFilter
+> {
   find_by_official(
     official_id: string,
     options?: QueryOptions,

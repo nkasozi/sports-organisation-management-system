@@ -57,14 +57,14 @@
         }
 
         const officials_map = new Map(
-            officials_result.data.map((o) => [o.id, o]),
+            officials_result.data.items.map((o: Official) => [o.id, o]),
         );
 
         const ratings_result =
             await rating_use_cases.list_by_fixture(fixture_id);
         const existing_ratings: OfficialPerformanceRating[] =
             ratings_result.success && ratings_result.data
-                ? ratings_result.data
+                ? ratings_result.data.items
                 : [];
 
         const rater_ratings = existing_ratings.filter(
@@ -92,7 +92,7 @@
                         : build_default_dimensions(),
                     existing_id: found?.id ?? null,
                     is_saving: false,
-                    validation_errors: [],
+                    validation_errors: [] as string[],
                 };
             })
             .filter((s): s is OfficialRatingState => s !== null);
@@ -134,7 +134,7 @@
             toast_message = `Rating submitted for ${get_official_full_name(state.official)}`;
             toast_type = "success";
         } else {
-            toast_message = result.error ?? "Failed to submit rating";
+            toast_message = !result.success ? result.error : "Failed to submit rating";
             toast_type = "error";
         }
         toast_visible = true;
@@ -171,29 +171,31 @@
 
                 {#each [{ key: "overall", label: "Overall" }, { key: "decision_accuracy", label: "Decision Accuracy" }, { key: "game_control", label: "Game Control" }, { key: "communication", label: "Communication" }, { key: "fitness", label: "Fitness & Mobility" }] as dim}
                     <div class="flex items-center gap-3 mb-2">
-                        <label class="w-40 text-sm text-gray-600 shrink-0"
+                        <label for="dim-{state.official.id}-{dim.key}" class="w-40 text-sm text-gray-600 shrink-0"
                             >{dim.label}</label
                         >
                         <input
+                            id="dim-{state.official.id}-{dim.key}"
                             type="range"
                             min="1"
                             max="10"
                             step="1"
-                            bind:value={state.rating[dim.key]}
+                            bind:value={(state.rating as unknown as Record<string, number>)[dim.key]}
                             class="flex-1 accent-emerald-500"
                         />
                         <span
                             class="w-6 text-center text-sm font-medium text-gray-700"
                         >
-                            {state.rating[dim.key]}
+                            {(state.rating as unknown as Record<string, number>)[dim.key]}
                         </span>
                     </div>
                 {/each}
 
                 <div class="mt-3">
-                    <label class="text-sm text-gray-600">Notes (optional)</label
+                    <label for="notes-{state.official.id}" class="text-sm text-gray-600">Notes (optional)</label
                     >
                     <textarea
+                        id="notes-{state.official.id}"
                         bind:value={state.rating.notes}
                         rows="2"
                         class="mt-1 w-full border border-gray-200 rounded px-2 py-1 text-sm"

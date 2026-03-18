@@ -11,7 +11,9 @@ import {
 } from "./OfficialPerformanceRating";
 
 function make_rating(
-  overrides: Partial<OfficialPerformanceRating & { importance_weight: number }> = {},
+  overrides: Partial<
+    OfficialPerformanceRating & { importance_weight: number }
+  > = {},
 ): OfficialPerformanceRating & { importance_weight: number } {
   return {
     id: "opr_001",

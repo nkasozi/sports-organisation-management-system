@@ -138,8 +138,8 @@ class InBrowserOfficialPerformanceRatingRepository
         return create_failure_result(all_result.error ?? "Lookup failed");
       }
       const match =
-        all_result.data && all_result.data.length > 0
-          ? all_result.data[0]
+        all_result.data && all_result.data.items.length > 0
+          ? all_result.data.items[0]
           : null;
       return create_success_result(match);
     } catch (error) {

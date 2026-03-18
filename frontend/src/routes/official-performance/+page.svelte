@@ -28,8 +28,8 @@
     $: current_profile = $auth_store.current_profile;
 
     async function load_leaderboard(): Promise<void> {
-        const auth_result = await ensure_auth_profile($auth_store);
-        if (!auth_result.is_authenticated) {
+        const auth_result = await ensure_auth_profile();
+        if (!auth_result.success || !auth_result.profile) {
             goto("/sign-in");
             return;
         }
@@ -49,22 +49,22 @@
         ]);
 
         if (!ratings_result.success || !ratings_result.data) {
-            error_message = ratings_result.error ?? "Failed to load ratings";
+            error_message = !ratings_result.success ? ratings_result.error : "Failed to load ratings";
             is_loading = false;
             return;
         }
 
         const officials =
             officials_result.success && officials_result.data
-                ? officials_result.data
+                ? officials_result.data.items
                 : [];
         const fixtures =
             fixtures_result.success && fixtures_result.data
-                ? fixtures_result.data
+                ? fixtures_result.data.items
                 : [];
         const stages =
             stages_result.success && stages_result.data
-                ? stages_result.data
+                ? stages_result.data.items
                 : [];
 
         const official_name_map = new Map(
@@ -75,7 +75,7 @@
         );
 
         entries = build_leaderboard_entries(
-            ratings_result.data,
+            ratings_result.data.items,
             fixtures,
             stages,
             official_name_map,
