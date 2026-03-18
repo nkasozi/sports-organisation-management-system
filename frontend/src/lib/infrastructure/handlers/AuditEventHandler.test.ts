@@ -260,3 +260,234 @@ describe("handle_access_denied", () => {
     expect(call_arg.organization_id).toBe("*");
   });
 });
+
+describe("handle_page_viewed", () => {
+  it("writes an audit log with action 'page_view'", async () => {
+    initialize_audit_event_handlers();
+
+    EventBus.emit_page_viewed("/fixtures", "Fixtures");
+    await Promise.resolve();
+
+    expect(mock_create_audit_log).toHaveBeenCalledTimes(1);
+    const call_arg = mock_create_audit_log.mock.calls[0][0];
+    expect(call_arg.action).toBe("page_view");
+  });
+
+  it("sets entity_type to 'page' and entity_id to the page_path", async () => {
+    initialize_audit_event_handlers();
+
+    EventBus.emit_page_viewed("/competitions/league-1", "League One");
+    await Promise.resolve();
+
+    const call_arg = mock_create_audit_log.mock.calls[0][0];
+    expect(call_arg.entity_type).toBe("page");
+    expect(call_arg.entity_id).toBe("/competitions/league-1");
+  });
+
+  it("sets entity_display_name to the page_title", async () => {
+    initialize_audit_event_handlers();
+
+    EventBus.emit_page_viewed("/teams", "Teams");
+    await Promise.resolve();
+
+    const call_arg = mock_create_audit_log.mock.calls[0][0];
+    expect(call_arg.entity_display_name).toBe("Teams");
+  });
+
+  it("writes an empty changes array", async () => {
+    initialize_audit_event_handlers();
+
+    EventBus.emit_page_viewed("/players", "Players");
+    await Promise.resolve();
+
+    const call_arg = mock_create_audit_log.mock.calls[0][0];
+    expect(call_arg.changes).toEqual([]);
+  });
+
+  it("uses user_context fields when a user is set", async () => {
+    initialize_audit_event_handlers();
+    set_user_context({
+      user_id: "u-10",
+      user_email: "bob@example.com",
+      user_display_name: "Bob",
+      organization_id: "org-3",
+    });
+
+    EventBus.emit_page_viewed("/dashboard", "Dashboard");
+    await Promise.resolve();
+
+    const call_arg = mock_create_audit_log.mock.calls[0][0];
+    expect(call_arg.user_id).toBe("u-10");
+    expect(call_arg.user_email).toBe("bob@example.com");
+    expect(call_arg.organization_id).toBe("org-3");
+  });
+
+  it("falls back to anonymous values when no user_context is set", async () => {
+    initialize_audit_event_handlers();
+
+    EventBus.emit_page_viewed("/help", "Help");
+    await Promise.resolve();
+
+    const call_arg = mock_create_audit_log.mock.calls[0][0];
+    expect(call_arg.user_id).toBe("anonymous");
+    expect(call_arg.user_email).toBe("anonymous@unknown");
+    expect(call_arg.organization_id).toBe("*");
+  });
+});
+
+describe("reset_audit_event_handlers", () => {
+  it("allows re-initialization after a reset — initialize returns true again", () => {
+    initialize_audit_event_handlers();
+    reset_audit_event_handlers();
+    expect(initialize_audit_event_handlers()).toBe(true);
+  });
+});
+
+describe("handle_entity_updated — additional coverage", () => {
+  it("records all changed fields when multiple fields are updated", async () => {
+    initialize_audit_event_handlers();
+
+    EventBus.emit_entity_updated(
+      "Player",
+      "player-1",
+      "Jane",
+      { first_name: "Jane", jersey_number: "10" },
+      { first_name: "Janet", jersey_number: "7" },
+      ["first_name", "jersey_number"],
+    );
+    await Promise.resolve();
+
+    const call_arg = mock_create_audit_log.mock.calls[0][0];
+    expect(call_arg.changes).toHaveLength(2);
+    expect(call_arg.changes[0]).toEqual({
+      field_name: "first_name",
+      old_value: "Jane",
+      new_value: "Janet",
+    });
+    expect(call_arg.changes[1]).toEqual({
+      field_name: "jersey_number",
+      old_value: "10",
+      new_value: "7",
+    });
+  });
+
+  it("coerces null and undefined field values to empty string", async () => {
+    initialize_audit_event_handlers();
+
+    EventBus.emit_entity_updated(
+      "Player",
+      "player-2",
+      "Anon",
+      { nickname: null },
+      { nickname: undefined },
+      ["nickname"],
+    );
+    await Promise.resolve();
+
+    const call_arg = mock_create_audit_log.mock.calls[0][0];
+    expect(call_arg.changes[0].old_value).toBe("");
+    expect(call_arg.changes[0].new_value).toBe("");
+  });
+
+  it("uses user_context fields when a user is set", async () => {
+    initialize_audit_event_handlers();
+    set_user_context({
+      user_id: "u-99",
+      user_email: "carol@example.com",
+      user_display_name: "Carol",
+      organization_id: "org-9",
+    });
+
+    EventBus.emit_entity_updated(
+      "Team",
+      "team-5",
+      "Red Bulls",
+      { name: "Bulls" },
+      { name: "Red Bulls" },
+      ["name"],
+    );
+    await Promise.resolve();
+
+    const call_arg = mock_create_audit_log.mock.calls[0][0];
+    expect(call_arg.user_id).toBe("u-99");
+    expect(call_arg.user_email).toBe("carol@example.com");
+    expect(call_arg.organization_id).toBe("org-9");
+  });
+});
+
+describe("handle_entity_deleted — additional coverage", () => {
+  it("uses user_context fields when a user is set", async () => {
+    initialize_audit_event_handlers();
+    set_user_context({
+      user_id: "u-55",
+      user_email: "dave@example.com",
+      user_display_name: "Dave",
+      organization_id: "org-2",
+    });
+
+    EventBus.emit_entity_deleted("Fixture", "fix-20", "Round 3", {});
+    await Promise.resolve();
+
+    const call_arg = mock_create_audit_log.mock.calls[0][0];
+    expect(call_arg.user_id).toBe("u-55");
+    expect(call_arg.user_email).toBe("dave@example.com");
+    expect(call_arg.organization_id).toBe("org-2");
+  });
+
+  it("falls back to system values when no user_context is set", async () => {
+    initialize_audit_event_handlers();
+
+    EventBus.emit_entity_deleted("Venue", "venue-3", "Central Park", {});
+    await Promise.resolve();
+
+    const call_arg = mock_create_audit_log.mock.calls[0][0];
+    expect(call_arg.user_id).toBe("system");
+    expect(call_arg.user_email).toBe("system@sport-sync.local");
+    expect(call_arg.organization_id).toBe("*");
+  });
+});
+
+describe("handle_access_denied — additional coverage", () => {
+  it("prefixes entity_display_name with 'Access Denied: '", async () => {
+    initialize_audit_event_handlers();
+
+    EventBus.emit_access_denied(
+      "MatchReport",
+      "report-1",
+      "view",
+      "report_data",
+      "insufficient_permissions",
+      "player",
+    );
+    await Promise.resolve();
+
+    const call_arg = mock_create_audit_log.mock.calls[0][0];
+    expect(call_arg.entity_display_name).toBe("Access Denied: MatchReport");
+  });
+
+  it("records the user role in the role change field value", async () => {
+    initialize_audit_event_handlers();
+    set_user_context({
+      user_id: "u-1",
+      user_email: "e@e.com",
+      user_display_name: "E",
+      organization_id: "org-1",
+    });
+
+    EventBus.emit_access_denied(
+      "Team",
+      "team-1",
+      "delete",
+      "team_data",
+      "role_too_low",
+      "team_manager",
+    );
+    await Promise.resolve();
+
+    const call_arg = mock_create_audit_log.mock.calls[0][0];
+    const role_change = call_arg.changes.find(
+      (c: { field_name: string }) => c.field_name === "role",
+    );
+    expect(role_change?.new_value).toBe("team_manager");
+  });
+});

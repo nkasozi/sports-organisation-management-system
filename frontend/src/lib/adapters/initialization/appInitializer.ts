@@ -161,9 +161,10 @@ type InitResult = "success" | "redirect_to_login";
 
 interface InitializeOptions {
   current_path: string;
+  session_already_synced: boolean;
 }
 
-function get_is_public_content_page(path: string): boolean {
+export function get_is_public_content_page(path: string): boolean {
   return (
     path.startsWith("/competition-results") ||
     path.startsWith("/calendar") ||
@@ -171,10 +172,11 @@ function get_is_public_content_page(path: string): boolean {
   );
 }
 
-function determine_seeding_strategy(
+export function determine_seeding_strategy(
   user_is_signed_in: boolean,
   current_path: string,
   seeding_already_complete: boolean,
+  session_already_synced: boolean,
 ): SeedingStrategy {
   if (
     !user_is_signed_in &&
@@ -185,6 +187,9 @@ function determine_seeding_strategy(
   }
   if (!user_is_signed_in) {
     return "local_only";
+  }
+  if (session_already_synced) {
+    return "skip_seeding";
   }
   return "convex_mandatory";
 }
@@ -251,9 +256,17 @@ export async function initialize_app_data(
     user_is_signed_in,
     options.current_path,
     seeding_already_complete,
+    options.session_already_synced,
   );
   console.log(
-    `[AppInitializer] Seeding strategy: ${strategy} (signed_in=${user_is_signed_in}, path=${options.current_path})`,
+    `[AppInitializer] Seeding strategy: ${strategy}`,
+    {
+      event: "seeding_strategy_determined",
+      strategy,
+      signed_in: user_is_signed_in,
+      session_synced: options.session_already_synced,
+      path: options.current_path,
+    },
   );
 
   const seed_outcome = await run_seeding_with_strategy(strategy, is_first_time);
