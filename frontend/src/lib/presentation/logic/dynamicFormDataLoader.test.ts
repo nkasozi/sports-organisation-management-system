@@ -699,12 +699,9 @@ describe("fetch_filtered_entities_for_field", () => {
       foreign_key_filter: { filter_type: "fixtures_from_official" } as any,
     });
 
-    const result = await fetch_filtered_entities_for_field(
-      field,
-      "off-1",
-      [],
-      { organization_id: "org-1" },
-    );
+    const result = await fetch_filtered_entities_for_field(field, "off-1", [], {
+      organization_id: "org-1",
+    });
 
     expect(result.entities).toHaveLength(1);
     expect(result.entities[0].id).toBe("fix_1");
@@ -735,8 +732,12 @@ describe("fetch_fixtures_from_official", () => {
   });
 
   it("excludes assigned fixtures that are not completed", async () => {
-    const fixture_scheduled = create_base_entity("fix_a", { status: "scheduled" });
-    const fixture_completed = create_base_entity("fix_b", { status: "completed" });
+    const fixture_scheduled = create_base_entity("fix_a", {
+      status: "scheduled",
+    });
+    const fixture_completed = create_base_entity("fix_b", {
+      status: "completed",
+    });
     const setup_a = create_base_entity("setup_1", {
       fixture_id: "fix_a",
       assigned_officials: [{ official_id: "off-1", role_id: "r1" }],
@@ -746,7 +747,9 @@ describe("fetch_fixtures_from_official", () => {
       assigned_officials: [{ official_id: "off-1", role_id: "r1" }],
     });
     mock_get_use_cases
-      .mockReturnValueOnce(make_list_use_cases([fixture_scheduled, fixture_completed]))
+      .mockReturnValueOnce(
+        make_list_use_cases([fixture_scheduled, fixture_completed]),
+      )
       .mockReturnValueOnce(make_list_use_cases([setup_a, setup_b]))
       .mockReturnValueOnce(make_list_use_cases([]));
 
@@ -843,20 +846,27 @@ describe("fetch_fixtures_from_official", () => {
     const result = await fetch_fixtures_from_official("off-1", "org-1");
 
     expect(result).toHaveLength(1);
-    expect(mock_get_use_cases).toHaveBeenCalledWith("officialperformancerating");
+    expect(mock_get_use_cases).toHaveBeenCalledWith(
+      "officialperformancerating",
+    );
   });
 });
 
-function make_fixture_use_cases_with_data(fixture_data: unknown, success = true) {
+function make_fixture_use_cases_with_data(
+  fixture_data: unknown,
+  success = true,
+) {
   return {
     success: true as const,
     data: {
       list: vi.fn(),
-      get_by_id: vi.fn().mockResolvedValue(
-        success
-          ? { success: true, data: fixture_data }
-          : { success: false, error: "not found" },
-      ),
+      get_by_id: vi
+        .fn()
+        .mockResolvedValue(
+          success
+            ? { success: true, data: fixture_data }
+            : { success: false, error: "not found" },
+        ),
     } as any,
   };
 }
@@ -1099,7 +1109,9 @@ describe("fetch_officials_from_fixture", () => {
     const result = await fetch_officials_from_fixture("fix-1", "org-1");
 
     expect(result).toHaveLength(1);
-    expect(mock_get_use_cases).toHaveBeenCalledWith("officialperformancerating");
+    expect(mock_get_use_cases).toHaveBeenCalledWith(
+      "officialperformancerating",
+    );
   });
 });
 
@@ -1163,7 +1175,12 @@ describe("fetch_fixtures_without_setup", () => {
       foreign_key_filter: { filter_type: "fixtures_without_setup" } as any,
     });
 
-    const result = await fetch_filtered_entities_for_field(field, "org-1", [], {});
+    const result = await fetch_filtered_entities_for_field(
+      field,
+      "org-1",
+      [],
+      {},
+    );
 
     expect(result.entities).toHaveLength(1);
     expect(result.entities[0].id).toBe("fix_a");

@@ -134,7 +134,10 @@ export function validate_form_data_against_metadata(
       Array.isArray(field_value) &&
       field_value.length === 0;
 
-    if (is_required && (is_empty_scalar || is_empty_star_rating || is_empty_array)) {
+    if (
+      is_required &&
+      (is_empty_scalar || is_empty_star_rating || is_empty_array)
+    ) {
       errors[field.field_name] = `${field.display_name} is required`;
       continue;
     }
