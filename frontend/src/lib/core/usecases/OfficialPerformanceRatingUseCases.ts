@@ -16,22 +16,33 @@ import {
 } from "$lib/core/types/Result";
 import { get_repository_container } from "../../infrastructure/container";
 import type { OfficialPerformanceRatingUseCasesPort } from "$lib/core/interfaces/ports";
+import { get } from "svelte/store";
+import { auth_store } from "$lib/presentation/stores/auth";
 
 export type OfficialPerformanceRatingUseCases =
   OfficialPerformanceRatingUseCasesPort;
 
+type CurrentUserProvider = () => { id: string; role: string } | null;
+
 function create_official_performance_rating_use_cases(
   repository: OfficialPerformanceRatingRepository,
+  get_current_user: CurrentUserProvider = () => null,
 ): OfficialPerformanceRatingUseCases {
   return {
     async create(
       input: CreateOfficialPerformanceRatingInput,
     ): AsyncResult<OfficialPerformanceRating> {
-      const validation_errors = validate_rating_input(input);
+      const current_user = get_current_user();
+      const enriched_input: CreateOfficialPerformanceRatingInput = {
+        ...input,
+        rater_user_id: current_user?.id ?? input.rater_user_id ?? "",
+        rater_role: current_user?.role ?? input.rater_role ?? "",
+      };
+      const validation_errors = validate_rating_input(enriched_input);
       if (validation_errors.length > 0) {
         return create_failure_result(validation_errors.join(", "));
       }
-      return repository.create(input);
+      return repository.create(enriched_input);
     },
 
     async update(
@@ -79,7 +90,6 @@ function create_official_performance_rating_use_cases(
         fixture_id: filter.fixture_id,
         rater_user_id: filter.rater_user_id,
         rater_role: filter.rater_role,
-        status: filter.status,
       };
 
       return repository.find_all(typed_filter, query_options);
@@ -133,15 +143,11 @@ function create_official_performance_rating_use_cases(
           communication: input.communication,
           fitness: input.fitness,
           notes: input.notes,
-          submitted_at: new Date().toISOString(),
         };
         return repository.update(existing_result.data.id, update_input);
       }
 
-      return repository.create({
-        ...input,
-        submitted_at: new Date().toISOString(),
-      });
+      return repository.create(input);
     },
   };
 }
@@ -150,6 +156,7 @@ export function get_official_performance_rating_use_cases(): OfficialPerformance
   const container = get_repository_container();
   return create_official_performance_rating_use_cases(
     container.official_performance_rating_repository,
+    () => get(auth_store).current_profile,
   );
 }
 

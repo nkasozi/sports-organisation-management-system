@@ -143,6 +143,11 @@ class SportSyncDatabase extends Dexie {
       official_performance_ratings:
         "id, organization_id, official_id, fixture_id, rater_user_id, rater_role, submitted_at, created_at",
     });
+
+    this.version(6).stores({
+      official_performance_ratings:
+        "id, organization_id, official_id, fixture_id, rater_user_id, rater_role, created_at",
+    });
   }
 }
 

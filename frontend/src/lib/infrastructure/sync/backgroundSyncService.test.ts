@@ -38,6 +38,7 @@ const SYNCED_TABLE_NAMES = [
   "game_event_logs",
   "player_team_transfer_histories",
   "official_associated_teams",
+  "official_performance_ratings",
 ] as const;
 
 interface BackgroundSyncState {
@@ -113,8 +114,8 @@ describe("SYNCED_TABLE_NAMES", () => {
     }
   });
 
-  it("has 34 synced tables", () => {
-    expect(SYNCED_TABLE_NAMES.length).toBe(34);
+  it("has 35 synced tables", () => {
+    expect(SYNCED_TABLE_NAMES.length).toBe(35);
   });
 });
 

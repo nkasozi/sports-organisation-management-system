@@ -13,6 +13,10 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
     SubEntityConfig,
   } from "../../core/entities/BaseEntity";
   import type { Result } from "../../core/types/Result";
+  import {
+    create_failure_result,
+    create_success_result,
+  } from "../../core/types/Result";
   import type { EntityMetadata } from "../../core/entities/BaseEntity";
   import { entityMetadataRegistry } from "../../infrastructure/registry/EntityMetadataRegistry";
   import { fakeDataGenerator } from "../../infrastructure/utils/FakeDataGenerator";
@@ -31,6 +35,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
     get_default_value_for_field_type as get_base_default_value_for_field_type,
     get_input_type_for_field,
     validate_field_against_rules,
+    validate_form_data_against_metadata,
     initialize_form_data_from_metadata,
     format_entity_display_name,
     is_field_visible_by_visible_when_condition,
@@ -52,6 +57,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
     EntityViewCallbacks,
   } from "$lib/core/types/EntityHandlers";
   import OfficialAssignmentArray from "./OfficialAssignmentArray.svelte";
+  import StarRatingInput from "./ui/StarRatingInput.svelte";
   import { create_empty_official_assignment } from "../../core/entities/FixtureDetailsSetup";
   import type { OfficialAssignment } from "../../core/entities/FixtureDetailsSetup";
   import {
@@ -986,6 +992,47 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
       check_fixture_team_gender_mismatch(mismatch_input);
   }
 
+  async function resolve_create_result(
+    data: Record<string, unknown>,
+  ): Promise<Result<BaseEntity, string>> {
+    if (crud_handlers?.create) {
+      return crud_handlers.create(data);
+    }
+    const use_cases_result = get_use_cases_for_entity_type(
+      entity_type.toLowerCase(),
+    );
+    if (!use_cases_result.success) {
+      return create_failure_result(`No handler found for "${entity_type}"`);
+    }
+    if (typeof use_cases_result.data.create !== "function") {
+      return create_failure_result(
+        `Create is not supported for "${entity_type}"`,
+      );
+    }
+    return use_cases_result.data.create(data);
+  }
+
+  async function resolve_update_result(
+    id: string,
+    data: Record<string, unknown>,
+  ): Promise<Result<BaseEntity, string>> {
+    if (crud_handlers?.update) {
+      return crud_handlers.update(id, data);
+    }
+    const use_cases_result = get_use_cases_for_entity_type(
+      entity_type.toLowerCase(),
+    );
+    if (!use_cases_result.success) {
+      return create_failure_result(`No handler found for "${entity_type}"`);
+    }
+    if (typeof use_cases_result.data.update !== "function") {
+      return create_failure_result(
+        `Update is not supported for "${entity_type}"`,
+      );
+    }
+    return use_cases_result.data.update(id, data);
+  }
+
   async function handle_form_submission(): Promise<void> {
     if (!entity_metadata) return;
 
@@ -998,118 +1045,75 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
 
     is_save_in_progress = true;
     save_error_message = "";
+    validation_errors = {};
+
     const is_player_transfer_being_approved =
       check_if_player_transfer_is_being_approved();
-    validation_errors = {};
 
     const validation_result = validate_form_data_against_metadata(
       form_data,
       entity_metadata,
+      is_edit_mode,
+      entity_type,
     );
-    if (!validation_result.is_valid) {
-      validation_errors = validation_result.errors;
+    if (!validation_result.success) {
+      validation_errors = validation_result.error;
       is_save_in_progress = false;
       return;
     }
 
-    try {
-      let save_result: Result<BaseEntity, string>;
+    const save_result =
+      is_edit_mode && entity_data?.id
+        ? await resolve_update_result(entity_data.id, form_data)
+        : await resolve_create_result(form_data);
 
-      if (is_edit_mode && entity_data?.id) {
-        if (crud_handlers?.update) {
-          console.log(
-            `[ENTITY_FORM] Using custom update handler for "${entity_type}"`,
-          );
-          save_result = await crud_handlers.update(entity_data.id, form_data);
-        } else {
-          const normalized_type = entity_type.toLowerCase();
-          const update_use_cases_result =
-            get_use_cases_for_entity_type(normalized_type);
-          if (!update_use_cases_result.success) {
-            console.error(`No use cases found for entity type: ${entity_type}`);
-            is_save_in_progress = false;
-            return;
-          }
-          const use_cases = update_use_cases_result.data;
-          if (typeof use_cases.update !== "function") {
-            console.error(
-              `Method update not found on use cases for ${entity_type}`,
-            );
-            is_save_in_progress = false;
-            return;
-          }
-          save_result = await use_cases.update(entity_data.id, form_data);
-        }
-      } else {
-        if (crud_handlers?.create) {
-          console.log(
-            `[ENTITY_FORM] Using custom create handler for "${entity_type}"`,
-          );
-          save_result = await crud_handlers.create(form_data);
-        } else {
-          const normalized_type = entity_type.toLowerCase();
-          const create_use_cases_result =
-            get_use_cases_for_entity_type(normalized_type);
-          if (!create_use_cases_result.success) {
-            console.error(`No use cases found for entity type: ${entity_type}`);
-            is_save_in_progress = false;
-            return;
-          }
-          const use_cases = create_use_cases_result.data;
-          if (typeof use_cases.create !== "function") {
-            console.error(
-              `Method create not found on use cases for ${entity_type}`,
-            );
-            is_save_in_progress = false;
-            return;
-          }
-          save_result = await use_cases.create(form_data);
-        }
+    is_save_in_progress = false;
+
+    if (!save_result.success) {
+      save_error_message = save_result.error || "Unknown error occurred";
+      console.error("[DynamicEntityForm] Save failed", {
+        event: "entity_save_failed",
+        entity_type,
+        error: save_error_message,
+      });
+      return;
+    }
+
+    const saved_entity = save_result.data;
+    const was_new_entity = !is_edit_mode;
+
+    console.debug("[DynamicEntityForm] Save succeeded", {
+      event: "entity_save_succeeded",
+      entity_type,
+      id: saved_entity.id,
+      was_new_entity,
+    });
+
+    if (is_player_transfer_being_approved) {
+      const transfer_result =
+        await execute_player_transfer_membership_change(saved_entity);
+      if (!transfer_result.success) {
+        save_error_message = transfer_result.error;
+        console.error("[DynamicEntityForm] Transfer membership change failed", {
+          event: "transfer_membership_change_failed",
+          entity_type,
+          error: transfer_result.error,
+        });
+        return;
       }
+    }
 
-      is_save_in_progress = false;
-
-      if (save_result.success && save_result.data) {
-        const saved_entity = save_result.data;
-        const was_new_entity = !is_edit_mode;
-
-        console.debug(
-          `[DynamicEntityForm] Save succeeded for ${entity_type}:`,
-          { id: saved_entity.id, was_new_entity, entity: saved_entity },
-        );
-
-        if (is_player_transfer_being_approved) {
-          await execute_player_transfer_membership_change(saved_entity);
-        }
-
-        if (is_transfer_entity_and_status_just_changed_to_declined()) {
-          console.debug(
-            "[TRANSFER] Transfer declined — no membership changes made",
-          );
-        }
-
-        if (is_inline_mode) {
-          dispatch("inline_save_success", { entity: saved_entity });
-        } else if (view_callbacks?.on_save_completed) {
-          console.debug(
-            "[DynamicEntityForm] Calling on_save_completed callback",
-          );
-          view_callbacks.on_save_completed(saved_entity, was_new_entity);
-        }
-      } else {
-        if (!save_result.success) {
-          const error_msg = save_result.error || "Unknown error occurred";
-          console.error("[DynamicEntityForm] Save failed:", error_msg);
-          save_error_message = error_msg;
-        }
-        validation_errors = {};
-      }
-    } catch (error) {
-      is_save_in_progress = false;
-      console.error(
-        `[DynamicEntityForm] Failed to save ${entity_metadata.display_name}:`,
-        error,
+    if (is_transfer_entity_and_status_just_changed_to_declined()) {
+      console.debug(
+        "[TRANSFER] Transfer declined — no membership changes made",
       );
+    }
+
+    if (is_inline_mode) {
+      dispatch("inline_save_success", { entity: saved_entity });
+    } else if (view_callbacks?.on_save_completed) {
+      console.debug("[DynamicEntityForm] Calling on_save_completed callback");
+      view_callbacks.on_save_completed(saved_entity, was_new_entity);
     }
   }
 
@@ -1133,74 +1137,16 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
 
   async function execute_player_transfer_membership_change(
     saved_transfer: BaseEntity,
-  ): Promise<boolean> {
+  ): Promise<Result<boolean, string>> {
     const transfer = saved_transfer as unknown as TransferApprovalDetails;
     const result = await apply_player_transfer_membership_change(
       get_player_team_membership_use_cases(),
       transfer,
     );
     if (!result.success) {
-      save_error_message = result.error;
-      return false;
+      return create_failure_result(result.error);
     }
-    return true;
-  }
-
-  function validate_form_data_against_metadata(
-    data: Record<string, any>,
-    metadata: EntityMetadata,
-  ): { is_valid: boolean; errors: Record<string, string> } {
-    const errors: Record<string, string> = {};
-
-    const is_system_user_entity =
-      entity_type.toLowerCase().replace(/[\s_-]/g, "") === "systemuser";
-    const selected_role = is_system_user_entity
-      ? (data["role"] as UserRole | null)
-      : null;
-
-    for (const field of metadata.fields) {
-      if (!is_field_visible_by_visible_when_condition(field, data)) continue;
-
-      const field_value = data[field.field_name];
-
-      const is_dynamically_required =
-        is_system_user_entity &&
-        should_field_be_required_for_role(field.field_name, selected_role);
-      const is_required = field.is_required || is_dynamically_required;
-
-      if (
-        is_required &&
-        (field_value === "" ||
-          field_value === null ||
-          field_value === undefined ||
-          (field.field_type === "stage_template_array" &&
-            Array.isArray(field_value) &&
-            field_value.length === 0))
-      ) {
-        errors[field.field_name] = `${field.display_name} is required`;
-        continue;
-      }
-
-      if (
-        field.validation_rules &&
-        field_value !== "" &&
-        field_value !== null &&
-        field_value !== undefined
-      ) {
-        const rule_validation_result = validate_field_against_rules(
-          field_value,
-          field.validation_rules,
-        );
-        if (!rule_validation_result.is_valid) {
-          errors[field.field_name] = rule_validation_result.error_message;
-        }
-      }
-    }
-
-    return {
-      is_valid: Object.keys(errors).length === 0,
-      errors,
-    };
+    return create_success_result(true);
   }
 
   function handle_cancel_action(): void {
@@ -1722,6 +1668,21 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
                   />
                 {/if}
 
+                <!-- Star rating field -->
+              {:else if field.field_type === "star_rating"}
+                <StarRatingInput
+                  field_id={`field_${field.field_name}`}
+                  value={form_data[field.field_name] ?? 0}
+                  max={10}
+                  disabled={should_field_be_read_only(
+                    field,
+                    authorization_restricted_fields,
+                  )}
+                  on:change={(e) => {
+                    form_data[field.field_name] = e.detail;
+                  }}
+                />
+
                 <!-- Number field -->
               {:else if field.field_type === "number"}
                 <input
@@ -1889,11 +1850,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
                     class="mt-2 p-3 rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20 text-blue-900 dark:text-blue-100"
                   >
                     <div class="text-sm">
-                      No {field.display_name.toLowerCase()} found for the selected
-                      {field.foreign_key_filter.depends_on_field.replace(
-                        "_id",
-                        "",
-                      )}.
+                      No recently completed {field.display_name.toLowerCase()} found.
                     </div>
                   </div>
                 {/if}
@@ -2168,6 +2125,31 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
                 to
                 <strong>Approved</strong> to complete the transfer and update the
                 player's team membership.
+              </p>
+            </div>
+          </div>
+        {/if}
+
+        {#if save_error_message}
+          <div
+            class="p-4 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 rounded-lg"
+          >
+            <div class="flex items-start gap-3">
+              <svg
+                class="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              <p class="text-sm text-red-800 dark:text-red-200">
+                {save_error_message}
               </p>
             </div>
           </div>

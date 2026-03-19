@@ -664,6 +664,7 @@ const ALL_SYNCED_TABLE_NAMES = [
   "game_event_logs",
   "player_team_transfer_histories",
   "official_associated_teams",
+  "official_performance_ratings",
 ] as const;
 
 const DEMO_DATA_TABLE_NAMES = [
@@ -700,6 +701,7 @@ const DEMO_DATA_TABLE_NAMES = [
   "game_event_logs",
   "player_team_transfer_histories",
   "official_associated_teams",
+  "official_performance_ratings",
 ] as const;
 
 export const clear_all_demo_data = mutation({

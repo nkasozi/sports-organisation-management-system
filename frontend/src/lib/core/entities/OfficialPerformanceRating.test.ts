@@ -28,8 +28,6 @@ function make_rating(
     communication: 7,
     fitness: 7,
     notes: "",
-    submitted_at: "2026-01-01T00:00:00Z",
-    status: "active",
     created_at: "2026-01-01T00:00:00Z",
     updated_at: "2026-01-01T00:00:00Z",
     importance_weight: 1.0,
@@ -191,14 +189,14 @@ describe("create_empty_rating_input", () => {
     expect(input.fixture_id).toBe("fix_1");
   });
 
-  it("sets status to active", () => {
+  it("sets rater_user_id to empty string by default", () => {
     const input = create_empty_rating_input();
-    expect(input.status).toBe("active");
+    expect(input.rater_user_id).toBe("");
   });
 
-  it("sets rater_role to officials_manager", () => {
+  it("sets rater_role to empty string by default", () => {
     const input = create_empty_rating_input();
-    expect(input.rater_role).toBe("officials_manager");
+    expect(input.rater_role).toBe("");
   });
 });
 

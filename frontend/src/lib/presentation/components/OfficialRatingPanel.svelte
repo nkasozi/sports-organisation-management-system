@@ -11,6 +11,23 @@
     import type { Official } from "$lib/core/entities/Official";
     import { get_official_full_name } from "$lib/core/entities/Official";
     import Toast from "$lib/presentation/components/ui/Toast.svelte";
+    import StarRatingInput from "$lib/presentation/components/ui/StarRatingInput.svelte";
+
+    function get_rating_dim(
+        rating: RatingDimensions & { notes: string },
+        key: string,
+    ): number {
+        return (rating as unknown as { [k: string]: number })[key] ?? 0;
+    }
+
+    function set_rating_dim(
+        state: OfficialRatingState,
+        key: string,
+        new_value: number,
+    ): void {
+        (state.rating as unknown as { [k: string]: number })[key] = new_value;
+        official_states = official_states;
+    }
 
     export let fixture_id: string;
     export let organization_id: string;
@@ -113,8 +130,6 @@
             communication: state.rating.communication,
             fitness: state.rating.fitness,
             notes: state.rating.notes,
-            submitted_at: new Date().toISOString(),
-            status: "active",
         };
 
         const errors = validate_rating_input(input);
@@ -134,7 +149,9 @@
             toast_message = `Rating submitted for ${get_official_full_name(state.official)}`;
             toast_type = "success";
         } else {
-            toast_message = !result.success ? result.error : "Failed to submit rating";
+            toast_message = !result.success
+                ? result.error
+                : "Failed to submit rating";
             toast_type = "error";
         }
         toast_visible = true;
@@ -170,29 +187,26 @@
                 </h4>
 
                 {#each [{ key: "overall", label: "Overall" }, { key: "decision_accuracy", label: "Decision Accuracy" }, { key: "game_control", label: "Game Control" }, { key: "communication", label: "Communication" }, { key: "fitness", label: "Fitness & Mobility" }] as dim}
-                    <div class="flex items-center gap-3 mb-2">
-                        <label for="dim-{state.official.id}-{dim.key}" class="w-40 text-sm text-gray-600 shrink-0"
-                            >{dim.label}</label
+                    <div
+                        class="flex flex-col gap-1 mb-3 sm:flex-row sm:items-center"
+                    >
+                        <span class="w-40 text-sm text-gray-600 shrink-0"
+                            >{dim.label}</span
                         >
-                        <input
-                            id="dim-{state.official.id}-{dim.key}"
-                            type="range"
-                            min="1"
-                            max="10"
-                            step="1"
-                            bind:value={(state.rating as unknown as Record<string, number>)[dim.key]}
-                            class="flex-1 accent-emerald-500"
+                        <StarRatingInput
+                            field_id="dim-{state.official.id}-{dim.key}"
+                            value={get_rating_dim(state.rating, dim.key)}
+                            max={10}
+                            on:change={(e) =>
+                                set_rating_dim(state, dim.key, e.detail)}
                         />
-                        <span
-                            class="w-6 text-center text-sm font-medium text-gray-700"
-                        >
-                            {(state.rating as unknown as Record<string, number>)[dim.key]}
-                        </span>
                     </div>
                 {/each}
 
                 <div class="mt-3">
-                    <label for="notes-{state.official.id}" class="text-sm text-gray-600">Notes (optional)</label
+                    <label
+                        for="notes-{state.official.id}"
+                        class="text-sm text-gray-600">Notes (optional)</label
                     >
                     <textarea
                         id="notes-{state.official.id}"

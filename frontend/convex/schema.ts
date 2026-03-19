@@ -954,7 +954,7 @@ export default defineSchema({
     communication: v.number(),
     fitness: v.number(),
     notes: v.optional(v.string()),
-    submitted_at: v.string(),
+    submitted_at: v.optional(v.string()),
     status: v.optional(v.string()),
     ...timestamp_fields,
   })

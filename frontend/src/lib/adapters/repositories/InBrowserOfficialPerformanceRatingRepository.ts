@@ -58,8 +58,7 @@ class InBrowserOfficialPerformanceRatingRepository
       communication: input.communication,
       fitness: input.fitness,
       notes: input.notes || "",
-      submitted_at: input.submitted_at || new Date().toISOString(),
-      status: input.status || "active",
+      submitted_at: new Date().toISOString(),
     };
   }
 
@@ -95,10 +94,6 @@ class InBrowserOfficialPerformanceRatingRepository
     if (filter.rater_role) {
       filtered = filtered.filter((r) => r.rater_role === filter.rater_role);
     }
-    if (filter.status) {
-      filtered = filtered.filter((r) => r.status === filter.status);
-    }
-
     return filtered;
   }
 
