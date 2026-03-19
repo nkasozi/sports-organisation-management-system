@@ -23,6 +23,7 @@ export { set_pulling_from_remote };
 
 const DEBOUNCE_DELAY_MS = 3000;
 const OFFLINE_RETRY_INTERVAL_MS = 60000;
+const SCHEDULED_SYNC_INTERVAL_MS = 3_600_000;
 
 const SYNCED_TABLE_NAMES = [
   "organizations",
@@ -69,6 +70,7 @@ interface BackgroundSyncState {
   is_online: boolean;
   debounce_timer_id: ReturnType<typeof setTimeout> | null;
   offline_retry_timer_id: ReturnType<typeof setInterval> | null;
+  scheduled_sync_timer_id: ReturnType<typeof setInterval> | null;
   hooks_installed: boolean;
   is_restoration_sync_in_progress: boolean;
 }
@@ -80,6 +82,7 @@ function create_initial_state(): BackgroundSyncState {
     is_online: typeof navigator !== "undefined" ? navigator.onLine : true,
     debounce_timer_id: null,
     offline_retry_timer_id: null,
+    scheduled_sync_timer_id: null,
     hooks_installed: false,
     is_restoration_sync_in_progress: false,
   };
@@ -118,7 +121,7 @@ function handle_online_event(): void {
   state.is_online = true;
   console.log("[BackgroundSync] Device came online");
   stop_offline_retry_timer();
-  run_network_restoration_sync();
+  run_network_restoration_sync("network_restoration");
 }
 
 function handle_offline_event(): void {
@@ -180,15 +183,24 @@ async function execute_push_sync(): Promise<boolean> {
   return false;
 }
 
-async function run_network_restoration_sync(): Promise<void> {
+async function run_network_restoration_sync(
+  sync_trigger: "scheduled" | "page_reload" | "network_restoration",
+): Promise<void> {
   if (!get(is_signed_in)) {
-    console.log("[BackgroundSync] Not signed in — skipping restoration sync");
+    console.log("[BackgroundSync] Not signed in — skipping restoration sync", {
+      event: "restoration_sync_skipped_not_signed_in",
+      sync_trigger,
+    });
     return;
   }
 
   if (!orchestrator) {
     console.warn(
       "[BackgroundSync] No orchestrator — skipping restoration sync",
+      {
+        event: "restoration_sync_skipped_no_orchestrator",
+        sync_trigger,
+      },
     );
     if (state.has_pending_changes) {
       trigger_debounced_sync();
@@ -197,20 +209,29 @@ async function run_network_restoration_sync(): Promise<void> {
   }
 
   if (state.is_restoration_sync_in_progress) {
-    console.log("[BackgroundSync] Restoration sync already in progress");
+    console.log("[BackgroundSync] Restoration sync already in progress", {
+      event: "restoration_sync_skipped_already_in_progress",
+      sync_trigger,
+    });
     return;
   }
 
   state.is_restoration_sync_in_progress = true;
-  console.log(
-    "[BackgroundSync] Starting full bidirectional restoration sync...",
-  );
+  console.log("[BackgroundSync] Starting full bidirectional sync", {
+    event: "restoration_sync_started",
+    sync_trigger,
+    timestamp: new Date().toISOString(),
+  });
 
   const websocket_was_running = remote_subscriber?.is_running() ?? false;
 
   if (websocket_was_running) {
     console.log(
       "[BackgroundSync] Pausing WebSocket subscriptions for restoration sync",
+      {
+        event: "websocket_paused_for_sync",
+        sync_trigger,
+      },
     );
     restoration_handlers?.stop_remote_sync();
   }
@@ -222,18 +243,25 @@ async function run_network_restoration_sync(): Promise<void> {
 
     if (result.success) {
       state.has_pending_changes = false;
-      console.log(
-        `[BackgroundSync] Restoration sync completed — pushed: ${result.data.records_pushed}, pulled: ${result.data.records_pulled}`,
-      );
+      console.log("[BackgroundSync] Full bidirectional sync completed", {
+        event: "restoration_sync_completed",
+        sync_trigger,
+        records_pushed: result.data.records_pushed,
+        records_pulled: result.data.records_pulled,
+      });
     } else {
-      console.warn(
-        "[BackgroundSync] Restoration sync failed:",
-        result.error.message,
-      );
+      console.warn("[BackgroundSync] Full bidirectional sync failed", {
+        event: "restoration_sync_failed",
+        sync_trigger,
+        error: result.error.message,
+      });
     }
   } finally {
     if (websocket_was_running) {
-      console.log("[BackgroundSync] Resuming WebSocket subscriptions");
+      console.log("[BackgroundSync] Resuming WebSocket subscriptions", {
+        event: "websocket_resumed_after_sync",
+        sync_trigger,
+      });
       restoration_handlers?.start_remote_sync();
     }
     state.is_restoration_sync_in_progress = false;
@@ -293,7 +321,7 @@ function start_offline_retry_timer(): void {
       console.log(
         "[BackgroundSync] Back online during retry — syncing pending changes",
       );
-      run_network_restoration_sync();
+      run_network_restoration_sync("network_restoration");
       stop_offline_retry_timer();
       return;
     }
@@ -310,6 +338,30 @@ function stop_offline_retry_timer(): void {
   state.offline_retry_timer_id = null;
 }
 
+function start_scheduled_sync_timer(): void {
+  if (state.scheduled_sync_timer_id !== null) return;
+  console.log("[BackgroundSync] Starting hourly scheduled sync timer", {
+    event: "scheduled_sync_timer_started",
+    interval_ms: SCHEDULED_SYNC_INTERVAL_MS,
+  });
+  state.scheduled_sync_timer_id = setInterval(() => {
+    console.log("[BackgroundSync] Hourly scheduled sync triggered", {
+      event: "scheduled_sync_triggered",
+      timestamp: new Date().toISOString(),
+    });
+    run_network_restoration_sync("scheduled");
+  }, SCHEDULED_SYNC_INTERVAL_MS);
+}
+
+function stop_scheduled_sync_timer(): void {
+  if (state.scheduled_sync_timer_id === null) return;
+  clearInterval(state.scheduled_sync_timer_id);
+  state.scheduled_sync_timer_id = null;
+  console.log("[BackgroundSync] Hourly scheduled sync timer stopped", {
+    event: "scheduled_sync_timer_stopped",
+  });
+}
+
 export function start_background_sync(): boolean {
   if (typeof window === "undefined") return false;
   if (state.is_running) return false;
@@ -324,6 +376,7 @@ export function start_background_sync(): boolean {
 
   state.is_running = true;
   state.is_online = navigator.onLine;
+  start_scheduled_sync_timer();
 
   console.log("[BackgroundSync] Started — listening for Dexie database writes");
 
@@ -341,6 +394,7 @@ export function stop_background_sync(): boolean {
 
   cancel_pending_debounce();
   stop_offline_retry_timer();
+  stop_scheduled_sync_timer();
 
   if (typeof window !== "undefined") {
     window.removeEventListener("online", handle_online_event);
@@ -387,6 +441,14 @@ export async function flush_pending_changes(): AsyncResult<{
   return sync_succeeded
     ? create_success_result({ skipped_offline: false })
     : create_failure_result("Flush failed — check logs for push sync errors");
+}
+
+export async function trigger_full_sync_on_page_reload(): Promise<void> {
+  console.log("[BackgroundSync] Full sync triggered on page reload", {
+    event: "page_reload_sync_triggered",
+    timestamp: new Date().toISOString(),
+  });
+  await run_network_restoration_sync("page_reload");
 }
 
 export function create_local_change_publisher(): LocalChangePublisherPort {

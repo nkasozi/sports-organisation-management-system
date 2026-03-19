@@ -42,6 +42,7 @@
     stop_background_sync,
     start_background_sync,
     set_pulling_from_remote,
+    trigger_full_sync_on_page_reload,
   } from "$lib/infrastructure/sync/backgroundSyncService";
   import { reset_database } from "$lib/adapters/repositories/database";
   import { reset_all_data } from "$lib/adapters/initialization/dataResetService";
@@ -140,6 +141,7 @@
     auth_store.reset_initialized_state();
     await auth_store.initialize();
     start_background_sync();
+    void trigger_full_sync_on_page_reload();
     console.log("[Layout] Verified user page reload — session restored", {
       event: "verified_user_page_reload_complete",
     });
