@@ -52,6 +52,11 @@
             organization_id,
         });
         if (!officials_result.success || !officials_result.data) {
+            toast_message = !officials_result.success
+                ? officials_result.error
+                : "Failed to load officials";
+            toast_type = "error";
+            toast_visible = true;
             is_loading = false;
             return;
         }

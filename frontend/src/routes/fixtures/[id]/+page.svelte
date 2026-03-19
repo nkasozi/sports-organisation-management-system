@@ -159,7 +159,7 @@
       >
       {#if current_profile?.role === "officials_manager" || current_profile?.role === "org_admin" || current_profile?.role === "super_admin"}
         <a
-          href="/fixtures/{fixture_id}/manage"
+          href={`/fixtures/${fixture_id}/manage`}
           class="text-sm text-blue-600 underline">Manage Game →</a
         >
       {/if}

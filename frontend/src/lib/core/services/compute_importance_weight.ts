@@ -42,7 +42,14 @@ export function compute_importance_weight(
   input: ImportanceWeightInput,
 ): number {
   if (input.manual_override !== null && input.manual_override !== undefined) {
-    return input.manual_override;
+    const MIN_WEIGHT = 1.0;
+    const MAX_WEIGHT = 3.0;
+    const clamped = Math.max(
+      MIN_WEIGHT,
+      Math.min(MAX_WEIGHT, input.manual_override),
+    );
+    // Snap to nearest 0.5 increment
+    return Math.round(clamped * 2) / 2;
   }
   return compute_raw_importance_weight(
     input.stage_type,

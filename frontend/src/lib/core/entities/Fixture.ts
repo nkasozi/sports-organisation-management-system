@@ -169,6 +169,18 @@ export function validate_fixture_input(input: CreateFixtureInput): string[] {
     validation_errors.push("Stage is required");
   }
 
+  if (
+    input.manual_importance_override !== undefined &&
+    input.manual_importance_override !== null
+  ) {
+    const override = input.manual_importance_override;
+    if (isNaN(override) || override < 1 || override > 3) {
+      validation_errors.push(
+        "Manual importance override must be a number between 1 and 3",
+      );
+    }
+  }
+
   return validation_errors;
 }
 

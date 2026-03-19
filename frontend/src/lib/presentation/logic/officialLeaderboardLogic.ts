@@ -30,15 +30,31 @@ function build_fixture_weight_map(
   stages: CompetitionStage[],
 ): Map<string, number> {
   const stage_by_id = new Map(stages.map((s) => [s.id, s]));
+
+  // Derive total_match_days per stage: max match_day among fixtures in that stage
+  const max_match_day_by_stage = new Map<string, number>();
+  for (const fixture of fixtures) {
+    if (fixture.stage_id) {
+      const current_max = max_match_day_by_stage.get(fixture.stage_id) ?? 0;
+      const match_day = fixture.match_day ?? 1;
+      if (match_day > current_max) {
+        max_match_day_by_stage.set(fixture.stage_id, match_day);
+      }
+    }
+  }
+
   const weight_map = new Map<string, number>();
 
   for (const fixture of fixtures) {
     const stage = fixture.stage_id ? stage_by_id.get(fixture.stage_id) : null;
+    const total_match_days = fixture.stage_id
+      ? (max_match_day_by_stage.get(fixture.stage_id) ?? 0)
+      : 0;
 
     const weight_input: ImportanceWeightInput = {
       stage_type: stage?.stage_type ?? "custom",
       match_day: fixture.match_day ?? 1,
-      total_match_days: 0,
+      total_match_days,
       manual_override: fixture.manual_importance_override ?? null,
     };
 
