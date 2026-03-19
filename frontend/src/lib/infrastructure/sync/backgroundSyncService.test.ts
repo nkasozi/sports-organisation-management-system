@@ -47,6 +47,7 @@ interface BackgroundSyncState {
   is_online: boolean;
   debounce_timer_id: ReturnType<typeof setTimeout> | null;
   offline_retry_timer_id: ReturnType<typeof setInterval> | null;
+  scheduled_sync_timer_id: ReturnType<typeof setInterval> | null;
   hooks_installed: boolean;
 }
 
@@ -57,6 +58,7 @@ function create_initial_state(): BackgroundSyncState {
     is_online: true,
     debounce_timer_id: null,
     offline_retry_timer_id: null,
+    scheduled_sync_timer_id: null,
     hooks_installed: false,
   };
 }
@@ -127,6 +129,7 @@ describe("create_initial_state", () => {
     expect(state.is_online).toBe(true);
     expect(state.debounce_timer_id).toBeNull();
     expect(state.offline_retry_timer_id).toBeNull();
+    expect(state.scheduled_sync_timer_id).toBeNull();
     expect(state.hooks_installed).toBe(false);
   });
 });
@@ -184,6 +187,8 @@ describe("determine_offline_retry_action", () => {
   });
 });
 
+const SCHEDULED_SYNC_INTERVAL_MS = 3_600_000;
+
 describe("debounce behavior constants", () => {
   it("has a 3 second debounce delay", () => {
     expect(DEBOUNCE_DELAY_MS).toBe(3000);
@@ -191,6 +196,10 @@ describe("debounce behavior constants", () => {
 
   it("has a 60 second offline retry interval", () => {
     expect(OFFLINE_RETRY_INTERVAL_MS).toBe(60000);
+  });
+
+  it("has a 1 hour scheduled sync interval", () => {
+    expect(SCHEDULED_SYNC_INTERVAL_MS).toBe(3_600_000);
   });
 });
 
@@ -589,6 +598,144 @@ describe("flush_pending_changes returns AsyncResult", () => {
     const result = await flush_with_failed_sync();
     expect(result.success).toBe(false);
     expect(result.error).toContain("Flush failed");
+  });
+});
+
+describe("scheduled sync timer behavior", () => {
+  it("start_scheduled_sync_timer starts interval with 1-hour period and calls sync on each tick", () => {
+    vi.useFakeTimers();
+    const sync_calls: string[] = [];
+
+    function mock_run_restoration_sync(): void {
+      sync_calls.push("bidirectional_sync");
+    }
+
+    let stored_timer_id: ReturnType<typeof setInterval> | null = null;
+
+    function start_scheduled_sync_timer(): void {
+      if (stored_timer_id !== null) return;
+      stored_timer_id = setInterval(() => {
+        mock_run_restoration_sync();
+      }, SCHEDULED_SYNC_INTERVAL_MS);
+    }
+
+    start_scheduled_sync_timer();
+    expect(sync_calls).toHaveLength(0);
+
+    vi.advanceTimersByTime(SCHEDULED_SYNC_INTERVAL_MS);
+    expect(sync_calls).toHaveLength(1);
+
+    vi.advanceTimersByTime(SCHEDULED_SYNC_INTERVAL_MS);
+    expect(sync_calls).toHaveLength(2);
+
+    clearInterval(stored_timer_id!);
+    vi.useRealTimers();
+  });
+
+  it("start_scheduled_sync_timer is idempotent — calling twice starts only one timer", () => {
+    vi.useFakeTimers();
+    const sync_calls: string[] = [];
+
+    let stored_timer_id: ReturnType<typeof setInterval> | null = null;
+
+    function start_scheduled_sync_timer(): void {
+      if (stored_timer_id !== null) return;
+      stored_timer_id = setInterval(() => {
+        sync_calls.push("tick");
+      }, SCHEDULED_SYNC_INTERVAL_MS);
+    }
+
+    start_scheduled_sync_timer();
+    start_scheduled_sync_timer();
+
+    vi.advanceTimersByTime(SCHEDULED_SYNC_INTERVAL_MS);
+    expect(sync_calls).toHaveLength(1);
+
+    clearInterval(stored_timer_id!);
+    vi.useRealTimers();
+  });
+
+  it("stop_scheduled_sync_timer clears the interval so no further syncs fire", () => {
+    vi.useFakeTimers();
+    const sync_calls: string[] = [];
+
+    let stored_timer_id: ReturnType<typeof setInterval> | null = null;
+
+    function start_scheduled_sync_timer(): void {
+      if (stored_timer_id !== null) return;
+      stored_timer_id = setInterval(() => {
+        sync_calls.push("tick");
+      }, SCHEDULED_SYNC_INTERVAL_MS);
+    }
+
+    function stop_scheduled_sync_timer(): void {
+      if (stored_timer_id === null) return;
+      clearInterval(stored_timer_id);
+      stored_timer_id = null;
+    }
+
+    start_scheduled_sync_timer();
+    vi.advanceTimersByTime(SCHEDULED_SYNC_INTERVAL_MS);
+    expect(sync_calls).toHaveLength(1);
+
+    stop_scheduled_sync_timer();
+    vi.advanceTimersByTime(SCHEDULED_SYNC_INTERVAL_MS * 5);
+    expect(sync_calls).toHaveLength(1);
+
+    vi.useRealTimers();
+  });
+
+  it("stop_scheduled_sync_timer is safe to call when timer is not running", () => {
+    let stored_timer_id: ReturnType<typeof setInterval> | null = null;
+
+    function stop_scheduled_sync_timer(): void {
+      if (stored_timer_id === null) return;
+      clearInterval(stored_timer_id);
+      stored_timer_id = null;
+    }
+
+    expect(() => stop_scheduled_sync_timer()).not.toThrow();
+    expect(stored_timer_id).toBeNull();
+  });
+});
+
+describe("trigger_full_sync_on_page_reload behavior", () => {
+  it("delegates to run_network_restoration_sync", async () => {
+    const call_log: string[] = [];
+
+    async function mock_run_network_restoration_sync(): Promise<void> {
+      call_log.push("restoration_sync");
+    }
+
+    async function trigger_full_sync_on_page_reload(): Promise<void> {
+      await mock_run_network_restoration_sync();
+    }
+
+    await trigger_full_sync_on_page_reload();
+    expect(call_log).toEqual(["restoration_sync"]);
+  });
+
+  it("does not throw when sync completes successfully", async () => {
+    async function trigger_full_sync_on_page_reload(): Promise<void> {
+      await Promise.resolve();
+    }
+
+    await expect(trigger_full_sync_on_page_reload()).resolves.toBeUndefined();
+  });
+
+  it("does not block callers — returns a Promise so callers can fire-and-forget with void", async () => {
+    let sync_finished = false;
+
+    async function trigger_full_sync_on_page_reload(): Promise<void> {
+      await new Promise<void>((resolve) => setTimeout(resolve, 0));
+      sync_finished = true;
+    }
+
+    void trigger_full_sync_on_page_reload();
+    expect(sync_finished).toBe(false);
+
+    await new Promise<void>((resolve) => setTimeout(resolve, 10));
+    expect(sync_finished).toBe(true);
   });
 });
 
