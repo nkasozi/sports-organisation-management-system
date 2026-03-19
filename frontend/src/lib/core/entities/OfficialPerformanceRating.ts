@@ -139,6 +139,7 @@ export function create_empty_rating_input(
     communication: 5,
     fitness: 5,
     notes: "",
+    submitted_at: "",
   };
 }
 

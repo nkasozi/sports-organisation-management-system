@@ -130,6 +130,7 @@
             communication: state.rating.communication,
             fitness: state.rating.fitness,
             notes: state.rating.notes,
+            submitted_at: new Date().toISOString(),
         };
 
         const errors = validate_rating_input(input);

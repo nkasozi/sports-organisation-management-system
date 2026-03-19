@@ -124,7 +124,7 @@
         const profile = get(auth_store)
             .current_profile as UserScopeProfile | null;
         organizations = resolve_organizations(
-            org_result.data?.items ?? [],
+            org_result.success ? org_result.data.items : [],
             profile,
         );
         selected_organization_id = organizations[0]?.id ?? "";
