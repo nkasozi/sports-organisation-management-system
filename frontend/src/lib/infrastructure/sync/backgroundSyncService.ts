@@ -60,6 +60,7 @@ const SYNCED_TABLE_NAMES = [
   "game_event_logs",
   "player_team_transfer_histories",
   "official_associated_teams",
+  "official_performance_ratings",
 ] as const;
 
 interface BackgroundSyncState {

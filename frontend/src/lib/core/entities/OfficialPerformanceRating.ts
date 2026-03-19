@@ -1,4 +1,4 @@
-import type { BaseEntity, EntityStatus } from "./BaseEntity";
+import type { BaseEntity } from "./BaseEntity";
 
 export type RaterRole = "officials_manager" | "team_manager" | (string & {});
 
@@ -15,7 +15,6 @@ export interface OfficialPerformanceRating extends BaseEntity {
   fitness: number;
   notes: string;
   submitted_at: string;
-  status: EntityStatus;
 }
 
 export interface RatingDimensions {
@@ -133,15 +132,13 @@ export function create_empty_rating_input(
     official_id,
     fixture_id,
     rater_user_id: "",
-    rater_role: "officials_manager",
+    rater_role: "",
     overall: 5,
     decision_accuracy: 5,
     game_control: 5,
     communication: 5,
     fitness: 5,
     notes: "",
-    submitted_at: new Date().toISOString(),
-    status: "active",
   };
 }
 

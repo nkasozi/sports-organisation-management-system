@@ -6,6 +6,13 @@ import type {
   SubEntityConfig,
 } from "../../core/entities/BaseEntity";
 import type { SubEntityFilter } from "../../core/types/SubEntityFilter";
+import type { Result } from "../../core/types/Result";
+import {
+  create_failure_result,
+  create_success_result,
+} from "../../core/types/Result";
+import type { UserRole } from "../../core/interfaces/ports";
+import { should_field_be_required_for_role } from "./systemUserFormLogic";
 
 export function determine_if_edit_mode(
   data: Partial<BaseEntity> | null,
@@ -46,6 +53,7 @@ export function build_sub_entity_filter(
 export function get_default_value_for_field_type(field: FieldMetadata): any {
   if (field.field_type === "string") return "";
   if (field.field_type === "number") return 0;
+  if (field.field_type === "star_rating") return 0;
   if (field.field_type === "boolean") return false;
   if (field.field_type === "date") return "";
   if (field.field_type === "file") return "";
@@ -90,29 +98,43 @@ export function get_input_type_for_field(field: FieldMetadata): string {
   return "text";
 }
 
-export interface FormValidationResult {
-  is_valid: boolean;
-  errors: Record<string, string>;
-}
-
 export function validate_form_data_against_metadata(
   data: Record<string, any>,
   metadata: EntityMetadata,
-): FormValidationResult {
+  is_edit_mode: boolean,
+  entity_type: string,
+): Result<boolean, Record<string, string>> {
   const errors: Record<string, string> = {};
 
+  const is_system_user_entity =
+    entity_type.toLowerCase().replace(/[\s_-]/g, "") === "systemuser";
+  const selected_role = is_system_user_entity
+    ? (data["role"] as UserRole | null)
+    : null;
+
   for (const field of metadata.fields) {
+    if (!is_field_visible_by_visible_when_condition(field, data)) continue;
+    if (!is_edit_mode && field.hide_on_create) continue;
+    if (is_edit_mode && field.hide_on_edit) continue;
+
     const field_value = data[field.field_name];
 
-    if (
-      field.is_required &&
-      (field_value === "" ||
-        field_value === null ||
-        field_value === undefined ||
-        (field.field_type === "stage_template_array" &&
-          Array.isArray(field_value) &&
-          field_value.length === 0))
-    ) {
+    const is_dynamically_required =
+      is_system_user_entity &&
+      should_field_be_required_for_role(field.field_name, selected_role);
+    const is_required = field.is_required || is_dynamically_required;
+
+    const is_empty_scalar =
+      field_value === "" || field_value === null || field_value === undefined;
+    const is_empty_star_rating =
+      field.field_type === "star_rating" &&
+      (typeof field_value !== "number" || field_value <= 0);
+    const is_empty_array =
+      field.field_type === "stage_template_array" &&
+      Array.isArray(field_value) &&
+      field_value.length === 0;
+
+    if (is_required && (is_empty_scalar || is_empty_star_rating || is_empty_array)) {
       errors[field.field_name] = `${field.display_name} is required`;
       continue;
     }
@@ -133,10 +155,10 @@ export function validate_form_data_against_metadata(
     }
   }
 
-  return {
-    is_valid: Object.keys(errors).length === 0,
-    errors,
-  };
+  if (Object.keys(errors).length > 0) {
+    return create_failure_result(errors);
+  }
+  return create_success_result(true);
 }
 
 export interface FieldValidationResult {

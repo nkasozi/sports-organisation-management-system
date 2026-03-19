@@ -479,10 +479,14 @@ describe("dynamicFormLogic", () => {
       const result = validate_form_data_against_metadata(
         { name: "" },
         metadata,
+        false,
+        "",
       );
 
-      expect(result.is_valid).toBe(false);
-      expect(result.errors["name"]).toBe("Name is required");
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error["name"]).toBe("Name is required");
+      }
     });
 
     it("passes when required field has value", () => {
@@ -495,10 +499,14 @@ describe("dynamicFormLogic", () => {
       const result = validate_form_data_against_metadata(
         { name: "Test" },
         metadata,
+        false,
+        "",
       );
 
-      expect(result.is_valid).toBe(true);
-      expect(result.errors).toEqual({});
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data).toBe(true);
+      }
     });
 
     it("validates fields with validation rules", () => {
@@ -521,10 +529,14 @@ describe("dynamicFormLogic", () => {
       const result = validate_form_data_against_metadata(
         { name: "ab" },
         metadata,
+        false,
+        "",
       );
 
-      expect(result.is_valid).toBe(false);
-      expect(result.errors["name"]).toBe("Too short");
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error["name"]).toBe("Too short");
+      }
     });
 
     it("skips validation rules for empty optional fields", () => {
@@ -547,9 +559,11 @@ describe("dynamicFormLogic", () => {
       const result = validate_form_data_against_metadata(
         { name: "" },
         metadata,
+        false,
+        "",
       );
 
-      expect(result.is_valid).toBe(true);
+      expect(result.success).toBe(true);
     });
 
     it("collects multiple errors", () => {
@@ -571,10 +585,14 @@ describe("dynamicFormLogic", () => {
       const result = validate_form_data_against_metadata(
         { name: "", email: "" },
         metadata,
+        false,
+        "",
       );
 
-      expect(result.is_valid).toBe(false);
-      expect(Object.keys(result.errors)).toHaveLength(2);
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(Object.keys(result.error)).toHaveLength(2);
+      }
     });
 
     it("treats an empty stage template array as missing when required", () => {
@@ -592,12 +610,85 @@ describe("dynamicFormLogic", () => {
       const result = validate_form_data_against_metadata(
         { stage_templates: [] },
         metadata,
+        false,
+        "",
       );
 
-      expect(result.is_valid).toBe(false);
-      expect(result.errors["stage_templates"]).toBe(
-        "Stage Template is required",
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error["stage_templates"]).toBe(
+          "Stage Template is required",
+        );
+      }
+    });
+
+    it("skips hide_on_create fields during create even when required", () => {
+      const metadata = create_entity_metadata({
+        fields: [
+          create_field_metadata({
+            field_name: "rater_role",
+            display_name: "Rater Role",
+            is_required: true,
+            hide_on_create: true,
+          }),
+        ],
+      });
+
+      const result = validate_form_data_against_metadata(
+        { rater_role: "" },
+        metadata,
+        false,
+        "",
       );
+
+      expect(result.success).toBe(true);
+    });
+
+    it("skips hide_on_edit fields during edit even when required", () => {
+      const metadata = create_entity_metadata({
+        fields: [
+          create_field_metadata({
+            field_name: "secret_code",
+            display_name: "Secret Code",
+            is_required: true,
+            hide_on_edit: true,
+          }),
+        ],
+      });
+
+      const result = validate_form_data_against_metadata(
+        { secret_code: "" },
+        metadata,
+        true,
+        "",
+      );
+
+      expect(result.success).toBe(true);
+    });
+
+    it("treats a star_rating of 0 as empty when required", () => {
+      const metadata = create_entity_metadata({
+        fields: [
+          create_field_metadata({
+            field_name: "overall",
+            display_name: "Overall",
+            field_type: "star_rating",
+            is_required: true,
+          }),
+        ],
+      });
+
+      const result = validate_form_data_against_metadata(
+        { overall: 0 },
+        metadata,
+        false,
+        "",
+      );
+
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error["overall"]).toBe("Overall is required");
+      }
     });
   });
 

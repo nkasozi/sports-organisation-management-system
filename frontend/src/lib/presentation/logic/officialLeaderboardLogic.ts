@@ -5,6 +5,8 @@ import {
   type WeightedOfficialSummary,
   type PerformanceTier,
 } from "$lib/core/entities/OfficialPerformanceRating";
+import type { Official } from "$lib/core/entities/Official";
+import { get_official_full_name } from "$lib/core/entities/Official";
 import type { Fixture } from "$lib/core/entities/Fixture";
 import {
   compute_importance_weight,
@@ -118,4 +120,72 @@ export function get_tier_badge_classes(tier: PerformanceTier): string {
 export function get_score_bar_width(score: number): string {
   const percentage = Math.max(0, Math.min(100, (score / 10) * 100));
   return `${percentage}%`;
+}
+
+export function build_official_name_map(
+  officials: Official[],
+): Map<string, string> {
+  const name_map = new Map<string, string>();
+  for (const official of officials) {
+    name_map.set(official.id, get_official_full_name(official));
+  }
+  return name_map;
+}
+
+export interface PerFixtureRating {
+  fixture_label: string;
+  fixture_date: string;
+  rater_role: string;
+  overall: number;
+  decision_accuracy: number;
+  game_control: number;
+  communication: number;
+  fitness: number;
+  notes: string;
+}
+
+export function build_fixture_label_map(fixtures: Fixture[]): Map<string, string> {
+  const label_map = new Map<string, string>();
+  for (const fixture of fixtures) {
+    const home = fixture.home_team_name ?? fixture.home_team_id.slice(0, 8);
+    const away = fixture.away_team_name ?? fixture.away_team_id.slice(0, 8);
+    label_map.set(fixture.id, `${home} vs ${away}`);
+  }
+  return label_map;
+}
+
+export function filter_ratings_by_organization(
+  ratings: OfficialPerformanceRating[],
+  organization_id: string,
+): OfficialPerformanceRating[] {
+  if (!organization_id) return ratings;
+  return ratings.filter((r) => r.organization_id === organization_id);
+}
+
+export function filter_ratings_by_official(
+  ratings: OfficialPerformanceRating[],
+  official_id: string,
+): OfficialPerformanceRating[] {
+  return ratings.filter((r) => r.official_id === official_id);
+}
+
+export function build_per_fixture_breakdown(
+  ratings: OfficialPerformanceRating[],
+  fixture_label_map: Map<string, string>,
+  fixtures: Fixture[],
+): PerFixtureRating[] {
+  const fixture_by_id = new Map(fixtures.map((f) => [f.id, f]));
+  return ratings.map((rating) => ({
+    fixture_label:
+      fixture_label_map.get(rating.fixture_id) ??
+      `Fixture ${rating.fixture_id.slice(0, 8)}`,
+    fixture_date: fixture_by_id.get(rating.fixture_id)?.scheduled_date ?? "",
+    rater_role: rating.rater_role,
+    overall: rating.overall,
+    decision_accuracy: rating.decision_accuracy,
+    game_control: rating.game_control,
+    communication: rating.communication,
+    fitness: rating.fitness,
+    notes: rating.notes,
+  }));
 }

@@ -6,6 +6,7 @@ import {
   beforeEach,
   type MockedFunction,
 } from "vitest";
+import { get } from "svelte/store";
 import type { BaseEntity, FieldMetadata } from "../../core/entities/BaseEntity";
 import { get_use_cases_for_entity_type } from "../../infrastructure/registry/entityUseCasesRegistry";
 import { get_competition_team_use_cases } from "../../core/usecases/CompetitionTeamUseCases";
@@ -19,8 +20,19 @@ import {
   fetch_teams_from_player_memberships,
   fetch_teams_excluding_player_memberships,
   fetch_filtered_entities_for_field,
+  fetch_fixtures_from_official,
+  fetch_fixtures_for_rating,
+  fetch_officials_from_fixture,
+  fetch_fixtures_without_setup,
 } from "./dynamicFormDataLoader";
 
+vi.mock("svelte/store", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("svelte/store")>();
+  return { ...actual, get: vi.fn() };
+});
+vi.mock("../stores/auth", () => ({
+  auth_store: {},
+}));
 vi.mock("../../infrastructure/registry/entityUseCasesRegistry");
 vi.mock("../../core/usecases/CompetitionTeamUseCases");
 
@@ -31,6 +43,7 @@ const mock_get_competition_team_use_cases =
   get_competition_team_use_cases as MockedFunction<
     typeof get_competition_team_use_cases
   >;
+const mock_get = get as MockedFunction<typeof get>;
 
 function create_base_entity(
   id: string,
@@ -75,6 +88,7 @@ function make_list_use_cases(entities: BaseEntity[], success = true) {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  mock_get.mockReturnValue({ current_profile: { id: "user-123" } } as any);
 });
 
 describe("compute_teams_after_exclusion", () => {
@@ -667,5 +681,491 @@ describe("fetch_filtered_entities_for_field", () => {
 
     expect(result.entities).toHaveLength(1);
     expect(result.auto_select_team_id).toBe("team_a");
+  });
+
+  it("delegates fixtures_from_official to fetch_fixtures_from_official", async () => {
+    const fixture = create_base_entity("fix_1", { status: "completed" });
+    const setup = create_base_entity("setup_1", {
+      fixture_id: "fix_1",
+      assigned_officials: [{ official_id: "off-1", role_id: "r1" }],
+    });
+    mock_get_use_cases
+      .mockReturnValueOnce(make_list_use_cases([fixture]))
+      .mockReturnValueOnce(make_list_use_cases([setup]))
+      .mockReturnValueOnce(make_list_use_cases([]));
+
+    const field = create_field_metadata({
+      field_name: "fixture_id",
+      foreign_key_filter: { filter_type: "fixtures_from_official" } as any,
+    });
+
+    const result = await fetch_filtered_entities_for_field(
+      field,
+      "off-1",
+      [],
+      { organization_id: "org-1" },
+    );
+
+    expect(result.entities).toHaveLength(1);
+    expect(result.entities[0].id).toBe("fix_1");
+  });
+});
+
+describe("fetch_fixtures_from_official", () => {
+  it("returns completed fixtures where the official is in a FixtureDetailsSetup record", async () => {
+    const fixture_a = create_base_entity("fix_a", { status: "completed" });
+    const fixture_b = create_base_entity("fix_b", { status: "completed" });
+    const setup_a = create_base_entity("setup_1", {
+      fixture_id: "fix_a",
+      assigned_officials: [{ official_id: "off-1", role_id: "r1" }],
+    });
+    const setup_b = create_base_entity("setup_2", {
+      fixture_id: "fix_b",
+      assigned_officials: [{ official_id: "off-1", role_id: "r1" }],
+    });
+    mock_get_use_cases
+      .mockReturnValueOnce(make_list_use_cases([fixture_a, fixture_b]))
+      .mockReturnValueOnce(make_list_use_cases([setup_a, setup_b]))
+      .mockReturnValueOnce(make_list_use_cases([]));
+
+    const result = await fetch_fixtures_from_official("off-1", "org-1");
+
+    expect(result).toHaveLength(2);
+    expect(result.map((f) => f.id)).toEqual(["fix_a", "fix_b"]);
+  });
+
+  it("excludes assigned fixtures that are not completed", async () => {
+    const fixture_scheduled = create_base_entity("fix_a", { status: "scheduled" });
+    const fixture_completed = create_base_entity("fix_b", { status: "completed" });
+    const setup_a = create_base_entity("setup_1", {
+      fixture_id: "fix_a",
+      assigned_officials: [{ official_id: "off-1", role_id: "r1" }],
+    });
+    const setup_b = create_base_entity("setup_2", {
+      fixture_id: "fix_b",
+      assigned_officials: [{ official_id: "off-1", role_id: "r1" }],
+    });
+    mock_get_use_cases
+      .mockReturnValueOnce(make_list_use_cases([fixture_scheduled, fixture_completed]))
+      .mockReturnValueOnce(make_list_use_cases([setup_a, setup_b]))
+      .mockReturnValueOnce(make_list_use_cases([]));
+
+    const result = await fetch_fixtures_from_official("off-1", "org-1");
+
+    expect(result).toHaveLength(1);
+    expect(result[0].id).toBe("fix_b");
+  });
+
+  it("excludes fixtures already rated by the current rater for that official", async () => {
+    const fixture_a = create_base_entity("fix_a", { status: "completed" });
+    const fixture_b = create_base_entity("fix_b", { status: "completed" });
+    const setup_a = create_base_entity("setup_1", {
+      fixture_id: "fix_a",
+      assigned_officials: [{ official_id: "off-1", role_id: "r1" }],
+    });
+    const setup_b = create_base_entity("setup_2", {
+      fixture_id: "fix_b",
+      assigned_officials: [{ official_id: "off-1", role_id: "r1" }],
+    });
+    const existing_rating = create_base_entity("rating_1", {
+      fixture_id: "fix_a",
+    });
+    mock_get_use_cases
+      .mockReturnValueOnce(make_list_use_cases([fixture_a, fixture_b]))
+      .mockReturnValueOnce(make_list_use_cases([setup_a, setup_b]))
+      .mockReturnValueOnce(make_list_use_cases([existing_rating]));
+
+    const result = await fetch_fixtures_from_official("off-1", "org-1");
+
+    expect(result).toHaveLength(1);
+    expect(result[0].id).toBe("fix_b");
+  });
+
+  it("returns empty when all assigned fixtures are already rated", async () => {
+    const fixture_a = create_base_entity("fix_a", { status: "completed" });
+    const setup_a = create_base_entity("setup_1", {
+      fixture_id: "fix_a",
+      assigned_officials: [{ official_id: "off-1", role_id: "r1" }],
+    });
+    const existing_rating = create_base_entity("rating_1", {
+      fixture_id: "fix_a",
+    });
+    mock_get_use_cases
+      .mockReturnValueOnce(make_list_use_cases([fixture_a]))
+      .mockReturnValueOnce(make_list_use_cases([setup_a]))
+      .mockReturnValueOnce(make_list_use_cases([existing_rating]));
+
+    const result = await fetch_fixtures_from_official("off-1", "org-1");
+
+    expect(result).toHaveLength(0);
+  });
+
+  it("excludes fixtures where the official is not in any FixtureDetailsSetup record", async () => {
+    const fixture_a = create_base_entity("fix_a", { status: "completed" });
+    const setup_for_other_official = create_base_entity("setup_1", {
+      fixture_id: "fix_a",
+      assigned_officials: [{ official_id: "off-2", role_id: "r1" }],
+    });
+    mock_get_use_cases
+      .mockReturnValueOnce(make_list_use_cases([fixture_a]))
+      .mockReturnValueOnce(make_list_use_cases([setup_for_other_official]))
+      .mockReturnValueOnce(make_list_use_cases([]));
+
+    const result = await fetch_fixtures_from_official("off-1", "org-1");
+
+    expect(result).toHaveLength(0);
+  });
+
+  it("returns empty when no FixtureDetailsSetup records exist for the org", async () => {
+    const fixture_a = create_base_entity("fix_a", { status: "completed" });
+    mock_get_use_cases
+      .mockReturnValueOnce(make_list_use_cases([fixture_a]))
+      .mockReturnValueOnce(make_list_use_cases([]))
+      .mockReturnValueOnce(make_list_use_cases([]));
+
+    const result = await fetch_fixtures_from_official("off-1", "org-1");
+
+    expect(result).toHaveLength(0);
+  });
+
+  it("uses empty string as rater_user_id when auth profile is null", async () => {
+    mock_get.mockReturnValue({ current_profile: null } as any);
+    const fixture_a = create_base_entity("fix_a", { status: "completed" });
+    const setup_a = create_base_entity("setup_1", {
+      fixture_id: "fix_a",
+      assigned_officials: [{ official_id: "off-1", role_id: "r1" }],
+    });
+    mock_get_use_cases
+      .mockReturnValueOnce(make_list_use_cases([fixture_a]))
+      .mockReturnValueOnce(make_list_use_cases([setup_a]))
+      .mockReturnValueOnce(make_list_use_cases([]));
+
+    const result = await fetch_fixtures_from_official("off-1", "org-1");
+
+    expect(result).toHaveLength(1);
+    expect(mock_get_use_cases).toHaveBeenCalledWith("officialperformancerating");
+  });
+});
+
+function make_fixture_use_cases_with_data(fixture_data: unknown, success = true) {
+  return {
+    success: true as const,
+    data: {
+      list: vi.fn(),
+      get_by_id: vi.fn().mockResolvedValue(
+        success
+          ? { success: true, data: fixture_data }
+          : { success: false, error: "not found" },
+      ),
+    } as any,
+  };
+}
+
+describe("fetch_fixtures_for_rating", () => {
+  it("returns completed fixtures for org when user has no team scope", async () => {
+    mock_get.mockReturnValue({ current_profile: { id: "user-123" } } as any);
+    const completed = create_base_entity("fix_a", {
+      status: "completed",
+      home_team_id: "team_1",
+      away_team_id: "team_2",
+    });
+    mock_get_use_cases.mockReturnValueOnce(make_list_use_cases([completed]));
+
+    const result = await fetch_fixtures_for_rating("org-1");
+
+    expect(result).toHaveLength(1);
+    expect(result[0].id).toBe("fix_a");
+  });
+
+  it("excludes non-completed fixtures", async () => {
+    mock_get.mockReturnValue({ current_profile: { id: "user-123" } } as any);
+    const scheduled = create_base_entity("fix_a", { status: "scheduled" });
+    const completed = create_base_entity("fix_b", { status: "completed" });
+    mock_get_use_cases.mockReturnValueOnce(
+      make_list_use_cases([scheduled, completed]),
+    );
+
+    const result = await fetch_fixtures_for_rating("org-1");
+
+    expect(result).toHaveLength(1);
+    expect(result[0].id).toBe("fix_b");
+  });
+
+  it("returns all completed fixtures when user has wildcard team_id", async () => {
+    mock_get.mockReturnValue({
+      current_profile: { id: "user-123", team_id: "*" },
+    } as any);
+    const fixture_a = create_base_entity("fix_a", {
+      status: "completed",
+      home_team_id: "team_1",
+      away_team_id: "team_3",
+    });
+    const fixture_b = create_base_entity("fix_b", {
+      status: "completed",
+      home_team_id: "team_2",
+      away_team_id: "team_3",
+    });
+    mock_get_use_cases.mockReturnValueOnce(
+      make_list_use_cases([fixture_a, fixture_b]),
+    );
+
+    const result = await fetch_fixtures_for_rating("org-1");
+
+    expect(result).toHaveLength(2);
+  });
+
+  it("filters to team fixtures when user has a specific team_id", async () => {
+    mock_get.mockReturnValue({
+      current_profile: { id: "user-123", team_id: "team_1" },
+    } as any);
+    const team_fixture = create_base_entity("fix_a", {
+      status: "completed",
+      home_team_id: "team_1",
+      away_team_id: "team_3",
+    });
+    const other_fixture = create_base_entity("fix_b", {
+      status: "completed",
+      home_team_id: "team_2",
+      away_team_id: "team_3",
+    });
+    mock_get_use_cases.mockReturnValueOnce(
+      make_list_use_cases([team_fixture, other_fixture]),
+    );
+
+    const result = await fetch_fixtures_for_rating("org-1");
+
+    expect(result).toHaveLength(1);
+    expect(result[0].id).toBe("fix_a");
+  });
+
+  it("includes fixture when user team is the away team", async () => {
+    mock_get.mockReturnValue({
+      current_profile: { id: "user-123", team_id: "team_2" },
+    } as any);
+    const away_team_fixture = create_base_entity("fix_a", {
+      status: "completed",
+      home_team_id: "team_1",
+      away_team_id: "team_2",
+    });
+    mock_get_use_cases.mockReturnValueOnce(
+      make_list_use_cases([away_team_fixture]),
+    );
+
+    const result = await fetch_fixtures_for_rating("org-1");
+
+    expect(result).toHaveLength(1);
+    expect(result[0].id).toBe("fix_a");
+  });
+
+  it("returns empty array when no completed fixtures exist", async () => {
+    mock_get.mockReturnValue({ current_profile: { id: "user-123" } } as any);
+    mock_get_use_cases.mockReturnValueOnce(make_list_use_cases([]));
+
+    const result = await fetch_fixtures_for_rating("org-1");
+
+    expect(result).toHaveLength(0);
+  });
+
+  it("uses no team filter when auth profile is null", async () => {
+    mock_get.mockReturnValue({ current_profile: null } as any);
+    const completed = create_base_entity("fix_a", {
+      status: "completed",
+      home_team_id: "team_1",
+      away_team_id: "team_2",
+    });
+    mock_get_use_cases.mockReturnValueOnce(make_list_use_cases([completed]));
+
+    const result = await fetch_fixtures_for_rating("org-1");
+
+    expect(result).toHaveLength(1);
+    expect(result[0].id).toBe("fix_a");
+  });
+});
+
+describe("fetch_officials_from_fixture", () => {
+  it("returns officials with Name-Role display labels", async () => {
+    const fixture_data = {
+      id: "fix-1",
+      assigned_officials: [
+        { official_id: "off-1", role_id: "r1", role_name: "Referee" },
+      ],
+    };
+    const official = create_base_entity("off-1", {
+      first_name: "John",
+      last_name: "Doe",
+    });
+
+    mock_get_use_cases
+      .mockReturnValueOnce(make_fixture_use_cases_with_data(fixture_data))
+      .mockReturnValueOnce(make_list_use_cases([]))
+      .mockReturnValueOnce(make_list_use_cases([official]));
+
+    const result = await fetch_officials_from_fixture("fix-1", "org-1");
+
+    expect(result).toHaveLength(1);
+    expect((result[0] as any).name).toBe("John Doe - Referee");
+  });
+
+  it("excludes officials already rated for this fixture by the current rater", async () => {
+    const fixture_data = {
+      id: "fix-1",
+      assigned_officials: [
+        { official_id: "off-1", role_id: "r1", role_name: "Referee" },
+        { official_id: "off-2", role_id: "r2", role_name: "Assistant" },
+      ],
+    };
+    const official_1 = create_base_entity("off-1", {
+      first_name: "John",
+      last_name: "Doe",
+    });
+    const official_2 = create_base_entity("off-2", {
+      first_name: "Jane",
+      last_name: "Smith",
+    });
+    const existing_rating = create_base_entity("rating-1", {
+      official_id: "off-1",
+    });
+
+    mock_get_use_cases
+      .mockReturnValueOnce(make_fixture_use_cases_with_data(fixture_data))
+      .mockReturnValueOnce(make_list_use_cases([existing_rating]))
+      .mockReturnValueOnce(make_list_use_cases([official_1, official_2]));
+
+    const result = await fetch_officials_from_fixture("fix-1", "org-1");
+
+    expect(result).toHaveLength(1);
+    expect((result[0] as any).name).toBe("Jane Smith - Assistant");
+  });
+
+  it("returns empty when fixture has no assigned officials", async () => {
+    const fixture_data = { id: "fix-1", assigned_officials: [] };
+
+    mock_get_use_cases
+      .mockReturnValueOnce(make_fixture_use_cases_with_data(fixture_data))
+      .mockReturnValueOnce(make_list_use_cases([]))
+      .mockReturnValueOnce(make_list_use_cases([]));
+
+    const result = await fetch_officials_from_fixture("fix-1", "org-1");
+
+    expect(result).toHaveLength(0);
+  });
+
+  it("returns empty when fixture is not found", async () => {
+    mock_get_use_cases.mockReturnValueOnce(
+      make_fixture_use_cases_with_data(null, false),
+    );
+
+    const result = await fetch_officials_from_fixture("fix-missing", "org-1");
+
+    expect(result).toHaveLength(0);
+  });
+
+  it("returns empty when assigned official is not in org officials list", async () => {
+    const fixture_data = {
+      id: "fix-1",
+      assigned_officials: [
+        { official_id: "off-999", role_id: "r1", role_name: "Referee" },
+      ],
+    };
+
+    mock_get_use_cases
+      .mockReturnValueOnce(make_fixture_use_cases_with_data(fixture_data))
+      .mockReturnValueOnce(make_list_use_cases([]))
+      .mockReturnValueOnce(make_list_use_cases([]));
+
+    const result = await fetch_officials_from_fixture("fix-1", "org-1");
+
+    expect(result).toHaveLength(0);
+  });
+
+  it("uses empty rater_user_id when auth profile is null", async () => {
+    mock_get.mockReturnValue({ current_profile: null } as any);
+    const fixture_data = {
+      id: "fix-1",
+      assigned_officials: [
+        { official_id: "off-1", role_id: "r1", role_name: "Referee" },
+      ],
+    };
+    const official = create_base_entity("off-1", {
+      first_name: "Alice",
+      last_name: "Brown",
+    });
+
+    mock_get_use_cases
+      .mockReturnValueOnce(make_fixture_use_cases_with_data(fixture_data))
+      .mockReturnValueOnce(make_list_use_cases([]))
+      .mockReturnValueOnce(make_list_use_cases([official]));
+
+    const result = await fetch_officials_from_fixture("fix-1", "org-1");
+
+    expect(result).toHaveLength(1);
+    expect(mock_get_use_cases).toHaveBeenCalledWith("officialperformancerating");
+  });
+});
+
+describe("fetch_fixtures_without_setup", () => {
+  it("returns fixtures that have no fixturedetailssetup record", async () => {
+    const fixture_a = create_base_entity("fix_a");
+    const fixture_b = create_base_entity("fix_b");
+    const setup_for_b = create_base_entity("setup_1", { fixture_id: "fix_b" });
+    mock_get_use_cases
+      .mockReturnValueOnce(make_list_use_cases([fixture_a, fixture_b]))
+      .mockReturnValueOnce(make_list_use_cases([setup_for_b]));
+
+    const result = await fetch_fixtures_without_setup("org-1");
+
+    expect(result).toHaveLength(1);
+    expect(result[0].id).toBe("fix_a");
+  });
+
+  it("returns all fixtures when no setups exist", async () => {
+    const fixture_a = create_base_entity("fix_a");
+    const fixture_b = create_base_entity("fix_b");
+    mock_get_use_cases
+      .mockReturnValueOnce(make_list_use_cases([fixture_a, fixture_b]))
+      .mockReturnValueOnce(make_list_use_cases([]));
+
+    const result = await fetch_fixtures_without_setup("org-1");
+
+    expect(result).toHaveLength(2);
+  });
+
+  it("returns empty when all fixtures already have a setup", async () => {
+    const fixture_a = create_base_entity("fix_a");
+    const setup_a = create_base_entity("setup_1", { fixture_id: "fix_a" });
+    mock_get_use_cases
+      .mockReturnValueOnce(make_list_use_cases([fixture_a]))
+      .mockReturnValueOnce(make_list_use_cases([setup_a]));
+
+    const result = await fetch_fixtures_without_setup("org-1");
+
+    expect(result).toHaveLength(0);
+  });
+
+  it("returns empty when no fixtures exist", async () => {
+    mock_get_use_cases
+      .mockReturnValueOnce(make_list_use_cases([]))
+      .mockReturnValueOnce(make_list_use_cases([]));
+
+    const result = await fetch_fixtures_without_setup("org-1");
+
+    expect(result).toHaveLength(0);
+  });
+
+  it("delegates fixtures_without_setup filter_type in fetch_filtered_entities_for_field", async () => {
+    const fixture_a = create_base_entity("fix_a");
+    mock_get_use_cases
+      .mockReturnValueOnce(make_list_use_cases([fixture_a]))
+      .mockReturnValueOnce(make_list_use_cases([]));
+
+    const field = create_field_metadata({
+      field_name: "fixture_id",
+      foreign_key_filter: { filter_type: "fixtures_without_setup" } as any,
+    });
+
+    const result = await fetch_filtered_entities_for_field(field, "org-1", [], {});
+
+    expect(result.entities).toHaveLength(1);
+    expect(result.entities[0].id).toBe("fix_a");
   });
 });

@@ -36,6 +36,7 @@ export interface FieldMetadata<T extends BaseEntity = any> {
   field_type:
     | "string"
     | "number"
+    | "star_rating"
     | "boolean"
     | "date"
     | "enum"
@@ -80,7 +81,11 @@ export interface ForeignKeyFilterConfig {
     | "teams_from_player_memberships"
     | "teams_excluding_player_memberships"
     | "lookup_from_organization"
-    | "exclude_selected_field";
+    | "exclude_selected_field"
+    | "fixtures_from_official"
+    | "fixtures_for_rating"
+    | "officials_from_fixture"
+    | "fixtures_without_setup";
   holder_type?: string;
   team_side?: "home" | "away";
   exclude_field?: string;

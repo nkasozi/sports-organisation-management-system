@@ -15,7 +15,6 @@ export interface OfficialPerformanceRatingFilter {
   fixture_id?: string;
   rater_user_id?: string;
   rater_role?: string;
-  status?: string;
 }
 
 export interface OfficialPerformanceRatingRepository extends Repository<

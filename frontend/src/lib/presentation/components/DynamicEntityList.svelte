@@ -180,7 +180,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
 
   async function load_foreign_key_options_for_filters(): Promise<void> {
     if (!entity_metadata) return;
-    const fields = get_all_available_fields();
+    const fields = entity_metadata.fields;
     const new_options: Record<string, any[]> = {};
     for (const field of fields) {
       if (field.field_type === "foreign_key" && field.foreign_key_entity) {
