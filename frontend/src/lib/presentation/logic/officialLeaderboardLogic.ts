@@ -144,7 +144,9 @@ export interface PerFixtureRating {
   notes: string;
 }
 
-export function build_fixture_label_map(fixtures: Fixture[]): Map<string, string> {
+export function build_fixture_label_map(
+  fixtures: Fixture[],
+): Map<string, string> {
   const label_map = new Map<string, string>();
   for (const fixture of fixtures) {
     const home = fixture.home_team_name ?? fixture.home_team_id.slice(0, 8);

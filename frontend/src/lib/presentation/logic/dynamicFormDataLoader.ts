@@ -200,8 +200,7 @@ export async function fetch_fixtures_for_rating(
   organization_id: string,
 ): Promise<BaseEntity[]> {
   const raw_team_id = get(auth_store).current_profile?.team_id;
-  const team_id =
-    raw_team_id && raw_team_id !== "*" ? raw_team_id : null;
+  const team_id = raw_team_id && raw_team_id !== "*" ? raw_team_id : null;
 
   const all_fixtures = await fetch_entities_for_type("fixture", {
     organization_id,
