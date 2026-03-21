@@ -1,7 +1,9 @@
 <script lang="ts">
   import { onMount, tick } from "svelte";
   import { browser } from "$app/environment";
+  import { goto } from "$app/navigation";
   import { ensure_auth_profile } from "$lib/presentation/logic/authGuard";
+  import { get_authorization_adapter } from "$lib/infrastructure/AuthorizationProvider";
   import { access_denial_store } from "$lib/presentation/stores/accessDenial";
   import { get_organization_use_cases } from "$lib/core/usecases/OrganizationUseCases";
   import { get_competition_use_cases } from "$lib/core/usecases/CompetitionUseCases";
@@ -220,6 +222,13 @@
     }
 
     const user_role = $auth_store.current_profile?.role || "player";
+
+    const default_route_result =
+      await get_authorization_adapter().get_default_route_for_role(user_role);
+    if (default_route_result.success && default_route_result.data !== "/") {
+      await goto(default_route_result.data, { replaceState: true });
+      return;
+    }
     const user_organization_id =
       $auth_store.current_profile?.organization_id || "";
     const dashboard_filters = build_dashboard_filters(

@@ -4,12 +4,14 @@ import {
   get_sidebar_menu_for_role,
   can_role_access_route,
   get_allowed_routes_for_role,
+  get_default_route_for_role,
 } from "./LocalAuthorizationAdapter";
 import {
   SHARED_ENTITY_CATEGORY_MAP,
   SHARED_ROLE_PERMISSIONS,
 } from "$convex/shared_permission_definitions";
 import type { UserRole } from "$lib/core/interfaces/ports";
+import { USER_ROLE_ORDER } from "$lib/core/interfaces/ports/external/iam/AuthenticationPort";
 import type {
   SidebarMenuGroup,
   SystemUserRepository,
@@ -605,5 +607,45 @@ describe("get_allowed_routes_for_role", () => {
     expect(routes.has("/teams")).toBe(false);
     expect(routes.has("/system-users")).toBe(false);
     expect(routes.has("/settings")).toBe(false);
+  });
+});
+
+describe("get_default_route_for_role", () => {
+  it("should return /competition-results for public_viewer", () => {
+    expect(get_default_route_for_role("public_viewer")).toBe(
+      "/competition-results",
+    );
+  });
+
+  it("should return / for super_admin", () => {
+    expect(get_default_route_for_role("super_admin")).toBe("/");
+  });
+
+  it("should return / for org_admin", () => {
+    expect(get_default_route_for_role("org_admin")).toBe("/");
+  });
+
+  it("should return / for officials_manager", () => {
+    expect(get_default_route_for_role("officials_manager")).toBe("/");
+  });
+
+  it("should return / for team_manager", () => {
+    expect(get_default_route_for_role("team_manager")).toBe("/");
+  });
+
+  it("should return / for official", () => {
+    expect(get_default_route_for_role("official")).toBe("/");
+  });
+
+  it("should return / for player", () => {
+    expect(get_default_route_for_role("player")).toBe("/");
+  });
+
+  it("should return a defined route for every UserRole", () => {
+    for (const role of USER_ROLE_ORDER) {
+      const route = get_default_route_for_role(role);
+      expect(typeof route).toBe("string");
+      expect(route.startsWith("/")).toBe(true);
+    }
   });
 });

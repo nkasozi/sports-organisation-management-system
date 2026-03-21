@@ -647,6 +647,16 @@ const ROLE_MENUS: Record<UserRole, SidebarMenuGroup[]> = {
   public_viewer: PUBLIC_VIEWER_MENU,
 };
 
+const ROLE_DEFAULT_ROUTES: Record<UserRole, string> = {
+  super_admin: "/",
+  org_admin: "/",
+  officials_manager: "/",
+  team_manager: "/",
+  official: "/",
+  player: "/",
+  public_viewer: "/competition-results",
+};
+
 const ROLE_DISPLAY_NAMES: Record<UserRole, string> = {
   super_admin: "Super Admin",
   org_admin: "Organisation Admin",
@@ -683,6 +693,10 @@ export function get_allowed_routes_for_role(role: UserRole): Set<string> {
 
 export function get_sidebar_menu_for_role(role: UserRole): SidebarMenuGroup[] {
   return ROLE_MENUS[role];
+}
+
+export function get_default_route_for_role(role: UserRole): string {
+  return ROLE_DEFAULT_ROUTES[role];
 }
 
 const ALWAYS_ALLOWED_ROUTE_BASES: Set<string> = new Set(["/", "/match-report"]);
@@ -1179,5 +1193,9 @@ export class LocalAuthorizationAdapter implements AuthorizationPort {
   async get_accessible_routes_for_role(role: UserRole): AsyncResult<string[]> {
     const allowed_routes = get_allowed_routes_for_role(role);
     return create_success_result(Array.from(allowed_routes));
+  }
+
+  async get_default_route_for_role(role: UserRole): AsyncResult<string> {
+    return create_success_result(ROLE_DEFAULT_ROUTES[role]);
   }
 }
