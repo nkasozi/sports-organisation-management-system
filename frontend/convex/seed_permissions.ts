@@ -611,6 +611,15 @@ function build_sidebar_menu_items(): MenuItem[] {
     LINEUPS_ICON,
     2,
   );
+  add_item(
+    "team_manager",
+    "Officials",
+    4,
+    "Officials Performance",
+    "/official-performance",
+    OFFICIALS_ICON,
+    1,
+  );
 
   add_item("official", "Home", 1, "Dashboard", "/", DASHBOARD_ICON, 1);
   add_item("official", "Home", 1, "Calendar", "/calendar", CALENDAR_ICON, 2);

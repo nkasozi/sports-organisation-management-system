@@ -352,6 +352,20 @@ describe("get_sidebar_menu_for_role", () => {
     expect(organization_group).toBeUndefined();
   });
 
+  it("should include Officials Performance in team_manager menu", () => {
+    const menu = get_sidebar_menu_for_role("team_manager");
+
+    const officials_group = menu.find(
+      (group: SidebarMenuGroup) => group.group_name === "Officials",
+    );
+    expect(officials_group).toBeDefined();
+
+    const performance_item = officials_group?.items.find(
+      (item: { href: string }) => item.href === "/official-performance",
+    );
+    expect(performance_item).toBeDefined();
+  });
+
   it("should return officials-focused menu for officials_manager", () => {
     const menu = get_sidebar_menu_for_role("officials_manager");
 

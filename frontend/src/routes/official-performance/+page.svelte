@@ -1,5 +1,12 @@
 <script lang="ts">
     import EntityCrudWrapper from "$lib/presentation/components/EntityCrudWrapper.svelte";
+    import { auth_store } from "$lib/presentation/stores/auth";
+
+    $: current_profile = $auth_store.current_profile;
+    $: rater_filter =
+        current_profile?.role === "team_manager"
+            ? { rater_user_id: current_profile.id }
+            : null;
 </script>
 
 <svelte:head>
@@ -41,4 +48,7 @@
     </div>
 </div>
 
-<EntityCrudWrapper entity_type="OfficialPerformanceRating" />
+<EntityCrudWrapper
+    entity_type="OfficialPerformanceRating"
+    locked_filter={rater_filter}
+/>

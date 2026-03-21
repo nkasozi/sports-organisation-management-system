@@ -136,7 +136,7 @@ export const SHARED_ROLE_PERMISSIONS: SharedPermissionMap = {
     root_level: READ_ONLY,
     org_administrator_level: NO_PERMISSIONS,
     organisation_level: READ_ONLY,
-    team_level: READ_UPDATE,
+    team_level: CREATE_READ_UPDATE_NO_DELETE,
     player_level: CREATE_READ_UPDATE_NO_DELETE,
     public_level: FULL_PERMISSIONS,
   },
@@ -208,7 +208,7 @@ export const SHARED_ENTITY_CATEGORY_MAP: SharedEntityCategoryMap = {
   profilelink: "public_level",
   activitycategory: "public_level",
   teamprofile: "public_level",
-  officialperformancerating: "organisation_level",
+  officialperformancerating: "team_level",
   organizationsettings: "organisation_level",
 };
 
