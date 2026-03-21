@@ -22,6 +22,11 @@
   import ImageUpload from "$lib/presentation/components/ui/ImageUpload.svelte";
   import { current_user_store } from "$lib/presentation/stores/currentUser";
   import { get_use_cases_container } from "$lib/infrastructure/container";
+  import { configure_scheduled_interval } from "$lib/infrastructure/sync/backgroundSyncService";
+  import {
+    ALLOWED_SYNC_INTERVALS_MS,
+    DEFAULT_SYNC_INTERVAL_MS,
+  } from "$lib/core/entities/OrganizationSettings";
   import type { Organization } from "$lib/core/entities/Organization";
 
   const DEFAULT_LOGO_SVG =
@@ -50,6 +55,14 @@
   let social_media_links: SocialMediaLink[] = [];
   let organizations: Organization[] = [];
   let selected_organization_id: string = "";
+  let selected_sync_interval_ms: number = DEFAULT_SYNC_INTERVAL_MS;
+
+  const sync_interval_options = [
+    { value: 600_000, label: "Every 10 minutes" },
+    { value: 900_000, label: "Every 15 minutes" },
+    { value: 1_800_000, label: "Every 30 minutes" },
+    { value: 3_600_000, label: "Every 1 hour (default)" },
+  ] as const;
 
   $: current_profile = $auth_store.current_profile;
   $: is_platform_branding =
@@ -109,6 +122,19 @@
     ) {
       organizations = orgs_result.data.items;
       selected_organization_id = organizations[0].id;
+    }
+
+    if (selected_organization_id) {
+      const org_settings_result =
+        await use_cases.organization_settings_use_cases.get_by_organization_id(
+          selected_organization_id,
+        );
+      if (
+        org_settings_result.success &&
+        org_settings_result.data?.sync_interval_ms
+      ) {
+        selected_sync_interval_ms = org_settings_result.data.sync_interval_ms;
+      }
     }
 
     is_loading = false;
@@ -360,6 +386,21 @@
   async function save_social_media_settings(): Promise<void> {
     await branding_store.update_social_media_links(social_media_links);
     show_toast("Social media settings saved", "success");
+  }
+
+  async function handle_sync_interval_change(): Promise<void> {
+    if (!selected_organization_id) return;
+    const caller_role = current_profile?.role ?? "public_viewer";
+    const allowed = [...ALLOWED_SYNC_INTERVALS_MS] as number[];
+    if (!allowed.includes(selected_sync_interval_ms)) return;
+    const use_cases = get_use_cases_container();
+    await use_cases.organization_settings_use_cases.save_or_update(
+      caller_role,
+      selected_organization_id,
+      { sync_interval_ms: selected_sync_interval_ms },
+    );
+    configure_scheduled_interval(selected_sync_interval_ms);
+    show_toast("Sync interval updated for all organization users", "success");
   }
 
   function show_toast(
@@ -1234,6 +1275,49 @@
         </p>
       </div>
     </div>
+
+    {#if current_profile?.role === "super_admin" || current_profile?.role === "org_admin"}
+      <div
+        class="bg-white dark:bg-accent-800 rounded-lg shadow-sm border border-accent-200 dark:border-accent-700"
+      >
+        <div class="p-6 border-b border-accent-200 dark:border-accent-700">
+          <h2
+            class="text-lg font-semibold text-accent-900 dark:text-accent-100"
+          >
+            Data Sync
+          </h2>
+          <p class="text-sm text-accent-500 dark:text-accent-400 mt-1">
+            Configure how often the app syncs with the server for all users in
+            your organization
+          </p>
+        </div>
+
+        <div class="p-6 space-y-4">
+          <div>
+            <label
+              for="sync_interval"
+              class="block text-sm font-medium text-accent-700 dark:text-accent-300 mb-2"
+            >
+              Scheduled Sync Interval
+            </label>
+            <select
+              id="sync_interval"
+              class="select-styled w-full max-w-xs"
+              bind:value={selected_sync_interval_ms}
+              on:change={handle_sync_interval_change}
+            >
+              {#each sync_interval_options as option}
+                <option value={option.value}>{option.label}</option>
+              {/each}
+            </select>
+            <p class="mt-2 text-xs text-accent-500 dark:text-accent-400">
+              Changes apply to all users in your organization after their next
+              sync.
+            </p>
+          </div>
+        </div>
+      </div>
+    {/if}
   </div>
 {/if}
 

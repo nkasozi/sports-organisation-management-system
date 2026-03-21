@@ -18,12 +18,13 @@ import {
   create_failure_result,
 } from "$lib/core/types/Result";
 import type { AsyncResult, Result } from "$lib/core/types/Result";
+import { ALLOWED_SYNC_INTERVALS_MS } from "$lib/core/entities/OrganizationSettings";
 
 export { set_pulling_from_remote };
 
 const DEBOUNCE_DELAY_MS = 3000;
 const OFFLINE_RETRY_INTERVAL_MS = 60000;
-const SCHEDULED_SYNC_INTERVAL_MS = 3_600_000;
+const DEFAULT_SCHEDULED_SYNC_INTERVAL_MS = 3_600_000;
 
 const SYNCED_TABLE_NAMES = [
   "organizations",
@@ -62,6 +63,7 @@ const SYNCED_TABLE_NAMES = [
   "player_team_transfer_histories",
   "official_associated_teams",
   "official_performance_ratings",
+  "organization_settings",
 ] as const;
 
 interface BackgroundSyncState {
@@ -73,6 +75,7 @@ interface BackgroundSyncState {
   scheduled_sync_timer_id: ReturnType<typeof setInterval> | null;
   hooks_installed: boolean;
   is_restoration_sync_in_progress: boolean;
+  active_interval_ms: number;
 }
 
 function create_initial_state(): BackgroundSyncState {
@@ -85,6 +88,7 @@ function create_initial_state(): BackgroundSyncState {
     scheduled_sync_timer_id: null,
     hooks_installed: false,
     is_restoration_sync_in_progress: false,
+    active_interval_ms: DEFAULT_SCHEDULED_SYNC_INTERVAL_MS,
   };
 }
 
@@ -340,17 +344,17 @@ function stop_offline_retry_timer(): void {
 
 function start_scheduled_sync_timer(): void {
   if (state.scheduled_sync_timer_id !== null) return;
-  console.log("[BackgroundSync] Starting hourly scheduled sync timer", {
+  console.log("[BackgroundSync] Starting scheduled sync timer", {
     event: "scheduled_sync_timer_started",
-    interval_ms: SCHEDULED_SYNC_INTERVAL_MS,
+    interval_ms: state.active_interval_ms,
   });
   state.scheduled_sync_timer_id = setInterval(() => {
-    console.log("[BackgroundSync] Hourly scheduled sync triggered", {
+    console.log("[BackgroundSync] Scheduled sync triggered", {
       event: "scheduled_sync_triggered",
       timestamp: new Date().toISOString(),
     });
     run_network_restoration_sync("scheduled");
-  }, SCHEDULED_SYNC_INTERVAL_MS);
+  }, state.active_interval_ms);
 }
 
 function stop_scheduled_sync_timer(): void {
@@ -449,6 +453,33 @@ export async function trigger_full_sync_on_page_reload(): Promise<void> {
     timestamp: new Date().toISOString(),
   });
   await run_network_restoration_sync("page_reload");
+}
+
+export function configure_scheduled_interval(
+  interval_ms: number,
+): Result<boolean> {
+  const allowed = [...ALLOWED_SYNC_INTERVALS_MS] as number[];
+  if (!allowed.includes(interval_ms)) {
+    console.warn("[BackgroundSync] Rejected invalid sync interval", {
+      event: "scheduled_interval_rejected",
+      interval_ms,
+      allowed_values: allowed,
+    });
+    return create_failure_result(
+      `Invalid interval_ms: ${interval_ms}. Must be one of ${allowed.join(", ")}`,
+    );
+  }
+
+  state.active_interval_ms = interval_ms;
+  stop_scheduled_sync_timer();
+  start_scheduled_sync_timer();
+
+  console.log("[BackgroundSync] Scheduled sync interval reconfigured", {
+    event: "scheduled_interval_configured",
+    interval_ms,
+  });
+
+  return create_success_result(true);
 }
 
 export function create_local_change_publisher(): LocalChangePublisherPort {

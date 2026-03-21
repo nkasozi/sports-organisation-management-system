@@ -259,3 +259,8 @@ export type {
   LocalSyncStatus,
   LocalChangePublisherPort,
 } from "./external/sync/index";
+export type {
+  OrganizationSettingsRepository,
+  OrganizationSettingsFilter,
+} from "./external/repositories/OrganizationSettingsRepository";
+export type { OrganizationSettingsUseCasesPort } from "./internal/usecases/OrganizationSettingsUseCasesPort";

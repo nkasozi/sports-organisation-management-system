@@ -36,6 +36,8 @@ import type {
   GameEventLogRepository,
   CompetitionStageRepository,
   OfficialPerformanceRatingRepository,
+  OrganizationSettingsRepository,
+  OrganizationSettingsUseCasesPort,
 } from "../core/interfaces/ports";
 
 import { get_organization_repository } from "../adapters/repositories/InBrowserOrganizationRepository";
@@ -75,6 +77,7 @@ import { get_jersey_color_repository } from "../adapters/repositories/InBrowserJ
 import { get_live_game_log_repository } from "../adapters/repositories/InBrowserLiveGameLogRepository";
 import { get_game_event_log_repository } from "../adapters/repositories/InBrowserGameEventLogRepository";
 import { get_competition_stage_repository } from "../adapters/repositories/InBrowserCompetitionStageRepository";
+import { get_organization_settings_repository } from "../adapters/repositories/InBrowserOrganizationSettingsRepository";
 
 import type { OrganizationUseCasesPort } from "../core/interfaces/ports";
 import type { CompetitionUseCasesPort } from "../core/interfaces/ports";
@@ -104,6 +107,7 @@ import {
   type AuditLogUseCases,
 } from "../core/usecases/AuditLogUseCases";
 import { create_competition_stage_use_cases } from "../core/usecases/CompetitionStageUseCases";
+import { create_organization_settings_use_cases } from "../core/usecases/OrganizationSettingsUseCases";
 import type { CompetitionStageUseCasesPort } from "../core/interfaces/ports";
 import type { AppSettingsPort } from "../core/interfaces/ports";
 import { DexieAppSettingsAdapter } from "../adapters/persistence/DexieAppSettingsAdapter";
@@ -146,6 +150,7 @@ export interface RepositoryContainer {
   live_game_log_repository: LiveGameLogRepository;
   game_event_log_repository: GameEventLogRepository;
   competition_stage_repository: CompetitionStageRepository;
+  organization_settings_repository: OrganizationSettingsRepository;
 }
 
 export interface UseCasesContainer {
@@ -161,6 +166,7 @@ export interface UseCasesContainer {
   system_user_use_cases: SystemUserUseCases;
   audit_log_use_cases: AuditLogUseCases;
   competition_stage_use_cases: CompetitionStageUseCasesPort;
+  organization_settings_use_cases: OrganizationSettingsUseCasesPort;
 }
 
 let repository_container_instance: RepositoryContainer | null = null;
@@ -224,6 +230,7 @@ function create_in_browser_repository_container(): RepositoryContainer {
     live_game_log_repository: get_live_game_log_repository(),
     game_event_log_repository: get_game_event_log_repository(),
     competition_stage_repository: get_competition_stage_repository(),
+    organization_settings_repository: get_organization_settings_repository(),
   };
 }
 
@@ -269,6 +276,9 @@ function create_use_cases_container(
     competition_stage_use_cases: create_competition_stage_use_cases(
       repositories.competition_stage_repository,
       repositories.fixture_repository,
+    ),
+    organization_settings_use_cases: create_organization_settings_use_cases(
+      repositories.organization_settings_repository,
     ),
   };
 }
