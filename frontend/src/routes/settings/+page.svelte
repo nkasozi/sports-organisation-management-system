@@ -65,6 +65,7 @@
   ] as const;
 
   $: current_profile = $auth_store.current_profile;
+  $: is_super_admin = current_profile?.organization_id === ANY_VALUE;
   $: is_platform_branding =
     !current_profile || current_profile.organization_id === ANY_VALUE;
   $: branding_context_label = is_platform_branding
@@ -121,7 +122,12 @@
       orgs_result.data.items.length > 0
     ) {
       organizations = orgs_result.data.items;
-      selected_organization_id = organizations[0].id;
+      const profile_org_id = auth_result.profile?.organization_id;
+      const is_super_admin_user = profile_org_id === ANY_VALUE;
+      selected_organization_id = is_super_admin_user
+        ? organizations[0].id
+        : (organizations.find((org) => org.id === profile_org_id)?.id ??
+          organizations[0].id);
     }
 
     if (selected_organization_id) {
@@ -142,6 +148,35 @@
 
   function get_current_user_id(): string {
     return $current_user_store?.id ?? "default_user";
+  }
+
+  async function handle_org_switch(org_id: string): Promise<boolean> {
+    selected_organization_id = org_id;
+    const selected_org = organizations.find((org) => org.id === org_id);
+    organization_name = selected_org?.name ?? "";
+    const use_cases = get_use_cases_container();
+    const org_settings_result =
+      await use_cases.organization_settings_use_cases.get_by_organization_id(
+        org_id,
+      );
+    if (!org_settings_result.success || !org_settings_result.data) {
+      return true;
+    }
+    const org_settings = org_settings_result.data;
+    organization_logo_url = org_settings.logo_url ?? "";
+    organization_tagline = org_settings.tagline ?? "";
+    organization_email = org_settings.contact_email ?? "";
+    organization_address = org_settings.contact_address ?? "";
+    social_media_links = org_settings.social_media_links ?? [];
+    header_pattern = org_settings.header_pattern ?? "pattern";
+    footer_pattern = org_settings.footer_pattern ?? "solid_color";
+    background_pattern_url =
+      org_settings.background_pattern_url ?? "/african-mosaic-bg.svg";
+    show_panel_borders = org_settings.show_panel_borders ?? false;
+    if (org_settings.sync_interval_ms) {
+      selected_sync_interval_ms = org_settings.sync_interval_ms;
+    }
+    return true;
   }
 
   const color_options = [
@@ -472,43 +507,55 @@
             </p>
           </div>
           <div class="flex items-center gap-2">
-            <span
-              class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium {is_platform_branding
-                ? 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200'
-                : 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'}"
-            >
-              {#if is_platform_branding}
-                <svg
-                  class="w-3.5 h-3.5 mr-1.5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
-                Platform Default
-              {:else}
-                <svg
-                  class="w-3.5 h-3.5 mr-1.5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
-                  />
-                </svg>
-                {$branding_store.organization_name}
-              {/if}
-            </span>
+            {#if is_super_admin && organizations.length > 0}
+              <select
+                class="input text-xs py-1 px-2 rounded-full"
+                bind:value={selected_organization_id}
+                on:change={() => handle_org_switch(selected_organization_id)}
+              >
+                {#each organizations as org (org.id)}
+                  <option value={org.id}>{org.name}</option>
+                {/each}
+              </select>
+            {:else}
+              <span
+                class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium {is_platform_branding
+                  ? 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200'
+                  : 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'}"
+              >
+                {#if is_platform_branding}
+                  <svg
+                    class="w-3.5 h-3.5 mr-1.5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                  Platform Default
+                {:else}
+                  <svg
+                    class="w-3.5 h-3.5 mr-1.5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+                    />
+                  </svg>
+                  {$branding_store.organization_name}
+                {/if}
+              </span>
+            {/if}
           </div>
         </div>
       </div>
