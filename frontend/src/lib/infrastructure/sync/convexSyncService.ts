@@ -112,6 +112,7 @@ export const TABLE_NAMES = [
   "player_team_transfer_histories",
   "official_associated_teams",
   "official_performance_ratings",
+  "organization_settings",
 ] as const;
 
 export type TableName = (typeof TABLE_NAMES)[number];
@@ -119,6 +120,7 @@ export type TableName = (typeof TABLE_NAMES)[number];
 const TABLE_NAME_TO_ENTITY_TYPE: Partial<Record<TableName, SharedEntityType>> =
   {
     organizations: "organization",
+    organization_settings: "organizationsettings",
     sports: "sport",
     competitions: "competition",
     teams: "team",
@@ -202,7 +204,7 @@ export function get_table_from_database(
   string
 > | null {
   const table_map: Record<
-    string,
+    TableName,
     Table<{ id: string; updated_at?: string; created_at?: string }, string>
   > = {
     organizations: database.organizations,
@@ -230,7 +232,6 @@ export function get_table_from_database(
     fixture_lineups: database.fixture_lineups,
     activities: database.activities,
     activity_categories: database.activity_categories,
-    audit_logs: database.audit_logs,
     system_users: database.system_users,
     identification_types: database.identification_types,
     identifications: database.identifications,
@@ -242,6 +243,7 @@ export function get_table_from_database(
     player_team_transfer_histories: database.player_team_transfer_histories,
     official_associated_teams: database.official_associated_teams,
     official_performance_ratings: database.official_performance_ratings,
+    organization_settings: database.organization_settings,
   };
 
   return table_map[table_name] || null;

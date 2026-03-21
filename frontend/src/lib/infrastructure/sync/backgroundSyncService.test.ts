@@ -39,6 +39,7 @@ const SYNCED_TABLE_NAMES = [
   "player_team_transfer_histories",
   "official_associated_teams",
   "official_performance_ratings",
+  "organization_settings",
 ] as const;
 
 interface BackgroundSyncState {
@@ -116,8 +117,8 @@ describe("SYNCED_TABLE_NAMES", () => {
     }
   });
 
-  it("has 35 synced tables", () => {
-    expect(SYNCED_TABLE_NAMES.length).toBe(35);
+  it("has 36 synced tables", () => {
+    expect(SYNCED_TABLE_NAMES.length).toBe(36);
   });
 });
 
@@ -736,6 +737,108 @@ describe("trigger_full_sync_on_page_reload behavior", () => {
 
     await new Promise<void>((resolve) => setTimeout(resolve, 10));
     expect(sync_finished).toBe(true);
+  });
+});
+
+describe("configure_scheduled_interval behavior", () => {
+  const ALLOWED_INTERVALS = [600_000, 900_000, 1_800_000, 3_600_000];
+  const DEFAULT_SYNC_INTERVAL_MS = 3_600_000;
+
+  function configure_scheduled_interval(
+    interval_ms: number,
+    current_interval_ms: number,
+  ): { success: boolean; new_interval_ms: number; error?: string } {
+    if (!ALLOWED_INTERVALS.includes(interval_ms)) {
+      return {
+        success: false,
+        new_interval_ms: current_interval_ms,
+        error: `Invalid interval_ms: ${interval_ms}`,
+      };
+    }
+    return { success: true, new_interval_ms: interval_ms };
+  }
+
+  it("accepts all four allowed sync intervals", () => {
+    for (const interval_ms of ALLOWED_INTERVALS) {
+      const result = configure_scheduled_interval(
+        interval_ms,
+        DEFAULT_SYNC_INTERVAL_MS,
+      );
+      expect(result.success).toBe(true);
+      expect(result.new_interval_ms).toBe(interval_ms);
+    }
+  });
+
+  it("rejects an arbitrary ms value not in the allowed list", () => {
+    const result = configure_scheduled_interval(
+      12345,
+      DEFAULT_SYNC_INTERVAL_MS,
+    );
+    expect(result.success).toBe(false);
+    expect(result.error).toContain("Invalid interval_ms");
+  });
+
+  it("rejects zero", () => {
+    const result = configure_scheduled_interval(0, DEFAULT_SYNC_INTERVAL_MS);
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects a negative value", () => {
+    const result = configure_scheduled_interval(
+      -3_600_000,
+      DEFAULT_SYNC_INTERVAL_MS,
+    );
+    expect(result.success).toBe(false);
+  });
+
+  it("leaves the active interval unchanged on rejection", () => {
+    const result = configure_scheduled_interval(
+      99999,
+      DEFAULT_SYNC_INTERVAL_MS,
+    );
+    expect(result.new_interval_ms).toBe(DEFAULT_SYNC_INTERVAL_MS);
+  });
+
+  it("replaces the current interval with the new one on success", () => {
+    vi.useFakeTimers();
+    const sync_ticks: number[] = [];
+    let active_interval_ms = DEFAULT_SYNC_INTERVAL_MS;
+    let timer_id: ReturnType<typeof setInterval> | null = null;
+
+    function start_timer(): void {
+      if (timer_id !== null) return;
+      timer_id = setInterval(() => {
+        sync_ticks.push(Date.now());
+      }, active_interval_ms);
+    }
+
+    function stop_timer(): void {
+      if (timer_id === null) return;
+      clearInterval(timer_id);
+      timer_id = null;
+    }
+
+    function reconfigure(interval_ms: number): boolean {
+      if (!ALLOWED_INTERVALS.includes(interval_ms)) return false;
+      active_interval_ms = interval_ms;
+      stop_timer();
+      start_timer();
+      return true;
+    }
+
+    start_timer();
+    vi.advanceTimersByTime(DEFAULT_SYNC_INTERVAL_MS);
+    expect(sync_ticks).toHaveLength(1);
+
+    reconfigure(600_000);
+    vi.advanceTimersByTime(600_000);
+    expect(sync_ticks).toHaveLength(2);
+
+    vi.advanceTimersByTime(DEFAULT_SYNC_INTERVAL_MS);
+    expect(sync_ticks.length).toBeGreaterThan(2);
+
+    stop_timer();
+    vi.useRealTimers();
   });
 });
 

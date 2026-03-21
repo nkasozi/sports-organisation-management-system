@@ -49,12 +49,15 @@ import {
   configure_orchestrator,
   configure_restoration_handlers,
   configure_remote_subscriber,
+  configure_scheduled_interval,
 } from "$lib/infrastructure/sync/backgroundSyncService";
 import {
   start_realtime_sync,
   stop_realtime_sync,
   get_realtime_sync_adapter,
 } from "$lib/infrastructure/sync/convexRealtimeSync";
+import { get_organization_settings_use_cases } from "$lib/core/usecases/OrganizationSettingsUseCases";
+import { branding_store } from "$lib/presentation/stores/branding";
 import type { SubscribableConvexClient } from "$lib/infrastructure/cache/AuthCacheInvalidator";
 import type { Result } from "$lib/core/types/Result";
 import {
@@ -274,6 +277,20 @@ export async function initialize_app_data(
 
   if (convex_client_result.success) {
     const convex_client = convex_client_result.data;
+
+    const on_org_settings_pulled = async (
+      table_name: string,
+    ): Promise<void> => {
+      if (table_name !== "organization_settings") return;
+      const org_id = branding_store.get_current_org_id();
+      if (!org_id) return;
+      const use_cases = get_organization_settings_use_cases();
+      const settings_result = await use_cases.get_by_organization_id(org_id);
+      if (!settings_result.success || !settings_result.data) return;
+      branding_store.refresh_from_organization_settings(settings_result.data);
+      configure_scheduled_interval(settings_result.data.sync_interval_ms);
+    };
+
     start_realtime_sync(
       convex_client as unknown as SubscribableConvexClient,
       {
@@ -283,6 +300,7 @@ export async function initialize_app_data(
           convex_client.query(name as never, args as never),
       },
       api.sync.get_latest_modified_at,
+      on_org_settings_pulled,
     );
     console.log(
       "[AppInitializer] Real-time sync started via Convex subscriptions",

@@ -1023,4 +1023,32 @@ export default defineSchema({
     .index("by_clerk_user_id", ["clerk_user_id"])
     .index("by_email", ["email"])
     .index("by_role", ["role"]),
+
+  organization_settings: defineTable({
+    ...sync_metadata_fields,
+    organization_id: v.string(),
+    display_name: v.optional(v.string()),
+    logo_url: v.optional(v.string()),
+    tagline: v.optional(v.string()),
+    contact_email: v.optional(v.string()),
+    contact_address: v.optional(v.string()),
+    social_media_links: v.optional(
+      v.array(
+        v.object({
+          platform: v.string(),
+          url: v.string(),
+        }),
+      ),
+    ),
+    header_pattern: v.optional(v.string()),
+    footer_pattern: v.optional(v.string()),
+    background_pattern_url: v.optional(v.string()),
+    show_panel_borders: v.optional(v.boolean()),
+    primary_color: v.optional(v.string()),
+    secondary_color: v.optional(v.string()),
+    sync_interval_ms: v.optional(v.number()),
+    ...timestamp_fields,
+  })
+    .index("by_local_id", ["local_id"])
+    .index("by_organization", ["organization_id"]),
 });

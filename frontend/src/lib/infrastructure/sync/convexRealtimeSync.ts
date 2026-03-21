@@ -36,6 +36,7 @@ export interface RealtimeSyncDependencies {
   pull_table: PullTableFunction;
   table_names: string[];
   query_reference?: unknown;
+  on_table_pulled?: (table_name: string) => void;
 }
 
 export interface ConvexRealtimeSync {
@@ -57,6 +58,7 @@ function create_table_change_handler(
   table_name: string,
   tracking: Map<string, TableTrackingState>,
   pull_table: PullTableFunction,
+  on_table_pulled?: (table_name: string) => void,
 ): (result: unknown) => void {
   return (result: unknown): void => {
     const change_info = result as TableChangeInfo;
@@ -83,11 +85,15 @@ function create_table_change_handler(
       `[RealtimeSync] ${table_name} changed remotely (${previous_timestamp} → ${new_timestamp}), triggering pull`,
     );
 
-    pull_table(table_name, previous_timestamp).catch((error) => {
-      console.error(
-        `[RealtimeSync] ${table_name} pull failed: ${error instanceof Error ? error.message : String(error)}`,
-      );
-    });
+    pull_table(table_name, previous_timestamp)
+      .then(() => {
+        on_table_pulled?.(table_name);
+      })
+      .catch((error) => {
+        console.error(
+          `[RealtimeSync] ${table_name} pull failed: ${error instanceof Error ? error.message : String(error)}`,
+        );
+      });
   };
 }
 
@@ -112,6 +118,7 @@ export function create_convex_realtime_sync(
         table_name,
         table_tracking,
         deps.pull_table,
+        deps.on_table_pulled,
       );
 
       const query_ref = deps.query_reference ?? "sync:get_latest_modified_at";
@@ -227,6 +234,7 @@ export function start_realtime_sync(
   subscribable_client: SubscribableConvexClient,
   convex_client: ConvexClientWithQueryMutation,
   query_reference: unknown,
+  on_table_pulled?: (table_name: string) => void,
 ): boolean {
   if (realtime_sync_instance?.is_running()) return false;
 
@@ -235,6 +243,7 @@ export function start_realtime_sync(
     pull_table: create_pull_table_adapter(convex_client),
     table_names: [...TABLE_NAMES],
     query_reference,
+    on_table_pulled,
   });
 
   return realtime_sync_instance.start();

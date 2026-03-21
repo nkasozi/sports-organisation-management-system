@@ -374,4 +374,134 @@ describe("ConvexRealtimeSync", () => {
       expect(local_sync.is_running()).toBe(true);
     });
   });
+
+  describe("on_table_pulled callback", () => {
+    function fire_initial_then_change(
+      client: ReturnType<typeof create_mock_subscribable_client>,
+      table_index: number,
+      table_name: string,
+    ): void {
+      const callback = client.onUpdate.mock.calls[table_index][2];
+      callback({
+        table_name,
+        record_count: 3,
+        latest_modified_at: "2024-01-01T00:00:00.000Z",
+      } as TableChangeInfo);
+      callback({
+        table_name,
+        record_count: 4,
+        latest_modified_at: "2024-06-01T00:00:00.000Z",
+      } as TableChangeInfo);
+    }
+
+    it("invokes on_table_pulled with the correct table_name after a successful pull", async () => {
+      const client = create_mock_subscribable_client();
+      const pull_table = vi
+        .fn()
+        .mockResolvedValue({ success: true, records_pulled: 3 });
+      const on_table_pulled = vi.fn();
+
+      const local_deps = create_dependencies({
+        subscribable_client: client,
+        pull_table,
+        on_table_pulled,
+      });
+      const local_sync = create_convex_realtime_sync(local_deps);
+      local_sync.start();
+
+      fire_initial_then_change(client, 0, "teams");
+
+      await Promise.resolve();
+
+      expect(on_table_pulled).toHaveBeenCalledWith("teams");
+    });
+
+    it("does not invoke on_table_pulled on the initial snapshot (no pull triggered)", () => {
+      const client = create_mock_subscribable_client();
+      const pull_table = create_mock_pull_table();
+      const on_table_pulled = vi.fn();
+
+      const local_deps = create_dependencies({
+        subscribable_client: client,
+        pull_table,
+        on_table_pulled,
+      });
+      const local_sync = create_convex_realtime_sync(local_deps);
+      local_sync.start();
+
+      const callback = client.onUpdate.mock.calls[0][2];
+      callback({
+        table_name: "teams",
+        record_count: 5,
+        latest_modified_at: "2024-01-01T00:00:00.000Z",
+      } as TableChangeInfo);
+
+      expect(pull_table).not.toHaveBeenCalled();
+      expect(on_table_pulled).not.toHaveBeenCalled();
+    });
+
+    it("does not invoke on_table_pulled when timestamp is unchanged", () => {
+      const client = create_mock_subscribable_client();
+      const pull_table = create_mock_pull_table();
+      const on_table_pulled = vi.fn();
+
+      const local_deps = create_dependencies({
+        subscribable_client: client,
+        pull_table,
+        on_table_pulled,
+      });
+      const local_sync = create_convex_realtime_sync(local_deps);
+      local_sync.start();
+
+      const callback = client.onUpdate.mock.calls[0][2];
+      const change: TableChangeInfo = {
+        table_name: "teams",
+        record_count: 5,
+        latest_modified_at: "2024-01-01T00:00:00.000Z",
+      };
+      callback(change);
+      callback(change);
+
+      expect(pull_table).not.toHaveBeenCalled();
+      expect(on_table_pulled).not.toHaveBeenCalled();
+    });
+
+    it("works correctly when on_table_pulled is not provided (optional)", () => {
+      const client = create_mock_subscribable_client();
+      const pull_table = create_mock_pull_table();
+
+      const local_deps = create_dependencies({
+        subscribable_client: client,
+        pull_table,
+      });
+      const local_sync = create_convex_realtime_sync(local_deps);
+      local_sync.start();
+
+      expect(() => fire_initial_then_change(client, 0, "teams")).not.toThrow();
+    });
+
+    it("receives the table_name for the table that actually changed", async () => {
+      const client = create_mock_subscribable_client();
+      const pull_table = vi
+        .fn()
+        .mockResolvedValue({ success: true, records_pulled: 1 });
+      const on_table_pulled = vi.fn();
+
+      const local_deps = create_dependencies({
+        subscribable_client: client,
+        pull_table,
+        on_table_pulled,
+        table_names: ["teams", "players"],
+      });
+      const local_sync = create_convex_realtime_sync(local_deps);
+      local_sync.start();
+
+      fire_initial_then_change(client, 1, "players");
+
+      await Promise.resolve();
+
+      expect(on_table_pulled).toHaveBeenCalledWith("players");
+      expect(on_table_pulled).not.toHaveBeenCalledWith("teams");
+    });
+  });
 });
