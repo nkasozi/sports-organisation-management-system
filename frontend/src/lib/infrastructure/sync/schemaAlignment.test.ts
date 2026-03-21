@@ -430,7 +430,9 @@ describe("TABLE_NAMES completeness: every synced table reachable via get_table_f
 
   it("every TABLE_NAMES entry has a matching key in get_table_from_database's table_map", () => {
     const table_names = extract_table_names_array(sync_service_content);
-    const table_map_keys = new Set(extract_table_map_keys(sync_service_content));
+    const table_map_keys = new Set(
+      extract_table_map_keys(sync_service_content),
+    );
 
     const missing_from_map = table_names.filter(
       (name) => !table_map_keys.has(name),
@@ -444,7 +446,9 @@ describe("TABLE_NAMES completeness: every synced table reachable via get_table_f
   });
 
   it("every table_map key in get_table_from_database is a recognised TABLE_NAMES entry", () => {
-    const table_names = new Set(extract_table_names_array(sync_service_content));
+    const table_names = new Set(
+      extract_table_names_array(sync_service_content),
+    );
     const table_map_keys = extract_table_map_keys(sync_service_content);
 
     const orphaned_map_keys = table_map_keys.filter(

@@ -136,6 +136,8 @@ export interface AuthorizationPort {
   get_sidebar_menu_for_role(role: UserRole): AsyncResult<SidebarMenuGroup[]>;
 
   get_accessible_routes_for_role(role: UserRole): AsyncResult<string[]>;
+
+  get_default_route_for_role(role: UserRole): AsyncResult<string>;
 }
 
 export type ScopeDimension =
