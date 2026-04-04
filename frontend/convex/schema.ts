@@ -735,6 +735,7 @@ export default defineSchema({
     user_id: v.optional(v.string()),
     user_email: v.optional(v.string()),
     user_display_name: v.optional(v.string()),
+    correlation_id: v.optional(v.string()),
     changes: v.optional(
       v.array(
         v.object({

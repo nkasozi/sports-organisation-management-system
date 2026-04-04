@@ -13,16 +13,39 @@ export interface CalendarToken extends BaseEntity {
   is_active: boolean;
   last_accessed_at: string | null;
   access_count: number;
+  expires_at: string | null;
 }
 
 export type CreateCalendarTokenInput = Omit<
   CalendarToken,
-  "id" | "created_at" | "updated_at" | "last_accessed_at" | "access_count"
+  | "id"
+  | "created_at"
+  | "updated_at"
+  | "last_accessed_at"
+  | "access_count"
+  | "expires_at"
 >;
 
 export type UpdateCalendarTokenInput = Partial<
-  Pick<CalendarToken, "reminder_minutes_before" | "is_active">
+  Pick<CalendarToken, "reminder_minutes_before" | "is_active" | "expires_at">
 >;
+
+const CALENDAR_TOKEN_EXPIRY_DAYS = 90;
+
+export function compute_calendar_token_expiry(): string {
+  const expiry_date = new Date();
+  expiry_date.setDate(expiry_date.getDate() + CALENDAR_TOKEN_EXPIRY_DAYS);
+  return expiry_date.toISOString();
+}
+
+export function is_calendar_token_expired(
+  expires_at: string | null | undefined,
+): boolean {
+  if (!expires_at) {
+    return false;
+  }
+  return new Date(expires_at).getTime() < Date.now();
+}
 
 export function generate_calendar_token(): string {
   const array = new Uint8Array(32);

@@ -211,20 +211,58 @@ async function pull_table_from_convex(
   local_latest_modified_at: string,
 ): Promise<PullResult> {
   try {
-    const remote_changes = (await convex_client.query(
+    const sync_result = (await convex_client.query(
       "sync:get_changes_since",
       {
         table_name,
         since_timestamp: local_latest_modified_at,
       },
-    )) as Array<{
-      _id: string;
-      local_id: string;
-      synced_at: string;
-      version: number;
-      updated_at?: string;
-      [key: string]: unknown;
-    }>;
+    )) as
+      | {
+          success: boolean;
+          data: Array<{
+            _id: string;
+            local_id: string;
+            synced_at: string;
+            version: number;
+            updated_at?: string;
+            [key: string]: unknown;
+          }>;
+          error: string | null;
+        }
+      | Array<{
+          _id: string;
+          local_id: string;
+          synced_at: string;
+          version: number;
+          updated_at?: string;
+          [key: string]: unknown;
+        }>;
+
+    const is_result_type =
+      sync_result !== null &&
+      typeof sync_result === "object" &&
+      !Array.isArray(sync_result) &&
+      "success" in sync_result;
+
+    const remote_changes = is_result_type
+      ? sync_result.data
+      : (sync_result as Array<{
+          _id: string;
+          local_id: string;
+          synced_at: string;
+          version: number;
+          updated_at?: string;
+          [key: string]: unknown;
+        }>);
+
+    if (is_result_type && !sync_result.success) {
+      return {
+        success: false,
+        records_pulled: 0,
+        error: sync_result.error,
+      };
+    }
 
     if (!remote_changes || remote_changes.length === 0) {
       return { success: true, records_pulled: 0, error: null };

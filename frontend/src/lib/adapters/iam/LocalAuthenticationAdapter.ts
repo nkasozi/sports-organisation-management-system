@@ -19,17 +19,26 @@ import {
 const VERIFICATION_CACHE_MAX_ENTRIES = 50;
 const VERIFICATION_CACHE_TTL_MS = 30 * 60 * 1000;
 
+const MISSING_SECRET_KEY_ERROR =
+  "AUTH_SECRET_KEY environment variable is required but not set";
+
 function get_secret_key(): string {
   if (browser) {
-    return (
-      import.meta.env.VITE_AUTH_SECRET_KEY ||
-      "dev-only-fallback-key-not-for-production"
-    );
+    const secret_key = import.meta.env.VITE_AUTH_SECRET_KEY;
+    if (!secret_key) {
+      throw new Error(MISSING_SECRET_KEY_ERROR);
+    }
+    return secret_key;
   }
-  return "server-side-placeholder";
+  const server_secret_key =
+    process.env.AUTH_SECRET_KEY ?? import.meta.env.VITE_AUTH_SECRET_KEY;
+  if (!server_secret_key) {
+    throw new Error(MISSING_SECRET_KEY_ERROR);
+  }
+  return server_secret_key;
 }
 
-const TOKEN_EXPIRY_DAYS = 365;
+const TOKEN_EXPIRY_DAYS = 7;
 
 function base64_url_encode(data: string): string {
   const base64 = btoa(data);

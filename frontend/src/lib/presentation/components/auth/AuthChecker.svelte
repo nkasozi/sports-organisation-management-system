@@ -73,7 +73,9 @@
       );
 
       if (!result.success) {
-        console.error("[AuthChecker] Authorization failed:", result.error);
+        console.error("[AuthChecker] Authorization failed", {
+          event: "authorization_denied",
+        });
         const error_message = encodeURIComponent(
           result.error || "Access denied",
         );
@@ -81,12 +83,9 @@
         return;
       }
 
-      console.log(
-        "[AuthChecker] User authorized:",
-        result.data.email,
-        "role:",
-        result.data.role,
-      );
+      console.log("[AuthChecker] User authorized", {
+        event: "authorization_granted",
+      });
     } catch (error) {
       console.error("[AuthChecker] Authorization check failed:", error);
     } finally {

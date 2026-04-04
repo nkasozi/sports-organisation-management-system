@@ -16,7 +16,7 @@ import {
 
 const CLERK_VERIFICATION_CACHE_MAX_ENTRIES = 50;
 const CLERK_VERIFICATION_CACHE_TTL_MS = 30 * 60 * 1000;
-const TOKEN_EXPIRY_SECONDS = 365 * 24 * 60 * 60;
+const TOKEN_EXPIRY_SECONDS = 60 * 60;
 
 export interface ClerkUserInfo {
   id: string;

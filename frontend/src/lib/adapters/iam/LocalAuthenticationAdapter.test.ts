@@ -81,7 +81,7 @@ describe("LocalAuthenticationAdapter", () => {
       expect(token.payload.expires_at).toBeGreaterThan(token.payload.issued_at);
     });
 
-    it("should set expiry to 365 days from now", async () => {
+    it("should set expiry to 7 days from now", async () => {
       const payload_input = create_test_payload();
       const before_generation = Date.now();
       const token_result = await adapter.generate_token(payload_input);
@@ -91,8 +91,8 @@ describe("LocalAuthenticationAdapter", () => {
       if (!token_result.success) return;
       const token = token_result.data;
 
-      const expected_min_expiry = before_generation + 365 * 24 * 60 * 60 * 1000;
-      const expected_max_expiry = after_generation + 365 * 24 * 60 * 60 * 1000;
+      const expected_min_expiry = before_generation + 7 * 24 * 60 * 60 * 1000;
+      const expected_max_expiry = after_generation + 7 * 24 * 60 * 60 * 1000;
 
       expect(token.payload.expires_at).toBeGreaterThanOrEqual(
         expected_min_expiry,

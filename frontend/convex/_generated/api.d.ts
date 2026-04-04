@@ -13,6 +13,7 @@ import type * as audit_logs from "../audit_logs.js";
 import type * as authorization from "../authorization.js";
 import type * as crons from "../crons.js";
 import type * as lib_auth_middleware from "../lib/auth_middleware.js";
+import type * as security_audit from "../security_audit.js";
 import type * as seed_permissions from "../seed_permissions.js";
 import type * as shared_permission_definitions from "../shared_permission_definitions.js";
 import type * as sync from "../sync.js";
@@ -29,6 +30,7 @@ declare const fullApi: ApiFromModules<{
   authorization: typeof authorization;
   crons: typeof crons;
   "lib/auth_middleware": typeof lib_auth_middleware;
+  security_audit: typeof security_audit;
   seed_permissions: typeof seed_permissions;
   shared_permission_definitions: typeof shared_permission_definitions;
   sync: typeof sync;

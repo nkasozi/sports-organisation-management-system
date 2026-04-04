@@ -417,13 +417,32 @@ export async function pull_table_from_convex(
       `[Sync:Pull] ${table_name} — querying Convex for changes since local latest: ${local_latest_modified_at}`,
     );
 
-    const remote_changes = (await convex_client.query(
+    const sync_result = (await convex_client.query(
       "sync:get_changes_since",
       {
         table_name,
         since_timestamp: local_latest_modified_at,
       },
-    )) as ConvexRecord[];
+    )) as
+      | { success: boolean; data: ConvexRecord[]; error: string | null }
+      | ConvexRecord[];
+
+    const is_result_type =
+      sync_result !== null &&
+      typeof sync_result === "object" &&
+      !Array.isArray(sync_result) &&
+      "success" in sync_result;
+
+    const remote_changes: ConvexRecord[] = is_result_type
+      ? sync_result.data
+      : (sync_result as ConvexRecord[]);
+
+    if (is_result_type && !sync_result.success) {
+      console.warn(
+        `[Sync:Pull] ${table_name} — server returned error: ${sync_result.error}`,
+      );
+      return { success: false, records_pulled: 0, error: sync_result.error };
+    }
 
     if (!remote_changes || remote_changes.length === 0) {
       console.log(`[Sync:Pull] ${table_name} — no remote changes found`);

@@ -45,9 +45,10 @@ async function get_system_user_from_context(ctx: {
 
   const email = identity.email;
   if (!email) {
-    console.error(
-      "[authorization] JWT has no email claim — check Clerk JWT template configuration",
-    );
+    console.error("[authorization] JWT missing email claim", {
+      event: "jwt_missing_email",
+      identity_subject: identity.subject,
+    });
     return {
       success: false,
       error:
@@ -127,6 +128,19 @@ function get_actions_from_permissions(
   return actions;
 }
 
+const ACCESS_DENIED_MESSAGE =
+  "Access denied. Please contact your organization administrator.";
+
+function mask_email_for_logging(email: string): string {
+  const at_index = email.indexOf("@");
+  if (at_index <= 0) {
+    return "***";
+  }
+  const first_char = email[0];
+  const domain = email.substring(at_index);
+  return `${first_char}***${domain}`;
+}
+
 export const check_user_access = query({
   args: {
     email: v.string(),
@@ -134,7 +148,9 @@ export const check_user_access = query({
   handler: async (
     ctx,
     args,
-  ): Promise<ConvexResult<{ email: string; role: string }>> => {
+  ): Promise<ConvexResult<{ email: string }>> => {
+    const request_id = `acc_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+
     const system_user = await ctx.db
       .query("system_users")
       .withIndex("by_email", (q: any) =>
@@ -143,24 +159,41 @@ export const check_user_access = query({
       .first();
 
     if (!system_user) {
+      console.log("[authorization] Access check failed", {
+        event: "access_check_denied",
+        request_id,
+        email: mask_email_for_logging(args.email.toLowerCase()),
+        reason: "user_not_found",
+      });
       return {
         success: false,
-        error:
-          "No account found with this email address. Please contact your organization administrator.",
+        error: ACCESS_DENIED_MESSAGE,
       };
     }
 
     if (system_user.status === "inactive") {
+      console.log("[authorization] Access check failed", {
+        event: "access_check_denied",
+        request_id,
+        email: mask_email_for_logging(args.email.toLowerCase()),
+        reason: "account_inactive",
+      });
       return {
         success: false,
-        error:
-          "Your account has been deactivated. Please contact your organization administrator.",
+        error: ACCESS_DENIED_MESSAGE,
       };
     }
 
+    console.log("[authorization] Access check succeeded", {
+      event: "access_check_granted",
+      request_id,
+      email: mask_email_for_logging(system_user.email),
+      role: system_user.role,
+    });
+
     return {
       success: true,
-      data: { email: system_user.email, role: system_user.role },
+      data: { email: system_user.email },
     };
   },
 });
@@ -353,9 +386,17 @@ export const update_user_role = mutation({
     }
     const admin_user = admin_result.data;
     if (
-      !check_role_permission(admin_user.role, "org_administrator_level", "read")
+      !check_role_permission(admin_user.role, "org_administrator_level", "update")
     ) {
       return { success: false, error: "Unauthorized to update user roles" };
+    }
+
+    const role_assignment_check = can_caller_assign_role(
+      admin_user.role,
+      args.role,
+    );
+    if (!role_assignment_check.success) {
+      return { success: false, error: role_assignment_check.error };
     }
 
     const target_user = await ctx.db
@@ -420,6 +461,11 @@ export const can_access_route = query({
   },
 });
 
+import {
+  is_seed_super_admin_allowed,
+  can_caller_assign_role,
+} from "./lib/role_security";
+
 export const seed_super_admin = mutation({
   args: {
     email: v.string(),
@@ -427,6 +473,33 @@ export const seed_super_admin = mutation({
   },
   handler: async (ctx, args) => {
     const normalized_email = args.email.toLowerCase();
+
+    const all_super_admins = await ctx.db
+      .query("system_users")
+      .collect();
+    const existing_super_admin_count = all_super_admins.filter(
+      (u: any) => u.role === "super_admin" && u.status !== "inactive",
+    ).length;
+
+    let caller_role: string | null = null;
+    const identity = await ctx.auth.getUserIdentity();
+    if (identity?.email) {
+      const caller = await ctx.db
+        .query("system_users")
+        .withIndex("by_email", (q: any) =>
+          q.eq("email", identity.email!.toLowerCase()),
+        )
+        .first();
+      caller_role = caller?.role ?? null;
+    }
+
+    const seed_allowed = is_seed_super_admin_allowed(
+      caller_role,
+      existing_super_admin_count,
+    );
+    if (!seed_allowed.success) {
+      return { success: false, error: seed_allowed.error };
+    }
 
     const existing = await ctx.db
       .query("system_users")

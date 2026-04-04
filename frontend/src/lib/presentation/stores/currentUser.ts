@@ -18,6 +18,24 @@ export interface CurrentUser {
 
 const storage_key = "sports-org-current-user";
 
+const REQUIRED_USER_FIELDS: ReadonlyArray<keyof CurrentUser> = [
+  "id",
+  "email",
+  "first_name",
+  "last_name",
+  "role",
+];
+
+function validate_stored_user(
+  parsed: unknown,
+): parsed is CurrentUser {
+  if (typeof parsed !== "object" || parsed === null) return false;
+  const record = parsed as Record<string, unknown>;
+  return REQUIRED_USER_FIELDS.every(
+    (field) => typeof record[field] === "string" && record[field] !== "",
+  );
+}
+
 function create_current_user_store() {
   const { subscribe, set, update } = writable<CurrentUser | null>(null);
 
@@ -29,7 +47,9 @@ function create_current_user_store() {
       const stored = await get_app_settings_storage().get_setting(storage_key);
       if (!stored) return;
       try {
-        set(JSON.parse(stored) as CurrentUser);
+        const parsed: unknown = JSON.parse(stored);
+        if (!validate_stored_user(parsed)) return;
+        set(parsed);
       } catch {
         /* ignore corrupt data */
       }

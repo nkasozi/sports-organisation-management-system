@@ -17,18 +17,7 @@
       content="Comprehensive sports organization management system for competitions, teams, and players"
     />
 
-    <!-- Preload key fonts for better performance -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
-      rel="stylesheet"
-    />
-
-    <!-- Apple touch icon for iOS -->
     <link rel="apple-touch-icon" href="%sveltekit.assets%/favicon.svg" />
-
-    <!-- PWA manifest -->
     <link rel="manifest" href="%sveltekit.assets%/manifest.json" />
 
     <title>Sport-Sync</title>
@@ -37,35 +26,7 @@
   <body data-sveltekit-preload-data="hover" class="antialiased">
     <div style="display: contents">%sveltekit.body%</div>
 
-    <!-- Theme detection script to prevent flash of unstyled content -->
-    <script>
-      (function () {
-        if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
-          document.documentElement.classList.add("dark");
-        }
-      })();
-    </script>
-
-    <!-- Service Worker Registration (production only) -->
-    <script>
-      if (
-        "serviceWorker" in navigator &&
-        !window.location.hostname.includes("localhost")
-      ) {
-        window.addEventListener("load", function () {
-          navigator.serviceWorker
-            .register("/sw.js")
-            .then(function (registration) {
-              console.log(
-                "[PWA] Service Worker registered with scope:",
-                registration.scope,
-              );
-            })
-            .catch(function (error) {
-              console.log("[PWA] Service Worker registration failed:", error);
-            });
-        });
-      }
-    </script>
+    <script src="/theme-init.js"></script>
+    <script src="/sw-register.js"></script>
   </body>
 </html>
