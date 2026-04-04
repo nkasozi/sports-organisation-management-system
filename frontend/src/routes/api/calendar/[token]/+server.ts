@@ -9,11 +9,23 @@ import {
   type ICalEvent,
   type ICalFeedConfig,
 } from "$lib/core/services/ICalService";
-import { get_feed_type_display_name } from "$lib/core/entities/CalendarToken";
+import {
+  get_feed_type_display_name,
+  is_calendar_token_expired,
+} from "$lib/core/entities/CalendarToken";
+
+const VALID_TOKEN_PATTERN = /^[a-zA-Z0-9_-]{1,255}$/;
 
 export const GET: RequestHandler = async ({ params }) => {
   const token_with_extension = params.token;
   const token = token_with_extension.replace(/\.ics$/, "");
+
+  if (!VALID_TOKEN_PATTERN.test(token)) {
+    return new Response("Invalid token format", {
+      status: 400,
+      headers: { "Content-Type": "text/plain" },
+    });
+  }
 
   const use_cases = get_use_cases_container();
   const repositories = get_repository_container();
@@ -29,6 +41,17 @@ export const GET: RequestHandler = async ({ params }) => {
   }
 
   const calendar_token = token_result.data;
+
+  if (is_calendar_token_expired(calendar_token.expires_at)) {
+    console.log("[Calendar] Expired token access attempt", {
+      event: "calendar_token_expired",
+      token_id: calendar_token.id,
+    });
+    return new Response("Calendar feed token has expired", {
+      status: 410,
+      headers: { "Content-Type": "text/plain" },
+    });
+  }
 
   await use_cases.calendar_token_use_cases.record_feed_access(token);
 

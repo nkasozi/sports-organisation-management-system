@@ -17,27 +17,42 @@ export const seed_admin_user = mutation({
   },
   handler: async (ctx, args) => {
     const normalized_email = args.email.toLowerCase().trim();
+
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity?.email) {
+      console.log("[admin_seed] Seed attempt rejected", {
+        event: "seed_auth_required",
+        reason: "no_identity",
+      });
+      return {
+        success: false,
+        error: "Authentication required to seed admin users",
+      };
+    }
+
     const all_users = await ctx.db.query("system_users").collect();
     const is_bootstrap_mode = all_users.length === 0;
 
     if (!is_bootstrap_mode) {
-      const identity = await ctx.auth.getUserIdentity();
-      if (!identity?.email) {
-        return {
-          success: false,
-          error: "Authentication required — system_users table is not empty",
-        };
-      }
       const caller_email = identity.email.toLowerCase();
       const caller = all_users.find((u: any) => u.email === caller_email);
       const has_platform_access =
         caller && check_caller_platform_access(caller.organization_id);
       if (!has_platform_access) {
+        console.log("[admin_seed] Non-bootstrap seed rejected", {
+          event: "seed_access_denied",
+          caller_email: caller_email,
+        });
         return {
           success: false,
           error: "Only super admins can seed admin users",
         };
       }
+    } else {
+      console.log("[admin_seed] Bootstrap mode activated", {
+        event: "bootstrap_seed_initiated",
+        identity_email: identity.email,
+      });
     }
 
     const existing_user = await ctx.db

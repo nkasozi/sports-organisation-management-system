@@ -1,6 +1,7 @@
-const CACHE_VERSION = "v2";
+const CACHE_VERSION = "v3";
 const STATIC_CACHE_NAME = `sports-org-static-${CACHE_VERSION}`;
 const DYNAMIC_CACHE_NAME = `sports-org-dynamic-${CACHE_VERSION}`;
+const DYNAMIC_CACHE_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 
 const STATIC_ASSETS = ["/", "/manifest.json", "/favicon.svg"];
 

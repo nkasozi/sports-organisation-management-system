@@ -1,55 +1,28 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
+import { internal } from "./_generated/api";
 import {
   require_auth,
   require_permission,
-  try_auth,
   build_scope_filter,
   check_permission,
   get_entity_data_category,
 } from "./lib/auth_middleware";
 import type { UserRole } from "./lib/auth_middleware";
+import {
+  validate_table_name,
+  get_entity_type_for_table,
+  is_global_table as check_is_global_table,
+  validate_record_organization_ownership,
+  filter_records_by_organization_scope,
+} from "./lib/sync_validation";
+import { SecurityEventType } from "./lib/security_event_types";
+import { validate_record_url_fields } from "./lib/url_validation";
 
-export const GLOBAL_TABLES = [
-  "sports",
-  "genders",
-  "player_positions",
-  "identification_types",
-  "competition_formats",
-  "game_event_types",
-  "team_staff_roles",
-  "game_official_roles",
-  "jersey_colors",
-  "activity_categories",
-] as const;
+export { ALLOWED_SYNC_TABLES } from "./lib/sync_validation";
 
 export function is_global_table(table_name: string): boolean {
-  return GLOBAL_TABLES.includes(table_name as (typeof GLOBAL_TABLES)[number]);
-}
-
-function is_global_record(record: Record<string, unknown>): boolean {
-  const org_id = record.organization_id;
-  return (
-    org_id === undefined || org_id === null || org_id === "*" || org_id === ""
-  );
-}
-
-function get_entity_type_from_table(table_name: string): string {
-  const stripped = table_name.toLowerCase().replace(/_/g, "");
-  if (stripped.endsWith("ies")) {
-    return stripped.slice(0, -3) + "y";
-  }
-  if (
-    stripped.endsWith("xes") ||
-    stripped.endsWith("shes") ||
-    stripped.endsWith("ches")
-  ) {
-    return stripped.slice(0, -2);
-  }
-  if (stripped.endsWith("s") && !stripped.endsWith("ss")) {
-    return stripped.slice(0, -1);
-  }
-  return stripped;
+  return check_is_global_table(table_name);
 }
 
 export const upsert_record = mutation({
@@ -61,9 +34,14 @@ export const upsert_record = mutation({
   },
   handler: async (ctx, args) => {
     const { table_name, local_id, data, version } = args;
-    const synced_at = new Date().toISOString();
 
-    const entity_type = get_entity_type_from_table(table_name);
+    const table_validation = validate_table_name(table_name);
+    if (!table_validation.success) {
+      return { success: false, error: table_validation.error };
+    }
+
+    const synced_at = new Date().toISOString();
+    const entity_type = get_entity_type_for_table(table_name);
     const table = ctx.db.query(table_name as any);
     const existing = await table
       .withIndex("by_local_id", (q) => q.eq("local_id", local_id))
@@ -72,7 +50,38 @@ export const upsert_record = mutation({
     const action = existing ? "update" : "create";
     const perm_result = await require_permission(ctx, entity_type, action);
     if (!perm_result.success) {
+      await ctx.scheduler.runAfter(
+        0,
+        internal.security_audit.log_security_event,
+        {
+          event_type: SecurityEventType.ACCESS_DENIED,
+          entity_type,
+          entity_id: local_id,
+          details: `Permission denied for ${action} on ${table_name}`,
+        },
+      );
       return { success: false, error: perm_result.error };
+    }
+
+    const ownership_result = validate_record_organization_ownership(
+      data,
+      perm_result.data,
+      table_name,
+    );
+    if (!ownership_result.success) {
+      await ctx.scheduler.runAfter(
+        0,
+        internal.security_audit.log_security_event,
+        {
+          event_type: SecurityEventType.ORG_SCOPE_VIOLATION,
+          entity_type,
+          entity_id: local_id,
+          user_email: perm_result.data.email,
+          organization_id: perm_result.data.organization_id,
+          details: `Org scope violation on ${table_name}`,
+        },
+      );
+      return { success: false, error: ownership_result.error };
     }
 
     const record_data = {
@@ -106,42 +115,35 @@ export const get_changes_since = query({
   },
   handler: async (ctx, args) => {
     const { table_name, since_timestamp } = args;
-    const entity_type = get_entity_type_from_table(table_name);
-    const user = await try_auth(ctx);
+
+    const table_validation = validate_table_name(table_name);
+    if (!table_validation.success) {
+      return { success: false, error: table_validation.error, data: [] };
+    }
+
+    const entity_type = get_entity_type_for_table(table_name);
+    const auth_result = await require_auth(ctx);
+
     const table = ctx.db.query(table_name as any);
     let all_records = await table.collect();
 
-    if (user.success && !is_global_table(table_name)) {
-      const scope_filter = build_scope_filter(user.data, entity_type);
-      if (scope_filter.organization_id) {
-        const user_org_id = scope_filter.organization_id;
-
-        if (table_name === "organizations") {
-          all_records = all_records.filter(
-            (record: any) => record.local_id === user_org_id,
-          );
-        } else {
-          all_records = all_records.filter((record: any) => {
-            if (is_global_record(record)) {
-              return true;
-            }
-            if (scope_filter.team_id && record.team_id) {
-              return (
-                record.organization_id === user_org_id &&
-                record.team_id === scope_filter.team_id
-              );
-            }
-            return record.organization_id === user_org_id;
-          });
-        }
-      }
+    if (auth_result.success && !check_is_global_table(table_name)) {
+      const scope_filter = build_scope_filter(auth_result.data, entity_type);
+      all_records = filter_records_by_organization_scope(
+        all_records,
+        auth_result.data,
+        table_name,
+        scope_filter,
+      );
     }
 
-    return all_records.filter((record: any) => {
+    const filtered_records = all_records.filter((record: any) => {
       const synced_at =
         record.synced_at || record.updated_at || record.created_at;
       return synced_at > since_timestamp;
     });
+
+    return { success: true, data: filtered_records, error: null };
   },
 });
 
@@ -152,7 +154,13 @@ export const delete_record = mutation({
   },
   handler: async (ctx, args) => {
     const { table_name, local_id } = args;
-    const entity_type = get_entity_type_from_table(table_name);
+
+    const table_validation = validate_table_name(table_name);
+    if (!table_validation.success) {
+      return { success: false, error: table_validation.error };
+    }
+
+    const entity_type = get_entity_type_for_table(table_name);
 
     const perm_result = await require_permission(ctx, entity_type, "delete");
     if (!perm_result.success) {
@@ -187,11 +195,49 @@ export const batch_upsert = mutation({
   },
   handler: async (ctx, args) => {
     const { table_name, records, detect_conflicts = false } = args;
-    const entity_type = get_entity_type_from_table(table_name);
+
+    const MAX_BATCH_SIZE = 50;
+    if (records.length > MAX_BATCH_SIZE) {
+      console.log("[sync] Batch size limit exceeded", {
+        event: "batch_size_exceeded",
+        table_name,
+        received_count: records.length,
+        max_allowed: MAX_BATCH_SIZE,
+      });
+      return {
+        success: false,
+        error: `Batch size ${records.length} exceeds maximum of ${MAX_BATCH_SIZE}`,
+        results: [],
+        has_conflicts: false,
+        conflicts: [],
+      };
+    }
+
+    const table_validation = validate_table_name(table_name);
+    if (!table_validation.success) {
+      return {
+        success: false,
+        error: table_validation.error,
+        results: [],
+        has_conflicts: false,
+        conflicts: [],
+      };
+    }
+
+    const entity_type = get_entity_type_for_table(table_name);
     const synced_at = new Date().toISOString();
 
     const auth_result = await require_auth(ctx);
     if (!auth_result.success) {
+      await ctx.scheduler.runAfter(
+        0,
+        internal.security_audit.log_security_event,
+        {
+          event_type: SecurityEventType.AUTH_FAILURE,
+          entity_type,
+          details: `Unauthenticated batch_upsert attempt on ${table_name} with ${records.length} records`,
+        },
+      );
       return {
         success: false,
         error: auth_result.error,
@@ -205,6 +251,17 @@ export const batch_upsert = mutation({
     const can_create = check_permission(user_role, data_category, "create");
     const can_update = check_permission(user_role, data_category, "update");
     if (!can_create && !can_update) {
+      await ctx.scheduler.runAfter(
+        0,
+        internal.security_audit.log_security_event,
+        {
+          event_type: SecurityEventType.ACCESS_DENIED,
+          entity_type,
+          user_email: auth_result.data.email,
+          organization_id: auth_result.data.organization_id,
+          details: `Role "${user_role}" denied create/update on "${entity_type}" (${records.length} records)`,
+        },
+      );
       return {
         success: false,
         error: `Role "${user_role}" does not have create or update permission for "${entity_type}"`,
@@ -239,11 +296,44 @@ export const batch_upsert = mutation({
       delete sanitized_data._id;
       delete sanitized_data._creationTime;
 
+      const url_validation = validate_record_url_fields(sanitized_data);
+      if (!url_validation.is_valid) {
+        console.log("[sync] URL validation failed", {
+          event: "url_validation_rejected",
+          table_name,
+          local_id: record.local_id,
+          error: url_validation.error,
+        });
+        results.push({
+          local_id: record.local_id,
+          success: false,
+          action: "rejected_invalid_url",
+        });
+        continue;
+      }
+
+      const ownership_check = validate_record_organization_ownership(
+        sanitized_data,
+        auth_result.data,
+        table_name,
+      );
+      if (!ownership_check.success) {
+        results.push({
+          local_id: record.local_id,
+          success: false,
+          action: "rejected_wrong_organization",
+        });
+        continue;
+      }
+
       if (table_name === "system_users") {
         if (!sanitized_data.email) {
-          console.warn(
-            `[Sync] Skipping system_users record without email: local_id=${record.local_id}`,
-          );
+          console.warn("[Sync] Skipping system_users record without email", {
+            event: "sync_record_skipped",
+            table_name,
+            local_id: record.local_id,
+            reason: "missing_email",
+          });
           results.push({
             local_id: record.local_id,
             success: false,
@@ -386,8 +476,28 @@ export const get_all_records = query({
   },
   handler: async (ctx, args) => {
     const { table_name } = args;
+
+    const table_validation = validate_table_name(table_name);
+    if (!table_validation.success) {
+      return [];
+    }
+
+    const entity_type = get_entity_type_for_table(table_name);
     const table = ctx.db.query(table_name as any);
-    return await table.collect();
+    const all_records = await table.collect();
+
+    const auth_result = await require_auth(ctx);
+    if (!auth_result.success || check_is_global_table(table_name)) {
+      return all_records;
+    }
+
+    const scope_filter = build_scope_filter(auth_result.data, entity_type);
+    return filter_records_by_organization_scope(
+      all_records,
+      auth_result.data,
+      table_name,
+      scope_filter,
+    );
   },
 });
 
@@ -398,33 +508,40 @@ export const get_record_by_local_id = query({
   },
   handler: async (ctx, args) => {
     const { table_name, local_id } = args;
+
+    const table_validation = validate_table_name(table_name);
+    if (!table_validation.success) {
+      return null;
+    }
+
     const auth_result = await require_auth(ctx);
     if (!auth_result.success) {
       return null;
     }
 
     const caller = auth_result.data;
-
-    if (table_name === "organizations") {
-      const is_super_admin = caller.organization_id === "*";
-      const is_own_org = caller.organization_id === local_id;
-      if (!is_super_admin && !is_own_org) {
-        return null;
-      }
-    }
-
-    if (table_name === "teams") {
-      const is_super_admin = caller.organization_id === "*";
-      const is_own_team = caller.team_id === local_id;
-      if (!is_super_admin && !is_own_team) {
-        return null;
-      }
-    }
-
-    return await ctx.db
+    const record = await ctx.db
       .query(table_name as any)
       .withIndex("by_local_id", (q) => q.eq("local_id", local_id))
       .first();
+
+    if (!record) {
+      return null;
+    }
+
+    if (check_is_global_table(table_name)) {
+      return record;
+    }
+
+    const entity_type = get_entity_type_for_table(table_name);
+    const scope_filter = build_scope_filter(caller, entity_type);
+    const filtered = filter_records_by_organization_scope(
+      [record],
+      caller,
+      table_name,
+      scope_filter,
+    );
+    return filtered.length > 0 ? filtered[0] : null;
   },
 });
 
@@ -434,7 +551,26 @@ export const get_latest_modified_at = query({
   },
   handler: async (ctx, args) => {
     const { table_name } = args;
-    const records = await ctx.db.query(table_name as any).collect();
+
+    const table_validation = validate_table_name(table_name);
+    if (!table_validation.success) {
+      return { table_name, record_count: 0, latest_modified_at: null };
+    }
+
+    const auth_result = await require_auth(ctx);
+
+    let records = await ctx.db.query(table_name as any).collect();
+
+    if (auth_result.success && !check_is_global_table(table_name)) {
+      const entity_type = get_entity_type_for_table(table_name);
+      const scope_filter = build_scope_filter(auth_result.data, entity_type);
+      records = filter_records_by_organization_scope(
+        records,
+        auth_result.data,
+        table_name,
+        scope_filter,
+      );
+    }
 
     let latest_modified_at = "";
     let record_count = 0;
@@ -514,8 +650,27 @@ export const subscribe_to_table_changes = query({
   },
   handler: async (ctx, args) => {
     const { table_name } = args;
+
+    const table_validation = validate_table_name(table_name);
+    if (!table_validation.success) {
+      return { table_name, record_count: 0, latest_timestamp: "", records: [] };
+    }
+
+    const auth_result = await require_auth(ctx);
+
     const table = ctx.db.query(table_name as any);
-    const records = await table.collect();
+    let records = await table.collect();
+
+    if (auth_result.success && !check_is_global_table(table_name)) {
+      const entity_type = get_entity_type_for_table(table_name);
+      const scope_filter = build_scope_filter(auth_result.data, entity_type);
+      records = filter_records_by_organization_scope(
+        records,
+        auth_result.data,
+        table_name,
+        scope_filter,
+      );
+    }
 
     const latest_timestamp = records.reduce((latest: string, record: any) => {
       const record_timestamp =
@@ -551,7 +706,12 @@ export const force_resolve_conflict = mutation({
       resolved_by,
     } = args;
 
-    const entity_type = get_entity_type_from_table(table_name);
+    const entity_type = get_entity_type_for_table(table_name);
+
+    const table_validation = validate_table_name(table_name);
+    if (!table_validation.success) {
+      return { success: false, error: table_validation.error };
+    }
 
     const perm_result = await require_permission(ctx, entity_type, "update");
     if (!perm_result.success) {
@@ -609,10 +769,26 @@ export const clear_table = mutation({
   },
   handler: async (ctx, args) => {
     const { table_name } = args;
-    const entity_type = get_entity_type_from_table(table_name);
+
+    const table_validation = validate_table_name(table_name);
+    if (!table_validation.success) {
+      return { success: false, error: table_validation.error, deleted_count: 0 };
+    }
+
+    const entity_type = get_entity_type_for_table(table_name);
 
     const perm_result = await require_permission(ctx, entity_type, "delete");
     if (!perm_result.success) {
+      await ctx.scheduler.runAfter(
+        0,
+        internal.security_audit.log_security_event,
+        {
+          event_type: SecurityEventType.ACCESS_DENIED,
+          entity_type,
+          user_email: undefined,
+          details: `Unauthorized clear_table attempt on ${table_name}`,
+        },
+      );
       return {
         success: false,
         error: perm_result.error,
@@ -621,11 +797,35 @@ export const clear_table = mutation({
     }
 
     const all_records = await ctx.db.query(table_name as any).collect();
-    for (const record of all_records) {
+
+    const scope_filter = build_scope_filter(perm_result.data, entity_type);
+    const scope_filter_keys = Object.keys(scope_filter);
+    const scoped_records =
+      scope_filter_keys.length === 0
+        ? all_records
+        : all_records.filter((record: any) =>
+            scope_filter_keys.every(
+              (key) => record[key] === scope_filter[key],
+            ),
+          );
+
+    for (const record of scoped_records) {
       await ctx.db.delete(record._id);
     }
 
-    return { success: true, deleted_count: all_records.length };
+    await ctx.scheduler.runAfter(
+      0,
+      internal.security_audit.log_security_event,
+      {
+        event_type: SecurityEventType.SYNC_MUTATION,
+        entity_type,
+        user_email: perm_result.data.email,
+        organization_id: perm_result.data.organization_id,
+        details: `clear_table executed on ${table_name}: ${scoped_records.length} records deleted (scoped from ${all_records.length} total)`,
+      },
+    );
+
+    return { success: true, deleted_count: scoped_records.length };
   },
 });
 
@@ -709,6 +909,15 @@ export const clear_all_demo_data = mutation({
   handler: async (ctx, _args) => {
     const perm_result = await require_permission(ctx, "organization", "delete");
     if (!perm_result.success) {
+      await ctx.scheduler.runAfter(
+        0,
+        internal.security_audit.log_security_event,
+        {
+          event_type: SecurityEventType.ACCESS_DENIED,
+          entity_type: "organization",
+          details: "Unauthorized clear_all_demo_data attempt",
+        },
+      );
       return { success: false, error: perm_result.error, deleted_count: 0 };
     }
 
@@ -721,46 +930,31 @@ export const clear_all_demo_data = mutation({
           total_deleted++;
         }
       } catch (error) {
-        console.warn(`[clear_all_demo_data] Skipping ${table_name}: ${error}`);
+        console.warn("[clear_all_demo_data] Skipping table", {
+          event: "demo_data_clear_table_skipped",
+          table_name,
+          error: String(error),
+        });
       }
     }
 
-    console.log(
-      `[clear_all_demo_data] Done. Deleted ${total_deleted} records (system_users preserved)`,
+    await ctx.scheduler.runAfter(
+      0,
+      internal.security_audit.log_security_event,
+      {
+        event_type: SecurityEventType.SYNC_MUTATION,
+        entity_type: "organization",
+        user_email: perm_result.data.email,
+        organization_id: perm_result.data.organization_id,
+        details: `clear_all_demo_data executed: ${total_deleted} records deleted`,
+      },
     );
+
+    console.log("[clear_all_demo_data] Done", {
+      event: "demo_data_cleared",
+      total_deleted,
+      user_email: perm_result.data.email,
+    });
     return { success: true, deleted_count: total_deleted };
-  },
-});
-
-export const get_all_tables_latest_timestamps = query({
-  args: {},
-  handler: async (ctx, _args) => {
-    const result: Record<
-      string,
-      { record_count: number; latest_modified_at: string | null }
-    > = {};
-
-    for (const table_name of ALL_SYNCED_TABLE_NAMES) {
-      const records = await ctx.db.query(table_name as any).collect();
-
-      let latest_modified_at = "";
-      for (const record of records) {
-        const timestamp =
-          (record as any).updated_at ||
-          (record as any).modified_at ||
-          (record as any).created_at ||
-          "";
-        if (timestamp > latest_modified_at) {
-          latest_modified_at = timestamp;
-        }
-      }
-
-      result[table_name] = {
-        record_count: records.length,
-        latest_modified_at: latest_modified_at || null,
-      };
-    }
-
-    return result;
   },
 });

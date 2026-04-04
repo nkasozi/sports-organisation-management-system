@@ -6,9 +6,12 @@ export default defineConfig({
   test: {
     environment: "node",
     exclude: ["**/node_modules/**", "**/.svelte-kit/**", "**/dist/**"],
-    // This helps with the hanging issue too
     teardownTimeout: 1000,
     include: ["src/**/*.test.ts"],
+    env: {
+      VITE_AUTH_SECRET_KEY: "vitest-only-test-secret-key-not-for-production",
+      AUTH_SECRET_KEY: "vitest-only-test-secret-key-not-for-production",
+    },
   },
   server: {
     fs: {

@@ -1,6 +1,6 @@
 import { v } from "convex/values";
 import { mutation, query, internalMutation } from "./_generated/server";
-import { try_auth, build_scope_filter } from "./lib/auth_middleware";
+import { require_auth, build_scope_filter } from "./lib/auth_middleware";
 
 export const AUDIT_LOG_RETENTION_DAYS = 60;
 export const AUDIT_LOG_SYNC_DAYS = 2;
@@ -32,17 +32,25 @@ export const search_audit_logs = query({
       page_size = AUDIT_LOG_PAGE_SIZE,
     } = args;
 
-    const auth_result = await try_auth(ctx);
+    const auth_result = await require_auth(ctx);
+    if (!auth_result.success) {
+      return {
+        success: false,
+        data: [],
+        total_count: 0,
+        page_number: 1,
+        page_size: AUDIT_LOG_PAGE_SIZE,
+        total_pages: 0,
+      };
+    }
 
     let all_logs = await ctx.db.query("audit_logs").collect();
 
-    if (auth_result.success) {
-      const scope_filter = build_scope_filter(auth_result.data, "auditlog");
-      if (scope_filter.organization_id) {
-        all_logs = all_logs.filter(
-          (log) => log.organization_id === scope_filter.organization_id,
-        );
-      }
+    const scope_filter = build_scope_filter(auth_result.data, "auditlog");
+    if (scope_filter.organization_id) {
+      all_logs = all_logs.filter(
+        (log) => log.organization_id === scope_filter.organization_id,
+      );
     }
 
     let filtered_logs = all_logs;
@@ -122,17 +130,18 @@ export const get_recent_audit_logs = query({
     cutoff_date.setDate(cutoff_date.getDate() - days);
     const cutoff_timestamp = cutoff_date.toISOString();
 
-    const user = await try_auth(ctx);
+    const auth_result = await require_auth(ctx);
+    if (!auth_result.success) {
+      return [];
+    }
 
     let all_logs = await ctx.db.query("audit_logs").collect();
 
-    if (user.success) {
-      const scope_filter = build_scope_filter(user.data, "auditlog");
-      if (scope_filter.organization_id) {
-        all_logs = all_logs.filter(
-          (log) => log.organization_id === scope_filter.organization_id,
-        );
-      }
+    const scope_filter = build_scope_filter(auth_result.data, "auditlog");
+    if (scope_filter.organization_id) {
+      all_logs = all_logs.filter(
+        (log) => log.organization_id === scope_filter.organization_id,
+      );
     }
 
     const recent_logs = all_logs.filter((log) => {
@@ -174,9 +183,12 @@ export const delete_old_audit_logs_batch = internalMutation({
 
     const remaining_count = old_logs.length - deleted_count;
 
-    console.log(
-      `[AuditLogCleanup] Deleted ${deleted_count} logs older than ${retention_days} days. Remaining old logs: ${remaining_count}`,
-    );
+    console.log("[AuditLogCleanup] Batch complete", {
+      event: "audit_log_cleanup",
+      deleted_count,
+      retention_days,
+      remaining_count,
+    });
 
     return {
       deleted_count,
