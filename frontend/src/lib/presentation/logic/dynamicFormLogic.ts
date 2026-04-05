@@ -1,18 +1,24 @@
 import type {
   FieldMetadata,
   EntityMetadata,
-  ValidationRule,
   BaseEntity,
-  SubEntityConfig,
 } from "../../core/entities/BaseEntity";
 import type { SubEntityFilter } from "../../core/types/SubEntityFilter";
-import type { Result } from "../../core/types/Result";
-import {
-  create_failure_result,
-  create_success_result,
-} from "../../core/types/Result";
-import type { UserRole } from "../../core/interfaces/ports";
-import { should_field_be_required_for_role } from "./systemUserFormLogic";
+import { build_entity_display_label } from "./entityDisplayFormatter";
+
+export {
+  validate_form_data_against_metadata,
+  validate_field_against_rules,
+  type FieldValidationResult,
+} from "./dynamicFormValidation";
+export {
+  build_entity_display_label,
+  get_display_value_for_foreign_key,
+  format_entity_display_name,
+  format_enum_label,
+  build_foreign_entity_route,
+  build_foreign_entity_cta_label,
+} from "./entityDisplayFormatter";
 
 export function determine_if_edit_mode(
   data: Partial<BaseEntity> | null,
@@ -24,8 +30,7 @@ export function build_form_title(
   display_name: string,
   edit_mode: boolean,
 ): string {
-  const action = edit_mode ? "Edit" : "Create";
-  return `${action} ${display_name}`;
+  return `${edit_mode ? "Edit" : "Create"} ${display_name}`;
 }
 
 export function get_sub_entity_fields(
@@ -40,7 +45,6 @@ export function build_sub_entity_filter(
   parent_entity: Partial<BaseEntity> | null,
 ): SubEntityFilter | null {
   if (!field.sub_entity_config || !parent_entity?.id) return null;
-
   const config = field.sub_entity_config;
   return {
     foreign_key_field: config.foreign_key_field,
@@ -72,10 +76,9 @@ export function get_sorted_fields_for_display(
   in_edit_mode: boolean,
 ): FieldMetadata[] {
   const renderable_fields = fields.filter((f) => f.field_type !== "sub_entity");
-  const visible_fields = renderable_fields.filter((f) => {
-    if (!in_edit_mode && f.hide_on_create) return false;
-    return true;
-  });
+  const visible_fields = renderable_fields.filter(
+    (f) => !(!in_edit_mode && f.hide_on_create),
+  );
   const file_fields = visible_fields.filter((f) => f.field_type === "file");
   const other_fields = visible_fields.filter((f) => f.field_type !== "file");
   return [...file_fields, ...other_fields];
@@ -98,242 +101,11 @@ export function get_input_type_for_field(field: FieldMetadata): string {
   return "text";
 }
 
-export function validate_form_data_against_metadata(
-  data: Record<string, any>,
-  metadata: EntityMetadata,
-  is_edit_mode: boolean,
-  entity_type: string,
-): Result<boolean, Record<string, string>> {
-  const errors: Record<string, string> = {};
-
-  const is_system_user_entity =
-    entity_type.toLowerCase().replace(/[\s_-]/g, "") === "systemuser";
-  const selected_role = is_system_user_entity
-    ? (data["role"] as UserRole | null)
-    : null;
-
-  for (const field of metadata.fields) {
-    if (!is_field_visible_by_visible_when_condition(field, data)) continue;
-    if (!is_edit_mode && field.hide_on_create) continue;
-    if (is_edit_mode && field.hide_on_edit) continue;
-
-    const field_value = data[field.field_name];
-
-    const is_dynamically_required =
-      is_system_user_entity &&
-      should_field_be_required_for_role(field.field_name, selected_role);
-    const is_required = field.is_required || is_dynamically_required;
-
-    const is_empty_scalar =
-      field_value === "" || field_value === null || field_value === undefined;
-    const is_empty_star_rating =
-      field.field_type === "star_rating" &&
-      (typeof field_value !== "number" || field_value <= 0);
-    const is_empty_array =
-      field.field_type === "stage_template_array" &&
-      Array.isArray(field_value) &&
-      field_value.length === 0;
-
-    if (
-      is_required &&
-      (is_empty_scalar || is_empty_star_rating || is_empty_array)
-    ) {
-      errors[field.field_name] = `${field.display_name} is required`;
-      continue;
-    }
-
-    if (
-      field.validation_rules &&
-      field_value !== "" &&
-      field_value !== null &&
-      field_value !== undefined
-    ) {
-      const rule_validation_result = validate_field_against_rules(
-        field_value,
-        field.validation_rules,
-      );
-      if (!rule_validation_result.is_valid) {
-        errors[field.field_name] = rule_validation_result.error_message;
-      }
-    }
-  }
-
-  if (Object.keys(errors).length > 0) {
-    return create_failure_result(errors);
-  }
-  return create_success_result(true);
-}
-
-export interface FieldValidationResult {
-  is_valid: boolean;
-  error_message: string;
-}
-
-export function validate_field_against_rules(
-  value: any,
-  rules: ValidationRule[],
-): FieldValidationResult {
-  for (const rule of rules) {
-    if (
-      rule.rule_type === "min_length" &&
-      typeof value === "string" &&
-      value.length < rule.rule_value
-    ) {
-      return { is_valid: false, error_message: rule.error_message };
-    }
-    if (
-      rule.rule_type === "max_length" &&
-      typeof value === "string" &&
-      value.length > rule.rule_value
-    ) {
-      return { is_valid: false, error_message: rule.error_message };
-    }
-    if (
-      rule.rule_type === "min_value" &&
-      typeof value === "number" &&
-      value < rule.rule_value
-    ) {
-      return { is_valid: false, error_message: rule.error_message };
-    }
-    if (
-      rule.rule_type === "max_value" &&
-      typeof value === "number" &&
-      value > rule.rule_value
-    ) {
-      return { is_valid: false, error_message: rule.error_message };
-    }
-    if (
-      rule.rule_type === "pattern" &&
-      typeof value === "string" &&
-      !new RegExp(rule.rule_value).test(value)
-    ) {
-      return { is_valid: false, error_message: rule.error_message };
-    }
-  }
-  return { is_valid: true, error_message: "" };
-}
-
-function format_fixture_date_time(
-  scheduled_date: unknown,
-  scheduled_time: unknown,
-): string {
-  if (typeof scheduled_date !== "string" || scheduled_date.trim() === "") {
-    return "";
-  }
-
-  const date = new Date(scheduled_date);
-  if (isNaN(date.getTime())) return "";
-
-  const day = date.getDate();
-  const month_names = [
-    "Jan",
-    "Feb",
-    "Mar",
-    "Apr",
-    "May",
-    "Jun",
-    "Jul",
-    "Aug",
-    "Sep",
-    "Oct",
-    "Nov",
-    "Dec",
-  ];
-  const month = month_names[date.getMonth()];
-  const year = date.getFullYear();
-
-  const formatted_date = `${day} ${month} ${year}`;
-
-  if (typeof scheduled_time === "string" && scheduled_time.trim() !== "") {
-    return `${formatted_date} - ${scheduled_time}`;
-  }
-
-  return formatted_date;
-}
-
-export function build_entity_display_label(entity: BaseEntity): string {
-  const record = entity as unknown as Record<string, unknown>;
-
-  const nickname = record["nickname"];
-  const main_color = record["main_color"];
-  if (
-    typeof nickname === "string" &&
-    nickname.trim() !== "" &&
-    typeof main_color === "string" &&
-    main_color.trim() !== ""
-  ) {
-    return `${nickname} - ${main_color}`;
-  }
-
-  const name = record["name"];
-  if (typeof name === "string" && name.trim() !== "") return name;
-
-  const first_name = record["first_name"];
-  const last_name = record["last_name"];
-  if (
-    typeof first_name === "string" &&
-    typeof last_name === "string" &&
-    (first_name.trim() !== "" || last_name.trim() !== "")
-  ) {
-    return `${first_name} ${last_name}`.trim();
-  }
-
-  const title = record["title"];
-  if (typeof title === "string" && title.trim() !== "") return title;
-
-  const home_team_id = record["home_team_id"];
-  const away_team_id = record["away_team_id"];
-  if (typeof home_team_id === "string" && typeof away_team_id === "string") {
-    const home_team_name = record["home_team_name"];
-    const away_team_name = record["away_team_name"];
-    const scheduled_date = record["scheduled_date"];
-    const scheduled_time = record["scheduled_time"];
-    const date_time_suffix = format_fixture_date_time(
-      scheduled_date,
-      scheduled_time,
-    );
-
-    if (
-      typeof home_team_name === "string" &&
-      typeof away_team_name === "string"
-    ) {
-      const base_label = `${home_team_name} vs ${away_team_name}`;
-      return date_time_suffix
-        ? `${base_label} [${date_time_suffix}]`
-        : base_label;
-    }
-    const round_name = record["round_name"];
-    if (date_time_suffix) {
-      return `Fixture [${date_time_suffix}]`;
-    }
-    if (typeof round_name === "string" && round_name.trim() !== "") {
-      return `Fixture (${round_name})`;
-    }
-    return `Fixture: ${entity.id.slice(0, 8)}`;
-  }
-
-  return entity.id;
-}
-
-export function get_display_value_for_foreign_key(
-  options: BaseEntity[],
-  value: string,
-): string {
-  const normalized_value = String(value ?? "").trim();
-  const found_option = options.find((option) => {
-    const option_id = String((option as BaseEntity).id ?? "").trim();
-    return option_id === normalized_value;
-  });
-  if (found_option) return build_entity_display_label(found_option);
-  return normalized_value;
-}
-
 export function initialize_form_data_from_metadata(
   metadata: EntityMetadata,
   existing_data: Partial<BaseEntity> | null,
 ): Record<string, any> {
   const new_form_data: Record<string, any> = {};
-
   for (const field of metadata.fields) {
     if (
       existing_data &&
@@ -345,19 +117,7 @@ export function initialize_form_data_from_metadata(
       new_form_data[field.field_name] = get_default_value_for_field_type(field);
     }
   }
-
   return new_form_data;
-}
-
-export function format_entity_display_name(raw_name: string): string {
-  if (typeof raw_name !== "string" || raw_name.length === 0) return "Entity";
-  const with_spaces = raw_name
-    .replace(/([a-z])([A-Z])/g, "$1 $2")
-    .replace(/_/g, " ");
-  return with_spaces
-    .split(" ")
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-    .join(" ");
 }
 
 export function is_field_visible_by_visible_when_condition(
@@ -407,13 +167,6 @@ export function convert_file_to_base64(file: File): Promise<string> {
   });
 }
 
-export function format_enum_label(value: string): string {
-  return value
-    .split("_")
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-    .join(" ");
-}
-
 export function has_enum_options(field: FieldMetadata): boolean {
   if (field.enum_options && field.enum_options.length > 0) return true;
   if (field.enum_values && field.enum_values.length > 0) return true;
@@ -431,58 +184,24 @@ export function build_foreign_key_select_options(
 ): { value: string; label: string; color_swatch?: string }[] {
   const entities = options_map[field.field_name] || [];
   const is_jersey_field = is_jersey_color_field(field);
-
   return entities
     .map((entity) => {
       const entity_id = String((entity as BaseEntity).id ?? "").trim();
       if (entity_id.length === 0) return null;
-
       const option: { value: string; label: string; color_swatch?: string } = {
         value: entity_id,
         label: String(build_entity_display_label(entity)),
       };
-
       if (is_jersey_field) {
         const jersey = entity as unknown as { main_color?: string };
         if (jersey.main_color) option.color_swatch = jersey.main_color;
       }
-
       return option;
     })
     .filter(
       (opt): opt is { value: string; label: string; color_swatch?: string } =>
         Boolean(opt),
     );
-}
-
-export function build_foreign_entity_route(
-  entity_type: string | undefined,
-): string {
-  const normalized =
-    typeof entity_type === "string" ? entity_type.toLowerCase() : "";
-  if (normalized === "player") return "/players";
-  if (normalized === "team") return "/teams";
-  if (normalized === "organization") return "/organizations";
-  if (normalized === "competition") return "/competitions";
-  if (normalized === "fixture") return "/fixtures";
-  if (normalized === "playerposition") return "/player-positions";
-  if (normalized === "venue") return "/venues";
-  return "";
-}
-
-export function build_foreign_entity_cta_label(
-  entity_type: string | undefined,
-): string {
-  const normalized =
-    typeof entity_type === "string" ? entity_type.toLowerCase() : "";
-  if (normalized === "player") return "Create Players";
-  if (normalized === "team") return "Create Teams";
-  if (normalized === "organization") return "Create Organizations";
-  if (normalized === "competition") return "Create Competitions";
-  if (normalized === "fixture") return "Create Fixtures";
-  if (normalized === "playerposition") return "Create Player Positions";
-  if (normalized === "venue") return "Create Venues";
-  return "Create";
 }
 
 export function find_dependent_enum_fields(

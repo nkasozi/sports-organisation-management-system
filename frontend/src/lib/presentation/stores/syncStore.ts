@@ -1,4 +1,4 @@
-import { writable, derived, type Readable } from "svelte/store";
+import { writable } from "svelte/store";
 import {
   get_sync_manager,
   initialize_sync_manager,
@@ -6,10 +6,7 @@ import {
   type SyncDirection,
   type SyncProgress,
   type SyncResult,
-  type SyncStatus,
   get_last_sync_timestamp,
-  resolve_conflict,
-  type ConflictResolutionRequest,
 } from "$lib/infrastructure/sync/convexSyncService";
 import { conflict_store } from "$lib/presentation/stores/conflictStore";
 import type {
@@ -26,31 +23,14 @@ import {
   create_success_result,
   create_failure_result,
 } from "$lib/core/types/Result";
-
-interface SyncState {
-  is_configured: boolean;
-  is_syncing: boolean;
-  last_sync_at: string | null;
-  last_sync_result: SyncResult | null;
-  current_progress: SyncProgress | null;
-  auto_sync_enabled: boolean;
-  error_message: string | null;
-  has_pending_conflicts: boolean;
-}
-
-const initial_state: SyncState = {
-  is_configured: false,
-  is_syncing: false,
-  last_sync_at: null,
-  last_sync_result: null,
-  current_progress: null,
-  auto_sync_enabled: false,
-  error_message: null,
-  has_pending_conflicts: false,
-};
+import type { SyncState } from "./syncStoreTypes";
+import { SYNC_INITIAL_STATE } from "./syncStoreTypes";
+import { execute_conflict_resolution } from "./syncStoreResolveConflict";
+export type { SyncState } from "./syncStoreTypes";
+export { SYNC_INITIAL_STATE } from "./syncStoreTypes";
 
 function create_sync_store() {
-  const { subscribe, set, update } = writable<SyncState>(initial_state);
+  const { subscribe, set, update } = writable<SyncState>(SYNC_INITIAL_STATE);
 
   function handle_progress(progress: SyncProgress): void {
     update((state) => ({
@@ -64,9 +44,7 @@ function create_sync_store() {
     if (!result.success && result.errors.length > 0) {
       console.error("[Sync] Sync completed with errors:", result.errors);
     }
-
     const has_conflicts = result.conflicts && result.conflicts.length > 0;
-
     if (has_conflicts) {
       for (const table_conflict of result.conflicts) {
         conflict_store.add_conflicts_from_sync_response(
@@ -75,7 +53,6 @@ function create_sync_store() {
         );
       }
     }
-
     update((state) => ({
       ...state,
       is_syncing: false,
@@ -113,10 +90,7 @@ function create_sync_store() {
     }) => {
       const manager = get_sync_manager();
       manager.set_convex_client(client);
-      update((state) => ({
-        ...state,
-        is_configured: manager.is_configured(),
-      }));
+      update((state) => ({ ...state, is_configured: manager.is_configured() }));
     },
 
     sync_now: async (
@@ -129,7 +103,6 @@ function create_sync_store() {
         error_message: null,
         current_progress: null,
       }));
-
       try {
         const manager = get_sync_manager();
         const result = await manager.sync_now(
@@ -182,30 +155,22 @@ function create_sync_store() {
     start_auto_sync: () => {
       const manager = get_sync_manager();
       manager.start_auto_sync(handle_sync_complete);
-      update((state) => ({
-        ...state,
-        auto_sync_enabled: true,
-      }));
+      update((state) => ({ ...state, auto_sync_enabled: true }));
     },
 
     stop_auto_sync: () => {
       const manager = get_sync_manager();
       manager.stop_auto_sync();
-      update((state) => ({
-        ...state,
-        auto_sync_enabled: false,
-      }));
+      update((state) => ({ ...state, auto_sync_enabled: false }));
     },
 
     update_config: (config: Partial<SyncConfig>) => {
-      const manager = get_sync_manager();
-      manager.update_config(config);
+      get_sync_manager().update_config(config);
     },
 
     reset: () => {
-      const manager = get_sync_manager();
-      manager.stop_auto_sync();
-      set(initial_state);
+      get_sync_manager().stop_auto_sync();
+      set(SYNC_INITIAL_STATE);
     },
 
     resolve_conflict_and_sync: async (
@@ -218,93 +183,25 @@ function create_sync_store() {
         manager as unknown as {
           convex_client: {
             mutation: (
-              name: string,
-              args: Record<string, unknown>,
+              n: string,
+              a: Record<string, unknown>,
             ) => Promise<unknown>;
-            query: (
-              name: string,
-              args: Record<string, unknown>,
-            ) => Promise<unknown>;
+            query: (n: string, a: Record<string, unknown>) => Promise<unknown>;
           } | null;
         }
       ).convex_client;
-
-      if (!convex_client) {
-        return { success: false, error: "Convex client not configured" };
-      }
-
-      let resolved_data: Record<string, unknown>;
-
-      switch (action) {
-        case "keep_local":
-          resolved_data = {
-            ...conflict.local_data,
-            updated_at: new Date().toISOString(),
-          };
-          break;
-        case "keep_remote":
-          resolved_data = conflict.remote_data;
-          break;
-        case "merge":
-          resolved_data = merged_data || conflict.local_data;
-          break;
-        default:
-          resolved_data = conflict.local_data;
-      }
-
-      const request: ConflictResolutionRequest = {
-        table_name: conflict.table_name,
-        local_id: conflict.local_id,
-        resolved_data,
-        resolution_action: action,
-      };
-
-      const result = await resolve_conflict(convex_client, request);
-
+      const result = await execute_conflict_resolution(
+        convex_client,
+        conflict,
+        action,
+        merged_data,
+      );
       if (result.success) {
-        update((state) => ({
-          ...state,
-          has_pending_conflicts: false,
-        }));
+        update((state) => ({ ...state, has_pending_conflicts: false }));
       }
-
       return result;
     },
   };
 }
 
 export const sync_store = create_sync_store();
-
-export const is_syncing: Readable<boolean> = derived(
-  sync_store,
-  ($sync_store) => $sync_store.is_syncing,
-);
-
-export const sync_progress: Readable<SyncProgress | null> = derived(
-  sync_store,
-  ($sync_store) => $sync_store.current_progress,
-);
-
-export const sync_percentage: Readable<number> = derived(
-  sync_store,
-  ($sync_store) => $sync_store.current_progress?.percentage ?? 0,
-);
-
-const sync_status: Readable<SyncStatus> = derived(sync_store, ($sync_store) =>
-  $sync_store.is_syncing ? "syncing" : "idle",
-);
-
-export const last_sync_time: Readable<string | null> = derived(
-  sync_store,
-  ($sync_store) => $sync_store.last_sync_at,
-);
-
-export const sync_error: Readable<string | null> = derived(
-  sync_store,
-  ($sync_store) => $sync_store.error_message,
-);
-
-const has_pending_conflicts: Readable<boolean> = derived(
-  sync_store,
-  ($sync_store) => $sync_store.has_pending_conflicts,
-);

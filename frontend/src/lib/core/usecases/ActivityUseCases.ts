@@ -5,30 +5,26 @@ import type {
 } from "../entities/Activity";
 import {
   validate_activity_input,
-  create_activity_from_fixture,
-  create_activity_from_competition,
   can_edit_activity,
   can_delete_activity,
 } from "../entities/Activity";
 import type { ActivityCategory } from "../entities/ActivityCategory";
-import type { ActivityRepository, ActivityFilter } from "../interfaces/ports";
-import type { CompetitionRepository } from "../interfaces/ports";
-import type { FixtureRepository } from "../interfaces/ports";
-import type { TeamRepository } from "../interfaces/ports";
-import type { ActivityCategoryRepository } from "../interfaces/ports";
-import type { QueryOptions } from "../interfaces/ports";
 import type {
-  PaginatedAsyncResult,
-  AsyncResult,
-  Result,
-} from "../types/Result";
-import { create_success_result, create_failure_result } from "../types/Result";
-import type {
+  ActivityRepository,
+  ActivityFilter,
+  ActivityCategoryRepository,
+  CompetitionRepository,
+  FixtureRepository,
+  TeamRepository,
+  QueryOptions,
   ActivityUseCasesPort,
   CalendarDateRange,
   CalendarEvent,
 } from "../interfaces/ports";
+import type { PaginatedAsyncResult, AsyncResult } from "../types/Result";
+import { create_success_result, create_failure_result } from "../types/Result";
 import { get_repository_container } from "../../infrastructure/container";
+import { create_activity_sync } from "./ActivitySyncUseCases";
 
 export type ActivityUseCases = ActivityUseCasesPort;
 
@@ -51,50 +47,6 @@ export function create_activity_use_cases(
     team_repository,
   } = dependencies;
 
-  async function get_fixture_category_id(
-    organization_id: string,
-  ): Promise<Result<string>> {
-    const categories_result =
-      await activity_category_repository.find_by_category_type(
-        organization_id,
-        "fixture",
-      );
-
-    if (
-      categories_result.success &&
-      categories_result.data?.items &&
-      categories_result.data.items.length > 0
-    ) {
-      return create_success_result(categories_result.data.items[0].id);
-    }
-
-    return create_failure_result(
-      `No fixture category found for organization: ${organization_id}`,
-    );
-  }
-
-  async function get_competition_category_id(
-    organization_id: string,
-  ): Promise<Result<string>> {
-    const categories_result =
-      await activity_category_repository.find_by_category_type(
-        organization_id,
-        "competition",
-      );
-
-    if (
-      categories_result.success &&
-      categories_result.data?.items &&
-      categories_result.data.items.length > 0
-    ) {
-      return create_success_result(categories_result.data.items[0].id);
-    }
-
-    return create_failure_result(
-      `No competition category found for organization: ${organization_id}`,
-    );
-  }
-
   return {
     async list(
       filter?: ActivityFilter,
@@ -104,21 +56,16 @@ export function create_activity_use_cases(
     },
 
     async get_by_id(id: string): AsyncResult<Activity> {
-      if (!id || id.trim().length === 0) {
-        return create_failure_result("Activity ID is required");
-      }
-
+      if (!id?.trim()) return create_failure_result("Activity ID is required");
       return activity_repository.find_by_id(id);
     },
 
     async create(input: CreateActivityInput): AsyncResult<Activity> {
       const validation = validate_activity_input(input);
-
-      if (!validation.is_valid) {
-        const error_messages = Object.values(validation.errors).join(", ");
-        return create_failure_result(error_messages);
-      }
-
+      if (!validation.is_valid)
+        return create_failure_result(
+          Object.values(validation.errors).join(", "),
+        );
       return activity_repository.create(input);
     },
 
@@ -126,42 +73,26 @@ export function create_activity_use_cases(
       id: string,
       input: UpdateActivityInput,
     ): AsyncResult<Activity> {
-      if (!id || id.trim().length === 0) {
-        return create_failure_result("Activity ID is required");
-      }
-
+      if (!id?.trim()) return create_failure_result("Activity ID is required");
       const existing_result = await activity_repository.find_by_id(id);
-
-      if (!existing_result.success) {
+      if (!existing_result.success)
         return create_failure_result(existing_result.error);
-      }
-
-      if (!can_edit_activity(existing_result.data!)) {
+      if (!can_edit_activity(existing_result.data!))
         return create_failure_result(
           "Cannot edit activities auto-generated from competitions or fixtures",
         );
-      }
-
       return activity_repository.update(id, input);
     },
 
     async delete(id: string): AsyncResult<boolean> {
-      if (!id || id.trim().length === 0) {
-        return create_failure_result("Activity ID is required");
-      }
-
+      if (!id?.trim()) return create_failure_result("Activity ID is required");
       const existing_result = await activity_repository.find_by_id(id);
-
-      if (!existing_result.success) {
+      if (!existing_result.success)
         return create_failure_result(existing_result.error);
-      }
-
-      if (!can_delete_activity(existing_result.data!)) {
+      if (!can_delete_activity(existing_result.data!))
         return create_failure_result(
           "Cannot delete activities auto-generated from competitions or fixtures",
         );
-      }
-
       return activity_repository.delete_by_id(id);
     },
 
@@ -169,10 +100,8 @@ export function create_activity_use_cases(
       organization_id: string,
       options?: QueryOptions,
     ): PaginatedAsyncResult<Activity> {
-      if (!organization_id || organization_id.trim().length === 0) {
+      if (!organization_id?.trim())
         return { success: false, error: "Organization ID is required" };
-      }
-
       return activity_repository.find_by_organization(organization_id, options);
     },
 
@@ -181,10 +110,8 @@ export function create_activity_use_cases(
       date_range: CalendarDateRange,
       options?: QueryOptions,
     ): PaginatedAsyncResult<Activity> {
-      if (!organization_id || organization_id.trim().length === 0) {
+      if (!organization_id?.trim())
         return { success: false, error: "Organization ID is required" };
-      }
-
       return activity_repository.find_by_date_range(
         organization_id,
         date_range.start_date,
@@ -235,35 +162,26 @@ export function create_activity_use_cases(
         start_date_after: date_range.start_date,
         start_date_before: date_range.end_date,
       };
-
       const activities_result = await activity_repository.find_all(
         combined_filter,
         { page_size: 1000 },
       );
-
-      if (!activities_result.success) {
+      if (!activities_result.success)
         return create_failure_result(activities_result.error);
-      }
-
       const activities = activities_result.data?.items || [];
-
       const categories_result =
         await activity_category_repository.find_by_organization(
           organization_id,
         );
-
       const category_items =
         categories_result.success && categories_result.data
           ? categories_result.data.items
           : [];
-
       const categories_map = new Map<string, ActivityCategory>(
         category_items.map((c) => [c.id, c]),
       );
-
       const calendar_events: CalendarEvent[] = activities.map((activity) => {
         const category = categories_map.get(activity.category_id);
-
         return {
           id: activity.id,
           title: activity.title,
@@ -280,198 +198,16 @@ export function create_activity_use_cases(
           activity,
         };
       });
-
       return create_success_result(calendar_events);
     },
 
-    async sync_competitions_to_activities(
-      organization_id: string,
-    ): AsyncResult<{ created: number; updated: number }> {
-      const competition_category_result =
-        await get_competition_category_id(organization_id);
-
-      if (!competition_category_result.success) {
-        return create_failure_result(
-          `Competition category not found. Please ensure default categories are created.`,
-        );
-      }
-
-      const competition_category_id = competition_category_result.data;
-
-      const competitions_result =
-        await competition_repository.find_by_organization(organization_id);
-
-      if (!competitions_result.success) {
-        return create_failure_result(competitions_result.error);
-      }
-
-      const competitions = competitions_result.data?.items || [];
-      let created = 0;
-      let updated = 0;
-
-      for (const competition of competitions) {
-        const existing_activity_result =
-          await activity_repository.find_by_source(
-            "competition",
-            competition.id,
-          );
-
-        if (!existing_activity_result.success) {
-          continue;
-        }
-
-        const activity_input = create_activity_from_competition(
-          competition.id,
-          competition.name,
-          competition.start_date,
-          competition.end_date,
-          organization_id,
-          competition_category_id,
-          competition.location,
-        );
-
-        if (existing_activity_result.data) {
-          const update_result = await activity_repository.update(
-            existing_activity_result.data.id,
-            {
-              title: activity_input.title,
-              start_datetime: activity_input.start_datetime,
-              end_datetime: activity_input.end_datetime,
-              location: activity_input.location,
-            },
-          );
-
-          if (update_result.success) {
-            updated++;
-          }
-        } else {
-          const create_result =
-            await activity_repository.create(activity_input);
-
-          if (create_result.success) {
-            created++;
-          }
-        }
-      }
-
-      return create_success_result({ created, updated });
-    },
-
-    async sync_fixtures_to_activities(
-      organization_id: string,
-      competition_id?: string,
-    ): AsyncResult<{ created: number; updated: number }> {
-      console.log(
-        "[ActivityUseCases] sync_fixtures_to_activities - org:",
-        organization_id,
-        "competition:",
-        competition_id,
-      );
-
-      const fixture_category_result =
-        await get_fixture_category_id(organization_id);
-
-      if (!fixture_category_result.success) {
-        console.log("[ActivityUseCases] No fixture category found");
-        return create_failure_result(
-          `Fixture category not found. Please ensure default categories are created.`,
-        );
-      }
-
-      const fixture_category_id = fixture_category_result.data;
-
-      const fixtures_result = competition_id
-        ? await fixture_repository.find_by_competition(competition_id)
-        : await fixture_repository.find_all(undefined, { page_size: 1000 });
-
-      if (!fixtures_result.success) {
-        console.log(
-          "[ActivityUseCases] Failed to fetch fixtures:",
-          fixtures_result.error,
-        );
-        return create_failure_result(fixtures_result.error);
-      }
-
-      console.log(
-        "[ActivityUseCases] Fixtures found - count:",
-        fixtures_result.data?.items?.length,
-      );
-
-      const fixtures = fixtures_result.data?.items || [];
-      let created = 0;
-      let updated = 0;
-
-      for (const fixture of fixtures) {
-        const existing_activity_result =
-          await activity_repository.find_by_source("fixture", fixture.id);
-
-        if (!existing_activity_result.success) {
-          continue;
-        }
-
-        const home_team_result = await team_repository.find_by_id(
-          fixture.home_team_id,
-        );
-        const away_team_result = await team_repository.find_by_id(
-          fixture.away_team_id,
-        );
-
-        const home_team_name = home_team_result.success
-          ? home_team_result.data?.name || "TBD"
-          : "TBD";
-        const away_team_name = away_team_result.success
-          ? away_team_result.data?.name || "TBD"
-          : "TBD";
-
-        const fixture_title = `${home_team_name} vs ${away_team_name}`;
-        const fixture_datetime = `${fixture.scheduled_date}T${fixture.scheduled_time || "00:00"}`;
-
-        const activity_input = create_activity_from_fixture(
-          fixture.id,
-          fixture_title,
-          fixture_datetime,
-          fixture.competition_id,
-          fixture.home_team_id,
-          fixture.away_team_id,
-          organization_id,
-          fixture_category_id,
-          fixture.venue,
-        );
-
-        if (existing_activity_result.data) {
-          const update_result = await activity_repository.update(
-            existing_activity_result.data.id,
-            {
-              title: activity_input.title,
-              start_datetime: activity_input.start_datetime,
-              end_datetime: activity_input.end_datetime,
-              location: activity_input.location,
-              team_ids: activity_input.team_ids,
-            },
-          );
-
-          if (update_result.success) {
-            updated++;
-          }
-        } else {
-          const create_result =
-            await activity_repository.create(activity_input);
-
-          if (create_result.success) {
-            created++;
-          }
-        }
-      }
-
-      return create_success_result({ created, updated });
-    },
-
-    async find_activity_by_source(
-      source_type: Activity["source_type"],
-      source_id: string,
-    ): AsyncResult<Activity | null> {
-      return activity_repository.find_by_source(source_type, source_id);
-    },
+    ...create_activity_sync(
+      activity_repository,
+      activity_category_repository,
+      competition_repository,
+      fixture_repository,
+      team_repository,
+    ),
   };
 }
 

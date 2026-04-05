@@ -15,82 +15,52 @@ import {
   create_success_result,
   create_failure_result,
 } from "$lib/core/types/Result";
+import {
+  base64_url_encode,
+  base64_url_decode,
+  create_hmac_signature,
+  verify_hmac_signature,
+  create_token_header,
+} from "$lib/infrastructure/utils/JwtTokenUtils";
 
 const VERIFICATION_CACHE_MAX_ENTRIES = 50;
 const VERIFICATION_CACHE_TTL_MS = 30 * 60 * 1000;
+const TOKEN_EXPIRY_DAYS = 7;
+const SESSION_KEY_STORAGE_KEY = "local_auth_session_key";
+const SESSION_KEY_BYTE_LENGTH = 32;
 
-const MISSING_SECRET_KEY_ERROR =
-  "AUTH_SECRET_KEY environment variable is required but not set";
+function generate_random_session_key(): string {
+  const random_bytes = crypto.getRandomValues(
+    new Uint8Array(SESSION_KEY_BYTE_LENGTH),
+  );
+  return Array.from(random_bytes, (byte) =>
+    byte.toString(16).padStart(2, "0"),
+  ).join("");
+}
+
+function get_or_create_browser_session_key(): string {
+  const existing_key = sessionStorage.getItem(SESSION_KEY_STORAGE_KEY);
+  if (existing_key) return existing_key;
+  const new_key = generate_random_session_key();
+  sessionStorage.setItem(SESSION_KEY_STORAGE_KEY, new_key);
+  return new_key;
+}
+
+function is_real_browser_environment(): boolean {
+  return browser && typeof sessionStorage !== "undefined";
+}
 
 function get_secret_key(): string {
-  if (browser) {
-    const secret_key = import.meta.env.VITE_AUTH_SECRET_KEY;
-    if (!secret_key) {
-      throw new Error(MISSING_SECRET_KEY_ERROR);
-    }
-    return secret_key;
+  if (is_real_browser_environment()) {
+    return get_or_create_browser_session_key();
   }
-  const server_secret_key =
-    process.env.AUTH_SECRET_KEY ?? import.meta.env.VITE_AUTH_SECRET_KEY;
+  const server_secret_key = process.env.AUTH_SECRET_KEY;
   if (!server_secret_key) {
-    throw new Error(MISSING_SECRET_KEY_ERROR);
+    throw new Error(
+      "AUTH_SECRET_KEY environment variable is required but not set",
+    );
   }
   return server_secret_key;
-}
-
-const TOKEN_EXPIRY_DAYS = 7;
-
-function base64_url_encode(data: string): string {
-  const base64 = btoa(data);
-  return base64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
-}
-
-function base64_url_decode(encoded: string): string {
-  let base64 = encoded.replace(/-/g, "+").replace(/_/g, "/");
-  const padding = base64.length % 4;
-  if (padding) {
-    base64 += "=".repeat(4 - padding);
-  }
-  return atob(base64);
-}
-
-async function create_hmac_signature(
-  data: string,
-  secret: string,
-): Promise<string> {
-  const encoder = new TextEncoder();
-  const key_data = encoder.encode(secret);
-  const message_data = encoder.encode(data);
-
-  const crypto_key = await crypto.subtle.importKey(
-    "raw",
-    key_data,
-    { name: "HMAC", hash: "SHA-256" },
-    false,
-    ["sign"],
-  );
-
-  const signature = await crypto.subtle.sign("HMAC", crypto_key, message_data);
-  const signature_array = new Uint8Array(signature);
-  const signature_hex = Array.from(signature_array)
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
-
-  return signature_hex;
-}
-
-async function verify_hmac_signature(
-  data: string,
-  signature: string,
-  secret: string,
-): Promise<boolean> {
-  const expected_signature = await create_hmac_signature(data, secret);
-  return signature === expected_signature;
-}
-
-function create_token_header(): string {
-  const header = { alg: "HS256", typ: "JWT" };
-  return base64_url_encode(JSON.stringify(header));
 }
 
 export class LocalAuthenticationAdapter implements AuthenticationPort {
@@ -119,32 +89,26 @@ export class LocalAuthenticationAdapter implements AuthenticationPort {
   ): Promise<Result<AuthToken>> {
     try {
       const now = Date.now();
-      const expires_at = now + TOKEN_EXPIRY_DAYS * 24 * 60 * 60 * 1000;
-
       const payload: AuthTokenPayload = {
         ...payload_input,
         issued_at: now,
-        expires_at,
+        expires_at: now + TOKEN_EXPIRY_DAYS * 24 * 60 * 60 * 1000,
       };
-
       const header = create_token_header();
       const encoded_payload = base64_url_encode(JSON.stringify(payload));
-      const signature_input = `${header}.${encoded_payload}`;
       const signature = await create_hmac_signature(
-        signature_input,
+        `${header}.${encoded_payload}`,
         get_secret_key(),
       );
-
-      const raw_token = `${header}.${encoded_payload}.${signature}`;
-
-      console.log(
-        `[LocalAuthenticationAdapter] Generated token for user: ${payload.email}, role: ${payload.role}`,
-      );
-
+      console.log("[Auth] Token generated", {
+        event: "token_generated",
+        user_id: payload.user_id,
+        role: payload.role,
+      });
       return create_success_result({
         payload,
         signature,
-        raw_token,
+        raw_token: `${header}.${encoded_payload}.${signature}`,
       });
     } catch (error) {
       return create_failure_result(`Failed to generate token: ${error}`);
@@ -160,22 +124,18 @@ export class LocalAuthenticationAdapter implements AuthenticationPort {
         error_message: "Token is empty",
       });
     }
-
     const cached_result = this.verification_cache.get_or_miss(raw_token);
     if (cached_result.is_hit && cached_result.value) {
-      console.log(
-        "[LocalAuthenticationAdapter] Cache HIT for token verification",
-      );
+      console.log("[Auth] Cache HIT for token verification", {
+        event: "token_cache_hit",
+      });
       return create_success_result(cached_result.value);
     }
-
     const verification_result =
       await this.verify_token_without_cache(raw_token);
-
     if (verification_result.is_valid) {
       this.verification_cache.set(raw_token, verification_result);
     }
-
     return create_success_result(verification_result);
   }
 
@@ -183,82 +143,61 @@ export class LocalAuthenticationAdapter implements AuthenticationPort {
     raw_token: string,
   ): Promise<AuthVerificationResult> {
     const parts = raw_token.split(".");
-    if (parts.length !== 3) {
+    if (parts.length !== 3)
       return { is_valid: false, error_message: "Invalid token format" };
-    }
-
     const [header, encoded_payload, signature] = parts;
-    const signature_input = `${header}.${encoded_payload}`;
-
     const is_signature_valid = await verify_hmac_signature(
-      signature_input,
+      `${header}.${encoded_payload}`,
       signature,
       get_secret_key(),
     );
-
     if (!is_signature_valid) {
-      console.warn(
-        "[LocalAuthenticationAdapter] Token signature verification failed - token may have been tampered with",
-      );
+      console.warn("[Auth] Token signature verification failed", {
+        event: "token_tampered",
+      });
       return { is_valid: false, error_message: "Token has been tampered with" };
     }
-
     const payload_result = this.parse_token_payload(raw_token);
-    if (!payload_result.success) {
-      return {
-        is_valid: false,
-        error_message: payload_result.error,
-      };
-    }
+    if (!payload_result.success)
+      return { is_valid: false, error_message: payload_result.error };
     const payload = payload_result.data;
-
     if (Date.now() > payload.expires_at) {
-      console.warn("[LocalAuthenticationAdapter] Token has expired");
+      console.warn("[Auth] Token has expired", { event: "token_expired" });
       return { is_valid: false, error_message: "Token has expired" };
     }
-
     const user_result = await this.system_user_repository.find_by_email(
       payload.email,
     );
-
     if (!user_result.success || user_result.data.items.length === 0) {
-      console.warn(
-        `[LocalAuthenticationAdapter] User not found for email: ${payload.email}`,
-      );
+      console.warn("[Auth] User not found for token", {
+        event: "token_user_not_found",
+      });
       return { is_valid: false, error_message: "User not found" };
     }
-
-    const system_user = user_result.data.items[0];
-
-    console.log(
-      `[LocalAuthenticationAdapter] Token verified successfully for user: ${payload.email}`,
-    );
-
-    return { is_valid: true, payload, system_user };
+    console.log("[Auth] Token verified", {
+      event: "token_verified",
+      user_id: user_result.data.items[0].id,
+    });
+    return { is_valid: true, payload, system_user: user_result.data.items[0] };
   }
 
   private parse_token_payload(raw_token: string): Result<AuthTokenPayload> {
-    if (!raw_token || raw_token.trim().length === 0) {
+    if (!raw_token || raw_token.trim().length === 0)
       return create_failure_result("Token is empty");
-    }
-
     const parts = raw_token.split(".");
-    if (parts.length !== 3) {
+    if (parts.length !== 3)
       return create_failure_result(
         "Token format is invalid (expected 3 parts)",
       );
-    }
-
     try {
-      const decoded_payload = base64_url_decode(parts[1]);
       return create_success_result(
-        JSON.parse(decoded_payload) as AuthTokenPayload,
+        JSON.parse(base64_url_decode(parts[1])) as AuthTokenPayload,
       );
     } catch (error) {
-      console.error(
-        "[LocalAuthenticationAdapter] Failed to decode token:",
-        error,
-      );
+      console.error("[Auth] Failed to decode token", {
+        event: "token_decode_failed",
+        error: String(error),
+      });
       return create_failure_result("Failed to decode token payload");
     }
   }

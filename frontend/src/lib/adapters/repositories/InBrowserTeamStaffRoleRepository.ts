@@ -8,8 +8,8 @@ import type { BaseEntity } from "../../core/entities/BaseEntity";
 import type {
   TeamStaffRoleRepository,
   TeamStaffRoleFilter,
+  QueryOptions,
 } from "../../core/interfaces/ports";
-import type { QueryOptions } from "../../core/interfaces/ports";
 import type {
   PaginatedAsyncResult,
   AsyncResult,
@@ -20,6 +20,7 @@ import {
   create_failure_result,
 } from "../../core/types/Result";
 import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
+export { create_default_team_staff_roles_for_organization } from "./InBrowserTeamStaffRoleRepositoryDefaults";
 
 const ENTITY_PREFIX = "team_staff_role";
 
@@ -45,28 +46,14 @@ export class InBrowserTeamStaffRoleRepository
     id: string,
     timestamps: Pick<BaseEntity, "created_at" | "updated_at">,
   ): TeamStaffRole {
-    return {
-      id,
-      ...timestamps,
-      name: input.name,
-      code: input.code,
-      description: input.description,
-      category: input.category,
-      is_primary_contact: input.is_primary_contact,
-      display_order: input.display_order,
-      status: input.status,
-      organization_id: input.organization_id,
-    };
+    return { id, ...timestamps, ...input };
   }
 
   protected apply_updates_to_entity(
     entity: TeamStaffRole,
     updates: UpdateTeamStaffRoleInput,
   ): TeamStaffRole {
-    return {
-      ...entity,
-      ...updates,
-    };
+    return { ...entity, ...updates };
   }
 
   protected apply_entity_filter(
@@ -74,28 +61,21 @@ export class InBrowserTeamStaffRoleRepository
     filter: TeamStaffRoleFilter,
   ): TeamStaffRole[] {
     let filtered = entities;
-
     if (filter.name_contains) {
-      const search_term = filter.name_contains.toLowerCase();
-      filtered = filtered.filter((role) =>
-        role.name.toLowerCase().includes(search_term),
-      );
+      const term = filter.name_contains.toLowerCase();
+      filtered = filtered.filter((r) => r.name.toLowerCase().includes(term));
     }
-
     if (filter.category) {
-      filtered = filtered.filter((role) => role.category === filter.category);
+      filtered = filtered.filter((r) => r.category === filter.category);
     }
-
     if (filter.status) {
-      filtered = filtered.filter((role) => role.status === filter.status);
+      filtered = filtered.filter((r) => r.status === filter.status);
     }
-
     if (filter.organization_id) {
       filtered = filtered.filter(
-        (role) => role.organization_id === filter.organization_id,
+        (r) => r.organization_id === filter.organization_id,
       );
     }
-
     return filtered;
   }
 
@@ -105,44 +85,14 @@ export class InBrowserTeamStaffRoleRepository
   ): PaginatedAsyncResult<TeamStaffRole> {
     try {
       let filtered_entities = await this.database.team_staff_roles.toArray();
-
       if (filter) {
-        if (filter.name_contains) {
-          const search_term = filter.name_contains.toLowerCase();
-          filtered_entities = filtered_entities.filter((role) =>
-            role.name.toLowerCase().includes(search_term),
-          );
-        }
-
-        if (filter.category) {
-          filtered_entities = filtered_entities.filter(
-            (role) => role.category === filter.category,
-          );
-        }
-
-        if (filter.status) {
-          filtered_entities = filtered_entities.filter(
-            (role) => role.status === filter.status,
-          );
-        }
-
-        if (filter.organization_id) {
-          filtered_entities = filtered_entities.filter(
-            (role) => role.organization_id === filter.organization_id,
-          );
-        }
+        filtered_entities = this.apply_entity_filter(filtered_entities, filter);
       }
-
       filtered_entities.sort((a, b) => a.display_order - b.display_order);
-
       const total_count = filtered_entities.length;
-      const paginated_entities = this.apply_pagination(
-        filtered_entities,
-        options,
-      );
-
+      const paginated = this.apply_pagination(filtered_entities, options);
       return create_success_result(
-        this.create_paginated_result(paginated_entities, total_count, options),
+        this.create_paginated_result(paginated, total_count, options),
       );
     } catch (error) {
       const error_message =
@@ -161,7 +111,6 @@ export class InBrowserTeamStaffRoleRepository
         .where("category")
         .equals(category)
         .toArray();
-
       return create_success_result(
         roles.sort((a, b) => a.display_order - b.display_order),
       );
@@ -181,146 +130,6 @@ export class InBrowserTeamStaffRoleRepository
   ): PaginatedAsyncResult<TeamStaffRole> {
     return this.find_all({ organization_id }, options);
   }
-}
-
-export function create_default_team_staff_roles_for_organization(
-  organization_id: string,
-): TeamStaffRole[] {
-  const now = new Date().toISOString();
-
-  return [
-    {
-      id: `team_staff_role_default_1_${organization_id}`,
-      name: "Head Coach",
-      code: "HC",
-      description:
-        "Primary coach responsible for team strategy and player development",
-      category: "coaching",
-      is_primary_contact: true,
-      display_order: 1,
-      status: "active",
-      organization_id,
-      created_at: now,
-      updated_at: now,
-    },
-    {
-      id: `team_staff_role_default_2_${organization_id}`,
-      name: "Assistant Coach",
-      code: "AC",
-      description: "Assists the head coach with training and match preparation",
-      category: "coaching",
-      is_primary_contact: false,
-      display_order: 2,
-      status: "active",
-      organization_id,
-      created_at: now,
-      updated_at: now,
-    },
-    {
-      id: `team_staff_role_default_3_${organization_id}`,
-      name: "Goalkeeping Coach",
-      code: "GKC",
-      description: "Specialized coach for goalkeeper training",
-      category: "coaching",
-      is_primary_contact: false,
-      display_order: 3,
-      status: "active",
-      organization_id,
-      created_at: now,
-      updated_at: now,
-    },
-    {
-      id: `team_staff_role_default_4_${organization_id}`,
-      name: "Fitness Coach",
-      code: "FC",
-      description: "Responsible for player fitness and conditioning",
-      category: "coaching",
-      is_primary_contact: false,
-      display_order: 4,
-      status: "active",
-      organization_id,
-      created_at: now,
-      updated_at: now,
-    },
-    {
-      id: `team_staff_role_default_5_${organization_id}`,
-      name: "Team Manager",
-      code: "TM",
-      description: "Handles administrative and logistical aspects of the team",
-      category: "administrative",
-      is_primary_contact: true,
-      display_order: 5,
-      status: "active",
-      organization_id,
-      created_at: now,
-      updated_at: now,
-    },
-    {
-      id: `team_staff_role_default_6_${organization_id}`,
-      name: "Team Doctor",
-      code: "DOC",
-      description: "Medical professional responsible for player health",
-      category: "medical",
-      is_primary_contact: false,
-      display_order: 6,
-      status: "active",
-      organization_id,
-      created_at: now,
-      updated_at: now,
-    },
-    {
-      id: `team_staff_role_default_7_${organization_id}`,
-      name: "Physiotherapist",
-      code: "PHYSIO",
-      description: "Treats and prevents injuries through physical therapy",
-      category: "medical",
-      is_primary_contact: false,
-      display_order: 7,
-      status: "active",
-      organization_id,
-      created_at: now,
-      updated_at: now,
-    },
-    {
-      id: `team_staff_role_default_8_${organization_id}`,
-      name: "Sports Psychologist",
-      code: "PSY",
-      description: "Provides mental health support and performance psychology",
-      category: "medical",
-      is_primary_contact: false,
-      display_order: 8,
-      status: "active",
-      organization_id,
-      created_at: now,
-      updated_at: now,
-    },
-    {
-      id: `team_staff_role_default_9_${organization_id}`,
-      name: "Performance Analyst",
-      code: "PA",
-      description: "Analyzes match and training data to improve performance",
-      category: "technical",
-      is_primary_contact: false,
-      display_order: 9,
-      status: "active",
-      organization_id,
-      created_at: now,
-      updated_at: now,
-    },
-    {
-      id: `team_staff_role_default_10_${organization_id}`,
-      name: "Kit Manager",
-      code: "KM",
-      description: "Manages team equipment and uniforms",
-      category: "administrative",
-      is_primary_contact: false,
-      display_order: 10,
-      status: "active",
-      organization_id,
-      created_at: now,
-      updated_at: now,
-    },
-  ];
 }
 
 let singleton_instance: InBrowserTeamStaffRoleRepository | null = null;

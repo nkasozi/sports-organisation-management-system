@@ -9,8 +9,8 @@ import type { BaseEntity } from "../../core/entities/BaseEntity";
 import type {
   TeamStaffRepository,
   TeamStaffFilter,
+  QueryOptions,
 } from "../../core/interfaces/ports";
-import type { QueryOptions } from "../../core/interfaces/ports";
 import type {
   PaginatedAsyncResult,
   AsyncResult,
@@ -21,6 +21,7 @@ import {
   create_failure_result,
 } from "../../core/types/Result";
 import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
+import { create_default_team_staff } from "./InBrowserTeamStaffRepositoryDefaults";
 
 const ENTITY_PREFIX = "team_staff";
 
@@ -84,34 +85,26 @@ export class InBrowserTeamStaffRepository
     filter: TeamStaffFilter,
   ): TeamStaff[] {
     let filtered = entities;
-
     if (filter.organization_id) {
       filtered = filtered.filter(
-        (staff) => staff.organization_id === filter.organization_id,
+        (s) => s.organization_id === filter.organization_id,
       );
     }
-
     if (filter.name_contains) {
-      const search_term = filter.name_contains.toLowerCase();
-      filtered = filtered.filter((staff) =>
-        `${staff.first_name} ${staff.last_name}`
-          .toLowerCase()
-          .includes(search_term),
+      const term = filter.name_contains.toLowerCase();
+      filtered = filtered.filter((s) =>
+        `${s.first_name} ${s.last_name}`.toLowerCase().includes(term),
       );
     }
-
     if (filter.team_id) {
-      filtered = filtered.filter((staff) => staff.team_id === filter.team_id);
+      filtered = filtered.filter((s) => s.team_id === filter.team_id);
     }
-
     if (filter.role_id) {
-      filtered = filtered.filter((staff) => staff.role_id === filter.role_id);
+      filtered = filtered.filter((s) => s.role_id === filter.role_id);
     }
-
     if (filter.status) {
-      filtered = filtered.filter((staff) => staff.status === filter.status);
+      filtered = filtered.filter((s) => s.status === filter.status);
     }
-
     return filtered;
   }
 
@@ -121,45 +114,14 @@ export class InBrowserTeamStaffRepository
   ): PaginatedAsyncResult<TeamStaff> {
     try {
       let filtered_entities = await this.database.team_staff.toArray();
-
       if (filter) {
-        if (filter.name_contains) {
-          const search_term = filter.name_contains.toLowerCase();
-          filtered_entities = filtered_entities.filter((staff) =>
-            `${staff.first_name} ${staff.last_name}`
-              .toLowerCase()
-              .includes(search_term),
-          );
-        }
-
-        if (filter.team_id) {
-          filtered_entities = filtered_entities.filter(
-            (staff) => staff.team_id === filter.team_id,
-          );
-        }
-
-        if (filter.role_id) {
-          filtered_entities = filtered_entities.filter(
-            (staff) => staff.role_id === filter.role_id,
-          );
-        }
-
-        if (filter.status) {
-          filtered_entities = filtered_entities.filter(
-            (staff) => staff.status === filter.status,
-          );
-        }
+        filtered_entities = this.apply_entity_filter(filtered_entities, filter);
       }
-
       const total_count = filtered_entities.length;
-      const sorted_entities = this.apply_sort(filtered_entities, options);
-      const paginated_entities = this.apply_pagination(
-        sorted_entities,
-        options,
-      );
-
+      const sorted = this.apply_sort(filtered_entities, options);
+      const paginated = this.apply_pagination(sorted, options);
       return create_success_result(
-        this.create_paginated_result(paginated_entities, total_count, options),
+        this.create_paginated_result(paginated, total_count, options),
       );
     } catch (error) {
       const error_message =
@@ -201,76 +163,6 @@ export class InBrowserTeamStaffRepository
       return create_failure_result(`Failed to find staff by role: ${error}`);
     }
   }
-}
-
-function create_default_team_staff(): TeamStaff[] {
-  const now = new Date().toISOString();
-
-  return [
-    {
-      id: "team_staff_default_1",
-      organization_id: "org_default_1",
-      first_name: "John",
-      last_name: "Mukasa",
-      email: "john.mukasa@ugandahockey.org",
-      phone: "+256-700-111-001",
-      date_of_birth: "1975-03-15",
-      team_id: "team_default_1",
-      role_id: "staff_role_default_1",
-      nationality: "Ugandan",
-      profile_image_url: DEFAULT_STAFF_AVATAR,
-      employment_start_date: "2018-01-01",
-      employment_end_date: null,
-      emergency_contact_name: "Sarah Mukasa",
-      emergency_contact_phone: "+256-700-111-002",
-      notes: "",
-      status: "active",
-      created_at: now,
-      updated_at: now,
-    },
-    {
-      id: "team_staff_default_2",
-      organization_id: "org_default_1",
-      first_name: "Grace",
-      last_name: "Nalwanga",
-      email: "grace.nalwanga@ugandahockey.org",
-      phone: "+256-700-222-001",
-      date_of_birth: "1980-07-22",
-      team_id: "team_default_1",
-      role_id: "staff_role_default_2",
-      nationality: "Ugandan",
-      profile_image_url: DEFAULT_STAFF_AVATAR,
-      employment_start_date: "2019-06-15",
-      employment_end_date: null,
-      emergency_contact_name: "Peter Nalwanga",
-      emergency_contact_phone: "+256-700-222-002",
-      notes: "",
-      status: "active",
-      created_at: now,
-      updated_at: now,
-    },
-    {
-      id: "team_staff_default_3",
-      organization_id: "org_default_1",
-      first_name: "David",
-      last_name: "Okello",
-      email: "david.okello@ugandahockey.org",
-      phone: "+256-700-333-001",
-      date_of_birth: "1985-11-10",
-      team_id: "team_default_2",
-      role_id: "staff_role_default_1",
-      nationality: "Ugandan",
-      profile_image_url: DEFAULT_STAFF_AVATAR,
-      employment_start_date: "2020-02-01",
-      employment_end_date: null,
-      emergency_contact_name: "Mary Okello",
-      emergency_contact_phone: "+256-700-333-002",
-      notes: "",
-      status: "active",
-      created_at: now,
-      updated_at: now,
-    },
-  ];
 }
 
 let singleton_instance: InBrowserTeamStaffRepository | null = null;

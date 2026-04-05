@@ -77,10 +77,7 @@ class InBrowserGameEventLogRepository
     entity: GameEventLog,
     updates: UpdateGameEventLogInput,
   ): GameEventLog {
-    return {
-      ...entity,
-      ...updates,
-    };
+    return { ...entity, ...updates };
   }
 
   protected apply_entity_filter(
@@ -88,49 +85,35 @@ class InBrowserGameEventLogRepository
     filter: GameEventLogFilter,
   ): GameEventLog[] {
     let filtered = entities;
-
     if (filter.organization_id) {
       filtered = filtered.filter(
-        (event) => event.organization_id === filter.organization_id,
+        (e) => e.organization_id === filter.organization_id,
       );
     }
-
     if (filter.live_game_log_id) {
       filtered = filtered.filter(
-        (event) => event.live_game_log_id === filter.live_game_log_id,
+        (e) => e.live_game_log_id === filter.live_game_log_id,
       );
     }
-
     if (filter.fixture_id) {
-      filtered = filtered.filter(
-        (event) => event.fixture_id === filter.fixture_id,
-      );
+      filtered = filtered.filter((e) => e.fixture_id === filter.fixture_id);
     }
-
     if (filter.event_type) {
-      filtered = filtered.filter(
-        (event) => event.event_type === filter.event_type,
-      );
+      filtered = filtered.filter((e) => e.event_type === filter.event_type);
     }
-
     if (filter.team_side) {
-      filtered = filtered.filter(
-        (event) => event.team_side === filter.team_side,
-      );
+      filtered = filtered.filter((e) => e.team_side === filter.team_side);
     }
-
     if (filter.player_id) {
       filtered = filtered.filter(
-        (event) =>
-          event.player_id === filter.player_id ||
-          event.secondary_player_id === filter.player_id,
+        (e) =>
+          e.player_id === filter.player_id ||
+          e.secondary_player_id === filter.player_id,
       );
     }
-
     if (filter.voided !== undefined) {
-      filtered = filtered.filter((event) => event.voided === filter.voided);
+      filtered = filtered.filter((e) => e.voided === filter.voided);
     }
-
     return filtered;
   }
 
@@ -180,10 +163,10 @@ class InBrowserGameEventLogRepository
     if (!result.success) {
       return { success: false, error: result.error };
     }
-    const scoring_events = result.data.items.filter((event) =>
-      is_scoring_event(event.event_type),
-    );
-    return { success: true, data: scoring_events };
+    return {
+      success: true,
+      data: result.data.items.filter((e) => is_scoring_event(e.event_type)),
+    };
   }
 
   async get_card_events_for_live_game(
@@ -193,10 +176,10 @@ class InBrowserGameEventLogRepository
     if (!result.success) {
       return { success: false, error: result.error };
     }
-    const card_events = result.data.items.filter((event) =>
-      is_card_event(event.event_type),
-    );
-    return { success: true, data: card_events };
+    return {
+      success: true,
+      data: result.data.items.filter((e) => is_card_event(e.event_type)),
+    };
   }
 
   async void_event(
@@ -204,13 +187,12 @@ class InBrowserGameEventLogRepository
     reason: string,
     voided_by_user_id: string,
   ): AsyncResult<GameEventLog> {
-    const now = new Date().toISOString();
     return this.update(id, {
       voided: true,
       voided_reason: reason,
       reviewed: true,
       reviewed_by_user_id: voided_by_user_id,
-      reviewed_at: now,
+      reviewed_at: new Date().toISOString(),
     });
   }
 }

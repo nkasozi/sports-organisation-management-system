@@ -115,7 +115,6 @@ export class InBrowserJerseyColorRepository
 
 function create_default_jersey_colors(): JerseyColor[] {
   const now = new Date().toISOString();
-
   return [
     {
       id: "jersey_default_home",

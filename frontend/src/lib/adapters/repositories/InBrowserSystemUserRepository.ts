@@ -58,41 +58,26 @@ export class InBrowserSystemUserRepository
   }
 
   async create(input: CreateSystemUserInput): AsyncResult<SystemUser> {
-    console.debug("[SystemUserRepo] create called with input:", {
+    console.debug("[SystemUserRepo] create called", {
+      event: "system_user_create_start",
       email: input.email,
       role: input.role,
       status: input.status,
-      organization_id: input.organization_id,
     });
-
     const result = await super.create(input);
-
     if (!result.success) {
-      console.error("[SystemUserRepo] create failed:", result.error);
+      console.error("[SystemUserRepo] create failed", {
+        event: "system_user_create_failed",
+        error: result.error,
+      });
       return result;
     }
-
-    console.debug("[SystemUserRepo] create succeeded:", {
+    console.debug("[SystemUserRepo] create succeeded", {
+      event: "system_user_created",
       id: result.data.id,
-      email: result.data.email,
       role: result.data.role,
       status: result.data.status,
-      organization_id: result.data.organization_id,
     });
-
-    const verification = await this.find_by_id(result.data.id);
-    if (verification.success && verification.data) {
-      console.debug("[SystemUserRepo] verification read-back confirmed:", {
-        id: verification.data.id,
-        status: verification.data.status,
-      });
-    } else {
-      console.error(
-        "[SystemUserRepo] VERIFICATION FAILED - entity not found after create!",
-        result.data.id,
-      );
-    }
-
     return result;
   }
 
@@ -105,20 +90,15 @@ export class InBrowserSystemUserRepository
       input.organization_id,
       input.role,
     );
-
     return {
       id,
       ...timestamps,
+      ...input,
       email: input.email.trim().toLowerCase(),
       first_name: input.first_name.trim(),
       last_name: input.last_name.trim(),
-      role: input.role,
       status: input.status || "active",
       organization_id,
-      team_id: input.team_id,
-      player_id: input.player_id,
-      official_id: input.official_id,
-      profile_picture_base64: input.profile_picture_base64,
     };
   }
 
@@ -127,24 +107,18 @@ export class InBrowserSystemUserRepository
     updates: UpdateSystemUserInput,
   ): SystemUser {
     const updated_role = updates.role ?? entity.role;
-    const updated_organization_id = resolve_organization_id_for_role(
+    const updated_org_id = resolve_organization_id_for_role(
       updates.organization_id ?? entity.organization_id,
       updated_role,
     );
-
     return {
       ...entity,
+      ...updates,
       email: updates.email?.trim().toLowerCase() ?? entity.email,
       first_name: updates.first_name?.trim() ?? entity.first_name,
       last_name: updates.last_name?.trim() ?? entity.last_name,
       role: updated_role,
-      status: updates.status ?? entity.status,
-      organization_id: updated_organization_id,
-      team_id: updates.team_id ?? entity.team_id,
-      player_id: updates.player_id ?? entity.player_id,
-      official_id: updates.official_id ?? entity.official_id,
-      profile_picture_base64:
-        updates.profile_picture_base64 ?? entity.profile_picture_base64,
+      organization_id: updated_org_id,
     };
   }
 
@@ -153,48 +127,38 @@ export class InBrowserSystemUserRepository
     filter: SystemUserFilter,
   ): SystemUser[] {
     let filtered = entities;
-
     if (filter.email_contains) {
-      const search_term = filter.email_contains.toLowerCase();
-      filtered = filtered.filter((user) =>
-        user.email.toLowerCase().includes(search_term),
-      );
+      const s = filter.email_contains.toLowerCase();
+      filtered = filtered.filter((u) => u.email.toLowerCase().includes(s));
     }
-
     if (filter.name_contains) {
-      const search_term = filter.name_contains.toLowerCase();
+      const s = filter.name_contains.toLowerCase();
       filtered = filtered.filter(
-        (user) =>
-          user.first_name.toLowerCase().includes(search_term) ||
-          user.last_name.toLowerCase().includes(search_term),
+        (u) =>
+          u.first_name.toLowerCase().includes(s) ||
+          u.last_name.toLowerCase().includes(s),
       );
     }
-
     if (filter.role) {
-      filtered = filtered.filter((user) => user.role === filter.role);
+      filtered = filtered.filter((u) => u.role === filter.role);
     }
-
     if (filter.status) {
-      filtered = filtered.filter((user) => user.status === filter.status);
+      filtered = filtered.filter((u) => u.status === filter.status);
     }
-
     if (filter.organization_id) {
       filtered = filtered.filter(
-        (user) => user.organization_id === filter.organization_id,
+        (u) => u.organization_id === filter.organization_id,
       );
     }
-
     return filtered;
   }
 
   async find_by_email(email: string): PaginatedAsyncResult<SystemUser> {
     try {
-      const normalized_email = email.trim().toLowerCase();
       const users = await this.database.system_users
         .where("email")
-        .equals(normalized_email)
+        .equals(email.trim().toLowerCase())
         .toArray();
-
       return create_success_result(
         this.create_paginated_result(users, users.length),
       );
@@ -217,44 +181,23 @@ export class InBrowserSystemUserRepository
   async find_active_users(
     options?: QueryOptions,
   ): PaginatedAsyncResult<SystemUser> {
-    const all_users_result = await this.find_all(undefined, options);
-    if (all_users_result.success) {
-      const all_users = all_users_result.data.items;
-      const active_users = all_users.filter((u) => u.status === "active");
-      console.debug(
-        `[SystemUserRepo] find_active_users: ${all_users.length} total, ${active_users.length} active`,
-        all_users.map((u) => ({
-          id: u.id,
-          email: u.email,
-          role: u.role,
-          status: u.status,
-        })),
-      );
-    }
     return this.find_all({ status: "active" }, options);
   }
 
   async find_admins(options?: QueryOptions): PaginatedAsyncResult<SystemUser> {
     try {
-      let filtered_entities = await this.database.system_users.toArray();
-
-      filtered_entities = filtered_entities.filter((user) =>
+      let filtered = await this.database.system_users.toArray();
+      filtered = filtered.filter((u) =>
         check_data_permission(
-          user.role as UserRole,
+          u.role as UserRole,
           "org_administrator_level",
           "read",
         ),
       );
-
-      const total_count = filtered_entities.length;
-      const sorted_entities = this.apply_sort(filtered_entities, options);
-      const paginated_entities = this.apply_pagination(
-        sorted_entities,
-        options,
-      );
-
+      const sorted = this.apply_sort(filtered, options);
+      const paginated = this.apply_pagination(sorted, options);
       return create_success_result(
-        this.create_paginated_result(paginated_entities, total_count, options),
+        this.create_paginated_result(paginated, filtered.length, options),
       );
     } catch (error) {
       const error_message =

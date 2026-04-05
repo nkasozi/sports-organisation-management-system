@@ -7,14 +7,15 @@ import { validate_player_team_transfer_history_input } from "../entities/PlayerT
 import type {
   PlayerTeamTransferHistoryRepository,
   PlayerTeamTransferHistoryFilter,
+  PlayerTeamMembershipRepository,
+  QueryOptions,
+  PlayerTeamTransferHistoryUseCasesPort,
 } from "../interfaces/ports";
-import type { PlayerTeamMembershipRepository } from "../interfaces/ports";
-import type { QueryOptions } from "../interfaces/ports";
 import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
 import { create_failure_result, create_success_result } from "../types/Result";
 import { get_repository_container } from "../../infrastructure/container";
-import type { PlayerTeamTransferHistoryUseCasesPort } from "../interfaces/ports";
 import { EventBus } from "$lib/infrastructure/events/EventBus";
+import { create_transfer_confirmation } from "./TransferConfirmationUseCases";
 
 export type PlayerTeamTransferHistoryUseCases =
   PlayerTeamTransferHistoryUseCasesPort;
@@ -119,188 +120,7 @@ export function create_player_team_transfer_history_use_cases(
       return repository.find_pending_transfers(options);
     },
 
-    async confirm_transfer(
-      transfer_id: string,
-    ): AsyncResult<PlayerTeamTransferHistory> {
-      if (!transfer_id || transfer_id.trim().length === 0) {
-        return create_failure_result("Transfer ID is required");
-      }
-
-      const transfer_result = await repository.find_by_id(transfer_id);
-      if (!transfer_result.success) {
-        return create_failure_result(transfer_result.error);
-      }
-
-      if (!transfer_result.data) {
-        return create_failure_result("Transfer not found");
-      }
-
-      const transfer = transfer_result.data;
-
-      if (transfer.status !== "pending") {
-        return create_failure_result(
-          `Transfer cannot be confirmed. Current status: ${transfer.status}`,
-        );
-      }
-
-      const memberships_result = await membership_repository.find_all({
-        player_id: transfer.player_id,
-        team_id: transfer.from_team_id,
-        status: "active",
-      });
-
-      if (!memberships_result.success) {
-        return create_failure_result(
-          `Failed to find player membership: ${memberships_result.error}`,
-        );
-      }
-
-      const active_membership = memberships_result.data?.items?.[0];
-
-      if (active_membership) {
-        const old_membership_data = {
-          ...active_membership,
-        } as unknown as Record<string, unknown>;
-
-        const update_membership_result = await membership_repository.update(
-          active_membership.id,
-          {
-            team_id: transfer.to_team_id,
-            start_date: transfer.transfer_date,
-          },
-        );
-
-        if (!update_membership_result.success) {
-          return create_failure_result(
-            `Failed to update player membership: ${update_membership_result.error}`,
-          );
-        }
-
-        if (update_membership_result.data) {
-          EventBus.emit_entity_updated(
-            "playerteammembership",
-            active_membership.id,
-            active_membership.id,
-            old_membership_data,
-            update_membership_result.data as unknown as Record<string, unknown>,
-            ["team_id", "start_date"],
-          );
-        }
-
-        console.log(
-          `[PlayerTeamTransferHistoryUseCases] Successfully updated membership ${active_membership.id} from team ${transfer.from_team_id} to team ${transfer.to_team_id}`,
-        );
-      } else {
-        console.warn(
-          `[PlayerTeamTransferHistoryUseCases] No active membership found for player ${transfer.player_id} in team ${transfer.from_team_id}. Creating new membership.`,
-        );
-
-        const create_membership_result = await membership_repository.create({
-          organization_id: transfer.organization_id,
-          player_id: transfer.player_id,
-          team_id: transfer.to_team_id,
-          start_date: transfer.transfer_date,
-          jersey_number: null,
-          status: "active",
-        });
-
-        if (!create_membership_result.success) {
-          return create_failure_result(
-            `Failed to create new membership: ${create_membership_result.error}`,
-          );
-        }
-
-        if (create_membership_result.data) {
-          EventBus.emit_entity_created(
-            "playerteammembership",
-            create_membership_result.data.id,
-            create_membership_result.data.id,
-            create_membership_result.data as unknown as Record<string, unknown>,
-          );
-        }
-
-        console.log(
-          `[PlayerTeamTransferHistoryUseCases] Created new membership for player ${transfer.player_id} in team ${transfer.to_team_id}`,
-        );
-      }
-
-      const update_result = await repository.update(transfer_id, {
-        status: "approved",
-      });
-
-      if (!update_result.success) {
-        return create_failure_result(
-          `Failed to confirm transfer: ${update_result.error}`,
-        );
-      }
-
-      if (update_result.data) {
-        EventBus.emit_entity_updated(
-          "playerteamtransferhistory",
-          transfer_id,
-          transfer_id,
-          transfer as unknown as Record<string, unknown>,
-          update_result.data as unknown as Record<string, unknown>,
-          ["status"],
-        );
-      }
-
-      console.log(
-        `[PlayerTeamTransferHistoryUseCases] Transfer ${transfer_id} confirmed successfully`,
-      );
-
-      return create_success_result(update_result.data!);
-    },
-
-    async reject_transfer(
-      transfer_id: string,
-    ): AsyncResult<PlayerTeamTransferHistory> {
-      if (!transfer_id || transfer_id.trim().length === 0) {
-        return create_failure_result("Transfer ID is required");
-      }
-
-      const transfer_result = await repository.find_by_id(transfer_id);
-      if (!transfer_result.success) {
-        return create_failure_result(transfer_result.error);
-      }
-
-      if (!transfer_result.data) {
-        return create_failure_result("Transfer not found");
-      }
-
-      if (transfer_result.data.status !== "pending") {
-        return create_failure_result(
-          `Transfer cannot be rejected. Current status: ${transfer_result.data.status}`,
-        );
-      }
-
-      const update_result = await repository.update(transfer_id, {
-        status: "declined",
-      });
-
-      if (!update_result.success) {
-        return create_failure_result(
-          `Failed to reject transfer: ${update_result.error}`,
-        );
-      }
-
-      if (update_result.data && transfer_result.data) {
-        EventBus.emit_entity_updated(
-          "playerteamtransferhistory",
-          transfer_id,
-          transfer_id,
-          transfer_result.data as unknown as Record<string, unknown>,
-          update_result.data as unknown as Record<string, unknown>,
-          ["status"],
-        );
-      }
-
-      console.log(
-        `[PlayerTeamTransferHistoryUseCases] Transfer ${transfer_id} rejected`,
-      );
-
-      return create_success_result(update_result.data!);
-    },
+    ...create_transfer_confirmation(repository, membership_repository),
 
     async delete_transfers(ids: string[]): AsyncResult<number> {
       if (!ids || ids.length === 0) {

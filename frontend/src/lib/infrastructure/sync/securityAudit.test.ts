@@ -9,16 +9,10 @@ describe("SecurityEventType constants", () => {
     expect(SecurityEventType.ROLE_ESCALATION_BLOCKED).toBe(
       "role_escalation_blocked",
     );
-    expect(SecurityEventType.INVALID_TABLE_ACCESS).toBe(
-      "invalid_table_access",
-    );
-    expect(SecurityEventType.ORG_SCOPE_VIOLATION).toBe(
-      "org_scope_violation",
-    );
+    expect(SecurityEventType.INVALID_TABLE_ACCESS).toBe("invalid_table_access");
+    expect(SecurityEventType.ORG_SCOPE_VIOLATION).toBe("org_scope_violation");
     expect(SecurityEventType.SYNC_MUTATION).toBe("sync_mutation");
-    expect(SecurityEventType.SEED_ADMIN_BLOCKED).toBe(
-      "seed_admin_blocked",
-    );
+    expect(SecurityEventType.SEED_ADMIN_BLOCKED).toBe("seed_admin_blocked");
   });
 
   it("contains exactly 7 event types", () => {

@@ -104,29 +104,22 @@ class InBrowserLiveGameLogRepository
     filter: LiveGameLogFilter,
   ): LiveGameLog[] {
     let filtered = entities;
-
     if (filter.organization_id) {
       filtered = filtered.filter(
-        (log) => log.organization_id === filter.organization_id,
+        (l) => l.organization_id === filter.organization_id,
       );
     }
-
     if (filter.fixture_id) {
-      filtered = filtered.filter((log) => log.fixture_id === filter.fixture_id);
+      filtered = filtered.filter((l) => l.fixture_id === filter.fixture_id);
     }
-
     if (filter.game_status) {
-      filtered = filtered.filter(
-        (log) => log.game_status === filter.game_status,
-      );
+      filtered = filtered.filter((l) => l.game_status === filter.game_status);
     }
-
     if (filter.started_by_user_id) {
       filtered = filtered.filter(
-        (log) => log.started_by_user_id === filter.started_by_user_id,
+        (l) => l.started_by_user_id === filter.started_by_user_id,
       );
     }
-
     return filtered;
   }
 
@@ -162,8 +155,7 @@ class InBrowserLiveGameLogRepository
     }
     const active_games = result.data.items
       .filter(
-        (log) =>
-          log.game_status === "in_progress" || log.game_status === "paused",
+        (l) => l.game_status === "in_progress" || l.game_status === "paused",
       )
       .sort(
         (a, b) =>
@@ -188,7 +180,9 @@ class InBrowserLiveGameLogRepository
     options?: { page: number; page_size: number },
   ): PaginatedAsyncResult<LiveGameLog> {
     const filter: LiveGameLogFilter = { game_status: "completed" };
-    if (organization_id) filter.organization_id = organization_id;
+    if (organization_id) {
+      filter.organization_id = organization_id;
+    }
     return this.find_all(filter, this.build_query_options(options));
   }
 }

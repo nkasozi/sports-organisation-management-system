@@ -1,4 +1,4 @@
-import { writable, derived, get } from "svelte/store";
+import { writable, get } from "svelte/store";
 import type {
   ConflictRecord,
   ConflictResolution,
@@ -18,26 +18,21 @@ import {
   create_success_result,
   create_failure_result,
 } from "$lib/core/types/Result";
+import type { ConflictStoreState } from "./conflictStoreHelpers";
+import { get_resolved_data_for_action } from "./conflictStoreHelpers";
+export type { ConflictStoreState } from "./conflictStoreHelpers";
 
-export interface ConflictStoreState {
-  pending_conflicts: ConflictRecord[];
-  resolved_conflicts: ConflictResolution[];
-  is_resolution_in_progress: boolean;
-  current_conflict_index: number;
-  show_merge_screen: boolean;
-}
+const INITIAL_STATE: ConflictStoreState = {
+  pending_conflicts: [],
+  resolved_conflicts: [],
+  is_resolution_in_progress: false,
+  current_conflict_index: 0,
+  show_merge_screen: false,
+};
 
 function create_conflict_store() {
-  const initial_state: ConflictStoreState = {
-    pending_conflicts: [],
-    resolved_conflicts: [],
-    is_resolution_in_progress: false,
-    current_conflict_index: 0,
-    show_merge_screen: false,
-  };
-
   const { subscribe, set, update } =
-    writable<ConflictStoreState>(initial_state);
+    writable<ConflictStoreState>(INITIAL_STATE);
 
   function add_conflicts_from_sync_response(
     table_name: string,
@@ -86,7 +81,6 @@ function create_conflict_store() {
       pending_conflicts: [...state.pending_conflicts, ...new_conflicts],
       show_merge_screen: true,
     }));
-
     return true;
   }
 
@@ -99,7 +93,6 @@ function create_conflict_store() {
     const conflict = current_state.pending_conflicts.find(
       (c) => c.id === conflict_id,
     );
-
     if (!conflict)
       return create_failure_result(`Conflict not found: ${conflict_id}`);
 
@@ -113,12 +106,11 @@ function create_conflict_store() {
       merged_data,
     };
 
-    const resolved_data = get_resolved_data_for_action_internal(
+    const resolved_data = get_resolved_data_for_action(
       conflict,
       action,
       merged_data,
     );
-
     log_conflict_resolution(conflict, action, resolved_data).catch((err) => {
       console.error(
         "[ConflictStore] Failed to audit log conflict resolution:",
@@ -133,25 +125,7 @@ function create_conflict_store() {
       ),
       resolved_conflicts: [...state.resolved_conflicts, resolution],
     }));
-
     return create_success_result(resolution);
-  }
-
-  function get_resolved_data_for_action_internal(
-    conflict: ConflictRecord,
-    action: ConflictResolutionAction,
-    merged_data?: Record<string, unknown>,
-  ): Record<string, unknown> {
-    switch (action) {
-      case "keep_local":
-        return { ...conflict.local_data, updated_at: new Date().toISOString() };
-      case "keep_remote":
-        return conflict.remote_data;
-      case "merge":
-        return merged_data || conflict.local_data;
-      default:
-        return conflict.local_data;
-    }
   }
 
   function resolve_current_conflict(
@@ -161,18 +135,17 @@ function create_conflict_store() {
     const current_state = get({ subscribe });
     const current_conflict =
       current_state.pending_conflicts[current_state.current_conflict_index];
-
     if (!current_conflict)
       return create_failure_result("No current conflict to resolve");
-
     return resolve_conflict(current_conflict.id, action, merged_data);
   }
 
   function move_to_next_conflict(): boolean {
     const current_state = get({ subscribe });
-    const next_index = current_state.current_conflict_index;
-
-    if (next_index >= current_state.pending_conflicts.length) {
+    if (
+      current_state.current_conflict_index >=
+      current_state.pending_conflicts.length
+    ) {
       update((state) => ({
         ...state,
         show_merge_screen: false,
@@ -180,7 +153,6 @@ function create_conflict_store() {
       }));
       return false;
     }
-
     return true;
   }
 
@@ -192,24 +164,6 @@ function create_conflict_store() {
     );
   }
 
-  function clear_all_conflicts(): void {
-    set(initial_state);
-  }
-
-  function dismiss_merge_screen(): void {
-    update((state) => ({
-      ...state,
-      show_merge_screen: false,
-    }));
-  }
-
-  function get_resolved_data_for_action(
-    conflict: ConflictRecord,
-    action: ConflictResolutionAction,
-  ): Record<string, unknown> {
-    return get_resolved_data_for_action_internal(conflict, action, undefined);
-  }
-
   return {
     subscribe,
     add_conflicts_from_sync_response,
@@ -217,42 +171,15 @@ function create_conflict_store() {
     resolve_current_conflict,
     move_to_next_conflict,
     get_current_conflict,
-    clear_all_conflicts,
-    dismiss_merge_screen,
-    get_resolved_data_for_action,
-    reset: () => set(initial_state),
+    clear_all_conflicts: () => set(INITIAL_STATE),
+    dismiss_merge_screen: () =>
+      update((state) => ({ ...state, show_merge_screen: false })),
+    get_resolved_data_for_action: (
+      conflict: ConflictRecord,
+      action: ConflictResolutionAction,
+    ) => get_resolved_data_for_action(conflict, action, undefined),
+    reset: () => set(INITIAL_STATE),
   };
 }
 
 export const conflict_store = create_conflict_store();
-
-export const pending_conflicts = derived(
-  conflict_store,
-  ($store) => $store.pending_conflicts,
-);
-
-const has_pending_conflicts = derived(
-  conflict_store,
-  ($store) => $store.pending_conflicts.length > 0,
-);
-
-const pending_conflict_count = derived(
-  conflict_store,
-  ($store) => $store.pending_conflicts.length,
-);
-
-export const show_merge_screen = derived(
-  conflict_store,
-  ($store) => $store.show_merge_screen,
-);
-
-export const current_conflict = derived(
-  conflict_store,
-  ($store) => $store.pending_conflicts[$store.current_conflict_index] || null,
-);
-
-export const conflict_progress = derived(conflict_store, ($store) => ({
-  current: $store.current_conflict_index + 1,
-  total: $store.pending_conflicts.length + $store.resolved_conflicts.length,
-  resolved: $store.resolved_conflicts.length,
-}));

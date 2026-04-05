@@ -1,0 +1,110 @@
+import type { FixtureLineup } from "../../../core/entities/FixtureLineup";
+import {
+  SEED_FIXTURE_LINEUP_IDS,
+  SEED_ORGANIZATION_IDS,
+  SEED_FIXTURE_IDS,
+  SEED_TEAM_IDS,
+  generate_current_timestamp,
+} from "./seedIds";
+import { SEED_PLAYER_IDS } from "./seedPlayerIds";
+
+export function create_seed_lineups_part12(): FixtureLineup[] {
+  const now = generate_current_timestamp();
+
+  return [
+    {
+      id: SEED_FIXTURE_LINEUP_IDS.EASTER_CUP_GROUP_A_3_AWAY_LINEUP,
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
+      fixture_id: SEED_FIXTURE_IDS.EASTER_CUP_GROUP_A_3,
+      team_id: SEED_TEAM_IDS.SIMBA_HC,
+      selected_players: [
+        {
+          id: SEED_PLAYER_IDS.SIMBA_P4,
+          first_name: "Collins",
+          last_name: "Okello",
+          jersey_number: 1,
+          position: "Goalkeeper",
+          is_captain: false,
+          is_substitute: false,
+          time_on: "present_at_start",
+        },
+        {
+          id: SEED_PLAYER_IDS.SIMBA_P5,
+          first_name: "Francis",
+          last_name: "Ochieng",
+          jersey_number: 4,
+          position: "Left Back",
+          is_captain: false,
+          is_substitute: false,
+          time_on: "present_at_start",
+        },
+        {
+          id: SEED_PLAYER_IDS.SIMBA_P6,
+          first_name: "Beatrice",
+          last_name: "Atim",
+          jersey_number: 5,
+          position: "Sweeper",
+          is_captain: false,
+          is_substitute: false,
+          time_on: "present_at_start",
+        },
+        {
+          id: SEED_PLAYER_IDS.SIMBA_P7,
+          first_name: "David",
+          last_name: "Onen",
+          jersey_number: 6,
+          position: "Right Back",
+          is_captain: false,
+          is_substitute: false,
+          time_on: "present_at_start",
+        },
+        {
+          id: SEED_PLAYER_IDS.SIMBA_P8,
+          first_name: "Agnes",
+          last_name: "Nambi",
+          jersey_number: 7,
+          position: "Center Midfield",
+          is_captain: false,
+          is_substitute: false,
+          time_on: "present_at_start",
+        },
+        {
+          id: SEED_PLAYER_IDS.SIMBA_P9,
+          first_name: "Robert",
+          last_name: "Okot",
+          jersey_number: 8,
+          position: "Left Midfield",
+          is_captain: true,
+          is_substitute: false,
+          time_on: "present_at_start",
+        },
+        {
+          id: SEED_PLAYER_IDS.SIMBA_P10,
+          first_name: "Lydia",
+          last_name: "Awor",
+          jersey_number: 9,
+          position: "Right Midfield",
+          is_captain: false,
+          is_substitute: false,
+          time_on: "present_at_start",
+        },
+        {
+          id: SEED_PLAYER_IDS.SIMBA_P11,
+          first_name: "Isaac",
+          last_name: "Mwangi",
+          jersey_number: 10,
+          position: "Forward",
+          is_captain: false,
+          is_substitute: false,
+          time_on: "present_at_start",
+        },
+      ],
+      status: "locked",
+      submitted_by: "admin",
+      submitted_at: "2026-04-04T09:00:00Z",
+      notes: "Simba lineup - Easter Cup Group A Match 3",
+      created_at: now,
+      updated_at: now,
+    },
+  ];
+}

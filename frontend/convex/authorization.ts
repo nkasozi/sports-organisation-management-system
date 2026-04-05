@@ -145,10 +145,7 @@ export const check_user_access = query({
   args: {
     email: v.string(),
   },
-  handler: async (
-    ctx,
-    args,
-  ): Promise<ConvexResult<{ email: string }>> => {
+  handler: async (ctx, args): Promise<ConvexResult<{ email: string }>> => {
     const request_id = `acc_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
 
     const system_user = await ctx.db
@@ -386,7 +383,11 @@ export const update_user_role = mutation({
     }
     const admin_user = admin_result.data;
     if (
-      !check_role_permission(admin_user.role, "org_administrator_level", "update")
+      !check_role_permission(
+        admin_user.role,
+        "org_administrator_level",
+        "update",
+      )
     ) {
       return { success: false, error: "Unauthorized to update user roles" };
     }
@@ -474,9 +475,7 @@ export const seed_super_admin = mutation({
   handler: async (ctx, args) => {
     const normalized_email = args.email.toLowerCase();
 
-    const all_super_admins = await ctx.db
-      .query("system_users")
-      .collect();
+    const all_super_admins = await ctx.db.query("system_users").collect();
     const existing_super_admin_count = all_super_admins.filter(
       (u: any) => u.role === "super_admin" && u.status !== "inactive",
     ).length;

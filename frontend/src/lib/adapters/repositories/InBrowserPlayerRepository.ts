@@ -8,9 +8,9 @@ import type { BaseEntity } from "../../core/entities/BaseEntity";
 import type {
   PlayerRepository,
   PlayerFilter,
+  PlayerTeamMembershipRepository,
+  QueryOptions,
 } from "../../core/interfaces/ports";
-import type { PlayerTeamMembershipRepository } from "../../core/interfaces/ports";
-import type { QueryOptions } from "../../core/interfaces/ports";
 import type { PaginatedAsyncResult } from "../../core/types/Result";
 import {
   create_success_result,
@@ -56,36 +56,14 @@ export class InBrowserPlayerRepository
     id: string,
     timestamps: Pick<BaseEntity, "created_at" | "updated_at">,
   ): Player {
-    return {
-      id,
-      ...timestamps,
-      first_name: input.first_name,
-      last_name: input.last_name,
-      gender_id: input.gender_id,
-      email: input.email,
-      phone: input.phone,
-      date_of_birth: input.date_of_birth,
-      position_id: input.position_id,
-      organization_id: input.organization_id,
-      height_cm: input.height_cm,
-      weight_kg: input.weight_kg,
-      nationality: input.nationality,
-      profile_image_url: input.profile_image_url,
-      emergency_contact_name: input.emergency_contact_name,
-      emergency_contact_phone: input.emergency_contact_phone,
-      medical_notes: input.medical_notes,
-      status: input.status,
-    };
+    return { id, ...timestamps, ...input };
   }
 
   protected apply_updates_to_entity(
     entity: Player,
     updates: UpdatePlayerInput,
   ): Player {
-    return {
-      ...entity,
-      ...updates,
-    };
+    return { ...entity, ...updates };
   }
 
   protected apply_entity_filter(
@@ -93,42 +71,31 @@ export class InBrowserPlayerRepository
     filter: PlayerFilter,
   ): Player[] {
     let filtered = entities;
-
     if (filter.organization_id) {
       filtered = filtered.filter(
-        (player) => player.organization_id === filter.organization_id,
+        (p) => p.organization_id === filter.organization_id,
       );
     }
-
     if (filter.id) {
-      filtered = filtered.filter((player) => player.id === filter.id);
+      filtered = filtered.filter((p) => p.id === filter.id);
     }
-
     if (filter.name_contains) {
-      const search_term = filter.name_contains.toLowerCase();
+      const term = filter.name_contains.toLowerCase();
       filtered = filtered.filter(
-        (player) =>
-          player.first_name.toLowerCase().includes(search_term) ||
-          player.last_name.toLowerCase().includes(search_term),
+        (p) =>
+          p.first_name.toLowerCase().includes(term) ||
+          p.last_name.toLowerCase().includes(term),
       );
     }
-
     if (filter.position_id) {
-      filtered = filtered.filter(
-        (player) => player.position_id === filter.position_id,
-      );
+      filtered = filtered.filter((p) => p.position_id === filter.position_id);
     }
-
     if (filter.status) {
-      filtered = filtered.filter((player) => player.status === filter.status);
+      filtered = filtered.filter((p) => p.status === filter.status);
     }
-
     if (filter.nationality) {
-      filtered = filtered.filter(
-        (player) => player.nationality === filter.nationality,
-      );
+      filtered = filtered.filter((p) => p.nationality === filter.nationality);
     }
-
     return filtered;
   }
 
@@ -138,69 +105,28 @@ export class InBrowserPlayerRepository
   ): PaginatedAsyncResult<Player> {
     try {
       let filtered_entities = await this.database.players.toArray();
-
-      if (filter.id) {
-        filtered_entities = filtered_entities.filter(
-          (player) => player.id === filter.id,
-        );
-      }
-
-      if (filter.name_contains) {
-        const search_term = filter.name_contains.toLowerCase();
-        filtered_entities = filtered_entities.filter(
-          (player) =>
-            player.first_name.toLowerCase().includes(search_term) ||
-            player.last_name.toLowerCase().includes(search_term),
-        );
-      }
-
       if (filter.team_id) {
         const membership_result = await this.membership_repository.find_by_team(
           filter.team_id,
           { page_number: 1, page_size: 10000 },
         );
-
         if (membership_result.success && membership_result.data) {
           const player_id_set = new Set(
-            membership_result.data.items.map(
-              (membership) => membership.player_id,
-            ),
+            membership_result.data.items.map((m) => m.player_id),
           );
-          filtered_entities = filtered_entities.filter((player) =>
-            player_id_set.has(player.id),
+          filtered_entities = filtered_entities.filter((p) =>
+            player_id_set.has(p.id),
           );
         } else {
           filtered_entities = [];
         }
       }
-
-      if (filter.position_id) {
-        filtered_entities = filtered_entities.filter(
-          (player) => player.position_id === filter.position_id,
-        );
-      }
-
-      if (filter.status) {
-        filtered_entities = filtered_entities.filter(
-          (player) => player.status === filter.status,
-        );
-      }
-
-      if (filter.nationality) {
-        filtered_entities = filtered_entities.filter(
-          (player) => player.nationality === filter.nationality,
-        );
-      }
-
+      filtered_entities = this.apply_entity_filter(filtered_entities, filter);
       const total_count = filtered_entities.length;
-      const sorted_entities = this.apply_sort(filtered_entities, options);
-      const paginated_entities = this.apply_pagination(
-        sorted_entities,
-        options,
-      );
-
+      const sorted = this.apply_sort(filtered_entities, options);
+      const paginated = this.apply_pagination(sorted, options);
       return create_success_result(
-        this.create_paginated_result(paginated_entities, total_count, options),
+        this.create_paginated_result(paginated, total_count, options),
       );
     } catch (error) {
       const error_message =
@@ -233,22 +159,18 @@ export class InBrowserPlayerRepository
         team_id,
         { page_number: 1, page_size: 10000 },
       );
-
       if (!membership_result.success || !membership_result.data) {
         return create_success_result(this.create_paginated_result([], 0));
       }
-
       const matching_player_ids = new Set(
         membership_result.data.items
-          .filter((membership) => membership.jersey_number === jersey_number)
-          .map((membership) => membership.player_id),
+          .filter((m) => m.jersey_number === jersey_number)
+          .map((m) => m.player_id),
       );
-
       const all_players = await this.database.players.toArray();
-      const matching_players = all_players.filter((player) =>
-        matching_player_ids.has(player.id),
+      const matching_players = all_players.filter((p) =>
+        matching_player_ids.has(p.id),
       );
-
       return create_success_result(
         this.create_paginated_result(matching_players, matching_players.length),
       );
@@ -260,97 +182,6 @@ export class InBrowserPlayerRepository
       );
     }
   }
-}
-
-function create_default_players(): Player[] {
-  const now = new Date().toISOString();
-
-  return [
-    {
-      id: "player_default_1",
-      first_name: "Carlos",
-      last_name: "Martinez",
-      gender_id: "gender_default_male",
-      email: "c.martinez@reddragons.com",
-      phone: "+1-555-2001",
-      date_of_birth: "1995-03-15",
-      position_id: "",
-      organization_id: "org_default_1",
-      height_cm: 180,
-      weight_kg: 75,
-      nationality: "Spain",
-      profile_image_url: "",
-      emergency_contact_name: "Maria Martinez",
-      emergency_contact_phone: "+1-555-2101",
-      medical_notes: "",
-      status: "active",
-      created_at: now,
-      updated_at: now,
-    },
-    {
-      id: "player_default_2",
-      first_name: "John",
-      last_name: "Smith",
-      gender_id: "gender_default_male",
-      email: "j.smith@reddragons.com",
-      phone: "+1-555-2002",
-      date_of_birth: "1998-07-22",
-      position_id: "",
-      organization_id: "org_default_1",
-      height_cm: 175,
-      weight_kg: 72,
-      nationality: "United States",
-      profile_image_url: "",
-      emergency_contact_name: "Jane Smith",
-      emergency_contact_phone: "+1-555-2102",
-      medical_notes: "",
-      status: "active",
-      created_at: now,
-      updated_at: now,
-    },
-    {
-      id: "player_default_3",
-      first_name: "Yuki",
-      last_name: "Tanaka",
-      gender_id: "gender_default_male",
-      email: "y.tanaka@bluethunder.com",
-      phone: "+1-555-2003",
-      date_of_birth: "1997-11-08",
-      position_id: "",
-      organization_id: "org_default_1",
-      height_cm: 188,
-      weight_kg: 82,
-      nationality: "Japan",
-      profile_image_url: "",
-      emergency_contact_name: "Kenji Tanaka",
-      emergency_contact_phone: "+1-555-2103",
-      medical_notes: "",
-      status: "active",
-      created_at: now,
-      updated_at: now,
-    },
-    {
-      id: "player_default_4",
-      first_name: "Marcus",
-      last_name: "Johnson",
-      gender_id: "gender_default_male",
-      email: "m.johnson@stormbasketball.com",
-      phone: "+1-555-2004",
-      date_of_birth: "1996-05-30",
-      position_id: "",
-      organization_id: "org_default_1",
-      height_cm: 190,
-      weight_kg: 85,
-      nationality: "United States",
-      profile_image_url: "",
-      emergency_contact_name: "Linda Johnson",
-      emergency_contact_phone: "+1-555-2104",
-      medical_notes: "",
-      status: "active",
-      created_at: now,
-      updated_at: now,
-    },
-  ];
 }
 
 let singleton_instance: InBrowserPlayerRepository | null = null;

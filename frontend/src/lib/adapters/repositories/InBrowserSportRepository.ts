@@ -82,21 +82,14 @@ class InBrowserSportRepository
     id: string,
     timestamps: Pick<BaseEntity, "created_at" | "updated_at">,
   ): Sport {
-    return {
-      id,
-      ...timestamps,
-      ...input,
-    };
+    return { id, ...timestamps, ...input };
   }
 
   protected apply_updates_to_entity(
     entity: Sport,
     updates: UpdateSportInput,
   ): Sport {
-    return {
-      ...entity,
-      ...updates,
-    };
+    return { ...entity, ...updates };
   }
 
   protected apply_entity_filter(
@@ -104,33 +97,24 @@ class InBrowserSportRepository
     filter: SportFilter,
   ): Sport[] {
     let filtered = entities;
-
     if (filter.name_contains) {
-      const search_term = filter.name_contains.toLowerCase();
-      filtered = filtered.filter((sport) =>
-        sport.name.toLowerCase().includes(search_term),
-      );
+      const term = filter.name_contains.toLowerCase();
+      filtered = filtered.filter((s) => s.name.toLowerCase().includes(term));
     }
-
     if (filter.status) {
-      filtered = filtered.filter((sport) => sport.status === filter.status);
+      filtered = filtered.filter((s) => s.status === filter.status);
     }
-
     return filtered;
   }
 
   async find_by_code(code: string): Promise<Sport | null> {
-    const all_sports = await this.get_table().toArray();
-    return (
-      all_sports.find(
-        (sport) => sport.code.toLowerCase() === code.toLowerCase(),
-      ) || null
-    );
+    const all = await this.get_table().toArray();
+    return all.find((s) => s.code.toLowerCase() === code.toLowerCase()) || null;
   }
 
   async find_active(): Promise<Sport[]> {
-    const all_sports = await this.get_table().toArray();
-    return all_sports.filter((sport) => sport.status === "active");
+    const all = await this.get_table().toArray();
+    return all.filter((s) => s.status === "active");
   }
 }
 
@@ -140,13 +124,6 @@ export function get_sport_id_by_code_sync(code: string): string | null {
 
 let singleton_instance: InBrowserSportRepository | null = null;
 
-export function get_sport_repository(): SportRepository {
-  if (!singleton_instance) {
-    singleton_instance = new InBrowserSportRepository();
-  }
-  return singleton_instance;
-}
-
 function get_concrete_repository(): InBrowserSportRepository {
   if (!singleton_instance) {
     singleton_instance = new InBrowserSportRepository();
@@ -154,43 +131,42 @@ function get_concrete_repository(): InBrowserSportRepository {
   return singleton_instance;
 }
 
+export function get_sport_repository(): SportRepository {
+  return get_concrete_repository();
+}
+
 async function ensure_default_sports_exist(): Promise<void> {
-  const repository = get_concrete_repository();
-  const has_data = await repository.has_data();
-  if (!has_data) {
-    await repository.seed_with_data(create_default_sports());
+  const repo = get_concrete_repository();
+  if (!(await repo.has_data())) {
+    await repo.seed_with_data(create_default_sports());
   }
 }
 
 export async function reset_sport_repository(): Promise<void> {
-  const repository = get_concrete_repository();
-  await repository.clear_all_data();
-  await repository.seed_with_data(create_default_sports());
+  const repo = get_concrete_repository();
+  await repo.clear_all_data();
+  await repo.seed_with_data(create_default_sports());
 }
 
 export async function get_all_sports(): Promise<Sport[]> {
   await ensure_default_sports_exist();
-  const repository = get_concrete_repository();
-  const result = await repository.find_all();
+  const result = await get_concrete_repository().find_all();
   return result.success && result.data ? result.data.items : [];
 }
 
 export async function get_sport_by_id(id: string): Promise<Sport | null> {
-  const repository = get_concrete_repository();
-  const result = await repository.find_by_id(id);
+  const result = await get_concrete_repository().find_by_id(id);
   return result.success && result.data ? result.data : null;
 }
 
 export async function get_sport_by_code(code: string): Promise<Sport | null> {
-  const repository = get_concrete_repository();
-  return repository.find_by_code(code);
+  return get_concrete_repository().find_by_code(code);
 }
 
 export async function create_sport(
   input: CreateSportInput,
 ): Promise<Result<Sport>> {
-  const repository = get_concrete_repository();
-  const result = await repository.create(input);
+  const result = await get_concrete_repository().create(input);
   if (!result.success) {
     return { success: false, error: result.error || "Failed to create sport" };
   }
@@ -201,18 +177,15 @@ export async function update_sport(
   id: string,
   input: UpdateSportInput,
 ): Promise<Sport | null> {
-  const repository = get_concrete_repository();
-  const result = await repository.update(id, input);
+  const result = await get_concrete_repository().update(id, input);
   return result.success && result.data ? result.data : null;
 }
 
 export async function delete_sport(id: string): Promise<boolean> {
-  const repository = get_concrete_repository();
-  const result = await repository.delete_by_id(id);
+  const result = await get_concrete_repository().delete_by_id(id);
   return result.success && result.data === true;
 }
 
 export async function get_active_sports(): Promise<Sport[]> {
-  const repository = get_concrete_repository();
-  return repository.find_active();
+  return get_concrete_repository().find_active();
 }

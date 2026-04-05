@@ -1,0 +1,77 @@
+import type { Player } from "../../core/entities/Player";
+
+export function create_default_players(): Player[] {
+  const now = new Date().toISOString();
+  const BASE = {
+    organization_id: "org_default_1",
+    position_id: "",
+    profile_image_url: "",
+    medical_notes: "",
+    status: "active" as const,
+    created_at: now,
+    updated_at: now,
+  };
+
+  return [
+    {
+      ...BASE,
+      id: "player_default_1",
+      first_name: "Carlos",
+      last_name: "Martinez",
+      gender_id: "gender_default_male",
+      email: "c.martinez@reddragons.com",
+      phone: "+1-555-2001",
+      date_of_birth: "1995-03-15",
+      height_cm: 180,
+      weight_kg: 75,
+      nationality: "Spain",
+      emergency_contact_name: "Maria Martinez",
+      emergency_contact_phone: "+1-555-2101",
+    },
+    {
+      ...BASE,
+      id: "player_default_2",
+      first_name: "John",
+      last_name: "Smith",
+      gender_id: "gender_default_male",
+      email: "j.smith@reddragons.com",
+      phone: "+1-555-2002",
+      date_of_birth: "1998-07-22",
+      height_cm: 175,
+      weight_kg: 72,
+      nationality: "United States",
+      emergency_contact_name: "Jane Smith",
+      emergency_contact_phone: "+1-555-2102",
+    },
+    {
+      ...BASE,
+      id: "player_default_3",
+      first_name: "Yuki",
+      last_name: "Tanaka",
+      gender_id: "gender_default_male",
+      email: "y.tanaka@bluethunder.com",
+      phone: "+1-555-2003",
+      date_of_birth: "1997-11-08",
+      height_cm: 188,
+      weight_kg: 82,
+      nationality: "Japan",
+      emergency_contact_name: "Kenji Tanaka",
+      emergency_contact_phone: "+1-555-2103",
+    },
+    {
+      ...BASE,
+      id: "player_default_4",
+      first_name: "Marcus",
+      last_name: "Johnson",
+      gender_id: "gender_default_male",
+      email: "m.johnson@stormbasketball.com",
+      phone: "+1-555-2004",
+      date_of_birth: "1996-05-30",
+      height_cm: 190,
+      weight_kg: 85,
+      nationality: "United States",
+      emergency_contact_name: "Linda Johnson",
+      emergency_contact_phone: "+1-555-2104",
+    },
+  ];
+}

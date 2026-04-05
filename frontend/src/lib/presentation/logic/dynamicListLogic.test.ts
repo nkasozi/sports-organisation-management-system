@@ -506,6 +506,26 @@ describe("get_display_value_for_entity_field", () => {
     );
     expect(result).toBe("Unknown-team");
   });
+
+  it("should return raw value without enum formatting for unresolved FK with metadata", () => {
+    const entity = {
+      id: "1",
+      sport_id: "sport-field-hockey-default",
+    } as unknown as BaseEntity;
+    const foreign_key_options = {
+      sport_id: [] as BaseEntity[],
+    };
+    const field_metadata = create_test_field_metadata("sport_id", "foreign_key", {
+      foreign_key_entity: "sport",
+    });
+    const result = get_display_value_for_entity_field(
+      entity,
+      "sport_id",
+      foreign_key_options,
+      field_metadata,
+    );
+    expect(result).toBe("sport-field-hockey-default");
+  });
 });
 
 describe("toggle_sort_direction", () => {

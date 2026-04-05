@@ -6,10 +6,10 @@ import type {
 import type {
   FixtureLineupRepository,
   FixtureLineupFilter,
+  FixtureLineupUseCasesPort,
 } from "../interfaces/ports";
 import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
 import { create_failure_result } from "../types/Result";
-import type { FixtureLineupUseCasesPort } from "../interfaces/ports";
 import { get_repository_container } from "../../infrastructure/container";
 import { EventBus } from "$lib/infrastructure/events/EventBus";
 
@@ -54,36 +54,24 @@ export function create_fixture_lineup_use_cases(
       id: string,
       input: UpdateFixtureLineupInput,
     ): AsyncResult<FixtureLineup> {
-      if (!id || id.trim().length === 0) {
+      if (!id || id.trim().length === 0)
         return create_failure_result("FixtureLineup ID is required");
-      }
-
       const existing_result = await repository.find_by_id(id);
-      if (!existing_result.success || !existing_result.data) {
+      if (!existing_result.success || !existing_result.data)
         return create_failure_result("Lineup not found");
-      }
-
-      if (existing_result.data.status === "locked") {
+      if (existing_result.data.status === "locked")
         return create_failure_result("Cannot update a locked lineup");
-      }
-
       return repository.update(id, input);
     },
 
     async delete(id: string): AsyncResult<boolean> {
-      if (!id || id.trim().length === 0) {
+      if (!id || id.trim().length === 0)
         return create_failure_result("FixtureLineup ID is required");
-      }
-
       const existing_result = await repository.find_by_id(id);
-      if (!existing_result.success || !existing_result.data) {
+      if (!existing_result.success || !existing_result.data)
         return create_failure_result("Lineup not found");
-      }
-
-      if (existing_result.data.status === "locked") {
+      if (existing_result.data.status === "locked")
         return create_failure_result("Cannot delete a locked lineup");
-      }
-
       return repository.delete_by_id(id);
     },
 
@@ -111,9 +99,8 @@ export function create_fixture_lineup_use_cases(
       fixture_id: string,
       options?: { page: number; page_size: number },
     ): PaginatedAsyncResult<FixtureLineup> {
-      if (!fixture_id || fixture_id.trim().length === 0) {
+      if (!fixture_id || fixture_id.trim().length === 0)
         return create_failure_result("Fixture ID is required");
-      }
       return repository.find_by_fixture(fixture_id, options);
     },
 
@@ -122,12 +109,10 @@ export function create_fixture_lineup_use_cases(
       team_id: string,
       options?: { page: number; page_size: number },
     ): PaginatedAsyncResult<FixtureLineup> {
-      if (!fixture_id || fixture_id.trim().length === 0) {
+      if (!fixture_id || fixture_id.trim().length === 0)
         return create_failure_result("Fixture ID is required");
-      }
-      if (!team_id || team_id.trim().length === 0) {
+      if (!team_id || team_id.trim().length === 0)
         return create_failure_result("Team ID is required");
-      }
       return repository.find_by_fixture_and_team(fixture_id, team_id, options);
     },
 

@@ -3,11 +3,13 @@ import type {
   CreateFixtureInput,
   UpdateFixtureInput,
   FixtureGenerationConfig,
-  GameEvent,
-  GamePeriod,
 } from "../entities/Fixture";
-import type { FixtureRepository, FixtureFilter } from "../interfaces/ports";
-import type { QueryOptions } from "../interfaces/ports";
+import type {
+  FixtureRepository,
+  FixtureFilter,
+  QueryOptions,
+  FixtureUseCasesPort,
+} from "../interfaces/ports";
 import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
 import { create_failure_result, create_success_result } from "../types/Result";
 import {
@@ -16,84 +18,48 @@ import {
 } from "../entities/Fixture";
 import { get_repository_container } from "../../infrastructure/container";
 import { EventBus } from "$lib/infrastructure/events/EventBus";
-
-import type { FixtureUseCasesPort } from "../interfaces/ports";
 import type { Team } from "../entities/Team";
+import { create_fixture_game_events } from "./FixtureGameEventsUseCases";
 
 export type FixtureUseCases = FixtureUseCasesPort;
 
 const ENTITY_TYPE = "fixture";
 
-function build_fixture_display_name(fixture: Fixture): string {
-  return (
-    `${fixture.venue || "Fixture"} - Round ${fixture.round_number || ""}`.trim() ||
-    fixture.id
-  );
-}
-
-function emit_fixture_updated(
-  old_fixture: Fixture,
-  updated_fixture: Fixture,
-  changed_fields: string[],
-): void {
-  EventBus.emit_entity_updated(
-    ENTITY_TYPE,
-    updated_fixture.id,
-    build_fixture_display_name(updated_fixture),
-    old_fixture as unknown as Record<string, unknown>,
-    updated_fixture as unknown as Record<string, unknown>,
-    changed_fields,
-  );
-}
-
 async function enrich_fixtures_with_team_names(
   fixtures: Fixture[],
 ): Promise<Fixture[]> {
   if (fixtures.length === 0) return fixtures;
-
   try {
     const container = get_repository_container();
-    if (!container.team_repository) {
-      return fixtures;
-    }
-
-    const team_repository = container.team_repository;
-    const teams_result = await team_repository.find_all();
-
-    if (!teams_result.success || !teams_result.data) {
-      return fixtures;
-    }
-
-    const teams_map = new Map<string, Team>();
-    for (const team of teams_result.data.items) {
-      teams_map.set(team.id, team);
-    }
-
-    return fixtures.map((fixture) => {
-      const home_team = teams_map.get(fixture.home_team_id);
-      const away_team = teams_map.get(fixture.away_team_id);
-      return {
-        ...fixture,
-        home_team_name: home_team?.name || fixture.home_team_id,
-        away_team_name: away_team?.name || fixture.away_team_id,
-      } as Fixture;
-    });
+    if (!container.team_repository) return fixtures;
+    const teams_result = await container.team_repository.find_all();
+    if (!teams_result.success || !teams_result.data) return fixtures;
+    const teams_map = new Map<string, Team>(
+      teams_result.data.items.map((t) => [t.id, t]),
+    );
+    return fixtures.map(
+      (fixture) =>
+        ({
+          ...fixture,
+          home_team_name:
+            teams_map.get(fixture.home_team_id)?.name || fixture.home_team_id,
+          away_team_name:
+            teams_map.get(fixture.away_team_id)?.name || fixture.away_team_id,
+        }) as Fixture,
+    );
   } catch (error) {
-    console.warn("[DEBUG] Failed to enrich fixtures with team names:", error);
+    console.warn("[Fixture] Failed to enrich with team names", {
+      event: "enrich_failed",
+      error: String(error),
+    });
     return fixtures;
   }
 }
 
 function find_unmapped_rounds(config: FixtureGenerationConfig): number[] {
-  const total_rounds = config.rounds;
-  const unmapped: number[] = [];
-  for (let round = 1; round <= total_rounds; round++) {
-    const stage_id = config.stage_id_per_round[round];
-    if (!stage_id || stage_id.trim().length === 0) {
-      unmapped.push(round);
-    }
-  }
-  return unmapped;
+  return Array.from({ length: config.rounds }, (_, i) => i + 1).filter(
+    (round) => !config.stage_id_per_round[round]?.trim(),
+  );
 }
 
 export function create_fixture_use_cases(
@@ -116,57 +82,33 @@ export function create_fixture_use_cases(
     },
 
     async get_by_id(id: string): AsyncResult<Fixture> {
-      if (!id || id.trim().length === 0) {
-        return create_failure_result("Fixture ID is required");
-      }
-      const result = await repository.find_by_id(id);
-      if (!result.success) {
-        return create_failure_result(result.error);
-      }
-      return create_success_result(result.data);
+      if (!id?.trim()) return create_failure_result("Fixture ID is required");
+      return repository.find_by_id(id);
     },
 
     async create(input: CreateFixtureInput): AsyncResult<Fixture> {
       const validation_errors = validate_fixture_input(input);
-      if (validation_errors.length > 0) {
+      if (validation_errors.length > 0)
         return create_failure_result(validation_errors.join(", "));
-      }
-      const result = await repository.create(input);
-      if (!result.success) {
-        return create_failure_result(result.error);
-      }
-      return create_success_result(result.data);
+      return repository.create(input);
     },
 
     async update(id: string, input: UpdateFixtureInput): AsyncResult<Fixture> {
-      if (!id || id.trim().length === 0) {
-        return create_failure_result("Fixture ID is required");
-      }
-      const result = await repository.update(id, input);
-      if (!result.success) {
-        return create_failure_result(result.error);
-      }
-      return create_success_result(result.data);
+      if (!id?.trim()) return create_failure_result("Fixture ID is required");
+      return repository.update(id, input);
     },
 
     async delete(id: string): AsyncResult<boolean> {
-      if (!id || id.trim().length === 0) {
-        return create_failure_result("Fixture ID is required");
-      }
-      const result = await repository.delete_by_id(id);
-      if (!result.success) {
-        return create_failure_result(result.error);
-      }
-      return create_success_result(result.data);
+      if (!id?.trim()) return create_failure_result("Fixture ID is required");
+      return repository.delete_by_id(id);
     },
 
     async list_fixtures_by_competition(
       competition_id: string,
       options?: QueryOptions,
     ): PaginatedAsyncResult<Fixture> {
-      if (!competition_id || competition_id.trim().length === 0) {
+      if (!competition_id?.trim())
         return create_failure_result("Competition ID is required");
-      }
       return repository.find_by_competition(competition_id, options);
     },
 
@@ -174,9 +116,7 @@ export function create_fixture_use_cases(
       team_id: string,
       options?: QueryOptions,
     ): PaginatedAsyncResult<Fixture> {
-      if (!team_id || team_id.trim().length === 0) {
-        return create_failure_result("Team ID is required");
-      }
+      if (!team_id?.trim()) return create_failure_result("Team ID is required");
       return repository.find_by_team(team_id, options);
     },
 
@@ -185,12 +125,10 @@ export function create_fixture_use_cases(
       round_number: number,
       options?: QueryOptions,
     ): PaginatedAsyncResult<Fixture> {
-      if (!competition_id || competition_id.trim().length === 0) {
+      if (!competition_id?.trim())
         return create_failure_result("Competition ID is required");
-      }
-      if (round_number < 1) {
+      if (round_number < 1)
         return create_failure_result("Round number must be at least 1");
-      }
       return repository.find_by_round(competition_id, round_number, options);
     },
 
@@ -204,215 +142,37 @@ export function create_fixture_use_cases(
     async generate_fixtures(
       config: FixtureGenerationConfig,
     ): PaginatedAsyncResult<Fixture> {
-      if (!config.competition_id) {
+      if (!config.competition_id)
         return create_failure_result("Competition ID is required");
-      }
-      if (!config.team_ids || config.team_ids.length < 2) {
+      if (!config.team_ids || config.team_ids.length < 2)
         return create_failure_result("At least 2 teams are required");
-      }
-      if (!config.start_date) {
+      if (!config.start_date)
         return create_failure_result("Start date is required");
-      }
-
       const unmapped_rounds = find_unmapped_rounds(config);
       if (unmapped_rounds.length > 0) {
         return create_failure_result(
           `All rounds must be mapped to a stage. Missing stage mappings for rounds: ${unmapped_rounds.join(", ")}`,
         );
       }
-
       const fixture_inputs = generate_round_robin_fixtures(config);
       const result = await repository.create_many(fixture_inputs);
-
       if (result.success && result.data) {
-        for (const created_fixture of result.data.items) {
+        for (const created of result.data.items) {
+          const display_name =
+            `${created.venue || "Fixture"} - Round ${created.round_number || ""}`.trim() ||
+            created.id;
           EventBus.emit_entity_created(
             ENTITY_TYPE,
-            created_fixture.id,
-            build_fixture_display_name(created_fixture),
-            created_fixture as unknown as Record<string, unknown>,
+            created.id,
+            display_name,
+            created as unknown as Record<string, unknown>,
           );
         }
       }
-
       return result;
     },
 
-    async update_fixture_score(
-      id: string,
-      home_score: number,
-      away_score: number,
-    ): AsyncResult<Fixture> {
-      if (!id || id.trim().length === 0) {
-        return create_failure_result("Fixture ID is required");
-      }
-      if (home_score < 0 || away_score < 0) {
-        return create_failure_result("Scores cannot be negative");
-      }
-
-      const old_result = await repository.find_by_id(id);
-      const old_fixture = old_result.success ? old_result.data : undefined;
-
-      const result = await repository.update(id, {
-        home_team_score: home_score,
-        away_team_score: away_score,
-      });
-
-      if (result.success && result.data && old_fixture) {
-        emit_fixture_updated(old_fixture, result.data, [
-          "home_team_score",
-          "away_team_score",
-        ]);
-      }
-
-      return result;
-    },
-
-    async start_fixture(id: string): AsyncResult<Fixture> {
-      if (!id || id.trim().length === 0) {
-        return create_failure_result("Fixture ID is required");
-      }
-
-      const old_result = await repository.find_by_id(id);
-      const old_fixture = old_result.success ? old_result.data : undefined;
-
-      const result = await repository.update(id, {
-        status: "in_progress",
-        current_period: "first_half",
-        current_minute: 0,
-        home_team_score: 0,
-        away_team_score: 0,
-        game_events: [],
-      });
-
-      if (result.success && result.data && old_fixture) {
-        emit_fixture_updated(old_fixture, result.data, [
-          "status",
-          "current_period",
-          "current_minute",
-          "home_team_score",
-          "away_team_score",
-          "game_events",
-        ]);
-      }
-
-      return result;
-    },
-
-    async record_game_event(
-      id: string,
-      event: GameEvent,
-    ): AsyncResult<Fixture> {
-      if (!id || id.trim().length === 0) {
-        return create_failure_result("Fixture ID is required");
-      }
-
-      const fixture_result = await repository.find_by_id(id);
-      if (!fixture_result.success) {
-        return create_failure_result("Fixture not found");
-      }
-
-      const fixture = fixture_result.data;
-      const updated_events = [...(fixture.game_events || []), event];
-
-      let home_score = fixture.home_team_score || 0;
-      let away_score = fixture.away_team_score || 0;
-
-      const scoring_events = ["goal", "penalty_scored"];
-      if (scoring_events.includes(event.event_type)) {
-        if (event.team_side === "home") {
-          home_score += 1;
-        } else if (event.team_side === "away") {
-          away_score += 1;
-        }
-      }
-
-      if (event.event_type === "own_goal") {
-        if (event.team_side === "home") {
-          away_score += 1;
-        } else if (event.team_side === "away") {
-          home_score += 1;
-        }
-      }
-
-      const result = await repository.update(id, {
-        game_events: updated_events,
-        home_team_score: home_score,
-        away_team_score: away_score,
-        current_minute: event.minute,
-      });
-
-      if (result.success && result.data) {
-        emit_fixture_updated(fixture, result.data, [
-          "game_events",
-          "home_team_score",
-          "away_team_score",
-          "current_minute",
-        ]);
-      }
-
-      return result;
-    },
-
-    async update_period(
-      id: string,
-      period: GamePeriod,
-      minute: number,
-    ): AsyncResult<Fixture> {
-      if (!id || id.trim().length === 0) {
-        return create_failure_result("Fixture ID is required");
-      }
-
-      const old_result = await repository.find_by_id(id);
-      const old_fixture = old_result.success ? old_result.data : undefined;
-
-      const result = await repository.update(id, {
-        current_period: period,
-        current_minute: minute,
-      });
-
-      if (result.success && result.data && old_fixture) {
-        emit_fixture_updated(old_fixture, result.data, [
-          "current_period",
-          "current_minute",
-        ]);
-      }
-
-      return result;
-    },
-
-    async end_fixture(id: string): AsyncResult<Fixture> {
-      if (!id || id.trim().length === 0) {
-        return create_failure_result("Fixture ID is required");
-      }
-
-      const fixture_result = await repository.find_by_id(id);
-      if (!fixture_result.success || !fixture_result.data) {
-        return create_failure_result("Fixture not found");
-      }
-
-      const fixture = fixture_result.data;
-      const final_home_score = fixture.home_team_score ?? 0;
-      const final_away_score = fixture.away_team_score ?? 0;
-
-      const result = await repository.update(id, {
-        status: "completed",
-        current_period: "finished",
-        home_team_score: final_home_score,
-        away_team_score: final_away_score,
-      });
-
-      if (result.success && result.data) {
-        emit_fixture_updated(fixture, result.data, [
-          "status",
-          "current_period",
-          "home_team_score",
-          "away_team_score",
-        ]);
-      }
-
-      return result;
-    },
+    ...create_fixture_game_events(repository),
   };
 }
 

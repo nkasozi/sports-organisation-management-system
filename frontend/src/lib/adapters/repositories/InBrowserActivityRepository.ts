@@ -8,8 +8,8 @@ import type { BaseEntity } from "../../core/entities/BaseEntity";
 import type {
   ActivityRepository,
   ActivityFilter,
+  QueryOptions,
 } from "../../core/interfaces/ports";
-import type { QueryOptions } from "../../core/interfaces/ports";
 import type {
   AsyncResult,
   PaginatedAsyncResult,
@@ -44,21 +44,14 @@ class InBrowserActivityRepository
     id: string,
     timestamps: Pick<BaseEntity, "created_at" | "updated_at">,
   ): Activity {
-    return {
-      id,
-      ...timestamps,
-      ...input,
-    };
+    return { id, ...timestamps, ...input };
   }
 
   protected apply_updates_to_entity(
     entity: Activity,
     updates: UpdateActivityInput,
   ): Activity {
-    return {
-      ...entity,
-      ...updates,
-    };
+    return { ...entity, ...updates };
   }
 
   protected apply_entity_filter(
@@ -66,82 +59,51 @@ class InBrowserActivityRepository
     filter: ActivityFilter,
   ): Activity[] {
     let filtered = entities;
-
     if (filter.title_contains) {
-      const search_term = filter.title_contains.toLowerCase();
-      filtered = filtered.filter((activity) =>
-        activity.title.toLowerCase().includes(search_term),
-      );
+      const term = filter.title_contains.toLowerCase();
+      filtered = filtered.filter((a) => a.title.toLowerCase().includes(term));
     }
-
     if (filter.organization_id) {
       filtered = filtered.filter(
-        (activity) => activity.organization_id === filter.organization_id,
+        (a) => a.organization_id === filter.organization_id,
       );
     }
-
     if (filter.category_id) {
-      filtered = filtered.filter(
-        (activity) => activity.category_id === filter.category_id,
-      );
+      filtered = filtered.filter((a) => a.category_id === filter.category_id);
     }
-
     if (filter.category_type) {
       filtered = filtered.filter(
-        (activity) => activity.category_type === filter.category_type,
+        (a) => a.category_type === filter.category_type,
       );
     }
-
     if (filter.team_id) {
-      filtered = filtered.filter((activity) =>
-        activity.team_ids.includes(filter.team_id!),
-      );
+      filtered = filtered.filter((a) => a.team_ids.includes(filter.team_id!));
     }
-
     if (filter.competition_id) {
       filtered = filtered.filter(
-        (activity) => activity.competition_id === filter.competition_id,
+        (a) => a.competition_id === filter.competition_id,
       );
     }
-
     if (filter.fixture_id) {
-      filtered = filtered.filter(
-        (activity) => activity.fixture_id === filter.fixture_id,
-      );
+      filtered = filtered.filter((a) => a.fixture_id === filter.fixture_id);
     }
-
     if (filter.status) {
-      filtered = filtered.filter(
-        (activity) => activity.status === filter.status,
-      );
+      filtered = filtered.filter((a) => a.status === filter.status);
     }
-
     if (filter.source_type) {
-      filtered = filtered.filter(
-        (activity) => activity.source_type === filter.source_type,
-      );
+      filtered = filtered.filter((a) => a.source_type === filter.source_type);
     }
-
     if (filter.start_date_after) {
-      const after_date = new Date(filter.start_date_after);
-      filtered = filtered.filter(
-        (activity) => new Date(activity.start_datetime) >= after_date,
-      );
+      const after = new Date(filter.start_date_after);
+      filtered = filtered.filter((a) => new Date(a.start_datetime) >= after);
     }
-
     if (filter.start_date_before) {
-      const before_date = new Date(filter.start_date_before);
-      filtered = filtered.filter(
-        (activity) => new Date(activity.start_datetime) <= before_date,
-      );
+      const before = new Date(filter.start_date_before);
+      filtered = filtered.filter((a) => new Date(a.start_datetime) <= before);
     }
-
     if (filter.is_all_day !== undefined) {
-      filtered = filtered.filter(
-        (activity) => activity.is_all_day === filter.is_all_day,
-      );
+      filtered = filtered.filter((a) => a.is_all_day === filter.is_all_day);
     }
-
     return filtered;
   }
 
@@ -196,17 +158,16 @@ class InBrowserActivityRepository
     source_id: string,
   ): AsyncResult<Activity | null> {
     try {
-      const all_activities = await this.database.activities.toArray();
-      const activity = all_activities.find(
-        (a) => a.source_type === source_type && a.source_id === source_id,
+      const all = await this.database.activities.toArray();
+      return create_success_result(
+        all.find(
+          (a) => a.source_type === source_type && a.source_id === source_id,
+        ) ?? null,
       );
-      return create_success_result(activity ?? null);
     } catch (error) {
-      const error_message =
+      const msg =
         error instanceof Error ? error.message : "Unknown error occurred";
-      return create_failure_result(
-        `Failed to find activity by source: ${error_message}`,
-      );
+      return create_failure_result(`Failed to find activity by source: ${msg}`);
     }
   }
 }

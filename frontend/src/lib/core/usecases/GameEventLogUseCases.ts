@@ -2,19 +2,17 @@ import type {
   GameEventLog,
   CreateGameEventLogInput,
   UpdateGameEventLogInput,
-  GameEventLogType,
-  TeamSide,
 } from "../entities/GameEventLog";
-import { is_scoring_event } from "../entities/GameEventLog";
 import type {
   GameEventLogRepository,
   GameEventLogFilter,
+  GameEventLogUseCasesPort,
 } from "../interfaces/ports";
 import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
 import { create_failure_result } from "../types/Result";
-import type { GameEventLogUseCasesPort } from "../interfaces/ports";
 import { get_repository_container } from "../../infrastructure/container";
 import { EventBus } from "$lib/infrastructure/events/EventBus";
+import { create_game_event_recorder } from "./GameEventRecorderUseCases";
 
 export type GameEventLogUseCases = GameEventLogUseCasesPort;
 
@@ -176,149 +174,7 @@ export function create_game_event_log_use_cases(
       return result;
     },
 
-    async record_goal(
-      live_game_log_id: string,
-      fixture_id: string,
-      organization_id: string,
-      minute: number,
-      team_side: TeamSide,
-      player_id: string,
-      player_name: string,
-      recorded_by_user_id: string,
-    ): AsyncResult<GameEventLog> {
-      const input: CreateGameEventLogInput = {
-        organization_id,
-        live_game_log_id,
-        fixture_id,
-        event_type: "goal",
-        minute,
-        stoppage_time_minute: null,
-        team_side,
-        player_id,
-        player_name,
-        secondary_player_id: "",
-        secondary_player_name: "",
-        description: `Goal by ${player_name}`,
-        affects_score: true,
-        score_change_home: team_side === "home" ? 1 : 0,
-        score_change_away: team_side === "away" ? 1 : 0,
-        recorded_by_user_id,
-        status: "active",
-      };
-
-      const result = await repository.create(input);
-
-      if (result.success && result.data) {
-        EventBus.emit_entity_created(
-          "gameeventlog",
-          result.data.id,
-          `${result.data.event_type || "Event"} at ${result.data.minute || 0}'`,
-          result.data as unknown as Record<string, unknown>,
-        );
-      }
-
-      return result;
-    },
-
-    async record_card(
-      live_game_log_id: string,
-      fixture_id: string,
-      organization_id: string,
-      minute: number,
-      team_side: TeamSide,
-      player_id: string,
-      player_name: string,
-      card_type: "yellow_card" | "red_card" | "second_yellow" | "green_card",
-      recorded_by_user_id: string,
-    ): AsyncResult<GameEventLog> {
-      const card_label =
-        card_type === "yellow_card"
-          ? "Yellow card"
-          : card_type === "red_card"
-            ? "Red card"
-            : card_type === "second_yellow"
-              ? "Second yellow card"
-              : "Green card";
-
-      const input: CreateGameEventLogInput = {
-        organization_id,
-        live_game_log_id,
-        fixture_id,
-        event_type: card_type,
-        minute,
-        stoppage_time_minute: null,
-        team_side,
-        player_id,
-        player_name,
-        secondary_player_id: "",
-        secondary_player_name: "",
-        description: `${card_label} for ${player_name}`,
-        affects_score: false,
-        score_change_home: 0,
-        score_change_away: 0,
-        recorded_by_user_id,
-        status: "active",
-      };
-
-      const result = await repository.create(input);
-
-      if (result.success && result.data) {
-        EventBus.emit_entity_created(
-          "gameeventlog",
-          result.data.id,
-          `${result.data.event_type || "Event"} at ${result.data.minute || 0}'`,
-          result.data as unknown as Record<string, unknown>,
-        );
-      }
-
-      return result;
-    },
-
-    async record_substitution(
-      live_game_log_id: string,
-      fixture_id: string,
-      organization_id: string,
-      minute: number,
-      team_side: TeamSide,
-      player_out_id: string,
-      player_out_name: string,
-      player_in_id: string,
-      player_in_name: string,
-      recorded_by_user_id: string,
-    ): AsyncResult<GameEventLog> {
-      const input: CreateGameEventLogInput = {
-        organization_id,
-        live_game_log_id,
-        fixture_id,
-        event_type: "substitution",
-        minute,
-        stoppage_time_minute: null,
-        team_side,
-        player_id: player_out_id,
-        player_name: player_out_name,
-        secondary_player_id: player_in_id,
-        secondary_player_name: player_in_name,
-        description: `${player_out_name} replaced by ${player_in_name}`,
-        affects_score: false,
-        score_change_home: 0,
-        score_change_away: 0,
-        recorded_by_user_id,
-        status: "active",
-      };
-
-      const result = await repository.create(input);
-
-      if (result.success && result.data) {
-        EventBus.emit_entity_created(
-          "gameeventlog",
-          result.data.id,
-          `${result.data.event_type || "Event"} at ${result.data.minute || 0}'`,
-          result.data as unknown as Record<string, unknown>,
-        );
-      }
-
-      return result;
-    },
+    ...create_game_event_recorder(repository),
   };
 }
 
