@@ -159,7 +159,6 @@ export class InBrowserCompetitionTeamRepository
 
 function create_default_competition_teams(): CompetitionTeam[] {
   const now = new Date().toISOString();
-
   return [
     {
       id: "comp_team_default_1",

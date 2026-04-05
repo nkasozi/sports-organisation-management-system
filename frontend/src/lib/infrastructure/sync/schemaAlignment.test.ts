@@ -174,8 +174,7 @@ function find_missing_fields(
 }
 
 function get_entity_files(): { entity_name: string; file_path: string }[] {
-  const skip_files = new Set(["BaseEntity.ts", "GameEntities.ts", "index.ts"]);
-
+  const entity_names = new Set(Object.keys(ENTITY_TO_TABLE_MAP));
   const all_files = fs.readdirSync(ENTITIES_DIR);
 
   return all_files
@@ -183,12 +182,29 @@ function get_entity_files(): { entity_name: string; file_path: string }[] {
       (file) =>
         file.endsWith(".ts") &&
         !file.endsWith(".test.ts") &&
-        !skip_files.has(file),
+        entity_names.has(file.replace(".ts", "")),
     )
     .map((file) => ({
       entity_name: file.replace(".ts", ""),
       file_path: path.join(ENTITIES_DIR, file),
     }));
+}
+
+function read_entity_interface_content(
+  entity_name: string,
+  file_path: string,
+): string {
+  const content = fs.readFileSync(file_path, "utf-8");
+  const has_interface = new RegExp(
+    `export\\s+interface\\s+${entity_name}\\s+extends\\s+BaseEntity\\s*\\{`,
+  ).test(content);
+  if (has_interface) return content;
+
+  const types_file_path = path.join(ENTITIES_DIR, `${entity_name}Types.ts`);
+  if (fs.existsSync(types_file_path))
+    return fs.readFileSync(types_file_path, "utf-8");
+
+  return content;
 }
 
 describe("extract_interface_fields", () => {
@@ -379,7 +395,10 @@ describe("Schema Alignment: Local Entities vs Convex Schema", () => {
     if (!table_name) continue;
 
     it(`${entity_file.entity_name} fields should all exist in Convex table '${table_name}'`, () => {
-      const entity_content = fs.readFileSync(entity_file.file_path, "utf-8");
+      const entity_content = read_entity_interface_content(
+        entity_file.entity_name,
+        entity_file.file_path,
+      );
       const local_fields = extract_interface_fields(entity_content);
 
       const table_block = extract_table_block(schema_content, table_name);

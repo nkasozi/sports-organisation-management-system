@@ -48,6 +48,7 @@ class InBrowserCalendarTokenRepository
       id,
       ...timestamps,
       ...input,
+      expires_at: null,
       last_accessed_at: null,
       access_count: 0,
     };

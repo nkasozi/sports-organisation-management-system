@@ -2,46 +2,25 @@ import { browser } from "$app/environment";
 import { PUBLIC_CLERK_PUBLISHABLE_KEY } from "$env/static/public";
 import { writable, derived, type Readable } from "svelte/store";
 import type { Clerk } from "@clerk/clerk-js";
-import { goto } from "$app/navigation";
 import {
   create_success_result,
   create_failure_result,
 } from "$lib/core/types/Result";
 import type { Result } from "$lib/core/types/Result";
+import {
+  type ClerkUser,
+  type ClerkSessionState,
+  INITIAL_CLERK_STATE,
+} from "./clerkAuthTypes";
 
-export interface ClerkUser {
-  id: string;
-  email_address: string;
-  full_name: string;
-  first_name: string;
-  last_name: string;
-  image_url?: string;
-}
+export type { ClerkUser, ClerkSessionState } from "./clerkAuthTypes";
 
-export interface ClerkSessionState {
-  is_loaded: boolean;
-  is_signed_in: boolean;
-  user: ClerkUser | null;
-  session_id: string | null;
-}
-
-const initial_state: ClerkSessionState = {
-  is_loaded: false,
-  is_signed_in: false,
-  user: null,
-  session_id: null,
-};
-
-const clerk_store = writable<ClerkSessionState>(initial_state);
+const clerk_store = writable<ClerkSessionState>(INITIAL_CLERK_STATE);
 
 let clerk_instance: Clerk | null = null;
 let is_reloading = false;
 let is_navigating = false;
 let pending_state: ClerkSessionState | null = null;
-
-function set_reloading(): void {
-  is_reloading = true;
-}
 
 export function set_navigating(navigating: boolean): void {
   is_navigating = navigating;
@@ -53,17 +32,15 @@ export function set_navigating(navigating: boolean): void {
 
 function safe_store_update(new_state: ClerkSessionState): void {
   if (is_reloading) return;
-
   if (is_navigating) {
     pending_state = new_state;
     return;
   }
-
   clerk_store.set(new_state);
 }
 
-function sync_clerk_state(): void {
-  if (!clerk_instance || is_reloading) return;
+function build_clerk_state_from_instance(): ClerkSessionState | null {
+  if (!clerk_instance || is_reloading) return null;
 
   const clerkUser = clerk_instance.user;
   const session = clerk_instance.session;
@@ -79,72 +56,26 @@ function sync_clerk_state(): void {
       }
     : null;
 
-  const new_state = {
+  return {
     is_loaded: true,
     is_signed_in: !!session,
     user,
     session_id: session?.id ?? null,
   };
+}
 
+function sync_clerk_state(): void {
+  const new_state = build_clerk_state_from_instance();
+  if (!new_state) return;
   requestAnimationFrame(() => {
     safe_store_update(new_state);
   });
 }
 
 function sync_clerk_state_immediate(): void {
-  if (!clerk_instance || is_reloading) return;
-
-  const clerkUser = clerk_instance.user;
-  const session = clerk_instance.session;
-
-  const user: ClerkUser | null = clerkUser
-    ? {
-        id: clerkUser.id,
-        email_address: clerkUser.emailAddresses?.[0]?.emailAddress ?? "",
-        full_name: clerkUser.fullName ?? "",
-        first_name: clerkUser.firstName ?? "",
-        last_name: clerkUser.lastName ?? "",
-        image_url: clerkUser.imageUrl,
-      }
-    : null;
-
-  const new_state = {
-    is_loaded: true,
-    is_signed_in: !!session,
-    user,
-    session_id: session?.id ?? null,
-  };
-
+  const new_state = build_clerk_state_from_instance();
+  if (!new_state) return;
   clerk_store.set(new_state);
-}
-
-function update_clerk_session_state(
-  is_signed_in: boolean,
-  user_id: string | null,
-  user_email: string | null,
-): void {
-  if (is_reloading) return;
-
-  const user: ClerkUser | null = user_id
-    ? {
-        id: user_id,
-        email_address: user_email ?? "",
-        full_name: "",
-        first_name: "",
-        last_name: "",
-      }
-    : null;
-
-  const new_state = {
-    is_loaded: true,
-    is_signed_in,
-    user,
-    session_id: null,
-  };
-
-  requestAnimationFrame(() => {
-    safe_store_update(new_state);
-  });
 }
 
 export async function initialize_clerk(): Promise<boolean> {
@@ -155,7 +86,7 @@ export async function initialize_clerk(): Promise<boolean> {
   if (!publishable_key) {
     console.log("[Clerk] No PUBLIC_CLERK_PUBLISHABLE_KEY configured, skipping");
     requestAnimationFrame(() => {
-      safe_store_update({ ...initial_state, is_loaded: true });
+      safe_store_update({ ...INITIAL_CLERK_STATE, is_loaded: true });
     });
     return false;
   }
@@ -178,7 +109,7 @@ export async function initialize_clerk(): Promise<boolean> {
     if (!window.Clerk) {
       console.error("[Clerk] ClerkProvider did not load Clerk in time");
       requestAnimationFrame(() => {
-        safe_store_update({ ...initial_state, is_loaded: true });
+        safe_store_update({ ...INITIAL_CLERK_STATE, is_loaded: true });
       });
       return false;
     }
@@ -224,7 +155,7 @@ export async function initialize_clerk(): Promise<boolean> {
   } catch (error) {
     console.error("[Clerk] Failed to initialize:", error);
     requestAnimationFrame(() => {
-      safe_store_update({ ...initial_state, is_loaded: true });
+      safe_store_update({ ...INITIAL_CLERK_STATE, is_loaded: true });
     });
     return false;
   }
@@ -264,17 +195,12 @@ export async function sign_out(): Promise<Result<true>> {
 
 export function destroy_clerk(): void {
   clerk_instance = null;
-  clerk_store.set(initial_state);
+  clerk_store.set(INITIAL_CLERK_STATE);
 }
 
 export const clerk_session: Readable<ClerkSessionState> = {
   subscribe: clerk_store.subscribe,
 };
-
-const clerk_user: Readable<ClerkUser | null> = derived(
-  clerk_store,
-  ($state) => $state.user,
-);
 
 export const is_clerk_loaded: Readable<boolean> = derived(
   clerk_store,

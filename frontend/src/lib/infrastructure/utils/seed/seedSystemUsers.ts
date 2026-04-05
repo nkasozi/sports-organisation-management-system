@@ -1,0 +1,96 @@
+import type { SystemUser } from "../../../core/entities/SystemUser";
+import { ANY_VALUE } from "../../../core/interfaces/ports";
+import {
+  SEED_SYSTEM_USER_IDS,
+  SEED_ORGANIZATION_IDS,
+  SEED_OFFICIAL_IDS,
+  SEED_TEAM_IDS,
+  generate_current_timestamp,
+} from "./seedIds";
+import { SEED_PLAYER_IDS } from "./seedPlayerIds";
+
+export function create_seed_system_users(): SystemUser[] {
+  const now = generate_current_timestamp();
+
+  return [
+    {
+      id: SEED_SYSTEM_USER_IDS.SYSTEM_ADMINISTRATOR,
+      email: "nkasozi@gmail.com",
+      first_name: "Super",
+      last_name: "Admin",
+      role: "super_admin",
+      organization_id: ANY_VALUE,
+      team_id: ANY_VALUE,
+      player_id: ANY_VALUE,
+      status: "active",
+      created_at: now,
+      updated_at: now,
+    },
+    {
+      id: SEED_SYSTEM_USER_IDS.ORG_ADMIN_UGANDA_HOCKEY,
+      email: "orgadmin@ugandahockey.local",
+      first_name: "Organisation",
+      last_name: "Administrator",
+      role: "org_admin",
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
+      team_id: ANY_VALUE,
+      player_id: ANY_VALUE,
+      status: "active",
+      created_at: now,
+      updated_at: now,
+    },
+    {
+      id: SEED_SYSTEM_USER_IDS.OFFICIALS_MANAGER_UGANDA_HOCKEY,
+      email: "officials@ugandahockey.local",
+      first_name: "Officials",
+      last_name: "Manager",
+      role: "officials_manager",
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
+      team_id: ANY_VALUE,
+      player_id: ANY_VALUE,
+      status: "active",
+      created_at: now,
+      updated_at: now,
+    },
+    {
+      id: SEED_SYSTEM_USER_IDS.TEAM_MANAGER_WEATHERHEAD,
+      email: "manager@weatherheadhc.local",
+      first_name: "Team",
+      last_name: "Manager",
+      role: "team_manager",
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
+      team_id: SEED_TEAM_IDS.WEATHERHEAD_HC,
+      player_id: ANY_VALUE,
+      status: "active",
+      created_at: now,
+      updated_at: now,
+    },
+    {
+      id: SEED_SYSTEM_USER_IDS.OFFICIAL_MICHAEL_ANDERSON,
+      email: "michael.anderson@ugandahockey.local",
+      first_name: "Michael",
+      last_name: "Anderson",
+      role: "official",
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
+      team_id: ANY_VALUE,
+      player_id: ANY_VALUE,
+      official_id: SEED_OFFICIAL_IDS.MICHAEL_ANDERSON,
+      status: "active",
+      created_at: now,
+      updated_at: now,
+    },
+    {
+      id: SEED_SYSTEM_USER_IDS.PLAYER_DENIS_ONYANGO,
+      email: "denis.onyango@weatherheadhc.local",
+      first_name: "Denis",
+      last_name: "Onyango",
+      role: "player",
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
+      team_id: SEED_TEAM_IDS.WEATHERHEAD_HC,
+      player_id: SEED_PLAYER_IDS.DENIS_ONYANGO,
+      status: "active",
+      created_at: now,
+      updated_at: now,
+    },
+  ];
+}

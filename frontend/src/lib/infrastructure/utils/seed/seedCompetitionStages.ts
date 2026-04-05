@@ -1,0 +1,103 @@
+import type { CompetitionStage } from "../../../core/entities/CompetitionStage";
+import {
+  SEED_STAGE_IDS,
+  SEED_COMPETITION_IDS,
+  generate_current_timestamp,
+} from "./seedIds";
+
+export function create_seed_competition_stages(): CompetitionStage[] {
+  const now = generate_current_timestamp();
+
+  return [
+    {
+      id: SEED_STAGE_IDS.EASTER_CUP_POOL_STAGE,
+      competition_id: SEED_COMPETITION_IDS.EASTER_CUP_2026,
+      name: "Pool Stage",
+      stage_type: "group_stage",
+      stage_order: 1,
+      status: "active",
+      created_at: now,
+      updated_at: now,
+    },
+    {
+      id: SEED_STAGE_IDS.EASTER_CUP_SEMI_FINALS,
+      competition_id: SEED_COMPETITION_IDS.EASTER_CUP_2026,
+      name: "Semi Finals",
+      stage_type: "knockout_stage",
+      stage_order: 2,
+      status: "active",
+      created_at: now,
+      updated_at: now,
+    },
+    {
+      id: SEED_STAGE_IDS.EASTER_CUP_FINAL,
+      competition_id: SEED_COMPETITION_IDS.EASTER_CUP_2026,
+      name: "Final",
+      stage_type: "one_off_stage",
+      stage_order: 3,
+      status: "active",
+      created_at: now,
+      updated_at: now,
+    },
+    {
+      id: SEED_STAGE_IDS.UGANDA_CUP_ROUND_OF_16,
+      competition_id: SEED_COMPETITION_IDS.UGANDA_CUP_2026,
+      name: "Round of 16",
+      stage_type: "knockout_stage",
+      stage_order: 1,
+      status: "active",
+      created_at: now,
+      updated_at: now,
+    },
+    {
+      id: SEED_STAGE_IDS.UGANDA_CUP_QUARTER_FINALS,
+      competition_id: SEED_COMPETITION_IDS.UGANDA_CUP_2026,
+      name: "Quarter Finals",
+      stage_type: "knockout_stage",
+      stage_order: 2,
+      status: "active",
+      created_at: now,
+      updated_at: now,
+    },
+    {
+      id: SEED_STAGE_IDS.UGANDA_CUP_SEMI_FINALS,
+      competition_id: SEED_COMPETITION_IDS.UGANDA_CUP_2026,
+      name: "Semi Finals",
+      stage_type: "knockout_stage",
+      stage_order: 3,
+      status: "active",
+      created_at: now,
+      updated_at: now,
+    },
+    {
+      id: SEED_STAGE_IDS.UGANDA_CUP_FINAL,
+      competition_id: SEED_COMPETITION_IDS.UGANDA_CUP_2026,
+      name: "Final",
+      stage_type: "one_off_stage",
+      stage_order: 4,
+      status: "active",
+      created_at: now,
+      updated_at: now,
+    },
+    {
+      id: SEED_STAGE_IDS.NHL_LEAGUE_SEASON,
+      competition_id: SEED_COMPETITION_IDS.NATIONAL_HOCKEY_LEAGUE_2026,
+      name: "League Season",
+      stage_type: "league_stage",
+      stage_order: 1,
+      status: "active",
+      created_at: now,
+      updated_at: now,
+    },
+    {
+      id: SEED_STAGE_IDS.UNIVERSITY_ROUND_ROBIN,
+      competition_id: SEED_COMPETITION_IDS.UNIVERSITY_HOCKEY_CHAMPIONSHIP_2026,
+      name: "Round Robin",
+      stage_type: "league_stage",
+      stage_order: 1,
+      status: "active",
+      created_at: now,
+      updated_at: now,
+    },
+  ];
+}

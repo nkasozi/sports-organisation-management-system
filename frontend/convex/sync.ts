@@ -772,7 +772,11 @@ export const clear_table = mutation({
 
     const table_validation = validate_table_name(table_name);
     if (!table_validation.success) {
-      return { success: false, error: table_validation.error, deleted_count: 0 };
+      return {
+        success: false,
+        error: table_validation.error,
+        deleted_count: 0,
+      };
     }
 
     const entity_type = get_entity_type_for_table(table_name);
@@ -804,9 +808,7 @@ export const clear_table = mutation({
       scope_filter_keys.length === 0
         ? all_records
         : all_records.filter((record: any) =>
-            scope_filter_keys.every(
-              (key) => record[key] === scope_filter[key],
-            ),
+            scope_filter_keys.every((key) => record[key] === scope_filter[key]),
           );
 
     for (const record of scoped_records) {

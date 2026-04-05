@@ -2,12 +2,14 @@
   import { onDestroy } from "svelte";
   import {
     sync_store,
+  } from "$lib/presentation/stores/syncStore";
+  import {
     is_syncing,
     last_sync_time,
     sync_error,
     sync_percentage,
     sync_progress,
-  } from "$lib/presentation/stores/syncStore";
+  } from "$lib/presentation/stores/syncStoreDerived";
 
   let show_details = false;
   let sync_in_progress = false;

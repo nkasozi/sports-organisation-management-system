@@ -1,269 +1,16 @@
 import { writable, derived } from "svelte/store";
 import { browser } from "$app/environment";
 import { get_app_settings_storage } from "$lib/infrastructure/container";
-
-export type ThemeColorName =
-  | "amber"
-  | "blue"
-  | "green"
-  | "red"
-  | "purple"
-  | "orange"
-  | "teal"
-  | "pink"
-  | "indigo"
-  | "emerald"
-  | "rose"
-  | "violet"
-  | "fuchsia"
-  | "lime"
-  | "sky"
-  | "slate"
-  | "cyan";
-
-export interface ThemeConfig {
-  mode: "light" | "dark";
-  primary_color: ThemeColorName;
-  secondary_color: ThemeColorName;
-}
-
-export interface ColorPalette {
-  50: string;
-  100: string;
-  200: string;
-  300: string;
-  400: string;
-  500: string;
-  600: string;
-  700: string;
-  800: string;
-  900: string;
-  950: string;
-}
-
-const COLOR_PALETTES: Record<ThemeColorName, ColorPalette> = {
-  amber: {
-    50: "#f0f9ff",
-    100: "#e0f2fe",
-    200: "#bae6fd",
-    300: "#7dd3fc",
-    400: "#38bdf8",
-    500: "#0ea5e9",
-    600: "#0284c7",
-    700: "#0369a1",
-    800: "#075985",
-    900: "#0c4a6e",
-    950: "#082f49",
-  },
-  blue: {
-    50: "#eff6ff",
-    100: "#dbeafe",
-    200: "#bfdbfe",
-    300: "#93c5fd",
-    400: "#60a5fa",
-    500: "#3b82f6",
-    600: "#2563eb",
-    700: "#1d4ed8",
-    800: "#1e40af",
-    900: "#1e3a8a",
-    950: "#172554",
-  },
-  green: {
-    50: "#f0fdf4",
-    100: "#dcfce7",
-    200: "#bbf7d0",
-    300: "#86efac",
-    400: "#4ade80",
-    500: "#22c55e",
-    600: "#16a34a",
-    700: "#15803d",
-    800: "#166534",
-    900: "#14532d",
-    950: "#052e16",
-  },
-  red: {
-    50: "#fef2f2",
-    100: "#fee2e2",
-    200: "#fecaca",
-    300: "#fca5a5",
-    400: "#f87171",
-    500: "#ef4444",
-    600: "#dc2626",
-    700: "#b91c1c",
-    800: "#991b1b",
-    900: "#7f1d1d",
-    950: "#450a0a",
-  },
-  purple: {
-    50: "#faf5ff",
-    100: "#f3e8ff",
-    200: "#e9d5ff",
-    300: "#d8b4fe",
-    400: "#c084fc",
-    500: "#a855f7",
-    600: "#9333ea",
-    700: "#7c3aed",
-    800: "#6b21a8",
-    900: "#581c87",
-    950: "#3b0764",
-  },
-  orange: {
-    50: "#ecfeff",
-    100: "#cffafe",
-    200: "#a5f3fc",
-    300: "#67e8f9",
-    400: "#22d3ee",
-    500: "#06b6d4",
-    600: "#0891b2",
-    700: "#0e7490",
-    800: "#155e75",
-    900: "#164e63",
-    950: "#083344",
-  },
-  teal: {
-    50: "#f0fdfa",
-    100: "#ccfbf1",
-    200: "#99f6e4",
-    300: "#5eead4",
-    400: "#2dd4bf",
-    500: "#14b8a6",
-    600: "#0d9488",
-    700: "#0f766e",
-    800: "#115e59",
-    900: "#134e4a",
-    950: "#042f2e",
-  },
-  pink: {
-    50: "#fdf2f8",
-    100: "#fce7f3",
-    200: "#fbcfe8",
-    300: "#f9a8d4",
-    400: "#f472b6",
-    500: "#ec4899",
-    600: "#db2777",
-    700: "#be185d",
-    800: "#9d174d",
-    900: "#831843",
-    950: "#500724",
-  },
-  indigo: {
-    50: "#eef2ff",
-    100: "#e0e7ff",
-    200: "#c7d2fe",
-    300: "#a5b4fc",
-    400: "#818cf8",
-    500: "#6366f1",
-    600: "#4f46e5",
-    700: "#4338ca",
-    800: "#3730a3",
-    900: "#312e81",
-    950: "#1e1b4e",
-  },
-  emerald: {
-    50: "#ecfdf5",
-    100: "#d1fae5",
-    200: "#a7f3d0",
-    300: "#6ee7b7",
-    400: "#34d399",
-    500: "#10b981",
-    600: "#059669",
-    700: "#047857",
-    800: "#065f46",
-    900: "#064e3b",
-    950: "#022c22",
-  },
-  rose: {
-    50: "#fff1f2",
-    100: "#ffe4e6",
-    200: "#fecdd3",
-    300: "#fda4af",
-    400: "#fb7185",
-    500: "#f43f5e",
-    600: "#e11d48",
-    700: "#be123c",
-    800: "#9f1239",
-    900: "#881337",
-    950: "#4c0519",
-  },
-  violet: {
-    50: "#f5f3ff",
-    100: "#ede9fe",
-    200: "#ddd6fe",
-    300: "#c4b5fd",
-    400: "#a78bfa",
-    500: "#8b5cf6",
-    600: "#7c3aed",
-    700: "#6d28d9",
-    800: "#5b21b6",
-    900: "#4c1d95",
-    950: "#2e1065",
-  },
-  fuchsia: {
-    50: "#fdf4ff",
-    100: "#fae8ff",
-    200: "#f5d0fe",
-    300: "#f0abfc",
-    400: "#e879f9",
-    500: "#d946ef",
-    600: "#c026d3",
-    700: "#a21caf",
-    800: "#86198f",
-    900: "#701a75",
-    950: "#4a044e",
-  },
-  lime: {
-    50: "#f7fee7",
-    100: "#ecfccb",
-    200: "#d9f99d",
-    300: "#bef264",
-    400: "#a3e635",
-    500: "#84cc16",
-    600: "#65a30d",
-    700: "#4d7c0f",
-    800: "#3f6212",
-    900: "#365314",
-    950: "#1a2e05",
-  },
-  sky: {
-    50: "#f0f9ff",
-    100: "#e0f2fe",
-    200: "#bae6fd",
-    300: "#7dd3fc",
-    400: "#38bdf8",
-    500: "#0ea5e9",
-    600: "#0284c7",
-    700: "#0369a1",
-    800: "#075985",
-    900: "#0c4a6e",
-    950: "#082f49",
-  },
-  slate: {
-    50: "#f8fafc",
-    100: "#f1f5f9",
-    200: "#e2e8f0",
-    300: "#cbd5e1",
-    400: "#94a3b8",
-    500: "#64748b",
-    600: "#475569",
-    700: "#334155",
-    800: "#1e293b",
-    900: "#0f172a",
-    950: "#020617",
-  },
-  cyan: {
-    50: "#ecfeff",
-    100: "#cffafe",
-    200: "#a5f3fc",
-    300: "#67e8f9",
-    400: "#22d3ee",
-    500: "#06b6d4",
-    600: "#0891b2",
-    700: "#0e7490",
-    800: "#155e75",
-    900: "#164e63",
-    950: "#083344",
-  },
-};
+export type {
+  ThemeColorName,
+  ThemeConfig,
+  ColorPalette,
+  PaletteShade,
+} from "./themeTypes";
+import type { ThemeColorName, ThemeConfig, PaletteShade } from "./themeTypes";
+import { PALETTE_SHADES } from "./themeTypes";
+export { COLOR_PALETTES } from "./themeColorPalettes";
+import { COLOR_PALETTES } from "./themeColorPalettes";
 
 const DEFAULT_THEME: ThemeConfig = {
   mode: "dark",
@@ -295,9 +42,7 @@ export async function initialize_theme(): Promise<void> {
     } catch {
       console.warn(
         "[theme] Failed to parse stored theme, falling back to system preference",
-        {
-          event: "theme_parse_failed",
-        },
+        { event: "theme_parse_failed" },
       );
     }
   }
@@ -309,18 +54,27 @@ const primary_palette = derived(
   theme_store,
   ($theme) => COLOR_PALETTES[$theme.primary_color],
 );
-
 const secondary_palette = derived(
   theme_store,
   ($theme) => COLOR_PALETTES[$theme.secondary_color],
 );
 
+function apply_palette_css_variables(
+  html_element: HTMLElement,
+  prefix: string,
+  palette: Record<PaletteShade, string>,
+): void {
+  for (const shade of PALETTE_SHADES) {
+    html_element.style.setProperty(
+      `--color-${prefix}-${shade}`,
+      palette[shade],
+    );
+  }
+}
+
 function apply_theme_to_document(theme_config: ThemeConfig): void {
   if (!browser) return;
-
   const html_element = document.documentElement;
-  const primary = COLOR_PALETTES[theme_config.primary_color];
-  const secondary = COLOR_PALETTES[theme_config.secondary_color];
 
   if (theme_config.mode === "dark") {
     html_element.classList.add("dark");
@@ -328,34 +82,20 @@ function apply_theme_to_document(theme_config: ThemeConfig): void {
     html_element.classList.remove("dark");
   }
 
-  html_element.style.setProperty("--color-primary-50", primary[50]);
-  html_element.style.setProperty("--color-primary-100", primary[100]);
-  html_element.style.setProperty("--color-primary-200", primary[200]);
-  html_element.style.setProperty("--color-primary-300", primary[300]);
-  html_element.style.setProperty("--color-primary-400", primary[400]);
-  html_element.style.setProperty("--color-primary-500", primary[500]);
-  html_element.style.setProperty("--color-primary-600", primary[600]);
-  html_element.style.setProperty("--color-primary-700", primary[700]);
-  html_element.style.setProperty("--color-primary-800", primary[800]);
-  html_element.style.setProperty("--color-primary-900", primary[900]);
-  html_element.style.setProperty("--color-primary-950", primary[950]);
-
-  html_element.style.setProperty("--color-secondary-50", secondary[50]);
-  html_element.style.setProperty("--color-secondary-100", secondary[100]);
-  html_element.style.setProperty("--color-secondary-200", secondary[200]);
-  html_element.style.setProperty("--color-secondary-300", secondary[300]);
-  html_element.style.setProperty("--color-secondary-400", secondary[400]);
-  html_element.style.setProperty("--color-secondary-500", secondary[500]);
-  html_element.style.setProperty("--color-secondary-600", secondary[600]);
-  html_element.style.setProperty("--color-secondary-700", secondary[700]);
-  html_element.style.setProperty("--color-secondary-800", secondary[800]);
-  html_element.style.setProperty("--color-secondary-900", secondary[900]);
-  html_element.style.setProperty("--color-secondary-950", secondary[950]);
+  apply_palette_css_variables(
+    html_element,
+    "primary",
+    COLOR_PALETTES[theme_config.primary_color],
+  );
+  apply_palette_css_variables(
+    html_element,
+    "secondary",
+    COLOR_PALETTES[theme_config.secondary_color],
+  );
 }
 
 async function save_theme_to_storage(theme_config: ThemeConfig): Promise<void> {
   if (!browser) return;
-
   await get_app_settings_storage().set_setting(
     "sports-org-theme-v2",
     JSON.stringify(theme_config),
@@ -408,46 +148,39 @@ function set_secondary_color(color: ThemeColorName): void {
   }));
 }
 
+const COLOR_NAME_MAP: Record<string, ThemeColorName> = {
+  yellow: "sky",
+  amber: "sky",
+  blue: "blue",
+  green: "green",
+  red: "red",
+  purple: "purple",
+  orange: "cyan",
+  teal: "teal",
+  pink: "pink",
+  indigo: "indigo",
+  emerald: "emerald",
+  cyan: "cyan",
+  rose: "rose",
+  violet: "violet",
+  fuchsia: "fuchsia",
+  lime: "lime",
+  sky: "sky",
+  slate: "slate",
+};
+
 export function update_theme_colors(options: {
   primaryColor?: string;
   secondaryColor?: string;
 }): void {
-  const color_name_map: Record<string, ThemeColorName> = {
-    yellow: "sky",
-    amber: "sky",
-    blue: "blue",
-    green: "green",
-    red: "red",
-    purple: "purple",
-    orange: "cyan",
-    teal: "teal",
-    pink: "pink",
-    indigo: "indigo",
-    emerald: "emerald",
-    cyan: "cyan",
-    rose: "rose",
-    violet: "violet",
-    fuchsia: "fuchsia",
-    lime: "lime",
-    sky: "sky",
-    slate: "slate",
-  };
-
   theme_store.update((current_theme) => {
     const new_theme = { ...current_theme };
-
-    if (options.primaryColor) {
-      const mapped_color =
-        color_name_map[options.primaryColor.toLowerCase()] || "blue";
-      new_theme.primary_color = mapped_color;
-    }
-
-    if (options.secondaryColor) {
-      const mapped_color =
-        color_name_map[options.secondaryColor.toLowerCase()] || "red";
-      new_theme.secondary_color = mapped_color;
-    }
-
+    if (options.primaryColor)
+      new_theme.primary_color =
+        COLOR_NAME_MAP[options.primaryColor.toLowerCase()] || "blue";
+    if (options.secondaryColor)
+      new_theme.secondary_color =
+        COLOR_NAME_MAP[options.secondaryColor.toLowerCase()] || "red";
     return new_theme;
   });
 }
@@ -460,7 +193,7 @@ function get_available_colors(): ThemeColorName[] {
   return Object.keys(COLOR_PALETTES) as ThemeColorName[];
 }
 
-function get_color_palette(color: ThemeColorName): ColorPalette {
+function get_color_palette(color: ThemeColorName) {
   return COLOR_PALETTES[color];
 }
 

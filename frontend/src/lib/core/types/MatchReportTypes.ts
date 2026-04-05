@@ -89,9 +89,7 @@ export function build_match_player_entry(
   const player_full_name =
     `${player.first_name} ${player.last_name}`.toUpperCase();
   const cards: MatchPlayerCard[] = [];
-
   const card_event_types = card_types.map((ct) => ct.event_type);
-
   const relevant_events = game_events.filter(
     (e) =>
       e.team_side === team_side &&
@@ -181,58 +179,41 @@ function find_player_jersey_number(
   home_players: LineupPlayer[],
   away_players: LineupPlayer[],
 ): number | string {
-  if (!player_name || player_name.trim() === "") {
-    return "?";
-  }
-
+  if (!player_name || player_name.trim() === "") return "?";
   const players = team_side === "home" ? home_players : away_players;
   const name_upper = player_name.toUpperCase().trim();
-
   for (const player of players) {
     const full_name = `${player.first_name} ${player.last_name}`
       .toUpperCase()
       .trim();
-    if (full_name === name_upper) {
+    if (
+      full_name === name_upper ||
+      full_name.includes(name_upper) ||
+      name_upper.includes(full_name)
+    )
       return player.jersey_number ?? "?";
-    }
   }
-
-  for (const player of players) {
-    const full_name = `${player.first_name} ${player.last_name}`.toUpperCase();
-    if (full_name.includes(name_upper) || name_upper.includes(full_name)) {
-      return player.jersey_number ?? "?";
-    }
-  }
-
   return "?";
 }
 
+const GOAL_ACTION_LABELS: Record<string, string> = {
+  goal: "FG",
+  penalty_scored: "PC",
+  own_goal: "OG",
+};
+
 function get_goal_action_label(event_type: string): string {
-  switch (event_type) {
-    case "goal":
-      return "FG";
-    case "penalty_scored":
-      return "PC";
-    case "own_goal":
-      return "OG";
-    default:
-      return "FG";
-  }
+  return GOAL_ACTION_LABELS[event_type] ?? "FG";
 }
 
 export function format_report_date(date_string: string): string {
   const date = new Date(date_string);
-  const day = date.getDate();
-  const month = date.toLocaleString("en-US", { month: "short" }).toUpperCase();
-  const year = date.getFullYear();
-  return `${day} ${month} ${year}`;
+  return `${date.getDate()} ${date.toLocaleString("en-US", { month: "short" }).toUpperCase()} ${date.getFullYear()}`;
 }
 
 export function get_team_initials(team_name: string): string {
   const words = team_name.trim().split(/\s+/);
-  if (words.length === 1 && words[0].length <= 3) {
-    return words[0].toUpperCase();
-  }
+  if (words.length === 1 && words[0].length <= 3) return words[0].toUpperCase();
   return words
     .map((w) => w.charAt(0))
     .join("")

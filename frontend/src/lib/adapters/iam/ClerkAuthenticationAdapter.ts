@@ -65,10 +65,7 @@ function build_verification_payload_from_clerk_user(
 function build_invalid_verification_result(
   error_message: string,
 ): AuthVerificationResult {
-  return {
-    is_valid: false,
-    error_message,
-  };
+  return { is_valid: false, error_message };
 }
 
 function build_valid_verification_result(
@@ -215,9 +212,8 @@ let clerk_authentication_adapter_instance: ClerkAuthenticationAdapter | null =
 
 export function get_clerk_authentication_adapter(): ClerkAuthenticationAdapter {
   if (!clerk_authentication_adapter_instance) {
-    const session_provider = create_clerk_session_provider();
     clerk_authentication_adapter_instance = new ClerkAuthenticationAdapter(
-      session_provider,
+      create_clerk_session_provider(),
     );
   }
   return clerk_authentication_adapter_instance;

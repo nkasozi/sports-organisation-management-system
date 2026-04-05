@@ -211,13 +211,10 @@ async function pull_table_from_convex(
   local_latest_modified_at: string,
 ): Promise<PullResult> {
   try {
-    const sync_result = (await convex_client.query(
-      "sync:get_changes_since",
-      {
-        table_name,
-        since_timestamp: local_latest_modified_at,
-      },
-    )) as
+    const sync_result = (await convex_client.query("sync:get_changes_since", {
+      table_name,
+      since_timestamp: local_latest_modified_at,
+    })) as
       | {
           success: boolean;
           data: Array<{

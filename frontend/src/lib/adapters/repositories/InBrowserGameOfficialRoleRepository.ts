@@ -8,8 +8,8 @@ import type { BaseEntity } from "../../core/entities/BaseEntity";
 import type {
   GameOfficialRoleRepository,
   GameOfficialRoleFilter,
+  QueryOptions,
 } from "../../core/interfaces/ports";
-import type { QueryOptions } from "../../core/interfaces/ports";
 import type {
   PaginatedAsyncResult,
   AsyncResult,
@@ -46,29 +46,14 @@ export class InBrowserGameOfficialRoleRepository
     id: string,
     timestamps: Pick<BaseEntity, "created_at" | "updated_at">,
   ): GameOfficialRole {
-    return {
-      id,
-      ...timestamps,
-      name: input.name,
-      code: input.code,
-      description: input.description,
-      sport_id: input.sport_id,
-      is_on_field: input.is_on_field,
-      is_head_official: input.is_head_official,
-      display_order: input.display_order,
-      status: input.status,
-      organization_id: input.organization_id,
-    };
+    return { id, ...timestamps, ...input };
   }
 
   protected apply_updates_to_entity(
     entity: GameOfficialRole,
     updates: UpdateGameOfficialRoleInput,
   ): GameOfficialRole {
-    return {
-      ...entity,
-      ...updates,
-    };
+    return { ...entity, ...updates };
   }
 
   protected apply_entity_filter(
@@ -76,40 +61,29 @@ export class InBrowserGameOfficialRoleRepository
     filter: GameOfficialRoleFilter,
   ): GameOfficialRole[] {
     let filtered = entities;
-
     if (filter.name_contains) {
-      const search_term = filter.name_contains.toLowerCase();
-      filtered = filtered.filter((role) =>
-        role.name.toLowerCase().includes(search_term),
-      );
+      const term = filter.name_contains.toLowerCase();
+      filtered = filtered.filter((r) => r.name.toLowerCase().includes(term));
     }
-
     if (filter.sport_id !== undefined) {
-      filtered = filtered.filter((role) => role.sport_id === filter.sport_id);
+      filtered = filtered.filter((r) => r.sport_id === filter.sport_id);
     }
-
     if (filter.is_on_field !== undefined) {
-      filtered = filtered.filter(
-        (role) => role.is_on_field === filter.is_on_field,
-      );
+      filtered = filtered.filter((r) => r.is_on_field === filter.is_on_field);
     }
-
     if (filter.is_head_official !== undefined) {
       filtered = filtered.filter(
-        (role) => role.is_head_official === filter.is_head_official,
+        (r) => r.is_head_official === filter.is_head_official,
       );
     }
-
     if (filter.status) {
-      filtered = filtered.filter((role) => role.status === filter.status);
+      filtered = filtered.filter((r) => r.status === filter.status);
     }
-
     if (filter.organization_id) {
       filtered = filtered.filter(
-        (role) => role.organization_id === filter.organization_id,
+        (r) => r.organization_id === filter.organization_id,
       );
     }
-
     return filtered;
   }
 
@@ -119,56 +93,14 @@ export class InBrowserGameOfficialRoleRepository
   ): PaginatedAsyncResult<GameOfficialRole> {
     try {
       let filtered_entities = await this.database.game_official_roles.toArray();
-
       if (filter) {
-        if (filter.name_contains) {
-          const search_term = filter.name_contains.toLowerCase();
-          filtered_entities = filtered_entities.filter((role) =>
-            role.name.toLowerCase().includes(search_term),
-          );
-        }
-
-        if (filter.sport_id !== undefined) {
-          filtered_entities = filtered_entities.filter(
-            (role) => role.sport_id === filter.sport_id,
-          );
-        }
-
-        if (filter.is_on_field !== undefined) {
-          filtered_entities = filtered_entities.filter(
-            (role) => role.is_on_field === filter.is_on_field,
-          );
-        }
-
-        if (filter.is_head_official !== undefined) {
-          filtered_entities = filtered_entities.filter(
-            (role) => role.is_head_official === filter.is_head_official,
-          );
-        }
-
-        if (filter.status) {
-          filtered_entities = filtered_entities.filter(
-            (role) => role.status === filter.status,
-          );
-        }
-
-        if (filter.organization_id) {
-          filtered_entities = filtered_entities.filter(
-            (role) => role.organization_id === filter.organization_id,
-          );
-        }
+        filtered_entities = this.apply_entity_filter(filtered_entities, filter);
       }
-
       filtered_entities.sort((a, b) => a.display_order - b.display_order);
-
       const total_count = filtered_entities.length;
-      const paginated_entities = this.apply_pagination(
-        filtered_entities,
-        options,
-      );
-
+      const paginated = this.apply_pagination(filtered_entities, options);
       return create_success_result(
-        this.create_paginated_result(paginated_entities, total_count, options),
+        this.create_paginated_result(paginated, total_count, options),
       );
     } catch (error) {
       const error_message =
@@ -183,12 +115,10 @@ export class InBrowserGameOfficialRoleRepository
     sport_id: string | null,
   ): Promise<Result<GameOfficialRole[]>> {
     try {
-      const all_roles = await this.database.game_official_roles.toArray();
+      const all = await this.database.game_official_roles.toArray();
       return create_success_result(
-        all_roles
-          .filter(
-            (role) => role.sport_id === sport_id || role.sport_id === null,
-          )
+        all
+          .filter((r) => r.sport_id === sport_id || r.sport_id === null)
           .sort((a, b) => a.display_order - b.display_order),
       );
     } catch (error) {
@@ -202,10 +132,10 @@ export class InBrowserGameOfficialRoleRepository
 
   async find_head_officials(): Promise<Result<GameOfficialRole[]>> {
     try {
-      const all_roles = await this.database.game_official_roles.toArray();
+      const all = await this.database.game_official_roles.toArray();
       return create_success_result(
-        all_roles
-          .filter((role) => role.is_head_official)
+        all
+          .filter((r) => r.is_head_official)
           .sort((a, b) => a.display_order - b.display_order),
       );
     } catch (error) {

@@ -8,9 +8,7 @@ const REQUIRED_USER_FIELDS = [
   "role",
 ] as const;
 
-function validate_stored_user(
-  parsed: unknown,
-): boolean {
+function validate_stored_user(parsed: unknown): boolean {
   if (typeof parsed !== "object" || parsed === null) return false;
   const record = parsed as Record<string, unknown>;
   return REQUIRED_USER_FIELDS.every(

@@ -1,0 +1,110 @@
+import type { FixtureLineup } from "../../../core/entities/FixtureLineup";
+import {
+  SEED_FIXTURE_LINEUP_IDS,
+  SEED_ORGANIZATION_IDS,
+  SEED_FIXTURE_IDS,
+  SEED_TEAM_IDS,
+  generate_current_timestamp,
+} from "./seedIds";
+import { SEED_PLAYER_IDS } from "./seedPlayerIds";
+
+export function create_seed_lineups_part14(): FixtureLineup[] {
+  const now = generate_current_timestamp();
+
+  return [
+    {
+      id: SEED_FIXTURE_LINEUP_IDS.EASTER_CUP_GROUP_B_2_AWAY_LINEUP,
+      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
+      fixture_id: SEED_FIXTURE_IDS.EASTER_CUP_GROUP_B_2,
+      team_id: SEED_TEAM_IDS.STRIKERS_HC,
+      selected_players: [
+        {
+          id: SEED_PLAYER_IDS.STRIKERS_P4,
+          first_name: "Nelson",
+          last_name: "Obbo",
+          jersey_number: 1,
+          position: "Goalkeeper",
+          is_captain: false,
+          is_substitute: false,
+          time_on: "present_at_start",
+        },
+        {
+          id: SEED_PLAYER_IDS.STRIKERS_P5,
+          first_name: "Sandra",
+          last_name: "Ayot",
+          jersey_number: 4,
+          position: "Left Back",
+          is_captain: false,
+          is_substitute: false,
+          time_on: "present_at_start",
+        },
+        {
+          id: SEED_PLAYER_IDS.STRIKERS_P6,
+          first_name: "Julius",
+          last_name: "Ogenga",
+          jersey_number: 5,
+          position: "Sweeper",
+          is_captain: false,
+          is_substitute: false,
+          time_on: "present_at_start",
+        },
+        {
+          id: SEED_PLAYER_IDS.STRIKERS_P7,
+          first_name: "Mary",
+          last_name: "Amoding",
+          jersey_number: 6,
+          position: "Right Back",
+          is_captain: false,
+          is_substitute: false,
+          time_on: "present_at_start",
+        },
+        {
+          id: SEED_PLAYER_IDS.STRIKERS_P8,
+          first_name: "Geoffrey",
+          last_name: "Opoka",
+          jersey_number: 7,
+          position: "Center Midfield",
+          is_captain: false,
+          is_substitute: false,
+          time_on: "present_at_start",
+        },
+        {
+          id: SEED_PLAYER_IDS.STRIKERS_P9,
+          first_name: "Phoebe",
+          last_name: "Oroma",
+          jersey_number: 8,
+          position: "Left Midfield",
+          is_captain: true,
+          is_substitute: false,
+          time_on: "present_at_start",
+        },
+        {
+          id: SEED_PLAYER_IDS.STRIKERS_P10,
+          first_name: "Amos",
+          last_name: "Okwir",
+          jersey_number: 9,
+          position: "Right Midfield",
+          is_captain: false,
+          is_substitute: false,
+          time_on: "present_at_start",
+        },
+        {
+          id: SEED_PLAYER_IDS.STRIKERS_P11,
+          first_name: "Lucy",
+          last_name: "Alaba",
+          jersey_number: 10,
+          position: "Forward",
+          is_captain: false,
+          is_substitute: false,
+          time_on: "present_at_start",
+        },
+      ],
+      status: "locked",
+      submitted_by: "admin",
+      submitted_at: "2026-04-03T11:00:00Z",
+      notes: "Strikers lineup - Easter Cup Group B Match 2",
+      created_at: now,
+      updated_at: now,
+    },
+  ];
+}

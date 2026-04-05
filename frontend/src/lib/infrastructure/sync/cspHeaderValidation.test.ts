@@ -2,11 +2,11 @@ import { describe, expect, it } from "vitest";
 
 const CSP_DIRECTIVES = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' https://clerk.com https://*.clerk.accounts.dev",
-  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-  "font-src 'self' https://fonts.gstatic.com",
+  "script-src 'self' https://clerk.com https://*.clerk.accounts.dev https://va.vercel-scripts.com",
+  "style-src 'self' 'unsafe-inline'",
+  "font-src 'self'",
   "img-src 'self' data: blob: https://*.clerk.com https://img.clerk.com",
-  "connect-src 'self' https://*.convex.cloud wss://*.convex.cloud https://*.clerk.com https://clerk.com https://*.clerk.accounts.dev",
+  "connect-src 'self' https://*.convex.cloud wss://*.convex.cloud https://*.clerk.com https://clerk.com https://*.clerk.accounts.dev https://clerk-telemetry.com https://va.vercel-scripts.com",
   "frame-src 'self' https://*.clerk.com https://*.clerk.accounts.dev",
   "worker-src 'self' blob:",
   "object-src 'none'",
@@ -42,11 +42,6 @@ describe("CSP header validation", () => {
     expect(CSP_DIRECTIVES).toContain("https://clerk.com");
   });
 
-  it("allows Google Fonts", () => {
-    expect(CSP_DIRECTIVES).toContain("https://fonts.googleapis.com");
-    expect(CSP_DIRECTIVES).toContain("https://fonts.gstatic.com");
-  });
-
   it("allows service worker and blob", () => {
     expect(CSP_DIRECTIVES).toContain("worker-src 'self' blob:");
   });
@@ -58,5 +53,11 @@ describe("CSP header validation", () => {
   it("does not contain wildcard origins", () => {
     const wildcard_pattern = /(?<!\.)(\*\s)/;
     expect(wildcard_pattern.test(CSP_DIRECTIVES)).toBe(false);
+  });
+
+  it("does not include unsafe-inline for scripts", () => {
+    const script_src_match = CSP_DIRECTIVES.match(/script-src[^;]*/);
+    expect(script_src_match).not.toBeNull();
+    expect(script_src_match![0]).not.toContain("unsafe-inline");
   });
 });

@@ -1,0 +1,73 @@
+import type { Player } from "../../../core/entities/Player";
+import { SEED_ORGANIZATION_IDS, generate_current_timestamp } from "./seedIds";
+import { SEED_PLAYER_IDS } from "./seedPlayerIds";
+import type { PositionIds } from "./seedPlayerIds";
+
+export function create_seed_players_group12(
+  positions: PositionIds,
+  organization_id: string,
+  now: string,
+): Omit<Player, "gender_id">[] {
+  return [
+    {
+      id: SEED_PLAYER_IDS.ROCKETS_WOMEN_P9,
+      first_name: "Joyce",
+      last_name: "Ayero",
+      email: "joyce.ayero@rocketshcladies.ug",
+      phone: "+256-700-900-089",
+      date_of_birth: "1999-06-14",
+      position_id: positions.lw,
+      organization_id,
+      height_cm: 167,
+      weight_kg: 61,
+      nationality: "Uganda",
+      profile_image_url: "",
+      emergency_contact_name: "Peter Ayero",
+      emergency_contact_phone: "+256-700-900-189",
+      medical_notes: "",
+      status: "active",
+      created_at: now,
+      updated_at: now,
+    },
+    {
+      id: SEED_PLAYER_IDS.ROCKETS_WOMEN_P10,
+      first_name: "Beatrice",
+      last_name: "Ajambo",
+      email: "beatrice.ajambo@rocketshcladies.ug",
+      phone: "+256-700-900-090",
+      date_of_birth: "2000-09-22",
+      position_id: positions.rw,
+      organization_id,
+      height_cm: 165,
+      weight_kg: 59,
+      nationality: "Uganda",
+      profile_image_url: "",
+      emergency_contact_name: "Charles Ajambo",
+      emergency_contact_phone: "+256-700-900-190",
+      medical_notes: "",
+      status: "active",
+      created_at: now,
+      updated_at: now,
+    },
+    {
+      id: SEED_PLAYER_IDS.ROCKETS_WOMEN_P11,
+      first_name: "Alice",
+      last_name: "Nabwire",
+      email: "alice.nabwire@rocketshcladies.ug",
+      phone: "+256-700-900-091",
+      date_of_birth: "1998-11-05",
+      position_id: positions.cf,
+      organization_id,
+      height_cm: 170,
+      weight_kg: 64,
+      nationality: "Uganda",
+      profile_image_url: "",
+      emergency_contact_name: "Robert Nabwire",
+      emergency_contact_phone: "+256-700-900-191",
+      medical_notes: "",
+      status: "active",
+      created_at: now,
+      updated_at: now,
+    },
+  ];
+}

@@ -9,7 +9,6 @@ export default defineConfig({
     teardownTimeout: 1000,
     include: ["src/**/*.test.ts"],
     env: {
-      VITE_AUTH_SECRET_KEY: "vitest-only-test-secret-key-not-for-production",
       AUTH_SECRET_KEY: "vitest-only-test-secret-key-not-for-production",
     },
   },

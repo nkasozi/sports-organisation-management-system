@@ -41,25 +41,16 @@ function build_empty_name_error_message(entity_type: string): string {
 }
 
 function build_success_result(resolved_id: string): NameResolutionResult {
-  return {
-    success: true,
-    resolved_id,
-    error_message: null,
-  };
+  return { success: true, resolved_id, error_message: null };
 }
 
 function build_failure_result(error_message: string): NameResolutionResult {
-  return {
-    success: false,
-    resolved_id: null,
-    error_message,
-  };
+  return { success: false, resolved_id: null, error_message };
 }
 
 function is_empty_or_whitespace(value: string): boolean {
   return !value || value.trim().length === 0;
 }
-
 function normalize_name_for_comparison(name: string): string {
   return name.toLowerCase().trim();
 }
@@ -167,11 +158,9 @@ export async function resolve_multiple_names_to_ids(
 }
 
 export function convert_name_column_to_id_column(column_name: string): string {
-  const name_suffix = "_name";
-  if (!column_name.endsWith(name_suffix)) {
-    return column_name;
-  }
-  return column_name.slice(0, -name_suffix.length) + "_id";
+  return column_name.endsWith("_name")
+    ? column_name.slice(0, -"_name".length) + "_id"
+    : column_name;
 }
 
 export function is_name_column(column_name: string): boolean {
@@ -181,11 +170,9 @@ export function is_name_column(column_name: string): boolean {
 export function extract_entity_type_from_name_column(
   column_name: string,
 ): string {
-  const name_suffix = "_name";
-  if (!column_name.endsWith(name_suffix)) {
-    return column_name;
-  }
-  return column_name.slice(0, -name_suffix.length);
+  return column_name.endsWith("_name")
+    ? column_name.slice(0, -"_name".length)
+    : column_name;
 }
 
 export function is_id_column(column_name: string): boolean {
@@ -195,31 +182,20 @@ export function is_id_column(column_name: string): boolean {
 export function extract_entity_type_from_id_column(
   column_name: string,
 ): string {
-  const id_suffix = "_id";
-  if (!column_name.endsWith(id_suffix)) {
-    return column_name;
-  }
-  return column_name.slice(0, -id_suffix.length);
+  return column_name.endsWith("_id")
+    ? column_name.slice(0, -"_id".length)
+    : column_name;
 }
 
 export function looks_like_entity_id(value: string): boolean {
-  if (!value || value.trim().length === 0) {
-    return false;
-  }
-
+  if (!value || value.trim().length === 0) return false;
   const trimmed_value = value.trim();
-  const id_pattern = /^[a-z_]+-\d+-[a-z0-9]+$/i;
-  const legacy_id_pattern = /^[a-z_]+_default_\d+$/i;
-
   return (
-    id_pattern.test(trimmed_value) || legacy_id_pattern.test(trimmed_value)
+    /^[a-z_]+-\d+-[a-z0-9]+$/i.test(trimmed_value) ||
+    /^[a-z_]+_default_\d+$/i.test(trimmed_value)
   );
 }
 
 export function looks_like_entity_name(value: string): boolean {
-  if (!value || value.trim().length === 0) {
-    return false;
-  }
-
-  return !looks_like_entity_id(value);
+  return !!value && value.trim().length > 0 && !looks_like_entity_id(value);
 }

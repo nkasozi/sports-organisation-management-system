@@ -174,7 +174,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
       error_message = auth_result.error_message;
       return;
     }
-    load_all_entities_for_display();
+    await load_all_entities_for_display();
     await load_foreign_key_options_for_filters();
   });
 

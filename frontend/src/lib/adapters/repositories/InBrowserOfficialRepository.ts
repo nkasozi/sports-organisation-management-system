@@ -130,7 +130,7 @@ export class InBrowserOfficialRepository
 
 function create_default_officials(): Official[] {
   const now = new Date().toISOString();
-
+  const avatar = DEFAULT_OFFICIAL_AVATAR;
   return [
     {
       id: "official_default_1",
@@ -143,7 +143,7 @@ function create_default_officials(): Official[] {
       organization_id: "org_default_1",
       years_of_experience: 12,
       nationality: "Ugandan",
-      profile_image_url: DEFAULT_OFFICIAL_AVATAR,
+      profile_image_url: avatar,
       emergency_contact_name: "Mary Mukasa",
       emergency_contact_phone: "+256-700-111-333",
       notes: "Senior referee with international certification",
@@ -162,7 +162,7 @@ function create_default_officials(): Official[] {
       organization_id: "org_default_1",
       years_of_experience: 8,
       nationality: "Ugandan",
-      profile_image_url: DEFAULT_OFFICIAL_AVATAR,
+      profile_image_url: avatar,
       emergency_contact_name: "Peter Nakato",
       emergency_contact_phone: "+256-700-222-444",
       notes: "Technical official specializing in timekeeping",
@@ -181,7 +181,7 @@ function create_default_officials(): Official[] {
       organization_id: "org_default_1",
       years_of_experience: 10,
       nationality: "Ugandan",
-      profile_image_url: DEFAULT_OFFICIAL_AVATAR,
+      profile_image_url: avatar,
       emergency_contact_name: "Grace Ochieng",
       emergency_contact_phone: "+256-700-333-555",
       notes: "Umpire with East African certification",

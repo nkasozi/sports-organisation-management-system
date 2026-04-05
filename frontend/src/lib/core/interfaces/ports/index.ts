@@ -3,6 +3,11 @@ export type {
   BaseUseCasesPort,
   AsyncResult,
 } from "./internal/usecases/BaseUseCasesPort";
+export type {
+  ActivityUseCasesPort,
+  CalendarDateRange,
+  CalendarEvent,
+} from "./internal/usecases/ActivityUseCasesPort";
 export type { PlayerUseCasesPort } from "./internal/usecases/PlayerUseCasesPort";
 export type { TeamUseCasesPort } from "./internal/usecases/TeamUseCasesPort";
 export type { OrganizationUseCasesPort } from "./internal/usecases/OrganizationUseCasesPort";
@@ -26,21 +31,17 @@ export type { TeamStaffUseCasesPort } from "./internal/usecases/TeamStaffUseCase
 export type { VenueUseCasesPort } from "./internal/usecases/VenueUseCasesPort";
 export type { GenderUseCasesPort } from "./internal/usecases/GenderUseCasesPort";
 export type { ActivityCategoryUseCasesPort } from "./internal/usecases/ActivityCategoryUseCasesPort";
+export type { CompetitionStageUseCasesPort } from "./internal/usecases/CompetitionStageUseCasesPort";
 export type {
-  ActivityUseCasesPort,
-  CalendarDateRange,
-  CalendarEvent,
-} from "./internal/usecases/ActivityUseCasesPort";
+  CalendarTokenUseCasesPort,
+  CalendarFeedInfo,
+} from "./internal/usecases/CalendarTokenUseCasesPort";
 export type { FixtureDetailsSetupUseCasesPort } from "./internal/usecases/FixtureDetailsSetupUseCasesPort";
 export type { GameEventLogUseCasesPort } from "./internal/usecases/GameEventLogUseCasesPort";
 export type { JerseyColorUseCasesPort } from "./internal/usecases/JerseyColorUseCasesPort";
 export type { LiveGameLogUseCasesPort } from "./internal/usecases/LiveGameLogUseCasesPort";
 export type { OfficialAssociatedTeamUseCasesPort } from "./internal/usecases/OfficialAssociatedTeamUseCasesPort";
 export type { OfficialPerformanceRatingUseCasesPort } from "./internal/usecases/OfficialPerformanceRatingUseCasesPort";
-export type {
-  CalendarTokenUseCasesPort,
-  CalendarFeedInfo,
-} from "./internal/usecases/CalendarTokenUseCasesPort";
 export type {
   AuthenticationPort,
   AuthToken,
@@ -246,7 +247,6 @@ export type {
   CompetitionStageRepository,
   CompetitionStageFilter,
 } from "./external/repositories/CompetitionStageRepository";
-export type { CompetitionStageUseCasesPort } from "./internal/usecases/CompetitionStageUseCasesPort";
 export type {
   SyncDirection,
   SyncMetrics,

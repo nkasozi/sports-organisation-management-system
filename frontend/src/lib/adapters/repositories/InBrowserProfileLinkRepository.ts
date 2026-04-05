@@ -1,4 +1,5 @@
 import type { Table } from "dexie";
+import { format_repository_error } from "./InBrowserBaseRepositoryHelpers";
 import type {
   ProfileLink,
   CreateProfileLinkInput,
@@ -123,10 +124,8 @@ export class InBrowserProfileLinkRepository
         this.create_paginated_result(paginated_entities, total_count, options),
       );
     } catch (error) {
-      const error_message =
-        error instanceof Error ? error.message : "Unknown error occurred";
       return create_failure_result(
-        `Failed to filter profile links: ${error_message}`,
+        format_repository_error(error, "filter profile links"),
       );
     }
   }
@@ -141,7 +140,6 @@ export class InBrowserProfileLinkRepository
 
 function create_default_profile_links(): ProfileLink[] {
   const now = new Date().toISOString();
-
   return [
     {
       id: "profilelink_default_1",

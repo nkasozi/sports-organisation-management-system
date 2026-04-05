@@ -19,6 +19,8 @@ import { reset_profile_link_repository } from "../repositories/InBrowserProfileL
 import { reset_qualification_repository } from "../repositories/InBrowserQualificationRepository";
 import { reset_fixture_details_setup_repository } from "../repositories/InBrowserFixtureDetailsSetupRepository";
 import { reset_fixture_lineup_repository } from "../repositories/InBrowserFixtureLineupRepository";
+import { reset_sport_repository } from "../repositories/InBrowserSportRepository";
+import { reset_organization_repository } from "../repositories/InBrowserOrganizationRepository";
 import { seed_all_data_if_needed } from "./seedingService";
 import { clear_all_demo_data_in_convex } from "$lib/infrastructure/sync/convexSyncService";
 import {
@@ -60,6 +62,8 @@ export async function reset_all_data(
   await clear_session_sync_flag();
 
   report("Resetting data stores...", 35);
+  await reset_sport_repository();
+  await reset_organization_repository();
   await reset_team_repository();
   await reset_competition_repository();
   await reset_player_repository();

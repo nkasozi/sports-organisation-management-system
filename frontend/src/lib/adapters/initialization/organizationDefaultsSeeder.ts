@@ -52,261 +52,142 @@ export interface OrgSeedResult {
   competition_formats_seeded: number;
 }
 
-async function seed_genders(
-  organization_id: string,
-  repository: InBrowserGenderRepository,
-): AsyncResult<number> {
-  console.log(
-    `[OrganizationDefaults] Seeding genders for org: ${organization_id}`,
-  );
-  const result = await repository.seed_with_data(
-    create_seed_genders(organization_id),
-  );
-  if (!result.success) {
-    console.error(
-      `[OrganizationDefaults] Genders seeding failed: ${result.error}`,
-    );
-    return create_failure_result(`Genders: ${result.error}`);
-  }
-  console.log(`[OrganizationDefaults] Genders seeded: ${result.data} records`);
-  return result;
+interface SeedableRepository<T> {
+  seed_with_data(data: T[]): AsyncResult<number>;
 }
 
-async function seed_identification_types(
-  organization_id: string,
-  repository: InBrowserIdentificationTypeRepository,
+async function execute_seed_step<T>(
+  step_name: string,
+  repository: SeedableRepository<T>,
+  data: T[],
 ): AsyncResult<number> {
-  console.log(
-    `[OrganizationDefaults] Seeding identification types for org: ${organization_id}`,
-  );
-  const result = await repository.seed_with_data(
-    create_seed_identification_types(organization_id),
-  );
+  console.log(`[OrganizationDefaults] Seeding ${step_name}`, {
+    event: "seed_step_start",
+    step_name,
+  });
+  const result = await repository.seed_with_data(data);
   if (!result.success) {
-    console.error(
-      `[OrganizationDefaults] Identification types seeding failed: ${result.error}`,
-    );
-    return create_failure_result(`IdentificationTypes: ${result.error}`);
+    console.error(`[OrganizationDefaults] ${step_name} seeding failed`, {
+      event: "seed_step_failed",
+      step_name,
+      error: result.error,
+    });
+    return create_failure_result(`${step_name}: ${result.error}`);
   }
-  console.log(
-    `[OrganizationDefaults] Identification types seeded: ${result.data} records`,
-  );
-  return result;
-}
-
-async function seed_player_positions(
-  organization_id: string,
-  repository: InBrowserPlayerPositionRepository,
-): AsyncResult<number> {
-  console.log(
-    `[OrganizationDefaults] Seeding player positions for org: ${organization_id}`,
-  );
-  const result = await repository.seed_with_data(
-    create_default_player_positions_for_organization(organization_id),
-  );
-  if (!result.success) {
-    console.error(
-      `[OrganizationDefaults] Player positions seeding failed: ${result.error}`,
-    );
-    return create_failure_result(`PlayerPositions: ${result.error}`);
-  }
-  console.log(
-    `[OrganizationDefaults] Player positions seeded: ${result.data} records`,
-  );
-  return result;
-}
-
-async function seed_game_official_roles(
-  organization_id: string,
-  repository: InBrowserGameOfficialRoleRepository,
-): AsyncResult<number> {
-  console.log(
-    `[OrganizationDefaults] Seeding game official roles for org: ${organization_id}`,
-  );
-  const result = await repository.seed_with_data(
-    create_default_game_official_roles_for_organization(organization_id),
-  );
-  if (!result.success) {
-    console.error(
-      `[OrganizationDefaults] Game official roles seeding failed: ${result.error}`,
-    );
-    return create_failure_result(`GameOfficialRoles: ${result.error}`);
-  }
-  console.log(
-    `[OrganizationDefaults] Game official roles seeded: ${result.data} records`,
-  );
-  return result;
-}
-
-async function seed_game_event_types(
-  organization_id: string,
-  repository: InBrowserGameEventTypeRepository,
-): AsyncResult<number> {
-  console.log(
-    `[OrganizationDefaults] Seeding game event types for org: ${organization_id}`,
-  );
-  const result = await repository.seed_with_data(
-    create_default_game_event_types_for_organization(organization_id),
-  );
-  if (!result.success) {
-    console.error(
-      `[OrganizationDefaults] Game event types seeding failed: ${result.error}`,
-    );
-    return create_failure_result(`GameEventTypes: ${result.error}`);
-  }
-  console.log(
-    `[OrganizationDefaults] Game event types seeded: ${result.data} records`,
-  );
-  return result;
-}
-
-async function seed_team_staff_roles(
-  organization_id: string,
-  repository: InBrowserTeamStaffRoleRepository,
-): AsyncResult<number> {
-  console.log(
-    `[OrganizationDefaults] Seeding team staff roles for org: ${organization_id}`,
-  );
-  const result = await repository.seed_with_data(
-    create_default_team_staff_roles_for_organization(organization_id),
-  );
-  if (!result.success) {
-    console.error(
-      `[OrganizationDefaults] Team staff roles seeding failed: ${result.error}`,
-    );
-    return create_failure_result(`TeamStaffRoles: ${result.error}`);
-  }
-  console.log(
-    `[OrganizationDefaults] Team staff roles seeded: ${result.data} records`,
-  );
-  return result;
-}
-
-async function seed_competition_formats(
-  organization_id: string,
-  repository: InBrowserCompetitionFormatRepository,
-): AsyncResult<number> {
-  console.log(
-    `[OrganizationDefaults] Seeding competition formats for org: ${organization_id}`,
-  );
-  const result = await repository.seed_with_data(
-    create_default_competition_formats_for_organization(organization_id),
-  );
-  if (!result.success) {
-    console.error(
-      `[OrganizationDefaults] Competition formats seeding failed: ${result.error}`,
-    );
-    return create_failure_result(`CompetitionFormats: ${result.error}`);
-  }
-  console.log(
-    `[OrganizationDefaults] Competition formats seeded: ${result.data} records`,
-  );
+  console.log(`[OrganizationDefaults] ${step_name} seeded`, {
+    event: "seed_step_complete",
+    step_name,
+    count: result.data,
+  });
   return result;
 }
 
 export async function seed_default_lookup_entities_for_organization(
   organization_id: string,
 ): AsyncResult<OrgSeedResult> {
-  console.log(
-    `[OrganizationDefaults] Starting seeding for org: ${organization_id}`,
-  );
+  console.log(`[OrganizationDefaults] Starting seeding`, {
+    event: "org_seeding_start",
+    organization_id,
+  });
 
-  const gender_repository =
-    get_gender_repository() as InBrowserGenderRepository;
-  const identification_type_repository =
+  const gender_repo = get_gender_repository() as InBrowserGenderRepository;
+  const id_type_repo =
     get_identification_type_repository() as InBrowserIdentificationTypeRepository;
-  const player_position_repository =
+  const position_repo =
     get_player_position_repository() as InBrowserPlayerPositionRepository;
-  const game_official_role_repository =
+  const official_role_repo =
     get_game_official_role_repository() as InBrowserGameOfficialRoleRepository;
-  const game_event_type_repository =
+  const event_type_repo =
     get_game_event_type_repository() as InBrowserGameEventTypeRepository;
-  const team_staff_role_repository =
+  const staff_role_repo =
     get_team_staff_role_repository() as InBrowserTeamStaffRoleRepository;
-  const competition_format_repository =
+  const format_repo =
     get_competition_format_repository() as InBrowserCompetitionFormatRepository;
 
-  const genders_result = await seed_genders(organization_id, gender_repository);
-  if (!genders_result.success) {
-    return create_failure_result(
-      `Org seeding aborted at step 1/6 (genders): ${genders_result.error}`,
-    );
-  }
-
-  const identification_types_result = await seed_identification_types(
-    organization_id,
-    identification_type_repository,
+  const genders_result = await execute_seed_step(
+    "genders",
+    gender_repo,
+    create_seed_genders(organization_id),
   );
-  if (!identification_types_result.success) {
+  if (!genders_result.success)
     return create_failure_result(
-      `Org seeding aborted at step 2/6 (identification types): ${identification_types_result.error}`,
+      `Org seeding aborted at step 1/7 (genders): ${genders_result.error}`,
     );
-  }
 
-  const player_positions_result = await seed_player_positions(
-    organization_id,
-    player_position_repository,
+  const id_types_result = await execute_seed_step(
+    "identification_types",
+    id_type_repo,
+    create_seed_identification_types(organization_id),
   );
-  if (!player_positions_result.success) {
+  if (!id_types_result.success)
     return create_failure_result(
-      `Org seeding aborted at step 3/6 (player positions): ${player_positions_result.error}`,
+      `Org seeding aborted at step 2/7 (identification types): ${id_types_result.error}`,
     );
-  }
 
-  const game_official_roles_result = await seed_game_official_roles(
-    organization_id,
-    game_official_role_repository,
+  const positions_result = await execute_seed_step(
+    "player_positions",
+    position_repo,
+    create_default_player_positions_for_organization(organization_id),
   );
-  if (!game_official_roles_result.success) {
+  if (!positions_result.success)
     return create_failure_result(
-      `Org seeding aborted at step 4/6 (game official roles): ${game_official_roles_result.error}`,
+      `Org seeding aborted at step 3/7 (player positions): ${positions_result.error}`,
     );
-  }
 
-  const game_event_types_result = await seed_game_event_types(
-    organization_id,
-    game_event_type_repository,
+  const official_roles_result = await execute_seed_step(
+    "game_official_roles",
+    official_role_repo,
+    create_default_game_official_roles_for_organization(organization_id),
   );
-  if (!game_event_types_result.success) {
+  if (!official_roles_result.success)
     return create_failure_result(
-      `Org seeding aborted at step 5/6 (game event types): ${game_event_types_result.error}`,
+      `Org seeding aborted at step 4/7 (game official roles): ${official_roles_result.error}`,
     );
-  }
 
-  const team_staff_roles_result = await seed_team_staff_roles(
-    organization_id,
-    team_staff_role_repository,
+  const event_types_result = await execute_seed_step(
+    "game_event_types",
+    event_type_repo,
+    create_default_game_event_types_for_organization(organization_id),
   );
-  if (!team_staff_roles_result.success) {
+  if (!event_types_result.success)
     return create_failure_result(
-      `Org seeding aborted at step 6/7 (team staff roles): ${team_staff_roles_result.error}`,
+      `Org seeding aborted at step 5/7 (game event types): ${event_types_result.error}`,
     );
-  }
 
-  const competition_formats_result = await seed_competition_formats(
-    organization_id,
-    competition_format_repository,
+  const staff_roles_result = await execute_seed_step(
+    "team_staff_roles",
+    staff_role_repo,
+    create_default_team_staff_roles_for_organization(organization_id),
   );
-  if (!competition_formats_result.success) {
+  if (!staff_roles_result.success)
     return create_failure_result(
-      `Org seeding aborted at step 7/7 (competition formats): ${competition_formats_result.error}`,
+      `Org seeding aborted at step 6/7 (team staff roles): ${staff_roles_result.error}`,
     );
-  }
+
+  const formats_result = await execute_seed_step(
+    "competition_formats",
+    format_repo,
+    create_default_competition_formats_for_organization(organization_id),
+  );
+  if (!formats_result.success)
+    return create_failure_result(
+      `Org seeding aborted at step 7/7 (competition formats): ${formats_result.error}`,
+    );
 
   const summary: OrgSeedResult = {
     organization_id,
     genders_seeded: genders_result.data,
-    identification_types_seeded: identification_types_result.data,
-    player_positions_seeded: player_positions_result.data,
-    game_official_roles_seeded: game_official_roles_result.data,
-    game_event_types_seeded: game_event_types_result.data,
-    team_staff_roles_seeded: team_staff_roles_result.data,
-    competition_formats_seeded: competition_formats_result.data,
+    identification_types_seeded: id_types_result.data,
+    player_positions_seeded: positions_result.data,
+    game_official_roles_seeded: official_roles_result.data,
+    game_event_types_seeded: event_types_result.data,
+    team_staff_roles_seeded: staff_roles_result.data,
+    competition_formats_seeded: formats_result.data,
   };
 
-  console.log(
-    `[OrganizationDefaults] All 7 steps completed for org: ${organization_id}`,
-    summary,
-  );
+  console.log(`[OrganizationDefaults] All 7 steps completed`, {
+    event: "org_seeding_complete",
+    ...summary,
+  });
   return create_success_result(summary);
 }

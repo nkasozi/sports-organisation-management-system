@@ -26,9 +26,7 @@ const REQUIRED_USER_FIELDS: ReadonlyArray<keyof CurrentUser> = [
   "role",
 ];
 
-function validate_stored_user(
-  parsed: unknown,
-): parsed is CurrentUser {
+function validate_stored_user(parsed: unknown): parsed is CurrentUser {
   if (typeof parsed !== "object" || parsed === null) return false;
   const record = parsed as Record<string, unknown>;
   return REQUIRED_USER_FIELDS.every(

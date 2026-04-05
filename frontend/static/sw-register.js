@@ -8,7 +8,7 @@ if (
       .then(function (registration) {
         console.log(
           "[PWA] Service Worker registered with scope:",
-          registration.scope
+          registration.scope,
         );
       })
       .catch(function (error) {
