@@ -20,6 +20,14 @@
   import { branding_store } from "$lib/presentation/stores/branding";
   import { auth_store } from "$lib/presentation/stores/auth";
   import { build_dashboard_filters } from "$lib/presentation/logic/dashboardStatsLogic";
+  import {
+    load_dashboard_data,
+    get_competition_initials,
+    split_organization_name,
+    get_status_class,
+    format_fixture_date,
+  } from "$lib/presentation/logic/dashboardPageLogic";
+  import type { DashboardDependencies } from "$lib/presentation/logic/dashboardPageLogic";
   import { ANY_VALUE, check_data_permission } from "$lib/core/interfaces/ports";
   import { ErrorDisplay } from "$lib/presentation/components/ui";
   import FullScreenOverlay from "$lib/presentation/components/ui/FullScreenOverlay.svelte";
@@ -27,12 +35,14 @@
   import type { Fixture } from "$lib/core/entities/Fixture";
   import type { Team } from "$lib/core/entities/Team";
 
-  const organization_use_cases = get_organization_use_cases();
-  const competition_use_cases = get_competition_use_cases();
-  const team_use_cases = get_team_use_cases();
-  const player_use_cases = get_player_use_cases();
-  const fixture_use_cases = get_fixture_use_cases();
-  const sport_use_cases = get_sport_use_cases();
+  const dashboard_dependencies: DashboardDependencies = {
+    organization_use_cases: get_organization_use_cases(),
+    competition_use_cases: get_competition_use_cases(),
+    team_use_cases: get_team_use_cases(),
+    player_use_cases: get_player_use_cases(),
+    fixture_use_cases: get_fixture_use_cases(),
+    sport_use_cases: get_sport_use_cases(),
+  };
 
   let loading = true;
   let is_resetting = false;
@@ -63,66 +73,6 @@
     "read",
   );
 
-  function get_competition_initials(name: string): string {
-    return name
-      .split(" ")
-      .map((word) => word[0])
-      .join("")
-      .toUpperCase()
-      .slice(0, 2);
-  }
-
-  function split_organization_name(name: string): {
-    prefix: string;
-    suffix: string;
-    remainder: string;
-  } {
-    const parts = name.trim().split(/\s+/);
-    if (parts.length === 1) {
-      return { prefix: "", suffix: parts[0], remainder: "" };
-    }
-    const prefix = parts[0];
-    const suffix = parts[1];
-    const remainder = parts.slice(2).join(" ");
-    return { prefix, suffix, remainder };
-  }
-
-  function get_status_class(status: string): string {
-    switch (status) {
-      case "active":
-      case "in_progress":
-        return "status-active";
-      case "upcoming":
-      case "scheduled":
-        return "status-warning";
-      case "completed":
-      case "finished":
-        return "status-inactive";
-      default:
-        return "status-inactive";
-    }
-  }
-
-  function format_fixture_date(
-    scheduled_date: string,
-    scheduled_time: string,
-  ): string {
-    const fixture_date = new Date(scheduled_date);
-    const today = new Date();
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-
-    const is_today = fixture_date.toDateString() === today.toDateString();
-    const is_tomorrow = fixture_date.toDateString() === tomorrow.toDateString();
-
-    const time_formatted = scheduled_time || "TBD";
-
-    if (is_today) return `Today, ${time_formatted}`;
-    if (is_tomorrow) return `Tomorrow, ${time_formatted}`;
-
-    return `${fixture_date.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}, ${time_formatted}`;
-  }
-
   function get_team_name(team_id: string): string {
     const team = teams_map.get(team_id);
     return team?.short_name || team?.name || "Unknown";
@@ -140,70 +90,34 @@
     return competition_sport_names[competition_id] || "Unknown Sport";
   }
 
-  async function load_sport_names_for_competitions(
-    competitions: Competition[],
-  ): Promise<void> {
-    for (const competition of competitions) {
-      if (!competition.id) continue;
+  async function refresh_dashboard_data(): Promise<void> {
+    loading = true;
+    const user_role = $auth_store.current_profile?.role || "player";
+    const user_organization_id =
+      $auth_store.current_profile?.organization_id || "";
+    const dashboard_filters = build_dashboard_filters(
+      user_role,
+      user_organization_id,
+    );
 
-      const org_result = await organization_use_cases.get_by_id(
-        competition.organization_id,
-      );
-      if (!org_result.success || !org_result.data) {
-        competition_sport_names[competition.id] = "Unknown Sport";
-        continue;
-      }
+    const result = await load_dashboard_data(
+      dashboard_dependencies,
+      dashboard_filters,
+    );
 
-      const sport_result = await sport_use_cases.get_by_id(
-        org_result.data.sport_id,
-      );
-      if (sport_result.success && sport_result.data) {
-        competition_sport_names[competition.id] = sport_result.data.name;
-      } else {
-        competition_sport_names[competition.id] = "Unknown Sport";
-      }
+    if (!result.success) {
+      loading = false;
+      return;
     }
 
-    competition_sport_names = { ...competition_sport_names };
-  }
-
-  async function load_competition_and_sport_names(
-    fixtures: Fixture[],
-  ): Promise<void> {
-    const competition_ids = [
-      ...new Set(fixtures.map((f) => f.competition_id).filter(Boolean)),
-    ];
-
-    for (const competition_id of competition_ids) {
-      const comp_result = await competition_use_cases.get_by_id(competition_id);
-      if (!comp_result.success || !comp_result.data) {
-        competition_names[competition_id] = "Unknown Competition";
-        sport_names[competition_id] = "Unknown Sport";
-        continue;
-      }
-
-      competition_names[competition_id] = comp_result.data.name;
-
-      const org_result = await organization_use_cases.get_by_id(
-        comp_result.data.organization_id,
-      );
-      if (!org_result.success || !org_result.data) {
-        sport_names[competition_id] = "Unknown Sport";
-        continue;
-      }
-
-      const sport_result = await sport_use_cases.get_by_id(
-        org_result.data.sport_id,
-      );
-      if (sport_result.success && sport_result.data) {
-        sport_names[competition_id] = sport_result.data.name;
-      } else {
-        sport_names[competition_id] = "Unknown Sport";
-      }
-    }
-
-    competition_names = { ...competition_names };
-    sport_names = { ...sport_names };
+    stats = result.data.stats;
+    recent_competitions = result.data.recent_competitions;
+    upcoming_fixtures = result.data.upcoming_fixtures;
+    teams_map = result.data.teams_map;
+    competition_names = result.data.competition_names;
+    sport_names = result.data.sport_names;
+    competition_sport_names = result.data.competition_sport_names;
+    loading = false;
   }
 
   onMount(async () => {
@@ -229,76 +143,8 @@
       await goto(default_route_result.data, { replaceState: true });
       return;
     }
-    const user_organization_id =
-      $auth_store.current_profile?.organization_id || "";
-    const dashboard_filters = build_dashboard_filters(
-      user_role,
-      user_organization_id,
-    );
 
-    const [
-      org_result,
-      comp_result,
-      team_result,
-      player_result,
-      fixture_result,
-    ] = await Promise.all([
-      organization_use_cases.list(undefined, { page_number: 1, page_size: 1 }),
-      competition_use_cases.list(dashboard_filters.organization_filter, {
-        page_number: 1,
-        page_size: 5,
-      }),
-      team_use_cases.list(dashboard_filters.organization_filter, {
-        page_number: 1,
-        page_size: 100,
-      }),
-      player_use_cases.list(dashboard_filters.organization_filter, {
-        page_number: 1,
-        page_size: 1,
-      }),
-      fixture_use_cases.list(dashboard_filters.fixture_filter, {
-        page_number: 1,
-        page_size: 5,
-      }),
-    ]);
-
-    stats = {
-      organizations:
-        dashboard_filters.organization_count_override ??
-        (org_result.success ? (org_result.data?.total_count ?? 0) : 0),
-      competitions: comp_result.success
-        ? (comp_result.data?.total_count ?? 0)
-        : 0,
-      teams: team_result.success ? (team_result.data?.total_count ?? 0) : 0,
-      players: player_result.success
-        ? (player_result.data?.total_count ?? 0)
-        : 0,
-    };
-
-    if (comp_result.success && comp_result.data) {
-      recent_competitions = comp_result.data.items.slice(0, 3);
-      await load_sport_names_for_competitions(recent_competitions);
-    }
-
-    if (team_result.success && team_result.data) {
-      teams_map = new Map(
-        team_result.data.items.map((team: Team) => [team.id, team]),
-      );
-    }
-
-    if (fixture_result.success && fixture_result.data) {
-      upcoming_fixtures = fixture_result.data.items
-        .sort(
-          (a: Fixture, b: Fixture) =>
-            new Date(a.scheduled_date).getTime() -
-            new Date(b.scheduled_date).getTime(),
-        )
-        .slice(0, 3);
-
-      await load_competition_and_sport_names(upcoming_fixtures);
-    }
-
-    loading = false;
+    await refresh_dashboard_data();
   });
 
   async function handle_reset_data(): Promise<boolean> {
@@ -323,8 +169,8 @@
       current_path: window.location.pathname,
       session_already_synced: false,
     });
+    await refresh_dashboard_data();
     is_resetting = false;
-    window.location.reload();
     return true;
   }
 </script>

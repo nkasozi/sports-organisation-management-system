@@ -86,15 +86,8 @@
   let unsubscribe_sync: (() => void) | null = null;
   let unsubscribe_signed_in: (() => void) | null = null;
   let previous_signed_in_state = false;
-  const layout_mount_id = Math.random().toString(36).slice(2, 8);
 
   afterNavigate(async ({ to, type }) => {
-    console.log("[Layout-DIAG] afterNavigate", {
-      type,
-      path: to?.url?.pathname,
-      app_ready,
-    });
-
     if (!app_ready) return;
     if (!to?.url?.pathname) return;
 
@@ -295,12 +288,6 @@
 
   onMount(async () => {
     current_path = get(page).url.pathname;
-    console.log("[Layout-DIAG] onMount fired", {
-      event: "layout_on_mount",
-      mount_id: layout_mount_id,
-      path: current_path,
-      timestamp: Date.now(),
-    });
 
     await initialize_theme();
     await branding_store.initialize();
@@ -390,11 +377,6 @@
   });
 
   onDestroy(() => {
-    console.log("[Layout-DIAG] onDestroy fired", {
-      event: "layout_on_destroy",
-      mount_id: layout_mount_id,
-      timestamp: Date.now(),
-    });
     cleanup_subscriptions();
     reset_initialization();
   });

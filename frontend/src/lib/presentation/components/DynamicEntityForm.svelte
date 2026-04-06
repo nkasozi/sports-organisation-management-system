@@ -73,6 +73,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
     type TransferApprovalDetails,
   } from "../logic/playerTransferApprovalLogic";
   import { auth_store, check_action_authorization } from "../stores/auth";
+  import { is_signed_in } from "$lib/adapters/iam/clerkAuthService";
   import { get } from "svelte/store";
   import {
     get_authorization_restricted_fields,
@@ -1189,6 +1190,7 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
     return (
       show_fake_data_button &&
       !is_edit_mode &&
+      !$is_signed_in &&
       fakeDataGenerator.is_fake_data_generation_enabled()
     );
   }

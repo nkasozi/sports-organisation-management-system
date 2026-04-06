@@ -62,8 +62,9 @@ export async function reset_all_data(
   await clear_session_sync_flag();
 
   report("Resetting data stores...", 35);
-  await reset_sport_repository();
-  await reset_organization_repository();
+  const seeded_sports = await reset_sport_repository();
+  await reset_organization_repository(seeded_sports);
+
   await reset_team_repository();
   await reset_competition_repository();
   await reset_player_repository();

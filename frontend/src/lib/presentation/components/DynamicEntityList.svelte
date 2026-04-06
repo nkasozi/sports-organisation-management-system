@@ -192,14 +192,21 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
             page_size: 100,
           });
           if (result.success && result.data) {
-            new_options[field.field_name] = extract_items_from_result_data(
-              result.data,
-            );
+            const extracted_items = extract_items_from_result_data(result.data);
+            new_options[field.field_name] = extracted_items;
           } else {
             new_options[field.field_name] = [];
           }
         } else {
           new_options[field.field_name] = [];
+          console.warn(
+            `[DynamicEntityList] FK use cases NOT FOUND for "${field.foreign_key_entity}"`,
+            {
+              event: "foreign_key_use_cases_not_found",
+              foreign_key_entity: field.foreign_key_entity,
+              error: fk_use_cases_result.error,
+            },
+          );
         }
       }
     }
@@ -381,9 +388,27 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
             filter,
           );
           entities = loaded_entities;
-          console.debug(
+          console.log(
             `[DynamicEntityList] ✅ Custom handler loaded ${entities.length} ${entity_type} entities`,
+            {
+              event: "custom_handler_entities_loaded",
+              entity_type,
+              entity_ids: entities.map((e: any) => e.id),
+              entity_sport_ids: entities
+                .map((e: any) => e.sport_id)
+                .filter(Boolean),
+            },
           );
+          if (entity_type === "Organization") {
+            console.warn(`[DynamicEntityList] ORGANIZATION SPORT DEBUG`, {
+              event: "organization_sport_debug",
+              orgs: entities.map((e: any) => ({
+                id: e.id,
+                name: e.name,
+                sport_id: e.sport_id,
+              })),
+            });
+          }
           const total = entities.length;
           on_total_count_changed?.(total);
         } else {

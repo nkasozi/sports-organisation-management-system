@@ -142,10 +142,17 @@ async function ensure_default_sports_exist(): Promise<void> {
   }
 }
 
-export async function reset_sport_repository(): Promise<void> {
+export async function reset_sport_repository(): Promise<Sport[]> {
   const repo = get_concrete_repository();
   await repo.clear_all_data();
-  await repo.seed_with_data(create_default_sports());
+  const default_sports = create_default_sports();
+  await repo.seed_with_data(default_sports);
+  console.log("[SportRepository] Reset complete", {
+    event: "sport_repository_reset",
+    sport_count: default_sports.length,
+    sport_ids: default_sports.map((sport) => sport.id),
+  });
+  return default_sports;
 }
 
 export async function get_all_sports(): Promise<Sport[]> {

@@ -44,6 +44,33 @@ export type AllowedSyncTable = (typeof ALLOWED_SYNC_TABLES)[number];
 
 const ALLOWED_TABLE_SET = new Set<string>(ALLOWED_SYNC_TABLES);
 
+const PUBLIC_TABLE_NAMES = [
+  "organizations",
+  "competitions",
+  "competition_formats",
+  "competition_stages",
+  "competition_teams",
+  "teams",
+  "fixtures",
+  "fixture_lineups",
+  "fixture_details_setups",
+  "officials",
+  "team_staff",
+  "team_staff_roles",
+  "game_official_roles",
+  "activities",
+  "activity_categories",
+  "players",
+  "player_positions",
+  "player_team_memberships",
+] as const;
+
+export const PUBLIC_TABLES = new Set<string>(PUBLIC_TABLE_NAMES);
+
+export function is_public_table(table_name: string): boolean {
+  return PUBLIC_TABLES.has(table_name);
+}
+
 const TABLE_TO_ENTITY_TYPE: Record<string, string> = {
   organizations: "organization",
   organization_settings: "organizationsettings",

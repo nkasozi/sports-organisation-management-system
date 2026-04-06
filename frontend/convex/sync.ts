@@ -15,6 +15,7 @@ import {
   is_global_table as check_is_global_table,
   validate_record_organization_ownership,
   filter_records_by_organization_scope,
+  is_public_table,
 } from "./lib/sync_validation";
 import { SecurityEventType } from "./lib/security_event_types";
 import { validate_record_url_fields } from "./lib/url_validation";
@@ -124,10 +125,18 @@ export const get_changes_since = query({
     const entity_type = get_entity_type_for_table(table_name);
     const auth_result = await require_auth(ctx);
 
+    if (!auth_result.success) {
+      console.warn("[Sync] get_changes_since rejected unauthenticated caller", {
+        event: "sync_query_auth_denied",
+        table_name,
+      });
+      return { success: false, error: "Access denied", data: [] };
+    }
+
     const table = ctx.db.query(table_name as any);
     let all_records = await table.collect();
 
-    if (auth_result.success && !check_is_global_table(table_name)) {
+    if (!check_is_global_table(table_name)) {
       const scope_filter = build_scope_filter(auth_result.data, entity_type);
       all_records = filter_records_by_organization_scope(
         all_records,
@@ -482,12 +491,27 @@ export const get_all_records = query({
       return [];
     }
 
-    const entity_type = get_entity_type_for_table(table_name);
-    const table = ctx.db.query(table_name as any);
-    const all_records = await table.collect();
-
     const auth_result = await require_auth(ctx);
-    if (!auth_result.success || check_is_global_table(table_name)) {
+
+    if (!auth_result.success) {
+      if (!is_public_table(table_name)) {
+        console.warn("[Sync] get_all_records rejected unauthenticated caller for private table", {
+          event: "sync_public_table_auth_denied",
+          table_name,
+        });
+        return [];
+      }
+      console.log("[Sync] get_all_records serving public table to anonymous caller", {
+        event: "sync_public_table_served",
+        table_name,
+      });
+      return await ctx.db.query(table_name as any).collect();
+    }
+
+    const entity_type = get_entity_type_for_table(table_name);
+    const all_records = await ctx.db.query(table_name as any).collect();
+
+    if (check_is_global_table(table_name)) {
       return all_records;
     }
 
@@ -559,9 +583,17 @@ export const get_latest_modified_at = query({
 
     const auth_result = await require_auth(ctx);
 
+    if (!auth_result.success) {
+      console.warn("[Sync] get_latest_modified_at rejected unauthenticated caller", {
+        event: "sync_query_auth_denied",
+        table_name,
+      });
+      return { table_name, record_count: 0, latest_modified_at: null };
+    }
+
     let records = await ctx.db.query(table_name as any).collect();
 
-    if (auth_result.success && !check_is_global_table(table_name)) {
+    if (!check_is_global_table(table_name)) {
       const entity_type = get_entity_type_for_table(table_name);
       const scope_filter = build_scope_filter(auth_result.data, entity_type);
       records = filter_records_by_organization_scope(
@@ -603,6 +635,14 @@ export const update_sync_metadata = mutation({
     error_message: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
+    const auth_result = await require_auth(ctx);
+    if (!auth_result.success) {
+      console.warn("[Sync] update_sync_metadata rejected unauthenticated caller", {
+        event: "sync_metadata_auth_denied",
+      });
+      return { success: false, error: "Access denied" };
+    }
+
     const { table_name, sync_status, records_synced, error_message } = args;
     const last_sync_at = new Date().toISOString();
 
@@ -634,6 +674,14 @@ export const get_sync_metadata = query({
     table_name: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
+    const auth_result = await require_auth(ctx);
+    if (!auth_result.success) {
+      console.warn("[Sync] get_sync_metadata rejected unauthenticated caller", {
+        event: "sync_metadata_auth_denied",
+      });
+      return null;
+    }
+
     if (args.table_name) {
       return await ctx.db
         .query("sync_metadata")
@@ -658,10 +706,18 @@ export const subscribe_to_table_changes = query({
 
     const auth_result = await require_auth(ctx);
 
+    if (!auth_result.success) {
+      console.warn("[Sync] subscribe_to_table_changes rejected unauthenticated caller", {
+        event: "sync_query_auth_denied",
+        table_name,
+      });
+      return { table_name, record_count: 0, latest_timestamp: "", records: [] };
+    }
+
     const table = ctx.db.query(table_name as any);
     let records = await table.collect();
 
-    if (auth_result.success && !check_is_global_table(table_name)) {
+    if (!check_is_global_table(table_name)) {
       const entity_type = get_entity_type_for_table(table_name);
       const scope_filter = build_scope_filter(auth_result.data, entity_type);
       records = filter_records_by_organization_scope(
