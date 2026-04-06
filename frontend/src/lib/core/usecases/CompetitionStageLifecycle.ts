@@ -1,3 +1,4 @@
+import { ENTITY_STATUS } from "../entities/StatusConstants";
 import type { CompetitionFormatRepository } from "../interfaces/ports";
 import type { CompetitionStageRepository } from "../interfaces/ports";
 import type { FixtureRepository } from "../interfaces/ports";
@@ -142,7 +143,7 @@ async function create_stages_from_format(
       name: template.name,
       stage_type: template.stage_type,
       stage_order: template.stage_order,
-      status: "active",
+      status: ENTITY_STATUS.ACTIVE,
     });
     if (!create_result.success) {
       return create_failure_result(create_result.error);

@@ -16,16 +16,6 @@
   import type { Official } from "$lib/core/entities/Official";
   import type { Organization } from "$lib/core/entities/Organization";
   import type { LoadingState } from "$lib/presentation/components/ui/LoadingStateWrapper.svelte";
-  import { get_competition_use_cases } from "$lib/core/usecases/CompetitionUseCases";
-  import { get_fixture_use_cases } from "$lib/core/usecases/FixtureUseCases";
-  import { get_team_use_cases } from "$lib/core/usecases/TeamUseCases";
-  import { get_competition_format_use_cases } from "$lib/core/usecases/CompetitionFormatUseCases";
-  import { get_competition_stage_use_cases } from "$lib/core/usecases/CompetitionStageUseCases";
-  import { get_competition_team_use_cases } from "$lib/core/usecases/CompetitionTeamUseCases";
-  import { get_fixture_lineup_use_cases } from "$lib/core/usecases/FixtureLineupUseCases";
-  import { get_official_use_cases } from "$lib/core/usecases/OfficialUseCases";
-  import { get_organization_use_cases } from "$lib/core/usecases/OrganizationUseCases";
-  import { get_team_staff_use_cases } from "$lib/core/usecases/TeamStaffUseCases";
   import { get_team_staff_full_name } from "$lib/core/entities/TeamStaff";
   import { auth_store } from "$lib/presentation/stores/auth";
   import {
@@ -65,6 +55,18 @@
     type TieBreaker,
     DEFAULT_POINTS_CONFIG,
   } from "$lib/core/entities/CompetitionFormat";
+import {
+  get_competition_format_use_cases,
+  get_competition_stage_use_cases,
+  get_competition_team_use_cases,
+  get_competition_use_cases,
+  get_fixture_lineup_use_cases,
+  get_fixture_use_cases,
+  get_official_use_cases,
+  get_organization_use_cases,
+  get_team_staff_use_cases,
+  get_team_use_cases,
+} from "$lib/infrastructure/registry/useCaseFactories";
 
   const competition_use_cases = get_competition_use_cases();
   const fixture_use_cases = get_fixture_use_cases();

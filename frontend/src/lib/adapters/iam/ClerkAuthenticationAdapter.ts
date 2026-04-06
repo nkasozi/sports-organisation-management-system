@@ -1,3 +1,4 @@
+import { WILDCARD_SCOPE } from "../../core/entities/StatusConstants";
 import type {
   AuthenticationPort,
   AuthToken,
@@ -55,7 +56,7 @@ function build_verification_payload_from_clerk_user(
       clerk_user.full_name ||
       `${clerk_user.first_name} ${clerk_user.last_name}`.trim(),
     role: "public_viewer",
-    organization_id: "*",
+    organization_id: WILDCARD_SCOPE,
     team_id: "*",
     issued_at: now_in_seconds,
     expires_at: now_in_seconds + TOKEN_EXPIRY_SECONDS,

@@ -9,7 +9,7 @@ import {
 import { get } from "svelte/store";
 import type { BaseEntity, FieldMetadata } from "../../core/entities/BaseEntity";
 import { get_use_cases_for_entity_type } from "../../infrastructure/registry/entityUseCasesRegistry";
-import { get_competition_team_use_cases } from "../../core/usecases/CompetitionTeamUseCases";
+import { get_competition_team_use_cases } from "../../infrastructure/registry/useCaseFactories";
 import {
   compute_teams_after_exclusion,
   fetch_entities_for_type,
@@ -34,7 +34,7 @@ vi.mock("../stores/auth", () => ({
   auth_store: {},
 }));
 vi.mock("../../infrastructure/registry/entityUseCasesRegistry");
-vi.mock("../../core/usecases/CompetitionTeamUseCases");
+vi.mock("../../infrastructure/registry/useCaseFactories");
 
 const mock_get_use_cases = get_use_cases_for_entity_type as MockedFunction<
   typeof get_use_cases_for_entity_type

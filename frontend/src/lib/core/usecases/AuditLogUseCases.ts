@@ -9,7 +9,6 @@ import type { AuditLogRepository, AuditLogFilter } from "../interfaces/ports";
 import type { QueryOptions } from "../interfaces/ports";
 import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
 import { create_success_result, create_failure_result } from "../types/Result";
-import { get_repository_container } from "../../infrastructure/container";
 
 export interface AuditLogUseCases {
   list(
@@ -124,11 +123,6 @@ function validate_audit_log_input(input: CreateAuditLogInput): string[] {
   }
 
   return errors;
-}
-
-export function get_audit_log_use_cases(): AuditLogUseCases {
-  const container = get_repository_container();
-  return create_audit_log_use_cases(container.audit_log_repository);
 }
 
 export type { AuditAction, FieldChange, AuditLogFilter };

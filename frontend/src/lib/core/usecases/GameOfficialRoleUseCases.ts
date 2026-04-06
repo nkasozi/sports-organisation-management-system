@@ -10,7 +10,6 @@ import type {
 import type { QueryOptions } from "../interfaces/ports";
 import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
 import { create_failure_result, create_success_result } from "../types/Result";
-import { get_repository_container } from "../../infrastructure/container";
 import type { GameOfficialRoleUseCasesPort } from "../interfaces/ports";
 
 export type GameOfficialRoleUseCases = GameOfficialRoleUseCasesPort;
@@ -92,11 +91,4 @@ export function create_game_official_role_use_cases(
       return await repository.find_by_sport(sport_id);
     },
   };
-}
-
-export function get_game_official_role_use_cases(): GameOfficialRoleUseCases {
-  const container = get_repository_container();
-  return create_game_official_role_use_cases(
-    container.game_official_role_repository,
-  );
 }

@@ -5,12 +5,6 @@
   import { ensure_auth_profile } from "$lib/presentation/logic/authGuard";
   import { get_authorization_adapter } from "$lib/infrastructure/AuthorizationProvider";
   import { access_denial_store } from "$lib/presentation/stores/accessDenial";
-  import { get_organization_use_cases } from "$lib/core/usecases/OrganizationUseCases";
-  import { get_competition_use_cases } from "$lib/core/usecases/CompetitionUseCases";
-  import { get_team_use_cases } from "$lib/core/usecases/TeamUseCases";
-  import { get_player_use_cases } from "$lib/core/usecases/PlayerUseCases";
-  import { get_fixture_use_cases } from "$lib/core/usecases/FixtureUseCases";
-  import { get_sport_use_cases } from "$lib/core/usecases/SportUseCases";
   import { reset_all_data } from "$lib/adapters/initialization/dataResetService";
   import {
     initialize_app_data,
@@ -34,6 +28,14 @@
   import type { Competition } from "$lib/core/entities/Competition";
   import type { Fixture } from "$lib/core/entities/Fixture";
   import type { Team } from "$lib/core/entities/Team";
+import {
+  get_competition_use_cases,
+  get_fixture_use_cases,
+  get_organization_use_cases,
+  get_player_use_cases,
+  get_sport_use_cases,
+  get_team_use_cases,
+} from "$lib/infrastructure/registry/useCaseFactories";
 
   const dashboard_dependencies: DashboardDependencies = {
     organization_use_cases: get_organization_use_cases(),

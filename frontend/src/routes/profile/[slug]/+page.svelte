@@ -9,13 +9,6 @@
   import type { Fixture, GameEvent } from "$lib/core/entities/Fixture";
   import type { PlayerPosition } from "$lib/core/entities/PlayerPosition";
   import type { ProfileLink } from "$lib/core/entities/ProfileLink";
-  import { get_player_profile_use_cases } from "$lib/core/usecases/PlayerProfileUseCases";
-  import { get_player_use_cases } from "$lib/core/usecases/PlayerUseCases";
-  import { get_team_use_cases } from "$lib/core/usecases/TeamUseCases";
-  import { get_player_team_membership_use_cases } from "$lib/core/usecases/PlayerTeamMembershipUseCases";
-  import { get_fixture_use_cases } from "$lib/core/usecases/FixtureUseCases";
-  import { get_player_position_use_cases } from "$lib/core/usecases/PlayerPositionUseCases";
-  import { get_profile_link_use_cases } from "$lib/core/usecases/ProfileLinkUseCases";
   import {
     get_player_avatar,
     get_player_full_name,
@@ -23,6 +16,15 @@
     DEFAULT_PLAYER_AVATAR,
   } from "$lib/core/entities/Player";
   import { get_platform_icon } from "$lib/core/entities/ProfileLink";
+import {
+  get_fixture_use_cases,
+  get_player_position_use_cases,
+  get_player_profile_use_cases,
+  get_player_team_membership_use_cases,
+  get_player_use_cases,
+  get_profile_link_use_cases,
+  get_team_use_cases,
+} from "$lib/infrastructure/registry/useCaseFactories";
 
   interface PlayerStats {
     total_matches: number;

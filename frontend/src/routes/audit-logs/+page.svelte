@@ -6,7 +6,6 @@
     ensure_auth_profile,
     ensure_route_access,
   } from "$lib/presentation/logic/authGuard";
-  import { get_audit_log_use_cases } from "$lib/core/usecases/AuditLogUseCases";
   import type { AuditLog } from "$lib/core/entities/AuditLog";
   import { build_audit_log_summary } from "$lib/core/entities/AuditLog";
   import { auth_store } from "$lib/presentation/stores/auth";
@@ -16,6 +15,7 @@
   } from "$lib/core/interfaces/ports";
   import { get } from "svelte/store";
   import { AUDIT_LOG_PAGE_SIZE } from "$lib/infrastructure/sync/convexAuditLogService";
+import { get_audit_log_use_cases } from "$lib/infrastructure/registry/useCaseFactories";
 
   let audit_logs: AuditLog[] = [];
   let is_loading = true;

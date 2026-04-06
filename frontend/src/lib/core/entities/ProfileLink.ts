@@ -72,7 +72,11 @@ function is_valid_url(url: string): boolean {
   try {
     new URL(url);
     return true;
-  } catch {
+  } catch (error) {
+    console.warn("[ProfileLink] URL validation failed", {
+      event: "url_validation_failed",
+      error: String(error),
+    });
     return false;
   }
 }

@@ -1,3 +1,4 @@
+import { LINEUP_STATUS } from "../entities/StatusConstants";
 import type { Fixture } from "../entities/Fixture";
 import type { FixtureDetailsSetupUseCases } from "../usecases/FixtureDetailsSetupUseCases";
 import type { FixtureLineupUseCases } from "../usecases/FixtureLineupUseCases";
@@ -101,7 +102,9 @@ function build_lineup_check(
   lineup: FixtureLineup | undefined,
 ): PreFlightCheck {
   const is_submitted =
-    lineup && (lineup.status === "submitted" || lineup.status === "locked");
+    lineup &&
+    (lineup.status === LINEUP_STATUS.SUBMITTED ||
+      lineup.status === LINEUP_STATUS.LOCKED);
   if (is_submitted) {
     return {
       check_name,

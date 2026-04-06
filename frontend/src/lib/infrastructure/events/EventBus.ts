@@ -52,14 +52,19 @@ class EventBusImpl {
         const result = handler(payload);
         if (result instanceof Promise) {
           result.catch((error) => {
-            console.error(
-              `[EventBus] Async handler error for ${event_type}:`,
-              error,
-            );
+            console.error("[EventBus] Async handler error", {
+              event: "event_bus_async_handler_error",
+              event_type,
+              error: String(error),
+            });
           });
         }
       } catch (error) {
-        console.error(`[EventBus] Handler error for ${event_type}:`, error);
+        console.error("[EventBus] Handler error", {
+          event: "event_bus_handler_error",
+          event_type,
+          error: String(error),
+        });
       }
     }
   }

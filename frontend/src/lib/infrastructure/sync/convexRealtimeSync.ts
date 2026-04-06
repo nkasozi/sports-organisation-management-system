@@ -83,9 +83,11 @@ function create_table_change_handler(
         on_table_pulled?.(table_name);
       })
       .catch((error) => {
-        console.error(
-          `[RealtimeSync] ${table_name} pull failed: ${error instanceof Error ? error.message : String(error)}`,
-        );
+        console.error("[RealtimeSync] Table pull failed", {
+          event: "realtime_sync_pull_failed",
+          table_name,
+          error: error instanceof Error ? error.message : String(error),
+        });
       });
   };
 }

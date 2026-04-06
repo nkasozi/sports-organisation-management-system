@@ -1,3 +1,7 @@
+import {
+  CONFIRMATION_STATUS,
+  ENTITY_STATUS,
+} from "../entities/StatusConstants";
 import type { Fixture } from "../entities/Fixture";
 import type {
   CreateFixtureDetailsSetupInput,
@@ -142,8 +146,8 @@ async function build_auto_populated_input(
       official_jersey_id: official_jersey_id!,
       assigned_officials,
       assignment_notes: "",
-      confirmation_status: "confirmed",
-      status: "active",
+      confirmation_status: CONFIRMATION_STATUS.CONFIRMED,
+      status: ENTITY_STATUS.ACTIVE,
     },
   };
 }

@@ -1,3 +1,4 @@
+import { TRANSFER_STATUS } from "../../core/entities/StatusConstants";
 import type { Table } from "dexie";
 import type {
   FixtureDetailsSetup,
@@ -51,7 +52,7 @@ class InBrowserFixtureDetailsSetupRepository
       official_jersey_id: input.official_jersey_id || "",
       assigned_officials: input.assigned_officials || [],
       assignment_notes: input.assignment_notes || "",
-      confirmation_status: input.confirmation_status || "pending",
+      confirmation_status: input.confirmation_status || TRANSFER_STATUS.PENDING,
       status: input.status || "active",
     };
   }

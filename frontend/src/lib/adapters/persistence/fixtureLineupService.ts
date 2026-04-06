@@ -5,7 +5,7 @@ import type {
 } from "../../core/entities/FixtureLineup";
 import type { FixtureLineupFilter } from "../../core/interfaces/ports";
 import type { AsyncResult } from "../../core/types/Result";
-import { get_fixture_lineup_use_cases } from "../../core/usecases/FixtureLineupUseCases";
+import { get_fixture_lineup_use_cases } from "$lib/infrastructure/registry/useCaseFactories";
 
 const use_cases = get_fixture_lineup_use_cases();
 

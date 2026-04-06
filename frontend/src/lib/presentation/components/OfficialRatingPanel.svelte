@@ -6,12 +6,11 @@
         RatingDimensions,
     } from "$lib/core/entities/OfficialPerformanceRating";
     import { validate_rating_input } from "$lib/core/entities/OfficialPerformanceRating";
-    import { get_official_performance_rating_use_cases } from "$lib/core/usecases/OfficialPerformanceRatingUseCases";
-    import { get_official_use_cases } from "$lib/core/usecases/OfficialUseCases";
     import type { Official } from "$lib/core/entities/Official";
     import { get_official_full_name } from "$lib/core/entities/Official";
     import Toast from "$lib/presentation/components/ui/Toast.svelte";
     import StarRatingInput from "$lib/presentation/components/ui/StarRatingInput.svelte";
+import { get_official_performance_rating_use_cases, get_official_use_cases } from "$lib/infrastructure/registry/useCaseFactories";
 
     function get_rating_dim(
         rating: RatingDimensions & { notes: string },

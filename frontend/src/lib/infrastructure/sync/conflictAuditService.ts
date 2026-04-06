@@ -1,3 +1,4 @@
+import { WILDCARD_SCOPE } from "../../core/entities/StatusConstants";
 import { get_repository_container } from "$lib/infrastructure/container";
 import type {
   CreateAuditLogInput,
@@ -54,7 +55,7 @@ export async function log_conflict_detected(
       user_id: context.user_id ?? "system",
       user_email: context.user_email ?? "system@sport-sync.local",
       user_display_name: context.user_display_name ?? "System",
-      organization_id: context.organization_id ?? "*",
+      organization_id: context.organization_id ?? WILDCARD_SCOPE,
       ip_address: "127.0.0.1",
       user_agent: "SportSyncApp/SyncService",
     };
@@ -62,7 +63,10 @@ export async function log_conflict_detected(
     await audit_log_repository.create(audit_input);
     return true;
   } catch (error) {
-    console.error("[ConflictAudit] Failed to log conflict detected:", error);
+    console.error("[ConflictAudit] Failed to log conflict detected", {
+      event: "failed_to_log_conflict_detected_failed",
+      error: String(error),
+    });
     return false;
   }
 }
@@ -120,7 +124,7 @@ export async function log_conflict_resolution(
       user_id: context.user_id ?? "system",
       user_email: context.user_email ?? "system@sport-sync.local",
       user_display_name: context.user_display_name ?? "System",
-      organization_id: context.organization_id ?? "*",
+      organization_id: context.organization_id ?? WILDCARD_SCOPE,
       ip_address: "127.0.0.1",
       user_agent: "SportSyncApp/SyncService",
     };
@@ -128,7 +132,10 @@ export async function log_conflict_resolution(
     await audit_log_repository.create(audit_input);
     return true;
   } catch (error) {
-    console.error("[ConflictAudit] Failed to log conflict resolution:", error);
+    console.error("[ConflictAudit] Failed to log conflict resolution", {
+      event: "failed_to_log_conflict_resolution_failed",
+      error: String(error),
+    });
     return false;
   }
 }

@@ -91,6 +91,12 @@ export abstract class InBrowserBaseRepository<
         create_paginated_result_from_options(paginated, total_count, options),
       );
     } catch (error) {
+      console.warn("[Repository] Failed to fetch entities", {
+        event: "repository_fetch_entities_failed",
+
+        error: String(error),
+      });
+
       return create_failure_result(
         format_repository_error(error, "fetch entities"),
       );
@@ -104,6 +110,12 @@ export abstract class InBrowserBaseRepository<
         return create_failure_result(`Entity with id '${id}' not found`);
       return create_success_result(entity);
     } catch (error) {
+      console.warn("[Repository] Failed to fetch entity by id", {
+        event: "repository_fetch_entity_by_id_failed",
+
+        error: String(error),
+      });
+
       return create_failure_result(
         format_repository_error(error, "fetch entity by id"),
       );
@@ -117,6 +129,12 @@ export abstract class InBrowserBaseRepository<
         entities.filter((e): e is TEntity => e !== undefined),
       );
     } catch (error) {
+      console.warn("[Repository] Failed to fetch entities by ids", {
+        event: "repository_fetch_entities_by_ids_failed",
+
+        error: String(error),
+      });
+
       return create_failure_result(
         format_repository_error(error, "fetch entities by ids"),
       );
@@ -134,6 +152,12 @@ export abstract class InBrowserBaseRepository<
       await this.get_table().add(new_entity);
       return create_success_result(new_entity);
     } catch (error) {
+      console.warn("[Repository] Failed to create entity", {
+        event: "repository_create_entity_failed",
+
+        error: String(error),
+      });
+
       return create_failure_result(
         format_repository_error(error, "create entity"),
       );
@@ -151,6 +175,12 @@ export abstract class InBrowserBaseRepository<
       await this.get_table().put(updated_entity);
       return create_success_result(updated_entity);
     } catch (error) {
+      console.warn("[Repository] Failed to update entity", {
+        event: "repository_update_entity_failed",
+
+        error: String(error),
+      });
+
       return create_failure_result(
         format_repository_error(error, "update entity"),
       );
@@ -165,6 +195,12 @@ export abstract class InBrowserBaseRepository<
       await this.get_table().delete(id);
       return create_success_result(true);
     } catch (error) {
+      console.warn("[Repository] Failed to delete entity", {
+        event: "repository_delete_entity_failed",
+
+        error: String(error),
+      });
+
       return create_failure_result(
         format_repository_error(error, "delete entity"),
       );
@@ -176,6 +212,12 @@ export abstract class InBrowserBaseRepository<
       await this.get_table().bulkDelete(ids);
       return create_success_result(ids.length);
     } catch (error) {
+      console.warn("[Repository] Failed to delete entities", {
+        event: "repository_delete_entities_failed",
+
+        error: String(error),
+      });
+
       return create_failure_result(
         format_repository_error(error, "delete entities"),
       );
@@ -186,6 +228,12 @@ export abstract class InBrowserBaseRepository<
     try {
       return create_success_result(await this.get_table().count());
     } catch (error) {
+      console.warn("[Repository] Failed to count entities", {
+        event: "repository_count_entities_failed",
+
+        error: String(error),
+      });
+
       return create_failure_result(
         format_repository_error(error, "count entities"),
       );
@@ -195,12 +243,18 @@ export abstract class InBrowserBaseRepository<
   async seed_with_data(entities: TEntity[]): AsyncResult<number> {
     try {
       await this.get_table().bulkPut(entities);
-      console.log(
-        `[${this.entity_prefix}] Seeded ${entities.length} records successfully`,
-      );
+      console.log("[Repository] Seeded records successfully", {
+        event: "repository_seed_success",
+        entity_prefix: this.entity_prefix,
+        record_count: entities.length,
+      });
       return create_success_result(entities.length);
     } catch (error) {
-      console.error(`[${this.entity_prefix}] Failed to seed data:`, error);
+      console.error("[Repository] Failed to seed data", {
+        event: "repository_seed_failed",
+        entity_prefix: this.entity_prefix,
+        error: String(error),
+      });
       return create_failure_result(
         format_repository_error(error, `seed ${this.entity_prefix}`),
       );

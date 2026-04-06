@@ -1,3 +1,4 @@
+import { FORMAT_TYPE } from "./StatusConstants";
 import type {
   FormatType,
   CreateCompetitionFormatInput,
@@ -112,7 +113,7 @@ function requires_knockout_stage_config(format_type: FormatType): boolean {
 }
 
 function requires_league_config(format_type: FormatType): boolean {
-  return ["league", "round_robin"].includes(format_type);
+  return [FORMAT_TYPE.LEAGUE, FORMAT_TYPE.ROUND_ROBIN].includes(format_type);
 }
 
 function normalize_stage_templates(

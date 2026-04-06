@@ -1,3 +1,4 @@
+import { WILDCARD_SCOPE } from "../../core/entities/StatusConstants";
 export type SessionAction =
   | "login_sync"
   | "verified_page_reload"
@@ -77,5 +78,5 @@ export function build_sync_progress_message(
 export function should_pull_org_from_server(
   organization_id: string | undefined | null,
 ): boolean {
-  return !!organization_id && organization_id !== "*";
+  return !!organization_id && organization_id !== WILDCARD_SCOPE;
 }

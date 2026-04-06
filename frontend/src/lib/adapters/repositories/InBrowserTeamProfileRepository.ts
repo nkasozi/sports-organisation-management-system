@@ -104,6 +104,13 @@ export class InBrowserTeamProfileRepository
 
       return create_success_result(profiles[0]);
     } catch (error) {
+      console.warn(
+        "[TeamProfileRepository] Failed to find profile by team_id",
+        {
+          event: "repository_find_profile_by_team_id_failed",
+          error: String(error),
+        },
+      );
       const error_message =
         error instanceof Error ? error.message : "Unknown error occurred";
       return create_failure_result(
@@ -125,6 +132,10 @@ export class InBrowserTeamProfileRepository
 
       return create_success_result(profiles[0]);
     } catch (error) {
+      console.warn("[TeamProfileRepository] Failed to find profile by slug", {
+        event: "repository_find_profile_by_slug_failed",
+        error: String(error),
+      });
       const error_message =
         error instanceof Error ? error.message : "Unknown error occurred";
       return create_failure_result(

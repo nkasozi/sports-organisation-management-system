@@ -1,3 +1,4 @@
+import { ENTITY_STATUS } from "../../core/entities/StatusConstants";
 import type { Table } from "dexie";
 import type {
   PlayerPosition,
@@ -92,6 +93,13 @@ export class InBrowserPlayerPositionRepository
         all.find((p) => p.code.toLowerCase() === code.toLowerCase()) ?? null,
       );
     } catch (error) {
+      console.warn(
+        "[PlayerPositionRepository] Failed to find position by code",
+        {
+          event: "repository_find_position_by_code_failed",
+          error: String(error),
+        },
+      );
       return create_failure_result(`Failed to find position by code: ${error}`);
     }
   }
@@ -107,6 +115,13 @@ export class InBrowserPlayerPositionRepository
           .sort((a, b) => a.display_order - b.display_order),
       );
     } catch (error) {
+      console.warn(
+        "[PlayerPositionRepository] Failed to find positions by sport type",
+        {
+          event: "repository_find_positions_by_sport_type_failed",
+          error: String(error),
+        },
+      );
       return create_failure_result(
         `Failed to find positions by sport type: ${error}`,
       );
@@ -124,6 +139,13 @@ export class InBrowserPlayerPositionRepository
           .sort((a, b) => a.display_order - b.display_order),
       );
     } catch (error) {
+      console.warn(
+        "[PlayerPositionRepository] Failed to find positions by category",
+        {
+          event: "repository_find_positions_by_category_failed",
+          error: String(error),
+        },
+      );
       return create_failure_result(
         `Failed to find positions by category: ${error}`,
       );
@@ -135,10 +157,17 @@ export class InBrowserPlayerPositionRepository
       const all = await this.database.player_positions.toArray();
       return create_success_result(
         all
-          .filter((p) => p.is_available && p.status === "active")
+          .filter((p) => p.is_available && p.status === ENTITY_STATUS.ACTIVE)
           .sort((a, b) => a.display_order - b.display_order),
       );
     } catch (error) {
+      console.warn(
+        "[PlayerPositionRepository] Failed to find available positions",
+        {
+          event: "repository_find_available_positions_failed",
+          error: String(error),
+        },
+      );
       return create_failure_result(
         `Failed to find available positions: ${error}`,
       );
@@ -160,6 +189,13 @@ export class InBrowserPlayerPositionRepository
         this.create_paginated_result(paginated, total_count, options),
       );
     } catch (error) {
+      console.warn(
+        "[PlayerPositionRepository] Failed to filter player positions",
+        {
+          event: "repository_filter_player_positions_failed",
+          error: String(error),
+        },
+      );
       const error_message =
         error instanceof Error ? error.message : "Unknown error occurred";
       return create_failure_result(

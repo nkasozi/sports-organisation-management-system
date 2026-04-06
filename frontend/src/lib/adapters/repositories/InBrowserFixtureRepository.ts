@@ -193,6 +193,10 @@ export class InBrowserFixtureRepository
         total_pages: 1,
       });
     } catch (error) {
+      console.warn("[FixtureRepository] Failed to create fixtures", {
+        event: "repository_create_fixtures_failed",
+        error: String(error),
+      });
       const error_message =
         error instanceof Error ? error.message : "Unknown error occurred";
       return create_failure_result(

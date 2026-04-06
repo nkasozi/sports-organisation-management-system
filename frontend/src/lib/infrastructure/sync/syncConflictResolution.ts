@@ -40,7 +40,10 @@ export async function resolve_conflict(
   } catch (error) {
     const error_message =
       error instanceof Error ? error.message : String(error);
-    console.error(`[Sync] Conflict resolution failed:`, error_message);
+    console.error("[Sync] Conflict resolution failed", {
+      event: "sync_conflict_resolution_failed",
+      error: String(error_message),
+    });
     return { success: false, error: error_message };
   }
 }

@@ -6,7 +6,7 @@ import type { PlayerUseCases } from "../usecases/PlayerUseCases";
 import type { PlayerPositionUseCases } from "../usecases/PlayerPositionUseCases";
 import type { CompetitionUseCases } from "../usecases/CompetitionUseCases";
 import type { OrganizationUseCases } from "../usecases/OrganizationUseCases";
-import { MEMBERSHIP_STATUS } from "../entities/StatusConstants";
+import { LINEUP_STATUS, MEMBERSHIP_STATUS } from "../entities/StatusConstants";
 import type { SportUseCases } from "../usecases/SportUseCases";
 import type { CreateFixtureLineupInput } from "../entities/FixtureLineup";
 import type { Player } from "../entities/Player";
@@ -124,7 +124,7 @@ async function try_previous_match_strategy(
     fixture_id: fixture.id,
     team_id,
     selected_players: previous_players,
-    status: "submitted",
+    status: LINEUP_STATUS.SUBMITTED,
     submitted_by: "auto-generated",
     submitted_at: new Date().toISOString(),
     notes: "Auto-generated from previous match squad",
@@ -210,7 +210,7 @@ async function generate_first_available_lineup(
     fixture_id: fixture.id,
     team_id,
     selected_players,
-    status: "submitted",
+    status: LINEUP_STATUS.SUBMITTED,
     submitted_by: "auto-generated",
     submitted_at: new Date().toISOString(),
     notes: "Auto-generated lineup (first available players)",

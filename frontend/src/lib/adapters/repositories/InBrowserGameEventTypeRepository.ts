@@ -114,6 +114,13 @@ export class InBrowserGameEventTypeRepository
         this.create_paginated_result(paginated, total_count, options),
       );
     } catch (error) {
+      console.warn(
+        "[GameEventTypeRepository] Failed to filter game event types",
+        {
+          event: "repository_filter_game_event_types_failed",
+          error: String(error),
+        },
+      );
       const error_message =
         error instanceof Error ? error.message : "Unknown error occurred";
       return create_failure_result(
@@ -133,6 +140,13 @@ export class InBrowserGameEventTypeRepository
           .sort((a, b) => a.display_order - b.display_order),
       );
     } catch (error) {
+      console.warn(
+        "[GameEventTypeRepository] Failed to find event types by sport",
+        {
+          event: "repository_find_event_types_by_sport_failed",
+          error: String(error),
+        },
+      );
       return create_failure_result(
         `Failed to find event types by sport: ${error}`,
       );
@@ -150,6 +164,13 @@ export class InBrowserGameEventTypeRepository
           .sort((a, b) => a.display_order - b.display_order),
       );
     } catch (error) {
+      console.warn(
+        "[GameEventTypeRepository] Failed to find event types by category",
+        {
+          event: "repository_find_event_types_by_category_failed",
+          error: String(error),
+        },
+      );
       return create_failure_result(
         `Failed to find event types by category: ${error}`,
       );
@@ -161,6 +182,13 @@ export class InBrowserGameEventTypeRepository
       const all = await this.database.game_event_types.toArray();
       return create_success_result(all.find((e) => e.code === code) ?? null);
     } catch (error) {
+      console.warn(
+        "[GameEventTypeRepository] Failed to find event type by code",
+        {
+          event: "repository_find_event_type_by_code_failed",
+          error: String(error),
+        },
+      );
       return create_failure_result(
         `Failed to find event type by code: ${error}`,
       );
@@ -176,6 +204,10 @@ export class InBrowserGameEventTypeRepository
           .sort((a, b) => a.display_order - b.display_order),
       );
     } catch (error) {
+      console.warn("[GameEventTypeRepository] Failed to find scoring events", {
+        event: "repository_find_scoring_events_failed",
+        error: String(error),
+      });
       return create_failure_result(`Failed to find scoring events: ${error}`);
     }
   }

@@ -11,7 +11,6 @@ import type {
 import type { QueryOptions } from "../interfaces/ports";
 import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
 import { create_failure_result, create_success_result } from "../types/Result";
-import { get_repository_container } from "../../infrastructure/container";
 import type { GameEventTypeUseCasesPort } from "../interfaces/ports";
 
 export type GameEventTypeUseCases = GameEventTypeUseCasesPort;
@@ -133,9 +132,4 @@ export function create_game_event_type_use_cases(
       return await repository.find_scoring_events();
     },
   };
-}
-
-export function get_game_event_type_use_cases(): GameEventTypeUseCases {
-  const container = get_repository_container();
-  return create_game_event_type_use_cases(container.game_event_type_repository);
 }

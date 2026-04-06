@@ -5,7 +5,6 @@ import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
 import type { TeamUseCasesPort } from "../interfaces/ports";
 import { create_success_result, create_failure_result } from "../types/Result";
 import { validate_team_input } from "../entities/Team";
-import { get_repository_container } from "../../infrastructure/container";
 
 export type TeamUseCases = TeamUseCasesPort;
 
@@ -66,9 +65,4 @@ export function create_team_use_cases(
       return repository.find_by_organization(organization_id, options);
     },
   };
-}
-
-export function get_team_use_cases(): TeamUseCases {
-  const container = get_repository_container();
-  return create_team_use_cases(container.team_repository);
 }

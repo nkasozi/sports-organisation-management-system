@@ -10,9 +10,8 @@ import type {
 } from "../interfaces/ports";
 import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
 import { create_failure_result } from "../types/Result";
-import { get_repository_container } from "../../infrastructure/container";
-import { EventBus } from "$lib/infrastructure/events/EventBus";
 import { create_game_event_recorder } from "./GameEventRecorderUseCases";
+import { EventBus } from "$lib/infrastructure/events/EventBus";
 
 export type GameEventLogUseCases = GameEventLogUseCasesPort;
 
@@ -176,9 +175,4 @@ export function create_game_event_log_use_cases(
 
     ...create_game_event_recorder(repository),
   };
-}
-
-export function get_game_event_log_use_cases(): GameEventLogUseCases {
-  const container = get_repository_container();
-  return create_game_event_log_use_cases(container.game_event_log_repository);
 }

@@ -11,12 +11,11 @@ import type {
 import type { QueryOptions } from "$lib/core/interfaces/ports";
 import type { AsyncResult, PaginatedAsyncResult } from "$lib/core/types/Result";
 import { create_failure_result } from "$lib/core/types/Result";
-import { get_repository_container } from "../../infrastructure/container";
 import type { OfficialAssociatedTeamUseCasesPort } from "$lib/core/interfaces/ports";
 
 export type OfficialAssociatedTeamUseCases = OfficialAssociatedTeamUseCasesPort;
 
-function create_official_associated_team_use_cases(
+export function create_official_associated_team_use_cases(
   repository: OfficialAssociatedTeamRepository,
 ): OfficialAssociatedTeamUseCases {
   return {
@@ -107,11 +106,4 @@ function create_official_associated_team_use_cases(
       return repository.find_all(undefined, { page_number: 1, page_size: 100 });
     },
   };
-}
-
-export function get_official_associated_team_use_cases(): OfficialAssociatedTeamUseCases {
-  const container = get_repository_container();
-  return create_official_associated_team_use_cases(
-    container.official_associated_team_repository,
-  );
 }

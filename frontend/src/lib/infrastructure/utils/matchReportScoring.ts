@@ -1,3 +1,4 @@
+import { GAME_PERIOD } from "../../core/entities/StatusConstants";
 import type { GameEvent } from "$lib/core/entities/Fixture";
 import type { MatchScoreByPeriod } from "$lib/core/types/MatchReportTypes";
 
@@ -10,10 +11,10 @@ const PERIOD_NAMES = {
 } as const;
 
 function infer_period_from_minute(minute: number): string {
-  if (minute <= 45) return "first_half";
-  if (minute <= 90) return "second_half";
-  if (minute <= 105) return "extra_time_first";
-  return "extra_time_second";
+  if (minute <= 45) return GAME_PERIOD.FIRST_HALF;
+  if (minute <= 90) return GAME_PERIOD.SECOND_HALF;
+  if (minute <= 105) return GAME_PERIOD.EXTRA_TIME_FIRST;
+  return GAME_PERIOD.EXTRA_TIME_SECOND;
 }
 
 export function calculate_score_by_period(

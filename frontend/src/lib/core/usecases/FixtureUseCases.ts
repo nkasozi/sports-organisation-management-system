@@ -9,6 +9,7 @@ import type {
   FixtureFilter,
   QueryOptions,
   FixtureUseCasesPort,
+  TeamRepository,
 } from "../interfaces/ports";
 import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
 import { create_failure_result, create_success_result } from "../types/Result";
@@ -16,10 +17,9 @@ import {
   validate_fixture_input,
   generate_round_robin_fixtures,
 } from "../entities/Fixture";
-import { get_repository_container } from "../../infrastructure/container";
-import { EventBus } from "$lib/infrastructure/events/EventBus";
 import type { Team } from "../entities/Team";
 import { create_fixture_game_events } from "./FixtureGameEventsUseCases";
+import { EventBus } from "$lib/infrastructure/events/EventBus";
 
 export type FixtureUseCases = FixtureUseCasesPort;
 
@@ -27,12 +27,12 @@ const ENTITY_TYPE = "fixture";
 
 async function enrich_fixtures_with_team_names(
   fixtures: Fixture[],
+  team_repository?: TeamRepository,
 ): Promise<Fixture[]> {
   if (fixtures.length === 0) return fixtures;
+  if (!team_repository) return fixtures;
   try {
-    const container = get_repository_container();
-    if (!container.team_repository) return fixtures;
-    const teams_result = await container.team_repository.find_all();
+    const teams_result = await team_repository.find_all();
     if (!teams_result.success || !teams_result.data) return fixtures;
     const teams_map = new Map<string, Team>(
       teams_result.data.items.map((t) => [t.id, t]),
@@ -64,6 +64,7 @@ function find_unmapped_rounds(config: FixtureGenerationConfig): number[] {
 
 export function create_fixture_use_cases(
   repository: FixtureRepository,
+  team_repository?: TeamRepository,
 ): FixtureUseCases {
   return {
     async list(
@@ -74,6 +75,7 @@ export function create_fixture_use_cases(
       if (!result.success) return result;
       const enriched_fixtures = await enrich_fixtures_with_team_names(
         result.data.items,
+        team_repository,
       );
       return create_success_result({
         ...result.data,
@@ -174,9 +176,4 @@ export function create_fixture_use_cases(
 
     ...create_fixture_game_events(repository),
   };
-}
-
-export function get_fixture_use_cases(): FixtureUseCases {
-  const container = get_repository_container();
-  return create_fixture_use_cases(container.fixture_repository);
 }

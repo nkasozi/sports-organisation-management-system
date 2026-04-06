@@ -153,7 +153,10 @@ export async function initialize_clerk(): Promise<boolean> {
     console.log("[Clerk] Initialized successfully via ClerkProvider");
     return true;
   } catch (error) {
-    console.error("[Clerk] Failed to initialize:", error);
+    console.error("[Clerk] Failed to initialize", {
+      event: "failed_to_initialize_failed",
+      error: String(error),
+    });
     requestAnimationFrame(() => {
       safe_store_update({ ...INITIAL_CLERK_STATE, is_loaded: true });
     });
@@ -178,7 +181,10 @@ export async function get_session_token(): Promise<string | null> {
     }
     return token;
   } catch (error) {
-    console.error("[Clerk] Failed to get session token:", error);
+    console.error("[Clerk] Failed to get session token", {
+      event: "failed_to_get_session_token_failed",
+      error: String(error),
+    });
     return null;
   }
 }

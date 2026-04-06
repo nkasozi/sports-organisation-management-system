@@ -1,3 +1,4 @@
+import { WILDCARD_SCOPE } from "../../core/entities/StatusConstants";
 import type { SystemUser } from "$lib/core/entities/SystemUser";
 import type {
   SystemUserRepository,
@@ -42,7 +43,7 @@ export async function resolve_organization_names(
   name_map.set("*", "All Organisations");
 
   const unique_ids = [...new Set(organization_ids)].filter(
-    (id) => id !== "*" && id.trim().length > 0,
+    (id) => id !== WILDCARD_SCOPE && id.trim().length > 0,
   );
 
   if (unique_ids.length === 0) {

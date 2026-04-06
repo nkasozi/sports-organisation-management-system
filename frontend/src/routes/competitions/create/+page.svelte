@@ -14,11 +14,6 @@
   import type { SelectOption } from "$lib/presentation/components/ui/SelectField.svelte";
   import { create_empty_competition_input } from "$lib/core/entities/Competition";
   import { create_empty_competition_team_input } from "$lib/core/entities/CompetitionTeam";
-  import { get_competition_use_cases } from "$lib/core/usecases/CompetitionUseCases";
-  import { get_competition_team_use_cases } from "$lib/core/usecases/CompetitionTeamUseCases";
-  import { get_organization_use_cases } from "$lib/core/usecases/OrganizationUseCases";
-  import { get_competition_format_use_cases } from "$lib/core/usecases/CompetitionFormatUseCases";
-  import { get_team_use_cases } from "$lib/core/usecases/TeamUseCases";
   import { get_sport_by_id } from "$lib/adapters/persistence/sportService";
   import FormField from "$lib/presentation/components/ui/FormField.svelte";
   import SelectField from "$lib/presentation/components/ui/SelectField.svelte";
@@ -32,6 +27,13 @@
     type UserScopeProfile,
   } from "$lib/core/interfaces/ports";
   import type { SquadGenerationStrategy } from "$lib/core/entities/Competition";
+import {
+  get_competition_format_use_cases,
+  get_competition_team_use_cases,
+  get_competition_use_cases,
+  get_organization_use_cases,
+  get_team_use_cases,
+} from "$lib/infrastructure/registry/useCaseFactories";
 
   const competition_use_cases = get_competition_use_cases();
   const competition_team_use_cases = get_competition_team_use_cases();

@@ -1,3 +1,4 @@
+import { ENTITY_STATUS } from "../entities/StatusConstants";
 import type {
   GameEventLog,
   CreateGameEventLogInput,
@@ -73,7 +74,7 @@ export function create_game_event_recorder(
         score_change_home: team_side === "home" ? 1 : 0,
         score_change_away: team_side === "away" ? 1 : 0,
         recorded_by_user_id,
-        status: "active",
+        status: ENTITY_STATUS.ACTIVE,
       });
     },
 
@@ -106,7 +107,7 @@ export function create_game_event_recorder(
         score_change_home: 0,
         score_change_away: 0,
         recorded_by_user_id,
-        status: "active",
+        status: ENTITY_STATUS.ACTIVE,
       });
     },
 
@@ -139,7 +140,7 @@ export function create_game_event_recorder(
         score_change_home: 0,
         score_change_away: 0,
         recorded_by_user_id,
-        status: "active",
+        status: ENTITY_STATUS.ACTIVE,
       });
     },
   };

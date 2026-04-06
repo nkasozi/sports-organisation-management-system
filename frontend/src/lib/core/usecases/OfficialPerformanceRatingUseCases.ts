@@ -14,10 +14,7 @@ import {
   create_failure_result,
   create_success_result,
 } from "$lib/core/types/Result";
-import { get_repository_container } from "../../infrastructure/container";
 import type { OfficialPerformanceRatingUseCasesPort } from "$lib/core/interfaces/ports";
-import { get } from "svelte/store";
-import { auth_store } from "$lib/presentation/stores/auth";
 
 export type OfficialPerformanceRatingUseCases =
   OfficialPerformanceRatingUseCasesPort;
@@ -150,14 +147,6 @@ function create_official_performance_rating_use_cases(
       return repository.create(input);
     },
   };
-}
-
-export function get_official_performance_rating_use_cases(): OfficialPerformanceRatingUseCases {
-  const container = get_repository_container();
-  return create_official_performance_rating_use_cases(
-    container.official_performance_rating_repository,
-    () => get(auth_store).current_profile,
-  );
 }
 
 export { create_official_performance_rating_use_cases };

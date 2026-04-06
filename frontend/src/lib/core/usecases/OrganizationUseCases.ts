@@ -12,7 +12,6 @@ import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
 import type { OrganizationUseCasesPort } from "../interfaces/ports";
 import { create_success_result, create_failure_result } from "../types/Result";
 import { validate_organization_input } from "../entities/Organization";
-import { get_repository_container } from "../../infrastructure/container";
 
 export type OrganizationUseCases = OrganizationUseCasesPort;
 
@@ -70,11 +69,6 @@ export function create_organization_use_cases(
   };
 }
 
-export function get_organization_use_cases(): OrganizationUseCases {
-  const container = get_repository_container();
-  return create_organization_use_cases(container.organization_repository);
-}
-
 export type OrganizationDefaultSeeder = (
   organization_id: string,
 ) => Promise<void>;
@@ -93,26 +87,16 @@ export function create_organization_use_cases_with_default_seeder(
       if (!result.success) return result;
 
       seed_defaults(result.data.id).catch((error) =>
-        console.error(
-          `[OrganizationUseCases] Failed to seed defaults for org ${result.data.id}: ${error}`,
-        ),
+        console.error("[OrganizationUseCases] Failed to seed defaults", {
+          event: "organization_seed_defaults_failed",
+          organization_id: result.data.id,
+          error: String(error),
+        }),
       );
 
       return result;
     },
   };
-}
-
-export function get_organization_with_defaults_use_cases(): OrganizationUseCases {
-  const container = get_repository_container();
-  return create_organization_use_cases_with_default_seeder(
-    container.organization_repository,
-    async (organization_id: string) => {
-      const { seed_default_lookup_entities_for_organization } =
-        await import("../../adapters/initialization/organizationDefaultsSeeder");
-      await seed_default_lookup_entities_for_organization(organization_id);
-    },
-  );
 }
 
 function await_import() {

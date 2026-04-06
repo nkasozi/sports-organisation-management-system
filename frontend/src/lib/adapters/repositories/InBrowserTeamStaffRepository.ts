@@ -124,6 +124,10 @@ export class InBrowserTeamStaffRepository
         this.create_paginated_result(paginated, total_count, options),
       );
     } catch (error) {
+      console.warn("[TeamStaffRepository] Failed to filter team staff", {
+        event: "repository_filter_team_staff_failed",
+        error: String(error),
+      });
       const error_message =
         error instanceof Error ? error.message : "Unknown error occurred";
       return create_failure_result(
@@ -140,10 +144,10 @@ export class InBrowserTeamStaffRepository
         .toArray();
       return create_success_result(staff);
     } catch (error) {
-      console.error(
-        "[InBrowserTeamStaffRepository] find_by_team error:",
-        error,
-      );
+      console.error("[TeamStaffRepository] find_by_team failed", {
+        event: "repository_find_by_team_failed",
+        error: String(error),
+      });
       return create_failure_result(`Failed to find staff by team: ${error}`);
     }
   }
@@ -156,10 +160,10 @@ export class InBrowserTeamStaffRepository
         .toArray();
       return create_success_result(staff);
     } catch (error) {
-      console.error(
-        "[InBrowserTeamStaffRepository] find_by_role error:",
-        error,
-      );
+      console.error("[TeamStaffRepository] find_by_role failed", {
+        event: "repository_find_by_role_failed",
+        error: String(error),
+      });
       return create_failure_result(`Failed to find staff by role: ${error}`);
     }
   }

@@ -21,7 +21,6 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
   import { entityMetadataRegistry } from "../../infrastructure/registry/EntityMetadataRegistry";
   import { fakeDataGenerator } from "../../infrastructure/utils/FakeDataGenerator";
   import { get_use_cases_for_entity_type } from "../../infrastructure/registry/entityUseCasesRegistry";
-  import { get_competition_team_use_cases } from "../../core/usecases/CompetitionTeamUseCases";
   import SearchableSelectField from "./ui/SearchableSelectField.svelte";
   import DynamicEntityList from "./DynamicEntityList.svelte";
   import CompetitionFormatStageTemplateArray from "./competition/CompetitionFormatStageTemplateArray.svelte";
@@ -64,10 +63,6 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
     detect_official_team_conflicts,
     type OfficialWithAssociations,
   } from "../../core/entities/FixtureDetailsSetup";
-  import { get_official_associated_team_use_cases } from "../../core/usecases/OfficialAssociatedTeamUseCases";
-  import { get_fixture_use_cases } from "../../core/usecases/FixtureUseCases";
-  import { get_team_use_cases } from "../../core/usecases/TeamUseCases";
-  import { get_player_team_membership_use_cases } from "../../core/usecases/PlayerTeamMembershipUseCases";
   import {
     apply_player_transfer_membership_change,
     type TransferApprovalDetails,
@@ -104,6 +99,13 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
     fetch_unfiltered_foreign_key_options,
     fetch_filtered_entities_for_field,
   } from "$lib/presentation/logic/dynamicFormDataLoader";
+import {
+  get_competition_team_use_cases,
+  get_fixture_use_cases,
+  get_official_associated_team_use_cases,
+  get_player_team_membership_use_cases,
+  get_team_use_cases,
+} from "$lib/infrastructure/registry/useCaseFactories";
 
   export let entity_type: string;
   export let entity_data: Partial<BaseEntity> | null = null;

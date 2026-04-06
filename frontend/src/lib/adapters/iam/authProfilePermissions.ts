@@ -1,3 +1,4 @@
+import { ENTITY_STATUS } from "../../core/entities/StatusConstants";
 import type {
   AuthenticationPort,
   UserRole,
@@ -30,7 +31,7 @@ export async function get_role_for_email(
 
   const system_user = user_result.data.items[0];
 
-  if (system_user.status === "inactive") {
+  if (system_user.status === ENTITY_STATUS.INACTIVE) {
     console.warn(
       `[LocalAuthorizationAdapter] User account is inactive: ${email}`,
     );

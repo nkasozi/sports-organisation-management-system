@@ -13,7 +13,8 @@ import type {
   AppSettingsPort,
 } from "../core/interfaces/ports";
 import { create_organization_use_cases } from "../core/usecases/OrganizationUseCases";
-import { create_competition_use_cases } from "../core/usecases/CompetitionUseCases";
+import { create_competition_use_cases_with_stage_lifecycle } from "../core/usecases/CompetitionUseCases";
+import { create_competition_stage_lifecycle } from "../core/usecases/CompetitionStageLifecycle";
 import { create_team_use_cases } from "../core/usecases/TeamUseCases";
 import { create_player_use_cases } from "../core/usecases/PlayerUseCases";
 import { create_official_use_cases } from "../core/usecases/OfficialUseCases";
@@ -81,8 +82,13 @@ function create_use_cases_container(
     organization_use_cases: create_organization_use_cases(
       repositories.organization_repository,
     ),
-    competition_use_cases: create_competition_use_cases(
+    competition_use_cases: create_competition_use_cases_with_stage_lifecycle(
       repositories.competition_repository,
+      create_competition_stage_lifecycle(
+        repositories.competition_format_repository,
+        repositories.competition_stage_repository,
+        repositories.fixture_repository,
+      ),
     ),
     team_use_cases: create_team_use_cases(repositories.team_repository),
     player_use_cases: create_player_use_cases(repositories.player_repository),

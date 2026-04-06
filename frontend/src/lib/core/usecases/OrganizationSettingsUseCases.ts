@@ -8,7 +8,6 @@ import type { OrganizationSettingsRepository } from "../interfaces/ports/externa
 import type { OrganizationSettingsUseCasesPort } from "../interfaces/ports/internal/usecases/OrganizationSettingsUseCasesPort";
 import type { AsyncResult } from "../types/Result";
 import { create_success_result, create_failure_result } from "../types/Result";
-import { get_repository_container } from "../../infrastructure/container";
 
 const WRITE_PERMITTED_ROLES = ["super_admin", "org_admin"];
 
@@ -123,11 +122,4 @@ export function create_organization_settings_use_cases(
     update_settings,
     save_or_update,
   };
-}
-
-export function get_organization_settings_use_cases(): OrganizationSettingsUseCasesPort {
-  const container = get_repository_container();
-  return create_organization_settings_use_cases(
-    container.organization_settings_repository,
-  );
 }

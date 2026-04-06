@@ -1,3 +1,4 @@
+import { ENTITY_STATUS } from "../../core/entities/StatusConstants";
 import type { Result } from "$lib/core/types/Result";
 import {
   create_success_result,
@@ -71,7 +72,7 @@ export async function write_convex_user_to_local_dexie(convex_user: {
     first_name: convex_user.first_name ?? "",
     last_name: convex_user.last_name ?? "",
     role: convex_user.role as any,
-    status: (convex_user.status ?? "active") as any,
+    status: (convex_user.status ?? ENTITY_STATUS.ACTIVE) as any,
     organization_id: convex_user.organization_id ?? "",
     team_id: convex_user.team_id,
     player_id: convex_user.player_id,
@@ -128,6 +129,10 @@ export async function pull_user_scoped_record_from_convex(
     );
     return create_success_result(true);
   } catch (error) {
+    console.warn("[SyncUserOps] Failed to pull", {
+      event: "repository_pull_failed",
+      error: String(error),
+    });
     const error_message =
       error instanceof Error ? error.message : String(error);
     return create_failure_result(

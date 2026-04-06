@@ -3,8 +3,7 @@
   import type { OfficialAssignment } from "$lib/core/entities/FixtureDetailsSetup";
   import { create_empty_official_assignment } from "$lib/core/entities/FixtureDetailsSetup";
   import SearchableSelectField from "./ui/SearchableSelectField.svelte";
-  import { get_official_use_cases } from "$lib/core/usecases/OfficialUseCases";
-  import { get_game_official_role_use_cases } from "$lib/core/usecases/GameOfficialRoleUseCases";
+import { get_game_official_role_use_cases, get_official_use_cases } from "$lib/infrastructure/registry/useCaseFactories";
 
   export let assignments: OfficialAssignment[] = [];
   export let disabled: boolean = false;

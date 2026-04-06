@@ -17,15 +17,6 @@
   } from "$lib/core/entities/Fixture";
   import { get_official_full_name } from "$lib/core/entities/Official";
   import { get_team_staff_full_name } from "$lib/core/entities/TeamStaff";
-  import { get_fixture_use_cases } from "$lib/core/usecases/FixtureUseCases";
-  import { get_team_use_cases } from "$lib/core/usecases/TeamUseCases";
-  import { get_fixture_lineup_use_cases } from "$lib/core/usecases/FixtureLineupUseCases";
-  import { get_competition_use_cases } from "$lib/core/usecases/CompetitionUseCases";
-  import { get_organization_use_cases } from "$lib/core/usecases/OrganizationUseCases";
-  import { get_sport_use_cases } from "$lib/core/usecases/SportUseCases";
-  import { get_venue_use_cases } from "$lib/core/usecases/VenueUseCases";
-  import { get_official_use_cases } from "$lib/core/usecases/OfficialUseCases";
-  import { get_team_staff_use_cases } from "$lib/core/usecases/TeamStaffUseCases";
   import type { MatchStaffEntry } from "$lib/core/types/MatchReportTypes";
   import type { CardTypeConfig } from "$lib/core/types/MatchReportTypes";
   import type { Venue } from "$lib/core/entities/Venue";
@@ -42,6 +33,17 @@
   import { fetch_public_data_from_convex } from "$lib/infrastructure/sync/convexPublicDataService";
   import { is_public_viewer } from "$lib/presentation/stores/auth";
   import { get } from "svelte/store";
+import {
+  get_competition_use_cases,
+  get_fixture_lineup_use_cases,
+  get_fixture_use_cases,
+  get_official_use_cases,
+  get_organization_use_cases,
+  get_sport_use_cases,
+  get_team_staff_use_cases,
+  get_team_use_cases,
+  get_venue_use_cases,
+} from "$lib/infrastructure/registry/useCaseFactories";
 
   const LIVE_POLL_INTERVAL_MS = 10000;
 

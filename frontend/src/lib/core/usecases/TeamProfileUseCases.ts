@@ -11,7 +11,6 @@ import type { QueryOptions } from "../interfaces/ports";
 import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
 import { create_failure_result } from "../types/Result";
 import { validate_team_profile_input } from "../entities/TeamProfile";
-import { get_repository_container } from "../../infrastructure/container";
 
 export interface TeamProfileUseCases {
   list(
@@ -111,9 +110,4 @@ export function create_team_profile_use_cases(
       return repository.find_public_profiles(options);
     },
   };
-}
-
-export function get_team_profile_use_cases(): TeamProfileUseCases {
-  const container = get_repository_container();
-  return create_team_profile_use_cases(container.team_profile_repository);
 }

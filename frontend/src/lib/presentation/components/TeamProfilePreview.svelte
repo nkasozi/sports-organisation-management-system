@@ -1,7 +1,7 @@
 <script lang="ts">
   import { browser } from "$app/environment";
   import type { TeamProfile } from "$lib/core/entities/TeamProfile";
-  import { get_team_profile_use_cases } from "$lib/core/usecases/TeamProfileUseCases";
+import { get_team_profile_use_cases } from "$lib/infrastructure/registry/useCaseFactories";
 
   export let team_id: string;
 

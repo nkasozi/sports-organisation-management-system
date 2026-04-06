@@ -8,7 +8,7 @@ import type {
   LiveGameLogUseCasesPort,
 } from "../interfaces/ports";
 import type { AsyncResult } from "../types/Result";
-import { GAME_STATUS } from "../entities/StatusConstants";
+import { GAME_PERIOD, GAME_STATUS } from "../entities/StatusConstants";
 import { create_failure_result } from "../types/Result";
 import { EventBus } from "$lib/infrastructure/events/EventBus";
 
@@ -135,7 +135,7 @@ export function create_live_game_state_management(
         () => ({
           game_status: GAME_STATUS.COMPLETED,
           clock_running: false,
-          current_period: "finished",
+          current_period: GAME_PERIOD.FINISHED,
           ended_by_user_id: user_id,
         }),
         ["game_status", "clock_running", "current_period", "ended_by_user_id"],

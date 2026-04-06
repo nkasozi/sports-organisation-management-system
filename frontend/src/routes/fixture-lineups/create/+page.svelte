@@ -10,15 +10,6 @@
   import type { Competition } from "$lib/core/entities/Competition";
   import type { Sport } from "$lib/core/entities/Sport";
   import type { CompetitionTeam } from "$lib/core/entities/CompetitionTeam";
-  import { get_fixture_lineup_use_cases } from "$lib/core/usecases/FixtureLineupUseCases";
-  import { get_fixture_use_cases } from "$lib/core/usecases/FixtureUseCases";
-  import { get_team_use_cases } from "$lib/core/usecases/TeamUseCases";
-  import { get_player_use_cases } from "$lib/core/usecases/PlayerUseCases";
-  import { get_competition_use_cases } from "$lib/core/usecases/CompetitionUseCases";
-  import { get_competition_team_use_cases } from "$lib/core/usecases/CompetitionTeamUseCases";
-  import { get_player_team_membership_use_cases } from "$lib/core/usecases/PlayerTeamMembershipUseCases";
-  import { get_player_position_use_cases } from "$lib/core/usecases/PlayerPositionUseCases";
-  import { get_organization_use_cases } from "$lib/core/usecases/OrganizationUseCases";
   import { get_sport_by_id } from "$lib/adapters/persistence/sportService";
   import { create_empty_fixture_lineup_input } from "$lib/core/entities/FixtureLineup";
   import UiWizardStepper from "$lib/presentation/components/UiWizardStepper.svelte";
@@ -58,6 +49,17 @@
 
   import type { Organization } from "$lib/core/entities/Organization";
   import { is_field_restricted_by_authorization } from "$lib/core/interfaces/ports";
+import {
+  get_competition_team_use_cases,
+  get_competition_use_cases,
+  get_fixture_lineup_use_cases,
+  get_fixture_use_cases,
+  get_organization_use_cases,
+  get_player_position_use_cases,
+  get_player_team_membership_use_cases,
+  get_player_use_cases,
+  get_team_use_cases,
+} from "$lib/infrastructure/registry/useCaseFactories";
 
   $: current_auth_profile = $auth_store.current_profile;
 

@@ -88,7 +88,12 @@ export async function seed_all_data_if_needed(): Promise<Result<boolean>> {
     user_display_name: `${super_admin.first_name} ${super_admin.last_name}`,
     organization_id: super_admin.organization_id,
   });
-  current_user_store.set_user(super_admin).catch(() => {});
+  current_user_store.set_user(super_admin).catch((error) => {
+    console.warn("[SeedingService] Failed to set user", {
+      event: "seeding_set_user_failed",
+      error: String(error),
+    });
+  });
   EventBus.emit_entity_created(
     "system_user",
     super_admin.id,

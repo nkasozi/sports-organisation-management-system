@@ -18,6 +18,10 @@ export async function verify_sync_auth(
     };
     return { authenticated: result.authenticated, error: null };
   } catch (error) {
+    console.warn("[SyncAuth] Failed to perform operation", {
+      event: "repository_perform_operation_failed",
+      error: String(error),
+    });
     const error_message =
       error instanceof Error ? error.message : String(error);
     return { authenticated: false, error: error_message };

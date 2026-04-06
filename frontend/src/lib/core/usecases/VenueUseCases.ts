@@ -9,7 +9,6 @@ import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
 import type { VenueUseCasesPort } from "../interfaces/ports";
 import { create_success_result, create_failure_result } from "../types/Result";
 import { validate_venue_input } from "../entities/Venue";
-import { get_repository_container } from "../../infrastructure/container";
 
 export type VenueUseCases = VenueUseCasesPort;
 
@@ -60,9 +59,4 @@ export function create_venue_use_cases(
       return repository.delete_by_ids(ids);
     },
   };
-}
-
-export function get_venue_use_cases(): VenueUseCases {
-  const container = get_repository_container();
-  return create_venue_use_cases(container.venue_repository);
 }

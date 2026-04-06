@@ -1,3 +1,4 @@
+import { MEMBERSHIP_STATUS } from "../entities/StatusConstants";
 import type { Player } from "$lib/core/entities/Player";
 import type { PlayerPosition } from "$lib/core/entities/PlayerPosition";
 import type { PlayerTeamMembership } from "$lib/core/entities/PlayerTeamMembership";
@@ -26,7 +27,7 @@ export function pick_best_membership_for_player(
     .sort((a, b) => (a.start_date < b.start_date ? 1 : -1));
 
   const active_membership = candidates.find(
-    (membership) => membership.status === "active",
+    (membership) => membership.status === MEMBERSHIP_STATUS.ACTIVE,
   );
 
   return active_membership || candidates[0] || null;

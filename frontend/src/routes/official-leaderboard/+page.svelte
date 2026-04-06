@@ -8,11 +8,6 @@
         ANY_VALUE,
         type UserScopeProfile,
     } from "$lib/core/interfaces/ports";
-    import { get_organization_use_cases } from "$lib/core/usecases/OrganizationUseCases";
-    import { get_official_use_cases } from "$lib/core/usecases/OfficialUseCases";
-    import { get_official_performance_rating_use_cases } from "$lib/core/usecases/OfficialPerformanceRatingUseCases";
-    import { get_fixture_use_cases } from "$lib/core/usecases/FixtureUseCases";
-    import { get_competition_stage_use_cases } from "$lib/core/usecases/CompetitionStageUseCases";
     import {
         build_leaderboard_entries,
         build_official_name_map,
@@ -30,6 +25,13 @@
     import type { CompetitionStage } from "$lib/core/entities/CompetitionStage";
     import OfficialLeaderboardTable from "$lib/presentation/components/OfficialLeaderboardTable.svelte";
     import OfficialLeaderboardBreakdownPanel from "$lib/presentation/components/OfficialLeaderboardBreakdownPanel.svelte";
+import {
+  get_competition_stage_use_cases,
+  get_fixture_use_cases,
+  get_official_performance_rating_use_cases,
+  get_official_use_cases,
+  get_organization_use_cases,
+} from "$lib/infrastructure/registry/useCaseFactories";
 
     let is_loading = true;
     let error_message = "";

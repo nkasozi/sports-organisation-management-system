@@ -140,7 +140,11 @@
         copy_success_token = null;
       }, 2000);
       return true;
-    } catch {
+    } catch (error) {
+      console.warn("[CalendarSubscription] Token validation failed", {
+        event: "calendar_token_validation_failed",
+        error: String(error),
+      });
       return false;
     }
   }

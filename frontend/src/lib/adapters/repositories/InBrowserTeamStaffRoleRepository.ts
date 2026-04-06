@@ -95,6 +95,13 @@ export class InBrowserTeamStaffRoleRepository
         this.create_paginated_result(paginated, total_count, options),
       );
     } catch (error) {
+      console.warn(
+        "[TeamStaffRoleRepository] Failed to filter team staff roles",
+        {
+          event: "repository_filter_team_staff_roles_failed",
+          error: String(error),
+        },
+      );
       const error_message =
         error instanceof Error ? error.message : "Unknown error occurred";
       return create_failure_result(
@@ -115,9 +122,10 @@ export class InBrowserTeamStaffRoleRepository
         roles.sort((a, b) => a.display_order - b.display_order),
       );
     } catch (error) {
-      console.error(
-        `[InBrowserTeamStaffRoleRepository] Failed to find by category: ${error}`,
-      );
+      console.error("[TeamStaffRoleRepository] find_by_category failed", {
+        event: "repository_find_by_category_failed",
+        error: String(error),
+      });
       return create_failure_result(
         `Failed to find roles by category: ${error}`,
       );

@@ -138,6 +138,13 @@ class InBrowserOfficialPerformanceRatingRepository
           : null;
       return create_success_result(match);
     } catch (error) {
+      console.warn(
+        "[OfficialPerformanceRatingRepository] Failed to perform operation",
+        {
+          event: "repository_perform_operation_failed",
+          error: String(error),
+        },
+      );
       return create_failure_result(
         error instanceof Error ? error.message : "Lookup failed",
       );

@@ -45,7 +45,12 @@ export async function delete_record_in_convex(
     }
     return result.success;
   } catch (error) {
-    console.warn(`[Sync:Delete] ${table_name}/${local_id} — error: ${error}`);
+    console.warn("[Sync:Delete] Delete record error", {
+      event: "sync_delete_record_error",
+      table_name,
+      local_id,
+      error: String(error),
+    });
     return false;
   }
 }
@@ -87,7 +92,11 @@ export async function clear_all_synced_tables_in_convex(
         console.warn(`[Sync:Reset] ${table_name}: ${result.error}`);
       }
     } catch (error) {
-      console.warn(`[Sync:Reset] ${table_name}: failed — ${error}`);
+      console.warn("[Sync:Reset] Clear table failed", {
+        event: "sync_clear_table_failed",
+        table_name,
+        error: String(error),
+      });
     }
   }
 

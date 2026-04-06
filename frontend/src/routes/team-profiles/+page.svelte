@@ -6,8 +6,6 @@
   import { ensure_auth_profile } from "$lib/presentation/logic/authGuard";
   import type { BaseEntity } from "$lib/core/entities/BaseEntity";
   import type { TeamProfile } from "$lib/core/entities/TeamProfile";
-  import { get_team_profile_use_cases } from "$lib/core/usecases/TeamProfileUseCases";
-  import { get_team_use_cases } from "$lib/core/usecases/TeamUseCases";
   import DynamicEntityForm from "$lib/presentation/components/DynamicEntityForm.svelte";
   import { auth_store } from "$lib/presentation/stores/auth";
   import { access_denial_store } from "$lib/presentation/stores/accessDenial";
@@ -17,6 +15,7 @@
     type UserScopeProfile,
   } from "$lib/core/interfaces/ports";
   import { get_authorization_adapter } from "$lib/infrastructure/AuthorizationProvider";
+import { get_team_profile_use_cases, get_team_use_cases } from "$lib/infrastructure/registry/useCaseFactories";
 
   type ViewMode = "list" | "create" | "edit";
 
