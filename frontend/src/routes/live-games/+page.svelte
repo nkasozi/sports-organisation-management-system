@@ -9,6 +9,8 @@
   import { get_authorization_adapter } from "$lib/infrastructure/AuthorizationProvider";
   import type { Fixture } from "$lib/core/entities/Fixture";
   import type { Organization } from "$lib/core/entities/Organization";
+  import type { Team } from "$lib/core/entities/Team";
+  import { get_team_logo } from "$lib/core/entities/Team";
   import {
     check_fixture_can_start,
     auto_generate_lineups_if_possible,
@@ -23,21 +25,22 @@
     ANY_VALUE,
     type UserScopeProfile,
   } from "$lib/core/interfaces/ports";
-import {
-  get_competition_use_cases,
-  get_fixture_details_setup_use_cases,
-  get_fixture_lineup_use_cases,
-  get_fixture_use_cases,
-  get_game_official_role_use_cases,
-  get_jersey_color_use_cases,
-  get_official_use_cases,
-  get_organization_use_cases,
-  get_player_position_use_cases,
-  get_player_team_membership_use_cases,
-  get_player_use_cases,
-  get_sport_use_cases,
-  get_team_use_cases,
-} from "$lib/infrastructure/registry/useCaseFactories";
+  import {
+    get_competition_use_cases,
+    get_fixture_details_setup_use_cases,
+    get_fixture_lineup_use_cases,
+    get_fixture_use_cases,
+    get_game_official_role_use_cases,
+    get_jersey_color_use_cases,
+    get_official_use_cases,
+    get_organization_use_cases,
+    get_player_position_use_cases,
+    get_player_team_membership_use_cases,
+    get_player_use_cases,
+    get_sport_use_cases,
+    get_team_use_cases,
+  } from "$lib/infrastructure/registry/useCaseFactories";
+  import TeamLogoThumbnail from "$lib/presentation/components/ui/TeamLogoThumbnail.svelte";
 
   const fixture_use_cases = get_fixture_use_cases();
   const fixture_details_setup_use_cases = get_fixture_details_setup_use_cases();
@@ -62,6 +65,7 @@ import {
   let current_checks: Record<string, PreFlightCheck[]> = {};
   let is_starting: Record<string, boolean> = {};
   let team_names: Record<string, string> = {};
+  let team_logo_urls: Record<string, string> = {};
   let competition_names: Record<string, string> = {};
   let sport_names: Record<string, string> = {};
   let can_start_games = false;
@@ -103,6 +107,7 @@ import {
     error_message = "";
     incomplete_fixtures = [];
     team_names = {};
+    team_logo_urls = {};
     competition_names = {};
     sport_names = {};
     current_checks = {};
@@ -181,6 +186,7 @@ import {
     fixtures: Fixture[],
   ): Promise<Record<string, string>> {
     const names_record: Record<string, string> = {};
+    const logos_record: Record<string, string> = {};
     const team_ids_to_fetch = new Set<string>();
 
     for (const fixture of fixtures) {
@@ -192,11 +198,14 @@ import {
       const team_result = await team_use_cases.get_by_id(team_id);
       if (team_result.success && team_result.data) {
         names_record[team_id] = team_result.data.name;
+        logos_record[team_id] = get_team_logo(team_result.data);
       } else {
         names_record[team_id] = "Unknown Team";
+        logos_record[team_id] = "";
       }
     }
 
+    team_logo_urls = logos_record;
     return names_record;
   }
 
@@ -739,7 +748,7 @@ import {
 <div class="container mx-auto px-3 sm:px-4 py-4 sm:py-8 max-w-5xl">
   <div class="mb-6 sm:mb-8">
     <div
-      class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-1 sm:mb-2"
+      class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-1 sm:mb-2 pb-4 border-b border-accent-200 dark:border-accent-700"
     >
       <div>
         <h1
@@ -911,70 +920,40 @@ import {
           <div class="p-4 sm:p-5">
             <div class="flex flex-col gap-4">
               <div
-                class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3"
+                class="pb-4 border-b border-accent-200 dark:border-accent-700"
               >
-                <div class="flex-1 min-w-0">
-                  <div class="flex flex-wrap items-center gap-2">
-                    <h3
-                      class="text-base sm:text-lg font-semibold text-accent-900 dark:text-white"
-                    >
-                      {get_team_name(fixture.home_team_id)}
-                      <span
-                        class="text-accent-400 dark:text-accent-500 font-normal mx-1"
-                        >vs</span
-                      >
-                      {get_team_name(fixture.away_team_id)}
-                    </h3>
-                    <span class={get_status_badge_class(fixture.status)}>
-                      {fixture.status.replace("_", " ")}
-                    </span>
-                  </div>
-                </div>
-
-                {#if can_start_games}
-                  <button
-                    type="button"
-                    on:click={() => handle_start_click(fixture)}
-                    disabled={is_starting[fixture.id || ""]}
-                    class="hidden sm:inline-flex flex-shrink-0 items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:bg-accent-400 dark:disabled:bg-accent-600 disabled:cursor-not-allowed transition-colors text-sm font-medium"
+                <div class="flex items-center gap-1.5">
+                  <span
+                    class="text-base sm:text-lg font-semibold text-accent-900 dark:text-white line-clamp-1"
                   >
-                    {#if is_starting[fixture.id || ""]}
-                      <svg
-                        class="h-5 w-5 animate-spin"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                      >
-                        <circle
-                          class="opacity-25"
-                          cx="12"
-                          cy="12"
-                          r="10"
-                          stroke="currentColor"
-                          stroke-width="4"
-                        ></circle>
-                        <path
-                          class="opacity-75"
-                          fill="currentColor"
-                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                        ></path>
-                      </svg>
-                      Starting...
-                    {:else}
-                      <svg
-                        class="h-5 w-5"
-                        fill="currentColor"
-                        viewBox="0 0 20 20"
-                      >
-                        <path
-                          fill-rule="evenodd"
-                          d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"
-                          clip-rule="evenodd"
-                        />
-                      </svg>
-                      Start Game
-                    {/if}
-                  </button>
-                {/if}
+                    {get_team_name(fixture.home_team_id)}
+                  </span>
+                  <TeamLogoThumbnail
+                    logo_url={team_logo_urls[fixture.home_team_id] ?? ""}
+                    team_name={get_team_name(fixture.home_team_id)}
+                    size="sm"
+                  />
+                  <span
+                    class="text-accent-400 dark:text-accent-500 font-normal text-base sm:text-lg mx-1"
+                    >vs</span
+                  >
+                  <TeamLogoThumbnail
+                    logo_url={team_logo_urls[fixture.away_team_id] ?? ""}
+                    team_name={get_team_name(fixture.away_team_id)}
+                    size="sm"
+                  />
+                  <span
+                    class="text-base sm:text-lg font-semibold text-accent-900 dark:text-white line-clamp-1"
+                  >
+                    {get_team_name(fixture.away_team_id)}
+                  </span>
+                </div>
+              </div>
+
+              <div class="mb-2">
+                <span class={get_status_badge_class(fixture.status)}>
+                  {fixture.status.replace("_", " ")}
+                </span>
               </div>
 
               <div
@@ -1072,12 +1051,14 @@ import {
               </div>
 
               {#if can_start_games}
-                <div class="pt-2 sm:hidden">
+                <div
+                  class="pt-4 border-t border-accent-200 dark:border-accent-700"
+                >
                   <button
                     type="button"
                     on:click={() => handle_start_click(fixture)}
                     disabled={is_starting[fixture.id || ""]}
-                    class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:bg-accent-400 dark:disabled:bg-accent-600 disabled:cursor-not-allowed transition-colors text-sm font-medium"
+                    class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 disabled:bg-accent-400 dark:disabled:bg-accent-600 disabled:cursor-not-allowed transition-colors text-sm font-medium"
                   >
                     {#if is_starting[fixture.id || ""]}
                       <svg

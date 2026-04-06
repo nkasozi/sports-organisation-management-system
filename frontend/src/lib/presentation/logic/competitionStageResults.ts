@@ -18,6 +18,7 @@ export const FORM_LAST_N_GAMES = 5;
 export interface TeamStanding {
   team_id: string;
   team_name: string;
+  team_logo_url: string;
   played: number;
   won: number;
   drawn: number;
@@ -55,6 +56,7 @@ export function calculate_team_standings(
     standings_map.set(team.id, {
       team_id: team.id,
       team_name: team.name,
+      team_logo_url: team.logo_url ?? "",
       played: 0,
       won: 0,
       drawn: 0,

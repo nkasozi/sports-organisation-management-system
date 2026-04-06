@@ -6,6 +6,7 @@
   import { ensure_auth_profile } from "$lib/presentation/logic/authGuard";
   import type { Fixture, GameEvent } from "$lib/core/entities/Fixture";
   import type { Team } from "$lib/core/entities/Team";
+  import { get_team_logo } from "$lib/core/entities/Team";
   import type { Competition } from "$lib/core/entities/Competition";
   import type { Sport } from "$lib/core/entities/Sport";
   import type { LineupPlayer } from "$lib/core/entities/FixtureLineup";
@@ -22,6 +23,7 @@
   import type { Venue } from "$lib/core/entities/Venue";
   import type { Official } from "$lib/core/entities/Official";
   import Toast from "$lib/presentation/components/ui/Toast.svelte";
+  import TeamLogoThumbnail from "$lib/presentation/components/ui/TeamLogoThumbnail.svelte";
   import { ErrorDisplay } from "$lib/presentation/components/ui";
   import {
     build_match_report_data,
@@ -33,17 +35,17 @@
   import { fetch_public_data_from_convex } from "$lib/infrastructure/sync/convexPublicDataService";
   import { is_public_viewer } from "$lib/presentation/stores/auth";
   import { get } from "svelte/store";
-import {
-  get_competition_use_cases,
-  get_fixture_lineup_use_cases,
-  get_fixture_use_cases,
-  get_official_use_cases,
-  get_organization_use_cases,
-  get_sport_use_cases,
-  get_team_staff_use_cases,
-  get_team_use_cases,
-  get_venue_use_cases,
-} from "$lib/infrastructure/registry/useCaseFactories";
+  import {
+    get_competition_use_cases,
+    get_fixture_lineup_use_cases,
+    get_fixture_use_cases,
+    get_official_use_cases,
+    get_organization_use_cases,
+    get_sport_use_cases,
+    get_team_staff_use_cases,
+    get_team_use_cases,
+    get_venue_use_cases,
+  } from "$lib/infrastructure/registry/useCaseFactories";
 
   const LIVE_POLL_INTERVAL_MS = 10000;
 
@@ -588,18 +590,18 @@ import {
 
           <div class="flex items-center gap-4 sm:gap-8 justify-center">
             <div class="text-center flex-1">
+              <div class="flex justify-center mb-2">
+                <TeamLogoThumbnail
+                  logo_url={home_team ? get_team_logo(home_team) : ""}
+                  team_name={home_team?.name ?? "HOME"}
+                  size="lg"
+                />
+              </div>
               <div
                 class="text-sm sm:text-base font-medium text-gray-300 mb-2 truncate"
               >
                 {home_team?.name ?? "HOME"}
               </div>
-              {#if fixture?.home_team_jersey?.main_color}
-                <div
-                  class="w-8 h-8 rounded-full border-2 border-gray-600 mx-auto mb-2"
-                  style="background-color: {fixture.home_team_jersey
-                    .main_color}"
-                ></div>
-              {/if}
               <div class="text-4xl sm:text-5xl font-bold tabular-nums">
                 {#if is_game_scheduled}
                   <span class="text-gray-500 text-3xl">-</span>
@@ -619,18 +621,18 @@ import {
             </div>
 
             <div class="text-center flex-1">
+              <div class="flex justify-center mb-2">
+                <TeamLogoThumbnail
+                  logo_url={away_team ? get_team_logo(away_team) : ""}
+                  team_name={away_team?.name ?? "AWAY"}
+                  size="lg"
+                />
+              </div>
               <div
                 class="text-sm sm:text-base font-medium text-gray-300 mb-2 truncate"
               >
                 {away_team?.name ?? "AWAY"}
               </div>
-              {#if fixture?.away_team_jersey?.main_color}
-                <div
-                  class="w-8 h-8 rounded-full border-2 border-gray-600 mx-auto mb-2"
-                  style="background-color: {fixture.away_team_jersey
-                    .main_color}"
-                ></div>
-              {/if}
               <div class="text-4xl sm:text-5xl font-bold tabular-nums">
                 {#if is_game_scheduled}
                   <span class="text-gray-500 text-3xl">-</span>

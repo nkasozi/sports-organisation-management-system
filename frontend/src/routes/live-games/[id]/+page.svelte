@@ -15,6 +15,7 @@
     QuickEventButton,
   } from "$lib/core/entities/Fixture";
   import type { Team } from "$lib/core/entities/Team";
+  import { get_team_logo } from "$lib/core/entities/Team";
   import type { Competition } from "$lib/core/entities/Competition";
   import type { Sport, SportGamePeriod } from "$lib/core/entities/Sport";
   import type {
@@ -44,6 +45,7 @@
   import type { Official } from "$lib/core/entities/Official";
   import { get_official_full_name } from "$lib/core/entities/Official";
   import Toast from "$lib/presentation/components/ui/Toast.svelte";
+  import TeamLogoThumbnail from "$lib/presentation/components/ui/TeamLogoThumbnail.svelte";
   import ConfirmationModal from "$lib/presentation/components/ui/ConfirmationModal.svelte";
   import SearchableSelectField from "$lib/presentation/components/ui/SearchableSelectField.svelte";
   import {
@@ -1394,6 +1396,13 @@
           <div class="flex flex-col items-center flex-1">
             <div class="flex items-center gap-4 sm:gap-6 justify-center">
               <div class="text-center">
+                <div class="flex justify-center mb-1">
+                  <TeamLogoThumbnail
+                    logo_url={home_team ? get_team_logo(home_team) : ""}
+                    team_name={home_team?.name ?? "HOME"}
+                    size="md"
+                  />
+                </div>
                 <div
                   class="text-xs text-gray-400 mb-1 truncate max-w-20 sm:max-w-none"
                 >
@@ -1431,6 +1440,13 @@
               </div>
 
               <div class="text-center">
+                <div class="flex justify-center mb-1">
+                  <TeamLogoThumbnail
+                    logo_url={away_team ? get_team_logo(away_team) : ""}
+                    team_name={away_team?.name ?? "AWAY"}
+                    size="md"
+                  />
+                </div>
                 <div
                   class="text-xs text-gray-400 mb-1 truncate max-w-20 sm:max-w-none"
                 >
