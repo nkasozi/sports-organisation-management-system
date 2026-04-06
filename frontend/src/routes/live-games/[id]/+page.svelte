@@ -53,18 +53,18 @@
   } from "$lib/infrastructure/utils/MatchReportBuilder";
   import { download_match_report } from "$lib/infrastructure/utils/MatchReportPdfGenerator";
   import { branding_store } from "$lib/presentation/stores/branding";
-import {
-  get_competition_use_cases,
-  get_fixture_lineup_use_cases,
-  get_fixture_use_cases,
-  get_official_use_cases,
-  get_organization_use_cases,
-  get_player_team_membership_use_cases,
-  get_sport_use_cases,
-  get_team_staff_use_cases,
-  get_team_use_cases,
-  get_venue_use_cases,
-} from "$lib/infrastructure/registry/useCaseFactories";
+  import {
+    get_competition_use_cases,
+    get_fixture_lineup_use_cases,
+    get_fixture_use_cases,
+    get_official_use_cases,
+    get_organization_use_cases,
+    get_player_team_membership_use_cases,
+    get_sport_use_cases,
+    get_team_staff_use_cases,
+    get_team_use_cases,
+    get_venue_use_cases,
+  } from "$lib/infrastructure/registry/useCaseFactories";
 
   const fixture_use_cases = get_fixture_use_cases();
   const team_use_cases = get_team_use_cases();
