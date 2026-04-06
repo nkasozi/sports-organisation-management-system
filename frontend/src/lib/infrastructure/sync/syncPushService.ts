@@ -16,15 +16,10 @@ export async function push_table_to_convex(
   const remote_cutoff = remote_latest_modified_at || EPOCH_TIMESTAMP;
   const server_is_empty = !remote_latest_modified_at;
 
-  if (server_is_empty) {
-    console.log(
-      `[Sync:Push] ${table_name} — server is EMPTY, pushing all ${all_records.length} local records`,
-    );
-  } else {
-    console.log(
-      `[Sync:Push] ${table_name} — ${all_records.length} local records, server latest_modified_at: ${remote_cutoff}`,
-    );
-  }
+  const push_log_context = server_is_empty
+    ? `server is EMPTY, pushing all ${all_records.length} local records`
+    : `${all_records.length} local records, server latest_modified_at: ${remote_cutoff}`;
+  console.log(`[Sync:Push] ${table_name} — ${push_log_context}`);
 
   const records_to_push = server_is_empty
     ? all_records

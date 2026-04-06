@@ -1,6 +1,3 @@
-// Base entity class that all entities inherit from
-// Follows the coding rule: well-named variables and methods over short names
-
 export interface BaseEntity {
   id: string;
   created_at: string;
@@ -106,7 +103,7 @@ export interface ValidationRule {
     | "max_value"
     | "pattern"
     | "custom";
-  rule_value: any;
+  rule_value: number | string;
   error_message: string;
 }
 

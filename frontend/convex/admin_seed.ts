@@ -3,6 +3,14 @@ import { mutation } from "./_generated/server";
 
 const PLATFORM_WIDE_SCOPE = "*";
 
+function mask_email_for_logging(email: string): string {
+  const at_index = email.indexOf("@");
+  if (at_index <= 0) return "***";
+  const first_char = email[0];
+  const domain = email.substring(at_index);
+  return `${first_char}***${domain}`;
+}
+
 function check_caller_platform_access(
   organization_id: string | undefined,
 ): boolean {
@@ -33,6 +41,13 @@ export const seed_admin_user = mutation({
     const all_users = await ctx.db.query("system_users").collect();
     const is_bootstrap_mode = all_users.length === 0;
 
+    if (is_bootstrap_mode) {
+      console.log("[admin_seed] Bootstrap mode activated", {
+        event: "bootstrap_seed_initiated",
+        masked_email: mask_email_for_logging(identity.email),
+      });
+    }
+
     if (!is_bootstrap_mode) {
       const caller_email = identity.email.toLowerCase();
       const caller = all_users.find((u: any) => u.email === caller_email);
@@ -41,18 +56,13 @@ export const seed_admin_user = mutation({
       if (!has_platform_access) {
         console.log("[admin_seed] Non-bootstrap seed rejected", {
           event: "seed_access_denied",
-          caller_email: caller_email,
+          masked_caller_email: mask_email_for_logging(caller_email),
         });
         return {
           success: false,
           error: "Only super admins can seed admin users",
         };
       }
-    } else {
-      console.log("[admin_seed] Bootstrap mode activated", {
-        event: "bootstrap_seed_initiated",
-        identity_email: identity.email,
-      });
     }
 
     const existing_user = await ctx.db

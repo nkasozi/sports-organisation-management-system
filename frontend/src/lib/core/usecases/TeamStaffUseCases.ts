@@ -14,16 +14,20 @@ import type {
 import { create_failure_result, create_success_result } from "../types/Result";
 import { validate_team_staff_input } from "../entities/TeamStaff";
 import { get_repository_container } from "../../infrastructure/container";
-import type { TeamStaffUseCasesPort } from "../interfaces/ports";
+import type {
+  TeamStaffUseCasesPort,
+  TeamStaffRepository,
+  TeamStaffRoleRepository,
+} from "../interfaces/ports";
 
 export type TeamStaffUseCases = TeamStaffUseCasesPort;
 
 export function create_team_staff_use_cases(
-  repository: any,
-  roles_repository: any,
+  repository: TeamStaffRepository,
+  roles_repository: TeamStaffRoleRepository,
 ): TeamStaffUseCases {
-  const staff_repository = repository as any;
-  const role_repository = roles_repository as any;
+  const staff_repository = repository;
+  const role_repository = roles_repository;
 
   return {
     async list(

@@ -300,37 +300,27 @@ describe("load_dashboard_data", () => {
   it("returns empty data when use cases fail", async () => {
     const dependencies = create_mock_dependencies({
       organization_use_cases: {
-        list: vi
-          .fn()
-          .mockResolvedValue({ success: false, error: "db error" }),
+        list: vi.fn().mockResolvedValue({ success: false, error: "db error" }),
         get_by_id: vi.fn().mockResolvedValue({
           success: false,
           error: "not found",
         }),
       },
       competition_use_cases: {
-        list: vi
-          .fn()
-          .mockResolvedValue({ success: false, error: "db error" }),
+        list: vi.fn().mockResolvedValue({ success: false, error: "db error" }),
         get_by_id: vi.fn().mockResolvedValue({
           success: false,
           error: "not found",
         }),
       },
       team_use_cases: {
-        list: vi
-          .fn()
-          .mockResolvedValue({ success: false, error: "db error" }),
+        list: vi.fn().mockResolvedValue({ success: false, error: "db error" }),
       },
       player_use_cases: {
-        list: vi
-          .fn()
-          .mockResolvedValue({ success: false, error: "db error" }),
+        list: vi.fn().mockResolvedValue({ success: false, error: "db error" }),
       },
       fixture_use_cases: {
-        list: vi
-          .fn()
-          .mockResolvedValue({ success: false, error: "db error" }),
+        list: vi.fn().mockResolvedValue({ success: false, error: "db error" }),
       },
     });
     const filters = create_default_filters();

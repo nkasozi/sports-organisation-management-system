@@ -40,19 +40,26 @@ async function get_system_user_from_context(ctx: {
   db: any;
   auth: any;
 }): Promise<ConvexResult<SystemUser>> {
+  const request_id = `auth_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
   const identity = await ctx.auth.getUserIdentity();
-  if (!identity) return { success: false, error: "Not authenticated" };
+  if (!identity) {
+    console.warn("[authorization] Auth context missing identity", {
+      event: "auth_identity_missing",
+      request_id,
+    });
+    return { success: false, error: AUTH_DENIED_MESSAGE };
+  }
 
   const email = identity.email;
   if (!email) {
     console.error("[authorization] JWT missing email claim", {
       event: "jwt_missing_email",
+      request_id,
       identity_subject: identity.subject,
     });
     return {
       success: false,
-      error:
-        "No email in authentication token — check Clerk JWT template configuration",
+      error: AUTH_DENIED_MESSAGE,
     };
   }
 
@@ -61,10 +68,22 @@ async function get_system_user_from_context(ctx: {
     .withIndex("by_email", (q: any) => q.eq("email", email.toLowerCase()))
     .first();
 
-  if (!system_user)
-    return { success: false, error: "User not found in system" };
-  if (system_user.status === "inactive")
-    return { success: false, error: "User account is deactivated" };
+  if (!system_user) {
+    console.warn("[authorization] System user not found", {
+      event: "auth_user_not_found",
+      request_id,
+      masked_email: mask_email_for_logging(email),
+    });
+    return { success: false, error: AUTH_DENIED_MESSAGE };
+  }
+  if (system_user.status === "inactive") {
+    console.warn("[authorization] Inactive user access attempt", {
+      event: "auth_user_inactive",
+      request_id,
+      masked_email: mask_email_for_logging(email),
+    });
+    return { success: false, error: AUTH_DENIED_MESSAGE };
+  }
 
   return {
     success: true,
@@ -130,6 +149,8 @@ function get_actions_from_permissions(
 
 const ACCESS_DENIED_MESSAGE =
   "Access denied. Please contact your organization administrator.";
+
+const AUTH_DENIED_MESSAGE = "Access denied";
 
 function mask_email_for_logging(email: string): string {
   const at_index = email.indexOf("@");
@@ -389,7 +410,7 @@ export const update_user_role = mutation({
         "update",
       )
     ) {
-      return { success: false, error: "Unauthorized to update user roles" };
+      return { success: false, error: ACCESS_DENIED_MESSAGE };
     }
 
     const role_assignment_check = can_caller_assign_role(
@@ -408,7 +429,7 @@ export const update_user_role = mutation({
       .first();
 
     if (!target_user) {
-      return { success: false, error: "User not found" };
+      return { success: false, error: ACCESS_DENIED_MESSAGE };
     }
 
     await ctx.db.patch(target_user._id, {
@@ -454,7 +475,7 @@ export const can_access_route = query({
     if (!is_allowed) {
       return {
         success: false,
-        error: `Access denied to route: ${args.route}`,
+        error: ACCESS_DENIED_MESSAGE,
       };
     }
 

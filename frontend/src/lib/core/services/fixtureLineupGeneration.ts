@@ -6,6 +6,7 @@ import type { PlayerUseCases } from "../usecases/PlayerUseCases";
 import type { PlayerPositionUseCases } from "../usecases/PlayerPositionUseCases";
 import type { CompetitionUseCases } from "../usecases/CompetitionUseCases";
 import type { OrganizationUseCases } from "../usecases/OrganizationUseCases";
+import { MEMBERSHIP_STATUS } from "../entities/StatusConstants";
 import type { SportUseCases } from "../usecases/SportUseCases";
 import type { CreateFixtureLineupInput } from "../entities/FixtureLineup";
 import type { Player } from "../entities/Player";
@@ -156,11 +157,11 @@ async function generate_first_available_lineup(
 ): Promise<LineupGenerationResult> {
   const memberships_result = await membership_use_cases.list({
     team_id,
-    status: "active",
+    status: MEMBERSHIP_STATUS.ACTIVE,
   });
   const active_memberships = (
     memberships_result.success ? memberships_result.data.items : []
-  ).filter((m: PlayerTeamMembership) => m.status === "active");
+  ).filter((m: PlayerTeamMembership) => m.status === MEMBERSHIP_STATUS.ACTIVE);
 
   if (active_memberships.length < min_players) {
     return {

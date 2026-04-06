@@ -79,35 +79,44 @@ function validate_live_game_log_input(
     errors.fixture_id = "Fixture is required";
   }
 
-  if ("game_status" in input && input.game_status) {
-    const valid_statuses: LiveGameStatus[] = [
-      "pre_game",
-      "in_progress",
-      "paused",
-      "completed",
-      "abandoned",
-    ];
-    if (!valid_statuses.includes(input.game_status)) {
-      errors.game_status = "Invalid game status";
-    }
+  if (
+    "game_status" in input &&
+    input.game_status &&
+    !(
+      [
+        "pre_game",
+        "in_progress",
+        "paused",
+        "completed",
+        "abandoned",
+      ] as LiveGameStatus[]
+    ).includes(input.game_status)
+  ) {
+    errors.game_status = "Invalid game status";
   }
 
-  if ("home_team_score" in input && input.home_team_score !== undefined) {
-    if (input.home_team_score < 0) {
-      errors.home_team_score = "Home team score cannot be negative";
-    }
+  if (
+    "home_team_score" in input &&
+    input.home_team_score !== undefined &&
+    input.home_team_score < 0
+  ) {
+    errors.home_team_score = "Home team score cannot be negative";
   }
 
-  if ("away_team_score" in input && input.away_team_score !== undefined) {
-    if (input.away_team_score < 0) {
-      errors.away_team_score = "Away team score cannot be negative";
-    }
+  if (
+    "away_team_score" in input &&
+    input.away_team_score !== undefined &&
+    input.away_team_score < 0
+  ) {
+    errors.away_team_score = "Away team score cannot be negative";
   }
 
-  if ("current_minute" in input && input.current_minute !== undefined) {
-    if (input.current_minute < 0) {
-      errors.current_minute = "Current minute cannot be negative";
-    }
+  if (
+    "current_minute" in input &&
+    input.current_minute !== undefined &&
+    input.current_minute < 0
+  ) {
+    errors.current_minute = "Current minute cannot be negative";
   }
 
   return {

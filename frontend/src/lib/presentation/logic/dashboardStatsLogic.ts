@@ -1,5 +1,6 @@
 import type { FixtureStatus } from "$lib/core/entities/Fixture";
 import { ANY_VALUE } from "$lib/core/interfaces/ports";
+import { FIXTURE_STATUS } from "$lib/core/entities/StatusConstants";
 
 export interface DashboardFilters {
   organization_filter: { organization_id: string } | undefined;
@@ -17,14 +18,14 @@ export function build_dashboard_filters(
   if (has_unrestricted_org_scope) {
     return {
       organization_filter: undefined,
-      fixture_filter: { status: "scheduled" },
+      fixture_filter: { status: FIXTURE_STATUS.SCHEDULED },
       organization_count_override: null,
     };
   }
 
   return {
     organization_filter: { organization_id },
-    fixture_filter: { status: "scheduled", organization_id },
+    fixture_filter: { status: FIXTURE_STATUS.SCHEDULED, organization_id },
     organization_count_override: 1,
   };
 }

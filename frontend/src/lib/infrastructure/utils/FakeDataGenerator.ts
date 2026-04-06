@@ -30,10 +30,6 @@ class FakeDataGeneratorService {
       ...config,
     };
 
-    // Note: Locale setting in newer faker versions is handled differently
-    // For now we'll use the default English locale
-
-    // Set seed for reproducible fake data if provided
     if (this.config.seed) {
       faker.seed(this.config.seed);
     }
@@ -55,7 +51,6 @@ class FakeDataGeneratorService {
       const generated_data: Record<string, any> = {};
 
       for (const field of fields) {
-        // Skip read-only fields like timestamps and IDs
         if (
           field.is_read_only ||
           field.field_name === "id" ||

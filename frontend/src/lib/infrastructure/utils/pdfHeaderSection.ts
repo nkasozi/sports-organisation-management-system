@@ -124,7 +124,14 @@ function draw_header_with_logo(
     doc.text(title_line_2, MARGIN_LEFT + logo_size + 5, y + 7);
     doc.text(title_line_3, MARGIN_LEFT + logo_size + 5, y + 12);
     return y + 18;
-  } catch {
+  } catch (error) {
+    console.warn(
+      "[PDF] Failed to draw header with logo, using text-only header",
+      {
+        event: "pdf_logo_draw_failed",
+        error: String(error),
+      },
+    );
     return draw_header_without_logo(
       doc,
       title_line_1,

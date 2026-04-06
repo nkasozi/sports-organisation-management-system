@@ -24,16 +24,20 @@ function compute_raw_importance_weight(
 ): number {
   if (stage_type === "one_off_stage") return 3.0;
 
-  if (stage_type === "knockout_stage") {
-    if (is_final_round(match_day, total_match_days)) return 3.0;
-    return 2.5;
-  }
+  if (
+    stage_type === "knockout_stage" &&
+    is_final_round(match_day, total_match_days)
+  )
+    return 3.0;
+  if (stage_type === "knockout_stage") return 2.5;
 
-  if (stage_type === "group_stage" || stage_type === "league_stage") {
-    if (is_final_round(match_day, total_match_days)) return 3.0;
-    if (is_late_season(match_day, total_match_days)) return 2.0;
-    return 1.5;
-  }
+  const is_group_or_league =
+    stage_type === "group_stage" || stage_type === "league_stage";
+  if (is_group_or_league && is_final_round(match_day, total_match_days))
+    return 3.0;
+  if (is_group_or_league && is_late_season(match_day, total_match_days))
+    return 2.0;
+  if (is_group_or_league) return 1.5;
 
   return 1.0;
 }

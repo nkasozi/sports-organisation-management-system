@@ -6,6 +6,7 @@ import {
   type TieBreaker,
   DEFAULT_POINTS_CONFIG,
 } from "$lib/core/entities/CompetitionFormat";
+import { FIXTURE_STATUS, STAGE_TYPE } from "$lib/core/entities/StatusConstants";
 import { sort_standings_by_tiebreakers } from "./competitionStandingsTiebreakers";
 import { build_team_form_map } from "./competitionStandingsForm";
 import { infer_group_stage_team_groups } from "./groupStageInference";
@@ -67,7 +68,7 @@ export function calculate_team_standings(
   }
 
   const completed_fixtures = fixtures.filter(
-    (fixture) => fixture.status === "completed",
+    (fixture) => fixture.status === FIXTURE_STATUS.COMPLETED,
   );
 
   for (const fixture of completed_fixtures) {
@@ -145,7 +146,7 @@ export function build_competition_stage_results_sections(
       (fixture) => fixture.stage_id === stage.id,
     );
 
-    if (stage.stage_type === "group_stage") {
+    if (stage.stage_type === STAGE_TYPE.GROUP_STAGE) {
       const inferred_groups = infer_group_stage_team_groups(stage_fixtures).map(
         (team_ids, index) => {
           const group_team_set = new Set(team_ids);
@@ -182,7 +183,8 @@ export function build_competition_stage_results_sections(
     }
 
     const can_show_stage_standings =
-      stage.stage_type === "league_stage" || stage.stage_type === "custom";
+      stage.stage_type === STAGE_TYPE.LEAGUE_STAGE ||
+      stage.stage_type === STAGE_TYPE.CUSTOM;
     const stage_team_ids = new Set<string>();
     for (const fixture of stage_fixtures) {
       stage_team_ids.add(fixture.home_team_id);

@@ -515,9 +515,13 @@ describe("get_display_value_for_entity_field", () => {
     const foreign_key_options = {
       sport_id: [] as BaseEntity[],
     };
-    const field_metadata = create_test_field_metadata("sport_id", "foreign_key", {
-      foreign_key_entity: "sport",
-    });
+    const field_metadata = create_test_field_metadata(
+      "sport_id",
+      "foreign_key",
+      {
+        foreign_key_entity: "sport",
+      },
+    );
     const result = get_display_value_for_entity_field(
       entity,
       "sport_id",

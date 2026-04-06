@@ -6,7 +6,6 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
 <script lang="ts">
   import { createEventDispatcher } from "svelte";
 
-  // Component props
   export let steps: any[];
   export let current_step_index: number = 0;
   export let is_mobile_view: boolean = true;
@@ -16,7 +15,6 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
     | ((from_index: number, to_index: number) => boolean)
     | null = null;
 
-  // Event dispatcher
   const dispatch = createEventDispatcher<{
     step_changed: { previous_index: number; new_index: number; step: any };
     step_completed: { step_index: number; step: any };
@@ -25,7 +23,6 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
     validation_failed: { step_index: number; target_index: number };
   }>();
 
-  // Computed values
   $: current_step = get_current_step_from_index(steps, current_step_index);
   $: progress_percentage = calculate_progress_percentage(
     current_step_index,
