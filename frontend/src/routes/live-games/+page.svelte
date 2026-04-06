@@ -922,28 +922,40 @@
               <div
                 class="pb-4 border-b border-accent-200 dark:border-accent-700"
               >
-                <div class="flex items-center gap-1.5">
+                <div
+                  class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4"
+                >
                   <span
-                    class="text-base sm:text-lg font-semibold text-accent-900 dark:text-white line-clamp-1"
+                    class="text-base sm:text-lg font-semibold text-accent-900 dark:text-white line-clamp-1 text-center sm:text-left sm:flex-1"
                   >
                     {get_team_name(fixture.home_team_id)}
                   </span>
-                  <TeamLogoThumbnail
-                    logo_url={team_logo_urls[fixture.home_team_id] ?? ""}
-                    team_name={get_team_name(fixture.home_team_id)}
-                    size="sm"
-                  />
+                  <div class="flex items-center justify-center gap-2 shrink-0">
+                    <TeamLogoThumbnail
+                      logo_url={team_logo_urls[fixture.home_team_id] ?? ""}
+                      team_name={get_team_name(fixture.home_team_id)}
+                      size="sm"
+                    />
+                    {#if fixture.status === "in_progress"}
+                      <span
+                        class="text-lg sm:text-xl font-bold text-accent-900 dark:text-white tabular-nums"
+                        >{fixture.home_team_score ?? 0} - {fixture.away_team_score ??
+                          0}</span
+                      >
+                    {:else}
+                      <span
+                        class="text-accent-400 dark:text-accent-500 font-normal text-base sm:text-lg"
+                        >vs</span
+                      >
+                    {/if}
+                    <TeamLogoThumbnail
+                      logo_url={team_logo_urls[fixture.away_team_id] ?? ""}
+                      team_name={get_team_name(fixture.away_team_id)}
+                      size="sm"
+                    />
+                  </div>
                   <span
-                    class="text-accent-400 dark:text-accent-500 font-normal text-base sm:text-lg mx-1"
-                    >vs</span
-                  >
-                  <TeamLogoThumbnail
-                    logo_url={team_logo_urls[fixture.away_team_id] ?? ""}
-                    team_name={get_team_name(fixture.away_team_id)}
-                    size="sm"
-                  />
-                  <span
-                    class="text-base sm:text-lg font-semibold text-accent-900 dark:text-white line-clamp-1"
+                    class="text-base sm:text-lg font-semibold text-accent-900 dark:text-white line-clamp-1 text-center sm:text-right sm:flex-1"
                   >
                     {get_team_name(fixture.away_team_id)}
                   </span>
@@ -1050,7 +1062,29 @@
                 {/if}
               </div>
 
-              {#if can_start_games}
+              {#if fixture.status === "in_progress"}
+                <div
+                  class="pt-4 border-t border-accent-200 dark:border-accent-700"
+                >
+                  <a
+                    href="/live-games/{fixture.id}"
+                    class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors text-sm font-medium"
+                  >
+                    <svg
+                      class="h-5 w-5"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path
+                        fill-rule="evenodd"
+                        d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"
+                        clip-rule="evenodd"
+                      />
+                    </svg>
+                    Go to Game
+                  </a>
+                </div>
+              {:else if can_start_games}
                 <div
                   class="pt-4 border-t border-accent-200 dark:border-accent-700"
                 >
