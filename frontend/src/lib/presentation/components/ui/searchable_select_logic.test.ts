@@ -31,6 +31,26 @@ describe("searchable_select_logic", () => {
     expect(filter_select_options(options, "").length).toBe(3);
   });
 
+  it("filters by group name", () => {
+    const grouped_options: SelectOption[] = [
+      { value: "fix_1", label: "Team A vs Team B", group: "Premier League" },
+      { value: "fix_2", label: "Team C vs Team D", group: "FA Cup" },
+      { value: "fix_3", label: "Team E vs Team F", group: "Premier League" },
+    ];
+    const result = filter_select_options(grouped_options, "fa cup");
+    expect(result.map((o) => o.value)).toEqual(["fix_2"]);
+  });
+
+  it("returns options matching group even when label does not match", () => {
+    const grouped_options: SelectOption[] = [
+      { value: "fix_1", label: "Lions vs Tigers", group: "Champions League" },
+      { value: "fix_2", label: "Eagles vs Hawks", group: "Local Cup" },
+    ];
+    const result = filter_select_options(grouped_options, "champions");
+    expect(result).toHaveLength(1);
+    expect(result[0].value).toBe("fix_1");
+  });
+
   it("finds option by exact value", () => {
     expect(find_select_option_by_value(options, "KE")?.label).toBe("Kenya");
     expect(find_select_option_by_value(options, "XX")).toBeNull();

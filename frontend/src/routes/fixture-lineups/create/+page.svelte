@@ -49,17 +49,17 @@
 
   import type { Organization } from "$lib/core/entities/Organization";
   import { is_field_restricted_by_authorization } from "$lib/core/interfaces/ports";
-import {
-  get_competition_team_use_cases,
-  get_competition_use_cases,
-  get_fixture_lineup_use_cases,
-  get_fixture_use_cases,
-  get_organization_use_cases,
-  get_player_position_use_cases,
-  get_player_team_membership_use_cases,
-  get_player_use_cases,
-  get_team_use_cases,
-} from "$lib/infrastructure/registry/useCaseFactories";
+  import {
+    get_competition_team_use_cases,
+    get_competition_use_cases,
+    get_fixture_lineup_use_cases,
+    get_fixture_use_cases,
+    get_organization_use_cases,
+    get_player_position_use_cases,
+    get_player_team_membership_use_cases,
+    get_player_use_cases,
+    get_team_use_cases,
+  } from "$lib/infrastructure/registry/useCaseFactories";
 
   $: current_auth_profile = $auth_store.current_profile;
 
@@ -143,10 +143,16 @@ import {
       f.status === "scheduled" && !fixtures_with_complete_lineups.has(f.id),
   );
 
-  $: fixture_select_options = fixtures_for_organization.map((fixture) => ({
-    value: fixture.id,
-    label: get_fixture_name(fixture),
-  }));
+  $: fixture_select_options = fixtures_for_organization.map((fixture) => {
+    const competition = all_competitions.find(
+      (c) => c.id === fixture.competition_id,
+    );
+    return {
+      value: fixture.id,
+      label: get_fixture_name(fixture),
+      group: competition?.name || "",
+    };
+  });
 
   $: team_select_options = available_teams.map((team) => ({
     value: team.id,
@@ -832,16 +838,16 @@ import {
       fixture.scheduled_date,
       fixture.scheduled_time,
     );
-    const competition_suffix = competition?.name || "";
 
-    let label = teams_label;
+    const parts: string[] = [];
+    if (competition?.name) {
+      parts.push(competition.name);
+    }
+    parts.push(teams_label);
     if (date_time_suffix) {
-      label += ` [${date_time_suffix}]`;
+      parts.push(date_time_suffix);
     }
-    if (competition_suffix) {
-      label += ` [${competition_suffix}]`;
-    }
-    return label;
+    return parts.join(" - ");
   }
 
   function format_fixture_date_time(

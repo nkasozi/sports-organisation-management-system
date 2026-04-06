@@ -4,7 +4,6 @@ import type {
   BaseEntity,
 } from "../../core/entities/BaseEntity";
 import type { SubEntityFilter } from "../../core/types/SubEntityFilter";
-import { build_entity_display_label } from "./entityDisplayFormatter";
 
 export {
   validate_form_data_against_metadata,
@@ -19,6 +18,11 @@ export {
   build_foreign_entity_route,
   build_foreign_entity_cta_label,
 } from "./entityDisplayFormatter";
+export {
+  build_foreign_key_select_options,
+  type ForeignKeySelectOption,
+} from "./foreignKeyOptionBuilder";
+export { is_jersey_color_field } from "./foreignKeyOptionBuilder";
 
 export function determine_if_edit_mode(
   data: Partial<BaseEntity> | null,
@@ -172,36 +176,6 @@ export function has_enum_options(field: FieldMetadata): boolean {
   if (field.enum_values && field.enum_values.length > 0) return true;
   if (field.enum_dependency) return true;
   return false;
-}
-
-export function is_jersey_color_field(field: FieldMetadata): boolean {
-  return field.foreign_key_entity?.toLowerCase() === "jerseycolor";
-}
-
-export function build_foreign_key_select_options(
-  field: FieldMetadata,
-  options_map: Record<string, BaseEntity[]>,
-): { value: string; label: string; color_swatch?: string }[] {
-  const entities = options_map[field.field_name] || [];
-  const is_jersey_field = is_jersey_color_field(field);
-  return entities
-    .map((entity) => {
-      const entity_id = String((entity as BaseEntity).id ?? "").trim();
-      if (entity_id.length === 0) return null;
-      const option: { value: string; label: string; color_swatch?: string } = {
-        value: entity_id,
-        label: String(build_entity_display_label(entity)),
-      };
-      if (is_jersey_field) {
-        const jersey = entity as unknown as { main_color?: string };
-        if (jersey.main_color) option.color_swatch = jersey.main_color;
-      }
-      return option;
-    })
-    .filter(
-      (opt): opt is { value: string; label: string; color_swatch?: string } =>
-        Boolean(opt),
-    );
 }
 
 export function find_dependent_enum_fields(

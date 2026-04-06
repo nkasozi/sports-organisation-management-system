@@ -98,14 +98,15 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
   import {
     fetch_unfiltered_foreign_key_options,
     fetch_filtered_entities_for_field,
+    fetch_entities_for_type,
   } from "$lib/presentation/logic/dynamicFormDataLoader";
-import {
-  get_competition_team_use_cases,
-  get_fixture_use_cases,
-  get_official_associated_team_use_cases,
-  get_player_team_membership_use_cases,
-  get_team_use_cases,
-} from "$lib/infrastructure/registry/useCaseFactories";
+  import {
+    get_competition_team_use_cases,
+    get_fixture_use_cases,
+    get_official_associated_team_use_cases,
+    get_player_team_membership_use_cases,
+    get_team_use_cases,
+  } from "$lib/infrastructure/registry/useCaseFactories";
 
   export let entity_type: string;
   export let entity_data: Partial<BaseEntity> | null = null;
@@ -484,10 +485,17 @@ import {
       form_data,
     );
 
-    foreign_key_options = {
+    const updated_options: Record<string, BaseEntity[]> = {
       ...foreign_key_options,
       [field.field_name]: result.entities,
     };
+
+    if (field.foreign_key_entity?.toLowerCase() === "fixture") {
+      const competitions = await fetch_entities_for_type("competition");
+      updated_options["competition_id"] = competitions;
+    }
+
+    foreign_key_options = updated_options;
 
     if (result.all_competition_teams)
       all_competition_teams_cache = result.all_competition_teams;
