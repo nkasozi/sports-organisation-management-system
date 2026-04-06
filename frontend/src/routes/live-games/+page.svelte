@@ -969,75 +969,12 @@
               </div>
 
               <div
-                class="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-x-6 sm:gap-y-2 text-sm"
+                class="flex flex-col sm:flex-row sm:justify-between gap-2 sm:gap-4 text-sm"
               >
-                <div class="flex items-center gap-2">
-                  <svg
-                    class="w-4 h-4 text-teal-500 dark:text-teal-400 flex-shrink-0"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
-                    ></path>
-                  </svg>
-                  <span class="text-accent-600 dark:text-accent-400 truncate">
-                    {get_competition_name(fixture.competition_id)}
-                  </span>
-                </div>
-
-                <div class="flex items-center gap-2">
-                  <svg
-                    class="w-4 h-4 text-sky-500 dark:text-sky-400 flex-shrink-0"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
-                    ></path>
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                    ></path>
-                  </svg>
-                  <span class="text-accent-600 dark:text-accent-400">
-                    {get_sport_name(fixture.competition_id)}
-                  </span>
-                </div>
-
-                <div class="flex items-center gap-2">
-                  <svg
-                    class="w-4 h-4 text-violet-500 dark:text-violet-400 flex-shrink-0"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                    ></path>
-                  </svg>
-                  <span class="text-accent-600 dark:text-accent-400">
-                    {format_date_time(fixture.scheduled_date)}
-                  </span>
-                </div>
-
-                {#if fixture.venue}
+                <div class="flex flex-col gap-2 sm:flex-1">
                   <div class="flex items-center gap-2">
                     <svg
-                      class="w-4 h-4 text-rose-500 dark:text-rose-400 flex-shrink-0"
+                      class="w-4 h-4 text-teal-500 dark:text-teal-400 flex-shrink-0"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -1046,90 +983,171 @@
                         stroke-linecap="round"
                         stroke-linejoin="round"
                         stroke-width="2"
-                        d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                        d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
+                      ></path>
+                    </svg>
+                    <span class="text-accent-600 dark:text-accent-400 truncate">
+                      {get_competition_name(fixture.competition_id)}
+                    </span>
+                  </div>
+
+                  <div class="flex items-center gap-2">
+                    <svg
+                      class="w-4 h-4 text-sky-500 dark:text-sky-400 flex-shrink-0"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
                       ></path>
                       <path
                         stroke-linecap="round"
                         stroke-linejoin="round"
                         stroke-width="2"
-                        d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                        d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                       ></path>
                     </svg>
-                    <span class="text-accent-600 dark:text-accent-400 truncate">
-                      {fixture.venue}
+                    <span class="text-accent-600 dark:text-accent-400">
+                      {get_sport_name(fixture.competition_id)}
                     </span>
                   </div>
-                {/if}
+                </div>
+
+                <div class="hidden sm:block sm:flex-1"></div>
+
+                <div class="flex flex-col gap-2 sm:flex-1 sm:items-end">
+                  <div class="flex items-center gap-2">
+                    <svg
+                      class="w-4 h-4 text-violet-500 dark:text-violet-400 flex-shrink-0"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                      ></path>
+                    </svg>
+                    <span class="text-accent-600 dark:text-accent-400">
+                      {format_date_time(fixture.scheduled_date)}
+                    </span>
+                  </div>
+
+                  {#if fixture.venue}
+                    <div class="flex items-center gap-2">
+                      <svg
+                        class="w-4 h-4 text-rose-500 dark:text-rose-400 flex-shrink-0"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                        ></path>
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                        ></path>
+                      </svg>
+                      <span class="text-accent-600 dark:text-accent-400 truncate">
+                        {fixture.venue}
+                      </span>
+                    </div>
+                  {/if}
+                </div>
               </div>
 
               {#if fixture.status === "in_progress"}
                 <div
                   class="pt-4 border-t border-accent-200 dark:border-accent-700"
                 >
-                  <a
-                    href="/live-games/{fixture.id}"
-                    class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors text-sm font-medium"
-                  >
-                    <svg
-                      class="h-5 w-5"
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                    >
-                      <path
-                        fill-rule="evenodd"
-                        d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"
-                        clip-rule="evenodd"
-                      />
-                    </svg>
-                    Go to Game
-                  </a>
+                  <div class="flex flex-col sm:flex-row sm:justify-between gap-2 sm:gap-4">
+                    <div class="hidden sm:block sm:flex-1"></div>
+                    <div class="sm:flex-1 flex justify-center">
+                      <a
+                        href="/live-games/{fixture.id}"
+                        class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors text-sm font-medium"
+                      >
+                        <svg
+                          class="h-5 w-5"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path
+                            fill-rule="evenodd"
+                            d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"
+                            clip-rule="evenodd"
+                          />
+                        </svg>
+                        Go to Game
+                      </a>
+                    </div>
+                    <div class="hidden sm:block sm:flex-1"></div>
+                  </div>
                 </div>
               {:else if can_start_games}
                 <div
                   class="pt-4 border-t border-accent-200 dark:border-accent-700"
                 >
-                  <button
-                    type="button"
-                    on:click={() => handle_start_click(fixture)}
-                    disabled={is_starting[fixture.id || ""]}
-                    class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 disabled:bg-accent-400 dark:disabled:bg-accent-600 disabled:cursor-not-allowed transition-colors text-sm font-medium"
-                  >
-                    {#if is_starting[fixture.id || ""]}
-                      <svg
-                        class="h-5 w-5 animate-spin"
-                        fill="none"
-                        viewBox="0 0 24 24"
+                  <div class="flex flex-col sm:flex-row sm:justify-between gap-2 sm:gap-4">
+                    <div class="hidden sm:block sm:flex-1"></div>
+                    <div class="sm:flex-1 flex justify-center">
+                      <button
+                        type="button"
+                        on:click={() => handle_start_click(fixture)}
+                        disabled={is_starting[fixture.id || ""]}
+                        class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 disabled:bg-accent-400 dark:disabled:bg-accent-600 disabled:cursor-not-allowed transition-colors text-sm font-medium"
                       >
-                        <circle
-                          class="opacity-25"
-                          cx="12"
-                          cy="12"
-                          r="10"
-                          stroke="currentColor"
-                          stroke-width="4"
-                        ></circle>
-                        <path
-                          class="opacity-75"
-                          fill="currentColor"
-                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                        ></path>
-                      </svg>
-                      Starting...
-                    {:else}
-                      <svg
-                        class="h-5 w-5"
-                        fill="currentColor"
-                        viewBox="0 0 20 20"
-                      >
-                        <path
-                          fill-rule="evenodd"
-                          d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"
-                          clip-rule="evenodd"
-                        />
-                      </svg>
-                      Start Game
-                    {/if}
-                  </button>
+                        {#if is_starting[fixture.id || ""]}
+                          <svg
+                            class="h-5 w-5 animate-spin"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                          >
+                            <circle
+                              class="opacity-25"
+                              cx="12"
+                              cy="12"
+                              r="10"
+                              stroke="currentColor"
+                              stroke-width="4"
+                            ></circle>
+                            <path
+                              class="opacity-75"
+                              fill="currentColor"
+                              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                            ></path>
+                          </svg>
+                          Starting...
+                        {:else}
+                          <svg
+                            class="h-5 w-5"
+                            fill="currentColor"
+                            viewBox="0 0 20 20"
+                          >
+                            <path
+                              fill-rule="evenodd"
+                              d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"
+                              clip-rule="evenodd"
+                            />
+                          </svg>
+                          Start Game
+                        {/if}
+                      </button>
+                    </div>
+                    <div class="hidden sm:block sm:flex-1"></div>
+                  </div>
                 </div>
               {/if}
             </div>
