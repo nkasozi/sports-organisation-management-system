@@ -38,6 +38,7 @@
   $: select_id = `searchable-select-${name}`;
   $: list_id = `${select_id}-list`;
   $: filtered_options = filter_select_options(options, query);
+  $: grouped_filtered_options = build_grouped_options(filtered_options);
   $: selected_option = find_select_option_by_value(options, value);
   $: should_show_label = label.trim().length > 0;
 
@@ -194,6 +195,53 @@
     if (selected_option) return selected_option.label;
     return "";
   }
+
+  type GroupedOptions = { group: string; options: SelectOptionType[] }[];
+
+  function build_grouped_options(
+    flat_options: SelectOptionType[],
+  ): GroupedOptions {
+    const has_groups = flat_options.some(
+      (option) => option.group && option.group.trim().length > 0,
+    );
+    if (!has_groups) return [{ group: "", options: flat_options }];
+
+    const group_map = new Map<string, SelectOptionType[]>();
+    for (const option of flat_options) {
+      const group_key = option.group ?? "";
+      const existing = group_map.get(group_key);
+      if (existing) {
+        existing.push(option);
+      } else {
+        group_map.set(group_key, [option]);
+      }
+    }
+    const result: GroupedOptions = [];
+    const sorted_group_keys = Array.from(group_map.keys()).sort((a, b) => {
+      if (a === "") return 1;
+      if (b === "") return -1;
+      return a.localeCompare(b);
+    });
+    for (const group_name of sorted_group_keys) {
+      const group_options = group_map.get(group_name);
+      if (group_options) {
+        result.push({ group: group_name, options: group_options });
+      }
+    }
+    return result;
+  }
+
+  function get_flat_index_for_grouped(
+    groups: GroupedOptions,
+    group_index: number,
+    option_index: number,
+  ): number {
+    let flat_index = 0;
+    for (let gi = 0; gi < group_index; gi++) {
+      flat_index += groups[gi].options.length;
+    }
+    return flat_index + option_index;
+  }
 </script>
 
 <div bind:this={container_element} class="space-y-1">
@@ -287,30 +335,44 @@
             No matches
           </div>
         {:else}
-          {#each filtered_options as option, index (option.value)}
-            <button
-              type="button"
-              class="w-full text-left px-3 py-2 text-sm transition-colors flex items-center gap-2
-                     {index === highlighted_index
-                ? 'bg-accent-100 dark:bg-accent-700'
-                : 'bg-transparent'}
-                     {option.value === value
-                ? 'font-semibold text-accent-900 dark:text-accent-100'
-                : 'text-accent-800 dark:text-accent-200'}"
-              role="option"
-              aria-selected={option.value === value}
-              on:mouseenter={() => (highlighted_index = index)}
-              on:mousedown|preventDefault|stopPropagation={() =>
-                commit_value(option.value)}
-            >
-              {#if option.color_swatch}
-                <span
-                  class="inline-block w-5 h-5 rounded border border-accent-300 dark:border-accent-600 flex-shrink-0"
-                  style="background-color: {option.color_swatch};"
-                ></span>
-              {/if}
-              {option.label}
-            </button>
+          {#each grouped_filtered_options as group_entry, group_index}
+            {#if group_entry.group.length > 0}
+              <div
+                class="px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-accent-500 dark:text-accent-400 bg-accent-50 dark:bg-accent-900 sticky top-0"
+              >
+                {group_entry.group}
+              </div>
+            {/if}
+            {#each group_entry.options as option, option_index (option.value)}
+              {@const flat_index = get_flat_index_for_grouped(
+                grouped_filtered_options,
+                group_index,
+                option_index,
+              )}
+              <button
+                type="button"
+                class="w-full text-left px-3 py-2 text-sm transition-colors flex items-center gap-2
+                       {flat_index === highlighted_index
+                  ? 'bg-accent-100 dark:bg-accent-700'
+                  : 'bg-transparent'}
+                       {option.value === value
+                  ? 'font-semibold text-accent-900 dark:text-accent-100'
+                  : 'text-accent-800 dark:text-accent-200'}"
+                role="option"
+                aria-selected={option.value === value}
+                on:mouseenter={() => (highlighted_index = flat_index)}
+                on:mousedown|preventDefault|stopPropagation={() =>
+                  commit_value(option.value)}
+              >
+                {#if option.color_swatch}
+                  <span
+                    class="inline-block w-5 h-5 rounded border border-accent-300 dark:border-accent-600 flex-shrink-0"
+                    style="background-color: {option.color_swatch};"
+                  ></span>
+                {/if}
+                {option.label}
+              </button>
+            {/each}
           {/each}
         {/if}
       </div>

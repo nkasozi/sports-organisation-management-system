@@ -2,6 +2,7 @@ export type SelectOption = {
   value: string;
   label: string;
   color_swatch?: string;
+  group?: string;
 };
 
 export function normalize_select_query(query: string): string {
@@ -18,9 +19,11 @@ export function filter_select_options(
   return options.filter((option) => {
     const normalized_label = option.label.toLowerCase();
     const normalized_value = option.value.toLowerCase();
+    const normalized_group = (option.group ?? "").toLowerCase();
     return (
       normalized_label.includes(normalized_query) ||
-      normalized_value.includes(normalized_query)
+      normalized_value.includes(normalized_query) ||
+      normalized_group.includes(normalized_query)
     );
   });
 }

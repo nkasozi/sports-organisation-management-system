@@ -78,15 +78,25 @@ function build_fixture_display_label(
   );
   const home_team_name = record["home_team_name"];
   const away_team_name = record["away_team_name"];
+  const competition_name = record["competition_name"];
 
   if (
     typeof home_team_name === "string" &&
     typeof away_team_name === "string"
   ) {
-    const base_label = `${home_team_name} vs ${away_team_name}`;
-    return date_time_suffix
-      ? `${base_label} [${date_time_suffix}]`
-      : base_label;
+    const teams_label = `${home_team_name} vs ${away_team_name}`;
+    const parts: string[] = [];
+    if (
+      typeof competition_name === "string" &&
+      competition_name.trim() !== ""
+    ) {
+      parts.push(competition_name);
+    }
+    parts.push(teams_label);
+    if (date_time_suffix) {
+      parts.push(date_time_suffix);
+    }
+    return parts.join(" - ");
   }
 
   const round_name = record["round_name"];
