@@ -1,6 +1,7 @@
 <script lang="ts">
     import { createEventDispatcher } from "svelte";
     import type { TeamStanding } from "$lib/presentation/logic/competitionStageResults";
+    import TeamLogoThumbnail from "$lib/presentation/components/ui/TeamLogoThumbnail.svelte";
 
     export let standings: TeamStanding[] = [];
     export let selected_team_id: string | null = null;
@@ -109,6 +110,11 @@
                                         ></span>
                                     </span>
                                 {/if}
+                                <TeamLogoThumbnail
+                                    logo_url={standing.team_logo_url}
+                                    team_name={standing.team_name}
+                                    size="sm"
+                                />
                                 <span
                                     class="font-medium text-accent-900 dark:text-accent-100 hover:text-primary-600 dark:hover:text-primary-400 truncate max-w-[120px]"
                                 >

@@ -12,6 +12,7 @@
   } from "$lib/core/entities/CompetitionStage";
   import type { Fixture } from "$lib/core/entities/Fixture";
   import type { Team } from "$lib/core/entities/Team";
+  import { get_team_logo } from "$lib/core/entities/Team";
   import type { CompetitionFormat } from "$lib/core/entities/CompetitionFormat";
   import type { Official } from "$lib/core/entities/Official";
   import type { Organization } from "$lib/core/entities/Organization";
@@ -44,6 +45,7 @@
   import { is_public_viewer } from "$lib/presentation/stores/auth";
   import { fetch_public_data_from_convex } from "$lib/infrastructure/sync/convexPublicDataService";
   import CompetitionStandingsTable from "$lib/presentation/components/competition/CompetitionStandingsTable.svelte";
+  import TeamLogoThumbnail from "$lib/presentation/components/ui/TeamLogoThumbnail.svelte";
   import Pagination from "$lib/presentation/components/ui/Pagination.svelte";
   import {
     build_competition_stage_results_sections,
@@ -55,18 +57,18 @@
     type TieBreaker,
     DEFAULT_POINTS_CONFIG,
   } from "$lib/core/entities/CompetitionFormat";
-import {
-  get_competition_format_use_cases,
-  get_competition_stage_use_cases,
-  get_competition_team_use_cases,
-  get_competition_use_cases,
-  get_fixture_lineup_use_cases,
-  get_fixture_use_cases,
-  get_official_use_cases,
-  get_organization_use_cases,
-  get_team_staff_use_cases,
-  get_team_use_cases,
-} from "$lib/infrastructure/registry/useCaseFactories";
+  import {
+    get_competition_format_use_cases,
+    get_competition_stage_use_cases,
+    get_competition_team_use_cases,
+    get_competition_use_cases,
+    get_fixture_lineup_use_cases,
+    get_fixture_use_cases,
+    get_official_use_cases,
+    get_organization_use_cases,
+    get_team_staff_use_cases,
+    get_team_use_cases,
+  } from "$lib/infrastructure/registry/useCaseFactories";
 
   const competition_use_cases = get_competition_use_cases();
   const fixture_use_cases = get_fixture_use_cases();
@@ -702,6 +704,11 @@ import {
 
   function get_team_name(team_id: string): string {
     return team_map.get(team_id)?.name ?? "Unknown Team";
+  }
+
+  function get_team_logo_url(team_id: string): string {
+    const team = team_map.get(team_id) ?? extended_team_map.get(team_id);
+    return team ? get_team_logo(team) : "";
   }
 
   function get_fixture_stage_name(stage_id?: string | null): string {
@@ -1388,7 +1395,9 @@ import {
                               <div
                                 class="flex items-center justify-between gap-2"
                               >
-                                <div class="flex-1 text-right">
+                                <div
+                                  class="flex-1 flex items-center justify-end gap-1.5"
+                                >
                                   <span
                                     class="text-sm sm:text-base font-medium line-clamp-1 {home_score >
                                       away_score &&
@@ -1398,6 +1407,15 @@ import {
                                   >
                                     {get_team_name(fixture.home_team_id)}
                                   </span>
+                                  <TeamLogoThumbnail
+                                    logo_url={get_team_logo_url(
+                                      fixture.home_team_id,
+                                    )}
+                                    team_name={get_team_name(
+                                      fixture.home_team_id,
+                                    )}
+                                    size="sm"
+                                  />
                                 </div>
                                 <div class="flex-shrink-0 px-2 sm:px-4">
                                   {#if fixture.status === "completed" || fixture.status === "in_progress"}
@@ -1430,7 +1448,16 @@ import {
                                     >
                                   {/if}
                                 </div>
-                                <div class="flex-1 text-left">
+                                <div class="flex-1 flex items-center gap-1.5">
+                                  <TeamLogoThumbnail
+                                    logo_url={get_team_logo_url(
+                                      fixture.away_team_id,
+                                    )}
+                                    team_name={get_team_name(
+                                      fixture.away_team_id,
+                                    )}
+                                    size="sm"
+                                  />
                                   <span
                                     class="text-sm sm:text-base font-medium line-clamp-1 {away_score >
                                       home_score &&
@@ -1736,7 +1763,9 @@ import {
                             </span>
                           </div>
                           <div class="flex items-center justify-between gap-2">
-                            <div class="flex-1 text-right">
+                            <div
+                              class="flex-1 flex items-center justify-end gap-1.5"
+                            >
                               <span
                                 class="text-sm font-medium {fixture.home_team_id ===
                                 selected_team_id
@@ -1745,6 +1774,15 @@ import {
                               >
                                 {get_team_name_extended(fixture.home_team_id)}
                               </span>
+                              <TeamLogoThumbnail
+                                logo_url={get_team_logo_url(
+                                  fixture.home_team_id,
+                                )}
+                                team_name={get_team_name_extended(
+                                  fixture.home_team_id,
+                                )}
+                                size="sm"
+                              />
                             </div>
                             <div class="flex-shrink-0 px-2 sm:px-4">
                               {#if fixture.status === "completed" || fixture.status === "in_progress"}
@@ -1777,7 +1815,16 @@ import {
                                 >
                               {/if}
                             </div>
-                            <div class="flex-1 text-left">
+                            <div class="flex-1 flex items-center gap-1.5">
+                              <TeamLogoThumbnail
+                                logo_url={get_team_logo_url(
+                                  fixture.away_team_id,
+                                )}
+                                team_name={get_team_name_extended(
+                                  fixture.away_team_id,
+                                )}
+                                size="sm"
+                              />
                               <span
                                 class="text-sm font-medium {fixture.away_team_id ===
                                 selected_team_id
@@ -1899,12 +1946,17 @@ import {
                       {/if}
                     </div>
                     <div class="flex items-center justify-between gap-2">
-                      <div class="flex-1 text-right">
+                      <div class="flex-1 flex items-center justify-end gap-1.5">
                         <span
                           class="text-sm sm:text-base font-medium text-accent-900 dark:text-accent-100 line-clamp-1"
                         >
                           {get_team_name(fixture.home_team_id)}
                         </span>
+                        <TeamLogoThumbnail
+                          logo_url={get_team_logo_url(fixture.home_team_id)}
+                          team_name={get_team_name(fixture.home_team_id)}
+                          size="sm"
+                        />
                       </div>
                       <div class="flex-shrink-0 px-3 sm:px-6">
                         <div
@@ -1913,7 +1965,12 @@ import {
                           VS
                         </div>
                       </div>
-                      <div class="flex-1 text-left">
+                      <div class="flex-1 flex items-center gap-1.5">
+                        <TeamLogoThumbnail
+                          logo_url={get_team_logo_url(fixture.away_team_id)}
+                          team_name={get_team_name(fixture.away_team_id)}
+                          size="sm"
+                        />
                         <span
                           class="text-sm sm:text-base font-medium text-accent-900 dark:text-accent-100 line-clamp-1"
                         >
@@ -2061,7 +2118,7 @@ import {
                       </div>
                     {/if}
                     <div class="flex items-center justify-between gap-2">
-                      <div class="flex-1 text-right">
+                      <div class="flex-1 flex items-center justify-end gap-1.5">
                         <span
                           class="text-sm sm:text-base font-medium text-accent-900 dark:text-accent-100 line-clamp-1 {home_score >
                           away_score
@@ -2070,6 +2127,11 @@ import {
                         >
                           {get_team_name(fixture.home_team_id)}
                         </span>
+                        <TeamLogoThumbnail
+                          logo_url={get_team_logo_url(fixture.home_team_id)}
+                          team_name={get_team_name(fixture.home_team_id)}
+                          size="sm"
+                        />
                       </div>
                       <div class="flex-shrink-0 px-2 sm:px-4">
                         <div
@@ -2094,7 +2156,12 @@ import {
                           </span>
                         </div>
                       </div>
-                      <div class="flex-1 text-left">
+                      <div class="flex-1 flex items-center gap-1.5">
+                        <TeamLogoThumbnail
+                          logo_url={get_team_logo_url(fixture.away_team_id)}
+                          team_name={get_team_name(fixture.away_team_id)}
+                          size="sm"
+                        />
                         <span
                           class="text-sm sm:text-base font-medium text-accent-900 dark:text-accent-100 line-clamp-1 {away_score >
                           home_score
