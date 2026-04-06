@@ -135,6 +135,13 @@ export class InBrowserPlayerTeamTransferHistoryRepository
         this.create_paginated_result(paginated_entities, total_count, options),
       );
     } catch (error) {
+      console.warn(
+        "[TransferHistoryRepository] Failed to find transfers by team",
+        {
+          event: "repository_find_transfers_by_team_failed",
+          error: String(error),
+        },
+      );
       const error_message =
         error instanceof Error ? error.message : "Unknown error occurred";
       return create_failure_result(

@@ -12,9 +12,8 @@ import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
 import type { CompetitionUseCasesPort } from "../interfaces/ports";
 import { create_success_result, create_failure_result } from "../types/Result";
 import { validate_competition_input } from "../entities/Competition";
-import { get_repository_container } from "../../infrastructure/container";
-import { EventBus } from "$lib/infrastructure/events/EventBus";
 import { create_competition_stage_lifecycle } from "./CompetitionStageLifecycle";
+import { EventBus } from "$lib/infrastructure/events/EventBus";
 
 export type CompetitionUseCases = CompetitionUseCasesPort;
 
@@ -176,24 +175,4 @@ export function create_competition_use_cases_with_stage_lifecycle(
       return repository.find_by_organization(organization_id, options);
     },
   };
-}
-
-export function create_competition_use_cases(
-  repository: CompetitionRepository,
-): CompetitionUseCases {
-  const container = get_repository_container();
-  const stage_lifecycle = create_competition_stage_lifecycle(
-    container.competition_format_repository,
-    container.competition_stage_repository,
-    container.fixture_repository,
-  );
-  return create_competition_use_cases_with_stage_lifecycle(
-    repository,
-    stage_lifecycle,
-  );
-}
-
-export function get_competition_use_cases(): CompetitionUseCases {
-  const container = get_repository_container();
-  return create_competition_use_cases(container.competition_repository);
 }

@@ -15,12 +15,11 @@ import {
   create_success_result,
   create_failure_result,
 } from "$lib/core/types/Result";
-import { get_repository_container } from "../../infrastructure/container";
 import type { JerseyColorUseCasesPort } from "$lib/core/interfaces/ports";
 
 export type JerseyColorUseCases = JerseyColorUseCasesPort;
 
-function create_jersey_color_use_cases(
+export function create_jersey_color_use_cases(
   repository: JerseyColorRepository,
 ): JerseyColorUseCases {
   return {
@@ -109,9 +108,4 @@ function create_jersey_color_use_cases(
       return repository.find_by_holder(holder_type, holder_id);
     },
   };
-}
-
-export function get_jersey_color_use_cases(): JerseyColorUseCases {
-  const container = get_repository_container();
-  return create_jersey_color_use_cases(container.jersey_color_repository);
 }

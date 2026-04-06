@@ -20,11 +20,9 @@
     format_event_time,
     get_period_display_name,
   } from "$lib/core/entities/Fixture";
-  import { get_fixture_use_cases } from "$lib/core/usecases/FixtureUseCases";
-  import { get_team_use_cases } from "$lib/core/usecases/TeamUseCases";
-  import { get_player_use_cases } from "$lib/core/usecases/PlayerUseCases";
   import Toast from "$lib/presentation/components/ui/Toast.svelte";
   import ConfirmationModal from "$lib/presentation/components/ui/ConfirmationModal.svelte";
+import { get_fixture_use_cases, get_player_use_cases, get_team_use_cases } from "$lib/infrastructure/registry/useCaseFactories";
 
   const fixture_use_cases = get_fixture_use_cases();
   const team_use_cases = get_team_use_cases();

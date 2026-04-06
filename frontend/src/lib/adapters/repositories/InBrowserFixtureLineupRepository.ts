@@ -1,3 +1,4 @@
+import { LINEUP_STATUS } from "../../core/entities/StatusConstants";
 import type { Table } from "dexie";
 import type {
   FixtureLineup,
@@ -45,7 +46,8 @@ export class InBrowserFixtureLineupRepository
   ): FixtureLineup {
     const now = new Date().toISOString();
     const is_submitted_or_locked =
-      input.status === "submitted" || input.status === "locked";
+      input.status === LINEUP_STATUS.SUBMITTED ||
+      input.status === LINEUP_STATUS.LOCKED;
 
     return {
       id,
@@ -54,7 +56,7 @@ export class InBrowserFixtureLineupRepository
       fixture_id: input.fixture_id,
       team_id: input.team_id,
       selected_players: input.selected_players || [],
-      status: input.status || "draft",
+      status: input.status || LINEUP_STATUS.DRAFT,
       submitted_by: input.submitted_by || "",
       submitted_at: input.submitted_at || (is_submitted_or_locked ? now : ""),
       notes: input.notes || "",
@@ -68,7 +70,8 @@ export class InBrowserFixtureLineupRepository
     const now = new Date().toISOString();
     const updated_status = updates.status || entity.status;
     const status_changed_to_submitted =
-      updated_status === "submitted" && entity.status !== "submitted";
+      updated_status === LINEUP_STATUS.SUBMITTED &&
+      entity.status !== LINEUP_STATUS.SUBMITTED;
 
     const submitted_at_value = status_changed_to_submitted
       ? now

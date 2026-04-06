@@ -72,7 +72,10 @@ function create_conflict_store() {
 
     for (const conflict of new_conflicts) {
       log_conflict_detected(conflict).catch((err) => {
-        console.error("[ConflictStore] Failed to audit log conflict:", err);
+        console.error("[ConflictStore] Failed to audit log conflict", {
+          event: "conflict_audit_log_failed",
+          error: String(err),
+        });
       });
     }
 
@@ -112,10 +115,10 @@ function create_conflict_store() {
       merged_data,
     );
     log_conflict_resolution(conflict, action, resolved_data).catch((err) => {
-      console.error(
-        "[ConflictStore] Failed to audit log conflict resolution:",
-        err,
-      );
+      console.error("[ConflictStore] Failed to audit log conflict resolution", {
+        event: "conflict_resolution_audit_log_failed",
+        error: String(err),
+      });
     });
 
     update((state) => ({

@@ -115,9 +115,11 @@ async function try_seed_all_tables_from_convex(
     } catch (error) {
       const error_message =
         error instanceof Error ? error.message : String(error);
-      console.warn(
-        `[ConvexSeeding] Failed to fetch ${table_name}: ${error_message}`,
-      );
+      console.warn("[ConvexSeeding] Failed to fetch table", {
+        event: "convex_seeding_fetch_table_failed",
+        table_name,
+        error: String(error_message),
+      });
       failed_tables.push(table_name);
     }
   }

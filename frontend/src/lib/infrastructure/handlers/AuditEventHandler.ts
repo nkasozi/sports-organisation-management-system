@@ -1,3 +1,4 @@
+import { WILDCARD_SCOPE } from "../../core/entities/StatusConstants";
 import {
   EventBus,
   type EntityCreatedPayload,
@@ -38,7 +39,7 @@ function build_base_audit_input(
     user_id: user_context?.user_id ?? "system",
     user_email: user_context?.user_email ?? "system@sport-sync.local",
     user_display_name: user_context?.user_display_name ?? "System",
-    organization_id: user_context?.organization_id ?? "*",
+    organization_id: user_context?.organization_id ?? WILDCARD_SCOPE,
     ip_address: "127.0.0.1",
     user_agent: "SportSyncApp/1.0",
   };

@@ -124,6 +124,12 @@ export class InBrowserProfileLinkRepository
         this.create_paginated_result(paginated_entities, total_count, options),
       );
     } catch (error) {
+      console.warn("[ProfileLinkRepository] Failed to filter profile links", {
+        event: "repository_filter_profile_links_failed",
+
+        error: String(error),
+      });
+
       return create_failure_result(
         format_repository_error(error, "filter profile links"),
       );

@@ -106,6 +106,13 @@ export class InBrowserPlayerProfileRepository
 
       return create_success_result(profiles[0]);
     } catch (error) {
+      console.warn(
+        "[PlayerProfileRepository] Failed to find profile by player_id",
+        {
+          event: "repository_find_profile_by_player_id_failed",
+          error: String(error),
+        },
+      );
       const error_message =
         error instanceof Error ? error.message : "Unknown error occurred";
       return create_failure_result(
@@ -127,6 +134,10 @@ export class InBrowserPlayerProfileRepository
 
       return create_success_result(profiles[0]);
     } catch (error) {
+      console.warn("[PlayerProfileRepository] Failed to find profile by slug", {
+        event: "repository_find_profile_by_slug_failed",
+        error: String(error),
+      });
       const error_message =
         error instanceof Error ? error.message : "Unknown error occurred";
       return create_failure_result(

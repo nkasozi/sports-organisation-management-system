@@ -7,17 +7,19 @@
   import type { Fixture } from "$lib/core/entities/Fixture";
   import type { Competition } from "$lib/core/entities/Competition";
   import type { ProfileLink } from "$lib/core/entities/ProfileLink";
-  import { get_team_profile_use_cases } from "$lib/core/usecases/TeamProfileUseCases";
-  import { get_team_use_cases } from "$lib/core/usecases/TeamUseCases";
-  import { get_fixture_use_cases } from "$lib/core/usecases/FixtureUseCases";
-  import { get_competition_use_cases } from "$lib/core/usecases/CompetitionUseCases";
-  import { get_profile_link_use_cases } from "$lib/core/usecases/ProfileLinkUseCases";
   import {
     get_team_logo,
     get_team_initials,
     DEFAULT_TEAM_LOGO,
   } from "$lib/core/entities/Team";
   import { get_platform_icon } from "$lib/core/entities/ProfileLink";
+import {
+  get_competition_use_cases,
+  get_fixture_use_cases,
+  get_profile_link_use_cases,
+  get_team_profile_use_cases,
+  get_team_use_cases,
+} from "$lib/infrastructure/registry/useCaseFactories";
 
   interface TeamStats {
     total_matches: number;

@@ -46,7 +46,10 @@ export function initialize_convex_client(): Result<ConvexClient> {
     );
     return create_success_result(client);
   } catch (error) {
-    console.error("[Convex] Failed to initialize client:", error);
+    console.error("[Convex] Failed to initialize client", {
+      event: "failed_to_initialize_client_failed",
+      error: String(error),
+    });
     return create_failure_result(
       `Failed to initialize Convex client: ${error instanceof Error ? error.message : String(error)}`,
     );

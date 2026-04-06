@@ -1,6 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
 import { create_organization_use_cases } from "../usecases/OrganizationUseCases";
-import { create_competition_use_cases } from "../usecases/CompetitionUseCases";
 import { create_team_use_cases } from "../usecases/TeamUseCases";
 import { create_player_use_cases } from "../usecases/PlayerUseCases";
 import { create_fixture_use_cases } from "../usecases/FixtureUseCases";

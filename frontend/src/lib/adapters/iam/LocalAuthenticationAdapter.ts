@@ -116,6 +116,10 @@ export class LocalAuthenticationAdapter implements AuthenticationPort {
         raw_token: `${header}.${encoded_payload}.${signature}`,
       });
     } catch (error) {
+      console.warn("[LocalAuth] Failed to generate token", {
+        event: "repository_generate_token_failed",
+        error: String(error),
+      });
       return create_failure_result(`Failed to generate token: ${error}`);
     }
   }

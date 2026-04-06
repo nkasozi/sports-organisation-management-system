@@ -109,6 +109,10 @@ class InBrowserCalendarTokenRepository
       );
       return create_success_result(found_token ?? null);
     } catch (error) {
+      console.warn("[CalendarTokenRepository] Failed to find token", {
+        event: "repository_find_token_failed",
+        error: String(error),
+      });
       const error_message =
         error instanceof Error ? error.message : "Unknown error occurred";
       return create_failure_result(`Failed to find token: ${error_message}`);
@@ -148,6 +152,10 @@ class InBrowserCalendarTokenRepository
       await this.database.calendar_tokens.put(updated_token);
       return create_success_result(updated_token);
     } catch (error) {
+      console.warn("[CalendarTokenRepository] Failed to record access", {
+        event: "repository_record_access_failed",
+        error: String(error),
+      });
       const error_message =
         error instanceof Error ? error.message : "Unknown error occurred";
       return create_failure_result(`Failed to record access: ${error_message}`);
@@ -172,6 +180,10 @@ class InBrowserCalendarTokenRepository
       await this.database.calendar_tokens.put(updated_token);
       return create_success_result(updated_token);
     } catch (error) {
+      console.warn("[CalendarTokenRepository] Failed to deactivate token", {
+        event: "repository_deactivate_token_failed",
+        error: String(error),
+      });
       const error_message =
         error instanceof Error ? error.message : "Unknown error occurred";
       return create_failure_result(

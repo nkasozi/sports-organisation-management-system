@@ -1,3 +1,4 @@
+import { FORMAT_TYPE } from "./StatusConstants";
 import type { BaseEntity, EntityStatus } from "./BaseEntity";
 import type { FormatType, LeagueConfig } from "./CompetitionFormat";
 
@@ -73,41 +74,43 @@ export function create_default_stage_templates(
   league_config?: LeagueConfig,
 ): CreateCompetitionStageInput[] {
   switch (format_type) {
-    case "league":
+    case FORMAT_TYPE.LEAGUE:
       return build_league_templates(league_config);
-    case "round_robin":
+    case FORMAT_TYPE.ROUND_ROBIN:
       return [build_template("Round Robin", "league_stage", 1)];
-    case "groups_knockout":
+    case FORMAT_TYPE.GROUPS_KNOCKOUT:
       return [
         build_template("Pool Stage", "group_stage", 1),
         build_template("Semi Finals", "knockout_stage", 2),
         build_template("Final", "one_off_stage", 3),
       ];
-    case "straight_knockout":
+    case FORMAT_TYPE.STRAIGHT_KNOCKOUT:
       return [
         build_template("Round of 16", "knockout_stage", 1),
         build_template("Quarter Finals", "knockout_stage", 2),
         build_template("Semi Finals", "knockout_stage", 3),
         build_template("Final", "one_off_stage", 4),
       ];
-    case "groups_playoffs":
+    case FORMAT_TYPE.GROUPS_PLAYOFFS:
       return [
         build_template("Pool Stage", "group_stage", 1),
         build_template("Playoffs", "knockout_stage", 2),
         build_template("Final", "one_off_stage", 3),
       ];
-    case "double_elimination":
+    case FORMAT_TYPE.DOUBLE_ELIMINATION:
       return [
         build_template("Winners Bracket", "knockout_stage", 1),
         build_template("Losers Bracket", "knockout_stage", 2),
         build_template("Grand Final", "one_off_stage", 3),
       ];
-    case "swiss":
+    case FORMAT_TYPE.SWISS:
       return [
         build_template("Swiss Rounds", "league_stage", 1),
         build_template("Final", "one_off_stage", 2),
       ];
-    case "custom":
+    case FORMAT_TYPE.CUSTOM:
+      return [build_template("Stage 1", "custom", 1)];
+    default:
       return [build_template("Stage 1", "custom", 1)];
   }
 }

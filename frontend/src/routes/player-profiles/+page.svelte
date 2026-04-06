@@ -5,8 +5,6 @@
   import { get } from "svelte/store";
   import type { BaseEntity } from "$lib/core/entities/BaseEntity";
   import type { PlayerProfile } from "$lib/core/entities/PlayerProfile";
-  import { get_player_profile_use_cases } from "$lib/core/usecases/PlayerProfileUseCases";
-  import { get_player_use_cases } from "$lib/core/usecases/PlayerUseCases";
   import DynamicEntityForm from "$lib/presentation/components/DynamicEntityForm.svelte";
   import { auth_store } from "$lib/presentation/stores/auth";
   import { access_denial_store } from "$lib/presentation/stores/accessDenial";
@@ -17,6 +15,7 @@
   } from "$lib/core/interfaces/ports";
   import { get_authorization_adapter } from "$lib/infrastructure/AuthorizationProvider";
   import { ensure_auth_profile } from "$lib/presentation/logic/authGuard";
+import { get_player_profile_use_cases, get_player_use_cases } from "$lib/infrastructure/registry/useCaseFactories";
 
   type ViewMode = "list" | "create" | "edit";
 

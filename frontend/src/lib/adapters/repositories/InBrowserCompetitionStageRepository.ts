@@ -117,6 +117,13 @@ export class InBrowserCompetitionStageRepository
         this.create_paginated_result(paginated_stages, total_count, options),
       );
     } catch (error) {
+      console.warn(
+        "[CompetitionStageRepository] Failed to fetch stages for competition",
+        {
+          event: "repository_fetch_stages_for_competition_failed",
+          error: String(error),
+        },
+      );
       return create_failure_result(
         `Failed to fetch stages for competition: ${error}`,
       );

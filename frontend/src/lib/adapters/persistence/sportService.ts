@@ -26,7 +26,10 @@ export async function get_all_sports(): Promise<SportServiceResult<Sport[]>> {
     const sports = await repo_get_all_sports();
     return { success: true, data: sports };
   } catch (error) {
-    console.error("[SportService] Failed to get all sports:", error);
+    console.error("[SportService] Failed to get all sports", {
+      event: "failed_to_get_all_sports_failed",
+      error: String(error),
+    });
     return { success: false, error: "Failed to retrieve sports" };
   }
 }
@@ -45,7 +48,10 @@ export async function get_sport_by_id(
     }
     return { success: true, data: sport };
   } catch (error) {
-    console.error("[SportService] Failed to get sport by ID:", error);
+    console.error("[SportService] Failed to get sport by ID", {
+      event: "failed_to_get_sport_by_id_failed",
+      error: String(error),
+    });
     return { success: false, error: "Failed to retrieve sport" };
   }
 }
@@ -64,7 +70,10 @@ async function get_sport_by_code(
     }
     return { success: true, data: sport };
   } catch (error) {
-    console.error("[SportService] Failed to get sport by code:", error);
+    console.error("[SportService] Failed to get sport by code", {
+      event: "failed_to_get_sport_by_code_failed",
+      error: String(error),
+    });
     return { success: false, error: "Failed to retrieve sport" };
   }
 }
@@ -124,7 +133,10 @@ async function update_sport(
 
     return { success: true, data: updated_sport };
   } catch (error) {
-    console.error("[SportService] Failed to update sport:", error);
+    console.error("[SportService] Failed to update sport", {
+      event: "failed_to_update_sport_failed",
+      error: String(error),
+    });
     return { success: false, error: "Failed to update sport" };
   }
 }
@@ -141,7 +153,10 @@ async function delete_sport(id: string): Promise<SportServiceResult<boolean>> {
     }
     return { success: true, data: true };
   } catch (error) {
-    console.error("[SportService] Failed to delete sport:", error);
+    console.error("[SportService] Failed to delete sport", {
+      event: "failed_to_delete_sport_failed",
+      error: String(error),
+    });
     return { success: false, error: "Failed to delete sport" };
   }
 }
@@ -151,7 +166,10 @@ async function get_active_sports(): Promise<SportServiceResult<Sport[]>> {
     const sports = await repo_get_active_sports();
     return { success: true, data: sports };
   } catch (error) {
-    console.error("[SportService] Failed to get active sports:", error);
+    console.error("[SportService] Failed to get active sports", {
+      event: "failed_to_get_active_sports_failed",
+      error: String(error),
+    });
     return { success: false, error: "Failed to retrieve active sports" };
   }
 }

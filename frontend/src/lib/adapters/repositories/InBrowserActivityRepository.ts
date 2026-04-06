@@ -165,6 +165,10 @@ class InBrowserActivityRepository
         ) ?? null,
       );
     } catch (error) {
+      console.warn("[ActivityRepository] Failed to find activity by source", {
+        event: "repository_find_activity_by_source_failed",
+        error: String(error),
+      });
       const msg =
         error instanceof Error ? error.message : "Unknown error occurred";
       return create_failure_result(`Failed to find activity by source: ${msg}`);

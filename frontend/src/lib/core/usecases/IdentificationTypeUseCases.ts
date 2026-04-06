@@ -14,7 +14,6 @@ import {
   create_success_result,
   create_failure_result,
 } from "$lib/core/types/Result";
-import { get_repository_container } from "../../infrastructure/container";
 import type { IdentificationTypeUseCasesPort } from "$lib/core/interfaces/ports";
 
 export type IdentificationTypeUseCases = IdentificationTypeUseCasesPort;
@@ -111,11 +110,4 @@ export function create_identification_type_use_cases(
       });
     },
   };
-}
-
-export function get_identification_type_use_cases(): IdentificationTypeUseCases {
-  const container = get_repository_container();
-  return create_identification_type_use_cases(
-    container.identification_type_repository,
-  );
 }

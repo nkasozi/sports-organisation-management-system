@@ -1,3 +1,4 @@
+import { WILDCARD_SCOPE } from "../../core/entities/StatusConstants";
 import type {
   BaseEntity,
   FieldMetadata,
@@ -32,8 +33,8 @@ export function build_entity_authorization_filter(
   const normalized_type = normalize_entity_type_for_filter(entity_type);
   const player_id = auth_profile.player_id;
   const team_id = auth_profile.team_id;
-  const has_valid_player_id = player_id && player_id !== "*";
-  const has_valid_team_id = team_id && team_id !== "*";
+  const has_valid_player_id = player_id && player_id !== WILDCARD_SCOPE;
+  const has_valid_team_id = team_id && team_id !== WILDCARD_SCOPE;
 
   if (normalized_type === "player" && has_valid_player_id)
     filter["id"] = player_id;
@@ -50,7 +51,7 @@ export function build_entity_authorization_filter(
     filter["team_id"] = team_id;
 
   const official_id = auth_profile.official_id;
-  const has_valid_official_id = official_id && official_id !== "*";
+  const has_valid_official_id = official_id && official_id !== WILDCARD_SCOPE;
   if (normalized_type === "official" && has_valid_official_id)
     filter["id"] = official_id;
 

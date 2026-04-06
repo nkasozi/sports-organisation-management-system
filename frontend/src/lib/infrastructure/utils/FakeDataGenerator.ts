@@ -70,6 +70,10 @@ class FakeDataGeneratorService {
         debug_info: `Generated fake data for ${Object.keys(generated_data).length} fields`,
       };
     } catch (error) {
+      console.warn("[FakeDataGenerator] Failed to generate fake data", {
+        event: "repository_generate_fake_data_failed",
+        error: String(error),
+      });
       return {
         success: false,
         generated_data: {},

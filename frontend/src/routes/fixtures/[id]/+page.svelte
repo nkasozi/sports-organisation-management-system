@@ -4,9 +4,9 @@
   import { goto } from "$app/navigation";
   import { ensure_auth_profile } from "$lib/presentation/logic/authGuard";
   import type { Fixture } from "$lib/core/entities/Fixture";
-  import { get_fixture_use_cases } from "$lib/core/usecases/FixtureUseCases";
   import { auth_store } from "$lib/presentation/stores/auth";
   import OfficialRatingPanel from "$lib/presentation/components/OfficialRatingPanel.svelte";
+import { get_fixture_use_cases } from "$lib/infrastructure/registry/useCaseFactories";
 
   const fixture_use_cases = get_fixture_use_cases();
 

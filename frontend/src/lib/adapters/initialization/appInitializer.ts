@@ -25,7 +25,6 @@ import {
 } from "$lib/infrastructure/sync/convexRealtimeSync";
 import { sync_store } from "$lib/presentation/stores/syncStore";
 import { branding_store } from "$lib/presentation/stores/branding";
-import { get_organization_settings_use_cases } from "$lib/core/usecases/OrganizationSettingsUseCases";
 import type { SubscribableConvexClient } from "$lib/infrastructure/cache/AuthCacheInvalidator";
 import { api } from "$convex/_generated/api";
 import {
@@ -35,6 +34,7 @@ import {
 } from "./appConvexInitializer";
 import { run_seeding_with_strategy } from "./appSeedingOrchestrator";
 import { initialize_all_use_cases } from "./appUseCaseInitializer";
+import { get_organization_settings_use_cases } from "$lib/infrastructure/registry/useCaseFactories";
 
 let initialized = false;
 const FIRST_TIME_DETECTION_KEY = "sports_org_app_initialized";

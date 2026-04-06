@@ -1,3 +1,4 @@
+import { ENTITY_STATUS } from "../../core/entities/StatusConstants";
 import type { Table } from "dexie";
 import type {
   Player,
@@ -129,6 +130,10 @@ export class InBrowserPlayerRepository
         this.create_paginated_result(paginated, total_count, options),
       );
     } catch (error) {
+      console.warn("[PlayerRepository] Failed to filter players", {
+        event: "repository_filter_players_failed",
+        error: String(error),
+      });
       const error_message =
         error instanceof Error ? error.message : "Unknown error occurred";
       return create_failure_result(
@@ -147,7 +152,10 @@ export class InBrowserPlayerRepository
   async find_active_players(
     options?: QueryOptions,
   ): PaginatedAsyncResult<Player> {
-    return this.find_by_filter({ status: "active" }, options);
+    return this.find_by_filter(
+      { status: ENTITY_STATUS.ACTIVE as "active" },
+      options,
+    );
   }
 
   async find_by_jersey_number(
@@ -175,6 +183,13 @@ export class InBrowserPlayerRepository
         this.create_paginated_result(matching_players, matching_players.length),
       );
     } catch (error) {
+      console.warn(
+        "[PlayerRepository] Failed to find players by jersey number",
+        {
+          event: "repository_find_players_by_jersey_number_failed",
+          error: String(error),
+        },
+      );
       const error_message =
         error instanceof Error ? error.message : "Unknown error occurred";
       return create_failure_result(

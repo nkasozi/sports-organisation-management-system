@@ -101,7 +101,11 @@ export async function pull_table_from_convex(
   } catch (error) {
     const error_message =
       error instanceof Error ? error.message : String(error);
-    console.error(`[Sync:Pull] ${table_name} — FAILED: ${error_message}`);
+    console.error("[Sync:Pull] Operation failed", {
+      event: "failed_failed",
+      context: String(table_name),
+      error: String(error_message),
+    });
     return { success: false, records_pulled: 0, error: error_message };
   }
 }

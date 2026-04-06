@@ -13,9 +13,8 @@ import type {
 } from "../interfaces/ports";
 import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
 import { create_failure_result, create_success_result } from "../types/Result";
-import { get_repository_container } from "../../infrastructure/container";
-import { EventBus } from "$lib/infrastructure/events/EventBus";
 import { create_transfer_confirmation } from "./TransferConfirmationUseCases";
+import { EventBus } from "$lib/infrastructure/events/EventBus";
 
 export type PlayerTeamTransferHistoryUseCases =
   PlayerTeamTransferHistoryUseCasesPort;
@@ -149,12 +148,4 @@ export function create_player_team_transfer_history_use_cases(
       return result;
     },
   };
-}
-
-export function get_player_team_transfer_history_use_cases(): PlayerTeamTransferHistoryUseCases {
-  const container = get_repository_container();
-  return create_player_team_transfer_history_use_cases(
-    container.player_team_transfer_history_repository,
-    container.player_team_membership_repository,
-  );
 }

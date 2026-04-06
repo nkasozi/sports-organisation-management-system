@@ -23,7 +23,6 @@ import type {
 } from "../interfaces/ports";
 import type { PaginatedAsyncResult, AsyncResult } from "../types/Result";
 import { create_success_result, create_failure_result } from "../types/Result";
-import { get_repository_container } from "../../infrastructure/container";
 import { create_activity_sync } from "./ActivitySyncUseCases";
 
 export type ActivityUseCases = ActivityUseCasesPort;
@@ -209,15 +208,4 @@ export function create_activity_use_cases(
       team_repository,
     ),
   };
-}
-
-function get_activity_use_cases(): ActivityUseCases {
-  const container = get_repository_container();
-  return create_activity_use_cases({
-    activity_repository: container.activity_repository,
-    activity_category_repository: container.activity_category_repository,
-    competition_repository: container.competition_repository,
-    fixture_repository: container.fixture_repository,
-    team_repository: container.team_repository,
-  });
 }

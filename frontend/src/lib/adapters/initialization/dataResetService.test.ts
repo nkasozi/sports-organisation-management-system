@@ -27,15 +27,13 @@ vi.mock("../repositories/InBrowserOfficialRepository", () => ({
   get_official_repository: vi.fn(),
 }));
 vi.mock("../repositories/InBrowserSportRepository", () => ({
-  reset_sport_repository: vi
-    .fn()
-    .mockResolvedValue([
-      {
-        id: "sport-field-hockey-default",
-        name: "Field Hockey",
-        code: "FIELD_HOCKEY",
-      },
-    ]),
+  reset_sport_repository: vi.fn().mockResolvedValue([
+    {
+      id: "sport-field-hockey-default",
+      name: "Field Hockey",
+      code: "FIELD_HOCKEY",
+    },
+  ]),
 }));
 vi.mock("../repositories/InBrowserFixtureRepository", () => ({
   reset_fixture_repository: vi.fn().mockResolvedValue(undefined),

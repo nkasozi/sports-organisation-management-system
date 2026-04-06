@@ -16,19 +16,6 @@
   import { auto_create_fixture_details_setup } from "$lib/core/services/fixtureDetailsAutoSetup";
   import type { PreFlightCheck } from "$lib/core/services/fixtureStartChecks";
   import { can_role_access_route } from "$lib/adapters/iam/LocalAuthorizationAdapter";
-  import { get_fixture_use_cases } from "$lib/core/usecases/FixtureUseCases";
-  import { get_fixture_details_setup_use_cases } from "$lib/core/usecases/FixtureDetailsSetupUseCases";
-  import { get_fixture_lineup_use_cases } from "$lib/core/usecases/FixtureLineupUseCases";
-  import { get_player_team_membership_use_cases } from "$lib/core/usecases/PlayerTeamMembershipUseCases";
-  import { get_player_use_cases } from "$lib/core/usecases/PlayerUseCases";
-  import { get_player_position_use_cases } from "$lib/core/usecases/PlayerPositionUseCases";
-  import { get_team_use_cases } from "$lib/core/usecases/TeamUseCases";
-  import { get_sport_use_cases } from "$lib/core/usecases/SportUseCases";
-  import { get_competition_use_cases } from "$lib/core/usecases/CompetitionUseCases";
-  import { get_organization_use_cases } from "$lib/core/usecases/OrganizationUseCases";
-  import { get_jersey_color_use_cases } from "$lib/core/usecases/JerseyColorUseCases";
-  import { get_official_use_cases } from "$lib/core/usecases/OfficialUseCases";
-  import { get_game_official_role_use_cases } from "$lib/core/usecases/GameOfficialRoleUseCases";
   import { auth_store } from "$lib/presentation/stores/auth";
   import {
     build_authorization_list_filter,
@@ -36,6 +23,21 @@
     ANY_VALUE,
     type UserScopeProfile,
   } from "$lib/core/interfaces/ports";
+import {
+  get_competition_use_cases,
+  get_fixture_details_setup_use_cases,
+  get_fixture_lineup_use_cases,
+  get_fixture_use_cases,
+  get_game_official_role_use_cases,
+  get_jersey_color_use_cases,
+  get_official_use_cases,
+  get_organization_use_cases,
+  get_player_position_use_cases,
+  get_player_team_membership_use_cases,
+  get_player_use_cases,
+  get_sport_use_cases,
+  get_team_use_cases,
+} from "$lib/infrastructure/registry/useCaseFactories";
 
   const fixture_use_cases = get_fixture_use_cases();
   const fixture_details_setup_use_cases = get_fixture_details_setup_use_cases();

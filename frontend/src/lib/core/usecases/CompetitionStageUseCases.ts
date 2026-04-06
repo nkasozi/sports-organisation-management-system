@@ -13,7 +13,6 @@ import type { FixtureRepository } from "../interfaces/ports";
 import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
 import { create_failure_result, create_success_result } from "../types/Result";
 import type { CompetitionStageUseCasesPort } from "../interfaces/ports";
-import { get_repository_container } from "../../infrastructure/container";
 
 export type CompetitionStageUseCases = CompetitionStageUseCasesPort;
 
@@ -154,12 +153,4 @@ async function check_for_linked_fixtures(
     );
   }
   return create_success_result(true);
-}
-
-export function get_competition_stage_use_cases(): CompetitionStageUseCases {
-  const container = get_repository_container();
-  return create_competition_stage_use_cases(
-    container.competition_stage_repository,
-    container.fixture_repository,
-  );
 }

@@ -126,9 +126,11 @@ export async function sync_all_tables(
     } catch (error) {
       const error_message =
         error instanceof Error ? error.message : String(error);
-      console.error(
-        `[Sync] ${table_name} — failed to get remote state: ${error_message}`,
-      );
+      console.error("[Sync] Failed to get remote state", {
+        event: "sync_remote_state_failed",
+        table_name,
+        error: String(error_message),
+      });
       errors.push({ table_name, error: error_message });
       tables_completed++;
       continue;

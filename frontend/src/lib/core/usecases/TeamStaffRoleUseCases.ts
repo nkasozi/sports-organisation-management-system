@@ -11,7 +11,6 @@ import type {
 import type { QueryOptions } from "../interfaces/ports";
 import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
 import { create_failure_result, create_success_result } from "../types/Result";
-import { get_repository_container } from "../../infrastructure/container";
 import type { TeamStaffRoleUseCasesPort } from "../interfaces/ports";
 
 export type TeamStaffRoleUseCases = TeamStaffRoleUseCasesPort;
@@ -88,9 +87,4 @@ export function create_team_staff_role_use_cases(
       return await repository.find_by_category(category);
     },
   };
-}
-
-export function get_team_staff_role_use_cases(): TeamStaffRoleUseCases {
-  const container = get_repository_container();
-  return create_team_staff_role_use_cases(container.team_staff_role_repository);
 }

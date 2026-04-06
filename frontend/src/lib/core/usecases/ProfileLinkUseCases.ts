@@ -11,7 +11,6 @@ import type { QueryOptions } from "../interfaces/ports";
 import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
 import { create_failure_result } from "../types/Result";
 import { validate_profile_link_input } from "../entities/ProfileLink";
-import { get_repository_container } from "../../infrastructure/container";
 
 export interface ProfileLinkUseCases {
   list(
@@ -92,9 +91,4 @@ export function create_profile_link_use_cases(
       return repository.find_by_profile_id(profile_id, options);
     },
   };
-}
-
-export function get_profile_link_use_cases(): ProfileLinkUseCases {
-  const container = get_repository_container();
-  return create_profile_link_use_cases(container.profile_link_repository);
 }

@@ -123,6 +123,13 @@ export class InBrowserCompetitionTeamRepository
       }
       return create_success_result(found);
     } catch (error) {
+      console.warn(
+        "[CompetitionTeamRepository] Failed to find team in competition",
+        {
+          event: "repository_find_team_in_competition_failed",
+          error: String(error),
+        },
+      );
       const error_message =
         error instanceof Error ? error.message : "Unknown error occurred";
       return create_failure_result(
@@ -148,6 +155,13 @@ export class InBrowserCompetitionTeamRepository
 
       return this.delete_by_id(found.id);
     } catch (error) {
+      console.warn(
+        "[CompetitionTeamRepository] Failed to remove team from competition",
+        {
+          event: "repository_remove_team_from_competition_failed",
+          error: String(error),
+        },
+      );
       const error_message =
         error instanceof Error ? error.message : "Unknown error occurred";
       return create_failure_result(

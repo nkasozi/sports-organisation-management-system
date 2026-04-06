@@ -7,7 +7,6 @@ import { validate_system_user_input } from "../entities/SystemUser";
 import type { Repository, QueryOptions } from "../interfaces/ports";
 import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
 import { create_success_result, create_failure_result } from "../types/Result";
-import { get_repository_container } from "../../infrastructure/container";
 
 export interface SystemUserFilter {
   email?: string;
@@ -190,9 +189,4 @@ async function check_email_already_exists(
   );
 
   return { exists: !!existing_user };
-}
-
-export function get_system_user_use_cases(): SystemUserUseCases {
-  const container = get_repository_container();
-  return create_system_user_use_cases(container.system_user_repository);
 }

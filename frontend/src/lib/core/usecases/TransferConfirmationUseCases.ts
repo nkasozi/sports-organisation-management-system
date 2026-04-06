@@ -1,3 +1,4 @@
+import { TRANSFER_STATUS } from "../entities/StatusConstants";
 import type { PlayerTeamTransferHistory } from "../entities/PlayerTeamTransferHistory";
 import type {
   PlayerTeamTransferHistoryRepository,
@@ -106,7 +107,7 @@ export function create_transfer_confirmation(
         return create_failure_result(transfer_result.error);
       if (!transfer_result.data)
         return create_failure_result("Transfer not found");
-      if (transfer_result.data.status !== "pending") {
+      if (transfer_result.data.status !== TRANSFER_STATUS.PENDING) {
         return create_failure_result(
           `Transfer cannot be confirmed. Current status: ${transfer_result.data.status}`,
         );
@@ -118,7 +119,7 @@ export function create_transfer_confirmation(
       if (!membership_result.success)
         return create_failure_result(membership_result.error);
       const update_result = await repository.update(transfer_id, {
-        status: "approved",
+        status: TRANSFER_STATUS.APPROVED,
       });
       if (!update_result.success)
         return create_failure_result(
@@ -149,13 +150,13 @@ export function create_transfer_confirmation(
         return create_failure_result(transfer_result.error);
       if (!transfer_result.data)
         return create_failure_result("Transfer not found");
-      if (transfer_result.data.status !== "pending") {
+      if (transfer_result.data.status !== TRANSFER_STATUS.PENDING) {
         return create_failure_result(
           `Transfer cannot be rejected. Current status: ${transfer_result.data.status}`,
         );
       }
       const update_result = await repository.update(transfer_id, {
-        status: "declined",
+        status: TRANSFER_STATUS.DECLINED,
       });
       if (!update_result.success)
         return create_failure_result(

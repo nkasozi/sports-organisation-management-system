@@ -11,12 +11,11 @@ import type {
 import type { QueryOptions } from "../interfaces/ports";
 import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
 import { create_success_result, create_failure_result } from "../types/Result";
-import { get_repository_container } from "../../infrastructure/container";
 import type { FixtureDetailsSetupUseCasesPort } from "../interfaces/ports";
 
 export type FixtureDetailsSetupUseCases = FixtureDetailsSetupUseCasesPort;
 
-function create_fixture_details_setup_use_cases(
+export function create_fixture_details_setup_use_cases(
   repository: FixtureDetailsSetupRepository,
 ): FixtureDetailsSetupUseCases {
   return {
@@ -149,11 +148,4 @@ function create_fixture_details_setup_use_cases(
       });
     },
   };
-}
-
-export function get_fixture_details_setup_use_cases(): FixtureDetailsSetupUseCases {
-  const container = get_repository_container();
-  return create_fixture_details_setup_use_cases(
-    container.fixture_details_setup_repository,
-  );
 }

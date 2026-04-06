@@ -11,7 +11,6 @@ import type { QueryOptions } from "../interfaces/ports";
 import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
 import { create_failure_result } from "../types/Result";
 import { validate_player_profile_input } from "../entities/PlayerProfile";
-import { get_repository_container } from "../../infrastructure/container";
 
 export interface PlayerProfileUseCases {
   list(
@@ -126,9 +125,4 @@ export function create_player_profile_use_cases(
       return repository.find_public_profiles(options);
     },
   };
-}
-
-export function get_player_profile_use_cases(): PlayerProfileUseCases {
-  const container = get_repository_container();
-  return create_player_profile_use_cases(container.player_profile_repository);
 }

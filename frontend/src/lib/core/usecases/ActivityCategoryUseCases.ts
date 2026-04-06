@@ -15,7 +15,6 @@ import type { QueryOptions } from "../interfaces/ports";
 import type { PaginatedAsyncResult, AsyncResult } from "../types/Result";
 import { create_success_result, create_failure_result } from "../types/Result";
 import type { ActivityCategoryUseCasesPort } from "../interfaces/ports";
-import { get_repository_container } from "../../infrastructure/container";
 
 export type ActivityCategoryUseCases = ActivityCategoryUseCasesPort;
 
@@ -135,11 +134,4 @@ export function create_activity_category_use_cases(
       return { success: true, data: { categories_created } };
     },
   };
-}
-
-function get_activity_category_use_cases(): ActivityCategoryUseCases {
-  const container = get_repository_container();
-  return create_activity_category_use_cases(
-    container.activity_category_repository,
-  );
 }

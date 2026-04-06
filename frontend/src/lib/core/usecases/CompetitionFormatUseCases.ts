@@ -15,7 +15,6 @@ import {
   hydrate_competition_format_input,
   validate_competition_format_input,
 } from "../entities/CompetitionFormat";
-import { get_repository_container } from "../../infrastructure/container";
 import type { CompetitionFormatUseCasesPort } from "../interfaces/ports";
 
 export type CompetitionFormatUseCases = CompetitionFormatUseCasesPort;
@@ -140,11 +139,4 @@ export function create_competition_format_use_cases(
       return await repository.find_active_formats();
     },
   };
-}
-
-export function get_competition_format_use_cases(): CompetitionFormatUseCases {
-  const container = get_repository_container();
-  return create_competition_format_use_cases(
-    container.competition_format_repository,
-  );
 }

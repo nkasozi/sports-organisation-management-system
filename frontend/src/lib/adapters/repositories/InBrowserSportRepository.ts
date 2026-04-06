@@ -1,3 +1,4 @@
+import { ENTITY_STATUS } from "../../core/entities/StatusConstants";
 import type { Table } from "dexie";
 import type {
   Sport,
@@ -114,7 +115,7 @@ class InBrowserSportRepository
 
   async find_active(): Promise<Sport[]> {
     const all = await this.get_table().toArray();
-    return all.filter((s) => s.status === "active");
+    return all.filter((s) => s.status === ENTITY_STATUS.ACTIVE);
   }
 }
 

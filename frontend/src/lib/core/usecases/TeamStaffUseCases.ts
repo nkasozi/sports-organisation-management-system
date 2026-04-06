@@ -1,3 +1,4 @@
+import { ENTITY_STATUS } from "../entities/StatusConstants";
 import type {
   TeamStaff,
   CreateTeamStaffInput,
@@ -13,7 +14,6 @@ import type {
 } from "../types/Result";
 import { create_failure_result, create_success_result } from "../types/Result";
 import { validate_team_staff_input } from "../entities/TeamStaff";
-import { get_repository_container } from "../../infrastructure/container";
 import type {
   TeamStaffUseCasesPort,
   TeamStaffRepository,
@@ -114,7 +114,7 @@ export function create_team_staff_use_cases(
 
     async list_staff_roles(): AsyncResult<TeamStaffRole[]> {
       const result = await role_repository.find_all(
-        { status: "active" },
+        { status: ENTITY_STATUS.ACTIVE },
         { page_size: 100 },
       );
 
@@ -125,12 +125,4 @@ export function create_team_staff_use_cases(
       return create_success_result(result.data.items);
     },
   };
-}
-
-export function get_team_staff_use_cases(): TeamStaffUseCases {
-  const container = get_repository_container();
-  return create_team_staff_use_cases(
-    container.team_staff_repository,
-    container.team_staff_role_repository,
-  );
 }

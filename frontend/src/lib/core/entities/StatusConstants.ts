@@ -1,8 +1,14 @@
 import type { FixtureStatus } from "./FixtureTypes";
+import type { GamePeriod } from "./FixtureTypes";
 import type { EntityStatus } from "./BaseEntity";
 import type { StageType } from "./CompetitionStage";
 import type { LiveGameStatus } from "./LiveGameLog";
 import type { PlayerTeamMembershipStatus } from "./PlayerTeamMembership";
+import type { LineupStatus } from "./FixtureLineup";
+import type { PlayerTeamTransferStatus } from "./PlayerTeamTransferHistory";
+import type { FixtureDetailsSetupConfirmationStatus } from "./FixtureDetailsSetup";
+import type { FormatType } from "./CompetitionFormatTypes";
+import type { UserRole } from "../interfaces/ports/external/iam/AuthenticationPort";
 
 export const FIXTURE_STATUS: Record<string, FixtureStatus> = {
   SCHEDULED: "scheduled",
@@ -58,4 +64,60 @@ export const MEMBERSHIP_STATUS: Record<string, PlayerTeamMembershipStatus> = {
   ACTIVE: "active",
   INACTIVE: "inactive",
   ENDED: "ended",
+} as const;
+
+export const USER_ROLE: Record<string, UserRole> = {
+  SUPER_ADMIN: "super_admin",
+  ORG_ADMIN: "org_admin",
+  OFFICIALS_MANAGER: "officials_manager",
+  TEAM_MANAGER: "team_manager",
+  OFFICIAL: "official",
+  PLAYER: "player",
+  PUBLIC_VIEWER: "public_viewer",
+} as const;
+
+export const WILDCARD_SCOPE = "*" as const;
+
+export const GAME_PERIOD: Record<string, GamePeriod> = {
+  PRE_GAME: "pre_game",
+  FIRST_HALF: "first_half",
+  HALF_TIME: "half_time",
+  SECOND_HALF: "second_half",
+  EXTRA_TIME_FIRST: "extra_time_first",
+  EXTRA_TIME_SECOND: "extra_time_second",
+  PENALTY_SHOOTOUT: "penalty_shootout",
+  FINISHED: "finished",
+} as const;
+
+export const LINEUP_STATUS: Record<string, LineupStatus> = {
+  DRAFT: "draft",
+  SUBMITTED: "submitted",
+  LOCKED: "locked",
+} as const;
+
+export const TRANSFER_STATUS: Record<string, PlayerTeamTransferStatus> = {
+  PENDING: "pending",
+  APPROVED: "approved",
+  DECLINED: "declined",
+} as const;
+
+export const CONFIRMATION_STATUS: Record<
+  string,
+  FixtureDetailsSetupConfirmationStatus
+> = {
+  PENDING: "pending",
+  CONFIRMED: "confirmed",
+  DECLINED: "declined",
+  REPLACED: "replaced",
+} as const;
+
+export const FORMAT_TYPE: Record<string, FormatType> = {
+  LEAGUE: "league",
+  ROUND_ROBIN: "round_robin",
+  GROUPS_KNOCKOUT: "groups_knockout",
+  STRAIGHT_KNOCKOUT: "straight_knockout",
+  GROUPS_PLAYOFFS: "groups_playoffs",
+  DOUBLE_ELIMINATION: "double_elimination",
+  SWISS: "swiss",
+  CUSTOM: "custom",
 } as const;

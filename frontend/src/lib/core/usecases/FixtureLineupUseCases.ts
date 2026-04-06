@@ -1,3 +1,4 @@
+import { LINEUP_STATUS } from "../entities/StatusConstants";
 import type {
   FixtureLineup,
   CreateFixtureLineupInput,
@@ -10,7 +11,6 @@ import type {
 } from "../interfaces/ports";
 import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
 import { create_failure_result } from "../types/Result";
-import { get_repository_container } from "../../infrastructure/container";
 import { EventBus } from "$lib/infrastructure/events/EventBus";
 
 export type FixtureLineupUseCases = FixtureLineupUseCasesPort;
@@ -59,7 +59,7 @@ export function create_fixture_lineup_use_cases(
       const existing_result = await repository.find_by_id(id);
       if (!existing_result.success || !existing_result.data)
         return create_failure_result("Lineup not found");
-      if (existing_result.data.status === "locked")
+      if (existing_result.data.status === LINEUP_STATUS.LOCKED)
         return create_failure_result("Cannot update a locked lineup");
       return repository.update(id, input);
     },
@@ -70,7 +70,7 @@ export function create_fixture_lineup_use_cases(
       const existing_result = await repository.find_by_id(id);
       if (!existing_result.success || !existing_result.data)
         return create_failure_result("Lineup not found");
-      if (existing_result.data.status === "locked")
+      if (existing_result.data.status === LINEUP_STATUS.LOCKED)
         return create_failure_result("Cannot delete a locked lineup");
       return repository.delete_by_id(id);
     },
@@ -122,11 +122,11 @@ export function create_fixture_lineup_use_cases(
         return create_failure_result("Lineup not found");
       }
 
-      if (existing_result.data.status === "locked") {
+      if (existing_result.data.status === LINEUP_STATUS.LOCKED) {
         return create_failure_result("Cannot submit a locked lineup");
       }
 
-      if (existing_result.data.status === "submitted") {
+      if (existing_result.data.status === LINEUP_STATUS.SUBMITTED) {
         return create_failure_result("Lineup is already submitted");
       }
 
@@ -162,7 +162,7 @@ export function create_fixture_lineup_use_cases(
         return create_failure_result("Lineup not found");
       }
 
-      if (existing_result.data.status === "locked") {
+      if (existing_result.data.status === LINEUP_STATUS.LOCKED) {
         return create_failure_result("Lineup is already locked");
       }
 
@@ -191,9 +191,4 @@ export function create_fixture_lineup_use_cases(
       return result;
     },
   };
-}
-
-export function get_fixture_lineup_use_cases(): FixtureLineupUseCases {
-  const container = get_repository_container();
-  return create_fixture_lineup_use_cases(container.fixture_lineup_repository);
 }

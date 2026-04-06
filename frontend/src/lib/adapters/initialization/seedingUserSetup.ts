@@ -52,7 +52,12 @@ export async function load_and_set_current_user(): Promise<Result<SystemUser>> {
     user_display_name: `${matched_user.first_name} ${matched_user.last_name}`,
     organization_id: matched_user.organization_id,
   });
-  current_user_store.set_user(matched_user).catch(() => {});
+  current_user_store.set_user(matched_user).catch((error) => {
+    console.warn("[SeedingUserSetup] Failed to set user", {
+      event: "seeding_set_user_failed",
+      error: String(error),
+    });
+  });
   console.log(
     `[Seeding] Current user resolved: ${matched_user.email} (role: ${matched_user.role})`,
   );

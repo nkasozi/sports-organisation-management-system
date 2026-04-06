@@ -101,6 +101,10 @@ export class InBrowserOrganizationSettingsRepository
 
       return create_success_result(match ?? null);
     } catch (error) {
+      console.warn("[OrgSettingsRepository] Failed to find settings for org", {
+        event: "repository_find_settings_for_org_failed",
+        error: String(error),
+      });
       const error_message =
         error instanceof Error ? error.message : "Unknown error";
       return create_failure_result(

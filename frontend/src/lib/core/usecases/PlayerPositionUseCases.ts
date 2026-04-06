@@ -9,7 +9,6 @@ import type { PlayerPositionRepository } from "../interfaces/ports";
 import type { QueryOptions } from "../interfaces/ports";
 import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
 import { create_failure_result, create_success_result } from "../types/Result";
-import { get_repository_container } from "../../infrastructure/container";
 import type { PlayerPositionUseCasesPort } from "../interfaces/ports";
 
 export type PlayerPositionUseCases = PlayerPositionUseCasesPort;
@@ -135,9 +134,4 @@ export function create_player_position_use_cases(
       return repository.find_by_sport_type(sport_type);
     },
   };
-}
-
-export function get_player_position_use_cases(): PlayerPositionUseCases {
-  const container = get_repository_container();
-  return create_player_position_use_cases(container.player_position_repository);
 }

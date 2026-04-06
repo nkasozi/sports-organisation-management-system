@@ -2,11 +2,13 @@
   import { onMount } from "svelte";
   import { page } from "$app/stores";
   import EntityCrudWrapper from "$lib/presentation/components/EntityCrudWrapper.svelte";
-  import { get_fixture_use_cases } from "$lib/core/usecases/FixtureUseCases";
-  import { get_jersey_color_use_cases } from "$lib/core/usecases/JerseyColorUseCases";
-  import { get_official_use_cases } from "$lib/core/usecases/OfficialUseCases";
-  import { get_game_official_role_use_cases } from "$lib/core/usecases/GameOfficialRoleUseCases";
   import type { OfficialAssignment } from "$lib/core/entities/FixtureDetailsSetup";
+import {
+  get_fixture_use_cases,
+  get_game_official_role_use_cases,
+  get_jersey_color_use_cases,
+  get_official_use_cases,
+} from "$lib/infrastructure/registry/useCaseFactories";
 
   const fixture_use_cases = get_fixture_use_cases();
   const jersey_color_use_cases = get_jersey_color_use_cases();

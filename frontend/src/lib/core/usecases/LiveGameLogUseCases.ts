@@ -1,3 +1,4 @@
+import { GAME_STATUS } from "../entities/StatusConstants";
 import type {
   LiveGameLog,
   CreateLiveGameLogInput,
@@ -10,7 +11,6 @@ import type {
 } from "../interfaces/ports";
 import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
 import { create_failure_result } from "../types/Result";
-import { get_repository_container } from "../../infrastructure/container";
 import { create_live_game_state_management } from "./LiveGameStateManagementUseCases";
 
 export type LiveGameLogUseCases = LiveGameLogUseCasesPort;
@@ -74,7 +74,7 @@ export function create_live_game_log_use_cases(
         return create_failure_result("Live game log not found");
       }
 
-      if (existing_result.data.game_status === "in_progress") {
+      if (existing_result.data.game_status === GAME_STATUS.IN_PROGRESS) {
         return create_failure_result("Cannot delete an in-progress game");
       }
 
@@ -119,9 +119,4 @@ export function create_live_game_log_use_cases(
       return repository.find_completed_games(organization_id, options);
     },
   };
-}
-
-export function get_live_game_log_use_cases(): LiveGameLogUseCases {
-  const container = get_repository_container();
-  return create_live_game_log_use_cases(container.live_game_log_repository);
 }

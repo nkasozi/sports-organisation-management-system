@@ -14,7 +14,6 @@ import {
   create_success_result,
   create_failure_result,
 } from "$lib/core/types/Result";
-import { get_repository_container } from "../../infrastructure/container";
 import type { GenderUseCasesPort } from "$lib/core/interfaces/ports";
 
 export type GenderUseCases = GenderUseCasesPort;
@@ -93,9 +92,4 @@ export function create_gender_use_cases(
       });
     },
   };
-}
-
-export function get_gender_use_cases(): GenderUseCases {
-  const container = get_repository_container();
-  return create_gender_use_cases(container.gender_repository);
 }

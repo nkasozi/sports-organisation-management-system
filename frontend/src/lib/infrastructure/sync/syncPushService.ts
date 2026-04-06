@@ -106,7 +106,11 @@ export async function push_table_to_convex(
   } catch (error) {
     const error_message =
       error instanceof Error ? error.message : String(error);
-    console.error(`[Sync:Push] ${table_name} — FAILED: ${error_message}`);
+    console.error("[Sync:Push] Operation failed", {
+      event: "failed_failed",
+      context: String(table_name),
+      error: String(error_message),
+    });
     return {
       success: false,
       records_pushed: total_pushed,

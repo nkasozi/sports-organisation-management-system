@@ -1,3 +1,4 @@
+import { FIXTURE_STATUS, GAME_PERIOD } from "../entities/StatusConstants";
 import type {
   Fixture,
   UpdateFixtureInput,
@@ -108,8 +109,8 @@ export function create_fixture_game_events(
         repository,
         id,
         {
-          status: "in_progress",
-          current_period: "first_half",
+          status: FIXTURE_STATUS.IN_PROGRESS,
+          current_period: GAME_PERIOD.FIRST_HALF,
           current_minute: 0,
           home_team_score: 0,
           away_team_score: 0,
@@ -173,8 +174,8 @@ export function create_fixture_game_events(
         repository,
         id,
         {
-          status: "completed",
-          current_period: "finished",
+          status: FIXTURE_STATUS.COMPLETED,
+          current_period: GAME_PERIOD.FINISHED,
           home_team_score: fixture.home_team_score ?? 0,
           away_team_score: fixture.away_team_score ?? 0,
         },

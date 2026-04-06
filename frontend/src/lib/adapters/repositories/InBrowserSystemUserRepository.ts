@@ -163,6 +163,13 @@ export class InBrowserSystemUserRepository
         this.create_paginated_result(users, users.length),
       );
     } catch (error) {
+      console.warn(
+        "[SystemUserRepository] Failed to find system user by email",
+        {
+          event: "repository_find_system_user_by_email_failed",
+          error: String(error),
+        },
+      );
       const error_message =
         error instanceof Error ? error.message : "Unknown error occurred";
       return create_failure_result(
@@ -200,6 +207,10 @@ export class InBrowserSystemUserRepository
         this.create_paginated_result(paginated, filtered.length, options),
       );
     } catch (error) {
+      console.warn("[SystemUserRepository] Failed to find admin users", {
+        event: "repository_find_admin_users_failed",
+        error: String(error),
+      });
       const error_message =
         error instanceof Error ? error.message : "Unknown error occurred";
       return create_failure_result(

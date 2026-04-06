@@ -1,3 +1,4 @@
+import { ENTITY_STATUS } from "../../core/entities/StatusConstants";
 import type { Table } from "dexie";
 import type {
   CompetitionFormat,
@@ -125,10 +126,18 @@ export class InBrowserCompetitionFormatRepository
       return create_success_result(
         all_formats.filter(
           (format) =>
-            format.format_type === format_type && format.status === "active",
+            format.format_type === format_type &&
+            format.status === ENTITY_STATUS.ACTIVE,
         ),
       );
     } catch (error) {
+      console.warn(
+        "[CompetitionFormatRepository] Failed to find formats by type",
+        {
+          event: "repository_find_formats_by_type_failed",
+          error: String(error),
+        },
+      );
       return create_failure_result(`Failed to find formats by type: ${error}`);
     }
   }
@@ -139,6 +148,13 @@ export class InBrowserCompetitionFormatRepository
       const found = all_formats.find((format) => format.code === code);
       return create_success_result(found ?? null);
     } catch (error) {
+      console.warn(
+        "[CompetitionFormatRepository] Failed to find format by code",
+        {
+          event: "repository_find_format_by_code_failed",
+          error: String(error),
+        },
+      );
       return create_failure_result(`Failed to find format by code: ${error}`);
     }
   }
@@ -148,10 +164,17 @@ export class InBrowserCompetitionFormatRepository
       const all_formats = await this.database.competition_formats.toArray();
       return create_success_result(
         all_formats
-          .filter((format) => format.status === "active")
+          .filter((format) => format.status === ENTITY_STATUS.ACTIVE)
           .sort((a, b) => a.name.localeCompare(b.name)),
       );
     } catch (error) {
+      console.warn(
+        "[CompetitionFormatRepository] Failed to find active formats",
+        {
+          event: "repository_find_active_formats_failed",
+          error: String(error),
+        },
+      );
       return create_failure_result(`Failed to find active formats: ${error}`);
     }
   }

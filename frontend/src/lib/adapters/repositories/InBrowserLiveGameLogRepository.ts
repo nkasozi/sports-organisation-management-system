@@ -1,3 +1,4 @@
+import { GAME_STATUS } from "../../core/entities/StatusConstants";
 import type { Table } from "dexie";
 import type {
   LiveGameLog,
@@ -76,16 +77,16 @@ class InBrowserLiveGameLogRepository
     let ended_at = entity.ended_at;
 
     if (
-      updates.game_status === "in_progress" &&
+      updates.game_status === GAME_STATUS.IN_PROGRESS &&
       entity.game_status === "pre_game"
     ) {
       started_at = now;
     }
 
     if (
-      (updates.game_status === "completed" ||
+      (updates.game_status === GAME_STATUS.COMPLETED ||
         updates.game_status === "abandoned") &&
-      entity.game_status !== "completed" &&
+      entity.game_status !== GAME_STATUS.COMPLETED &&
       entity.game_status !== "abandoned"
     ) {
       ended_at = now;
@@ -155,7 +156,9 @@ class InBrowserLiveGameLogRepository
     }
     const active_games = result.data.items
       .filter(
-        (l) => l.game_status === "in_progress" || l.game_status === "paused",
+        (l) =>
+          l.game_status === GAME_STATUS.IN_PROGRESS ||
+          l.game_status === GAME_STATUS.PAUSED,
       )
       .sort(
         (a, b) =>

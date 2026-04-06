@@ -1,3 +1,7 @@
+import {
+  FIXTURE_STATUS,
+  WILDCARD_SCOPE,
+} from "../../core/entities/StatusConstants";
 import type { BaseEntity, FieldMetadata } from "../../core/entities/BaseEntity";
 import { get_use_cases_for_entity_type } from "../../infrastructure/registry/entityUseCasesRegistry";
 import { get } from "svelte/store";
@@ -36,7 +40,8 @@ export async function fetch_fixtures_for_rating(
   organization_id: string,
 ): Promise<BaseEntity[]> {
   const raw_team_id = get(auth_store).current_profile?.team_id;
-  const team_id = raw_team_id && raw_team_id !== "*" ? raw_team_id : null;
+  const team_id =
+    raw_team_id && raw_team_id !== WILDCARD_SCOPE ? raw_team_id : null;
   const all_fixtures = await fetch_entities_for_type("fixture", {
     organization_id,
   });
@@ -47,7 +52,7 @@ export async function fetch_fixtures_for_rating(
       home_team_id?: string;
       away_team_id?: string;
     };
-    const is_completed = fixture.status === "completed";
+    const is_completed = fixture.status === FIXTURE_STATUS.COMPLETED;
     const matches_team =
       !team_id ||
       fixture.home_team_id === team_id ||

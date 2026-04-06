@@ -7,7 +7,6 @@ import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
 import type { SportRepository, SportFilter } from "../interfaces/ports";
 import type { QueryOptions } from "../interfaces/ports";
 import { create_success_result, create_failure_result } from "../types/Result";
-import { get_repository_container } from "../../infrastructure/container";
 import type { SportUseCasesPort } from "../interfaces/ports";
 
 export type SportUseCases = SportUseCasesPort;
@@ -83,9 +82,4 @@ export function create_sport_use_cases(
       return create_success_result(result.data || 0);
     },
   };
-}
-
-export function get_sport_use_cases(): SportUseCases {
-  const container = get_repository_container();
-  return create_sport_use_cases(container.sport_repository);
 }

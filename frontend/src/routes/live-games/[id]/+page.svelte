@@ -37,16 +37,6 @@
     format_event_time,
     get_period_display_name,
   } from "$lib/core/entities/Fixture";
-  import { get_fixture_use_cases } from "$lib/core/usecases/FixtureUseCases";
-  import { get_team_use_cases } from "$lib/core/usecases/TeamUseCases";
-  import { get_fixture_lineup_use_cases } from "$lib/core/usecases/FixtureLineupUseCases";
-  import { get_competition_use_cases } from "$lib/core/usecases/CompetitionUseCases";
-  import { get_organization_use_cases } from "$lib/core/usecases/OrganizationUseCases";
-  import { get_sport_use_cases } from "$lib/core/usecases/SportUseCases";
-  import { get_player_team_membership_use_cases } from "$lib/core/usecases/PlayerTeamMembershipUseCases";
-  import { get_venue_use_cases } from "$lib/core/usecases/VenueUseCases";
-  import { get_official_use_cases } from "$lib/core/usecases/OfficialUseCases";
-  import { get_team_staff_use_cases } from "$lib/core/usecases/TeamStaffUseCases";
   import { get_team_staff_full_name } from "$lib/core/entities/TeamStaff";
   import type { MatchStaffEntry } from "$lib/core/types/MatchReportTypes";
   import type { CardTypeConfig } from "$lib/core/types/MatchReportTypes";
@@ -63,6 +53,18 @@
   } from "$lib/infrastructure/utils/MatchReportBuilder";
   import { download_match_report } from "$lib/infrastructure/utils/MatchReportPdfGenerator";
   import { branding_store } from "$lib/presentation/stores/branding";
+import {
+  get_competition_use_cases,
+  get_fixture_lineup_use_cases,
+  get_fixture_use_cases,
+  get_official_use_cases,
+  get_organization_use_cases,
+  get_player_team_membership_use_cases,
+  get_sport_use_cases,
+  get_team_staff_use_cases,
+  get_team_use_cases,
+  get_venue_use_cases,
+} from "$lib/infrastructure/registry/useCaseFactories";
 
   const fixture_use_cases = get_fixture_use_cases();
   const team_use_cases = get_team_use_cases();
@@ -656,7 +658,7 @@
     }
 
     const player_promises = active_memberships.map((m: any) =>
-      import("$lib/core/usecases/PlayerUseCases").then((mod) =>
+      import("$lib/infrastructure/registry/useCaseFactories").then((mod) =>
         mod.get_player_use_cases().get_by_id(m.player_id),
       ),
     );

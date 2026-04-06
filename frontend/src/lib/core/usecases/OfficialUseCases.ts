@@ -9,7 +9,6 @@ import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
 import type { OfficialUseCasesPort } from "../interfaces/ports";
 import { create_success_result, create_failure_result } from "../types/Result";
 import { validate_official_input } from "../entities/Official";
-import { get_repository_container } from "../../infrastructure/container";
 
 export type OfficialUseCases = OfficialUseCasesPort;
 
@@ -94,9 +93,4 @@ export function create_official_use_cases(
       return repository.find_available_for_date(date, organization_id, options);
     },
   };
-}
-
-export function get_official_use_cases(): OfficialUseCases {
-  const container = get_repository_container();
-  return create_official_use_cases(container.official_repository);
 }

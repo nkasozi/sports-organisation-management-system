@@ -103,6 +103,13 @@ export class InBrowserGameOfficialRoleRepository
         this.create_paginated_result(paginated, total_count, options),
       );
     } catch (error) {
+      console.warn(
+        "[GameOfficialRoleRepository] Failed to filter game official roles",
+        {
+          event: "repository_filter_game_official_roles_failed",
+          error: String(error),
+        },
+      );
       const error_message =
         error instanceof Error ? error.message : "Unknown error occurred";
       return create_failure_result(
@@ -122,10 +129,10 @@ export class InBrowserGameOfficialRoleRepository
           .sort((a, b) => a.display_order - b.display_order),
       );
     } catch (error) {
-      console.error(
-        "[InBrowserGameOfficialRoleRepository] find_by_sport error:",
-        error,
-      );
+      console.error("[GameOfficialRoleRepository] find_by_sport failed", {
+        event: "repository_find_by_sport_failed",
+        error: String(error),
+      });
       return create_failure_result(`Failed to find roles by sport: ${error}`);
     }
   }
@@ -139,10 +146,10 @@ export class InBrowserGameOfficialRoleRepository
           .sort((a, b) => a.display_order - b.display_order),
       );
     } catch (error) {
-      console.error(
-        "[InBrowserGameOfficialRoleRepository] find_head_officials error:",
-        error,
-      );
+      console.error("[GameOfficialRoleRepository] find_head_officials failed", {
+        event: "repository_find_head_officials_failed",
+        error: String(error),
+      });
       return create_failure_result(`Failed to find head officials: ${error}`);
     }
   }

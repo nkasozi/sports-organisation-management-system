@@ -11,10 +11,6 @@
     get_player_avatar,
     get_player_full_name,
   } from "$lib/core/entities/Player";
-  import { get_player_use_cases } from "$lib/core/usecases/PlayerUseCases";
-  import { get_team_use_cases } from "$lib/core/usecases/TeamUseCases";
-  import { get_player_team_membership_use_cases } from "$lib/core/usecases/PlayerTeamMembershipUseCases";
-  import { get_gender_use_cases } from "$lib/core/usecases/GenderUseCases";
   import Toast from "$lib/presentation/components/ui/Toast.svelte";
   import { auth_store } from "$lib/presentation/stores/auth";
   import { access_denial_store } from "$lib/presentation/stores/accessDenial";
@@ -23,6 +19,12 @@
     type UserScopeProfile,
   } from "$lib/core/interfaces/ports";
   import { get_authorization_adapter } from "$lib/infrastructure/AuthorizationProvider";
+import {
+  get_gender_use_cases,
+  get_player_team_membership_use_cases,
+  get_player_use_cases,
+  get_team_use_cases,
+} from "$lib/infrastructure/registry/useCaseFactories";
 
   const player_use_cases = get_player_use_cases();
   const team_use_cases = get_team_use_cases();
