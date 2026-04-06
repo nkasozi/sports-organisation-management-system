@@ -26,6 +26,7 @@ export function validate_field_against_rules(
     if (
       rule.rule_type === "min_length" &&
       typeof value === "string" &&
+      typeof rule.rule_value === "number" &&
       value.length < rule.rule_value
     ) {
       return { is_valid: false, error_message: rule.error_message };
@@ -33,6 +34,7 @@ export function validate_field_against_rules(
     if (
       rule.rule_type === "max_length" &&
       typeof value === "string" &&
+      typeof rule.rule_value === "number" &&
       value.length > rule.rule_value
     ) {
       return { is_valid: false, error_message: rule.error_message };
@@ -40,6 +42,7 @@ export function validate_field_against_rules(
     if (
       rule.rule_type === "min_value" &&
       typeof value === "number" &&
+      typeof rule.rule_value === "number" &&
       value < rule.rule_value
     ) {
       return { is_valid: false, error_message: rule.error_message };
@@ -47,6 +50,7 @@ export function validate_field_against_rules(
     if (
       rule.rule_type === "max_value" &&
       typeof value === "number" &&
+      typeof rule.rule_value === "number" &&
       value > rule.rule_value
     ) {
       return { is_valid: false, error_message: rule.error_message };
@@ -54,6 +58,7 @@ export function validate_field_against_rules(
     if (
       rule.rule_type === "pattern" &&
       typeof value === "string" &&
+      typeof rule.rule_value === "string" &&
       !new RegExp(rule.rule_value).test(value)
     ) {
       return { is_valid: false, error_message: rule.error_message };

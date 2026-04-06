@@ -1168,13 +1168,11 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
       );
 
     if (fake_data_result.success) {
-      // Merge the generated fake data with existing form data
       form_data = {
         ...form_data,
         ...fake_data_result.generated_data,
       };
 
-      // Clear any existing validation errors
       validation_errors = {};
 
       console.log("Generated fake data:", fake_data_result.debug_info);

@@ -164,7 +164,9 @@ export async function ensure_default_organization_exists(
     get_organization_repository() as InBrowserOrganizationRepository;
   const has_data = await repository.has_data();
   if (!has_data) {
-    await repository.seed_with_data(create_default_organizations(seeded_sports));
+    await repository.seed_with_data(
+      create_default_organizations(seeded_sports),
+    );
   }
 }
 

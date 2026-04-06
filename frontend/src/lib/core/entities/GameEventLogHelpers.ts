@@ -53,20 +53,20 @@ export function validate_game_event_log_input(
     errors.event_type = "Event type is required";
   }
 
-  if ("minute" in input && input.minute !== undefined) {
-    if (input.minute < 0) {
-      errors.minute = "Minute cannot be negative";
-    }
-    if (input.minute > 200) {
-      errors.minute = "Minute value is too high";
-    }
+  if ("minute" in input && input.minute !== undefined && input.minute < 0) {
+    errors.minute = "Minute cannot be negative";
   }
 
-  if ("team_side" in input && input.team_side) {
-    const valid_sides: TeamSide[] = ["home", "away", "match"];
-    if (!valid_sides.includes(input.team_side)) {
-      errors.team_side = "Invalid team side";
-    }
+  if ("minute" in input && input.minute !== undefined && input.minute > 200) {
+    errors.minute = "Minute value is too high";
+  }
+
+  if (
+    "team_side" in input &&
+    input.team_side &&
+    !(["home", "away", "match"] as TeamSide[]).includes(input.team_side)
+  ) {
+    errors.team_side = "Invalid team side";
   }
 
   return {

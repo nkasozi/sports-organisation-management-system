@@ -48,8 +48,11 @@ function create_current_user_store() {
         const parsed: unknown = JSON.parse(stored);
         if (!validate_stored_user(parsed)) return;
         set(parsed);
-      } catch {
-        /* ignore corrupt data */
+      } catch (error) {
+        console.warn("[CurrentUser] Failed to parse stored user data", {
+          event: "stored_user_parse_failed",
+          error: String(error),
+        });
       }
     },
 

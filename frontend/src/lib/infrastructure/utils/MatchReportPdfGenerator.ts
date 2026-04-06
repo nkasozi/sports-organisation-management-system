@@ -59,8 +59,11 @@ export function download_match_report(
     console.log("[PDF] PDF save completed");
     return true;
   } catch (error) {
-    console.error("[PDF] Error generating or saving PDF:", error);
-    throw error;
+    console.error("[PDF] Error generating or saving PDF", {
+      event: "pdf_generation_failed",
+      error: String(error),
+    });
+    return false;
   }
 }
 
@@ -107,7 +110,10 @@ export function download_all_match_reports(
     console.log("[PDF] All reports PDF save completed");
     return true;
   } catch (error) {
-    console.error("[PDF] Error generating or saving all reports PDF:", error);
-    throw error;
+    console.error("[PDF] Error generating or saving all reports PDF", {
+      event: "pdf_all_reports_generation_failed",
+      error: String(error),
+    });
+    return false;
   }
 }

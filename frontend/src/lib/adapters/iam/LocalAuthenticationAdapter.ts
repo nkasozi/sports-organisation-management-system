@@ -50,17 +50,20 @@ function is_real_browser_environment(): boolean {
   return browser && typeof sessionStorage !== "undefined";
 }
 
-function get_secret_key(): string {
+function get_secret_key(): Result<string> {
   if (is_real_browser_environment()) {
-    return get_or_create_browser_session_key();
+    return create_success_result(get_or_create_browser_session_key());
   }
   const server_secret_key = process.env.AUTH_SECRET_KEY;
   if (!server_secret_key) {
-    throw new Error(
+    console.error("[Auth] Missing AUTH_SECRET_KEY environment variable", {
+      event: "auth_secret_key_missing",
+    });
+    return create_failure_result(
       "AUTH_SECRET_KEY environment variable is required but not set",
     );
   }
-  return server_secret_key;
+  return create_success_result(server_secret_key);
 }
 
 export class LocalAuthenticationAdapter implements AuthenticationPort {
@@ -87,6 +90,8 @@ export class LocalAuthenticationAdapter implements AuthenticationPort {
   async generate_token(
     payload_input: Omit<AuthTokenPayload, "issued_at" | "expires_at">,
   ): Promise<Result<AuthToken>> {
+    const secret_key_result = get_secret_key();
+    if (!secret_key_result.success) return secret_key_result;
     try {
       const now = Date.now();
       const payload: AuthTokenPayload = {
@@ -98,7 +103,7 @@ export class LocalAuthenticationAdapter implements AuthenticationPort {
       const encoded_payload = base64_url_encode(JSON.stringify(payload));
       const signature = await create_hmac_signature(
         `${header}.${encoded_payload}`,
-        get_secret_key(),
+        secret_key_result.data,
       );
       console.log("[Auth] Token generated", {
         event: "token_generated",
@@ -146,10 +151,13 @@ export class LocalAuthenticationAdapter implements AuthenticationPort {
     if (parts.length !== 3)
       return { is_valid: false, error_message: "Invalid token format" };
     const [header, encoded_payload, signature] = parts;
+    const secret_key_result = get_secret_key();
+    if (!secret_key_result.success)
+      return { is_valid: false, error_message: secret_key_result.error };
     const is_signature_valid = await verify_hmac_signature(
       `${header}.${encoded_payload}`,
       signature,
-      get_secret_key(),
+      secret_key_result.data,
     );
     if (!is_signature_valid) {
       console.warn("[Auth] Token signature verification failed", {

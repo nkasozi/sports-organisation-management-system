@@ -67,26 +67,28 @@ export async function pull_table_from_convex(
         delete local_data.version;
         local_data.id = local_id;
 
-        if (existing_local) {
-          const local_timestamp =
-            existing_local.updated_at ||
-            existing_local.created_at ||
-            EPOCH_TIMESTAMP;
-          const remote_timestamp =
-            ((remote_record as Record<string, unknown>).updated_at as string) ||
-            remote_record.synced_at ||
-            EPOCH_TIMESTAMP;
-
-          if (remote_timestamp > local_timestamp) {
-            await table.put(local_data as unknown as { id: string });
-            records_pulled++;
-          } else {
-            records_skipped++;
-          }
-        } else {
+        if (!existing_local) {
           await table.put(local_data as unknown as { id: string });
           records_pulled++;
+          continue;
         }
+
+        const local_timestamp =
+          existing_local.updated_at ||
+          existing_local.created_at ||
+          EPOCH_TIMESTAMP;
+        const remote_timestamp =
+          ((remote_record as Record<string, unknown>).updated_at as string) ||
+          remote_record.synced_at ||
+          EPOCH_TIMESTAMP;
+
+        if (remote_timestamp <= local_timestamp) {
+          records_skipped++;
+          continue;
+        }
+
+        await table.put(local_data as unknown as { id: string });
+        records_pulled++;
       }
     } finally {
       set_pulling_from_remote(false);

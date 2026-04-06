@@ -92,7 +92,6 @@ export const upsert_record = mutation({
       version,
     };
 
-    // strip Convex system fields — they must not be set on patch/insert
     delete (record_data as Record<string, unknown>)._id;
     delete (record_data as Record<string, unknown>)._creationTime;
 
@@ -495,16 +494,22 @@ export const get_all_records = query({
 
     if (!auth_result.success) {
       if (!is_public_table(table_name)) {
-        console.warn("[Sync] get_all_records rejected unauthenticated caller for private table", {
-          event: "sync_public_table_auth_denied",
-          table_name,
-        });
+        console.warn(
+          "[Sync] get_all_records rejected unauthenticated caller for private table",
+          {
+            event: "sync_public_table_auth_denied",
+            table_name,
+          },
+        );
         return [];
       }
-      console.log("[Sync] get_all_records serving public table to anonymous caller", {
-        event: "sync_public_table_served",
-        table_name,
-      });
+      console.log(
+        "[Sync] get_all_records serving public table to anonymous caller",
+        {
+          event: "sync_public_table_served",
+          table_name,
+        },
+      );
       return await ctx.db.query(table_name as any).collect();
     }
 
@@ -584,10 +589,13 @@ export const get_latest_modified_at = query({
     const auth_result = await require_auth(ctx);
 
     if (!auth_result.success) {
-      console.warn("[Sync] get_latest_modified_at rejected unauthenticated caller", {
-        event: "sync_query_auth_denied",
-        table_name,
-      });
+      console.warn(
+        "[Sync] get_latest_modified_at rejected unauthenticated caller",
+        {
+          event: "sync_query_auth_denied",
+          table_name,
+        },
+      );
       return { table_name, record_count: 0, latest_modified_at: null };
     }
 
@@ -637,9 +645,12 @@ export const update_sync_metadata = mutation({
   handler: async (ctx, args) => {
     const auth_result = await require_auth(ctx);
     if (!auth_result.success) {
-      console.warn("[Sync] update_sync_metadata rejected unauthenticated caller", {
-        event: "sync_metadata_auth_denied",
-      });
+      console.warn(
+        "[Sync] update_sync_metadata rejected unauthenticated caller",
+        {
+          event: "sync_metadata_auth_denied",
+        },
+      );
       return { success: false, error: "Access denied" };
     }
 
@@ -707,10 +718,13 @@ export const subscribe_to_table_changes = query({
     const auth_result = await require_auth(ctx);
 
     if (!auth_result.success) {
-      console.warn("[Sync] subscribe_to_table_changes rejected unauthenticated caller", {
-        event: "sync_query_auth_denied",
-        table_name,
-      });
+      console.warn(
+        "[Sync] subscribe_to_table_changes rejected unauthenticated caller",
+        {
+          event: "sync_query_auth_denied",
+          table_name,
+        },
+      );
       return { table_name, record_count: 0, latest_timestamp: "", records: [] };
     }
 

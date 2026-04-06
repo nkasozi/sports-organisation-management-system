@@ -211,14 +211,23 @@ export abstract class InBrowserBaseRepository<
     try {
       await this.get_table().clear();
     } catch (error) {
-      console.error(`[${this.entity_prefix}] Failed to clear data:`, error);
+      console.error(`[${this.entity_prefix}] Failed to clear data`, {
+        event: "repository_clear_failed",
+        entity_prefix: this.entity_prefix,
+        error: String(error),
+      });
     }
   }
 
   async has_data(): Promise<boolean> {
     try {
       return (await this.get_table().count()) > 0;
-    } catch {
+    } catch (error) {
+      console.warn(`[${this.entity_prefix}] Failed to check data existence`, {
+        event: "repository_has_data_check_failed",
+        entity_prefix: this.entity_prefix,
+        error: String(error),
+      });
       return false;
     }
   }

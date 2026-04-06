@@ -8,6 +8,7 @@ import type {
   LiveGameLogUseCasesPort,
 } from "../interfaces/ports";
 import type { AsyncResult } from "../types/Result";
+import { GAME_STATUS } from "../entities/StatusConstants";
 import { create_failure_result } from "../types/Result";
 import { EventBus } from "$lib/infrastructure/events/EventBus";
 
@@ -74,11 +75,12 @@ export function create_live_game_state_management(
         repository,
         id,
         (game) =>
-          game.game_status !== "pre_game" && game.game_status !== "paused"
+          game.game_status !== GAME_STATUS.PRE_GAME &&
+          game.game_status !== GAME_STATUS.PAUSED
             ? `Cannot start a game that is ${game.game_status}`
             : null,
         (game) => ({
-          game_status: "in_progress",
+          game_status: GAME_STATUS.IN_PROGRESS,
           clock_running: true,
           started_by_user_id: user_id,
           current_period:
@@ -100,10 +102,10 @@ export function create_live_game_state_management(
         repository,
         id,
         (game) =>
-          game.game_status !== "in_progress"
+          game.game_status !== GAME_STATUS.IN_PROGRESS
             ? "Can only pause an in-progress game"
             : null,
-        () => ({ game_status: "paused", clock_running: false }),
+        () => ({ game_status: GAME_STATUS.PAUSED, clock_running: false }),
         ["game_status", "clock_running"],
       );
     },
@@ -113,10 +115,10 @@ export function create_live_game_state_management(
         repository,
         id,
         (game) =>
-          game.game_status !== "paused"
+          game.game_status !== GAME_STATUS.PAUSED
             ? "Can only resume a paused game"
             : null,
-        () => ({ game_status: "in_progress", clock_running: true }),
+        () => ({ game_status: GAME_STATUS.IN_PROGRESS, clock_running: true }),
         ["game_status", "clock_running"],
       );
     },
@@ -126,11 +128,12 @@ export function create_live_game_state_management(
         repository,
         id,
         (game) =>
-          game.game_status !== "in_progress" && game.game_status !== "paused"
+          game.game_status !== GAME_STATUS.IN_PROGRESS &&
+          game.game_status !== GAME_STATUS.PAUSED
             ? `Cannot end a game that is ${game.game_status}`
             : null,
         () => ({
-          game_status: "completed",
+          game_status: GAME_STATUS.COMPLETED,
           clock_running: false,
           current_period: "finished",
           ended_by_user_id: user_id,
@@ -144,11 +147,12 @@ export function create_live_game_state_management(
         repository,
         id,
         (game) =>
-          game.game_status === "completed" || game.game_status === "abandoned"
+          game.game_status === GAME_STATUS.COMPLETED ||
+          game.game_status === GAME_STATUS.ABANDONED
             ? `Cannot abandon a game that is already ${game.game_status}`
             : null,
         () => ({
-          game_status: "abandoned",
+          game_status: GAME_STATUS.ABANDONED,
           clock_running: false,
           ended_by_user_id: user_id,
           notes: reason,

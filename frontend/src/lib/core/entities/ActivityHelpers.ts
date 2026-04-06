@@ -4,6 +4,7 @@ import type {
   CreateActivityInput,
 } from "./ActivityTypes";
 import { DEFAULT_REMINDERS } from "./ActivityTypes";
+import { ACTIVITY_SOURCE_TYPE } from "./StatusConstants";
 
 export function validate_activity_input(input: CreateActivityInput): {
   is_valid: boolean;
@@ -163,13 +164,13 @@ function is_activity_recurring(activity: Activity): boolean {
 }
 
 function is_activity_from_external_source(activity: Activity): boolean {
-  return activity.source_type !== "manual";
+  return activity.source_type !== ACTIVITY_SOURCE_TYPE.MANUAL;
 }
 
 export function can_edit_activity(activity: Activity): boolean {
-  return activity.source_type === "manual";
+  return activity.source_type === ACTIVITY_SOURCE_TYPE.MANUAL;
 }
 
 export function can_delete_activity(activity: Activity): boolean {
-  return activity.source_type === "manual";
+  return activity.source_type === ACTIVITY_SOURCE_TYPE.MANUAL;
 }

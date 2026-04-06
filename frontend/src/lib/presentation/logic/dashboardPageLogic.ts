@@ -29,9 +29,7 @@ interface ListPort<TFilter> {
 }
 
 interface GetByIdPort<TEntity> {
-  get_by_id(
-    identifier: string,
-  ): Promise<Result<TEntity>>;
+  get_by_id(identifier: string): Promise<Result<TEntity>>;
 }
 
 export interface DashboardDependencies {
@@ -65,9 +63,7 @@ export interface OrganizationNameParts {
   remainder: string;
 }
 
-export function split_organization_name(
-  name: string,
-): OrganizationNameParts {
+export function split_organization_name(name: string): OrganizationNameParts {
   const parts = name.trim().split(/\s+/);
   if (parts.length === 1) {
     return { prefix: "", suffix: parts[0], remainder: "" };
@@ -104,10 +100,8 @@ export function format_fixture_date(
   const tomorrow = new Date(today);
   tomorrow.setDate(tomorrow.getDate() + 1);
 
-  const is_today =
-    fixture_date.toDateString() === today.toDateString();
-  const is_tomorrow =
-    fixture_date.toDateString() === tomorrow.toDateString();
+  const is_today = fixture_date.toDateString() === today.toDateString();
+  const is_tomorrow = fixture_date.toDateString() === tomorrow.toDateString();
 
   const time_formatted = scheduled_time || "TBD";
 
@@ -136,12 +130,8 @@ function extract_stats(
     competitions: comp_result.success
       ? (comp_result.data?.total_count ?? 0)
       : 0,
-    teams: team_result.success
-      ? (team_result.data?.total_count ?? 0)
-      : 0,
-    players: player_result.success
-      ? (player_result.data?.total_count ?? 0)
-      : 0,
+    teams: team_result.success ? (team_result.data?.total_count ?? 0) : 0,
+    players: player_result.success ? (player_result.data?.total_count ?? 0) : 0,
   };
 }
 
@@ -154,19 +144,17 @@ async function resolve_sport_names_for_competitions(
   for (const competition of competitions) {
     if (!competition.id) continue;
 
-    const org_result =
-      await dependencies.organization_use_cases.get_by_id(
-        competition.organization_id,
-      );
+    const org_result = await dependencies.organization_use_cases.get_by_id(
+      competition.organization_id,
+    );
     if (!org_result.success || !org_result.data) {
       resolved_names[competition.id] = UNKNOWN_SPORT_LABEL;
       continue;
     }
 
-    const sport_result =
-      await dependencies.sport_use_cases.get_by_id(
-        org_result.data.sport_id,
-      );
+    const sport_result = await dependencies.sport_use_cases.get_by_id(
+      org_result.data.sport_id,
+    );
     resolved_names[competition.id] =
       sport_result.success && sport_result.data
         ? sport_result.data.name
@@ -188,7 +176,9 @@ async function resolve_fixture_display_names(
 
   const competition_ids = [
     ...new Set(
-      fixtures.map((fixture: Fixture) => fixture.competition_id).filter(Boolean),
+      fixtures
+        .map((fixture: Fixture) => fixture.competition_id)
+        .filter(Boolean),
     ),
   ];
 
@@ -203,19 +193,17 @@ async function resolve_fixture_display_names(
 
     resolved_competition_names[competition_id] = comp_result.data.name;
 
-    const org_result =
-      await dependencies.organization_use_cases.get_by_id(
-        comp_result.data.organization_id,
-      );
+    const org_result = await dependencies.organization_use_cases.get_by_id(
+      comp_result.data.organization_id,
+    );
     if (!org_result.success || !org_result.data) {
       resolved_sport_names[competition_id] = UNKNOWN_SPORT_LABEL;
       continue;
     }
 
-    const sport_result =
-      await dependencies.sport_use_cases.get_by_id(
-        org_result.data.sport_id,
-      );
+    const sport_result = await dependencies.sport_use_cases.get_by_id(
+      org_result.data.sport_id,
+    );
     resolved_sport_names[competition_id] =
       sport_result.success && sport_result.data
         ? sport_result.data.name
@@ -232,34 +220,29 @@ export async function load_dashboard_data(
   dependencies: DashboardDependencies,
   filters: DashboardFilters,
 ): Promise<Result<DashboardData>> {
-  const [
-    org_result,
-    comp_result,
-    team_result,
-    player_result,
-    fixture_result,
-  ] = await Promise.all([
-    dependencies.organization_use_cases.list(undefined, {
-      page_number: 1,
-      page_size: 1,
-    }),
-    dependencies.competition_use_cases.list(
-      filters.organization_filter,
-      { page_number: 1, page_size: 5 },
-    ),
-    dependencies.team_use_cases.list(filters.organization_filter, {
-      page_number: 1,
-      page_size: 100,
-    }),
-    dependencies.player_use_cases.list(filters.organization_filter, {
-      page_number: 1,
-      page_size: 1,
-    }),
-    dependencies.fixture_use_cases.list(filters.fixture_filter, {
-      page_number: 1,
-      page_size: 5,
-    }),
-  ]);
+  const [org_result, comp_result, team_result, player_result, fixture_result] =
+    await Promise.all([
+      dependencies.organization_use_cases.list(undefined, {
+        page_number: 1,
+        page_size: 1,
+      }),
+      dependencies.competition_use_cases.list(filters.organization_filter, {
+        page_number: 1,
+        page_size: 5,
+      }),
+      dependencies.team_use_cases.list(filters.organization_filter, {
+        page_number: 1,
+        page_size: 100,
+      }),
+      dependencies.player_use_cases.list(filters.organization_filter, {
+        page_number: 1,
+        page_size: 1,
+      }),
+      dependencies.fixture_use_cases.list(filters.fixture_filter, {
+        page_number: 1,
+        page_size: 5,
+      }),
+    ]);
 
   const stats = extract_stats(
     filters,
@@ -277,11 +260,10 @@ export async function load_dashboard_data(
         )
       : [];
 
-  const competition_sport_names =
-    await resolve_sport_names_for_competitions(
-      recent_competitions,
-      dependencies,
-    );
+  const competition_sport_names = await resolve_sport_names_for_competitions(
+    recent_competitions,
+    dependencies,
+  );
 
   const teams_map: Map<string, Team> =
     team_result.success && team_result.data
@@ -304,8 +286,10 @@ export async function load_dashboard_data(
           .slice(0, UPCOMING_FIXTURES_LIMIT)
       : [];
 
-  const fixture_display_names =
-    await resolve_fixture_display_names(sorted_fixtures, dependencies);
+  const fixture_display_names = await resolve_fixture_display_names(
+    sorted_fixtures,
+    dependencies,
+  );
 
   return {
     success: true,
