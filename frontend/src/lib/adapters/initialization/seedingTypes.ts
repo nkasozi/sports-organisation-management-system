@@ -60,7 +60,7 @@ export interface SeedEntityIdLookups {
 
 export type { DataSource } from "../../infrastructure/sync/convexSeedingService";
 
-export const SEEDING_COMPLETE_KEY = "sports_org_seeding_complete_v15";
+export const SEEDING_COMPLETE_KEY = "sports_org_seeding_complete_v16";
 
 export async function is_seeding_already_complete(
   app_settings: AppSettingsPort = get_app_settings_storage(),

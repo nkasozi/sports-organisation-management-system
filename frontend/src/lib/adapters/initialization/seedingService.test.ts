@@ -387,7 +387,7 @@ describe("seed_from_convex_or_local — convex_first_with_local_fallback strateg
   });
 
   it("returns local_fallback_success when seeding already complete", async () => {
-    mock_app_settings_store["sports_org_seeding_complete_v15"] = "true";
+    mock_app_settings_store["sports_org_seeding_complete_v16"] = "true";
 
     const result = await seed_from_convex_or_local(
       on_progress,
@@ -432,7 +432,7 @@ describe("seed_from_convex_or_local — convex_first_with_local_fallback strateg
       "convex_first_with_local_fallback",
     );
 
-    expect(mock_app_settings_store["sports_org_seeding_complete_v15"]).toBe(
+    expect(mock_app_settings_store["sports_org_seeding_complete_v16"]).toBe(
       "true",
     );
   });
@@ -538,7 +538,7 @@ describe("seed_from_convex_or_local — convex_mandatory strategy", () => {
   });
 
   it("enters offline mode when convex fails but local data exists", async () => {
-    mock_app_settings_store["sports_org_seeding_complete_v15"] = "true";
+    mock_app_settings_store["sports_org_seeding_complete_v16"] = "true";
 
     const result = await seed_from_convex_or_local(
       on_progress,
@@ -600,7 +600,7 @@ describe("seed_all_data_if_needed — login-flow guard (regression: stale seeded
   });
 
   it("does NOT seed demo system users when seeding flag is already set", async () => {
-    mock_app_settings_store["sports_org_seeding_complete_v15"] = "true";
+    mock_app_settings_store["sports_org_seeding_complete_v16"] = "true";
 
     await seed_all_data_if_needed();
 
@@ -608,7 +608,7 @@ describe("seed_all_data_if_needed — login-flow guard (regression: stale seeded
   });
 
   it("returns success without demo seeding when seeding is already complete", async () => {
-    mock_app_settings_store["sports_org_seeding_complete_v15"] = "true";
+    mock_app_settings_store["sports_org_seeding_complete_v16"] = "true";
 
     const result = await seed_all_data_if_needed();
 

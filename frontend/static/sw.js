@@ -102,16 +102,6 @@ self.addEventListener("activate", function (event) {
 
 self.addEventListener("fetch", function (event) {
   const request = event.request;
-  const url = new URL(request.url);
-
-  if (request.mode === "navigate") {
-    console.log("[PWA-DIAG] SW intercepted navigate request", {
-      event: "sw_navigate_intercepted",
-      url: url.pathname,
-      mode: request.mode,
-      destination: request.destination,
-    });
-  }
 
   if (!is_cacheable_request(request)) {
     return;
@@ -120,12 +110,6 @@ self.addEventListener("fetch", function (event) {
   if (is_static_asset(request)) {
     event.respondWith(cache_first_strategy(request));
   } else {
-    console.log("[PWA-DIAG] SW calling respondWith for non-static request", {
-      event: "sw_respond_with_called",
-      url: url.pathname,
-      mode: request.mode,
-      destination: request.destination,
-    });
     event.respondWith(network_first_strategy(request));
   }
 });

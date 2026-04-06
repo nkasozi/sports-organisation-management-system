@@ -86,11 +86,6 @@ export function determine_seeding_strategy(
 export async function initialize_app_data(
   options: InitializeOptions,
 ): Promise<InitResult> {
-  console.log("[AppInitializer-DIAG] initialize_app_data called", {
-    event: "initialize_app_data_called",
-    already_initialized: initialized,
-    path: options.current_path,
-  });
   if (initialized) return "success";
   if (typeof window === "undefined") return "success";
 
@@ -160,7 +155,7 @@ export async function initialize_app_data(
     return "redirect_to_login";
   }
 
-  if (convex_client_result.success) {
+  if (convex_client_result.success && user_is_signed_in) {
     const convex_client = convex_client_result.data;
 
     const on_org_settings_pulled = async (
@@ -205,11 +200,6 @@ export async function initialize_app_data(
 }
 
 export function reset_initialization(): void {
-  console.log("[AppInitializer-DIAG] reset_initialization called", {
-    event: "reset_initialization_called",
-    was_initialized: initialized,
-    stack: new Error().stack,
-  });
   stop_background_sync();
   stop_realtime_sync();
   stop_auth_cache_invalidation();

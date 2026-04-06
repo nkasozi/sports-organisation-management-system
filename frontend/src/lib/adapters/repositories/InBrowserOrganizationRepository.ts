@@ -16,7 +16,9 @@ import {
   create_failure_result,
 } from "../../core/types/Result";
 import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
-import { get_sport_id_by_code_sync } from "./InBrowserSportRepository";
+import type { Sport } from "../../core/entities/Sport";
+
+const FIELD_HOCKEY_SPORT_CODE = "FIELD_HOCKEY";
 
 const ENTITY_PREFIX = "org";
 
@@ -102,9 +104,30 @@ class InBrowserOrganizationRepository
   }
 }
 
-function create_default_organizations(): Organization[] {
+function find_sport_id_by_code(
+  seeded_sports: Sport[],
+  sport_code: string,
+): string {
+  const matched_sport = seeded_sports.find(
+    (sport) => sport.code.toUpperCase() === sport_code.toUpperCase(),
+  );
+  if (!matched_sport) {
+    console.error("[OrganizationRepository] Sport not found in seeded sports", {
+      event: "sport_lookup_failed",
+      sport_code,
+      available_codes: seeded_sports.map((sport) => sport.code),
+    });
+    return "";
+  }
+  return matched_sport.id;
+}
+
+function create_default_organizations(seeded_sports: Sport[]): Organization[] {
   const now = new Date().toISOString();
-  const field_hockey_sport_id = get_sport_id_by_code_sync("FIELD_HOCKEY") || "";
+  const field_hockey_sport_id = find_sport_id_by_code(
+    seeded_sports,
+    FIELD_HOCKEY_SPORT_CODE,
+  );
 
   return [
     {
@@ -134,18 +157,23 @@ export function get_organization_repository(): OrganizationRepository {
   return singleton_instance;
 }
 
-export async function ensure_default_organization_exists(): Promise<void> {
+export async function ensure_default_organization_exists(
+  seeded_sports: Sport[],
+): Promise<void> {
   const repository =
     get_organization_repository() as InBrowserOrganizationRepository;
   const has_data = await repository.has_data();
   if (!has_data) {
-    await repository.seed_with_data(create_default_organizations());
+    await repository.seed_with_data(create_default_organizations(seeded_sports));
   }
 }
 
-export async function reset_organization_repository(): Promise<void> {
+export async function reset_organization_repository(
+  seeded_sports: Sport[],
+): Promise<void> {
   const repository =
     get_organization_repository() as InBrowserOrganizationRepository;
   await repository.clear_all_data();
-  await repository.seed_with_data(create_default_organizations());
+  const default_orgs = create_default_organizations(seeded_sports);
+  await repository.seed_with_data(default_orgs);
 }

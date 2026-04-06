@@ -44,22 +44,27 @@ export type ConvexResult<TData, TError = string> =
   | { success: true; data: TData }
   | { success: false; error: TError };
 
+export const AUTH_DENIED_MESSAGE = "Access denied";
+
 export async function require_auth(
   ctx: ConvexContext,
 ): Promise<ConvexResult<SystemUserRecord>> {
   const identity = await ctx.auth.getUserIdentity();
-  if (!identity) return { success: false, error: "Not authenticated" };
+  if (!identity) {
+    console.warn("[Auth] Authentication failed", {
+      event: "auth_failed",
+      reason: "no_identity",
+    });
+    return { success: false, error: AUTH_DENIED_MESSAGE };
+  }
 
   const email = identity.email;
   if (!email) {
-    console.error(
-      "[auth_middleware] JWT has no email claim — check Clerk JWT template configuration",
-    );
-    return {
-      success: false,
-      error:
-        "No email in authentication token — check Clerk JWT template configuration",
-    };
+    console.warn("[Auth] Authentication failed", {
+      event: "auth_failed",
+      reason: "no_email_claim",
+    });
+    return { success: false, error: AUTH_DENIED_MESSAGE };
   }
 
   const system_user = (await ctx.db
@@ -67,10 +72,22 @@ export async function require_auth(
     .withIndex("by_email", (q: any) => q.eq("email", email.toLowerCase()))
     .first()) as SystemUserRecord | null;
 
-  if (!system_user)
-    return { success: false, error: "User not found in system" };
-  if (system_user.status === "inactive")
-    return { success: false, error: "User account is deactivated" };
+  if (!system_user) {
+    console.warn("[Auth] Authentication failed", {
+      event: "auth_failed",
+      reason: "user_not_found",
+    });
+    return { success: false, error: AUTH_DENIED_MESSAGE };
+  }
+
+  if (system_user.status === "inactive") {
+    console.warn("[Auth] Authentication failed", {
+      event: "auth_failed",
+      reason: "account_inactive",
+      user_id: system_user._id,
+    });
+    return { success: false, error: AUTH_DENIED_MESSAGE };
+  }
 
   return { success: true, data: system_user };
 }

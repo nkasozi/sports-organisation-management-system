@@ -55,7 +55,8 @@ export type { SeedResult, SeedOutcome, SeedingStrategy } from "./seedingTypes";
 export type { DataSource } from "../../infrastructure/sync/convexSeedingService";
 
 export async function seed_all_data_if_needed(): Promise<Result<boolean>> {
-  if (await is_seeding_already_complete()) {
+  const seeding_complete = await is_seeding_already_complete();
+  if (seeding_complete) {
     const current_user_result = await load_and_set_current_user();
     if (!current_user_result.success) {
       console.warn(
@@ -69,8 +70,8 @@ export async function seed_all_data_if_needed(): Promise<Result<boolean>> {
     return create_failure_result("Not in browser environment");
   }
 
-  await reset_sport_repository();
-  await reset_organization_repository();
+  const seeded_sports = await reset_sport_repository();
+  await reset_organization_repository(seeded_sports);
 
   const super_admin_result = await seed_super_admin_user();
   if (!super_admin_result.success) {
