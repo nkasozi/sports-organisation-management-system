@@ -2348,7 +2348,7 @@
                       <span>🟨</span> Most Cards
                     </h3>
                     <div
-                      class="flex rounded-lg border border-accent-200 dark:border-accent-700 overflow-hidden text-xs font-medium self-start sm:self-auto"
+                      class="flex rounded-md border border-accent-200 dark:border-accent-700 overflow-hidden text-xs font-medium self-start sm:self-auto"
                     >
                       <button
                         type="button"

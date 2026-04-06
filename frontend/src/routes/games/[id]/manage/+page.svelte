@@ -22,7 +22,11 @@
   } from "$lib/core/entities/Fixture";
   import Toast from "$lib/presentation/components/ui/Toast.svelte";
   import ConfirmationModal from "$lib/presentation/components/ui/ConfirmationModal.svelte";
-import { get_fixture_use_cases, get_player_use_cases, get_team_use_cases } from "$lib/infrastructure/registry/useCaseFactories";
+  import {
+    get_fixture_use_cases,
+    get_player_use_cases,
+    get_team_use_cases,
+  } from "$lib/infrastructure/registry/useCaseFactories";
 
   const fixture_use_cases = get_fixture_use_cases();
   const team_use_cases = get_team_use_cases();
@@ -525,14 +529,14 @@ import { get_fixture_use_cases, get_player_use_cases, get_team_use_cases } from 
           <div class="flex gap-2">
             {#if fixture.status === "scheduled"}
               <button
-                class="px-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg text-sm font-medium"
+                class="px-4 py-2 bg-green-600 hover:bg-green-700 rounded-md text-sm font-medium"
                 on:click={() => (show_start_modal = true)}
               >
                 ▶️ Start
               </button>
             {:else if is_game_active}
               <button
-                class="px-3 py-2 rounded-lg text-sm font-medium {is_clock_running
+                class="px-3 py-2 rounded-md text-sm font-medium {is_clock_running
                   ? 'bg-yellow-500 text-black'
                   : 'bg-green-500 text-white'}"
                 on:click={toggle_clock}
@@ -540,7 +544,7 @@ import { get_fixture_use_cases, get_player_use_cases, get_team_use_cases } from 
                 {is_clock_running ? "⏸️ Pause" : "▶️ Resume"}
               </button>
               <button
-                class="px-3 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-sm font-medium"
+                class="px-3 py-2 bg-red-600 hover:bg-red-700 rounded-md text-sm font-medium"
                 on:click={() => (show_end_modal = true)}
               >
                 🏁 End
@@ -555,27 +559,27 @@ import { get_fixture_use_cases, get_player_use_cases, get_team_use_cases } from 
           <div class="flex justify-center gap-3 max-w-4xl mx-auto flex-wrap">
             {#if fixture.current_period === "first_half" && !is_clock_running}
               <button
-                class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-sm font-medium"
+                class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-md text-sm font-medium"
                 on:click={end_current_period}
               >
                 ⏹️ End 1st Half
               </button>
             {:else if fixture.current_period === "half_time"}
               <button
-                class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-sm font-medium"
+                class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-md text-sm font-medium"
                 on:click={() => change_period("second_half")}
               >
                 ▶️ Start 2nd Half
               </button>
             {:else if fixture.current_period === "second_half" && !is_clock_running}
               <button
-                class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-sm font-medium"
+                class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-md text-sm font-medium"
                 on:click={end_current_period}
               >
                 ⏹️ End 2nd Half
               </button>
               <button
-                class="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg text-sm font-medium"
+                class="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-md text-sm font-medium"
                 on:click={() => change_period("extra_time_first")}
               >
                 ⚡ Extra Time
@@ -598,7 +602,7 @@ import { get_fixture_use_cases, get_player_use_cases, get_team_use_cases } from 
                 <div class="grid grid-cols-4 gap-2">
                   {#each primary_events as event_btn}
                     <button
-                      class="flex flex-col items-center justify-center p-2 rounded-lg text-white transition-all active:scale-95 {event_btn.color}"
+                      class="flex flex-col items-center justify-center p-2 rounded-md text-white transition-all active:scale-95 {event_btn.color}"
                       on:click={() => open_event_modal(event_btn, "home")}
                       disabled={!is_clock_running}
                     >
@@ -617,7 +621,7 @@ import { get_fixture_use_cases, get_player_use_cases, get_team_use_cases } from 
                 <div class="grid grid-cols-4 gap-2">
                   {#each primary_events as event_btn}
                     <button
-                      class="flex flex-col items-center justify-center p-2 rounded-lg text-white transition-all active:scale-95 {event_btn.color}"
+                      class="flex flex-col items-center justify-center p-2 rounded-md text-white transition-all active:scale-95 {event_btn.color}"
                       on:click={() => open_event_modal(event_btn, "away")}
                       disabled={!is_clock_running}
                     >
@@ -641,7 +645,7 @@ import { get_fixture_use_cases, get_player_use_cases, get_team_use_cases } from 
                 <div class="flex flex-wrap justify-center gap-2">
                   {#each secondary_events as event_btn}
                     <button
-                      class="px-3 py-1.5 rounded-lg text-xs font-medium text-white flex items-center gap-1 {event_btn.color}"
+                      class="px-3 py-1.5 rounded-md text-xs font-medium text-white flex items-center gap-1 {event_btn.color}"
                       on:click={() => open_event_modal(event_btn, "home")}
                       disabled={!is_clock_running}
                     >
@@ -991,7 +995,7 @@ import { get_fixture_use_cases, get_player_use_cases, get_team_use_cases } from 
           Cancel
         </button>
         <button
-          class="px-6 py-2 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg disabled:opacity-50"
+          class="px-6 py-2 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-md disabled:opacity-50"
           disabled={is_updating}
           on:click={record_event}
         >

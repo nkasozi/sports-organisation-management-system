@@ -850,7 +850,7 @@
       </p>
       <a
         href="/organizations"
-        class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+        class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm font-medium"
       >
         Go to Organizations
       </a>
@@ -893,7 +893,7 @@
       </p>
       <a
         href="/fixtures"
-        class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+        class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm font-medium"
       >
         <svg
           class="w-4 h-4"
@@ -912,7 +912,7 @@
       </a>
     </div>
   {:else}
-    <div class="space-y-3 sm:space-y-4">
+    <div class="space-y-3 sm:space-y-4 max-w-3xl mx-auto">
       {#each incomplete_fixtures as fixture (fixture.id)}
         <div
           class="bg-white dark:bg-accent-800 rounded-xl shadow-sm border border-accent-200 dark:border-accent-700 overflow-hidden"
@@ -1060,7 +1060,9 @@
                           d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
                         ></path>
                       </svg>
-                      <span class="text-accent-600 dark:text-accent-400 truncate">
+                      <span
+                        class="text-accent-600 dark:text-accent-400 truncate"
+                      >
                         {fixture.venue}
                       </span>
                     </div>
@@ -1072,7 +1074,9 @@
                 <div
                   class="pt-4 border-t border-accent-200 dark:border-accent-700"
                 >
-                  <div class="flex flex-col sm:flex-row sm:justify-between gap-2 sm:gap-4">
+                  <div
+                    class="flex flex-col sm:flex-row sm:justify-between gap-2 sm:gap-4"
+                  >
                     <div class="hidden sm:block sm:flex-1"></div>
                     <div class="sm:flex-1 flex justify-center">
                       <a
@@ -1100,7 +1104,9 @@
                 <div
                   class="pt-4 border-t border-accent-200 dark:border-accent-700"
                 >
-                  <div class="flex flex-col sm:flex-row sm:justify-between gap-2 sm:gap-4">
+                  <div
+                    class="flex flex-col sm:flex-row sm:justify-between gap-2 sm:gap-4"
+                  >
                     <div class="hidden sm:block sm:flex-1"></div>
                     <div class="sm:flex-1 flex justify-center">
                       <button

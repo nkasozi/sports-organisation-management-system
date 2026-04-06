@@ -25,13 +25,13 @@
     import type { CompetitionStage } from "$lib/core/entities/CompetitionStage";
     import OfficialLeaderboardTable from "$lib/presentation/components/OfficialLeaderboardTable.svelte";
     import OfficialLeaderboardBreakdownPanel from "$lib/presentation/components/OfficialLeaderboardBreakdownPanel.svelte";
-import {
-  get_competition_stage_use_cases,
-  get_fixture_use_cases,
-  get_official_performance_rating_use_cases,
-  get_official_use_cases,
-  get_organization_use_cases,
-} from "$lib/infrastructure/registry/useCaseFactories";
+    import {
+        get_competition_stage_use_cases,
+        get_fixture_use_cases,
+        get_official_performance_rating_use_cases,
+        get_official_use_cases,
+        get_organization_use_cases,
+    } from "$lib/infrastructure/registry/useCaseFactories";
 
     let is_loading = true;
     let error_message = "";
@@ -229,7 +229,7 @@ import {
                 </select>
             {:else if organizations.length > 0}
                 <span
-                    class="rounded-lg bg-accent-100 px-3 py-2 text-sm font-medium
+                    class="rounded-md bg-accent-100 px-3 py-2 text-sm font-medium
                  text-accent-700 dark:bg-accent-800 dark:text-accent-300"
                 >
                     {get_selected_org_name()}
