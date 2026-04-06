@@ -646,7 +646,7 @@
           {#if is_game_completed}
             <div class="flex justify-center mt-4">
               <button
-                class="px-4 py-2 bg-primary-600 hover:bg-primary-700 rounded-lg text-sm font-medium flex items-center gap-2 disabled:opacity-50"
+                class="px-4 py-2 bg-primary-600 hover:bg-primary-700 rounded-md text-sm font-medium flex items-center gap-2 disabled:opacity-50"
                 disabled={downloading_report}
                 on:click={handle_download_match_report}
               >

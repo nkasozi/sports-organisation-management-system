@@ -1462,21 +1462,21 @@
               {#if can_modify_game}
                 {#if fixture.status === "scheduled"}
                   <button
-                    class="px-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg text-sm font-medium"
+                    class="px-4 py-2 bg-green-600 hover:bg-green-700 rounded-md text-sm font-medium"
                     on:click={() => (show_start_modal = true)}
                   >
                     ▶️ Start
                   </button>
                 {:else if is_game_active}
                   <button
-                    class="px-3 py-2 rounded-lg text-sm font-medium bg-blue-600 text-white hover:bg-blue-700"
+                    class="px-3 py-2 rounded-md text-sm font-medium bg-blue-600 text-white hover:bg-blue-700"
                     on:click={toggle_clock}
                   >
                     {is_clock_running ? "⏸️ Pause Time" : "▶️ Resume"}
                   </button>
                   {#if period_button_config}
                     <button
-                      class="px-3 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg text-sm font-medium"
+                      class="px-3 py-2 bg-purple-600 hover:bg-purple-700 rounded-md text-sm font-medium"
                       on:click={() => (show_period_modal = true)}
                     >
                       {period_button_config.icon}
@@ -1485,14 +1485,14 @@
                   {/if}
                   {#if show_extra_time_button}
                     <button
-                      class="px-3 py-2 rounded-lg text-sm font-medium bg-green-600 hover:bg-green-700 text-white"
+                      class="px-3 py-2 rounded-md text-sm font-medium bg-green-600 hover:bg-green-700 text-white"
                       on:click={() => (show_extra_time_modal = true)}
                     >
                       ⏱️ Add Time
                     </button>
                   {/if}
                   <button
-                    class="px-3 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-sm font-medium"
+                    class="px-3 py-2 bg-red-600 hover:bg-red-700 rounded-md text-sm font-medium"
                     on:click={() => (show_end_modal = true)}
                   >
                     🏁 End Game
@@ -1501,7 +1501,7 @@
               {/if}
               {#if is_game_completed}
                 <button
-                  class="px-4 py-2 bg-primary-600 hover:bg-primary-700 rounded-lg text-sm font-medium flex items-center gap-2 disabled:opacity-50"
+                  class="px-4 py-2 bg-primary-600 hover:bg-primary-700 rounded-md text-sm font-medium flex items-center gap-2 disabled:opacity-50"
                   disabled={downloading_report}
                   on:click={handle_download_match_report}
                 >
@@ -1576,7 +1576,7 @@
                   <div class="grid grid-cols-4 gap-2">
                     {#each all_event_buttons as event_btn}
                       <button
-                        class="flex flex-col items-center justify-center p-2 rounded-lg text-white transition-all active:scale-95 {event_btn.color}"
+                        class="flex flex-col items-center justify-center p-2 rounded-md text-white transition-all active:scale-95 {event_btn.color}"
                         on:click={() => open_event_modal(event_btn, "home")}
                         disabled={!is_clock_running}
                       >
@@ -1605,7 +1605,7 @@
                   <div class="grid grid-cols-4 gap-2">
                     {#each all_event_buttons as event_btn}
                       <button
-                        class="flex flex-col items-center justify-center p-2 rounded-lg text-white transition-all active:scale-95 {event_btn.color}"
+                        class="flex flex-col items-center justify-center p-2 rounded-md text-white transition-all active:scale-95 {event_btn.color}"
                         on:click={() => open_event_modal(event_btn, "away")}
                         disabled={!is_clock_running}
                       >
@@ -2640,13 +2640,13 @@
         class="p-4 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-3"
       >
         <button
-          class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
+          class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
           on:click={() => (show_extra_time_modal = false)}
         >
           Cancel
         </button>
         <button
-          class="px-4 py-2 text-sm font-medium text-white bg-violet-600 hover:bg-violet-700 rounded-lg disabled:opacity-50"
+          class="px-4 py-2 text-sm font-medium text-white bg-violet-600 hover:bg-violet-700 rounded-md disabled:opacity-50"
           disabled={extra_minutes_to_add < 1 || is_updating}
           on:click={confirm_extra_time}
         >
@@ -2802,7 +2802,7 @@
           Cancel
         </button>
         <button
-          class="px-6 py-2 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg disabled:opacity-50"
+          class="px-6 py-2 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-md disabled:opacity-50"
           disabled={is_updating}
           on:click={record_event}
         >

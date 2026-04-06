@@ -1,8 +1,6 @@
 <script lang="ts">
   import { onDestroy } from "svelte";
-  import {
-    sync_store,
-  } from "$lib/presentation/stores/syncStore";
+  import { sync_store } from "$lib/presentation/stores/syncStore";
   import {
     is_syncing,
     last_sync_time,
@@ -194,7 +192,7 @@
           type="button"
           on:click={trigger_manual_sync}
           disabled={sync_in_progress}
-          class="w-full flex items-center justify-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-accent-400 dark:disabled:bg-accent-600 disabled:cursor-not-allowed transition-colors text-sm font-medium"
+          class="w-full flex items-center justify-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-accent-400 dark:disabled:bg-accent-600 disabled:cursor-not-allowed transition-colors text-sm font-medium"
         >
           {#if sync_in_progress}
             <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
