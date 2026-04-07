@@ -5,7 +5,7 @@
     import type { Team } from "$lib/core/entities/Team";
     import { get_team_logo } from "$lib/core/entities/Team";
     import type { Venue } from "$lib/core/entities/Venue";
-    import TeamLogoThumbnail from "$lib/presentation/components/ui/TeamLogoThumbnail.svelte";
+    import MatchReportHeaderTeam from "$lib/presentation/components/matchReport/MatchReportHeaderTeam.svelte";
     import {
         format_match_report_kickoff_display,
         get_match_report_status_color,
@@ -97,28 +97,12 @@
         </div>
 
         <div class="flex items-center gap-4 sm:gap-8 justify-center">
-            <div class="text-center flex-1">
-                <div class="flex justify-center mb-2">
-                    <TeamLogoThumbnail
-                        logo_url={home_team ? get_team_logo(home_team) : ""}
-                        team_name={home_team?.name ?? "HOME"}
-                        size="lg"
-                    />
-                </div>
-                <div
-                    class="text-sm sm:text-base font-medium text-gray-300 mb-2 truncate"
-                >
-                    {home_team?.name ?? "HOME"}
-                </div>
-                <div class="text-4xl sm:text-5xl font-bold tabular-nums">
-                    {#if view_state.is_game_scheduled}
-                        <span class="text-gray-500 text-3xl">-</span>
-                    {:else}
-                        {view_state.home_score}
-                    {/if}
-                </div>
-            </div>
-
+            <MatchReportHeaderTeam
+                team_logo_url={home_team ? get_team_logo(home_team) : ""}
+                team_name={home_team?.name ?? "HOME"}
+                score={view_state.home_score}
+                is_game_scheduled={view_state.is_game_scheduled}
+            />
             <div class="text-center px-2">
                 {#if view_state.is_game_in_progress}
                     <div class="text-xs text-gray-500 mb-1">
@@ -128,29 +112,13 @@
                 <div class="text-lg font-semibold text-gray-500">VS</div>
             </div>
 
-            <div class="text-center flex-1">
-                <div class="flex justify-center mb-2">
-                    <TeamLogoThumbnail
-                        logo_url={away_team ? get_team_logo(away_team) : ""}
-                        team_name={away_team?.name ?? "AWAY"}
-                        size="lg"
-                    />
-                </div>
-                <div
-                    class="text-sm sm:text-base font-medium text-gray-300 mb-2 truncate"
-                >
-                    {away_team?.name ?? "AWAY"}
-                </div>
-                <div class="text-4xl sm:text-5xl font-bold tabular-nums">
-                    {#if view_state.is_game_scheduled}
-                        <span class="text-gray-500 text-3xl">-</span>
-                    {:else}
-                        {view_state.away_score}
-                    {/if}
-                </div>
-            </div>
+            <MatchReportHeaderTeam
+                team_logo_url={away_team ? get_team_logo(away_team) : ""}
+                team_name={away_team?.name ?? "AWAY"}
+                score={view_state.away_score}
+                is_game_scheduled={view_state.is_game_scheduled}
+            />
         </div>
-
         {#if view_state.is_game_completed}
             <div class="flex justify-center mt-4">
                 <button

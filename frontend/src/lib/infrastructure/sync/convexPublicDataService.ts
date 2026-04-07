@@ -62,7 +62,6 @@ const MATCH_REPORT_TABLES: TableName[] = [
 ];
 
 const TABLE_FETCH_TIMEOUT_MS = 8000;
-
 function get_tables_for_page(
   page_type: "competition_results" | "calendar" | "match_report",
 ): TableName[] {

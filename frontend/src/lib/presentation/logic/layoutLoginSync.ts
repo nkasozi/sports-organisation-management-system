@@ -102,13 +102,10 @@ export async function sync_verified_user_login_session(
   if (dependencies.initial_sync_store.get_state().is_syncing) {
     console.log(
       "[Layout] Sync already in progress, skipping duplicate request",
-      {
-        event: "sync_duplicate_skipped",
-      },
+      { event: "sync_duplicate_skipped" },
     );
     return create_success_result(false);
   }
-
   dependencies.initial_sync_store.start_sync();
   let unsubscribe_sync_progress: (() => void) | null = null;
   dependencies.initial_sync_store.update_progress(
@@ -133,7 +130,6 @@ export async function sync_verified_user_login_session(
     await dependencies.goto(UNAUTHORIZED_REDIRECT);
     return create_failure_result(NO_PROFILE_FOUND_ERROR);
   }
-
   dependencies.initial_sync_store.update_progress(
     "Profile found. Preparing your workspace...",
     9,
@@ -164,7 +160,6 @@ export async function sync_verified_user_login_session(
       profile_result.data.team_id,
     );
   }
-
   dependencies.initial_sync_store.update_progress("Starting data sync...", 20);
   dependencies.set_pulling_from_remote(false);
   unsubscribe_sync_progress = dependencies.sync_store.subscribe((state) => {
@@ -178,7 +173,6 @@ export async function sync_verified_user_login_session(
       scale_sync_percentage(state.current_progress.percentage),
     );
   });
-
   const first_sync_result = await dependencies.sync_store.sync_now("pull");
   if (!first_sync_result.success && first_sync_result.errors.length > 0) {
     return cleanup_failed_login_sync(
@@ -187,7 +181,6 @@ export async function sync_verified_user_login_session(
       unsubscribe_sync_progress,
     );
   }
-
   unsubscribe_sync_progress?.();
   dependencies.initial_sync_store.update_progress(
     "Resolving references...",

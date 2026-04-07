@@ -28,7 +28,6 @@ const PROFILE_MANAGEMENT_STATUS_CLASS_BY_VALUE: Record<string, string> = {
 };
 
 const PROFILE_MANAGEMENT_PREVIEW_PATH_SEPARATOR = "/";
-
 export type ProfileManagementViewMode = "list" | "create" | "edit";
 
 export interface ProfileManagementEntity extends BaseEntity {
@@ -119,17 +118,14 @@ export function build_profile_management_permissions(
   role: UserRole | undefined,
   entity_type: string,
 ): ProfileManagementPermissions {
-  if (!role) {
+  if (!role)
     return {
       can_read: false,
       can_create: false,
       can_edit: false,
       can_delete: false,
     };
-  }
-
   const normalized_entity_type = normalize_to_entity_type(entity_type);
-
   return {
     can_read: check_entity_permission(
       role,
@@ -175,10 +171,8 @@ export function build_profile_management_rows(
       option.label,
     ]),
   );
-
   return profiles.map((profile: ProfileManagementEntity) => {
     const related_entity_id = get_related_entity_id(profile);
-
     return {
       id: profile.id,
       entity: profile,
@@ -213,9 +207,6 @@ export function build_profile_management_preview_path(
   path_prefix: string,
   profile_slug: string,
 ): string | null {
-  if (!profile_slug.trim()) {
-    return null;
-  }
-
+  if (!profile_slug.trim()) return null;
   return `${path_prefix}${PROFILE_MANAGEMENT_PREVIEW_PATH_SEPARATOR}${profile_slug}`;
 }

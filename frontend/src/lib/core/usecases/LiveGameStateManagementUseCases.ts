@@ -30,7 +30,6 @@ type LiveGameStateMethods = Pick<
 function build_display_name(game: LiveGameLog): string {
   return `Game ${game.fixture_id || game.id} - ${game.game_status || "unknown"}`;
 }
-
 function emit_live_game_updated(
   old_game: LiveGameLog,
   updated_game: LiveGameLog,
@@ -97,7 +96,6 @@ export function create_live_game_state_management(
         ],
       );
     },
-
     async pause_game(id) {
       return execute_game_transition(
         repository,
@@ -110,7 +108,6 @@ export function create_live_game_state_management(
         ["game_status", "clock_running"],
       );
     },
-
     async resume_game(id) {
       return execute_game_transition(
         repository,
@@ -123,7 +120,6 @@ export function create_live_game_state_management(
         ["game_status", "clock_running"],
       );
     },
-
     async end_game(id, user_id) {
       return execute_game_transition(
         repository,
@@ -142,7 +138,6 @@ export function create_live_game_state_management(
         ["game_status", "clock_running", "current_period", "ended_by_user_id"],
       );
     },
-
     async abandon_game(id, user_id, reason) {
       return execute_game_transition(
         repository,
@@ -161,7 +156,6 @@ export function create_live_game_state_management(
         ["game_status", "clock_running", "ended_by_user_id", "notes"],
       );
     },
-
     async update_score(id, home_score, away_score) {
       if (home_score < 0 || away_score < 0)
         return create_failure_result("Scores cannot be negative");
@@ -179,7 +173,6 @@ export function create_live_game_state_management(
       }
       return result;
     },
-
     async update_game_clock(id, current_minute, stoppage_time_minutes) {
       if (current_minute < 0)
         return create_failure_result("Current minute cannot be negative");
@@ -199,7 +192,6 @@ export function create_live_game_state_management(
       }
       return result;
     },
-
     async advance_period(id, new_period) {
       const old_result = await repository.find_by_id(id);
       const old_game = old_result.success ? old_result.data : undefined;

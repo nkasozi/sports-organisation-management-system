@@ -1,4 +1,4 @@
-import { derived, writable } from "svelte/store";
+import { writable } from "svelte/store";
 
 import { browser } from "$app/environment";
 import { get_app_settings_storage } from "$lib/infrastructure/container";
@@ -30,11 +30,9 @@ export const theme_store = writable<ThemeConfig>(DEFAULT_THEME);
 
 export async function initialize_theme(): Promise<void> {
   if (!browser) return;
-
   const stored_theme_json = await get_app_settings_storage().get_setting(
     "sports-org-theme-v2",
   );
-
   if (stored_theme_json) {
     try {
       const parsed = JSON.parse(stored_theme_json) as Partial<ThemeConfig>;
@@ -50,15 +48,6 @@ export async function initialize_theme(): Promise<void> {
 
   theme_store.set(get_system_preference_theme());
 }
-
-const primary_palette = derived(
-  theme_store,
-  ($theme) => COLOR_PALETTES[$theme.primary_color],
-);
-const secondary_palette = derived(
-  theme_store,
-  ($theme) => COLOR_PALETTES[$theme.secondary_color],
-);
 
 function apply_palette_css_variables(
   html_element: HTMLElement,
@@ -76,13 +65,8 @@ function apply_palette_css_variables(
 function apply_theme_to_document(theme_config: ThemeConfig): void {
   if (!browser) return;
   const html_element = document.documentElement;
-
-  if (theme_config.mode === "dark") {
-    html_element.classList.add("dark");
-  } else {
-    html_element.classList.remove("dark");
-  }
-
+  if (theme_config.mode === "dark") html_element.classList.add("dark");
+  else html_element.classList.remove("dark");
   apply_palette_css_variables(
     html_element,
     "primary",
@@ -188,14 +172,6 @@ export function update_theme_colors(options: {
 
 export function reset_theme_to_default(): void {
   theme_store.set(DEFAULT_THEME);
-}
-
-function get_available_colors(): ThemeColorName[] {
-  return Object.keys(COLOR_PALETTES) as ThemeColorName[];
-}
-
-function get_color_palette(color: ThemeColorName) {
-  return COLOR_PALETTES[color];
 }
 
 export function get_theme_classes(

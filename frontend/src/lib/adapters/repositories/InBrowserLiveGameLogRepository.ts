@@ -20,7 +20,6 @@ import {
   create_success_result,
 } from "../../core/types/Result";
 import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
-
 const ENTITY_PREFIX = "livegame";
 
 class InBrowserLiveGameLogRepository

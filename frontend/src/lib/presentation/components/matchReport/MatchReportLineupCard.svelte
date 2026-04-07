@@ -174,7 +174,6 @@
                             </div>
                         </div>
                     {/if}
-
                     {#if lineup_groups.starters.length === 0}
                         <div class="space-y-1">
                             {#each players as player}

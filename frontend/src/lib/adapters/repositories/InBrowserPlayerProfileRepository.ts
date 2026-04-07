@@ -22,7 +22,6 @@ import {
 import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
 
 const ENTITY_PREFIX = "profile";
-
 export class InBrowserPlayerProfileRepository
   extends InBrowserBaseRepository<
     PlayerProfile,
@@ -156,7 +155,6 @@ export class InBrowserPlayerProfileRepository
 
 function create_default_player_profiles(): PlayerProfile[] {
   const now = new Date().toISOString();
-
   return [
     {
       id: "profile_default_1",

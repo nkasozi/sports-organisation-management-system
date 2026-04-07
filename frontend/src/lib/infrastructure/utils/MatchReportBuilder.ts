@@ -19,7 +19,6 @@ import {
 } from "$lib/core/types/MatchReportTypes";
 
 import { calculate_score_by_period } from "./matchReportScoring";
-
 export interface MatchReportBuildContext {
   fixture: Fixture;
   home_team: Team;

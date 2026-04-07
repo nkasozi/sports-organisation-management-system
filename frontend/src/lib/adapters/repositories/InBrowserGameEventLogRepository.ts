@@ -126,7 +126,6 @@ class InBrowserGameEventLogRepository
       ? { page_number: pagination.page, page_size: pagination.page_size }
       : undefined;
   }
-
   async get_events_for_live_game(
     live_game_log_id: string,
     options?: { page: number; page_size: number },

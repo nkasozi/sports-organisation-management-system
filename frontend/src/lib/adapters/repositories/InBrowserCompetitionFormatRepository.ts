@@ -79,38 +79,32 @@ export class InBrowserCompetitionFormatRepository
     filter: CompetitionFormatFilter,
   ): CompetitionFormat[] {
     let filtered_entities = entities;
-
     if (filter.name_contains) {
       const search_term = filter.name_contains.toLowerCase();
       filtered_entities = filtered_entities.filter((format) =>
         format.name.toLowerCase().includes(search_term),
       );
     }
-
     if (filter.code) {
       filtered_entities = filtered_entities.filter(
         (format) => format.code === filter.code,
       );
     }
-
     if (filter.format_type) {
       filtered_entities = filtered_entities.filter(
         (format) => format.format_type === filter.format_type,
       );
     }
-
     if (filter.status) {
       filtered_entities = filtered_entities.filter(
         (format) => format.status === filter.status,
       );
     }
-
     if (filter.organization_id) {
       filtered_entities = filtered_entities.filter(
         (format) => format.organization_id === filter.organization_id,
       );
     }
-
     return filtered_entities;
   }
 
@@ -193,7 +187,6 @@ export function get_competition_format_repository(): CompetitionFormatRepository
   }
   return singleton_instance;
 }
-
 export async function reset_competition_format_repository(): Promise<void> {
   const repository =
     get_competition_format_repository() as InBrowserCompetitionFormatRepository;

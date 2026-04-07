@@ -48,7 +48,6 @@ export async function auto_generate_lineups_if_possible(
   );
   if (!fixture.id)
     return { success: false, error_message: "Fixture must have an ID" };
-
   const rules_result = await get_player_rules_from_competition(
     fixture.competition_id,
     competition_use_cases,
@@ -57,7 +56,6 @@ export async function auto_generate_lineups_if_possible(
   );
   if (!rules_result.success)
     return { success: false, error_message: rules_result.error_message };
-
   const { min_players, max_players, squad_generation_strategy } = rules_result;
   console.log(
     "[fixtureStartChecks] Rules - min:",
@@ -67,7 +65,6 @@ export async function auto_generate_lineups_if_possible(
     "strategy:",
     squad_generation_strategy,
   );
-
   if (squad_generation_strategy === "previous_match") {
     const previous_result = await try_previous_match_strategy(
       fixture,
@@ -81,7 +78,6 @@ export async function auto_generate_lineups_if_possible(
       "[fixtureStartChecks] No previous lineup — falling back to first_available",
     );
   }
-
   return generate_first_available_lineup(
     fixture,
     team_id,
@@ -110,7 +106,6 @@ async function try_previous_match_strategy(
   );
   if (!previous_lineup_result.success || !previous_lineup_result.lineup)
     return null;
-
   const previous_players = previous_lineup_result.lineup.selected_players;
   console.log(
     "[fixtureStartChecks] Found previous lineup with",
@@ -118,7 +113,6 @@ async function try_previous_match_strategy(
     "players for:",
     team_name,
   );
-
   const lineup: CreateFixtureLineupInput = {
     organization_id: fixture.organization_id,
     fixture_id: fixture.id,
@@ -129,14 +123,12 @@ async function try_previous_match_strategy(
     submitted_at: new Date().toISOString(),
     notes: "Auto-generated from previous match squad",
   };
-
   const create_result = await lineup_use_cases.create(lineup);
   if (!create_result.success)
     return {
       success: false,
       error_message: create_result.error || "Failed to create lineup",
     };
-
   return {
     success: true,
     lineup,
@@ -162,7 +154,6 @@ async function generate_first_available_lineup(
   const active_memberships = (
     memberships_result.success ? memberships_result.data.items : []
   ).filter((m: PlayerTeamMembership) => m.status === MEMBERSHIP_STATUS.ACTIVE);
-
   if (active_memberships.length < min_players) {
     return {
       success: false,
@@ -170,7 +161,6 @@ async function generate_first_available_lineup(
       fix_suggestion: `Go to the Player Team Memberships page and add more players to ${team_name} (need at least ${min_players - active_memberships.length} more)`,
     };
   }
-
   const players_to_select = Math.min(active_memberships.length, max_players);
   const player_ids = active_memberships.map(
     (m: PlayerTeamMembership) => m.player_id,
@@ -183,7 +173,6 @@ async function generate_first_available_lineup(
   const players: Player[] = player_results
     .filter((r): r is { success: true; data: Player } => r.success)
     .map((r) => r.data);
-
   const positions_result = await player_position_use_cases.list(undefined, {
     page_number: 1,
     page_size: 100,
@@ -192,7 +181,6 @@ async function generate_first_available_lineup(
   const position_name_by_id = new Map<string, string>(
     positions.map((p: PlayerPosition) => [p.id, p.name]),
   );
-
   const all_lineup_players = build_lineup_players_from_memberships(
     active_memberships,
     players,
@@ -204,7 +192,6 @@ async function generate_first_available_lineup(
       .localeCompare(`${b.last_name} ${b.first_name}`.toLowerCase()),
   );
   const selected_players = all_lineup_players.slice(0, players_to_select);
-
   const lineup: CreateFixtureLineupInput = {
     organization_id: fixture.organization_id,
     fixture_id: fixture.id,
@@ -215,14 +202,12 @@ async function generate_first_available_lineup(
     submitted_at: new Date().toISOString(),
     notes: "Auto-generated lineup (first available players)",
   };
-
   const create_result = await lineup_use_cases.create(lineup);
   if (!create_result.success)
     return {
       success: false,
       error_message: create_result.error || "Failed to create lineup",
     };
-
   console.log(
     "[fixtureStartChecks] Lineup created for:",
     team_name,

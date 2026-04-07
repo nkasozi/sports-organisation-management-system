@@ -104,19 +104,17 @@ export class ClerkAuthenticationAdapter implements AuthenticationPort {
     payload_input: Omit<AuthTokenPayload, "issued_at" | "expires_at">,
   ): Promise<Result<AuthToken>> {
     const session_token = await this.session_provider.get_session_token();
-
     if (!session_token) {
       return create_failure_result(
         "No active Clerk session - cannot generate token",
       );
     }
-
     const payload = build_auth_token_payload(payload_input);
-
-    console.log(
-      `[ClerkAuthenticationAdapter] Generated token for user: ${payload.email}`,
-    );
-
+    console.log("[ClerkAuthenticationAdapter] Generated token", {
+      event: "clerk_token_generated",
+      user_id: payload.user_id,
+      role: payload.role,
+    });
     return create_success_result({
       payload,
       signature: "clerk-managed",
@@ -128,20 +126,16 @@ export class ClerkAuthenticationAdapter implements AuthenticationPort {
     raw_token: string,
   ): Promise<Result<AuthVerificationResult>> {
     const cached = this.verification_cache.get_or_miss(raw_token);
-
     if (cached.is_hit && cached.value) {
       console.log(
         "[ClerkAuthenticationAdapter] Cache HIT for token verification",
       );
       return create_success_result(cached.value);
     }
-
     const result = this.verify_token_via_clerk_session();
-
     if (result.is_valid) {
       this.verification_cache.set(raw_token, result);
     }
-
     return create_success_result(result);
   }
 
@@ -154,9 +148,7 @@ export class ClerkAuthenticationAdapter implements AuthenticationPort {
         "No active Clerk session - user is not signed in",
       );
     }
-
     const clerk_user = this.session_provider.get_current_user();
-
     if (!clerk_user) {
       console.log(
         "[ClerkAuthenticationAdapter] Clerk session active but no user data available",
@@ -165,11 +157,10 @@ export class ClerkAuthenticationAdapter implements AuthenticationPort {
         "Clerk session exists but user data is unavailable",
       );
     }
-
-    console.log(
-      `[ClerkAuthenticationAdapter] Verified token for user: ${clerk_user.email_address}`,
-    );
-
+    console.log("[ClerkAuthenticationAdapter] Verified token", {
+      event: "clerk_token_verified",
+      user_id: clerk_user.id,
+    });
     return build_valid_verification_result(clerk_user);
   }
 }
@@ -204,8 +195,7 @@ function create_clerk_session_provider(): ClerkSessionProvider {
       return map_clerk_service_user_to_clerk_user_info(session_state.user);
     },
     is_signed_in(): boolean {
-      const session_state = get(clerk_session);
-      return session_state.is_signed_in;
+      return get(clerk_session).is_signed_in;
     },
   };
 }

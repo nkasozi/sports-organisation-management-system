@@ -3,9 +3,18 @@
 
   import type { OfficialAssignment } from "$lib/core/entities/FixtureDetailsSetup";
   import { create_empty_official_assignment } from "$lib/core/entities/FixtureDetailsSetup";
-import { get_game_official_role_use_cases, get_official_use_cases } from "$lib/infrastructure/registry/useCaseFactories";
+  import {
+    get_game_official_role_use_cases,
+    get_official_use_cases,
+  } from "$lib/infrastructure/registry/useCaseFactories";
 
-  import SearchableSelectField from "./ui/SearchableSelectField.svelte";
+  import type { SelectOption } from "../logic/officialAssignmentArrayState";
+  import {
+    compute_available_officials,
+    load_assignment_options,
+    reload_official_options,
+  } from "../logic/officialAssignmentArrayState";
+  import OfficialAssignmentRow from "./OfficialAssignmentRow.svelte";
 
   export let assignments: OfficialAssignment[] = [];
   export let disabled: boolean = false;
@@ -19,14 +28,18 @@ import { get_game_official_role_use_cases, get_official_use_cases } from "$lib/i
   const official_use_cases = get_official_use_cases();
   const role_use_cases = get_game_official_role_use_cases();
 
-  type SelectOption = { value: string; label: string };
-
   let official_options: SelectOption[] = [];
   let role_options: SelectOption[] = [];
   let is_loading = true;
 
   onMount(async () => {
-    await load_options(organization_id);
+    const options = await load_assignment_options({
+      organization_id,
+      official_use_cases,
+      role_use_cases,
+    });
+    official_options = options.official_options;
+    role_options = options.role_options;
     is_loading = false;
   });
 
@@ -40,76 +53,12 @@ import { get_game_official_role_use_cases, get_official_use_cases } from "$lib/i
     org_id: string,
   ): Promise<boolean> {
     is_loading = true;
-    const filter = org_id ? { organization_id: org_id } : undefined;
-    const officials_result = await official_use_cases.list(filter, {
-      page_number: 1,
-      page_size: 500,
+    official_options = await reload_official_options({
+      organization_id: org_id,
+      official_use_cases,
     });
-
-    if (officials_result.success && officials_result.data) {
-      const officials_data = officials_result.data as any;
-      const officials_list = Array.isArray(officials_data)
-        ? officials_data
-        : officials_data.items || [];
-      official_options = officials_list.map(
-        (official: { id: string; first_name: string; last_name: string }) => ({
-          value: official.id,
-          label: `${official.first_name} ${official.last_name}`,
-        }),
-      );
-      console.debug(
-        "[OFFICIALS] Reloaded officials for org:",
-        org_id,
-        "count:",
-        official_options.length,
-      );
-    }
-
     is_loading = false;
     return true;
-  }
-
-  async function load_options(org_id: string): Promise<void> {
-    const official_filter = org_id ? { organization_id: org_id } : undefined;
-    const [officials_result, roles_result] = await Promise.all([
-      official_use_cases.list(official_filter, {
-        page_number: 1,
-        page_size: 500,
-      }),
-      role_use_cases.list(org_id ? { organization_id: org_id } : undefined, {
-        page_number: 1,
-        page_size: 100,
-      }),
-    ]);
-
-    console.log("[OFFICIALS] Loading officials result:", officials_result);
-    console.log("[OFFICIALS] Loading roles result:", roles_result);
-
-    if (officials_result.success && officials_result.data) {
-      const officials_data = officials_result.data as any;
-      const officials_list = Array.isArray(officials_data)
-        ? officials_data
-        : officials_data.items || [];
-      official_options = officials_list.map(
-        (official: { id: string; first_name: string; last_name: string }) => ({
-          value: official.id,
-          label: `${official.first_name} ${official.last_name}`,
-        }),
-      );
-      console.log("[OFFICIALS] Loaded official_options:", official_options);
-    }
-
-    if (roles_result.success && roles_result.data) {
-      const roles_data = roles_result.data as any;
-      const roles_list = Array.isArray(roles_data)
-        ? roles_data
-        : roles_data.items || [];
-      role_options = roles_list.map((role: { id: string; name: string }) => ({
-        value: role.id,
-        label: role.name,
-      }));
-      console.log("[OFFICIALS] Loaded role_options:", role_options);
-    }
   }
 
   function handle_assignment_change(
@@ -141,22 +90,6 @@ import { get_game_official_role_use_cases, get_official_use_cases } from "$lib/i
 
   function get_assignment_error(index: number, field: string): string {
     return errors[`assigned_officials_${index}_${field}`] || "";
-  }
-
-  function compute_available_officials(
-    all_officials: SelectOption[],
-    current_assignments: OfficialAssignment[],
-    current_index: number,
-  ): SelectOption[] {
-    const assigned_official_ids = new Set(
-      current_assignments
-        .map((a, i) => (i !== current_index ? a.official_id : null))
-        .filter((id): id is string => id !== null && id !== ""),
-    );
-
-    return all_officials.filter(
-      (option) => !assigned_official_ids.has(option.value),
-    );
   }
 
   $: available_officials_by_index = assignments.map((_, index) =>
@@ -203,73 +136,19 @@ import { get_game_official_role_use_cases, get_official_use_cases } from "$lib/i
 
   <div class="space-y-4">
     {#each assignments as assignment, index}
-      <div
-        class="p-4 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50"
-      >
-        <div class="flex items-start justify-between mb-3">
-          <span class="text-sm font-medium text-gray-600 dark:text-gray-400">
-            Official #{index + 1}
-          </span>
-          {#if assignments.length > 1}
-            <button
-              type="button"
-              class="p-1 text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300
-                     hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
-              on:click={() => remove_assignment(index)}
-              {disabled}
-              title="Remove this official"
-            >
-              <svg
-                class="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                />
-              </svg>
-            </button>
-          {/if}
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <SearchableSelectField
-              label="Official"
-              name={`official_${index}`}
-              value={assignment.official_id}
-              options={available_officials_by_index[index] || []}
-              placeholder="Select Official"
-              required={true}
-              {disabled}
-              error={get_assignment_error(index, "official")}
-              {is_loading}
-              on:change={(e) =>
-                handle_assignment_change(index, "official_id", e.detail.value)}
-            />
-          </div>
-
-          <div>
-            <SearchableSelectField
-              label="Role"
-              name={`role_${index}`}
-              value={assignment.role_id}
-              options={role_options}
-              placeholder="Select Role"
-              required={true}
-              {disabled}
-              error={get_assignment_error(index, "role")}
-              {is_loading}
-              on:change={(e) =>
-                handle_assignment_change(index, "role_id", e.detail.value)}
-            />
-          </div>
-        </div>
-      </div>
+      <OfficialAssignmentRow
+        {assignment}
+        {index}
+        {disabled}
+        available_officials={available_officials_by_index[index] || []}
+        {role_options}
+        {is_loading}
+        official_error={get_assignment_error(index, "official")}
+        role_error={get_assignment_error(index, "role")}
+        can_remove={assignments.length > 1}
+        on_change={handle_assignment_change}
+        on_remove={remove_assignment}
+      />
     {/each}
   </div>
 

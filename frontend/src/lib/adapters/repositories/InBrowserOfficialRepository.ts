@@ -16,7 +16,6 @@ import type { PaginatedAsyncResult } from "../../core/types/Result";
 import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
 
 const ENTITY_PREFIX = "official";
-
 export class InBrowserOfficialRepository
   extends InBrowserBaseRepository<
     Official,
@@ -29,7 +28,6 @@ export class InBrowserOfficialRepository
   constructor() {
     super(ENTITY_PREFIX);
   }
-
   protected get_table(): Table<Official, string> {
     return this.database.officials;
   }
@@ -74,7 +72,6 @@ export class InBrowserOfficialRepository
     filter: OfficialFilter,
   ): Official[] {
     let filtered_entities = entities;
-
     if (filter.name_contains) {
       const search_term = filter.name_contains.toLowerCase();
       filtered_entities = filtered_entities.filter((official) =>
@@ -83,13 +80,11 @@ export class InBrowserOfficialRepository
           .includes(search_term),
       );
     }
-
     if (filter.organization_id) {
       filtered_entities = filtered_entities.filter(
         (official) => official.organization_id === filter.organization_id,
       );
     }
-
     if (filter.status) {
       filtered_entities = filtered_entities.filter(
         (official) => official.status === filter.status,
@@ -197,7 +192,6 @@ export function get_official_repository(): OfficialRepository {
   }
   return singleton_instance;
 }
-
 export async function reset_official_repository(): Promise<void> {
   const repository = get_official_repository() as InBrowserOfficialRepository;
   await repository.clear_all_data();

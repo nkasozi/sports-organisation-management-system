@@ -21,7 +21,6 @@ interface EntityListResult<EntityType> {
   data?: { items: EntityType[] };
   error?: string;
 }
-
 interface EntityResult<EntityType> {
   success: boolean;
   data?: EntityType;
@@ -178,7 +177,6 @@ export async function load_selected_competition_bundle(
       fixtures: [],
     };
   }
-
   const competition_result = await dependencies.competition_use_cases.get_by_id(
     selected_competition_id,
   );

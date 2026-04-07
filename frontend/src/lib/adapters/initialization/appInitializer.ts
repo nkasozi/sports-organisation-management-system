@@ -37,7 +37,6 @@ import {
   is_seeding_already_complete,
   type SeedingStrategy,
 } from "./seedingService";
-
 let initialized = false;
 const FIRST_TIME_DETECTION_KEY = "sports_org_app_initialized";
 
@@ -53,7 +52,6 @@ async function delay(milliseconds: number): Promise<void> {
 }
 
 type InitResult = "success" | "redirect_to_login";
-
 interface InitializeOptions {
   current_path: string;
   session_already_synced: boolean;
@@ -92,14 +90,10 @@ export async function initialize_app_data(
   if (typeof window === "undefined") return "success";
 
   const is_first_time = await is_first_time_use();
-
   if (is_first_time) {
     first_time_setup_store.set_first_time(true);
     first_time_setup_store.start_setup();
     await delay(500);
-  }
-
-  if (is_first_time) {
     first_time_setup_store.update_progress("Initializing audit system...", 10);
     await delay(300);
   }
@@ -152,14 +146,10 @@ export async function initialize_app_data(
   });
 
   const seed_outcome = await run_seeding_with_strategy(strategy, is_first_time);
-
-  if (seed_outcome === "redirect_to_login") {
-    return "redirect_to_login";
-  }
+  if (seed_outcome === "redirect_to_login") return "redirect_to_login";
 
   if (convex_client_result.success && user_is_signed_in) {
     const convex_client = convex_client_result.data;
-
     const on_org_settings_pulled = async (
       table_name: string,
     ): Promise<void> => {

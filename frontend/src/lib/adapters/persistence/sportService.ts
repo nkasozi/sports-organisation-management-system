@@ -37,15 +37,12 @@ export async function get_all_sports(): Promise<SportServiceResult<Sport[]>> {
 export async function get_sport_by_id(
   id: string,
 ): Promise<SportServiceResult<Sport>> {
-  if (!id || id.trim() === "") {
+  if (!id || id.trim() === "")
     return { success: false, error: "Sport ID is required" };
-  }
-
   try {
     const sport = await repo_get_sport_by_id(id);
-    if (!sport) {
+    if (!sport)
       return { success: false, error: `Sport with ID '${id}' not found` };
-    }
     return { success: true, data: sport };
   } catch (error) {
     console.error("[SportService] Failed to get sport by ID", {
@@ -59,15 +56,12 @@ export async function get_sport_by_id(
 async function get_sport_by_code(
   code: string,
 ): Promise<SportServiceResult<Sport>> {
-  if (!code || code.trim() === "") {
+  if (!code || code.trim() === "")
     return { success: false, error: "Sport code is required" };
-  }
-
   try {
     const sport = await repo_get_sport_by_code(code);
-    if (!sport) {
+    if (!sport)
       return { success: false, error: `Sport with code '${code}' not found` };
-    }
     return { success: true, data: sport };
   } catch (error) {
     console.error("[SportService] Failed to get sport by code", {
@@ -82,10 +76,8 @@ async function create_sport(
   input: CreateSportInput,
 ): Promise<SportServiceResult<Sport>> {
   const validation_errors = validate_sport_input(input);
-  if (validation_errors.length > 0) {
+  if (validation_errors.length > 0)
     return { success: false, error: validation_errors.join(", ") };
-  }
-
   const existing_sport = await repo_get_sport_by_code(input.code);
   if (existing_sport) {
     return {
@@ -93,7 +85,6 @@ async function create_sport(
       error: `Sport with code '${input.code}' already exists`,
     };
   }
-
   const result = await repo_create_sport(input);
   if (!result.success) {
     console.error("[SportService] Failed to create sport:", result.error);
@@ -106,16 +97,12 @@ async function update_sport(
   id: string,
   input: UpdateSportInput,
 ): Promise<SportServiceResult<Sport>> {
-  if (!id || id.trim() === "") {
+  if (!id || id.trim() === "")
     return { success: false, error: "Sport ID is required" };
-  }
-
   try {
     const existing_sport = await repo_get_sport_by_id(id);
-    if (!existing_sport) {
+    if (!existing_sport)
       return { success: false, error: `Sport with ID '${id}' not found` };
-    }
-
     if (input.code && input.code !== existing_sport.code) {
       const sport_with_code = await repo_get_sport_by_code(input.code);
       if (sport_with_code && sport_with_code.id !== id) {
@@ -125,12 +112,9 @@ async function update_sport(
         };
       }
     }
-
     const updated_sport = await repo_update_sport(id, input);
-    if (!updated_sport) {
+    if (!updated_sport)
       return { success: false, error: "Failed to update sport" };
-    }
-
     return { success: true, data: updated_sport };
   } catch (error) {
     console.error("[SportService] Failed to update sport", {
@@ -142,15 +126,12 @@ async function update_sport(
 }
 
 async function delete_sport(id: string): Promise<SportServiceResult<boolean>> {
-  if (!id || id.trim() === "") {
+  if (!id || id.trim() === "")
     return { success: false, error: "Sport ID is required" };
-  }
-
   try {
     const deleted = await repo_delete_sport(id);
-    if (!deleted) {
+    if (!deleted)
       return { success: false, error: `Sport with ID '${id}' not found` };
-    }
     return { success: true, data: true };
   } catch (error) {
     console.error("[SportService] Failed to delete sport", {
@@ -178,20 +159,15 @@ function get_effective_official_requirements(
   sport: Sport,
   competition_overrides?: OfficialRequirement[],
 ): OfficialRequirement[] {
-  if (!competition_overrides || competition_overrides.length === 0) {
+  if (!competition_overrides || competition_overrides.length === 0)
     return sport.official_requirements;
-  }
-
   const merged_requirements: Map<string, OfficialRequirement> = new Map();
-
   for (const req of sport.official_requirements) {
     merged_requirements.set(req.role_id, req);
   }
-
   for (const override of competition_overrides) {
     merged_requirements.set(override.role_id, override);
   }
-
   return Array.from(merged_requirements.values());
 }
 
@@ -201,7 +177,6 @@ function get_official_requirement_source(
   competition_overrides?: OfficialRequirement[],
 ): "sport" | "competition" {
   if (!competition_overrides) return "sport";
-
   const has_competition_override = competition_overrides.some(
     (req) => req.role_id === role_id,
   );

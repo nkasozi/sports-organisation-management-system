@@ -20,7 +20,6 @@
                     ? 'bg-secondary-500'
                     : 'bg-primary-500'}"
             ></div>
-
             <div class="p-6 sm:p-8 text-center">
                 <div
                     class="mx-auto w-16 h-16 rounded-full flex items-center justify-center mb-5 {severity ===
@@ -44,19 +43,16 @@
                         />
                     </svg>
                 </div>
-
                 <h3
                     class="text-xl font-bold text-accent-900 dark:text-accent-100 mb-2"
                 >
                     {title}
                 </h3>
-
                 <p
                     class="text-sm text-accent-500 dark:text-accent-400 leading-relaxed mb-6 max-w-sm mx-auto"
                 >
                     {message}
                 </p>
-
                 <div
                     class="flex flex-col sm:flex-row items-center justify-center gap-3"
                 >
@@ -147,7 +143,6 @@
                         />
                     </svg>
                 </div>
-
                 <div class="flex-1 min-w-0">
                     <h4
                         class="text-sm font-semibold text-accent-900 dark:text-accent-100"
@@ -159,7 +154,6 @@
                     >
                         {message}
                     </p>
-
                     {#if on_retry || on_back}
                         <div class="mt-3 flex items-center gap-4">
                             {#if on_retry}

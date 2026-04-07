@@ -13,7 +13,7 @@ import type {
   SystemUserRepository,
   UserRole,
 } from "../../core/interfaces/ports";
-import { ANY_VALUE, check_data_permission } from "../../core/interfaces/ports";
+import { check_data_permission } from "../../core/interfaces/ports";
 import type {
   AsyncResult,
   PaginatedAsyncResult,
@@ -23,23 +23,14 @@ import {
   create_success_result,
 } from "../../core/types/Result";
 import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
+import {
+  apply_system_user_filter,
+  apply_system_user_updates,
+  create_system_user_from_input,
+} from "./InBrowserSystemUserRepositoryUtils";
 
 const ENTITY_PREFIX = "usr";
-const ALL_ORGANIZATIONS_SCOPE = ANY_VALUE;
-
-export function resolve_organization_id_for_role(
-  organization_id: string,
-  role: SystemUserRole,
-): string {
-  const has_platform_wide_scope = check_data_permission(
-    role as UserRole,
-    "root_level",
-    "delete",
-  );
-  return has_platform_wide_scope
-    ? ALL_ORGANIZATIONS_SCOPE
-    : organization_id || "";
-}
+export { resolve_organization_id_for_role } from "./InBrowserSystemUserRepositoryUtils";
 
 export class InBrowserSystemUserRepository
   extends InBrowserBaseRepository<
@@ -87,71 +78,21 @@ export class InBrowserSystemUserRepository
     id: string,
     timestamps: Pick<BaseEntity, "created_at" | "updated_at">,
   ): SystemUser {
-    const organization_id = resolve_organization_id_for_role(
-      input.organization_id,
-      input.role,
-    );
-    return {
-      id,
-      ...timestamps,
-      ...input,
-      email: input.email.trim().toLowerCase(),
-      first_name: input.first_name.trim(),
-      last_name: input.last_name.trim(),
-      status: input.status || "active",
-      organization_id,
-    };
+    return create_system_user_from_input(input, id, timestamps);
   }
 
   protected apply_updates_to_entity(
     entity: SystemUser,
     updates: UpdateSystemUserInput,
   ): SystemUser {
-    const updated_role = updates.role ?? entity.role;
-    const updated_org_id = resolve_organization_id_for_role(
-      updates.organization_id ?? entity.organization_id,
-      updated_role,
-    );
-    return {
-      ...entity,
-      ...updates,
-      email: updates.email?.trim().toLowerCase() ?? entity.email,
-      first_name: updates.first_name?.trim() ?? entity.first_name,
-      last_name: updates.last_name?.trim() ?? entity.last_name,
-      role: updated_role,
-      organization_id: updated_org_id,
-    };
+    return apply_system_user_updates(entity, updates);
   }
 
   protected apply_entity_filter(
     entities: SystemUser[],
     filter: SystemUserFilter,
   ): SystemUser[] {
-    let filtered = entities;
-    if (filter.email_contains) {
-      const s = filter.email_contains.toLowerCase();
-      filtered = filtered.filter((u) => u.email.toLowerCase().includes(s));
-    }
-    if (filter.name_contains) {
-      const s = filter.name_contains.toLowerCase();
-      filtered = filtered.filter(
-        (u) =>
-          u.first_name.toLowerCase().includes(s) ||
-          u.last_name.toLowerCase().includes(s),
-      );
-    }
-    if (filter.role) {
-      filtered = filtered.filter((u) => u.role === filter.role);
-    }
-    if (filter.status) {
-      filtered = filtered.filter((u) => u.status === filter.status);
-    }
-    if (filter.organization_id) {
-      filtered = filtered.filter(
-        (u) => u.organization_id === filter.organization_id,
-      );
-    }
-    return filtered;
+    return apply_system_user_filter(entities, filter);
   }
 
   async find_by_email(email: string): PaginatedAsyncResult<SystemUser> {

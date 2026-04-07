@@ -200,10 +200,10 @@ export function create_local_change_publisher(): LocalChangePublisherPort {
       has_pending_changes: sync_state.has_pending_changes,
       is_online: sync_state.is_online,
     }),
-    set_remote_sync_in_progress: (value: boolean) => {
-      set_pulling_from_remote(value);
-      return create_success_result(true);
-    },
+    set_remote_sync_in_progress: (value: boolean) => (
+      set_pulling_from_remote(value),
+      create_success_result(true)
+    ),
     configure_orchestrator: (orch: SyncOrchestratorPort) =>
       configure_orchestrator(orch),
     configure_restoration_handlers: (handlers: SyncRestorationHandlers) =>

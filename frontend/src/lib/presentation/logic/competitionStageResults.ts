@@ -30,14 +30,12 @@ export interface TeamStanding {
   points: number;
   form: FormResult[];
 }
-
 export interface InferredStageGroup {
   label: string;
   team_ids: string[];
   fixtures: Fixture[];
   standings: TeamStanding[];
 }
-
 export interface CompetitionStageResultsSection {
   stage: CompetitionStage;
   fixtures: Fixture[];
@@ -52,7 +50,6 @@ export function calculate_team_standings(
   tie_breakers: TieBreaker[] = ["goal_difference", "goals_scored"],
 ): TeamStanding[] {
   const standings_map = new Map<string, TeamStanding>();
-
   for (const team of teams) {
     standings_map.set(team.id, {
       team_id: team.id,
@@ -69,29 +66,23 @@ export function calculate_team_standings(
       form: [],
     });
   }
-
   const completed_fixtures = fixtures.filter(
     (fixture) => fixture.status === FIXTURE_STATUS.COMPLETED,
   );
-
   for (const fixture of completed_fixtures) {
     const home_standing = standings_map.get(fixture.home_team_id);
     const away_standing = standings_map.get(fixture.away_team_id);
-
     if (!home_standing || !away_standing) {
       continue;
     }
-
     const home_goals = fixture.home_team_score ?? 0;
     const away_goals = fixture.away_team_score ?? 0;
-
     home_standing.played += 1;
     away_standing.played += 1;
     home_standing.goals_for += home_goals;
     home_standing.goals_against += away_goals;
     away_standing.goals_for += away_goals;
     away_standing.goals_against += home_goals;
-
     if (home_goals > away_goals) {
       home_standing.won += 1;
       away_standing.lost += 1;
@@ -99,7 +90,6 @@ export function calculate_team_standings(
       away_standing.points += points_config.points_for_loss;
       continue;
     }
-
     if (away_goals > home_goals) {
       away_standing.won += 1;
       home_standing.lost += 1;
@@ -113,11 +103,9 @@ export function calculate_team_standings(
     home_standing.points += points_config.points_for_draw;
     away_standing.points += points_config.points_for_draw;
   }
-
   for (const standing of standings_map.values()) {
     standing.goal_difference = standing.goals_for - standing.goals_against;
   }
-
   const form_map = build_team_form_map(completed_fixtures, FORM_LAST_N_GAMES);
   for (const standing of standings_map.values()) {
     standing.form = form_map.get(standing.team_id) ?? [];
@@ -141,14 +129,12 @@ export function build_competition_stage_results_sections(
 ): CompetitionStageResultsSection[] {
   const team_map = new Map(teams.map((team) => [team.id, team]));
   const sections: CompetitionStageResultsSection[] = [];
-
   for (const stage of [...stages].sort(
     (left, right) => left.stage_order - right.stage_order,
   )) {
     const stage_fixtures = fixtures.filter(
       (fixture) => fixture.stage_id === stage.id,
     );
-
     if (stage.stage_type === STAGE_TYPE.GROUP_STAGE) {
       const inferred_groups = infer_group_stage_team_groups(stage_fixtures).map(
         (team_ids, index) => {
@@ -161,7 +147,6 @@ export function build_competition_stage_results_sections(
           const group_teams = team_ids
             .map((team_id) => team_map.get(team_id))
             .filter((team): team is Team => team !== undefined);
-
           return {
             label: `Group ${String.fromCharCode(65 + index)}`,
             team_ids,
@@ -175,7 +160,6 @@ export function build_competition_stage_results_sections(
           };
         },
       );
-
       sections.push({
         stage,
         fixtures: stage_fixtures,
@@ -184,7 +168,6 @@ export function build_competition_stage_results_sections(
       });
       continue;
     }
-
     const can_show_stage_standings =
       stage.stage_type === STAGE_TYPE.LEAGUE_STAGE ||
       stage.stage_type === STAGE_TYPE.CUSTOM;
@@ -196,7 +179,6 @@ export function build_competition_stage_results_sections(
     const stage_teams = [...stage_team_ids]
       .map((team_id) => team_map.get(team_id))
       .filter((team): team is Team => team !== undefined);
-
     sections.push({
       stage,
       fixtures: stage_fixtures,
@@ -211,6 +193,5 @@ export function build_competition_stage_results_sections(
       inferred_groups: [],
     });
   }
-
   return sections;
 }
