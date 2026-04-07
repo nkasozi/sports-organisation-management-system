@@ -1,17 +1,23 @@
 <script lang="ts">
     import { onMount } from "svelte";
 
-    import type { Official } from "$lib/core/entities/Official";
     import { get_official_full_name } from "$lib/core/entities/Official";
     import type {
         CreateOfficialPerformanceRatingInput,
-        OfficialPerformanceRating,
         RatingDimensions,
     } from "$lib/core/entities/OfficialPerformanceRating";
     import { validate_rating_input } from "$lib/core/entities/OfficialPerformanceRating";
-import { get_official_performance_rating_use_cases, get_official_use_cases } from "$lib/infrastructure/registry/useCaseFactories";
+    import {
+        get_official_performance_rating_use_cases,
+        get_official_use_cases,
+    } from "$lib/infrastructure/registry/useCaseFactories";
     import StarRatingInput from "$lib/presentation/components/ui/StarRatingInput.svelte";
     import Toast from "$lib/presentation/components/ui/Toast.svelte";
+    import {
+        load_official_rating_states,
+        OFFICIAL_RATING_DIMENSIONS,
+        type OfficialRatingState,
+    } from "$lib/presentation/logic/officialRatingPanelState";
 
     function get_rating_dim(
         rating: RatingDimensions & { notes: string },
@@ -38,82 +44,21 @@ import { get_official_performance_rating_use_cases, get_official_use_cases } fro
     const rating_use_cases = get_official_performance_rating_use_cases();
     const official_use_cases = get_official_use_cases();
 
-    type OfficialRatingState = {
-        official: Official;
-        rating: RatingDimensions & { notes: string };
-        existing_id: string | null;
-        is_saving: boolean;
-        validation_errors: string[];
-    };
-
     let official_states: OfficialRatingState[] = [];
     let is_loading = true;
     let toast_message = "";
     let toast_type: "success" | "error" = "success";
     let toast_visible = false;
 
-    function build_default_dimensions(): RatingDimensions & { notes: string } {
-        return {
-            overall: 5,
-            decision_accuracy: 5,
-            game_control: 5,
-            communication: 5,
-            fitness: 5,
-            notes: "",
-        };
-    }
-
     async function load_officials_and_existing_ratings(): Promise<void> {
         is_loading = true;
-        const officials_result = await official_use_cases.list({
+        official_states = await load_official_rating_states(
+            fixture_id,
             organization_id,
-        });
-        if (!officials_result.success || !officials_result.data) {
-            is_loading = false;
-            return;
-        }
-
-        const officials_map = new Map(
-            officials_result.data.items.map((o: Official) => [o.id, o]),
+            assigned_official_ids,
+            rater_user_id,
+            { official_use_cases, rating_use_cases },
         );
-
-        const ratings_result =
-            await rating_use_cases.list_by_fixture(fixture_id);
-        const existing_ratings: OfficialPerformanceRating[] =
-            ratings_result.success && ratings_result.data
-                ? ratings_result.data.items
-                : [];
-
-        const rater_ratings = existing_ratings.filter(
-            (r) => r.rater_user_id === rater_user_id,
-        );
-
-        official_states = assigned_official_ids
-            .map((official_id) => {
-                const official = officials_map.get(official_id);
-                if (!official) return null;
-                const found = rater_ratings.find(
-                    (r) => r.official_id === official_id,
-                );
-                return {
-                    official,
-                    rating: found
-                        ? {
-                              overall: found.overall,
-                              decision_accuracy: found.decision_accuracy,
-                              game_control: found.game_control,
-                              communication: found.communication,
-                              fitness: found.fitness,
-                              notes: found.notes,
-                          }
-                        : build_default_dimensions(),
-                    existing_id: found?.id ?? null,
-                    is_saving: false,
-                    validation_errors: [] as string[],
-                };
-            })
-            .filter((s): s is OfficialRatingState => s !== null);
-
         is_loading = false;
     }
 
@@ -187,7 +132,7 @@ import { get_official_performance_rating_use_cases, get_official_use_cases } fro
                     {/if}
                 </h4>
 
-                {#each [{ key: "overall", label: "Overall" }, { key: "decision_accuracy", label: "Decision Accuracy" }, { key: "game_control", label: "Game Control" }, { key: "communication", label: "Communication" }, { key: "fitness", label: "Fitness & Mobility" }] as dim}
+                {#each OFFICIAL_RATING_DIMENSIONS as dim}
                     <div
                         class="flex flex-col gap-1 mb-3 sm:flex-row sm:items-center"
                     >

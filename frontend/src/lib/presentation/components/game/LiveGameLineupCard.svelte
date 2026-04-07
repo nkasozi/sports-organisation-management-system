@@ -1,9 +1,12 @@
 <script lang="ts">
+    import type { SvelteComponent } from "svelte";
+
     import type {
         LineupPlayer,
         PlayerTimeOnStatus,
     } from "$lib/core/entities/FixtureLineup";
-    import { get_time_on_options } from "$lib/presentation/logic/liveGameDetailState";
+
+    import LiveGameLineupPlayerRow from "./LiveGameLineupPlayerRow.svelte";
 
     export let accent: "blue" | "red";
     export let icon: string;
@@ -20,6 +23,9 @@
         player_id: string,
         new_time_on: PlayerTimeOnStatus,
     ) => Promise<boolean>;
+
+    const lineup_player_row_component =
+        LiveGameLineupPlayerRow as unknown as typeof SvelteComponent;
 </script>
 
 <div
@@ -73,68 +79,19 @@
                         </div>
                         <div class="space-y-1">
                             {#each starters as player}
-                                <div
-                                    class="flex items-center gap-2 text-sm py-1"
-                                >
-                                    {#if player.jersey_number}
-                                        <span
-                                            class={`w-6 h-6 flex items-center justify-center bg-${accent}-600 text-white text-xs font-bold rounded flex-shrink-0`}
-                                            >{player.jersey_number}</span
-                                        >
-                                    {:else}
-                                        <span
-                                            class="w-6 h-6 flex items-center justify-center bg-gray-300 dark:bg-gray-600 text-gray-600 dark:text-gray-300 text-xs rounded flex-shrink-0"
-                                            >-</span
-                                        >
-                                    {/if}
-
-                                    <span
-                                        class="text-gray-800 dark:text-gray-200 truncate flex-1"
-                                    >
-                                        {player.first_name}
-                                        {player.last_name}
-                                        {#if player.is_captain}
-                                            <span
-                                                class="text-yellow-600 dark:text-yellow-400"
-                                            >
-                                                ©</span
-                                            >
-                                        {/if}
-                                    </span>
-
-                                    {#if is_game_active}
-                                        <select
-                                            class="w-16 text-xs px-1 py-0.5 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200"
-                                            value={player.time_on ||
-                                                "present_at_start"}
-                                            on:change={(event) =>
-                                                void on_time_on_change(
-                                                    player.id,
-                                                    (
-                                                        event.currentTarget as HTMLSelectElement
-                                                    )
-                                                        .value as PlayerTimeOnStatus,
-                                                )}
-                                        >
-                                            {#each get_time_on_options(elapsed_minutes) as option}
-                                                <option value={option.value}
-                                                    >{option.label ===
-                                                    "Present at Start"
-                                                        ? "X"
-                                                        : option.label ===
-                                                            "Didn't Play"
-                                                          ? "-"
-                                                          : option.label}</option
-                                                >
-                                            {/each}
-                                        </select>
-                                    {:else if player.position}
-                                        <span
-                                            class="text-xs text-gray-500 dark:text-gray-400"
-                                            >{player.position}</span
-                                        >
-                                    {/if}
-                                </div>
+                                <svelte:component
+                                    this={lineup_player_row_component}
+                                    {accent}
+                                    badge_tone="primary"
+                                    {elapsed_minutes}
+                                    fallback_time_on={"present_at_start"}
+                                    {is_game_active}
+                                    {on_time_on_change}
+                                    {player}
+                                    show_position_when_inactive={true}
+                                    subdued={false}
+                                    text_tone="primary"
+                                />
                             {/each}
                         </div>
                     </div>
@@ -151,55 +108,19 @@
                         </div>
                         <div class="space-y-1">
                             {#each substitutes as player}
-                                <div
-                                    class="flex items-center gap-2 text-sm py-1 opacity-80"
-                                >
-                                    {#if player.jersey_number}
-                                        <span
-                                            class={`w-6 h-6 flex items-center justify-center bg-${accent}-400 text-white text-xs font-bold rounded flex-shrink-0`}
-                                            >{player.jersey_number}</span
-                                        >
-                                    {:else}
-                                        <span
-                                            class="w-6 h-6 flex items-center justify-center bg-gray-200 dark:bg-gray-600 text-gray-500 dark:text-gray-300 text-xs rounded flex-shrink-0"
-                                            >-</span
-                                        >
-                                    {/if}
-
-                                    <span
-                                        class="text-gray-700 dark:text-gray-300 truncate flex-1"
-                                        >{player.first_name}
-                                        {player.last_name}</span
-                                    >
-
-                                    {#if is_game_active}
-                                        <select
-                                            class="w-16 text-xs px-1 py-0.5 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200"
-                                            value={player.time_on ||
-                                                "didnt_play"}
-                                            on:change={(event) =>
-                                                void on_time_on_change(
-                                                    player.id,
-                                                    (
-                                                        event.currentTarget as HTMLSelectElement
-                                                    )
-                                                        .value as PlayerTimeOnStatus,
-                                                )}
-                                        >
-                                            {#each get_time_on_options(elapsed_minutes) as option}
-                                                <option value={option.value}
-                                                    >{option.label ===
-                                                    "Present at Start"
-                                                        ? "X"
-                                                        : option.label ===
-                                                            "Didn't Play"
-                                                          ? "-"
-                                                          : option.label}</option
-                                                >
-                                            {/each}
-                                        </select>
-                                    {/if}
-                                </div>
+                                <svelte:component
+                                    this={lineup_player_row_component}
+                                    {accent}
+                                    badge_tone="secondary"
+                                    {elapsed_minutes}
+                                    fallback_time_on={"didnt_play"}
+                                    {is_game_active}
+                                    {on_time_on_change}
+                                    {player}
+                                    show_position_when_inactive={false}
+                                    subdued={true}
+                                    text_tone="secondary"
+                                />
                             {/each}
                         </div>
                     </div>

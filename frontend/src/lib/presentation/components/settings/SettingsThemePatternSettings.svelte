@@ -63,20 +63,15 @@
     function handle_pattern_upload(event: Event): void {
         const input = event.target as HTMLInputElement;
         const file = input.files?.[0];
-        if (!file) {
-            return;
-        }
-
+        if (!file) return;
         if (!file.type.includes("svg")) {
             show_toast("Please upload an SVG file", "error");
             return;
         }
-
         if (file.size > 500 * 1024) {
             show_toast("File size must be less than 500KB", "error");
             return;
         }
-
         const reader = new FileReader();
         reader.onload = (load_event) => {
             const result = load_event.target?.result as string;

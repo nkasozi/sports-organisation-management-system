@@ -80,10 +80,8 @@ export function draw_lineup_section(
   );
   const away_final_y =
     (doc as JsPDFWithAutoTable).lastAutoTable?.finalY ?? y + 100;
-
   y = Math.max(home_final_y, away_final_y) + 3;
   y = draw_team_staff_rows(doc, data.home_team.staff, data.away_team.staff, y);
-
   return y;
 }
 
@@ -156,40 +154,31 @@ function draw_card_indicators(
   card_types: CardTypeConfig[],
 ): boolean {
   if (cell_data.section !== "body") return false;
-
   const row_index = cell_data.row.index;
   if (row_index >= players.length) return false;
-
   const player = players[row_index];
   if (!player.cards || player.cards.length === 0) return false;
-
   const base_columns = 3;
   const card_col_offset = cell_data.column.index - base_columns;
   if (card_col_offset < 0 || card_col_offset >= card_types.length) return false;
-
   const card_config = card_types[card_col_offset];
   const player_card = player.cards.find((c) => c.card_type === card_config.id);
   if (!player_card) return false;
-
   const x = cell_data.cell.x + 0.5;
   const y_pos = cell_data.cell.y + 0.5;
   const w = cell_data.cell.width - 1;
   const h = cell_data.cell.height - 1;
-
   const { r, g, b } = parse_hex_color(card_config.color);
   doc.setFillColor(r, g, b);
   doc.rect(x, y_pos, w, h, "F");
-
   const brightness = (r * 299 + g * 587 + b * 114) / 1000;
   const text_color = brightness > 128 ? 0 : 255;
-
   doc.setFontSize(5);
   doc.setTextColor(text_color, text_color, text_color);
   doc.text(player_card.minute, x + w / 2, y_pos + h / 2 + 1, {
     align: "center",
   });
   doc.setTextColor(0, 0, 0);
-
   return true;
 }
 
@@ -198,7 +187,6 @@ function build_player_table_data(
   card_count: number,
 ): string[][] {
   const rows: string[][] = [];
-
   for (const player of players) {
     const row = [player.time_on, player.jersey_number.toString(), player.name];
     for (let i = 0; i < card_count; i++) {
@@ -206,15 +194,12 @@ function build_player_table_data(
     }
     rows.push(row);
   }
-
   const empty_row = ["", "", ""];
   for (let i = 0; i < card_count; i++) {
     empty_row.push("");
   }
-
   while (rows.length < 18) {
     rows.push([...empty_row]);
   }
-
   return rows;
 }

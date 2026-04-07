@@ -2,6 +2,20 @@
   import { createEventDispatcher } from "svelte";
 
   import type { SportGamePeriod } from "$lib/core/entities/Sport";
+  import {
+    append_game_break,
+    append_game_period,
+    build_game_period_editor_summary,
+    build_game_period_preset,
+    move_game_period_down,
+    move_game_period_up,
+    type PeriodPreset,
+    remove_game_period,
+    rename_game_period,
+    set_game_period_duration,
+  } from "$lib/presentation/logic/gamePeriodsEditorState";
+
+  import GamePeriodsEditorRow from "./GamePeriodsEditorRow.svelte";
 
   export let periods: SportGamePeriod[] = [];
   export let readonly: boolean = false;
@@ -11,230 +25,19 @@
     change: SportGamePeriod[];
   }>();
 
-  function generate_period_id(): string {
-    return `period_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-  }
-
-  function add_period(): void {
-    const new_order =
-      periods.length > 0 ? Math.max(...periods.map((p) => p.order)) + 1 : 1;
-    const new_period: SportGamePeriod = {
-      id: generate_period_id(),
-      name: `Period ${new_order}`,
-      duration_minutes: 15,
-      is_break: false,
-      order: new_order,
-    };
-    periods = [...periods, new_period];
+  function apply_change(next_periods: SportGamePeriod[]): void {
+    periods = next_periods;
     dispatch("change", periods);
   }
 
-  function add_break(): void {
-    const new_order =
-      periods.length > 0 ? Math.max(...periods.map((p) => p.order)) + 1 : 1;
-    const new_break: SportGamePeriod = {
-      id: generate_period_id(),
-      name: "Break",
-      duration_minutes: 10,
-      is_break: true,
-      order: new_order,
-    };
-    periods = [...periods, new_break];
-    dispatch("change", periods);
+  function apply_preset(preset: PeriodPreset): void {
+    apply_change(build_game_period_preset(preset));
   }
-
-  function remove_period(period_id: string): void {
-    periods = periods.filter((p) => p.id !== period_id);
-    reorder_periods();
-    dispatch("change", periods);
-  }
-
-  function reorder_periods(): void {
-    periods = periods
-      .sort((a, b) => a.order - b.order)
-      .map((p, index) => ({ ...p, order: index + 1 }));
-  }
-
-  function move_period_up(period_id: string): void {
-    const current_index = periods.findIndex((p) => p.id === period_id);
-    if (current_index <= 0) return;
-
-    const temp = periods[current_index - 1].order;
-    periods[current_index - 1].order = periods[current_index].order;
-    periods[current_index].order = temp;
-    reorder_periods();
-    dispatch("change", periods);
-  }
-
-  function move_period_down(period_id: string): void {
-    const current_index = periods.findIndex((p) => p.id === period_id);
-    if (current_index < 0 || current_index >= periods.length - 1) return;
-
-    const temp = periods[current_index + 1].order;
-    periods[current_index + 1].order = periods[current_index].order;
-    periods[current_index].order = temp;
-    reorder_periods();
-    dispatch("change", periods);
-  }
-
-  function update_period_name(period_id: string, name: string): void {
-    periods = periods.map((p) => (p.id === period_id ? { ...p, name } : p));
-    dispatch("change", periods);
-  }
-
-  function update_period_duration(
-    period_id: string,
-    duration_minutes: number,
-  ): void {
-    periods = periods.map((p) =>
-      p.id === period_id ? { ...p, duration_minutes } : p,
-    );
-    dispatch("change", periods);
-  }
-
-  function get_total_playing_time(): number {
-    return periods
-      .filter((p) => !p.is_break)
-      .reduce((sum, p) => sum + p.duration_minutes, 0);
-  }
-
-  function get_total_break_time(): number {
-    return periods
-      .filter((p) => p.is_break)
-      .reduce((sum, p) => sum + p.duration_minutes, 0);
-  }
-
-  function get_sorted_periods(): SportGamePeriod[] {
-    return [...periods].sort((a, b) => a.order - b.order);
-  }
-
-  function apply_preset(preset: "halves" | "quarters" | "thirds"): void {
-    switch (preset) {
-      case "halves":
-        periods = [
-          {
-            id: "first_half",
-            name: "First Half",
-            duration_minutes: 45,
-            is_break: false,
-            order: 1,
-          },
-          {
-            id: "half_time",
-            name: "Half Time",
-            duration_minutes: 15,
-            is_break: true,
-            order: 2,
-          },
-          {
-            id: "second_half",
-            name: "Second Half",
-            duration_minutes: 45,
-            is_break: false,
-            order: 3,
-          },
-        ];
-        break;
-      case "quarters":
-        periods = [
-          {
-            id: "first_quarter",
-            name: "1st Quarter",
-            duration_minutes: 12,
-            is_break: false,
-            order: 1,
-          },
-          {
-            id: "break_1",
-            name: "Break",
-            duration_minutes: 2,
-            is_break: true,
-            order: 2,
-          },
-          {
-            id: "second_quarter",
-            name: "2nd Quarter",
-            duration_minutes: 12,
-            is_break: false,
-            order: 3,
-          },
-          {
-            id: "half_time",
-            name: "Half Time",
-            duration_minutes: 15,
-            is_break: true,
-            order: 4,
-          },
-          {
-            id: "third_quarter",
-            name: "3rd Quarter",
-            duration_minutes: 12,
-            is_break: false,
-            order: 5,
-          },
-          {
-            id: "break_2",
-            name: "Break",
-            duration_minutes: 2,
-            is_break: true,
-            order: 6,
-          },
-          {
-            id: "fourth_quarter",
-            name: "4th Quarter",
-            duration_minutes: 12,
-            is_break: false,
-            order: 7,
-          },
-        ];
-        break;
-      case "thirds":
-        periods = [
-          {
-            id: "first_period",
-            name: "1st Period",
-            duration_minutes: 20,
-            is_break: false,
-            order: 1,
-          },
-          {
-            id: "break_1",
-            name: "Intermission",
-            duration_minutes: 15,
-            is_break: true,
-            order: 2,
-          },
-          {
-            id: "second_period",
-            name: "2nd Period",
-            duration_minutes: 20,
-            is_break: false,
-            order: 3,
-          },
-          {
-            id: "break_2",
-            name: "Intermission",
-            duration_minutes: 15,
-            is_break: true,
-            order: 4,
-          },
-          {
-            id: "third_period",
-            name: "3rd Period",
-            duration_minutes: 20,
-            is_break: false,
-            order: 5,
-          },
-        ];
-        break;
-    }
-    dispatch("change", periods);
-  }
-
-  $: sorted_periods = get_sorted_periods();
-  $: total_playing_time = get_total_playing_time();
-  $: total_break_time = get_total_break_time();
-  $: total_time = total_playing_time + total_break_time;
+  $: summary = build_game_period_editor_summary(periods);
+  $: sorted_periods = summary.sorted_periods;
+  $: total_playing_time = summary.total_playing_time;
+  $: total_break_time = summary.total_break_time;
+  $: total_time = summary.total_time;
 </script>
 
 <div class="space-y-4">
@@ -300,145 +103,25 @@
 
   <div class="space-y-2">
     {#each sorted_periods as period, index (period.id)}
-      <div
-        class="flex items-center gap-3 p-3 rounded-lg border {period.is_break
-          ? 'border-violet-200 dark:border-violet-800 bg-violet-50 dark:bg-violet-900/20'
-          : 'border-accent-200 dark:border-accent-700 bg-white dark:bg-accent-900'}"
-      >
-        <div
-          class="flex flex-col items-center justify-center w-8 h-8 rounded-full {period.is_break
-            ? 'bg-violet-200 dark:bg-violet-800 text-violet-700 dark:text-violet-300'
-            : 'bg-primary-100 dark:bg-primary-900 text-primary-700 dark:text-primary-300'} text-sm font-medium"
-        >
-          {index + 1}
-        </div>
-
-        <div class="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div>
-            {#if readonly}
-              <span
-                class="text-sm font-medium text-accent-900 dark:text-accent-100"
-              >
-                {period.name}
-              </span>
-            {:else}
-              <input
-                type="text"
-                value={period.name}
-                on:change={(e) =>
-                  update_period_name(period.id, e.currentTarget.value)}
-                placeholder="Period name"
-                class="w-full px-2 py-1 text-sm border border-accent-300 dark:border-accent-600 rounded-md bg-white dark:bg-accent-800 text-accent-900 dark:text-accent-100 focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
-              />
-            {/if}
-          </div>
-
-          <div class="flex items-center gap-2">
-            {#if readonly}
-              <span class="text-sm text-accent-600 dark:text-accent-400">
-                {period.duration_minutes} min
-              </span>
-            {:else}
-              <input
-                type="number"
-                value={period.duration_minutes}
-                on:change={(e) =>
-                  update_period_duration(
-                    period.id,
-                    parseInt(e.currentTarget.value) || 1,
-                  )}
-                min={1}
-                max={120}
-                class="w-20 px-2 py-1 text-sm border border-accent-300 dark:border-accent-600 rounded-md bg-white dark:bg-accent-800 text-accent-900 dark:text-accent-100 focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
-              />
-              <span class="text-sm text-accent-500 dark:text-accent-400"
-                >min</span
-              >
-            {/if}
-
-            {#if period.is_break}
-              <span
-                class="text-xs px-2 py-0.5 rounded bg-violet-100 dark:bg-violet-900 text-violet-700 dark:text-violet-300"
-              >
-                Break
-              </span>
-            {:else}
-              <span
-                class="text-xs px-2 py-0.5 rounded bg-primary-100 dark:bg-primary-900 text-primary-700 dark:text-primary-300"
-              >
-                Playing
-              </span>
-            {/if}
-          </div>
-        </div>
-
-        {#if !readonly}
-          <div class="flex items-center gap-1">
-            <button
-              type="button"
-              on:click={() => move_period_up(period.id)}
-              disabled={index === 0}
-              class="p-1 rounded hover:bg-accent-100 dark:hover:bg-accent-700 disabled:opacity-30 disabled:cursor-not-allowed"
-              title="Move up"
-            >
-              <svg
-                class="w-4 h-4 text-accent-600 dark:text-accent-400"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M5 15l7-7 7 7"
-                />
-              </svg>
-            </button>
-            <button
-              type="button"
-              on:click={() => move_period_down(period.id)}
-              disabled={index === sorted_periods.length - 1}
-              class="p-1 rounded hover:bg-accent-100 dark:hover:bg-accent-700 disabled:opacity-30 disabled:cursor-not-allowed"
-              title="Move down"
-            >
-              <svg
-                class="w-4 h-4 text-accent-600 dark:text-accent-400"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M19 9l-7 7-7-7"
-                />
-              </svg>
-            </button>
-            <button
-              type="button"
-              on:click={() => remove_period(period.id)}
-              class="p-1 rounded hover:bg-red-100 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400"
-              title="Remove"
-            >
-              <svg
-                class="w-4 h-4"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              </svg>
-            </button>
-          </div>
-        {/if}
-      </div>
+      <GamePeriodsEditorRow
+        {index}
+        {period}
+        {readonly}
+        is_first={index === 0}
+        is_last={index === sorted_periods.length - 1}
+        on_name_change={(period_id: string, name: string) =>
+          apply_change(rename_game_period(periods, period_id, name))}
+        on_duration_change={(period_id: string, duration_minutes: number) =>
+          apply_change(
+            set_game_period_duration(periods, period_id, duration_minutes),
+          )}
+        on_move_up={(period_id: string) =>
+          apply_change(move_game_period_up(periods, period_id))}
+        on_move_down={(period_id: string) =>
+          apply_change(move_game_period_down(periods, period_id))}
+        on_remove={(period_id: string) =>
+          apply_change(remove_game_period(periods, period_id))}
+      />
     {/each}
   </div>
 
@@ -446,7 +129,7 @@
     <div class="flex gap-2">
       <button
         type="button"
-        on:click={add_period}
+        on:click={() => apply_change(append_game_period(periods))}
         class="flex items-center gap-1 px-3 py-2 text-sm rounded-md bg-primary-100 dark:bg-primary-900 text-primary-700 dark:text-primary-300 hover:bg-primary-200 dark:hover:bg-primary-800 transition-colors"
       >
         <svg
@@ -466,7 +149,7 @@
       </button>
       <button
         type="button"
-        on:click={add_break}
+        on:click={() => apply_change(append_game_break(periods))}
         class="flex items-center gap-1 px-3 py-2 text-sm rounded-md bg-violet-100 dark:bg-violet-900 text-violet-700 dark:text-violet-300 hover:bg-violet-200 dark:hover:bg-violet-800 transition-colors"
       >
         <svg

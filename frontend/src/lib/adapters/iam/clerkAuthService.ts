@@ -74,25 +74,20 @@ function sync_clerk_state(): void {
   });
 }
 
-function sync_clerk_state_immediate(): void {
-  const new_state = build_clerk_state_from_instance();
-  if (!new_state) return;
-  clerk_store.set(new_state);
+function mark_clerk_loaded_without_session(): void {
+  requestAnimationFrame(() => {
+    safe_store_update({ ...INITIAL_CLERK_STATE, is_loaded: true });
+  });
 }
 
 export async function initialize_clerk(): Promise<boolean> {
   if (!browser) return false;
-
   const publishable_key = PUBLIC_CLERK_PUBLISHABLE_KEY;
-
   if (!publishable_key) {
     console.log("[Clerk] No PUBLIC_CLERK_PUBLISHABLE_KEY configured, skipping");
-    requestAnimationFrame(() => {
-      safe_store_update({ ...INITIAL_CLERK_STATE, is_loaded: true });
-    });
+    mark_clerk_loaded_without_session();
     return false;
   }
-
   if (clerk_instance) {
     console.log("[Clerk] Already initialized");
     return true;
@@ -110,25 +105,19 @@ export async function initialize_clerk(): Promise<boolean> {
 
     if (!window.Clerk) {
       console.error("[Clerk] ClerkProvider did not load Clerk in time");
-      requestAnimationFrame(() => {
-        safe_store_update({ ...INITIAL_CLERK_STATE, is_loaded: true });
-      });
+      mark_clerk_loaded_without_session();
       return false;
     }
-
     const clerk = window.Clerk as unknown as Clerk & { loaded?: boolean };
-
     while (!clerk.loaded && elapsed_ms < max_wait_ms) {
       await new Promise((resolve) => setTimeout(resolve, poll_interval_ms));
       elapsed_ms += poll_interval_ms;
     }
-
     if (!clerk.loaded) {
       console.warn(
         "[Clerk] Clerk did not finish loading in time, proceeding anyway",
       );
     }
-
     if (clerk.user && !clerk.session) {
       console.log(
         "[Clerk] User exists but session not ready, waiting for session...",
@@ -143,15 +132,12 @@ export async function initialize_clerk(): Promise<boolean> {
         console.log("[Clerk] Session now available");
       }
     }
-
     clerk_instance = window.Clerk as unknown as Clerk;
-
-    sync_clerk_state_immediate();
-
+    const new_state = build_clerk_state_from_instance();
+    if (new_state) clerk_store.set(new_state);
     clerk_instance.addListener(() => {
       sync_clerk_state();
     });
-
     console.log("[Clerk] Initialized successfully via ClerkProvider");
     return true;
   } catch (error) {
@@ -159,9 +145,7 @@ export async function initialize_clerk(): Promise<boolean> {
       event: "failed_to_initialize_failed",
       error: String(error),
     });
-    requestAnimationFrame(() => {
-      safe_store_update({ ...INITIAL_CLERK_STATE, is_loaded: true });
-    });
+    mark_clerk_loaded_without_session();
     return false;
   }
 }
@@ -175,7 +159,6 @@ export async function get_session_token(): Promise<string | null> {
     console.log("[Clerk] get_session_token: No session available");
     return null;
   }
-
   try {
     const token = await clerk_instance.session.getToken({ template: "convex" });
     if (!token) {
@@ -209,12 +192,10 @@ export function destroy_clerk(): void {
 export const clerk_session: Readable<ClerkSessionState> = {
   subscribe: clerk_store.subscribe,
 };
-
 export const is_clerk_loaded: Readable<boolean> = derived(
   clerk_store,
   ($state) => $state.is_loaded,
 );
-
 export const is_signed_in: Readable<boolean> = derived(
   clerk_store,
   ($state) => $state.is_signed_in,

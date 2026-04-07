@@ -184,7 +184,6 @@
         border-radius: 0.5rem;
         overflow: hidden;
     }
-
     :global(.dark .sx__calendar-wrapper) {
         --sx-color-surface: #1f2937;
         --sx-color-on-surface: #f3f4f6;
@@ -193,21 +192,18 @@
         --sx-color-primary: #60a5fa;
         --sx-color-on-primary: #ffffff;
     }
-
     :global(.sx__view-selection-item--is-selected),
     :global(.sx__date-picker__day--selected),
     :global(.sx__range-heading--is-selected) {
         color: white !important;
         background-color: var(--sx-color-primary, #3b82f6) !important;
     }
-
     :global(.dark .sx__view-selection-item--is-selected),
     :global(.dark .sx__date-picker__day--selected),
     :global(.dark .sx__range-heading--is-selected) {
         color: white !important;
         background-color: #60a5fa !important;
     }
-
     :global(.sx__month-grid-day__header) {
         font-weight: 500;
     }

@@ -210,7 +210,6 @@ export class InBrowserFixtureRepository
 function create_default_fixtures(): Fixture[] {
   return [];
 }
-
 let singleton_instance: InBrowserFixtureRepository | null = null;
 
 export function get_fixture_repository(): FixtureRepository {

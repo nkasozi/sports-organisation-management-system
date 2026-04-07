@@ -10,52 +10,28 @@ import {
   type Sport,
   type SportGamePeriod,
 } from "$lib/core/entities/Sport";
+export {
+  add_card_type,
+  add_foul_category,
+  add_game_period,
+  add_official_requirement,
+  add_scoring_rule,
+  remove_card_type,
+  remove_foul_category,
+  remove_game_period,
+  remove_official_requirement,
+  remove_scoring_rule,
+} from "$lib/presentation/logic/sportFormEditorCollectionActions";
+export {
+  SPORT_CARD_SEVERITY_OPTIONS,
+  SPORT_FORM_SECTIONS,
+  SPORT_FOUL_SEVERITY_OPTIONS,
+  SPORT_OVERTIME_TRIGGER_OPTIONS,
+  SPORT_OVERTIME_TYPE_OPTIONS,
+  SPORT_STATUS_OPTIONS,
+} from "$lib/presentation/logic/sportFormEditorConstants";
 
 export type SportPresetType = "football" | "basketball" | "field_hockey";
-
-export const SPORT_FORM_SECTIONS = [
-  { id: "basic", label: "Basic Info" },
-  { id: "periods", label: "Game Periods" },
-  { id: "cards", label: "Card Types" },
-  { id: "fouls", label: "Foul Categories" },
-  { id: "officials", label: "Officials" },
-  { id: "scoring", label: "Scoring" },
-  { id: "overtime", label: "Overtime" },
-  { id: "substitutions", label: "Substitutions" },
-] as const;
-
-export const SPORT_STATUS_OPTIONS = [
-  { value: "active", label: "Active" },
-  { value: "inactive", label: "Inactive" },
-];
-
-export const SPORT_CARD_SEVERITY_OPTIONS = [
-  { value: "warning", label: "Warning" },
-  { value: "ejection", label: "Ejection" },
-  { value: "suspension", label: "Suspension" },
-];
-
-export const SPORT_FOUL_SEVERITY_OPTIONS = [
-  { value: "minor", label: "Minor" },
-  { value: "moderate", label: "Moderate" },
-  { value: "major", label: "Major" },
-  { value: "severe", label: "Severe" },
-];
-
-export const SPORT_OVERTIME_TRIGGER_OPTIONS = [
-  { value: "draw", label: "Any Draw" },
-  { value: "knockout_draw", label: "Knockout Draw Only" },
-  { value: "never", label: "Never" },
-];
-
-export const SPORT_OVERTIME_TYPE_OPTIONS = [
-  { value: "extra_time", label: "Extra Time" },
-  { value: "golden_goal", label: "Golden Goal" },
-  { value: "silver_goal", label: "Silver Goal" },
-  { value: "penalties", label: "Penalties" },
-  { value: "replay", label: "Replay" },
-  { value: "shootout", label: "Shootout" },
-];
 
 export function apply_sport_preset(
   preset_type: SportPresetType,
@@ -75,150 +51,6 @@ export function generate_sport_identifier(name: string): string {
     .toLowerCase()
     .replace(/\s+/g, "_")
     .replace(/[^a-z0-9_]/g, "");
-}
-
-export function add_game_period(form_data: CreateSportInput): CreateSportInput {
-  const next_period: SportGamePeriod = {
-    id: `period_${form_data.periods.length + 1}`,
-    name: `Period ${form_data.periods.length + 1}`,
-    duration_minutes: 15,
-    is_break: false,
-    order: form_data.periods.length + 1,
-  };
-
-  return { ...form_data, periods: [...form_data.periods, next_period] };
-}
-
-export function remove_game_period(
-  form_data: CreateSportInput,
-  index: number,
-): CreateSportInput {
-  const reordered_periods = form_data.periods
-    .filter((_, current_index: number) => current_index !== index)
-    .map((current_period: SportGamePeriod, current_index: number) => ({
-      ...current_period,
-      order: current_index + 1,
-    }));
-
-  return { ...form_data, periods: reordered_periods };
-}
-
-export function add_card_type(form_data: CreateSportInput): CreateSportInput {
-  const next_card_type: CardType = {
-    id: `card_${form_data.card_types.length + 1}`,
-    name: "",
-    color: "#FBBF24",
-    severity: "warning",
-    description: "",
-    consequences: [],
-  };
-
-  return {
-    ...form_data,
-    card_types: [...form_data.card_types, next_card_type],
-  };
-}
-
-export function remove_card_type(
-  form_data: CreateSportInput,
-  index: number,
-): CreateSportInput {
-  return {
-    ...form_data,
-    card_types: form_data.card_types.filter(
-      (_, current_index: number) => current_index !== index,
-    ),
-  };
-}
-
-export function add_foul_category(
-  form_data: CreateSportInput,
-): CreateSportInput {
-  const next_foul_category: FoulCategory = {
-    id: `foul_${form_data.foul_categories.length + 1}`,
-    name: "",
-    severity: "minor",
-    description: "",
-    typical_penalty: "",
-    results_in_card: null,
-  };
-
-  return {
-    ...form_data,
-    foul_categories: [...form_data.foul_categories, next_foul_category],
-  };
-}
-
-export function remove_foul_category(
-  form_data: CreateSportInput,
-  index: number,
-): CreateSportInput {
-  return {
-    ...form_data,
-    foul_categories: form_data.foul_categories.filter(
-      (_, current_index: number) => current_index !== index,
-    ),
-  };
-}
-
-export function add_official_requirement(
-  form_data: CreateSportInput,
-): CreateSportInput {
-  const next_official_requirement: OfficialRequirement = {
-    role_id: `official_${form_data.official_requirements.length + 1}`,
-    role_name: "",
-    minimum_count: 1,
-    maximum_count: 1,
-    is_mandatory: true,
-    description: "",
-  };
-
-  return {
-    ...form_data,
-    official_requirements: [
-      ...form_data.official_requirements,
-      next_official_requirement,
-    ],
-  };
-}
-
-export function remove_official_requirement(
-  form_data: CreateSportInput,
-  index: number,
-): CreateSportInput {
-  return {
-    ...form_data,
-    official_requirements: form_data.official_requirements.filter(
-      (_, current_index: number) => current_index !== index,
-    ),
-  };
-}
-
-export function add_scoring_rule(
-  form_data: CreateSportInput,
-): CreateSportInput {
-  const next_scoring_rule: ScoringRule = {
-    event_type: "",
-    points_awarded: 1,
-    description: "",
-  };
-
-  return {
-    ...form_data,
-    scoring_rules: [...form_data.scoring_rules, next_scoring_rule],
-  };
-}
-
-export function remove_scoring_rule(
-  form_data: CreateSportInput,
-  index: number,
-): CreateSportInput {
-  return {
-    ...form_data,
-    scoring_rules: form_data.scoring_rules.filter(
-      (_, current_index: number) => current_index !== index,
-    ),
-  };
 }
 
 export function create_sport_form_data_from_sport(

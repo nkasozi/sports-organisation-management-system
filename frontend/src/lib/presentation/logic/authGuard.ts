@@ -21,7 +21,6 @@ interface RouteAccessCache {
 }
 
 const ROUTE_CACHE_TTL_MS = 5 * 60 * 1000;
-
 let route_access_cache: RouteAccessCache | null = null;
 
 export function extract_route_base(pathname: string): string {

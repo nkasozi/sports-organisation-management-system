@@ -16,7 +16,6 @@ import type { PaginatedAsyncResult } from "../../core/types/Result";
 import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
 
 const ENTITY_PREFIX = "jersey";
-
 export class InBrowserJerseyColorRepository
   extends InBrowserBaseRepository<
     JerseyColor,
@@ -29,7 +28,6 @@ export class InBrowserJerseyColorRepository
   constructor() {
     super(ENTITY_PREFIX);
   }
-
   protected get_table(): Table<JerseyColor, string> {
     return this.database.jersey_colors;
   }
@@ -67,33 +65,28 @@ export class InBrowserJerseyColorRepository
     filter: JerseyColorFilter,
   ): JerseyColor[] {
     let filtered = entities;
-
     if (filter.holder_type) {
       filtered = filtered.filter(
         (jersey) => jersey.holder_type === filter.holder_type,
       );
     }
-
     if (filter.holder_id) {
       filtered = filtered.filter(
         (jersey) => jersey.holder_id === filter.holder_id,
       );
     }
-
     if (filter.nickname) {
       const nickname_lower = filter.nickname.toLowerCase();
       filtered = filtered.filter((jersey) =>
         jersey.nickname.toLowerCase().includes(nickname_lower),
       );
     }
-
     if (filter.main_color) {
       const color_lower = filter.main_color.toLowerCase();
       filtered = filtered.filter(
         (jersey) => jersey.main_color.toLowerCase() === color_lower,
       );
     }
-
     if (filter.status) {
       filtered = filtered.filter((jersey) => jersey.status === filter.status);
     }
@@ -196,7 +189,6 @@ export function get_jersey_color_repository(): JerseyColorRepository {
   }
   return singleton_instance;
 }
-
 export async function reset_jersey_color_repository(): Promise<void> {
   const repository =
     get_jersey_color_repository() as InBrowserJerseyColorRepository;

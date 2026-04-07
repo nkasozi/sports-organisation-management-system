@@ -1,4 +1,6 @@
 <script lang="ts">
+    import type { SvelteComponent } from "svelte";
+
     import type { Fixture, QuickEventButton } from "$lib/core/entities/Fixture";
     import type {
         LineupPlayer,
@@ -8,10 +10,10 @@
     import GameManageTimeline from "$lib/presentation/components/game/GameManageTimeline.svelte";
     import LiveGameHeader from "$lib/presentation/components/game/LiveGameHeader.svelte";
     import LiveGameInfoSummary from "$lib/presentation/components/game/LiveGameInfoSummary.svelte";
+    import LiveGameLineupSection from "$lib/presentation/components/game/LiveGameLineupSection.svelte";
+    import LiveGamePermissionBanner from "$lib/presentation/components/game/LiveGamePermissionBanner.svelte";
     import LiveGameQuickActions from "$lib/presentation/components/game/LiveGameQuickActions.svelte";
     import type { PeriodButtonConfig } from "$lib/presentation/logic/liveGameDetailState";
-
-    import LiveGameLineupCard from "./LiveGameLineupCard.svelte";
 
     export let fixture: Fixture | null;
     export let home_team: Team | null;
@@ -72,6 +74,11 @@
         player_id: string,
         new_time_on: PlayerTimeOnStatus,
     ) => Promise<boolean>;
+
+    const live_game_lineup_section_component =
+        LiveGameLineupSection as unknown as typeof SvelteComponent;
+    const live_game_permission_banner_component =
+        LiveGamePermissionBanner as unknown as typeof SvelteComponent;
 </script>
 
 <div class="min-h-screen bg-gray-100 dark:bg-gray-900">
@@ -121,26 +128,10 @@
                 {on_extra_time}
                 {on_end}
                 {on_download_match_report}
-            />{#if permission_info_message}<div
-                    class="bg-blue-50 dark:bg-blue-900/20 border-b border-blue-200 dark:border-blue-700 px-4 py-3"
-                >
-                    <div class="max-w-4xl mx-auto flex items-center gap-2">
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            class="h-5 w-5 text-blue-600 dark:text-blue-400 shrink-0"
-                            viewBox="0 0 20 20"
-                            fill="currentColor"
-                            ><path
-                                fill-rule="evenodd"
-                                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
-                                clip-rule="evenodd"
-                            /></svg
-                        >
-                        <p class="text-sm text-blue-700 dark:text-blue-300">
-                            {permission_info_message}
-                        </p>
-                    </div>
-                </div>{/if}{#if is_game_active && can_modify_game}<LiveGameQuickActions
+            />{#if permission_info_message}<svelte:component
+                    this={live_game_permission_banner_component}
+                    {permission_info_message}
+                />{/if}{#if is_game_active && can_modify_game}<LiveGameQuickActions
                     home_team_name={home_team?.name ?? "Home"}
                     away_team_name={away_team?.name ?? "Away"}
                     {all_event_buttons}
@@ -149,67 +140,32 @@
                 />{/if}
             <div class="flex-1 px-4 py-6 pb-24">
                 <div class="max-w-3xl mx-auto">
-                    {#if fixture.status === "scheduled"}<div
-                            class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-6"
-                        >
-                            <LiveGameLineupCard
-                                accent="blue"
-                                icon="🏠"
-                                team_name={home_team?.name ?? "Home Team"}
-                                players={home_players}
-                                starters={home_starters}
-                                substitutes={home_substitutes}
-                                expanded={true}
-                                expandable={false}
-                                {is_game_active}
-                                {elapsed_minutes}
-                                on_toggle={on_toggle_home_lineup}
-                                on_time_on_change={on_home_time_on_change}
-                            /><LiveGameLineupCard
-                                accent="red"
-                                icon="✈️"
-                                team_name={away_team?.name ?? "Away Team"}
-                                players={away_players}
-                                starters={away_starters}
-                                substitutes={away_substitutes}
-                                expanded={true}
-                                expandable={false}
-                                {is_game_active}
-                                {elapsed_minutes}
-                                on_toggle={on_toggle_away_lineup}
-                                on_time_on_change={on_away_time_on_change}
-                            />
-                        </div>{:else}<div
-                            class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6"
-                        >
-                            <LiveGameLineupCard
-                                accent="blue"
-                                icon="🏠"
-                                team_name={home_team?.name ?? "Home"}
-                                players={home_players}
-                                starters={home_starters}
-                                substitutes={home_substitutes}
-                                expanded={home_lineup_expanded}
-                                expandable={true}
-                                {is_game_active}
-                                {elapsed_minutes}
-                                on_toggle={on_toggle_home_lineup}
-                                on_time_on_change={on_home_time_on_change}
-                            /><LiveGameLineupCard
-                                accent="red"
-                                icon="✈️"
-                                team_name={away_team?.name ?? "Away"}
-                                players={away_players}
-                                starters={away_starters}
-                                substitutes={away_substitutes}
-                                expanded={away_lineup_expanded}
-                                expandable={true}
-                                {is_game_active}
-                                {elapsed_minutes}
-                                on_toggle={on_toggle_away_lineup}
-                                on_time_on_change={on_away_time_on_change}
-                            />
-                        </div>{/if}<LiveGameInfoSummary
+                    <svelte:component
+                        this={live_game_lineup_section_component}
+                        fixture_status={fixture.status}
+                        home_team_name={home_team?.name ??
+                            (fixture.status === "scheduled"
+                                ? "Home Team"
+                                : "Home")}
+                        away_team_name={away_team?.name ??
+                            (fixture.status === "scheduled"
+                                ? "Away Team"
+                                : "Away")}
+                        {home_players}
+                        {away_players}
+                        {home_starters}
+                        {home_substitutes}
+                        {away_starters}
+                        {away_substitutes}
+                        {home_lineup_expanded}
+                        {away_lineup_expanded}
+                        {is_game_active}
+                        {elapsed_minutes}
+                        {on_toggle_home_lineup}
+                        {on_toggle_away_lineup}
+                        {on_home_time_on_change}
+                        {on_away_time_on_change}
+                    /><LiveGameInfoSummary
                         {venue_name}
                         {venue_location}
                         {home_team_short_name}

@@ -30,10 +30,8 @@ import type { SyncState } from "./syncStoreTypes";
 import { SYNC_INITIAL_STATE } from "./syncStoreTypes";
 export type { SyncState } from "./syncStoreTypes";
 export { SYNC_INITIAL_STATE } from "./syncStoreTypes";
-
 function create_sync_store() {
   const { subscribe, set, update } = writable<SyncState>(SYNC_INITIAL_STATE);
-
   function handle_progress(progress: SyncProgress): void {
     update((state) => ({
       ...state,
@@ -72,7 +70,6 @@ function create_sync_store() {
 
   return {
     subscribe,
-
     initialize: (config: Partial<SyncConfig>) => {
       const manager = initialize_sync_manager(config);
       update((state) => ({
@@ -153,28 +150,23 @@ function create_sync_store() {
         is_configured: () => get_sync_manager().is_configured(),
       };
     },
-
     start_auto_sync: () => {
       const manager = get_sync_manager();
       manager.start_auto_sync(handle_sync_complete);
       update((state) => ({ ...state, auto_sync_enabled: true }));
     },
-
     stop_auto_sync: () => {
       const manager = get_sync_manager();
       manager.stop_auto_sync();
       update((state) => ({ ...state, auto_sync_enabled: false }));
     },
-
     update_config: (config: Partial<SyncConfig>) => {
       get_sync_manager().update_config(config);
     },
-
     reset: () => {
       get_sync_manager().stop_auto_sync();
       set(SYNC_INITIAL_STATE);
     },
-
     resolve_conflict_and_sync: async (
       conflict: ConflictRecord,
       action: ConflictResolutionAction,

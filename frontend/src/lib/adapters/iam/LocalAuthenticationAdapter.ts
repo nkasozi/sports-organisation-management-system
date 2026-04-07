@@ -127,12 +127,11 @@ export class LocalAuthenticationAdapter implements AuthenticationPort {
   async verify_token(
     raw_token: string,
   ): Promise<Result<AuthVerificationResult>> {
-    if (!raw_token || raw_token.trim().length === 0) {
+    if (!raw_token || raw_token.trim().length === 0)
       return create_success_result({
         is_valid: false,
         error_message: "Token is empty",
       });
-    }
     const cached_result = this.verification_cache.get_or_miss(raw_token);
     if (cached_result.is_hit && cached_result.value) {
       console.log("[Auth] Cache HIT for token verification", {

@@ -21,6 +21,7 @@ import {
   create_success_result,
 } from "../../core/types/Result";
 import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
+import { create_default_competition_teams } from "./InBrowserCompetitionTeamRepositoryDefaults";
 
 const ENTITY_PREFIX = "comp_team";
 
@@ -72,19 +73,16 @@ export class InBrowserCompetitionTeamRepository
     filter: CompetitionTeamFilter,
   ): CompetitionTeam[] {
     let filtered_entities = entities;
-
     if (filter.competition_id) {
       filtered_entities = filtered_entities.filter(
         (ct) => ct.competition_id === filter.competition_id,
       );
     }
-
     if (filter.team_id) {
       filtered_entities = filtered_entities.filter(
         (ct) => ct.team_id === filter.team_id,
       );
     }
-
     if (filter.status) {
       filtered_entities = filtered_entities.filter(
         (ct) => ct.status === filter.status,
@@ -114,11 +112,9 @@ export class InBrowserCompetitionTeamRepository
   ): AsyncResult<CompetitionTeam> {
     try {
       const all_entities = await this.database.competition_teams.toArray();
-
       const found = all_entities.find(
         (ct) => ct.competition_id === competition_id && ct.team_id === team_id,
       );
-
       if (!found) {
         return create_failure_result("Team not found in competition");
       }
@@ -145,15 +141,12 @@ export class InBrowserCompetitionTeamRepository
   ): AsyncResult<boolean> {
     try {
       const all_entities = await this.database.competition_teams.toArray();
-
       const found = all_entities.find(
         (ct) => ct.competition_id === competition_id && ct.team_id === team_id,
       );
-
       if (!found) {
         return create_failure_result("Team not found in competition");
       }
-
       return this.delete_by_id(found.id);
     } catch (error) {
       console.warn(
@@ -170,52 +163,6 @@ export class InBrowserCompetitionTeamRepository
       );
     }
   }
-}
-
-function create_default_competition_teams(): CompetitionTeam[] {
-  const now = new Date().toISOString();
-  return [
-    {
-      id: "comp_team_default_1",
-      competition_id: "comp_default_1",
-      team_id: "team_default_1",
-      registration_date: "2026-01-15",
-      seed_number: 1,
-      group_name: "Group A",
-      points: 0,
-      goals_for: 0,
-      goals_against: 0,
-      goal_difference: 0,
-      matches_played: 0,
-      matches_won: 0,
-      matches_drawn: 0,
-      matches_lost: 0,
-      notes: "",
-      status: "confirmed",
-      created_at: now,
-      updated_at: now,
-    },
-    {
-      id: "comp_team_default_2",
-      competition_id: "comp_default_1",
-      team_id: "team_default_2",
-      registration_date: "2026-01-15",
-      seed_number: 2,
-      group_name: "Group A",
-      points: 0,
-      goals_for: 0,
-      goals_against: 0,
-      goal_difference: 0,
-      matches_played: 0,
-      matches_won: 0,
-      matches_drawn: 0,
-      matches_lost: 0,
-      notes: "",
-      status: "confirmed",
-      created_at: now,
-      updated_at: now,
-    },
-  ];
 }
 
 let singleton_instance: InBrowserCompetitionTeamRepository | null = null;

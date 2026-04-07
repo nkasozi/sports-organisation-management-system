@@ -20,9 +20,7 @@ import {
   create_success_result,
 } from "../../core/types/Result";
 import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
-
 const ENTITY_PREFIX = "cal_token";
-
 class InBrowserCalendarTokenRepository
   extends InBrowserBaseRepository<
     CalendarToken,
@@ -35,7 +33,6 @@ class InBrowserCalendarTokenRepository
   constructor() {
     super(ENTITY_PREFIX);
   }
-
   protected get_table(): Table<CalendarToken, string> {
     return this.database.calendar_tokens;
   }
@@ -70,29 +67,24 @@ class InBrowserCalendarTokenRepository
     filter: CalendarTokenFilter,
   ): CalendarToken[] {
     let filtered = entities;
-
     if (filter.user_id) {
       filtered = filtered.filter((token) => token.user_id === filter.user_id);
     }
-
     if (filter.organization_id) {
       filtered = filtered.filter(
         (token) => token.organization_id === filter.organization_id,
       );
     }
-
     if (filter.feed_type) {
       filtered = filtered.filter(
         (token) => token.feed_type === filter.feed_type,
       );
     }
-
     if (filter.entity_id) {
       filtered = filtered.filter(
         (token) => token.entity_id === filter.entity_id,
       );
     }
-
     if (filter.is_active !== undefined) {
       filtered = filtered.filter(
         (token) => token.is_active === filter.is_active,

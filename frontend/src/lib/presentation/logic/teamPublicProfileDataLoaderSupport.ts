@@ -30,7 +30,6 @@ function create_team_public_profile_load_error(
 ): TeamPublicProfileLoadError {
   return { kind, message };
 }
-
 function create_empty_team_public_profile_stats_bundle(
   team: Team,
 ): TeamPublicProfileStatsBundle {
@@ -145,7 +144,6 @@ function sort_team_public_competition_stats(
         first_competition_stat.stats.total_matches,
     );
 }
-
 export async function build_public_team_stats_bundle(
   command: LoadTeamPublicProfilePageDataCommand,
   team: Team,

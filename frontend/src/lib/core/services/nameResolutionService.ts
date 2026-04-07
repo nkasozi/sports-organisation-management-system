@@ -51,6 +51,7 @@ function build_failure_result(error_message: string): NameResolutionResult {
 function is_empty_or_whitespace(value: string): boolean {
   return !value || value.trim().length === 0;
 }
+
 function normalize_name_for_comparison(name: string): string {
   return name.toLowerCase().trim();
 }

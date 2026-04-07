@@ -1,33 +1,22 @@
-<!--
-Main CRUD Wrapper Component
-Combines form and list components for complete entity management
-Uses explicit handlers instead of events for predictable data flow
--->
 <script lang="ts">
   import { createEventDispatcher } from "svelte";
 
   import { goto } from "$app/navigation";
+  import EntityCrudWrapperContent from "$lib/presentation/components/EntityCrudWrapperContent.svelte";
+  import EntityCrudWrapperHeader from "$lib/presentation/components/EntityCrudWrapperHeader.svelte";
   import {
-    check_entity_permission,
-    get_entity_data_category,
-    get_entity_level_disabled_operations,
-    normalize_to_entity_type,
-  } from "$lib/core/interfaces/ports";
+    build_crud_handlers_for_entity_type,
+    build_form_view_callbacks,
+    build_list_view_callbacks,
+    build_page_title_for_current_view,
+    compute_effective_disabled_functionalities,
+    get_disabled_crud_actions_for_profile,
+    normalize_entity_type,
+  } from "$lib/presentation/logic/entityCrudWrapperLogic";
 
   import type { BaseEntity } from "../../core/entities/BaseEntity";
-  import type {
-    CrudFunctionality,
-    EntityCrudHandlers,
-    EntityViewCallbacks,
-  } from "../../core/types/EntityHandlers";
-  import { is_functionality_disabled } from "../../core/types/EntityHandlers";
-  import { get_use_cases_for_entity_type } from "../../infrastructure/registry/entityUseCasesRegistry";
-  import type { UserProfile } from "../../presentation/stores/auth";
-  import {
-    auth_store,
-  } from "../../presentation/stores/auth";
-  import DynamicEntityForm from "./DynamicEntityForm.svelte";
-  import DynamicEntityList from "./DynamicEntityList.svelte";
+  import type { CrudFunctionality } from "../../core/types/EntityHandlers";
+  import { auth_store } from "../../presentation/stores/auth";
 
   export let entity_type: string;
   export let initial_view: "list" | "create" | "edit" = "list";
@@ -55,7 +44,7 @@ Uses explicit handlers instead of events for predictable data flow
   let current_view: "list" | "create" | "edit" = initial_view;
   let current_entity_for_editing: BaseEntity | null = null;
   let total_entity_count: number = 0;
-  let entity_list_component: DynamicEntityList;
+  let crud_content_component: EntityCrudWrapperContent | undefined = undefined;
 
   $: page_title = build_page_title_for_current_view(current_view, entity_type);
   $: show_back_button = current_view !== "list";
@@ -71,6 +60,7 @@ Uses explicit handlers instead of events for predictable data flow
     compute_effective_disabled_functionalities(
       disabled_functionalities,
       authorization_disabled_actions as CrudFunctionality[],
+      normalized_entity_type,
     );
   $: crud_handlers = build_crud_handlers_for_entity_type(
     normalized_entity_type,
@@ -78,167 +68,24 @@ Uses explicit handlers instead of events for predictable data flow
   );
   $: list_view_callbacks = build_list_view_callbacks(
     effective_disabled_functionalities,
+    entity_type,
+    { handle_create_requested, handle_edit_requested, handle_entity_deleted },
   );
-  $: form_view_callbacks = build_form_view_callbacks();
-
-  function get_disabled_crud_actions_for_profile(
-    entity_type: string,
-    profile: UserProfile | null,
-  ): CrudFunctionality[] {
-    if (!profile) {
-      console.log(
-        `[EntityCrudWrapper] No profile - disabling all crud for "${entity_type}"`,
-      );
-      return ["create", "edit", "delete"];
-    }
-
-    const disabled_actions: CrudFunctionality[] = [];
-    const normalized = normalize_to_entity_type(entity_type);
-    const category = get_entity_data_category(normalized);
-
-    if (!check_entity_permission(profile.role, normalized, "create")) {
-      disabled_actions.push("create");
-    }
-    if (!check_entity_permission(profile.role, normalized, "update")) {
-      disabled_actions.push("edit");
-    }
-    if (!check_entity_permission(profile.role, normalized, "delete")) {
-      disabled_actions.push("delete");
-    }
-
-    const entity_restrictions =
-      get_entity_level_disabled_operations(normalized);
-    for (const restricted_op of entity_restrictions) {
-      if (!disabled_actions.includes(restricted_op)) {
-        disabled_actions.push(restricted_op);
-      }
-    }
-
-    console.log(
-      `[EntityCrudWrapper] Permission check for "${entity_type}" (category: ${category}) with role "${profile.role}": disabled = [${disabled_actions.join(", ")}]`,
-    );
-    return disabled_actions;
-  }
-
-  function compute_effective_disabled_functionalities(
-    explicit_disabled: CrudFunctionality[],
-    auth_disabled: CrudFunctionality[],
-  ): CrudFunctionality[] {
-    const combined = new Set([...explicit_disabled, ...auth_disabled]);
-    const result = Array.from(combined);
-
-    if (auth_disabled.length > 0) {
-      console.log(
-        `[EntityCrudWrapper] Authorization disabled actions for ${normalized_entity_type}:`,
-        auth_disabled,
-      );
-    }
-
-    return result;
-  }
-
-  function normalize_entity_type(type: string): string {
-    if (typeof type !== "string") return "";
-    return type.toLowerCase().replace(/\s+/g, "").trim();
-  }
-
-  function format_entity_display_name(raw_name: string): string {
-    if (typeof raw_name !== "string" || raw_name.length === 0) return "Entity";
-    const with_spaces = raw_name
-      .replace(/([a-z])([A-Z])/g, "$1 $2")
-      .replace(/_/g, " ");
-    return with_spaces
-      .split(" ")
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-      .join(" ");
-  }
-
-  function build_page_title_for_current_view(
-    view: string,
-    type: string | undefined,
-  ): string {
-    const type_display = format_entity_display_name(type || "");
-    if (view === "create") return `Create New ${type_display}`;
-    if (view === "edit") return `Edit ${type_display}`;
-    return `${type_display} Management`;
-  }
-
-  function build_crud_handlers_for_entity_type(
-    normalized_type: string,
-    filter_override: Record<string, unknown> | null,
-  ): EntityCrudHandlers | null {
-    const use_cases_result = get_use_cases_for_entity_type(normalized_type);
-    if (!use_cases_result.success) {
-      console.warn(
-        `[EntityCrudWrapper] No use cases found for entity type: ${normalized_type}`,
-      );
-      return null;
-    }
-
-    const use_cases = use_cases_result.data;
-    return {
-      create: use_cases.create
-        ? async (input: Record<string, unknown>) => use_cases.create(input)
-        : undefined,
-      update: use_cases.update
-        ? async (id: string, input: Record<string, unknown>) =>
-            use_cases.update(id, input)
-        : undefined,
-      delete: use_cases.delete
-        ? async (id: string) => use_cases.delete(id)
-        : undefined,
-      list: use_cases.list
-        ? async (
-            filter?: Record<string, string>,
-            options?: { page_number?: number; page_size?: number },
-          ) => use_cases.list({ ...filter_override, ...filter }, options)
-        : undefined,
-      get_by_id: use_cases.get_by_id
-        ? async (id: string) => use_cases.get_by_id(id)
-        : undefined,
-    };
-  }
-
-  function build_list_view_callbacks(
-    disabled_funcs: CrudFunctionality[],
-  ): EntityViewCallbacks {
-    console.debug(
-      `[EntityCrudWrapper] Building list view callbacks for ${entity_type}, disabled:`,
-      disabled_funcs,
-    );
-    return {
-      on_create_requested: is_functionality_disabled("create", disabled_funcs)
-        ? undefined
-        : handle_create_requested,
-      on_edit_requested: is_functionality_disabled("edit", disabled_funcs)
-        ? undefined
-        : handle_edit_requested,
-      on_delete_completed: is_functionality_disabled("delete", disabled_funcs)
-        ? undefined
-        : handle_entity_deleted,
-    };
-  }
-
-  function build_form_view_callbacks(): EntityViewCallbacks {
-    return {
-      on_save_completed: handle_save_completed,
-      on_cancel: handle_form_cancelled,
-    };
-  }
+  $: form_view_callbacks = build_form_view_callbacks({
+    handle_save_completed,
+    handle_form_cancelled,
+  });
 
   function handle_create_requested(): void {
     console.debug("[EntityCrudWrapper] Create requested for:", entity_type);
-
     if (normalized_entity_type === "fixturelineup") {
       goto("/fixture-lineups/create");
       return;
     }
-
     if (normalized_entity_type === "sport") {
       goto("/sports/create");
       return;
     }
-
     switch_to_view("create");
   }
 
@@ -324,9 +171,8 @@ Uses explicit handlers instead of events for predictable data flow
   }
 
   export function refresh_entity_data(): void {
-    if (entity_list_component && current_view === "list") {
-      entity_list_component.refresh_entity_list();
-    }
+    if (crud_content_component && current_view === "list")
+      crud_content_component.refresh_entity_list();
   }
 
   export function get_current_view_info(): {
@@ -342,119 +188,44 @@ Uses explicit handlers instead of events for predictable data flow
   }
 
   export function get_selected_entities_from_list(): BaseEntity[] {
-    if (entity_list_component && current_view === "list") {
-      return entity_list_component.get_current_selected_entities();
-    }
-    return [];
+    if (!crud_content_component || current_view !== "list") return [];
+    return crud_content_component.get_current_selected_entities();
   }
 
   export function get_selected_entity_count(): number {
-    if (entity_list_component && current_view === "list") {
-      return entity_list_component.get_selected_entity_count();
-    }
-    return 0;
+    if (!crud_content_component || current_view !== "list") return 0;
+    return crud_content_component.get_selected_entity_count();
   }
 </script>
 
 <div class="crud-wrapper w-full">
-  <div class="flex justify-center w-full">
-    <div class="crud-header mb-4 sm:mb-6 w-full max-w-6xl px-4 sm:px-6">
-      <div
-        class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
-      >
-        <div class="flex items-center gap-4">
-          {#if show_back_button}
-            <button
-              class="btn btn-outline"
-              on:click={navigate_back_to_list}
-              aria-label="Back to list"
-            >
-              ← Back
-            </button>
-          {/if}
-
-          <div>
-            <h1
-              class="text-xl sm:text-2xl font-bold text-accent-900 dark:text-accent-100"
-            >
-              {page_title}
-            </h1>
-            {#if current_view === "list" && total_entity_count > 0}
-              <p class="text-sm text-accent-600 dark:text-accent-400">
-                {total_entity_count}
-                {total_entity_count === 1 ? "item" : "items"} total
-              </p>
-            {/if}
-          </div>
-        </div>
-      </div>
-
-      {#if info_message}
-        <div
-          class="mt-4 p-4 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 rounded-lg"
-        >
-          <div class="flex items-start gap-3">
-            <svg
-              class="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
-            <p class="text-sm text-blue-800 dark:text-blue-200">
-              {info_message}
-            </p>
-          </div>
-        </div>
-      {/if}
-    </div>
-  </div>
-
-  <div class="flex justify-center w-full">
-    <div class="crud-content w-full max-w-6xl sm:px-6">
-      {#if current_view === "list"}
-        <DynamicEntityList
-          bind:this={entity_list_component}
-          {entity_type}
-          show_actions={show_list_actions}
-          {is_mobile_view}
-          {crud_handlers}
-          view_callbacks={list_view_callbacks}
-          {bulk_create_handler}
-          {enable_bulk_import}
-          {button_color_class}
-          disabled_functionalities={effective_disabled_functionalities}
-          on_total_count_changed={handle_list_count_updated}
-          on_selection_changed={handle_selection_changed}
-          on_entities_batch_deleted={handle_entities_batch_deleted}
-        />
-      {:else if current_view === "create"}
-        <DynamicEntityForm
-          {entity_type}
-          entity_data={initial_create_data}
-          {is_mobile_view}
-          {crud_handlers}
-          view_callbacks={form_view_callbacks}
-          {button_color_class}
-        />
-      {:else if current_view === "edit"}
-        <DynamicEntityForm
-          {entity_type}
-          entity_data={current_entity_for_editing}
-          {is_mobile_view}
-          {crud_handlers}
-          view_callbacks={form_view_callbacks}
-          {button_color_class}
-        />
-      {/if}
-    </div>
-  </div>
+  <EntityCrudWrapperHeader
+    {show_back_button}
+    {page_title}
+    {current_view}
+    {total_entity_count}
+    {info_message}
+    on_back={navigate_back_to_list}
+  />
+  <EntityCrudWrapperContent
+    bind:this={crud_content_component}
+    {current_view}
+    {entity_type}
+    {show_list_actions}
+    {is_mobile_view}
+    {crud_handlers}
+    {list_view_callbacks}
+    {form_view_callbacks}
+    {bulk_create_handler}
+    {enable_bulk_import}
+    {button_color_class}
+    disabled_functionalities={effective_disabled_functionalities}
+    {initial_create_data}
+    {current_entity_for_editing}
+    on_total_count_changed={handle_list_count_updated}
+    on_selection_changed={handle_selection_changed}
+    on_entities_batch_deleted={handle_entities_batch_deleted}
+  />
 </div>
 
 <style>
@@ -462,26 +233,9 @@ Uses explicit handlers instead of events for predictable data flow
     min-height: 100%;
   }
 
-  .crud-header {
-    border-bottom: 1px solid rgb(229 231 235 / 1);
-    padding-bottom: 1rem;
-  }
-
-  :global(.dark) .crud-header {
-    border-bottom-color: rgb(75 85 99 / 1);
-  }
-
-  .crud-content {
-    flex: 1;
-  }
-
   @media (max-width: 640px) {
     .crud-wrapper {
       padding: 0.5rem;
-    }
-
-    .crud-header {
-      margin-bottom: 1rem;
     }
   }
 </style>

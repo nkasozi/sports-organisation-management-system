@@ -79,25 +79,18 @@ export function build_default_visible_column_names(
   fields: FieldMetadata[],
   max_columns: number,
 ): string[] {
-  if (!fields || fields.length === 0) {
-    return [];
-  }
-
+  if (!fields || fields.length === 0) return [];
   const displayable_fields = fields.filter(
     (field: FieldMetadata) => field.field_type !== "sub_entity",
   );
-
   const explicitly_enabled_fields = displayable_fields.filter(
     (field: FieldMetadata) => field.show_in_list === true,
   );
-
   const preferred_fields =
     explicitly_enabled_fields.length > 0
       ? explicitly_enabled_fields
       : displayable_fields;
-
   const safe_max_columns = Math.max(0, max_columns);
-
   return preferred_fields
     .slice(0, safe_max_columns)
     .map((field: FieldMetadata) => field.field_name);
@@ -125,11 +118,8 @@ export function toggle_column_in_set(
   field_name: string,
 ): Set<string> {
   const new_columns = new Set(visible_columns);
-  if (new_columns.has(field_name)) {
-    new_columns.delete(field_name);
-  } else {
-    new_columns.add(field_name);
-  }
+  if (new_columns.has(field_name)) new_columns.delete(field_name);
+  else new_columns.add(field_name);
   return new_columns;
 }
 

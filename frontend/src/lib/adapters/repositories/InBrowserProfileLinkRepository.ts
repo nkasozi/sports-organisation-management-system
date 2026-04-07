@@ -70,17 +70,14 @@ export class InBrowserProfileLinkRepository
     filter: ProfileLinkFilter,
   ): ProfileLink[] {
     let filtered = entities;
-
     if (filter.profile_id) {
       filtered = filtered.filter(
         (link) => link.profile_id === filter.profile_id,
       );
     }
-
     if (filter.platform) {
       filtered = filtered.filter((link) => link.platform === filter.platform);
     }
-
     if (filter.status) {
       filtered = filtered.filter((link) => link.status === filter.status);
     }
@@ -94,43 +91,35 @@ export class InBrowserProfileLinkRepository
   ): PaginatedAsyncResult<ProfileLink> {
     try {
       let filtered_entities = await this.database.profile_links.toArray();
-
       if (filter.profile_id) {
         filtered_entities = filtered_entities.filter(
           (link) => link.profile_id === filter.profile_id,
         );
       }
-
       if (filter.platform) {
         filtered_entities = filtered_entities.filter(
           (link) => link.platform === filter.platform,
         );
       }
-
       if (filter.status) {
         filtered_entities = filtered_entities.filter(
           (link) => link.status === filter.status,
         );
       }
-
       filtered_entities.sort((a, b) => a.display_order - b.display_order);
-
       const total_count = filtered_entities.length;
       const paginated_entities = this.apply_pagination(
         filtered_entities,
         options,
       );
-
       return create_success_result(
         this.create_paginated_result(paginated_entities, total_count, options),
       );
     } catch (error) {
       console.warn("[ProfileLinkRepository] Failed to filter profile links", {
         event: "repository_filter_profile_links_failed",
-
         error: String(error),
       });
-
       return create_failure_result(
         format_repository_error(error, "filter profile links"),
       );

@@ -61,9 +61,7 @@
             update_stage_template_at_index(
                 displayed_stage_templates,
                 template_index,
-                {
-                    name: template_name,
-                },
+                { name: template_name },
             ),
         );
     }
@@ -73,14 +71,11 @@
         stage_type_value: string,
     ): boolean {
         if (!is_stage_type(stage_type_value)) return false;
-
         return emit_change(
             update_stage_template_at_index(
                 displayed_stage_templates,
                 template_index,
-                {
-                    stage_type: stage_type_value,
-                },
+                { stage_type: stage_type_value },
             ),
         );
     }

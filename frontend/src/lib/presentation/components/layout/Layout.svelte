@@ -1,20 +1,16 @@
 <script lang="ts">
   import { onMount } from "svelte";
 
-  import { is_signed_in } from "$lib/adapters/iam/clerkAuthService";
   import type {
     ConflictRecord,
     ConflictResolutionAction,
   } from "$lib/infrastructure/sync/conflictTypes";
   import Footer from "$lib/presentation/components/layout/Footer.svelte";
   import Header from "$lib/presentation/components/layout/Header.svelte";
+  import LayoutStatusBanner from "$lib/presentation/components/layout/LayoutStatusBanner.svelte";
   import Sidebar from "$lib/presentation/components/layout/Sidebar.svelte";
   import MergeConflictScreen from "$lib/presentation/components/MergeConflictScreen.svelte";
   import ThemeProvider from "$lib/presentation/components/theme/ThemeProvider.svelte";
-  import {
-    is_offline_mode,
-    offline_reason,
-  } from "$lib/presentation/stores/appStatus";
   import { sync_store } from "$lib/presentation/stores/syncStore";
   import {
     get_theme_classes,
@@ -84,86 +80,22 @@
   <div
     class="min-h-screen flex flex-col {theme_classes.textPrimary} bg-gray-50 dark:bg-accent-900 transition-colors duration-300"
   >
-    <!-- Header -->
     <Header {sidebar_open} on:toggle-sidebar={toggle_sidebar} />
+    <LayoutStatusBanner />
 
-    {#if $is_offline_mode}
-      <div class="banner-info w-full border-b pt-4 pb-2 text-center">
-        <p
-          class="inline-flex items-center gap-1.5 px-4 text-xs sm:text-sm flex-wrap justify-center"
-        >
-          <svg
-            class="banner-info-icon w-4 h-4 flex-shrink-0"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M18.364 5.636a9 9 0 010 12.728M5.636 18.364a9 9 0 010-12.728M12 9v4m0 4h.01"
-            />
-          </svg>
-          Offline mode — {$offline_reason}
-        </p>
-      </div>
-    {:else if !$is_signed_in}
-      <div
-        class="bg-violet-50 dark:bg-violet-950/60 border-b border-violet-200 dark:border-violet-800 w-full py-2 text-center"
-      >
-        <div class="flex flex-col items-center gap-0.5 px-6">
-          <div class="flex items-center gap-1.5">
-            <svg
-              class="w-3.5 h-3.5 text-violet-600 dark:text-violet-400 flex-shrink-0"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
-            <span
-              class="text-sm font-medium text-violet-700 dark:text-violet-300"
-              >You are not signed in.</span
-            >
-          </div>
-          <span class="text-sm text-violet-600 dark:text-violet-400"
-            >Changes you make will be overridden when you sign in.</span
-          >
-          <a
-            href="/sign-in"
-            class="text-sm font-semibold text-violet-800 dark:text-violet-200 underline hover:text-violet-900 dark:hover:text-violet-100"
-            style="min-height: 0px;">Sign in</a
-          >
-        </div>
-      </div>
-    {/if}
-
-    <!-- Main content area -->
     <div class="flex flex-1 min-w-0">
-      <!-- Sidebar -->
       <Sidebar {sidebar_open} on:close-sidebar={close_sidebar} />
-
-      <!-- Main content -->
       <main
         class="flex-1 min-w-0 transition-all duration-300 ease-in-out lg:ml-4 overflow-x-auto"
       >
         <div class="w-full max-w-7xl mx-auto p-4 lg:p-6">
-          <!-- Page content slot -->
           <slot />
         </div>
       </main>
     </div>
 
-    <!-- Footer -->
     <Footer />
 
-    <!-- Mobile sidebar overlay -->
     {#if sidebar_open}
       <div
         class="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
@@ -175,7 +107,6 @@
       ></div>
     {/if}
 
-    <!-- Merge Conflict Screen (modal overlay) -->
     <MergeConflictScreen
       on:resolve={handle_conflict_resolve}
       on:dismiss={handle_conflict_dismiss}
@@ -184,19 +115,16 @@
 </ThemeProvider>
 
 <style>
-  /* Global responsive design - mobile first approach */
   :global(body) {
     font-family: "Inter", system-ui, sans-serif;
   }
 
-  /* Ensure smooth transitions for theme changes */
   :global(*) {
     transition-property: background-color, border-color, color, fill, stroke;
     transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
     transition-duration: 200ms;
   }
 
-  /* Mobile optimizations */
   @media (max-width: 768px) {
     :global(.mobile-optimized) {
       font-size: 0.875rem;
@@ -204,7 +132,6 @@
     }
   }
 
-  /* Responsive text sizing */
   :global(.text-responsive) {
     font-size: clamp(0.875rem, 2.5vw, 1rem);
   }

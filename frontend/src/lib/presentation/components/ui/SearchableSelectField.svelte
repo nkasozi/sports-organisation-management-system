@@ -9,13 +9,19 @@
 <script lang="ts">
   import { createEventDispatcher, onDestroy, onMount, tick } from "svelte";
 
-  import type { SelectOption as SelectOptionType } from "./searchable_select_logic";
   import {
-    clamp_index,
+    build_grouped_options,
     filter_select_options,
     find_select_option_by_value,
+    focus_input_cursor_to_end,
+    get_display_input_value,
+    get_highlighted_index_for_selected_value,
+    get_next_highlighted_index,
+    type SelectOption as SelectOptionType,
+    should_close_dropdown_from_pointer,
   } from "./searchable_select_logic";
-
+  import SearchableSelectDropdown from "./SearchableSelectDropdown.svelte";
+  import SearchableSelectInput from "./SearchableSelectInput.svelte";
   const dispatch = createEventDispatcher<{ change: { value: string } }>();
 
   export let label: string = "";
@@ -30,11 +36,9 @@
 
   let container_element: HTMLDivElement | null = null;
   let input_element: HTMLInputElement | null = null;
-
   let is_open: boolean = false;
   let query: string = "";
   let highlighted_index: number = 0;
-
   $: has_error = error.length > 0;
   $: select_id = `searchable-select-${name}`;
   $: list_id = `${select_id}-list`;
@@ -46,24 +50,16 @@
   $: if (input_element && !is_open) {
     input_element.value = selected_option ? selected_option.label : "";
   }
-
   function open_dropdown(): Promise<boolean> {
     if (disabled || is_loading) return Promise.resolve(false);
     is_open = true;
     query = "";
-    highlighted_index = selected_option
-      ? clamp_index(
-          filtered_options.findIndex((o) => o.value === selected_option?.value),
-          0,
-          Math.max(0, filtered_options.length - 1),
-        )
-      : 0;
-
-    return tick().then(() => {
-      return true;
-    });
+    highlighted_index = get_highlighted_index_for_selected_value(
+      filtered_options,
+      selected_option?.value ?? "",
+    );
+    return tick().then(() => true);
   }
-
   function close_dropdown(): boolean {
     is_open = false;
     query = "";
@@ -82,34 +78,19 @@
     }
     return true;
   }
-
   function handle_input_mousedown(event: MouseEvent): void {
     if (disabled || is_loading) return;
-
     if (!is_open) {
       event.preventDefault();
       void open_dropdown();
       return;
     }
-
-    void tick().then(() => {
-      if (!input_element) return;
-      const length = input_element.value.length;
-      input_element.setSelectionRange(length, length);
-    });
+    void tick().then(() => focus_input_cursor_to_end(input_element));
   }
-
   function handle_input_focus(): void {
-    if (!is_open) {
-      void open_dropdown();
-    }
-    void tick().then(() => {
-      if (!input_element) return;
-      const length = input_element.value.length;
-      input_element.setSelectionRange(length, length);
-    });
+    if (!is_open) void open_dropdown();
+    void tick().then(() => focus_input_cursor_to_end(input_element));
   }
-
   function handle_input(event: Event): void {
     const target = event.currentTarget as HTMLInputElement | null;
     if (!target) return;
@@ -117,10 +98,8 @@
     is_open = true;
     highlighted_index = 0;
   }
-
   function handle_keydown(event: KeyboardEvent): void {
     if (disabled || is_loading) return;
-
     if (event.key === "Escape") {
       event.preventDefault();
       close_dropdown();
@@ -133,10 +112,10 @@
         void open_dropdown();
         return;
       }
-      highlighted_index = clamp_index(
-        highlighted_index + 1,
-        0,
-        Math.max(0, filtered_options.length - 1),
+      highlighted_index = get_next_highlighted_index(
+        highlighted_index,
+        1,
+        filtered_options.length,
       );
       return;
     }
@@ -147,18 +126,16 @@
         void open_dropdown();
         return;
       }
-      highlighted_index = clamp_index(
-        highlighted_index - 1,
-        0,
-        Math.max(0, filtered_options.length - 1),
+      highlighted_index = get_next_highlighted_index(
+        highlighted_index,
+        -1,
+        filtered_options.length,
       );
       return;
     }
 
     if (event.key === "Tab") {
-      if (is_open) {
-        close_dropdown();
-      }
+      if (is_open) close_dropdown();
       return;
     }
 
@@ -173,212 +150,56 @@
       commit_value(option.value);
     }
   }
-
   function handle_global_pointer_down(event: MouseEvent): void {
-    const target_node = event.target as Node | null;
-    if (!target_node) return;
-    if (!container_element) return;
-    if (container_element.contains(target_node)) return;
-    if (!is_open) return;
-    close_dropdown();
+    if (
+      should_close_dropdown_from_pointer(
+        container_element,
+        event.target as Node | null,
+        is_open,
+      )
+    )
+      close_dropdown();
   }
-
   onMount(() => {
     window.addEventListener("mousedown", handle_global_pointer_down);
   });
-
   onDestroy(() => {
     window.removeEventListener("mousedown", handle_global_pointer_down);
   });
-
-  function get_display_input_value(): string {
-    if (is_open) return query;
-    if (selected_option) return selected_option.label;
-    return "";
-  }
-
-  type GroupedOptions = { group: string; options: SelectOptionType[] }[];
-
-  function build_grouped_options(
-    flat_options: SelectOptionType[],
-  ): GroupedOptions {
-    const has_groups = flat_options.some(
-      (option) => option.group && option.group.trim().length > 0,
-    );
-    if (!has_groups) return [{ group: "", options: flat_options }];
-
-    const group_map = new Map<string, SelectOptionType[]>();
-    for (const option of flat_options) {
-      const group_key = option.group ?? "";
-      const existing = group_map.get(group_key);
-      if (existing) {
-        existing.push(option);
-      } else {
-        group_map.set(group_key, [option]);
-      }
-    }
-    const result: GroupedOptions = [];
-    const sorted_group_keys = Array.from(group_map.keys()).sort((a, b) => {
-      if (a === "") return 1;
-      if (b === "") return -1;
-      return a.localeCompare(b);
-    });
-    for (const group_name of sorted_group_keys) {
-      const group_options = group_map.get(group_name);
-      if (group_options) {
-        result.push({ group: group_name, options: group_options });
-      }
-    }
-    return result;
-  }
-
-  function get_flat_index_for_grouped(
-    groups: GroupedOptions,
-    group_index: number,
-    option_index: number,
-  ): number {
-    let flat_index = 0;
-    for (let gi = 0; gi < group_index; gi++) {
-      flat_index += groups[gi].options.length;
-    }
-    return flat_index + option_index;
-  }
 </script>
 
 <div bind:this={container_element} class="space-y-1">
-  {#if should_show_label}
-    <label
-      for={select_id}
-      class="block text-sm font-medium text-accent-700 dark:text-accent-300"
-    >
-      {label}
-      {#if required}
-        <span class="text-red-500">*</span>
-      {/if}
-    </label>
-  {/if}
+  <SearchableSelectInput
+    bind:input_element
+    {label}
+    {required}
+    {should_show_label}
+    {select_id}
+    {name}
+    {selected_option}
+    {placeholder}
+    {has_error}
+    {is_open}
+    {disabled}
+    {is_loading}
+    {list_id}
+    input_value={get_display_input_value(is_open, query, selected_option)}
+    on_input_mousedown={handle_input_mousedown}
+    on_input_focus={handle_input_focus}
+    on_input={handle_input}
+    on_keydown={handle_keydown}
+  />
 
-  <div class="relative">
-    {#if selected_option?.color_swatch && !is_open}
-      <span
-        class="absolute left-3 top-1/2 -translate-y-1/2 inline-block w-5 h-5 rounded border border-accent-300 dark:border-accent-600 z-10"
-        style="background-color: {selected_option.color_swatch};"
-      ></span>
-    {/if}
-    <input
-      bind:this={input_element}
-      id={select_id}
-      name="{name}_searchable_select"
-      type="text"
-      value={get_display_input_value()}
-      placeholder={selected_option ? selected_option.label : placeholder}
-      autocomplete="off"
-      autocorrect="off"
-      autocapitalize="off"
-      spellcheck="false"
-      data-form-type="other"
-      data-lpignore="true"
-      data-1p-ignore="true"
-      aria-invalid={has_error}
-      aria-expanded={is_open}
-      aria-controls={list_id}
-      role="combobox"
-      on:mousedown={handle_input_mousedown}
-      on:focus={handle_input_focus}
-      on:input={handle_input}
-      on:keydown={handle_keydown}
-      disabled={disabled || is_loading}
-      class="w-full py-2 border rounded-lg text-sm cursor-pointer
-             bg-white dark:bg-accent-800
-             text-accent-900 dark:text-accent-100
-             focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none
-             disabled:bg-accent-100 dark:disabled:bg-accent-700 disabled:cursor-not-allowed
-             {selected_option?.color_swatch && !is_open ? 'pl-11 pr-3' : 'px-3'}
-             {has_error
-        ? 'border-red-500'
-        : 'border-accent-300 dark:border-accent-600'}"
-    />
-
-    <div
-      class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none"
-    >
-      {#if is_loading}
-        <div
-          class="animate-spin rounded-full h-4 w-4 border-2 border-accent-200 border-t-accent-600"
-        ></div>
-      {:else}
-        <svg
-          class="h-4 w-4 text-accent-400"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M19 9l-7 7-7-7"
-          />
-        </svg>
-      {/if}
-    </div>
-
-    {#if is_open}
-      <div
-        id={list_id}
-        class="absolute z-[9999] mt-2 w-full max-h-64 overflow-auto rounded-lg border border-accent-200 dark:border-accent-700 bg-white dark:bg-accent-800 shadow-lg"
-        role="listbox"
-        tabindex="-1"
-        on:mousedown|preventDefault
-      >
-        {#if filtered_options.length === 0}
-          <div class="px-3 py-2 text-sm text-accent-600 dark:text-accent-400">
-            No matches
-          </div>
-        {:else}
-          {#each grouped_filtered_options as group_entry, group_index}
-            {#if group_entry.group.length > 0}
-              <div
-                class="px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-accent-500 dark:text-accent-400 bg-accent-50 dark:bg-accent-900 sticky top-0"
-              >
-                {group_entry.group}
-              </div>
-            {/if}
-            {#each group_entry.options as option, option_index (option.value)}
-              {@const flat_index = get_flat_index_for_grouped(
-                grouped_filtered_options,
-                group_index,
-                option_index,
-              )}
-              <button
-                type="button"
-                class="w-full text-left px-3 py-2 text-sm transition-colors flex items-center gap-2
-                       {flat_index === highlighted_index
-                  ? 'bg-accent-100 dark:bg-accent-700'
-                  : 'bg-transparent'}
-                       {option.value === value
-                  ? 'font-semibold text-accent-900 dark:text-accent-100'
-                  : 'text-accent-800 dark:text-accent-200'}"
-                role="option"
-                aria-selected={option.value === value}
-                on:mouseenter={() => (highlighted_index = flat_index)}
-                on:mousedown|preventDefault|stopPropagation={() =>
-                  commit_value(option.value)}
-              >
-                {#if option.color_swatch}
-                  <span
-                    class="inline-block w-5 h-5 rounded border border-accent-300 dark:border-accent-600 flex-shrink-0"
-                    style="background-color: {option.color_swatch};"
-                  ></span>
-                {/if}
-                {option.label}
-              </button>
-            {/each}
-          {/each}
-        {/if}
-      </div>
-    {/if}
-  </div>
+  <SearchableSelectDropdown
+    {is_open}
+    {list_id}
+    filtered_options_length={filtered_options.length}
+    {grouped_filtered_options}
+    {highlighted_index}
+    {value}
+    on_highlight={(index: number) => (highlighted_index = index)}
+    on_select={commit_value}
+  />
 
   {#if has_error}
     <p class="text-sm text-red-600 dark:text-red-400">{error}</p>
