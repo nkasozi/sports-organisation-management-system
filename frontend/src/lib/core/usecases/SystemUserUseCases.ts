@@ -1,12 +1,12 @@
 import type {
-  SystemUser,
   CreateSystemUserInput,
+  SystemUser,
   UpdateSystemUserInput,
 } from "../entities/SystemUser";
 import { validate_system_user_input } from "../entities/SystemUser";
-import type { Repository, QueryOptions } from "../interfaces/ports";
+import type { QueryOptions, Repository } from "../interfaces/ports";
 import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
-import { create_success_result, create_failure_result } from "../types/Result";
+import { create_failure_result, create_success_result } from "../types/Result";
 
 export interface SystemUserFilter {
   email?: string;

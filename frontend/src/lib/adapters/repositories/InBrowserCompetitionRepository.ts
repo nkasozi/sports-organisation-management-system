@@ -1,13 +1,14 @@
 import type { Table } from "dexie";
+
+import type { BaseEntity } from "../../core/entities/BaseEntity";
 import type {
   Competition,
   CreateCompetitionInput,
   UpdateCompetitionInput,
 } from "../../core/entities/Competition";
-import type { BaseEntity } from "../../core/entities/BaseEntity";
 import type {
-  CompetitionRepository,
   CompetitionFilter,
+  CompetitionRepository,
   QueryOptions,
 } from "../../core/interfaces/ports";
 import type { PaginatedAsyncResult } from "../../core/types/Result";

@@ -1,10 +1,11 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { create_game_official_role_use_cases } from "./GameOfficialRoleUseCases";
-import type { GameOfficialRoleRepository } from "../interfaces/ports";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
 import type {
-  GameOfficialRole,
   CreateGameOfficialRoleInput,
+  GameOfficialRole,
 } from "../entities/GameOfficialRole";
+import type { GameOfficialRoleRepository } from "../interfaces/ports";
+import { create_game_official_role_use_cases } from "./GameOfficialRoleUseCases";
 
 function create_mock_repository(): GameOfficialRoleRepository {
   return {

@@ -1,7 +1,7 @@
+import type { SquadGenerationStrategy } from "../entities/Competition";
 import type { CompetitionUseCases } from "../usecases/CompetitionUseCases";
 import type { OrganizationUseCases } from "../usecases/OrganizationUseCases";
 import type { SportUseCases } from "../usecases/SportUseCases";
-import type { SquadGenerationStrategy } from "../entities/Competition";
 
 export interface PlayerRulesResult {
   success: boolean;

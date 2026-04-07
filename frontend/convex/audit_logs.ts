@@ -1,6 +1,7 @@
 import { v } from "convex/values";
-import { mutation, query, internalMutation } from "./_generated/server";
-import { require_auth, build_scope_filter } from "./lib/auth_middleware";
+
+import { internalMutation, query } from "./_generated/server";
+import { build_scope_filter, require_auth } from "./lib/auth_middleware";
 
 export const AUDIT_LOG_RETENTION_DAYS = 60;
 export const AUDIT_LOG_SYNC_DAYS = 2;

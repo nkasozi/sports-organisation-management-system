@@ -1,8 +1,7 @@
 import {
-  SEED_TEAM_PROFILE_IDS,
-  SEED_TEAM_IDS,
-  SEED_ORGANIZATION_IDS,
   generate_current_timestamp,
+  SEED_TEAM_IDS,
+  SEED_TEAM_PROFILE_IDS,
 } from "./seedIds";
 
 export function create_seed_team_profiles(): import("../../../core/entities/TeamProfile").TeamProfile[] {

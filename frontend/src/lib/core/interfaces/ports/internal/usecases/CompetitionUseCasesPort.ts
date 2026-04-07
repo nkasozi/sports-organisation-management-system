@@ -3,12 +3,12 @@ import type {
   CreateCompetitionInput,
   UpdateCompetitionInput,
 } from "../../../../entities/Competition";
-import type { CompetitionFilter } from "../../external/repositories/CompetitionRepository";
-import type { QueryOptions } from "../../external/repositories/Repository";
 import type {
   AsyncResult,
   PaginatedAsyncResult,
 } from "../../../../types/Result";
+import type { CompetitionFilter } from "../../external/repositories/CompetitionRepository";
+import type { QueryOptions } from "../../external/repositories/Repository";
 import type { BaseUseCasesPort } from "./BaseUseCasesPort";
 
 export interface CompetitionUseCasesPort extends BaseUseCasesPort<

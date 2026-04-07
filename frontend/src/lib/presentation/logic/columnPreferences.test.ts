@@ -1,11 +1,12 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
 import type { AppSettingsPort } from "$lib/core/interfaces/ports";
+
 import {
   build_column_cache_key,
-  save_column_preferences,
-  load_column_preferences,
   clear_column_preferences,
-  type ColumnPreferenceResult,
+  load_column_preferences,
+  save_column_preferences,
 } from "./columnPreferences";
 
 function create_mock_storage(): AppSettingsPort {

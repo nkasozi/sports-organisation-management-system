@@ -1,10 +1,10 @@
 import type {
-  OrganizationSettings,
   CreateOrganizationSettingsInput,
+  OrganizationSettings,
   UpdateOrganizationSettingsInput,
 } from "../../../../entities/OrganizationSettings";
-import type { Repository, QueryOptions } from "./Repository";
 import type { AsyncResult } from "../../../../types/Result";
+import type { QueryOptions, Repository } from "./Repository";
 
 export interface OrganizationSettingsFilter {
   organization_id?: string;

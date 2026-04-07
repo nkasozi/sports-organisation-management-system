@@ -1,29 +1,30 @@
-import {
-  describe,
-  it,
-  expect,
-  vi,
-  beforeEach,
-  type MockedFunction,
-} from "vitest";
 import { get } from "svelte/store";
+import {
+  beforeEach,
+  describe,
+  expect,
+  it,
+  type MockedFunction,
+  vi,
+} from "vitest";
+
 import type { BaseEntity, FieldMetadata } from "../../core/entities/BaseEntity";
 import { get_use_cases_for_entity_type } from "../../infrastructure/registry/entityUseCasesRegistry";
 import { get_competition_team_use_cases } from "../../infrastructure/registry/useCaseFactories";
 import {
   compute_teams_after_exclusion,
-  fetch_entities_for_type,
-  fetch_unfiltered_foreign_key_options,
-  fetch_teams_from_competition,
   fetch_entities_filtered_by_organization,
-  fetch_stages_from_competition,
-  fetch_teams_from_player_memberships,
-  fetch_teams_excluding_player_memberships,
+  fetch_entities_for_type,
   fetch_filtered_entities_for_field,
-  fetch_fixtures_from_official,
   fetch_fixtures_for_rating,
-  fetch_officials_from_fixture,
+  fetch_fixtures_from_official,
   fetch_fixtures_without_setup,
+  fetch_officials_from_fixture,
+  fetch_stages_from_competition,
+  fetch_teams_excluding_player_memberships,
+  fetch_teams_from_competition,
+  fetch_teams_from_player_memberships,
+  fetch_unfiltered_foreign_key_options,
 } from "./dynamicFormDataLoader";
 
 vi.mock("svelte/store", async (importOriginal) => {

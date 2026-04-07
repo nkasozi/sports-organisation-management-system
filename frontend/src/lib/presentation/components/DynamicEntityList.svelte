@@ -6,60 +6,59 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
 <script lang="ts">
   import { onMount } from "svelte";
   import { get } from "svelte/store";
+
+  import { type UserScopeProfile } from "$lib/core/interfaces/ports";
+  import type {
+    CrudFunctionality,
+    EntityCrudHandlers,
+    EntityViewCallbacks,
+  } from "$lib/core/types/EntityHandlers";
+  import { is_functionality_disabled } from "$lib/core/types/EntityHandlers";
+  import type { SubEntityFilter } from "$lib/core/types/SubEntityFilter";
+  import { get_authorization_adapter } from "$lib/infrastructure/AuthorizationProvider";
+
   import type {
     BaseEntity,
     FieldMetadata,
   } from "../../core/entities/BaseEntity";
   import { entityMetadataRegistry } from "../../infrastructure/registry/EntityMetadataRegistry";
   import { get_use_cases_for_entity_type } from "../../infrastructure/registry/entityUseCasesRegistry";
-  import type { SubEntityFilter } from "$lib/core/types/SubEntityFilter";
-  import DynamicEntityForm from "./DynamicEntityForm.svelte";
+  import { ensure_auth_profile } from "../logic/authGuard";
   import {
-    get_display_value_for_entity_field,
-    extract_items_from_result_data,
-    extract_total_count_from_result_data,
-    extract_error_message_from_result,
-    build_default_visible_column_names,
-    check_if_all_entities_selected,
-    check_if_some_entities_selected,
-    determine_if_bulk_actions_available,
-    build_filter_from_sub_entity_config,
-    apply_filters_and_sorting,
-    toggle_sort_direction,
-    toggle_column_in_set,
-    build_csv_content,
-    build_csv_filename,
-    get_selected_entities_from_list,
-    clear_filter_state,
-    toggle_select_all_entities,
-    toggle_single_entity_selection as compute_entity_selection_toggle,
-    normalize_entity_type_for_filter,
-    build_entity_authorization_filter,
-    apply_id_filter_to_entities,
-    merge_entity_list_filters,
-    type EntityAuthFilterResult,
-  } from "../logic/dynamicListLogic";
-  import {
-    save_column_preferences,
     load_column_preferences,
+    save_column_preferences,
   } from "../logic/columnPreferences";
-  import type {
-    EntityCrudHandlers,
-    EntityViewCallbacks,
-    CrudFunctionality,
-  } from "$lib/core/types/EntityHandlers";
-  import { is_functionality_disabled } from "$lib/core/types/EntityHandlers";
-  import BulkImportModal from "./BulkImportModal.svelte";
-  import SearchableSelectField from "./ui/SearchableSelectField.svelte";
-  import Pagination from "./ui/Pagination.svelte";
   import {
     build_entity_display_label,
     format_entity_display_name,
   } from "../logic/dynamicFormLogic";
+  import {
+    apply_filters_and_sorting,
+    apply_id_filter_to_entities,
+    build_csv_content,
+    build_csv_filename,
+    build_default_visible_column_names,
+    build_entity_authorization_filter,
+    build_filter_from_sub_entity_config,
+    check_if_all_entities_selected,
+    check_if_some_entities_selected,
+    clear_filter_state,
+    determine_if_bulk_actions_available,
+    extract_error_message_from_result,
+    extract_items_from_result_data,
+    get_display_value_for_entity_field,
+    get_selected_entities_from_list,
+    merge_entity_list_filters,
+    toggle_column_in_set,
+    toggle_select_all_entities,
+    toggle_single_entity_selection as compute_entity_selection_toggle,
+    toggle_sort_direction,
+  } from "../logic/dynamicListLogic";
   import { auth_store } from "../stores/auth";
-  import { type UserScopeProfile } from "$lib/core/interfaces/ports";
-  import { get_authorization_adapter } from "$lib/infrastructure/AuthorizationProvider";
-  import { ensure_auth_profile } from "../logic/authGuard";
+  import BulkImportModal from "./BulkImportModal.svelte";
+  import DynamicEntityForm from "./DynamicEntityForm.svelte";
+  import Pagination from "./ui/Pagination.svelte";
+  import SearchableSelectField from "./ui/SearchableSelectField.svelte";
 
   export let entity_type: string;
   export let show_actions: boolean = true;

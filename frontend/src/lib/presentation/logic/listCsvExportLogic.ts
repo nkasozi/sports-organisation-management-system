@@ -1,7 +1,7 @@
 import type {
   BaseEntity,
-  FieldMetadata,
   EntityMetadata,
+  FieldMetadata,
 } from "../../core/entities/BaseEntity";
 import { get_display_value_for_entity_field } from "./listDisplayValueLogic";
 

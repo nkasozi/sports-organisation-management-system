@@ -1,10 +1,10 @@
 import type {
-  IdentificationType,
   CreateIdentificationTypeInput,
+  IdentificationType,
   UpdateIdentificationTypeInput,
 } from "../../../../entities/IdentificationType";
-import type { Repository, QueryOptions } from "./Repository";
 import type { PaginatedAsyncResult } from "../../../../types/Result";
+import type { QueryOptions, Repository } from "./Repository";
 
 export interface IdentificationTypeFilter {
   status?: string;

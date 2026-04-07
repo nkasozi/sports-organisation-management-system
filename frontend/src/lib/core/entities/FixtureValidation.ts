@@ -1,9 +1,9 @@
-import type { OfficialRequirement } from "./Sport";
 import type {
   AssignedOfficial,
   CreateFixtureInput,
   Fixture,
 } from "./FixtureTypes";
+import type { OfficialRequirement } from "./Sport";
 
 export function create_empty_fixture_input(
   organization_id: string = "",

@@ -1,12 +1,13 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import type { PlayerTeamMembership } from "../../core/entities/PlayerTeamMembership";
+import type { PlayerTeamMembershipUseCases } from "../../core/usecases/PlayerTeamMembershipUseCases";
 import {
   apply_player_transfer_membership_change,
-  delete_old_team_memberships,
   create_new_team_membership,
+  delete_old_team_memberships,
   type TransferApprovalDetails,
 } from "./playerTransferApprovalLogic";
-import type { PlayerTeamMembershipUseCases } from "../../core/usecases/PlayerTeamMembershipUseCases";
-import type { PlayerTeamMembership } from "../../core/entities/PlayerTeamMembership";
 
 function create_mock_use_cases(): PlayerTeamMembershipUseCases {
   return {

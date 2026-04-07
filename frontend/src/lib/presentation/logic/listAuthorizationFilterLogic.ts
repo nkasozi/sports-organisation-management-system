@@ -1,9 +1,9 @@
-import { WILDCARD_SCOPE } from "../../core/entities/StatusConstants";
 import type {
   BaseEntity,
-  FieldMetadata,
   EntityMetadata,
+  FieldMetadata,
 } from "../../core/entities/BaseEntity";
+import { WILDCARD_SCOPE } from "../../core/entities/StatusConstants";
 import {
   build_authorization_list_filter,
   type UserScopeProfile,

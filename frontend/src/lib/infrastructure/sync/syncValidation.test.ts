@@ -1,15 +1,15 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  validate_table_name,
-  get_entity_type_for_table,
-  is_global_table,
-  is_global_record,
-  validate_record_organization_ownership,
-  filter_records_by_organization_scope,
-  ALLOWED_SYNC_TABLES,
-} from "../../../../convex/lib/sync_validation";
 import type { SystemUserRecord } from "../../../../convex/lib/auth_middleware";
+import {
+  ALLOWED_SYNC_TABLES,
+  filter_records_by_organization_scope,
+  get_entity_type_for_table,
+  is_global_record,
+  is_global_table,
+  validate_record_organization_ownership,
+  validate_table_name,
+} from "../../../../convex/lib/sync_validation";
 
 function build_mock_system_user(
   overrides: Partial<SystemUserRecord> = {},

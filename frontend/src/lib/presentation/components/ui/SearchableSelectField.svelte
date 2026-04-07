@@ -8,12 +8,13 @@
 
 <script lang="ts">
   import { createEventDispatcher, onDestroy, onMount, tick } from "svelte";
+
+  import type { SelectOption as SelectOptionType } from "./searchable_select_logic";
   import {
     clamp_index,
     filter_select_options,
     find_select_option_by_value,
   } from "./searchable_select_logic";
-  import type { SelectOption as SelectOptionType } from "./searchable_select_logic";
 
   const dispatch = createEventDispatcher<{ change: { value: string } }>();
 

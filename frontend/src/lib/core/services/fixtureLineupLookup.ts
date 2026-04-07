@@ -1,9 +1,9 @@
 import type { Fixture } from "../entities/Fixture";
-import type { FixtureLineupUseCases } from "../usecases/FixtureLineupUseCases";
-import type { FixtureUseCases } from "../usecases/FixtureUseCases";
 import type { FixtureLineup, LineupPlayer } from "../entities/FixtureLineup";
 import type { Player } from "../entities/Player";
 import type { PlayerTeamMembership } from "../entities/PlayerTeamMembership";
+import type { FixtureLineupUseCases } from "../usecases/FixtureLineupUseCases";
+import type { FixtureUseCases } from "../usecases/FixtureUseCases";
 
 export interface PreviousLineupResult {
   success: boolean;

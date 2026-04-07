@@ -1,852 +1,372 @@
 <script lang="ts">
-  import { onMount } from "svelte";
-  import { browser } from "$app/environment";
-  import { goto } from "$app/navigation";
-  import { ensure_auth_profile } from "$lib/presentation/logic/authGuard";
-  import { access_denial_store } from "$lib/presentation/stores/accessDenial";
-  import { get_authorization_adapter } from "$lib/infrastructure/AuthorizationProvider";
-  import { get } from "svelte/store";
-  import type { Organization } from "$lib/core/entities/Organization";
-  import type { CompetitionFormat } from "$lib/core/entities/CompetitionFormat";
-  import type { Team } from "$lib/core/entities/Team";
-  import type { Sport } from "$lib/core/entities/Sport";
-  import type { CreateCompetitionInput } from "$lib/core/entities/Competition";
-  import type { SelectOption } from "$lib/presentation/components/ui/SelectField.svelte";
-  import { create_empty_competition_input } from "$lib/core/entities/Competition";
-  import { create_empty_competition_team_input } from "$lib/core/entities/CompetitionTeam";
-  import { get_sport_by_id } from "$lib/adapters/persistence/sportService";
-  import FormField from "$lib/presentation/components/ui/FormField.svelte";
-  import SelectField from "$lib/presentation/components/ui/SelectField.svelte";
-  import EnumSelectField from "$lib/presentation/components/ui/EnumSelectField.svelte";
-  import Toast from "$lib/presentation/components/ui/Toast.svelte";
-  import SportRulesCustomizer from "$lib/presentation/components/competition/SportRulesCustomizer.svelte";
-  import InfoTooltip from "$lib/presentation/components/ui/InfoTooltip.svelte";
-  import { auth_store } from "$lib/presentation/stores/auth";
-  import {
-    is_scope_restricted,
-    type UserScopeProfile,
-  } from "$lib/core/interfaces/ports";
-  import type { SquadGenerationStrategy } from "$lib/core/entities/Competition";
-import {
-  get_competition_format_use_cases,
-  get_competition_team_use_cases,
-  get_competition_use_cases,
-  get_organization_use_cases,
-  get_team_use_cases,
-} from "$lib/infrastructure/registry/useCaseFactories";
+    import { onMount } from "svelte";
+    import { get } from "svelte/store";
 
-  const competition_use_cases = get_competition_use_cases();
-  const competition_team_use_cases = get_competition_team_use_cases();
-  const organization_use_cases = get_organization_use_cases();
-  const competition_format_use_cases = get_competition_format_use_cases();
-  const team_use_cases = get_team_use_cases();
+    import { browser } from "$app/environment";
+    import { goto } from "$app/navigation";
+    import { get_sport_by_id } from "$lib/adapters/persistence/sportService";
+    import {
+        create_empty_competition_input,
+        type CreateCompetitionInput,
+    } from "$lib/core/entities/Competition";
+    import type { CompetitionFormat } from "$lib/core/entities/CompetitionFormat";
+    import type { Organization } from "$lib/core/entities/Organization";
+    import type { Sport } from "$lib/core/entities/Sport";
+    import type { Team } from "$lib/core/entities/Team";
+    import {
+        is_scope_restricted,
+        type UserScopeProfile,
+    } from "$lib/core/interfaces/ports";
+    import { get_authorization_adapter } from "$lib/infrastructure/AuthorizationProvider";
+    import {
+        get_competition_format_use_cases,
+        get_competition_team_use_cases,
+        get_competition_use_cases,
+        get_organization_use_cases,
+        get_team_use_cases,
+    } from "$lib/infrastructure/registry/useCaseFactories";
+    import CompetitionCreateEditor from "$lib/presentation/components/competition/CompetitionCreateEditor.svelte";
+    import type { SelectOption } from "$lib/presentation/components/ui/SelectField.svelte";
+    import Toast from "$lib/presentation/components/ui/Toast.svelte";
+    import { ensure_auth_profile } from "$lib/presentation/logic/authGuard";
+    import {
+        create_competition_team_inputs,
+        get_competition_format_team_requirements,
+        get_next_selected_team_ids,
+        is_competition_team_count_valid,
+        normalize_competition_auto_squad_settings,
+        update_competition_auto_squad_submission,
+    } from "$lib/presentation/logic/competitionCreatePageState";
+    import { access_denial_store } from "$lib/presentation/stores/accessDenial";
+    import { auth_store } from "$lib/presentation/stores/auth";
 
-  let form_data: CreateCompetitionInput = create_empty_competition_input();
-  let organizations: Organization[] = [];
-  let competition_formats: CompetitionFormat[] = [];
-  let all_teams: Team[] = [];
-  let organization_options: SelectOption[] = [];
-  let competition_format_options: SelectOption[] = [];
-  let team_options: SelectOption[] = [];
-  let selected_team_ids: Set<string> = new Set();
-  let selected_format: CompetitionFormat | null = null;
-  let selected_sport: Sport | null = null;
-  let is_loading_organizations: boolean = true;
-  let is_loading_formats: boolean = true;
-  let is_loading_teams: boolean = false;
-  let is_saving: boolean = false;
-  let errors: Record<string, string> = {};
-  let error_message: string = "";
-  let active_tab: "details" | "rules" = "details";
+    const competition_use_cases = get_competition_use_cases();
+    const competition_team_use_cases = get_competition_team_use_cases();
+    const organization_use_cases = get_organization_use_cases();
+    const competition_format_use_cases = get_competition_format_use_cases();
+    const team_use_cases = get_team_use_cases();
+    const status_options = [
+        { value: "upcoming", label: "Upcoming" },
+        { value: "active", label: "Active" },
+        { value: "completed", label: "Completed" },
+        { value: "cancelled", label: "Cancelled" },
+    ];
 
-  let toast_visible: boolean = false;
-  let toast_message: string = "";
-  let toast_type: "success" | "error" | "info" = "info";
-
-  $: current_auth_profile = $auth_store.current_profile;
-  $: is_organization_restricted =
-    current_auth_profile !== null &&
-    is_scope_restricted(
-      current_auth_profile as UserScopeProfile,
-      "organization_id",
+    let form_data: CreateCompetitionInput = create_empty_competition_input();
+    let organizations: Organization[] = [];
+    let competition_formats: CompetitionFormat[] = [];
+    let team_options: SelectOption[] = [];
+    let organization_options: SelectOption[] = [];
+    let competition_format_options: SelectOption[] = [];
+    let selected_team_ids: Set<string> = new Set();
+    let selected_format: CompetitionFormat | null = null;
+    let selected_sport: Sport | null = null;
+    let is_loading_organizations: boolean = true;
+    let is_loading_formats: boolean = true;
+    let is_loading_teams: boolean = false;
+    let is_saving: boolean = false;
+    let errors: Record<string, string> = {};
+    let error_message: string = "";
+    let toast_visible: boolean = false;
+    let toast_message: string = "";
+    let toast_type: "success" | "error" | "info" = "info";
+    $: current_auth_profile = $auth_store.current_profile;
+    $: is_organization_restricted =
+        current_auth_profile !== null &&
+        is_scope_restricted(
+            current_auth_profile as UserScopeProfile,
+            "organization_id",
+        );
+    $: form_data.team_ids = Array.from(selected_team_ids);
+    $: format_team_requirements =
+        get_competition_format_team_requirements(selected_format);
+    $: is_team_count_valid = is_competition_team_count_valid(
+        selected_format,
+        selected_team_ids.size,
     );
-
-  const status_options = [
-    { value: "upcoming", label: "Upcoming" },
-    { value: "active", label: "Active" },
-    { value: "completed", label: "Completed" },
-    { value: "cancelled", label: "Cancelled" },
-  ];
-
-  $: {
-    form_data.team_ids = Array.from(selected_team_ids);
-  }
-
-  $: format_team_requirements = selected_format
-    ? `Requires ${selected_format.min_teams_required} to ${selected_format.max_teams_allowed} teams`
-    : "";
-
-  $: is_team_count_valid =
-    !selected_format ||
-    (selected_team_ids.size >= selected_format.min_teams_required &&
-      selected_team_ids.size <= selected_format.max_teams_allowed);
-
-  $: {
-    if (
-      form_data.lineup_submission_deadline_hours > 0 &&
-      !form_data.allow_auto_squad_submission
-    ) {
-      form_data.allow_auto_squad_submission = true;
+    $: {
+        const normalized_form_data =
+            normalize_competition_auto_squad_settings(form_data);
+        if (normalized_form_data !== form_data)
+            form_data = normalized_form_data;
     }
-  }
-
-  $: {
-    if (
-      form_data.allow_auto_squad_submission &&
-      !form_data.squad_generation_strategy
-    ) {
-      form_data.squad_generation_strategy = "first_available";
+    async function initialize_page(): Promise<void> {
+        if (!browser) return;
+        const auth_result = await ensure_auth_profile();
+        if (!auth_result.success) {
+            error_message = auth_result.error_message;
+            is_loading_organizations = false;
+            is_loading_formats = false;
+            is_loading_teams = false;
+            return;
+        }
+        const auth_state = get(auth_store);
+        if (auth_state.current_token) {
+            const authorization_check =
+                await get_authorization_adapter().check_entity_authorized(
+                    auth_state.current_token.raw_token,
+                    "competition",
+                    "create",
+                );
+            if (!authorization_check.success) return;
+            if (!authorization_check.data.is_authorized) {
+                access_denial_store.set_denial(
+                    "/competitions/create",
+                    "You do not have permission to create competitions.",
+                );
+                await goto("/competitions");
+                return;
+            }
+        }
+        await load_organizations();
     }
-  }
+    async function load_organizations(): Promise<void> {
+        is_loading_organizations = true;
+        if (is_organization_restricted && current_auth_profile) {
+            const result = await organization_use_cases.get_by_id(
+                current_auth_profile.organization_id,
+            );
+            if (result.success && result.data) {
+                organizations = [result.data];
+                organization_options = [
+                    { value: result.data.id, label: result.data.name },
+                ];
+                form_data.organization_id = result.data.id;
+                await trigger_organization_side_effects(result.data.id);
+            }
+            is_loading_organizations = false;
+            return;
+        }
 
-  function handle_auto_squad_submission_toggle(enabled: boolean): void {
-    form_data.allow_auto_squad_submission = enabled;
-    if (!enabled) {
-      form_data.lineup_submission_deadline_hours = 0;
+        const result = await organization_use_cases.list(undefined, {
+            page_number: 1,
+            page_size: 100,
+        });
+        if (result.success) {
+            organizations = result.data?.items || [];
+            organization_options = organizations.map(
+                (current_organization: Organization) => ({
+                    value: current_organization.id,
+                    label: current_organization.name,
+                }),
+            );
+        }
+        is_loading_organizations = false;
     }
-  }
-
-  onMount(async () => {
-    if (!browser) return;
-    const auth_result = await ensure_auth_profile();
-    if (!auth_result.success) {
-      error_message = auth_result.error_message;
-      is_loading_organizations = false;
-      is_loading_formats = false;
-      is_loading_teams = false;
-      return;
-    }
-
-    const auth_state = get(auth_store);
-    if (auth_state.current_token) {
-      const authorization_check =
-        await get_authorization_adapter().check_entity_authorized(
-          auth_state.current_token.raw_token,
-          "competition",
-          "create",
+    async function load_competition_formats(
+        organization_id?: string,
+    ): Promise<void> {
+        is_loading_formats = true;
+        const result = await competition_format_use_cases.list(
+            organization_id ? { organization_id } : undefined,
+            { page_number: 1, page_size: 100 },
         );
-
-      if (!authorization_check.success) return;
-      if (!authorization_check.data.is_authorized) {
-        access_denial_store.set_denial(
-          "/competitions/create",
-          "You do not have permission to create competitions.",
+        if (result.success) {
+            competition_formats = (result.data?.items || []).filter(
+                (current_format: CompetitionFormat) =>
+                    current_format.status === "active",
+            );
+            competition_format_options = competition_formats.map(
+                (current_format: CompetitionFormat) => ({
+                    value: current_format.id,
+                    label: current_format.name,
+                }),
+            );
+        }
+        is_loading_formats = false;
+    }
+    async function load_teams_for_organization(
+        organization_id: string,
+    ): Promise<void> {
+        is_loading_teams = true;
+        const result = await team_use_cases.list(
+            { organization_id },
+            { page_number: 1, page_size: 200 },
         );
+        team_options = result.success
+            ? (result.data?.items || []).map((current_team: Team) => ({
+                  value: current_team.id,
+                  label: current_team.name,
+              }))
+            : [];
+        is_loading_teams = false;
+    }
+    async function trigger_organization_side_effects(
+        organization_id: string,
+    ): Promise<void> {
+        selected_team_ids = new Set();
+        team_options = [];
+        competition_formats = [];
+        competition_format_options = [];
+        form_data = {
+            ...form_data,
+            competition_format_id: "",
+            rule_overrides: {},
+        };
+        selected_format = null;
+        selected_sport = null;
+        await Promise.all([
+            load_teams_for_organization(organization_id),
+            load_competition_formats(organization_id),
+        ]);
+        const selected_organization = organizations.find(
+            (current_organization: Organization) =>
+                current_organization.id === organization_id,
+        );
+        if (!selected_organization?.sport_id) return;
+        const sport_result = await get_sport_by_id(
+            selected_organization.sport_id,
+        );
+        if (sport_result.success && sport_result.data)
+            selected_sport = sport_result.data;
+    }
+    async function handle_organization_change(
+        event: CustomEvent<{ value: string }>,
+    ): Promise<void> {
+        form_data = { ...form_data, organization_id: event.detail.value };
+        await trigger_organization_side_effects(event.detail.value);
+    }
+    function handle_format_change(event: CustomEvent<{ value: string }>): void {
+        form_data = { ...form_data, competition_format_id: event.detail.value };
+        selected_format =
+            competition_formats.find(
+                (current_format: CompetitionFormat) =>
+                    current_format.id === event.detail.value,
+            ) || null;
+    }
+    function handle_team_toggle(team_id: string): boolean {
+        selected_team_ids = get_next_selected_team_ids(
+            selected_team_ids,
+            team_id,
+        );
+        return true;
+    }
+    function handle_auto_squad_submission_toggle(enabled: boolean): void {
+        form_data = update_competition_auto_squad_submission(
+            form_data,
+            enabled,
+        );
+    }
+    async function create_competition_team_records(
+        competition_id: string,
+        team_ids: string[],
+    ): Promise<boolean> {
+        const registration_date = new Date().toISOString().split("T")[0];
+        for (const competition_team_input of create_competition_team_inputs(
+            competition_id,
+            team_ids,
+            registration_date,
+        )) {
+            const result = await competition_team_use_cases.create(
+                competition_team_input,
+            );
+            if (result.success) continue;
+            console.error(
+                "[CompetitionCreate] Failed to create competition team",
+                {
+                    event: "competition_team_create_failed",
+                    competition_id,
+                    team_id: competition_team_input.team_id,
+                    error: result.error,
+                },
+            );
+            return false;
+        }
+        return true;
+    }
+    async function handle_submit(): Promise<void> {
+        errors = {};
+        if (!is_team_count_valid) {
+            show_toast(
+                `Please select between ${selected_format?.min_teams_required} and ${selected_format?.max_teams_allowed} teams`,
+                "error",
+            );
+            return;
+        }
+        is_saving = true;
+        const result = await competition_use_cases.create(form_data);
+        if (!result.success || !result.data) {
+            is_saving = false;
+            show_toast(
+                !result.success
+                    ? result.error || "Failed to create competition"
+                    : "Failed to create competition",
+                "error",
+            );
+            return;
+        }
+        const teams_created = await create_competition_team_records(
+            result.data.id,
+            form_data.team_ids,
+        );
+        if (!teams_created) {
+            is_saving = false;
+            show_toast(
+                "Competition created but failed to register some teams. Please add teams manually.",
+                "error",
+            );
+            return;
+        }
+        is_saving = false;
+        show_toast("Competition created successfully!", "success");
+        setTimeout(() => goto("/competitions"), 1500);
+    }
+    function handle_cancel(): void {
         goto("/competitions");
-        return;
-      }
     }
-
-    await load_organizations();
-  });
-
-  async function load_organizations(): Promise<void> {
-    is_loading_organizations = true;
-
-    if (is_organization_restricted && current_auth_profile) {
-      const result = await organization_use_cases.get_by_id(
-        current_auth_profile.organization_id,
-      );
-      if (result.success && result.data) {
-        organizations = [result.data];
-        organization_options = [
-          { value: result.data.id, label: result.data.name },
-        ];
-        form_data.organization_id = result.data.id;
-        await trigger_organization_side_effects(result.data.id);
-      }
-      is_loading_organizations = false;
-      return;
+    function show_toast(
+        message: string,
+        type: "success" | "error" | "info",
+    ): void {
+        toast_message = message;
+        toast_type = type;
+        toast_visible = true;
     }
-
-    const result = await organization_use_cases.list(undefined, {
-      page_number: 1,
-      page_size: 100,
+    onMount(() => {
+        void initialize_page();
     });
-
-    if (result.success) {
-      organizations = result.data?.items || [];
-      organization_options = organizations.map((org) => ({
-        value: org.id,
-        label: org.name,
-      }));
-    }
-    is_loading_organizations = false;
-  }
-
-  async function load_competition_formats(
-    organization_id?: string,
-  ): Promise<void> {
-    is_loading_formats = true;
-    const result = await competition_format_use_cases.list(
-      organization_id ? { organization_id } : undefined,
-      { page_number: 1, page_size: 100 },
-    );
-
-    if (result.success) {
-      competition_formats = (result.data?.items || []).filter(
-        (format: CompetitionFormat) => format.status === "active",
-      );
-      competition_format_options = competition_formats.map((format) => ({
-        value: format.id,
-        label: format.name,
-      }));
-    }
-    is_loading_formats = false;
-  }
-
-  async function load_teams_for_organization(
-    organization_id: string,
-  ): Promise<void> {
-    is_loading_teams = true;
-    const result = await team_use_cases.list(
-      { organization_id },
-      { page_number: 1, page_size: 200 },
-    );
-    if (result.success) {
-      all_teams = result.data?.items || [];
-      team_options = all_teams.map((team) => ({
-        value: team.id,
-        label: team.name,
-      }));
-    } else {
-      all_teams = [];
-      team_options = [];
-    }
-    is_loading_teams = false;
-  }
-
-  async function handle_organization_change(
-    event: CustomEvent<{ value: string }>,
-  ): Promise<void> {
-    form_data.organization_id = event.detail.value;
-    await trigger_organization_side_effects(event.detail.value);
-  }
-
-  async function trigger_organization_side_effects(
-    organization_id: string,
-  ): Promise<void> {
-    selected_team_ids = new Set();
-    all_teams = [];
-    team_options = [];
-    competition_formats = [];
-    competition_format_options = [];
-    form_data.competition_format_id = "";
-    selected_format = null;
-
-    await Promise.all([
-      load_teams_for_organization(organization_id),
-      load_competition_formats(organization_id),
-    ]);
-
-    form_data.rule_overrides = {};
-    selected_sport = null;
-
-    const selected_organization = organizations.find(
-      (org) => org.id === organization_id,
-    );
-
-    if (selected_organization && selected_organization.sport_id) {
-      const sport_result = await get_sport_by_id(
-        selected_organization.sport_id,
-      );
-      if (sport_result.success && sport_result.data) {
-        selected_sport = sport_result.data;
-      }
-    }
-  }
-
-  function handle_format_change(event: CustomEvent<{ value: string }>): void {
-    form_data.competition_format_id = event.detail.value;
-    selected_format =
-      competition_formats.find(
-        (format) => format.id === form_data.competition_format_id,
-      ) || null;
-  }
-
-  function handle_team_toggle(team_id: string): boolean {
-    const new_set = new Set(selected_team_ids);
-
-    if (new_set.has(team_id)) {
-      new_set.delete(team_id);
-    } else {
-      new_set.add(team_id);
-    }
-
-    selected_team_ids = new_set;
-    return true;
-  }
-
-  async function create_competition_team_records(
-    competition_id: string,
-    team_ids: string[],
-  ): Promise<boolean> {
-    const registration_date = new Date().toISOString().split("T")[0];
-
-    for (const team_id of team_ids) {
-      const competition_team_input = create_empty_competition_team_input(
-        competition_id,
-        team_id,
-      );
-      competition_team_input.registration_date = registration_date;
-
-      const result = await competition_team_use_cases.create(
-        competition_team_input,
-      );
-      if (!result.success) {
-        console.error(
-          `[CompetitionCreate] Failed to create CompetitionTeam for team ${team_id}: ${result.error}`,
-        );
-        return false;
-      }
-    }
-    return true;
-  }
-
-  async function handle_submit(): Promise<void> {
-    errors = {};
-
-    if (!is_team_count_valid) {
-      show_toast(
-        `Please select between ${selected_format?.min_teams_required} and ${selected_format?.max_teams_allowed} teams`,
-        "error",
-      );
-      return;
-    }
-
-    is_saving = true;
-
-    const result = await competition_use_cases.create(form_data);
-
-    if (!result.success || !result.data) {
-      is_saving = false;
-      show_toast(
-        !result.success
-          ? result.error || "Failed to create competition"
-          : "Failed to create competition",
-        "error",
-      );
-      return;
-    }
-
-    const created_competition = result.data;
-
-    const teams_created = await create_competition_team_records(
-      created_competition.id,
-      form_data.team_ids,
-    );
-
-    if (!teams_created) {
-      is_saving = false;
-      show_toast(
-        "Competition created but failed to register some teams. Please add teams manually.",
-        "error",
-      );
-      return;
-    }
-
-    is_saving = false;
-    show_toast("Competition created successfully!", "success");
-
-    setTimeout(() => {
-      goto("/competitions");
-    }, 1500);
-  }
-
-  function handle_cancel(): void {
-    goto("/competitions");
-  }
-
-  function show_toast(
-    message: string,
-    type: "success" | "error" | "info",
-  ): void {
-    toast_message = message;
-    toast_type = type;
-    toast_visible = true;
-  }
 </script>
 
 <svelte:head>
-  <title>Create Competition - Sports Management</title>
+    <title>Create Competition - Sports Management</title>
 </svelte:head>
 
 <div class="max-w-2xl mx-auto space-y-6">
-  {#if error_message}
-    <div
-      class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4"
-    >
-      <p class="text-red-600 dark:text-red-400">{error_message}</p>
-    </div>
-  {/if}
-  <div class="flex items-center gap-4">
-    <button
-      type="button"
-      class="p-2 rounded-lg text-accent-500 hover:bg-accent-100 dark:hover:bg-accent-700"
-      on:click={handle_cancel}
-      aria-label="Go back"
-    >
-      <svg
-        class="h-5 w-5"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-      >
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          d="M10 19l-7-7m0 0l7-7m-7 7h18"
-        />
-      </svg>
-    </button>
-    <div class="flex-1">
-      <h1 class="text-2xl font-bold text-accent-900 dark:text-accent-100">
-        Create Competition
-      </h1>
-      <p class="text-sm text-accent-600 dark:text-accent-400 mt-1">
-        Set up a new tournament, league, or championship
-      </p>
-    </div>
-  </div>
-
-  <div
-    class="bg-white dark:bg-accent-800 shadow-sm border-y border-accent-200 dark:border-accent-700 -mx-4 sm:mx-0 sm:border sm:rounded-lg"
-  >
-    <div class="border-b border-accent-200 dark:border-accent-700">
-      <nav class="flex -mb-px overflow-x-auto" aria-label="Tabs">
-        <button
-          type="button"
-          class="px-6 py-3 text-sm font-medium border-b-2 whitespace-nowrap {active_tab ===
-          'details'
-            ? 'border-primary-500 text-primary-600 dark:text-primary-400'
-            : 'border-transparent text-accent-500 hover:text-accent-700 hover:border-accent-300 dark:text-accent-400 dark:hover:text-accent-200'}"
-          on:click={() => (active_tab = "details")}
+    {#if error_message}
+        <div
+            class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4"
         >
-          Details
-        </button>
-        <button
-          type="button"
-          class="px-6 py-3 text-sm font-medium border-b-2 whitespace-nowrap {active_tab ===
-          'rules'
-            ? 'border-primary-500 text-primary-600 dark:text-primary-400'
-            : 'border-transparent text-accent-500 hover:text-accent-700 hover:border-accent-300 dark:text-accent-400 dark:hover:text-accent-200'}"
-          on:click={() => (active_tab = "rules")}
-        >
-          Rules
-        </button>
-      </nav>
-    </div>
-
-    <form
-      class="px-4 py-6 space-y-6 sm:px-6"
-      on:submit|preventDefault={handle_submit}
-    >
-      {#if active_tab === "details"}
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div class="md:col-span-2">
-            <FormField
-              label="Competition Name"
-              name="name"
-              bind:value={form_data.name}
-              placeholder="Enter competition name"
-              required={true}
-              error={errors.name || ""}
-            />
-          </div>
-
-          <SelectField
-            label="Organization"
-            name="organization_id"
-            value={form_data.organization_id}
-            options={organization_options}
-            placeholder="Select an organization..."
-            required={true}
-            is_loading={is_loading_organizations}
-            error={errors.organization_id || ""}
-            disabled={is_organization_restricted ||
-              organization_options.length === 0}
-            on:change={handle_organization_change}
-          />
-
-          {#if !is_loading_organizations && organization_options.length === 0}
-            <div
-              class="md:col-span-2 flex items-start gap-2 rounded-md border border-yellow-300 bg-yellow-50 px-3 py-2 text-yellow-900"
-            >
-              <svg
-                class="h-5 w-5 flex-shrink-0 text-yellow-600"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-                aria-hidden="true"
-                ><path
-                  fill-rule="evenodd"
-                  d="M8.257 3.099c.765-1.36 2.72-1.36 3.485 0l6.518 11.596c.75 1.336-.213 3.005-1.742 3.005H3.48c-1.53 0-2.492-1.669-1.743-3.005L8.257 3.1zM11 14a1 1 0 10-2 0 1 1 0 002 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V7a1 1 0 00-1-1z"
-                  clip-rule="evenodd"
-                /></svg
-              >
-              <div>
-                <p class="text-sm font-medium">No organizations found.</p>
-                <p class="text-sm text-yellow-800">
-                  Create an organization to continue creating a competition.
-                </p>
-              </div>
-            </div>
-          {/if}
-
-          <SelectField
-            label="Competition Format"
-            name="competition_format_id"
-            value={form_data.competition_format_id}
-            options={competition_format_options}
-            placeholder="Select a format..."
-            required={true}
-            is_loading={is_loading_formats}
-            error={errors.competition_format_id || ""}
-            disabled={competition_format_options.length === 0}
-            on:change={handle_format_change}
-          />
-
-          {#if !is_loading_formats && competition_format_options.length === 0}
-            <div
-              class="md:col-span-2 flex items-start gap-2 rounded-md border border-yellow-300 bg-yellow-50 px-3 py-2 text-yellow-900"
-            >
-              <svg
-                class="h-5 w-5 flex-shrink-0 text-yellow-600"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-                aria-hidden="true"
-                ><path
-                  fill-rule="evenodd"
-                  d="M8.257 3.099c.765-1.36 2.72-1.36 3.485 0l6.518 11.596c.75 1.336-.213 3.005-1.742 3.005H3.48c-1.53 0-2.492-1.669-1.743-3.005L8.257 3.1zM11 14a1 1 0 10-2 0 1 1 0 002 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V7a1 1 0 00-1-1z"
-                  clip-rule="evenodd"
-                /></svg
-              >
-              <div>
-                <p class="text-sm font-medium">
-                  No competition formats available.
-                </p>
-                <p class="text-sm text-yellow-800">
-                  Activate or create a competition format to proceed.
-                </p>
-              </div>
-            </div>
-          {/if}
-
-          <EnumSelectField
-            label="Status"
-            name="status"
-            bind:value={form_data.status}
-            options={status_options}
-          />
+            <p class="text-red-600 dark:text-red-400">{error_message}</p>
         </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <FormField
-            label="Start Date"
-            name="start_date"
-            type="date"
-            bind:value={form_data.start_date}
-            required={true}
-          />
-
-          <FormField
-            label="End Date"
-            name="end_date"
-            type="date"
-            bind:value={form_data.end_date}
-            required={true}
-          />
-
-          <FormField
-            label="Registration Deadline"
-            name="registration_deadline"
-            type="date"
-            bind:value={form_data.registration_deadline}
-          />
-
-          <FormField
-            label="Max Teams"
-            name="max_teams"
-            type="number"
-            bind:value={form_data.max_teams}
-            min={2}
-            required={true}
-          />
-        </div>
-
-        <div class="border-t border-accent-200 dark:border-accent-700 pt-6">
-          <h3
-            class="text-lg font-semibold text-accent-900 dark:text-accent-100 mb-4"
-          >
-            Select Teams
-          </h3>
-          {#if format_team_requirements}
-            <p
-              class="text-sm text-accent-600 dark:text-accent-400 mb-4"
-              class:text-red-600={!is_team_count_valid}
-              class:dark:text-red-400={!is_team_count_valid}
-            >
-              {format_team_requirements} •
-              {selected_team_ids.size} selected
-            </p>
-          {/if}
-
-          {#if !form_data.organization_id}
-            <div
-              class="flex items-start gap-2 rounded-md border border-accent-300 bg-accent-50 dark:bg-accent-800 dark:border-accent-600 px-3 py-3 text-accent-700 dark:text-accent-300"
-            >
-              <svg
-                class="h-5 w-5 flex-shrink-0 text-accent-400 mt-0.5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-              <p class="text-sm">
-                Select an organisation above to load available teams.
-              </p>
-            </div>
-          {:else if is_loading_teams}
-            <div class="text-center py-8 text-accent-500">Loading teams...</div>
-          {:else if team_options.length === 0}
-            <div
-              class="flex items-start gap-2 rounded-md border border-yellow-300 bg-yellow-50 px-3 py-2 text-yellow-900"
-            >
-              <svg
-                class="h-5 w-5 flex-shrink-0 text-yellow-600"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-                aria-hidden="true"
-                ><path
-                  fill-rule="evenodd"
-                  d="M8.257 3.099c.765-1.36 2.72-1.36 3.485 0l6.518 11.596c.75 1.336-.213 3.005-1.742 3.005H3.48c-1.53 0-2.492-1.669-1.743-3.005L8.257 3.1zM11 14a1 1 0 10-2 0 1 1 0 002 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V7a1 1 0 00-1-1z"
-                  clip-rule="evenodd"
-                /></svg
-              >
-              <div>
-                <p class="text-sm font-medium">
-                  No teams available for the selected organisation.
-                </p>
-                <p class="text-sm text-yellow-800">
-                  Create teams under the organisation to add them here.
-                </p>
-              </div>
-            </div>
-          {:else}
-            <div
-              class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 max-h-64 overflow-y-auto p-4 bg-accent-50 dark:bg-accent-900/30 rounded-lg"
-            >
-              {#each team_options as team_option}
-                <label
-                  class="flex items-center gap-2 p-2 rounded cursor-pointer hover:bg-accent-100 dark:hover:bg-accent-700 transition-colors"
-                >
-                  <input
-                    type="checkbox"
-                    checked={selected_team_ids.has(team_option.value)}
-                    on:change={() => handle_team_toggle(team_option.value)}
-                    class="w-4 h-4 text-primary-600 rounded border-accent-300"
-                  />
-                  <span class="text-sm text-accent-700 dark:text-accent-300">
-                    {team_option.label}
-                  </span>
-                </label>
-              {/each}
-            </div>
-          {/if}
-        </div>
-
-        <div class="border-t border-accent-200 dark:border-accent-700 pt-6">
-          <label class="flex items-center gap-3 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={form_data.allow_auto_squad_submission}
-              on:change={(e) =>
-                handle_auto_squad_submission_toggle(e.currentTarget.checked)}
-              class="w-5 h-5 text-primary-600 rounded border-accent-300"
-            />
-            <div>
-              <span
-                class="text-sm font-medium text-accent-900 dark:text-accent-100"
-              >
-                Allow auto squad submission
-              </span>
-              <p class="text-xs text-accent-500">
-                When enabled, starting a live game will automatically generate
-                squads from team rosters. When disabled, teams must submit their
-                squads before starting a game.
-              </p>
-            </div>
-          </label>
-        </div>
-
-        {#if form_data.allow_auto_squad_submission}
-          <div class="pl-8 pt-4 space-y-4">
-            <div>
-              <label
-                class="flex items-center gap-1 text-sm font-medium text-accent-900 dark:text-accent-100 mb-1"
-                for="squad_generation_strategy"
-              >
-                Squad Generation Strategy
-                <InfoTooltip
-                  tooltip_text="How to select players for auto-generated squads: 'First Available' picks the first X team members alphabetically. 'Previous Match' uses the team's squad from their last match in this competition."
-                  position="right"
-                />
-              </label>
-              <select
-                id="squad_generation_strategy"
-                bind:value={form_data.squad_generation_strategy}
-                class="block w-full sm:w-64 px-3 py-2 border border-accent-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 dark:bg-accent-800 dark:border-accent-600 dark:text-white"
-              >
-                <option value="first_available">First Available Players</option>
-                <option value="previous_match">Previous Match Squad</option>
-              </select>
-              <p class="text-xs text-accent-500 mt-1">
-                {#if form_data.squad_generation_strategy === "first_available"}
-                  Selects the first X players from the team roster
-                  alphabetically
-                {:else}
-                  Uses the team's squad from their previous match in this
-                  competition. Falls back to first available if no previous
-                  match exists.
-                {/if}
-              </p>
-            </div>
-
-            <div>
-              <label
-                class="flex items-center gap-1 text-sm font-medium text-accent-900 dark:text-accent-100 mb-1"
-                for="lineup_submission_deadline_hours"
-              >
-                Lineup Submission Deadline (hours before match)
-                <InfoTooltip
-                  tooltip_text="How many hours before match start time teams must submit their lineups. When set > 0, auto-submission must remain enabled to prevent soft locks where no lineup can be submitted after deadline."
-                  position="right"
-                />
-              </label>
-              <input
-                id="lineup_submission_deadline_hours"
-                type="number"
-                bind:value={form_data.lineup_submission_deadline_hours}
-                min={0}
-                max={72}
-                class="block w-full sm:w-32 px-3 py-2 border border-accent-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 dark:bg-accent-800 dark:border-accent-600 dark:text-white"
-              />
-              <p class="text-xs text-accent-500 mt-1">
-                Teams must submit lineups at least {form_data.lineup_submission_deadline_hours}
-                hour{form_data.lineup_submission_deadline_hours !== 1
-                  ? "s"
-                  : ""} before match time.
-                {#if form_data.lineup_submission_deadline_hours > 0}
-                  <span class="text-violet-600 dark:text-violet-400">
-                    Auto-submission is required when deadline is set.
-                  </span>
-                {/if}
-              </p>
-            </div>
-          </div>
-        {/if}
-
-        <div class="pt-4">
-          <label class="flex items-center gap-3 cursor-pointer">
-            <input
-              type="checkbox"
-              bind:checked={form_data.allow_auto_fixture_details_setup}
-              class="w-5 h-5 text-primary-600 rounded border-accent-300"
-            />
-            <div>
-              <span
-                class="text-sm font-medium text-accent-900 dark:text-accent-100"
-              >
-                Allow auto fixture details setup
-              </span>
-              <p class="text-xs text-accent-500">
-                When enabled, starting a live game without fixture details will
-                redirect to auto-create them with pre-filled officials and
-                jersey colors.
-              </p>
-            </div>
-          </label>
-        </div>
-      {:else if active_tab === "rules"}
-        <div class="space-y-6">
-          <div
-            class="border-b border-accent-200 dark:border-accent-700 pb-4 mb-4"
-          >
-            <h2
-              class="text-lg font-medium text-accent-900 dark:text-accent-100"
-            >
-              Sport Rules
-            </h2>
-            <p class="text-sm text-accent-600 dark:text-accent-400 mt-1">
-              Customize competition-specific rules inherited from the sport
-            </p>
-          </div>
-          {#if form_data.organization_id && selected_sport}
-            <SportRulesCustomizer
-              sport={selected_sport}
-              bind:rule_overrides={form_data.rule_overrides}
-            />
-          {:else}
-            <div
-              class="rounded-lg border border-accent-200 dark:border-accent-700 p-4"
-            >
-              <p class="text-sm text-accent-600 dark:text-accent-400">
-                Select an organization and sport to customize competition rules.
-              </p>
-            </div>
-          {/if}
-        </div>
-      {/if}
-
-      <div class="flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
-        <button
-          type="button"
-          class="btn btn-outline"
-          on:click={handle_cancel}
-          disabled={is_saving}
-        >
-          Cancel
-        </button>
-        <button
-          type="submit"
-          class="btn btn-primary-action"
-          disabled={is_saving}
-        >
-          {#if is_saving}
-            <span class="flex items-center justify-center">
-              <span
-                class="animate-spin rounded-full h-4 w-4 border-2 border-white/20 border-t-white mr-2"
-              ></span>
-              Saving...
-            </span>
-          {:else}
-            Create Competition
-          {/if}
-        </button>
-      </div>
-    </form>
-  </div>
+    {/if}
+    <CompetitionCreateEditor
+        bind:form_data
+        {organization_options}
+        {competition_format_options}
+        {team_options}
+        {selected_team_ids}
+        {selected_sport}
+        {is_loading_organizations}
+        {is_loading_formats}
+        {is_loading_teams}
+        {is_organization_restricted}
+        {errors}
+        {status_options}
+        {format_team_requirements}
+        {is_team_count_valid}
+        {is_saving}
+        on_cancel={handle_cancel}
+        on_organization_change={handle_organization_change}
+        on_format_change={handle_format_change}
+        on_toggle_team={handle_team_toggle}
+        on_toggle_auto_squad_submission={handle_auto_squad_submission_toggle}
+        on_submit={handle_submit}
+    />
 </div>
 
 <Toast
-  message={toast_message}
-  type={toast_type}
-  is_visible={toast_visible}
-  on:dismiss={() => (toast_visible = false)}
+    message={toast_message}
+    type={toast_type}
+    is_visible={toast_visible}
+    on:dismiss={() => (toast_visible = false)}
 />

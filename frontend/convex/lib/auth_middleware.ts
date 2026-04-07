@@ -1,11 +1,11 @@
 import type { Id } from "../_generated/dataModel";
-import {
-  SHARED_ROLE_PERMISSIONS,
-  SHARED_ENTITY_CATEGORY_MAP,
-} from "../shared_permission_definitions";
 import type {
-  SharedUserRole,
   SharedDataCategory,
+  SharedUserRole,
+} from "../shared_permission_definitions";
+import {
+  SHARED_ENTITY_CATEGORY_MAP,
+  SHARED_ROLE_PERMISSIONS,
 } from "../shared_permission_definitions";
 
 export type DataAction = "create" | "read" | "update" | "delete";

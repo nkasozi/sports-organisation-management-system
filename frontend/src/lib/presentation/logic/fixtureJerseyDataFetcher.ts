@@ -1,10 +1,11 @@
+import { get } from "svelte/store";
+
+import type { BaseEntity, FieldMetadata } from "../../core/entities/BaseEntity";
 import {
   FIXTURE_STATUS,
   WILDCARD_SCOPE,
 } from "../../core/entities/StatusConstants";
-import type { BaseEntity, FieldMetadata } from "../../core/entities/BaseEntity";
 import { get_use_cases_for_entity_type } from "../../infrastructure/registry/entityUseCasesRegistry";
-import { get } from "svelte/store";
 import { auth_store } from "../stores/auth";
 import { fetch_entities_for_type } from "./dynamicFormDataLoader";
 

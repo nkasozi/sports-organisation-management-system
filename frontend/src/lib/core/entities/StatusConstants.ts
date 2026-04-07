@@ -1,14 +1,14 @@
+import type { UserRole } from "../interfaces/ports/external/iam/AuthenticationPort";
+import type { EntityStatus } from "./BaseEntity";
+import type { FormatType } from "./CompetitionFormatTypes";
+import type { StageType } from "./CompetitionStage";
+import type { FixtureDetailsSetupConfirmationStatus } from "./FixtureDetailsSetup";
+import type { LineupStatus } from "./FixtureLineup";
 import type { FixtureStatus } from "./FixtureTypes";
 import type { GamePeriod } from "./FixtureTypes";
-import type { EntityStatus } from "./BaseEntity";
-import type { StageType } from "./CompetitionStage";
 import type { LiveGameStatus } from "./LiveGameLog";
 import type { PlayerTeamMembershipStatus } from "./PlayerTeamMembership";
-import type { LineupStatus } from "./FixtureLineup";
 import type { PlayerTeamTransferStatus } from "./PlayerTeamTransferHistory";
-import type { FixtureDetailsSetupConfirmationStatus } from "./FixtureDetailsSetup";
-import type { FormatType } from "./CompetitionFormatTypes";
-import type { UserRole } from "../interfaces/ports/external/iam/AuthenticationPort";
 
 export const FIXTURE_STATUS: Record<string, FixtureStatus> = {
   SCHEDULED: "scheduled",

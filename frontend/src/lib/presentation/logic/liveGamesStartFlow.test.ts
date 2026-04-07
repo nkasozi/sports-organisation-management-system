@@ -1,7 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+
 import type { Fixture } from "$lib/core/entities/Fixture";
 import type { PreFlightCheck } from "$lib/core/services/fixtureStartChecks";
 import { create_success_result } from "$lib/core/types/Result";
+
 import { start_live_game_fixture } from "./liveGamesStartFlow";
 
 const {
@@ -39,7 +41,10 @@ function create_fixture(overrides: Partial<Fixture> = {}): Fixture {
   } as Fixture;
 }
 
-function create_passed_check(check_name: string, message: string): PreFlightCheck {
+function create_passed_check(
+  check_name: string,
+  message: string,
+): PreFlightCheck {
   return {
     check_name,
     status: "passed",
@@ -67,18 +72,19 @@ describe("liveGamesStartFlow", () => {
     );
 
     await start_live_game_fixture(create_fixture(), {
-      fixture_details_setup_use_cases: {},
-      fixture_lineup_use_cases: {},
-      membership_use_cases: {},
-      player_use_cases: {},
-      player_position_use_cases: {},
-      team_use_cases: {},
-      sport_use_cases: {},
-      competition_use_cases: {},
-      organization_use_cases: {},
-      jersey_color_use_cases: {},
-      official_use_cases: {},
-      game_official_role_use_cases: {},
+      fixture_details_setup_use_cases: {} as never,
+      fixture_lineup_use_cases: {} as never,
+      membership_use_cases: {} as never,
+      player_use_cases: {} as never,
+      player_position_use_cases: {} as never,
+      fixture_use_cases: {} as never,
+      team_use_cases: {} as never,
+      sport_use_cases: {} as never,
+      competition_use_cases: {} as never,
+      organization_use_cases: {} as never,
+      jersey_color_use_cases: {} as never,
+      official_use_cases: {} as never,
+      game_official_role_use_cases: {} as never,
       goto,
       get_current_role: () => "organisation_admin",
       can_access_route: () => false,
@@ -100,18 +106,19 @@ describe("liveGamesStartFlow", () => {
     const set_is_starting = vi.fn();
 
     await start_live_game_fixture(create_fixture({ id: "" }), {
-      fixture_details_setup_use_cases: {},
-      fixture_lineup_use_cases: {},
-      membership_use_cases: {},
-      player_use_cases: {},
-      player_position_use_cases: {},
-      team_use_cases: {},
-      sport_use_cases: {},
-      competition_use_cases: {},
-      organization_use_cases: {},
-      jersey_color_use_cases: {},
-      official_use_cases: {},
-      game_official_role_use_cases: {},
+      fixture_details_setup_use_cases: {} as never,
+      fixture_lineup_use_cases: {} as never,
+      membership_use_cases: {} as never,
+      player_use_cases: {} as never,
+      player_position_use_cases: {} as never,
+      fixture_use_cases: {} as never,
+      team_use_cases: {} as never,
+      sport_use_cases: {} as never,
+      competition_use_cases: {} as never,
+      organization_use_cases: {} as never,
+      jersey_color_use_cases: {} as never,
+      official_use_cases: {} as never,
+      game_official_role_use_cases: {} as never,
       goto,
       get_current_role: () => "organisation_admin",
       can_access_route: () => false,

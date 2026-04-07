@@ -1,14 +1,15 @@
-import type { CompetitionStage } from "$lib/core/entities/CompetitionStage";
-import type { Fixture } from "$lib/core/entities/Fixture";
-import type { Team } from "$lib/core/entities/Team";
 import {
+  DEFAULT_POINTS_CONFIG,
   type PointsConfig,
   type TieBreaker,
-  DEFAULT_POINTS_CONFIG,
 } from "$lib/core/entities/CompetitionFormat";
+import type { CompetitionStage } from "$lib/core/entities/CompetitionStage";
+import type { Fixture } from "$lib/core/entities/Fixture";
 import { FIXTURE_STATUS, STAGE_TYPE } from "$lib/core/entities/StatusConstants";
-import { sort_standings_by_tiebreakers } from "./competitionStandingsTiebreakers";
+import type { Team } from "$lib/core/entities/Team";
+
 import { build_team_form_map } from "./competitionStandingsForm";
+import { sort_standings_by_tiebreakers } from "./competitionStandingsTiebreakers";
 import { infer_group_stage_team_groups } from "./groupStageInference";
 
 export type FormResult = "W" | "D" | "L";

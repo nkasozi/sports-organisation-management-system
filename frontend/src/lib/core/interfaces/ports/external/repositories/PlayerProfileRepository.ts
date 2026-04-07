@@ -1,15 +1,15 @@
-import type { FilterableRepository, QueryOptions } from "./Repository";
-import type {
-  PaginatedAsyncResult,
-  AsyncResult,
-} from "../../../../types/Result";
-import type {
-  PlayerProfile,
-  CreatePlayerProfileInput,
-  UpdatePlayerProfileInput,
-  ProfileVisibility,
-} from "../../../../entities/PlayerProfile";
 import type { EntityStatus } from "../../../../entities/BaseEntity";
+import type {
+  CreatePlayerProfileInput,
+  PlayerProfile,
+  ProfileVisibility,
+  UpdatePlayerProfileInput,
+} from "../../../../entities/PlayerProfile";
+import type {
+  AsyncResult,
+  PaginatedAsyncResult,
+} from "../../../../types/Result";
+import type { FilterableRepository, QueryOptions } from "./Repository";
 
 export interface PlayerProfileFilter {
   player_id?: string;

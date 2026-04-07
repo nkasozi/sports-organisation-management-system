@@ -1,10 +1,10 @@
-import type { FilterableRepository, QueryOptions } from "./Repository";
-import type { PaginatedAsyncResult } from "../../../../types/Result";
 import type {
-  Venue,
   CreateVenueInput,
   UpdateVenueInput,
+  Venue,
 } from "../../../../entities/Venue";
+import type { PaginatedAsyncResult } from "../../../../types/Result";
+import type { FilterableRepository, QueryOptions } from "./Repository";
 
 export interface VenueFilter {
   organization_id?: string;

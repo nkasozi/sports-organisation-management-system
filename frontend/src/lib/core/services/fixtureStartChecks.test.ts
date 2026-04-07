@@ -1,11 +1,10 @@
-import { describe, it, expect } from "vitest";
-import {
-  check_fixture_can_start,
-  auto_generate_lineups_if_possible,
-  type FixtureCanStartResult,
-  type LineupGenerationResult,
-} from "./fixtureStartChecks";
+import { describe, expect, it } from "vitest";
+
 import { is_success } from "../types/Result";
+import {
+  auto_generate_lineups_if_possible,
+  check_fixture_can_start,
+} from "./fixtureStartChecks";
 
 describe("fixtureStartChecks", () => {
   describe("check_fixture_can_start", () => {

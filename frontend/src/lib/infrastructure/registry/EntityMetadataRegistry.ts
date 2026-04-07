@@ -1,66 +1,66 @@
 import type { EntityMetadata } from "../../core/entities/BaseEntity";
-import { register_team_staff_metadata } from "./teamStaffMetadata";
-import { register_venue_metadata } from "./venueMetadata";
-import { register_player_metadata } from "./playerMetadata";
-import { register_official_metadata } from "./officialMetadata";
-import { register_fixture_metadata } from "./fixtureMetadata";
-import { register_game_event_log_metadata } from "./gameEventLogMetadata";
-import { register_live_game_log_metadata } from "./liveGameLogMetadata";
-import {
-  register_organization_metadata,
-  register_competition_metadata,
-} from "./organizationCompetitionMetadata";
-import {
-  register_player_team_membership_metadata,
-  register_player_team_transfer_history_metadata,
-} from "./playerMembershipTransferMetadata";
-import {
-  register_player_position_metadata,
-  register_qualification_metadata,
-} from "./qualificationPositionMetadata";
-import {
-  register_sport_metadata,
-  register_game_event_type_metadata,
-} from "./sportEventTypeMetadata";
-import { register_team_metadata } from "./teamMetadata";
 import {
   register_competition_constraint_metadata,
   register_competition_format_metadata,
 } from "./constraintFormatMetadata";
 import {
-  register_game_official_role_metadata,
-  register_team_staff_role_metadata,
-} from "./officialRoleStaffRoleMetadata";
-import {
-  register_game_assignment_metadata,
-  register_active_game_metadata,
-} from "./gameAssignmentActiveMetadata";
-import {
-  register_fixture_lineup_metadata,
   register_fixture_details_setup_metadata,
+  register_fixture_lineup_metadata,
 } from "./fixtureLineupDetailsMetadata";
+import { register_fixture_metadata } from "./fixtureMetadata";
 import {
-  register_competition_stage_metadata,
-  register_identification_type_metadata,
-  register_gender_metadata,
-} from "./referenceEntityMetadata";
+  register_active_game_metadata,
+  register_game_assignment_metadata,
+} from "./gameAssignmentActiveMetadata";
+import { register_game_event_log_metadata } from "./gameEventLogMetadata";
 import {
   register_identification_metadata,
   register_jersey_color_metadata,
 } from "./identificationJerseyMetadata";
-import { register_system_user_metadata } from "./systemUserMetadata";
+import { register_live_game_log_metadata } from "./liveGameLogMetadata";
+import { register_official_metadata } from "./officialMetadata";
+import {
+  register_game_official_role_metadata,
+  register_team_staff_role_metadata,
+} from "./officialRoleStaffRoleMetadata";
+import {
+  register_official_associated_team_metadata,
+  register_official_performance_rating_metadata,
+} from "./officialTeamPerformanceMetadata";
+import {
+  register_competition_metadata,
+  register_organization_metadata,
+} from "./organizationCompetitionMetadata";
+import {
+  register_player_team_membership_metadata,
+  register_player_team_transfer_history_metadata,
+} from "./playerMembershipTransferMetadata";
+import { register_player_metadata } from "./playerMetadata";
+import {
+  register_audit_log_metadata,
+  register_profile_link_metadata,
+} from "./profileLinkAuditMetadata";
 import {
   register_player_profile_metadata,
   register_team_profile_metadata,
 } from "./profileMetadata";
 import {
-  register_profile_link_metadata,
-  register_audit_log_metadata,
-} from "./profileLinkAuditMetadata";
+  register_player_position_metadata,
+  register_qualification_metadata,
+} from "./qualificationPositionMetadata";
 import {
-  register_official_associated_team_metadata,
-  register_official_performance_rating_metadata,
-} from "./officialTeamPerformanceMetadata";
+  register_competition_stage_metadata,
+  register_gender_metadata,
+  register_identification_type_metadata,
+} from "./referenceEntityMetadata";
+import {
+  register_game_event_type_metadata,
+  register_sport_metadata,
+} from "./sportEventTypeMetadata";
+import { register_system_user_metadata } from "./systemUserMetadata";
+import { register_team_metadata } from "./teamMetadata";
+import { register_team_staff_metadata } from "./teamStaffMetadata";
+import { register_venue_metadata } from "./venueMetadata";
 
 class EntityMetadataRegistry {
   private metadata_map: Map<string, EntityMetadata> = new Map();

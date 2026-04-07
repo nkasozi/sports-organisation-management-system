@@ -1,17 +1,18 @@
 <script lang="ts">
   import { createEventDispatcher } from "svelte";
-  import { conflict_store } from "$lib/presentation/stores/conflictStore";
-  import {
-    pending_conflicts,
-    current_conflict,
-    conflict_progress,
-    show_merge_screen,
-  } from "$lib/presentation/stores/conflictStoreDerived";
+
   import type {
     ConflictRecord,
     ConflictResolutionAction,
     FieldDifference,
   } from "$lib/infrastructure/sync/conflictTypes";
+  import { conflict_store } from "$lib/presentation/stores/conflictStore";
+  import {
+    conflict_progress,
+    current_conflict,
+    pending_conflicts,
+    show_merge_screen,
+  } from "$lib/presentation/stores/conflictStoreDerived";
 
   const dispatch = createEventDispatcher<{
     resolve: {

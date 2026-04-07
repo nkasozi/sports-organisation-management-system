@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onDestroy } from "svelte";
+
   import { sync_store } from "$lib/presentation/stores/syncStore";
   import {
     is_syncing,

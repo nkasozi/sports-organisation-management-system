@@ -1,11 +1,12 @@
 import { get_app_settings_storage } from "$lib/infrastructure/container";
+import { app_status_store } from "$lib/presentation/stores/appStatus";
+import { first_time_setup_store } from "$lib/presentation/stores/firstTimeSetup";
+
 import {
   seed_from_convex_or_local,
   type SeedingStrategy,
   type SeedResult,
 } from "./seedingService";
-import { first_time_setup_store } from "$lib/presentation/stores/firstTimeSetup";
-import { app_status_store } from "$lib/presentation/stores/appStatus";
 
 type InitResult = "success" | "redirect_to_login";
 const FIRST_TIME_DETECTION_KEY = "sports_org_app_initialized";

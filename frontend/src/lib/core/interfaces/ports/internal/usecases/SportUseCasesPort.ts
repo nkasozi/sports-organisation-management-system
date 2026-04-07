@@ -1,6 +1,6 @@
 import type {
-  Sport,
   CreateSportInput,
+  Sport,
   UpdateSportInput,
 } from "../../../../entities/Sport";
 import type { AsyncResult } from "../../../../types/Result";

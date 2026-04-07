@@ -1,9 +1,5 @@
 import type { IdentificationType } from "../../../core/entities/IdentificationType";
-import {
-  SEED_IDENTIFICATION_TYPE_IDS,
-  SEED_ORGANIZATION_IDS,
-  generate_current_timestamp,
-} from "./seedIds";
+import { generate_current_timestamp } from "./seedIds";
 
 export function create_seed_identification_types(
   organization_id: string,

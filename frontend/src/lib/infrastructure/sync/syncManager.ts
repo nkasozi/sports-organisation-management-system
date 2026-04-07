@@ -1,4 +1,6 @@
 import type { SyncDirection, SyncHints } from "$lib/core/interfaces/ports";
+
+import { sync_all_tables } from "./syncOrchestrator";
 import type {
   ConvexClient,
   SyncConfig,
@@ -7,7 +9,6 @@ import type {
   SyncStatus,
 } from "./syncTypes";
 import { TABLE_NAMES } from "./syncTypes";
-import { sync_all_tables } from "./syncOrchestrator";
 
 export class ConvexSyncManager {
   private convex_client: ConvexClient | null = null;

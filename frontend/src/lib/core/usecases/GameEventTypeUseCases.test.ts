@@ -1,10 +1,11 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { create_game_event_type_use_cases } from "./GameEventTypeUseCases";
-import type { GameEventTypeRepository } from "../interfaces/ports";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
 import type {
-  GameEventType,
   CreateGameEventTypeInput,
+  GameEventType,
 } from "../entities/GameEventType";
+import type { GameEventTypeRepository } from "../interfaces/ports";
+import { create_game_event_type_use_cases } from "./GameEventTypeUseCases";
 
 function create_mock_repository(): GameEventTypeRepository {
   return {

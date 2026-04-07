@@ -5,10 +5,10 @@ import type {
   Result,
 } from "$lib/core/types/Result";
 import {
-  create_success_result,
   create_failure_result,
+  create_success_result,
 } from "$lib/core/types/Result";
-import { get_entity_display_name } from "./entityDisplayNames";
+
 import { wrap_use_cases_with_events } from "./entityEventWrapper";
 import {
   get_audit_log_use_cases,

@@ -1,40 +1,36 @@
 <script lang="ts">
     import { onMount } from "svelte";
     import { get } from "svelte/store";
-    import { auth_store } from "$lib/presentation/stores/auth";
-    import { ensure_auth_profile } from "$lib/presentation/logic/authGuard";
-    import {
-        get_scope_value,
-        ANY_VALUE,
-        type UserScopeProfile,
-    } from "$lib/core/interfaces/ports";
-    import {
-        build_leaderboard_entries,
-        build_official_name_map,
-        build_fixture_label_map,
-        filter_ratings_by_organization,
-        filter_ratings_by_official,
-        build_per_fixture_breakdown,
-        type OfficialLeaderboardEntry,
-        type PerFixtureRating,
-    } from "$lib/presentation/logic/officialLeaderboardLogic";
-    import type { Organization } from "$lib/core/entities/Organization";
+
+    import type { CompetitionStage } from "$lib/core/entities/CompetitionStage";
+    import type { Fixture } from "$lib/core/entities/Fixture";
     import type { Official } from "$lib/core/entities/Official";
     import type { OfficialPerformanceRating } from "$lib/core/entities/OfficialPerformanceRating";
-    import type { Fixture } from "$lib/core/entities/Fixture";
-    import type { CompetitionStage } from "$lib/core/entities/CompetitionStage";
-    import OfficialLeaderboardTable from "$lib/presentation/components/OfficialLeaderboardTable.svelte";
+    import type { Organization } from "$lib/core/entities/Organization";
+    import type { UserScopeProfile } from "$lib/core/interfaces/ports";
     import OfficialLeaderboardBreakdownPanel from "$lib/presentation/components/OfficialLeaderboardBreakdownPanel.svelte";
-    import {
-        get_competition_stage_use_cases,
-        get_fixture_use_cases,
-        get_official_performance_rating_use_cases,
-        get_official_use_cases,
-        get_organization_use_cases,
-    } from "$lib/infrastructure/registry/useCaseFactories";
+    import OfficialLeaderboardTable from "$lib/presentation/components/OfficialLeaderboardTable.svelte";
+    import { ensure_auth_profile } from "$lib/presentation/logic/authGuard";
+    import type {
+        OfficialLeaderboardEntry,
+        PerFixtureRating,
+    } from "$lib/presentation/logic/officialLeaderboardLogic";
+    import { auth_store } from "$lib/presentation/stores/auth";
 
-    let is_loading = true;
-    let error_message = "";
+    import { official_leaderboard_page_dependencies } from "../../lib/presentation/logic/officialLeaderboardPageDependencies";
+    import {
+        load_official_leaderboard_page_state,
+        type OfficialLeaderboardPageData,
+    } from "../../lib/presentation/logic/officialLeaderboardPageLoad";
+    import {
+        can_user_change_official_leaderboard_organizations,
+        get_selected_official_leaderboard_organization_name,
+        rebuild_official_leaderboard_view,
+        select_official_leaderboard_entry,
+    } from "../../lib/presentation/logic/officialLeaderboardPageState";
+
+    let is_loading = true,
+        error_message = "";
     let organizations: Organization[] = [];
     let selected_organization_id = "";
     let leaderboard_entries: OfficialLeaderboardEntry[] = [];
@@ -46,29 +42,11 @@
     let all_fixtures: Fixture[] = [];
     let all_stages: CompetitionStage[] = [];
 
-    function can_user_change_organizations(): boolean {
-        const profile = get(auth_store)
-            .current_profile as UserScopeProfile | null;
-        if (!profile) return false;
-        return (
-            profile.organization_id === ANY_VALUE || !profile.organization_id
-        );
-    }
-
     function get_selected_org_name(): string {
-        return (
-            organizations.find((o) => o.id === selected_organization_id)
-                ?.name ?? "Organization"
+        return get_selected_official_leaderboard_organization_name(
+            organizations,
+            selected_organization_id,
         );
-    }
-
-    function resolve_organizations(
-        all_orgs: Organization[],
-        profile: UserScopeProfile | null,
-    ): Organization[] {
-        const org_scope = get_scope_value(profile, "organization_id");
-        if (!org_scope) return all_orgs;
-        return all_orgs.filter((o) => o.id === org_scope);
     }
 
     onMount(async () => {
@@ -78,112 +56,61 @@
             is_loading = false;
             return;
         }
-        const profile = get(auth_store)
-            .current_profile as UserScopeProfile | null;
-        user_official_id = get_scope_value(profile, "official_id");
         await load_all_data();
     });
 
     async function load_all_data(): Promise<void> {
         is_loading = true;
         error_message = "";
-        const [
-            org_result,
-            ratings_result,
-            officials_result,
-            fixtures_result,
-            stages_result,
-        ] = await Promise.all([
-            get_organization_use_cases().list(),
-            get_official_performance_rating_use_cases().list(undefined, {
-                page_size: 1000,
-            }),
-            get_official_use_cases().list(undefined, { page_size: 1000 }),
-            get_fixture_use_cases().list(undefined, { page_size: 1000 }),
-            get_competition_stage_use_cases().list(undefined, {
-                page_size: 1000,
-            }),
-        ]);
-
-        const data_load_failed =
-            !ratings_result.success ||
-            !officials_result.success ||
-            !fixtures_result.success ||
-            !stages_result.success;
-        if (data_load_failed) {
-            error_message =
-                "Failed to load leaderboard data. Please try again.";
-            console.error("[OfficialLeaderboard] Data load failed", {
-                event: "official_leaderboard_load_failed",
-                ratings_ok: ratings_result.success,
-                officials_ok: officials_result.success,
-                fixtures_ok: fixtures_result.success,
-                stages_ok: stages_result.success,
-            });
+        const profile = get(auth_store)
+            .current_profile as UserScopeProfile | null;
+        const load_result = await load_official_leaderboard_page_state({
+            profile,
+            dependencies: official_leaderboard_page_dependencies,
+        });
+        if (!load_result.success) {
+            error_message = load_result.error_message;
             is_loading = false;
             return;
         }
-        const profile = get(auth_store)
-            .current_profile as UserScopeProfile | null;
-        organizations = resolve_organizations(
-            org_result.success ? org_result.data.items : [],
-            profile,
-        );
-        selected_organization_id = organizations[0]?.id ?? "";
-        all_ratings = ratings_result.data?.items ?? [];
-        all_officials = officials_result.data?.items ?? [];
-        all_fixtures = fixtures_result.data?.items ?? [];
-        all_stages = stages_result.data?.items ?? [];
-        rebuild_entries();
+
+        apply_page_state(load_result.data);
         is_loading = false;
     }
 
+    function apply_page_state(page_state: OfficialLeaderboardPageData): void {
+        organizations = page_state.organizations;
+        selected_organization_id = page_state.selected_organization_id;
+        leaderboard_entries = page_state.leaderboard_entries;
+        selected_entry = page_state.selected_entry;
+        selected_breakdown = page_state.selected_breakdown;
+        user_official_id = page_state.user_official_id;
+        all_ratings = page_state.all_ratings;
+        all_officials = page_state.all_officials;
+        all_fixtures = page_state.all_fixtures;
+        all_stages = page_state.all_stages;
+    }
+
     function rebuild_entries(): void {
-        const org_filtered = filter_ratings_by_organization(
-            all_ratings,
-            selected_organization_id,
-        );
-        const filtered = user_official_id
-            ? filter_ratings_by_official(org_filtered, user_official_id)
-            : org_filtered;
-        const name_map = build_official_name_map(all_officials);
-        leaderboard_entries = build_leaderboard_entries(
-            filtered,
-            all_fixtures,
-            all_stages,
-            name_map,
-        );
-        if (user_official_id && leaderboard_entries.length > 0) {
-            select_official(leaderboard_entries[0]);
-        }
-        console.info("[OfficialLeaderboard] Entries rebuilt", {
-            event: "official_leaderboard_rebuilt",
-            entry_count: leaderboard_entries.length,
-            organization_id: selected_organization_id,
-        });
+        ({ leaderboard_entries, selected_entry, selected_breakdown } =
+            rebuild_official_leaderboard_view({
+                all_ratings,
+                all_officials,
+                all_fixtures,
+                all_stages,
+                selected_organization_id,
+                user_official_id,
+            }));
     }
 
     function select_official(entry: OfficialLeaderboardEntry): void {
-        const org_filtered = filter_ratings_by_organization(
-            all_ratings,
-            selected_organization_id,
-        );
-        const official_ratings = filter_ratings_by_official(
-            org_filtered,
-            entry.official_id,
-        );
-        const fixture_label_map = build_fixture_label_map(all_fixtures);
-        selected_breakdown = build_per_fixture_breakdown(
-            official_ratings,
-            fixture_label_map,
-            all_fixtures,
-        );
-        selected_entry = entry;
-        console.info("[OfficialLeaderboard] Official selected", {
-            event: "official_leaderboard_entry_selected",
-            official_id: entry.official_id,
-            rating_count: selected_breakdown.length,
-        });
+        ({ selected_entry, selected_breakdown } =
+            select_official_leaderboard_entry({
+                all_ratings,
+                all_fixtures,
+                selected_organization_id,
+                entry,
+            }));
     }
 
     function close_breakdown(): void {
@@ -217,7 +144,7 @@
             </p>
         </div>
         <div class="shrink-0">
-            {#if can_user_change_organizations()}
+            {#if can_user_change_official_leaderboard_organizations(get(auth_store).current_profile as UserScopeProfile | null)}
                 <select
                     bind:value={selected_organization_id}
                     onchange={handle_organization_change}

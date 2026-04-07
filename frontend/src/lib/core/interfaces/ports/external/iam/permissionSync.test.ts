@@ -1,17 +1,18 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
+
 import {
-  SHARED_ROLE_PERMISSIONS,
-  SHARED_ENTITY_CATEGORY_MAP,
-  SHARED_ENTITY_CATEGORIES,
-  ALL_ROLES,
   ALL_CATEGORIES,
+  ALL_ROLES,
+  SHARED_ENTITY_CATEGORIES,
+  SHARED_ENTITY_CATEGORY_MAP,
+  SHARED_ROLE_PERMISSIONS,
   type SharedEntityType,
 } from "$convex/shared_permission_definitions";
-import {
-  get_role_permissions,
-  get_entity_data_category,
-} from "$lib/core/interfaces/ports/external/iam/AuthorizationPort";
 import type { UserRole } from "$lib/core/interfaces/ports";
+import {
+  get_entity_data_category,
+  get_role_permissions,
+} from "$lib/core/interfaces/ports/external/iam/AuthorizationPort";
 
 describe("permission single source of truth", () => {
   describe("get_entity_data_category reads SHARED_ENTITY_CATEGORY_MAP directly", () => {

@@ -1,5 +1,5 @@
-import type { GenericEntityUseCases } from "$lib/infrastructure/registry/entityUseCasesRegistry";
 import type { BaseEntity } from "$lib/core/entities/BaseEntity";
+import type { GenericEntityUseCases } from "$lib/infrastructure/registry/entityUseCasesRegistry";
 
 export interface NameResolutionResult {
   success: boolean;

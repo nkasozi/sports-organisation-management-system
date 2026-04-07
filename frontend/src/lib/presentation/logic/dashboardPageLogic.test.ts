@@ -1,12 +1,13 @@
-import { describe, it, expect, vi } from "vitest";
-import {
-  load_dashboard_data,
-  get_competition_initials,
-  split_organization_name,
-  get_status_class,
-  format_fixture_date,
-} from "./dashboardPageLogic";
+import { describe, expect, it, vi } from "vitest";
+
 import type { DashboardDependencies } from "./dashboardPageLogic";
+import {
+  format_fixture_date,
+  get_competition_initials,
+  get_status_class,
+  load_dashboard_data,
+  split_organization_name,
+} from "./dashboardPageLogic";
 import type { DashboardFilters } from "./dashboardStatsLogic";
 
 function create_mock_dependencies(

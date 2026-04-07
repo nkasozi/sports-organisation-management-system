@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
+
 import {
   detect_jersey_color_clashes,
   has_color_clashes,
   type JerseyColorAssignment,
-  type ColorClashWarning,
 } from "./Fixture";
 
 describe("Fixture Jersey Color Clash Detection", () => {

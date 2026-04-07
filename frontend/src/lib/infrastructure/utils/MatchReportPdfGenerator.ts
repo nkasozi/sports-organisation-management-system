@@ -1,15 +1,17 @@
 import { jsPDF } from "jspdf";
+
 import type { MatchReportData } from "$lib/core/types/MatchReportTypes";
+
 import {
   FONT_SIZE_SMALL,
-  MARGIN_LEFT,
   type JsPDFWithAutoTable,
+  MARGIN_LEFT,
 } from "./pdfConstantsAndHelpers";
-import { draw_header_section } from "./pdfHeaderSection";
-import { draw_result_section } from "./pdfResultSection";
-import { draw_lineup_section } from "./pdfLineupSection";
-import { draw_officials_section } from "./pdfStaffOfficialsSection";
 import { draw_goals_section } from "./pdfGoalsSection";
+import { draw_header_section } from "./pdfHeaderSection";
+import { draw_lineup_section } from "./pdfLineupSection";
+import { draw_result_section } from "./pdfResultSection";
+import { draw_officials_section } from "./pdfStaffOfficialsSection";
 
 function generate_match_report_pdf(data: MatchReportData): jsPDF {
   const doc = new jsPDF() as JsPDFWithAutoTable;

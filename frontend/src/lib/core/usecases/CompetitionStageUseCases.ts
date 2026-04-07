@@ -5,14 +5,14 @@ import type {
 } from "../entities/CompetitionStage";
 import { validate_competition_stage_input } from "../entities/CompetitionStage";
 import type {
-  CompetitionStageRepository,
   CompetitionStageFilter,
+  CompetitionStageRepository,
   QueryOptions,
 } from "../interfaces/ports";
 import type { FixtureRepository } from "../interfaces/ports";
+import type { CompetitionStageUseCasesPort } from "../interfaces/ports";
 import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
 import { create_failure_result, create_success_result } from "../types/Result";
-import type { CompetitionStageUseCasesPort } from "../interfaces/ports";
 
 export type CompetitionStageUseCases = CompetitionStageUseCasesPort;
 

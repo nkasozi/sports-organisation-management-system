@@ -1,14 +1,14 @@
 import type {
-  PlayerTeamTransferHistory,
   CreatePlayerTeamTransferHistoryInput,
+  PlayerTeamTransferHistory,
   UpdatePlayerTeamTransferHistoryInput,
 } from "../../../../entities/PlayerTeamTransferHistory";
-import type { PlayerTeamTransferHistoryFilter } from "../../external/repositories/PlayerTeamTransferHistoryRepository";
-import type { QueryOptions } from "../../external/repositories/Repository";
 import type {
   AsyncResult,
   PaginatedAsyncResult,
 } from "../../../../types/Result";
+import type { PlayerTeamTransferHistoryFilter } from "../../external/repositories/PlayerTeamTransferHistoryRepository";
+import type { QueryOptions } from "../../external/repositories/Repository";
 import type { BaseUseCasesPort } from "./BaseUseCasesPort";
 
 export interface PlayerTeamTransferHistoryUseCasesPort extends BaseUseCasesPort<

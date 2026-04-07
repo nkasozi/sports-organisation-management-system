@@ -1,14 +1,14 @@
 import type {
-  FixtureDetailsSetup,
   CreateFixtureDetailsSetupInput,
+  FixtureDetailsSetup,
   UpdateFixtureDetailsSetupInput,
 } from "../../../../entities/FixtureDetailsSetup";
-import type { FixtureDetailsSetupFilter } from "../../external/repositories/FixtureDetailsSetupRepository";
-import type { QueryOptions } from "../../external/repositories/Repository";
 import type {
   AsyncResult,
   PaginatedAsyncResult,
 } from "../../../../types/Result";
+import type { FixtureDetailsSetupFilter } from "../../external/repositories/FixtureDetailsSetupRepository";
+import type { QueryOptions } from "../../external/repositories/Repository";
 
 export interface FixtureDetailsSetupUseCasesPort {
   create(

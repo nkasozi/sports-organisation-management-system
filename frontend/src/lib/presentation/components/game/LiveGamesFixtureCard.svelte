@@ -2,12 +2,13 @@
     import type { Fixture } from "$lib/core/entities/Fixture";
     import type { PreFlightCheck } from "$lib/core/services/fixtureStartChecks";
     import TeamLogoThumbnail from "$lib/presentation/components/ui/TeamLogoThumbnail.svelte";
-    import LiveGamesFixtureActions from "./LiveGamesFixtureActions.svelte";
-    import LiveGamesPreFlightChecks from "./LiveGamesPreFlightChecks.svelte";
     import {
         format_live_game_date_time,
         get_live_game_status_badge_class,
     } from "$lib/presentation/logic/liveGamesViewLogic";
+
+    import LiveGamesFixtureActions from "./LiveGamesFixtureActions.svelte";
+    import LiveGamesPreFlightChecks from "./LiveGamesPreFlightChecks.svelte";
 
     export let fixture: Fixture;
     export let home_team_name: string;

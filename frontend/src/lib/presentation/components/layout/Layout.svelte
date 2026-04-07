@@ -1,24 +1,25 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import {
-    theme_store,
-    get_theme_classes,
-  } from "$lib/presentation/stores/theme";
-  import Header from "$lib/presentation/components/layout/Header.svelte";
-  import Sidebar from "$lib/presentation/components/layout/Sidebar.svelte";
-  import Footer from "$lib/presentation/components/layout/Footer.svelte";
-  import ThemeProvider from "$lib/presentation/components/theme/ThemeProvider.svelte";
-  import MergeConflictScreen from "$lib/presentation/components/MergeConflictScreen.svelte";
-  import { sync_store } from "$lib/presentation/stores/syncStore";
+
   import { is_signed_in } from "$lib/adapters/iam/clerkAuthService";
-  import {
-    is_offline_mode,
-    offline_reason,
-  } from "$lib/presentation/stores/appStatus";
   import type {
     ConflictRecord,
     ConflictResolutionAction,
   } from "$lib/infrastructure/sync/conflictTypes";
+  import Footer from "$lib/presentation/components/layout/Footer.svelte";
+  import Header from "$lib/presentation/components/layout/Header.svelte";
+  import Sidebar from "$lib/presentation/components/layout/Sidebar.svelte";
+  import MergeConflictScreen from "$lib/presentation/components/MergeConflictScreen.svelte";
+  import ThemeProvider from "$lib/presentation/components/theme/ThemeProvider.svelte";
+  import {
+    is_offline_mode,
+    offline_reason,
+  } from "$lib/presentation/stores/appStatus";
+  import { sync_store } from "$lib/presentation/stores/syncStore";
+  import {
+    get_theme_classes,
+    theme_store,
+  } from "$lib/presentation/stores/theme";
 
   let sidebar_open = false;
   let is_mobile = true;

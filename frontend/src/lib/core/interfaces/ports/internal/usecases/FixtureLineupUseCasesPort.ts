@@ -1,13 +1,13 @@
 import type {
-  FixtureLineup,
   CreateFixtureLineupInput,
+  FixtureLineup,
   UpdateFixtureLineupInput,
 } from "../../../../entities/FixtureLineup";
-import type { FixtureLineupFilter } from "../../external/repositories/FixtureLineupRepository";
 import type {
   AsyncResult,
   PaginatedAsyncResult,
 } from "../../../../types/Result";
+import type { FixtureLineupFilter } from "../../external/repositories/FixtureLineupRepository";
 import type { BaseUseCasesPort } from "./BaseUseCasesPort";
 
 export interface FixtureLineupUseCasesPort extends BaseUseCasesPort<

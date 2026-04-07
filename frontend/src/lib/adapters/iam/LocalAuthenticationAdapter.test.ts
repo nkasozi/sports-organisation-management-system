@@ -1,8 +1,10 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
-import { LocalAuthenticationAdapter } from "./LocalAuthenticationAdapter";
-import type { AuthTokenPayload } from "$lib/core/interfaces/ports";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
 import type { InBrowserSystemUserRepository } from "$lib/adapters/repositories/InBrowserSystemUserRepository";
 import type { SystemUser } from "$lib/core/entities/SystemUser";
+import type { AuthTokenPayload } from "$lib/core/interfaces/ports";
+
+import { LocalAuthenticationAdapter } from "./LocalAuthenticationAdapter";
 
 function create_test_payload(): Omit<
   AuthTokenPayload,

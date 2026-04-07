@@ -1,10 +1,6 @@
 import type { Venue } from "../../../core/entities/Venue";
 import { DEFAULT_VENUE_IMAGE } from "../../../core/entities/Venue";
-import {
-  SEED_VENUE_IDS,
-  SEED_ORGANIZATION_IDS,
-  generate_current_timestamp,
-} from "./seedIds";
+import { generate_current_timestamp, SEED_VENUE_IDS } from "./seedIds";
 
 export function create_seed_venues(organization_id: string): Venue[] {
   const now = generate_current_timestamp();

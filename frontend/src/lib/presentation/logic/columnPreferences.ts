@@ -1,5 +1,5 @@
-import type { SubEntityFilter } from "$lib/core/types/SubEntityFilter";
 import type { AppSettingsPort } from "$lib/core/interfaces/ports";
+import type { SubEntityFilter } from "$lib/core/types/SubEntityFilter";
 import { get_app_settings_storage } from "$lib/infrastructure/container";
 
 const COLUMN_PREFERENCES_PREFIX = "col_prefs_";

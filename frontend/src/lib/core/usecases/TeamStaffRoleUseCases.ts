@@ -1,17 +1,17 @@
 import type {
-  TeamStaffRole,
   CreateTeamStaffRoleInput,
+  TeamStaffRole,
   UpdateTeamStaffRoleInput,
 } from "../entities/TeamStaffRole";
 import { validate_team_staff_role_input } from "../entities/TeamStaffRole";
 import type {
-  TeamStaffRoleRepository,
   TeamStaffRoleFilter,
+  TeamStaffRoleRepository,
 } from "../interfaces/ports";
 import type { QueryOptions } from "../interfaces/ports";
+import type { TeamStaffRoleUseCasesPort } from "../interfaces/ports";
 import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
 import { create_failure_result, create_success_result } from "../types/Result";
-import type { TeamStaffRoleUseCasesPort } from "../interfaces/ports";
 
 export type TeamStaffRoleUseCases = TeamStaffRoleUseCasesPort;
 

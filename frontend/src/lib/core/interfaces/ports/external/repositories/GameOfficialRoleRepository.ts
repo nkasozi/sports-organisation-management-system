@@ -1,13 +1,13 @@
-import type { Repository, QueryOptions } from "./Repository";
+import type {
+  CreateGameOfficialRoleInput,
+  GameOfficialRole,
+  UpdateGameOfficialRoleInput,
+} from "../../../../entities/GameOfficialRole";
 import type {
   AsyncResult,
   PaginatedAsyncResult,
 } from "../../../../types/Result";
-import type {
-  GameOfficialRole,
-  CreateGameOfficialRoleInput,
-  UpdateGameOfficialRoleInput,
-} from "../../../../entities/GameOfficialRole";
+import type { QueryOptions, Repository } from "./Repository";
 
 export interface GameOfficialRoleFilter {
   name_contains?: string;
@@ -33,7 +33,7 @@ export interface GameOfficialRoleRepository extends Repository<
 }
 
 export type {
-  GameOfficialRole,
   CreateGameOfficialRoleInput,
+  GameOfficialRole,
   UpdateGameOfficialRoleInput,
 };

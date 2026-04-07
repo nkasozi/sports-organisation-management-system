@@ -1,9 +1,9 @@
+import { get_database, get_table_from_database } from "./syncDataAccess";
 import type {
-  ConvexClient,
   ConflictResolutionRequest,
+  ConvexClient,
   TableName,
 } from "./syncTypes";
-import { get_table_from_database, get_database } from "./syncDataAccess";
 
 export async function resolve_conflict(
   convex_client: ConvexClient,

@@ -1,4 +1,5 @@
 import type { SportSyncDatabase } from "$lib/adapters/repositories/database";
+
 import { SYNCED_TABLE_NAMES } from "./backgroundSyncSharedState";
 import { delete_record_in_convex } from "./convexSyncService";
 

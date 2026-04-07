@@ -1,36 +1,38 @@
-import { get_database } from "$lib/adapters/repositories/database";
-import { get_pulling_from_remote, set_pulling_from_remote } from "./syncState";
-import { is_signed_in } from "$lib/adapters/iam/clerkAuthService";
 import { get } from "svelte/store";
+
+import { is_signed_in } from "$lib/adapters/iam/clerkAuthService";
+import { get_database } from "$lib/adapters/repositories/database";
+import { ALLOWED_SYNC_INTERVALS_MS } from "$lib/core/entities/OrganizationSettings";
 import type {
-  SyncOrchestratorPort,
-  SyncRestorationHandlers,
-  RemoteChangeSubscriberPort,
   LocalChangePublisherPort,
   LocalSyncStatus,
+  RemoteChangeSubscriberPort,
+  SyncOrchestratorPort,
+  SyncRestorationHandlers,
 } from "$lib/core/interfaces/ports";
-import {
-  create_success_result,
-  create_failure_result,
-} from "$lib/core/types/Result";
 import type { AsyncResult, Result } from "$lib/core/types/Result";
-import { ALLOWED_SYNC_INTERVALS_MS } from "$lib/core/entities/OrganizationSettings";
 import {
-  sync_state,
-  sync_deps,
-  reset_sync_state,
-} from "./backgroundSyncSharedState";
+  create_failure_result,
+  create_success_result,
+} from "$lib/core/types/Result";
+
 import { install_dexie_hooks } from "./backgroundSyncDexieHooks";
 import {
   cancel_pending_debounce,
-  trigger_debounced_sync,
   execute_push_sync,
   run_network_restoration_sync,
   start_offline_retry_timer,
-  stop_offline_retry_timer,
   start_scheduled_sync_timer,
+  stop_offline_retry_timer,
   stop_scheduled_sync_timer,
+  trigger_debounced_sync,
 } from "./backgroundSyncExecution";
+import {
+  reset_sync_state,
+  sync_deps,
+  sync_state,
+} from "./backgroundSyncSharedState";
+import { get_pulling_from_remote, set_pulling_from_remote } from "./syncState";
 
 export { set_pulling_from_remote };
 

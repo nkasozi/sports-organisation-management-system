@@ -1,25 +1,26 @@
 import type {
-  UserRole,
-  DataAction,
-  DataCategory,
-  CategoryPermissions,
-  AuthorizableAction,
-  AuthorizationLevel,
-  EntityAuthorizationMap,
-  AuthorizationCheckResult,
-  FeatureAccess,
-} from "$lib/core/interfaces/ports";
-import { ANY_VALUE, check_data_permission } from "$lib/core/interfaces/ports";
+  SharedCrudPermissions,
+  SharedEntityType,
+} from "$convex/shared_permission_definitions";
 import {
   SHARED_ENTITY_CATEGORY_MAP,
   SHARED_ROLE_PERMISSIONS,
 } from "$convex/shared_permission_definitions";
 import type {
-  SharedEntityType,
-  SharedCrudPermissions,
-} from "$convex/shared_permission_definitions";
+  AuthorizableAction,
+  AuthorizationCheckResult,
+  AuthorizationLevel,
+  CategoryPermissions,
+  DataAction,
+  DataCategory,
+  EntityAuthorizationMap,
+  FeatureAccess,
+  UserRole,
+} from "$lib/core/interfaces/ports";
+import { ANY_VALUE, check_data_permission } from "$lib/core/interfaces/ports";
 import { normalize_to_entity_type } from "$lib/core/interfaces/ports/external/iam/AuthorizationPort";
 import type { Result } from "$lib/core/types/Result";
+
 import type { AuthState } from "./authTypes";
 
 export function get_entity_data_category(

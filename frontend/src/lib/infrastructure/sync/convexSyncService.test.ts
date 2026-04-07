@@ -1,4 +1,4 @@
-import { describe, expect, it, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mock_app_settings_store: Record<string, string> = {};
 const mock_remove_setting = vi.fn((key: string) => {

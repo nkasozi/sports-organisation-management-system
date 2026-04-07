@@ -1,24 +1,21 @@
-import { ENTITY_STATUS } from "../../core/entities/StatusConstants";
 import type { Table } from "dexie";
-import type {
-  PlayerPosition,
-  CreatePlayerPositionInput,
-  UpdatePlayerPositionInput,
-  PlayerPositionFilter,
-} from "../../core/entities/PlayerPosition";
+
 import type { BaseEntity } from "../../core/entities/BaseEntity";
+import type {
+  CreatePlayerPositionInput,
+  PlayerPosition,
+  PlayerPositionFilter,
+  UpdatePlayerPositionInput,
+} from "../../core/entities/PlayerPosition";
+import { ENTITY_STATUS } from "../../core/entities/StatusConstants";
 import type {
   PlayerPositionRepository,
   QueryOptions,
 } from "../../core/interfaces/ports";
-import type {
-  PaginatedAsyncResult,
-  AsyncResult,
-  Result,
-} from "../../core/types/Result";
+import type { PaginatedAsyncResult, Result } from "../../core/types/Result";
 import {
-  create_success_result,
   create_failure_result,
+  create_success_result,
 } from "../../core/types/Result";
 import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
 export { create_default_player_positions_for_organization } from "./InBrowserPlayerPositionRepositoryDefaults";

@@ -1,22 +1,19 @@
 import type { Table } from "dexie";
-import type {
-  Organization,
-  CreateOrganizationInput,
-  UpdateOrganizationInput,
-} from "../../core/entities/Organization";
+
 import type { BaseEntity } from "../../core/entities/BaseEntity";
 import type {
-  OrganizationRepository,
+  CreateOrganizationInput,
+  Organization,
+  UpdateOrganizationInput,
+} from "../../core/entities/Organization";
+import type { Sport } from "../../core/entities/Sport";
+import type {
   OrganizationFilter,
+  OrganizationRepository,
 } from "../../core/interfaces/ports";
 import type { QueryOptions } from "../../core/interfaces/ports";
 import type { PaginatedAsyncResult } from "../../core/types/Result";
-import {
-  create_success_result,
-  create_failure_result,
-} from "../../core/types/Result";
 import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
-import type { Sport } from "../../core/entities/Sport";
 
 const FIELD_HOCKEY_SPORT_CODE = "FIELD_HOCKEY";
 

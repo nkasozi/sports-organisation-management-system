@@ -1,11 +1,11 @@
 import type {
-  JerseyColor,
   CreateJerseyColorInput,
-  UpdateJerseyColorInput,
+  JerseyColor,
   JerseyColorHolderType,
+  UpdateJerseyColorInput,
 } from "../../../../entities/JerseyColor";
-import type { Repository, QueryOptions } from "./Repository";
 import type { PaginatedAsyncResult } from "../../../../types/Result";
+import type { QueryOptions, Repository } from "./Repository";
 
 export interface JerseyColorFilter {
   holder_type?: JerseyColorHolderType;

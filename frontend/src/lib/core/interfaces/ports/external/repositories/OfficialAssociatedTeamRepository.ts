@@ -1,10 +1,10 @@
 import type {
-  OfficialAssociatedTeam,
   CreateOfficialAssociatedTeamInput,
+  OfficialAssociatedTeam,
   UpdateOfficialAssociatedTeamInput,
 } from "../../../../entities/OfficialAssociatedTeam";
-import type { Repository, QueryOptions } from "./Repository";
 import type { PaginatedAsyncResult } from "../../../../types/Result";
+import type { QueryOptions, Repository } from "./Repository";
 
 export interface OfficialAssociatedTeamFilter {
   official_id?: string;

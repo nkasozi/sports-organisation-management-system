@@ -1,13 +1,14 @@
 import { describe, expect, it } from "vitest";
+
 import {
+  aggregate_weighted_ratings,
+  compute_composite_score,
+  create_empty_rating_input,
   get_performance_tier,
   get_tier_label,
-  compute_composite_score,
-  aggregate_weighted_ratings,
-  create_empty_rating_input,
-  validate_rating_input,
   type OfficialPerformanceRating,
   type RatingDimensions,
+  validate_rating_input,
 } from "./OfficialPerformanceRating";
 
 function make_rating(

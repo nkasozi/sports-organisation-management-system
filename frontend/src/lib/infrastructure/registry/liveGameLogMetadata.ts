@@ -1,8 +1,8 @@
 import type { EntityMetadata } from "../../core/entities/BaseEntity";
 import type { LiveGameLog } from "../../core/entities/LiveGameLog";
 import {
-  LIVE_GAME_STATUS_OPTIONS,
   LIVE_GAME_PERIOD_OPTIONS,
+  LIVE_GAME_STATUS_OPTIONS,
 } from "../../core/entities/LiveGameLog";
 
 export function register_live_game_log_metadata(

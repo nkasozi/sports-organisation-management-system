@@ -1,17 +1,19 @@
 import { describe, expect, it } from "vitest";
+
+import type { LineupPlayer } from "$lib/core/entities/FixtureLineup";
 import type { TeamPlayer } from "$lib/core/services/teamPlayers";
+
 import {
   build_error_message,
-  derive_initial_selected_player_ids,
-  derive_initial_selected_players,
   convert_team_player_to_lineup_player,
   convert_team_players_to_lineup_players,
-  summarize_selected_team_players,
-  sort_lineup_players,
+  derive_initial_selected_player_ids,
+  derive_initial_selected_players,
   determine_initial_wizard_step,
   determine_step_after_team_auto_selected,
+  sort_lineup_players,
+  summarize_selected_team_players,
 } from "./fixtureLineupWizard";
-import type { LineupPlayer } from "$lib/core/entities/FixtureLineup";
 
 describe("fixtureLineupWizard", () => {
   it("builds a cause/solution style error message", () => {

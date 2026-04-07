@@ -1,7 +1,8 @@
-import { get_app_settings_storage } from "$lib/infrastructure/container";
 import type { AppSettingsPort } from "$lib/core/interfaces/ports";
-import type { SeedCompetitionFormatIds } from "../../infrastructure/utils/SeedDataGenerator";
+import { get_app_settings_storage } from "$lib/infrastructure/container";
+
 import type { DataSource } from "../../infrastructure/sync/convexSeedingService";
+import type { SeedCompetitionFormatIds } from "../../infrastructure/utils/SeedDataGenerator";
 
 export type SeedingStrategy =
   | "skip_seeding"

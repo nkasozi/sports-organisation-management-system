@@ -1,13 +1,14 @@
-import { writable, derived } from "svelte/store";
+import { derived, writable } from "svelte/store";
+
 import { browser } from "$app/environment";
 import { get_app_settings_storage } from "$lib/infrastructure/container";
 export type {
-  ThemeColorName,
-  ThemeConfig,
   ColorPalette,
   PaletteShade,
+  ThemeColorName,
+  ThemeConfig,
 } from "./themeTypes";
-import type { ThemeColorName, ThemeConfig, PaletteShade } from "./themeTypes";
+import type { PaletteShade, ThemeColorName, ThemeConfig } from "./themeTypes";
 import { PALETTE_SHADES } from "./themeTypes";
 export { COLOR_PALETTES } from "./themeColorPalettes";
 import { COLOR_PALETTES } from "./themeColorPalettes";

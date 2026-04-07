@@ -1,8 +1,9 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
-import type { TeamRepository, TeamFilter } from "../interfaces/ports";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import type { CreateTeamInput, Team, UpdateTeamInput } from "../entities/Team";
+import type { TeamFilter, TeamRepository } from "../interfaces/ports";
 import type { QueryOptions } from "../interfaces/ports";
-import type { Team, CreateTeamInput, UpdateTeamInput } from "../entities/Team";
-import type { Result, PaginatedResult } from "../types/Result";
+import type { PaginatedResult, Result } from "../types/Result";
 import { create_team_use_cases } from "./TeamUseCases";
 
 function create_mock_team(overrides: Partial<Team> = {}): Team {

@@ -1,8 +1,8 @@
+import type { BaseEntity } from "../../../../entities/BaseEntity";
 import type {
   AsyncResult,
   PaginatedAsyncResult,
 } from "../../../../types/Result";
-import type { BaseEntity } from "../../../../entities/BaseEntity";
 
 export interface QueryOptions {
   page_number?: number;

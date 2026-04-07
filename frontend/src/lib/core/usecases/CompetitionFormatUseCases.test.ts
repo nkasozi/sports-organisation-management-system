@@ -1,10 +1,11 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { create_competition_format_use_cases } from "./CompetitionFormatUseCases";
-import type { CompetitionFormatRepository } from "../interfaces/ports";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
 import type {
   CompetitionFormat,
   CreateCompetitionFormatInput,
 } from "../entities/CompetitionFormat";
+import type { CompetitionFormatRepository } from "../interfaces/ports";
+import { create_competition_format_use_cases } from "./CompetitionFormatUseCases";
 
 function create_mock_repository(): CompetitionFormatRepository {
   return {

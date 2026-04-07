@@ -1,4 +1,5 @@
 import { writable } from "svelte/store";
+
 import { get_app_settings_storage } from "$lib/infrastructure/container";
 
 export interface InitialSyncState {

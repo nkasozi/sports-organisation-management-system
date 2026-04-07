@@ -1,11 +1,11 @@
 import type {
-  Qualification,
   CreateQualificationInput,
-  UpdateQualificationInput,
+  Qualification,
   QualificationHolderType,
+  UpdateQualificationInput,
 } from "../../../../entities/Qualification";
-import type { Repository, QueryOptions } from "./Repository";
 import type { PaginatedAsyncResult } from "../../../../types/Result";
+import type { QueryOptions, Repository } from "./Repository";
 
 export interface QualificationFilter {
   holder_type?: QualificationHolderType;

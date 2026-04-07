@@ -1,12 +1,12 @@
-import type { FilterableRepository, QueryOptions } from "./Repository";
-import type { PaginatedAsyncResult } from "../../../../types/Result";
-import type {
-  SystemUser,
-  CreateSystemUserInput,
-  UpdateSystemUserInput,
-  SystemUserRole,
-} from "../../../../entities/SystemUser";
 import type { EntityStatus } from "../../../../entities/BaseEntity";
+import type {
+  CreateSystemUserInput,
+  SystemUser,
+  SystemUserRole,
+  UpdateSystemUserInput,
+} from "../../../../entities/SystemUser";
+import type { PaginatedAsyncResult } from "../../../../types/Result";
+import type { FilterableRepository, QueryOptions } from "./Repository";
 
 export interface SystemUserFilter {
   email_contains?: string;

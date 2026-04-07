@@ -1,15 +1,15 @@
 import type {
-  Identification,
   CreateIdentificationInput,
-  UpdateIdentificationInput,
+  Identification,
   IdentificationHolderType,
+  UpdateIdentificationInput,
 } from "../../../../entities/Identification";
-import type { IdentificationFilter } from "../../external/repositories/IdentificationRepository";
-import type { QueryOptions } from "../../external/repositories/Repository";
 import type {
   AsyncResult,
   PaginatedAsyncResult,
 } from "../../../../types/Result";
+import type { IdentificationFilter } from "../../external/repositories/IdentificationRepository";
+import type { QueryOptions } from "../../external/repositories/Repository";
 
 export interface IdentificationUseCasesPort {
   create(input: CreateIdentificationInput): AsyncResult<Identification>;

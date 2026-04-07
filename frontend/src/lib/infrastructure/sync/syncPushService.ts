@@ -1,4 +1,4 @@
-import type { ConvexClient, ConflictFromServer, TableName } from "./syncTypes";
+import type { ConflictFromServer, ConvexClient, TableName } from "./syncTypes";
 import { EPOCH_TIMESTAMP } from "./syncTypes";
 
 export async function push_table_to_convex(

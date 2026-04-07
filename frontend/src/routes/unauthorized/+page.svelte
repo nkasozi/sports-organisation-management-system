@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { sign_out, destroy_clerk } from "$lib/adapters/iam/clerkAuthService";
-  import { page } from "$app/stores";
   import { goto } from "$app/navigation";
+  import { page } from "$app/stores";
+  import { destroy_clerk,sign_out } from "$lib/adapters/iam/clerkAuthService";
   import { clear_session_sync_flag } from "$lib/presentation/stores/initialSyncStore";
 
   $: error_message =

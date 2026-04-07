@@ -1,20 +1,20 @@
-import type { InBrowserCompetitionTeamRepository } from "../repositories/InBrowserCompetitionTeamRepository";
-import type { InBrowserPlayerTeamMembershipRepository } from "../repositories/InBrowserPlayerTeamMembershipRepository";
-import type { InBrowserFixtureRepository } from "../repositories/InBrowserFixtureRepository";
-import type { InBrowserFixtureLineupRepository } from "../repositories/InBrowserFixtureLineupRepository";
-import type { InBrowserJerseyColorRepository } from "../repositories/InBrowserJerseyColorRepository";
-import {
-  create_seed_competition_teams,
-  create_seed_player_team_memberships,
-  create_seed_fixtures,
-  create_seed_fixture_lineups,
-  create_seed_jersey_colors,
-} from "../../infrastructure/utils/SeedDataGenerator";
 import type { Result } from "../../core/types/Result";
 import {
-  create_success_result,
   create_failure_result,
+  create_success_result,
 } from "../../core/types/Result";
+import {
+  create_seed_competition_teams,
+  create_seed_fixture_lineups,
+  create_seed_fixtures,
+  create_seed_jersey_colors,
+  create_seed_player_team_memberships,
+} from "../../infrastructure/utils/SeedDataGenerator";
+import type { InBrowserCompetitionTeamRepository } from "../repositories/InBrowserCompetitionTeamRepository";
+import type { InBrowserFixtureLineupRepository } from "../repositories/InBrowserFixtureLineupRepository";
+import type { InBrowserFixtureRepository } from "../repositories/InBrowserFixtureRepository";
+import type { InBrowserJerseyColorRepository } from "../repositories/InBrowserJerseyColorRepository";
+import type { InBrowserPlayerTeamMembershipRepository } from "../repositories/InBrowserPlayerTeamMembershipRepository";
 import type { SeedEntityIdLookups } from "./seedingTypes";
 import { emit_entity_created_events } from "./seedingUserSetup";
 

@@ -1,25 +1,26 @@
 import type { Table } from "dexie";
-import type {
-  SystemUser,
-  CreateSystemUserInput,
-  UpdateSystemUserInput,
-  SystemUserRole,
-} from "../../core/entities/SystemUser";
+
 import type { BaseEntity } from "../../core/entities/BaseEntity";
 import type {
+  CreateSystemUserInput,
+  SystemUser,
+  SystemUserRole,
+  UpdateSystemUserInput,
+} from "../../core/entities/SystemUser";
+import type {
   QueryOptions,
-  SystemUserRepository,
   SystemUserFilter,
+  SystemUserRepository,
   UserRole,
 } from "../../core/interfaces/ports";
-import { check_data_permission, ANY_VALUE } from "../../core/interfaces/ports";
+import { ANY_VALUE, check_data_permission } from "../../core/interfaces/ports";
 import type {
-  PaginatedAsyncResult,
   AsyncResult,
+  PaginatedAsyncResult,
 } from "../../core/types/Result";
 import {
-  create_success_result,
   create_failure_result,
+  create_success_result,
 } from "../../core/types/Result";
 import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
 

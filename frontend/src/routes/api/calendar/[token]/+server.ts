@@ -1,18 +1,19 @@
-import type { RequestHandler } from "./$types";
-import {
-  get_use_cases_container,
-  get_repository_container,
-} from "$lib/infrastructure/container";
-import {
-  generate_ical_feed,
-  convert_activity_to_ical_event,
-  type ICalEvent,
-  type ICalFeedConfig,
-} from "$lib/core/services/ICalService";
 import {
   get_feed_type_display_name,
   is_calendar_token_expired,
 } from "$lib/core/entities/CalendarToken";
+import {
+  convert_activity_to_ical_event,
+  generate_ical_feed,
+  type ICalEvent,
+  type ICalFeedConfig,
+} from "$lib/core/services/ICalService";
+import {
+  get_repository_container,
+  get_use_cases_container,
+} from "$lib/infrastructure/container";
+
+import type { RequestHandler } from "./$types";
 
 const VALID_TOKEN_PATTERN = /^[a-zA-Z0-9_-]{1,255}$/;
 

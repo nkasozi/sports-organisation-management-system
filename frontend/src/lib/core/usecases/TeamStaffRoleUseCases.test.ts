@@ -1,10 +1,11 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { create_team_staff_role_use_cases } from "./TeamStaffRoleUseCases";
-import type { TeamStaffRoleRepository } from "../interfaces/ports";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
 import type {
-  TeamStaffRole,
   CreateTeamStaffRoleInput,
+  TeamStaffRole,
 } from "../entities/TeamStaffRole";
+import type { TeamStaffRoleRepository } from "../interfaces/ports";
+import { create_team_staff_role_use_cases } from "./TeamStaffRoleUseCases";
 
 function create_mock_repository(): TeamStaffRoleRepository {
   return {

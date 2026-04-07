@@ -1,12 +1,12 @@
-import type {
-  CompetitionFormat,
-  CreateCompetitionFormatInput,
-} from "./CompetitionFormatTypes";
 import {
   create_default_group_stage_config,
   create_default_knockout_stage_config,
   create_default_league_config,
 } from "./CompetitionFormatFactories";
+import type {
+  CompetitionFormat,
+  CreateCompetitionFormatInput,
+} from "./CompetitionFormatTypes";
 import { hydrate_competition_format_input } from "./CompetitionFormatValidation";
 
 export function get_default_competition_formats_for_organization(

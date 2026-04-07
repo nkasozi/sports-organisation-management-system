@@ -1,7 +1,7 @@
 import type {
   AuthenticationPort,
-  SystemUserRepository,
   DataAction,
+  SystemUserRepository,
 } from "$lib/core/interfaces/ports";
 import {
   get_entity_data_category,
@@ -11,6 +11,7 @@ import {
 import type { AsyncResult } from "$lib/core/types/Result";
 import { create_success_result } from "$lib/core/types/Result";
 import type { AuthCache } from "$lib/infrastructure/cache/AuthCache";
+
 import { get_role_for_email } from "./authProfilePermissions";
 
 export async function get_allowed_entity_actions_impl(

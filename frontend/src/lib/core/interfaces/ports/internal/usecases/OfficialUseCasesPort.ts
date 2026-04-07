@@ -1,14 +1,14 @@
 import type {
-  Official,
   CreateOfficialInput,
+  Official,
   UpdateOfficialInput,
 } from "../../../../entities/Official";
-import type { OfficialFilter } from "../../external/repositories/OfficialRepository";
-import type { QueryOptions } from "../../external/repositories/Repository";
 import type {
   AsyncResult,
   PaginatedAsyncResult,
 } from "../../../../types/Result";
+import type { OfficialFilter } from "../../external/repositories/OfficialRepository";
+import type { QueryOptions } from "../../external/repositories/Repository";
 import type { BaseUseCasesPort } from "./BaseUseCasesPort";
 
 export interface OfficialUseCasesPort extends BaseUseCasesPort<

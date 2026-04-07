@@ -1,18 +1,19 @@
 import type {
   AuthenticationPort,
-  SystemUserRepository,
   DataAction,
   EntityAuthorizationResult,
+  SystemUserRepository,
 } from "$lib/core/interfaces/ports";
 import {
-  get_entity_data_category,
   check_data_permission,
+  get_entity_data_category,
   normalize_to_entity_type,
 } from "$lib/core/interfaces/ports";
 import type { AsyncResult } from "$lib/core/types/Result";
 import { create_success_result } from "$lib/core/types/Result";
-import { EventBus } from "$lib/infrastructure/events/EventBus";
 import type { AuthCache } from "$lib/infrastructure/cache/AuthCache";
+import { EventBus } from "$lib/infrastructure/events/EventBus";
+
 import { get_role_for_email } from "./authProfilePermissions";
 
 function cache_entity_authorization_result(

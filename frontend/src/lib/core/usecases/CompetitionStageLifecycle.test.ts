@@ -1,9 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { create_competition_stage_lifecycle } from "./CompetitionStageLifecycle";
+
+import type { CompetitionFormat } from "../entities/CompetitionFormat";
 import type { CompetitionFormatRepository } from "../interfaces/ports";
 import type { CompetitionStageRepository } from "../interfaces/ports";
 import type { FixtureRepository } from "../interfaces/ports";
-import type { CompetitionFormat } from "../entities/CompetitionFormat";
+import { create_competition_stage_lifecycle } from "./CompetitionStageLifecycle";
 
 function create_mock_format_repository(): CompetitionFormatRepository {
   return {

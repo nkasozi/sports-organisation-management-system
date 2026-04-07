@@ -1,13 +1,13 @@
 import type {
-  OfficialPerformanceRating,
   CreateOfficialPerformanceRatingInput,
+  OfficialPerformanceRating,
   UpdateOfficialPerformanceRatingInput,
 } from "../../../../entities/OfficialPerformanceRating";
-import type { Repository, QueryOptions } from "./Repository";
 import type {
   AsyncResult,
   PaginatedAsyncResult,
 } from "../../../../types/Result";
+import type { QueryOptions, Repository } from "./Repository";
 
 export interface OfficialPerformanceRatingFilter {
   organization_id?: string;

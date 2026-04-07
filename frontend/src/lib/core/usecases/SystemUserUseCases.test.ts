@@ -1,15 +1,16 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import type {
+  CreateSystemUserInput,
+  SystemUser,
+  UpdateSystemUserInput,
+} from "../entities/SystemUser";
+import type { Repository } from "../interfaces/ports";
+import type { PaginatedResult, Result } from "../types/Result";
 import {
   create_system_user_use_cases,
   type SystemUserUseCases,
 } from "./SystemUserUseCases";
-import type { Repository, QueryOptions } from "../interfaces/ports";
-import type {
-  SystemUser,
-  CreateSystemUserInput,
-  UpdateSystemUserInput,
-} from "../entities/SystemUser";
-import type { Result, PaginatedResult } from "../types/Result";
 
 type MockRepository = Repository<
   SystemUser,

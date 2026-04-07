@@ -1,10 +1,11 @@
-import { get_sync_manager } from "./convexSyncService";
 import type {
-  AuditLog,
   AuditAction,
+  AuditLog,
   FieldChange,
 } from "$lib/core/entities/AuditLog";
 import type { AuditLogFilter } from "$lib/core/interfaces/ports";
+
+import { get_sync_manager } from "./convexSyncService";
 
 export const AUDIT_LOG_PAGE_SIZE = 50;
 

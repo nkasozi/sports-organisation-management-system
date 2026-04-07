@@ -1,36 +1,37 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
+
 import type {
   BaseEntity,
-  FieldMetadata,
   EntityMetadata,
+  FieldMetadata,
 } from "../../core/entities/BaseEntity";
 import type { SubEntityFilter } from "../../core/types/SubEntityFilter";
 import {
-  extract_items_from_result_data,
-  extract_total_count_from_result_data,
-  extract_error_message_from_result,
-  build_default_visible_column_names,
-  check_if_all_entities_selected,
-  check_if_some_entities_selected,
-  determine_if_bulk_actions_available,
-  build_filter_from_sub_entity_config,
-  get_display_value_for_entity_field,
-  toggle_sort_direction,
-  toggle_column_in_set,
-  apply_filters_to_entities,
-  sort_entities,
   apply_filters_and_sorting,
+  apply_filters_to_entities,
   build_csv_content,
   build_csv_filename,
-  create_new_entity_with_defaults,
-  get_selected_entities_from_list,
-  remove_entities_by_ids,
+  build_default_visible_column_names,
   build_display_name_from_metadata,
+  build_filter_from_sub_entity_config,
+  check_if_all_entities_selected,
+  check_if_some_entities_selected,
   clear_filter_state,
+  create_new_entity_with_defaults,
+  determine_if_bulk_actions_available,
+  extract_error_message_from_result,
+  extract_items_from_result_data,
+  extract_total_count_from_result_data,
+  get_column_responsive_class,
+  get_display_value_for_entity_field,
+  get_selected_entities_from_list,
+  normalize_entity_type_for_filter,
+  remove_entities_by_ids,
+  sort_entities,
+  toggle_column_in_set,
   toggle_select_all_entities,
   toggle_single_entity_selection,
-  get_column_responsive_class,
-  normalize_entity_type_for_filter,
+  toggle_sort_direction,
 } from "./dynamicListLogic";
 
 function create_test_entity(

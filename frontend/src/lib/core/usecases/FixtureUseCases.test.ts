@@ -1,11 +1,12 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { create_fixture_use_cases } from "./FixtureUseCases";
-import type { FixtureRepository } from "../interfaces/ports";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
 import type {
-  Fixture,
   CreateFixtureInput,
+  Fixture,
   GameEvent,
 } from "../entities/Fixture";
+import type { FixtureRepository } from "../interfaces/ports";
+import { create_fixture_use_cases } from "./FixtureUseCases";
 
 function create_mock_repository(): FixtureRepository {
   return {

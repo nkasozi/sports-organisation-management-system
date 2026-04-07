@@ -1,8 +1,10 @@
 import { derived, type Readable } from "svelte/store";
+
 import type {
   SyncProgress,
   SyncStatus,
 } from "$lib/infrastructure/sync/convexSyncService";
+
 import { sync_store } from "./syncStore";
 
 export const is_syncing: Readable<boolean> = derived(

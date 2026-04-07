@@ -1,14 +1,15 @@
-import { WILDCARD_SCOPE } from "../../core/entities/StatusConstants";
-import { get_repository_container } from "$lib/infrastructure/container";
 import type {
   CreateAuditLogInput,
   FieldChange,
 } from "$lib/core/entities/AuditLog";
+import { get_repository_container } from "$lib/infrastructure/container";
 import type {
   ConflictRecord,
   ConflictResolutionAction,
   FieldDifference,
 } from "$lib/infrastructure/sync/conflictTypes";
+
+import { WILDCARD_SCOPE } from "../../core/entities/StatusConstants";
 
 export interface ConflictAuditContext {
   user_id?: string;

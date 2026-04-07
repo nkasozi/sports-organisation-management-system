@@ -1,32 +1,31 @@
 import { get } from "svelte/store";
-import { get_app_settings_storage } from "$lib/infrastructure/container";
-import {
-  is_seeding_already_complete,
-  type SeedingStrategy,
-} from "./seedingService";
-import { initialize_audit_event_handlers } from "$lib/infrastructure/handlers/AuditEventHandler";
-import { first_time_setup_store } from "$lib/presentation/stores/firstTimeSetup";
+
+import { api } from "$convex/_generated/api";
 import {
   initialize_clerk,
-  is_signed_in,
   is_clerk_loaded,
+  is_signed_in,
 } from "$lib/adapters/iam/clerkAuthService";
+import type { SubscribableConvexClient } from "$lib/infrastructure/cache/AuthCacheInvalidator";
+import { get_app_settings_storage } from "$lib/infrastructure/container";
+import { initialize_audit_event_handlers } from "$lib/infrastructure/handlers/AuditEventHandler";
+import { get_organization_settings_use_cases } from "$lib/infrastructure/registry/useCaseFactories";
 import {
-  stop_background_sync,
   configure_orchestrator,
-  configure_restoration_handlers,
   configure_remote_subscriber,
+  configure_restoration_handlers,
   configure_scheduled_interval,
+  stop_background_sync,
 } from "$lib/infrastructure/sync/backgroundSyncService";
 import {
+  get_realtime_sync_adapter,
   start_realtime_sync,
   stop_realtime_sync,
-  get_realtime_sync_adapter,
 } from "$lib/infrastructure/sync/convexRealtimeSync";
-import { sync_store } from "$lib/presentation/stores/syncStore";
 import { branding_store } from "$lib/presentation/stores/branding";
-import type { SubscribableConvexClient } from "$lib/infrastructure/cache/AuthCacheInvalidator";
-import { api } from "$convex/_generated/api";
+import { first_time_setup_store } from "$lib/presentation/stores/firstTimeSetup";
+import { sync_store } from "$lib/presentation/stores/syncStore";
+
 import {
   initialize_convex_client,
   start_auth_cache_invalidation,
@@ -34,7 +33,10 @@ import {
 } from "./appConvexInitializer";
 import { run_seeding_with_strategy } from "./appSeedingOrchestrator";
 import { initialize_all_use_cases } from "./appUseCaseInitializer";
-import { get_organization_settings_use_cases } from "$lib/infrastructure/registry/useCaseFactories";
+import {
+  is_seeding_already_complete,
+  type SeedingStrategy,
+} from "./seedingService";
 
 let initialized = false;
 const FIRST_TIME_DETECTION_KEY = "sports_org_app_initialized";

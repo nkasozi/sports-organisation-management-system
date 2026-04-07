@@ -1,20 +1,17 @@
 import type { Table } from "dexie";
-import type {
-  OfficialAssociatedTeam,
-  CreateOfficialAssociatedTeamInput,
-  UpdateOfficialAssociatedTeamInput,
-} from "../../core/entities/OfficialAssociatedTeam";
+
 import type { BaseEntity } from "../../core/entities/BaseEntity";
 import type {
-  OfficialAssociatedTeamRepository,
+  CreateOfficialAssociatedTeamInput,
+  OfficialAssociatedTeam,
+  UpdateOfficialAssociatedTeamInput,
+} from "../../core/entities/OfficialAssociatedTeam";
+import type {
   OfficialAssociatedTeamFilter,
+  OfficialAssociatedTeamRepository,
 } from "../../core/interfaces/ports";
 import type { QueryOptions } from "../../core/interfaces/ports";
 import type { PaginatedAsyncResult } from "../../core/types/Result";
-import {
-  create_success_result,
-  create_failure_result,
-} from "../../core/types/Result";
 import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
 
 const ENTITY_PREFIX = "oat";

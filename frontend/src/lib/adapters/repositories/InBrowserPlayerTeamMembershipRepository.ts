@@ -1,20 +1,17 @@
 import type { Table } from "dexie";
-import type {
-  PlayerTeamMembership,
-  CreatePlayerTeamMembershipInput,
-  UpdatePlayerTeamMembershipInput,
-} from "../../core/entities/PlayerTeamMembership";
+
 import type { BaseEntity } from "../../core/entities/BaseEntity";
 import type {
-  PlayerTeamMembershipRepository,
+  CreatePlayerTeamMembershipInput,
+  PlayerTeamMembership,
+  UpdatePlayerTeamMembershipInput,
+} from "../../core/entities/PlayerTeamMembership";
+import type {
   PlayerTeamMembershipFilter,
+  PlayerTeamMembershipRepository,
 } from "../../core/interfaces/ports";
 import type { QueryOptions } from "../../core/interfaces/ports";
 import type { PaginatedAsyncResult } from "../../core/types/Result";
-import {
-  create_success_result,
-  create_failure_result,
-} from "../../core/types/Result";
 import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
 
 const ENTITY_PREFIX = "player_team_membership";

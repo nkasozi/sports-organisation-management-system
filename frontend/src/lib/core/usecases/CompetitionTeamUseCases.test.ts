@@ -1,10 +1,11 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { create_competition_team_use_cases } from "./CompetitionTeamUseCases";
-import type { CompetitionTeamRepository } from "../interfaces/ports";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
 import type {
   CompetitionTeam,
   CreateCompetitionTeamInput,
 } from "../entities/CompetitionTeam";
+import type { CompetitionTeamRepository } from "../interfaces/ports";
+import { create_competition_team_use_cases } from "./CompetitionTeamUseCases";
 
 function create_mock_repository(): CompetitionTeamRepository {
   return {

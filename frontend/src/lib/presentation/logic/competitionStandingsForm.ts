@@ -1,4 +1,5 @@
 import type { Fixture } from "$lib/core/entities/Fixture";
+
 import type { FormResult } from "./competitionStageResults";
 
 export function build_team_form_map(

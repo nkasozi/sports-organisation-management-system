@@ -1,12 +1,13 @@
 import type { Fixture } from "$lib/core/entities/Fixture";
 import type { PreFlightCheck } from "$lib/core/services/fixtureStartChecks";
 import { check_fixture_can_start } from "$lib/core/services/fixtureStartChecks";
+
 import { handle_missing_fixture_details } from "./liveGamesAutoSetupFlow";
 import {
+  type LiveGamesStartFlowDependencies,
   process_lineup_check,
   publish_checks,
   replace_last_check,
-  type LiveGamesStartFlowDependencies,
 } from "./liveGamesStartFlowShared";
 
 export type { LiveGamesStartFlowDependencies } from "./liveGamesStartFlowShared";

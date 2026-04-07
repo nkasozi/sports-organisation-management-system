@@ -1,19 +1,21 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+import type { SystemUser } from "$lib/core/entities/SystemUser";
+import type {
+  OrganizationRepository,
+  SystemUserRepository,
+} from "$lib/core/interfaces/ports";
+import {
+  create_failure_result,
+  create_success_result,
+} from "$lib/core/types/Result";
+
 import {
   convert_system_user_to_profile,
   convert_system_users_to_profiles,
-  resolve_organization_names,
   load_profiles_from_repository,
+  resolve_organization_names,
 } from "./profileLoader";
-import type { SystemUser } from "$lib/core/entities/SystemUser";
-import type {
-  SystemUserRepository,
-  OrganizationRepository,
-} from "$lib/core/interfaces/ports";
-import {
-  create_success_result,
-  create_failure_result,
-} from "$lib/core/types/Result";
 
 function create_test_system_user(
   overrides: Partial<SystemUser> = {},

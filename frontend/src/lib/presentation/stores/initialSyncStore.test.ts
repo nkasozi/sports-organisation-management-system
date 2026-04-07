@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const SESSION_SYNC_KEY = "sports_org_session_synced";
 
@@ -25,12 +25,13 @@ vi.mock("$lib/infrastructure/container", () => ({
   }),
 }));
 
+import { get } from "svelte/store";
+
 import {
-  has_session_been_synced,
   clear_session_sync_flag,
+  has_session_been_synced,
   initial_sync_store,
 } from "./initialSyncStore";
-import { get } from "svelte/store";
 
 describe("has_session_been_synced", () => {
   beforeEach(() => {

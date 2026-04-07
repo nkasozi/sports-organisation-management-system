@@ -1,12 +1,13 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
+
 import type { BaseEntity } from "../../core/entities/BaseEntity";
 import {
   build_entity_display_label,
-  get_display_value_for_foreign_key,
+  build_foreign_entity_cta_label,
+  build_foreign_entity_route,
   format_entity_display_name,
   format_enum_label,
-  build_foreign_entity_route,
-  build_foreign_entity_cta_label,
+  get_display_value_for_foreign_key,
 } from "./entityDisplayFormatter";
 
 function create_base_entity(overrides: Partial<BaseEntity> = {}): BaseEntity {
@@ -21,7 +22,10 @@ function create_base_entity(overrides: Partial<BaseEntity> = {}): BaseEntity {
 describe("entityDisplayFormatter", () => {
   describe("build_entity_display_label", () => {
     it("returns name when present", () => {
-      const entity = { ...create_base_entity(), name: "Arsenal" } as unknown as BaseEntity;
+      const entity = {
+        ...create_base_entity(),
+        name: "Arsenal",
+      } as unknown as BaseEntity;
       expect(build_entity_display_label(entity)).toBe("Arsenal");
     });
 
@@ -195,7 +199,10 @@ describe("entityDisplayFormatter", () => {
   describe("get_display_value_for_foreign_key", () => {
     it("returns display label for matching entity", () => {
       const options = [
-        { ...create_base_entity({ id: "t1" }), name: "Arsenal" } as unknown as BaseEntity,
+        {
+          ...create_base_entity({ id: "t1" }),
+          name: "Arsenal",
+        } as unknown as BaseEntity,
       ];
       expect(get_display_value_for_foreign_key(options, "t1")).toBe("Arsenal");
     });

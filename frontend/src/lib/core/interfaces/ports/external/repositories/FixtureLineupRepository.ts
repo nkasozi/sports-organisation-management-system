@@ -1,6 +1,6 @@
 import type {
-  FixtureLineup,
   CreateFixtureLineupInput,
+  FixtureLineup,
   UpdateFixtureLineupInput,
 } from "../../../../entities/FixtureLineup";
 import type {

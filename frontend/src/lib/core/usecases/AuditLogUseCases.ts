@@ -1,14 +1,13 @@
 import type {
+  AuditAction,
   AuditLog,
   CreateAuditLogInput,
-  AuditAction,
   FieldChange,
 } from "../entities/AuditLog";
-import { compute_field_changes } from "../entities/AuditLog";
-import type { AuditLogRepository, AuditLogFilter } from "../interfaces/ports";
+import type { AuditLogFilter, AuditLogRepository } from "../interfaces/ports";
 import type { QueryOptions } from "../interfaces/ports";
 import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
-import { create_success_result, create_failure_result } from "../types/Result";
+import { create_failure_result } from "../types/Result";
 
 export interface AuditLogUseCases {
   list(
@@ -125,4 +124,4 @@ function validate_audit_log_input(input: CreateAuditLogInput): string[] {
   return errors;
 }
 
-export type { AuditAction, FieldChange, AuditLogFilter };
+export type { AuditAction, AuditLogFilter, FieldChange };

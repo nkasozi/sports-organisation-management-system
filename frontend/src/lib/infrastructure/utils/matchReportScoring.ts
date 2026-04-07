@@ -1,6 +1,7 @@
-import { GAME_PERIOD } from "../../core/entities/StatusConstants";
 import type { GameEvent } from "$lib/core/entities/Fixture";
 import type { MatchScoreByPeriod } from "$lib/core/types/MatchReportTypes";
+
+import { GAME_PERIOD } from "../../core/entities/StatusConstants";
 
 const GOAL_TYPES = new Set(["goal", "own_goal", "penalty_scored"]);
 

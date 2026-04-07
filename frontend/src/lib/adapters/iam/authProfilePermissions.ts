@@ -1,20 +1,21 @@
-import { ENTITY_STATUS } from "../../core/entities/StatusConstants";
 import type {
   AuthenticationPort,
-  UserRole,
-  SystemUserRepository,
-  ProfilePermissions,
   AuthorizationFailure,
-  DataCategory,
   CategoryPermissions,
+  DataCategory,
+  ProfilePermissions,
+  SystemUserRepository,
+  UserRole,
 } from "$lib/core/interfaces/ports";
 import { get_role_permissions } from "$lib/core/interfaces/ports";
 import type { Result } from "$lib/core/types/Result";
 import {
-  create_success_result,
   create_failure_result,
+  create_success_result,
 } from "$lib/core/types/Result";
 import type { AuthCache } from "$lib/infrastructure/cache/AuthCache";
+
+import { ENTITY_STATUS } from "../../core/entities/StatusConstants";
 
 export async function get_role_for_email(
   system_user_repository: SystemUserRepository,

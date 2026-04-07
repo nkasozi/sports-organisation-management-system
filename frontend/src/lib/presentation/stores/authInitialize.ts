@@ -1,31 +1,33 @@
 import { get } from "svelte/store";
+
+import {
+  clerk_session,
+  is_clerk_loaded,
+  is_signed_in,
+} from "$lib/adapters/iam/clerkAuthService";
+import { get_authentication_adapter } from "$lib/adapters/iam/LocalAuthenticationAdapter";
+import { sync_branding_with_profile } from "$lib/adapters/initialization/brandingSyncService";
+import { get_organization_repository } from "$lib/adapters/repositories/InBrowserOrganizationRepository";
+import { get_system_user_repository } from "$lib/adapters/repositories/InBrowserSystemUserRepository";
 import type { AuthToken } from "$lib/core/interfaces/ports";
 import type { Result } from "$lib/core/types/Result";
 import {
-  create_success_result,
   create_failure_result,
+  create_success_result,
 } from "$lib/core/types/Result";
-import { get_authentication_adapter } from "$lib/adapters/iam/LocalAuthenticationAdapter";
-import { get_system_user_repository } from "$lib/adapters/repositories/InBrowserSystemUserRepository";
-import { get_organization_repository } from "$lib/adapters/repositories/InBrowserOrganizationRepository";
-import { sync_branding_with_profile } from "$lib/adapters/initialization/brandingSyncService";
-import { load_profiles_from_repository } from "./profileLoader";
+
 import {
-  is_signed_in,
-  is_clerk_loaded,
-  clerk_session,
-} from "$lib/adapters/iam/clerkAuthService";
-import type { AuthState, UserProfile } from "./authTypes";
-import {
-  load_saved_token,
-  clear_auth_storage,
-  save_token,
-  save_profile_id,
-  generate_token_for_profile,
-  sync_user_context_with_event_bus,
-  load_sidebar_menu_for_role,
   build_profiles_with_public_viewer,
+  clear_auth_storage,
+  generate_token_for_profile,
+  load_saved_token,
+  load_sidebar_menu_for_role,
+  save_profile_id,
+  save_token,
+  sync_user_context_with_event_bus,
 } from "./authHelpers";
+import type { AuthState, UserProfile } from "./authTypes";
+import { load_profiles_from_repository } from "./profileLoader";
 
 async function wait_for_clerk(): Promise<boolean> {
   const clerk_already_loaded = get(is_clerk_loaded);

@@ -1,16 +1,17 @@
 <script lang="ts">
     import { onMount } from "svelte";
+
+    import type { Official } from "$lib/core/entities/Official";
+    import { get_official_full_name } from "$lib/core/entities/Official";
     import type {
-        OfficialPerformanceRating,
         CreateOfficialPerformanceRatingInput,
+        OfficialPerformanceRating,
         RatingDimensions,
     } from "$lib/core/entities/OfficialPerformanceRating";
     import { validate_rating_input } from "$lib/core/entities/OfficialPerformanceRating";
-    import type { Official } from "$lib/core/entities/Official";
-    import { get_official_full_name } from "$lib/core/entities/Official";
-    import Toast from "$lib/presentation/components/ui/Toast.svelte";
-    import StarRatingInput from "$lib/presentation/components/ui/StarRatingInput.svelte";
 import { get_official_performance_rating_use_cases, get_official_use_cases } from "$lib/infrastructure/registry/useCaseFactories";
+    import StarRatingInput from "$lib/presentation/components/ui/StarRatingInput.svelte";
+    import Toast from "$lib/presentation/components/ui/Toast.svelte";
 
     function get_rating_dim(
         rating: RatingDimensions & { notes: string },

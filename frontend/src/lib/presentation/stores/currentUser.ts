@@ -1,11 +1,12 @@
-import { writable, derived, get } from "svelte/store";
+import { derived, get, writable } from "svelte/store";
+
 import { browser } from "$app/environment";
 import type { SystemUser, SystemUserRole } from "$lib/core/entities/SystemUser";
-import {
-  EventBus,
-  type EntityUpdatedPayload,
-} from "$lib/infrastructure/events/EventBus";
 import { get_app_settings_storage } from "$lib/infrastructure/container";
+import {
+  type EntityUpdatedPayload,
+  EventBus,
+} from "$lib/infrastructure/events/EventBus";
 
 export interface CurrentUser {
   id: string;

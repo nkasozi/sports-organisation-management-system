@@ -1,21 +1,18 @@
 import type { Table } from "dexie";
-import type {
-  Qualification,
-  CreateQualificationInput,
-  UpdateQualificationInput,
-  QualificationHolderType,
-} from "../../core/entities/Qualification";
+
 import type { BaseEntity } from "../../core/entities/BaseEntity";
 import type {
-  QualificationRepository,
+  CreateQualificationInput,
+  Qualification,
+  QualificationHolderType,
+  UpdateQualificationInput,
+} from "../../core/entities/Qualification";
+import type {
   QualificationFilter,
+  QualificationRepository,
 } from "../../core/interfaces/ports";
 import type { QueryOptions } from "../../core/interfaces/ports";
 import type { PaginatedAsyncResult } from "../../core/types/Result";
-import {
-  create_success_result,
-  create_failure_result,
-} from "../../core/types/Result";
 import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
 
 const ENTITY_PREFIX = "qual";

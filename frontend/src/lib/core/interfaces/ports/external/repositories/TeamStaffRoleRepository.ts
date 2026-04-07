@@ -1,13 +1,13 @@
-import type { Repository, QueryOptions } from "./Repository";
+import type {
+  CreateTeamStaffRoleInput,
+  TeamStaffRole,
+  UpdateTeamStaffRoleInput,
+} from "../../../../entities/TeamStaffRole";
 import type {
   AsyncResult,
   PaginatedAsyncResult,
 } from "../../../../types/Result";
-import type {
-  TeamStaffRole,
-  CreateTeamStaffRoleInput,
-  UpdateTeamStaffRoleInput,
-} from "../../../../entities/TeamStaffRole";
+import type { QueryOptions, Repository } from "./Repository";
 
 export interface TeamStaffRoleFilter {
   name_contains?: string;
@@ -32,7 +32,7 @@ export interface TeamStaffRoleRepository extends Repository<
 }
 
 export type {
-  TeamStaffRole,
   CreateTeamStaffRoleInput,
+  TeamStaffRole,
   UpdateTeamStaffRoleInput,
 };

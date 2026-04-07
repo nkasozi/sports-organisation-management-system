@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
+
 import {
-  COUNTRY_NAMES,
   build_country_select_options,
+  COUNTRY_NAMES,
   get_country_names_sorted_unique,
   is_country_name,
 } from "./countries";

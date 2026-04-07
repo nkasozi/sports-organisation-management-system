@@ -1,14 +1,15 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
+
 import {
-  get_is_public_profile_page,
-  get_is_public_content_page,
-  get_is_auth_page,
-  is_route_guard_exempt,
-  determine_session_action,
-  is_in_app_navigation,
-  format_table_name,
-  scale_sync_percentage,
   build_sync_progress_message,
+  determine_session_action,
+  format_table_name,
+  get_is_auth_page,
+  get_is_public_content_page,
+  get_is_public_profile_page,
+  is_in_app_navigation,
+  is_route_guard_exempt,
+  scale_sync_percentage,
   should_pull_org_from_server,
 } from "./layoutLogic";
 

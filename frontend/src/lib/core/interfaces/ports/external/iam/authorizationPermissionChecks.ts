@@ -1,18 +1,19 @@
-import type { UserRole } from "./AuthenticationPort";
 import type {
-  SharedEntityType,
   SharedCrudPermissions,
+  SharedEntityType,
 } from "$convex/shared_permission_definitions";
 import {
   SHARED_ENTITY_CATEGORY_MAP,
   SHARED_ROLE_PERMISSIONS,
 } from "$convex/shared_permission_definitions";
+
+import type { UserRole } from "./AuthenticationPort";
 import type {
-  DataAction,
-  DataCategory,
   CategoryPermissions,
-  RolePermissionMap,
+  DataAction,
   DataAuthorizationResult,
+  DataCategory,
+  RolePermissionMap,
 } from "./AuthorizationPort";
 
 export const ENTITY_LEVEL_DISABLED_OPERATIONS: Partial<

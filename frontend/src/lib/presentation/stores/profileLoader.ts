@@ -1,9 +1,10 @@
-import { WILDCARD_SCOPE } from "../../core/entities/StatusConstants";
 import type { SystemUser } from "$lib/core/entities/SystemUser";
 import type {
-  SystemUserRepository,
   OrganizationRepository,
+  SystemUserRepository,
 } from "$lib/core/interfaces/ports";
+
+import { WILDCARD_SCOPE } from "../../core/entities/StatusConstants";
 import type { UserProfile } from "./auth";
 
 export function convert_system_user_to_profile(

@@ -25,11 +25,12 @@ export async function load_live_games_permissions(
   raw_token: string,
   authorization_adapter: LiveGamesAuthorizationAdapter,
 ): Promise<LiveGamesPermissions> {
-  const read_authorization = await authorization_adapter.check_entity_authorized(
-    raw_token,
-    "fixture",
-    "read",
-  );
+  const read_authorization =
+    await authorization_adapter.check_entity_authorized(
+      raw_token,
+      "fixture",
+      "read",
+    );
   if (!read_authorization.success || !read_authorization.data) {
     return {
       authorization_succeeded: false,
@@ -40,11 +41,12 @@ export async function load_live_games_permissions(
     };
   }
 
-  const update_authorization = await authorization_adapter.check_entity_authorized(
-    raw_token,
-    "fixture",
-    "update",
-  );
+  const update_authorization =
+    await authorization_adapter.check_entity_authorized(
+      raw_token,
+      "fixture",
+      "update",
+    );
   const can_start_games = Boolean(
     update_authorization.success && update_authorization.data?.is_authorized,
   );
@@ -66,11 +68,12 @@ export async function validate_live_games_start_permission(
   raw_token: string,
   authorization_adapter: LiveGamesAuthorizationAdapter,
 ): Promise<string> {
-  const authorization_check = await authorization_adapter.check_entity_authorized(
-    raw_token,
-    "fixture",
-    "update",
-  );
+  const authorization_check =
+    await authorization_adapter.check_entity_authorized(
+      raw_token,
+      "fixture",
+      "update",
+    );
   if (!authorization_check.success || authorization_check.data?.is_authorized) {
     return "";
   }

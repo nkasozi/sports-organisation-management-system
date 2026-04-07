@@ -1,9 +1,10 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
+
 import {
-  check_player_team_gender_mismatch,
   check_fixture_team_gender_mismatch,
-  type GenderMismatchInput,
+  check_player_team_gender_mismatch,
   type FixtureTeamGenderMismatchInput,
+  type GenderMismatchInput,
 } from "./genderMismatchCheck";
 
 function create_mismatch_input(

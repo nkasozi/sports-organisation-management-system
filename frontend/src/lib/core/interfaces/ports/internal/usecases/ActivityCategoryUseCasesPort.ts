@@ -3,12 +3,12 @@ import type {
   CreateActivityCategoryInput,
   UpdateActivityCategoryInput,
 } from "../../../../entities/ActivityCategory";
+import type {
+  AsyncResult,
+  PaginatedAsyncResult,
+} from "../../../../types/Result";
 import type { ActivityCategoryFilter } from "../../external/repositories/ActivityCategoryRepository";
 import type { QueryOptions } from "../../external/repositories/Repository";
-import type {
-  PaginatedAsyncResult,
-  AsyncResult,
-} from "../../../../types/Result";
 import type { BaseUseCasesPort } from "./BaseUseCasesPort";
 
 export interface ActivityCategoryUseCasesPort extends BaseUseCasesPort<

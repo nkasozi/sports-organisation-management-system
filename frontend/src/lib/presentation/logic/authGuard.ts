@@ -1,10 +1,12 @@
 import { get } from "svelte/store";
+
 import { goto } from "$app/navigation";
-import { auth_store } from "../stores/auth";
-import { access_denial_store } from "../stores/accessDenial";
-import type { UserProfile } from "../stores/auth";
 import type { UserRole } from "$lib/core/interfaces/ports";
 import { get_authorization_adapter } from "$lib/infrastructure/AuthorizationProvider";
+
+import { access_denial_store } from "../stores/accessDenial";
+import type { UserProfile } from "../stores/auth";
+import { auth_store } from "../stores/auth";
 
 export interface AuthGuardResult {
   success: boolean;

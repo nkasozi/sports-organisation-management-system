@@ -1,19 +1,19 @@
 import type { Activity, CreateActivityInput } from "../entities/Activity";
 import {
-  create_activity_from_fixture,
   create_activity_from_competition,
+  create_activity_from_fixture,
 } from "../entities/Activity";
 import type { ActivityCategoryType } from "../entities/ActivityCategory";
 import type {
-  ActivityRepository,
   ActivityCategoryRepository,
+  ActivityRepository,
+  ActivityUseCasesPort,
   CompetitionRepository,
   FixtureRepository,
   TeamRepository,
-  ActivityUseCasesPort,
 } from "../interfaces/ports";
 import type { AsyncResult, Result } from "../types/Result";
-import { create_success_result, create_failure_result } from "../types/Result";
+import { create_failure_result, create_success_result } from "../types/Result";
 
 type ActivitySyncMethods = Pick<
   ActivityUseCasesPort,

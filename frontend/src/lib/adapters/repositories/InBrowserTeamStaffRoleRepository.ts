@@ -1,23 +1,20 @@
 import type { Table } from "dexie";
-import type {
-  TeamStaffRole,
-  CreateTeamStaffRoleInput,
-  UpdateTeamStaffRoleInput,
-} from "../../core/entities/TeamStaffRole";
+
 import type { BaseEntity } from "../../core/entities/BaseEntity";
 import type {
-  TeamStaffRoleRepository,
-  TeamStaffRoleFilter,
-  QueryOptions,
-} from "../../core/interfaces/ports";
+  CreateTeamStaffRoleInput,
+  TeamStaffRole,
+  UpdateTeamStaffRoleInput,
+} from "../../core/entities/TeamStaffRole";
 import type {
-  PaginatedAsyncResult,
-  AsyncResult,
-  Result,
-} from "../../core/types/Result";
+  QueryOptions,
+  TeamStaffRoleFilter,
+  TeamStaffRoleRepository,
+} from "../../core/interfaces/ports";
+import type { PaginatedAsyncResult, Result } from "../../core/types/Result";
 import {
-  create_success_result,
   create_failure_result,
+  create_success_result,
 } from "../../core/types/Result";
 import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
 export { create_default_team_staff_roles_for_organization } from "./InBrowserTeamStaffRoleRepositoryDefaults";

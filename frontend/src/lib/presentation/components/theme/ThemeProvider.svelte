@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
+
   import { theme_store } from "$lib/presentation/stores/theme";
 
   let mounted = false;

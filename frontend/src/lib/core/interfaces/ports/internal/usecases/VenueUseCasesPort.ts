@@ -1,10 +1,10 @@
 import type {
-  Venue,
   CreateVenueInput,
   UpdateVenueInput,
+  Venue,
 } from "../../../../entities/Venue";
-import type { VenueFilter } from "../../external/repositories/VenueRepository";
 import type { AsyncResult } from "../../../../types/Result";
+import type { VenueFilter } from "../../external/repositories/VenueRepository";
 import type { BaseUseCasesPort } from "./BaseUseCasesPort";
 
 export interface VenueUseCasesPort extends BaseUseCasesPort<

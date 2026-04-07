@@ -1,10 +1,11 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { create_organization_use_cases } from "./OrganizationUseCases";
-import type { OrganizationRepository } from "../interfaces/ports";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
 import type {
-  Organization,
   CreateOrganizationInput,
+  Organization,
 } from "../entities/Organization";
+import type { OrganizationRepository } from "../interfaces/ports";
+import { create_organization_use_cases } from "./OrganizationUseCases";
 
 function create_mock_repository(): OrganizationRepository {
   return {

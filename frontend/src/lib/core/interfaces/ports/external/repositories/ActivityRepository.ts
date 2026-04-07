@@ -1,16 +1,16 @@
-import type { FilterableRepository, QueryOptions } from "./Repository";
+import type {
+  Activity,
+  ActivitySourceType,
+  ActivityStatus,
+  CreateActivityInput,
+  UpdateActivityInput,
+} from "../../../../entities/Activity";
+import type { ActivityCategoryType } from "../../../../entities/ActivityCategory";
 import type {
   AsyncResult,
   PaginatedAsyncResult,
 } from "../../../../types/Result";
-import type {
-  Activity,
-  CreateActivityInput,
-  UpdateActivityInput,
-  ActivityStatus,
-  ActivitySourceType,
-} from "../../../../entities/Activity";
-import type { ActivityCategoryType } from "../../../../entities/ActivityCategory";
+import type { FilterableRepository, QueryOptions } from "./Repository";
 
 export interface ActivityFilter {
   title_contains?: string;

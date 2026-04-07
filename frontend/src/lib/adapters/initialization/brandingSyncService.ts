@@ -1,7 +1,7 @@
-import { branding_store } from "$lib/presentation/stores/branding";
-import type { UserProfile } from "$lib/presentation/stores/auth";
 import { ANY_VALUE } from "$lib/core/interfaces/ports";
 import { get_organization_use_cases } from "$lib/infrastructure/registry/useCaseFactories";
+import type { UserProfile } from "$lib/presentation/stores/auth";
+import { branding_store } from "$lib/presentation/stores/branding";
 
 export async function sync_branding_with_profile(
   profile: UserProfile | null,

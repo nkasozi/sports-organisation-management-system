@@ -1,14 +1,14 @@
 import type {
-  Official,
   CreateOfficialInput,
+  Official,
   UpdateOfficialInput,
 } from "../entities/Official";
-import type { OfficialRepository, OfficialFilter } from "../interfaces/ports";
-import type { QueryOptions } from "../interfaces/ports";
-import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
-import type { OfficialUseCasesPort } from "../interfaces/ports";
-import { create_success_result, create_failure_result } from "../types/Result";
 import { validate_official_input } from "../entities/Official";
+import type { OfficialFilter, OfficialRepository } from "../interfaces/ports";
+import type { QueryOptions } from "../interfaces/ports";
+import type { OfficialUseCasesPort } from "../interfaces/ports";
+import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
+import { create_failure_result } from "../types/Result";
 
 export type OfficialUseCases = OfficialUseCasesPort;
 

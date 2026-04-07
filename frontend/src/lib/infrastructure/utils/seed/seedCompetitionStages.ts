@@ -1,8 +1,8 @@
 import type { CompetitionStage } from "../../../core/entities/CompetitionStage";
 import {
-  SEED_STAGE_IDS,
-  SEED_COMPETITION_IDS,
   generate_current_timestamp,
+  SEED_COMPETITION_IDS,
+  SEED_STAGE_IDS,
 } from "./seedIds";
 
 export function create_seed_competition_stages(): CompetitionStage[] {

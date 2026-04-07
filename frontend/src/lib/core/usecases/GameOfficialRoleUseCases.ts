@@ -1,16 +1,16 @@
 import type {
-  GameOfficialRole,
   CreateGameOfficialRoleInput,
+  GameOfficialRole,
   UpdateGameOfficialRoleInput,
 } from "../entities/GameOfficialRole";
 import type {
-  GameOfficialRoleRepository,
   GameOfficialRoleFilter,
+  GameOfficialRoleRepository,
 } from "../interfaces/ports";
 import type { QueryOptions } from "../interfaces/ports";
+import type { GameOfficialRoleUseCasesPort } from "../interfaces/ports";
 import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
 import { create_failure_result, create_success_result } from "../types/Result";
-import type { GameOfficialRoleUseCasesPort } from "../interfaces/ports";
 
 export type GameOfficialRoleUseCases = GameOfficialRoleUseCasesPort;
 

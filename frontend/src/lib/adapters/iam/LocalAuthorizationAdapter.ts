@@ -1,45 +1,44 @@
 import type {
   AuthenticationPort,
-  UserRole,
-  SystemUserRepository,
-  AuthorizationPort,
-  SidebarMenuGroup,
-  ProfilePermissions,
   AuthorizationFailure,
-  RouteAccessGranted,
-  RouteAccessDenied,
+  AuthorizationPort,
   DataAction,
   EntityAuthorizationResult,
+  ProfilePermissions,
+  RouteAccessDenied,
+  RouteAccessGranted,
+  SidebarMenuGroup,
+  SystemUserRepository,
+  UserRole,
 } from "$lib/core/interfaces/ports";
 import type { AsyncResult } from "$lib/core/types/Result";
 import { create_success_result } from "$lib/core/types/Result";
 import {
-  create_auth_cache,
   type AuthCache,
+  create_auth_cache,
 } from "$lib/infrastructure/cache/AuthCache";
-import { get_profile_permissions_impl } from "./authProfilePermissions";
-import {
-  get_sidebar_menu_for_profile_impl,
-  can_profile_access_route_impl,
-} from "./authProfileRouting";
-import { check_entity_authorized_impl } from "./authEntityCheck";
+
 import {
   get_allowed_entity_actions_impl,
   get_disabled_entity_actions_impl,
 } from "./authEntityActions";
+import { check_entity_authorized_impl } from "./authEntityCheck";
+import { get_profile_permissions_impl } from "./authProfilePermissions";
+import {
+  can_profile_access_route_impl,
+  get_sidebar_menu_for_profile_impl,
+} from "./authProfileRouting";
 import {
   get_allowed_routes_for_role,
   get_sidebar_menu_for_role,
-  get_default_route_for_role,
-  can_role_access_route,
   ROLE_DEFAULT_ROUTES,
 } from "./roleMenuRegistry";
 
 export {
-  get_allowed_routes_for_role,
-  get_sidebar_menu_for_role,
-  get_default_route_for_role,
   can_role_access_route,
+  get_allowed_routes_for_role,
+  get_default_route_for_role,
+  get_sidebar_menu_for_role,
 } from "./roleMenuRegistry";
 
 const AUTHORIZATION_CACHE_MAX_ENTRIES = 200;

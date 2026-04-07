@@ -1,7 +1,7 @@
 import type {
+  RemoteChangeSubscriberPort,
   SyncOrchestratorPort,
   SyncRestorationHandlers,
-  RemoteChangeSubscriberPort,
 } from "$lib/core/interfaces/ports";
 
 export const DEBOUNCE_DELAY_MS = 3000;

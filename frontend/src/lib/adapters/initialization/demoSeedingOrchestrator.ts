@@ -1,31 +1,31 @@
-import type { DemoSeedingRepos } from "./demoSeedingRepos";
-import type { SeedEntityIdLookups } from "./seedingTypes";
+import type { Result } from "../../core/types/Result";
 import {
-  seed_demo_players,
-  seed_demo_venues,
-  seed_demo_teams,
-  seed_demo_team_staff,
-  seed_demo_officials,
-  seed_demo_competitions,
+  create_failure_result,
+  create_success_result,
+} from "../../core/types/Result";
+import {
   seed_demo_competition_stages,
+  seed_demo_competitions,
+  seed_demo_officials,
+  seed_demo_players,
+  seed_demo_team_staff,
+  seed_demo_teams,
+  seed_demo_venues,
 } from "./demoEntitySeedersCore";
 import {
   seed_demo_competition_teams,
-  seed_demo_player_memberships,
-  seed_demo_fixtures,
   seed_demo_fixture_lineups,
+  seed_demo_fixtures,
   seed_demo_jersey_colors,
+  seed_demo_player_memberships,
 } from "./demoEntitySeedersExtended";
 import {
   seed_demo_player_profiles,
-  seed_demo_team_profiles,
   seed_demo_profile_links,
+  seed_demo_team_profiles,
 } from "./demoEntitySeedersProfiles";
-import type { Result } from "../../core/types/Result";
-import {
-  create_success_result,
-  create_failure_result,
-} from "../../core/types/Result";
+import type { DemoSeedingRepos } from "./demoSeedingRepos";
+import type { SeedEntityIdLookups } from "./seedingTypes";
 
 export async function seed_all_demo_entities(
   organization_id: string,

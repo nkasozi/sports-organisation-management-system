@@ -1,7 +1,7 @@
+import type { AuditLog } from "../../core/entities/AuditLog";
 import type { EntityMetadata } from "../../core/entities/BaseEntity";
 import type { ProfileLink } from "../../core/entities/ProfileLink";
 import { PROFILE_LINK_PLATFORM_OPTIONS } from "../../core/entities/ProfileLink";
-import type { AuditLog } from "../../core/entities/AuditLog";
 
 export function register_profile_link_metadata(
   metadata_map: Map<string, EntityMetadata>,

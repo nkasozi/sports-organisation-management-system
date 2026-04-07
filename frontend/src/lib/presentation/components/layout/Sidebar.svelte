@@ -1,15 +1,16 @@
 <script lang="ts">
   import { createEventDispatcher } from "svelte";
-  import { page } from "$app/stores";
+
   import { goto } from "$app/navigation";
-  import { branding_store } from "$lib/presentation/stores/branding";
-  import { current_user_store } from "$lib/presentation/stores/currentUser";
+  import { page } from "$app/stores";
   import {
-    sidebar_menu_items,
-    current_user_role_display,
     current_profile_display_name,
     current_profile_initials,
+    current_user_role_display,
+    sidebar_menu_items,
   } from "$lib/presentation/stores/auth";
+  import { branding_store } from "$lib/presentation/stores/branding";
+  import { current_user_store } from "$lib/presentation/stores/currentUser";
 
   export let sidebar_open = false;
 

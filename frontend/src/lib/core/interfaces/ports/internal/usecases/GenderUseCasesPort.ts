@@ -1,14 +1,14 @@
 import type {
-  Gender,
   CreateGenderInput,
+  Gender,
   UpdateGenderInput,
 } from "../../../../entities/Gender";
-import type { GenderFilter } from "../../external/repositories/GenderRepository";
-import type { QueryOptions } from "../../external/repositories/Repository";
 import type {
   AsyncResult,
   PaginatedAsyncResult,
 } from "../../../../types/Result";
+import type { GenderFilter } from "../../external/repositories/GenderRepository";
+import type { QueryOptions } from "../../external/repositories/Repository";
 
 export interface GenderUseCasesPort {
   create(input: CreateGenderInput): AsyncResult<Gender>;

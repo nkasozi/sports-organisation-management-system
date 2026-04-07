@@ -1,14 +1,14 @@
 import {
+  type ProgressCallback,
+  try_seed_all_tables_from_convex,
+} from "../../infrastructure/sync/convexSeedingService";
+import { seed_all_data_if_needed } from "./seedingService";
+import {
   is_seeding_already_complete,
   mark_seeding_complete,
   type SeedResult,
 } from "./seedingTypes";
 import { load_and_set_current_user } from "./seedingUserSetup";
-import { seed_all_data_if_needed } from "./seedingService";
-import {
-  try_seed_all_tables_from_convex,
-  type ProgressCallback,
-} from "../../infrastructure/sync/convexSeedingService";
 
 export function handle_skip_seeding(): SeedResult {
   console.log("[Seeding] Skip strategy — public viewer, no seeding needed");

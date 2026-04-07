@@ -1,19 +1,20 @@
-import { get_app_settings_storage } from "$lib/infrastructure/container";
-import type { AuthToken, UserRole } from "$lib/core/interfaces/ports";
-import type { Result } from "$lib/core/types/Result";
-import type { SidebarMenuGroup } from "$lib/core/interfaces/ports";
-import {
-  set_user_context,
-  clear_user_context,
-} from "$lib/infrastructure/events/EventBus";
 import { get_authentication_adapter } from "$lib/adapters/iam/LocalAuthenticationAdapter";
 import { get_system_user_repository } from "$lib/adapters/repositories/InBrowserSystemUserRepository";
+import type { AuthToken, UserRole } from "$lib/core/interfaces/ports";
+import type { SidebarMenuGroup } from "$lib/core/interfaces/ports";
+import type { Result } from "$lib/core/types/Result";
 import { get_authorization_adapter } from "$lib/infrastructure/AuthorizationProvider";
+import { get_app_settings_storage } from "$lib/infrastructure/container";
+import {
+  clear_user_context,
+  set_user_context,
+} from "$lib/infrastructure/events/EventBus";
 import { get_sync_manager } from "$lib/infrastructure/sync/convexSyncService";
+
 import type {
-  UserProfile,
-  ConvexUserProfile,
   ConvexGetProfileResponse,
+  ConvexUserProfile,
+  UserProfile,
 } from "./authTypes";
 import { AUTH_STORAGE_KEY, PROFILE_STORAGE_KEY } from "./authTypes";
 

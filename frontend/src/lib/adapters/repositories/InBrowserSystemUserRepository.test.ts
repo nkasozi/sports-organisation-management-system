@@ -1,4 +1,5 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
+
 import { resolve_organization_id_for_role } from "./InBrowserSystemUserRepository";
 
 describe("resolve_organization_id_for_role", () => {

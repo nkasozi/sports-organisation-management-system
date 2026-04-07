@@ -1,18 +1,20 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+import type { BaseEntity } from "$lib/core/entities/BaseEntity";
+import type { GenericEntityUseCases } from "$lib/infrastructure/registry/entityUseCasesRegistry";
+
 import {
-  resolve_entity_name_to_id,
-  resolve_multiple_names_to_ids,
   convert_name_column_to_id_column,
-  is_name_column,
+  extract_entity_type_from_id_column,
   extract_entity_type_from_name_column,
   is_id_column,
-  extract_entity_type_from_id_column,
+  is_name_column,
   looks_like_entity_id,
   looks_like_entity_name,
   type NameResolutionInput,
+  resolve_entity_name_to_id,
+  resolve_multiple_names_to_ids,
 } from "./nameResolutionService";
-import type { GenericEntityUseCases } from "$lib/infrastructure/registry/entityUseCasesRegistry";
-import type { BaseEntity } from "$lib/core/entities/BaseEntity";
 
 function create_mock_use_cases(list_response: {
   success: boolean;

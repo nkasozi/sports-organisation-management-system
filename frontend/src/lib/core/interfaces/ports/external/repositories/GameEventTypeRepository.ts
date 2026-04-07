@@ -1,14 +1,14 @@
-import type { Repository, QueryOptions } from "./Repository";
+import type {
+  CreateGameEventTypeInput,
+  EventCategory,
+  GameEventType,
+  UpdateGameEventTypeInput,
+} from "../../../../entities/GameEventType";
 import type {
   AsyncResult,
   PaginatedAsyncResult,
 } from "../../../../types/Result";
-import type {
-  GameEventType,
-  CreateGameEventTypeInput,
-  UpdateGameEventTypeInput,
-  EventCategory,
-} from "../../../../entities/GameEventType";
+import type { QueryOptions, Repository } from "./Repository";
 
 export interface GameEventTypeFilter {
   name_contains?: string;
@@ -38,7 +38,7 @@ export interface GameEventTypeRepository extends Repository<
 }
 
 export type {
-  GameEventType,
   CreateGameEventTypeInput,
+  GameEventType,
   UpdateGameEventTypeInput,
 };

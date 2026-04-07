@@ -1,41 +1,41 @@
+import { DexieAppSettingsAdapter } from "../adapters/persistence/DexieAppSettingsAdapter";
 import type {
-  OrganizationUseCasesPort,
-  CompetitionUseCasesPort,
-  TeamUseCasesPort,
-  PlayerUseCasesPort,
-  OfficialUseCasesPort,
-  FixtureUseCasesPort,
-  ActivityUseCasesPort,
   ActivityCategoryUseCasesPort,
+  ActivityUseCasesPort,
+  AppSettingsPort,
   CalendarTokenUseCasesPort,
   CompetitionStageUseCasesPort,
+  CompetitionUseCasesPort,
+  FixtureUseCasesPort,
+  OfficialUseCasesPort,
   OrganizationSettingsUseCasesPort,
-  AppSettingsPort,
+  OrganizationUseCasesPort,
+  PlayerUseCasesPort,
+  TeamUseCasesPort,
 } from "../core/interfaces/ports";
-import { create_organization_use_cases } from "../core/usecases/OrganizationUseCases";
-import { create_competition_use_cases_with_stage_lifecycle } from "../core/usecases/CompetitionUseCases";
-import { create_competition_stage_lifecycle } from "../core/usecases/CompetitionStageLifecycle";
-import { create_team_use_cases } from "../core/usecases/TeamUseCases";
-import { create_player_use_cases } from "../core/usecases/PlayerUseCases";
-import { create_official_use_cases } from "../core/usecases/OfficialUseCases";
-import { create_fixture_use_cases } from "../core/usecases/FixtureUseCases";
-import { create_activity_use_cases } from "../core/usecases/ActivityUseCases";
 import { create_activity_category_use_cases } from "../core/usecases/ActivityCategoryUseCases";
+import { create_activity_use_cases } from "../core/usecases/ActivityUseCases";
+import {
+  type AuditLogUseCases,
+  create_audit_log_use_cases,
+} from "../core/usecases/AuditLogUseCases";
 import { create_calendar_token_use_cases } from "../core/usecases/CalendarTokenUseCases";
+import { create_competition_stage_lifecycle } from "../core/usecases/CompetitionStageLifecycle";
+import { create_competition_stage_use_cases } from "../core/usecases/CompetitionStageUseCases";
+import { create_competition_use_cases_with_stage_lifecycle } from "../core/usecases/CompetitionUseCases";
+import { create_fixture_use_cases } from "../core/usecases/FixtureUseCases";
+import { create_official_use_cases } from "../core/usecases/OfficialUseCases";
+import { create_organization_settings_use_cases } from "../core/usecases/OrganizationSettingsUseCases";
+import { create_organization_use_cases } from "../core/usecases/OrganizationUseCases";
+import { create_player_use_cases } from "../core/usecases/PlayerUseCases";
 import {
   create_system_user_use_cases,
   type SystemUserUseCases,
 } from "../core/usecases/SystemUserUseCases";
+import { create_team_use_cases } from "../core/usecases/TeamUseCases";
 import {
-  create_audit_log_use_cases,
-  type AuditLogUseCases,
-} from "../core/usecases/AuditLogUseCases";
-import { create_competition_stage_use_cases } from "../core/usecases/CompetitionStageUseCases";
-import { create_organization_settings_use_cases } from "../core/usecases/OrganizationSettingsUseCases";
-import { DexieAppSettingsAdapter } from "../adapters/persistence/DexieAppSettingsAdapter";
-import {
-  type RepositoryContainer,
   create_in_browser_repository_container,
+  type RepositoryContainer,
 } from "./RepositoryContainerFactory";
 
 export type { RepositoryContainer } from "./RepositoryContainerFactory";

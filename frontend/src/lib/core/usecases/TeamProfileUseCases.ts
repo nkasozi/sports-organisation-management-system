@@ -1,16 +1,16 @@
 import type {
-  TeamProfile,
   CreateTeamProfileInput,
+  TeamProfile,
   UpdateTeamProfileInput,
 } from "../entities/TeamProfile";
+import { validate_team_profile_input } from "../entities/TeamProfile";
 import type {
-  TeamProfileRepository,
   TeamProfileFilter,
+  TeamProfileRepository,
 } from "../interfaces/ports";
 import type { QueryOptions } from "../interfaces/ports";
 import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
 import { create_failure_result } from "../types/Result";
-import { validate_team_profile_input } from "../entities/TeamProfile";
 
 export interface TeamProfileUseCases {
   list(

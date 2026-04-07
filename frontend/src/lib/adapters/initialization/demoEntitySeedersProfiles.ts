@@ -1,17 +1,17 @@
-import type { InBrowserPlayerProfileRepository } from "../repositories/InBrowserPlayerProfileRepository";
-import type { InBrowserTeamProfileRepository } from "../repositories/InBrowserTeamProfileRepository";
-import type { InBrowserProfileLinkRepository } from "../repositories/InBrowserProfileLinkRepository";
-import {
-  create_seed_player_profiles,
-  create_seed_team_profiles,
-  create_seed_profile_links,
-  create_seed_team_profile_links,
-} from "../../infrastructure/utils/SeedDataGenerator";
 import type { Result } from "../../core/types/Result";
 import {
-  create_success_result,
   create_failure_result,
+  create_success_result,
 } from "../../core/types/Result";
+import {
+  create_seed_player_profiles,
+  create_seed_profile_links,
+  create_seed_team_profile_links,
+  create_seed_team_profiles,
+} from "../../infrastructure/utils/SeedDataGenerator";
+import type { InBrowserPlayerProfileRepository } from "../repositories/InBrowserPlayerProfileRepository";
+import type { InBrowserProfileLinkRepository } from "../repositories/InBrowserProfileLinkRepository";
+import type { InBrowserTeamProfileRepository } from "../repositories/InBrowserTeamProfileRepository";
 import { emit_entity_created_events } from "./seedingUserSetup";
 
 export async function seed_demo_player_profiles(

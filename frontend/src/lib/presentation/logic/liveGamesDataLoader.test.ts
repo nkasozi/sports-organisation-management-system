@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { ANY_VALUE, type UserScopeProfile } from "$lib/core/interfaces/ports";
+
 import type { Fixture } from "$lib/core/entities/Fixture";
 import type { Organization } from "$lib/core/entities/Organization";
+import { ANY_VALUE, type UserScopeProfile } from "$lib/core/interfaces/ports";
+
 import {
   can_user_change_live_games_organization,
   load_live_games_fixture_state,
@@ -106,7 +108,11 @@ describe("liveGamesDataLoader", () => {
       competition_use_cases: {
         get_by_id: async () => ({
           success: true,
-          data: { id: "comp_1", name: "National League", organization_id: "org_1" },
+          data: {
+            id: "comp_1",
+            name: "National League",
+            organization_id: "org_1",
+          },
         }),
       },
       organization_use_cases: {

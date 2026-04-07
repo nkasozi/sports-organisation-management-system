@@ -1,13 +1,14 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
+
+import type { Activity } from "../entities/Activity";
+import type { Fixture } from "../entities/Fixture";
 import {
-  generate_ical_feed,
   convert_activity_to_ical_event,
   convert_fixture_to_ical_event,
+  generate_ical_feed,
   type ICalEvent,
   type ICalFeedConfig,
 } from "./ICalService";
-import type { Activity } from "../entities/Activity";
-import type { Fixture } from "../entities/Fixture";
 
 describe("ICalService", () => {
   describe("generate_ical_feed", () => {

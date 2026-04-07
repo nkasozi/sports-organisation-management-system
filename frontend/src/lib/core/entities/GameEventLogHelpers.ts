@@ -1,8 +1,8 @@
 import type {
+  CreateGameEventLogInput,
   GameEventLog,
   GameEventLogType,
   TeamSide,
-  CreateGameEventLogInput,
   UpdateGameEventLogInput,
 } from "./GameEventLogTypes";
 

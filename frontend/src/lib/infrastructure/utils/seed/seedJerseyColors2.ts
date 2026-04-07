@@ -1,10 +1,9 @@
 import type { JerseyColor } from "../../../core/entities/JerseyColor";
 import {
-  SEED_JERSEY_COLOR_IDS,
-  SEED_ORGANIZATION_IDS,
-  SEED_TEAM_IDS,
-  SEED_COMPETITION_IDS,
   generate_current_timestamp,
+  SEED_COMPETITION_IDS,
+  SEED_JERSEY_COLOR_IDS,
+  SEED_TEAM_IDS,
 } from "./seedIds";
 
 export function create_seed_jersey_colors_part2(): JerseyColor[] {

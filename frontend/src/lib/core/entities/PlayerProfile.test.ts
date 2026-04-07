@@ -1,8 +1,9 @@
 import { describe, expect, it } from "vitest";
+
 import {
-  validate_player_profile_input,
   create_empty_player_profile_input,
   generate_profile_slug,
+  validate_player_profile_input,
 } from "./PlayerProfile";
 
 describe("PlayerProfile", () => {

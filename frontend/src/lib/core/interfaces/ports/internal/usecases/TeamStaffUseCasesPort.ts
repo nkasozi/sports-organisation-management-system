@@ -1,12 +1,12 @@
 import type {
-  TeamStaff,
   CreateTeamStaffInput,
+  TeamStaff,
   UpdateTeamStaffInput,
 } from "../../../../entities/TeamStaff";
 import type { TeamStaffRole } from "../../../../entities/TeamStaffRole";
-import type { TeamStaffFilter } from "../../external/repositories/TeamStaffRepository";
-import type { QueryOptions } from "../../external/repositories/Repository";
 import type { AsyncResult, PaginatedResult } from "../../../../types/Result";
+import type { QueryOptions } from "../../external/repositories/Repository";
+import type { TeamStaffFilter } from "../../external/repositories/TeamStaffRepository";
 import type { BaseUseCasesPort } from "./BaseUseCasesPort";
 
 export interface TeamStaffUseCasesPort extends BaseUseCasesPort<

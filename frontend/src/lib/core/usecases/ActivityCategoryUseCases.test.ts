@@ -1,10 +1,11 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { create_activity_category_use_cases } from "./ActivityCategoryUseCases";
+import { describe, expect, it, vi } from "vitest";
+
 import type {
   ActivityCategory,
   CreateActivityCategoryInput,
 } from "../entities/ActivityCategory";
 import type { ActivityCategoryRepository } from "../interfaces/ports";
+import { create_activity_category_use_cases } from "./ActivityCategoryUseCases";
 
 function make_mock_repository(): ActivityCategoryRepository {
   return {

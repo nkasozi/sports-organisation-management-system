@@ -1,14 +1,15 @@
 import { describe, expect, it } from "vitest";
+
 import {
-  validate_activity_input,
-  can_edit_activity,
-  can_delete_activity,
-  create_activity_from_fixture,
-  create_activity_from_competition,
-  DEFAULT_REMINDERS,
   type Activity,
-  type CreateActivityInput,
   type ActivitySourceType,
+  can_delete_activity,
+  can_edit_activity,
+  create_activity_from_competition,
+  create_activity_from_fixture,
+  type CreateActivityInput,
+  DEFAULT_REMINDERS,
+  validate_activity_input,
 } from "./Activity";
 
 describe("Activity Entity", () => {

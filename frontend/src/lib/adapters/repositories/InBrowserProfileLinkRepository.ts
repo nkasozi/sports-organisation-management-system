@@ -1,22 +1,23 @@
 import type { Table } from "dexie";
-import { format_repository_error } from "./InBrowserBaseRepositoryHelpers";
-import type {
-  ProfileLink,
-  CreateProfileLinkInput,
-  UpdateProfileLinkInput,
-} from "../../core/entities/ProfileLink";
+
 import type { BaseEntity } from "../../core/entities/BaseEntity";
 import type {
-  ProfileLinkRepository,
+  CreateProfileLinkInput,
+  ProfileLink,
+  UpdateProfileLinkInput,
+} from "../../core/entities/ProfileLink";
+import type {
   ProfileLinkFilter,
+  ProfileLinkRepository,
 } from "../../core/interfaces/ports";
 import type { QueryOptions } from "../../core/interfaces/ports";
 import type { PaginatedAsyncResult } from "../../core/types/Result";
 import {
-  create_success_result,
   create_failure_result,
+  create_success_result,
 } from "../../core/types/Result";
 import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
+import { format_repository_error } from "./InBrowserBaseRepositoryHelpers";
 
 const ENTITY_PREFIX = "profilelink";
 

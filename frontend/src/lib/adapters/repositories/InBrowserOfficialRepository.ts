@@ -1,21 +1,18 @@
 import type { Table } from "dexie";
+
+import type { BaseEntity } from "../../core/entities/BaseEntity";
 import type {
-  Official,
   CreateOfficialInput,
+  Official,
   UpdateOfficialInput,
 } from "../../core/entities/Official";
 import { DEFAULT_OFFICIAL_AVATAR } from "../../core/entities/Official";
-import type { BaseEntity } from "../../core/entities/BaseEntity";
 import type {
-  OfficialRepository,
   OfficialFilter,
+  OfficialRepository,
 } from "../../core/interfaces/ports";
 import type { QueryOptions } from "../../core/interfaces/ports";
 import type { PaginatedAsyncResult } from "../../core/types/Result";
-import {
-  create_success_result,
-  create_failure_result,
-} from "../../core/types/Result";
 import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
 
 const ENTITY_PREFIX = "official";

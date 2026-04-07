@@ -1,29 +1,27 @@
-import type {
-  SyncDirection,
-  SyncHints,
-  UserRole,
-} from "$lib/core/interfaces/ports";
-import { current_user_role } from "../../presentation/stores/auth";
 import { get } from "svelte/store";
-import type { ConvexClient, SyncProgress, SyncResult } from "./syncTypes";
-import {
-  EPOCH_TIMESTAMP,
-  TABLE_NAMES,
-  type TableName,
-  get_push_excluded_tables,
-} from "./syncTypes";
-import {
-  get_local_latest_modified_at,
-  get_table_from_database,
-  get_remote_state_for_table,
-  get_database,
-} from "./syncDataAccess";
+
+import type { SyncDirection, SyncHints } from "$lib/core/interfaces/ports";
+
+import { current_user_role } from "../../presentation/stores/auth";
 import { verify_sync_auth } from "./syncAuthUtils";
+import {
+  get_database,
+  get_local_latest_modified_at,
+  get_remote_state_for_table,
+  get_table_from_database,
+} from "./syncDataAccess";
 import {
   sync_table_when_local_ahead,
   sync_table_when_remote_ahead,
 } from "./syncTableSync";
+import type { ConvexClient, SyncProgress, SyncResult } from "./syncTypes";
 import type { RemoteTableState } from "./syncTypes";
+import {
+  EPOCH_TIMESTAMP,
+  get_push_excluded_tables,
+  TABLE_NAMES,
+  type TableName,
+} from "./syncTypes";
 
 export async function sync_all_tables(
   convex_client: ConvexClient,

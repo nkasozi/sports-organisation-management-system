@@ -1,17 +1,17 @@
 import type {
-  GameEventType,
   CreateGameEventTypeInput,
-  UpdateGameEventTypeInput,
   EventCategory,
+  GameEventType,
+  UpdateGameEventTypeInput,
 } from "../entities/GameEventType";
 import type {
-  GameEventTypeRepository,
   GameEventTypeFilter,
+  GameEventTypeRepository,
 } from "../interfaces/ports";
 import type { QueryOptions } from "../interfaces/ports";
+import type { GameEventTypeUseCasesPort } from "../interfaces/ports";
 import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
 import { create_failure_result, create_success_result } from "../types/Result";
-import type { GameEventTypeUseCasesPort } from "../interfaces/ports";
 
 export type GameEventTypeUseCases = GameEventTypeUseCasesPort;
 

@@ -1,22 +1,23 @@
 import type { Table } from "dexie";
+
+import type { BaseEntity } from "../../core/entities/BaseEntity";
 import type {
-  GameEventLog,
   CreateGameEventLogInput,
+  GameEventLog,
   UpdateGameEventLogInput,
 } from "../../core/entities/GameEventLog";
 import {
-  is_scoring_event,
   is_card_event,
+  is_scoring_event,
 } from "../../core/entities/GameEventLog";
-import type { BaseEntity } from "../../core/entities/BaseEntity";
+import type {
+  GameEventLogFilter,
+  GameEventLogRepository,
+} from "../../core/interfaces/ports";
 import type {
   AsyncResult,
   PaginatedAsyncResult,
 } from "../../core/types/Result";
-import type {
-  GameEventLogRepository,
-  GameEventLogFilter,
-} from "../../core/interfaces/ports";
 import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
 
 const ENTITY_PREFIX = "gameevent";

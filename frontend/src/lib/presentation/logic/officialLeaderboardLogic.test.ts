@@ -1,13 +1,14 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
+
+import type { CompetitionStage } from "$lib/core/entities/CompetitionStage";
+import type { Fixture } from "$lib/core/entities/Fixture";
+import type { OfficialPerformanceRating } from "$lib/core/entities/OfficialPerformanceRating";
+
 import {
   build_leaderboard_entries,
-  get_tier_badge_classes,
   get_score_bar_width,
-  type OfficialLeaderboardEntry,
+  get_tier_badge_classes,
 } from "./officialLeaderboardLogic";
-import type { OfficialPerformanceRating } from "$lib/core/entities/OfficialPerformanceRating";
-import type { Fixture } from "$lib/core/entities/Fixture";
-import type { CompetitionStage } from "$lib/core/entities/CompetitionStage";
 
 function make_rating(
   overrides: Partial<OfficialPerformanceRating> = {},

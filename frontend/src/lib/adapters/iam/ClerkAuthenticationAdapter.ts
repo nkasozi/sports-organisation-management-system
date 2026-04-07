@@ -1,19 +1,20 @@
-import { WILDCARD_SCOPE } from "../../core/entities/StatusConstants";
 import type {
   AuthenticationPort,
   AuthToken,
   AuthTokenPayload,
   AuthVerificationResult,
 } from "$lib/core/interfaces/ports";
-import {
-  create_auth_cache,
-  type AuthCache,
-} from "$lib/infrastructure/cache/AuthCache";
 import type { Result } from "$lib/core/types/Result";
 import {
-  create_success_result,
   create_failure_result,
+  create_success_result,
 } from "$lib/core/types/Result";
+import {
+  type AuthCache,
+  create_auth_cache,
+} from "$lib/infrastructure/cache/AuthCache";
+
+import { WILDCARD_SCOPE } from "../../core/entities/StatusConstants";
 
 const CLERK_VERIFICATION_CACHE_MAX_ENTRIES = 50;
 const CLERK_VERIFICATION_CACHE_TTL_MS = 30 * 60 * 1000;
@@ -174,10 +175,11 @@ export class ClerkAuthenticationAdapter implements AuthenticationPort {
 }
 
 import { get } from "svelte/store";
+
 import {
-  get_session_token,
   clerk_session,
   type ClerkUser as ClerkServiceUser,
+  get_session_token,
 } from "./clerkAuthService";
 
 function map_clerk_service_user_to_clerk_user_info(

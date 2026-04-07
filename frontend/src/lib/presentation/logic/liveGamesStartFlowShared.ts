@@ -1,4 +1,16 @@
 import type { Fixture } from "$lib/core/entities/Fixture";
+import type { FixtureDetailsSetupUseCasesPort } from "$lib/core/interfaces/ports";
+import type { FixtureLineupUseCasesPort } from "$lib/core/interfaces/ports";
+import type { FixtureUseCasesPort } from "$lib/core/interfaces/ports";
+import type { GameOfficialRoleUseCasesPort } from "$lib/core/interfaces/ports";
+import type { JerseyColorUseCasesPort } from "$lib/core/interfaces/ports";
+import type { OfficialUseCasesPort } from "$lib/core/interfaces/ports";
+import type { OrganizationUseCasesPort } from "$lib/core/interfaces/ports";
+import type { PlayerPositionUseCasesPort } from "$lib/core/interfaces/ports";
+import type { PlayerTeamMembershipUseCasesPort } from "$lib/core/interfaces/ports";
+import type { PlayerUseCasesPort } from "$lib/core/interfaces/ports";
+import type { CompetitionUseCasesPort } from "$lib/core/interfaces/ports";
+import type { SportUseCasesPort } from "$lib/core/interfaces/ports";
 import type { PreFlightCheck } from "$lib/core/services/fixtureStartChecks";
 import { auto_generate_lineups_if_possible } from "$lib/core/services/fixtureStartChecks";
 
@@ -9,19 +21,19 @@ type CompetitionLookupResult = Promise<{
 }>;
 
 export interface LiveGamesStartFlowDependencies {
-  fixture_details_setup_use_cases: unknown;
-  fixture_lineup_use_cases: unknown;
-  membership_use_cases: unknown;
-  player_use_cases: unknown;
-  player_position_use_cases: unknown;
-  fixture_use_cases: unknown;
+  fixture_details_setup_use_cases: FixtureDetailsSetupUseCasesPort;
+  fixture_lineup_use_cases: FixtureLineupUseCasesPort;
+  membership_use_cases: PlayerTeamMembershipUseCasesPort;
+  player_use_cases: PlayerUseCasesPort;
+  player_position_use_cases: PlayerPositionUseCasesPort;
+  fixture_use_cases: FixtureUseCasesPort;
   team_use_cases: { get_by_id(team_id: string): TeamLookupResult };
-  sport_use_cases: unknown;
-  competition_use_cases: { get_by_id(competition_id: string): CompetitionLookupResult };
-  organization_use_cases: unknown;
-  jersey_color_use_cases: unknown;
-  official_use_cases: unknown;
-  game_official_role_use_cases: unknown;
+  sport_use_cases: SportUseCasesPort;
+  competition_use_cases: CompetitionUseCasesPort;
+  organization_use_cases: OrganizationUseCasesPort;
+  jersey_color_use_cases: JerseyColorUseCasesPort;
+  official_use_cases: OfficialUseCasesPort;
+  game_official_role_use_cases: GameOfficialRoleUseCasesPort;
   goto(path: string): Promise<void>;
   get_current_role(): string;
   can_access_route(role: string, route: string): boolean;
@@ -118,8 +130,7 @@ export async function process_lineup_check(
     replace_last_check(checks, {
       check_name: failed_check_name,
       status: "failed",
-      message:
-        auto_generate_result.error_message || fallback_failure_message,
+      message: auto_generate_result.error_message || fallback_failure_message,
       fix_suggestion: (auto_generate_result.fix_suggestion || null) as
         | string
         | null,

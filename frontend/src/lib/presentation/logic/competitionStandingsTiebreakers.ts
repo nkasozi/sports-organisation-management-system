@@ -1,5 +1,6 @@
-import type { Fixture } from "$lib/core/entities/Fixture";
 import type { TieBreaker } from "$lib/core/entities/CompetitionFormat";
+import type { Fixture } from "$lib/core/entities/Fixture";
+
 import type { TeamStanding } from "./competitionStageResults";
 
 function calculate_head_to_head(

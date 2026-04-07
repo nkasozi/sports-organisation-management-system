@@ -1,22 +1,23 @@
-import { get_repository_container } from "../../infrastructure/container";
 import { get } from "svelte/store";
+
 import { clerk_session } from "../../adapters/iam/clerkAuthService";
-import { get_system_user_repository } from "../repositories/InBrowserSystemUserRepository";
+import type { SystemUser } from "../../core/entities/SystemUser";
+import type { Result } from "../../core/types/Result";
 import {
-  create_seed_system_users,
-  SEED_SYSTEM_USER_IDS,
-} from "../../infrastructure/utils/SeedDataGenerator";
+  create_failure_result,
+  create_success_result,
+} from "../../core/types/Result";
+import { get_repository_container } from "../../infrastructure/container";
 import {
   EventBus,
   set_user_context,
 } from "../../infrastructure/events/EventBus";
-import type { SystemUser } from "../../core/entities/SystemUser";
-import { current_user_store } from "../../presentation/stores/currentUser";
-import type { Result } from "../../core/types/Result";
 import {
-  create_success_result,
-  create_failure_result,
-} from "../../core/types/Result";
+  create_seed_system_users,
+  SEED_SYSTEM_USER_IDS,
+} from "../../infrastructure/utils/SeedDataGenerator";
+import { current_user_store } from "../../presentation/stores/currentUser";
+import { get_system_user_repository } from "../repositories/InBrowserSystemUserRepository";
 
 export async function load_and_set_current_user(): Promise<Result<SystemUser>> {
   const container = get_repository_container();

@@ -1,6 +1,6 @@
-import { get_team_logo } from "$lib/core/entities/Team";
 import type { Fixture } from "$lib/core/entities/Fixture";
 import type { Organization } from "$lib/core/entities/Organization";
+import { DEFAULT_TEAM_LOGO } from "$lib/core/entities/Team";
 import {
   ANY_VALUE,
   build_authorization_list_filter,
@@ -95,7 +95,7 @@ async function load_team_data_for_fixtures(
     }
 
     team_names[team_id] = team_result.data.name;
-    team_logo_urls[team_id] = get_team_logo(team_result.data);
+    team_logo_urls[team_id] = team_result.data.logo_url || DEFAULT_TEAM_LOGO;
   }
 
   return { team_names, team_logo_urls };
@@ -123,9 +123,10 @@ async function load_competition_sport_data_for_fixtures(
     }
 
     competition_names[competition_id] = competition_result.data.name;
-    const organization_result = await dependencies.organization_use_cases.get_by_id(
-      competition_result.data.organization_id,
-    );
+    const organization_result =
+      await dependencies.organization_use_cases.get_by_id(
+        competition_result.data.organization_id,
+      );
     if (!organization_result.success || !organization_result.data) {
       sport_names[competition_id] = "Unknown Sport";
       continue;

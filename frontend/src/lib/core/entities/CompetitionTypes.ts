@@ -1,14 +1,14 @@
 import type { BaseEntity, EntityStatus } from "./BaseEntity";
+import type { PointsConfig, TieBreaker } from "./CompetitionFormat";
 import type {
   CardType,
   FoulCategory,
-  SportGamePeriod,
   OfficialRequirement,
   OvertimeRule,
   ScoringRule,
+  SportGamePeriod,
   SubstitutionRule,
 } from "./Sport";
-import type { PointsConfig, TieBreaker } from "./CompetitionFormat";
 
 export type CompetitionDerivedStatus = "upcoming" | "active" | "completed";
 

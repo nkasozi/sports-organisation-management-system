@@ -1,11 +1,11 @@
 import type {
-  Identification,
   CreateIdentificationInput,
-  UpdateIdentificationInput,
+  Identification,
   IdentificationHolderType,
+  UpdateIdentificationInput,
 } from "../../../../entities/Identification";
-import type { Repository, QueryOptions } from "./Repository";
 import type { PaginatedAsyncResult } from "../../../../types/Result";
+import type { QueryOptions, Repository } from "./Repository";
 
 export interface IdentificationFilter {
   holder_type?: IdentificationHolderType;

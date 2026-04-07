@@ -1,7 +1,7 @@
 import type { EntityMetadata } from "../../core/entities/BaseEntity";
 import type { CompetitionStage } from "../../core/entities/CompetitionStage";
-import type { IdentificationType } from "../../core/entities/IdentificationType";
 import type { Gender } from "../../core/entities/Gender";
+import type { IdentificationType } from "../../core/entities/IdentificationType";
 
 export function register_competition_stage_metadata(
   metadata_map: Map<string, EntityMetadata>,

@@ -1,7 +1,8 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { create_official_use_cases } from "./OfficialUseCases";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import type { CreateOfficialInput, Official } from "../entities/Official";
 import type { OfficialRepository } from "../interfaces/ports";
-import type { Official, CreateOfficialInput } from "../entities/Official";
+import { create_official_use_cases } from "./OfficialUseCases";
 
 function create_mock_repository(): OfficialRepository {
   return {

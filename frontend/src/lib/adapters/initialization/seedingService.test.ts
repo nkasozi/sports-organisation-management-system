@@ -1,4 +1,4 @@
-import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 let seeding_complete_flag = false;
 let mock_convex_seed_result = {
@@ -318,9 +318,8 @@ vi.mock("../../infrastructure/utils/SeedDataGenerator", () => ({
 vi.stubGlobal("window", globalThis);
 
 import {
-  seed_from_convex_or_local,
-  reset_seeding_flag,
   seed_all_data_if_needed,
+  seed_from_convex_or_local,
 } from "./seedingService";
 
 beforeEach(() => {

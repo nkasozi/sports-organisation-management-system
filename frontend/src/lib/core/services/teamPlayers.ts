@@ -1,7 +1,8 @@
-import { MEMBERSHIP_STATUS } from "../entities/StatusConstants";
 import type { Player } from "$lib/core/entities/Player";
 import type { PlayerPosition } from "$lib/core/entities/PlayerPosition";
 import type { PlayerTeamMembership } from "$lib/core/entities/PlayerTeamMembership";
+
+import { MEMBERSHIP_STATUS } from "../entities/StatusConstants";
 
 export type TeamPlayer = Player & {
   jersey_number: number | null;

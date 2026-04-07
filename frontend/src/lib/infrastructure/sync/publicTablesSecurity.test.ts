@@ -1,8 +1,9 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
+
 import {
-  PUBLIC_TABLES,
   ALLOWED_SYNC_TABLES,
   is_public_table,
+  PUBLIC_TABLES,
 } from "../../../../convex/lib/sync_validation";
 
 const COMPETITION_RESULTS_TABLES = [

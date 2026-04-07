@@ -1,19 +1,11 @@
 import tsEslintPlugin from "@typescript-eslint/eslint-plugin";
 import tsParser from "@typescript-eslint/parser";
 import eslintConfigPrettier from "eslint-config-prettier";
+import simpleImportSortPlugin from "eslint-plugin-simple-import-sort";
 import sveltePlugin from "eslint-plugin-svelte";
+import unusedImportsPlugin from "eslint-plugin-unused-imports";
 
-const unusedVariablesRule = [
-  "error",
-  {
-    args: "all",
-    argsIgnorePattern: "^_",
-    caughtErrors: "all",
-    caughtErrorsIgnorePattern: "^_",
-    destructuredArrayIgnorePattern: "^_",
-    varsIgnorePattern: "^_",
-  },
-];
+import svelteUnusedImportsPlugin from "./eslint/svelteUnusedImportsPlugin.js";
 
 export default [
   {
@@ -33,6 +25,8 @@ export default [
     files: ["**/*.{js,mjs,cjs,ts}"],
     plugins: {
       "@typescript-eslint": tsEslintPlugin,
+      "simple-import-sort": simpleImportSortPlugin,
+      "unused-imports": unusedImportsPlugin,
     },
     languageOptions: {
       ecmaVersion: "latest",
@@ -40,7 +34,10 @@ export default [
     },
     rules: {
       "no-unused-vars": "off",
-      "@typescript-eslint/no-unused-vars": unusedVariablesRule,
+      "@typescript-eslint/no-unused-vars": "off",
+      "simple-import-sort/imports": "error",
+      "simple-import-sort/exports": "error",
+      "unused-imports/no-unused-imports": "error",
     },
   },
   {
@@ -51,6 +48,10 @@ export default [
   },
   {
     files: ["**/*.svelte"],
+    plugins: {
+      "simple-import-sort": simpleImportSortPlugin,
+      "svelte-unused-imports": svelteUnusedImportsPlugin,
+    },
     languageOptions: {
       parserOptions: {
         parser: tsParser,
@@ -59,6 +60,9 @@ export default [
     rules: {
       "no-unused-vars": "off",
       "@typescript-eslint/no-unused-vars": "off",
+      "simple-import-sort/imports": "error",
+      "simple-import-sort/exports": "error",
+      "svelte-unused-imports/no-unused-imports": "error",
     },
   },
   eslintConfigPrettier,

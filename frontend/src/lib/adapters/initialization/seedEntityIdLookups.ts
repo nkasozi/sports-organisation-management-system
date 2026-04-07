@@ -1,16 +1,16 @@
+import type { CompetitionFormat } from "../../core/entities/CompetitionFormat";
+import type { GameOfficialRole } from "../../core/entities/GameOfficialRole";
 import type { PlayerPosition } from "../../core/entities/PlayerPosition";
 import type { TeamStaffRole } from "../../core/entities/TeamStaffRole";
-import type { GameOfficialRole } from "../../core/entities/GameOfficialRole";
-import type { CompetitionFormat } from "../../core/entities/CompetitionFormat";
-import type { InBrowserPlayerPositionRepository } from "../repositories/InBrowserPlayerPositionRepository";
-import type { InBrowserTeamStaffRoleRepository } from "../repositories/InBrowserTeamStaffRoleRepository";
-import type { InBrowserGameOfficialRoleRepository } from "../repositories/InBrowserGameOfficialRoleRepository";
-import { get_competition_format_repository } from "../repositories/InBrowserCompetitionFormatRepository";
 import type { Result } from "../../core/types/Result";
 import {
-  create_success_result,
   create_failure_result,
+  create_success_result,
 } from "../../core/types/Result";
+import { get_competition_format_repository } from "../repositories/InBrowserCompetitionFormatRepository";
+import type { InBrowserGameOfficialRoleRepository } from "../repositories/InBrowserGameOfficialRoleRepository";
+import type { InBrowserPlayerPositionRepository } from "../repositories/InBrowserPlayerPositionRepository";
+import type { InBrowserTeamStaffRoleRepository } from "../repositories/InBrowserTeamStaffRoleRepository";
 import type { SeedEntityIdLookups } from "./seedingTypes";
 
 function find_position_id_by_code(

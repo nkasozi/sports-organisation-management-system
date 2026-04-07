@@ -1,26 +1,25 @@
 import type {
+  CalendarFeedType,
   CalendarToken,
   CreateCalendarTokenInput,
   UpdateCalendarTokenInput,
-  CalendarFeedType,
 } from "../entities/CalendarToken";
 import {
-  generate_calendar_token,
   build_ical_feed_url,
   build_webcal_feed_url,
+  generate_calendar_token,
 } from "../entities/CalendarToken";
 import type {
-  CalendarTokenRepository,
   CalendarTokenFilter,
+  CalendarTokenRepository,
 } from "../interfaces/ports";
 import type { QueryOptions } from "../interfaces/ports";
-import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
-import { create_success_result, create_failure_result } from "../types/Result";
-
 import type {
-  CalendarTokenUseCasesPort,
   CalendarFeedInfo,
+  CalendarTokenUseCasesPort,
 } from "../interfaces/ports";
+import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
+import { create_failure_result, create_success_result } from "../types/Result";
 
 export type CalendarTokenUseCases = CalendarTokenUseCasesPort;
 

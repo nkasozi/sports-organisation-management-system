@@ -1,4 +1,4 @@
-import type { FieldMetadata, BaseEntity } from "../../core/entities/BaseEntity";
+import type { BaseEntity, FieldMetadata } from "../../core/entities/BaseEntity";
 import { build_entity_display_label } from "./entityDisplayFormatter";
 
 export type ForeignKeySelectOption = {

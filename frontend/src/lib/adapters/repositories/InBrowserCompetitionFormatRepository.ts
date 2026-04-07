@@ -1,28 +1,24 @@
-import { ENTITY_STATUS } from "../../core/entities/StatusConstants";
 import type { Table } from "dexie";
+
+import type { BaseEntity } from "../../core/entities/BaseEntity";
 import type {
   CompetitionFormat,
   CreateCompetitionFormatInput,
-  UpdateCompetitionFormatInput,
   FormatType,
+  UpdateCompetitionFormatInput,
 } from "../../core/entities/CompetitionFormat";
-import type { BaseEntity } from "../../core/entities/BaseEntity";
+import { get_default_competition_formats_for_organization } from "../../core/entities/CompetitionFormat";
+import { ENTITY_STATUS } from "../../core/entities/StatusConstants";
 import type {
-  CompetitionFormatRepository,
   CompetitionFormatFilter,
+  CompetitionFormatRepository,
 } from "../../core/interfaces/ports";
-import type { QueryOptions } from "../../core/interfaces/ports";
-import type {
-  PaginatedAsyncResult,
-  AsyncResult,
-  Result,
-} from "../../core/types/Result";
+import type { Result } from "../../core/types/Result";
 import {
-  create_success_result,
   create_failure_result,
+  create_success_result,
 } from "../../core/types/Result";
 import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
-import { get_default_competition_formats_for_organization } from "../../core/entities/CompetitionFormat";
 
 const ENTITY_PREFIX = "comp_fmt";
 

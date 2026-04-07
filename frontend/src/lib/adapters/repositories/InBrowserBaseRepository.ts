@@ -1,25 +1,26 @@
 import type { Table } from "dexie";
+
 import type { BaseEntity } from "../../core/entities/BaseEntity";
+import {
+  create_timestamp_fields,
+  generate_unique_id,
+  update_timestamp,
+} from "../../core/entities/BaseEntity";
+import type { QueryOptions, Repository } from "../../core/interfaces/ports";
 import type {
   AsyncResult,
   PaginatedAsyncResult,
 } from "../../core/types/Result";
 import {
-  create_success_result,
   create_failure_result,
+  create_success_result,
 } from "../../core/types/Result";
-import type { QueryOptions, Repository } from "../../core/interfaces/ports";
-import {
-  generate_unique_id,
-  create_timestamp_fields,
-  update_timestamp,
-} from "../../core/entities/BaseEntity";
 import { get_database, type SportSyncDatabase } from "./database";
 import {
-  format_repository_error,
   create_paginated_result_from_options,
-  sort_entities_by_options,
+  format_repository_error,
   paginate_entity_slice,
+  sort_entities_by_options,
 } from "./InBrowserBaseRepositoryHelpers";
 
 export abstract class InBrowserBaseRepository<

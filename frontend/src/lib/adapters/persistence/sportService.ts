@@ -1,18 +1,18 @@
 import type {
-  Sport,
   CreateSportInput,
-  UpdateSportInput,
   OfficialRequirement,
+  Sport,
+  UpdateSportInput,
 } from "../../core/entities/Sport";
 import { validate_sport_input } from "../../core/entities/Sport";
 import {
-  get_all_sports as repo_get_all_sports,
-  get_sport_by_id as repo_get_sport_by_id,
-  get_sport_by_code as repo_get_sport_by_code,
   create_sport as repo_create_sport,
-  update_sport as repo_update_sport,
   delete_sport as repo_delete_sport,
   get_active_sports as repo_get_active_sports,
+  get_all_sports as repo_get_all_sports,
+  get_sport_by_code as repo_get_sport_by_code,
+  get_sport_by_id as repo_get_sport_by_id,
+  update_sport as repo_update_sport,
 } from "../repositories/InBrowserSportRepository";
 
 export interface SportServiceResult<T> {

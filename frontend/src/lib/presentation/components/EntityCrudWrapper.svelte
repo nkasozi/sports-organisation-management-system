@@ -4,28 +4,28 @@ Combines form and list components for complete entity management
 Uses explicit handlers instead of events for predictable data flow
 -->
 <script lang="ts">
-  import { goto } from "$app/navigation";
   import { createEventDispatcher } from "svelte";
-  import type { BaseEntity } from "../../core/entities/BaseEntity";
-  import type {
-    EntityCrudHandlers,
-    EntityViewCallbacks,
-    CrudFunctionality,
-  } from "../../core/types/EntityHandlers";
-  import { is_functionality_disabled } from "../../core/types/EntityHandlers";
-  import { get_use_cases_for_entity_type } from "../../infrastructure/registry/entityUseCasesRegistry";
-  import {
-    get_disabled_crud_actions,
-    auth_store,
-  } from "../../presentation/stores/auth";
+
+  import { goto } from "$app/navigation";
   import {
     check_entity_permission,
     get_entity_data_category,
-    normalize_to_entity_type,
     get_entity_level_disabled_operations,
+    normalize_to_entity_type,
   } from "$lib/core/interfaces/ports";
-  import type { SharedEntityType } from "$convex/shared_permission_definitions";
+
+  import type { BaseEntity } from "../../core/entities/BaseEntity";
+  import type {
+    CrudFunctionality,
+    EntityCrudHandlers,
+    EntityViewCallbacks,
+  } from "../../core/types/EntityHandlers";
+  import { is_functionality_disabled } from "../../core/types/EntityHandlers";
+  import { get_use_cases_for_entity_type } from "../../infrastructure/registry/entityUseCasesRegistry";
   import type { UserProfile } from "../../presentation/stores/auth";
+  import {
+    auth_store,
+  } from "../../presentation/stores/auth";
   import DynamicEntityForm from "./DynamicEntityForm.svelte";
   import DynamicEntityList from "./DynamicEntityList.svelte";
 

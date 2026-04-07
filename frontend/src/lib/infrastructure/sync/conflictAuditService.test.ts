@@ -1,6 +1,7 @@
-import { describe, expect, it, vi, beforeEach } from "vitest";
-import type { ConflictRecord } from "$lib/infrastructure/sync/conflictTypes";
+import { describe, expect, it } from "vitest";
+
 import type { FieldChange } from "$lib/core/entities/AuditLog";
+import type { ConflictRecord } from "$lib/infrastructure/sync/conflictTypes";
 
 function build_conflict_changes(
   field_differences: Array<{

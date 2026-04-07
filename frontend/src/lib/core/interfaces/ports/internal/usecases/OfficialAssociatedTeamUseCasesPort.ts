@@ -1,14 +1,14 @@
 import type {
-  OfficialAssociatedTeam,
   CreateOfficialAssociatedTeamInput,
+  OfficialAssociatedTeam,
   UpdateOfficialAssociatedTeamInput,
 } from "../../../../entities/OfficialAssociatedTeam";
-import type { OfficialAssociatedTeamFilter } from "../../external/repositories/OfficialAssociatedTeamRepository";
-import type { QueryOptions } from "../../external/repositories/Repository";
 import type {
   AsyncResult,
   PaginatedAsyncResult,
 } from "../../../../types/Result";
+import type { OfficialAssociatedTeamFilter } from "../../external/repositories/OfficialAssociatedTeamRepository";
+import type { QueryOptions } from "../../external/repositories/Repository";
 
 export interface OfficialAssociatedTeamUseCasesPort {
   create(

@@ -1,10 +1,10 @@
-import type { FilterableRepository, QueryOptions } from "./Repository";
-import type { PaginatedAsyncResult } from "../../../../types/Result";
 import type {
-  Official,
   CreateOfficialInput,
+  Official,
   UpdateOfficialInput,
 } from "../../../../entities/Official";
+import type { PaginatedAsyncResult } from "../../../../types/Result";
+import type { FilterableRepository, QueryOptions } from "./Repository";
 
 export interface OfficialFilter {
   name_contains?: string;

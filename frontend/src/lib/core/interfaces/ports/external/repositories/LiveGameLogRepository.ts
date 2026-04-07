@@ -1,8 +1,8 @@
 import type {
-  LiveGameLog,
   CreateLiveGameLogInput,
-  UpdateLiveGameLogInput,
+  LiveGameLog,
   LiveGameStatus,
+  UpdateLiveGameLogInput,
 } from "../../../../entities/LiveGameLog";
 import type {
   AsyncResult,

@@ -1,13 +1,13 @@
 import type {
-  LiveGameLog,
   CreateLiveGameLogInput,
+  LiveGameLog,
   UpdateLiveGameLogInput,
 } from "../../../../entities/LiveGameLog";
-import type { LiveGameLogFilter } from "../../external/repositories/LiveGameLogRepository";
 import type {
   AsyncResult,
   PaginatedAsyncResult,
 } from "../../../../types/Result";
+import type { LiveGameLogFilter } from "../../external/repositories/LiveGameLogRepository";
 import type { BaseUseCasesPort } from "./BaseUseCasesPort";
 
 export interface LiveGameLogUseCasesPort extends BaseUseCasesPort<

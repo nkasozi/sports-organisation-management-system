@@ -1,11 +1,11 @@
 import type {
-  GameEventType,
   CreateGameEventTypeInput,
-  UpdateGameEventTypeInput,
   EventCategory,
+  GameEventType,
+  UpdateGameEventTypeInput,
 } from "../../../../entities/GameEventType";
-import type { GameEventTypeFilter } from "../../external/repositories/GameEventTypeRepository";
 import type { AsyncResult } from "../../../../types/Result";
+import type { GameEventTypeFilter } from "../../external/repositories/GameEventTypeRepository";
 import type { BaseUseCasesPort } from "./BaseUseCasesPort";
 
 export interface GameEventTypeUseCasesPort extends BaseUseCasesPort<

@@ -1,6 +1,6 @@
 import type { EntityMetadata } from "../../core/entities/BaseEntity";
-import type { Sport } from "../../core/entities/Sport";
 import type { GameEventType } from "../../core/entities/GameEventType";
+import type { Sport } from "../../core/entities/Sport";
 
 export function register_sport_metadata(
   metadata_map: Map<string, EntityMetadata>,

@@ -1,6 +1,8 @@
-import { is_signed_in } from "../../adapters/iam/clerkAuthService";
 import { get } from "svelte/store";
+
 import { get_app_settings_storage } from "$lib/infrastructure/container";
+
+import { is_signed_in } from "../../adapters/iam/clerkAuthService";
 import type { ConvexClient } from "./syncTypes";
 import { EPOCH_TIMESTAMP, TABLE_NAMES } from "./syncTypes";
 

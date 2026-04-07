@@ -1,4 +1,4 @@
-import type { ThemeColorName, ColorPalette } from "./themeTypes";
+import type { ColorPalette, ThemeColorName } from "./themeTypes";
 
 export const COLOR_PALETTES: Record<ThemeColorName, ColorPalette> = {
   amber: {

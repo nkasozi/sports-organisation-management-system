@@ -1,17 +1,17 @@
-import { FIXTURE_STATUS, GAME_PERIOD } from "../entities/StatusConstants";
+import { EventBus } from "$lib/infrastructure/events/EventBus";
+
 import type {
   Fixture,
-  UpdateFixtureInput,
   GameEvent,
-  GamePeriod,
+  UpdateFixtureInput,
 } from "../entities/Fixture";
+import { FIXTURE_STATUS, GAME_PERIOD } from "../entities/StatusConstants";
 import type {
   FixtureRepository,
   FixtureUseCasesPort,
 } from "../interfaces/ports";
 import type { AsyncResult } from "../types/Result";
 import { create_failure_result } from "../types/Result";
-import { EventBus } from "$lib/infrastructure/events/EventBus";
 
 const ENTITY_TYPE = "fixture";
 

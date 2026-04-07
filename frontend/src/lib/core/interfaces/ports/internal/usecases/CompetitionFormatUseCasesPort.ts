@@ -1,11 +1,11 @@
 import type {
   CompetitionFormat,
   CreateCompetitionFormatInput,
-  UpdateCompetitionFormatInput,
   FormatType,
+  UpdateCompetitionFormatInput,
 } from "../../../../entities/CompetitionFormat";
-import type { CompetitionFormatFilter } from "../../external/repositories/CompetitionFormatRepository";
 import type { AsyncResult } from "../../../../types/Result";
+import type { CompetitionFormatFilter } from "../../external/repositories/CompetitionFormatRepository";
 import type { BaseUseCasesPort } from "./BaseUseCasesPort";
 
 export interface CompetitionFormatUseCasesPort extends BaseUseCasesPort<

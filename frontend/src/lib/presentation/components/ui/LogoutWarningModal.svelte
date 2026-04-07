@@ -1,9 +1,10 @@
 <script lang="ts">
     import { createEventDispatcher } from "svelte";
+
     import {
-        has_pending_unsynced_changes,
         flush_pending_changes,
         get_background_sync_status,
+        has_pending_unsynced_changes,
     } from "$lib/infrastructure/sync/backgroundSyncService";
 
     export let is_visible: boolean = false;

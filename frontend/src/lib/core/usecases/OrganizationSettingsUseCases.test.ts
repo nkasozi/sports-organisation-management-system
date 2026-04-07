@@ -1,10 +1,11 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { create_organization_settings_use_cases } from "./OrganizationSettingsUseCases";
-import type { OrganizationSettingsRepository } from "../interfaces/ports/external/repositories/OrganizationSettingsRepository";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
 import type {
-  OrganizationSettings,
   CreateOrganizationSettingsInput,
+  OrganizationSettings,
 } from "../entities/OrganizationSettings";
+import type { OrganizationSettingsRepository } from "../interfaces/ports/external/repositories/OrganizationSettingsRepository";
+import { create_organization_settings_use_cases } from "./OrganizationSettingsUseCases";
 
 function create_mock_repository(): OrganizationSettingsRepository {
   return {

@@ -1,6 +1,7 @@
 <script lang="ts">
-  import type { SportGamePeriod } from "$lib/core/entities/Sport";
   import { createEventDispatcher } from "svelte";
+
+  import type { SportGamePeriod } from "$lib/core/entities/Sport";
 
   export let periods: SportGamePeriod[] = [];
   export let readonly: boolean = false;

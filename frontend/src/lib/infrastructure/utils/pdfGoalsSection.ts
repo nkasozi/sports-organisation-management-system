@@ -1,16 +1,17 @@
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
+
 import type {
-  MatchReportData,
   MatchGoalEntry,
+  MatchReportData,
 } from "$lib/core/types/MatchReportTypes";
+
 import {
   FONT_SIZE_SMALL,
-  MARGIN_LEFT,
-  MARGIN_RIGHT,
-  PAGE_WIDTH,
   HALF_WIDTH,
   type JsPDFWithAutoTable,
+  MARGIN_LEFT,
+  PAGE_WIDTH,
 } from "./pdfConstantsAndHelpers";
 
 export function draw_goals_section(

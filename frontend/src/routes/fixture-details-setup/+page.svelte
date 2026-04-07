@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
+
   import { page } from "$app/stores";
-  import EntityCrudWrapper from "$lib/presentation/components/EntityCrudWrapper.svelte";
   import type { OfficialAssignment } from "$lib/core/entities/FixtureDetailsSetup";
 import {
   get_fixture_use_cases,
@@ -9,6 +9,7 @@ import {
   get_jersey_color_use_cases,
   get_official_use_cases,
 } from "$lib/infrastructure/registry/useCaseFactories";
+  import EntityCrudWrapper from "$lib/presentation/components/EntityCrudWrapper.svelte";
 
   const fixture_use_cases = get_fixture_use_cases();
   const jersey_color_use_cases = get_jersey_color_use_cases();

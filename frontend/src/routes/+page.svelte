@@ -1,858 +1,190 @@
 <script lang="ts">
-  import { onMount, tick } from "svelte";
-  import { browser } from "$app/environment";
-  import { goto } from "$app/navigation";
-  import { ensure_auth_profile } from "$lib/presentation/logic/authGuard";
-  import { get_authorization_adapter } from "$lib/infrastructure/AuthorizationProvider";
-  import { access_denial_store } from "$lib/presentation/stores/accessDenial";
-  import { reset_all_data } from "$lib/adapters/initialization/dataResetService";
-  import {
-    initialize_app_data,
-    reset_initialization,
-  } from "$lib/adapters/initialization/appInitializer";
-  import { first_time_setup_store } from "$lib/presentation/stores/firstTimeSetup";
-  import { branding_store } from "$lib/presentation/stores/branding";
-  import { auth_store } from "$lib/presentation/stores/auth";
-  import { build_dashboard_filters } from "$lib/presentation/logic/dashboardStatsLogic";
-  import {
-    load_dashboard_data,
-    get_competition_initials,
-    split_organization_name,
-    get_status_class,
-    format_fixture_date,
-  } from "$lib/presentation/logic/dashboardPageLogic";
-  import type { DashboardDependencies } from "$lib/presentation/logic/dashboardPageLogic";
-  import { ANY_VALUE, check_data_permission } from "$lib/core/interfaces/ports";
-  import { ErrorDisplay } from "$lib/presentation/components/ui";
-  import FullScreenOverlay from "$lib/presentation/components/ui/FullScreenOverlay.svelte";
-  import type { Competition } from "$lib/core/entities/Competition";
-  import type { Fixture } from "$lib/core/entities/Fixture";
-  import type { Team } from "$lib/core/entities/Team";
-import {
-  get_competition_use_cases,
-  get_fixture_use_cases,
-  get_organization_use_cases,
-  get_player_use_cases,
-  get_sport_use_cases,
-  get_team_use_cases,
-} from "$lib/infrastructure/registry/useCaseFactories";
+    import { onMount, tick } from "svelte";
 
-  const dashboard_dependencies: DashboardDependencies = {
-    organization_use_cases: get_organization_use_cases(),
-    competition_use_cases: get_competition_use_cases(),
-    team_use_cases: get_team_use_cases(),
-    player_use_cases: get_player_use_cases(),
-    fixture_use_cases: get_fixture_use_cases(),
-    sport_use_cases: get_sport_use_cases(),
-  };
+    import { goto } from "$app/navigation";
+    import {
+        initialize_app_data,
+        reset_initialization,
+    } from "$lib/adapters/initialization/appInitializer";
+    import { reset_all_data } from "$lib/adapters/initialization/dataResetService";
+    import type { Competition } from "$lib/core/entities/Competition";
+    import type { Fixture } from "$lib/core/entities/Fixture";
+    import type { Team } from "$lib/core/entities/Team";
+    import {
+        ANY_VALUE,
+        check_data_permission,
+    } from "$lib/core/interfaces/ports";
+    import { get_authorization_adapter } from "$lib/infrastructure/AuthorizationProvider";
+    import {
+        get_competition_use_cases,
+        get_fixture_use_cases,
+        get_organization_use_cases,
+        get_player_use_cases,
+        get_sport_use_cases,
+        get_team_use_cases,
+    } from "$lib/infrastructure/registry/useCaseFactories";
+    import DashboardHomePage from "$lib/presentation/components/dashboard/DashboardHomePage.svelte";
+    import { ErrorDisplay } from "$lib/presentation/components/ui";
+    import FullScreenOverlay from "$lib/presentation/components/ui/FullScreenOverlay.svelte";
+    import { ensure_auth_profile } from "$lib/presentation/logic/authGuard";
+    import type { DashboardDependencies } from "$lib/presentation/logic/dashboardPageLogic";
+    import { load_dashboard_data } from "$lib/presentation/logic/dashboardPageLogic";
+    import { build_dashboard_filters } from "$lib/presentation/logic/dashboardStatsLogic";
+    import { access_denial_store } from "$lib/presentation/stores/accessDenial";
+    import { auth_store } from "$lib/presentation/stores/auth";
+    import { branding_store } from "$lib/presentation/stores/branding";
+    import { first_time_setup_store } from "$lib/presentation/stores/firstTimeSetup";
 
-  let loading = true;
-  let is_resetting = false;
-  let reset_status_message = "Clearing demo data...";
-  let reset_progress = 0;
-  let error_message = "";
-  let access_denial_message = "";
-  let stats = {
-    organizations: 0,
-    competitions: 0,
-    teams: 0,
-    players: 0,
-  };
+    const dashboard_dependencies: DashboardDependencies = {
+        organization_use_cases: get_organization_use_cases(),
+        competition_use_cases: get_competition_use_cases(),
+        team_use_cases: get_team_use_cases(),
+        player_use_cases: get_player_use_cases(),
+        fixture_use_cases: get_fixture_use_cases(),
+        sport_use_cases: get_sport_use_cases(),
+    };
 
-  let recent_competitions: Competition[] = [];
-  let upcoming_fixtures: Fixture[] = [];
-  let teams_map: Map<string, Team> = new Map();
-  let competition_names: Record<string, string> = {};
-  let sport_names: Record<string, string> = {};
-  let competition_sport_names: Record<string, string> = {};
+    let loading: boolean = true;
+    let is_resetting: boolean = false;
+    let reset_status_message: string = "Clearing demo data...";
+    let reset_progress: number = 0;
+    let error_message: string = "";
+    let access_denial_message: string = "";
+    let stats = { organizations: 0, competitions: 0, teams: 0, players: 0 };
+    let recent_competitions: Competition[] = [];
+    let upcoming_fixtures: Fixture[] = [];
+    let teams_map: Map<string, Team> = new Map();
+    let competition_names: Record<string, string> = {};
+    let sport_names: Record<string, string> = {};
+    let competition_sport_names: Record<string, string> = {};
 
-  $: current_user_organization_id =
-    $auth_store.current_profile?.organization_id || "";
-  $: user_is_super_admin = current_user_organization_id === ANY_VALUE;
-  $: user_has_org_admin_access = check_data_permission(
-    $auth_store.current_profile?.role || "player",
-    "org_administrator_level",
-    "read",
-  );
-
-  function get_team_name(team_id: string): string {
-    const team = teams_map.get(team_id);
-    return team?.short_name || team?.name || "Unknown";
-  }
-
-  function get_competition_name(competition_id: string): string {
-    return competition_names[competition_id] || "Unknown Competition";
-  }
-
-  function get_sport_name(competition_id: string): string {
-    return sport_names[competition_id] || "Unknown Sport";
-  }
-
-  function get_sport_name_for_competition(competition_id: string): string {
-    return competition_sport_names[competition_id] || "Unknown Sport";
-  }
-
-  async function refresh_dashboard_data(): Promise<void> {
-    loading = true;
-    const user_role = $auth_store.current_profile?.role || "player";
-    const user_organization_id =
-      $auth_store.current_profile?.organization_id || "";
-    const dashboard_filters = build_dashboard_filters(
-      user_role,
-      user_organization_id,
+    $: current_user_organization_id =
+        $auth_store.current_profile?.organization_id || "";
+    $: user_is_super_admin = current_user_organization_id === ANY_VALUE;
+    $: user_has_org_admin_access = check_data_permission(
+        $auth_store.current_profile?.role || "player",
+        "org_administrator_level",
+        "read",
     );
 
-    const result = await load_dashboard_data(
-      dashboard_dependencies,
-      dashboard_filters,
-    );
-
-    if (!result.success) {
-      loading = false;
-      return;
+    function dismiss_access_denial(): void {
+        access_denial_message = "";
     }
 
-    stats = result.data.stats;
-    recent_competitions = result.data.recent_competitions;
-    upcoming_fixtures = result.data.upcoming_fixtures;
-    teams_map = result.data.teams_map;
-    competition_names = result.data.competition_names;
-    sport_names = result.data.sport_names;
-    competition_sport_names = result.data.competition_sport_names;
-    loading = false;
-  }
-
-  onMount(async () => {
-    if (!browser) return;
-
-    const denial_info = access_denial_store.get_and_clear();
-    if (denial_info.denied) {
-      access_denial_message = denial_info.message;
+    async function refresh_dashboard_data(): Promise<void> {
+        loading = true;
+        const dashboard_filters = build_dashboard_filters(
+            $auth_store.current_profile?.role || "player",
+            $auth_store.current_profile?.organization_id || "",
+        );
+        const result = await load_dashboard_data(
+            dashboard_dependencies,
+            dashboard_filters,
+        );
+        if (!result.success) {
+            loading = false;
+            return;
+        }
+        stats = result.data.stats;
+        recent_competitions = result.data.recent_competitions;
+        upcoming_fixtures = result.data.upcoming_fixtures;
+        teams_map = result.data.teams_map;
+        competition_names = result.data.competition_names;
+        sport_names = result.data.sport_names;
+        competition_sport_names = result.data.competition_sport_names;
+        loading = false;
     }
 
-    const auth_result = await ensure_auth_profile();
-    if (!auth_result.success) {
-      error_message = auth_result.error_message;
-      loading = false;
-      return;
+    async function handle_reset_data(): Promise<boolean> {
+        if (is_resetting) return false;
+        reset_status_message = "Clearing demo data...";
+        reset_progress = 0;
+        is_resetting = true;
+        await tick();
+        const reset_result = await reset_all_data(
+            (message: string, percentage: number) => {
+                reset_status_message = message;
+                reset_progress = percentage;
+            },
+        );
+        if (!reset_result) {
+            is_resetting = false;
+            return false;
+        }
+        first_time_setup_store.reset();
+        reset_initialization();
+        await initialize_app_data({
+            current_path: window.location.pathname,
+            session_already_synced: false,
+        });
+        await refresh_dashboard_data();
+        is_resetting = false;
+        return true;
     }
 
-    const user_role = $auth_store.current_profile?.role || "player";
-
-    const default_route_result =
-      await get_authorization_adapter().get_default_route_for_role(user_role);
-    if (default_route_result.success && default_route_result.data !== "/") {
-      await goto(default_route_result.data, { replaceState: true });
-      return;
-    }
-
-    await refresh_dashboard_data();
-  });
-
-  async function handle_reset_data(): Promise<boolean> {
-    if (is_resetting) return false;
-    reset_status_message = "Clearing demo data...";
-    reset_progress = 0;
-    is_resetting = true;
-    await tick();
-    const reset_result = await reset_all_data(
-      (message: string, percentage: number) => {
-        reset_status_message = message;
-        reset_progress = percentage;
-      },
-    );
-    if (!reset_result) {
-      is_resetting = false;
-      return false;
-    }
-    first_time_setup_store.reset();
-    reset_initialization();
-    await initialize_app_data({
-      current_path: window.location.pathname,
-      session_already_synced: false,
+    onMount(async () => {
+        const denial_info = access_denial_store.get_and_clear();
+        if (denial_info.denied) {
+            access_denial_message = denial_info.message;
+        }
+        const auth_result = await ensure_auth_profile();
+        if (!auth_result.success) {
+            error_message = auth_result.error_message;
+            loading = false;
+            return;
+        }
+        const user_role = $auth_store.current_profile?.role || "player";
+        const default_route_result =
+            await get_authorization_adapter().get_default_route_for_role(
+                user_role,
+            );
+        if (default_route_result.success && default_route_result.data !== "/") {
+            await goto(default_route_result.data, { replaceState: true });
+            return;
+        }
+        await refresh_dashboard_data();
     });
-    await refresh_dashboard_data();
-    is_resetting = false;
-    return true;
-  }
 </script>
 
 <svelte:head>
-  <title>Dashboard - Sport-Sync</title>
-  <meta
-    name="description"
-    content="Overview of your sports organization management system"
-  />
+    <title>Dashboard - Sport-Sync</title>
+    <meta
+        name="description"
+        content="Overview of your sports organization management system"
+    />
 </svelte:head>
 
 {#if is_resetting}
-  <FullScreenOverlay
-    title="Resetting Demo Data"
-    status_message={reset_status_message}
-    progress_percentage={reset_progress}
-  />
+    <FullScreenOverlay
+        title="Resetting Demo Data"
+        status_message={reset_status_message}
+        progress_percentage={reset_progress}
+    />
 {/if}
 
 {#if error_message}
-  <ErrorDisplay
-    variant="page"
-    title="Unable to Load Dashboard"
-    message={error_message}
-  />
+    <ErrorDisplay
+        variant="page"
+        title="Unable to Load Dashboard"
+        message={error_message}
+    />
 {:else}
-  {#if access_denial_message}
-    <div
-      class="mb-6 rounded-lg border border-blue-300 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-700 p-4"
-    >
-      <div class="flex items-start gap-3">
-        <svg
-          class="h-6 w-6 text-blue-500 flex-shrink-0 mt-0.5"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-          />
-        </svg>
-        <div class="flex-1">
-          <h3 class="text-sm font-semibold text-blue-800 dark:text-blue-200">
-            Access Denied
-          </h3>
-          <p class="mt-1 text-sm text-blue-700 dark:text-blue-300">
-            {access_denial_message}
-          </p>
-        </div>
-        <button
-          type="button"
-          class="text-blue-500 hover:text-blue-700 dark:hover:text-blue-300"
-          on:click={() => (access_denial_message = "")}
-          aria-label="Dismiss"
-        >
-          <svg
-            class="h-5 w-5"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M6 18L18 6M6 6l12 12"
-            />
-          </svg>
-        </button>
-      </div>
-    </div>
-  {/if}
-  <div class="space-y-6">
-    <!-- Page header -->
-    <div
-      class="bg-white dark:bg-accent-800 rounded-lg shadow-sm border border-accent-200 dark:border-accent-700 p-6"
-    >
-      <div class="flex flex-col md:flex-row md:items-center md:justify-between">
-        <div>
-          <h1
-            class="text-2xl sm:text-3xl font-bold text-accent-900 dark:text-accent-100 mb-2"
-          >
-            Welcome to {#if split_organization_name($branding_store.organization_name).prefix}{split_organization_name(
-                $branding_store.organization_name,
-              ).prefix}
-            {/if}
-            <span class="text-theme-secondary-600"
-              >{split_organization_name($branding_store.organization_name)
-                .suffix}</span
-            >
-            {#if split_organization_name($branding_store.organization_name).remainder}
-              {split_organization_name($branding_store.organization_name)
-                .remainder}
-            {/if}
-          </h1>
-          <p class="text-accent-600 dark:text-accent-300 text-mobile">
-            {$branding_store.organization_tagline}
-          </p>
-        </div>
-        {#if user_is_super_admin}
-          <div class="mt-4 md:mt-0">
-            <button
-              class="btn btn-primary-action mobile-touch"
-              on:click={handle_reset_data}
-              disabled={is_resetting}
-            >
-              {#if is_resetting}
-                Resetting...
-              {:else}
-                Reset Demo Data
-              {/if}
-            </button>
-          </div>
-        {/if}
-      </div>
-    </div>
-
-    <!-- Stats cards -->
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-      <!-- Organizations card -->
-      <svelte:element
-        this={user_has_org_admin_access ? "a" : "div"}
-        href={user_has_org_admin_access ? "/organizations" : undefined}
-        class="card p-6 {user_has_org_admin_access
-          ? 'hover:ring-2 hover:ring-sky-400 dark:hover:ring-sky-500 cursor-pointer'
-          : ''}"
-      >
-        <div class="flex items-center">
-          <div class="flex-shrink-0">
-            <div
-              class="h-12 w-12 bg-sky-100 dark:bg-sky-900/60 rounded-lg flex items-center justify-center"
-            >
-              {#if loading}
-                <div class="loading-spinner h-6 w-6"></div>
-              {:else}
-                <svg
-                  class="h-6 w-6 text-sky-500"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
-                  />
-                </svg>
-              {/if}
-            </div>
-          </div>
-          <div class="ml-4 flex-1 min-w-0">
-            <p
-              class="text-sm font-medium text-accent-500 dark:text-accent-400 truncate"
-            >
-              Organizations
-            </p>
-            <p class="text-2xl font-bold text-accent-900 dark:text-accent-100">
-              {loading ? "---" : stats.organizations}
-            </p>
-          </div>
-        </div>
-      </svelte:element>
-
-      <!-- Competitions card -->
-      <svelte:element
-        this={user_has_org_admin_access ? "a" : "div"}
-        href={user_has_org_admin_access ? "/competitions" : undefined}
-        class="card p-6 {user_has_org_admin_access
-          ? 'hover:ring-2 hover:ring-teal-400 dark:hover:ring-teal-500 cursor-pointer'
-          : ''}"
-      >
-        <div class="flex items-center">
-          <div class="flex-shrink-0">
-            <div
-              class="h-12 w-12 bg-teal-100 dark:bg-teal-900/60 rounded-lg flex items-center justify-center"
-            >
-              {#if loading}
-                <div class="loading-spinner h-6 w-6"></div>
-              {:else}
-                <svg
-                  class="h-6 w-6 text-teal-500"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"
-                  />
-                </svg>
-              {/if}
-            </div>
-          </div>
-          <div class="ml-4 flex-1 min-w-0">
-            <p
-              class="text-sm font-medium text-accent-500 dark:text-accent-400 truncate"
-            >
-              Competitions
-            </p>
-            <p class="text-2xl font-bold text-accent-900 dark:text-accent-100">
-              {loading ? "---" : stats.competitions}
-            </p>
-          </div>
-        </div>
-      </svelte:element>
-
-      <!-- Teams card -->
-      <svelte:element
-        this={user_has_org_admin_access ? "a" : "div"}
-        href={user_has_org_admin_access ? "/teams" : undefined}
-        class="card p-6 {user_has_org_admin_access
-          ? 'hover:ring-2 hover:ring-fuchsia-400 dark:hover:ring-fuchsia-500 cursor-pointer'
-          : ''}"
-      >
-        <div class="flex items-center">
-          <div class="flex-shrink-0">
-            <div
-              class="h-12 w-12 bg-fuchsia-100 dark:bg-fuchsia-900/60 rounded-lg flex items-center justify-center"
-            >
-              {#if loading}
-                <div class="loading-spinner h-6 w-6"></div>
-              {:else}
-                <svg
-                  class="h-6 w-6 text-fuchsia-500"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
-                  />
-                </svg>
-              {/if}
-            </div>
-          </div>
-          <div class="ml-4 flex-1 min-w-0">
-            <p
-              class="text-sm font-medium text-accent-500 dark:text-accent-400 truncate"
-            >
-              Teams
-            </p>
-            <p class="text-2xl font-bold text-accent-900 dark:text-accent-100">
-              {loading ? "---" : stats.teams}
-            </p>
-          </div>
-        </div>
-      </svelte:element>
-
-      <!-- Players card -->
-      <svelte:element
-        this={user_has_org_admin_access ? "a" : "div"}
-        href={user_has_org_admin_access ? "/players" : undefined}
-        class="card p-6 {user_has_org_admin_access
-          ? 'hover:ring-2 hover:ring-sky-400 dark:hover:ring-sky-500 cursor-pointer'
-          : ''}"
-      >
-        <div class="flex items-center">
-          <div class="flex-shrink-0">
-            <div
-              class="h-12 w-12 bg-sky-100 dark:bg-sky-900/60 rounded-lg flex items-center justify-center"
-            >
-              {#if loading}
-                <div class="loading-spinner h-6 w-6"></div>
-              {:else}
-                <svg
-                  class="h-6 w-6 text-sky-500"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                  />
-                </svg>
-              {/if}
-            </div>
-          </div>
-          <div class="ml-4 flex-1 min-w-0">
-            <p
-              class="text-sm font-medium text-accent-500 dark:text-accent-400 truncate"
-            >
-              Players
-            </p>
-            <p class="text-2xl font-bold text-accent-900 dark:text-accent-100">
-              {loading ? "---" : stats.players}
-            </p>
-          </div>
-        </div>
-      </svelte:element>
-    </div>
-
-    <!-- Recent activity -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <!-- Recent competitions -->
-      <div class="card p-6">
-        <h2
-          class="text-lg font-semibold text-accent-900 dark:text-accent-100 mb-4"
-        >
-          Recent Competitions
-        </h2>
-        <div class="space-y-4">
-          {#if loading}
-            {#each Array(3) as _}
-              <div class="animate-pulse">
-                <div class="flex items-center space-x-4">
-                  <div
-                    class="h-10 w-10 bg-accent-200 dark:bg-accent-700 rounded-lg"
-                  ></div>
-                  <div class="flex-1 space-y-2">
-                    <div
-                      class="h-4 bg-accent-200 dark:bg-accent-700 rounded w-3/4"
-                    ></div>
-                    <div
-                      class="h-3 bg-accent-200 dark:bg-accent-700 rounded w-1/2"
-                    ></div>
-                  </div>
-                </div>
-              </div>
-            {/each}
-          {:else if recent_competitions.length === 0}
-            <div class="text-center py-4">
-              <p class="text-sm text-accent-500 dark:text-accent-400">
-                No competitions yet.
-                {#if user_has_org_admin_access}
-                  <a
-                    href="/competitions/create"
-                    class="text-primary-500 hover:underline">Create one</a
-                  >
-                {/if}
-              </p>
-            </div>
-          {:else}
-            {#each recent_competitions as competition, index}
-              <svelte:element
-                this={user_has_org_admin_access ? "a" : "div"}
-                href={user_has_org_admin_access ? "/competitions" : undefined}
-                class="flex items-center space-x-4 p-2 -mx-2 rounded-lg {user_has_org_admin_access
-                  ? 'hover:bg-accent-50 dark:hover:bg-accent-700/50 cursor-pointer'
-                  : ''} transition-colors"
-              >
-                <div
-                  class="h-10 w-10 rounded-lg flex items-center justify-center {index %
-                    3 ===
-                  0
-                    ? 'bg-sky-100 dark:bg-sky-900/60'
-                    : index % 3 === 1
-                      ? 'bg-teal-100 dark:bg-teal-900/60'
-                      : 'bg-fuchsia-100 dark:bg-fuchsia-900/60'}"
-                >
-                  <span
-                    class="{index % 3 === 0
-                      ? 'text-sky-600'
-                      : index % 3 === 1
-                        ? 'text-teal-500'
-                        : 'text-fuchsia-500'} font-semibold text-sm"
-                  >
-                    {get_competition_initials(competition.name)}
-                  </span>
-                </div>
-                <div class="flex-1 min-w-0">
-                  <p
-                    class="text-sm font-medium text-accent-900 dark:text-accent-100 truncate"
-                  >
-                    {competition.name}
-                  </p>
-                  <div class="flex flex-wrap items-center gap-1 mt-0.5">
-                    <span
-                      class="inline-flex items-center px-1.5 py-0.5 bg-sky-100 dark:bg-sky-900/40 text-sky-700 dark:text-sky-300 rounded text-xs"
-                    >
-                      {get_sport_name_for_competition(competition.id)}
-                    </span>
-                    <span class="text-xs text-accent-500 dark:text-accent-400">
-                      {competition.team_ids?.length || 0} teams
-                    </span>
-                  </div>
-                </div>
-                <span
-                  class="{get_status_class(
-                    competition.status,
-                  )} px-2 py-1 text-xs rounded-full"
-                >
-                  {competition.status.charAt(0).toUpperCase() +
-                    competition.status.slice(1)}
-                </span>
-              </svelte:element>
-            {/each}
-          {/if}
-        </div>
-      </div>
-
-      <!-- Upcoming games -->
-      <div class="card p-6">
-        <h2
-          class="text-lg font-semibold text-accent-900 dark:text-accent-100 mb-4"
-        >
-          Upcoming Games
-        </h2>
-        <div class="space-y-4">
-          {#if loading}
-            {#each Array(3) as _}
-              <div class="animate-pulse">
-                <div class="flex items-center justify-between">
-                  <div class="flex items-center space-x-3">
-                    <div
-                      class="h-8 w-8 bg-accent-200 dark:bg-accent-700 rounded"
-                    ></div>
-                    <div class="space-y-1">
-                      <div
-                        class="h-4 bg-accent-200 dark:bg-accent-700 rounded w-20"
-                      ></div>
-                      <div
-                        class="h-3 bg-accent-200 dark:bg-accent-700 rounded w-16"
-                      ></div>
-                    </div>
-                  </div>
-                  <div
-                    class="h-4 bg-accent-200 dark:bg-accent-700 rounded w-16"
-                  ></div>
-                </div>
-              </div>
-            {/each}
-          {:else if upcoming_fixtures.length === 0}
-            <div class="text-center py-4">
-              <p class="text-sm text-accent-500 dark:text-accent-400">
-                No upcoming fixtures.
-                {#if user_has_org_admin_access}
-                  <a
-                    href="/fixtures?action=create"
-                    class="text-primary-500 hover:underline">Schedule one</a
-                  >
-                {/if}
-              </p>
-            </div>
-          {:else}
-            {#each upcoming_fixtures as fixture, index}
-              <svelte:element
-                this={user_has_org_admin_access ? "a" : "div"}
-                href={user_has_org_admin_access ? "/live-games" : undefined}
-                class="flex items-center justify-between p-2 -mx-2 rounded-lg {user_has_org_admin_access
-                  ? 'hover:bg-accent-50 dark:hover:bg-accent-700/50 cursor-pointer'
-                  : ''} transition-colors"
-              >
-                <div class="flex items-center space-x-3">
-                  <div
-                    class="h-8 w-8 rounded flex items-center justify-center {index %
-                      3 ===
-                    0
-                      ? 'bg-sky-100 dark:bg-sky-900/60'
-                      : index % 3 === 1
-                        ? 'bg-teal-100 dark:bg-teal-900/60'
-                        : 'bg-fuchsia-100 dark:bg-fuchsia-900/60'}"
-                  >
-                    <svg
-                      class="h-4 w-4 {index % 3 === 0
-                        ? 'text-sky-500'
-                        : index % 3 === 1
-                          ? 'text-teal-500'
-                          : 'text-fuchsia-500'}"
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                    >
-                      <path
-                        fill-rule="evenodd"
-                        d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.293l-3-3a1 1 0 00-1.414 1.414L10.586 9.5H7a1 1 0 100 2h3.586l-1.293 1.293a1 1 0 101.414 1.414l3-3a1 1 0 000-1.414z"
-                        clip-rule="evenodd"
-                      />
-                    </svg>
-                  </div>
-                  <div>
-                    <p
-                      class="text-sm font-medium text-accent-900 dark:text-accent-100"
-                    >
-                      {get_team_name(fixture.home_team_id)} vs {get_team_name(
-                        fixture.away_team_id,
-                      )}
-                    </p>
-                    <div class="flex flex-col gap-1 mt-0.5">
-                      <span
-                        class="inline-flex items-center px-1.5 py-0.5 bg-teal-100 dark:bg-teal-900/40 text-teal-700 dark:text-teal-300 rounded text-xs w-fit"
-                      >
-                        {get_competition_name(fixture.competition_id)}
-                      </span>
-                      <span
-                        class="inline-flex items-center px-1.5 py-0.5 bg-sky-100 dark:bg-sky-900/40 text-sky-700 dark:text-sky-300 rounded text-xs w-fit"
-                      >
-                        {get_sport_name(fixture.competition_id)}
-                      </span>
-                    </div>
-                    <p
-                      class="text-xs text-accent-500 dark:text-accent-400 mt-0.5"
-                      style="padding-left: 0.2rem;"
-                    >
-                      {format_fixture_date(
-                        fixture.scheduled_date,
-                        fixture.scheduled_time,
-                      )}
-                    </p>
-                  </div>
-                </div>
-                <span class="text-xs text-accent-500 dark:text-accent-400">
-                  {fixture.venue || "TBD"}
-                </span>
-              </svelte:element>
-            {/each}
-          {/if}
-        </div>
-      </div>
-    </div>
-
-    <!-- Quick actions -->
-    {#if user_has_org_admin_access}
-      <div class="card p-6">
-        <h2
-          class="text-lg font-semibold text-accent-900 dark:text-accent-100 mb-4"
-        >
-          Quick Actions
-        </h2>
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <a
-            href="/organizations"
-            class="flex flex-col items-center p-4 text-center hover:bg-accent-50 dark:hover:bg-accent-700 rounded-lg transition-colors duration-200 mobile-touch"
-          >
-            <div
-              class="h-12 w-12 bg-sky-600 rounded-lg flex items-center justify-center mb-3"
-            >
-              <svg
-                class="h-6 w-6 text-white"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                />
-              </svg>
-            </div>
-            <span
-              class="text-sm font-medium text-accent-900 dark:text-accent-100"
-              >Organizations</span
-            >
-          </a>
-
-          <a
-            href="/competitions/create"
-            class="flex flex-col items-center p-4 text-center hover:bg-accent-50 dark:hover:bg-accent-700 rounded-lg transition-colors duration-200 mobile-touch"
-          >
-            <div
-              class="h-12 w-12 bg-teal-700 rounded-lg flex items-center justify-center mb-3"
-            >
-              <svg
-                class="h-6 w-6 text-white"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                />
-              </svg>
-            </div>
-            <span
-              class="text-sm font-medium text-accent-900 dark:text-accent-100"
-              >New Competition</span
-            >
-          </a>
-
-          <a
-            href="/teams"
-            class="flex flex-col items-center p-4 text-center hover:bg-accent-50 dark:hover:bg-accent-700 rounded-lg transition-colors duration-200 mobile-touch"
-          >
-            <div
-              class="h-12 w-12 bg-fuchsia-700 rounded-lg flex items-center justify-center mb-3"
-            >
-              <svg
-                class="h-6 w-6 text-white"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                />
-              </svg>
-            </div>
-            <span
-              class="text-sm font-medium text-accent-900 dark:text-accent-100"
-              >Teams</span
-            >
-          </a>
-
-          <a
-            href="/fixtures/create"
-            class="flex flex-col items-center p-4 text-center hover:bg-accent-50 dark:hover:bg-accent-700 rounded-lg transition-colors duration-200 mobile-touch"
-          >
-            <div
-              class="h-12 w-12 bg-sky-600 rounded-lg flex items-center justify-center mb-3"
-            >
-              <svg
-                class="h-6 w-6 text-white"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                />
-              </svg>
-            </div>
-            <span
-              class="text-sm font-medium text-accent-900 dark:text-accent-100"
-              >Create Fixture</span
-            >
-          </a>
-        </div>
-      </div>
-    {/if}
-  </div>
+    <DashboardHomePage
+        {loading}
+        {access_denial_message}
+        organization_name={$branding_store.organization_name}
+        organization_tagline={$branding_store.organization_tagline}
+        {user_is_super_admin}
+        {user_has_org_admin_access}
+        {is_resetting}
+        {stats}
+        {recent_competitions}
+        {upcoming_fixtures}
+        {teams_map}
+        {competition_names}
+        {sport_names}
+        {competition_sport_names}
+        on_reset={handle_reset_data}
+        on_dismiss_access_denial={dismiss_access_denial}
+    />
 {/if}
-
-<style>
-  /* Additional mobile optimizations */
-  @media (max-width: 640px) {
-    .card {
-      padding: 1rem;
-    }
-
-    .grid {
-      gap: 1rem;
-    }
-  }
-
-  /* Smooth animations */
-  .card {
-    transition: all 0.2s ease-in-out;
-  }
-
-  .card:hover {
-    transform: translateY(-1px);
-    box-shadow:
-      0 4px 6px -1px rgba(0, 0, 0, 0.1),
-      0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  }
-
-  /* Loading animation improvements */
-  @keyframes pulse {
-    0%,
-    100% {
-      opacity: 1;
-    }
-    50% {
-      opacity: 0.5;
-    }
-  }
-
-  .animate-pulse {
-    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-  }
-</style>

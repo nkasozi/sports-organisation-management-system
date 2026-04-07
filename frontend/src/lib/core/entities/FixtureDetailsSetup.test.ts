@@ -1,10 +1,11 @@
 import { describe, expect, it } from "vitest";
+
 import {
   create_empty_fixture_details_setup_input,
   create_empty_official_assignment,
-  validate_fixture_details_setup_input,
-  type OfficialAssignment,
   type CreateFixtureDetailsSetupInput,
+  type OfficialAssignment,
+  validate_fixture_details_setup_input,
 } from "./FixtureDetailsSetup";
 
 describe("FixtureDetailsSetup", () => {

@@ -1,22 +1,23 @@
 import type { Table } from "dexie";
-import type {
-  PlayerProfile,
-  CreatePlayerProfileInput,
-  UpdatePlayerProfileInput,
-} from "../../core/entities/PlayerProfile";
+
 import type { BaseEntity } from "../../core/entities/BaseEntity";
 import type {
-  PlayerProfileRepository,
+  CreatePlayerProfileInput,
+  PlayerProfile,
+  UpdatePlayerProfileInput,
+} from "../../core/entities/PlayerProfile";
+import type {
   PlayerProfileFilter,
+  PlayerProfileRepository,
 } from "../../core/interfaces/ports";
 import type { QueryOptions } from "../../core/interfaces/ports";
 import type {
-  PaginatedAsyncResult,
   AsyncResult,
+  PaginatedAsyncResult,
 } from "../../core/types/Result";
 import {
-  create_success_result,
   create_failure_result,
+  create_success_result,
 } from "../../core/types/Result";
 import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
 

@@ -1,7 +1,8 @@
 <script lang="ts">
     import { createEventDispatcher } from "svelte";
-    import type { TeamStanding } from "$lib/presentation/logic/competitionStageResults";
+
     import TeamLogoThumbnail from "$lib/presentation/components/ui/TeamLogoThumbnail.svelte";
+    import type { TeamStanding } from "$lib/presentation/logic/competitionStageResults";
 
     export let standings: TeamStanding[] = [];
     export let selected_team_id: string | null = null;

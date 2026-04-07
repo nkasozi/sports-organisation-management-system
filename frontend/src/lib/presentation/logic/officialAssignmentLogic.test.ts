@@ -1,14 +1,16 @@
 import { describe, expect, it } from "vitest";
+
+import type { OfficialAssignment } from "$lib/core/entities/FixtureDetailsSetup";
+
 import {
-  compute_available_officials,
-  get_assignment_error,
-  filter_officials_by_organization,
   build_official_options_from_records,
   build_organization_official_filter,
-  type SelectOption,
+  compute_available_officials,
+  filter_officials_by_organization,
+  get_assignment_error,
   type OfficialRecord,
+  type SelectOption,
 } from "./officialAssignmentLogic";
-import type { OfficialAssignment } from "$lib/core/entities/FixtureDetailsSetup";
 
 describe("officialAssignmentLogic", () => {
   describe("compute_available_officials", () => {

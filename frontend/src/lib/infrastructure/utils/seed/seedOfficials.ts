@@ -1,11 +1,6 @@
 import type { Official } from "../../../core/entities/Official";
 import { DEFAULT_OFFICIAL_AVATAR } from "../../../core/entities/Official";
-import {
-  SEED_OFFICIAL_IDS,
-  SEED_ORGANIZATION_IDS,
-  SEED_GENDER_IDS,
-  generate_current_timestamp,
-} from "./seedIds";
+import { generate_current_timestamp, SEED_OFFICIAL_IDS } from "./seedIds";
 import { resolve_seed_gender_id_for_first_name } from "./seedPlayerIds";
 
 export function create_seed_officials(organization_id: string): Official[] {

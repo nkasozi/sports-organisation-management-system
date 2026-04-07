@@ -1,12 +1,12 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
-import type { TeamProfileRepository } from "../interfaces/ports";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
 import type {
-  TeamProfile,
   CreateTeamProfileInput,
+  TeamProfile,
 } from "../entities/TeamProfile";
+import type { TeamProfileRepository } from "../interfaces/ports";
 import type { QueryOptions } from "../interfaces/ports";
-import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
-import { create_success_result, create_failure_result } from "../types/Result";
+import { create_failure_result, create_success_result } from "../types/Result";
 import { create_team_profile_use_cases } from "./TeamProfileUseCases";
 
 function create_mock_team_profile(
@@ -40,7 +40,7 @@ function create_valid_team_profile_input(
   };
 }
 
-import type { Result, PaginatedResult } from "../types/Result";
+import type { PaginatedResult, Result } from "../types/Result";
 
 function create_paginated_result<T>(
   items: T[],

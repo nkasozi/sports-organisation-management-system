@@ -1,9 +1,9 @@
-import type { FilterableRepository, QueryOptions } from "./Repository";
 import type {
   AuditLog,
   CreateAuditLogInput,
 } from "../../../../entities/AuditLog";
 import type { PaginatedAsyncResult } from "../../../../types/Result";
+import type { FilterableRepository, QueryOptions } from "./Repository";
 
 export interface AuditLogFilter {
   entity_type?: string;

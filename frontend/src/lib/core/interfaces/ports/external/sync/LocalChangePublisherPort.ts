@@ -1,4 +1,5 @@
-import type { Result, AsyncResult } from "$lib/core/types/Result";
+import type { AsyncResult, Result } from "$lib/core/types/Result";
+
 import type { SyncOrchestratorPort } from "./SyncOrchestratorPort";
 
 export interface SyncRestorationHandlers {

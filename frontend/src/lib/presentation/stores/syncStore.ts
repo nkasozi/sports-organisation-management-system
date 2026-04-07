@@ -1,31 +1,33 @@
 import { writable } from "svelte/store";
+
+import type {
+  SyncHints,
+  SyncMetrics,
+  SyncOrchestratorPort,
+  SyncTableError,
+} from "$lib/core/interfaces/ports";
 import {
+  create_failure_result,
+  create_success_result,
+} from "$lib/core/types/Result";
+import type {
+  ConflictRecord,
+  ConflictResolutionAction,
+} from "$lib/infrastructure/sync/conflictTypes";
+import {
+  get_last_sync_timestamp,
   get_sync_manager,
   initialize_sync_manager,
   type SyncConfig,
   type SyncDirection,
   type SyncProgress,
   type SyncResult,
-  get_last_sync_timestamp,
 } from "$lib/infrastructure/sync/convexSyncService";
 import { conflict_store } from "$lib/presentation/stores/conflictStore";
-import type {
-  ConflictRecord,
-  ConflictResolutionAction,
-} from "$lib/infrastructure/sync/conflictTypes";
-import type {
-  SyncOrchestratorPort,
-  SyncMetrics,
-  SyncTableError,
-  SyncHints,
-} from "$lib/core/interfaces/ports";
-import {
-  create_success_result,
-  create_failure_result,
-} from "$lib/core/types/Result";
+
+import { execute_conflict_resolution } from "./syncStoreResolveConflict";
 import type { SyncState } from "./syncStoreTypes";
 import { SYNC_INITIAL_STATE } from "./syncStoreTypes";
-import { execute_conflict_resolution } from "./syncStoreResolveConflict";
 export type { SyncState } from "./syncStoreTypes";
 export { SYNC_INITIAL_STATE } from "./syncStoreTypes";
 

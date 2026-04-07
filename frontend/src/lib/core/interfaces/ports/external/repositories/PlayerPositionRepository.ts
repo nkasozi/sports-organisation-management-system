@@ -1,24 +1,20 @@
 import type {
-  Repository,
-  FilterableRepository,
-  QueryOptions,
-} from "./Repository";
+  CreatePlayerPositionInput,
+  PlayerPosition,
+  PlayerPositionFilter,
+  UpdatePlayerPositionInput,
+} from "../../../../entities/PlayerPosition";
 import type {
   AsyncResult,
   PaginatedAsyncResult,
 } from "../../../../types/Result";
-import type {
-  PlayerPosition,
-  CreatePlayerPositionInput,
-  UpdatePlayerPositionInput,
-  PlayerPositionFilter,
-} from "../../../../entities/PlayerPosition";
+import type { FilterableRepository, QueryOptions } from "./Repository";
 
 export type {
-  PlayerPosition,
   CreatePlayerPositionInput,
-  UpdatePlayerPositionInput,
+  PlayerPosition,
   PlayerPositionFilter,
+  UpdatePlayerPositionInput,
 };
 
 export interface PlayerPositionRepository extends FilterableRepository<

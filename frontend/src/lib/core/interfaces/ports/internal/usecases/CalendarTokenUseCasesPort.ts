@@ -1,15 +1,15 @@
 import type {
+  CalendarFeedType,
   CalendarToken,
   CreateCalendarTokenInput,
   UpdateCalendarTokenInput,
-  CalendarFeedType,
 } from "../../../../entities/CalendarToken";
-import type { CalendarTokenFilter } from "../../external/repositories/CalendarTokenRepository";
-import type { QueryOptions } from "../../external/repositories/Repository";
 import type {
   AsyncResult,
   PaginatedAsyncResult,
 } from "../../../../types/Result";
+import type { CalendarTokenFilter } from "../../external/repositories/CalendarTokenRepository";
+import type { QueryOptions } from "../../external/repositories/Repository";
 import type { BaseUseCasesPort } from "./BaseUseCasesPort";
 
 export interface CalendarFeedInfo {
