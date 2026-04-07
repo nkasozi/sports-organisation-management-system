@@ -1,15 +1,15 @@
-import { LINEUP_STATUS } from "../entities/StatusConstants";
 import type { Fixture } from "../entities/Fixture";
+import type { FixtureLineup } from "../entities/FixtureLineup";
+import { LINEUP_STATUS } from "../entities/StatusConstants";
+import type { Result } from "../types/Result";
+import { create_failure_result, create_success_result } from "../types/Result";
 import type { FixtureDetailsSetupUseCases } from "../usecases/FixtureDetailsSetupUseCases";
 import type { FixtureLineupUseCases } from "../usecases/FixtureLineupUseCases";
-import type { FixtureLineup } from "../entities/FixtureLineup";
-import type { Result } from "../types/Result";
-import { create_success_result, create_failure_result } from "../types/Result";
 
-export { auto_generate_lineups_if_possible } from "./fixtureLineupGeneration";
 export type { LineupGenerationResult } from "./fixtureLineupGeneration";
-export type { PlayerRulesResult } from "./fixturePlayerRules";
+export { auto_generate_lineups_if_possible } from "./fixtureLineupGeneration";
 export type { PreviousLineupResult } from "./fixtureLineupLookup";
+export type { PlayerRulesResult } from "./fixturePlayerRules";
 
 export type CheckStatus = "pending" | "checking" | "passed" | "failed";
 

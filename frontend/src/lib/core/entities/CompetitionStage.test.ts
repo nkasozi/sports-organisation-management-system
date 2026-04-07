@@ -1,10 +1,11 @@
-import { describe, it, expect } from "vitest";
-import {
-  validate_competition_stage_input,
-  create_empty_competition_stage_input,
-  create_default_stage_templates,
-} from "./CompetitionStage";
+import { describe, expect, it } from "vitest";
+
 import type { CreateCompetitionStageInput } from "./CompetitionStage";
+import {
+  create_default_stage_templates,
+  create_empty_competition_stage_input,
+  validate_competition_stage_input,
+} from "./CompetitionStage";
 
 function create_valid_stage_input(
   overrides: Partial<CreateCompetitionStageInput> = {},

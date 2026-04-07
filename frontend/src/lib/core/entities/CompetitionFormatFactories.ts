@@ -1,6 +1,6 @@
 import type {
-  FormatType,
   CreateCompetitionFormatInput,
+  FormatType,
   GroupStageConfig,
   KnockoutStageConfig,
   LeagueConfig,

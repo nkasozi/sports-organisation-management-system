@@ -1,15 +1,15 @@
 import type {
-  JerseyColor,
   CreateJerseyColorInput,
-  UpdateJerseyColorInput,
+  JerseyColor,
   JerseyColorHolderType,
+  UpdateJerseyColorInput,
 } from "../../../../entities/JerseyColor";
-import type { JerseyColorFilter } from "../../external/repositories/JerseyColorRepository";
-import type { QueryOptions } from "../../external/repositories/Repository";
 import type {
   AsyncResult,
   PaginatedAsyncResult,
 } from "../../../../types/Result";
+import type { JerseyColorFilter } from "../../external/repositories/JerseyColorRepository";
+import type { QueryOptions } from "../../external/repositories/Repository";
 
 export interface JerseyColorUseCasesPort {
   create(input: CreateJerseyColorInput): AsyncResult<JerseyColor>;

@@ -1,24 +1,4 @@
 import {
-  get_player_repository,
-  InBrowserPlayerRepository,
-} from "../repositories/InBrowserPlayerRepository";
-import {
-  get_venue_repository,
-  InBrowserVenueRepository,
-} from "../repositories/InBrowserVenueRepository";
-import {
-  get_team_repository,
-  InBrowserTeamRepository,
-} from "../repositories/InBrowserTeamRepository";
-import {
-  get_team_staff_repository,
-  InBrowserTeamStaffRepository,
-} from "../repositories/InBrowserTeamStaffRepository";
-import {
-  get_official_repository,
-  InBrowserOfficialRepository,
-} from "../repositories/InBrowserOfficialRepository";
-import {
   get_competition_repository,
   InBrowserCompetitionRepository,
 } from "../repositories/InBrowserCompetitionRepository";
@@ -31,33 +11,53 @@ import {
   InBrowserCompetitionTeamRepository,
 } from "../repositories/InBrowserCompetitionTeamRepository";
 import {
-  get_player_team_membership_repository,
-  InBrowserPlayerTeamMembershipRepository,
-} from "../repositories/InBrowserPlayerTeamMembershipRepository";
+  get_fixture_lineup_repository,
+  InBrowserFixtureLineupRepository,
+} from "../repositories/InBrowserFixtureLineupRepository";
 import {
   get_fixture_repository,
   InBrowserFixtureRepository,
 } from "../repositories/InBrowserFixtureRepository";
 import {
-  get_fixture_lineup_repository,
-  InBrowserFixtureLineupRepository,
-} from "../repositories/InBrowserFixtureLineupRepository";
-import {
   get_jersey_color_repository,
   InBrowserJerseyColorRepository,
 } from "../repositories/InBrowserJerseyColorRepository";
+import {
+  get_official_repository,
+  InBrowserOfficialRepository,
+} from "../repositories/InBrowserOfficialRepository";
 import {
   get_player_profile_repository,
   InBrowserPlayerProfileRepository,
 } from "../repositories/InBrowserPlayerProfileRepository";
 import {
-  get_team_profile_repository,
-  InBrowserTeamProfileRepository,
-} from "../repositories/InBrowserTeamProfileRepository";
+  get_player_repository,
+  InBrowserPlayerRepository,
+} from "../repositories/InBrowserPlayerRepository";
+import {
+  get_player_team_membership_repository,
+  InBrowserPlayerTeamMembershipRepository,
+} from "../repositories/InBrowserPlayerTeamMembershipRepository";
 import {
   get_profile_link_repository,
   InBrowserProfileLinkRepository,
 } from "../repositories/InBrowserProfileLinkRepository";
+import {
+  get_team_profile_repository,
+  InBrowserTeamProfileRepository,
+} from "../repositories/InBrowserTeamProfileRepository";
+import {
+  get_team_repository,
+  InBrowserTeamRepository,
+} from "../repositories/InBrowserTeamRepository";
+import {
+  get_team_staff_repository,
+  InBrowserTeamStaffRepository,
+} from "../repositories/InBrowserTeamStaffRepository";
+import {
+  get_venue_repository,
+  InBrowserVenueRepository,
+} from "../repositories/InBrowserVenueRepository";
 
 export interface DemoSeedingRepos {
   player: InBrowserPlayerRepository;

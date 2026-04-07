@@ -1,18 +1,18 @@
+import type { CompetitionStage } from "$lib/core/entities/CompetitionStage";
+import type { Fixture } from "$lib/core/entities/Fixture";
+import type { Official } from "$lib/core/entities/Official";
+import { get_official_full_name } from "$lib/core/entities/Official";
 import type { OfficialPerformanceRating } from "$lib/core/entities/OfficialPerformanceRating";
 import {
   aggregate_weighted_ratings,
   get_performance_tier,
-  type WeightedOfficialSummary,
   type PerformanceTier,
+  type WeightedOfficialSummary,
 } from "$lib/core/entities/OfficialPerformanceRating";
-import type { Official } from "$lib/core/entities/Official";
-import { get_official_full_name } from "$lib/core/entities/Official";
-import type { Fixture } from "$lib/core/entities/Fixture";
 import {
   compute_importance_weight,
   type ImportanceWeightInput,
 } from "$lib/core/services/compute_importance_weight";
-import type { CompetitionStage } from "$lib/core/entities/CompetitionStage";
 
 export interface OfficialLeaderboardEntry {
   official_id: string;

@@ -1,11 +1,12 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
+
+import type { UserRole } from "../../core/interfaces/ports";
 import {
   get_allowed_roles_for_creator,
   get_visible_fields_for_role,
   is_system_user_field_visible_for_role,
   should_field_be_required_for_role,
 } from "./systemUserFormLogic";
-import type { UserRole } from "../../core/interfaces/ports";
 
 describe("get_allowed_roles_for_creator", () => {
   it("super_admin can create all roles", () => {

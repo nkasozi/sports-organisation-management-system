@@ -1,14 +1,14 @@
 import type {
-  Team,
   CreateTeamInput,
+  Team,
   UpdateTeamInput,
 } from "../../../../entities/Team";
-import type { TeamFilter } from "../../external/repositories/TeamRepository";
-import type { QueryOptions } from "../../external/repositories/Repository";
 import type {
   AsyncResult,
   PaginatedAsyncResult,
 } from "../../../../types/Result";
+import type { QueryOptions } from "../../external/repositories/Repository";
+import type { TeamFilter } from "../../external/repositories/TeamRepository";
 import type { BaseUseCasesPort } from "./BaseUseCasesPort";
 
 export interface TeamUseCasesPort extends BaseUseCasesPort<

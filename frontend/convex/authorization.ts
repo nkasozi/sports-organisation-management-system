@@ -1,15 +1,16 @@
 import { v } from "convex/values";
-import { query, mutation } from "./_generated/server";
-import {
-  SHARED_ROLE_PERMISSIONS,
-  SHARED_ENTITY_CATEGORY_MAP,
-} from "./shared_permission_definitions";
-import type {
-  SharedUserRole,
-  SharedDataCategory,
-  SharedCrudPermissions,
-} from "./shared_permission_definitions";
+
+import { mutation, query } from "./_generated/server";
 import type { ConvexResult } from "./lib/auth_middleware";
+import type {
+  SharedCrudPermissions,
+  SharedDataCategory,
+  SharedUserRole,
+} from "./shared_permission_definitions";
+import {
+  SHARED_ENTITY_CATEGORY_MAP,
+  SHARED_ROLE_PERMISSIONS,
+} from "./shared_permission_definitions";
 
 export type UserRole = SharedUserRole;
 export type DataCategory = SharedDataCategory;
@@ -484,8 +485,8 @@ export const can_access_route = query({
 });
 
 import {
-  is_seed_super_admin_allowed,
   can_caller_assign_role,
+  is_seed_super_admin_allowed,
 } from "./lib/role_security";
 
 export const seed_super_admin = mutation({

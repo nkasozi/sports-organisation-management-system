@@ -1,7 +1,8 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
 import {
-  create_convex_realtime_sync,
   type ConvexRealtimeSync,
+  create_convex_realtime_sync,
   type RealtimeSyncDependencies,
   type TableChangeInfo,
 } from "./convexRealtimeSync";

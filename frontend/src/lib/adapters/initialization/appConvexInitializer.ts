@@ -1,22 +1,23 @@
-import { PUBLIC_CONVEX_URL } from "$env/static/public";
 import { ConvexClient } from "convex/browser";
-import { sync_store } from "$lib/presentation/stores/syncStore";
+
+import { api } from "$convex/_generated/api";
+import { PUBLIC_CONVEX_URL } from "$env/static/public";
+import { get_clerk_authentication_adapter } from "$lib/adapters/iam/ClerkAuthenticationAdapter";
 import { get_session_token } from "$lib/adapters/iam/clerkAuthService";
 import { get_authentication_adapter } from "$lib/adapters/iam/LocalAuthenticationAdapter";
-import { get_authorization_adapter } from "$lib/infrastructure/AuthorizationProvider";
-import { get_clerk_authentication_adapter } from "$lib/adapters/iam/ClerkAuthenticationAdapter";
-import {
-  create_auth_cache_invalidator,
-  type AuthCacheInvalidator,
-  type SubscribableConvexClient,
-} from "$lib/infrastructure/cache/AuthCacheInvalidator";
-import { api } from "$convex/_generated/api";
 import { get_system_user_repository } from "$lib/adapters/repositories/InBrowserSystemUserRepository";
 import type { Result } from "$lib/core/types/Result";
 import {
-  create_success_result,
   create_failure_result,
+  create_success_result,
 } from "$lib/core/types/Result";
+import { get_authorization_adapter } from "$lib/infrastructure/AuthorizationProvider";
+import {
+  type AuthCacheInvalidator,
+  create_auth_cache_invalidator,
+  type SubscribableConvexClient,
+} from "$lib/infrastructure/cache/AuthCacheInvalidator";
+import { sync_store } from "$lib/presentation/stores/syncStore";
 
 let auth_cache_invalidator: AuthCacheInvalidator | null = null;
 

@@ -1,4 +1,5 @@
 import type { Table } from "dexie";
+
 import type {
   Activity,
   CreateActivityInput,
@@ -6,8 +7,8 @@ import type {
 } from "../../core/entities/Activity";
 import type { BaseEntity } from "../../core/entities/BaseEntity";
 import type {
-  ActivityRepository,
   ActivityFilter,
+  ActivityRepository,
   QueryOptions,
 } from "../../core/interfaces/ports";
 import type {
@@ -15,8 +16,8 @@ import type {
   PaginatedAsyncResult,
 } from "../../core/types/Result";
 import {
-  create_success_result,
   create_failure_result,
+  create_success_result,
 } from "../../core/types/Result";
 import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
 

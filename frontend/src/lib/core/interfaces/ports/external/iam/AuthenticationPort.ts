@@ -1,4 +1,5 @@
 import type { SystemUser } from "$lib/core/entities/SystemUser";
+
 import type { AsyncResult } from "../../../../types/Result";
 
 export type UserRole =

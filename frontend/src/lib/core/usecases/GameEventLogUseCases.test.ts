@@ -1,10 +1,11 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import type { GameEventLog } from "../entities/GameEventLog";
+import type { GameEventLogRepository } from "../interfaces/ports";
 import {
   create_game_event_log_use_cases,
   type GameEventLogUseCases,
 } from "./GameEventLogUseCases";
-import type { GameEventLogRepository } from "../interfaces/ports";
-import type { GameEventLog } from "../entities/GameEventLog";
 
 function create_mock_game_event_log(
   overrides: Partial<GameEventLog> = {},

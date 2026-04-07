@@ -1,11 +1,12 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
+
 import {
-  validate_qualification_input,
   create_empty_qualification_input,
-  is_qualification_expired,
-  get_days_until_expiry,
   type CreateQualificationInput,
+  get_days_until_expiry,
+  is_qualification_expired,
   type QualificationHolderType,
+  validate_qualification_input,
 } from "./Qualification";
 
 describe("Qualification Entity", () => {

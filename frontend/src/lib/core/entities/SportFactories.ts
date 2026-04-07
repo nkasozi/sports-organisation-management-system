@@ -1,17 +1,17 @@
-import type {
-  CreateSportInput,
-  OfficialRequirement,
-  SportGamePeriod,
-} from "./SportTypes";
 import {
   create_default_card_types,
-  create_default_foul_categories,
   create_default_football_periods,
+  create_default_foul_categories,
   create_default_official_requirements,
   create_default_overtime_rules,
   create_default_scoring_rules,
   create_default_substitution_rules,
 } from "./SportDefaults";
+import type {
+  CreateSportInput,
+  OfficialRequirement,
+  SportGamePeriod,
+} from "./SportTypes";
 
 export function create_empty_sport_input(): CreateSportInput {
   return {

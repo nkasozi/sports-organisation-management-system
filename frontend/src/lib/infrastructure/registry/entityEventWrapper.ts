@@ -1,8 +1,9 @@
-import { EventBus } from "$lib/infrastructure/events/EventBus";
 import type { BaseEntity } from "$lib/core/entities/BaseEntity";
 import type { AsyncResult } from "$lib/core/types/Result";
-import type { GenericEntityUseCases } from "./entityUseCasesRegistry";
+import { EventBus } from "$lib/infrastructure/events/EventBus";
+
 import { get_entity_display_name } from "./entityDisplayNames";
+import type { GenericEntityUseCases } from "./entityUseCasesRegistry";
 
 const ENTITIES_TO_SKIP_AUDIT = ["auditlog"];
 

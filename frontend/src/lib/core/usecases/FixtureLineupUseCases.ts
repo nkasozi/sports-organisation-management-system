@@ -1,17 +1,18 @@
-import { LINEUP_STATUS } from "../entities/StatusConstants";
+import { EventBus } from "$lib/infrastructure/events/EventBus";
+
 import type {
-  FixtureLineup,
   CreateFixtureLineupInput,
+  FixtureLineup,
   UpdateFixtureLineupInput,
 } from "../entities/FixtureLineup";
+import { LINEUP_STATUS } from "../entities/StatusConstants";
 import type {
-  FixtureLineupRepository,
   FixtureLineupFilter,
+  FixtureLineupRepository,
   FixtureLineupUseCasesPort,
 } from "../interfaces/ports";
 import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
 import { create_failure_result } from "../types/Result";
-import { EventBus } from "$lib/infrastructure/events/EventBus";
 
 export type FixtureLineupUseCases = FixtureLineupUseCasesPort;
 

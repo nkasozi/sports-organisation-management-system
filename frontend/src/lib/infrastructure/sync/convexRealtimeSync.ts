@@ -1,9 +1,9 @@
 import type { SubscribableConvexClient } from "../cache/AuthCacheInvalidator";
 
 export {
+  get_realtime_sync_adapter,
   start_realtime_sync,
   stop_realtime_sync,
-  get_realtime_sync_adapter,
 } from "./realtimeSyncLifecycle";
 
 export interface TableChangeInfo {

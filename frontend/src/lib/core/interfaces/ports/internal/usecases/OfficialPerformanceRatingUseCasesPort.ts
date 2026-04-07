@@ -1,14 +1,14 @@
 import type {
-  OfficialPerformanceRating,
   CreateOfficialPerformanceRatingInput,
+  OfficialPerformanceRating,
   UpdateOfficialPerformanceRatingInput,
 } from "../../../../entities/OfficialPerformanceRating";
-import type { OfficialPerformanceRatingFilter } from "../../external/repositories/OfficialPerformanceRatingRepository";
-import type { QueryOptions } from "../../external/repositories/Repository";
 import type {
   AsyncResult,
   PaginatedAsyncResult,
 } from "../../../../types/Result";
+import type { OfficialPerformanceRatingFilter } from "../../external/repositories/OfficialPerformanceRatingRepository";
+import type { QueryOptions } from "../../external/repositories/Repository";
 
 export interface OfficialPerformanceRatingUseCasesPort {
   create(

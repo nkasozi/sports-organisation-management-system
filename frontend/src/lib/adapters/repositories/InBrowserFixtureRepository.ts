@@ -1,23 +1,24 @@
 import type { Table } from "dexie";
-import type {
-  Fixture,
-  CreateFixtureInput,
-  UpdateFixtureInput,
-} from "../../core/entities/Fixture";
+
 import type { BaseEntity } from "../../core/entities/BaseEntity";
 import {
-  generate_unique_id,
   create_timestamp_fields,
+  generate_unique_id,
 } from "../../core/entities/BaseEntity";
 import type {
-  FixtureRepository,
+  CreateFixtureInput,
+  Fixture,
+  UpdateFixtureInput,
+} from "../../core/entities/Fixture";
+import type {
   FixtureFilter,
+  FixtureRepository,
   QueryOptions,
 } from "../../core/interfaces/ports";
 import type { PaginatedAsyncResult } from "../../core/types/Result";
 import {
-  create_success_result,
   create_failure_result,
+  create_success_result,
 } from "../../core/types/Result";
 import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
 

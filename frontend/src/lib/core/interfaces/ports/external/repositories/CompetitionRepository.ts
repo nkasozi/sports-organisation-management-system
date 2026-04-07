@@ -1,10 +1,10 @@
-import type { FilterableRepository, QueryOptions } from "./Repository";
-import type { PaginatedAsyncResult } from "../../../../types/Result";
 import type {
   Competition,
   CreateCompetitionInput,
   UpdateCompetitionInput,
 } from "../../../../entities/Competition";
+import type { PaginatedAsyncResult } from "../../../../types/Result";
+import type { FilterableRepository, QueryOptions } from "./Repository";
 
 export interface CompetitionFilter {
   name_contains?: string;

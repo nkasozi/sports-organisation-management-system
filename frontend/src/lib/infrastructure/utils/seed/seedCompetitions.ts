@@ -1,11 +1,11 @@
 import type { Competition } from "../../../core/entities/Competition";
+import type { SeedCompetitionFormatIds } from "./seedIds";
 import {
+  generate_current_timestamp,
   SEED_COMPETITION_IDS,
   SEED_ORGANIZATION_IDS,
   SEED_TEAM_IDS,
-  generate_current_timestamp,
 } from "./seedIds";
-import type { SeedCompetitionFormatIds } from "./seedIds";
 
 export function create_seed_competitions(
   format_ids: SeedCompetitionFormatIds,

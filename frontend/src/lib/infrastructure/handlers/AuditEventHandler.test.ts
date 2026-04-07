@@ -1,13 +1,14 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+import {
+  clear_user_context,
+  EventBus,
+  set_user_context,
+} from "../events/EventBus";
 import {
   initialize_audit_event_handlers,
   reset_audit_event_handlers,
 } from "./AuditEventHandler";
-import {
-  EventBus,
-  set_user_context,
-  clear_user_context,
-} from "../events/EventBus";
 
 const mock_create_audit_log = vi.fn().mockResolvedValue({ success: true });
 

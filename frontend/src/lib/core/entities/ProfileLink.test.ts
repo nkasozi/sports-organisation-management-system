@@ -1,8 +1,9 @@
 import { describe, expect, it } from "vitest";
+
 import {
-  validate_profile_link_input,
   create_empty_profile_link_input,
   get_platform_icon,
+  validate_profile_link_input,
 } from "./ProfileLink";
 
 describe("ProfileLink", () => {

@@ -1,21 +1,22 @@
+import type { RemoteChangeSubscriberPort } from "$lib/core/interfaces/ports";
+import {
+  create_failure_result,
+  create_success_result,
+} from "$lib/core/types/Result";
+
+import { get_database } from "../../adapters/repositories/database";
 import type { SubscribableConvexClient } from "../cache/AuthCacheInvalidator";
 import {
-  pull_table_from_convex,
+  type ConvexRealtimeSync,
+  create_convex_realtime_sync,
+  type PullTableFunction,
+} from "./convexRealtimeSync";
+import {
   get_table_from_database,
+  pull_table_from_convex,
   TABLE_NAMES,
   type TableName,
 } from "./convexSyncService";
-import { get_database } from "../../adapters/repositories/database";
-import type { RemoteChangeSubscriberPort } from "$lib/core/interfaces/ports";
-import {
-  create_success_result,
-  create_failure_result,
-} from "$lib/core/types/Result";
-import {
-  create_convex_realtime_sync,
-  type ConvexRealtimeSync,
-  type PullTableFunction,
-} from "./convexRealtimeSync";
 
 interface ConvexClientWithQueryMutation {
   mutation: (name: string, args: Record<string, unknown>) => Promise<unknown>;

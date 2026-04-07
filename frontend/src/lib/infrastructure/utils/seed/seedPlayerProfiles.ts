@@ -1,8 +1,4 @@
-import {
-  SEED_PLAYER_PROFILE_IDS,
-  SEED_ORGANIZATION_IDS,
-  generate_current_timestamp,
-} from "./seedIds";
+import { generate_current_timestamp, SEED_PLAYER_PROFILE_IDS } from "./seedIds";
 import { SEED_PLAYER_IDS } from "./seedPlayerIds";
 
 export function create_seed_player_profiles(): import("../../../core/entities/PlayerProfile").PlayerProfile[] {

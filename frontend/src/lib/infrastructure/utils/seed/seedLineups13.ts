@@ -1,10 +1,10 @@
 import type { FixtureLineup } from "../../../core/entities/FixtureLineup";
 import {
+  generate_current_timestamp,
+  SEED_FIXTURE_IDS,
   SEED_FIXTURE_LINEUP_IDS,
   SEED_ORGANIZATION_IDS,
-  SEED_FIXTURE_IDS,
   SEED_TEAM_IDS,
-  generate_current_timestamp,
 } from "./seedIds";
 import { SEED_PLAYER_IDS } from "./seedPlayerIds";
 

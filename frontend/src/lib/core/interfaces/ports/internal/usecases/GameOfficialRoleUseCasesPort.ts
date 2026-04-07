@@ -1,10 +1,10 @@
 import type {
-  GameOfficialRole,
   CreateGameOfficialRoleInput,
+  GameOfficialRole,
   UpdateGameOfficialRoleInput,
 } from "../../../../entities/GameOfficialRole";
-import type { GameOfficialRoleFilter } from "../../external/repositories/GameOfficialRoleRepository";
 import type { AsyncResult } from "../../../../types/Result";
+import type { GameOfficialRoleFilter } from "../../external/repositories/GameOfficialRoleRepository";
 import type { BaseUseCasesPort } from "./BaseUseCasesPort";
 
 export interface GameOfficialRoleUseCasesPort extends BaseUseCasesPort<

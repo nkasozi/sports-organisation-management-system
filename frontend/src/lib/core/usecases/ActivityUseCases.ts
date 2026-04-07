@@ -4,25 +4,25 @@ import type {
   UpdateActivityInput,
 } from "../entities/Activity";
 import {
-  validate_activity_input,
-  can_edit_activity,
   can_delete_activity,
+  can_edit_activity,
+  validate_activity_input,
 } from "../entities/Activity";
 import type { ActivityCategory } from "../entities/ActivityCategory";
 import type {
-  ActivityRepository,
-  ActivityFilter,
   ActivityCategoryRepository,
-  CompetitionRepository,
-  FixtureRepository,
-  TeamRepository,
-  QueryOptions,
+  ActivityFilter,
+  ActivityRepository,
   ActivityUseCasesPort,
   CalendarDateRange,
   CalendarEvent,
+  CompetitionRepository,
+  FixtureRepository,
+  QueryOptions,
+  TeamRepository,
 } from "../interfaces/ports";
-import type { PaginatedAsyncResult, AsyncResult } from "../types/Result";
-import { create_success_result, create_failure_result } from "../types/Result";
+import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
+import { create_failure_result, create_success_result } from "../types/Result";
 import { create_activity_sync } from "./ActivitySyncUseCases";
 
 export type ActivityUseCases = ActivityUseCasesPort;

@@ -1,10 +1,10 @@
-import type { Repository } from "./Repository";
-import type { AsyncResult } from "../../../../types/Result";
 import type {
-  TeamStaff,
   CreateTeamStaffInput,
+  TeamStaff,
   UpdateTeamStaffInput,
 } from "../../../../entities/TeamStaff";
+import type { AsyncResult } from "../../../../types/Result";
+import type { Repository } from "./Repository";
 
 export interface TeamStaffFilter {
   organization_id?: string;
@@ -24,4 +24,4 @@ export interface TeamStaffRepository extends Repository<
   find_by_role(role_id: string): AsyncResult<TeamStaff[]>;
 }
 
-export type { TeamStaff, CreateTeamStaffInput, UpdateTeamStaffInput };
+export type { CreateTeamStaffInput, TeamStaff, UpdateTeamStaffInput };

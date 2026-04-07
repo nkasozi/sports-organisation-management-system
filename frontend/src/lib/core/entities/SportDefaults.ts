@@ -1,10 +1,10 @@
 import type {
   CardType,
   FoulCategory,
-  SportGamePeriod,
   OfficialRequirement,
   OvertimeRule,
   ScoringRule,
+  SportGamePeriod,
   SubstitutionRule,
 } from "./SportTypes";
 

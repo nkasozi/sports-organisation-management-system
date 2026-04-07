@@ -1,10 +1,10 @@
 import type {
-  TeamStaffRole,
   CreateTeamStaffRoleInput,
+  TeamStaffRole,
   UpdateTeamStaffRoleInput,
 } from "../../../../entities/TeamStaffRole";
-import type { TeamStaffRoleFilter } from "../../external/repositories/TeamStaffRoleRepository";
 import type { AsyncResult } from "../../../../types/Result";
+import type { TeamStaffRoleFilter } from "../../external/repositories/TeamStaffRoleRepository";
 import type { BaseUseCasesPort } from "./BaseUseCasesPort";
 
 export interface TeamStaffRoleUseCasesPort extends BaseUseCasesPort<

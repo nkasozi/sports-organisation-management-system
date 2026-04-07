@@ -1,8 +1,6 @@
-import { describe, it, expect } from "vitest";
-import type {
-  FieldMetadata,
-  BaseEntity,
-} from "../../core/entities/BaseEntity";
+import { describe, expect, it } from "vitest";
+
+import type { BaseEntity, FieldMetadata } from "../../core/entities/BaseEntity";
 import {
   build_foreign_key_select_options,
   is_jersey_color_field,
@@ -46,10 +44,7 @@ function create_fixture_entity(
   } as unknown as BaseEntity;
 }
 
-function create_competition_entity(
-  id: string,
-  name: string,
-): BaseEntity {
+function create_competition_entity(id: string, name: string): BaseEntity {
   return {
     ...create_base_entity({ id }),
     name,
@@ -91,7 +86,10 @@ describe("foreignKeyOptionBuilder", () => {
       });
       const options_map = {
         team_id: [
-          { ...create_base_entity({ id: "t1" }), name: "Arsenal" } as unknown as BaseEntity,
+          {
+            ...create_base_entity({ id: "t1" }),
+            name: "Arsenal",
+          } as unknown as BaseEntity,
         ],
       };
 
@@ -107,7 +105,10 @@ describe("foreignKeyOptionBuilder", () => {
       const field = create_field_metadata({ field_name: "team_id" });
       const options_map = {
         team_id: [
-          { ...create_base_entity({ id: "" }), name: "Empty" } as unknown as BaseEntity,
+          {
+            ...create_base_entity({ id: "" }),
+            name: "Empty",
+          } as unknown as BaseEntity,
         ],
       };
 
@@ -152,9 +153,7 @@ describe("foreignKeyOptionBuilder", () => {
         fixture_id: [
           create_fixture_entity({ id: "fix_1", competition_id: "comp_1" }),
         ],
-        competition_id: [
-          create_competition_entity("comp_1", "Premier League"),
-        ],
+        competition_id: [create_competition_entity("comp_1", "Premier League")],
       };
 
       const result = build_foreign_key_select_options(field, options_map);
@@ -172,9 +171,7 @@ describe("foreignKeyOptionBuilder", () => {
         fixture_id: [
           create_fixture_entity({ id: "fix_1", competition_id: "comp_1" }),
         ],
-        competition_id: [
-          create_competition_entity("comp_1", "Premier League"),
-        ],
+        competition_id: [create_competition_entity("comp_1", "Premier League")],
       };
 
       const result = build_foreign_key_select_options(field, options_map);
@@ -209,9 +206,7 @@ describe("foreignKeyOptionBuilder", () => {
       delete (fixture as unknown as Record<string, unknown>)["competition_id"];
       const options_map = {
         fixture_id: [fixture],
-        competition_id: [
-          create_competition_entity("comp_1", "Premier League"),
-        ],
+        competition_id: [create_competition_entity("comp_1", "Premier League")],
       };
 
       const result = build_foreign_key_select_options(field, options_map);
@@ -267,11 +262,12 @@ describe("foreignKeyOptionBuilder", () => {
       });
       const options_map = {
         team_id: [
-          { ...create_base_entity({ id: "t1" }), name: "Arsenal" } as unknown as BaseEntity,
+          {
+            ...create_base_entity({ id: "t1" }),
+            name: "Arsenal",
+          } as unknown as BaseEntity,
         ],
-        competition_id: [
-          create_competition_entity("comp_1", "Premier League"),
-        ],
+        competition_id: [create_competition_entity("comp_1", "Premier League")],
       };
 
       const result = build_foreign_key_select_options(field, options_map);
@@ -288,9 +284,7 @@ describe("foreignKeyOptionBuilder", () => {
         fixture_id: [
           create_fixture_entity({ id: "fix_1", competition_id: "comp_1" }),
         ],
-        competition_id: [
-          create_competition_entity("comp_1", "League A"),
-        ],
+        competition_id: [create_competition_entity("comp_1", "League A")],
       };
 
       const result = build_foreign_key_select_options(field, options_map);

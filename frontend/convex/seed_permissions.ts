@@ -1,11 +1,11 @@
 import { mutation } from "./_generated/server";
 import {
-  SHARED_ROLE_PERMISSIONS,
-  SHARED_ENTITY_CATEGORIES,
-  ALL_ROLES,
   ALL_CATEGORIES,
-  type SharedUserRole,
+  ALL_ROLES,
+  SHARED_ENTITY_CATEGORIES,
+  SHARED_ROLE_PERMISSIONS,
   type SharedDataCategory,
+  type SharedUserRole,
 } from "./shared_permission_definitions";
 
 export type UserRole = SharedUserRole;

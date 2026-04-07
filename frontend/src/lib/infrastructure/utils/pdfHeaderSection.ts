@@ -1,16 +1,18 @@
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
+
 import type { MatchReportData } from "$lib/core/types/MatchReportTypes";
+
 import {
-  FONT_SIZE_TITLE,
   FONT_SIZE_HEADER,
   FONT_SIZE_SMALL,
+  FONT_SIZE_TITLE,
+  type JsPDFWithAutoTable,
   LINE_HEIGHT,
   MARGIN_LEFT,
   MARGIN_RIGHT,
   PAGE_WIDTH,
   truncate_text,
-  type JsPDFWithAutoTable,
 } from "./pdfConstantsAndHelpers";
 
 export function draw_header_section(

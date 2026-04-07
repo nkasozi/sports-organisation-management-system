@@ -1,12 +1,12 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
-import type { ProfileLinkRepository } from "../interfaces/ports";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
 import type {
-  ProfileLink,
   CreateProfileLinkInput,
+  ProfileLink,
 } from "../entities/ProfileLink";
+import type { ProfileLinkRepository } from "../interfaces/ports";
 import type { QueryOptions } from "../interfaces/ports";
-import type { PaginatedAsyncResult } from "../types/Result";
-import { create_success_result, create_failure_result } from "../types/Result";
+import { create_failure_result, create_success_result } from "../types/Result";
 import { create_profile_link_use_cases } from "./ProfileLinkUseCases";
 
 function create_mock_profile_link(
@@ -40,7 +40,7 @@ function create_valid_profile_link_input(
   };
 }
 
-import type { Result, PaginatedResult } from "../types/Result";
+import type { PaginatedResult, Result } from "../types/Result";
 
 function create_paginated_result<T>(
   items: T[],

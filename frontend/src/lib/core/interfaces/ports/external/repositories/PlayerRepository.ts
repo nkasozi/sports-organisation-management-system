@@ -1,10 +1,10 @@
-import type { FilterableRepository, QueryOptions } from "./Repository";
-import type { PaginatedAsyncResult } from "../../../../types/Result";
 import type {
-  Player,
   CreatePlayerInput,
+  Player,
   UpdatePlayerInput,
 } from "../../../../entities/Player";
+import type { PaginatedAsyncResult } from "../../../../types/Result";
+import type { FilterableRepository, QueryOptions } from "./Repository";
 
 export interface PlayerFilter {
   organization_id?: string;

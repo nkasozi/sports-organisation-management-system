@@ -1,6 +1,7 @@
 <script lang="ts">
     import type { Fixture } from "$lib/core/entities/Fixture";
     import type { PreFlightCheck } from "$lib/core/services/fixtureStartChecks";
+
     import LiveGamesFixtureCard from "./LiveGamesFixtureCard.svelte";
 
     export let is_loading: boolean;

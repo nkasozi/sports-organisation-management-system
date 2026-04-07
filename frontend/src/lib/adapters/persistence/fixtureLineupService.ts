@@ -1,11 +1,7 @@
-import type {
-  FixtureLineup,
-  CreateFixtureLineupInput,
-  UpdateFixtureLineupInput,
-} from "../../core/entities/FixtureLineup";
-import type { FixtureLineupFilter } from "../../core/interfaces/ports";
-import type { AsyncResult } from "../../core/types/Result";
 import { get_fixture_lineup_use_cases } from "$lib/infrastructure/registry/useCaseFactories";
+
+import type { FixtureLineup } from "../../core/entities/FixtureLineup";
+import type { AsyncResult } from "../../core/types/Result";
 
 const use_cases = get_fixture_lineup_use_cases();
 

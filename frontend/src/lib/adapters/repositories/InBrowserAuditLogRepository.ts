@@ -1,26 +1,24 @@
 import type { Table } from "dexie";
+
 import type {
   AuditLog,
   CreateAuditLogInput,
 } from "../../core/entities/AuditLog";
 import type { BaseEntity } from "../../core/entities/BaseEntity";
 import type {
-  QueryOptions,
-  AuditLogRepository,
   AuditLogFilter,
+  AuditLogRepository,
+  QueryOptions,
   UpdateAuditLogInput,
 } from "../../core/interfaces/ports";
 import type { PaginatedAsyncResult } from "../../core/types/Result";
+import { create_success_result } from "../../core/types/Result";
 import {
-  create_success_result,
-  create_failure_result,
-} from "../../core/types/Result";
-import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
-import {
-  search_audit_logs_from_convex,
-  is_convex_available,
   AUDIT_LOG_PAGE_SIZE,
+  is_convex_available,
+  search_audit_logs_from_convex,
 } from "../../infrastructure/sync/convexAuditLogService";
+import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
 
 const ENTITY_PREFIX = "aud";
 

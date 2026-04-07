@@ -1,15 +1,15 @@
-import type { FilterableRepository, QueryOptions } from "./Repository";
-import type {
-  PaginatedAsyncResult,
-  AsyncResult,
-} from "../../../../types/Result";
-import type {
-  TeamProfile,
-  CreateTeamProfileInput,
-  UpdateTeamProfileInput,
-  ProfileVisibility,
-} from "../../../../entities/TeamProfile";
 import type { EntityStatus } from "../../../../entities/BaseEntity";
+import type {
+  CreateTeamProfileInput,
+  ProfileVisibility,
+  TeamProfile,
+  UpdateTeamProfileInput,
+} from "../../../../entities/TeamProfile";
+import type {
+  AsyncResult,
+  PaginatedAsyncResult,
+} from "../../../../types/Result";
+import type { FilterableRepository, QueryOptions } from "./Repository";
 
 export interface TeamProfileFilter {
   team_id?: string;

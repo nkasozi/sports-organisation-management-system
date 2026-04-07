@@ -1,11 +1,11 @@
-import type { Repository, FilterableRepository } from "./Repository";
-import type { AsyncResult } from "../../../../types/Result";
 import type {
   CompetitionFormat,
   CreateCompetitionFormatInput,
-  UpdateCompetitionFormatInput,
   FormatType,
+  UpdateCompetitionFormatInput,
 } from "../../../../entities/CompetitionFormat";
+import type { AsyncResult } from "../../../../types/Result";
+import type { FilterableRepository } from "./Repository";
 
 export interface CompetitionFormatFilter {
   name_contains?: string;

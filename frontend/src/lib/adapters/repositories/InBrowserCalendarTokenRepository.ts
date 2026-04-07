@@ -1,13 +1,14 @@
 import type { Table } from "dexie";
+
+import type { BaseEntity } from "../../core/entities/BaseEntity";
 import type {
   CalendarToken,
   CreateCalendarTokenInput,
   UpdateCalendarTokenInput,
 } from "../../core/entities/CalendarToken";
-import type { BaseEntity } from "../../core/entities/BaseEntity";
 import type {
-  CalendarTokenRepository,
   CalendarTokenFilter,
+  CalendarTokenRepository,
 } from "../../core/interfaces/ports";
 import type { QueryOptions } from "../../core/interfaces/ports";
 import type {
@@ -15,8 +16,8 @@ import type {
   PaginatedAsyncResult,
 } from "../../core/types/Result";
 import {
-  create_success_result,
   create_failure_result,
+  create_success_result,
 } from "../../core/types/Result";
 import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
 

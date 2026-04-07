@@ -1,18 +1,18 @@
-import { FORMAT_TYPE } from "./StatusConstants";
-import type {
-  FormatType,
-  CreateCompetitionFormatInput,
-  CompetitionFormatStageTemplate,
-  PointsConfig,
-  LeagueConfig,
-} from "./CompetitionFormatTypes";
-import { DEFAULT_POINTS_CONFIG } from "./CompetitionFormatTypes";
-import { create_default_stage_templates } from "./CompetitionStage";
 import {
   create_default_group_stage_config,
   create_default_knockout_stage_config,
   create_default_league_config,
 } from "./CompetitionFormatFactories";
+import type {
+  CompetitionFormatStageTemplate,
+  CreateCompetitionFormatInput,
+  FormatType,
+  LeagueConfig,
+  PointsConfig,
+} from "./CompetitionFormatTypes";
+import { DEFAULT_POINTS_CONFIG } from "./CompetitionFormatTypes";
+import { create_default_stage_templates } from "./CompetitionStage";
+import { FORMAT_TYPE } from "./StatusConstants";
 
 export function validate_competition_format_input(
   input: CreateCompetitionFormatInput,

@@ -1,7 +1,8 @@
-import type { Result } from "$lib/core/types/Result";
 import type { Competition } from "$lib/core/entities/Competition";
 import type { Fixture } from "$lib/core/entities/Fixture";
 import type { Team } from "$lib/core/entities/Team";
+import type { Result } from "$lib/core/types/Result";
+
 import type { DashboardFilters } from "./dashboardStatsLogic";
 
 export interface DashboardStats {

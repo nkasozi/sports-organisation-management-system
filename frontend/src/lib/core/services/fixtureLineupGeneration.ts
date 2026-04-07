@@ -1,23 +1,23 @@
 import type { Fixture } from "../entities/Fixture";
-import type { FixtureLineupUseCases } from "../usecases/FixtureLineupUseCases";
-import type { FixtureUseCases } from "../usecases/FixtureUseCases";
-import type { PlayerTeamMembershipUseCases } from "../usecases/PlayerTeamMembershipUseCases";
-import type { PlayerUseCases } from "../usecases/PlayerUseCases";
-import type { PlayerPositionUseCases } from "../usecases/PlayerPositionUseCases";
-import type { CompetitionUseCases } from "../usecases/CompetitionUseCases";
-import type { OrganizationUseCases } from "../usecases/OrganizationUseCases";
-import { LINEUP_STATUS, MEMBERSHIP_STATUS } from "../entities/StatusConstants";
-import type { SportUseCases } from "../usecases/SportUseCases";
 import type { CreateFixtureLineupInput } from "../entities/FixtureLineup";
 import type { Player } from "../entities/Player";
-import type { PlayerTeamMembership } from "../entities/PlayerTeamMembership";
 import type { PlayerPosition } from "../entities/PlayerPosition";
+import type { PlayerTeamMembership } from "../entities/PlayerTeamMembership";
+import { LINEUP_STATUS, MEMBERSHIP_STATUS } from "../entities/StatusConstants";
 import type { Result } from "../types/Result";
-import { get_player_rules_from_competition } from "./fixturePlayerRules";
+import type { CompetitionUseCases } from "../usecases/CompetitionUseCases";
+import type { FixtureLineupUseCases } from "../usecases/FixtureLineupUseCases";
+import type { FixtureUseCases } from "../usecases/FixtureUseCases";
+import type { OrganizationUseCases } from "../usecases/OrganizationUseCases";
+import type { PlayerPositionUseCases } from "../usecases/PlayerPositionUseCases";
+import type { PlayerTeamMembershipUseCases } from "../usecases/PlayerTeamMembershipUseCases";
+import type { PlayerUseCases } from "../usecases/PlayerUseCases";
+import type { SportUseCases } from "../usecases/SportUseCases";
 import {
-  find_previous_lineup_for_team,
   build_lineup_players_from_memberships,
+  find_previous_lineup_for_team,
 } from "./fixtureLineupLookup";
+import { get_player_rules_from_competition } from "./fixturePlayerRules";
 
 export interface LineupGenerationResult {
   success: boolean;

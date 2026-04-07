@@ -1,12 +1,12 @@
-import type { BaseUseCasesPort } from "./BaseUseCasesPort";
-import type { AsyncResult, PaginatedAsyncResult } from "./BaseUseCasesPort";
-import type { QueryOptions } from "../../external/repositories/Repository";
 import type {
   CompetitionStage,
   CreateCompetitionStageInput,
   UpdateCompetitionStageInput,
 } from "../../../../entities/CompetitionStage";
 import type { CompetitionStageFilter } from "../../external/repositories/CompetitionStageRepository";
+import type { QueryOptions } from "../../external/repositories/Repository";
+import type { BaseUseCasesPort } from "./BaseUseCasesPort";
+import type { AsyncResult, PaginatedAsyncResult } from "./BaseUseCasesPort";
 
 export interface CompetitionStageUseCasesPort extends BaseUseCasesPort<
   CompetitionStage,

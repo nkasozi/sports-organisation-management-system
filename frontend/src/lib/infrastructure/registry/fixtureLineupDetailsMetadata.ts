@@ -1,6 +1,6 @@
 import type { EntityMetadata } from "../../core/entities/BaseEntity";
-import type { FixtureLineup } from "../../core/entities/FixtureLineup";
 import type { FixtureDetailsSetup } from "../../core/entities/FixtureDetailsSetup";
+import type { FixtureLineup } from "../../core/entities/FixtureLineup";
 
 export function register_fixture_lineup_metadata(
   metadata_map: Map<string, EntityMetadata>,

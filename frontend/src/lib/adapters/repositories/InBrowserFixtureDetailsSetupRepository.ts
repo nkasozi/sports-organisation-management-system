@@ -1,21 +1,18 @@
-import { TRANSFER_STATUS } from "../../core/entities/StatusConstants";
 import type { Table } from "dexie";
-import type {
-  FixtureDetailsSetup,
-  CreateFixtureDetailsSetupInput,
-  UpdateFixtureDetailsSetupInput,
-} from "../../core/entities/FixtureDetailsSetup";
+
 import type { BaseEntity } from "../../core/entities/BaseEntity";
 import type {
-  FixtureDetailsSetupRepository,
+  CreateFixtureDetailsSetupInput,
+  FixtureDetailsSetup,
+  UpdateFixtureDetailsSetupInput,
+} from "../../core/entities/FixtureDetailsSetup";
+import { TRANSFER_STATUS } from "../../core/entities/StatusConstants";
+import type {
   FixtureDetailsSetupFilter,
+  FixtureDetailsSetupRepository,
 } from "../../core/interfaces/ports";
 import type { QueryOptions } from "../../core/interfaces/ports";
 import type { PaginatedAsyncResult } from "../../core/types/Result";
-import {
-  create_success_result,
-  create_failure_result,
-} from "../../core/types/Result";
 import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
 
 const ENTITY_PREFIX = "fixture-details-setup";

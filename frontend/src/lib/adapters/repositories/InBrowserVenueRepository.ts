@@ -1,17 +1,14 @@
 import type { Table } from "dexie";
+
+import type { BaseEntity } from "../../core/entities/BaseEntity";
 import type {
-  Venue,
   CreateVenueInput,
   UpdateVenueInput,
+  Venue,
 } from "../../core/entities/Venue";
-import type { BaseEntity } from "../../core/entities/BaseEntity";
-import type { VenueRepository, VenueFilter } from "../../core/interfaces/ports";
+import type { VenueFilter, VenueRepository } from "../../core/interfaces/ports";
 import type { QueryOptions } from "../../core/interfaces/ports";
 import type { PaginatedAsyncResult } from "../../core/types/Result";
-import {
-  create_success_result,
-  create_failure_result,
-} from "../../core/types/Result";
 import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
 
 const ENTITY_PREFIX = "venue";

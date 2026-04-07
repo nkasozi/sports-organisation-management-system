@@ -1,10 +1,10 @@
 import type {
-  Organization,
   CreateOrganizationInput,
+  Organization,
   UpdateOrganizationInput,
 } from "../../../../entities/Organization";
-import type { OrganizationFilter } from "../../external/repositories/OrganizationRepository";
 import type { AsyncResult } from "../../../../types/Result";
+import type { OrganizationFilter } from "../../external/repositories/OrganizationRepository";
 import type { BaseUseCasesPort } from "./BaseUseCasesPort";
 
 export interface OrganizationUseCasesPort extends BaseUseCasesPort<

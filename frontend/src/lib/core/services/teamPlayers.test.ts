@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
+
 import type { Player } from "$lib/core/entities/Player";
 import type { PlayerPosition } from "$lib/core/entities/PlayerPosition";
 import type { PlayerTeamMembership } from "$lib/core/entities/PlayerTeamMembership";
+
 import {
   build_position_name_by_id,
   build_team_players,

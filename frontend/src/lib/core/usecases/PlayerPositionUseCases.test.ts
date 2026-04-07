@@ -1,10 +1,11 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { create_player_position_use_cases } from "./PlayerPositionUseCases";
-import type { PlayerPositionRepository } from "../interfaces/ports";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
 import type {
-  PlayerPosition,
   CreatePlayerPositionInput,
+  PlayerPosition,
 } from "../entities/PlayerPosition";
+import type { PlayerPositionRepository } from "../interfaces/ports";
+import { create_player_position_use_cases } from "./PlayerPositionUseCases";
 
 function create_mock_repository(): PlayerPositionRepository {
   return {

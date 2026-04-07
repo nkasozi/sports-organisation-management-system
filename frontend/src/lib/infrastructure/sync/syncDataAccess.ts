@@ -1,11 +1,13 @@
+import type { Table } from "dexie";
+
+import type { SyncHints } from "$lib/core/interfaces/ports";
+
 import {
   get_database,
   type SportSyncDatabase,
 } from "../../adapters/repositories/database";
-import type { Table } from "dexie";
-import type { SyncHints } from "$lib/core/interfaces/ports";
 import type { ConvexClient, RemoteTableState, TableName } from "./syncTypes";
-import { EPOCH_TIMESTAMP, TABLE_NAMES } from "./syncTypes";
+import { EPOCH_TIMESTAMP } from "./syncTypes";
 
 export function get_local_latest_modified_at(
   all_records: Array<{ id: string; updated_at?: string; created_at?: string }>,

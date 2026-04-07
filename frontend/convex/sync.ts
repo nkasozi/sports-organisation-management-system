@@ -1,23 +1,24 @@
 import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
+
 import { internal } from "./_generated/api";
+import { mutation, query } from "./_generated/server";
+import type { UserRole } from "./lib/auth_middleware";
 import {
-  require_auth,
-  require_permission,
   build_scope_filter,
   check_permission,
   get_entity_data_category,
+  require_auth,
+  require_permission,
 } from "./lib/auth_middleware";
-import type { UserRole } from "./lib/auth_middleware";
+import { SecurityEventType } from "./lib/security_event_types";
 import {
-  validate_table_name,
+  filter_records_by_organization_scope,
   get_entity_type_for_table,
   is_global_table as check_is_global_table,
-  validate_record_organization_ownership,
-  filter_records_by_organization_scope,
   is_public_table,
+  validate_record_organization_ownership,
+  validate_table_name,
 } from "./lib/sync_validation";
-import { SecurityEventType } from "./lib/security_event_types";
 import { validate_record_url_fields } from "./lib/url_validation";
 
 export { ALLOWED_SYNC_TABLES } from "./lib/sync_validation";

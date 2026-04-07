@@ -1,7 +1,8 @@
+import { get_competition_team_use_cases } from "$lib/infrastructure/registry/useCaseFactories";
+
 import type { BaseEntity } from "../../core/entities/BaseEntity";
 import { get_use_cases_for_entity_type } from "../../infrastructure/registry/entityUseCasesRegistry";
 import { fetch_entities_for_type } from "./dynamicFormDataLoader";
-import { get_competition_team_use_cases } from "$lib/infrastructure/registry/useCaseFactories";
 
 export type CompetitionTeamsResult = {
   teams: BaseEntity[];

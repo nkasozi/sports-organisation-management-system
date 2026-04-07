@@ -1,20 +1,17 @@
 import type { Table } from "dexie";
-import type {
-  Gender,
-  CreateGenderInput,
-  UpdateGenderInput,
-} from "../../core/entities/Gender";
+
 import type { BaseEntity } from "../../core/entities/BaseEntity";
 import type {
-  GenderRepository,
+  CreateGenderInput,
+  Gender,
+  UpdateGenderInput,
+} from "../../core/entities/Gender";
+import type {
   GenderFilter,
+  GenderRepository,
 } from "../../core/interfaces/ports";
 import type { QueryOptions } from "../../core/interfaces/ports";
 import type { PaginatedAsyncResult } from "../../core/types/Result";
-import {
-  create_success_result,
-  create_failure_result,
-} from "../../core/types/Result";
 import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
 
 const ENTITY_PREFIX = "gender";

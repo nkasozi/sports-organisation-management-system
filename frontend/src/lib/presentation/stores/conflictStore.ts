@@ -1,4 +1,14 @@
-import { writable, get } from "svelte/store";
+import { get, writable } from "svelte/store";
+
+import type { Result } from "$lib/core/types/Result";
+import {
+  create_failure_result,
+  create_success_result,
+} from "$lib/core/types/Result";
+import {
+  log_conflict_detected,
+  log_conflict_resolution,
+} from "$lib/infrastructure/sync/conflictAuditService";
 import type {
   ConflictRecord,
   ConflictResolution,
@@ -9,15 +19,7 @@ import {
   generate_conflict_id,
   get_entity_display_name,
 } from "$lib/infrastructure/sync/conflictTypes";
-import {
-  log_conflict_detected,
-  log_conflict_resolution,
-} from "$lib/infrastructure/sync/conflictAuditService";
-import type { Result } from "$lib/core/types/Result";
-import {
-  create_success_result,
-  create_failure_result,
-} from "$lib/core/types/Result";
+
 import type { ConflictStoreState } from "./conflictStoreHelpers";
 import { get_resolved_data_for_action } from "./conflictStoreHelpers";
 export type { ConflictStoreState } from "./conflictStoreHelpers";

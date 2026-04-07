@@ -1,19 +1,20 @@
 import type { Table } from "dexie";
-import type {
-  OrganizationSettings,
-  CreateOrganizationSettingsInput,
-  UpdateOrganizationSettingsInput,
-} from "../../core/entities/OrganizationSettings";
+
 import type { BaseEntity } from "../../core/entities/BaseEntity";
 import type {
-  OrganizationSettingsRepository,
-  OrganizationSettingsFilter,
-} from "../../core/interfaces/ports/external/repositories/OrganizationSettingsRepository";
+  CreateOrganizationSettingsInput,
+  OrganizationSettings,
+  UpdateOrganizationSettingsInput,
+} from "../../core/entities/OrganizationSettings";
 import type { QueryOptions } from "../../core/interfaces/ports";
+import type {
+  OrganizationSettingsFilter,
+  OrganizationSettingsRepository,
+} from "../../core/interfaces/ports/external/repositories/OrganizationSettingsRepository";
 import type { AsyncResult } from "../../core/types/Result";
 import {
-  create_success_result,
   create_failure_result,
+  create_success_result,
 } from "../../core/types/Result";
 import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
 

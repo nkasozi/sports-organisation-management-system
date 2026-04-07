@@ -1,8 +1,8 @@
 <script lang="ts">
   import { goto } from "$app/navigation";
-  import DynamicEntityList from "$lib/presentation/components/DynamicEntityList.svelte";
   import type { BaseEntity } from "$lib/core/entities/BaseEntity";
   import type { EntityViewCallbacks } from "$lib/core/types/EntityHandlers";
+  import DynamicEntityList from "$lib/presentation/components/DynamicEntityList.svelte";
 
   const view_callbacks: EntityViewCallbacks = {
     on_create_requested: () => goto("/competitions/create"),

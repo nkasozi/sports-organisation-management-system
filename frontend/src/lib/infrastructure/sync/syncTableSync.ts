@@ -1,15 +1,16 @@
 import type { Table } from "dexie";
+
 import type { SyncDirection } from "$lib/core/interfaces/ports";
+
+import { is_auth_error } from "./syncAuthUtils";
+import { pull_table_from_convex } from "./syncPullService";
+import { push_table_to_convex } from "./syncPushService";
 import type {
-  ConvexClient,
   ConflictFromServer,
+  ConvexClient,
   RemoteTableState,
   TableName,
 } from "./syncTypes";
-import { EPOCH_TIMESTAMP } from "./syncTypes";
-import { is_auth_error } from "./syncAuthUtils";
-import { push_table_to_convex } from "./syncPushService";
-import { pull_table_from_convex } from "./syncPullService";
 
 export interface TableSyncResult {
   records_pushed: number;

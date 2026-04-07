@@ -1,10 +1,12 @@
-import { is_signed_in } from "$lib/adapters/iam/clerkAuthService";
 import { get } from "svelte/store";
+
+import { is_signed_in } from "$lib/adapters/iam/clerkAuthService";
+
 import {
-  sync_state,
-  sync_deps,
   DEBOUNCE_DELAY_MS,
   OFFLINE_RETRY_INTERVAL_MS,
+  sync_deps,
+  sync_state,
 } from "./backgroundSyncSharedState";
 
 export function cancel_pending_debounce(): void {

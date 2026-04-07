@@ -1,21 +1,22 @@
 import type {
   AuthenticationPort,
-  SystemUserRepository,
-  SidebarMenuGroup,
   AuthorizationFailure,
-  RouteAccessGranted,
   RouteAccessDenied,
+  RouteAccessGranted,
+  SidebarMenuGroup,
+  SystemUserRepository,
 } from "$lib/core/interfaces/ports";
 import type { Result } from "$lib/core/types/Result";
 import {
-  create_success_result,
   create_failure_result,
+  create_success_result,
 } from "$lib/core/types/Result";
 import type { AuthCache } from "$lib/infrastructure/cache/AuthCache";
+
 import { get_role_for_email } from "./authProfilePermissions";
 import {
-  get_sidebar_menu_for_role,
   can_role_access_route,
+  get_sidebar_menu_for_role,
 } from "./roleMenuRegistry";
 
 export async function get_sidebar_menu_for_profile_impl(

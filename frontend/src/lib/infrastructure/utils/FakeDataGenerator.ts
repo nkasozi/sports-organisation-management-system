@@ -1,9 +1,10 @@
 import { faker } from "@faker-js/faker";
+
 import type { FieldMetadata } from "../../core/entities/BaseEntity";
 import {
-  generate_fake_string_value,
-  generate_fake_number_value,
   generate_fake_date_value,
+  generate_fake_number_value,
+  generate_fake_string_value,
 } from "./fakeDataFieldGenerators";
 
 export interface FakeDataGeneratorConfig {

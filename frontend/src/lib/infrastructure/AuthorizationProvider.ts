@@ -1,7 +1,7 @@
-import type { AuthorizationPort } from "$lib/core/interfaces/ports";
-import { LocalAuthorizationAdapter } from "$lib/adapters/iam/LocalAuthorizationAdapter";
 import { get_authentication_adapter } from "$lib/adapters/iam/LocalAuthenticationAdapter";
+import { LocalAuthorizationAdapter } from "$lib/adapters/iam/LocalAuthorizationAdapter";
 import { get_system_user_repository } from "$lib/adapters/repositories/InBrowserSystemUserRepository";
+import type { AuthorizationPort } from "$lib/core/interfaces/ports";
 
 let authorization_adapter_instance: AuthorizationPort | null = null;
 

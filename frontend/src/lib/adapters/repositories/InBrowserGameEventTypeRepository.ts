@@ -1,27 +1,24 @@
 import type { Table } from "dexie";
-import type {
-  GameEventType,
-  CreateGameEventTypeInput,
-  UpdateGameEventTypeInput,
-  EventCategory,
-} from "../../core/entities/GameEventType";
+
 import type { BaseEntity } from "../../core/entities/BaseEntity";
 import type {
-  GameEventTypeRepository,
+  CreateGameEventTypeInput,
+  EventCategory,
+  GameEventType,
+  UpdateGameEventTypeInput,
+} from "../../core/entities/GameEventType";
+import { get_default_game_event_types } from "../../core/entities/GameEventType";
+import type {
   GameEventTypeFilter,
+  GameEventTypeRepository,
   QueryOptions,
 } from "../../core/interfaces/ports";
-import type {
-  PaginatedAsyncResult,
-  AsyncResult,
-  Result,
-} from "../../core/types/Result";
+import type { PaginatedAsyncResult, Result } from "../../core/types/Result";
 import {
-  create_success_result,
   create_failure_result,
+  create_success_result,
 } from "../../core/types/Result";
 import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
-import { get_default_game_event_types } from "../../core/entities/GameEventType";
 
 const ENTITY_PREFIX = "game_event_type";
 

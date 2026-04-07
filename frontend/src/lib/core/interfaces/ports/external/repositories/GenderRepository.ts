@@ -1,10 +1,10 @@
 import type {
-  Gender,
   CreateGenderInput,
+  Gender,
   UpdateGenderInput,
 } from "../../../../entities/Gender";
-import type { Repository, QueryOptions } from "./Repository";
 import type { PaginatedAsyncResult } from "../../../../types/Result";
+import type { QueryOptions, Repository } from "./Repository";
 
 export interface GenderFilter {
   status?: string;

@@ -1,4 +1,4 @@
-import { describe, expect, it, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 let mock_is_signed_in = false;
 
@@ -133,16 +133,17 @@ vi.mock("$lib/infrastructure/container", () => ({
   }),
 }));
 
-import { reset_all_data } from "./dataResetService";
-import { clear_all_demo_data_in_convex } from "$lib/infrastructure/sync/convexSyncService";
 import {
-  stop_background_sync,
-  start_background_sync,
   set_pulling_from_remote,
+  start_background_sync,
+  stop_background_sync,
 } from "$lib/infrastructure/sync/backgroundSyncService";
+import { clear_all_demo_data_in_convex } from "$lib/infrastructure/sync/convexSyncService";
 import { clear_session_sync_flag } from "$lib/presentation/stores/initialSyncStore";
-import { seed_all_data_if_needed } from "./seedingService";
+
 import { reset_team_repository } from "../repositories/InBrowserTeamRepository";
+import { reset_all_data } from "./dataResetService";
+import { seed_all_data_if_needed } from "./seedingService";
 
 describe("reset_all_data", () => {
   const setup_window = () => {

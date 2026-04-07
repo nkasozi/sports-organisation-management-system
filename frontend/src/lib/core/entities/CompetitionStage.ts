@@ -1,6 +1,6 @@
-import { FORMAT_TYPE } from "./StatusConstants";
 import type { BaseEntity, EntityStatus } from "./BaseEntity";
 import type { FormatType, LeagueConfig } from "./CompetitionFormat";
+import { FORMAT_TYPE } from "./StatusConstants";
 
 export type StageType =
   | "group_stage"

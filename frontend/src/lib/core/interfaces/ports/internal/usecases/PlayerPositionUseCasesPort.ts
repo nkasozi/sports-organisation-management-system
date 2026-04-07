@@ -1,8 +1,8 @@
 import type {
-  PlayerPosition,
   CreatePlayerPositionInput,
-  UpdatePlayerPositionInput,
+  PlayerPosition,
   PlayerPositionFilter,
+  UpdatePlayerPositionInput,
 } from "../../../../entities/PlayerPosition";
 import type { AsyncResult } from "../../../../types/Result";
 import type { BaseUseCasesPort } from "./BaseUseCasesPort";

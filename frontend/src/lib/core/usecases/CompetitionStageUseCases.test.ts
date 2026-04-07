@@ -1,11 +1,12 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { create_competition_stage_use_cases } from "./CompetitionStageUseCases";
-import type { CompetitionStageRepository } from "../interfaces/ports";
-import type { FixtureRepository } from "../interfaces/ports";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
 import type {
   CompetitionStage,
   CreateCompetitionStageInput,
 } from "../entities/CompetitionStage";
+import type { CompetitionStageRepository } from "../interfaces/ports";
+import type { FixtureRepository } from "../interfaces/ports";
+import { create_competition_stage_use_cases } from "./CompetitionStageUseCases";
 
 function create_mock_stage_repository(): CompetitionStageRepository {
   return {

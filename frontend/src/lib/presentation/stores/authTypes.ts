@@ -1,12 +1,5 @@
 import type { AuthToken, UserRole } from "$lib/core/interfaces/ports";
-import type {
-  SidebarMenuGroup,
-  AuthorizableAction,
-  AuthorizationLevel,
-  EntityAuthorizationMap,
-  AuthorizationCheckResult,
-  FeatureAccess,
-} from "$lib/core/interfaces/ports";
+import type { SidebarMenuGroup } from "$lib/core/interfaces/ports";
 
 export interface ConvexUserProfile {
   local_id?: string;

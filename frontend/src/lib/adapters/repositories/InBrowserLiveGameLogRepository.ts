@@ -1,23 +1,24 @@
-import { GAME_STATUS } from "../../core/entities/StatusConstants";
 import type { Table } from "dexie";
+
+import type { BaseEntity } from "../../core/entities/BaseEntity";
 import type {
-  LiveGameLog,
   CreateLiveGameLogInput,
+  LiveGameLog,
   UpdateLiveGameLogInput,
 } from "../../core/entities/LiveGameLog";
-import type { BaseEntity } from "../../core/entities/BaseEntity";
+import { GAME_STATUS } from "../../core/entities/StatusConstants";
+import type {
+  LiveGameLogFilter,
+  LiveGameLogRepository,
+} from "../../core/interfaces/ports";
 import type {
   AsyncResult,
   PaginatedAsyncResult,
 } from "../../core/types/Result";
 import {
-  create_success_result,
   create_failure_result,
+  create_success_result,
 } from "../../core/types/Result";
-import type {
-  LiveGameLogRepository,
-  LiveGameLogFilter,
-} from "../../core/interfaces/ports";
 import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
 
 const ENTITY_PREFIX = "livegame";

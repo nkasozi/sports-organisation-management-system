@@ -1,6 +1,6 @@
 import type { EntityMetadata } from "../../core/entities/BaseEntity";
-import type { Organization } from "../../core/entities/Organization";
 import type { Competition } from "../../core/entities/Competition";
+import type { Organization } from "../../core/entities/Organization";
 
 export function register_organization_metadata(
   metadata_map: Map<string, EntityMetadata>,

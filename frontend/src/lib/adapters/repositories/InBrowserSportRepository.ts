@@ -1,26 +1,19 @@
-import { ENTITY_STATUS } from "../../core/entities/StatusConstants";
 import type { Table } from "dexie";
+
+import type { BaseEntity } from "../../core/entities/BaseEntity";
 import type {
-  Sport,
   CreateSportInput,
+  Sport,
   UpdateSportInput,
 } from "../../core/entities/Sport";
 import {
-  create_football_sport_preset,
   create_basketball_sport_preset,
   create_field_hockey_sport_preset,
+  create_football_sport_preset,
 } from "../../core/entities/Sport";
-import type {
-  SportRepository,
-  SportFilter,
-  QueryOptions,
-} from "../../core/interfaces/ports";
-import type { BaseEntity } from "../../core/entities/BaseEntity";
-import type { PaginatedAsyncResult, Result } from "../../core/types/Result";
-import {
-  create_success_result,
-  create_failure_result,
-} from "../../core/types/Result";
+import { ENTITY_STATUS } from "../../core/entities/StatusConstants";
+import type { SportFilter, SportRepository } from "../../core/interfaces/ports";
+import type { Result } from "../../core/types/Result";
 import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
 
 const ENTITY_PREFIX = "sport";

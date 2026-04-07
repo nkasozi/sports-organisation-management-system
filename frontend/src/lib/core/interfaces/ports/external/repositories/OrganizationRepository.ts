@@ -1,13 +1,10 @@
-import type { FilterableRepository, QueryOptions } from "./Repository";
 import type {
-  AsyncResult,
-  PaginatedAsyncResult,
-} from "../../../../types/Result";
-import type {
-  Organization,
   CreateOrganizationInput,
+  Organization,
   UpdateOrganizationInput,
 } from "../../../../entities/Organization";
+import type { PaginatedAsyncResult } from "../../../../types/Result";
+import type { FilterableRepository, QueryOptions } from "./Repository";
 
 export interface OrganizationFilter {
   name_contains?: string;

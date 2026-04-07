@@ -1,5 +1,6 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { get } from "svelte/store";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
 import type { UserProfile } from "./auth";
 
 const mock_app_settings_store: Record<string, string> = {};
@@ -140,16 +141,16 @@ vi.mock("./profileLoader", () => ({
   }),
 }));
 
+import { get_sidebar_menu_for_role } from "$lib/adapters/iam/LocalAuthorizationAdapter";
+
 import {
   auth_store,
-  sidebar_menu_items,
+  can_switch_profiles,
+  current_profile_display_name,
   current_user_role,
   current_user_role_display,
-  current_profile_display_name,
-  can_switch_profiles,
+  sidebar_menu_items,
 } from "./auth";
-import { get_sidebar_menu_for_role } from "$lib/adapters/iam/LocalAuthorizationAdapter";
-import type { UserRole } from "$lib/core/interfaces/ports";
 
 describe("auth_store integration", () => {
   beforeEach(async () => {

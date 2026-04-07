@@ -1,21 +1,18 @@
 import type { Table } from "dexie";
-import type {
-  JerseyColor,
-  CreateJerseyColorInput,
-  UpdateJerseyColorInput,
-  JerseyColorHolderType,
-} from "../../core/entities/JerseyColor";
+
 import type { BaseEntity } from "../../core/entities/BaseEntity";
 import type {
-  JerseyColorRepository,
+  CreateJerseyColorInput,
+  JerseyColor,
+  JerseyColorHolderType,
+  UpdateJerseyColorInput,
+} from "../../core/entities/JerseyColor";
+import type {
   JerseyColorFilter,
+  JerseyColorRepository,
 } from "../../core/interfaces/ports";
 import type { QueryOptions } from "../../core/interfaces/ports";
 import type { PaginatedAsyncResult } from "../../core/types/Result";
-import {
-  create_success_result,
-  create_failure_result,
-} from "../../core/types/Result";
 import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
 
 const ENTITY_PREFIX = "jersey";

@@ -1,19 +1,18 @@
+export { get_play_and_control_event_types } from "./GameEventTypePlayDefaults";
+export { get_scoring_and_discipline_event_types } from "./GameEventTypeScoringDefaults";
 export {
+  create_empty_game_event_type_input,
+  type CreateGameEventTypeInput,
+  EVENT_CATEGORY_OPTIONS,
   type EventCategory,
   type GameEventType,
-  type CreateGameEventTypeInput,
-  type UpdateGameEventTypeInput,
-  create_empty_game_event_type_input,
-  EVENT_CATEGORY_OPTIONS,
   get_category_label,
+  type UpdateGameEventTypeInput,
   validate_game_event_type_input,
 } from "./GameEventTypeTypes";
 
-export { get_scoring_and_discipline_event_types } from "./GameEventTypeScoringDefaults";
-export { get_play_and_control_event_types } from "./GameEventTypePlayDefaults";
-
-import { get_scoring_and_discipline_event_types } from "./GameEventTypeScoringDefaults";
 import { get_play_and_control_event_types } from "./GameEventTypePlayDefaults";
+import { get_scoring_and_discipline_event_types } from "./GameEventTypeScoringDefaults";
 import type { CreateGameEventTypeInput } from "./GameEventTypeTypes";
 
 export function get_default_game_event_types(

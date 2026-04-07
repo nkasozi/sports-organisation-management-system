@@ -1,9 +1,9 @@
-import type { FilterableRepository } from "./Repository";
 import type {
-  Sport,
   CreateSportInput,
+  Sport,
   UpdateSportInput,
 } from "../../../../entities/Sport";
+import type { FilterableRepository } from "./Repository";
 
 export interface SportFilter {
   name_contains?: string;

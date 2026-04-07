@@ -1,24 +1,21 @@
 import type { Table } from "dexie";
+
+import type { BaseEntity } from "../../core/entities/BaseEntity";
 import type {
-  TeamStaff,
   CreateTeamStaffInput,
+  TeamStaff,
   UpdateTeamStaffInput,
 } from "../../core/entities/TeamStaff";
 import { DEFAULT_STAFF_AVATAR } from "../../core/entities/TeamStaff";
-import type { BaseEntity } from "../../core/entities/BaseEntity";
 import type {
-  TeamStaffRepository,
-  TeamStaffFilter,
   QueryOptions,
+  TeamStaffFilter,
+  TeamStaffRepository,
 } from "../../core/interfaces/ports";
-import type {
-  PaginatedAsyncResult,
-  AsyncResult,
-  Result,
-} from "../../core/types/Result";
+import type { PaginatedAsyncResult, Result } from "../../core/types/Result";
 import {
-  create_success_result,
   create_failure_result,
+  create_success_result,
 } from "../../core/types/Result";
 import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
 import { create_default_team_staff } from "./InBrowserTeamStaffRepositoryDefaults";

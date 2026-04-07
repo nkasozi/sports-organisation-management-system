@@ -1,13 +1,13 @@
 import type {
-  Sport,
   CreateSportInput,
+  Sport,
   UpdateSportInput,
 } from "../entities/Sport";
-import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
-import type { SportRepository, SportFilter } from "../interfaces/ports";
+import type { SportFilter, SportRepository } from "../interfaces/ports";
 import type { QueryOptions } from "../interfaces/ports";
-import { create_success_result, create_failure_result } from "../types/Result";
 import type { SportUseCasesPort } from "../interfaces/ports";
+import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
+import { create_failure_result, create_success_result } from "../types/Result";
 
 export type SportUseCases = SportUseCasesPort;
 

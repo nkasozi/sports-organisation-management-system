@@ -1,3 +1,27 @@
+import type { AsyncResult } from "../../core/types/Result";
+import {
+  create_failure_result,
+  create_success_result,
+} from "../../core/types/Result";
+import {
+  create_seed_genders,
+  create_seed_identification_types,
+} from "../../infrastructure/utils/SeedDataGenerator";
+import {
+  create_default_competition_formats_for_organization,
+  get_competition_format_repository,
+  InBrowserCompetitionFormatRepository,
+} from "../repositories/InBrowserCompetitionFormatRepository";
+import {
+  create_default_game_event_types_for_organization,
+  get_game_event_type_repository,
+  InBrowserGameEventTypeRepository,
+} from "../repositories/InBrowserGameEventTypeRepository";
+import {
+  create_default_game_official_roles_for_organization,
+  get_game_official_role_repository,
+  InBrowserGameOfficialRoleRepository,
+} from "../repositories/InBrowserGameOfficialRoleRepository";
 import {
   get_gender_repository,
   InBrowserGenderRepository,
@@ -7,39 +31,15 @@ import {
   InBrowserIdentificationTypeRepository,
 } from "../repositories/InBrowserIdentificationTypeRepository";
 import {
+  create_default_player_positions_for_organization,
   get_player_position_repository,
   InBrowserPlayerPositionRepository,
-  create_default_player_positions_for_organization,
 } from "../repositories/InBrowserPlayerPositionRepository";
 import {
-  get_game_official_role_repository,
-  InBrowserGameOfficialRoleRepository,
-  create_default_game_official_roles_for_organization,
-} from "../repositories/InBrowserGameOfficialRoleRepository";
-import {
-  get_game_event_type_repository,
-  InBrowserGameEventTypeRepository,
-  create_default_game_event_types_for_organization,
-} from "../repositories/InBrowserGameEventTypeRepository";
-import {
+  create_default_team_staff_roles_for_organization,
   get_team_staff_role_repository,
   InBrowserTeamStaffRoleRepository,
-  create_default_team_staff_roles_for_organization,
 } from "../repositories/InBrowserTeamStaffRoleRepository";
-import {
-  get_competition_format_repository,
-  InBrowserCompetitionFormatRepository,
-  create_default_competition_formats_for_organization,
-} from "../repositories/InBrowserCompetitionFormatRepository";
-import {
-  create_seed_genders,
-  create_seed_identification_types,
-} from "../../infrastructure/utils/SeedDataGenerator";
-import type { AsyncResult } from "../../core/types/Result";
-import {
-  create_success_result,
-  create_failure_result,
-} from "../../core/types/Result";
 
 export interface OrgSeedResult {
   organization_id: string;

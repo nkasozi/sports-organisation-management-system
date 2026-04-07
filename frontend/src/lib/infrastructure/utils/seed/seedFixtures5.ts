@@ -1,14 +1,13 @@
-import { GAME_EVENTS_EASTER_CUP_GROUP_B_1 } from "./seedFixtureEvents5";
 import type { Fixture } from "../../../core/entities/Fixture";
+import { GAME_EVENTS_EASTER_CUP_GROUP_B_1 } from "./seedFixtureEvents5";
 import {
-  SEED_FIXTURE_IDS,
-  SEED_ORGANIZATION_IDS,
-  SEED_COMPETITION_IDS,
-  SEED_TEAM_IDS,
-  SEED_STAGE_IDS,
-  SEED_OFFICIAL_IDS,
-  SEED_VENUE_IDS,
   generate_current_timestamp,
+  SEED_COMPETITION_IDS,
+  SEED_FIXTURE_IDS,
+  SEED_OFFICIAL_IDS,
+  SEED_ORGANIZATION_IDS,
+  SEED_STAGE_IDS,
+  SEED_TEAM_IDS,
 } from "./seedIds";
 
 export function create_seed_fixtures_part5(

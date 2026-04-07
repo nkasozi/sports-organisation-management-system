@@ -1,16 +1,15 @@
 export {
-  type CompetitionDerivedStatus,
-  type SquadGenerationStrategy,
-  type CompetitionRuleOverrides,
-  type Competition,
-  type CreateCompetitionInput,
-  type UpdateCompetitionInput,
-} from "./CompetitionTypes";
-
-export {
+  create_empty_competition_input,
   derive_competition_status,
   get_competition_status_display,
-  create_empty_competition_input,
-  validate_competition_input,
   merge_sport_and_competition_rules,
+  validate_competition_input,
 } from "./CompetitionHelpers";
+export {
+  type Competition,
+  type CompetitionDerivedStatus,
+  type CompetitionRuleOverrides,
+  type CreateCompetitionInput,
+  type SquadGenerationStrategy,
+  type UpdateCompetitionInput,
+} from "./CompetitionTypes";

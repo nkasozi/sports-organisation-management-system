@@ -1,10 +1,10 @@
 import type { Team } from "../../../core/entities/Team";
 import { DEFAULT_TEAM_LOGO } from "../../../core/entities/Team";
 import {
-  SEED_TEAM_IDS,
-  SEED_ORGANIZATION_IDS,
-  SEED_GENDER_IDS,
   generate_current_timestamp,
+  SEED_GENDER_IDS,
+  SEED_ORGANIZATION_IDS,
+  SEED_TEAM_IDS,
 } from "./seedIds";
 import { SEED_PLAYER_IDS } from "./seedPlayerIds";
 

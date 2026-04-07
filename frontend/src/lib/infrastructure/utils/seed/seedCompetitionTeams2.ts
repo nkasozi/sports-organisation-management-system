@@ -1,8 +1,8 @@
 import type { CompetitionTeam } from "../../../core/entities/CompetitionTeam";
 import {
+  generate_current_timestamp,
   SEED_COMPETITION_IDS,
   SEED_TEAM_IDS,
-  generate_current_timestamp,
 } from "./seedIds";
 
 export function create_seed_competition_teams_part2(): CompetitionTeam[] {

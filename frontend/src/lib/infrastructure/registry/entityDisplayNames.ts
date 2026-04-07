@@ -1,5 +1,4 @@
 import type { BaseEntity } from "$lib/core/entities/BaseEntity";
-import type { EntityTypeKey } from "./entityUseCasesRegistry";
 
 function to_record(entity: BaseEntity): Record<string, unknown> {
   return entity as unknown as Record<string, unknown>;

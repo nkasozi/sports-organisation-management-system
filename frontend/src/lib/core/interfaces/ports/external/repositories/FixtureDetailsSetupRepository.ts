@@ -1,10 +1,10 @@
-import type { FilterableRepository, QueryOptions } from "./Repository";
-import type { PaginatedAsyncResult } from "../../../../types/Result";
 import type {
-  FixtureDetailsSetup,
   CreateFixtureDetailsSetupInput,
+  FixtureDetailsSetup,
   UpdateFixtureDetailsSetupInput,
 } from "../../../../entities/FixtureDetailsSetup";
+import type { PaginatedAsyncResult } from "../../../../types/Result";
+import type { FilterableRepository, QueryOptions } from "./Repository";
 
 export interface FixtureDetailsSetupFilter {
   organization_id?: string;

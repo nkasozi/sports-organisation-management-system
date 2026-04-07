@@ -1,20 +1,17 @@
 import type { Table } from "dexie";
-import type {
-  IdentificationType,
-  CreateIdentificationTypeInput,
-  UpdateIdentificationTypeInput,
-} from "../../core/entities/IdentificationType";
+
 import type { BaseEntity } from "../../core/entities/BaseEntity";
 import type {
-  IdentificationTypeRepository,
+  CreateIdentificationTypeInput,
+  IdentificationType,
+  UpdateIdentificationTypeInput,
+} from "../../core/entities/IdentificationType";
+import type {
   IdentificationTypeFilter,
+  IdentificationTypeRepository,
 } from "../../core/interfaces/ports";
 import type { QueryOptions } from "../../core/interfaces/ports";
 import type { PaginatedAsyncResult } from "../../core/types/Result";
-import {
-  create_success_result,
-  create_failure_result,
-} from "../../core/types/Result";
 import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
 
 const ENTITY_PREFIX = "id_type";

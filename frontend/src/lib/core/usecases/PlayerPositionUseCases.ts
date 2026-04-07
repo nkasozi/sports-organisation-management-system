@@ -1,15 +1,15 @@
 import type {
-  PlayerPosition,
   CreatePlayerPositionInput,
-  UpdatePlayerPositionInput,
+  PlayerPosition,
   PlayerPositionFilter,
+  UpdatePlayerPositionInput,
 } from "../entities/PlayerPosition";
 import { validate_player_position_input } from "../entities/PlayerPosition";
 import type { PlayerPositionRepository } from "../interfaces/ports";
 import type { QueryOptions } from "../interfaces/ports";
+import type { PlayerPositionUseCasesPort } from "../interfaces/ports";
 import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
 import { create_failure_result, create_success_result } from "../types/Result";
-import type { PlayerPositionUseCasesPort } from "../interfaces/ports";
 
 export type PlayerPositionUseCases = PlayerPositionUseCasesPort;
 

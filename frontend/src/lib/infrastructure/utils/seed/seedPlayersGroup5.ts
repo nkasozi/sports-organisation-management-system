@@ -1,7 +1,6 @@
 import type { Player } from "../../../core/entities/Player";
-import { SEED_ORGANIZATION_IDS, generate_current_timestamp } from "./seedIds";
-import { SEED_PLAYER_IDS } from "./seedPlayerIds";
 import type { PositionIds } from "./seedPlayerIds";
+import { SEED_PLAYER_IDS } from "./seedPlayerIds";
 
 export function create_seed_players_group5(
   positions: PositionIds,

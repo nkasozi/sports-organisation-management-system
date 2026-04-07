@@ -1,12 +1,12 @@
-import type { FilterableRepository } from "./Repository";
-import type { QueryOptions, PaginatedAsyncResult } from "./Repository";
+import type { EntityStatus } from "../../../../entities/BaseEntity";
 import type {
   CompetitionStage,
   CreateCompetitionStageInput,
-  UpdateCompetitionStageInput,
   StageType,
+  UpdateCompetitionStageInput,
 } from "../../../../entities/CompetitionStage";
-import type { EntityStatus } from "../../../../entities/BaseEntity";
+import type { FilterableRepository } from "./Repository";
+import type { PaginatedAsyncResult, QueryOptions } from "./Repository";
 
 export interface CompetitionStageFilter {
   competition_id?: string;

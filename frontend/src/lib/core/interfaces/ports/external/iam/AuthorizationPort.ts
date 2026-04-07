@@ -1,6 +1,7 @@
-import type { UserRole } from "./AuthenticationPort";
-import type { AsyncResult } from "../../../../types/Result";
 import type { AuthCache } from "$lib/infrastructure/cache/AuthCache";
+
+import type { AsyncResult } from "../../../../types/Result";
+import type { UserRole } from "./AuthenticationPort";
 
 export type DataAction = "create" | "read" | "update" | "delete";
 
@@ -155,20 +156,19 @@ export interface DataAuthorizationResult {
 }
 
 export {
-  ENTITY_LEVEL_DISABLED_OPERATIONS,
-  get_entity_level_disabled_operations,
-  normalize_to_entity_type,
-  get_entity_data_category,
-  get_role_permissions,
   check_data_permission,
   check_entity_permission,
+  ENTITY_LEVEL_DISABLED_OPERATIONS,
+  get_entity_data_category,
+  get_entity_level_disabled_operations,
+  get_role_permissions,
+  normalize_to_entity_type,
 } from "./authorizationPermissionChecks";
-
 export {
-  is_scope_restricted,
-  get_scope_value,
-  get_authorization_restricted_fields,
-  get_authorization_preselect_values,
   build_authorization_list_filter,
+  get_authorization_preselect_values,
+  get_authorization_restricted_fields,
+  get_scope_value,
   is_field_restricted_by_authorization,
+  is_scope_restricted,
 } from "./authorizationScopeUtils";

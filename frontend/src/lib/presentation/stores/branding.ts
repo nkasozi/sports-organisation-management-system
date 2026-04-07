@@ -1,24 +1,25 @@
-import { writable, get } from "svelte/store";
+import { get, writable } from "svelte/store";
+
 import { browser } from "$app/environment";
+import type { OrganizationSettings } from "$lib/core/entities/OrganizationSettings";
 import {
   get_app_settings_storage,
   get_use_cases_container,
 } from "$lib/infrastructure/container";
-import type { OrganizationSettings } from "$lib/core/entities/OrganizationSettings";
-import { update_theme_colors } from "$lib/presentation/stores/theme";
 import { auth_store } from "$lib/presentation/stores/auth";
+import { update_theme_colors } from "$lib/presentation/stores/theme";
 export type {
-  SocialMediaLink,
-  HeaderFooterStyle,
   BrandingConfig,
+  HeaderFooterStyle,
+  SocialMediaLink,
 } from "./brandingTypes";
 import type { BrandingConfig, SocialMediaLink } from "./brandingTypes";
 import {
-  DEFAULT_PLATFORM_BRANDING,
-  PLATFORM_STORAGE_KEY,
   CURRENT_ORG_ID_KEY,
-  map_settings_to_branding,
+  DEFAULT_PLATFORM_BRANDING,
   map_branding_to_settings_input,
+  map_settings_to_branding,
+  PLATFORM_STORAGE_KEY,
 } from "./brandingTypes";
 
 function get_caller_role(): string {

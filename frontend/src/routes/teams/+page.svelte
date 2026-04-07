@@ -1,7 +1,8 @@
 <script lang="ts">
+  import { writable } from "svelte/store";
+
   import EntityCrudWrapper from "$lib/presentation/components/EntityCrudWrapper.svelte";
   import TeamProfilePreview from "$lib/presentation/components/TeamProfilePreview.svelte";
-  import { writable } from "svelte/store";
 
   let selected_team_id = writable<string | null>(null);
   let entity_wrapper: EntityCrudWrapper;

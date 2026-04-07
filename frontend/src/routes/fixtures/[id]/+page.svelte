@@ -1,12 +1,13 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { page } from "$app/stores";
+
   import { goto } from "$app/navigation";
-  import { ensure_auth_profile } from "$lib/presentation/logic/authGuard";
+  import { page } from "$app/stores";
   import type { Fixture } from "$lib/core/entities/Fixture";
-  import { auth_store } from "$lib/presentation/stores/auth";
-  import OfficialRatingPanel from "$lib/presentation/components/OfficialRatingPanel.svelte";
 import { get_fixture_use_cases } from "$lib/infrastructure/registry/useCaseFactories";
+  import OfficialRatingPanel from "$lib/presentation/components/OfficialRatingPanel.svelte";
+  import { ensure_auth_profile } from "$lib/presentation/logic/authGuard";
+  import { auth_store } from "$lib/presentation/stores/auth";
 
   const fixture_use_cases = get_fixture_use_cases();
 

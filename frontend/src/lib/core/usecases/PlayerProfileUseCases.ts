@@ -1,16 +1,16 @@
 import type {
-  PlayerProfile,
   CreatePlayerProfileInput,
+  PlayerProfile,
   UpdatePlayerProfileInput,
 } from "../entities/PlayerProfile";
+import { validate_player_profile_input } from "../entities/PlayerProfile";
 import type {
-  PlayerProfileRepository,
   PlayerProfileFilter,
+  PlayerProfileRepository,
 } from "../interfaces/ports";
 import type { QueryOptions } from "../interfaces/ports";
 import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
 import { create_failure_result } from "../types/Result";
-import { validate_player_profile_input } from "../entities/PlayerProfile";
 
 export interface PlayerProfileUseCases {
   list(

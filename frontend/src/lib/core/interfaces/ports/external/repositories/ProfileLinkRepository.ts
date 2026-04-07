@@ -1,13 +1,10 @@
 import type {
-  ProfileLink,
   CreateProfileLinkInput,
+  ProfileLink,
   UpdateProfileLinkInput,
 } from "../../../../entities/ProfileLink";
+import type { PaginatedAsyncResult } from "../../../../types/Result";
 import type { FilterableRepository, QueryOptions } from "./Repository";
-import type {
-  AsyncResult,
-  PaginatedAsyncResult,
-} from "../../../../types/Result";
 
 export interface ProfileLinkFilter {
   profile_id?: string;

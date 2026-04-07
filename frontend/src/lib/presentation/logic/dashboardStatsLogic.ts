@@ -1,6 +1,6 @@
 import type { FixtureStatus } from "$lib/core/entities/Fixture";
-import { ANY_VALUE } from "$lib/core/interfaces/ports";
 import { FIXTURE_STATUS } from "$lib/core/entities/StatusConstants";
+import { ANY_VALUE } from "$lib/core/interfaces/ports";
 
 export interface DashboardFilters {
   organization_filter: { organization_id: string } | undefined;

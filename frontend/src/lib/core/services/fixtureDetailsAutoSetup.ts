@@ -1,18 +1,18 @@
-import {
-  CONFIRMATION_STATUS,
-  ENTITY_STATUS,
-} from "../entities/StatusConstants";
 import type { Fixture } from "../entities/Fixture";
 import type {
   CreateFixtureDetailsSetupInput,
   FixtureDetailsSetup,
   OfficialAssignment,
 } from "../entities/FixtureDetailsSetup";
+import {
+  CONFIRMATION_STATUS,
+  ENTITY_STATUS,
+} from "../entities/StatusConstants";
+import type { Result } from "../types/Result";
 import type { FixtureDetailsSetupUseCases } from "../usecases/FixtureDetailsSetupUseCases";
+import type { GameOfficialRoleUseCases } from "../usecases/GameOfficialRoleUseCases";
 import type { JerseyColorUseCases } from "../usecases/JerseyColorUseCases";
 import type { OfficialUseCases } from "../usecases/OfficialUseCases";
-import type { GameOfficialRoleUseCases } from "../usecases/GameOfficialRoleUseCases";
-import type { Result } from "../types/Result";
 
 export interface AutoSetupDependencies {
   fixture_details_setup_use_cases: FixtureDetailsSetupUseCases;

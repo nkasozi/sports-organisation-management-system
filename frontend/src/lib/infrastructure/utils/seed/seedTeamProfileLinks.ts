@@ -1,8 +1,4 @@
-import {
-  SEED_TEAM_PROFILE_IDS,
-  SEED_ORGANIZATION_IDS,
-  generate_current_timestamp,
-} from "./seedIds";
+import { generate_current_timestamp, SEED_TEAM_PROFILE_IDS } from "./seedIds";
 
 const SEED_TEAM_PROFILE_LINK_IDS = {
   WEATHERHEAD_TWITTER: "team_link_001",

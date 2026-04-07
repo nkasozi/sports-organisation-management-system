@@ -1,21 +1,22 @@
-import { ENTITY_STATUS } from "../../core/entities/StatusConstants";
 import type { Table } from "dexie";
-import type {
-  Player,
-  CreatePlayerInput,
-  UpdatePlayerInput,
-} from "../../core/entities/Player";
+
 import type { BaseEntity } from "../../core/entities/BaseEntity";
 import type {
-  PlayerRepository,
+  CreatePlayerInput,
+  Player,
+  UpdatePlayerInput,
+} from "../../core/entities/Player";
+import { ENTITY_STATUS } from "../../core/entities/StatusConstants";
+import type {
   PlayerFilter,
+  PlayerRepository,
   PlayerTeamMembershipRepository,
   QueryOptions,
 } from "../../core/interfaces/ports";
 import type { PaginatedAsyncResult } from "../../core/types/Result";
 import {
-  create_success_result,
   create_failure_result,
+  create_success_result,
 } from "../../core/types/Result";
 import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
 import { get_player_team_membership_repository } from "./InBrowserPlayerTeamMembershipRepository";

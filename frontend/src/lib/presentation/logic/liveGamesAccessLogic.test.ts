@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+
 import {
   load_live_games_permissions,
   validate_live_games_start_permission,
@@ -7,11 +8,21 @@ import {
 describe("liveGamesAccessLogic", () => {
   it("builds denial and permission state from authorization responses", async () => {
     const adapter = {
-      check_entity_authorized: async (_raw_token: string, _entity: string, action: string) => {
+      check_entity_authorized: async (
+        _raw_token: string,
+        _entity: string,
+        action: string,
+      ) => {
         if (action === "read") {
-          return { success: true, data: { is_authorized: true, role: "viewer" } };
+          return {
+            success: true,
+            data: { is_authorized: true, role: "viewer" },
+          };
         }
-        return { success: true, data: { is_authorized: false, role: "viewer" } };
+        return {
+          success: true,
+          data: { is_authorized: false, role: "viewer" },
+        };
       },
     };
 

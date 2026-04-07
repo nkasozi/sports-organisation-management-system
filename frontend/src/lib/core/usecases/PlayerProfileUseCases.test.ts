@@ -1,12 +1,12 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
-import type { PlayerProfileRepository } from "../interfaces/ports";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
 import type {
-  PlayerProfile,
   CreatePlayerProfileInput,
+  PlayerProfile,
 } from "../entities/PlayerProfile";
+import type { PlayerProfileRepository } from "../interfaces/ports";
 import type { QueryOptions } from "../interfaces/ports";
-import type { PaginatedAsyncResult } from "../types/Result";
-import { create_success_result, create_failure_result } from "../types/Result";
+import { create_failure_result, create_success_result } from "../types/Result";
 import { create_player_profile_use_cases } from "./PlayerProfileUseCases";
 
 function create_mock_player_profile(
@@ -40,7 +40,7 @@ function create_valid_player_profile_input(
   };
 }
 
-import type { Result, PaginatedResult } from "../types/Result";
+import type { PaginatedResult, Result } from "../types/Result";
 
 function create_paginated_result<T>(
   items: T[],

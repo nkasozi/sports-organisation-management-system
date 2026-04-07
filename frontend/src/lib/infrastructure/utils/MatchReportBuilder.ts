@@ -1,15 +1,15 @@
-import type { Fixture, GameEvent } from "$lib/core/entities/Fixture";
-import type { Team } from "$lib/core/entities/Team";
 import type { Competition } from "$lib/core/entities/Competition";
+import type { Fixture, GameEvent } from "$lib/core/entities/Fixture";
 import type { LineupPlayer } from "$lib/core/entities/FixtureLineup";
 import type { Official } from "$lib/core/entities/Official";
 import { get_official_full_name } from "$lib/core/entities/Official";
+import type { Team } from "$lib/core/entities/Team";
 import type {
-  MatchReportData,
-  MatchPlayerEntry,
-  MatchOfficialInfo,
-  MatchStaffEntry,
   CardTypeConfig,
+  MatchOfficialInfo,
+  MatchPlayerEntry,
+  MatchReportData,
+  MatchStaffEntry,
 } from "$lib/core/types/MatchReportTypes";
 import {
   build_match_player_entry,
@@ -17,6 +17,7 @@ import {
   format_report_date,
   get_team_initials,
 } from "$lib/core/types/MatchReportTypes";
+
 import { calculate_score_by_period } from "./matchReportScoring";
 
 export interface MatchReportBuildContext {

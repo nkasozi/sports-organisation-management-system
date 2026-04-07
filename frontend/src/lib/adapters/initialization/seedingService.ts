@@ -1,32 +1,41 @@
-import { reset_sport_repository } from "../repositories/InBrowserSportRepository";
+import type { Result } from "../../core/types/Result";
+import {
+  create_failure_result,
+  create_success_result,
+} from "../../core/types/Result";
+import {
+  clear_user_context,
+  EventBus,
+  set_user_context,
+} from "../../infrastructure/events/EventBus";
+import type { ProgressCallback } from "../../infrastructure/sync/convexSeedingService";
+import { SEED_ORGANIZATION_IDS } from "../../infrastructure/utils/SeedDataGenerator";
+import { current_user_store } from "../../presentation/stores/currentUser";
+import { get_competition_format_repository } from "../repositories/InBrowserCompetitionFormatRepository";
+import {
+  get_game_official_role_repository,
+  InBrowserGameOfficialRoleRepository,
+} from "../repositories/InBrowserGameOfficialRoleRepository";
 import { reset_organization_repository } from "../repositories/InBrowserOrganizationRepository";
 import {
   get_player_position_repository,
   InBrowserPlayerPositionRepository,
 } from "../repositories/InBrowserPlayerPositionRepository";
+import { reset_sport_repository } from "../repositories/InBrowserSportRepository";
 import {
   get_team_staff_role_repository,
   InBrowserTeamStaffRoleRepository,
 } from "../repositories/InBrowserTeamStaffRoleRepository";
-import {
-  get_game_official_role_repository,
-  InBrowserGameOfficialRoleRepository,
-} from "../repositories/InBrowserGameOfficialRoleRepository";
-import { get_competition_format_repository } from "../repositories/InBrowserCompetitionFormatRepository";
+import { seed_all_demo_entities } from "./demoSeedingOrchestrator";
+import { build_demo_seeding_repos } from "./demoSeedingRepos";
 import { seed_default_lookup_entities_for_organization } from "./organizationDefaultsSeeder";
-import { SEED_ORGANIZATION_IDS } from "../../infrastructure/utils/SeedDataGenerator";
+import { load_seed_entity_id_lookups } from "./seedEntityIdLookups";
 import {
-  EventBus,
-  set_user_context,
-  clear_user_context,
-} from "../../infrastructure/events/EventBus";
-import { current_user_store } from "../../presentation/stores/currentUser";
-import type { Result } from "../../core/types/Result";
-import {
-  create_success_result,
-  create_failure_result,
-} from "../../core/types/Result";
-import type { ProgressCallback } from "../../infrastructure/sync/convexSeedingService";
+  handle_convex_mandatory,
+  handle_convex_with_local_fallback,
+  handle_local_only_seeding,
+  handle_skip_seeding,
+} from "./seedingStrategies";
 import {
   is_seeding_already_complete,
   mark_seeding_complete,
@@ -37,22 +46,13 @@ import {
   load_and_set_current_user,
   seed_super_admin_user,
 } from "./seedingUserSetup";
-import { load_seed_entity_id_lookups } from "./seedEntityIdLookups";
-import { build_demo_seeding_repos } from "./demoSeedingRepos";
-import { seed_all_demo_entities } from "./demoSeedingOrchestrator";
-import {
-  handle_skip_seeding,
-  handle_local_only_seeding,
-  handle_convex_with_local_fallback,
-  handle_convex_mandatory,
-} from "./seedingStrategies";
 
+export type { DataSource } from "../../infrastructure/sync/convexSeedingService";
+export type { SeedingStrategy, SeedOutcome, SeedResult } from "./seedingTypes";
 export {
   is_seeding_already_complete,
   reset_seeding_flag,
 } from "./seedingTypes";
-export type { SeedResult, SeedOutcome, SeedingStrategy } from "./seedingTypes";
-export type { DataSource } from "../../infrastructure/sync/convexSeedingService";
 
 export async function seed_all_data_if_needed(): Promise<Result<boolean>> {
   const seeding_complete = await is_seeding_already_complete();

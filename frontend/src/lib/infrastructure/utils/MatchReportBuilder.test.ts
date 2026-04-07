@@ -1,13 +1,15 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
+
+import type { Competition } from "$lib/core/entities/Competition";
+import type { Fixture } from "$lib/core/entities/Fixture";
+import type { Official } from "$lib/core/entities/Official";
+import type { Team } from "$lib/core/entities/Team";
+
 import {
   build_match_report_data,
   generate_match_report_filename,
   type MatchReportBuildContext,
 } from "./MatchReportBuilder";
-import type { Fixture } from "$lib/core/entities/Fixture";
-import type { Team } from "$lib/core/entities/Team";
-import type { Competition } from "$lib/core/entities/Competition";
-import type { Official } from "$lib/core/entities/Official";
 
 function make_fixture(overrides: Partial<Fixture> = {}): Fixture {
   return {

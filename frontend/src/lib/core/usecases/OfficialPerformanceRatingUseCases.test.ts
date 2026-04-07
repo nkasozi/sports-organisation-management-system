@@ -1,10 +1,11 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { create_official_performance_rating_use_cases } from "./OfficialPerformanceRatingUseCases";
-import type { OfficialPerformanceRatingRepository } from "../interfaces/ports";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
 import type {
-  OfficialPerformanceRating,
   CreateOfficialPerformanceRatingInput,
+  OfficialPerformanceRating,
 } from "../entities/OfficialPerformanceRating";
+import type { OfficialPerformanceRatingRepository } from "../interfaces/ports";
+import { create_official_performance_rating_use_cases } from "./OfficialPerformanceRatingUseCases";
 
 function create_mock_repository(): OfficialPerformanceRatingRepository {
   return {

@@ -1,18 +1,20 @@
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
+
 import type {
-  MatchReportData,
-  MatchPlayerEntry,
   CardTypeConfig,
+  MatchPlayerEntry,
+  MatchReportData,
 } from "$lib/core/types/MatchReportTypes";
+
 import {
   FONT_SIZE_SMALL,
+  HALF_WIDTH,
+  type JsPDFWithAutoTable,
   MARGIN_LEFT,
   MARGIN_RIGHT,
   PAGE_WIDTH,
-  HALF_WIDTH,
   parse_hex_color,
-  type JsPDFWithAutoTable,
 } from "./pdfConstantsAndHelpers";
 import { draw_team_staff_rows } from "./pdfStaffOfficialsSection";
 

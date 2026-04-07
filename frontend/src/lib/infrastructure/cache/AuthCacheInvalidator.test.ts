@@ -1,11 +1,11 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
-import {
-  create_auth_cache_invalidator,
-  type AuthCacheInvalidatorConfig,
-  type SubscribableConvexClient,
-} from "./AuthCacheInvalidator";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
 import type { AuthCache } from "./AuthCache";
 import { create_auth_cache } from "./AuthCache";
+import {
+  create_auth_cache_invalidator,
+  type SubscribableConvexClient,
+} from "./AuthCacheInvalidator";
 
 function create_mock_convex_client(): SubscribableConvexClient & {
   trigger_subscription: (query_name: string, new_data: unknown) => void;

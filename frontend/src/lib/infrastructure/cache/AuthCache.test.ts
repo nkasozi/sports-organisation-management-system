@@ -1,8 +1,9 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
+
 import {
-  create_auth_cache,
   type AuthCache,
   type AuthCacheConfig,
+  create_auth_cache,
 } from "./AuthCache";
 
 function create_default_cache<T>(

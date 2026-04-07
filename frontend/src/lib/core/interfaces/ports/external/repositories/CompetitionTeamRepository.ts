@@ -1,14 +1,14 @@
-import type { FilterableRepository, QueryOptions } from "./Repository";
-import type {
-  PaginatedAsyncResult,
-  AsyncResult,
-} from "../../../../types/Result";
 import type {
   CompetitionTeam,
+  CompetitionTeamStatus,
   CreateCompetitionTeamInput,
   UpdateCompetitionTeamInput,
-  CompetitionTeamStatus,
 } from "../../../../entities/CompetitionTeam";
+import type {
+  AsyncResult,
+  PaginatedAsyncResult,
+} from "../../../../types/Result";
+import type { FilterableRepository, QueryOptions } from "./Repository";
 
 export interface CompetitionTeamFilter {
   competition_id?: string;

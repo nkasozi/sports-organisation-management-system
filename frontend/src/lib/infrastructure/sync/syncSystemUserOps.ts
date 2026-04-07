@@ -1,13 +1,14 @@
-import { ENTITY_STATUS } from "../../core/entities/StatusConstants";
 import type { Result } from "$lib/core/types/Result";
 import {
-  create_success_result,
   create_failure_result,
+  create_success_result,
 } from "$lib/core/types/Result";
-import type { ConvexClient, TableName } from "./syncTypes";
-import { EPOCH_TIMESTAMP } from "./syncTypes";
-import { get_table_from_database, get_database } from "./syncDataAccess";
+
+import { ENTITY_STATUS } from "../../core/entities/StatusConstants";
+import { get_database, get_table_from_database } from "./syncDataAccess";
 import { pull_table_from_convex } from "./syncPullService";
+import type { ConvexClient } from "./syncTypes";
+import { EPOCH_TIMESTAMP } from "./syncTypes";
 
 export async function pull_system_users_from_convex(
   get_sync_manager_fn: () => { get_convex_client: () => ConvexClient | null },

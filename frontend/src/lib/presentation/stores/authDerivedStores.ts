@@ -1,14 +1,15 @@
 import { derived } from "svelte/store";
-import {
-  USER_ROLE_DISPLAY_NAMES,
-  ANY_VALUE,
-  check_data_permission,
-} from "$lib/core/interfaces/ports";
+
 import type {
   AuthorizableAction,
   AuthorizationCheckResult,
   EntityAuthorizationMap,
 } from "$lib/core/interfaces/ports";
+import {
+  check_data_permission,
+  USER_ROLE_DISPLAY_NAMES,
+} from "$lib/core/interfaces/ports";
+
 import { auth_store } from "./authStoreCore";
 
 export const current_user_role = derived(

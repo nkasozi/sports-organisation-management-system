@@ -1,7 +1,8 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { auto_create_fixture_details_setup } from "./fixtureDetailsAutoSetup";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
 import type { Fixture } from "../entities/Fixture";
 import type { AutoSetupDependencies } from "./fixtureDetailsAutoSetup";
+import { auto_create_fixture_details_setup } from "./fixtureDetailsAutoSetup";
 
 function makeFixture(overrides: Partial<Fixture> = {}): Fixture {
   return {
@@ -65,13 +66,13 @@ describe("auto_create_fixture_details_setup", () => {
 
   afterEach(() => {
     // Print mock call info for debugging
-    // eslint-disable-next-line no-console
+
     console.log(
       "list_jerseys_by_entity calls:",
       vi.mocked(dependencies.jersey_color_use_cases.list_jerseys_by_entity).mock
         .calls,
     );
-    // eslint-disable-next-line no-console
+
     console.log(
       "list calls:",
       vi.mocked(dependencies.jersey_color_use_cases.list).mock.calls,

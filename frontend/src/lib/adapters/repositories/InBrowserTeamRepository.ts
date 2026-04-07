@@ -1,15 +1,16 @@
 import type { Table } from "dexie";
+
+import type { BaseEntity } from "../../core/entities/BaseEntity";
 import type {
-  Team,
   CreateTeamInput,
+  Team,
   UpdateTeamInput,
 } from "../../core/entities/Team";
 import { DEFAULT_TEAM_LOGO } from "../../core/entities/Team";
-import type { BaseEntity } from "../../core/entities/BaseEntity";
 import type {
-  TeamRepository,
-  TeamFilter,
   QueryOptions,
+  TeamFilter,
+  TeamRepository,
 } from "../../core/interfaces/ports";
 import type { PaginatedAsyncResult } from "../../core/types/Result";
 import { InBrowserBaseRepository } from "./InBrowserBaseRepository";

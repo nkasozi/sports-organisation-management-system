@@ -1,12 +1,13 @@
 <script lang="ts">
-  import { onMount, onDestroy } from "svelte";
+  import { ConvexClient } from "convex/browser";
+  import { onDestroy,onMount } from "svelte";
+  import { get } from "svelte/store";
+
+  import { browser } from "$app/environment";
   import { goto } from "$app/navigation";
   import { page } from "$app/stores";
-  import { browser } from "$app/environment";
   import { PUBLIC_CONVEX_URL } from "$env/static/public";
-  import { ConvexClient } from "convex/browser";
   import { get_clerk } from "$lib/adapters/iam/clerkAuthService";
-  import { get } from "svelte/store";
 
   let authorization_checked = false;
   let is_checking = true;

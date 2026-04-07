@@ -1,19 +1,21 @@
+import type { Clerk } from "@clerk/clerk-js";
+import { derived, type Readable, writable } from "svelte/store";
+
 import { browser } from "$app/environment";
 import { PUBLIC_CLERK_PUBLISHABLE_KEY } from "$env/static/public";
-import { writable, derived, type Readable } from "svelte/store";
-import type { Clerk } from "@clerk/clerk-js";
-import {
-  create_success_result,
-  create_failure_result,
-} from "$lib/core/types/Result";
 import type { Result } from "$lib/core/types/Result";
 import {
-  type ClerkUser,
+  create_failure_result,
+  create_success_result,
+} from "$lib/core/types/Result";
+
+import {
   type ClerkSessionState,
+  type ClerkUser,
   INITIAL_CLERK_STATE,
 } from "./clerkAuthTypes";
 
-export type { ClerkUser, ClerkSessionState } from "./clerkAuthTypes";
+export type { ClerkSessionState, ClerkUser } from "./clerkAuthTypes";
 
 const clerk_store = writable<ClerkSessionState>(INITIAL_CLERK_STATE);
 

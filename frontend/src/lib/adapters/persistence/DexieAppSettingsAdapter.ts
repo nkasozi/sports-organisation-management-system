@@ -1,4 +1,5 @@
 import type { AppSettingsPort } from "$lib/core/interfaces/ports";
+
 import { get_database } from "../repositories/database";
 
 export class DexieAppSettingsAdapter implements AppSettingsPort {

@@ -1,9 +1,9 @@
 <script lang="ts">
-  import { theme_store } from "$lib/presentation/stores/theme";
   import {
     branding_store,
     type SocialMediaLink,
   } from "$lib/presentation/stores/branding";
+  import { theme_store } from "$lib/presentation/stores/theme";
 
   let current_year = new Date().getFullYear();
   let theme_config: any = { mode: "light" };

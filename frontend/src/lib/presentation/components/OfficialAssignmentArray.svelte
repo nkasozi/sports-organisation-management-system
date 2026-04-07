@@ -1,9 +1,11 @@
 <script lang="ts">
   import { createEventDispatcher, onMount } from "svelte";
+
   import type { OfficialAssignment } from "$lib/core/entities/FixtureDetailsSetup";
   import { create_empty_official_assignment } from "$lib/core/entities/FixtureDetailsSetup";
-  import SearchableSelectField from "./ui/SearchableSelectField.svelte";
 import { get_game_official_role_use_cases, get_official_use_cases } from "$lib/infrastructure/registry/useCaseFactories";
+
+  import SearchableSelectField from "./ui/SearchableSelectField.svelte";
 
   export let assignments: OfficialAssignment[] = [];
   export let disabled: boolean = false;

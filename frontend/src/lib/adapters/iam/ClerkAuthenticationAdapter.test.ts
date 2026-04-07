@@ -1,9 +1,9 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
 import {
   ClerkAuthenticationAdapter,
   type ClerkSessionProvider,
 } from "./ClerkAuthenticationAdapter";
-import type { AuthVerificationResult } from "$lib/core/interfaces/ports";
 
 function create_mock_clerk_session_provider(
   overrides?: Partial<ClerkSessionProvider>,

@@ -1,25 +1,26 @@
+import { EventBus } from "$lib/infrastructure/events/EventBus";
+
 import type {
-  Fixture,
   CreateFixtureInput,
-  UpdateFixtureInput,
+  Fixture,
   FixtureGenerationConfig,
+  UpdateFixtureInput,
 } from "../entities/Fixture";
+import {
+  generate_round_robin_fixtures,
+  validate_fixture_input,
+} from "../entities/Fixture";
+import type { Team } from "../entities/Team";
 import type {
-  FixtureRepository,
   FixtureFilter,
-  QueryOptions,
+  FixtureRepository,
   FixtureUseCasesPort,
+  QueryOptions,
   TeamRepository,
 } from "../interfaces/ports";
 import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
 import { create_failure_result, create_success_result } from "../types/Result";
-import {
-  validate_fixture_input,
-  generate_round_robin_fixtures,
-} from "../entities/Fixture";
-import type { Team } from "../entities/Team";
 import { create_fixture_game_events } from "./FixtureGameEventsUseCases";
-import { EventBus } from "$lib/infrastructure/events/EventBus";
 
 export type FixtureUseCases = FixtureUseCasesPort;
 

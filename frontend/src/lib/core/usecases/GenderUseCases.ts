@@ -1,20 +1,17 @@
 import type {
-  Gender,
   CreateGenderInput,
+  Gender,
   UpdateGenderInput,
 } from "$lib/core/entities/Gender";
 import { validate_gender_input } from "$lib/core/entities/Gender";
 import type {
-  GenderRepository,
   GenderFilter,
+  GenderRepository,
 } from "$lib/core/interfaces/ports";
 import type { QueryOptions } from "$lib/core/interfaces/ports";
-import type { AsyncResult, PaginatedAsyncResult } from "$lib/core/types/Result";
-import {
-  create_success_result,
-  create_failure_result,
-} from "$lib/core/types/Result";
 import type { GenderUseCasesPort } from "$lib/core/interfaces/ports";
+import type { AsyncResult, PaginatedAsyncResult } from "$lib/core/types/Result";
+import { create_failure_result } from "$lib/core/types/Result";
 
 export type GenderUseCases = GenderUseCasesPort;
 

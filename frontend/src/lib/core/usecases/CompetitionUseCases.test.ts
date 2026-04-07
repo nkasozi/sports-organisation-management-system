@@ -1,13 +1,14 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import {
-  create_competition_use_cases_with_stage_lifecycle,
-  type CompetitionStageLifecyclePort,
-} from "./CompetitionUseCases";
-import type { CompetitionRepository } from "../interfaces/ports";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
 import type {
   Competition,
   CreateCompetitionInput,
 } from "../entities/Competition";
+import type { CompetitionRepository } from "../interfaces/ports";
+import {
+  type CompetitionStageLifecyclePort,
+  create_competition_use_cases_with_stage_lifecycle,
+} from "./CompetitionUseCases";
 
 function create_mock_repository(): CompetitionRepository {
   return {

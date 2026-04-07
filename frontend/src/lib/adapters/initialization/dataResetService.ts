@@ -1,38 +1,40 @@
-import { reset_team_repository } from "../repositories/InBrowserTeamRepository";
-import { reset_competition_repository } from "../repositories/InBrowserCompetitionRepository";
-import { reset_player_repository } from "../repositories/InBrowserPlayerRepository";
-import { reset_player_team_membership_repository } from "../repositories/InBrowserPlayerTeamMembershipRepository";
-import { reset_official_repository } from "../repositories/InBrowserOfficialRepository";
-import { reset_fixture_repository } from "../repositories/InBrowserFixtureRepository";
-import { reset_team_staff_repository } from "../repositories/InBrowserTeamStaffRepository";
-import { reset_game_event_type_repository } from "../repositories/InBrowserGameEventTypeRepository";
-import { reset_player_position_repository } from "../repositories/InBrowserPlayerPositionRepository";
-import { reset_team_staff_role_repository } from "../repositories/InBrowserTeamStaffRoleRepository";
-import { reset_game_official_role_repository } from "../repositories/InBrowserGameOfficialRoleRepository";
-import { reset_competition_format_repository } from "../repositories/InBrowserCompetitionFormatRepository";
-import { reset_venue_repository } from "../repositories/InBrowserVenueRepository";
-import { reset_jersey_color_repository } from "../repositories/InBrowserJerseyColorRepository";
-import { reset_competition_team_repository } from "../repositories/InBrowserCompetitionTeamRepository";
-import { reset_player_profile_repository } from "../repositories/InBrowserPlayerProfileRepository";
-import { reset_team_profile_repository } from "../repositories/InBrowserTeamProfileRepository";
-import { reset_profile_link_repository } from "../repositories/InBrowserProfileLinkRepository";
-import { reset_qualification_repository } from "../repositories/InBrowserQualificationRepository";
-import { reset_fixture_details_setup_repository } from "../repositories/InBrowserFixtureDetailsSetupRepository";
-import { reset_fixture_lineup_repository } from "../repositories/InBrowserFixtureLineupRepository";
-import { reset_sport_repository } from "../repositories/InBrowserSportRepository";
-import { reset_organization_repository } from "../repositories/InBrowserOrganizationRepository";
-import { seed_all_data_if_needed } from "./seedingService";
-import { clear_all_demo_data_in_convex } from "$lib/infrastructure/sync/convexSyncService";
+import { get } from "svelte/store";
+
+import { is_signed_in } from "$lib/adapters/iam/clerkAuthService";
+import { get_app_settings_storage } from "$lib/infrastructure/container";
 import {
-  stop_background_sync,
-  start_background_sync,
   set_pulling_from_remote,
+  start_background_sync,
+  stop_background_sync,
 } from "$lib/infrastructure/sync/backgroundSyncService";
+import { clear_all_demo_data_in_convex } from "$lib/infrastructure/sync/convexSyncService";
 import { clear_session_sync_flag } from "$lib/presentation/stores/initialSyncStore";
 import { sync_store } from "$lib/presentation/stores/syncStore";
-import { is_signed_in } from "$lib/adapters/iam/clerkAuthService";
-import { get } from "svelte/store";
-import { get_app_settings_storage } from "$lib/infrastructure/container";
+
+import { reset_competition_format_repository } from "../repositories/InBrowserCompetitionFormatRepository";
+import { reset_competition_repository } from "../repositories/InBrowserCompetitionRepository";
+import { reset_competition_team_repository } from "../repositories/InBrowserCompetitionTeamRepository";
+import { reset_fixture_details_setup_repository } from "../repositories/InBrowserFixtureDetailsSetupRepository";
+import { reset_fixture_lineup_repository } from "../repositories/InBrowserFixtureLineupRepository";
+import { reset_fixture_repository } from "../repositories/InBrowserFixtureRepository";
+import { reset_game_event_type_repository } from "../repositories/InBrowserGameEventTypeRepository";
+import { reset_game_official_role_repository } from "../repositories/InBrowserGameOfficialRoleRepository";
+import { reset_jersey_color_repository } from "../repositories/InBrowserJerseyColorRepository";
+import { reset_official_repository } from "../repositories/InBrowserOfficialRepository";
+import { reset_organization_repository } from "../repositories/InBrowserOrganizationRepository";
+import { reset_player_position_repository } from "../repositories/InBrowserPlayerPositionRepository";
+import { reset_player_profile_repository } from "../repositories/InBrowserPlayerProfileRepository";
+import { reset_player_repository } from "../repositories/InBrowserPlayerRepository";
+import { reset_player_team_membership_repository } from "../repositories/InBrowserPlayerTeamMembershipRepository";
+import { reset_profile_link_repository } from "../repositories/InBrowserProfileLinkRepository";
+import { reset_qualification_repository } from "../repositories/InBrowserQualificationRepository";
+import { reset_sport_repository } from "../repositories/InBrowserSportRepository";
+import { reset_team_profile_repository } from "../repositories/InBrowserTeamProfileRepository";
+import { reset_team_repository } from "../repositories/InBrowserTeamRepository";
+import { reset_team_staff_repository } from "../repositories/InBrowserTeamStaffRepository";
+import { reset_team_staff_role_repository } from "../repositories/InBrowserTeamStaffRoleRepository";
+import { reset_venue_repository } from "../repositories/InBrowserVenueRepository";
+import { seed_all_data_if_needed } from "./seedingService";
 
 export async function reset_all_data(
   on_progress?: (message: string, percentage: number) => void,

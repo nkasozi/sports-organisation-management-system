@@ -1,10 +1,11 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { create_identification_type_use_cases } from "./IdentificationTypeUseCases";
-import type { IdentificationTypeRepository } from "../interfaces/ports";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
 import type {
-  IdentificationType,
   CreateIdentificationTypeInput,
+  IdentificationType,
 } from "../entities/IdentificationType";
+import type { IdentificationTypeRepository } from "../interfaces/ports";
+import { create_identification_type_use_cases } from "./IdentificationTypeUseCases";
 
 function create_mock_repository(): IdentificationTypeRepository {
   return {

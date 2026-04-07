@@ -1,5 +1,5 @@
-import type { TeamPlayer } from "$lib/core/services/teamPlayers";
 import type { LineupPlayer } from "$lib/core/entities/FixtureLineup";
+import type { TeamPlayer } from "$lib/core/services/teamPlayers";
 
 export interface WizardAutoSkipInput {
   organization_is_restricted: boolean;

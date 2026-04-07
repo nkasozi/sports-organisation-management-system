@@ -1,22 +1,24 @@
-import { describe, it, expect, vi } from "vitest";
-import {
-  LocalAuthorizationAdapter,
-  get_sidebar_menu_for_role,
-  can_role_access_route,
-  get_allowed_routes_for_role,
-  get_default_route_for_role,
-} from "./LocalAuthorizationAdapter";
+import { describe, expect, it, vi } from "vitest";
+
 import {
   SHARED_ENTITY_CATEGORY_MAP,
   SHARED_ROLE_PERMISSIONS,
 } from "$convex/shared_permission_definitions";
 import type { UserRole } from "$lib/core/interfaces/ports";
-import { USER_ROLE_ORDER } from "$lib/core/interfaces/ports/external/iam/AuthenticationPort";
 import type {
   SidebarMenuGroup,
   SystemUserRepository,
 } from "$lib/core/interfaces/ports";
 import type { AuthenticationPort } from "$lib/core/interfaces/ports";
+import { USER_ROLE_ORDER } from "$lib/core/interfaces/ports/external/iam/AuthenticationPort";
+
+import {
+  can_role_access_route,
+  get_allowed_routes_for_role,
+  get_default_route_for_role,
+  get_sidebar_menu_for_role,
+  LocalAuthorizationAdapter,
+} from "./LocalAuthorizationAdapter";
 
 function create_mock_auth_port(
   email: string,

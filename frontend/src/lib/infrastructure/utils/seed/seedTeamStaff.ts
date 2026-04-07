@@ -1,10 +1,10 @@
 import type { TeamStaff } from "../../../core/entities/TeamStaff";
 import { DEFAULT_STAFF_AVATAR } from "../../../core/entities/TeamStaff";
 import {
-  SEED_STAFF_IDS,
-  SEED_ORGANIZATION_IDS,
-  SEED_TEAM_IDS,
   generate_current_timestamp,
+  SEED_ORGANIZATION_IDS,
+  SEED_STAFF_IDS,
+  SEED_TEAM_IDS,
 } from "./seedIds";
 
 export function create_seed_team_staff(

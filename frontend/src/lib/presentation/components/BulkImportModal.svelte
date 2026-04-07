@@ -1,15 +1,16 @@
 <script lang="ts">
   import { createEventDispatcher } from "svelte";
+
   import type { FieldMetadata } from "$lib/core/entities/BaseEntity";
-  import { entityMetadataRegistry } from "$lib/infrastructure/registry/EntityMetadataRegistry";
-  import { get_use_cases_for_entity_type } from "$lib/infrastructure/registry/entityUseCasesRegistry";
   import {
-    resolve_entity_name_to_id,
-    is_name_column,
     extract_entity_type_from_name_column,
     is_id_column,
+    is_name_column,
     looks_like_entity_name,
+    resolve_entity_name_to_id,
   } from "$lib/core/services/nameResolutionService";
+  import { entityMetadataRegistry } from "$lib/infrastructure/registry/EntityMetadataRegistry";
+  import { get_use_cases_for_entity_type } from "$lib/infrastructure/registry/entityUseCasesRegistry";
 
   export let entity_type: string;
   export let is_visible: boolean = false;

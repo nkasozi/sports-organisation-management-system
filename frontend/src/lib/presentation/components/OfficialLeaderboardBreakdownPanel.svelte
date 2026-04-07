@@ -1,11 +1,11 @@
 <script lang="ts">
+    import { get_tier_label } from "$lib/core/entities/OfficialPerformanceRating";
     import {
-        get_tier_badge_classes,
         get_score_bar_width,
+        get_tier_badge_classes,
         type OfficialLeaderboardEntry,
         type PerFixtureRating,
     } from "$lib/presentation/logic/officialLeaderboardLogic";
-    import { get_tier_label } from "$lib/core/entities/OfficialPerformanceRating";
 
     export let entry: OfficialLeaderboardEntry;
     export let breakdown_items: PerFixtureRating[];

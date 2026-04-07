@@ -1,7 +1,6 @@
 <script lang="ts">
-  import type { Sport, SportGamePeriod } from "$lib/core/entities/Sport";
   import type { CompetitionRuleOverrides } from "$lib/core/entities/Competition";
-  import FormField from "$lib/presentation/components/ui/FormField.svelte";
+  import type { Sport, SportGamePeriod } from "$lib/core/entities/Sport";
   import GamePeriodsEditor from "$lib/presentation/components/game/GamePeriodsEditor.svelte";
   import InfoTooltip from "$lib/presentation/components/ui/InfoTooltip.svelte";
 

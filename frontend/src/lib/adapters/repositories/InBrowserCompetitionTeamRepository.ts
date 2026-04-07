@@ -1,23 +1,24 @@
 import type { Table } from "dexie";
+
+import type { BaseEntity } from "../../core/entities/BaseEntity";
 import type {
   CompetitionTeam,
   CreateCompetitionTeamInput,
   UpdateCompetitionTeamInput,
 } from "../../core/entities/CompetitionTeam";
 import { create_competition_team_with_stats } from "../../core/entities/CompetitionTeam";
-import type { BaseEntity } from "../../core/entities/BaseEntity";
 import type {
-  CompetitionTeamRepository,
   CompetitionTeamFilter,
+  CompetitionTeamRepository,
 } from "../../core/interfaces/ports";
 import type { QueryOptions } from "../../core/interfaces/ports";
 import type {
-  PaginatedAsyncResult,
   AsyncResult,
+  PaginatedAsyncResult,
 } from "../../core/types/Result";
 import {
-  create_success_result,
   create_failure_result,
+  create_success_result,
 } from "../../core/types/Result";
 import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
 

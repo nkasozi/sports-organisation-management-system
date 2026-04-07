@@ -1,14 +1,16 @@
 import { jsPDF } from "jspdf";
+
 import type {
+  MatchOfficialInfo,
   MatchReportData,
   MatchStaffEntry,
-  MatchOfficialInfo,
 } from "$lib/core/types/MatchReportTypes";
+
 import {
   FONT_SIZE_SMALL,
+  HALF_WIDTH,
   MARGIN_LEFT,
   PAGE_WIDTH,
-  HALF_WIDTH,
 } from "./pdfConstantsAndHelpers";
 
 export function draw_team_staff_rows(

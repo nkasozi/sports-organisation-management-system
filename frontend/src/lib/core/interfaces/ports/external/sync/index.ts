@@ -1,18 +1,16 @@
 export type {
-  SyncDirection,
-  SyncMetrics,
-  SyncTableError,
-  SyncHints,
-  SyncOrchestratorPort,
-} from "./SyncOrchestratorPort";
-
-export type {
-  RemoteTableTimestamp,
-  RemoteChangeSubscriberPort,
-} from "./RemoteChangeSubscriberPort";
-
-export type {
-  SyncRestorationHandlers,
-  LocalSyncStatus,
   LocalChangePublisherPort,
+  LocalSyncStatus,
+  SyncRestorationHandlers,
 } from "./LocalChangePublisherPort";
+export type {
+  RemoteChangeSubscriberPort,
+  RemoteTableTimestamp,
+} from "./RemoteChangeSubscriberPort";
+export type {
+  SyncDirection,
+  SyncHints,
+  SyncMetrics,
+  SyncOrchestratorPort,
+  SyncTableError,
+} from "./SyncOrchestratorPort";

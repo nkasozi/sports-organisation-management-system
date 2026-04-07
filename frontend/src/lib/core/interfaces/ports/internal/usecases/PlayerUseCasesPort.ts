@@ -1,15 +1,14 @@
 import type {
-  Player,
   CreatePlayerInput,
+  Player,
   UpdatePlayerInput,
 } from "../../../../entities/Player";
-import type { PlayerFilter } from "../../external/repositories/PlayerRepository";
-import type { QueryOptions } from "../../external/repositories/Repository";
 import type {
   AsyncResult,
   PaginatedAsyncResult,
 } from "../../../../types/Result";
-import type { EntityListResult } from "../../../../entities/BaseEntity";
+import type { PlayerFilter } from "../../external/repositories/PlayerRepository";
+import type { QueryOptions } from "../../external/repositories/Repository";
 import type { BaseUseCasesPort } from "./BaseUseCasesPort";
 
 export interface PlayerUseCasesPort extends BaseUseCasesPort<
@@ -26,11 +25,11 @@ export interface PlayerUseCasesPort extends BaseUseCasesPort<
 }
 
 export type {
-  Player,
+  AsyncResult,
   CreatePlayerInput,
-  UpdatePlayerInput,
+  PaginatedAsyncResult,
+  Player,
   PlayerFilter,
   QueryOptions,
-  AsyncResult,
-  PaginatedAsyncResult,
+  UpdatePlayerInput,
 };

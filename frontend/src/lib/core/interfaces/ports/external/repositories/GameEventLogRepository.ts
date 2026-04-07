@@ -1,9 +1,9 @@
 import type {
-  GameEventLog,
   CreateGameEventLogInput,
-  UpdateGameEventLogInput,
+  GameEventLog,
   GameEventLogType,
   TeamSide,
+  UpdateGameEventLogInput,
 } from "../../../../entities/GameEventLog";
 import type {
   AsyncResult,

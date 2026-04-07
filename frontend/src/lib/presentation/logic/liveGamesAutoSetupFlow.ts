@@ -1,10 +1,11 @@
 import type { Fixture } from "$lib/core/entities/Fixture";
-import type { PreFlightCheck } from "$lib/core/services/fixtureStartChecks";
 import { auto_create_fixture_details_setup } from "$lib/core/services/fixtureDetailsAutoSetup";
+import type { PreFlightCheck } from "$lib/core/services/fixtureStartChecks";
+
 import {
+  type LiveGamesStartFlowDependencies,
   publish_checks,
   replace_last_check,
-  type LiveGamesStartFlowDependencies,
 } from "./liveGamesStartFlowShared";
 
 const FIXTURE_DETAILS_ROUTE = "/fixture-details-setup";
@@ -29,7 +30,7 @@ export async function handle_missing_fixture_details(
   );
   const competition_allows_auto_setup = Boolean(
     competition_result.success &&
-      competition_result.data?.allow_auto_fixture_details_setup,
+    competition_result.data?.allow_auto_fixture_details_setup,
   );
   if (!competition_allows_auto_setup) {
     replace_last_check(checks, officials_check);
@@ -56,7 +57,9 @@ export async function handle_missing_fixture_details(
     });
     await publish_checks(fixture.id, checks, dependencies);
     dependencies.set_is_starting(fixture.id, false);
-    await dependencies.goto(`${FIXTURE_DETAILS_ROUTE}?fixture_id=${fixture.id}`);
+    await dependencies.goto(
+      `${FIXTURE_DETAILS_ROUTE}?fixture_id=${fixture.id}`,
+    );
     return true;
   }
 

@@ -1,10 +1,10 @@
-import type { FilterableRepository, QueryOptions } from "./Repository";
-import type { PaginatedAsyncResult } from "../../../../types/Result";
 import type {
-  Team,
   CreateTeamInput,
+  Team,
   UpdateTeamInput,
 } from "../../../../entities/Team";
+import type { PaginatedAsyncResult } from "../../../../types/Result";
+import type { FilterableRepository, QueryOptions } from "./Repository";
 
 export interface TeamFilter {
   name_contains?: string;

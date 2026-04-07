@@ -1,26 +1,26 @@
+import { browser } from "$app/environment";
+import type { InBrowserSystemUserRepository } from "$lib/adapters/repositories/InBrowserSystemUserRepository";
 import type {
   AuthenticationPort,
   AuthToken,
   AuthTokenPayload,
   AuthVerificationResult,
 } from "$lib/core/interfaces/ports";
-import type { InBrowserSystemUserRepository } from "$lib/adapters/repositories/InBrowserSystemUserRepository";
-import { browser } from "$app/environment";
-import {
-  create_auth_cache,
-  type AuthCache,
-} from "$lib/infrastructure/cache/AuthCache";
 import type { Result } from "$lib/core/types/Result";
 import {
-  create_success_result,
   create_failure_result,
+  create_success_result,
 } from "$lib/core/types/Result";
 import {
-  base64_url_encode,
+  type AuthCache,
+  create_auth_cache,
+} from "$lib/infrastructure/cache/AuthCache";
+import {
   base64_url_decode,
+  base64_url_encode,
   create_hmac_signature,
-  verify_hmac_signature,
   create_token_header,
+  verify_hmac_signature,
 } from "$lib/infrastructure/utils/JwtTokenUtils";
 
 const VERIFICATION_CACHE_MAX_ENTRIES = 50;

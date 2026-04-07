@@ -1,13 +1,14 @@
 import type { SidebarMenuGroup, UserRole } from "$lib/core/interfaces/ports";
 import { EventBus } from "$lib/infrastructure/events/EventBus";
-import { SUPER_ADMIN_MENU } from "./superAdminMenu";
-import { ORG_ADMIN_MENU } from "./orgAdminMenu";
+
 import { OFFICIALS_MANAGER_MENU, TEAM_MANAGER_MENU } from "./managerRoleMenus";
 import {
-  PLAYER_MENU,
   OFFICIAL_MENU,
+  PLAYER_MENU,
   PUBLIC_VIEWER_MENU,
 } from "./memberRoleMenus";
+import { ORG_ADMIN_MENU } from "./orgAdminMenu";
+import { SUPER_ADMIN_MENU } from "./superAdminMenu";
 
 const ROLE_MENUS: Record<UserRole, SidebarMenuGroup[]> = {
   super_admin: SUPER_ADMIN_MENU,

@@ -1,29 +1,28 @@
 <script lang="ts">
   import { createEventDispatcher } from "svelte";
+
   import { goto, invalidateAll } from "$app/navigation";
   import { is_signed_in, sign_out } from "$lib/adapters/iam/clerkAuthService";
-  import {
-    theme_store,
-    toggle_theme_mode,
-  } from "$lib/presentation/stores/theme";
-  import { branding_store } from "$lib/presentation/stores/branding";
-  import { current_user_store } from "$lib/presentation/stores/currentUser";
+  import SyncStatusIndicator from "$lib/presentation/components/SyncStatusIndicator.svelte";
+  import LogoutWarningModal from "$lib/presentation/components/ui/LogoutWarningModal.svelte";
+  import { invalidate_route_access_cache } from "$lib/presentation/logic/authGuard";
   import {
     auth_store,
-    current_user_role_display,
     current_profile_display_name,
     current_profile_email,
     current_profile_initials,
     current_profile_organization_name,
+    current_user_role_display,
     other_available_profiles,
-    can_switch_profiles,
-    is_auth_initialized,
     type UserProfile,
   } from "$lib/presentation/stores/auth";
-  import SyncStatusIndicator from "$lib/presentation/components/SyncStatusIndicator.svelte";
-  import LogoutWarningModal from "$lib/presentation/components/ui/LogoutWarningModal.svelte";
+  import { branding_store } from "$lib/presentation/stores/branding";
+  import { current_user_store } from "$lib/presentation/stores/currentUser";
   import { clear_session_sync_flag } from "$lib/presentation/stores/initialSyncStore";
-  import { invalidate_route_access_cache } from "$lib/presentation/logic/authGuard";
+  import {
+    theme_store,
+    toggle_theme_mode,
+  } from "$lib/presentation/stores/theme";
 
   export let sidebar_open = false;
 

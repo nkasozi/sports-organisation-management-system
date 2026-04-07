@@ -1,8 +1,8 @@
 import type { PlayerTeamMembership } from "../../../core/entities/PlayerTeamMembership";
 import {
+  generate_current_timestamp,
   SEED_ORGANIZATION_IDS,
   SEED_TEAM_IDS,
-  generate_current_timestamp,
 } from "./seedIds";
 import { SEED_PLAYER_IDS } from "./seedPlayerIds";
 

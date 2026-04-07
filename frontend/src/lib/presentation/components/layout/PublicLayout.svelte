@@ -1,12 +1,13 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import {
-    theme_store,
-    get_theme_classes,
-  } from "$lib/presentation/stores/theme";
-  import PublicHeader from "$lib/presentation/components/layout/PublicHeader.svelte";
+
   import Footer from "$lib/presentation/components/layout/Footer.svelte";
+  import PublicHeader from "$lib/presentation/components/layout/PublicHeader.svelte";
   import ThemeProvider from "$lib/presentation/components/theme/ThemeProvider.svelte";
+  import {
+    get_theme_classes,
+    theme_store,
+  } from "$lib/presentation/stores/theme";
 
   let theme_config: any = {
     mode: "light",

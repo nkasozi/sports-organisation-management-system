@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { branding_store } from "$lib/presentation/stores/branding";
   import ThemeToggle from "$lib/presentation/components/theme/ThemeToggle.svelte";
+  import { branding_store } from "$lib/presentation/stores/branding";
 
   $: has_custom_logo =
     $branding_store.organization_logo_url &&

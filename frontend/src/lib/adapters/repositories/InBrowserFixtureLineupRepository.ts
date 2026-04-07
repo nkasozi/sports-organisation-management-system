@@ -1,23 +1,24 @@
-import { LINEUP_STATUS } from "../../core/entities/StatusConstants";
 import type { Table } from "dexie";
+
+import type { BaseEntity } from "../../core/entities/BaseEntity";
 import type {
-  FixtureLineup,
   CreateFixtureLineupInput,
+  FixtureLineup,
   UpdateFixtureLineupInput,
 } from "../../core/entities/FixtureLineup";
-import type { BaseEntity } from "../../core/entities/BaseEntity";
+import { LINEUP_STATUS } from "../../core/entities/StatusConstants";
+import type {
+  FixtureLineupFilter,
+  FixtureLineupRepository,
+} from "../../core/interfaces/ports";
 import type {
   AsyncResult,
   PaginatedAsyncResult,
 } from "../../core/types/Result";
 import {
-  create_success_result,
   create_failure_result,
+  create_success_result,
 } from "../../core/types/Result";
-import type {
-  FixtureLineupRepository,
-  FixtureLineupFilter,
-} from "../../core/interfaces/ports";
 import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
 
 const ENTITY_PREFIX = "lineup";

@@ -1,11 +1,12 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { create_fixture_lineup_use_cases } from "./FixtureLineupUseCases";
-import type { FixtureLineupRepository } from "../interfaces/ports";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
 import type {
-  FixtureLineup,
   CreateFixtureLineupInput,
+  FixtureLineup,
   LineupPlayer,
 } from "../entities/FixtureLineup";
+import type { FixtureLineupRepository } from "../interfaces/ports";
+import { create_fixture_lineup_use_cases } from "./FixtureLineupUseCases";
 
 function create_mock_repository(): FixtureLineupRepository {
   return {

@@ -1,19 +1,19 @@
+import { EventBus } from "$lib/infrastructure/events/EventBus";
+
 import type {
   Competition,
   CreateCompetitionInput,
   UpdateCompetitionInput,
 } from "../entities/Competition";
+import { validate_competition_input } from "../entities/Competition";
 import type {
-  CompetitionRepository,
   CompetitionFilter,
+  CompetitionRepository,
 } from "../interfaces/ports";
 import type { QueryOptions } from "../interfaces/ports";
-import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
 import type { CompetitionUseCasesPort } from "../interfaces/ports";
-import { create_success_result, create_failure_result } from "../types/Result";
-import { validate_competition_input } from "../entities/Competition";
-import { create_competition_stage_lifecycle } from "./CompetitionStageLifecycle";
-import { EventBus } from "$lib/infrastructure/events/EventBus";
+import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
+import { create_failure_result, create_success_result } from "../types/Result";
 
 export type CompetitionUseCases = CompetitionUseCasesPort;
 

@@ -1,12 +1,13 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
+
 import {
-  EventBus,
-  set_user_context,
+  type AccessDeniedPayload,
   clear_user_context,
   type EntityCreatedPayload,
-  type EntityUpdatedPayload,
   type EntityDeletedPayload,
-  type AccessDeniedPayload,
+  type EntityUpdatedPayload,
+  EventBus,
+  set_user_context,
 } from "./EventBus";
 
 beforeEach(() => {

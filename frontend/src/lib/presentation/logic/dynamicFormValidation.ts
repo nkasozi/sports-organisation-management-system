@@ -1,17 +1,13 @@
 import type { ValidationRule } from "../../core/entities/BaseEntity";
+import type { EntityMetadata } from "../../core/entities/BaseEntity";
+import type { UserRole } from "../../core/interfaces/ports";
 import type { Result } from "../../core/types/Result";
 import {
   create_failure_result,
   create_success_result,
 } from "../../core/types/Result";
-import type {
-  FieldMetadata,
-  EntityMetadata,
-  BaseEntity,
-} from "../../core/entities/BaseEntity";
-import type { UserRole } from "../../core/interfaces/ports";
-import { should_field_be_required_for_role } from "./systemUserFormLogic";
 import { is_field_visible_by_visible_when_condition } from "./dynamicFormLogic";
+import { should_field_be_required_for_role } from "./systemUserFormLogic";
 
 export interface FieldValidationResult {
   is_valid: boolean;

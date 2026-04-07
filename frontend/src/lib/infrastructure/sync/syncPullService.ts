@@ -1,4 +1,5 @@
 import type { Table } from "dexie";
+
 import { set_pulling_from_remote } from "./syncState";
 import type { ConvexClient, ConvexRecord, TableName } from "./syncTypes";
 import { EPOCH_TIMESTAMP } from "./syncTypes";

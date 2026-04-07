@@ -1,24 +1,21 @@
 import type { BaseEntity, FieldMetadata } from "../../core/entities/BaseEntity";
-import {
-  fetch_entities_for_type,
-  fetch_entities_filtered_by_organization,
-} from "./dynamicFormDataLoader";
 import { fetch_teams_from_competition } from "./competitionTeamDataFetcher";
 import {
   fetch_stages_from_competition,
-  fetch_teams_from_player_memberships,
   fetch_teams_excluding_player_memberships,
+  fetch_teams_from_player_memberships,
 } from "./competitionTeamDataFetcher";
+import { fetch_entities_filtered_by_organization } from "./dynamicFormDataLoader";
 import {
-  fetch_officials_from_organization,
-  fetch_officials_from_fixture,
-  fetch_fixtures_from_official,
-} from "./officialDataFetcher";
-import {
-  fetch_fixtures_without_setup,
-  fetch_fixtures_for_rating,
   fetch_filtered_jersey_options,
+  fetch_fixtures_for_rating,
+  fetch_fixtures_without_setup,
 } from "./fixtureJerseyDataFetcher";
+import {
+  fetch_fixtures_from_official,
+  fetch_officials_from_fixture,
+  fetch_officials_from_organization,
+} from "./officialDataFetcher";
 
 export type FilteredFetchResult = {
   entities: BaseEntity[];

@@ -1,11 +1,12 @@
 import { describe, expect, it } from "vitest";
+
 import {
-  validate_activity_category_input,
+  type ActivityCategoryType,
   create_default_categories_for_organization,
+  type CreateActivityCategoryInput,
   DEFAULT_CATEGORY_COLORS,
   DEFAULT_CATEGORY_ICONS,
-  type CreateActivityCategoryInput,
-  type ActivityCategoryType,
+  validate_activity_category_input,
 } from "./ActivityCategory";
 
 describe("ActivityCategory Entity", () => {

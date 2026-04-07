@@ -1,14 +1,16 @@
 import { describe, expect, it } from "vitest";
+
+import type { PointsConfig } from "$lib/core/entities/CompetitionFormat";
+import type { TieBreaker } from "$lib/core/entities/CompetitionFormat";
+import type { CompetitionStage } from "$lib/core/entities/CompetitionStage";
+import type { Fixture } from "$lib/core/entities/Fixture";
+import type { Team } from "$lib/core/entities/Team";
+
 import {
   build_competition_stage_results_sections,
   calculate_team_standings,
   infer_group_stage_team_groups,
 } from "./competitionStageResults";
-import type { CompetitionStage } from "$lib/core/entities/CompetitionStage";
-import type { Fixture } from "$lib/core/entities/Fixture";
-import type { Team } from "$lib/core/entities/Team";
-import type { PointsConfig } from "$lib/core/entities/CompetitionFormat";
-import type { TieBreaker } from "$lib/core/entities/CompetitionFormat";
 
 function create_team(id: string, name: string): Team {
   return {

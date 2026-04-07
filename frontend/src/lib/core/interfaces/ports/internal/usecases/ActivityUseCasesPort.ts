@@ -1,15 +1,15 @@
 import type {
   Activity,
+  ActivitySourceType,
   CreateActivityInput,
   UpdateActivityInput,
-  ActivitySourceType,
 } from "../../../../entities/Activity";
-import type { ActivityFilter } from "../../external/repositories/ActivityRepository";
-import type { QueryOptions } from "../../external/repositories/Repository";
 import type {
   AsyncResult,
   PaginatedAsyncResult,
 } from "../../../../types/Result";
+import type { ActivityFilter } from "../../external/repositories/ActivityRepository";
+import type { QueryOptions } from "../../external/repositories/Repository";
 import type { BaseUseCasesPort } from "./BaseUseCasesPort";
 
 export interface CalendarDateRange {

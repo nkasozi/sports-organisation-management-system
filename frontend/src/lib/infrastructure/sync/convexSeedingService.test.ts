@@ -1,4 +1,4 @@
-import { describe, expect, it, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 interface ConvexRecord {
   _id: string;
@@ -54,8 +54,8 @@ vi.mock("./convexSyncService", () => ({
 }));
 
 import {
-  try_seed_all_tables_from_convex,
   is_convex_client_available,
+  try_seed_all_tables_from_convex,
 } from "./convexSeedingService";
 
 function create_mock_convex_records(

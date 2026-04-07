@@ -1,27 +1,27 @@
-import type { InBrowserPlayerRepository } from "../repositories/InBrowserPlayerRepository";
-import type { InBrowserVenueRepository } from "../repositories/InBrowserVenueRepository";
-import type { InBrowserTeamRepository } from "../repositories/InBrowserTeamRepository";
-import type { InBrowserTeamStaffRepository } from "../repositories/InBrowserTeamStaffRepository";
-import type { InBrowserOfficialRepository } from "../repositories/InBrowserOfficialRepository";
-import type { InBrowserCompetitionRepository } from "../repositories/InBrowserCompetitionRepository";
-import type { InBrowserCompetitionStageRepository } from "../repositories/InBrowserCompetitionStageRepository";
-import {
-  create_seed_players,
-  create_seed_teams,
-  create_seed_team_staff,
-  create_seed_competitions,
-  create_seed_competition_stages,
-  create_seed_officials,
-  create_seed_venues,
-} from "../../infrastructure/utils/SeedDataGenerator";
 import type { Result } from "../../core/types/Result";
 import {
-  create_success_result,
   create_failure_result,
+  create_success_result,
 } from "../../core/types/Result";
+import {
+  create_seed_competition_stages,
+  create_seed_competitions,
+  create_seed_officials,
+  create_seed_players,
+  create_seed_team_staff,
+  create_seed_teams,
+  create_seed_venues,
+} from "../../infrastructure/utils/SeedDataGenerator";
+import type { InBrowserCompetitionRepository } from "../repositories/InBrowserCompetitionRepository";
+import type { InBrowserCompetitionStageRepository } from "../repositories/InBrowserCompetitionStageRepository";
+import type { InBrowserOfficialRepository } from "../repositories/InBrowserOfficialRepository";
+import type { InBrowserPlayerRepository } from "../repositories/InBrowserPlayerRepository";
+import type { InBrowserTeamRepository } from "../repositories/InBrowserTeamRepository";
+import type { InBrowserTeamStaffRepository } from "../repositories/InBrowserTeamStaffRepository";
+import type { InBrowserVenueRepository } from "../repositories/InBrowserVenueRepository";
 import type {
-  SeedEntityIdLookups,
   PositionIds,
+  SeedEntityIdLookups,
   SeedVenueIds,
 } from "./seedingTypes";
 import { emit_entity_created_events } from "./seedingUserSetup";

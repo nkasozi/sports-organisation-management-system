@@ -1,9 +1,5 @@
 import type { Gender } from "../../../core/entities/Gender";
-import {
-  SEED_GENDER_IDS,
-  SEED_ORGANIZATION_IDS,
-  generate_current_timestamp,
-} from "./seedIds";
+import { generate_current_timestamp } from "./seedIds";
 
 export function create_seed_genders(organization_id: string): Gender[] {
   const now = generate_current_timestamp();

@@ -1,16 +1,16 @@
 import type {
-  ProfileLink,
   CreateProfileLinkInput,
+  ProfileLink,
   UpdateProfileLinkInput,
 } from "../entities/ProfileLink";
+import { validate_profile_link_input } from "../entities/ProfileLink";
 import type {
-  ProfileLinkRepository,
   ProfileLinkFilter,
+  ProfileLinkRepository,
 } from "../interfaces/ports";
 import type { QueryOptions } from "../interfaces/ports";
 import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
 import { create_failure_result } from "../types/Result";
-import { validate_profile_link_input } from "../entities/ProfileLink";
 
 export interface ProfileLinkUseCases {
   list(

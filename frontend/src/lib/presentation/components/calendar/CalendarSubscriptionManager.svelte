@@ -1,17 +1,18 @@
 <script lang="ts">
   import { createEventDispatcher, onMount } from "svelte";
-  import { get_use_cases_container } from "$lib/infrastructure/container";
+
   import type {
-    CalendarToken,
     CalendarFeedType,
+    CalendarToken,
   } from "$lib/core/entities/CalendarToken";
   import {
-    get_feed_type_display_name,
     build_ical_feed_url,
     build_webcal_feed_url,
+    get_feed_type_display_name,
   } from "$lib/core/entities/CalendarToken";
-  import type { Team } from "$lib/core/entities/Team";
   import type { Competition } from "$lib/core/entities/Competition";
+  import type { Team } from "$lib/core/entities/Team";
+  import { get_use_cases_container } from "$lib/infrastructure/container";
 
   export let organization_id: string;
   export let user_id: string;

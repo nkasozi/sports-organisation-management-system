@@ -1,10 +1,10 @@
+import type { CompetitionFormat } from "../entities/CompetitionFormat";
 import { ENTITY_STATUS } from "../entities/StatusConstants";
 import type { CompetitionFormatRepository } from "../interfaces/ports";
 import type { CompetitionStageRepository } from "../interfaces/ports";
 import type { FixtureRepository } from "../interfaces/ports";
 import type { AsyncResult } from "../types/Result";
 import { create_failure_result, create_success_result } from "../types/Result";
-import type { CompetitionFormat } from "../entities/CompetitionFormat";
 
 export interface CompetitionStageLifecycle {
   ensure_stages_for_competition(

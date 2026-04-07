@@ -1,19 +1,16 @@
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
-import type {
-  MatchReportData,
-  MatchScoreByPeriod,
-} from "$lib/core/types/MatchReportTypes";
+
+import type { MatchReportData } from "$lib/core/types/MatchReportTypes";
+
 import {
+  draw_color_swatch,
   FONT_SIZE_HEADER,
   FONT_SIZE_SMALL,
   MARGIN_LEFT,
   MARGIN_RIGHT,
   PAGE_WIDTH,
-  HALF_WIDTH,
   truncate_text,
-  draw_color_swatch,
-  type JsPDFWithAutoTable,
 } from "./pdfConstantsAndHelpers";
 
 export function draw_result_section(

@@ -1,15 +1,15 @@
 import type {
-  Qualification,
   CreateQualificationInput,
-  UpdateQualificationInput,
+  Qualification,
   QualificationHolderType,
+  UpdateQualificationInput,
 } from "../../../../entities/Qualification";
-import type { QualificationFilter } from "../../external/repositories/QualificationRepository";
-import type { QueryOptions } from "../../external/repositories/Repository";
 import type {
   AsyncResult,
   PaginatedAsyncResult,
 } from "../../../../types/Result";
+import type { QualificationFilter } from "../../external/repositories/QualificationRepository";
+import type { QueryOptions } from "../../external/repositories/Repository";
 
 export interface QualificationUseCasesPort {
   create(input: CreateQualificationInput): AsyncResult<Qualification>;

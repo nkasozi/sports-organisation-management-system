@@ -1,8 +1,4 @@
-import {
-  SEED_PLAYER_PROFILE_IDS,
-  SEED_ORGANIZATION_IDS,
-  generate_current_timestamp,
-} from "./seedIds";
+import { generate_current_timestamp, SEED_PLAYER_PROFILE_IDS } from "./seedIds";
 
 const SEED_PROFILE_LINK_IDS = {
   DENIS_TWITTER: "profile-link-001",

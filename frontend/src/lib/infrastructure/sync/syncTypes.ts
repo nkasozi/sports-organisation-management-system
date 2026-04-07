@@ -1,10 +1,10 @@
+import type { SharedEntityType } from "$convex/shared_permission_definitions";
 import type {
   SyncDirection,
   SyncHints,
   UserRole,
 } from "$lib/core/interfaces/ports";
 import { check_entity_permission } from "$lib/core/interfaces/ports";
-import type { SharedEntityType } from "$convex/shared_permission_definitions";
 
 export type { SyncDirection, SyncHints };
 export type SyncStatus = "idle" | "syncing" | "success" | "error" | "conflict";

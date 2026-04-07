@@ -1,14 +1,14 @@
-import type { FilterableRepository, QueryOptions } from "./Repository";
+import type {
+  CalendarFeedType,
+  CalendarToken,
+  CreateCalendarTokenInput,
+  UpdateCalendarTokenInput,
+} from "../../../../entities/CalendarToken";
 import type {
   AsyncResult,
   PaginatedAsyncResult,
 } from "../../../../types/Result";
-import type {
-  CalendarToken,
-  CreateCalendarTokenInput,
-  UpdateCalendarTokenInput,
-  CalendarFeedType,
-} from "../../../../entities/CalendarToken";
+import type { FilterableRepository, QueryOptions } from "./Repository";
 
 export interface CalendarTokenFilter {
   user_id?: string;

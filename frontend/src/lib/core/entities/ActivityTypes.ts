@@ -1,5 +1,5 @@
-import type { BaseEntity } from "./BaseEntity";
 import type { ActivityCategoryType } from "./ActivityCategory";
+import type { BaseEntity } from "./BaseEntity";
 
 export type ActivityRecurrencePattern =
   | "none"

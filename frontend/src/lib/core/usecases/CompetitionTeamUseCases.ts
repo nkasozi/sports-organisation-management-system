@@ -5,14 +5,13 @@ import type {
 } from "../entities/CompetitionTeam";
 import { validate_competition_team_input } from "../entities/CompetitionTeam";
 import type {
-  CompetitionTeamRepository,
   CompetitionTeamFilter,
+  CompetitionTeamRepository,
 } from "../interfaces/ports";
 import type { QueryOptions } from "../interfaces/ports";
-import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
-import { create_success_result, create_failure_result } from "../types/Result";
-
 import type { CompetitionTeamUseCasesPort } from "../interfaces/ports";
+import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
+import { create_failure_result } from "../types/Result";
 
 export type CompetitionTeamUseCases = CompetitionTeamUseCasesPort;
 

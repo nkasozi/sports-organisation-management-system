@@ -1,17 +1,17 @@
 import type {
-  OfficialAssociatedTeam,
   CreateOfficialAssociatedTeamInput,
+  OfficialAssociatedTeam,
   UpdateOfficialAssociatedTeamInput,
 } from "$lib/core/entities/OfficialAssociatedTeam";
 import { validate_official_associated_team_input } from "$lib/core/entities/OfficialAssociatedTeam";
 import type {
-  OfficialAssociatedTeamRepository,
   OfficialAssociatedTeamFilter,
+  OfficialAssociatedTeamRepository,
 } from "$lib/core/interfaces/ports";
 import type { QueryOptions } from "$lib/core/interfaces/ports";
+import type { OfficialAssociatedTeamUseCasesPort } from "$lib/core/interfaces/ports";
 import type { AsyncResult, PaginatedAsyncResult } from "$lib/core/types/Result";
 import { create_failure_result } from "$lib/core/types/Result";
-import type { OfficialAssociatedTeamUseCasesPort } from "$lib/core/interfaces/ports";
 
 export type OfficialAssociatedTeamUseCases = OfficialAssociatedTeamUseCasesPort;
 

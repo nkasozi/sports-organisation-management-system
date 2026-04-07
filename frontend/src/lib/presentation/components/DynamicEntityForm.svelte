@@ -4,102 +4,30 @@ Automatically generates forms based on entity metadata
 Follows coding rules: mobile-first, stateless helpers, explicit return types
 -->
 <script lang="ts">
+  import { createEventDispatcher } from "svelte";
+  import { onMount } from "svelte";
+  import { get } from "svelte/store";
+
   import { browser } from "$app/environment";
   import { goto } from "$app/navigation";
-  import { createEventDispatcher } from "svelte";
-  import type {
-    BaseEntity,
-    FieldMetadata,
-    SubEntityConfig,
-  } from "../../core/entities/BaseEntity";
-  import type { Result } from "../../core/types/Result";
-  import {
-    create_failure_result,
-    create_success_result,
-  } from "../../core/types/Result";
-  import type { EntityMetadata } from "../../core/entities/BaseEntity";
-  import { entityMetadataRegistry } from "../../infrastructure/registry/EntityMetadataRegistry";
-  import { fakeDataGenerator } from "../../infrastructure/utils/FakeDataGenerator";
-  import { get_use_cases_for_entity_type } from "../../infrastructure/registry/entityUseCasesRegistry";
-  import SearchableSelectField from "./ui/SearchableSelectField.svelte";
-  import DynamicEntityList from "./DynamicEntityList.svelte";
-  import CompetitionFormatStageTemplateArray from "./competition/CompetitionFormatStageTemplateArray.svelte";
-  import type { SubEntityFilter } from "$lib/core/types/SubEntityFilter";
-  import {
-    build_entity_display_label,
-    determine_if_edit_mode,
-    build_form_title,
-    get_sub_entity_fields,
-    build_sub_entity_filter,
-    get_default_value_for_field_type as get_base_default_value_for_field_type,
-    get_input_type_for_field,
-    validate_field_against_rules,
-    validate_form_data_against_metadata,
-    initialize_form_data_from_metadata,
-    format_entity_display_name,
-    is_field_visible_by_visible_when_condition,
-    is_field_controlled_by_sub_entity_filter,
-    should_field_be_read_only as compute_field_read_only_state,
-    convert_file_to_base64,
-    format_enum_label,
-    has_enum_options,
-    is_jersey_color_field,
-    build_foreign_key_select_options,
-    build_foreign_entity_route,
-    build_foreign_entity_cta_label,
-    find_dependent_enum_fields as find_dependent_enum_fields_from_logic,
-  } from "../logic/dynamicFormLogic";
-  import { detect_jersey_color_clashes } from "../../core/entities/Fixture";
-  import type { JerseyColor } from "../../core/entities/JerseyColor";
-  import type {
-    EntityCrudHandlers,
-    EntityViewCallbacks,
-  } from "$lib/core/types/EntityHandlers";
-  import OfficialAssignmentArray from "./OfficialAssignmentArray.svelte";
-  import StarRatingInput from "./ui/StarRatingInput.svelte";
-  import { create_empty_official_assignment } from "../../core/entities/FixtureDetailsSetup";
-  import type { OfficialAssignment } from "../../core/entities/FixtureDetailsSetup";
-  import {
-    detect_official_team_conflicts,
-    type OfficialWithAssociations,
-  } from "../../core/entities/FixtureDetailsSetup";
-  import {
-    apply_player_transfer_membership_change,
-    type TransferApprovalDetails,
-  } from "../logic/playerTransferApprovalLogic";
-  import { auth_store, check_action_authorization } from "../stores/auth";
   import { is_signed_in } from "$lib/adapters/iam/clerkAuthService";
-  import { get } from "svelte/store";
-  import {
-    get_authorization_restricted_fields,
-    get_authorization_preselect_values,
-    type UserScopeProfile,
-    type UserRole,
-  } from "$lib/core/interfaces/ports";
-  import { get_authorization_adapter } from "$lib/infrastructure/AuthorizationProvider";
-  import { ensure_auth_profile } from "../logic/authGuard";
-  import { onMount } from "svelte";
-  import {
-    filter_enum_values_by_creator_role,
-    should_field_be_required_for_role,
-  } from "../logic/systemUserFormLogic";
-  import {
-    check_player_team_gender_mismatch,
-    check_fixture_team_gender_mismatch,
-    type GenderMismatchInput,
-    type FixtureTeamGenderMismatchInput,
-  } from "../../core/services/genderMismatchCheck";
   import type {
     CompetitionFormatStageTemplate,
     FormatType,
     LeagueConfig,
   } from "$lib/core/entities/CompetitionFormat";
-  import { build_stage_template_defaults } from "$lib/presentation/logic/competitionFormatStageTemplateLogic";
   import {
-    fetch_unfiltered_foreign_key_options,
-    fetch_filtered_entities_for_field,
-    fetch_entities_for_type,
-  } from "$lib/presentation/logic/dynamicFormDataLoader";
+    get_authorization_preselect_values,
+    get_authorization_restricted_fields,
+    type UserRole,
+    type UserScopeProfile,
+  } from "$lib/core/interfaces/ports";
+  import type {
+    EntityCrudHandlers,
+    EntityViewCallbacks,
+  } from "$lib/core/types/EntityHandlers";
+  import type { SubEntityFilter } from "$lib/core/types/SubEntityFilter";
+  import { get_authorization_adapter } from "$lib/infrastructure/AuthorizationProvider";
   import {
     get_competition_team_use_cases,
     get_fixture_use_cases,
@@ -107,6 +35,75 @@ Follows coding rules: mobile-first, stateless helpers, explicit return types
     get_player_team_membership_use_cases,
     get_team_use_cases,
   } from "$lib/infrastructure/registry/useCaseFactories";
+  import { build_stage_template_defaults } from "$lib/presentation/logic/competitionFormatStageTemplateLogic";
+  import {
+    fetch_entities_for_type,
+    fetch_filtered_entities_for_field,
+    fetch_unfiltered_foreign_key_options,
+  } from "$lib/presentation/logic/dynamicFormDataLoader";
+
+  import type {
+    BaseEntity,
+    FieldMetadata,
+  } from "../../core/entities/BaseEntity";
+  import type { EntityMetadata } from "../../core/entities/BaseEntity";
+  import { detect_jersey_color_clashes } from "../../core/entities/Fixture";
+  import type { OfficialAssignment } from "../../core/entities/FixtureDetailsSetup";
+  import { create_empty_official_assignment } from "../../core/entities/FixtureDetailsSetup";
+  import {
+    detect_official_team_conflicts,
+    type OfficialWithAssociations,
+  } from "../../core/entities/FixtureDetailsSetup";
+  import type { JerseyColor } from "../../core/entities/JerseyColor";
+  import {
+    check_fixture_team_gender_mismatch,
+    check_player_team_gender_mismatch,
+    type FixtureTeamGenderMismatchInput,
+    type GenderMismatchInput,
+  } from "../../core/services/genderMismatchCheck";
+  import type { Result } from "../../core/types/Result";
+  import {
+    create_failure_result,
+    create_success_result,
+  } from "../../core/types/Result";
+  import { entityMetadataRegistry } from "../../infrastructure/registry/EntityMetadataRegistry";
+  import { get_use_cases_for_entity_type } from "../../infrastructure/registry/entityUseCasesRegistry";
+  import { fakeDataGenerator } from "../../infrastructure/utils/FakeDataGenerator";
+  import { ensure_auth_profile } from "../logic/authGuard";
+  import {
+    build_entity_display_label,
+    build_foreign_entity_cta_label,
+    build_foreign_entity_route,
+    build_foreign_key_select_options,
+    build_form_title,
+    build_sub_entity_filter,
+    convert_file_to_base64,
+    determine_if_edit_mode,
+    find_dependent_enum_fields as find_dependent_enum_fields_from_logic,
+    format_entity_display_name,
+    format_enum_label,
+    get_input_type_for_field,
+    get_sub_entity_fields,
+    has_enum_options,
+    is_field_controlled_by_sub_entity_filter,
+    is_field_visible_by_visible_when_condition,
+    should_field_be_read_only as compute_field_read_only_state,
+    validate_form_data_against_metadata,
+  } from "../logic/dynamicFormLogic";
+  import {
+    apply_player_transfer_membership_change,
+    type TransferApprovalDetails,
+  } from "../logic/playerTransferApprovalLogic";
+  import {
+    filter_enum_values_by_creator_role,
+    should_field_be_required_for_role,
+  } from "../logic/systemUserFormLogic";
+  import { auth_store } from "../stores/auth";
+  import CompetitionFormatStageTemplateArray from "./competition/CompetitionFormatStageTemplateArray.svelte";
+  import DynamicEntityList from "./DynamicEntityList.svelte";
+  import OfficialAssignmentArray from "./OfficialAssignmentArray.svelte";
+  import SearchableSelectField from "./ui/SearchableSelectField.svelte";
+  import StarRatingInput from "./ui/StarRatingInput.svelte";
 
   export let entity_type: string;
   export let entity_data: Partial<BaseEntity> | null = null;

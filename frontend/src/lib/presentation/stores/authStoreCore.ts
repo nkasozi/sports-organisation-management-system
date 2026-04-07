@@ -1,27 +1,29 @@
-import { writable, get } from "svelte/store";
-import type { Result } from "$lib/core/types/Result";
-import { get_system_user_repository } from "$lib/adapters/repositories/InBrowserSystemUserRepository";
-import { get_organization_repository } from "$lib/adapters/repositories/InBrowserOrganizationRepository";
+import { get, writable } from "svelte/store";
+
 import { sync_branding_with_profile } from "$lib/adapters/initialization/brandingSyncService";
-import { load_profiles_from_repository } from "./profileLoader";
-import type { AuthState } from "./authTypes";
+import { get_organization_repository } from "$lib/adapters/repositories/InBrowserOrganizationRepository";
+import { get_system_user_repository } from "$lib/adapters/repositories/InBrowserSystemUserRepository";
+import type { Result } from "$lib/core/types/Result";
+
 import {
-  save_token,
-  save_profile_id,
+  build_profiles_with_public_viewer,
   clear_auth_storage,
   generate_token_for_profile,
-  sync_user_context_with_event_bus,
   load_sidebar_menu_for_role,
-  build_profiles_with_public_viewer,
+  save_profile_id,
+  save_token,
+  sync_user_context_with_event_bus,
 } from "./authHelpers";
 import { execute_auth_initialization } from "./authInitialize";
 import {
   compute_authorization_level,
-  compute_is_authorized_to_execute,
-  compute_feature_access,
-  compute_is_functionality_disabled,
   compute_disabled_functionalities,
+  compute_feature_access,
+  compute_is_authorized_to_execute,
+  compute_is_functionality_disabled,
 } from "./authPermissions";
+import type { AuthState } from "./authTypes";
+import { load_profiles_from_repository } from "./profileLoader";
 
 function create_auth_store() {
   const initial_state: AuthState = {

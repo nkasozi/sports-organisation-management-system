@@ -1,6 +1,6 @@
 import type {
-  OrganizationSettings,
   CreateOrganizationSettingsInput,
+  OrganizationSettings,
   UpdateOrganizationSettingsInput,
 } from "../../../../entities/OrganizationSettings";
 import type { AsyncResult } from "../../../../types/Result";
