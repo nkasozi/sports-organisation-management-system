@@ -5,6 +5,8 @@ import type {
   TieBreaker,
 } from "$lib/core/entities/CompetitionFormat";
 import { DEFAULT_POINTS_CONFIG } from "$lib/core/entities/CompetitionFormat";
+import type { CompetitionTeam } from "$lib/core/entities/CompetitionTeam";
+import type { Organization } from "$lib/core/entities/Organization";
 import type { Team } from "$lib/core/entities/Team";
 import {
   build_authorization_list_filter,

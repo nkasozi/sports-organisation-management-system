@@ -4,9 +4,7 @@
         Competition,
         UpdateCompetitionInput,
     } from "$lib/core/entities/Competition";
-    import type {
-        CompetitionFormat,
-    } from "$lib/core/entities/CompetitionFormat";
+    import type { CompetitionFormat } from "$lib/core/entities/CompetitionFormat";
     import type { CompetitionTeam } from "$lib/core/entities/CompetitionTeam";
     import type { Organization } from "$lib/core/entities/Organization";
     import type { Sport } from "$lib/core/entities/Sport";

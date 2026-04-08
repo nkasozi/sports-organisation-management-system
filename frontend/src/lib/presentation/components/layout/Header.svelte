@@ -45,16 +45,22 @@
     dispatch("toggle-sidebar");
   }
 
-  function handle_theme_toggle(): void { toggle_theme_mode(); }
+  function handle_theme_toggle(): void {
+    toggle_theme_mode();
+  }
 
-  function toggle_user_menu(): void { user_menu_open = !user_menu_open; }
+  function toggle_user_menu(): void {
+    user_menu_open = !user_menu_open;
+  }
 
   function close_user_menu(): void {
     user_menu_open = false;
     profile_submenu_open = false;
   }
 
-  function toggle_profile_submenu(): void { profile_submenu_open = !profile_submenu_open; }
+  function toggle_profile_submenu(): void {
+    profile_submenu_open = !profile_submenu_open;
+  }
 
   function handle_logout_click(): void {
     close_user_menu();
@@ -73,7 +79,9 @@
     goto("/sign-in");
   }
 
-  function handle_logout_cancelled(): void { show_logout_warning = false; }
+  function handle_logout_cancelled(): void {
+    show_logout_warning = false;
+  }
 
   async function handle_profile_switch(profile: UserProfile): Promise<void> {
     close_user_menu();

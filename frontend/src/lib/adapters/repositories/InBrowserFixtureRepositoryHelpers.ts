@@ -54,14 +54,15 @@ export function apply_fixture_entity_filter(
     );
   }
   if (filter.scheduled_date_from) {
+    const scheduled_date_from = filter.scheduled_date_from;
     filtered = filtered.filter(
-      (fixture: Fixture) =>
-        fixture.scheduled_date >= filter.scheduled_date_from,
+      (fixture: Fixture) => fixture.scheduled_date >= scheduled_date_from,
     );
   }
   if (filter.scheduled_date_to) {
+    const scheduled_date_to = filter.scheduled_date_to;
     filtered = filtered.filter(
-      (fixture: Fixture) => fixture.scheduled_date <= filter.scheduled_date_to,
+      (fixture: Fixture) => fixture.scheduled_date <= scheduled_date_to,
     );
   }
   return filtered;

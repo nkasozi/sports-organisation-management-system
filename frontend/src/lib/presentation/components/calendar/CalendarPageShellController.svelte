@@ -26,11 +26,9 @@
         type ActivityFormValues,
         create_empty_activity_form_values,
     } from "$lib/presentation/logic/calendarPageState";
-    import {
-        auth_store,
-    } from "$lib/presentation/stores/auth";
+    import { auth_store } from "$lib/presentation/stores/auth";
 
-import CalendarPageOverlays from "./CalendarPageOverlays.svelte";
+    import CalendarPageOverlays from "./CalendarPageOverlays.svelte";
     import CalendarPageView from "./CalendarPageView.svelte";
     const use_cases: UseCasesContainer = get_use_cases_container();
     let loading_state: LoadingState = "idle",
@@ -109,7 +107,8 @@ import CalendarPageOverlays from "./CalendarPageOverlays.svelte";
             (selected_event_details = value),
         set_selected_organization_id: (value: string) =>
             (selected_organization_id = value),
-        set_show_category_modal: (value: boolean) => (show_category_modal = value),
+        set_show_category_modal: (value: boolean) =>
+            (show_category_modal = value),
         set_show_create_modal: (value: boolean) => (show_create_modal = value),
         set_show_subscribe_modal: (value: boolean) =>
             (show_subscribe_modal = value),

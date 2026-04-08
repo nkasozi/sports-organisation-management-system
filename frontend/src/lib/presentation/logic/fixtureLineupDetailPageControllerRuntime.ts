@@ -5,6 +5,7 @@ import {
 import type { Fixture } from "$lib/core/entities/Fixture";
 import type { FixtureLineup } from "$lib/core/entities/FixtureLineup";
 import type { Team } from "$lib/core/entities/Team";
+import type { DataAction, UserScopeProfile } from "$lib/core/interfaces/ports";
 import type { TeamPlayer } from "$lib/core/services/teamPlayers";
 import { get_authorization_adapter } from "$lib/infrastructure/AuthorizationProvider";
 
@@ -15,10 +16,12 @@ import {
   submit_fixture_lineup_changes,
 } from "./fixtureLineupDetailPageActions";
 import { load_fixture_lineup_detail_view_data } from "./fixtureLineupDetailPageData";
-import {
-  build_fixture_lineup_selected_player_ids,
-  toggle_fixture_lineup_player_selection,
-} from "./fixtureLineupDetailPageState";
+import { toggle_fixture_lineup_player_selection } from "./fixtureLineupDetailPageState";
+
+type FixtureLineupDetailViewDependencies = Parameters<
+  typeof load_fixture_lineup_detail_view_data
+>[2];
+type UpdateFixtureLineup = Parameters<typeof save_fixture_lineup_changes>[2];
 
 export function create_fixture_lineup_detail_page_controller_runtime(command: {
   access_denied_message: string;
@@ -26,7 +29,7 @@ export function create_fixture_lineup_detail_page_controller_runtime(command: {
   access_check_failed_message: string;
   entity_type: string;
   get_auth_state: () => {
-    current_profile: unknown;
+    current_profile: UserScopeProfile | null;
     current_token?: { raw_token: string } | null;
   };
   get_lineup: () => FixtureLineup | null;
@@ -35,7 +38,7 @@ export function create_fixture_lineup_detail_page_controller_runtime(command: {
   is_browser: boolean;
   lineup_id: string;
   lineup_list_path: string;
-  read_action: string;
+  read_action: DataAction;
   set_access_denial: (path: string, message: string) => void;
   set_away_team: (value: Team | null) => void;
   set_can_modify_lineup: (value: boolean) => void;
@@ -50,15 +53,25 @@ export function create_fixture_lineup_detail_page_controller_runtime(command: {
   set_team_players: (value: TeamPlayer[]) => void;
   submit_confirmation: string;
   submit_failed_message: string;
-  update_action: string;
+  update_action: DataAction;
   update_failed_message: string;
   use_cases: {
-    fixture_lineup_use_cases: { update: unknown };
-    fixture_use_cases: { get_by_id: unknown };
-    membership_use_cases: { list_memberships_by_team: unknown };
-    player_position_use_cases: { list: unknown };
-    player_use_cases: { list_players_by_team: unknown };
-    team_use_cases: { get_by_id: unknown };
+    fixture_lineup_use_cases: { update: UpdateFixtureLineup };
+    fixture_use_cases: {
+      get_by_id: FixtureLineupDetailViewDependencies["get_fixture_by_id"];
+    };
+    membership_use_cases: {
+      list_memberships_by_team: FixtureLineupDetailViewDependencies["list_memberships_by_team"];
+    };
+    player_position_use_cases: {
+      list: FixtureLineupDetailViewDependencies["list_positions"];
+    };
+    player_use_cases: {
+      list_players_by_team: FixtureLineupDetailViewDependencies["list_players_by_team"];
+    };
+    team_use_cases: {
+      get_by_id: FixtureLineupDetailViewDependencies["get_team_by_id"];
+    };
   };
 }): {
   handle_save: () => Promise<void>;
@@ -142,7 +155,6 @@ export function create_fixture_lineup_detail_page_controller_runtime(command: {
           player_id,
         ),
       );
-      void build_fixture_lineup_selected_player_ids;
     },
     handle_save: async (): Promise<void> => {
       const lineup = command.get_lineup();

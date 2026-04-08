@@ -61,9 +61,7 @@
         return Temporal.PlainDate.from(iso_string.split("T")[0]);
     }
 
-    function convert_to_schedule_x_events(
-        events: CalendarEvent[],
-    ): Array<{
+    function convert_to_schedule_x_events(events: CalendarEvent[]): Array<{
         id: string;
         title: string;
         start: Temporal.ZonedDateTime | Temporal.PlainDate;
@@ -101,7 +99,10 @@
                 onClickDate: (date_value: Temporal.PlainDate) =>
                     on_date_click(date_value.toString()),
                 onClickDateTime: (date_time: Temporal.ZonedDateTime) =>
-                    on_date_time_click(date_time.toPlainDate().toString(), `${String(date_time.hour).padStart(2, "0")}:${String(date_time.minute).padStart(2, "0")}`),
+                    on_date_time_click(
+                        date_time.toPlainDate().toString(),
+                        `${String(date_time.hour).padStart(2, "0")}:${String(date_time.minute).padStart(2, "0")}`,
+                    ),
             },
         });
         calendar_instance.render(calendar_container_element);
@@ -165,7 +166,10 @@
     onDestroy(destroy_calendar);
 </script>
 
-<div bind:this={calendar_container_element} class="min-h-[500px] rounded-lg bg-white dark:bg-gray-900 sm:min-h-[600px] lg:min-h-[700px]"></div>
+<div
+    bind:this={calendar_container_element}
+    class="min-h-[500px] rounded-lg bg-white dark:bg-gray-900 sm:min-h-[600px] lg:min-h-[700px]"
+></div>
 
 <style>
     :global(.sx__calendar-wrapper) {
@@ -178,14 +182,31 @@
         border-radius: 0.5rem;
         overflow: hidden;
     }
-    :global(.dark .sx__calendar-wrapper) { --sx-color-surface: #1f2937; --sx-color-on-surface: #f3f4f6; --sx-color-surface-dim: #111827; --sx-color-on-surface-variant: #9ca3af; --sx-color-primary: #60a5fa; --sx-color-on-primary: #ffffff; }
+    :global(.dark .sx__calendar-wrapper) {
+        --sx-color-surface: #1f2937;
+        --sx-color-on-surface: #f3f4f6;
+        --sx-color-surface-dim: #111827;
+        --sx-color-on-surface-variant: #9ca3af;
+        --sx-color-primary: #60a5fa;
+        --sx-color-on-primary: #ffffff;
+    }
     :global(.sx__view-selection-item--is-selected),
     :global(.sx__date-picker__day--selected),
     :global(.sx__range-heading--is-selected) {
         color: white !important;
         background-color: var(--sx-color-primary, #3b82f6) !important;
     }
-    :global(.dark .sx__view-selection-item--is-selected), :global(.dark .sx__date-picker__day--selected), :global(.dark .sx__range-heading--is-selected) { color: white !important; background-color: #60a5fa !important; }
-    :global(.sx__month-grid-day__header) { font-weight: 500; }
-    :global(.sx__event) { border-radius: 4px; font-size: 0.75rem; }
+    :global(.dark .sx__view-selection-item--is-selected),
+    :global(.dark .sx__date-picker__day--selected),
+    :global(.dark .sx__range-heading--is-selected) {
+        color: white !important;
+        background-color: #60a5fa !important;
+    }
+    :global(.sx__month-grid-day__header) {
+        font-weight: 500;
+    }
+    :global(.sx__event) {
+        border-radius: 4px;
+        font-size: 0.75rem;
+    }
 </style>

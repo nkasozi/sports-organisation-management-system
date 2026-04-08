@@ -4,6 +4,7 @@ import { get_authorization_adapter } from "$lib/infrastructure/AuthorizationProv
 
 import { ensure_auth_profile } from "./authGuard";
 import {
+  type BulkPlayerAssignmentPageDependencies,
   load_bulk_player_assignment_page_data,
   save_bulk_player_assignments,
 } from "./bulkPlayerAssignmentPageData";
@@ -14,12 +15,7 @@ type ToastType = "success" | "error" | "info";
 export function create_bulk_player_assignment_page_controller_runtime(command: {
   access_denied_message: string;
   access_denied_path: string;
-  dependencies: {
-    player_use_cases: unknown;
-    team_use_cases: unknown;
-    membership_use_cases: unknown;
-    gender_use_cases: unknown;
-  };
+  dependencies: BulkPlayerAssignmentPageDependencies;
   failed_summary: string;
   get_assigned_players_on_other_teams: () => PlayerAssignment[];
   get_auth_state: () => {

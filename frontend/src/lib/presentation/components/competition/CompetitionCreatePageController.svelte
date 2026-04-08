@@ -16,9 +16,7 @@
         type UserScopeProfile,
     } from "$lib/core/interfaces/ports";
     import type { SelectOption } from "$lib/presentation/components/ui/SelectField.svelte";
-    import {
-        COMPETITION_CREATE_PAGE_TEXT,
-    } from "$lib/presentation/logic/competitionCreatePageControllerDependencies";
+    import { COMPETITION_CREATE_PAGE_TEXT } from "$lib/presentation/logic/competitionCreatePageControllerDependencies";
     import { create_competition_create_page_controller_runtime } from "$lib/presentation/logic/competitionCreatePageControllerRuntime";
     import { competition_create_status_options } from "$lib/presentation/logic/competitionCreatePageData";
     import {

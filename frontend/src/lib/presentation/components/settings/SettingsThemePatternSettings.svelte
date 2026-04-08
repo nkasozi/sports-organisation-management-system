@@ -7,9 +7,7 @@
         save_panel_borders_enabled,
         upload_custom_pattern,
     } from "$lib/presentation/components/settings/settingsThemePatternSettingsLogic";
-    import {
-        type HeaderFooterStyle,
-    } from "$lib/presentation/stores/branding";
+    import { type HeaderFooterStyle } from "$lib/presentation/stores/branding";
 
     export let header_pattern: HeaderFooterStyle;
     export let footer_pattern: HeaderFooterStyle;

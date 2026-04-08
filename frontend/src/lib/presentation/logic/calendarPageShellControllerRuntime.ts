@@ -12,8 +12,8 @@ import {
   load_calendar_shell_bundle,
   load_calendar_shell_events,
 } from "$lib/presentation/logic/calendarPageShellControllerData";
-import { load_calendar_shell_initial_data } from "$lib/presentation/logic/calendarPageShellControllerInitialData";
 import { type LoadingState } from "$lib/presentation/logic/calendarPageShellControllerHelpers";
+import { load_calendar_shell_initial_data } from "$lib/presentation/logic/calendarPageShellControllerInitialData";
 import type { ActivityFormValues } from "$lib/presentation/logic/calendarPageState";
 import { is_public_viewer } from "$lib/presentation/stores/auth";
 import { public_organization_store } from "$lib/presentation/stores/publicOrganization";

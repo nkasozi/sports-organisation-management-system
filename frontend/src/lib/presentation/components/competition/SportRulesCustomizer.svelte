@@ -16,16 +16,24 @@
   let is_customizing_substitutions: boolean = false;
   let is_customizing_overtime: boolean = false;
 
-  function resolve_rule_value<T>(override_value: T | undefined, sport_value: T | undefined, fallback_value: T): T {
+  function resolve_rule_value<T>(
+    override_value: T | undefined,
+    sport_value: T | undefined,
+    fallback_value: T,
+  ): T {
     return override_value ?? sport_value ?? fallback_value;
   }
 
-  function get_substitution_rules(): NonNullable<CompetitionRuleOverrides["substitution_rules"]> {
+  function get_substitution_rules(): NonNullable<
+    CompetitionRuleOverrides["substitution_rules"]
+  > {
     rule_overrides.substitution_rules ??= {};
     return rule_overrides.substitution_rules;
   }
 
-  function get_overtime_rules(): NonNullable<CompetitionRuleOverrides["overtime_rules"]> {
+  function get_overtime_rules(): NonNullable<
+    CompetitionRuleOverrides["overtime_rules"]
+  > {
     rule_overrides.overtime_rules ??= {};
     return rule_overrides.overtime_rules;
   }
@@ -53,31 +61,59 @@
   }
 
   function get_max_players_on_field(): number {
-    return resolve_rule_value(rule_overrides.max_players_on_field, sport?.max_players_on_field, 11);
+    return resolve_rule_value(
+      rule_overrides.max_players_on_field,
+      sport?.max_players_on_field,
+      11,
+    );
   }
 
   function get_min_players_on_field(): number {
-    return resolve_rule_value(rule_overrides.min_players_on_field, sport?.min_players_on_field, 7);
+    return resolve_rule_value(
+      rule_overrides.min_players_on_field,
+      sport?.min_players_on_field,
+      7,
+    );
   }
 
   function get_max_squad_size(): number {
-    return resolve_rule_value(rule_overrides.max_squad_size, sport?.max_squad_size, 20);
+    return resolve_rule_value(
+      rule_overrides.max_squad_size,
+      sport?.max_squad_size,
+      20,
+    );
   }
 
   function get_max_substitutions(): number {
-    return resolve_rule_value(rule_overrides.substitution_rules?.max_substitutions_per_game, sport?.substitution_rules.max_substitutions_per_game, 5);
+    return resolve_rule_value(
+      rule_overrides.substitution_rules?.max_substitutions_per_game,
+      sport?.substitution_rules.max_substitutions_per_game,
+      5,
+    );
   }
 
   function get_rolling_substitutions(): boolean {
-    return resolve_rule_value(rule_overrides.substitution_rules?.rolling_substitutions_allowed, sport?.substitution_rules.rolling_substitutions_allowed, false);
+    return resolve_rule_value(
+      rule_overrides.substitution_rules?.rolling_substitutions_allowed,
+      sport?.substitution_rules.rolling_substitutions_allowed,
+      false,
+    );
   }
 
   function get_return_after_substitution(): boolean {
-    return resolve_rule_value(rule_overrides.substitution_rules?.return_after_substitution_allowed, sport?.substitution_rules.return_after_substitution_allowed, false);
+    return resolve_rule_value(
+      rule_overrides.substitution_rules?.return_after_substitution_allowed,
+      sport?.substitution_rules.return_after_substitution_allowed,
+      false,
+    );
   }
 
   function get_overtime_enabled(): boolean {
-    return resolve_rule_value(rule_overrides.overtime_rules?.is_enabled, sport?.overtime_rules.is_enabled, true);
+    return resolve_rule_value(
+      rule_overrides.overtime_rules?.is_enabled,
+      sport?.overtime_rules.is_enabled,
+      true,
+    );
   }
 
   function handle_periods_change(event: CustomEvent<SportGamePeriod[]>): void {
@@ -142,7 +178,9 @@
     <SportRulesEmptyState />
   {:else}
     <div class="border border-accent-200 dark:border-accent-700 rounded-lg p-6">
-      <h3 class="mb-6 text-lg font-semibold text-accent-900 dark:text-accent-100">
+      <h3
+        class="mb-6 text-lg font-semibold text-accent-900 dark:text-accent-100"
+      >
         Customize Sport Rules <span class="text-primary-600">{sport.name}</span>
       </h3>
       <div class="space-y-6">
@@ -162,7 +200,10 @@
           current_max_players={get_max_players_on_field()}
           current_min_players={get_min_players_on_field()}
           current_max_squad={get_max_squad_size()}
-          has_custom_limits={rule_overrides.max_players_on_field !== undefined || rule_overrides.min_players_on_field !== undefined || rule_overrides.max_squad_size !== undefined}
+          has_custom_limits={rule_overrides.max_players_on_field !==
+            undefined ||
+            rule_overrides.min_players_on_field !== undefined ||
+            rule_overrides.max_squad_size !== undefined}
           {is_customizing_squad_limits}
           on_customize={() => (is_customizing_squad_limits = true)}
           on_reset={reset_squad_limits}

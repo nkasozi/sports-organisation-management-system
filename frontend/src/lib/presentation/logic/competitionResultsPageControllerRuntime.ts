@@ -1,5 +1,6 @@
 import type { Competition } from "$lib/core/entities/Competition";
 import type { Organization } from "$lib/core/entities/Organization";
+import type { UserRole, UserScopeProfile } from "$lib/core/interfaces/ports";
 import { fetch_public_data_from_convex } from "$lib/infrastructure/sync/convexPublicDataService";
 
 import { ensure_auth_profile } from "./authGuard";
@@ -17,7 +18,9 @@ import {
 
 export function create_competition_results_page_controller_runtime(command: {
   apply_bundle: (bundle: CompetitionResultsSelectedBundle) => void;
-  get_auth_state: () => { current_profile: unknown };
+  get_auth_state: () => {
+    current_profile: (UserScopeProfile & { role?: UserRole }) | null;
+  };
   get_is_public: () => boolean;
   get_organizations: () => Organization[];
   get_page_url: () => URL;

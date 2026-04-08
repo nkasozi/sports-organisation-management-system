@@ -45,14 +45,25 @@
     function handle_remove_stage_template(template_index: number): boolean {
         if (disabled) return false;
         if (displayed_stage_templates.length <= 1) return false;
-        return emit_change(remove_stage_template_at_index(displayed_stage_templates, template_index));
+        return emit_change(
+            remove_stage_template_at_index(
+                displayed_stage_templates,
+                template_index,
+            ),
+        );
     }
 
     function handle_stage_name_change(
         template_index: number,
         template_name: string,
     ): boolean {
-        return emit_change(update_stage_template_at_index(displayed_stage_templates, template_index, { name: template_name }));
+        return emit_change(
+            update_stage_template_at_index(
+                displayed_stage_templates,
+                template_index,
+                { name: template_name },
+            ),
+        );
     }
 
     function handle_stage_type_change(
@@ -60,13 +71,21 @@
         stage_type_value: string,
     ): boolean {
         if (!is_stage_type(stage_type_value)) return false;
-        return emit_change(update_stage_template_at_index(displayed_stage_templates, template_index, { stage_type: stage_type_value }));
+        return emit_change(
+            update_stage_template_at_index(
+                displayed_stage_templates,
+                template_index,
+                { stage_type: stage_type_value },
+            ),
+        );
     }
 </script>
 
 <div class="space-y-4">
     <div class="flex items-center justify-between gap-3">
-        <span class="block text-sm font-medium text-accent-700 dark:text-accent-300">
+        <span
+            class="block text-sm font-medium text-accent-700 dark:text-accent-300"
+        >
             Stage Templates
         </span>
         <div class="flex items-center gap-2">
@@ -76,7 +95,18 @@
                 on:click={handle_add_stage_template}
                 {disabled}
             >
-                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
+                <svg
+                    class="h-4 w-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    ><path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M12 4v16m8-8H4"
+                    /></svg
+                >
                 Add Stage
             </button>
         </div>
@@ -100,12 +130,24 @@
                     <button
                         type="button"
                         class="rounded p-1 text-red-500 transition-colors hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-900/20 dark:hover:text-red-300"
-                        on:click={() => handle_remove_stage_template(template_index)}
+                        on:click={() =>
+                            handle_remove_stage_template(template_index)}
                         disabled={disabled ||
                             displayed_stage_templates.length <= 1}
                         title="Remove this stage"
                     >
-                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                        <svg
+                            class="h-5 w-5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                            ><path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                            /></svg
+                        >
                     </button>
                 </div>
 
@@ -122,7 +164,12 @@
                             type="text"
                             class="input"
                             value={stage_template.name}
-                            on:input={(event) => handle_stage_name_change(template_index, (event.currentTarget as HTMLInputElement).value)}
+                            on:input={(event) =>
+                                handle_stage_name_change(
+                                    template_index,
+                                    (event.currentTarget as HTMLInputElement)
+                                        .value,
+                                )}
                             readonly={disabled}
                             placeholder="Stage name"
                         />
@@ -139,7 +186,12 @@
                             id={`stage_template_type_${template_index}`}
                             class="input"
                             value={stage_template.stage_type}
-                            on:change={(event) => handle_stage_type_change(template_index, (event.currentTarget as HTMLSelectElement).value)}
+                            on:change={(event) =>
+                                handle_stage_type_change(
+                                    template_index,
+                                    (event.currentTarget as HTMLSelectElement)
+                                        .value,
+                                )}
                             {disabled}
                         >
                             {#each STAGE_TYPE_OPTIONS as stage_type_option}

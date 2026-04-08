@@ -100,7 +100,8 @@
         access_denied_path: BULK_PLAYER_ASSIGNMENT_PAGE_TEXT.created_path,
         dependencies: bulk_player_assignment_dependencies,
         failed_summary: BULK_PLAYER_ASSIGNMENT_PAGE_TEXT.failed_summary,
-        get_assigned_players_on_other_teams: () => assigned_players_on_other_teams,
+        get_assigned_players_on_other_teams: () =>
+            assigned_players_on_other_teams,
         get_auth_state: () => ({
             current_profile: get(auth_store)
                 .current_profile as UserScopeProfile | null,

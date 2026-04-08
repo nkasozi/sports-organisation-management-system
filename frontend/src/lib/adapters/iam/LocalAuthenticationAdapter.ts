@@ -8,6 +8,7 @@ import type {
 import {
   create_failure_result,
   create_success_result,
+  type Result,
 } from "$lib/core/types/Result";
 import {
   type AuthCache,
