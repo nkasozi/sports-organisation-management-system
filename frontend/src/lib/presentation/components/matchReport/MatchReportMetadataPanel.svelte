@@ -3,7 +3,7 @@
     import { get_official_full_name } from "$lib/core/entities/Official";
     import type { Team } from "$lib/core/entities/Team";
     import type { Venue } from "$lib/core/entities/Venue";
-    import type { MatchReportAssignedOfficialData } from "$lib/presentation/logic/matchReportPageLoad";
+    import type { MatchReportAssignedOfficialData } from "$lib/presentation/logic/matchReportPageLoadTypes";
 
     export let fixture: Fixture;
     export let home_team: Team | null;

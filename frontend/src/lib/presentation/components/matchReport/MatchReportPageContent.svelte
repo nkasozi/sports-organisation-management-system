@@ -3,7 +3,7 @@
     import type { LineupPlayer } from "$lib/core/entities/FixtureLineup";
     import type { Team } from "$lib/core/entities/Team";
     import type { Venue } from "$lib/core/entities/Venue";
-    import type { MatchReportAssignedOfficialData } from "$lib/presentation/logic/matchReportPageLoad";
+    import type { MatchReportAssignedOfficialData } from "$lib/presentation/logic/matchReportPageLoadTypes";
     import type { MatchReportViewState } from "$lib/presentation/logic/matchReportPageState";
 
     import MatchReportLineupCard from "./MatchReportLineupCard.svelte";

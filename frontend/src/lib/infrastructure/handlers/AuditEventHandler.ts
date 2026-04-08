@@ -21,6 +21,7 @@ interface UserContext {
   organization_id?: string;
   role?: string;
 }
+
 function build_base_audit_input(
   entity_type: string,
   entity_id: string,

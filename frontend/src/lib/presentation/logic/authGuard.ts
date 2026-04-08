@@ -55,7 +55,6 @@ function is_cache_valid_for_role(role: UserRole): boolean {
 async function load_accessible_routes(role: UserRole): Promise<Set<string>> {
   const adapter = get_authorization_adapter();
   const result = await adapter.get_accessible_routes_for_role(role);
-
   if (!result.success) {
     console.error(
       `[AuthGuard] Failed to load accessible routes: ${result.error}`,
@@ -107,11 +106,9 @@ export async function check_route_access(
   pathname: string,
 ): Promise<{ allowed: boolean; message: string }> {
   const auth_state = get(auth_store);
-
   if (!auth_state.is_initialized) {
     await auth_store.initialize();
   }
-
   const updated_state = get(auth_store);
   const profile = updated_state.current_profile;
 
@@ -151,7 +148,6 @@ export async function check_route_access(
 
 export async function ensure_route_access(pathname: string): Promise<boolean> {
   const result = await check_route_access(pathname);
-
   if (!result.allowed) {
     access_denial_store.set_denial(pathname, result.message);
     goto("/");
@@ -163,14 +159,12 @@ export async function ensure_route_access(pathname: string): Promise<boolean> {
 
 export async function ensure_auth_profile(): Promise<AuthGuardResult> {
   const auth_state = get(auth_store);
-
   if (!auth_state.is_initialized) {
     console.log(
       "[AuthGuard] Auth not initialized, triggering initialization...",
     );
     await auth_store.initialize();
   }
-
   const updated_state = get(auth_store);
 
   if (!updated_state.current_profile) {

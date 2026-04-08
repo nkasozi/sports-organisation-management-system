@@ -91,21 +91,7 @@ export class InBrowserProfileLinkRepository
   ): PaginatedAsyncResult<ProfileLink> {
     try {
       let filtered_entities = await this.database.profile_links.toArray();
-      if (filter.profile_id) {
-        filtered_entities = filtered_entities.filter(
-          (link) => link.profile_id === filter.profile_id,
-        );
-      }
-      if (filter.platform) {
-        filtered_entities = filtered_entities.filter(
-          (link) => link.platform === filter.platform,
-        );
-      }
-      if (filter.status) {
-        filtered_entities = filtered_entities.filter(
-          (link) => link.status === filter.status,
-        );
-      }
+      filtered_entities = this.apply_entity_filter(filtered_entities, filter);
       filtered_entities.sort((a, b) => a.display_order - b.display_order);
       const total_count = filtered_entities.length;
       const paginated_entities = this.apply_pagination(

@@ -102,7 +102,9 @@ export async function sync_verified_user_login_session(
   if (dependencies.initial_sync_store.get_state().is_syncing) {
     console.log(
       "[Layout] Sync already in progress, skipping duplicate request",
-      { event: "sync_duplicate_skipped" },
+      {
+        event: "sync_duplicate_skipped",
+      },
     );
     return create_success_result(false);
   }

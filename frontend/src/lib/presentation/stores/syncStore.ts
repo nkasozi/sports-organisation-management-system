@@ -26,10 +26,10 @@ import {
 import { conflict_store } from "$lib/presentation/stores/conflictStore";
 
 import { execute_conflict_resolution } from "./syncStoreResolveConflict";
-import type { SyncState } from "./syncStoreTypes";
-import { SYNC_INITIAL_STATE } from "./syncStoreTypes";
+import { SYNC_INITIAL_STATE, type SyncState } from "./syncStoreTypes";
 export type { SyncState } from "./syncStoreTypes";
 export { SYNC_INITIAL_STATE } from "./syncStoreTypes";
+
 function create_sync_store() {
   const { subscribe, set, update } = writable<SyncState>(SYNC_INITIAL_STATE);
   function handle_progress(progress: SyncProgress): void {

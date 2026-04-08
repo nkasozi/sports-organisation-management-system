@@ -62,6 +62,7 @@ const MATCH_REPORT_TABLES: TableName[] = [
 ];
 
 const TABLE_FETCH_TIMEOUT_MS = 8000;
+
 function get_tables_for_page(
   page_type: "competition_results" | "calendar" | "match_report",
 ): TableName[] {
@@ -105,16 +106,12 @@ async function fetch_and_store_table(
     query_promise,
     timeout_promise,
   ])) as ConvexRecord[];
-
   if (!remote_records || remote_records.length === 0) {
     return 0;
   }
-
   const database = get_database();
   const table = database.table(table_name);
-
   set_pulling_from_remote(true);
-
   try {
     const local_records = remote_records.map(convert_convex_record_to_local);
     await table.bulkPut(local_records);

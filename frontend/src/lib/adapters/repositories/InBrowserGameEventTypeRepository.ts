@@ -18,6 +18,10 @@ import {
   create_success_result,
 } from "../../core/types/Result";
 import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
+import {
+  apply_game_event_type_filter,
+  sort_game_event_types,
+} from "./InBrowserGameEventTypeRepositoryHelpers";
 export { create_default_game_event_types_for_organization } from "./InBrowserGameEventTypeRepositoryDefaults";
 
 const ENTITY_PREFIX = "game_event_type";
@@ -58,41 +62,7 @@ export class InBrowserGameEventTypeRepository
     entities: GameEventType[],
     filter: GameEventTypeFilter,
   ): GameEventType[] {
-    let filtered = entities;
-    if (filter.name_contains) {
-      const term = filter.name_contains.toLowerCase();
-      filtered = filtered.filter((e) => e.name.toLowerCase().includes(term));
-    }
-    if (filter.code) {
-      filtered = filtered.filter((e) => e.code === filter.code);
-    }
-    if (filter.sport_id !== undefined) {
-      filtered = filtered.filter(
-        (e) => e.sport_id === filter.sport_id || e.sport_id === null,
-      );
-    }
-    if (filter.category) {
-      filtered = filtered.filter((e) => e.category === filter.category);
-    }
-    if (filter.affects_score !== undefined) {
-      filtered = filtered.filter(
-        (e) => e.affects_score === filter.affects_score,
-      );
-    }
-    if (filter.requires_player !== undefined) {
-      filtered = filtered.filter(
-        (e) => e.requires_player === filter.requires_player,
-      );
-    }
-    if (filter.status) {
-      filtered = filtered.filter((e) => e.status === filter.status);
-    }
-    if (filter.organization_id) {
-      filtered = filtered.filter(
-        (e) => e.organization_id === filter.organization_id,
-      );
-    }
-    return filtered;
+    return apply_game_event_type_filter(entities, filter);
   }
 
   async find_all_with_filter(
@@ -104,7 +74,7 @@ export class InBrowserGameEventTypeRepository
       if (filter) {
         filtered_entities = this.apply_entity_filter(filtered_entities, filter);
       }
-      filtered_entities.sort((a, b) => a.display_order - b.display_order);
+      filtered_entities = sort_game_event_types(filtered_entities);
       const total_count = filtered_entities.length;
       const paginated = this.apply_pagination(filtered_entities, options);
       return create_success_result(
@@ -132,9 +102,9 @@ export class InBrowserGameEventTypeRepository
     try {
       const all = await this.database.game_event_types.toArray();
       return create_success_result(
-        all
-          .filter((e) => e.sport_id === sport_id || e.sport_id === null)
-          .sort((a, b) => a.display_order - b.display_order),
+        sort_game_event_types(
+          all.filter((e) => e.sport_id === sport_id || e.sport_id === null),
+        ),
       );
     } catch (error) {
       console.warn(
@@ -156,9 +126,7 @@ export class InBrowserGameEventTypeRepository
     try {
       const all = await this.database.game_event_types.toArray();
       return create_success_result(
-        all
-          .filter((e) => e.category === category)
-          .sort((a, b) => a.display_order - b.display_order),
+        sort_game_event_types(all.filter((e) => e.category === category)),
       );
     } catch (error) {
       console.warn(
@@ -195,9 +163,7 @@ export class InBrowserGameEventTypeRepository
     try {
       const all = await this.database.game_event_types.toArray();
       return create_success_result(
-        all
-          .filter((e) => e.affects_score)
-          .sort((a, b) => a.display_order - b.display_order),
+        sort_game_event_types(all.filter((e) => e.affects_score)),
       );
     } catch (error) {
       console.warn("[GameEventTypeRepository] Failed to find scoring events", {

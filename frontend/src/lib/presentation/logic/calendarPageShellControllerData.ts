@@ -1,14 +1,6 @@
-import type { Activity } from "$lib/core/entities/Activity";
 import type { ActivityCategory } from "$lib/core/entities/ActivityCategory";
-import type { Competition } from "$lib/core/entities/Competition";
-import type { Organization } from "$lib/core/entities/Organization";
-import type { Team } from "$lib/core/entities/Team";
-import type { UserScopeProfile } from "$lib/core/interfaces/ports";
 import type { CalendarEvent } from "$lib/core/interfaces/ports/internal/usecases/ActivityUseCasesPort";
-import type { UseCasesContainer } from "$lib/infrastructure/container";
-import { fetch_public_data_from_convex } from "$lib/infrastructure/sync/convexPublicDataService";
 
-import { ensure_auth_profile } from "./authGuard";
 import {
   create_calendar_category_action,
   delete_calendar_activity_action,
@@ -16,51 +8,17 @@ import {
 } from "./calendarPageActions";
 import {
   load_calendar_organization_bundle,
-  load_calendar_organizations,
   sync_and_load_calendar_events,
 } from "./calendarPageData";
-import type { ActivityFormValues } from "./calendarPageState";
-
-interface CalendarOrganizationBundle {
-  teams: Team[];
-  competitions: Competition[];
-  categories: ActivityCategory[];
-  calendar_events: CalendarEvent[];
-}
-
-type CalendarShellFailure = {
-  success: false;
-  error_message: string;
-  error_type: "success" | "error" | "warning" | "info";
-};
-
-type CalendarShellScopedCommand = {
-  selected_organization_id: string;
-  filter_category_id: string;
-  filter_competition_id: string;
-  filter_team_id: string;
-  use_cases: UseCasesContainer;
-};
-
-type CalendarShellLoadCommand = {
-  organization_id: string;
-  filter_category_id: string;
-  filter_competition_id: string;
-  filter_team_id: string;
-  use_cases: UseCasesContainer;
-};
-
-function build_calendar_shell_load_command(
-  command: CalendarShellScopedCommand,
-): CalendarShellLoadCommand {
-  return {
-    organization_id: command.selected_organization_id,
-    filter_category_id: command.filter_category_id,
-    filter_competition_id: command.filter_competition_id,
-    filter_team_id: command.filter_team_id,
-    use_cases: command.use_cases,
-  };
-}
+import type {
+  CalendarOrganizationBundle,
+  CalendarShellFailure,
+  CalendarShellLoadCommand,
+  CreateCalendarShellCategoryCommand,
+  DeleteCalendarShellActivityCommand,
+  SaveCalendarShellActivityCommand,
+} from "./calendarPageShellControllerTypes";
+import { build_calendar_shell_load_command } from "./calendarPageShellControllerTypes";
 
 export async function load_calendar_shell_bundle(
   command: CalendarShellLoadCommand,
@@ -81,11 +39,7 @@ export async function load_calendar_shell_events(
 }
 
 export async function save_calendar_shell_activity(
-  command: {
-    activity_form_values: ActivityFormValues;
-    categories: ActivityCategory[];
-    editing_activity: Activity | null;
-  } & CalendarShellScopedCommand,
+  command: SaveCalendarShellActivityCommand,
 ): Promise<
   { success: true; calendar_events: CalendarEvent[] } | CalendarShellFailure
 > {
@@ -112,9 +66,7 @@ export async function save_calendar_shell_activity(
 }
 
 export async function delete_calendar_shell_activity(
-  command: {
-    editing_activity: Activity;
-  } & CalendarShellScopedCommand,
+  command: DeleteCalendarShellActivityCommand,
 ): Promise<
   { success: true; calendar_events: CalendarEvent[] } | CalendarShellFailure
 > {
@@ -138,11 +90,7 @@ export async function delete_calendar_shell_activity(
 }
 
 export async function create_calendar_shell_category(
-  command: {
-    category_name: string;
-    category_color: string;
-    category_type: string;
-  } & CalendarShellScopedCommand,
+  command: CreateCalendarShellCategoryCommand,
 ): Promise<
   { success: true; categories: ActivityCategory[] } | CalendarShellFailure
 > {
@@ -164,57 +112,4 @@ export async function create_calendar_shell_category(
     build_calendar_shell_load_command(command),
   );
   return { success: true, categories: bundle.categories };
-}
-
-export async function load_calendar_shell_initial_data(command: {
-  is_public: boolean;
-  current_profile: UserScopeProfile | null;
-  preferred_organization_id: string;
-  use_cases: UseCasesContainer;
-}): Promise<
-  | { success: false; error_message: string }
-  | {
-      success: true;
-      is_using_cached_data: boolean;
-      organizations: Organization[];
-      selected_organization_id: string;
-      bundle: CalendarOrganizationBundle | null;
-    }
-> {
-  const auth_result = await ensure_auth_profile();
-  if (!auth_result.success && !command.is_public) {
-    return { success: false, error_message: auth_result.error_message };
-  }
-  const fetch_result = await fetch_public_data_from_convex("calendar");
-  const organizations = await load_calendar_organizations({
-    current_profile: command.current_profile,
-    organization_use_cases: command.use_cases.organization_use_cases,
-  });
-  if (organizations.length === 0) {
-    return {
-      success: true,
-      is_using_cached_data: !fetch_result.success,
-      organizations,
-      selected_organization_id: "",
-      bundle: null,
-    };
-  }
-  const selected_organization_id =
-    organizations.find(
-      (organization: Organization) =>
-        organization.id === command.preferred_organization_id,
-    )?.id || organizations[0].id;
-  return {
-    success: true,
-    is_using_cached_data: !fetch_result.success,
-    organizations,
-    selected_organization_id,
-    bundle: await load_calendar_shell_bundle({
-      organization_id: selected_organization_id,
-      filter_category_id: "",
-      filter_competition_id: "",
-      filter_team_id: "",
-      use_cases: command.use_cases,
-    }),
-  };
 }

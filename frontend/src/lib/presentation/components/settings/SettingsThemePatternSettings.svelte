@@ -1,7 +1,13 @@
 <script lang="ts">
     import SettingsPatternSelector from "$lib/presentation/components/settings/SettingsPatternSelector.svelte";
     import {
-        branding_store,
+        reset_custom_pattern,
+        save_footer_pattern,
+        save_header_pattern,
+        save_panel_borders_enabled,
+        upload_custom_pattern,
+    } from "$lib/presentation/components/settings/settingsThemePatternSettingsLogic";
+    import {
         type HeaderFooterStyle,
     } from "$lib/presentation/stores/branding";
 
@@ -18,92 +24,37 @@
         pattern: HeaderFooterStyle,
     ): Promise<void> {
         header_pattern = pattern;
-        await branding_store.update((config) => ({
-            ...config,
-            header_pattern: pattern,
-        }));
-        show_toast(
-            pattern === "pattern"
-                ? "Header set to pattern"
-                : "Header set to solid color",
-            "success",
-        );
+        await save_header_pattern(pattern, show_toast);
     }
 
     async function handle_footer_pattern_change(
         pattern: HeaderFooterStyle,
     ): Promise<void> {
         footer_pattern = pattern;
-        await branding_store.update((config) => ({
-            ...config,
-            footer_pattern: pattern,
-        }));
-        show_toast(
-            pattern === "pattern"
-                ? "Footer set to pattern"
-                : "Footer set to solid color",
-            "success",
-        );
+        await save_footer_pattern(pattern, show_toast);
     }
 
     async function handle_panel_borders_toggle(
         enabled: boolean,
     ): Promise<void> {
         show_panel_borders = enabled;
-        await branding_store.update((config) => ({
-            ...config,
-            show_panel_borders: enabled,
-        }));
-        show_toast(
-            enabled ? "Panel borders enabled" : "Panel borders disabled",
-            "success",
-        );
+        await save_panel_borders_enabled(enabled, show_toast);
     }
 
     function handle_pattern_upload(event: Event): void {
-        const input = event.target as HTMLInputElement;
-        const file = input.files?.[0];
-        if (!file) return;
-        if (!file.type.includes("svg")) {
-            show_toast("Please upload an SVG file", "error");
-            return;
-        }
-        if (file.size > 500 * 1024) {
-            show_toast("File size must be less than 500KB", "error");
-            return;
-        }
-        const reader = new FileReader();
-        reader.onload = (load_event) => {
-            const result = load_event.target?.result as string;
-            background_pattern_url = result;
-            void branding_store
-                .update((config) => ({
-                    ...config,
-                    background_pattern_url: result,
-                }))
-                .then(() => show_toast("Custom pattern uploaded", "success"))
-                .catch((error) => {
-                    console.warn(
-                        "[SettingsThemePatternSettings] Failed to save pattern",
-                        {
-                            event: "settings_pattern_save_failed",
-                            error: String(error),
-                        },
-                    );
-                    show_toast("Failed to save custom pattern", "error");
-                });
-        };
-        reader.onerror = () => show_toast("Failed to read file", "error");
-        reader.readAsDataURL(file);
+        upload_custom_pattern({
+            event,
+            set_background_pattern_url: (value: string) =>
+                (background_pattern_url = value),
+            show_toast,
+        });
     }
 
     async function handle_reset_pattern(): Promise<void> {
-        background_pattern_url = "/african-mosaic-bg.svg";
-        await branding_store.update((config) => ({
-            ...config,
-            background_pattern_url: "/african-mosaic-bg.svg",
-        }));
-        show_toast("Reset to default pattern", "success");
+        await reset_custom_pattern(
+            (value: string) => (background_pattern_url = value),
+            show_toast,
+        );
     }
 </script>
 

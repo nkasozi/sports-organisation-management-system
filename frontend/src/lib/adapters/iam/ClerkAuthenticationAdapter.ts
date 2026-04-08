@@ -204,10 +204,9 @@ let clerk_authentication_adapter_instance: ClerkAuthenticationAdapter | null =
   null;
 
 export function get_clerk_authentication_adapter(): ClerkAuthenticationAdapter {
-  if (!clerk_authentication_adapter_instance) {
+  if (!clerk_authentication_adapter_instance)
     clerk_authentication_adapter_instance = new ClerkAuthenticationAdapter(
       create_clerk_session_provider(),
     );
-  }
   return clerk_authentication_adapter_instance;
 }

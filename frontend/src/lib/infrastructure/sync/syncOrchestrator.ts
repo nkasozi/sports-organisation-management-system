@@ -62,7 +62,6 @@ export async function sync_all_tables(
     start_time,
   );
   if (auth_failure) return auth_failure;
-
   for (const table_name of valid_tables) {
     if (auth_failed) {
       console.warn(
@@ -181,7 +180,6 @@ export async function sync_all_tables(
     errors,
     all_conflicts,
   });
-
   return {
     success: sync_succeeded,
     tables_synced,

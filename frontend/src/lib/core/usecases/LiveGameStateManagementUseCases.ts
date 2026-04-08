@@ -159,25 +159,24 @@ export function create_live_game_state_management(
     async update_score(id, home_score, away_score) {
       if (home_score < 0 || away_score < 0)
         return create_failure_result("Scores cannot be negative");
-      const old_result = await repository.find_by_id(id);
-      const old_game = old_result.success ? old_result.data : undefined;
+      const old_result = await repository.find_by_id(id),
+        old_game = old_result.success ? old_result.data : undefined;
       const result = await repository.update(id, {
         home_team_score: home_score,
         away_team_score: away_score,
       });
-      if (result.success && result.data && old_game) {
+      if (result.success && result.data && old_game)
         emit_live_game_updated(old_game, result.data, [
           "home_team_score",
           "away_team_score",
         ]);
-      }
       return result;
     },
     async update_game_clock(id, current_minute, stoppage_time_minutes) {
       if (current_minute < 0)
         return create_failure_result("Current minute cannot be negative");
-      const old_result = await repository.find_by_id(id);
-      const old_game = old_result.success ? old_result.data : undefined;
+      const old_result = await repository.find_by_id(id),
+        old_game = old_result.success ? old_result.data : undefined;
       const updates: UpdateLiveGameLogInput = { current_minute };
       if (stoppage_time_minutes !== undefined) {
         updates.stoppage_time_minutes = stoppage_time_minutes;
@@ -193,8 +192,8 @@ export function create_live_game_state_management(
       return result;
     },
     async advance_period(id, new_period) {
-      const old_result = await repository.find_by_id(id);
-      const old_game = old_result.success ? old_result.data : undefined;
+      const old_result = await repository.find_by_id(id),
+        old_game = old_result.success ? old_result.data : undefined;
       const result = await repository.update(id, {
         current_period: new_period as GamePeriod,
       });

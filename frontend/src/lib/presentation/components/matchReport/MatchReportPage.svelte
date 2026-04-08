@@ -10,10 +10,12 @@
     import { download_match_report_for_fixture } from "$lib/presentation/logic/matchReportPageDownload";
     import {
         load_match_report_page_data,
-        type MatchReportPageData,
-        type MatchReportRefreshData,
         refresh_match_report_fixture_data,
     } from "$lib/presentation/logic/matchReportPageLoad";
+    import type {
+        MatchReportPageData,
+        MatchReportRefreshData,
+    } from "$lib/presentation/logic/matchReportPageLoadTypes";
     import {
         build_match_report_page_title,
         build_match_report_view_state,

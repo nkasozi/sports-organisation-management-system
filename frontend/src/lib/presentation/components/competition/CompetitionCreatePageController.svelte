@@ -17,23 +17,15 @@
     } from "$lib/core/interfaces/ports";
     import type { SelectOption } from "$lib/presentation/components/ui/SelectField.svelte";
     import {
-        competition_create_dependencies,
         COMPETITION_CREATE_PAGE_TEXT,
     } from "$lib/presentation/logic/competitionCreatePageControllerDependencies";
+    import { create_competition_create_page_controller_runtime } from "$lib/presentation/logic/competitionCreatePageControllerRuntime";
     import { competition_create_status_options } from "$lib/presentation/logic/competitionCreatePageData";
     import {
-        initialize_competition_create_page,
-        load_competition_create_organization_state,
-    } from "$lib/presentation/logic/competitionCreatePageFlow";
-    import {
         get_competition_format_team_requirements,
-        get_next_selected_team_ids,
         is_competition_team_count_valid,
         normalize_competition_auto_squad_settings,
-        update_competition_auto_squad_submission,
     } from "$lib/presentation/logic/competitionCreatePageState";
-    import { submit_competition_create_form } from "$lib/presentation/logic/competitionCreatePageSubmit";
-    import { access_denial_store } from "$lib/presentation/stores/accessDenial";
     import { auth_store } from "$lib/presentation/stores/auth";
 
     import CompetitionCreatePageShell from "./CompetitionCreatePageShell.svelte";
@@ -83,130 +75,42 @@
         toast_type = type;
         toast_visible = true;
     }
+    const runtime = create_competition_create_page_controller_runtime({
+        get_auth_state: () => get(auth_store),
+        get_competition_formats: () => competition_formats,
+        get_current_auth_profile: () => current_auth_profile,
+        get_form_data: () => form_data,
+        get_selected_format: () => selected_format,
+        get_selected_team_ids: () => selected_team_ids,
+        get_is_team_count_valid: () => is_team_count_valid,
+        get_organizations: () => organizations,
+        is_browser: browser,
+        goto,
+        set_competition_format_options: (value: SelectOption[]) =>
+            (competition_format_options = value),
+        set_competition_formats: (value: CompetitionFormat[]) =>
+            (competition_formats = value),
+        set_error_message: (value: string) => (error_message = value),
+        set_form_data: (value: CreateCompetitionInput) => (form_data = value),
+        set_is_loading_formats: (value: boolean) =>
+            (is_loading_formats = value),
+        set_is_loading_organizations: (value: boolean) =>
+            (is_loading_organizations = value),
+        set_is_loading_teams: (value: boolean) => (is_loading_teams = value),
+        set_is_saving: (value: boolean) => (is_saving = value),
+        set_organization_options: (value: SelectOption[]) =>
+            (organization_options = value),
+        set_organizations: (value: Organization[]) => (organizations = value),
+        set_selected_format: (value: CompetitionFormat | null) =>
+            (selected_format = value),
+        set_selected_sport: (value: Sport | null) => (selected_sport = value),
+        set_selected_team_ids: (value: Set<string>) =>
+            (selected_team_ids = value),
+        set_team_options: (value: SelectOption[]) => (team_options = value),
+        show_toast,
+    });
 
-    async function initialize_page(): Promise<void> {
-        if (!browser) return;
-        const auth_state = get(auth_store);
-        const page_result = await initialize_competition_create_page({
-            current_auth_profile,
-            dependencies: competition_create_dependencies,
-            is_organization_restricted,
-            raw_token: auth_state.current_token?.raw_token ?? null,
-        });
-        if (page_result.access_denied) {
-            access_denial_store.set_denial(
-                COMPETITION_CREATE_PAGE_TEXT.create_path,
-                COMPETITION_CREATE_PAGE_TEXT.access_denied,
-            );
-            await goto("/competitions");
-            return;
-        }
-        if (page_result.error_message) {
-            error_message = page_result.error_message;
-            is_loading_organizations = false;
-            is_loading_formats = false;
-            is_loading_teams = false;
-            return;
-        }
-        organizations = page_result.organizations;
-        organization_options = page_result.organization_options;
-        is_loading_organizations = false;
-        if (!page_result.preselected_organization_id) {
-            is_loading_formats = false;
-            return;
-        }
-        form_data = {
-            ...form_data,
-            organization_id: page_result.preselected_organization_id,
-        };
-        await trigger_organization_side_effects(
-            page_result.preselected_organization_id,
-        );
-    }
-
-    async function trigger_organization_side_effects(
-        organization_id: string,
-    ): Promise<void> {
-        selected_team_ids = new Set();
-        selected_format = null;
-        selected_sport = null;
-        form_data = {
-            ...form_data,
-            competition_format_id: "",
-            rule_overrides: {},
-        };
-        is_loading_teams = true;
-        is_loading_formats = true;
-        const organization_state =
-            await load_competition_create_organization_state({
-                dependencies: competition_create_dependencies,
-                organization_id,
-                organizations,
-            });
-        team_options = organization_state.team_options;
-        competition_formats = organization_state.competition_formats;
-        competition_format_options =
-            organization_state.competition_format_options;
-        selected_sport = organization_state.selected_sport;
-        is_loading_teams = false;
-        is_loading_formats = false;
-    }
-
-    async function handle_organization_change(
-        event: CustomEvent<{ value: string }>,
-    ): Promise<void> {
-        form_data = { ...form_data, organization_id: event.detail.value };
-        await trigger_organization_side_effects(event.detail.value);
-    }
-
-    function handle_format_change(event: CustomEvent<{ value: string }>): void {
-        form_data = { ...form_data, competition_format_id: event.detail.value };
-        selected_format =
-            competition_formats.find(
-                (competition_format: CompetitionFormat) =>
-                    competition_format.id === event.detail.value,
-            ) || null;
-    }
-
-    function handle_team_toggle(team_id: string): boolean {
-        selected_team_ids = get_next_selected_team_ids(
-            selected_team_ids,
-            team_id,
-        );
-        return true;
-    }
-
-    function handle_auto_squad_submission_toggle(enabled: boolean): void {
-        form_data = update_competition_auto_squad_submission(
-            form_data,
-            enabled,
-        );
-    }
-
-    async function handle_submit(): Promise<void> {
-        errors = {};
-        if (!is_team_count_valid) {
-            show_toast(
-                `Please select between ${selected_format?.min_teams_required} and ${selected_format?.max_teams_allowed} teams`,
-                "error",
-            );
-            return;
-        }
-        is_saving = true;
-        const submit_result = await submit_competition_create_form({
-            dependencies: competition_create_dependencies,
-            form_data,
-        });
-        is_saving = false;
-        if (!submit_result.success) {
-            show_toast(submit_result.error_message, "error");
-            return;
-        }
-        show_toast(COMPETITION_CREATE_PAGE_TEXT.created, "success");
-        setTimeout(() => goto("/competitions"), 1500);
-    }
-
-    onMount(() => void initialize_page());
+    onMount(() => void runtime.initialize());
 </script>
 
 <svelte:head>
@@ -234,9 +138,9 @@
     {toast_type}
     bind:toast_visible
     on_cancel={() => goto("/competitions")}
-    on_organization_change={handle_organization_change}
-    on_format_change={handle_format_change}
-    on_toggle_team={handle_team_toggle}
-    on_toggle_auto_squad_submission={handle_auto_squad_submission_toggle}
-    on_submit={handle_submit}
+    on_organization_change={runtime.handle_organization_change}
+    on_format_change={runtime.handle_format_change}
+    on_toggle_team={runtime.handle_team_toggle}
+    on_toggle_auto_squad_submission={runtime.handle_auto_squad_submission_toggle}
+    on_submit={runtime.handle_submit}
 />

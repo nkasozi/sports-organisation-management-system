@@ -1,9 +1,8 @@
-import type { Activity, CreateActivityInput } from "../entities/Activity";
+import type { Activity } from "../entities/Activity";
 import {
   create_activity_from_competition,
   create_activity_from_fixture,
 } from "../entities/Activity";
-import type { ActivityCategoryType } from "../entities/ActivityCategory";
 import type {
   ActivityCategoryRepository,
   ActivityRepository,
@@ -12,8 +11,11 @@ import type {
   FixtureRepository,
   TeamRepository,
 } from "../interfaces/ports";
-import type { AsyncResult, Result } from "../types/Result";
 import { create_failure_result, create_success_result } from "../types/Result";
+import {
+  find_activity_category_by_type,
+  upsert_synced_activity,
+} from "./ActivitySyncUseCasesHelpers";
 
 type ActivitySyncMethods = Pick<
   ActivityUseCasesPort,
@@ -21,44 +23,6 @@ type ActivitySyncMethods = Pick<
   | "sync_fixtures_to_activities"
   | "find_activity_by_source"
 >;
-
-async function find_category_by_type(
-  category_repository: ActivityCategoryRepository,
-  organization_id: string,
-  category_type: ActivityCategoryType,
-): Promise<Result<string>> {
-  const result = await category_repository.find_by_category_type(
-    organization_id,
-    category_type,
-  );
-  if (result.success && result.data?.items && result.data.items.length > 0) {
-    return create_success_result(result.data.items[0].id);
-  }
-  return create_failure_result(
-    `No ${category_type} category found for organization: ${organization_id}`,
-  );
-}
-
-async function upsert_activity(
-  activity_repository: ActivityRepository,
-  existing_activity: Activity | null,
-  activity_input: CreateActivityInput,
-  update_fields: Partial<Activity>,
-): AsyncResult<boolean> {
-  if (existing_activity) {
-    const update_result = await activity_repository.update(
-      existing_activity.id,
-      update_fields,
-    );
-    return update_result.success
-      ? create_success_result(true)
-      : create_failure_result(update_result.error);
-  }
-  const create_result = await activity_repository.create(activity_input);
-  return create_result.success
-    ? create_success_result(false)
-    : create_failure_result(create_result.error);
-}
 
 export function create_activity_sync(
   activity_repository: ActivityRepository,
@@ -69,7 +33,7 @@ export function create_activity_sync(
 ): ActivitySyncMethods {
   return {
     async sync_competitions_to_activities(organization_id) {
-      const category_result = await find_category_by_type(
+      const category_result = await find_activity_category_by_type(
         activity_category_repository,
         organization_id,
         "competition",
@@ -100,7 +64,7 @@ export function create_activity_sync(
           category_result.data,
           competition.location,
         );
-        const upsert_result = await upsert_activity(
+        const upsert_result = await upsert_synced_activity(
           activity_repository,
           existing_result.data,
           activity_input,
@@ -124,7 +88,7 @@ export function create_activity_sync(
         organization_id,
         competition_id,
       });
-      const category_result = await find_category_by_type(
+      const category_result = await find_activity_category_by_type(
         activity_category_repository,
         organization_id,
         "fixture",
@@ -185,7 +149,7 @@ export function create_activity_sync(
           category_result.data,
           fixture.venue,
         );
-        const upsert_result = await upsert_activity(
+        const upsert_result = await upsert_synced_activity(
           activity_repository,
           existing_result.data,
           activity_input,

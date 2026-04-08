@@ -6,18 +6,13 @@
     import { goto } from "$app/navigation";
     import type { Team } from "$lib/core/entities/Team";
     import type { UserScopeProfile } from "$lib/core/interfaces/ports";
-    import { get_authorization_adapter } from "$lib/infrastructure/AuthorizationProvider";
     import {
         get_gender_use_cases,
         get_player_team_membership_use_cases,
         get_player_use_cases,
         get_team_use_cases,
     } from "$lib/infrastructure/registry/useCaseFactories";
-    import { ensure_auth_profile } from "$lib/presentation/logic/authGuard";
-    import {
-        load_bulk_player_assignment_page_data,
-        save_bulk_player_assignments,
-    } from "$lib/presentation/logic/bulkPlayerAssignmentPageData";
+    import { create_bulk_player_assignment_page_controller_runtime } from "$lib/presentation/logic/bulkPlayerAssignmentPageControllerRuntime";
     import {
         count_selected_players,
         filter_player_assignments_by_name,
@@ -100,96 +95,37 @@
         toast_type = type;
         toast_visible = true;
     }
-
-    async function initialize_page(): Promise<void> {
-        if (!browser) return;
-        const auth_result = await ensure_auth_profile();
-        if (!auth_result.success) {
-            error_message = auth_result.error_message;
-            is_loading = false;
-            return;
-        }
-        const auth_state = get(auth_store);
-        if (auth_state.current_token) {
-            const authorization_check =
-                await get_authorization_adapter().check_entity_authorized(
-                    auth_state.current_token.raw_token,
-                    "playerteammembership",
-                    "create",
-                );
-            if (!authorization_check.success) return;
-            if (!authorization_check.data.is_authorized) {
-                access_denial_store.set_denial(
-                    BULK_PLAYER_ASSIGNMENT_PAGE_TEXT.created_path,
-                    BULK_PLAYER_ASSIGNMENT_PAGE_TEXT.access_denied,
-                );
-                await goto("/");
-                return;
-            }
-        }
-        const page_data = await load_bulk_player_assignment_page_data({
+    const runtime = create_bulk_player_assignment_page_controller_runtime({
+        access_denied_message: BULK_PLAYER_ASSIGNMENT_PAGE_TEXT.access_denied,
+        access_denied_path: BULK_PLAYER_ASSIGNMENT_PAGE_TEXT.created_path,
+        dependencies: bulk_player_assignment_dependencies,
+        failed_summary: BULK_PLAYER_ASSIGNMENT_PAGE_TEXT.failed_summary,
+        get_assigned_players_on_other_teams: () => assigned_players_on_other_teams,
+        get_auth_state: () => ({
             current_profile: get(auth_store)
                 .current_profile as UserScopeProfile | null,
-            dependencies: bulk_player_assignment_dependencies,
-        });
-        teams = page_data.teams;
-        all_player_assignments = page_data.all_player_assignments;
-        gender_name_map = page_data.gender_name_map;
-        error_message = page_data.error_message;
-        is_loading = false;
-    }
+            current_token: get(auth_store).current_token,
+        }),
+        get_selected_team: () => selected_team,
+        get_selected_team_id: () => selected_team_id,
+        get_unassigned_players: () => unassigned_players,
+        goto,
+        is_browser: browser,
+        set_access_denial: (path: string, message: string) =>
+            access_denial_store.set_denial(path, message),
+        set_all_player_assignments: (value: PlayerAssignment[]) =>
+            (all_player_assignments = value),
+        set_error_message: (value: string) => (error_message = value),
+        set_gender_name_map: (value: Map<string, string>) =>
+            (gender_name_map = value),
+        set_is_loading: (value: boolean) => (is_loading = value),
+        set_is_saving: (value: boolean) => (is_saving = value),
+        set_teams: (value: Team[]) => (teams = value),
+        show_toast,
+        success_summary: BULK_PLAYER_ASSIGNMENT_PAGE_TEXT.success_summary,
+    });
 
-    function toggle_player_selection(assignment: PlayerAssignment): void {
-        assignment.selected = !assignment.selected;
-        all_player_assignments = [...all_player_assignments];
-    }
-
-    function select_all_unassigned(): void {
-        for (const assignment of all_player_assignments) {
-            if (assignment.current_team_id === null) assignment.selected = true;
-        }
-        all_player_assignments = [...all_player_assignments];
-    }
-
-    function deselect_all(): void {
-        for (const assignment of all_player_assignments)
-            assignment.selected = false;
-        all_player_assignments = [...all_player_assignments];
-    }
-
-    async function handle_save(): Promise<void> {
-        if (!can_save) return;
-        is_saving = true;
-        const save_result = await save_bulk_player_assignments({
-            assigned_players_on_other_teams,
-            dependencies: bulk_player_assignment_dependencies,
-            selected_team,
-            selected_team_id,
-            unassigned_players,
-        });
-        is_saving = false;
-        if (save_result.error_count === 0) {
-            show_toast(
-                BULK_PLAYER_ASSIGNMENT_PAGE_TEXT.success_summary
-                    .replace(
-                        "{success_count}",
-                        String(save_result.success_count),
-                    )
-                    .replace("{team_name}", selected_team?.name || ""),
-                "success",
-            );
-            setTimeout(() => goto("/player-team-memberships"), 1500);
-            return;
-        }
-        show_toast(
-            BULK_PLAYER_ASSIGNMENT_PAGE_TEXT.failed_summary
-                .replace("{success_count}", String(save_result.success_count))
-                .replace("{error_count}", String(save_result.error_count)),
-            "error",
-        );
-    }
-
-    onMount(() => void initialize_page());
+    onMount(() => void runtime.initialize_page());
 </script>
 
 <svelte:head
@@ -215,8 +151,8 @@
     {toast_type}
     bind:toast_visible
     on_cancel={() => goto("/player-team-memberships")}
-    on_select_all_unassigned={select_all_unassigned}
-    on_deselect_all={deselect_all}
-    on_save={handle_save}
-    on_toggle_selection={toggle_player_selection}
+    on_select_all_unassigned={runtime.select_all_unassigned}
+    on_deselect_all={runtime.deselect_all}
+    on_save={runtime.handle_save}
+    on_toggle_selection={runtime.toggle_player_selection}
 />

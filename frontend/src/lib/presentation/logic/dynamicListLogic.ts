@@ -4,7 +4,6 @@ import type {
   FieldMetadata,
 } from "../../core/entities/BaseEntity";
 import type { SubEntityFilter } from "../../core/types/SubEntityFilter";
-
 export {
   apply_id_filter_to_entities,
   build_entity_authorization_filter,
@@ -127,11 +126,9 @@ export function create_new_entity_with_defaults(
   sub_entity_filter: SubEntityFilter | null | undefined,
 ): Partial<BaseEntity> {
   const new_entity: Record<string, unknown> = { id: "" };
-
   if (sub_entity_filter) {
     new_entity[sub_entity_filter.foreign_key_field] =
       sub_entity_filter.foreign_key_value;
-
     if (
       sub_entity_filter.holder_type_field &&
       sub_entity_filter.holder_type_value
@@ -162,18 +159,12 @@ export function build_display_name_from_metadata(
   entity_metadata: EntityMetadata | null | undefined,
   entity_type: string,
 ): string {
-  if (
-    entity_metadata &&
-    typeof entity_metadata.display_name === "string" &&
-    entity_metadata.display_name.length > 0
-  ) {
+  if (entity_metadata?.display_name) {
     return entity_metadata.display_name;
   }
-
   if (typeof entity_type === "string" && entity_type.length > 0) {
     return entity_type;
   }
-
   return "Entity";
 }
 
