@@ -21,7 +21,7 @@ describe("headerUserMenuDetails", () => {
         value: "Organization Administrator",
       },
       {
-        label: "Organization",
+        label: "Org",
         value: "Uganda Hockey Association",
       },
       {

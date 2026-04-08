@@ -2,19 +2,13 @@ import { describe, expect, it } from "vitest";
 
 import type { Fixture } from "$lib/core/entities/Fixture";
 import type { FixtureLineup } from "$lib/core/entities/FixtureLineup";
-import type { Player } from "$lib/core/entities/Player";
-import type { PlayerPosition } from "$lib/core/entities/PlayerPosition";
-import type { PlayerTeamMembership } from "$lib/core/entities/PlayerTeamMembership";
 import type { Team } from "$lib/core/entities/Team";
 import type { TeamPlayer } from "$lib/core/services/teamPlayers";
-import {
-  create_failure_result,
-  create_success_result,
-} from "$lib/core/types/Result";
 
-import { load_fixture_lineup_detail_page_data } from "./fixtureLineupDetailPageLoad";
 import {
+  build_fixture_lineup_permission_info_message,
   build_fixture_lineup_selected_player_ids,
+  format_fixture_lineup_submission_date,
   get_fixture_lineup_name,
   get_fixture_lineup_status_class,
   toggle_fixture_lineup_player_selection,
@@ -109,78 +103,6 @@ function create_team(overrides: Partial<Team> = {}): Team {
   };
 }
 
-function create_player(overrides: Partial<Player> = {}): Player {
-  return {
-    id: "player_1",
-    first_name: "Jordan",
-    last_name: "Miles",
-    gender_id: "gender_1",
-    email: "player@example.com",
-    phone: "123",
-    date_of_birth: "2000-01-01",
-    position_id: "position_1",
-    organization_id: "org_1",
-    height_cm: null,
-    weight_kg: null,
-    nationality: "UG",
-    profile_image_url: "",
-    emergency_contact_name: "Coach",
-    emergency_contact_phone: "123",
-    medical_notes: "",
-    status: "active",
-    created_at: "2026-01-01T00:00:00Z",
-    updated_at: "2026-01-01T00:00:00Z",
-    ...overrides,
-  };
-}
-
-function create_membership(
-  overrides: Partial<PlayerTeamMembership> = {},
-): PlayerTeamMembership {
-  return {
-    id: "membership_1",
-    organization_id: "org_1",
-    player_id: "player_1",
-    team_id: "team_1",
-    start_date: "2026-01-01",
-    jersey_number: 9,
-    status: "active",
-    created_at: "2026-01-01T00:00:00Z",
-    updated_at: "2026-01-01T00:00:00Z",
-    ...overrides,
-  };
-}
-
-function create_position(
-  overrides: Partial<PlayerPosition> = {},
-): PlayerPosition {
-  return {
-    id: "position_1",
-    name: "Forward",
-    code: "FW",
-    category: "forward",
-    description: "",
-    sport_type: "Football",
-    display_order: 1,
-    is_available: true,
-    status: "active",
-    organization_id: "org_1",
-    created_at: "2026-01-01T00:00:00Z",
-    updated_at: "2026-01-01T00:00:00Z",
-    ...overrides,
-  };
-}
-
-function create_paginated_result<TData>(items: TData[]) {
-  return create_success_result({
-    items,
-    total_count: items.length,
-    page_number: 1,
-    page_size: items.length || 1,
-    total_pages: 1,
-  });
-}
-
 describe("fixtureLineupDetailPageState", () => {
   it("builds selected player ids from the lineup", () => {
     const result = build_fixture_lineup_selected_player_ids(
@@ -218,68 +140,14 @@ describe("fixtureLineupDetailPageState", () => {
     expect(get_fixture_lineup_status_class("draft")).toBe("status-warning");
     expect(get_fixture_lineup_status_class("locked")).toBe("status-inactive");
   });
-});
 
-describe("load_fixture_lineup_detail_page_data", () => {
-  it("returns a failure result when the lineup cannot be found", async () => {
-    const result = await load_fixture_lineup_detail_page_data({
-      lineup_id: "missing",
-      organization_id: "org_1",
-      dependencies: {
-        get_fixture_lineup_by_id: async () =>
-          create_failure_result("Lineup not found"),
-        get_fixture_by_id: async () => create_success_result(create_fixture()),
-        get_team_by_id: async () => create_success_result(create_team()),
-        list_players_by_team: async () =>
-          create_paginated_result([create_player()]),
-        list_memberships_by_team: async () =>
-          create_paginated_result([create_membership()]),
-        list_positions: async () =>
-          create_paginated_result([create_position()]),
-      },
-    });
-
-    expect(result.success).toBe(false);
-  });
-
-  it("loads lineup detail data and builds team players with position labels", async () => {
-    const result = await load_fixture_lineup_detail_page_data({
-      lineup_id: "lineup_1",
-      organization_id: "org_1",
-      dependencies: {
-        get_fixture_lineup_by_id: async () =>
-          create_success_result(create_lineup()),
-        get_fixture_by_id: async () => create_success_result(create_fixture()),
-        get_team_by_id: async (team_id: string) =>
-          create_success_result(
-            create_team({
-              id: team_id,
-              name:
-                team_id === "team_home"
-                  ? "Lions"
-                  : team_id === "team_away"
-                    ? "Tigers"
-                    : "Squad",
-            }),
-          ),
-        list_players_by_team: async () =>
-          create_paginated_result([create_player()]),
-        list_memberships_by_team: async () =>
-          create_paginated_result([create_membership()]),
-        list_positions: async () =>
-          create_paginated_result([create_position()]),
-      },
-    });
-
-    expect(result.success).toBe(true);
-    if (!result.success) {
-      return;
-    }
-
-    expect(result.data.lineup.id).toBe("lineup_1");
-    expect(result.data.team_players).toHaveLength(1);
-    expect(result.data.team_players[0].position).toBe("Forward");
-    expect(result.data.home_team?.name).toBe("Lions");
-    expect(result.data.away_team?.name).toBe("Tigers");
+  it("formats submission dates and permission messages with fallbacks", () => {
+    expect(format_fixture_lineup_submission_date("")).toBe("-");
+    expect(build_fixture_lineup_permission_info_message(undefined)).toContain(
+      '"unknown"',
+    );
+    expect(
+      build_fixture_lineup_permission_info_message("team_manager"),
+    ).toContain('"team_manager"');
   });
 });

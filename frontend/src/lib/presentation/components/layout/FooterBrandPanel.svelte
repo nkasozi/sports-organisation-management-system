@@ -19,7 +19,7 @@
 <div
   class="col-span-1 md:col-span-2 bg-black/25 dark:bg-black/40 backdrop-blur-sm rounded-lg p-4 footer-panel {show_panel_borders
     ? 'border-2 border-white/60'
-    : ''}"
+    : ''} text-white"
 >
   <div class="flex items-center space-x-3 mb-4">
     <div
@@ -43,7 +43,7 @@
         </svg>
       {/if}
     </div>
-    <span class="text-xl font-bold text-black">
+    <span class="text-xl font-bold text-white">
       {#if split_organization_name(organization_name).prefix}
         {split_organization_name(organization_name).prefix}
         <span class="text-theme-secondary-600"
@@ -60,7 +60,7 @@
     </span>
   </div>
 
-  <p class="text-sm text-gray-800 mb-4 max-w-md">
+  <p class="mb-4 max-w-md text-sm text-white">
     {organization_tagline ||
       "Track competitions, teams, players, officials and fixtures for your sport all in one place."}
   </p>
@@ -73,7 +73,7 @@
             href={link.url}
             target="_blank"
             rel="noopener noreferrer"
-            class="text-gray-800 hover:text-theme-secondary-600 transition-colors duration-200"
+            class="text-white transition-colors duration-200 hover:text-theme-secondary-600"
             aria-label={get_social_media_label(link.platform)}
             title={get_social_media_label(link.platform)}
           >
@@ -87,7 +87,7 @@
       {#each FOOTER_FALLBACK_SOCIAL_PLATFORMS as platform}
         <button
           type="button"
-          class="text-gray-800 hover:text-theme-secondary-600 transition-colors duration-200"
+          class="text-white transition-colors duration-200 hover:text-theme-secondary-600"
           aria-label={get_social_media_label(platform)}
         >
           <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20"

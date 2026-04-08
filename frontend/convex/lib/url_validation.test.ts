@@ -8,10 +8,7 @@ import {
 describe("url_validation", () => {
   it("allows data image urls for image fields", () => {
     expect(
-      validate_url_field_value(
-        "logo_url",
-        "data:image/png;base64,abc123",
-      ),
+      validate_url_field_value("logo_url", "data:image/png;base64,abc123"),
     ).toEqual({ is_valid: true, error: null });
 
     expect(
@@ -39,8 +36,7 @@ describe("url_validation", () => {
       ),
     ).toEqual({
       is_valid: false,
-      error:
-        'URL field "logo_url" uses disallowed protocol "data:"',
+      error: 'URL field "logo_url" uses disallowed protocol "data:"',
     });
   });
 
@@ -49,8 +45,7 @@ describe("url_validation", () => {
       validate_url_field_value("website", "data:image/png;base64,abc123"),
     ).toEqual({
       is_valid: false,
-      error:
-        'URL field "website" uses disallowed protocol "data:"',
+      error: 'URL field "website" uses disallowed protocol "data:"',
     });
 
     expect(validate_url_field_value("website", "/club-site")).toEqual({

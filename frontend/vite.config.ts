@@ -5,9 +5,14 @@ export default defineConfig({
   plugins: [sveltekit()],
   test: {
     environment: "node",
-    exclude: ["**/node_modules/**", "**/.svelte-kit/**", "**/dist/**"],
+    exclude: [
+      "**/node_modules/**",
+      "**/.svelte-kit/**",
+      "**/dist/**",
+      "**/.trunk/**",
+    ],
     teardownTimeout: 1000,
-    include: ["src/**/*.test.ts", "convex/**/*.test.ts"],
+    include: ["vite.config.test.ts", "src/**/*.test.ts", "convex/**/*.test.ts"],
     env: {
       AUTH_SECRET_KEY: "vitest-only-test-secret-key-not-for-production",
     },

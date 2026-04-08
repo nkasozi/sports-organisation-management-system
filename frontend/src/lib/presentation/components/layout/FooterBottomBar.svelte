@@ -7,17 +7,17 @@
 <div
   class="mt-6 pt-4 bg-black/25 dark:bg-black/40 backdrop-blur-sm rounded-lg px-4 py-3 footer-panel {show_panel_borders
     ? 'border-2 border-white/60'
-    : ''}"
+    : ''} text-white"
 >
   <div
     class="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0"
   >
-    <div class="flex items-center space-x-4 text-sm text-gray-800">
+    <div class="flex items-center space-x-4 text-sm text-white">
       <span
         >&copy; {current_year} {organization_name}. All rights reserved.</span
       >
     </div>
-    <div class="flex items-center space-x-6 text-sm text-gray-800">
+    <div class="flex items-center space-x-6 text-sm text-white">
       <span>Version 1.0.0</span>
       <div class="flex items-center space-x-1">
         <span>Built with</span>

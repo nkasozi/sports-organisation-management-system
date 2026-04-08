@@ -1,5 +1,21 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+const auth_state = vi.hoisted(() => {
+  let current_value = false;
+
+  return {
+    is_signed_in: {
+      subscribe(run: (value: boolean) => void) {
+        run(current_value);
+        return () => undefined;
+      },
+    },
+    set_signed_in(value: boolean) {
+      current_value = value;
+    },
+  };
+});
+
 const mock_app_settings_store: Record<string, string> = {};
 const mock_remove_setting = vi.fn((key: string) => {
   delete mock_app_settings_store[key];
@@ -22,6 +38,10 @@ vi.mock("$lib/infrastructure/container", () => ({
       return Promise.resolve();
     },
   }),
+}));
+
+vi.mock("../../adapters/iam/clerkAuthService", () => ({
+  is_signed_in: auth_state.is_signed_in,
 }));
 
 const EPOCH_TIMESTAMP = "1970-01-01T00:00:00.000Z";
@@ -382,6 +402,7 @@ describe("push_table_to_convex", () => {
 
   beforeEach(() => {
     mock_client = create_mock_convex_client();
+    auth_state.set_signed_in(false);
   });
 
   it("pushes all records when server is empty (null remote_latest_modified_at)", async () => {
