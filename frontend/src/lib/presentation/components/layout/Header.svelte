@@ -1,5 +1,6 @@
 <script lang="ts">
   import { createEventDispatcher } from "svelte";
+
   import { goto, invalidateAll } from "$app/navigation";
   import { is_signed_in, sign_out } from "$lib/adapters/iam/clerkAuthService";
   import LogoutWarningModal from "$lib/presentation/components/ui/LogoutWarningModal.svelte";
@@ -22,6 +23,7 @@
     theme_store,
     toggle_theme_mode,
   } from "$lib/presentation/stores/theme";
+
   import HeaderAccountPanel from "./HeaderAccountPanel.svelte";
   import HeaderBrandPanel from "./HeaderBrandPanel.svelte";
   export let sidebar_open = false;
