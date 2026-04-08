@@ -1,7 +1,7 @@
 <script lang="ts">
     import "../../../../app.css";
 
-    import { injectAnalytics } from "@vercel/analytics/sveltekit";
+    import { inject } from "@vercel/analytics";
     import { onDestroy, onMount } from "svelte";
     import { get } from "svelte/store";
 
@@ -61,7 +61,10 @@
     import { public_organization_store } from "$lib/presentation/stores/publicOrganization";
     import { sync_store } from "$lib/presentation/stores/syncStore";
     import { initialize_theme } from "$lib/presentation/stores/theme";
-    injectAnalytics();
+
+    const VERCEL_ANALYTICS_FRAMEWORK = "sveltekit";
+
+    inject({ framework: VERCEL_ANALYTICS_FRAMEWORK });
 
     let show_first_time_setup = false,
         show_initial_sync = false,
