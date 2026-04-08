@@ -77,7 +77,24 @@
 
     const delay = (milliseconds: number): Promise<void> =>
         new Promise((resolve) => setTimeout(resolve, milliseconds));
-    const login_sync_dependencies = create_layout_login_sync_dependencies({ initial_sync_store, get_initial_sync_state: () => get(initial_sync_store), auth_store, sync_store, stop_background_sync, start_background_sync, reset_database, reset_sync_metadata, fetch_current_user_profile_from_convex, set_pulling_from_remote, write_convex_user_to_local_dexie, pull_user_scoped_record_from_convex, clear_session_sync_flag, sign_out, goto, delay });
+    const login_sync_dependencies = create_layout_login_sync_dependencies({
+        initial_sync_store,
+        get_initial_sync_state: () => get(initial_sync_store),
+        auth_store,
+        sync_store,
+        stop_background_sync,
+        start_background_sync,
+        reset_database,
+        reset_sync_metadata,
+        fetch_current_user_profile_from_convex,
+        set_pulling_from_remote,
+        write_convex_user_to_local_dexie,
+        pull_user_scoped_record_from_convex,
+        clear_session_sync_flag,
+        sign_out,
+        goto,
+        delay,
+    });
 
     afterNavigate(async ({ to, type }) => {
         if (!app_ready || !to?.url?.pathname) return;
@@ -166,7 +183,8 @@
         }
         app_ready = true;
         const initial_path = get(page).url.pathname;
-        if (!is_route_guard_exempt(initial_path)) await ensure_route_access(initial_path);
+        if (!is_route_guard_exempt(initial_path))
+            await ensure_route_access(initial_path);
     });
     onDestroy(() => {
         cleanup_layout_subscriptions?.();

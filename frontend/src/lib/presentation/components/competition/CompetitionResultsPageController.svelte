@@ -12,9 +12,7 @@
     import type { Team } from "$lib/core/entities/Team";
     import type { LoadingState } from "$lib/presentation/components/ui/LoadingStateWrapper.svelte";
     import { create_competition_results_page_controller_runtime } from "$lib/presentation/logic/competitionResultsPageControllerRuntime";
-    import {
-        type CompetitionResultsSelectedBundle,
-    } from "$lib/presentation/logic/competitionResultsPageState";
+    import { type CompetitionResultsSelectedBundle } from "$lib/presentation/logic/competitionResultsPageState";
     import {
         auth_store,
         is_public_viewer,

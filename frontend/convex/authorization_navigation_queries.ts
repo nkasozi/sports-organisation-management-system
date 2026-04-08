@@ -30,14 +30,12 @@ export const get_sidebar_menu = query({
           group_order: item.group_order,
           items: [],
         });
-      groups_map
-        .get(item.group_name)!
-        .items.push({
-          name: item.item_name,
-          href: item.item_href,
-          icon: item.item_icon,
-          order: item.item_order,
-        });
+      groups_map.get(item.group_name)!.items.push({
+        name: item.item_name,
+        href: item.item_href,
+        icon: item.item_icon,
+        order: item.item_order,
+      });
     }
     return {
       success: true,

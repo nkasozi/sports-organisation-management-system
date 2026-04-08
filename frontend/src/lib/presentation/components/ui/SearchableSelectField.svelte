@@ -54,7 +54,10 @@
     if (disabled || is_loading) return Promise.resolve(false);
     is_open = true;
     query = "";
-    highlighted_index = get_highlighted_index_for_selected_value(filtered_options, selected_option?.value ?? "");
+    highlighted_index = get_highlighted_index_for_selected_value(
+      filtered_options,
+      selected_option?.value ?? "",
+    );
     return tick().then(() => true);
   }
   function close_dropdown(): boolean {
@@ -157,8 +160,12 @@
     )
       close_dropdown();
   }
-  onMount(() => window.addEventListener("mousedown", handle_global_pointer_down));
-  onDestroy(() => window.removeEventListener("mousedown", handle_global_pointer_down));
+  onMount(() =>
+    window.addEventListener("mousedown", handle_global_pointer_down),
+  );
+  onDestroy(() =>
+    window.removeEventListener("mousedown", handle_global_pointer_down),
+  );
 </script>
 
 <div bind:this={container_element} class="space-y-1">

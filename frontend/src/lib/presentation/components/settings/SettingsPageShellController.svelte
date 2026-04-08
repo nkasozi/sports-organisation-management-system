@@ -87,7 +87,8 @@
         apply_form_values,
         get_branding_state: () => $branding_store,
         get_current_form_values,
-        get_current_profile_organization_id: () => current_profile?.organization_id,
+        get_current_profile_organization_id: () =>
+            current_profile?.organization_id,
         get_organizations: () => organizations,
         get_pathname: () => $page.url.pathname,
         get_selected_organization_id: () => selected_organization_id,

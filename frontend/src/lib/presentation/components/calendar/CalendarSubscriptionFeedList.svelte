@@ -8,8 +8,10 @@
   export let format_date: (iso_string: string | null) => string = () => "";
   export let get_https_url: (token: string) => string = () => "";
   export let is_loading: boolean = false;
-  export let on_copy: (text: string, token: string) => Promise<boolean> =
-    async () => false;
+  export let on_copy: (
+    text: string,
+    token: string,
+  ) => Promise<boolean> = async () => false;
   export let on_open_webcal: (token: string) => void = () => {};
   export let on_revoke: (token: string) => Promise<boolean> = async () => false;
 </script>

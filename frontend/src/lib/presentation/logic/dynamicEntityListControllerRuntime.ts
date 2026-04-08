@@ -3,6 +3,7 @@ import { get, type Writable, writable } from "svelte/store";
 import type { BaseEntity } from "$lib/core/entities/BaseEntity";
 import type { UserScopeProfile } from "$lib/core/interfaces/ports";
 import { ensure_auth_profile } from "$lib/presentation/logic/authGuard";
+import { get_dynamic_entity_list_field_metadata_by_name } from "$lib/presentation/logic/dynamicEntityListControllerFields";
 import { create_dynamic_entity_list_controller_crud_actions } from "$lib/presentation/logic/dynamicEntityListControllerRuntimeCrud";
 import { create_dynamic_entity_list_controller_view_actions } from "$lib/presentation/logic/dynamicEntityListControllerRuntimeView";
 import { build_dynamic_entity_list_view_state } from "$lib/presentation/logic/dynamicEntityListControllerStateBuilder";

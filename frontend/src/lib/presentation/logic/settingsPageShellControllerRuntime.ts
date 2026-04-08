@@ -1,6 +1,8 @@
 import type { Organization } from "$lib/core/entities/Organization";
 import { get_use_cases_container } from "$lib/infrastructure/container";
+import type { BrandingConfig } from "$lib/presentation/stores/branding";
 import { branding_store } from "$lib/presentation/stores/branding";
+import type { ThemeConfig } from "$lib/presentation/stores/theme";
 
 import { ensure_auth_profile, ensure_route_access } from "./authGuard";
 import {
@@ -12,12 +14,12 @@ import {
 
 export function create_settings_page_shell_controller_runtime(command: {
   apply_form_values: (form_values: SettingsFormValues) => void;
-  get_branding_state: () => unknown;
+  get_branding_state: () => BrandingConfig;
   get_current_form_values: () => SettingsFormValues;
   get_current_profile_organization_id: () => string | undefined;
   get_pathname: () => string;
   get_selected_organization_id: () => string;
-  get_theme_state: () => unknown;
+  get_theme_state: () => ThemeConfig;
   get_organizations: () => Organization[];
   is_browser: boolean;
   set_error_message: (value: string) => void;
