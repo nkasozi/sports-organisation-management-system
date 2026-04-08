@@ -54,6 +54,7 @@ export async function execute_auth_initialization(
   }
 
   const clerk_email = get_clerk_email();
+  const normalized_clerk_email = clerk_email?.toLowerCase() ?? null;
   let current_profile: UserProfile | null = null;
   let current_token: AuthToken | null = null;
 
@@ -70,9 +71,9 @@ export async function execute_auth_initialization(
   }
 
   if (!current_profile) {
-    const clerk_local_profile = clerk_email
+    const clerk_local_profile = normalized_clerk_email
       ? (available_profiles.find(
-          (p) => p.email.toLowerCase() === clerk_email,
+          (p) => p.email.toLowerCase() === normalized_clerk_email,
         ) ?? null)
       : null;
 

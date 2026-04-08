@@ -1,7 +1,7 @@
 <script lang="ts">
+  import { build_header_user_menu_details } from "$lib/presentation/components/layout/headerUserMenuDetails";
   import type { UserProfile } from "$lib/presentation/stores/auth";
 
-  import { build_header_user_menu_details } from "$lib/presentation/components/layout/headerUserMenuDetails";
   import HeaderProfileSwitcher from "./HeaderProfileSwitcher.svelte";
 
   export let current_profile_display_name: string = "";

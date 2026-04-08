@@ -32,7 +32,9 @@ function create_header_user_menu_detail_row(
   };
 }
 
-function format_header_user_menu_team_value(current_profile_team_id: string): string {
+function format_header_user_menu_team_value(
+  current_profile_team_id: string,
+): string {
   const normalized_team_id = current_profile_team_id.trim();
   if (!normalized_team_id) {
     return "";

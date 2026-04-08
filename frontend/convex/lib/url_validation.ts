@@ -24,10 +24,7 @@ function is_image_data_url_field_name(field_name: string): boolean {
   return IMAGE_DATA_URL_FIELD_PATTERN.test(field_name.toLowerCase());
 }
 
-function is_allowed_image_data_url(
-  field_name: string,
-  value: string,
-): boolean {
+function is_allowed_image_data_url(field_name: string, value: string): boolean {
   return (
     is_image_data_url_field_name(field_name) &&
     value.toLowerCase().startsWith("data:image/")
