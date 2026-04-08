@@ -31,6 +31,7 @@
   import { get_dynamic_form_sorted_fields_for_display } from "../logic/dynamicEntityFormFieldState";
   import {
     build_dynamic_form_initial_data,
+    create_dynamic_form_initialization_key,
     create_sub_entity_crud_handlers,
     get_dynamic_entity_metadata_for_type,
   } from "../logic/dynamicEntityFormInitialization";
@@ -94,6 +95,7 @@
     gender_mismatch_warnings: [] as string[],
     fixture_team_gender_mismatch_warnings: [] as string[],
   };
+  let applied_initialization_key = "";
 
   $: current_auth_profile = $auth_store.current_profile;
   $: entity_metadata = get_dynamic_entity_metadata_for_type(entity_type);
@@ -104,6 +106,9 @@
   );
   $: sub_entity_fields = get_sub_entity_fields(entity_metadata);
   $: authorization_restricted_fields = get_authorization_restricted_fields(
+    current_auth_profile as UserScopeProfile | null,
+  );
+  $: authorization_preselect_values = get_authorization_preselect_values(
     current_auth_profile as UserScopeProfile | null,
   );
   $: sorted_fields = entity_metadata
@@ -121,15 +126,27 @@
     fakeDataGenerator.is_fake_data_generation_enabled();
   $: show_transfer_notice =
     entity_type.toLowerCase() === "playerteamtransferhistory" && !is_edit_mode;
-  $: if (entity_metadata && current_auth_profile) {
+  $: initialization_key =
+    entity_metadata && current_auth_profile
+      ? create_dynamic_form_initialization_key({
+          entity_type,
+          metadata: entity_metadata,
+          existing_data: entity_data,
+          authorization_preselect: authorization_preselect_values,
+        })
+      : "";
+  $: if (
+    entity_metadata &&
+    current_auth_profile &&
+    initialization_key !== applied_initialization_key
+  ) {
     const form_data = build_dynamic_form_initial_data(
       entity_metadata,
       entity_data,
-      get_authorization_preselect_values(
-        current_auth_profile as UserScopeProfile | null,
-      ),
+      authorization_preselect_values,
       entity_type,
     );
+    applied_initialization_key = initialization_key;
     form_state = { ...form_state, form_data, validation_errors: {} };
     if (browser) void controller.initialize_options(form_data);
   }

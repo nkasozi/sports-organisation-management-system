@@ -11,6 +11,7 @@
     current_profile_email,
     current_profile_initials,
     current_profile_organization_name,
+    current_profile_team_id,
     current_user_role_display,
     other_available_profiles,
     type UserProfile,
@@ -133,6 +134,7 @@
         current_profile_display_name={$current_profile_display_name}
         current_profile_organization_name={$current_profile_organization_name}
         current_profile_email={$current_profile_email}
+        current_profile_team_id={$current_profile_team_id}
         current_user_role_display={$current_user_role_display}
         is_signed_in={$is_signed_in}
         other_available_profiles={$other_available_profiles}

@@ -1,12 +1,14 @@
 <script lang="ts">
   import type { UserProfile } from "$lib/presentation/stores/auth";
 
+  import { build_header_user_menu_details } from "$lib/presentation/components/layout/headerUserMenuDetails";
   import HeaderProfileSwitcher from "./HeaderProfileSwitcher.svelte";
 
   export let current_profile_display_name: string = "";
   export let current_profile_email: string = "";
   export let current_user_role_display: string = "";
   export let current_profile_organization_name: string = "";
+  export let current_profile_team_id: string = "";
   export let is_signed_in: boolean = false;
   export let other_available_profiles: UserProfile[] = [];
   export let profile_submenu_open: boolean = false;
@@ -15,46 +17,63 @@
   export let on_profile_switch: (profile: UserProfile) => void = () => {};
   export let on_theme_toggle: () => void = () => {};
   export let on_logout_click: () => void = () => {};
+
+  $: header_user_menu_detail_rows = build_header_user_menu_details({
+    current_profile_email,
+    current_user_role_display,
+    current_profile_organization_name,
+    current_profile_team_id,
+  });
 </script>
 
 <div
-  class="absolute right-0 mt-2 w-72 rounded-md shadow-lg bg-white dark:bg-accent-800 ring-1 ring-black ring-opacity-5 z-[100] dropdown-menu"
+  class="absolute right-0 mt-2 w-80 max-w-[calc(100vw-2rem)] sm:w-96 rounded-md shadow-lg bg-white dark:bg-accent-800 ring-1 ring-black ring-opacity-5 z-[100] dropdown-menu"
   role="menu"
   tabindex="-1"
   on:click|stopPropagation
   on:keydown|stopPropagation
 >
   <div class="py-1">
-    <div class="px-4 py-3 border-b border-gray-200 dark:border-accent-700">
+    <div class="px-4 py-4 border-b border-gray-200 dark:border-accent-700">
       <p
-        class="text-xs text-gray-500 dark:text-accent-400 uppercase tracking-wide"
+        class="text-[11px] font-semibold text-gray-500 dark:text-accent-400 uppercase tracking-[0.24em]"
       >
         Signed in as
       </p>
-      <p class="text-sm font-semibold text-gray-900 dark:text-accent-100 mt-1">
-        {current_profile_display_name}
-      </p>
-      {#if current_profile_email}
-        <p class="text-xs text-gray-500 dark:text-accent-400 mt-0.5 truncate">
-          <span class="font-medium text-gray-600 dark:text-accent-300"
-            >Email:</span
+      <div
+        class="mt-3 rounded-md border border-gray-200 dark:border-accent-700 bg-gray-50 dark:bg-accent-900/40"
+      >
+        <div class="px-3 py-3">
+          <p
+            class="text-sm font-semibold leading-5 text-gray-900 dark:text-accent-100 break-words"
           >
-          {current_profile_email}
-        </p>
-      {/if}
-      <p class="text-xs text-gray-500 dark:text-accent-400 mt-1">
-        <span class="font-medium text-gray-600 dark:text-accent-300">Role:</span
-        >
-        {current_user_role_display}
-      </p>
-      {#if current_profile_organization_name}
-        <p class="text-xs text-gray-500 dark:text-accent-400 mt-1">
-          <span class="font-medium text-gray-600 dark:text-accent-300"
-            >Org:</span
-          >
-          {current_profile_organization_name}
-        </p>
-      {/if}
+            {current_profile_display_name}
+          </p>
+          {#if header_user_menu_detail_rows.length > 0}
+            <div
+              class="mt-3 border-t border-gray-200 dark:border-accent-700"
+            ></div>
+            <dl class="mt-3 space-y-2.5">
+              {#each header_user_menu_detail_rows as header_user_menu_detail_row (header_user_menu_detail_row.label)}
+                <div
+                  class="grid grid-cols-[5rem_minmax(0,1fr)] items-start gap-x-3"
+                >
+                  <dt
+                    class="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-accent-400"
+                  >
+                    {header_user_menu_detail_row.label}
+                  </dt>
+                  <dd
+                    class="min-w-0 text-sm leading-5 text-gray-700 dark:text-accent-200 break-words"
+                  >
+                    {header_user_menu_detail_row.value}
+                  </dd>
+                </div>
+              {/each}
+            </dl>
+          {/if}
+        </div>
+      </div>
     </div>
 
     {#if !is_signed_in && other_available_profiles.length > 0}
