@@ -229,7 +229,11 @@ describe("convert_system_users_to_profiles", () => {
       }),
     ];
 
-    const profiles = convert_system_users_to_profiles(users, new Map(), new Map());
+    const profiles = convert_system_users_to_profiles(
+      users,
+      new Map(),
+      new Map(),
+    );
 
     expect(profiles[0].organization_name).toBe("org_unknown");
     expect(profiles[0].team_name).toBe("");
