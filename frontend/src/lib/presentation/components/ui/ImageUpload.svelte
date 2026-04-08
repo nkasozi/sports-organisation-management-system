@@ -1,12 +1,20 @@
 <script lang="ts">
   import { createEventDispatcher } from "svelte";
 
+  import {
+    format_syncable_file_size,
+    MAX_SYNCABLE_IMAGE_FILE_BYTES,
+    validate_syncable_image_file,
+  } from "../../../core/services/syncableImageFileValidation";
+
   export let current_image_url: string = "";
   export let default_image_url: string = "";
   export let label: string = "Profile Photo";
   export let accept: string = "image/*";
   export let max_size_mb: number = 2;
   export let disabled: boolean = false;
+
+  const BYTES_PER_MEBIBYTE = 1024 * 1024;
 
   const dispatch = createEventDispatcher<{
     change: { url: string };
@@ -17,6 +25,12 @@
   let is_loading: boolean = false;
 
   $: display_image = current_image_url || default_image_url;
+  $: configured_max_size_bytes = max_size_mb * BYTES_PER_MEBIBYTE;
+  $: effective_max_size_bytes = Math.min(
+    configured_max_size_bytes,
+    MAX_SYNCABLE_IMAGE_FILE_BYTES,
+  );
+  $: max_size_label = format_syncable_file_size(effective_max_size_bytes);
 
   function handle_file_select(event: Event): void {
     const input = event.target as HTMLInputElement;
@@ -26,14 +40,12 @@
 
     error_message = "";
 
-    const max_size_bytes = max_size_mb * 1024 * 1024;
-    if (file.size > max_size_bytes) {
-      error_message = `File size must be less than ${max_size_mb}MB`;
-      return;
-    }
-
-    if (!file.type.startsWith("image/")) {
-      error_message = "Please select an image file";
+    const file_validation = validate_syncable_image_file(
+      file,
+      effective_max_size_bytes,
+    );
+    if (!file_validation.is_valid) {
+      error_message = file_validation.error_message ?? "";
       return;
     }
 
@@ -149,7 +161,7 @@
       </button>
 
       <p class="text-xs text-accent-500 dark:text-accent-400">
-        JPG, PNG or GIF. Max {max_size_mb}MB.
+        JPG, PNG or GIF. Max {max_size_label} to sync.
       </p>
 
       {#if error_message}

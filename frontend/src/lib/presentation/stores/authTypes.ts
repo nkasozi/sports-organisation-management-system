@@ -10,6 +10,7 @@ export interface ConvexUserProfile {
   role: string;
   organization_id?: string;
   team_id?: string;
+  team_name?: string;
   player_id?: string;
   official_id?: string;
   status?: string;
@@ -29,6 +30,7 @@ export interface UserProfile {
   organization_id: string;
   organization_name: string;
   team_id: string;
+  team_name?: string;
   player_id?: string;
   official_id?: string;
 }

@@ -1,3 +1,5 @@
+import { validate_syncable_image_file } from "$lib/core/services/syncableImageFileValidation";
+
 import type { EntityMetadata } from "../../core/entities/BaseEntity";
 import { build_dynamic_form_jersey_color_warnings } from "./dynamicEntityFormConflictWarnings";
 import { handle_dynamic_form_dependency_change } from "./dynamicEntityFormDependencyHandling";
@@ -65,12 +67,13 @@ export function create_dynamic_form_field_callbacks(
     const input = event.target as HTMLInputElement;
     if (!input.files || input.files.length === 0) return;
     const file = input.files[0];
-    if (!file.type.startsWith("image/")) {
+    const file_validation = validate_syncable_image_file(file);
+    if (!file_validation.is_valid) {
       dependencies.set_form_state({
         ...form_state,
         validation_errors: {
           ...form_state.validation_errors,
-          [field_name]: "Please select an image file",
+          [field_name]: file_validation.error_message ?? "",
         },
       });
       return;

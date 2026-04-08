@@ -3,14 +3,18 @@ import type { Table } from "dexie";
 import type { SyncDirection } from "$lib/core/interfaces/ports";
 
 import { is_auth_error } from "./syncAuthUtils";
+import { remediate_oversized_inline_file_records } from "./syncInlineFileRemediation";
 import { pull_table_from_convex } from "./syncPullService";
 import { push_table_to_convex } from "./syncPushService";
+import { get_pulling_from_remote, set_pulling_from_remote } from "./syncState";
 import type {
   ConflictFromServer,
   ConvexClient,
   RemoteTableState,
   TableName,
 } from "./syncTypes";
+
+const PUSH_REMEDIATION_FAILED_MESSAGE = "Push remediation failed";
 
 export interface TableSyncResult {
   records_pushed: number;
@@ -49,10 +53,41 @@ export async function sync_table_when_local_ahead(
   } | null = null;
 
   if (direction !== "pull" && !push_excluded_tables.has(table_name)) {
+    const remediation_result = await remediate_oversized_inline_file_records({
+      table,
+      table_name: table_name as TableName,
+      all_local_records: all_local_records as Array<
+        Record<string, unknown> & {
+          id: string;
+          updated_at?: string;
+          created_at?: string;
+        }
+      >,
+      remote_latest_modified_at: remote_state.latest_modified_at,
+      detect_conflicts,
+      get_is_remote_sync_in_progress: get_pulling_from_remote,
+      set_remote_sync_in_progress: set_pulling_from_remote,
+    });
+
+    if (!remediation_result.success) {
+      table_error = {
+        table_name,
+        error: remediation_result.error || PUSH_REMEDIATION_FAILED_MESSAGE,
+      };
+      return {
+        records_pushed,
+        records_pulled,
+        error: table_error,
+        conflicts: null,
+        auth_failed,
+        success: false,
+      };
+    }
+
     const push_result = await push_table_to_convex(
       convex_client,
       table_name as TableName,
-      all_local_records,
+      remediation_result.records,
       remote_state.latest_modified_at,
       detect_conflicts,
     );
@@ -154,10 +189,41 @@ export async function sync_table_when_remote_ahead(
 
   if (direction !== "pull" && !push_excluded_tables.has(table_name)) {
     const refreshed_records = await table.toArray();
+    const remediation_result = await remediate_oversized_inline_file_records({
+      table,
+      table_name: table_name as TableName,
+      all_local_records: refreshed_records as Array<
+        Record<string, unknown> & {
+          id: string;
+          updated_at?: string;
+          created_at?: string;
+        }
+      >,
+      remote_latest_modified_at: remote_state.latest_modified_at,
+      detect_conflicts,
+      get_is_remote_sync_in_progress: get_pulling_from_remote,
+      set_remote_sync_in_progress: set_pulling_from_remote,
+    });
+
+    if (!remediation_result.success) {
+      table_error = {
+        table_name,
+        error: remediation_result.error || PUSH_REMEDIATION_FAILED_MESSAGE,
+      };
+      return {
+        records_pushed,
+        records_pulled,
+        error: table_error,
+        conflicts: table_conflicts,
+        auth_failed,
+        success: false,
+      };
+    }
+
     const push_result = await push_table_to_convex(
       convex_client,
       table_name as TableName,
-      refreshed_records,
+      remediation_result.records,
       remote_state.latest_modified_at,
       detect_conflicts,
     );

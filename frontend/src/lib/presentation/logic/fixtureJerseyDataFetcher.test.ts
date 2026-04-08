@@ -82,20 +82,16 @@ describe("fixtureJerseyDataFetcher", () => {
 
   it("loads filtered jersey options from the resolved fixture holder", async () => {
     const fixture_use_cases = {
-      get_by_id: vi
-        .fn()
-        .mockResolvedValue({
-          success: true,
-          data: { home_team_id: "team-home" },
-        }),
+      get_by_id: vi.fn().mockResolvedValue({
+        success: true,
+        data: { home_team_id: "team-home" },
+      }),
     };
     const jersey_use_cases = {
-      list: vi
-        .fn()
-        .mockResolvedValue({
-          success: true,
-          data: { items: [{ id: "jersey-1", name: "Home Kit" }] },
-        }),
+      list: vi.fn().mockResolvedValue({
+        success: true,
+        data: { items: [{ id: "jersey-1", name: "Home Kit" }] },
+      }),
     };
     get_use_cases_for_entity_type_mock
       .mockReturnValueOnce({ success: true, data: fixture_use_cases })

@@ -8,6 +8,7 @@ export interface BuildHeaderUserMenuDetailsCommand {
   current_user_role_display: string;
   current_profile_organization_name: string;
   current_profile_team_id: string;
+  current_profile_team_name: string;
 }
 
 const DETAIL_LABEL_EMAIL = "Email";
@@ -34,15 +35,23 @@ function create_header_user_menu_detail_row(
 
 function format_header_user_menu_team_value(
   current_profile_team_id: string,
+  current_profile_team_name: string,
 ): string {
   const normalized_team_id = current_profile_team_id.trim();
   if (!normalized_team_id) {
     return "";
   }
 
-  return normalized_team_id === TEAM_SCOPE_WILDCARD
-    ? TEAM_SCOPE_ALL
-    : normalized_team_id;
+  if (normalized_team_id === TEAM_SCOPE_WILDCARD) {
+    return TEAM_SCOPE_ALL;
+  }
+
+  const normalized_team_name = current_profile_team_name.trim();
+  if (normalized_team_name) {
+    return normalized_team_name;
+  }
+
+  return normalized_team_id;
 }
 
 export function build_header_user_menu_details(
@@ -63,7 +72,10 @@ export function build_header_user_menu_details(
     ),
     create_header_user_menu_detail_row(
       DETAIL_LABEL_TEAM,
-      format_header_user_menu_team_value(command.current_profile_team_id),
+      format_header_user_menu_team_value(
+        command.current_profile_team_id,
+        command.current_profile_team_name,
+      ),
     ),
   ];
 

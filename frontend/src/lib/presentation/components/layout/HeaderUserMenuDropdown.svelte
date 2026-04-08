@@ -9,6 +9,7 @@
   export let current_user_role_display: string = "";
   export let current_profile_organization_name: string = "";
   export let current_profile_team_id: string = "";
+  export let current_profile_team_name: string = "";
   export let is_signed_in: boolean = false;
   export let other_available_profiles: UserProfile[] = [];
   export let profile_submenu_open: boolean = false;
@@ -23,6 +24,7 @@
     current_user_role_display,
     current_profile_organization_name,
     current_profile_team_id,
+    current_profile_team_name,
   });
 </script>
 

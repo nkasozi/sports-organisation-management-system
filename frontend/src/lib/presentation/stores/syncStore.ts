@@ -30,6 +30,19 @@ import { SYNC_INITIAL_STATE, type SyncState } from "./syncStoreTypes";
 export type { SyncState } from "./syncStoreTypes";
 export { SYNC_INITIAL_STATE } from "./syncStoreTypes";
 
+const SYNC_CONFLICT_ERROR_MESSAGE =
+  "Conflicts detected. Please review and resolve.";
+const SYNC_FALLBACK_ERROR_MESSAGE = "Sync failed. Please try again.";
+const SYNC_UNEXPECTED_FAILURE_MESSAGE = "Sync failed unexpectedly";
+
+function resolve_sync_error_message(result: SyncResult): string {
+  const has_conflicts = !!result.conflicts && result.conflicts.length > 0;
+  if (has_conflicts) {
+    return SYNC_CONFLICT_ERROR_MESSAGE;
+  }
+  return result.errors[0]?.error ?? SYNC_FALLBACK_ERROR_MESSAGE;
+}
+
 function create_sync_store() {
   const { subscribe, set, update } = writable<SyncState>(SYNC_INITIAL_STATE);
   function handle_progress(progress: SyncProgress): void {
@@ -59,11 +72,7 @@ function create_sync_store() {
       last_sync_at: new Date().toISOString(),
       last_sync_result: result,
       current_progress: null,
-      error_message: result.success
-        ? null
-        : has_conflicts
-          ? "Conflicts detected. Please review and resolve."
-          : "Sync failed. Please try again.",
+      error_message: result.success ? null : resolve_sync_error_message(result),
       has_pending_conflicts: has_conflicts,
     }));
   }
@@ -113,7 +122,13 @@ function create_sync_store() {
         return result;
       } catch (error) {
         const error_message =
-          error instanceof Error ? error.message : "Sync failed unexpectedly";
+          error instanceof Error
+            ? error.message
+            : SYNC_UNEXPECTED_FAILURE_MESSAGE;
+        console.error("[Sync] Unexpected sync failure", {
+          event: "sync_unexpected_failure",
+          error: String(error_message),
+        });
         const failed_result: SyncResult = {
           success: false,
           tables_synced: 0,

@@ -12,6 +12,7 @@
   export let current_profile_organization_name: string = "";
   export let current_profile_email: string = "";
   export let current_profile_team_id: string = "";
+  export let current_profile_team_name: string = "";
   export let current_user_role_display: string = "";
   export let is_signed_in: boolean = false;
   export let other_available_profiles: UserProfile[] = [];
@@ -47,6 +48,7 @@
         {current_profile_display_name}
         {current_profile_email}
         {current_profile_team_id}
+        {current_profile_team_name}
         {current_user_role_display}
         {current_profile_organization_name}
         {is_signed_in}

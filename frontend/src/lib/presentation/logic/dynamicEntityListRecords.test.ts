@@ -216,12 +216,10 @@ describe("dynamicEntityListRecords", () => {
     get_use_cases_for_entity_type_mock.mockReturnValueOnce({
       success: true,
       data: {
-        list: vi
-          .fn()
-          .mockResolvedValueOnce({
-            success: false,
-            error_message: "List failed",
-          }),
+        list: vi.fn().mockResolvedValueOnce({
+          success: false,
+          error_message: "List failed",
+        }),
       },
     });
 

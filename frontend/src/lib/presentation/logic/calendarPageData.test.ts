@@ -135,12 +135,10 @@ describe("calendarPageData", () => {
     const use_cases = {
       activity_category_use_cases: {
         ensure_default_categories_exist: vi.fn().mockResolvedValue(undefined),
-        list_by_organization: vi
-          .fn()
-          .mockResolvedValueOnce({
-            success: true,
-            data: { items: [{ id: "category-1" }] },
-          }),
+        list_by_organization: vi.fn().mockResolvedValueOnce({
+          success: true,
+          data: { items: [{ id: "category-1" }] },
+        }),
       },
       activity_use_cases: {
         get_calendar_events: vi.fn().mockResolvedValueOnce({ success: false }),
@@ -148,12 +146,10 @@ describe("calendarPageData", () => {
         sync_fixtures_to_activities: vi.fn().mockResolvedValue(undefined),
       },
       competition_use_cases: {
-        list: vi
-          .fn()
-          .mockResolvedValueOnce({
-            success: true,
-            data: { items: [{ id: "competition-1" }] },
-          }),
+        list: vi.fn().mockResolvedValueOnce({
+          success: true,
+          data: { items: [{ id: "competition-1" }] },
+        }),
       },
       team_use_cases: {
         list: vi.fn().mockResolvedValueOnce({ success: false }),

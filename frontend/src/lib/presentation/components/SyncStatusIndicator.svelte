@@ -17,6 +17,10 @@
   let current_table = "";
   let relative_time_tick = 0;
 
+  const SYNC_PROGRESS_ICON_COLOR = "rgb(59 130 246 / 1)";
+  const SYNC_ERROR_ICON_COLOR = "rgb(239 68 68 / 1)";
+  const SYNC_SUCCESS_ICON_COLOR = "rgb(16 185 129 / 1)";
+
   is_syncing.subscribe((value) => {
     sync_in_progress = value;
   });
@@ -52,9 +56,13 @@
   }
 
   function get_sync_icon_class(): string {
-    if (sync_in_progress) return "animate-spin text-blue-500";
-    if (error_message) return "text-red-500";
-    return "text-emerald-500";
+    return sync_in_progress ? "animate-spin" : "";
+  }
+
+  function get_sync_icon_color(): string {
+    if (sync_in_progress) return SYNC_PROGRESS_ICON_COLOR;
+    if (error_message) return SYNC_ERROR_ICON_COLOR;
+    return SYNC_SUCCESS_ICON_COLOR;
   }
 
   function format_sync_status_text(): string {
@@ -76,7 +84,7 @@
   }
 </script>
 
-<div class="relative">
+<div class="relative sync-status-indicator">
   <button
     type="button"
     on:click={() => (show_details = !show_details)}
@@ -84,7 +92,8 @@
     title="Sync Status"
   >
     <svg
-      class="w-4 h-4 {get_sync_icon_class()}"
+      class="w-4 h-4 sync-status-indicator-icon {get_sync_icon_class()}"
+      style="--sync-status-color: {get_sync_icon_color()};"
       fill="none"
       stroke="currentColor"
       viewBox="0 0 24 24"
@@ -114,3 +123,15 @@
     />
   {/if}
 </div>
+
+<style>
+  .sync-status-indicator-icon {
+    color: var(--sync-status-color);
+    stroke: currentColor;
+  }
+
+  :global(.header-panel .sync-status-indicator .sync-status-indicator-icon) {
+    color: var(--sync-status-color) !important;
+    stroke: currentColor !important;
+  }
+</style>

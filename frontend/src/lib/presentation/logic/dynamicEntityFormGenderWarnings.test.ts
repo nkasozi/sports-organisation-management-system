@@ -48,12 +48,10 @@ describe("dynamicEntityFormGenderWarnings", () => {
         { player_id: "player-1", to_team_id: "team-1" },
         {
           team_use_cases: {
-            get_by_id: vi
-              .fn()
-              .mockResolvedValueOnce({
-                success: true,
-                data: { gender_id: "gender-2", name: "Lions" },
-              }),
+            get_by_id: vi.fn().mockResolvedValueOnce({
+              success: true,
+              data: { gender_id: "gender-2", name: "Lions" },
+            }),
           },
           player_use_cases_result: {
             success: true,

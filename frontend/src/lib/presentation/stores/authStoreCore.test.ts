@@ -5,6 +5,7 @@ const auth_store_core_mocks = vi.hoisted(() => ({
   sync_branding_with_profile: vi.fn(),
   get_organization_repository: vi.fn(),
   get_system_user_repository: vi.fn(),
+  get_team_repository: vi.fn(),
   build_profiles_with_public_viewer: vi.fn(),
   clear_auth_storage: vi.fn(),
   generate_token_for_profile: vi.fn(),
@@ -32,6 +33,10 @@ vi.mock("$lib/adapters/repositories/InBrowserOrganizationRepository", () => ({
 
 vi.mock("$lib/adapters/repositories/InBrowserSystemUserRepository", () => ({
   get_system_user_repository: auth_store_core_mocks.get_system_user_repository,
+}));
+
+vi.mock("$lib/adapters/repositories/InBrowserTeamRepository", () => ({
+  get_team_repository: auth_store_core_mocks.get_team_repository,
 }));
 
 vi.mock("./authHelpers", () => ({
@@ -110,6 +115,7 @@ describe("authStoreCore", () => {
     auth_store_core_mocks.sync_branding_with_profile.mockReset();
     auth_store_core_mocks.get_organization_repository.mockReset();
     auth_store_core_mocks.get_system_user_repository.mockReset();
+    auth_store_core_mocks.get_team_repository.mockReset();
     auth_store_core_mocks.build_profiles_with_public_viewer.mockReset();
     auth_store_core_mocks.clear_auth_storage.mockReset();
     auth_store_core_mocks.generate_token_for_profile.mockReset();
@@ -130,6 +136,9 @@ describe("authStoreCore", () => {
     });
     auth_store_core_mocks.get_organization_repository.mockReturnValue({
       kind: "organization-repository",
+    });
+    auth_store_core_mocks.get_team_repository.mockReturnValue({
+      kind: "team-repository",
     });
     auth_store_core_mocks.build_profiles_with_public_viewer.mockImplementation(
       (profiles: unknown[]) => profiles,
@@ -199,6 +208,7 @@ describe("authStoreCore", () => {
     ).toHaveBeenCalledWith(
       { kind: "system-user-repository" },
       { kind: "organization-repository" },
+      { kind: "team-repository" },
     );
     expect(get(auth_store)).toEqual(
       expect.objectContaining({

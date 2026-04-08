@@ -63,12 +63,10 @@ describe("competitionResultsTeamFixturesData", () => {
     ];
     const dependencies = {
       fixture_use_cases: {
-        list: vi
-          .fn()
-          .mockResolvedValueOnce({
-            success: true,
-            data: { items: all_fixtures },
-          }),
+        list: vi.fn().mockResolvedValueOnce({
+          success: true,
+          data: { items: all_fixtures },
+        }),
       },
       team_use_cases: {
         get_by_id: vi.fn().mockResolvedValueOnce({
@@ -77,12 +75,10 @@ describe("competitionResultsTeamFixturesData", () => {
         }),
       },
       competition_use_cases: {
-        get_by_id: vi
-          .fn()
-          .mockResolvedValueOnce({
-            success: true,
-            data: { id: "competition-2", name: "League Two" },
-          }),
+        get_by_id: vi.fn().mockResolvedValueOnce({
+          success: true,
+          data: { id: "competition-2", name: "League Two" },
+        }),
       },
     };
 

@@ -151,12 +151,10 @@ describe("competitionTeamDataFetcher", () => {
     get_use_cases_for_entity_type_mock.mockReturnValue({
       success: true,
       data: {
-        get_by_id: vi
-          .fn()
-          .mockResolvedValue({
-            success: true,
-            data: { name: "National Stadium" },
-          }),
+        get_by_id: vi.fn().mockResolvedValue({
+          success: true,
+          data: { name: "National Stadium" },
+        }),
       },
     });
 
