@@ -7,6 +7,7 @@ import type {
 } from "../../core/entities/BaseEntity";
 import {
   build_dynamic_form_initial_data,
+  create_dynamic_form_initialization_key,
   is_competition_format_entity_type,
 } from "./dynamicEntityFormInitialization";
 
@@ -93,5 +94,76 @@ describe("dynamicEntityFormInitialization", () => {
 
     expect(Array.isArray(result["stage_templates"])).toBe(true);
     expect(result["stage_templates"].length).toBeGreaterThan(0);
+  });
+
+  it("builds the same initialization key for equal initialization inputs", () => {
+    const metadata = create_entity_metadata({
+      fields: [
+        create_field_metadata({ field_name: "name" }),
+        create_field_metadata({ field_name: "logo_url", field_type: "file" }),
+      ],
+    });
+    const existing_data: Partial<BaseEntity> = {
+      id: "team_1",
+      name: "Makers HC",
+      logo_url: "data:image/png;base64,abc123",
+    } as Partial<BaseEntity>;
+
+    const first_key = create_dynamic_form_initialization_key({
+      entity_type: "team",
+      metadata,
+      existing_data,
+      authorization_preselect: { organization_id: "org_1" },
+    });
+    const second_key = create_dynamic_form_initialization_key({
+      entity_type: "team",
+      metadata: create_entity_metadata({
+        fields: [
+          create_field_metadata({ field_name: "name" }),
+          create_field_metadata({
+            field_name: "logo_url",
+            field_type: "file",
+          }),
+        ],
+      }),
+      existing_data: {
+        id: "team_1",
+        name: "Makers HC",
+        logo_url: "data:image/png;base64,abc123",
+      } as Partial<BaseEntity>,
+      authorization_preselect: { organization_id: "org_1" },
+    });
+
+    expect(first_key).toBe(second_key);
+  });
+
+  it("changes the initialization key when the initial source data changes", () => {
+    const metadata = create_entity_metadata({
+      fields: [
+        create_field_metadata({ field_name: "name" }),
+        create_field_metadata({ field_name: "organization_id" }),
+      ],
+    });
+
+    const first_key = create_dynamic_form_initialization_key({
+      entity_type: "team",
+      metadata,
+      existing_data: {
+        id: "team_1",
+        name: "Original Name",
+      } as Partial<BaseEntity>,
+      authorization_preselect: { organization_id: "org_1" },
+    });
+    const second_key = create_dynamic_form_initialization_key({
+      entity_type: "team",
+      metadata,
+      existing_data: {
+        id: "team_1",
+        name: "Updated Name",
+      } as Partial<BaseEntity>,
+      authorization_preselect: { organization_id: "org_1" },
+    });
+
+    expect(first_key).not.toBe(second_key);
   });
 });

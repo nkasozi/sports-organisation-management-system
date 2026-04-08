@@ -102,6 +102,27 @@ export function build_dynamic_form_initial_data(
   };
 }
 
+export function create_dynamic_form_initialization_key(command: {
+  entity_type: string;
+  metadata: EntityMetadata;
+  existing_data: Partial<BaseEntity> | null;
+  authorization_preselect: Record<string, string>;
+}): string {
+  return JSON.stringify({
+    entity_type: command.entity_type,
+    entity_name: command.metadata.entity_name,
+    field_names: command.metadata.fields.map(
+      (field: FieldMetadata) => field.field_name,
+    ),
+    authorization_preselect: Object.fromEntries(
+      Object.entries(command.authorization_preselect).sort(
+        ([first_key], [second_key]) => first_key.localeCompare(second_key),
+      ),
+    ),
+    existing_data: command.existing_data,
+  });
+}
+
 export function create_sub_entity_crud_handlers(
   child_entity_type: string,
   sub_filter: SubEntityFilter,

@@ -7,7 +7,7 @@ export default defineConfig({
     environment: "node",
     exclude: ["**/node_modules/**", "**/.svelte-kit/**", "**/dist/**"],
     teardownTimeout: 1000,
-    include: ["src/**/*.test.ts"],
+    include: ["src/**/*.test.ts", "convex/**/*.test.ts"],
     env: {
       AUTH_SECRET_KEY: "vitest-only-test-secret-key-not-for-production",
     },

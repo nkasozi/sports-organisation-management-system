@@ -37,6 +37,10 @@ export const current_profile_email = derived(auth_store, ($auth) => {
   return $auth.current_profile?.email ?? "";
 });
 
+export const current_profile_team_id = derived(auth_store, ($auth) => {
+  return $auth.current_profile?.team_id ?? "";
+});
+
 export const current_profile_initials = derived(auth_store, ($auth) => {
   const name = $auth.current_profile?.display_name ?? "";
   if (!name) return "?";
