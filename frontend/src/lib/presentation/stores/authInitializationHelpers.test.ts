@@ -58,6 +58,7 @@ const {
     clear_auth_storage_mock: vi.fn(),
     clerk_session_store: create_store<ClerkSessionValue>({ user: null }),
     get_authentication_adapter_mock: vi.fn(),
+    get_team_repository_mock: vi.fn(),
     is_clerk_loaded_store: create_store(false),
     load_profiles_from_repository_mock: vi.fn(),
     load_sidebar_menu_for_role_mock: vi.fn(),
@@ -86,6 +87,10 @@ vi.mock("$lib/adapters/repositories/InBrowserOrganizationRepository", () => ({
 
 vi.mock("$lib/adapters/repositories/InBrowserSystemUserRepository", () => ({
   get_system_user_repository: vi.fn(() => ({ repository: "system_user" })),
+}));
+
+vi.mock("$lib/adapters/repositories/InBrowserTeamRepository", () => ({
+  get_team_repository: vi.fn(() => ({ repository: "team" })),
 }));
 
 vi.mock("./authHelpers", () => ({
@@ -144,6 +149,11 @@ describe("authInitializationHelpers", () => {
       public_viewer_profile,
       loaded_profile,
     ]);
+    expect(load_profiles_from_repository_mock).toHaveBeenCalledWith(
+      { repository: "system_user" },
+      { repository: "organization" },
+      { repository: "team" },
+    );
   });
 
   it("returns null and clears storage when anonymous restore fails token validation", async () => {

@@ -1,6 +1,5 @@
 <script lang="ts">
   import { createEventDispatcher } from "svelte";
-
   import { goto, invalidateAll } from "$app/navigation";
   import { is_signed_in, sign_out } from "$lib/adapters/iam/clerkAuthService";
   import LogoutWarningModal from "$lib/presentation/components/ui/LogoutWarningModal.svelte";
@@ -23,18 +22,13 @@
     theme_store,
     toggle_theme_mode,
   } from "$lib/presentation/stores/theme";
-
   import HeaderAccountPanel from "./HeaderAccountPanel.svelte";
   import HeaderBrandPanel from "./HeaderBrandPanel.svelte";
-
   export let sidebar_open = false;
-
   const dispatch = createEventDispatcher();
-
   let user_menu_open = false;
   let profile_submenu_open = false;
   let show_logout_warning = false;
-
   $: has_custom_logo =
     !!$branding_store.organization_logo_url &&
     $branding_store.organization_logo_url.length > 0;
@@ -100,7 +94,6 @@
 </script>
 
 <svelte:window on:click={close_user_menu} />
-
 <header
   class="shadow-sm border-b border-theme-primary-600 dark:border-theme-primary-700 sticky top-0 z-50 relative"
 >
@@ -115,7 +108,6 @@
       class="absolute inset-0 bg-theme-primary-500 dark:bg-theme-primary-600"
     ></div>
   {/if}
-
   <div class="px-4 sm:px-6 lg:px-8 relative z-10">
     <div class="flex justify-between items-center h-20">
       <HeaderBrandPanel
@@ -135,6 +127,7 @@
         current_profile_organization_name={$current_profile_organization_name}
         current_profile_email={$current_profile_email}
         current_profile_team_id={$current_profile_team_id}
+        current_profile_team_name={$auth_store.current_profile?.team_name ?? ""}
         current_user_role_display={$current_user_role_display}
         is_signed_in={$is_signed_in}
         other_available_profiles={$other_available_profiles}
@@ -151,7 +144,6 @@
     </div>
   </div>
 </header>
-
 <LogoutWarningModal
   is_visible={show_logout_warning}
   on:confirm_logout={handle_logout_confirmed}
@@ -173,7 +165,6 @@
     outline: 2px solid theme("colors.primary.500");
     outline-offset: 2px;
   }
-
   :global(.header-panel) {
     text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
   }
@@ -190,7 +181,6 @@
     color: white !important;
     stroke: white !important;
   }
-
   :global(.header-panel .dropdown-menu),
   :global(.header-panel .dropdown-menu p),
   :global(.header-panel .dropdown-menu span) {

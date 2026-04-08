@@ -1,3 +1,7 @@
+import {
+  build_sync_push_batches,
+  type SyncBatchRecord,
+} from "./syncPushBatching";
 import type { ConflictFromServer, ConvexClient, TableName } from "./syncTypes";
 import { EPOCH_TIMESTAMP } from "./syncTypes";
 
@@ -40,28 +44,50 @@ export async function push_table_to_convex(
     `[Sync:Push] ${table_name} — ${records_to_push.length} records to push`,
   );
 
-  const batch_size = 25;
   let total_pushed = 0;
   const all_conflicts: ConflictFromServer[] = [];
+  const sync_version = Date.now();
+  const batch_records: SyncBatchRecord[] = records_to_push.map((record) => ({
+    local_id: record.id,
+    data: record as Record<string, unknown>,
+    version: sync_version,
+  }));
+  const batch_partition_result = build_sync_push_batches({
+    table_name,
+    records: batch_records,
+    detect_conflicts,
+  });
+
+  if (!batch_partition_result.success) {
+    console.error("[Sync:Push] Batch partition failed", {
+      event: "sync_push_batch_partition_failed",
+      table_name,
+      error: batch_partition_result.error,
+    });
+    return {
+      success: false,
+      records_pushed: 0,
+      error: batch_partition_result.error,
+      conflicts: [],
+    };
+  }
 
   try {
-    for (let i = 0; i < records_to_push.length; i += batch_size) {
-      const batch = records_to_push.slice(i, i + batch_size);
-      const batch_number = Math.floor(i / batch_size) + 1;
-      const total_batches = Math.ceil(records_to_push.length / batch_size);
+    for (
+      let batch_index = 0;
+      batch_index < batch_partition_result.batches.length;
+      batch_index++
+    ) {
+      const batch = batch_partition_result.batches[batch_index];
+      const batch_number = batch_index + 1;
+      const total_batches = batch_partition_result.batches.length;
       console.log(
         `[Sync:Push] ${table_name} — sending batch ${batch_number}/${total_batches} (${batch.length} records)`,
       );
 
-      const batch_records = batch.map((record) => ({
-        local_id: record.id,
-        data: record,
-        version: Date.now(),
-      }));
-
       const result = (await convex_client.mutation("sync:batch_upsert", {
         table_name,
-        records: batch_records,
+        records: batch,
         detect_conflicts,
       })) as {
         success: boolean;
@@ -107,7 +133,7 @@ export async function push_table_to_convex(
     const error_message =
       error instanceof Error ? error.message : String(error);
     console.error("[Sync:Push] Operation failed", {
-      event: "failed_failed",
+      event: "sync_push_operation_failed",
       context: String(table_name),
       error: String(error_message),
     });

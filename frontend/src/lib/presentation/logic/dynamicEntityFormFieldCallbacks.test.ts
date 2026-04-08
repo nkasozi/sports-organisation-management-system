@@ -1,5 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import {
+  build_syncable_image_file_size_error,
+  MAX_SYNCABLE_IMAGE_FILE_BYTES,
+} from "$lib/core/services/syncableImageFileValidation";
+
 const {
   build_dynamic_form_jersey_color_warnings_mock,
   convert_file_to_base64_mock,
@@ -129,6 +134,34 @@ describe("dynamicEntityFormFieldCallbacks", () => {
 
     expect(dependencies.set_form_state).toHaveBeenCalled();
     expect(convert_file_to_base64_mock).toHaveBeenCalled();
+  });
+
+  it("rejects oversized image uploads before processing them", async () => {
+    const { dependencies, state } = create_dependencies();
+    const callbacks = create_dynamic_form_field_callbacks(
+      dependencies as never,
+    );
+
+    await callbacks.handle_file_change(
+      {
+        target: {
+          files: [
+            {
+              size: MAX_SYNCABLE_IMAGE_FILE_BYTES + 1,
+              type: "image/png",
+            },
+          ],
+        },
+      } as never,
+      "logo_url",
+    );
+
+    expect(convert_file_to_base64_mock).not.toHaveBeenCalled();
+    expect(
+      (state.form_state.validation_errors as Record<string, string>)[
+        "logo_url"
+      ],
+    ).toBe(build_syncable_image_file_size_error(MAX_SYNCABLE_IMAGE_FILE_BYTES));
   });
 
   it("updates dependent options and warning state after foreign-key changes", async () => {

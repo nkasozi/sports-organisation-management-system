@@ -93,16 +93,14 @@ describe("liveGameDetailLineupActions", () => {
         }),
       };
     const player_use_cases: Pick<PlayerUseCases, "get_by_id"> = {
-      get_by_id: vi
-        .fn()
-        .mockImplementation(async (player_id: string) =>
-          player_id === "player-1"
-            ? {
-                success: true,
-                data: { id: "player-1", first_name: "Ada", last_name: "Stone" },
-              }
-            : { success: false, error: "Missing" },
-        ),
+      get_by_id: vi.fn().mockImplementation(async (player_id: string) =>
+        player_id === "player-1"
+          ? {
+              success: true,
+              data: { id: "player-1", first_name: "Ada", last_name: "Stone" },
+            }
+          : { success: false, error: "Missing" },
+      ),
     };
     const fixture_lineup_use_cases: Pick<
       Parameters<typeof auto_generate_live_game_lineup>[4],

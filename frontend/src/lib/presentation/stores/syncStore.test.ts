@@ -136,6 +136,37 @@ describe("syncStore", () => {
     });
   });
 
+  it("surfaces the first sync error message when a sync fails without conflicts", async () => {
+    const failed_result = {
+      success: false,
+      tables_synced: 0,
+      records_pushed: 0,
+      records_pulled: 0,
+      errors: [
+        {
+          table_name: "teams",
+          error:
+            'Record "team-1" in "teams" is too large to sync. Choose a smaller image and try again.',
+        },
+      ],
+      duration_ms: 30,
+      conflicts: [],
+    };
+    sync_store_mocks.manager.sync_now.mockResolvedValue(failed_result);
+
+    const { sync_store } = await import("./syncStore");
+
+    const result = await sync_store.sync_now("push");
+
+    expect(result).toEqual(failed_result);
+    expect(get(sync_store)).toMatchObject({
+      is_syncing: false,
+      error_message: failed_result.errors[0].error,
+      has_pending_conflicts: false,
+      last_sync_result: failed_result,
+    });
+  });
+
   it("converts thrown sync errors into a failed sync result", async () => {
     sync_store_mocks.manager.sync_now.mockRejectedValue(
       new Error("network down"),
@@ -156,7 +187,7 @@ describe("syncStore", () => {
     });
     expect(get(sync_store)).toMatchObject({
       is_syncing: false,
-      error_message: "Sync failed. Please try again.",
+      error_message: "network down",
       has_pending_conflicts: false,
     });
   });

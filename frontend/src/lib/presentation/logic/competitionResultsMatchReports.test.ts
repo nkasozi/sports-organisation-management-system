@@ -161,12 +161,10 @@ describe("competitionResultsMatchReports", () => {
         organization_logo_url: "/logo.svg",
         dependencies: {
           fixture_lineup_use_cases: {
-            get_lineup_for_team_in_fixture: vi
-              .fn()
-              .mockResolvedValue({
-                success: true,
-                data: { selected_players: [] },
-              }),
+            get_lineup_for_team_in_fixture: vi.fn().mockResolvedValue({
+              success: true,
+              data: { selected_players: [] },
+            }),
           },
           team_staff_use_cases: { marker: true },
         } as never,
@@ -185,12 +183,10 @@ describe("competitionResultsMatchReports", () => {
         organization_logo_url: "/logo.svg",
         dependencies: {
           fixture_lineup_use_cases: {
-            get_lineup_for_team_in_fixture: vi
-              .fn()
-              .mockResolvedValue({
-                success: true,
-                data: { selected_players: [] },
-              }),
+            get_lineup_for_team_in_fixture: vi.fn().mockResolvedValue({
+              success: true,
+              data: { selected_players: [] },
+            }),
           },
           team_staff_use_cases: { marker: true },
         } as never,
@@ -245,12 +241,10 @@ describe("competitionResultsMatchReports", () => {
         organization_logo_url: "/logo.svg",
         dependencies: {
           fixture_lineup_use_cases: {
-            get_lineup_for_team_in_fixture: vi
-              .fn()
-              .mockResolvedValue({
-                success: true,
-                data: { selected_players: [] },
-              }),
+            get_lineup_for_team_in_fixture: vi.fn().mockResolvedValue({
+              success: true,
+              data: { selected_players: [] },
+            }),
           },
           team_staff_use_cases: { marker: true },
         } as never,

@@ -3,6 +3,7 @@ import { get, writable } from "svelte/store";
 import { sync_branding_with_profile } from "$lib/adapters/initialization/brandingSyncService";
 import { get_organization_repository } from "$lib/adapters/repositories/InBrowserOrganizationRepository";
 import { get_system_user_repository } from "$lib/adapters/repositories/InBrowserSystemUserRepository";
+import { get_team_repository } from "$lib/adapters/repositories/InBrowserTeamRepository";
 import type { Result } from "$lib/core/types/Result";
 
 import {
@@ -48,6 +49,7 @@ function create_auth_store() {
     const loaded_profiles = await load_profiles_from_repository(
       repository,
       organization_repository,
+      get_team_repository(),
     );
     const refreshed_profiles =
       build_profiles_with_public_viewer(loaded_profiles);

@@ -8,6 +8,7 @@ import { get_authentication_adapter } from "$lib/adapters/iam/LocalAuthenticatio
 import { sync_branding_with_profile } from "$lib/adapters/initialization/brandingSyncService";
 import { get_organization_repository } from "$lib/adapters/repositories/InBrowserOrganizationRepository";
 import { get_system_user_repository } from "$lib/adapters/repositories/InBrowserSystemUserRepository";
+import { get_team_repository } from "$lib/adapters/repositories/InBrowserTeamRepository";
 import type { AuthToken } from "$lib/core/interfaces/ports";
 
 import {
@@ -36,6 +37,7 @@ export async function load_available_profiles(): Promise<UserProfile[]> {
   const loaded_profiles = await load_profiles_from_repository(
     get_system_user_repository(),
     get_organization_repository(),
+    get_team_repository(),
   );
   return build_profiles_with_public_viewer(loaded_profiles);
 }

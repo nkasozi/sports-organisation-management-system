@@ -4,6 +4,7 @@ import type { SystemUser } from "$lib/core/entities/SystemUser";
 import type {
   OrganizationRepository,
   SystemUserRepository,
+  TeamRepository,
 } from "$lib/core/interfaces/ports";
 import {
   create_failure_result,
@@ -91,6 +92,48 @@ function create_mock_org_repository(
   } as unknown as OrganizationRepository;
 }
 
+function create_mock_team_repository(
+  teams: Array<{ id: string; name: string }> = [],
+): TeamRepository {
+  return {
+    find_by_ids: vi.fn().mockResolvedValue(
+      create_success_result(
+        teams.map((team) => ({
+          id: team.id,
+          name: team.name,
+          short_name: team.name,
+          description: "",
+          organization_id: "org_1",
+          gender_id: "",
+          captain_player_id: null,
+          vice_captain_player_id: null,
+          max_squad_size: 25,
+          home_venue_id: "",
+          primary_color: "#000000",
+          secondary_color: "#FFFFFF",
+          logo_url: "",
+          website: "",
+          founded_year: 2024,
+          status: "active",
+          created_at: "2024-01-01T00:00:00Z",
+          updated_at: "2024-01-01T00:00:00Z",
+        })),
+      ),
+    ),
+    find_active_teams: vi.fn(),
+    find_by_organization: vi.fn(),
+    find_all: vi.fn(),
+    find_by_id: vi.fn(),
+    create: vi.fn(),
+    update: vi.fn(),
+    delete_by_id: vi.fn(),
+    count: vi.fn(),
+    has_data: vi.fn(),
+    seed_with_data: vi.fn(),
+    clear_all_data: vi.fn(),
+  } as unknown as TeamRepository;
+}
+
 describe("convert_system_user_to_profile", () => {
   it("maps all fields from system user to profile", () => {
     const system_user = create_test_system_user({
@@ -108,6 +151,7 @@ describe("convert_system_user_to_profile", () => {
     const profile = convert_system_user_to_profile(
       system_user,
       "Test Organisation",
+      "Test Team",
     );
 
     expect(profile.id).toBe("usr_1");
@@ -117,6 +161,7 @@ describe("convert_system_user_to_profile", () => {
     expect(profile.organization_id).toBe("org_99");
     expect(profile.organization_name).toBe("Test Organisation");
     expect(profile.team_id).toBe("team_42");
+    expect(profile.team_name).toBe("Test Team");
     expect(profile.player_id).toBe("player_7");
     expect(profile.official_id).toBe("official_3");
   });
@@ -124,7 +169,7 @@ describe("convert_system_user_to_profile", () => {
   it("sets team_id to empty string when system user has no team_id", () => {
     const system_user = create_test_system_user({ team_id: undefined });
 
-    const profile = convert_system_user_to_profile(system_user, "Org");
+    const profile = convert_system_user_to_profile(system_user, "Org", "");
 
     expect(profile.team_id).toBe("");
   });
@@ -135,7 +180,7 @@ describe("convert_system_user_to_profile", () => {
       last_name: "Anderson",
     });
 
-    const profile = convert_system_user_to_profile(system_user, "Org");
+    const profile = convert_system_user_to_profile(system_user, "Org", "");
 
     expect(profile.display_name).toBe("Michael Anderson");
   });
@@ -148,11 +193,13 @@ describe("convert_system_users_to_profiles", () => {
         id: "usr_1",
         first_name: "Alice",
         organization_id: "org_1",
+        team_id: "team_1",
       }),
       create_test_system_user({
         id: "usr_2",
         first_name: "Bob",
         organization_id: "org_2",
+        team_id: "team_2",
       }),
     ];
 
@@ -160,12 +207,18 @@ describe("convert_system_users_to_profiles", () => {
       ["org_1", "Hockey Federation"],
       ["org_2", "Football League"],
     ]);
+    const team_map = new Map([
+      ["team_1", "Kampala Cranes"],
+      ["team_2", "Entebbe Sharks"],
+    ]);
 
-    const profiles = convert_system_users_to_profiles(users, org_map);
+    const profiles = convert_system_users_to_profiles(users, org_map, team_map);
 
     expect(profiles).toHaveLength(2);
     expect(profiles[0].organization_name).toBe("Hockey Federation");
+    expect(profiles[0].team_name).toBe("Kampala Cranes");
     expect(profiles[1].organization_name).toBe("Football League");
+    expect(profiles[1].team_name).toBe("Entebbe Sharks");
   });
 
   it("falls back to organization_id when name not in map", () => {
@@ -176,9 +229,10 @@ describe("convert_system_users_to_profiles", () => {
       }),
     ];
 
-    const profiles = convert_system_users_to_profiles(users, new Map());
+    const profiles = convert_system_users_to_profiles(users, new Map(), new Map());
 
     expect(profiles[0].organization_name).toBe("org_unknown");
+    expect(profiles[0].team_name).toBe("");
   });
 
   it("includes all system users regardless of status", () => {
@@ -188,7 +242,11 @@ describe("convert_system_users_to_profiles", () => {
       create_test_system_user({ id: "usr_3", status: "active" }),
     ];
 
-    const profiles = convert_system_users_to_profiles(users, new Map());
+    const profiles = convert_system_users_to_profiles(
+      users,
+      new Map(),
+      new Map(),
+    );
 
     expect(profiles).toHaveLength(3);
     expect(profiles[0].id).toBe("usr_1");
@@ -197,7 +255,7 @@ describe("convert_system_users_to_profiles", () => {
   });
 
   it("returns empty array for empty input", () => {
-    const profiles = convert_system_users_to_profiles([], new Map());
+    const profiles = convert_system_users_to_profiles([], new Map(), new Map());
     expect(profiles).toEqual([]);
   });
 });
@@ -257,11 +315,13 @@ describe("load_profiles_from_repository", () => {
         id: "usr_1",
         first_name: "Admin",
         organization_id: "org_1",
+        team_id: "team_1",
       }),
       create_test_system_user({
         id: "usr_2",
         first_name: "Manager",
         organization_id: "org_2",
+        team_id: "team_2",
       }),
     ];
 
@@ -281,17 +341,24 @@ describe("load_profiles_from_repository", () => {
       { id: "org_1", name: "Hockey Federation" },
       { id: "org_2", name: "Football League" },
     ]);
+    const mock_team_repo = create_mock_team_repository([
+      { id: "team_1", name: "Kampala Cranes" },
+      { id: "team_2", name: "Entebbe Sharks" },
+    ]);
 
     const profiles = await load_profiles_from_repository(
       mock_user_repo,
       mock_org_repo,
+      mock_team_repo,
     );
 
     expect(profiles).toHaveLength(2);
     expect(profiles[0].display_name).toBe("Admin Doe");
     expect(profiles[0].organization_name).toBe("Hockey Federation");
+    expect(profiles[0].team_name).toBe("Kampala Cranes");
     expect(profiles[1].display_name).toBe("Manager Doe");
     expect(profiles[1].organization_name).toBe("Football League");
+    expect(profiles[1].team_name).toBe("Entebbe Sharks");
   });
 
   it("returns empty array when repository call fails", async () => {
@@ -299,10 +366,12 @@ describe("load_profiles_from_repository", () => {
       Promise.resolve(create_failure_result("Database error")),
     );
     const mock_org_repo = create_mock_org_repository();
+    const mock_team_repo = create_mock_team_repository();
 
     const profiles = await load_profiles_from_repository(
       mock_user_repo,
       mock_org_repo,
+      mock_team_repo,
     );
 
     expect(profiles).toEqual([]);
@@ -321,10 +390,12 @@ describe("load_profiles_from_repository", () => {
       ),
     );
     const mock_org_repo = create_mock_org_repository();
+    const mock_team_repo = create_mock_team_repository();
 
     const profiles = await load_profiles_from_repository(
       mock_user_repo,
       mock_org_repo,
+      mock_team_repo,
     );
 
     expect(profiles).toEqual([]);
@@ -358,10 +429,14 @@ describe("load_profiles_from_repository", () => {
     const mock_org_repo = create_mock_org_repository([
       { id: "org_hockey", name: "Hockey Association" },
     ]);
+    const mock_team_repo = create_mock_team_repository([
+      { id: "team_weatherhead", name: "Weatherhead Hockey Club" },
+    ]);
 
     const profiles = await load_profiles_from_repository(
       mock_user_repo,
       mock_org_repo,
+      mock_team_repo,
     );
 
     expect(profiles).toHaveLength(1);
@@ -373,6 +448,7 @@ describe("load_profiles_from_repository", () => {
     expect(profile.organization_id).toBe("org_hockey");
     expect(profile.organization_name).toBe("Hockey Association");
     expect(profile.team_id).toBe("team_weatherhead");
+    expect(profile.team_name).toBe("Weatherhead Hockey Club");
     expect(profile.player_id).toBe("player_99");
   });
 
@@ -397,10 +473,12 @@ describe("load_profiles_from_repository", () => {
       ),
     );
     const mock_org_repo = create_mock_org_repository();
+    const mock_team_repo = create_mock_team_repository();
 
     const profiles = await load_profiles_from_repository(
       mock_user_repo,
       mock_org_repo,
+      mock_team_repo,
     );
 
     expect(profiles[0].organization_name).toBe("All Organisations");
