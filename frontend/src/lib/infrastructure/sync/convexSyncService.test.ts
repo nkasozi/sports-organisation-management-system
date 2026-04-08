@@ -1,4 +1,11 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  beforeEach,
+  describe,
+  expect,
+  it,
+  type MockedFunction,
+  vi,
+} from "vitest";
 
 const auth_state = vi.hoisted(() => {
   let current_value = false;
@@ -86,10 +93,19 @@ interface ConvexClient {
   query: (name: string, args: Record<string, unknown>) => Promise<unknown>;
 }
 
+type TableToArray = () => Promise<LocalRecord[]>;
+type TableGet = (id: string) => Promise<LocalRecord | null>;
+type TablePut = (record: Record<string, unknown>) => Promise<void>;
+
 interface MockTable {
-  toArray: ReturnType<typeof vi.fn>;
-  get: ReturnType<typeof vi.fn>;
-  put: ReturnType<typeof vi.fn>;
+  toArray: MockedFunction<TableToArray>;
+  get: MockedFunction<TableGet>;
+  put: MockedFunction<TablePut>;
+}
+
+interface MockConvexClient extends ConvexClient {
+  mutation: MockedFunction<ConvexClient["mutation"]>;
+  query: MockedFunction<ConvexClient["query"]>;
 }
 
 function get_local_latest_modified_at(
@@ -101,23 +117,20 @@ function get_local_latest_modified_at(
   }, EPOCH_TIMESTAMP);
 }
 
-function create_mock_convex_client(): ConvexClient & {
-  mutation: ReturnType<typeof vi.fn>;
-  query: ReturnType<typeof vi.fn>;
-} {
+function create_mock_convex_client(): MockConvexClient {
   return {
-    mutation: vi.fn(),
-    query: vi.fn(),
+    mutation: vi.fn() as MockedFunction<ConvexClient["mutation"]>,
+    query: vi.fn() as MockedFunction<ConvexClient["query"]>,
   };
 }
 
 function create_mock_table(records: LocalRecord[] = []): MockTable {
   return {
-    toArray: vi.fn().mockResolvedValue(records),
+    toArray: vi.fn().mockResolvedValue(records) as MockedFunction<TableToArray>,
     get: vi.fn().mockImplementation(async (id: string) => {
       return records.find((r) => r.id === id) || null;
-    }),
-    put: vi.fn().mockResolvedValue(undefined),
+    }) as MockedFunction<TableGet>,
+    put: vi.fn().mockResolvedValue(undefined) as MockedFunction<TablePut>,
   };
 }
 

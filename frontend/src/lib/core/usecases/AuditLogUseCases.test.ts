@@ -1,4 +1,11 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  beforeEach,
+  describe,
+  expect,
+  it,
+  type MockedFunction,
+  vi,
+} from "vitest";
 
 import type { AuditLog, CreateAuditLogInput } from "../entities/AuditLog";
 import { compute_field_changes } from "../entities/AuditLog";
@@ -10,28 +17,32 @@ import {
 } from "./AuditLogUseCases";
 
 type MockRepository = Partial<AuditLogRepository> & {
-  find_all: ReturnType<typeof vi.fn>;
-  find_by_id: ReturnType<typeof vi.fn>;
-  find_by_ids: ReturnType<typeof vi.fn>;
-  create: ReturnType<typeof vi.fn>;
-  update: ReturnType<typeof vi.fn>;
-  delete_by_id: ReturnType<typeof vi.fn>;
-  delete_by_ids: ReturnType<typeof vi.fn>;
-  count: ReturnType<typeof vi.fn>;
-  find_by_entity: ReturnType<typeof vi.fn>;
+  find_all: MockedFunction<AuditLogRepository["find_all"]>;
+  find_by_id: MockedFunction<AuditLogRepository["find_by_id"]>;
+  find_by_ids: MockedFunction<AuditLogRepository["find_by_ids"]>;
+  create: MockedFunction<AuditLogRepository["create"]>;
+  update: MockedFunction<AuditLogRepository["update"]>;
+  delete_by_id: MockedFunction<AuditLogRepository["delete_by_id"]>;
+  delete_by_ids: MockedFunction<AuditLogRepository["delete_by_ids"]>;
+  count: MockedFunction<AuditLogRepository["count"]>;
+  find_by_entity: MockedFunction<AuditLogRepository["find_by_entity"]>;
 };
 
 function create_mock_repository(): MockRepository {
   return {
-    find_all: vi.fn(),
-    find_by_id: vi.fn(),
-    find_by_ids: vi.fn(),
-    create: vi.fn(),
-    update: vi.fn(),
-    delete_by_id: vi.fn(),
-    delete_by_ids: vi.fn(),
-    count: vi.fn(),
-    find_by_entity: vi.fn(),
+    find_all: vi.fn() as MockedFunction<AuditLogRepository["find_all"]>,
+    find_by_id: vi.fn() as MockedFunction<AuditLogRepository["find_by_id"]>,
+    find_by_ids: vi.fn() as MockedFunction<AuditLogRepository["find_by_ids"]>,
+    create: vi.fn() as MockedFunction<AuditLogRepository["create"]>,
+    update: vi.fn() as MockedFunction<AuditLogRepository["update"]>,
+    delete_by_id: vi.fn() as MockedFunction<AuditLogRepository["delete_by_id"]>,
+    delete_by_ids: vi.fn() as MockedFunction<
+      AuditLogRepository["delete_by_ids"]
+    >,
+    count: vi.fn() as MockedFunction<AuditLogRepository["count"]>,
+    find_by_entity: vi.fn() as MockedFunction<
+      AuditLogRepository["find_by_entity"]
+    >,
   };
 }
 
