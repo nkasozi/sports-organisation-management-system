@@ -5,17 +5,24 @@
     CalendarFeedType,
     CalendarToken,
   } from "$lib/core/entities/CalendarToken";
-  import {
-    build_ical_feed_url,
-    build_webcal_feed_url,
-  } from "$lib/core/entities/CalendarToken";
   import type { Competition } from "$lib/core/entities/Competition";
   import type { Team } from "$lib/core/entities/Team";
   import { get_use_cases_container } from "$lib/infrastructure/container";
 
   import CalendarSubscriptionCreateSection from "./CalendarSubscriptionCreateSection.svelte";
-  import CalendarSubscriptionFeedCard from "./CalendarSubscriptionFeedCard.svelte";
+  import CalendarSubscriptionFeedList from "./CalendarSubscriptionFeedList.svelte";
   import CalendarSubscriptionHelp from "./CalendarSubscriptionHelp.svelte";
+  import {
+    CALENDAR_SUBSCRIPTION_REMINDER_OPTIONS,
+    copy_calendar_subscription_to_clipboard,
+    create_calendar_subscription_feed,
+    format_calendar_subscription_date,
+    get_calendar_subscription_entity_options,
+    get_calendar_subscription_https_url,
+    get_calendar_subscription_webcal_url,
+    load_calendar_subscription_manager_data,
+    revoke_calendar_subscription_feed,
+  } from "./calendarSubscriptionManagerLogic";
 
   export let organization_id: string;
   export let user_id: string;
@@ -35,14 +42,7 @@
   let reminder_minutes = 60;
 
   let copy_success_token: string | null = null;
-
-  const reminder_options = [
-    { value: 15, label: "15 minutes before" },
-    { value: 30, label: "30 minutes before" },
-    { value: 60, label: "1 hour before" },
-    { value: 120, label: "2 hours before" },
-    { value: 1440, label: "1 day before" },
-  ];
+  const reminder_options = [...CALENDAR_SUBSCRIPTION_REMINDER_OPTIONS];
 
   onMount(async () => {
     await load_data();
@@ -50,56 +50,48 @@
 
   async function load_data(): Promise<boolean> {
     is_loading = true;
-    const [feeds_result, teams_result, competitions_result] = await Promise.all(
-      [
-        use_cases.calendar_token_use_cases.list_user_feeds(user_id),
-        use_cases.team_use_cases.list({ organization_id }),
-        use_cases.competition_use_cases.list({ organization_id }),
-      ],
-    );
-    if (feeds_result.success && feeds_result.data)
-      existing_feeds = feeds_result.data.items;
-    if (teams_result.success && teams_result.data)
-      teams = teams_result.data?.items || [];
-    if (competitions_result.success && competitions_result.data)
-      competitions = competitions_result.data?.items || [];
+    const loaded_data = await load_calendar_subscription_manager_data({
+      organization_id,
+      user_id,
+      use_cases,
+    });
+    existing_feeds = loaded_data.existing_feeds;
+    teams = loaded_data.teams;
+    competitions = loaded_data.competitions;
     is_loading = false;
     return true;
   }
 
   async function create_feed(): Promise<boolean> {
     is_creating = true;
-    let entity_name: string | null = null;
-    if (selected_feed_type === "team" && selected_entity_id) {
-      const team = teams.find((t) => t.id === selected_entity_id);
-      entity_name = team?.name ?? null;
-    } else if (selected_feed_type === "competition" && selected_entity_id) {
-      const competition = competitions.find((c) => c.id === selected_entity_id);
-      entity_name = competition?.name ?? null;
-    }
-    const result = await use_cases.calendar_token_use_cases.create_feed(
-      user_id,
+    const result = await create_calendar_subscription_feed({
+      competitions,
       organization_id,
+      reminder_minutes,
       selected_feed_type,
       selected_entity_id,
-      entity_name,
-      reminder_minutes,
-    );
+      teams,
+      user_id,
+      use_cases,
+    });
     is_creating = false;
-    if (result.success && result.data) {
-      existing_feeds = [...existing_feeds, result.data.token];
+    if (result.success) {
+      existing_feeds = [...existing_feeds, result.token];
       show_create_form = false;
       selected_feed_type = "all";
       selected_entity_id = null;
-      dispatch("feed_created", result.data);
+      dispatch("feed_created", { token: result.token });
       return true;
     }
     return false;
   }
 
   async function revoke_feed(token: string): Promise<boolean> {
-    const result = await use_cases.calendar_token_use_cases.revoke_feed(token);
-    if (result.success) {
+    const was_revoked = await revoke_calendar_subscription_feed({
+      token,
+      use_cases,
+    });
+    if (was_revoked) {
       existing_feeds = existing_feeds.filter((f) => f.token !== token);
       return true;
     }
@@ -107,35 +99,32 @@
   }
 
   function get_https_url(token: string): string {
-    const base_url =
-      typeof window !== "undefined" ? window.location.origin : "";
-    return build_ical_feed_url(base_url, token);
+    return get_calendar_subscription_https_url({
+      base_url: typeof window !== "undefined" ? window.location.origin : "",
+      token,
+    });
   }
 
   function get_webcal_url(token: string): string {
-    const base_url =
-      typeof window !== "undefined" ? window.location.origin : "";
-    return build_webcal_feed_url(base_url, token);
+    return get_calendar_subscription_webcal_url({
+      base_url: typeof window !== "undefined" ? window.location.origin : "",
+      token,
+    });
   }
 
   async function copy_to_clipboard(
     text: string,
     token: string,
   ): Promise<boolean> {
-    try {
-      await navigator.clipboard.writeText(text);
-      copy_success_token = token;
-      setTimeout(() => {
-        copy_success_token = null;
-      }, 2000);
-      return true;
-    } catch (error) {
-      console.warn("[CalendarSubscription] Token validation failed", {
-        event: "calendar_token_validation_failed",
-        error: String(error),
-      });
+    const copied = await copy_calendar_subscription_to_clipboard(text);
+    if (!copied) {
       return false;
     }
+    copy_success_token = token;
+    setTimeout(() => {
+      copy_success_token = null;
+    }, 2000);
+    return true;
   }
 
   function open_webcal(token: string): void {
@@ -144,11 +133,11 @@
   }
 
   function get_entity_options(): Array<{ id: string; name: string }> {
-    if (selected_feed_type === "team")
-      return teams.map((t) => ({ id: t.id, name: t.name }));
-    if (selected_feed_type === "competition")
-      return competitions.map((c) => ({ id: c.id, name: c.name }));
-    return [];
+    return get_calendar_subscription_entity_options({
+      competitions,
+      selected_feed_type,
+      teams,
+    });
   }
 
   function handle_feed_type_change(): void {
@@ -156,8 +145,7 @@
   }
 
   function format_date(iso_string: string | null): string {
-    if (!iso_string) return "Never";
-    return new Date(iso_string).toLocaleDateString();
+    return format_calendar_subscription_date(iso_string);
   }
 </script>
 
@@ -172,70 +160,18 @@
     </p>
   </div>
 
-  {#if is_loading}
-    <div class="loading-state py-8 text-center">
-      <svg
-        class="animate-spin h-8 w-8 mx-auto text-primary-500"
-        xmlns="http://www.w3.org/2000/svg"
-        fill="none"
-        viewBox="0 0 24 24"
-        ><circle
-          class="opacity-25"
-          cx="12"
-          cy="12"
-          r="10"
-          stroke="currentColor"
-          stroke-width="4"
-        /><path
-          class="opacity-75"
-          fill="currentColor"
-          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-        /></svg
-      >
-      <p class="mt-2 text-accent-600 dark:text-accent-400">Loading feeds...</p>
-    </div>
-  {:else}
-    <div class="existing-feeds mt-6">
-      {#if existing_feeds.length === 0}
-        <div
-          class="empty-state py-8 text-center bg-accent-50 dark:bg-accent-800 rounded-lg"
-        >
-          <svg
-            class="h-12 w-12 mx-auto text-accent-400"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            ><path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-            /></svg
-          >
-          <p class="mt-2 text-accent-600 dark:text-accent-400">
-            No calendar subscriptions yet
-          </p>
-          <p class="text-sm text-accent-500 dark:text-accent-500 mt-1">
-            Create a subscription to sync events with your calendar app
-          </p>
-        </div>
-      {:else}
-        <div class="feeds-list space-y-4">
-          {#each existing_feeds as feed}
-            <CalendarSubscriptionFeedCard
-              {feed}
-              {copy_success_token}
-              {get_https_url}
-              {format_date}
-              on_revoke={revoke_feed}
-              on_open_webcal={open_webcal}
-              on_copy={copy_to_clipboard}
-            />
-          {/each}
-        </div>
-      {/if}
-    </div>
+  <CalendarSubscriptionFeedList
+    {copy_success_token}
+    {existing_feeds}
+    {format_date}
+    {get_https_url}
+    {is_loading}
+    on_copy={copy_to_clipboard}
+    on_open_webcal={open_webcal}
+    on_revoke={revoke_feed}
+  />
 
+  {#if !is_loading}
     <CalendarSubscriptionCreateSection
       bind:show_create_form
       bind:selected_feed_type

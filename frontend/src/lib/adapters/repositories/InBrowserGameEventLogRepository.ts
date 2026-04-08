@@ -19,7 +19,6 @@ import type {
   PaginatedAsyncResult,
 } from "../../core/types/Result";
 import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
-
 const ENTITY_PREFIX = "gameevent";
 
 class InBrowserGameEventLogRepository
@@ -126,6 +125,7 @@ class InBrowserGameEventLogRepository
       ? { page_number: pagination.page, page_size: pagination.page_size }
       : undefined;
   }
+
   async get_events_for_live_game(
     live_game_log_id: string,
     options?: { page: number; page_size: number },
@@ -160,9 +160,7 @@ class InBrowserGameEventLogRepository
     live_game_log_id: string,
   ): AsyncResult<GameEventLog[]> {
     const result = await this.find_all({ live_game_log_id, voided: false });
-    if (!result.success) {
-      return { success: false, error: result.error };
-    }
+    if (!result.success) return { success: false, error: result.error };
     return {
       success: true,
       data: result.data.items.filter((e) => is_scoring_event(e.event_type)),
@@ -173,9 +171,7 @@ class InBrowserGameEventLogRepository
     live_game_log_id: string,
   ): AsyncResult<GameEventLog[]> {
     const result = await this.find_all({ live_game_log_id, voided: false });
-    if (!result.success) {
-      return { success: false, error: result.error };
-    }
+    if (!result.success) return { success: false, error: result.error };
     return {
       success: true,
       data: result.data.items.filter((e) => is_card_event(e.event_type)),

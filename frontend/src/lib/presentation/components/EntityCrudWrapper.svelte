@@ -13,6 +13,7 @@
     get_disabled_crud_actions_for_profile,
     normalize_entity_type,
   } from "$lib/presentation/logic/entityCrudWrapperLogic";
+  import { create_entity_crud_wrapper_runtime } from "$lib/presentation/logic/entityCrudWrapperRuntime";
 
   import type { BaseEntity } from "../../core/entities/BaseEntity";
   import type { CrudFunctionality } from "../../core/types/EntityHandlers";
@@ -66,109 +67,33 @@
     normalized_entity_type,
     locked_filter,
   );
+  const runtime = create_entity_crud_wrapper_runtime({
+    after_save_redirect_url,
+    dispatch: (event_name: string, detail: Record<string, unknown>) =>
+      dispatch(event_name as never, detail as never),
+    entity_type,
+    get_current_view: () => current_view,
+    goto,
+    normalized_entity_type,
+    set_current_entity_for_editing: (entity: BaseEntity | null) =>
+      (current_entity_for_editing = entity),
+    set_current_view: (view: "list" | "create" | "edit") =>
+      (current_view = view),
+    set_total_entity_count: (count: number) => (total_entity_count = count),
+  });
   $: list_view_callbacks = build_list_view_callbacks(
     effective_disabled_functionalities,
     entity_type,
-    { handle_create_requested, handle_edit_requested, handle_entity_deleted },
+    {
+      handle_create_requested: runtime.handle_create_requested,
+      handle_edit_requested: runtime.handle_edit_requested,
+      handle_entity_deleted: runtime.handle_entity_deleted,
+    },
   );
   $: form_view_callbacks = build_form_view_callbacks({
-    handle_save_completed,
-    handle_form_cancelled,
+    handle_save_completed: runtime.handle_save_completed,
+    handle_form_cancelled: runtime.handle_form_cancelled,
   });
-
-  function handle_create_requested(): void {
-    console.debug("[EntityCrudWrapper] Create requested for:", entity_type);
-    if (normalized_entity_type === "fixturelineup") {
-      goto("/fixture-lineups/create");
-      return;
-    }
-    if (normalized_entity_type === "sport") {
-      goto("/sports/create");
-      return;
-    }
-    switch_to_view("create");
-  }
-
-  function handle_edit_requested(entity: BaseEntity): void {
-    console.debug(
-      "[EntityCrudWrapper] Edit requested for:",
-      entity_type,
-      entity.id,
-    );
-    switch_to_view("edit", entity);
-  }
-
-  function handle_save_completed(entity: BaseEntity, is_new: boolean): void {
-    console.debug("[EntityCrudWrapper] Save completed:", {
-      entity_type,
-      entity_id: entity.id,
-      is_new,
-    });
-
-    if (is_new) {
-      dispatch("entity_created", { entity });
-    } else {
-      dispatch("entity_updated", { entity });
-    }
-
-    if (after_save_redirect_url) {
-      goto(after_save_redirect_url);
-      return;
-    }
-
-    switch_to_view("list");
-  }
-
-  function handle_form_cancelled(): void {
-    console.debug("[EntityCrudWrapper] Form cancelled");
-    switch_to_view("list");
-  }
-
-  function handle_entity_deleted(entity: BaseEntity): void {
-    console.debug("[EntityCrudWrapper] Entity deleted:", entity.id);
-    dispatch("entity_deleted", { entity });
-  }
-
-  function handle_entities_batch_deleted(entities: BaseEntity[]): void {
-    console.debug(
-      "[EntityCrudWrapper] Entities batch deleted:",
-      entities.length,
-    );
-    dispatch("entities_deleted", { entities });
-  }
-
-  function handle_list_count_updated(count: number): void {
-    total_entity_count = count;
-  }
-
-  function handle_selection_changed(selected: BaseEntity[]): void {
-    dispatch("selection_changed", { selected_entities: selected });
-  }
-
-  function switch_to_view(
-    new_view: "list" | "create" | "edit",
-    entity?: BaseEntity,
-  ): void {
-    console.debug("[EntityCrudWrapper] Switching view:", {
-      from: current_view,
-      to: new_view,
-      entity_type,
-    });
-
-    current_view = new_view;
-
-    if (new_view === "edit" && entity) {
-      current_entity_for_editing = entity;
-    } else {
-      current_entity_for_editing = null;
-    }
-
-    dispatch("view_changed", { current_view: new_view, entity });
-  }
-
-  function navigate_back_to_list(): void {
-    switch_to_view("list");
-  }
 
   export function refresh_entity_data(): void {
     if (crud_content_component && current_view === "list")
@@ -205,7 +130,7 @@
     {current_view}
     {total_entity_count}
     {info_message}
-    on_back={navigate_back_to_list}
+    on_back={runtime.navigate_back_to_list}
   />
   <EntityCrudWrapperContent
     bind:this={crud_content_component}
@@ -222,9 +147,9 @@
     disabled_functionalities={effective_disabled_functionalities}
     {initial_create_data}
     {current_entity_for_editing}
-    on_total_count_changed={handle_list_count_updated}
-    on_selection_changed={handle_selection_changed}
-    on_entities_batch_deleted={handle_entities_batch_deleted}
+    on_total_count_changed={runtime.handle_list_count_updated}
+    on_selection_changed={runtime.handle_selection_changed}
+    on_entities_batch_deleted={runtime.handle_entities_batch_deleted}
   />
 </div>
 

@@ -24,7 +24,7 @@ import {
 } from "$lib/infrastructure/utils/MatchReportBuilder";
 import { download_match_report } from "$lib/infrastructure/utils/MatchReportPdfGenerator";
 
-import type { MatchReportAssignedOfficialData } from "./matchReportPageLoad";
+import type { MatchReportAssignedOfficialData } from "./matchReportPageLoadTypes";
 
 const MATCH_REPORT_DOWNLOAD_TEXT = {
   default_organization_name: "SPORT-SYNC",

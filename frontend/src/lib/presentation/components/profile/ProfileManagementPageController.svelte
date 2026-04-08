@@ -24,6 +24,7 @@
     import { auth_store } from "$lib/presentation/stores/auth";
 
     import ProfileManagementPageContent from "./ProfileManagementPageContent.svelte";
+
     const PROFILE_MANAGEMENT_PAGE_MESSAGES = {
         NO_USER_PROFILE: "No user profile found",
         LOAD_FAILED: "Failed to load profiles",

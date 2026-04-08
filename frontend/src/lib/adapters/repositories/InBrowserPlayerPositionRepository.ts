@@ -18,6 +18,10 @@ import {
   create_success_result,
 } from "../../core/types/Result";
 import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
+import {
+  apply_player_position_filter,
+  sort_player_positions,
+} from "./InBrowserPlayerPositionRepositoryHelpers";
 export { create_default_player_positions_for_organization } from "./InBrowserPlayerPositionRepositoryDefaults";
 
 const ENTITY_PREFIX = "player_position";
@@ -58,29 +62,7 @@ export class InBrowserPlayerPositionRepository
     entities: PlayerPosition[],
     filter: PlayerPositionFilter,
   ): PlayerPosition[] {
-    let filtered = entities;
-    if (filter.name_contains) {
-      const term = filter.name_contains.toLowerCase();
-      filtered = filtered.filter((p) => p.name.toLowerCase().includes(term));
-    }
-    if (filter.category) {
-      filtered = filtered.filter((p) => p.category === filter.category);
-    }
-    if (filter.sport_type) {
-      filtered = filtered.filter((p) => p.sport_type === filter.sport_type);
-    }
-    if (filter.is_available !== undefined) {
-      filtered = filtered.filter((p) => p.is_available === filter.is_available);
-    }
-    if (filter.status) {
-      filtered = filtered.filter((p) => p.status === filter.status);
-    }
-    if (filter.organization_id) {
-      filtered = filtered.filter(
-        (p) => p.organization_id === filter.organization_id,
-      );
-    }
-    return filtered;
+    return apply_player_position_filter(entities, filter);
   }
 
   async find_by_code(code: string): Promise<Result<PlayerPosition | null>> {
@@ -107,9 +89,7 @@ export class InBrowserPlayerPositionRepository
     try {
       const all = await this.database.player_positions.toArray();
       return create_success_result(
-        all
-          .filter((p) => p.sport_type === sport_type)
-          .sort((a, b) => a.display_order - b.display_order),
+        sort_player_positions(all.filter((p) => p.sport_type === sport_type)),
       );
     } catch (error) {
       console.warn(
@@ -131,9 +111,7 @@ export class InBrowserPlayerPositionRepository
     try {
       const all = await this.database.player_positions.toArray();
       return create_success_result(
-        all
-          .filter((p) => p.category === category)
-          .sort((a, b) => a.display_order - b.display_order),
+        sort_player_positions(all.filter((p) => p.category === category)),
       );
     } catch (error) {
       console.warn(
@@ -153,9 +131,11 @@ export class InBrowserPlayerPositionRepository
     try {
       const all = await this.database.player_positions.toArray();
       return create_success_result(
-        all
-          .filter((p) => p.is_available && p.status === ENTITY_STATUS.ACTIVE)
-          .sort((a, b) => a.display_order - b.display_order),
+        sort_player_positions(
+          all.filter(
+            (p) => p.is_available && p.status === ENTITY_STATUS.ACTIVE,
+          ),
+        ),
       );
     } catch (error) {
       console.warn(
@@ -178,7 +158,7 @@ export class InBrowserPlayerPositionRepository
     try {
       let filtered_entities = await this.database.player_positions.toArray();
       filtered_entities = this.apply_entity_filter(filtered_entities, filter);
-      filtered_entities.sort((a, b) => a.display_order - b.display_order);
+      filtered_entities = sort_player_positions(filtered_entities);
       const total_count = filtered_entities.length;
       const sorted = this.apply_sort(filtered_entities, options);
       const paginated = this.apply_pagination(sorted, options);
@@ -212,9 +192,8 @@ export class InBrowserPlayerPositionRepository
 let singleton_instance: InBrowserPlayerPositionRepository | null = null;
 
 export function get_player_position_repository(): PlayerPositionRepository {
-  if (!singleton_instance) {
+  if (!singleton_instance)
     singleton_instance = new InBrowserPlayerPositionRepository();
-  }
   return singleton_instance;
 }
 

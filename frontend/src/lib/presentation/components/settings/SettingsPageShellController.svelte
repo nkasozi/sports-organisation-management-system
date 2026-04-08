@@ -5,17 +5,10 @@
     import { page } from "$app/stores";
     import type { Organization } from "$lib/core/entities/Organization";
     import { ANY_VALUE } from "$lib/core/interfaces/ports";
-    import { get_use_cases_container } from "$lib/infrastructure/container";
     import Toast from "$lib/presentation/components/ui/Toast.svelte";
+    import { create_settings_page_shell_controller_runtime } from "$lib/presentation/logic/settingsPageShellControllerRuntime";
     import {
-        ensure_auth_profile,
-        ensure_route_access,
-    } from "$lib/presentation/logic/authGuard";
-    import {
-        apply_organization_settings_form_values,
-        create_settings_form_values,
         DEFAULT_LOGO_SVG,
-        get_default_selected_organization_id,
         type SettingsFormValues,
     } from "$lib/presentation/logic/settingsPageState";
     import { auth_store } from "$lib/presentation/stores/auth";
@@ -27,8 +20,6 @@
     import { theme_store } from "$lib/presentation/stores/theme";
 
     import SettingsPageBody from "./SettingsPageBody.svelte";
-
-    const use_cases = get_use_cases_container();
 
     let toast_visible = false,
         toast_message = "",
@@ -57,35 +48,6 @@
         !current_profile || current_profile.organization_id === ANY_VALUE;
     $: organization_badge_label =
         organization_name || $branding_store.organization_name;
-
-    onMount(async () => {
-        if (!browser) return;
-        if (!(await ensure_route_access($page.url.pathname))) return;
-        const auth_result = await ensure_auth_profile();
-        if (!auth_result.success) {
-            error_message = auth_result.error_message;
-            is_loading = false;
-            return;
-        }
-        apply_form_values(
-            create_settings_form_values($branding_store, $theme_store),
-        );
-        const organizations_result =
-            await use_cases.organization_use_cases.list({});
-        if (
-            organizations_result.success &&
-            organizations_result.data?.items?.length
-        ) {
-            organizations = organizations_result.data.items;
-            selected_organization_id = get_default_selected_organization_id(
-                organizations,
-                auth_result.profile?.organization_id,
-            );
-            if (selected_organization_id)
-                await handle_org_switch(selected_organization_id);
-        }
-        is_loading = false;
-    });
 
     function get_current_form_values(): SettingsFormValues {
         return {
@@ -121,53 +83,26 @@
         selected_sync_interval_ms = form_values.selected_sync_interval_ms;
     }
 
-    async function handle_org_switch(org_id: string): Promise<boolean> {
-        selected_organization_id = org_id;
-        const selected_organization = organizations.find(
-            (organization) => organization.id === org_id,
-        );
-        organization_name = selected_organization?.name ?? "";
-        if (!org_id) return true;
-        const organization_settings_result =
-            await use_cases.organization_settings_use_cases.get_by_organization_id(
-                org_id,
-            );
-        apply_form_values(
-            apply_organization_settings_form_values(
-                get_current_form_values(),
-                selected_organization,
-                organization_settings_result.success
-                    ? organization_settings_result.data
-                    : null,
-            ),
-        );
-        return true;
-    }
+    const runtime = create_settings_page_shell_controller_runtime({
+        apply_form_values,
+        get_branding_state: () => $branding_store,
+        get_current_form_values,
+        get_current_profile_organization_id: () => current_profile?.organization_id,
+        get_organizations: () => organizations,
+        get_pathname: () => $page.url.pathname,
+        get_selected_organization_id: () => selected_organization_id,
+        get_theme_state: () => $theme_store,
+        is_browser: browser,
+        set_error_message: (value: string) => (error_message = value),
+        set_is_loading: (value: boolean) => (is_loading = value),
+        set_organizations: (value: Organization[]) => (organizations = value),
+        set_selected_organization_id: (value: string) =>
+            (selected_organization_id = value),
+        show_toast,
+        update_logo_url: (value: string) => (organization_logo_url = value),
+    });
 
-    async function handle_save_organization_settings(): Promise<void> {
-        await branding_store.set({
-            organization_name,
-            organization_logo_url,
-            organization_tagline,
-            organization_email,
-            organization_address,
-            social_media_links,
-            header_footer_style: "pattern",
-            header_pattern,
-            footer_pattern,
-            background_pattern_url,
-            show_panel_borders,
-        });
-        show_toast("Organization settings saved", "success");
-    }
-
-    function handle_selected_organization_switch(): Promise<boolean> {
-        return handle_org_switch(selected_organization_id);
-    }
-
-    function handle_logo_change(event: CustomEvent<{ url: string }>): void {
-        organization_logo_url = event.detail.url;
-    }
+    onMount(() => void runtime.initialize_page());
 
     function show_toast(
         message: string,
@@ -207,9 +142,9 @@
     caller_role={current_profile?.role ?? ""}
     default_logo_svg={DEFAULT_LOGO_SVG}
     {show_toast}
-    {handle_selected_organization_switch}
-    {handle_logo_change}
-    {handle_save_organization_settings}
+    handle_selected_organization_switch={runtime.handle_selected_organization_switch}
+    handle_logo_change={runtime.handle_logo_change}
+    handle_save_organization_settings={runtime.handle_save_organization_settings}
 />
 
 <Toast

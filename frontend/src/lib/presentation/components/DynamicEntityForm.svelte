@@ -67,34 +67,13 @@
   }>();
   const fixture_use_cases = get_fixture_use_cases();
   const team_use_cases = get_team_use_cases();
-  const official_associated_team_use_cases =
-    get_official_associated_team_use_cases();
+  const official_associated_team_use_cases = get_official_associated_team_use_cases();
   const official_use_cases_result = get_use_cases_for_entity_type("official");
   const player_use_cases_result = get_use_cases_for_entity_type("player");
   const gender_use_cases_result = get_use_cases_for_entity_type("gender");
-
-  let form_state: DynamicEntityFormState = {
-    form_data: {} as Record<string, any>,
-    validation_errors: {} as Record<string, string>,
-    foreign_key_options: {} as Record<string, BaseEntity[]>,
-    filtered_fields_loading: {} as Record<string, boolean>,
-    all_competition_teams_cache: [] as BaseEntity[],
-  };
-  let ui_state: DynamicEntityFormUiState = {
-    is_loading: false,
-    is_save_in_progress: false,
-    auth_profile_missing: false,
-    auth_error_message: "",
-    permission_denied: false,
-    permission_denied_message: "",
-    save_error_message: "",
-  };
-  let warning_state: DynamicEntityFormWarningState = {
-    color_clash_warnings: [] as string[],
-    official_team_conflict_warnings: [] as string[],
-    gender_mismatch_warnings: [] as string[],
-    fixture_team_gender_mismatch_warnings: [] as string[],
-  };
+  let form_state: DynamicEntityFormState = { form_data: {} as Record<string, any>, validation_errors: {} as Record<string, string>, foreign_key_options: {} as Record<string, BaseEntity[]>, filtered_fields_loading: {} as Record<string, boolean>, all_competition_teams_cache: [] as BaseEntity[] };
+  let ui_state: DynamicEntityFormUiState = { is_loading: false, is_save_in_progress: false, auth_profile_missing: false, auth_error_message: "", permission_denied: false, permission_denied_message: "", save_error_message: "" };
+  let warning_state: DynamicEntityFormWarningState = { color_clash_warnings: [] as string[], official_team_conflict_warnings: [] as string[], gender_mismatch_warnings: [] as string[], fixture_team_gender_mismatch_warnings: [] as string[] };
 
   $: current_auth_profile = $auth_store.current_profile;
   $: entity_metadata = get_dynamic_entity_metadata_for_type(entity_type);
@@ -123,14 +102,7 @@
   $: show_transfer_notice =
     entity_type.toLowerCase() === "playerteamtransferhistory" && !is_edit_mode;
   $: if (entity_metadata && current_auth_profile) {
-    const form_data = build_dynamic_form_initial_data(
-      entity_metadata,
-      entity_data,
-      get_authorization_preselect_values(
-        current_auth_profile as UserScopeProfile | null,
-      ),
-      entity_type,
-    );
+    const form_data = build_dynamic_form_initial_data(entity_metadata, entity_data, get_authorization_preselect_values(current_auth_profile as UserScopeProfile | null), entity_type);
     form_state = { ...form_state, form_data, validation_errors: {} };
     if (browser) void controller.initialize_options(form_data);
   }

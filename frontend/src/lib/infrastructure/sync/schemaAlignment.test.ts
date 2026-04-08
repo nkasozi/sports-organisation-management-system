@@ -3,11 +3,7 @@ import * as path from "path";
 import { describe, expect, it } from "vitest";
 
 const ENTITIES_DIR = path.resolve(__dirname, "../../core/entities");
-
-const CONVEX_SCHEMA_PATH = path.resolve(
-  __dirname,
-  "../../../../convex/schema.ts",
-);
+const CONVEX_DIRECTORY = path.resolve(__dirname, "../../../../convex");
 
 const BASE_ENTITY_FIELDS = ["id", "created_at", "updated_at"];
 
@@ -53,6 +49,17 @@ const ENTITY_TO_TABLE_MAP: Record<string, string> = {
   OfficialPerformanceRating: "official_performance_ratings",
   OrganizationSettings: "organization_settings",
 };
+
+function read_convex_schema_content(): string {
+  return fs
+    .readdirSync(CONVEX_DIRECTORY)
+    .filter((file_name) => /^schema.*\.ts$/.test(file_name))
+    .sort()
+    .map((file_name) =>
+      fs.readFileSync(path.join(CONVEX_DIRECTORY, file_name), "utf-8"),
+    )
+    .join("\n");
+}
 
 function extract_interface_fields(file_content: string): string[] {
   const interface_start_pattern =
@@ -130,6 +137,13 @@ function extract_convex_table_fields(table_block: string): string[] {
   const lines = table_block.split("\n");
 
   for (const line of lines) {
+    if (brace_depth === 0) {
+      const field_match = line.match(/^\s+(\w+):\s+v\./);
+      if (field_match) {
+        fields.push(field_match[1]);
+      }
+    }
+
     for (const char of line) {
       switch (char) {
         case "{":
@@ -139,14 +153,6 @@ function extract_convex_table_fields(table_block: string): string[] {
           brace_depth--;
           break;
       }
-    }
-
-    if (brace_depth !== 0) continue;
-
-    const field_match = line.match(/^\s+(\w+):\s+v\./);
-
-    if (field_match) {
-      fields.push(field_match[1]);
     }
   }
 
@@ -356,7 +362,7 @@ describe("find_missing_fields", () => {
 });
 
 describe("Schema Alignment: Local Entities vs Convex Schema", () => {
-  const schema_content = fs.readFileSync(CONVEX_SCHEMA_PATH, "utf-8");
+  const schema_content = read_convex_schema_content();
   const entity_files = get_entity_files();
 
   it("should have a table mapping for every entity file", () => {
@@ -419,7 +425,7 @@ describe("Schema Alignment: Local Entities vs Convex Schema", () => {
       expect(
         missing_fields,
         `Entity '${entity_file.entity_name}' has fields missing from Convex table '${table_name}': [${missing_fields.join(", ")}]. ` +
-          `Add these fields to the '${table_name}' table in convex/schema.ts`,
+          `Add these fields to the '${table_name}' table in convex/schema*.ts`,
       ).toEqual([]);
     });
   }

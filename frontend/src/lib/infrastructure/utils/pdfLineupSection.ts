@@ -31,17 +31,14 @@ export function draw_lineup_section(
   y_start: number,
 ): number {
   let y = y_start + 3;
-
   const card_types = data.card_types || [];
   const card_col_width = 5;
   const base_headers = ["Time On", "Shirt No.", "Names"];
   const card_headers = card_types.map((ct) => ct.name.charAt(0));
   const headers = [[...base_headers, ...card_headers]];
-
   const base_header_widths = [10, 10, 40];
   const card_header_widths = card_types.map(() => card_col_width);
   const all_header_widths = [...base_header_widths, ...card_header_widths];
-
   const home_table_data = build_player_table_data(
     data.home_players,
     card_types.length,
@@ -181,7 +178,6 @@ function draw_card_indicators(
   doc.setTextColor(0, 0, 0);
   return true;
 }
-
 function build_player_table_data(
   players: MatchPlayerEntry[],
   card_count: number,

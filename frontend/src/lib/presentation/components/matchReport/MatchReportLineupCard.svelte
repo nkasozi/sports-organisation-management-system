@@ -24,9 +24,7 @@
     export let team_name: string;
     export let players: LineupPlayer[];
     export let variant: keyof typeof MATCH_REPORT_LINEUP_STYLE_BY_VARIANT;
-
     let is_expanded: boolean = true;
-
     $: lineup_groups = build_match_report_lineup_groups(players);
     $: lineup_style = MATCH_REPORT_LINEUP_STYLE_BY_VARIANT[variant];
 </script>
@@ -66,7 +64,6 @@
             />
         </svg>
     </button>
-
     {#if is_expanded}
         <div
             class="border-t border-gray-200 dark:border-gray-700 p-3 {lineup_style.panel_background_class} max-h-80 overflow-y-auto"
@@ -143,7 +140,6 @@
                             </div>
                         </div>
                     {/if}
-
                     {#if lineup_groups.substitutes.length > 0}
                         <div class="border-t pt-3 {lineup_style.divider_class}">
                             <div
@@ -174,6 +170,7 @@
                             </div>
                         </div>
                     {/if}
+
                     {#if lineup_groups.starters.length === 0}
                         <div class="space-y-1">
                             {#each players as player}

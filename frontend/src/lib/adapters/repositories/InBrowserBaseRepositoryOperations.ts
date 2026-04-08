@@ -23,14 +23,12 @@ import {
   sort_entities_by_options,
 } from "./InBrowserBaseRepositoryHelpers";
 
-type RepositoryLogLevel = "warn" | "error";
-
 interface RepositoryFailureDetails {
   log_message: string;
   event: string;
   operation: string;
   entity_prefix?: string;
-  log_level?: RepositoryLogLevel;
+  log_level?: "warn" | "error";
 }
 
 function create_entity_not_found_result(id: string): Result<never, string> {
@@ -78,9 +76,8 @@ export function find_all_entities<TEntity extends BaseEntity, TFilter>(
     },
     async () => {
       let all_entities = await table.toArray();
-      if (filter !== undefined) {
+      if (filter !== undefined)
         all_entities = apply_entity_filter(all_entities, filter);
-      }
       const total_count = all_entities.length;
       const sorted_entities = sort_entities_by_options(all_entities, options);
       const paginated_entities = paginate_entity_slice(

@@ -36,6 +36,7 @@ function create_player_public_profile_load_error(
 ): PlayerPublicProfileLoadError {
   return { kind, message };
 }
+
 function create_empty_player_public_profile_link_sections(): PlayerPublicProfileLinkSections {
   return { social_media_links: [], website_links: [], video_links: [] };
 }

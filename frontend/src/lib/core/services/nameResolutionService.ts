@@ -17,7 +17,6 @@ export interface MultipleMatchDetails {
   matches_found: number;
   matched_ids: string[];
 }
-
 function build_no_match_error_message(
   entity_name: string,
   entity_type: string,
@@ -95,15 +94,11 @@ export async function resolve_entity_name_to_id(
   input: NameResolutionInput,
 ): Promise<NameResolutionResult> {
   const { entity_name, entity_type, use_cases } = input;
-
   if (is_empty_or_whitespace(entity_name)) {
     return build_failure_result(build_empty_name_error_message(entity_type));
   }
-
   const trimmed_name = entity_name.trim();
-
   const list_result = await use_cases.list({ name_contains: trimmed_name });
-
   if (!list_result.success) {
     const error_msg =
       "error_message" in list_result
@@ -115,14 +110,11 @@ export async function resolve_entity_name_to_id(
       `Error: Failed to search for ${entity_type}. Cause: ${error_msg}. Solution: Try again or use the ID column instead.`,
     );
   }
-
   const entities = extract_entities_from_list_result(list_result);
-
   const exact_matches = find_exact_matches_from_entities(
     entities,
     trimmed_name,
   );
-
   if (exact_matches.length === 0) {
     return build_failure_result(
       build_no_match_error_message(trimmed_name, entity_type),
@@ -148,13 +140,11 @@ export async function resolve_multiple_names_to_ids(
   name_resolution_requests: NameResolutionInput[],
 ): Promise<Map<string, NameResolutionResult>> {
   const results = new Map<string, NameResolutionResult>();
-
   for (const request of name_resolution_requests) {
     const key = `${request.entity_type}:${request.entity_name}`;
     const result = await resolve_entity_name_to_id(request);
     results.set(key, result);
   }
-
   return results;
 }
 

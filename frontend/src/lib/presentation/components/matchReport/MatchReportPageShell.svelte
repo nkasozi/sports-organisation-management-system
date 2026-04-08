@@ -1,7 +1,7 @@
 <script lang="ts">
     import { ErrorDisplay } from "$lib/presentation/components/ui";
     import Toast from "$lib/presentation/components/ui/Toast.svelte";
-    import type { MatchReportPageData } from "$lib/presentation/logic/matchReportPageLoad";
+    import type { MatchReportPageData } from "$lib/presentation/logic/matchReportPageLoadTypes";
     import type { MatchReportViewState } from "$lib/presentation/logic/matchReportPageState";
 
     import MatchReportHeader from "./MatchReportHeader.svelte";

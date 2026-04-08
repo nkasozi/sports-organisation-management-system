@@ -21,6 +21,10 @@ import {
   create_success_result,
 } from "../../core/types/Result";
 import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
+import {
+  apply_fixture_entity_filter,
+  sort_fixtures_by_schedule,
+} from "./InBrowserFixtureRepositoryHelpers";
 
 const ENTITY_PREFIX = "fixture";
 
@@ -70,59 +74,9 @@ export class InBrowserFixtureRepository
     entities: Fixture[],
     filter: FixtureFilter,
   ): Fixture[] {
-    let filtered = entities;
-    if (filter.organization_id) {
-      filtered = filtered.filter(
-        (f) => f.organization_id === filter.organization_id,
-      );
-    }
-    if (filter.competition_id) {
-      filtered = filtered.filter(
-        (f) => f.competition_id === filter.competition_id,
-      );
-    }
-    if (filter.stage_id) {
-      filtered = filtered.filter((f) => f.stage_id === filter.stage_id);
-    }
-    if (filter.home_team_id) {
-      filtered = filtered.filter((f) => f.home_team_id === filter.home_team_id);
-    }
-    if (filter.away_team_id) {
-      filtered = filtered.filter((f) => f.away_team_id === filter.away_team_id);
-    }
-    if (filter.team_id) {
-      filtered = filtered.filter(
-        (f) =>
-          f.home_team_id === filter.team_id ||
-          f.away_team_id === filter.team_id,
-      );
-    }
-    if (filter.round_number !== undefined) {
-      filtered = filtered.filter((f) => f.round_number === filter.round_number);
-    }
-    if (filter.match_day !== undefined) {
-      filtered = filtered.filter((f) => f.match_day === filter.match_day);
-    }
-    if (filter.status) {
-      filtered = filtered.filter((f) => f.status === filter.status);
-    }
-    if (filter.scheduled_date_from) {
-      filtered = filtered.filter(
-        (f) => f.scheduled_date >= filter.scheduled_date_from!,
-      );
-    }
-    if (filter.scheduled_date_to) {
-      filtered = filtered.filter(
-        (f) => f.scheduled_date <= filter.scheduled_date_to!,
-      );
-    }
-    filtered.sort((a, b) => {
-      const date_cmp = a.scheduled_date.localeCompare(b.scheduled_date);
-      return date_cmp !== 0
-        ? date_cmp
-        : a.scheduled_time.localeCompare(b.scheduled_time);
-    });
-    return filtered;
+    return sort_fixtures_by_schedule(
+      apply_fixture_entity_filter(entities, filter),
+    );
   }
 
   async find_by_competition(

@@ -108,9 +108,7 @@ function build_competition_stats_map(
   >();
   for (const fixture of fixtures) {
     const competition = competitions_by_id.get(fixture.competition_id);
-    if (!competition || competition_stats_by_id.has(competition.id)) {
-      continue;
-    }
+    if (!competition || competition_stats_by_id.has(competition.id)) continue;
     competition_stats_by_id.set(competition.id, {
       competition,
       stats: create_empty_team_public_profile_stats(),
@@ -144,6 +142,7 @@ function sort_team_public_competition_stats(
         first_competition_stat.stats.total_matches,
     );
 }
+
 export async function build_public_team_stats_bundle(
   command: LoadTeamPublicProfilePageDataCommand,
   team: Team,

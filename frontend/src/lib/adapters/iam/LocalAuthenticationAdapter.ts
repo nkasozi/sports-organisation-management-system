@@ -1,4 +1,3 @@
-import { browser } from "$app/environment";
 import type { InBrowserSystemUserRepository } from "$lib/adapters/repositories/InBrowserSystemUserRepository";
 import type {
   AuthenticationPort,
@@ -6,7 +5,6 @@ import type {
   AuthTokenPayload,
   AuthVerificationResult,
 } from "$lib/core/interfaces/ports";
-import type { Result } from "$lib/core/types/Result";
 import {
   create_failure_result,
   create_success_result,
@@ -23,48 +21,11 @@ import {
   verify_hmac_signature,
 } from "$lib/infrastructure/utils/JwtTokenUtils";
 
+import { get_local_auth_secret_key } from "./localAuthenticationSessionKey";
+
 const VERIFICATION_CACHE_MAX_ENTRIES = 50;
 const VERIFICATION_CACHE_TTL_MS = 30 * 60 * 1000;
 const TOKEN_EXPIRY_DAYS = 7;
-const SESSION_KEY_STORAGE_KEY = "local_auth_session_key";
-const SESSION_KEY_BYTE_LENGTH = 32;
-
-function generate_random_session_key(): string {
-  const random_bytes = crypto.getRandomValues(
-    new Uint8Array(SESSION_KEY_BYTE_LENGTH),
-  );
-  return Array.from(random_bytes, (byte) =>
-    byte.toString(16).padStart(2, "0"),
-  ).join("");
-}
-
-function get_or_create_browser_session_key(): string {
-  const existing_key = sessionStorage.getItem(SESSION_KEY_STORAGE_KEY);
-  if (existing_key) return existing_key;
-  const new_key = generate_random_session_key();
-  sessionStorage.setItem(SESSION_KEY_STORAGE_KEY, new_key);
-  return new_key;
-}
-
-function is_real_browser_environment(): boolean {
-  return browser && typeof sessionStorage !== "undefined";
-}
-
-function get_secret_key(): Result<string> {
-  if (is_real_browser_environment()) {
-    return create_success_result(get_or_create_browser_session_key());
-  }
-  const server_secret_key = process.env.AUTH_SECRET_KEY;
-  if (!server_secret_key) {
-    console.error("[Auth] Missing AUTH_SECRET_KEY environment variable", {
-      event: "auth_secret_key_missing",
-    });
-    return create_failure_result(
-      "AUTH_SECRET_KEY environment variable is required but not set",
-    );
-  }
-  return create_success_result(server_secret_key);
-}
 
 export class LocalAuthenticationAdapter implements AuthenticationPort {
   private system_user_repository: InBrowserSystemUserRepository;
@@ -90,7 +51,7 @@ export class LocalAuthenticationAdapter implements AuthenticationPort {
   async generate_token(
     payload_input: Omit<AuthTokenPayload, "issued_at" | "expires_at">,
   ): Promise<Result<AuthToken>> {
-    const secret_key_result = get_secret_key();
+    const secret_key_result = get_local_auth_secret_key();
     if (!secret_key_result.success) return secret_key_result;
     try {
       const now = Date.now();
@@ -154,7 +115,7 @@ export class LocalAuthenticationAdapter implements AuthenticationPort {
     if (parts.length !== 3)
       return { is_valid: false, error_message: "Invalid token format" };
     const [header, encoded_payload, signature] = parts;
-    const secret_key_result = get_secret_key();
+    const secret_key_result = get_local_auth_secret_key();
     if (!secret_key_result.success)
       return { is_valid: false, error_message: secret_key_result.error };
     const is_signature_valid = await verify_hmac_signature(

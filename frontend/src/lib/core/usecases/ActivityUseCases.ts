@@ -8,7 +8,6 @@ import {
   can_edit_activity,
   validate_activity_input,
 } from "../entities/Activity";
-import type { ActivityCategory } from "../entities/ActivityCategory";
 import type {
   ActivityCategoryRepository,
   ActivityFilter,
@@ -23,6 +22,11 @@ import type {
 } from "../interfaces/ports";
 import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
 import { create_failure_result, create_success_result } from "../types/Result";
+import {
+  build_activity_date_range_filter,
+  create_activity_categories_map,
+  map_activities_to_calendar_events,
+} from "./ActivityCalendarEventMapping";
 import { create_activity_sync } from "./ActivitySyncUseCases";
 
 export type ActivityUseCases = ActivityUseCasesPort;
@@ -155,12 +159,11 @@ export function create_activity_use_cases(
       date_range: CalendarDateRange,
       filter?: ActivityFilter,
     ): AsyncResult<CalendarEvent[]> {
-      const combined_filter: ActivityFilter = {
-        ...filter,
+      const combined_filter = build_activity_date_range_filter({
+        date_range,
+        filter,
         organization_id,
-        start_date_after: date_range.start_date,
-        start_date_before: date_range.end_date,
-      };
+      });
       const activities_result = await activity_repository.find_all(
         combined_filter,
         { page_size: 1000 },
@@ -176,28 +179,10 @@ export function create_activity_use_cases(
         categories_result.success && categories_result.data
           ? categories_result.data.items
           : [];
-      const categories_map = new Map<string, ActivityCategory>(
-        category_items.map((c) => [c.id, c]),
+      const categories_map = create_activity_categories_map(category_items);
+      return create_success_result(
+        map_activities_to_calendar_events(activities, categories_map),
       );
-      const calendar_events: CalendarEvent[] = activities.map((activity) => {
-        const category = categories_map.get(activity.category_id);
-        return {
-          id: activity.id,
-          title: activity.title,
-          start: activity.start_datetime,
-          end: activity.end_datetime,
-          all_day: activity.is_all_day,
-          color: activity.color_override || category?.color || "#3B82F6",
-          category_id: activity.category_id,
-          category_name: category?.name || "Unknown",
-          category_type: activity.category_type,
-          source_type: activity.source_type,
-          is_editable: can_edit_activity(activity),
-          is_deletable: can_delete_activity(activity),
-          activity,
-        };
-      });
-      return create_success_result(calendar_events);
     },
 
     ...create_activity_sync(

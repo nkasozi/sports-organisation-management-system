@@ -127,12 +127,11 @@ const GLOBAL_TABLES = new Set<string>([
 export function validate_table_name(
   table_name: string,
 ): ConvexResult<AllowedSyncTable> {
-  if (!ALLOWED_TABLE_SET.has(table_name)) {
+  if (!ALLOWED_TABLE_SET.has(table_name))
     return {
       success: false,
       error: `Table "${table_name}" is not an allowed sync table`,
     };
-  }
   return { success: true, data: table_name as AllowedSyncTable };
 }
 
@@ -159,22 +158,14 @@ export function validate_record_organization_ownership(
   caller: SystemUserRecord,
   table_name: string,
 ): ConvexResult<true> {
-  if (is_global_table(table_name)) {
-    return { success: true, data: true };
-  }
-
-  if (caller.organization_id === "*") {
-    return { success: true, data: true };
-  }
+  if (is_global_table(table_name)) return { success: true, data: true };
+  if (caller.organization_id === "*") return { success: true, data: true };
 
   const record_organization_id = record_data.organization_id as
     | string
     | undefined;
 
-  if (is_global_record(record_data)) {
-    return { success: true, data: true };
-  }
-
+  if (is_global_record(record_data)) return { success: true, data: true };
   if (record_organization_id !== caller.organization_id) {
     return {
       success: false,
@@ -191,18 +182,11 @@ export function filter_records_by_organization_scope(
   table_name: string,
   scope_filter: Record<string, string | undefined>,
 ): Array<Record<string, unknown>> {
-  if (caller.organization_id === "*") {
+  if (caller.organization_id === "*" || is_global_table(table_name))
     return records;
-  }
-
-  if (is_global_table(table_name)) {
-    return records;
-  }
 
   const caller_organization_id = scope_filter.organization_id;
-  if (!caller_organization_id) {
-    return records;
-  }
+  if (!caller_organization_id) return records;
 
   if (table_name === "organizations") {
     return records.filter(
@@ -211,9 +195,7 @@ export function filter_records_by_organization_scope(
   }
 
   return records.filter((record) => {
-    if (is_global_record(record)) {
-      return true;
-    }
+    if (is_global_record(record)) return true;
 
     if (scope_filter.team_id && record.team_id) {
       return (

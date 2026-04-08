@@ -14,7 +14,6 @@ import {
   type ClerkUser,
   INITIAL_CLERK_STATE,
 } from "./clerkAuthTypes";
-
 export type { ClerkSessionState, ClerkUser } from "./clerkAuthTypes";
 
 const clerk_store = writable<ClerkSessionState>(INITIAL_CLERK_STATE);
@@ -92,7 +91,6 @@ export async function initialize_clerk(): Promise<boolean> {
     console.log("[Clerk] Already initialized");
     return true;
   }
-
   try {
     const max_wait_ms = 10000;
     const poll_interval_ms = 100;
@@ -188,7 +186,6 @@ export function destroy_clerk(): void {
   clerk_instance = null;
   clerk_store.set(INITIAL_CLERK_STATE);
 }
-
 export const clerk_session: Readable<ClerkSessionState> = {
   subscribe: clerk_store.subscribe,
 };

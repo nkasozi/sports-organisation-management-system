@@ -1,4 +1,6 @@
 <script lang="ts">
+    import { get } from "svelte/store";
+
     import { goto } from "$app/navigation";
     import type { Competition } from "$lib/core/entities/Competition";
     import type { CompetitionFormat } from "$lib/core/entities/CompetitionFormat";
@@ -6,17 +8,8 @@
     import type { Fixture } from "$lib/core/entities/Fixture";
     import type { Organization } from "$lib/core/entities/Organization";
     import type { Team } from "$lib/core/entities/Team";
-    import {
-        download_all_fixture_reports,
-        download_fixture_report,
-    } from "$lib/presentation/logic/competitionResultsMatchReports";
-    import { build_shareable_competition_results_url } from "$lib/presentation/logic/competitionResultsPageData";
     import { type CardSortMode } from "$lib/presentation/logic/competitionResultsStats";
-    import { load_team_fixtures_bundle } from "$lib/presentation/logic/competitionResultsTeamFixturesData";
-    import {
-        competition_results_match_report_dependencies,
-        competition_results_workspace_dependencies,
-    } from "$lib/presentation/logic/competitionResultsWorkspaceControllerDependencies";
+    import { create_competition_results_workspace_controller_runtime } from "$lib/presentation/logic/competitionResultsWorkspaceControllerRuntime";
     import {
         competition_results_page_size_options,
         format_competition_results_date,
@@ -123,86 +116,37 @@
             extended_team_map,
         );
 
-    async function handle_team_click(
-        event: CustomEvent<{ team_id: string; team_name: string }>,
-    ): Promise<void> {
-        if (selected_team_id === event.detail.team_id) {
-            close_team_fixtures_panel();
-            return;
-        }
-        selected_team_id = event.detail.team_id;
-        selected_team_name = event.detail.team_name;
-        team_fixtures_loading = true;
-        const bundle = await load_team_fixtures_bundle({
-            team_id: event.detail.team_id,
-            fixtures,
-            team_map,
-            competitions,
-            dependencies: competition_results_workspace_dependencies,
-        });
-        team_fixtures_in_competition = bundle.team_fixtures_in_competition;
-        team_fixtures_all_competitions = bundle.team_fixtures_all_competitions;
-        extended_team_map = bundle.extended_team_map;
-        extended_competition_map = bundle.extended_competition_map;
-        team_fixtures_loading = false;
-    }
-
-    function close_team_fixtures_panel(): void {
-        selected_team_id = null;
-        selected_team_name = "";
-        team_fixtures_in_competition = [];
-        team_fixtures_all_competitions = [];
-        show_all_competitions_fixtures = false;
-    }
-
-    function handle_copy_share_link(): boolean {
-        if (
-            !selected_organization_id ||
-            !selected_competition_id ||
-            typeof window === "undefined"
-        )
-            return false;
-        navigator.clipboard.writeText(
-            build_shareable_competition_results_url(
-                window.location.origin,
-                selected_organization_id,
-                selected_competition_id,
-            ),
-        );
-        share_link_copied = true;
-        setTimeout(() => (share_link_copied = false), 2000);
-        return true;
-    }
-
-    async function handle_download_match_report(
-        fixture: Fixture,
-        event: MouseEvent,
-    ): Promise<boolean> {
-        event.stopPropagation();
-        downloading_fixture_id = fixture.id;
-        const result = await download_fixture_report({
-            fixture,
-            selected_competition,
-            team_map,
-            organization_logo_url: $branding_store.organization_logo_url,
-            dependencies: competition_results_match_report_dependencies,
-        });
-        downloading_fixture_id = null;
-        return result;
-    }
-
-    async function handle_download_all_reports(): Promise<boolean> {
-        downloading_all_reports = true;
-        const result = await download_all_fixture_reports({
-            completed_fixtures: workspace_state.completed_fixtures,
-            selected_competition,
-            team_map,
-            organization_logo_url: $branding_store.organization_logo_url,
-            dependencies: competition_results_match_report_dependencies,
-        });
-        downloading_all_reports = false;
-        return result;
-    }
+    const runtime = create_competition_results_workspace_controller_runtime({
+        competitions,
+        fixtures,
+        get_branding_logo_url: () => get(branding_store).organization_logo_url,
+        get_completed_fixtures: () => workspace_state.completed_fixtures,
+        get_selected_competition: () => selected_competition,
+        get_selected_team_id: () => selected_team_id,
+        selected_competition_id,
+        selected_organization_id,
+        set_downloading_all_reports: (value: boolean) =>
+            (downloading_all_reports = value),
+        set_downloading_fixture_id: (value: string | null) =>
+            (downloading_fixture_id = value),
+        set_extended_competition_map: (value: Map<string, Competition>) =>
+            (extended_competition_map = value),
+        set_extended_team_map: (value: Map<string, Team>) =>
+            (extended_team_map = value),
+        set_selected_team_id: (value: string | null) =>
+            (selected_team_id = value),
+        set_selected_team_name: (value: string) => (selected_team_name = value),
+        set_share_link_copied: (value: boolean) => (share_link_copied = value),
+        set_show_all_competitions_fixtures: (value: boolean) =>
+            (show_all_competitions_fixtures = value),
+        set_team_fixtures_all_competitions: (value: Fixture[]) =>
+            (team_fixtures_all_competitions = value),
+        set_team_fixtures_in_competition: (value: Fixture[]) =>
+            (team_fixtures_in_competition = value),
+        set_team_fixtures_loading: (value: boolean) =>
+            (team_fixtures_loading = value),
+        team_map,
+    });
 </script>
 
 <CompetitionResultsWorkspaceView
@@ -233,12 +177,12 @@
     page_size_options={competition_results_page_size_options}
     {on_organization_change}
     {on_competition_change}
-    on_copy_share_link={handle_copy_share_link}
-    on_team_click={handle_team_click}
+    on_copy_share_link={runtime.handle_copy_share_link}
+    on_team_click={runtime.handle_team_click}
     on_open_match_report={(fixture_id) => goto(`/match-report/${fixture_id}`)}
-    on_download_all_reports={handle_download_all_reports}
-    on_download_match_report={handle_download_match_report}
-    on_close_team_fixtures_panel={close_team_fixtures_panel}
+    on_download_all_reports={runtime.handle_download_all_reports}
+    on_download_match_report={runtime.handle_download_match_report}
+    on_close_team_fixtures_panel={runtime.close_team_fixtures_panel}
     format_date={format_competition_results_date}
     {get_fixture_stage_name}
     {get_fixture_stage_type}

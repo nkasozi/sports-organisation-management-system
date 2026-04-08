@@ -19,6 +19,11 @@ import {
   create_success_result,
 } from "../../core/types/Result";
 import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
+import {
+  apply_player_entity_filter,
+  filter_players_by_player_ids,
+  get_membership_player_ids_by_jersey_number,
+} from "./InBrowserPlayerRepositoryFilters";
 import { get_player_team_membership_repository } from "./InBrowserPlayerTeamMembershipRepository";
 
 const ENTITY_PREFIX = "player";
@@ -72,33 +77,7 @@ export class InBrowserPlayerRepository
     entities: Player[],
     filter: PlayerFilter,
   ): Player[] {
-    let filtered = entities;
-    if (filter.organization_id) {
-      filtered = filtered.filter(
-        (p) => p.organization_id === filter.organization_id,
-      );
-    }
-    if (filter.id) {
-      filtered = filtered.filter((p) => p.id === filter.id);
-    }
-    if (filter.name_contains) {
-      const term = filter.name_contains.toLowerCase();
-      filtered = filtered.filter(
-        (p) =>
-          p.first_name.toLowerCase().includes(term) ||
-          p.last_name.toLowerCase().includes(term),
-      );
-    }
-    if (filter.position_id) {
-      filtered = filtered.filter((p) => p.position_id === filter.position_id);
-    }
-    if (filter.status) {
-      filtered = filtered.filter((p) => p.status === filter.status);
-    }
-    if (filter.nationality) {
-      filtered = filtered.filter((p) => p.nationality === filter.nationality);
-    }
-    return filtered;
+    return apply_player_entity_filter(entities, filter);
   }
 
   async find_by_filter(
@@ -116,8 +95,9 @@ export class InBrowserPlayerRepository
           const player_id_set = new Set(
             membership_result.data.items.map((m) => m.player_id),
           );
-          filtered_entities = filtered_entities.filter((p) =>
-            player_id_set.has(p.id),
+          filtered_entities = filter_players_by_player_ids(
+            filtered_entities,
+            player_id_set,
           );
         } else {
           filtered_entities = [];
@@ -171,14 +151,14 @@ export class InBrowserPlayerRepository
       if (!membership_result.success || !membership_result.data) {
         return create_success_result(this.create_paginated_result([], 0));
       }
-      const matching_player_ids = new Set(
-        membership_result.data.items
-          .filter((m) => m.jersey_number === jersey_number)
-          .map((m) => m.player_id),
+      const matching_player_ids = get_membership_player_ids_by_jersey_number(
+        membership_result.data.items,
+        jersey_number,
       );
       const all_players = await this.database.players.toArray();
-      const matching_players = all_players.filter((p) =>
-        matching_player_ids.has(p.id),
+      const matching_players = filter_players_by_player_ids(
+        all_players,
+        matching_player_ids,
       );
       return create_success_result(
         this.create_paginated_result(matching_players, matching_players.length),

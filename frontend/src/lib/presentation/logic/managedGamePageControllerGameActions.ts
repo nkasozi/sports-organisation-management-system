@@ -17,7 +17,6 @@ import {
   type ManagedGamePageState,
   set_managed_game_toast,
 } from "./managedGamePageControllerState";
-
 type ManagedGameFixtureUseCases = Pick<
   FixtureUseCasesPort,
   "start_fixture" | "end_fixture" | "record_game_event" | "update_period"
@@ -45,7 +44,6 @@ export function create_managed_game_game_action_handlers(command: {
     command.set_state(next_state);
     return next_state;
   };
-
   return {
     handle_start_click: async (): Promise<void> => {
       const start_check = await command.before_start(
@@ -53,7 +51,7 @@ export function create_managed_game_game_action_handlers(command: {
       );
       if (!start_check.allowed) {
         const start_message = start_check.message;
-        if (start_message)
+        if (start_message) {
           update_state((state) =>
             set_managed_game_toast(
               state,
@@ -61,8 +59,10 @@ export function create_managed_game_game_action_handlers(command: {
               start_check.message_type ?? "error",
             ),
           );
-        if (start_check.redirect_path)
+        }
+        if (start_check.redirect_path) {
           void command.goto(start_check.redirect_path);
+        }
         return;
       }
       update_state((state) => ({ ...state, show_start_modal: true }));
