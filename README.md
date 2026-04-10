@@ -1,6 +1,6 @@
 # Sport-Sync
 
-A comprehensive web application for managing Sport-Sync, competitions, teams, players, and live games. Built with SvelteKit and Convex, following Hexagonal Architecture for clean separation of concerns.
+A comprehensive offline first web app for managing Sports organisations, their competitions, teams, players, and live games. Built with SvelteKit and Convex, following Hexagonal Architecture for clean separation of concerns.
 
 ## Technology Stack
 
