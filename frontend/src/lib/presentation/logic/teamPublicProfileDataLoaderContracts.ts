@@ -27,12 +27,12 @@ export const TEAM_PUBLIC_PROFILE_LOAD_ERROR_KIND = {
 export type TeamPublicProfileLoadErrorKind =
   (typeof TEAM_PUBLIC_PROFILE_LOAD_ERROR_KIND)[keyof typeof TEAM_PUBLIC_PROFILE_LOAD_ERROR_KIND];
 
-export type TeamPublicProfileListResult<TData> = Promise<{
+type TeamPublicProfileListResult<TData> = Promise<{
   success: boolean;
   data?: { items?: TData[] };
 }>;
 
-export type TeamPublicProfileGetResult<TData> = Promise<{
+type TeamPublicProfileGetResult<TData> = Promise<{
   success: boolean;
   data?: TData;
 }>;

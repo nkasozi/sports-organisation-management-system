@@ -8,7 +8,7 @@ import { access_denial_store } from "../stores/accessDenial";
 import type { UserProfile } from "../stores/auth";
 import { auth_store } from "../stores/auth";
 
-export interface AuthGuardResult {
+interface AuthGuardResult {
   success: boolean;
   profile: UserProfile | null;
   error_message: string;

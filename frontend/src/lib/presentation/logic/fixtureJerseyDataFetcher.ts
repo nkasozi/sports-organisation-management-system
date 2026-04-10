@@ -9,7 +9,7 @@ import { get_use_cases_for_entity_type } from "../../infrastructure/registry/ent
 import { auth_store } from "../stores/auth";
 import { fetch_entities_for_type } from "./dynamicFormDataLoader";
 
-export type JerseyOptionsResult = { jerseys: BaseEntity[] };
+type JerseyOptionsResult = { jerseys: BaseEntity[] };
 
 export async function fetch_fixtures_without_setup(
   organization_id: string,

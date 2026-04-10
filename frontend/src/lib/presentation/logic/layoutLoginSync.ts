@@ -16,7 +16,7 @@ const LOGIN_SYNC_FAILED_REDIRECT = "/sign-in?error=sync_failed";
 const UNAUTHORIZED_REDIRECT = "/unauthorized";
 const NO_PROFILE_FOUND_ERROR = "No profile found for this account.";
 
-export interface InitialSyncStateSnapshot {
+interface InitialSyncStateSnapshot {
   is_syncing: boolean;
 }
 

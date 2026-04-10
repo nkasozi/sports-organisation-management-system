@@ -12,7 +12,7 @@ import {
   select_preferred_results_organization,
 } from "$lib/presentation/logic/competitionResultsPageState";
 
-export interface CompetitionResultsPageInitializationResult {
+interface CompetitionResultsPageInitializationResult {
   is_using_cached_data: boolean;
   organizations: Organization[];
   selected_organization_id: string;

@@ -1,4 +1,4 @@
-export interface OrganizationNameParts {
+interface OrganizationNameParts {
   prefix: string;
   suffix: string;
   remainder: string;

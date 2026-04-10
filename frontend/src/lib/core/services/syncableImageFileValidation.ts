@@ -7,7 +7,7 @@ const SYNC_IMAGE_LIMIT_MESSAGE_SUFFIX = "Upload a smaller image and try again.";
 
 export const MAX_SYNCABLE_IMAGE_FILE_BYTES = 700 * ONE_KIBIBYTE;
 
-export interface SyncableImageFileValidationResult {
+interface SyncableImageFileValidationResult {
   is_valid: boolean;
   error_message: string | null;
 }

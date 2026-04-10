@@ -5,7 +5,7 @@ import type {
 } from "./FixtureTypes";
 import type { OfficialRequirement } from "./Sport";
 
-export function create_empty_fixture_input(
+function create_empty_fixture_input(
   organization_id: string = "",
   competition_id: string = "",
 ): CreateFixtureInput {
@@ -65,7 +65,7 @@ export function validate_fixture_input(input: CreateFixtureInput): string[] {
   return validation_errors;
 }
 
-export function derive_groups_from_fixtures(
+function derive_groups_from_fixtures(
   fixtures: Pick<Fixture, "home_team_id" | "away_team_id">[],
 ): string[][] {
   const parent: Record<string, string> = {};
@@ -104,13 +104,13 @@ export function derive_groups_from_fixtures(
   return Object.values(groups).map((group) => group.sort());
 }
 
-export interface OfficialValidationResult {
+interface OfficialValidationResult {
   is_valid: boolean;
   errors: OfficialValidationError[];
   warnings: OfficialValidationWarning[];
 }
 
-export interface OfficialValidationError {
+interface OfficialValidationError {
   role_id: string;
   role_name: string;
   required_count: number;
@@ -119,13 +119,13 @@ export interface OfficialValidationError {
   rule_source: "sport" | "competition";
 }
 
-export interface OfficialValidationWarning {
+interface OfficialValidationWarning {
   role_id: string;
   role_name: string;
   message: string;
 }
 
-export function validate_fixture_officials(
+function validate_fixture_officials(
   assigned_officials: AssignedOfficial[],
   official_requirements: OfficialRequirement[],
   rule_source: "sport" | "competition" = "sport",

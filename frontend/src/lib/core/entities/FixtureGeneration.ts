@@ -83,7 +83,7 @@ export function generate_round_robin_fixtures(
   return fixtures;
 }
 
-export const FIXTURE_STATUS_OPTIONS = [
+const FIXTURE_STATUS_OPTIONS = [
   { value: "scheduled", label: "Scheduled" },
   { value: "in_progress", label: "In Progress" },
   { value: "completed", label: "Completed" },

@@ -1,9 +1,9 @@
 import type { GameEvent, GamePeriod } from "$lib/core/entities/Fixture";
 
-export const PERIOD_DURATION_MINUTES = 45;
+const PERIOD_DURATION_MINUTES = 45;
 export const PERIOD_DURATION_SECONDS = PERIOD_DURATION_MINUTES * 60;
 
-export interface GameClockState {
+interface GameClockState {
   elapsed_minutes: number;
   elapsed_seconds_in_minute: number;
   current_period_duration: number;
@@ -29,9 +29,7 @@ export function get_period_start_seconds(period: GamePeriod): number {
   }
 }
 
-export function get_current_period_duration_seconds(
-  period: GamePeriod,
-): number {
+function get_current_period_duration_seconds(period: GamePeriod): number {
   switch (period) {
     case "first_half":
     case "second_half":

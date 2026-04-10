@@ -22,8 +22,6 @@ import {
 
 import type { ConflictStoreState } from "./conflictStoreHelpers";
 import { get_resolved_data_for_action } from "./conflictStoreHelpers";
-export type { ConflictStoreState } from "./conflictStoreHelpers";
-
 const INITIAL_STATE: ConflictStoreState = {
   pending_conflicts: [],
   resolved_conflicts: [],

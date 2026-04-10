@@ -12,7 +12,7 @@ interface EntityResult<EntityType> {
   data?: EntityType;
 }
 
-export interface CompetitionResultsTeamFixturesDependencies {
+interface CompetitionResultsTeamFixturesDependencies {
   fixture_use_cases: {
     list: (
       filters: Record<string, string>,
@@ -27,7 +27,7 @@ export interface CompetitionResultsTeamFixturesDependencies {
   };
 }
 
-export interface CompetitionResultsTeamFixturesBundle {
+interface CompetitionResultsTeamFixturesBundle {
   team_fixtures_in_competition: Fixture[];
   team_fixtures_all_competitions: Fixture[];
   extended_team_map: Map<string, Team>;

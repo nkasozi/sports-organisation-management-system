@@ -33,7 +33,7 @@ const MATCH_REPORT_DOWNLOAD_TEXT = {
   download_success: "Match report downloaded!",
 } as const;
 
-export interface MatchReportPageDownloadDependencies {
+interface MatchReportPageDownloadDependencies {
   organization_use_cases: {
     get_by_id(id: string): AsyncResult<{ name: string }>;
   };

@@ -13,7 +13,7 @@ const SEED_TABLE_NAME = {
 
 type SeedTableName = (typeof SEED_TABLE_NAME)[keyof typeof SEED_TABLE_NAME];
 
-export interface SeedPermissionsCounts {
+interface SeedPermissionsCounts {
   entity_categories_seeded: number;
   menu_items_seeded: number;
   role_permissions_seeded: number;

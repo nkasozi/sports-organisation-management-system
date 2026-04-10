@@ -15,6 +15,6 @@ export async function submit_lineup(id: string): AsyncResult<FixtureLineup> {
   return use_cases.submit_lineup(id);
 }
 
-export async function lock_lineup(id: string): AsyncResult<FixtureLineup> {
+async function lock_lineup(id: string): AsyncResult<FixtureLineup> {
   return use_cases.lock_lineup(id);
 }

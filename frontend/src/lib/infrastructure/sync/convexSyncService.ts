@@ -16,10 +16,7 @@ import {
 } from "./syncSystemUserOps";
 
 export { resolve_conflict } from "./syncConflictResolution";
-export {
-  get_local_latest_modified_at,
-  get_table_from_database,
-} from "./syncDataAccess";
+export { get_table_from_database } from "./syncDataAccess";
 export {
   get_last_sync_timestamp,
   reset_sync_metadata,
@@ -28,7 +25,6 @@ export { ConvexSyncManager } from "./syncManager";
 export { pull_table_from_convex } from "./syncPullService";
 export { write_convex_user_to_local_dexie } from "./syncSystemUserOps";
 export type {
-  ConflictFromServer,
   ConflictResolutionRequest,
   SyncConfig,
   SyncDirection,
@@ -56,7 +52,7 @@ export async function delete_record_in_convex(
   return delete_record_impl(table_name, local_id, get_sync_manager_impl);
 }
 
-export async function clear_all_synced_tables_in_convex(): Promise<boolean> {
+async function clear_all_synced_tables_in_convex(): Promise<boolean> {
   return clear_all_tables_impl(get_sync_manager_impl);
 }
 
@@ -64,7 +60,7 @@ export async function clear_all_demo_data_in_convex(): Promise<boolean> {
   return clear_demo_impl(get_sync_manager_impl);
 }
 
-export async function pull_system_users_from_convex(): Promise<boolean> {
+async function pull_system_users_from_convex(): Promise<boolean> {
   return pull_users_impl(get_sync_manager_impl);
 }
 

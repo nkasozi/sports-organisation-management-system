@@ -24,7 +24,7 @@ interface EnsureAuthProfileResult {
   error_message: string;
 }
 
-export interface LiveGamesPageInitializationCommand {
+interface LiveGamesPageInitializationCommand {
   ensure_auth_profile: () => Promise<EnsureAuthProfileResult>;
   auth_state: Pick<AuthState, "current_profile" | "current_token">;
   authorization_adapter: LiveGamesAuthorizationAdapter;
@@ -32,20 +32,20 @@ export interface LiveGamesPageInitializationCommand {
   fixture_state_dependencies: LiveGamesDataDependencies;
 }
 
-export interface LiveGamesPageFixtureStateCommand {
+interface LiveGamesPageFixtureStateCommand {
   auth_state: Pick<AuthState, "current_profile">;
   fixture_state_dependencies: LiveGamesDataDependencies;
   organization_id: string;
 }
 
-export interface LiveGamesPageStartFlowCommand extends Omit<
+interface LiveGamesPageStartFlowCommand extends Omit<
   LiveGamesStartFlowDependencies,
   "delay" | "restart" | "check_delay_ms"
 > {
   check_delay_ms: number;
 }
 
-export type LiveGamesPageInitializationResult =
+type LiveGamesPageInitializationResult =
   | {
       status: typeof LIVE_GAMES_PAGE_STATUS_ERROR;
       error_message: string;

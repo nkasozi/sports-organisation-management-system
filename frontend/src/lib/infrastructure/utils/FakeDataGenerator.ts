@@ -7,13 +7,13 @@ import {
   generate_fake_string_value,
 } from "./fakeDataFieldGenerators";
 
-export interface FakeDataGeneratorConfig {
+interface FakeDataGeneratorConfig {
   locale?: string;
   seed?: number;
   enable_fake_data_generation?: boolean;
 }
 
-export interface FakeDataGenerationResult {
+interface FakeDataGenerationResult {
   success: boolean;
   generated_data: Record<string, any>;
   error_message?: string;

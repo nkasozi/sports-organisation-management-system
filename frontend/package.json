@@ -13,7 +13,8 @@
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
     "lint": "prettier --check . && eslint . --max-warnings=0",
-    "format": "eslint . --fix && prettier --write ."
+    "format": "eslint . --fix && prettier --write .",
+    "knip": "knip"
   },
   "devDependencies": {
     "@sveltejs/adapter-vercel": "^6.3.3",
@@ -27,6 +28,7 @@
     "eslint-plugin-simple-import-sort": "^12.1.1",
     "eslint-plugin-svelte": "^2.36.0",
     "eslint-plugin-unused-imports": "^4.1.4",
+    "knip": "^5.88.1",
     "postcss": "^8.4.32",
     "prettier": "^3.1.1",
     "svelte": "^5.0.0",
@@ -51,5 +53,20 @@
     "jspdf-autotable": "^5.0.7",
     "svelte-clerk": "^0.10.10",
     "temporal-polyfill": "^0.3.0"
+  },
+  "knip": {
+    "ignoreFiles": [
+      "static/sw-register.js",
+      "static/sw.js",
+      "static/theme-init.js"
+    ],
+    "ignoreIssues": {
+      "src/lib/presentation/components/EntityCrudWrapper.svelte": [
+        "exports"
+      ],
+      "src/lib/presentation/components/EntityCrudWrapperContent.svelte": [
+        "exports"
+      ]
+    }
   }
 }

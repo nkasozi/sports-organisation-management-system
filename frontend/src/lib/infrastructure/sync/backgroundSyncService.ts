@@ -183,7 +183,7 @@ export function configure_scheduled_interval(
   return create_success_result(true);
 }
 
-export function create_local_change_publisher(): LocalChangePublisherPort {
+function create_local_change_publisher(): LocalChangePublisherPort {
   return {
     start: () =>
       start_background_sync()

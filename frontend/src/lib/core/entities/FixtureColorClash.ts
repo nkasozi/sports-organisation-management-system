@@ -1,6 +1,6 @@
 import type { JerseyColorAssignment } from "./FixtureTypes";
 
-export interface ColorClashWarning {
+interface ColorClashWarning {
   party_a: string;
   party_b: string;
   color: string;

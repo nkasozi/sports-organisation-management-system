@@ -5,7 +5,7 @@ import type { FixtureUseCasesPort } from "$lib/core/interfaces/ports/internal/us
 import type { PlayerUseCasesPort } from "$lib/core/interfaces/ports/internal/usecases/PlayerUseCasesPort";
 import type { TeamUseCasesPort } from "$lib/core/interfaces/ports/internal/usecases/TeamUseCasesPort";
 
-export interface GameManageBundle {
+interface GameManageBundle {
   fixture: Fixture;
   home_team: Team | null;
   away_team: Team | null;
@@ -14,11 +14,11 @@ export interface GameManageBundle {
   game_clock_seconds: number;
 }
 
-export type GameManageLoadResult =
+type GameManageLoadResult =
   | { success: true; data: GameManageBundle }
   | { success: false; error_message: string };
 
-export interface GameManageDataDependencies {
+interface GameManageDataDependencies {
   fixture_use_cases: Pick<FixtureUseCasesPort, "get_by_id">;
   team_use_cases: Pick<TeamUseCasesPort, "get_by_id">;
   player_use_cases: Pick<PlayerUseCasesPort, "list_players_by_team">;

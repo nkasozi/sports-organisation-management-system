@@ -16,7 +16,7 @@ import type {
 
 const PUSH_REMEDIATION_FAILED_MESSAGE = "Push remediation failed";
 
-export interface TableSyncResult {
+interface TableSyncResult {
   records_pushed: number;
   records_pulled: number;
   error: { table_name: string; error: string } | null;

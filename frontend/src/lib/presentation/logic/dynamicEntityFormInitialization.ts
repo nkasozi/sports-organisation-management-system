@@ -173,6 +173,6 @@ export function create_sub_entity_crud_handlers(
   };
 }
 
-export function get_dynamic_form_default_value(field: FieldMetadata): unknown {
+function get_dynamic_form_default_value(field: FieldMetadata): unknown {
   return get_default_value_for_field_type(field);
 }

@@ -13,7 +13,7 @@ export interface LiveGamesAuthorizationAdapter {
   ): AuthorizationResult;
 }
 
-export interface LiveGamesPermissions {
+interface LiveGamesPermissions {
   authorization_succeeded: boolean;
   is_read_authorized: boolean;
   denial_reason: string;

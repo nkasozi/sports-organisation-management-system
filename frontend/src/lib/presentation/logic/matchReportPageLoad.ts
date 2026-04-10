@@ -15,12 +15,6 @@ import type {
   MatchReportRefreshDependencies,
 } from "$lib/presentation/logic/matchReportPageLoadTypes";
 
-export type {
-  MatchReportAssignedOfficialData,
-  MatchReportPageData,
-  MatchReportRefreshData,
-} from "$lib/presentation/logic/matchReportPageLoadTypes";
-
 const MATCH_REPORT_PAGE_LOAD_MESSAGE = {
   fixture_not_found: "Failed to load match",
 } as const;

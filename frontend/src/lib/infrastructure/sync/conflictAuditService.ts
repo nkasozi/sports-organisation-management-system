@@ -11,7 +11,7 @@ import type {
 
 import { WILDCARD_SCOPE } from "../../core/entities/StatusConstants";
 
-export interface ConflictAuditContext {
+interface ConflictAuditContext {
   user_id?: string;
   user_email?: string;
   user_display_name?: string;

@@ -69,7 +69,7 @@ export function derive_effective_tie_breakers(
   );
 }
 
-export function build_competition_results_auth_filter(
+function build_competition_results_auth_filter(
   current_profile: UserScopeProfile | null | undefined,
 ): Record<string, string> {
   if (!current_profile) return {};

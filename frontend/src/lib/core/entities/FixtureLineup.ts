@@ -78,7 +78,7 @@ function create_lineup_player(
   };
 }
 
-export function get_lineup_player_display_name(player: LineupPlayer): string {
+function get_lineup_player_display_name(player: LineupPlayer): string {
   const jersey = player.jersey_number ?? "?";
   const name = `${player.first_name} ${player.last_name}`.trim();
   const position_suffix = player.position ? `• ${player.position}` : "";

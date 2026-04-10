@@ -20,7 +20,7 @@ const LEADERBOARD_LOAD_ERROR_MESSAGE =
 
 type ListResult<T> = Promise<{ success: boolean; data?: { items: T[] } }>;
 
-export interface OfficialLeaderboardPageDependencies {
+interface OfficialLeaderboardPageDependencies {
   organization_use_cases: { list(): ListResult<Organization> };
   official_performance_rating_use_cases: {
     list(
@@ -58,7 +58,7 @@ export interface OfficialLeaderboardPageData extends OfficialLeaderboardViewStat
   all_stages: CompetitionStage[];
 }
 
-export type OfficialLeaderboardPageStateResult =
+type OfficialLeaderboardPageStateResult =
   | { success: false; error_message: string }
   | { success: true; data: OfficialLeaderboardPageData };
 

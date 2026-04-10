@@ -5,7 +5,7 @@ import type { PlayerTeamMembership } from "../entities/PlayerTeamMembership";
 import type { FixtureLineupUseCases } from "../usecases/FixtureLineupUseCases";
 import type { FixtureUseCases } from "../usecases/FixtureUseCases";
 
-export interface PreviousLineupResult {
+interface PreviousLineupResult {
   success: boolean;
   lineup?: FixtureLineup;
 }

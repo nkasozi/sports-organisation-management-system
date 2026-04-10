@@ -15,13 +15,13 @@ import {
   update_sport as repo_update_sport,
 } from "../repositories/InBrowserSportRepository";
 
-export interface SportServiceResult<T> {
+interface SportServiceResult<T> {
   success: boolean;
   data?: T;
   error?: string;
 }
 
-export async function get_all_sports(): Promise<SportServiceResult<Sport[]>> {
+async function get_all_sports(): Promise<SportServiceResult<Sport[]>> {
   try {
     const sports = await repo_get_all_sports();
     return { success: true, data: sports };

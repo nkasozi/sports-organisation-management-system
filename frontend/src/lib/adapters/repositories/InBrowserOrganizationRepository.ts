@@ -154,7 +154,7 @@ export function get_organization_repository(): OrganizationRepository {
   return singleton_instance;
 }
 
-export async function ensure_default_organization_exists(
+async function ensure_default_organization_exists(
   seeded_sports: Sport[],
 ): Promise<void> {
   const repository =

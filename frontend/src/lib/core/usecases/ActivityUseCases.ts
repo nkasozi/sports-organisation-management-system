@@ -29,9 +29,9 @@ import {
 } from "./ActivityCalendarEventMapping";
 import { create_activity_sync } from "./ActivitySyncUseCases";
 
-export type ActivityUseCases = ActivityUseCasesPort;
+type ActivityUseCases = ActivityUseCasesPort;
 
-export interface ActivityUseCasesDependencies {
+interface ActivityUseCasesDependencies {
   activity_repository: ActivityRepository;
   activity_category_repository: ActivityCategoryRepository;
   competition_repository: CompetitionRepository;

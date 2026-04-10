@@ -6,7 +6,7 @@ import type {
 
 export const DEBOUNCE_DELAY_MS = 3000;
 export const OFFLINE_RETRY_INTERVAL_MS = 60000;
-export const DEFAULT_SCHEDULED_SYNC_INTERVAL_MS = 3_600_000;
+const DEFAULT_SCHEDULED_SYNC_INTERVAL_MS = 3_600_000;
 
 export const SYNCED_TABLE_NAMES = [
   "organizations",
@@ -48,7 +48,7 @@ export const SYNCED_TABLE_NAMES = [
   "organization_settings",
 ] as const;
 
-export interface BackgroundSyncState {
+interface BackgroundSyncState {
   is_running: boolean;
   has_pending_changes: boolean;
   is_online: boolean;

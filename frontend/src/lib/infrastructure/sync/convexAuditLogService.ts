@@ -9,7 +9,7 @@ import { get_sync_manager } from "./convexSyncService";
 
 export const AUDIT_LOG_PAGE_SIZE = 50;
 
-export interface AuditLogSearchResult {
+interface AuditLogSearchResult {
   success: boolean;
   data: AuditLog[];
   total_count: number;
@@ -19,7 +19,7 @@ export interface AuditLogSearchResult {
   error_message?: string;
 }
 
-export interface AuditLogSearchOptions {
+interface AuditLogSearchOptions {
   page_number?: number;
   page_size?: number;
 }

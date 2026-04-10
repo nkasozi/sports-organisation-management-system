@@ -106,15 +106,13 @@ export function validate_sport_input(input: CreateSportInput): string[] {
   return validation_errors;
 }
 
-export function calculate_total_game_duration(
-  periods: SportGamePeriod[],
-): number {
+function calculate_total_game_duration(periods: SportGamePeriod[]): number {
   return periods
     .filter((p) => !p.is_break)
     .reduce((total, period) => total + period.duration_minutes, 0);
 }
 
-export function get_mandatory_official_count(
+function get_mandatory_official_count(
   requirements: OfficialRequirement[],
 ): number {
   return requirements

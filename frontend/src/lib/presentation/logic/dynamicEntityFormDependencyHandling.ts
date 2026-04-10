@@ -15,7 +15,7 @@ type DynamicFormDependencyState = {
   all_competition_teams_cache: BaseEntity[];
 };
 
-export type DynamicFormDependencyChangeResult = DynamicFormDependencyState & {
+type DynamicFormDependencyChangeResult = DynamicFormDependencyState & {
   should_check_jersey_color_clashes: boolean;
   should_run_gender_mismatch_check: boolean;
   should_run_fixture_team_gender_mismatch_check: boolean;

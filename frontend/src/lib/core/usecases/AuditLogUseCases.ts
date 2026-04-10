@@ -1,9 +1,4 @@
-import type {
-  AuditAction,
-  AuditLog,
-  CreateAuditLogInput,
-  FieldChange,
-} from "../entities/AuditLog";
+import type { AuditLog, CreateAuditLogInput } from "../entities/AuditLog";
 import type { AuditLogFilter, AuditLogRepository } from "../interfaces/ports";
 import type { QueryOptions } from "../interfaces/ports";
 import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
@@ -124,4 +119,4 @@ function validate_audit_log_input(input: CreateAuditLogInput): string[] {
   return errors;
 }
 
-export type { AuditAction, AuditLogFilter, FieldChange };
+export type { AuditLogFilter };

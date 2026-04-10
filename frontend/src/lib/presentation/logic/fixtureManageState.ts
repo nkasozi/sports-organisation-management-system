@@ -48,9 +48,7 @@ export function build_team_players(
   });
 }
 
-export function is_submitted_lineup_status(
-  status: FixtureLineup["status"],
-): boolean {
+function is_submitted_lineup_status(status: FixtureLineup["status"]): boolean {
   return status === "submitted" || status === "locked";
 }
 

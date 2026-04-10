@@ -1,6 +1,6 @@
 import type { Result } from "$lib/core/types/Result";
 
-export interface RemoteTableTimestamp {
+interface RemoteTableTimestamp {
   table_name: string;
   latest_modified_at: string | null;
 }

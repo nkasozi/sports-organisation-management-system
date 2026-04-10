@@ -36,7 +36,7 @@ export interface SystemUser {
 
 export const ACCESS_DENIED_MESSAGE =
   "Access denied. Please contact your organization administrator.";
-export const AUTH_DENIED_MESSAGE = "Access denied";
+const AUTH_DENIED_MESSAGE = "Access denied";
 
 export function mask_email_for_logging(email: string): string {
   const at_index = email.indexOf("@");

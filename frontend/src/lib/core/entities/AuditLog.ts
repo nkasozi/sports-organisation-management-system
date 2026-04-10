@@ -44,7 +44,7 @@ export interface CreateAuditLogInput {
   user_agent?: string;
 }
 
-export function build_audit_log_summary(audit_log: AuditLog): string {
+function build_audit_log_summary(audit_log: AuditLog): string {
   const action_past_tense = get_action_past_tense(audit_log.action);
   const changes_summary = build_changes_summary(audit_log.changes);
 

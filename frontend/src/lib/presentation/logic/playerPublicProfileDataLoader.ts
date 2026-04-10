@@ -18,7 +18,6 @@ import {
 
 export {
   PLAYER_PUBLIC_PROFILE_LOAD_ERROR_KIND,
-  type PlayerPublicProfileDataDependencies,
   type PlayerPublicProfileLoadError,
   type PlayerPublicProfilePageData,
 } from "./playerPublicProfileDataLoaderContracts";

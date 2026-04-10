@@ -191,7 +191,7 @@ export async function sync_all_tables(
   };
 }
 
-export async function sync_single_table(
+async function sync_single_table(
   convex_client: ConvexClient,
   table_name: string,
   direction: SyncDirection = "bidirectional",

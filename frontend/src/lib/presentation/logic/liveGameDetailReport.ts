@@ -23,7 +23,7 @@ import {
 type OrganizationUseCases = ReturnType<typeof get_organization_use_cases>;
 type TeamStaffUseCases = ReturnType<typeof get_team_staff_use_cases>;
 
-export interface LiveGameDetailReportDependencies {
+interface LiveGameDetailReportDependencies {
   organization_use_cases: OrganizationUseCases;
   team_staff_use_cases: TeamStaffUseCases;
 }

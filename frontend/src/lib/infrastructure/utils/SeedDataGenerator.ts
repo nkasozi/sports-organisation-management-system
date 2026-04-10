@@ -10,7 +10,6 @@ export { create_seed_jersey_colors } from "./seed/seedJerseyColors";
 export { create_seed_fixture_lineups } from "./seed/seedLineupsMain";
 export { create_seed_player_team_memberships } from "./seed/seedMemberships";
 export { create_seed_officials } from "./seed/seedOfficials";
-export type { PositionIds } from "./seed/seedPlayerIds";
 export { create_seed_player_profiles } from "./seed/seedPlayerProfiles";
 export { create_seed_players } from "./seed/seedPlayers";
 export { create_seed_profile_links } from "./seed/seedProfileLinks";

@@ -23,7 +23,7 @@ export function get_default_competition_formats_for_organization(
   }));
 }
 
-export function get_default_competition_formats(): CreateCompetitionFormatInput[] {
+function get_default_competition_formats(): CreateCompetitionFormatInput[] {
   return [
     hydrate_competition_format_input({
       name: "Standard League",

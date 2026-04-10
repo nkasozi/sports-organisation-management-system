@@ -19,7 +19,7 @@ import {
 } from "./fixtureLineupLookup";
 import { get_player_rules_from_competition } from "./fixturePlayerRules";
 
-export interface LineupGenerationResult {
+interface LineupGenerationResult {
   success: boolean;
   lineup?: CreateFixtureLineupInput;
   error_message?: string | null;

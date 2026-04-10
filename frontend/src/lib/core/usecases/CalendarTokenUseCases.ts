@@ -21,11 +21,11 @@ import type {
 import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
 import { create_failure_result, create_success_result } from "../types/Result";
 
-export type CalendarTokenUseCases = CalendarTokenUseCasesPort;
+type CalendarTokenUseCases = CalendarTokenUseCasesPort;
 
 const DEFAULT_REMINDER_MINUTES = 60;
 
-export interface CalendarTokenUseCasesDependencies {
+interface CalendarTokenUseCasesDependencies {
   calendar_token_repository: CalendarTokenRepository;
   get_base_url: () => string;
 }

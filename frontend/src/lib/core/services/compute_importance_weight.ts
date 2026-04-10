@@ -1,6 +1,6 @@
 import type { StageType } from "../entities/CompetitionStage";
 
-export type ImportanceWeight = 1.0 | 1.5 | 2.0 | 2.5 | 3.0;
+type ImportanceWeight = 1.0 | 1.5 | 2.0 | 2.5 | 3.0;
 
 export interface ImportanceWeightInput {
   stage_type: StageType;

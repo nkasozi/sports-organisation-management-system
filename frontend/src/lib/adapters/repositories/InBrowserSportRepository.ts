@@ -18,7 +18,7 @@ import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
 
 const ENTITY_PREFIX = "sport";
 
-export const DEFAULT_SPORT_IDS = {
+const DEFAULT_SPORT_IDS = {
   FOOTBALL: "sport-football-default",
   BASKETBALL: "sport-basketball-default",
   FIELD_HOCKEY: "sport-field-hockey-default",
@@ -112,7 +112,7 @@ class InBrowserSportRepository
   }
 }
 
-export function get_sport_id_by_code_sync(code: string): string | null {
+function get_sport_id_by_code_sync(code: string): string | null {
   return SPORT_ID_BY_CODE[code.toUpperCase()] ?? null;
 }
 

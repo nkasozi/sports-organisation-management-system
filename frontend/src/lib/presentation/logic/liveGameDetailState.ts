@@ -1,8 +1,6 @@
 export {
-  build_missing_lineups_error_message,
   build_player_select_options_for_team,
   build_players_on_field_options,
-  get_event_bg_class,
   get_starters_from_lineup,
   get_substitutes_from_lineup,
   get_time_on_options,

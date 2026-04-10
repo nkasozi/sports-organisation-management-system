@@ -1,12 +1,8 @@
 import type { SharedEntityType } from "$convex/shared_permission_definitions";
-import type {
-  SyncDirection,
-  SyncHints,
-  UserRole,
-} from "$lib/core/interfaces/ports";
+import type { SyncDirection, UserRole } from "$lib/core/interfaces/ports";
 import { check_entity_permission } from "$lib/core/interfaces/ports";
 
-export type { SyncDirection, SyncHints };
+export type { SyncDirection };
 export type SyncStatus = "idle" | "syncing" | "success" | "error" | "conflict";
 
 export interface SyncProgress {
@@ -154,10 +150,7 @@ const TABLE_NAME_TO_ENTITY_TYPE: Partial<Record<TableName, SharedEntityType>> =
 
 export const EPOCH_TIMESTAMP = "1970-01-01T00:00:00.000Z";
 
-export function role_can_push_table(
-  role: UserRole,
-  table_name: TableName,
-): boolean {
+function role_can_push_table(role: UserRole, table_name: TableName): boolean {
   const entity_type = TABLE_NAME_TO_ENTITY_TYPE[table_name];
   if (!entity_type) return true;
   return (

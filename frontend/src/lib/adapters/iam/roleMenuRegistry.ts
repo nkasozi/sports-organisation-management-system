@@ -30,7 +30,7 @@ export const ROLE_DEFAULT_ROUTES: Record<UserRole, string> = {
   public_viewer: "/competition-results",
 };
 
-export const ROLE_DISPLAY_NAMES: Record<UserRole, string> = {
+const ROLE_DISPLAY_NAMES: Record<UserRole, string> = {
   super_admin: "Super Admin",
   org_admin: "Organisation Admin",
   officials_manager: "Officials Manager",

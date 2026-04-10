@@ -17,7 +17,6 @@ import {
 
 export {
   TEAM_PUBLIC_PROFILE_LOAD_ERROR_KIND,
-  type TeamPublicProfileDataDependencies,
   type TeamPublicProfileLoadError,
   type TeamPublicProfilePageData,
 } from "./teamPublicProfileDataLoaderContracts";

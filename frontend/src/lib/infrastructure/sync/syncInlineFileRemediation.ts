@@ -41,7 +41,7 @@ export type SyncRemediableRecord = Record<string, unknown> & {
   created_at?: string;
 };
 
-export interface BuildRemediatedSyncRecordsCommand {
+interface BuildRemediatedSyncRecordsCommand {
   table_name: TableName;
   all_local_records: SyncRemediableRecord[];
   remote_latest_modified_at: string | null;
@@ -49,19 +49,19 @@ export interface BuildRemediatedSyncRecordsCommand {
   max_payload_bytes?: number;
 }
 
-export interface BuildRemediatedSyncRecordsResult {
+interface BuildRemediatedSyncRecordsResult {
   records: SyncRemediableRecord[];
   remediated_records: SyncRemediableRecord[];
   remediated_record_ids: string[];
 }
 
-export interface RemediateOversizedInlineFileRecordsCommand extends BuildRemediatedSyncRecordsCommand {
+interface RemediateOversizedInlineFileRecordsCommand extends BuildRemediatedSyncRecordsCommand {
   table: Table<SyncRemediableRecord, string>;
   get_is_remote_sync_in_progress: () => boolean;
   set_remote_sync_in_progress: (value: boolean) => void;
 }
 
-export interface RemediateOversizedInlineFileRecordsResult extends BuildRemediatedSyncRecordsResult {
+interface RemediateOversizedInlineFileRecordsResult extends BuildRemediatedSyncRecordsResult {
   success: boolean;
   error: string | null;
 }

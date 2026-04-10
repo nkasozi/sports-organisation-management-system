@@ -48,7 +48,7 @@ export async function resolve_conflict(
   }
 }
 
-export async function resolve_multiple_conflicts(
+async function resolve_multiple_conflicts(
   convex_client: ConvexClient,
   requests: ConflictResolutionRequest[],
 ): Promise<{

@@ -3,7 +3,7 @@ import type { CompetitionUseCases } from "../usecases/CompetitionUseCases";
 import type { OrganizationUseCases } from "../usecases/OrganizationUseCases";
 import type { SportUseCases } from "../usecases/SportUseCases";
 
-export interface PlayerRulesResult {
+interface PlayerRulesResult {
   success: boolean;
   min_players: number;
   max_players: number;

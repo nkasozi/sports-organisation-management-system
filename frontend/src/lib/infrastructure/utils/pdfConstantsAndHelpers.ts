@@ -2,13 +2,13 @@ import { jsPDF } from "jspdf";
 
 export const FONT_SIZE_TITLE = 12;
 export const FONT_SIZE_HEADER = 10;
-export const FONT_SIZE_BODY = 8;
+const FONT_SIZE_BODY = 8;
 export const FONT_SIZE_SMALL = 7;
 export const LINE_HEIGHT = 5;
 export const MARGIN_LEFT = 10;
 export const MARGIN_RIGHT = 10;
 export const PAGE_WIDTH = 210;
-export const CONTENT_WIDTH = PAGE_WIDTH - MARGIN_LEFT - MARGIN_RIGHT;
+const CONTENT_WIDTH = PAGE_WIDTH - MARGIN_LEFT - MARGIN_RIGHT;
 export const HALF_WIDTH = CONTENT_WIDTH / 2;
 
 export interface JsPDFWithAutoTable extends jsPDF {

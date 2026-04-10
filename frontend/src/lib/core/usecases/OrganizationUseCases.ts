@@ -69,9 +69,7 @@ export function create_organization_use_cases(
   };
 }
 
-export type OrganizationDefaultSeeder = (
-  organization_id: string,
-) => Promise<void>;
+type OrganizationDefaultSeeder = (organization_id: string) => Promise<void>;
 
 export function create_organization_use_cases_with_default_seeder(
   org_repo: OrganizationRepository,

@@ -11,7 +11,7 @@ import {
   get_competition_team_collections_after_remove,
 } from "$lib/presentation/logic/competitionEditPageState";
 
-export interface CompetitionEditWorkspaceCollections {
+interface CompetitionEditWorkspaceCollections {
   available_teams: Team[];
   competition_team_entries: CompetitionTeam[];
   teams_in_competition: Team[];

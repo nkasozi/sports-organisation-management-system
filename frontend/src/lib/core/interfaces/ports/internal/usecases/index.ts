@@ -4,7 +4,6 @@ export type {
   CalendarDateRange,
   CalendarEvent,
 } from "./ActivityUseCasesPort";
-export type { AsyncResult, BaseUseCasesPort } from "./BaseUseCasesPort";
 export type {
   CalendarFeedInfo,
   CalendarTokenUseCasesPort,

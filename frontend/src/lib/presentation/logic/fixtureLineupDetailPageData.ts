@@ -8,7 +8,7 @@ type FixtureLineupDetailPageDependencies = Parameters<
   typeof load_fixture_lineup_detail_page_data
 >[0]["dependencies"];
 
-export interface FixtureLineupDetailPageViewData {
+interface FixtureLineupDetailPageViewData {
   lineup: FixtureLineup;
   fixture: Fixture | null;
   team: Team | null;

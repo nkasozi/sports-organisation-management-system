@@ -27,8 +27,6 @@ import { conflict_store } from "$lib/presentation/stores/conflictStore";
 
 import { execute_conflict_resolution } from "./syncStoreResolveConflict";
 import { SYNC_INITIAL_STATE, type SyncState } from "./syncStoreTypes";
-export type { SyncState } from "./syncStoreTypes";
-export { SYNC_INITIAL_STATE } from "./syncStoreTypes";
 
 const SYNC_CONFLICT_ERROR_MESSAGE =
   "Conflicts detected. Please review and resolve.";
