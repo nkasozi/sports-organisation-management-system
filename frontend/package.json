@@ -52,7 +52,7 @@
     "jspdf": "^4.2.0",
     "jspdf-autotable": "^5.0.7",
     "svelte-clerk": "^0.10.10",
-    "temporal-polyfill": "^0.3.0"
+    "temporal-polyfill": "^0.3.2"
   },
   "knip": {
     "ignoreFiles": [
