@@ -6,11 +6,7 @@ import { create_failure_result, create_success_result } from "../types/Result";
 import type { FixtureDetailsSetupUseCases } from "../usecases/FixtureDetailsSetupUseCases";
 import type { FixtureLineupUseCases } from "../usecases/FixtureLineupUseCases";
 
-export type { LineupGenerationResult } from "./fixtureLineupGeneration";
 export { auto_generate_lineups_if_possible } from "./fixtureLineupGeneration";
-export type { PreviousLineupResult } from "./fixtureLineupLookup";
-export type { PlayerRulesResult } from "./fixturePlayerRules";
-
 export type CheckStatus = "pending" | "checking" | "passed" | "failed";
 
 export interface PreFlightCheck {
@@ -20,7 +16,7 @@ export interface PreFlightCheck {
   fix_suggestion: string | null;
 }
 
-export interface FixtureCanStartResult {
+interface FixtureCanStartResult {
   can_start: boolean;
   officials_check: PreFlightCheck;
   home_lineup_check: PreFlightCheck;

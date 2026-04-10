@@ -16,7 +16,7 @@ type EntityResult<EntityType> = {
   error?: string;
 };
 
-export interface CompetitionCreateSubmitDependencies {
+interface CompetitionCreateSubmitDependencies {
   competition_team_use_cases: {
     create: (
       input: CreateCompetitionTeamInput,

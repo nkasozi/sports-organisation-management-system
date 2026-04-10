@@ -30,7 +30,7 @@ const MATCH_REPORT_DEFAULT_TEXT = {
   default_event_background: "border-l-gray-300 bg-gray-50 dark:bg-accent-800",
 } as const;
 
-export interface MatchReportLineupGroups {
+interface MatchReportLineupGroups {
   starters: LineupPlayer[];
   substitutes: LineupPlayer[];
 }

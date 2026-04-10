@@ -1,4 +1,3 @@
-import type { UserRole } from "../interfaces/ports/external/iam/AuthenticationPort";
 import type { EntityStatus } from "./BaseEntity";
 import type { FormatType } from "./CompetitionFormatTypes";
 import type { StageType } from "./CompetitionStage";
@@ -42,20 +41,6 @@ export const GAME_STATUS: Record<string, LiveGameStatus> = {
   ABANDONED: "abandoned",
 } as const;
 
-export const FIELD_TYPE = {
-  STRING: "string",
-  NUMBER: "number",
-  STAR_RATING: "star_rating",
-  BOOLEAN: "boolean",
-  DATE: "date",
-  ENUM: "enum",
-  FOREIGN_KEY: "foreign_key",
-  FILE: "file",
-  SUB_ENTITY: "sub_entity",
-  OFFICIAL_ASSIGNMENT_ARRAY: "official_assignment_array",
-  STAGE_TEMPLATE_ARRAY: "stage_template_array",
-} as const;
-
 export const ACTIVITY_SOURCE_TYPE = {
   MANUAL: "manual",
 } as const;
@@ -64,16 +49,6 @@ export const MEMBERSHIP_STATUS: Record<string, PlayerTeamMembershipStatus> = {
   ACTIVE: "active",
   INACTIVE: "inactive",
   ENDED: "ended",
-} as const;
-
-export const USER_ROLE: Record<string, UserRole> = {
-  SUPER_ADMIN: "super_admin",
-  ORG_ADMIN: "org_admin",
-  OFFICIALS_MANAGER: "officials_manager",
-  TEAM_MANAGER: "team_manager",
-  OFFICIAL: "official",
-  PLAYER: "player",
-  PUBLIC_VIEWER: "public_viewer",
 } as const;
 
 export const WILDCARD_SCOPE = "*" as const;

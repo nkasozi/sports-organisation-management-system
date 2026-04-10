@@ -9,13 +9,13 @@ import {
   build_manual_activity_input,
 } from "$lib/presentation/logic/calendarPageState";
 
-export interface CalendarPageActionFailure {
+interface CalendarPageActionFailure {
   success: false;
   error_message: string;
   error_type: "error" | "warning";
 }
 
-export interface CalendarPageActionSuccess {
+interface CalendarPageActionSuccess {
   success: true;
 }
 

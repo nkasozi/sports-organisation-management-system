@@ -46,7 +46,7 @@ export interface FixtureLineupDetailPageDependencies {
   ): PaginatedAsyncResult<PlayerPosition>;
 }
 
-export interface FixtureLineupDetailPageData {
+interface FixtureLineupDetailPageData {
   lineup: FixtureLineup;
   fixture: Fixture | null;
   team: Team | null;

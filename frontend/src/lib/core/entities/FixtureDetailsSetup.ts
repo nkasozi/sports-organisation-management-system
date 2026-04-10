@@ -109,7 +109,7 @@ export function validate_fixture_details_setup_input(
   };
 }
 
-export interface OfficialTeamConflict {
+interface OfficialTeamConflict {
   official_id: string;
   official_name: string;
   team_id: string;

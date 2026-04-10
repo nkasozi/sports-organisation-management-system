@@ -35,7 +35,7 @@ interface FixtureLineupCreateDerivedStateParams {
   confirm_lock_understood: boolean;
 }
 
-export interface FixtureLineupCreateDerivedState {
+interface FixtureLineupCreateDerivedState {
   organization_is_restricted: boolean;
   team_is_restricted: boolean;
   user_team_id: string | undefined;

@@ -16,7 +16,7 @@ import type {
   RolePermissionMap,
 } from "./AuthorizationPort";
 
-export const ENTITY_LEVEL_DISABLED_OPERATIONS: Partial<
+const ENTITY_LEVEL_DISABLED_OPERATIONS: Partial<
   Record<SharedEntityType, ("create" | "edit" | "delete")[]>
 > = {
   playerteamtransferhistory: ["delete"],

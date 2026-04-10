@@ -171,7 +171,7 @@ export function get_system_user_repository(): InBrowserSystemUserRepository {
   return singleton_instance;
 }
 
-export async function reset_system_user_repository(): Promise<void> {
+async function reset_system_user_repository(): Promise<void> {
   const repository = get_system_user_repository();
   await repository.clear_all_data();
 }

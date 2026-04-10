@@ -1,6 +1,6 @@
 import { get, writable } from "svelte/store";
 
-export interface AccessDenialInfo {
+interface AccessDenialInfo {
   denied: boolean;
   route: string;
   message: string;

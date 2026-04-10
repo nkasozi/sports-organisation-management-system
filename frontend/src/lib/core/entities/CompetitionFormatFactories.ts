@@ -7,7 +7,7 @@ import type {
 } from "./CompetitionFormatTypes";
 import { DEFAULT_POINTS_CONFIG } from "./CompetitionFormatTypes";
 
-export const FORMAT_TYPE_OPTIONS = [
+const FORMAT_TYPE_OPTIONS = [
   {
     value: "league",
     label: "League",
@@ -50,7 +50,7 @@ export const FORMAT_TYPE_OPTIONS = [
   },
 ] as const;
 
-export const TIE_BREAKER_OPTIONS = [
+const TIE_BREAKER_OPTIONS = [
   { value: "goal_difference", label: "Goal Difference" },
   { value: "head_to_head", label: "Head to Head" },
   { value: "goals_scored", label: "Goals Scored" },
@@ -60,17 +60,17 @@ export const TIE_BREAKER_OPTIONS = [
   { value: "playoff", label: "Playoff Match" },
 ] as const;
 
-export function get_format_type_label(format_type: FormatType): string {
+function get_format_type_label(format_type: FormatType): string {
   const found = FORMAT_TYPE_OPTIONS.find((opt) => opt.value === format_type);
   return found?.label ?? format_type;
 }
 
-export function get_format_type_description(format_type: FormatType): string {
+function get_format_type_description(format_type: FormatType): string {
   const found = FORMAT_TYPE_OPTIONS.find((opt) => opt.value === format_type);
   return found?.description ?? "";
 }
 
-export function create_empty_competition_format_input(): CreateCompetitionFormatInput {
+function create_empty_competition_format_input(): CreateCompetitionFormatInput {
   return {
     name: "",
     code: "",

@@ -1,7 +1,7 @@
 import type { ActivityCategoryType } from "./ActivityCategory";
 import type { BaseEntity } from "./BaseEntity";
 
-export type ActivityRecurrencePattern =
+type ActivityRecurrencePattern =
   | "none"
   | "daily"
   | "weekly"

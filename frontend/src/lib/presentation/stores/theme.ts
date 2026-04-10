@@ -2,16 +2,10 @@ import { writable } from "svelte/store";
 
 import { browser } from "$app/environment";
 import { get_app_settings_storage } from "$lib/infrastructure/container";
-export type {
-  ColorPalette,
-  PaletteShade,
-  ThemeColorName,
-  ThemeConfig,
-} from "./themeTypes";
+export type { ThemeConfig } from "./themeTypes";
+import { COLOR_PALETTES } from "./themeColorPalettes";
 import type { PaletteShade, ThemeColorName, ThemeConfig } from "./themeTypes";
 import { PALETTE_SHADES } from "./themeTypes";
-export { COLOR_PALETTES } from "./themeColorPalettes";
-import { COLOR_PALETTES } from "./themeColorPalettes";
 
 const DEFAULT_THEME: ThemeConfig = {
   mode: "dark",

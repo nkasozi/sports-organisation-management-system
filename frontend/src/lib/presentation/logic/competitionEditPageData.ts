@@ -28,7 +28,7 @@ interface EntityByIdResult<EntityType> {
   error?: string;
 }
 
-export interface CompetitionEditPageDependencies {
+interface CompetitionEditPageDependencies {
   competition_use_cases: {
     get_by_id: (
       competition_id: string,
@@ -60,7 +60,7 @@ export interface CompetitionEditPageDependencies {
   };
 }
 
-export interface CompetitionEditPageLoadedData {
+interface CompetitionEditPageLoadedData {
   competition: Competition;
   organizations: Organization[];
   competition_formats: CompetitionFormat[];

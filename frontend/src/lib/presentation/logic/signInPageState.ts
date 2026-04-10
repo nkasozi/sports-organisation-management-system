@@ -1,4 +1,4 @@
-export interface SignInPageErrorState {
+interface SignInPageErrorState {
   error_param: string | null;
   has_server_error: boolean;
   has_sync_error: boolean;

@@ -11,7 +11,7 @@ import {
   type TeamPlayer,
 } from "$lib/presentation/logic/fixtureManageState";
 
-export interface FixtureManageBundle {
+interface FixtureManageBundle {
   fixture: Fixture;
   home_team: Team | null;
   away_team: Team | null;
@@ -20,11 +20,11 @@ export interface FixtureManageBundle {
   game_clock_seconds: number;
 }
 
-export type FixtureManageLoadResult =
+type FixtureManageLoadResult =
   | { success: true; data: FixtureManageBundle }
   | { success: false; error_message: string };
 
-export interface FixtureManageDataDependencies {
+interface FixtureManageDataDependencies {
   fixture_use_cases: Pick<FixtureUseCasesPort, "get_by_id">;
   team_use_cases: Pick<TeamUseCasesPort, "get_by_id">;
   player_use_cases: Pick<PlayerUseCasesPort, "list_players_by_team">;

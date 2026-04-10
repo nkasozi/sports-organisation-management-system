@@ -32,7 +32,7 @@ export type UpdateCalendarTokenInput = Partial<
 
 const CALENDAR_TOKEN_EXPIRY_DAYS = 90;
 
-export function compute_calendar_token_expiry(): string {
+function compute_calendar_token_expiry(): string {
   const expiry_date = new Date();
   expiry_date.setDate(expiry_date.getDate() + CALENDAR_TOKEN_EXPIRY_DAYS);
   return expiry_date.toISOString();

@@ -15,12 +15,6 @@ import {
 } from "$lib/presentation/stores/authPermissionCore";
 
 import type { AuthState } from "./authTypes";
-export {
-  check_entity_permission,
-  get_entity_data_category,
-  get_role_permissions_sync,
-  map_authorizable_action_to_data_action,
-} from "$lib/presentation/stores/authPermissionCore";
 
 export function compute_authorization_level(
   state: AuthState,

@@ -5,7 +5,6 @@ export { load_fixture_lineup_create_team_data } from "./fixtureLineupCreateDataT
 export {
   create_fixture_lineup_create_dependencies,
   type FixtureLineupCreateDependencies,
-  type FixtureLineupCreateFixtureData,
   type FixtureLineupCreateReferenceData,
   type FixtureLineupCreateTeamData,
 } from "./fixtureLineupCreateDataTypes";

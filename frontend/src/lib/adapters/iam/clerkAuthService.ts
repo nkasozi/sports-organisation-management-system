@@ -14,7 +14,7 @@ import {
   type ClerkUser,
   INITIAL_CLERK_STATE,
 } from "./clerkAuthTypes";
-export type { ClerkSessionState, ClerkUser } from "./clerkAuthTypes";
+export type { ClerkUser } from "./clerkAuthTypes";
 
 const clerk_store = writable<ClerkSessionState>(INITIAL_CLERK_STATE);
 

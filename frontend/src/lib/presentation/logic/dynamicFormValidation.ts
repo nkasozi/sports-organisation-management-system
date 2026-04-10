@@ -9,7 +9,7 @@ import {
 import { is_field_visible_by_visible_when_condition } from "./dynamicFormLogic";
 import { should_field_be_required_for_role } from "./systemUserFormLogic";
 
-export interface FieldValidationResult {
+interface FieldValidationResult {
   is_valid: boolean;
   error_message: string;
 }

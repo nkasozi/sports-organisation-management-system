@@ -30,12 +30,12 @@ export const PLAYER_PUBLIC_PROFILE_LOAD_ERROR_KIND = {
 export type PlayerPublicProfileLoadErrorKind =
   (typeof PLAYER_PUBLIC_PROFILE_LOAD_ERROR_KIND)[keyof typeof PLAYER_PUBLIC_PROFILE_LOAD_ERROR_KIND];
 
-export type PlayerPublicProfileListResult<TData> = Promise<{
+type PlayerPublicProfileListResult<TData> = Promise<{
   success: boolean;
   data?: { items?: TData[] };
 }>;
 
-export type PlayerPublicProfileGetResult<TData> = Promise<{
+type PlayerPublicProfileGetResult<TData> = Promise<{
   success: boolean;
   data?: TData;
 }>;

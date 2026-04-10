@@ -20,7 +20,7 @@ import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
 
 const ENTITY_PREFIX = "org_settings";
 
-export class InBrowserOrganizationSettingsRepository
+class InBrowserOrganizationSettingsRepository
   extends InBrowserBaseRepository<
     OrganizationSettings,
     CreateOrganizationSettingsInput,

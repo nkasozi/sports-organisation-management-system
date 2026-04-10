@@ -23,7 +23,7 @@ export interface SettingsOption {
   label: string;
 }
 
-export interface SyncIntervalOption {
+interface SyncIntervalOption {
   value: number;
   label: string;
 }

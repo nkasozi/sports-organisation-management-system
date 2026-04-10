@@ -1,9 +1,9 @@
-export interface HeaderUserMenuDetailRow {
+interface HeaderUserMenuDetailRow {
   label: string;
   value: string;
 }
 
-export interface BuildHeaderUserMenuDetailsCommand {
+interface BuildHeaderUserMenuDetailsCommand {
   current_profile_email: string;
   current_user_role_display: string;
   current_profile_organization_name: string;

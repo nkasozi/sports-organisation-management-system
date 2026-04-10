@@ -8,7 +8,7 @@ import {
   EventBus,
 } from "$lib/infrastructure/events/EventBus";
 
-export interface CurrentUser {
+interface CurrentUser {
   id: string;
   email: string;
   first_name: string;

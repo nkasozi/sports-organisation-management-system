@@ -147,7 +147,6 @@ async function try_seed_all_tables_from_convex(
 }
 
 export {
-  type ConvexSeedResult,
   type DataSource,
   is_convex_client_available,
   type ProgressCallback,

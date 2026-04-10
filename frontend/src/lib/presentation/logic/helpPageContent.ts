@@ -1,9 +1,9 @@
-export interface HelpFaqItem {
+interface HelpFaqItem {
   question: string;
   answer: string;
 }
 
-export interface HelpOverviewCard {
+interface HelpOverviewCard {
   title: string;
   description: string;
   href: string;

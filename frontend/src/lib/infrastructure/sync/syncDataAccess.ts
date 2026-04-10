@@ -70,7 +70,7 @@ export function get_table_from_database(
   return table_map[table_name] || null;
 }
 
-export async function get_remote_latest_modified_at(
+async function get_remote_latest_modified_at(
   convex_client: ConvexClient,
   table_name: string,
 ): Promise<RemoteTableState> {

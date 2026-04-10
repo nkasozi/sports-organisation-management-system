@@ -146,7 +146,7 @@ export interface UserScopeProfile {
 
 export type RolePermissionMap = Record<DataCategory, CategoryPermissions>;
 
-export type FullPermissionMap = Record<UserRole, RolePermissionMap>;
+type FullPermissionMap = Record<UserRole, RolePermissionMap>;
 
 export interface DataAuthorizationResult {
   is_authorized: boolean;
@@ -158,7 +158,6 @@ export interface DataAuthorizationResult {
 export {
   check_data_permission,
   check_entity_permission,
-  ENTITY_LEVEL_DISABLED_OPERATIONS,
   get_entity_data_category,
   get_entity_level_disabled_operations,
   get_role_permissions,

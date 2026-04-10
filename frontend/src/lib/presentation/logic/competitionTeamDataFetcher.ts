@@ -4,13 +4,13 @@ import type { BaseEntity } from "../../core/entities/BaseEntity";
 import { get_use_cases_for_entity_type } from "../../infrastructure/registry/entityUseCasesRegistry";
 import { fetch_entities_for_type } from "./dynamicFormDataLoader";
 
-export type CompetitionTeamsResult = {
+type CompetitionTeamsResult = {
   teams: BaseEntity[];
   all_competition_teams: BaseEntity[];
   competition_team_ids: Set<string>;
 };
 
-export type PlayerMembershipTeamsResult = {
+type PlayerMembershipTeamsResult = {
   teams: BaseEntity[];
   auto_select_team_id?: string;
 };

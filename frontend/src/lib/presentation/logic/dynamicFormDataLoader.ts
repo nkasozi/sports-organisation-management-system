@@ -2,29 +2,21 @@ import type { BaseEntity, FieldMetadata } from "../../core/entities/BaseEntity";
 import { get_use_cases_for_entity_type } from "../../infrastructure/registry/entityUseCasesRegistry";
 
 export {
-  type CompetitionTeamsResult,
   compute_teams_after_exclusion,
   fetch_stages_from_competition,
   fetch_teams_excluding_player_memberships,
   fetch_teams_from_competition,
   fetch_teams_from_player_memberships,
   fetch_venue_name_for_team,
-  type PlayerMembershipTeamsResult,
 } from "./competitionTeamDataFetcher";
+export { fetch_filtered_entities_for_field } from "./filteredFieldDispatcher";
 export {
-  fetch_filtered_entities_for_field,
-  type FilteredFetchResult,
-} from "./filteredFieldDispatcher";
-export {
-  fetch_filtered_jersey_options,
   fetch_fixtures_for_rating,
   fetch_fixtures_without_setup,
-  type JerseyOptionsResult,
 } from "./fixtureJerseyDataFetcher";
 export {
   fetch_fixtures_from_official,
   fetch_officials_from_fixture,
-  fetch_officials_from_organization,
 } from "./officialDataFetcher";
 
 export async function fetch_entities_for_type(

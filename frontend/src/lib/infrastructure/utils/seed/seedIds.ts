@@ -17,7 +17,7 @@ export const SEED_TEAM_IDS = {
   ROCKETS_HC_WOMEN: "team_default_12",
 };
 
-export const SEED_COMPETITION_FORMAT_IDS = {
+const SEED_COMPETITION_FORMAT_IDS = {
   STANDARD_LEAGUE: "format_standard_league",
   SINGLE_ELIMINATION: "format_single_elimination",
   DOUBLE_ELIMINATION: "format_double_elimination",
@@ -168,7 +168,7 @@ export const SEED_SYSTEM_USER_IDS = {
   PLAYER_DENIS_ONYANGO: "system_user_default_6",
 };
 
-export const SEED_IDENTIFICATION_TYPE_IDS = {
+const SEED_IDENTIFICATION_TYPE_IDS = {
   NATIONAL_ID: `id_type_default_1_${SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION}`,
   PASSPORT: `id_type_default_2_${SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION}`,
   DRIVING_LICENSE: `id_type_default_3_${SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION}`,

@@ -1,11 +1,11 @@
 import { WILDCARD_SCOPE } from "../../core/entities/StatusConstants";
-export type SessionAction =
+type SessionAction =
   | "login_sync"
   | "verified_page_reload"
   | "first_time_anonymous"
   | "returning_anonymous";
 
-export type NavigationType = "link" | "goto" | "popstate" | "enter" | string;
+type NavigationType = "link" | "goto" | "popstate" | "enter" | string;
 
 export function get_is_public_profile_page(path: string): boolean {
   return path.startsWith("/profile/") || path.startsWith("/team-profile/");

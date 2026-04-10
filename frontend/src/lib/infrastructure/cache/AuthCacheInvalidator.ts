@@ -8,7 +8,7 @@ export interface SubscribableConvexClient {
   ): { unsubscribe: () => void };
 }
 
-export interface AuthCacheInvalidatorConfig {
+interface AuthCacheInvalidatorConfig {
   convex_client: SubscribableConvexClient;
   caches_to_invalidate: AuthCache<unknown>[];
   queries_to_watch: unknown[];

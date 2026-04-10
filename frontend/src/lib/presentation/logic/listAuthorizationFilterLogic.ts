@@ -9,7 +9,7 @@ import {
   type UserScopeProfile,
 } from "../../core/interfaces/ports";
 
-export type EntityAuthFilterResult = {
+type EntityAuthFilterResult = {
   filter: Record<string, string> | null;
   profile_missing: boolean;
 };

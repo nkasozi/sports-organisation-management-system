@@ -13,7 +13,7 @@ import {
 } from "$lib/core/types/Result";
 import { get_next_period } from "$lib/presentation/logic/gameManageState";
 
-export interface RecordGameManageEventCommand {
+interface RecordGameManageEventCommand {
   fixture_id: string;
   selected_event_type: QuickEventButton;
   event_minute: number;

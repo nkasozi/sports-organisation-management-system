@@ -3,10 +3,7 @@ export type {
   LocalSyncStatus,
   SyncRestorationHandlers,
 } from "./LocalChangePublisherPort";
-export type {
-  RemoteChangeSubscriberPort,
-  RemoteTableTimestamp,
-} from "./RemoteChangeSubscriberPort";
+export type { RemoteChangeSubscriberPort } from "./RemoteChangeSubscriberPort";
 export type {
   SyncDirection,
   SyncHints,

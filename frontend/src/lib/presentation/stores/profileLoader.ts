@@ -100,7 +100,7 @@ export async function resolve_organization_names(
   return name_map;
 }
 
-export async function resolve_team_names(
+async function resolve_team_names(
   team_ids: string[],
   team_repository: TeamRepository,
 ): Promise<Map<string, string>> {

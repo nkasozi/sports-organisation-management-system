@@ -8,7 +8,7 @@ const OVERSIZED_RECORD_SUFFIX_MESSAGE =
   "is too large to sync because its payload exceeds the sync payload limit";
 const SMALLER_IMAGE_RETRY_MESSAGE = "Choose a smaller image and try again.";
 
-export const MAX_SYNC_BATCH_RECORD_COUNT = 25;
+const MAX_SYNC_BATCH_RECORD_COUNT = 25;
 export const MAX_SYNC_MUTATION_PAYLOAD_BYTES = 900 * ONE_KIBIBYTE;
 
 const text_encoder = new TextEncoder();
@@ -19,7 +19,7 @@ export interface SyncBatchRecord {
   version: number;
 }
 
-export interface BuildSyncPushBatchesCommand {
+interface BuildSyncPushBatchesCommand {
   table_name: TableName;
   records: SyncBatchRecord[];
   detect_conflicts: boolean;
@@ -27,7 +27,7 @@ export interface BuildSyncPushBatchesCommand {
   max_payload_bytes?: number;
 }
 
-export interface BuildSyncPushBatchesResult {
+interface BuildSyncPushBatchesResult {
   success: boolean;
   batches: SyncBatchRecord[][];
   error: string | null;

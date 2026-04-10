@@ -35,7 +35,7 @@ export interface ManagedGamePageState {
   toast_type: "success" | "error" | "info";
 }
 
-export interface ManagedGamePageViewState {
+interface ManagedGamePageViewState {
   available_players: unknown[];
   away_score: number;
   away_team_name: string;

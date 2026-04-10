@@ -14,18 +14,13 @@ import type {
 } from "./dashboardPageTypes";
 import type { DashboardFilters } from "./dashboardStatsLogic";
 
-export type { OrganizationNameParts } from "./dashboardPageDisplayLogic";
 export {
   format_fixture_date,
   get_competition_initials,
   get_status_class,
   split_organization_name,
 } from "./dashboardPageDisplayLogic";
-export type {
-  DashboardData,
-  DashboardDependencies,
-  DashboardStats,
-} from "./dashboardPageTypes";
+export type { DashboardDependencies } from "./dashboardPageTypes";
 
 const RECENT_COMPETITIONS_LIMIT = 3;
 const UPCOMING_FIXTURES_LIMIT = 3;

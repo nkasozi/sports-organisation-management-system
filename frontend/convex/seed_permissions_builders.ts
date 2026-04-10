@@ -9,10 +9,10 @@ import {
 import { SIDEBAR_ICONS } from "./sidebar_icons";
 import { SIDEBAR_MENU_SEED_ITEMS } from "./sidebar_menu_seed_data";
 
-export type UserRole = SharedUserRole;
-export type DataCategory = SharedDataCategory;
+type UserRole = SharedUserRole;
+type DataCategory = SharedDataCategory;
 
-export interface RolePermission {
+interface RolePermission {
   role: UserRole;
   data_category: DataCategory;
   can_create: boolean;
@@ -21,12 +21,12 @@ export interface RolePermission {
   can_delete: boolean;
 }
 
-export interface EntityCategory {
+interface EntityCategory {
   entity_type: string;
   data_category: DataCategory;
 }
 
-export interface MenuItem {
+interface MenuItem {
   role: UserRole;
   group_name: string;
   group_order: number;

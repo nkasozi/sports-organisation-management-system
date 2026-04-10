@@ -2,13 +2,8 @@ export type {
   AccessDeniedPayload,
   EntityCreatedPayload,
   EntityDeletedPayload,
-  EntityEventPayload,
   EntityUpdatedPayload,
-  EventHandler,
-  EventSubscription,
-  EventType,
   PageViewedPayload,
-  UserContext,
 } from "./EventBusTypes";
 import type {
   AccessDeniedPayload,

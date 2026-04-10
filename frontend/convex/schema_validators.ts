@@ -47,7 +47,7 @@ export const official_requirement_validator = v.object({
   description: v.string(),
 });
 
-export const penalties_config_validator = v.object({
+const penalties_config_validator = v.object({
   initial_rounds: v.number(),
   sudden_death_after: v.boolean(),
 });

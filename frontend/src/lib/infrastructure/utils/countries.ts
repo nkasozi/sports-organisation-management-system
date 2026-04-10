@@ -1,6 +1,6 @@
 import { COUNTRY_NAMES } from "./countryNamesList";
 
-export type SelectOptionLike = { value: string; label: string };
+type SelectOptionLike = { value: string; label: string };
 
 export { COUNTRY_NAMES } from "./countryNamesList";
 

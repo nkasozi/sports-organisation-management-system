@@ -41,7 +41,7 @@ import {
   InBrowserTeamStaffRoleRepository,
 } from "../repositories/InBrowserTeamStaffRoleRepository";
 
-export interface OrgSeedResult {
+interface OrgSeedResult {
   organization_id: string;
   genders_seeded: number;
   identification_types_seeded: number;

@@ -1,7 +1,7 @@
 import type { LineupPlayer } from "$lib/core/entities/FixtureLineup";
 import type { TeamPlayer } from "$lib/core/services/teamPlayers";
 
-export interface WizardAutoSkipInput {
+interface WizardAutoSkipInput {
   organization_is_restricted: boolean;
   organization_id: string;
   has_selected_organization: boolean;
@@ -20,7 +20,7 @@ export function determine_initial_wizard_step(
   return 0;
 }
 
-export interface TeamAutoSelectResult {
+interface TeamAutoSelectResult {
   has_selected_team: boolean;
   team_players_count: number;
 }

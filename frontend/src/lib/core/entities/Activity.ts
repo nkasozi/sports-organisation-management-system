@@ -7,9 +7,6 @@ export {
 } from "./ActivityHelpers";
 export {
   type Activity,
-  type ActivityRecurrence,
-  type ActivityRecurrencePattern,
-  type ActivityReminder,
   type ActivitySourceType,
   type ActivityStatus,
   type CreateActivityInput,

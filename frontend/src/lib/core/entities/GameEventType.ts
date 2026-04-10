@@ -1,14 +1,8 @@
-export { get_play_and_control_event_types } from "./GameEventTypePlayDefaults";
-export { get_scoring_and_discipline_event_types } from "./GameEventTypeScoringDefaults";
 export {
-  create_empty_game_event_type_input,
   type CreateGameEventTypeInput,
-  EVENT_CATEGORY_OPTIONS,
   type EventCategory,
   type GameEventType,
-  get_category_label,
   type UpdateGameEventTypeInput,
-  validate_game_event_type_input,
 } from "./GameEventTypeTypes";
 
 import { get_play_and_control_event_types } from "./GameEventTypePlayDefaults";

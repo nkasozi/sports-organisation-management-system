@@ -107,7 +107,7 @@ export interface ValidationRule {
   error_message: string;
 }
 
-export interface EntityListResult<T = any> {
+interface EntityListResult<T = any> {
   success: boolean;
   data: T[];
   total_count: number;

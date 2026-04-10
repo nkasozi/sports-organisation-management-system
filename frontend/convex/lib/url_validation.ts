@@ -6,7 +6,7 @@ const RELATIVE_ASSET_FIELD_EXACT_NAMES = ["background_pattern_url"];
 const URL_FIELD_SUFFIXES = ["_url"];
 const URL_FIELD_EXACT_NAMES = ["website"];
 
-export function is_url_field_name(field_name: string): boolean {
+function is_url_field_name(field_name: string): boolean {
   const lower_name = field_name.toLowerCase();
   const matches_suffix = URL_FIELD_SUFFIXES.some((suffix) =>
     lower_name.endsWith(suffix),
@@ -15,7 +15,7 @@ export function is_url_field_name(field_name: string): boolean {
   return matches_suffix || matches_exact;
 }
 
-export interface UrlValidationResult {
+interface UrlValidationResult {
   is_valid: boolean;
   error: string | null;
 }

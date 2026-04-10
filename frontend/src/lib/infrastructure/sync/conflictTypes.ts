@@ -32,7 +32,7 @@ export interface ConflictResolution {
   merged_data?: Record<string, unknown>;
 }
 
-export interface ConflictDetectionResult {
+interface ConflictDetectionResult {
   has_conflicts: boolean;
   conflicts: ConflictRecord[];
   records_without_conflicts: Array<{

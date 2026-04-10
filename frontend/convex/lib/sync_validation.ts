@@ -40,7 +40,7 @@ export const ALLOWED_SYNC_TABLES = [
   "official_performance_ratings",
 ] as const;
 
-export type AllowedSyncTable = (typeof ALLOWED_SYNC_TABLES)[number];
+type AllowedSyncTable = (typeof ALLOWED_SYNC_TABLES)[number];
 
 const ALLOWED_TABLE_SET = new Set<string>(ALLOWED_SYNC_TABLES);
 

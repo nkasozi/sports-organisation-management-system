@@ -193,5 +193,3 @@ export function build_scope_filter(
 
   return { organization_id: user.organization_id };
 }
-
-export const try_auth = require_auth;

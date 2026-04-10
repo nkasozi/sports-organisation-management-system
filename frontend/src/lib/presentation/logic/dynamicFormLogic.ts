@@ -6,7 +6,6 @@ import type {
 import type { SubEntityFilter } from "../../core/types/SubEntityFilter";
 
 export {
-  type FieldValidationResult,
   validate_field_against_rules,
   validate_form_data_against_metadata,
 } from "./dynamicFormValidation";
@@ -18,10 +17,7 @@ export {
   format_enum_label,
   get_display_value_for_foreign_key,
 } from "./entityDisplayFormatter";
-export {
-  build_foreign_key_select_options,
-  type ForeignKeySelectOption,
-} from "./foreignKeyOptionBuilder";
+export { build_foreign_key_select_options } from "./foreignKeyOptionBuilder";
 export { is_jersey_color_field } from "./foreignKeyOptionBuilder";
 
 export function determine_if_edit_mode(

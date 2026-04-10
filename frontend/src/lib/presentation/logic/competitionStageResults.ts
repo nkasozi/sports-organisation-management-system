@@ -14,7 +14,7 @@ import { infer_group_stage_team_groups } from "./groupStageInference";
 
 export type FormResult = "W" | "D" | "L";
 
-export const FORM_LAST_N_GAMES = 5;
+const FORM_LAST_N_GAMES = 5;
 
 export interface TeamStanding {
   team_id: string;

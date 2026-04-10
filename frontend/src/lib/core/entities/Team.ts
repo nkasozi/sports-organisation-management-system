@@ -1,6 +1,6 @@
 import type { BaseEntity, EntityStatus } from "./BaseEntity";
 
-export type SportType =
+type SportType =
   | "Football"
   | "Basketball"
   | "Baseball"

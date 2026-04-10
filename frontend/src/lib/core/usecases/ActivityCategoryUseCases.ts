@@ -16,7 +16,7 @@ import type { ActivityCategoryUseCasesPort } from "../interfaces/ports";
 import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
 import { create_failure_result } from "../types/Result";
 
-export type ActivityCategoryUseCases = ActivityCategoryUseCasesPort;
+type ActivityCategoryUseCases = ActivityCategoryUseCasesPort;
 
 export function create_activity_category_use_cases(
   repository: ActivityCategoryRepository,

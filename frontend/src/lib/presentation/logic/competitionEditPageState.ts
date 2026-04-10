@@ -10,7 +10,7 @@ import type { Team } from "$lib/core/entities/Team";
 const DEFAULT_SQUAD_GENERATION_STRATEGY: SquadGenerationStrategy =
   "first_available";
 
-export interface CompetitionTeamCollections {
+interface CompetitionTeamCollections {
   available_teams: Team[];
   competition_team_entries: CompetitionTeam[];
   teams_in_competition: Team[];

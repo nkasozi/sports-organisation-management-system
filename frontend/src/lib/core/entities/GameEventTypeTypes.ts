@@ -28,7 +28,7 @@ export type CreateGameEventTypeInput = Omit<
 >;
 export type UpdateGameEventTypeInput = Partial<CreateGameEventTypeInput>;
 
-export function create_empty_game_event_type_input(
+function create_empty_game_event_type_input(
   sport_id: string | null = null,
 ): CreateGameEventTypeInput {
   return {
@@ -47,7 +47,7 @@ export function create_empty_game_event_type_input(
   };
 }
 
-export const EVENT_CATEGORY_OPTIONS = [
+const EVENT_CATEGORY_OPTIONS = [
   { value: "score", label: "Scoring" },
   { value: "discipline", label: "Discipline" },
   { value: "play", label: "Play Events" },
@@ -55,12 +55,12 @@ export const EVENT_CATEGORY_OPTIONS = [
   { value: "other", label: "Other" },
 ] as const;
 
-export function get_category_label(category: EventCategory): string {
+function get_category_label(category: EventCategory): string {
   const found = EVENT_CATEGORY_OPTIONS.find((opt) => opt.value === category);
   return found?.label ?? category;
 }
 
-export function validate_game_event_type_input(
+function validate_game_event_type_input(
   input: CreateGameEventTypeInput,
 ): string[] {
   const validation_errors: string[] = [];

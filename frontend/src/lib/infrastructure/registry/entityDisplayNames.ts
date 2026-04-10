@@ -15,7 +15,7 @@ function get_full_name_or_id(entity: BaseEntity): string {
   );
 }
 
-export const ENTITY_DISPLAY_NAME_GETTERS: Record<
+const ENTITY_DISPLAY_NAME_GETTERS: Record<
   string,
   (entity: BaseEntity) => string
 > = {

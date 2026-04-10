@@ -82,7 +82,7 @@ const VALID_ENTITY_TYPE_KEYS = [
   "officialperformancerating",
 ] as const;
 
-export type EntityTypeKey = (typeof VALID_ENTITY_TYPE_KEYS)[number];
+type EntityTypeKey = (typeof VALID_ENTITY_TYPE_KEYS)[number];
 
 export interface GenericEntityUseCases<T extends BaseEntity = BaseEntity> {
   create(input: Record<string, unknown>): AsyncResult<T>;

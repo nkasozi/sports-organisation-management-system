@@ -6,7 +6,7 @@ import type { FixtureRepository } from "../interfaces/ports";
 import type { AsyncResult } from "../types/Result";
 import { create_failure_result, create_success_result } from "../types/Result";
 
-export interface CompetitionStageLifecycle {
+interface CompetitionStageLifecycle {
   ensure_stages_for_competition(
     competition_id: string,
     competition_format_id: string,

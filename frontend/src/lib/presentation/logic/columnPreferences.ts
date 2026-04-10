@@ -4,7 +4,7 @@ import { get_app_settings_storage } from "$lib/infrastructure/container";
 
 const COLUMN_PREFERENCES_PREFIX = "col_prefs_";
 
-export interface ColumnPreferenceResult {
+interface ColumnPreferenceResult {
   restored: boolean;
   columns: Set<string> | null;
 }

@@ -17,7 +17,7 @@ import {
   fetch_officials_from_organization,
 } from "./officialDataFetcher";
 
-export type FilteredFetchResult = {
+type FilteredFetchResult = {
   entities: BaseEntity[];
   all_competition_teams?: BaseEntity[];
   competition_team_ids?: Set<string>;

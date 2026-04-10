@@ -27,7 +27,7 @@ export interface OfficialLeaderboardViewState {
   selected_breakdown: PerFixtureRating[];
 }
 
-export interface OfficialLeaderboardRebuildCommand {
+interface OfficialLeaderboardRebuildCommand {
   all_ratings: OfficialPerformanceRating[];
   all_officials: Official[];
   all_fixtures: Fixture[];
@@ -36,7 +36,7 @@ export interface OfficialLeaderboardRebuildCommand {
   user_official_id: string | null;
 }
 
-export interface OfficialLeaderboardSelectionCommand {
+interface OfficialLeaderboardSelectionCommand {
   all_ratings: OfficialPerformanceRating[];
   all_fixtures: Fixture[];
   selected_organization_id: string;

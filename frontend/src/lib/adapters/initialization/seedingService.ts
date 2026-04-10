@@ -47,12 +47,8 @@ import {
   seed_super_admin_user,
 } from "./seedingUserSetup";
 
-export type { DataSource } from "../../infrastructure/sync/convexSeedingService";
-export type { SeedingStrategy, SeedOutcome, SeedResult } from "./seedingTypes";
-export {
-  is_seeding_already_complete,
-  reset_seeding_flag,
-} from "./seedingTypes";
+export type { SeedingStrategy, SeedResult } from "./seedingTypes";
+export { is_seeding_already_complete } from "./seedingTypes";
 
 export async function seed_all_data_if_needed(): Promise<Result<boolean>> {
   const seeding_complete = await is_seeding_already_complete();

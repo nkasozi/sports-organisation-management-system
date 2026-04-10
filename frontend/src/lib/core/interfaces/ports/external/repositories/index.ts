@@ -79,14 +79,8 @@ export type {
   OrganizationFilter,
   OrganizationRepository,
 } from "./OrganizationRepository";
-export type {
-  OrganizationSettingsFilter,
-  OrganizationSettingsRepository,
-} from "./OrganizationSettingsRepository";
-export type {
-  PlayerPositionFilter,
-  PlayerPositionRepository,
-} from "./PlayerPositionRepository";
+export type { OrganizationSettingsRepository } from "./OrganizationSettingsRepository";
+export type { PlayerPositionRepository } from "./PlayerPositionRepository";
 export type {
   PlayerProfileFilter,
   PlayerProfileRepository,
@@ -108,11 +102,7 @@ export type {
   QualificationFilter,
   QualificationRepository,
 } from "./QualificationRepository";
-export type {
-  FilterableRepository,
-  QueryOptions,
-  Repository,
-} from "./Repository";
+export type { QueryOptions, Repository } from "./Repository";
 export type { SportFilter, SportRepository } from "./SportRepository";
 export type {
   SystemUserFilter,

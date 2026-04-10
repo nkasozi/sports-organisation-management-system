@@ -7,7 +7,6 @@ import type { SubEntityFilter } from "../../core/types/SubEntityFilter";
 export {
   apply_id_filter_to_entities,
   build_entity_authorization_filter,
-  type EntityAuthFilterResult,
   merge_entity_list_filters,
 } from "./listAuthorizationFilterLogic";
 export { get_display_value_for_entity_field } from "./listDisplayValueLogic";
@@ -173,21 +172,4 @@ export function get_column_responsive_class(column_index: number): string {
   if (column_index === 1) return "hidden sm:table-cell";
   if (column_index === 2) return "hidden md:table-cell";
   return "hidden lg:table-cell";
-}
-
-export function build_full_name_from_entity(
-  entity: Record<string, unknown>,
-): string {
-  const first_name = entity.first_name;
-  const last_name = entity.last_name;
-  if (typeof first_name === "string" || typeof last_name === "string") {
-    return [first_name, last_name]
-      .filter(
-        (part) =>
-          typeof part === "string" && (part as string).trim().length > 0,
-      )
-      .join(" ")
-      .trim();
-  }
-  return "";
 }

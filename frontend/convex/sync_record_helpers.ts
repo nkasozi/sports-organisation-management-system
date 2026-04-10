@@ -19,7 +19,7 @@ export function has_meaningful_changes(
   return false;
 }
 
-export function values_equal(a: unknown, b: unknown): boolean {
+function values_equal(a: unknown, b: unknown): boolean {
   if (
     a === b ||
     (a === null && b === undefined) ||

@@ -9,5 +9,4 @@ export {
   handle_fixture_lineup_create_step_change_attempt,
   select_all_fixture_lineup_create_players,
   toggle_fixture_lineup_create_player,
-  validate_fixture_lineup_create_players,
 } from "./fixtureLineupCreatePageFlowUtilities";

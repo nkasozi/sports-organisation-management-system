@@ -38,8 +38,6 @@ import {
   type RepositoryContainer,
 } from "./RepositoryContainerFactory";
 
-export type { RepositoryContainer } from "./RepositoryContainerFactory";
-
 export interface UseCasesContainer {
   organization_use_cases: OrganizationUseCasesPort;
   competition_use_cases: CompetitionUseCasesPort;

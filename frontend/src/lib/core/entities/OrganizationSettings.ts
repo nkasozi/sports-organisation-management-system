@@ -13,8 +13,6 @@ export const ALLOWED_SYNC_INTERVALS_MS = [
   600_000, 900_000, 1_800_000, 3_600_000,
 ] as const;
 
-export type AllowedSyncIntervalMs = (typeof ALLOWED_SYNC_INTERVALS_MS)[number];
-
 export interface OrganizationSettings extends BaseEntity {
   organization_id: string;
   display_name: string;
@@ -39,28 +37,6 @@ export type CreateOrganizationSettingsInput = Omit<
 
 export type UpdateOrganizationSettingsInput =
   Partial<CreateOrganizationSettingsInput>;
-
-export function create_default_organization_settings(
-  organization_id: string,
-  display_name: string,
-): CreateOrganizationSettingsInput {
-  return {
-    organization_id,
-    display_name,
-    logo_url: "",
-    tagline: "",
-    contact_email: "",
-    contact_address: "",
-    social_media_links: [],
-    header_pattern: "pattern",
-    footer_pattern: "solid_color",
-    background_pattern_url: "/african-mosaic-bg.svg",
-    show_panel_borders: false,
-    primary_color: "red",
-    secondary_color: "blue",
-    sync_interval_ms: DEFAULT_SYNC_INTERVAL_MS,
-  };
-}
 
 export function validate_organization_settings_input(
   input: CreateOrganizationSettingsInput,

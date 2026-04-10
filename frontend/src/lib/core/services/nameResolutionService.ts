@@ -1,7 +1,7 @@
 import type { BaseEntity } from "$lib/core/entities/BaseEntity";
 import type { GenericEntityUseCases } from "$lib/infrastructure/registry/entityUseCasesRegistry";
 
-export interface NameResolutionResult {
+interface NameResolutionResult {
   success: boolean;
   resolved_id: string | null;
   error_message: string | null;
@@ -13,7 +13,7 @@ export interface NameResolutionInput {
   use_cases: GenericEntityUseCases<BaseEntity>;
 }
 
-export interface MultipleMatchDetails {
+interface MultipleMatchDetails {
   matches_found: number;
   matched_ids: string[];
 }
