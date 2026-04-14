@@ -10,6 +10,7 @@ import {
 import type { AuditLog, CreateAuditLogInput } from "../entities/AuditLog";
 import { compute_field_changes } from "../entities/AuditLog";
 import type { AuditLogRepository } from "../interfaces/ports";
+import type { ScalarInput } from "../types/DomainScalars";
 import type { PaginatedResult, Result } from "../types/Result";
 import {
   type AuditLogUseCases,
@@ -43,10 +44,12 @@ function create_mock_repository(): MockRepository {
     find_by_entity: vi.fn() as MockedFunction<
       AuditLogRepository["find_by_entity"]
     >,
-  };
+  } as MockRepository;
 }
 
-function create_mock_audit_log(overrides: Partial<AuditLog> = {}): AuditLog {
+function create_mock_audit_log(
+  overrides: Partial<ScalarInput<AuditLog>> = {},
+): AuditLog {
   return {
     id: "log_1",
     entity_type: "player",
@@ -64,11 +67,11 @@ function create_mock_audit_log(overrides: Partial<AuditLog> = {}): AuditLog {
     created_at: "2024-01-01T00:00:00Z",
     updated_at: "2024-01-01T00:00:00Z",
     ...overrides,
-  };
+  } as unknown as AuditLog;
 }
 
 function create_success_result<T>(data: T): Result<T, string> {
-  return { success: true, data };
+  return { success: true, data } as Result<T, string>;
 }
 
 function create_paginated_result<T>(
@@ -84,7 +87,7 @@ function create_paginated_result<T>(
       page_size: 10,
       total_pages: 1,
     },
-  };
+  } as Result<PaginatedResult<T>, string>;
 }
 
 describe("AuditLogUseCases", () => {
@@ -109,7 +112,7 @@ describe("AuditLogUseCases", () => {
       user_display_name: "Admin User",
       organization_id: "org_1",
       changes: [],
-    };
+    } as CreateAuditLogInput;
   }
 
   describe("create", () => {
@@ -135,11 +138,11 @@ describe("AuditLogUseCases", () => {
         { field_name: "first_name", old_value: "John", new_value: "Jane" },
         { field_name: "status", old_value: "active", new_value: "inactive" },
       ];
-      const input: CreateAuditLogInput = {
+      const input =  {
         ...create_valid_audit_log_input(),
         action: "update",
         changes,
-      };
+      } as CreateAuditLogInput;
       const created_log = create_mock_audit_log({
         action: "update",
         changes,
@@ -389,14 +392,14 @@ describe("compute_field_changes", () => {
   });
 
   it("should handle null and undefined values", () => {
-    const old_entity: Record<string, unknown> = {
+    const old_entity =  {
       name: null,
       email: undefined,
-    };
-    const new_entity: Record<string, unknown> = {
+    } as Record<string, unknown>;
+    const new_entity =  {
       name: "John",
       email: "john@example.com",
-    };
+    } as Record<string, unknown>;
 
     const changes = compute_field_changes(old_entity, new_entity, [
       "name",

@@ -20,7 +20,7 @@ function create_profile(overrides: Partial<UserProfile> = {}): UserProfile {
     organization_name: "City Hawks",
     team_id: "",
     ...overrides,
-  };
+  } as UserProfile;
 }
 
 const authorization_ports_mock = vi.hoisted(() => ({
@@ -28,14 +28,14 @@ const authorization_ports_mock = vi.hoisted(() => ({
 }));
 
 const auth_store_mock = vi.hoisted(() => {
-  let current_value: AuthState = {
+  let current_value =  {
     current_token: null,
     current_profile: null,
     available_profiles: [],
     sidebar_menu_items: [],
     is_initialized: false,
     is_demo_session: false,
-  };
+  } as AuthState;
   const subscribers = new Set<(value: AuthState) => void>();
   const get_authorization_level = vi.fn();
   const is_authorized_to_execute = vi.fn();
@@ -138,9 +138,9 @@ describe("authDerivedStores", () => {
       role: "public_viewer",
       team_id: "",
     });
-    const sidebar_groups: SidebarMenuGroup[] = [
+    const sidebar_groups =  [
       { group_name: "Operations", items: [] },
-    ];
+    ] as SidebarMenuGroup[];
 
     auth_store_mock.set_state({
       current_token: null,
@@ -218,15 +218,15 @@ describe("authDerivedStores", () => {
   });
 
   it("delegates authorization helper calls to the auth store", () => {
-    const authorization_level: EntityAuthorizationMap = {
+    const authorization_level =  {
       entity_type: "players",
       authorizations: new Map([["view", "organization"]]),
-    };
-    const authorization_result: AuthorizationCheckResult = {
+    } as EntityAuthorizationMap;
+    const authorization_result =  {
       is_authorized: true,
       authorization_level: "full",
-    };
-    const disabled_actions: AuthorizableAction[] = ["delete"];
+    } as AuthorizationCheckResult;
+    const disabled_actions =  ["delete"] as AuthorizableAction[];
 
     auth_store_mock.get_authorization_level.mockReturnValue(
       authorization_level,

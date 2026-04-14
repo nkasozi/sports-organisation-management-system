@@ -11,6 +11,7 @@ import type {
   ActivityRepository,
   QueryOptions,
 } from "../../core/interfaces/ports";
+import type { ScalarValueInput } from "../../core/types/DomainScalars";
 import type {
   AsyncResult,
   PaginatedAsyncResult,
@@ -42,17 +43,17 @@ class InBrowserActivityRepository
 
   protected create_entity_from_input(
     input: CreateActivityInput,
-    id: string,
+    id: Activity["id"],
     timestamps: Pick<BaseEntity, "created_at" | "updated_at">,
   ): Activity {
-    return { id, ...timestamps, ...input };
+    return { id: id as Activity["id"], ...timestamps, ...input } as Activity;
   }
 
   protected apply_updates_to_entity(
     entity: Activity,
     updates: UpdateActivityInput,
   ): Activity {
-    return { ...entity, ...updates };
+    return { ...entity, ...updates } as Activity;
   }
 
   protected apply_entity_filter(
@@ -78,7 +79,9 @@ class InBrowserActivityRepository
       );
     }
     if (filter.team_id) {
-      filtered = filtered.filter((a) => a.team_ids.includes(filter.team_id!));
+      filtered = filtered.filter((activity) =>
+        activity.team_ids.some((team_id) => team_id === filter.team_id),
+      );
     }
     if (filter.competition_id) {
       filtered = filtered.filter(
@@ -109,16 +112,16 @@ class InBrowserActivityRepository
   }
 
   async find_by_organization(
-    organization_id: string,
+    organization_id: ScalarValueInput<Activity["organization_id"]>,
     options?: QueryOptions,
   ): PaginatedAsyncResult<Activity> {
     return this.find_all({ organization_id }, options);
   }
 
   async find_by_date_range(
-    organization_id: string,
-    start_date: string,
-    end_date: string,
+    organization_id: ScalarValueInput<Activity["organization_id"]>,
+    start_date: ScalarValueInput<Activity["start_datetime"]>,
+    end_date: ScalarValueInput<Activity["end_datetime"]>,
     options?: QueryOptions,
   ): PaginatedAsyncResult<Activity> {
     return this.find_all(
@@ -132,23 +135,23 @@ class InBrowserActivityRepository
   }
 
   async find_by_category(
-    organization_id: string,
-    category_id: string,
+    organization_id: ScalarValueInput<Activity["organization_id"]>,
+    category_id: ScalarValueInput<Activity["category_id"]>,
     options?: QueryOptions,
   ): PaginatedAsyncResult<Activity> {
     return this.find_all({ organization_id, category_id }, options);
   }
 
   async find_by_team(
-    organization_id: string,
-    team_id: string,
+    organization_id: ScalarValueInput<Activity["organization_id"]>,
+    team_id: ScalarValueInput<Activity["team_ids"][number]>,
     options?: QueryOptions,
   ): PaginatedAsyncResult<Activity> {
     return this.find_all({ organization_id, team_id }, options);
   }
 
   async find_by_competition(
-    competition_id: string,
+    competition_id: ScalarValueInput<Activity["competition_id"]>,
     options?: QueryOptions,
   ): PaginatedAsyncResult<Activity> {
     return this.find_all({ competition_id }, options);
@@ -156,7 +159,7 @@ class InBrowserActivityRepository
 
   async find_by_source(
     source_type: Activity["source_type"],
-    source_id: string,
+    source_id: ScalarValueInput<Activity["source_id"]>,
   ): AsyncResult<Activity | null> {
     try {
       const all = await this.database.activities.toArray();

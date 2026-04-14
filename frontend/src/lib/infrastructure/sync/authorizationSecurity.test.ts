@@ -4,7 +4,7 @@ const SUPER_ADMIN_ROLE = "super_admin";
 
 type RoleHierarchyLevel = number;
 
-const ROLE_HIERARCHY: Record<string, RoleHierarchyLevel> = {
+const ROLE_HIERARCHY =  {
   super_admin: 100,
   org_admin: 80,
   officials_manager: 60,
@@ -12,7 +12,7 @@ const ROLE_HIERARCHY: Record<string, RoleHierarchyLevel> = {
   official: 30,
   player: 20,
   public_viewer: 10,
-};
+} as Record<string, RoleHierarchyLevel>;
 
 function can_caller_assign_role(
   caller_role: string,

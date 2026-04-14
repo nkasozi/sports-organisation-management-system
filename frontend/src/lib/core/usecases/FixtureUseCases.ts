@@ -18,6 +18,7 @@ import type {
   QueryOptions,
   TeamRepository,
 } from "../interfaces/ports";
+import type { ScalarValueInput } from "../types/DomainScalars";
 import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
 import { create_failure_result, create_success_result } from "../types/Result";
 import { create_fixture_game_events } from "./FixtureGameEventsUseCases";
@@ -84,7 +85,7 @@ export function create_fixture_use_cases(
       });
     },
 
-    async get_by_id(id: string): AsyncResult<Fixture> {
+    async get_by_id(id: ScalarValueInput<Fixture["id"]>): AsyncResult<Fixture> {
       if (!id?.trim()) return create_failure_result("Fixture ID is required");
       return repository.find_by_id(id);
     },
@@ -96,18 +97,21 @@ export function create_fixture_use_cases(
       return repository.create(input);
     },
 
-    async update(id: string, input: UpdateFixtureInput): AsyncResult<Fixture> {
+    async update(
+      id: ScalarValueInput<Fixture["id"]>,
+      input: UpdateFixtureInput,
+    ): AsyncResult<Fixture> {
       if (!id?.trim()) return create_failure_result("Fixture ID is required");
       return repository.update(id, input);
     },
 
-    async delete(id: string): AsyncResult<boolean> {
+    async delete(id: ScalarValueInput<Fixture["id"]>): AsyncResult<boolean> {
       if (!id?.trim()) return create_failure_result("Fixture ID is required");
       return repository.delete_by_id(id);
     },
 
     async list_fixtures_by_competition(
-      competition_id: string,
+      competition_id: ScalarValueInput<Fixture["competition_id"]>,
       options?: QueryOptions,
     ): PaginatedAsyncResult<Fixture> {
       if (!competition_id?.trim())
@@ -116,7 +120,7 @@ export function create_fixture_use_cases(
     },
 
     async list_fixtures_by_team(
-      team_id: string,
+      team_id: ScalarValueInput<Fixture["home_team_id"]>,
       options?: QueryOptions,
     ): PaginatedAsyncResult<Fixture> {
       if (!team_id?.trim()) return create_failure_result("Team ID is required");
@@ -124,7 +128,7 @@ export function create_fixture_use_cases(
     },
 
     async list_fixtures_by_round(
-      competition_id: string,
+      competition_id: ScalarValueInput<Fixture["competition_id"]>,
       round_number: number,
       options?: QueryOptions,
     ): PaginatedAsyncResult<Fixture> {
@@ -136,7 +140,7 @@ export function create_fixture_use_cases(
     },
 
     async list_upcoming_fixtures(
-      competition_id?: string,
+      competition_id?: ScalarValueInput<Fixture["competition_id"]>,
       options?: QueryOptions,
     ): PaginatedAsyncResult<Fixture> {
       return repository.find_upcoming(competition_id, options);

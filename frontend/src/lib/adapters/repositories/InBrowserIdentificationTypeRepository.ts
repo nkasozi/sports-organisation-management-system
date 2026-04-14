@@ -35,18 +35,18 @@ export class InBrowserIdentificationTypeRepository
 
   protected create_entity_from_input(
     input: CreateIdentificationTypeInput,
-    id: string,
+    id: IdentificationType["id"],
     timestamps: Pick<BaseEntity, "created_at" | "updated_at">,
   ): IdentificationType {
     return {
-      id,
+      id: id as IdentificationType["id"],
       ...timestamps,
       name: input.name,
       identifier_field_label: input.identifier_field_label,
       description: input.description,
       status: input.status,
       organization_id: input.organization_id,
-    };
+    } as IdentificationType;
   }
 
   protected apply_updates_to_entity(
@@ -56,7 +56,7 @@ export class InBrowserIdentificationTypeRepository
     return {
       ...entity,
       ...updates,
-    };
+    } as IdentificationType;
   }
 
   protected apply_entity_filter(
@@ -88,7 +88,7 @@ export class InBrowserIdentificationTypeRepository
   }
 
   async find_by_organization(
-    organization_id: string,
+    organization_id: IdentificationType["organization_id"],
     options?: QueryOptions,
   ): PaginatedAsyncResult<IdentificationType> {
     return this.find_all({ organization_id }, options);

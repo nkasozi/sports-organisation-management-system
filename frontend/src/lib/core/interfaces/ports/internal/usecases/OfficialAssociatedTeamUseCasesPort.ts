@@ -7,6 +7,7 @@ import type {
   AsyncResult,
   PaginatedAsyncResult,
 } from "../../../../types/Result";
+import type { ScalarValueInput } from "../../../../types/DomainScalars";
 import type { OfficialAssociatedTeamFilter } from "../../external/repositories/OfficialAssociatedTeamRepository";
 import type { QueryOptions } from "../../external/repositories/Repository";
 
@@ -15,18 +16,22 @@ export interface OfficialAssociatedTeamUseCasesPort {
     input: CreateOfficialAssociatedTeamInput,
   ): AsyncResult<OfficialAssociatedTeam>;
   update(
-    id: string,
+    id: ScalarValueInput<OfficialAssociatedTeam["id"]>,
     input: UpdateOfficialAssociatedTeamInput,
   ): AsyncResult<OfficialAssociatedTeam>;
-  delete(id: string): AsyncResult<boolean>;
-  get_by_id(id: string): AsyncResult<OfficialAssociatedTeam>;
+  delete(id: ScalarValueInput<OfficialAssociatedTeam["id"]>): AsyncResult<boolean>;
+  get_by_id(
+    id: ScalarValueInput<OfficialAssociatedTeam["id"]>,
+  ): AsyncResult<OfficialAssociatedTeam>;
   list(
     filter?: OfficialAssociatedTeamFilter | Record<string, string>,
     options?: QueryOptions,
   ): PaginatedAsyncResult<OfficialAssociatedTeam>;
   list_by_official(
-    official_id: string,
+    official_id: ScalarValueInput<OfficialAssociatedTeam["official_id"]>,
   ): PaginatedAsyncResult<OfficialAssociatedTeam>;
-  list_by_team(team_id: string): PaginatedAsyncResult<OfficialAssociatedTeam>;
+  list_by_team(
+    team_id: ScalarValueInput<OfficialAssociatedTeam["team_id"]>,
+  ): PaginatedAsyncResult<OfficialAssociatedTeam>;
   list_all(): PaginatedAsyncResult<OfficialAssociatedTeam>;
 }

@@ -10,6 +10,7 @@ import type {
   LiveGameLogRepository,
   LiveGameLogUseCasesPort,
 } from "../interfaces/ports";
+import type { ScalarValueInput } from "../types/DomainScalars";
 import type { AsyncResult } from "../types/Result";
 import { create_failure_result } from "../types/Result";
 
@@ -48,7 +49,7 @@ function emit_live_game_updated(
 
 async function execute_game_transition(
   repository: LiveGameLogRepository,
-  game_id: string,
+  game_id: ScalarValueInput<LiveGameLog["id"]>,
   validate: (game: LiveGameLog) => string | null,
   build_updates: (game: LiveGameLog) => UpdateLiveGameLogInput,
   changed_fields: string[],

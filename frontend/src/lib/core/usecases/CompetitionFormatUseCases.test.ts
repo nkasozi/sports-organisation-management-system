@@ -5,6 +5,7 @@ import type {
   CreateCompetitionFormatInput,
 } from "../entities/CompetitionFormat";
 import type { CompetitionFormatRepository } from "../interfaces/ports";
+import type { ScalarInput } from "../types/DomainScalars";
 import { create_competition_format_use_cases } from "./CompetitionFormatUseCases";
 
 function create_mock_repository(): CompetitionFormatRepository {
@@ -21,11 +22,11 @@ function create_mock_repository(): CompetitionFormatRepository {
     find_by_code: vi.fn(),
     find_active_formats: vi.fn(),
     find_by_organization: vi.fn(),
-  };
+  } as CompetitionFormatRepository;
 }
 
 function create_test_format(
-  overrides: Partial<CompetitionFormat> = {},
+  overrides: Partial<ScalarInput<CompetitionFormat>> = {},
 ): CompetitionFormat {
   return {
     id: "format-123",
@@ -58,7 +59,7 @@ function create_test_format(
     created_at: "2024-01-01T00:00:00Z",
     updated_at: "2024-01-01T00:00:00Z",
     ...overrides,
-  };
+  } as unknown as CompetitionFormat;
 }
 
 function create_valid_input(
@@ -91,7 +92,7 @@ function create_valid_input(
     status: "active",
     organization_id: "",
     ...overrides,
-  };
+  } as CreateCompetitionFormatInput;
 }
 
 describe("CompetitionFormatUseCases", () => {

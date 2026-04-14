@@ -1,7 +1,7 @@
 import type { Team } from "../../core/entities/Team";
 import { DEFAULT_TEAM_LOGO } from "../../core/entities/Team";
 
-export function create_default_teams(): Team[] {
+export function create_default_teams(): import("$lib/core/types/DomainScalars").ScalarInput<Team>[] {
   const now = new Date().toISOString();
   const BASE = {
     organization_id: "org_default_1",

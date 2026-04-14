@@ -9,7 +9,7 @@ const BASE_ENTITY_FIELDS = ["id", "created_at", "updated_at"];
 
 const CONVEX_ONLY_FIELDS = ["local_id", "synced_at", "version"];
 
-const ENTITY_TO_TABLE_MAP: Record<string, string> = {
+const ENTITY_TO_TABLE_MAP =  {
   Organization: "organizations",
   Competition: "competitions",
   Team: "teams",
@@ -48,7 +48,7 @@ const ENTITY_TO_TABLE_MAP: Record<string, string> = {
   CompetitionStage: "competition_stages",
   OfficialPerformanceRating: "official_performance_ratings",
   OrganizationSettings: "organization_settings",
-};
+} as Record<string, string>;
 
 function read_convex_schema_content(): string {
   return fs
@@ -89,7 +89,7 @@ function extract_interface_fields(file_content: string): string[] {
 
   const interface_body = file_content.slice(content_start, position - 1);
   const field_pattern = /^\s+(\w+)\??:\s/gm;
-  const fields: string[] = [];
+  const fields =  [] as string[];
   let field_match;
 
   while ((field_match = field_pattern.exec(interface_body)) !== null) {
@@ -131,7 +131,7 @@ function extract_table_block(
 }
 
 function extract_convex_table_fields(table_block: string): string[] {
-  const fields: string[] = [];
+  const fields =  [] as string[];
   let brace_depth = 0;
 
   const lines = table_block.split("\n");
@@ -377,7 +377,7 @@ describe("Schema Alignment: Local Entities vs Convex Schema", () => {
   });
 
   it("should have a Convex table definition for every mapped entity", () => {
-    const missing_tables: string[] = [];
+    const missing_tables =  [] as string[];
 
     for (const [entity_name, table_name] of Object.entries(
       ENTITY_TO_TABLE_MAP,

@@ -1,6 +1,7 @@
 import type { Table } from "dexie";
 
 import type { BaseEntity } from "../../core/entities/BaseEntity";
+import type { ScalarInput } from "../../core/types/DomainScalars";
 import type { AsyncResult } from "../../core/types/Result";
 import {
   create_failure_result,
@@ -26,11 +27,11 @@ export async function count_entities<TEntity extends BaseEntity>(
 
 export async function seed_entities<TEntity extends BaseEntity>(
   table: Table<TEntity, string>,
-  entities: TEntity[],
+  entities: ScalarInput<TEntity>[],
   entity_prefix: string,
 ): AsyncResult<number> {
   try {
-    await table.bulkPut(entities);
+    await table.bulkPut(entities as TEntity[]);
     console.log("[Repository] Seeded records successfully", {
       event: "repository_seed_success",
       entity_prefix,

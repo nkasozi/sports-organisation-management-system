@@ -6,6 +6,7 @@ import type {
   Player,
   UpdatePlayerInput,
 } from "../../core/entities/Player";
+import type { ScalarValueInput } from "../../core/types/DomainScalars";
 import { ENTITY_STATUS } from "../../core/entities/StatusConstants";
 import type {
   PlayerFilter,
@@ -60,17 +61,17 @@ export class InBrowserPlayerRepository
 
   protected create_entity_from_input(
     input: CreatePlayerInput,
-    id: string,
+    id: Player["id"],
     timestamps: Pick<BaseEntity, "created_at" | "updated_at">,
   ): Player {
-    return { id, ...timestamps, ...input };
+    return { id, ...timestamps, ...input } as Player;
   }
 
   protected apply_updates_to_entity(
     entity: Player,
     updates: UpdatePlayerInput,
   ): Player {
-    return { ...entity, ...updates };
+    return { ...entity, ...updates } as Player;
   }
 
   protected apply_entity_filter(
@@ -124,7 +125,7 @@ export class InBrowserPlayerRepository
   }
 
   async find_by_team(
-    team_id: string,
+    team_id: ScalarValueInput<Player["id"]>,
     options?: QueryOptions,
   ): PaginatedAsyncResult<Player> {
     return this.find_by_filter({ team_id }, options);
@@ -140,7 +141,7 @@ export class InBrowserPlayerRepository
   }
 
   async find_by_jersey_number(
-    team_id: string,
+    team_id: ScalarValueInput<Player["id"]>,
     jersey_number: number,
   ): PaginatedAsyncResult<Player> {
     try {

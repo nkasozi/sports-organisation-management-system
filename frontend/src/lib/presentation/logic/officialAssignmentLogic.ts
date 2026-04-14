@@ -1,4 +1,5 @@
 import type { OfficialAssignment } from "$lib/core/entities/FixtureDetailsSetup";
+import type { ScalarInput } from "$lib/core/types/DomainScalars";
 
 export interface SelectOption {
   value: string;
@@ -40,7 +41,7 @@ export function build_organization_official_filter(
 
 export function compute_available_officials(
   all_officials: SelectOption[],
-  current_assignments: OfficialAssignment[],
+  current_assignments: ScalarInput<OfficialAssignment>[],
   current_index: number,
 ): SelectOption[] {
   const assigned_official_ids = new Set(

@@ -1,14 +1,15 @@
+import type { EntityId, Name, ScalarInput } from "../types/DomainScalars";
 import type { BaseEntity, EntityStatus } from "./BaseEntity";
 
 export interface Gender extends BaseEntity {
-  name: string;
+  name: Name;
   description: string;
   status: EntityStatus;
-  organization_id: string;
+  organization_id: EntityId;
 }
 
 export type CreateGenderInput = Omit<
-  Gender,
+  ScalarInput<Gender>,
   "id" | "created_at" | "updated_at"
 >;
 

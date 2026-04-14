@@ -1,3 +1,11 @@
+import type {
+  EntityId,
+  GameMinute,
+  IsoDateString,
+  IsoDateTimeString,
+  Name,
+  ScalarInput,
+} from "../types/DomainScalars";
 import type { BaseEntity } from "./BaseEntity";
 
 export type FixtureStatus =
@@ -38,51 +46,51 @@ export type GameEventType =
   | "period_end";
 
 export interface GameEvent {
-  id: string;
+  id: EntityId;
   event_type: GameEventType;
-  minute: number;
-  stoppage_time_minute: number | null;
+  minute: GameMinute;
+  stoppage_time_minute: GameMinute | null;
   team_side: "home" | "away" | "match";
-  player_name: string;
-  secondary_player_name: string;
+  player_name: Name;
+  secondary_player_name: Name;
   description: string;
-  recorded_at: string;
+  recorded_at: IsoDateTimeString;
 }
 
 export interface AssignedOfficial {
-  official_id: string;
-  role_id: string;
-  role_name: string;
+  official_id: EntityId;
+  role_id: EntityId;
+  role_name: Name;
 }
 
 export interface JerseyColorAssignment {
-  jersey_color_id: string;
+  jersey_color_id: EntityId;
   main_color: string;
-  nickname: string;
+  nickname: Name;
 }
 
 export interface Fixture extends BaseEntity {
-  organization_id: string;
-  competition_id: string;
+  organization_id: EntityId;
+  competition_id: EntityId;
   round_number: number;
-  round_name: string;
-  home_team_id: string;
-  away_team_id: string;
+  round_name: Name;
+  home_team_id: EntityId;
+  away_team_id: EntityId;
   venue: string;
-  scheduled_date: string;
+  scheduled_date: IsoDateString;
   scheduled_time: string;
   home_team_score: number | null;
   away_team_score: number | null;
   assigned_officials: AssignedOfficial[];
   game_events: GameEvent[];
   current_period: GamePeriod;
-  current_minute: number;
+  current_minute: GameMinute;
   match_day: number;
   notes: string;
-  stage_id: string;
+  stage_id: EntityId;
   status: FixtureStatus;
-  home_team_name?: string;
-  away_team_name?: string;
+  home_team_name?: Name;
+  away_team_name?: Name;
   home_team_jersey?: JerseyColorAssignment;
   away_team_jersey?: JerseyColorAssignment;
   officials_jersey?: JerseyColorAssignment;
@@ -90,7 +98,7 @@ export interface Fixture extends BaseEntity {
 }
 
 export type CreateFixtureInput = Omit<
-  Fixture,
+  ScalarInput<Fixture>,
   | "id"
   | "created_at"
   | "updated_at"
@@ -101,5 +109,5 @@ export type CreateFixtureInput = Omit<
   | "current_minute"
 >;
 export type UpdateFixtureInput = Partial<
-  Omit<Fixture, "id" | "created_at" | "updated_at">
+  Omit<ScalarInput<Fixture>, "id" | "created_at" | "updated_at">
 >;

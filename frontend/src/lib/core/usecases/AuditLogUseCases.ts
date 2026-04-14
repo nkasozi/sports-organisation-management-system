@@ -1,6 +1,7 @@
 import type { AuditLog, CreateAuditLogInput } from "../entities/AuditLog";
 import type { AuditLogFilter, AuditLogRepository } from "../interfaces/ports";
 import type { QueryOptions } from "../interfaces/ports";
+import type { ScalarValueInput } from "../types/DomainScalars";
 import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
 import { create_failure_result } from "../types/Result";
 
@@ -9,17 +10,20 @@ export interface AuditLogUseCases {
     filter?: AuditLogFilter,
     options?: QueryOptions,
   ): PaginatedAsyncResult<AuditLog>;
-  get_by_id(id: string): AsyncResult<AuditLog>;
+  get_by_id(id: ScalarValueInput<AuditLog["id"]>): AsyncResult<AuditLog>;
   create(input: CreateAuditLogInput): AsyncResult<AuditLog>;
-  update(id: string, input: Record<string, unknown>): AsyncResult<AuditLog>;
-  delete(id: string): AsyncResult<boolean>;
+  update(
+    id: ScalarValueInput<AuditLog["id"]>,
+    input: Record<string, unknown>,
+  ): AsyncResult<AuditLog>;
+  delete(id: ScalarValueInput<AuditLog["id"]>): AsyncResult<boolean>;
   get_entity_history(
     entity_type: string,
-    entity_id: string,
+    entity_id: ScalarValueInput<AuditLog["entity_id"]>,
     options?: QueryOptions,
   ): PaginatedAsyncResult<AuditLog>;
   get_user_activity(
-    user_id: string,
+    user_id: ScalarValueInput<AuditLog["user_id"]>,
     options?: QueryOptions,
   ): PaginatedAsyncResult<AuditLog>;
 }
@@ -35,7 +39,9 @@ export function create_audit_log_use_cases(
       return repository.find_all(filter, options);
     },
 
-    async get_by_id(id: string): AsyncResult<AuditLog> {
+    async get_by_id(
+      id: ScalarValueInput<AuditLog["id"]>,
+    ): AsyncResult<AuditLog> {
       if (!id || id.trim().length === 0) {
         return create_failure_result("Audit log ID is required");
       }
@@ -54,7 +60,7 @@ export function create_audit_log_use_cases(
     },
 
     async update(
-      _id: string,
+      _id: ScalarValueInput<AuditLog["id"]>,
       _input: Record<string, unknown>,
     ): AsyncResult<AuditLog> {
       return create_failure_result(
@@ -62,7 +68,7 @@ export function create_audit_log_use_cases(
       );
     },
 
-    async delete(_id: string): AsyncResult<boolean> {
+    async delete(_id: ScalarValueInput<AuditLog["id"]>): AsyncResult<boolean> {
       return create_failure_result(
         "Audit logs are immutable and cannot be deleted",
       );
@@ -70,7 +76,7 @@ export function create_audit_log_use_cases(
 
     async get_entity_history(
       entity_type: string,
-      entity_id: string,
+      entity_id: ScalarValueInput<AuditLog["entity_id"]>,
       options?: QueryOptions,
     ): PaginatedAsyncResult<AuditLog> {
       if (!entity_type || entity_type.trim().length === 0) {
@@ -85,7 +91,7 @@ export function create_audit_log_use_cases(
     },
 
     async get_user_activity(
-      user_id: string,
+      user_id: ScalarValueInput<AuditLog["user_id"]>,
       options?: QueryOptions,
     ): PaginatedAsyncResult<AuditLog> {
       if (!user_id || user_id.trim().length === 0) {

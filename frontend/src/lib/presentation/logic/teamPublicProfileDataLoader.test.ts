@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import type { ScalarInput } from "$lib/core/types/DomainScalars";
 import type { Competition } from "$lib/core/entities/Competition";
 import type { Fixture, GameEvent } from "$lib/core/entities/Fixture";
 import type { ProfileLink } from "$lib/core/entities/ProfileLink";
@@ -9,7 +10,7 @@ import type { TeamProfile } from "$lib/core/entities/TeamProfile";
 import { load_team_public_profile_page_data } from "./teamPublicProfileDataLoader";
 
 function create_team_profile(
-  overrides: Partial<TeamProfile> = {},
+  overrides: Partial<ScalarInput<TeamProfile>> = {},
 ): TeamProfile {
   return {
     id: "profile_1",
@@ -22,10 +23,10 @@ function create_team_profile(
     created_at: "2026-04-01T00:00:00Z",
     updated_at: "2026-04-01T00:00:00Z",
     ...overrides,
-  };
+  } as TeamProfile;
 }
 
-function create_team(overrides: Partial<Team> = {}): Team {
+function create_team(overrides: Partial<ScalarInput<Team>> = {}): Team {
   return {
     id: "team_1",
     name: "Kampala Queens",
@@ -46,10 +47,12 @@ function create_team(overrides: Partial<Team> = {}): Team {
     created_at: "2026-04-01T00:00:00Z",
     updated_at: "2026-04-01T00:00:00Z",
     ...overrides,
-  };
+  } as Team;
 }
 
-function create_competition(overrides: Partial<Competition> = {}): Competition {
+function create_competition(
+  overrides: Partial<ScalarInput<Competition>> = {},
+): Competition {
   return {
     id: "competition_1",
     name: "National League",
@@ -73,10 +76,12 @@ function create_competition(overrides: Partial<Competition> = {}): Competition {
     created_at: "2026-04-01T00:00:00Z",
     updated_at: "2026-04-01T00:00:00Z",
     ...overrides,
-  };
+  } as Competition;
 }
 
-function create_game_event(overrides: Partial<GameEvent> = {}): GameEvent {
+function create_game_event(
+  overrides: Partial<ScalarInput<GameEvent>> = {},
+): GameEvent {
   return {
     id: "event_1",
     event_type: "yellow_card",
@@ -88,10 +93,10 @@ function create_game_event(overrides: Partial<GameEvent> = {}): GameEvent {
     description: "",
     recorded_at: "2026-04-01T00:00:00Z",
     ...overrides,
-  };
+  } as GameEvent;
 }
 
-function create_fixture(overrides: Partial<Fixture> = {}): Fixture {
+function create_fixture(overrides: Partial<ScalarInput<Fixture>> = {}): Fixture {
   return {
     id: "fixture_1",
     organization_id: "org_1",
@@ -116,11 +121,11 @@ function create_fixture(overrides: Partial<Fixture> = {}): Fixture {
     created_at: "2026-04-01T00:00:00Z",
     updated_at: "2026-04-01T00:00:00Z",
     ...overrides,
-  };
+  } as Fixture;
 }
 
 function create_profile_link(
-  overrides: Partial<ProfileLink> = {},
+  overrides: Partial<ScalarInput<ProfileLink>> = {},
 ): ProfileLink {
   return {
     id: "link_1",
@@ -133,7 +138,7 @@ function create_profile_link(
     created_at: "2026-04-01T00:00:00Z",
     updated_at: "2026-04-01T00:00:00Z",
     ...overrides,
-  };
+  } as ProfileLink;
 }
 
 describe("teamPublicProfileDataLoader", () => {

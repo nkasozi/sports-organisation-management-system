@@ -1,12 +1,15 @@
 <script lang="ts">
   import type { CompetitionRuleOverrides } from "$lib/core/entities/Competition";
   import type { Sport, SportGamePeriod } from "$lib/core/entities/Sport";
+  import type { ScalarInput } from "$lib/core/types/DomainScalars";
 
   import SportRulesEmptyState from "./SportRulesEmptyState.svelte";
   import SportRulesOvertimeSection from "./SportRulesOvertimeSection.svelte";
   import SportRulesPeriodsSection from "./SportRulesPeriodsSection.svelte";
   import SportRulesSquadLimitsSection from "./SportRulesSquadLimitsSection.svelte";
   import SportRulesSubstitutionsSection from "./SportRulesSubstitutionsSection.svelte";
+
+  type EditableSportGamePeriod = ScalarInput<SportGamePeriod>;
 
   export let sport: Sport | null = null;
   export let rule_overrides: CompetitionRuleOverrides = {};
@@ -38,17 +41,17 @@
     return rule_overrides.overtime_rules;
   }
 
-  function get_effective_periods(): SportGamePeriod[] {
+  function get_effective_periods(): EditableSportGamePeriod[] {
     return rule_overrides.periods ?? sport?.periods ?? [];
   }
 
-  function get_total_playing_time(periods: SportGamePeriod[]): number {
+  function get_total_playing_time(periods: EditableSportGamePeriod[]): number {
     return periods
       .filter((p) => !p.is_break)
       .reduce((sum, p) => sum + p.duration_minutes, 0);
   }
 
-  function format_periods_summary(periods: SportGamePeriod[]): string {
+  function format_periods_summary(periods: EditableSportGamePeriod[]): string {
     const playing_periods = periods.filter((p) => !p.is_break);
     const total_time = get_total_playing_time(periods);
     const period_count = playing_periods.length;
@@ -116,7 +119,9 @@
     );
   }
 
-  function handle_periods_change(event: CustomEvent<SportGamePeriod[]>): void {
+  function handle_periods_change(
+    event: CustomEvent<EditableSportGamePeriod[]>,
+  ): void {
     rule_overrides.periods = event.detail;
     rule_overrides.game_duration_minutes = get_total_playing_time(event.detail);
   }

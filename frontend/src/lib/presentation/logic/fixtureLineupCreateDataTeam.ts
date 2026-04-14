@@ -32,7 +32,7 @@ export async function load_fixture_lineup_create_team_data(
         "Select a fixture in Step 1, then continue.",
       ),
     };
-  const fixture_team_ids = new Set([
+  const fixture_team_ids = new Set<string>([
     selected_fixture.home_team_id,
     selected_fixture.away_team_id,
   ]);

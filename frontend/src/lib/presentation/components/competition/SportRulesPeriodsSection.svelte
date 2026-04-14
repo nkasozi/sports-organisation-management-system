@@ -1,15 +1,18 @@
 <script lang="ts">
   import type { SportGamePeriod } from "$lib/core/entities/Sport";
+  import type { ScalarInput } from "$lib/core/types/DomainScalars";
   import GamePeriodsEditor from "$lib/presentation/components/game/GamePeriodsEditor.svelte";
   import InfoTooltip from "$lib/presentation/components/ui/InfoTooltip.svelte";
 
-  export let periods: SportGamePeriod[] = [];
+  type EditableSportGamePeriod = ScalarInput<SportGamePeriod>;
+
+  export let periods: EditableSportGamePeriod[] = [];
   export let current_summary: string = "";
   export let default_summary: string = "";
   export let has_custom_periods: boolean = false;
   export let is_customizing_periods: boolean = false;
   export let on_customize: () => void = () => {};
-  export let on_periods_change: (periods: SportGamePeriod[]) => void = () => {};
+  export let on_periods_change: (periods: EditableSportGamePeriod[]) => void = () => {};
   export let on_reset: () => void = () => {};
 </script>
 

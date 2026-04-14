@@ -6,11 +6,12 @@ import type {
 } from "../entities/PlayerProfile";
 import type { PlayerProfileRepository } from "../interfaces/ports";
 import type { QueryOptions } from "../interfaces/ports";
+import type { ScalarInput } from "../types/DomainScalars";
 import { create_failure_result, create_success_result } from "../types/Result";
 import { create_player_profile_use_cases } from "./PlayerProfileUseCases";
 
 function create_mock_player_profile(
-  overrides: Partial<PlayerProfile> = {},
+  overrides: Partial<ScalarInput<PlayerProfile>> = {},
 ): PlayerProfile {
   return {
     id: "profile_1",
@@ -23,7 +24,7 @@ function create_mock_player_profile(
     featured_image_url: "",
     status: "active",
     ...overrides,
-  };
+  } as unknown as PlayerProfile;
 }
 
 function create_valid_player_profile_input(
@@ -37,7 +38,7 @@ function create_valid_player_profile_input(
     featured_image_url: "",
     status: "active",
     ...overrides,
-  };
+  } as CreatePlayerProfileInput;
 }
 
 import type { PaginatedResult, Result } from "../types/Result";
@@ -68,7 +69,7 @@ function create_mock_repository(): PlayerProfileRepository {
     find_by_player_id: vi.fn(),
     find_by_slug: vi.fn(),
     find_public_profiles: vi.fn(),
-  };
+  } as PlayerProfileRepository;
 }
 
 describe("PlayerProfileUseCases", () => {
@@ -142,7 +143,7 @@ describe("PlayerProfileUseCases", () => {
         create_paginated_result([]),
       );
 
-      const options: QueryOptions = { page_number: 2, page_size: 20 };
+      const options =  { page_number: 2, page_size: 20 } as QueryOptions;
       await use_cases.list(undefined, options);
 
       expect(mock_repository.find_all).toHaveBeenCalledWith(undefined, options);
@@ -448,7 +449,7 @@ describe("PlayerProfileUseCases", () => {
         create_paginated_result([]),
       );
 
-      const options: QueryOptions = { page_number: 2, page_size: 20 };
+      const options =  { page_number: 2, page_size: 20 } as QueryOptions;
       await use_cases.list_public_profiles(options);
 
       expect(mock_repository.find_public_profiles).toHaveBeenCalledWith(

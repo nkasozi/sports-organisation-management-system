@@ -5,13 +5,14 @@ import type {
 } from "../entities/SystemUser";
 import { validate_system_user_input } from "../entities/SystemUser";
 import type { QueryOptions, Repository } from "../interfaces/ports";
+import type { ScalarValueInput } from "../types/DomainScalars";
 import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
 import { create_failure_result, create_success_result } from "../types/Result";
 
 export interface SystemUserFilter {
-  email?: string;
-  role?: string;
-  status?: string;
+  email?: SystemUser["email"];
+  role?: SystemUser["role"];
+  status?: SystemUser["status"];
 }
 
 export interface SystemUserUseCases {
@@ -19,11 +20,16 @@ export interface SystemUserUseCases {
     filter?: SystemUserFilter,
     options?: QueryOptions,
   ): PaginatedAsyncResult<SystemUser>;
-  get_by_id(id: string): AsyncResult<SystemUser>;
+  get_by_id(id: ScalarValueInput<SystemUser["id"]>): AsyncResult<SystemUser>;
   create(input: CreateSystemUserInput): AsyncResult<SystemUser>;
-  update(id: string, input: UpdateSystemUserInput): AsyncResult<SystemUser>;
-  delete(id: string): AsyncResult<boolean>;
-  get_by_email(email: string): AsyncResult<SystemUser>;
+  update(
+    id: ScalarValueInput<SystemUser["id"]>,
+    input: UpdateSystemUserInput,
+  ): AsyncResult<SystemUser>;
+  delete(id: ScalarValueInput<SystemUser["id"]>): AsyncResult<boolean>;
+  get_by_email(
+    email: ScalarValueInput<SystemUser["email"]>,
+  ): AsyncResult<SystemUser>;
 }
 
 export function create_system_user_use_cases(
@@ -59,7 +65,9 @@ export function create_system_user_use_cases(
       };
     },
 
-    async get_by_id(id: string): AsyncResult<SystemUser> {
+    async get_by_id(
+      id: ScalarValueInput<SystemUser["id"]>,
+    ): AsyncResult<SystemUser> {
       if (!id || id.trim().length === 0) {
         return create_failure_result("User ID is required");
       }
@@ -76,7 +84,7 @@ export function create_system_user_use_cases(
 
       const email_exists_result = await check_email_already_exists(
         repository,
-        input.email,
+        input.email as SystemUser["email"],
       );
 
       if (email_exists_result.exists) {
@@ -87,7 +95,7 @@ export function create_system_user_use_cases(
     },
 
     async update(
-      id: string,
+      id: ScalarValueInput<SystemUser["id"]>,
       input: UpdateSystemUserInput,
     ): AsyncResult<SystemUser> {
       if (!id || id.trim().length === 0) {
@@ -97,7 +105,7 @@ export function create_system_user_use_cases(
       if (input.email) {
         const email_exists_result = await check_email_already_exists(
           repository,
-          input.email,
+          input.email as SystemUser["email"],
           id,
         );
 
@@ -109,7 +117,7 @@ export function create_system_user_use_cases(
       return repository.update(id, input);
     },
 
-    async delete(id: string): AsyncResult<boolean> {
+    async delete(id: ScalarValueInput<SystemUser["id"]>): AsyncResult<boolean> {
       if (!id || id.trim().length === 0) {
         return create_failure_result("User ID is required");
       }
@@ -117,7 +125,9 @@ export function create_system_user_use_cases(
       return repository.delete_by_id(id);
     },
 
-    async get_by_email(email: string): AsyncResult<SystemUser> {
+    async get_by_email(
+      email: ScalarValueInput<SystemUser["email"]>,
+    ): AsyncResult<SystemUser> {
       if (!email || email.trim().length === 0) {
         return create_failure_result("Email is required");
       }
@@ -172,8 +182,8 @@ async function check_email_already_exists(
     CreateSystemUserInput,
     UpdateSystemUserInput
   >,
-  email: string,
-  exclude_user_id?: string,
+  email: ScalarValueInput<SystemUser["email"]>,
+  exclude_user_id?: ScalarValueInput<SystemUser["id"]>,
 ): Promise<{ exists: boolean }> {
   const all_result = await repository.find_all();
 

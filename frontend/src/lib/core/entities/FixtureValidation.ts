@@ -6,8 +6,8 @@ import type {
 import type { OfficialRequirement } from "./Sport";
 
 function create_empty_fixture_input(
-  organization_id: string = "",
-  competition_id: string = "",
+  organization_id: CreateFixtureInput["organization_id"] = "",
+  competition_id: CreateFixtureInput["competition_id"] = "",
 ): CreateFixtureInput {
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
@@ -68,9 +68,11 @@ export function validate_fixture_input(input: CreateFixtureInput): string[] {
 function derive_groups_from_fixtures(
   fixtures: Pick<Fixture, "home_team_id" | "away_team_id">[],
 ): string[][] {
-  const parent: Record<string, string> = {};
+  const parent: Record<Fixture["home_team_id"], Fixture["home_team_id"]> = {};
 
-  function find_root(team_id: string): string {
+  function find_root(
+    team_id: Fixture["home_team_id"],
+  ): Fixture["home_team_id"] {
     if (parent[team_id] === undefined) {
       parent[team_id] = team_id;
     }
@@ -80,7 +82,10 @@ function derive_groups_from_fixtures(
     return parent[team_id];
   }
 
-  function union_teams(a: string, b: string): void {
+  function union_teams(
+    a: Fixture["home_team_id"],
+    b: Fixture["away_team_id"],
+  ): void {
     const root_a = find_root(a);
     const root_b = find_root(b);
     if (root_a !== root_b) {
@@ -92,8 +97,8 @@ function derive_groups_from_fixtures(
     union_teams(fixture.home_team_id, fixture.away_team_id);
   }
 
-  const groups: Record<string, string[]> = {};
-  for (const team_id of Object.keys(parent)) {
+  const groups: Record<Fixture["home_team_id"], Fixture["home_team_id"][]> = {};
+  for (const team_id of Object.keys(parent) as Fixture["home_team_id"][]) {
     const root = find_root(team_id);
     if (!groups[root]) {
       groups[root] = [];
@@ -111,8 +116,8 @@ interface OfficialValidationResult {
 }
 
 interface OfficialValidationError {
-  role_id: string;
-  role_name: string;
+  role_id: OfficialRequirement["role_id"];
+  role_name: OfficialRequirement["role_name"];
   required_count: number;
   assigned_count: number;
   message: string;
@@ -120,8 +125,8 @@ interface OfficialValidationError {
 }
 
 interface OfficialValidationWarning {
-  role_id: string;
-  role_name: string;
+  role_id: OfficialRequirement["role_id"];
+  role_name: OfficialRequirement["role_name"];
   message: string;
 }
 

@@ -138,10 +138,10 @@ export type ScopeDimension =
   | "official_id";
 
 export interface UserScopeProfile {
-  organization_id: string;
-  team_id: string;
-  player_id?: string;
-  official_id?: string;
+  organization_id: import("$lib/core/types/DomainScalars").EntityScope;
+  team_id: import("$lib/core/types/DomainScalars").EntityScope;
+  player_id?: import("$lib/core/types/DomainScalars").EntityId;
+  official_id?: import("$lib/core/types/DomainScalars").EntityId;
 }
 
 export type RolePermissionMap = Record<DataCategory, CategoryPermissions>;

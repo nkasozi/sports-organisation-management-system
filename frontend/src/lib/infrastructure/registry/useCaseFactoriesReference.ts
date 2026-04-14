@@ -1,3 +1,4 @@
+import type { Organization } from "../../core/entities/Organization";
 import type { OrganizationSettingsUseCasesPort } from "../../core/interfaces/ports/internal/usecases/OrganizationSettingsUseCasesPort";
 import type { GameEventLogUseCases } from "../../core/usecases/GameEventLogUseCases";
 import { create_game_event_log_use_cases } from "../../core/usecases/GameEventLogUseCases";

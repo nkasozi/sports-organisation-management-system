@@ -1,3 +1,6 @@
+import type { Gender } from "../../../core/entities/Gender";
+import type { PlayerPosition } from "../../../core/entities/PlayerPosition";
+import type { ScalarValueInput } from "../../../core/types/DomainScalars";
 import { SEED_GENDER_IDS } from "./seedIds";
 
 export const SEED_PLAYER_IDS = {
@@ -95,18 +98,18 @@ export const SEED_PLAYER_IDS = {
 };
 
 export interface PositionIds {
-  gk: string;
-  sw: string;
-  cb: string;
-  lb: string;
-  rb: string;
-  cdm: string;
-  cm: string;
-  lm: string;
-  rm: string;
-  lw: string;
-  rw: string;
-  cf: string;
+  gk: ScalarValueInput<PlayerPosition["id"]>;
+  sw: ScalarValueInput<PlayerPosition["id"]>;
+  cb: ScalarValueInput<PlayerPosition["id"]>;
+  lb: ScalarValueInput<PlayerPosition["id"]>;
+  rb: ScalarValueInput<PlayerPosition["id"]>;
+  cdm: ScalarValueInput<PlayerPosition["id"]>;
+  cm: ScalarValueInput<PlayerPosition["id"]>;
+  lm: ScalarValueInput<PlayerPosition["id"]>;
+  rm: ScalarValueInput<PlayerPosition["id"]>;
+  lw: ScalarValueInput<PlayerPosition["id"]>;
+  rw: ScalarValueInput<PlayerPosition["id"]>;
+  cf: ScalarValueInput<PlayerPosition["id"]>;
 }
 
 const FEMALE_SEED_FIRST_NAMES = new Set<string>([
@@ -160,9 +163,9 @@ const FEMALE_SEED_FIRST_NAMES = new Set<string>([
 
 export function resolve_seed_gender_id_for_first_name(
   first_name: string,
-): string {
+): Gender["id"] {
   if (FEMALE_SEED_FIRST_NAMES.has(first_name)) {
-    return SEED_GENDER_IDS.FEMALE;
+    return SEED_GENDER_IDS.FEMALE as Gender["id"];
   }
-  return SEED_GENDER_IDS.MALE;
+  return SEED_GENDER_IDS.MALE as Gender["id"];
 }

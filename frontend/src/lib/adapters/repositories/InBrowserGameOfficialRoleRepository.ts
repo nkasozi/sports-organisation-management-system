@@ -6,6 +6,7 @@ import type {
   GameOfficialRole,
   UpdateGameOfficialRoleInput,
 } from "../../core/entities/GameOfficialRole";
+import type { ScalarValueInput } from "../../core/types/DomainScalars";
 import { get_default_football_official_roles_with_ids } from "../../core/entities/GameOfficialRole";
 import type {
   GameOfficialRoleFilter,
@@ -40,17 +41,21 @@ export class InBrowserGameOfficialRoleRepository
 
   protected create_entity_from_input(
     input: CreateGameOfficialRoleInput,
-    id: string,
+    id: GameOfficialRole["id"],
     timestamps: Pick<BaseEntity, "created_at" | "updated_at">,
   ): GameOfficialRole {
-    return { id, ...timestamps, ...input };
+    return {
+      id: id as GameOfficialRole["id"],
+      ...timestamps,
+      ...input,
+    } as GameOfficialRole;
   }
 
   protected apply_updates_to_entity(
     entity: GameOfficialRole,
     updates: UpdateGameOfficialRoleInput,
   ): GameOfficialRole {
-    return { ...entity, ...updates };
+    return { ...entity, ...updates } as GameOfficialRole;
   }
 
   protected apply_entity_filter(
@@ -116,7 +121,7 @@ export class InBrowserGameOfficialRoleRepository
   }
 
   async find_by_sport(
-    sport_id: string | null,
+    sport_id: GameOfficialRole["sport_id"],
   ): Promise<Result<GameOfficialRole[]>> {
     try {
       const all = await this.database.game_official_roles.toArray();
@@ -152,7 +157,7 @@ export class InBrowserGameOfficialRoleRepository
   }
 
   async find_by_organization(
-    organization_id: string,
+    organization_id: GameOfficialRole["organization_id"],
     options?: QueryOptions,
   ): PaginatedAsyncResult<GameOfficialRole> {
     return this.find_all({ organization_id }, options);
@@ -160,8 +165,8 @@ export class InBrowserGameOfficialRoleRepository
 }
 
 export function create_default_game_official_roles_for_organization(
-  organization_id: string,
-): GameOfficialRole[] {
+  organization_id: ScalarValueInput<GameOfficialRole["organization_id"]>,
+): import("$lib/core/types/DomainScalars").ScalarInput<GameOfficialRole>[] {
   return get_default_football_official_roles_with_ids(organization_id);
 }
 

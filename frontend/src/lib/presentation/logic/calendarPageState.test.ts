@@ -36,7 +36,7 @@ function create_test_activity(overrides: Partial<Activity>): Activity {
     reminders: overrides.reminders ?? [],
     color_override: overrides.color_override ?? null,
     notes: overrides.notes ?? "",
-  };
+  } as Activity;
 }
 
 function create_test_category(
@@ -53,7 +53,7 @@ function create_test_category(
     color: overrides.color ?? "#3B82F6",
     icon: overrides.icon ?? "star",
     is_system_generated: overrides.is_system_generated ?? false,
-  };
+  } as ActivityCategory;
 }
 
 describe("calendar page date helpers", () => {

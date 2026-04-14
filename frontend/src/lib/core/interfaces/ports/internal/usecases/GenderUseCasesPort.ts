@@ -3,6 +3,7 @@ import type {
   Gender,
   UpdateGenderInput,
 } from "../../../../entities/Gender";
+import type { ScalarValueInput } from "../../../../types/DomainScalars";
 import type {
   AsyncResult,
   PaginatedAsyncResult,
@@ -12,9 +13,12 @@ import type { QueryOptions } from "../../external/repositories/Repository";
 
 export interface GenderUseCasesPort {
   create(input: CreateGenderInput): AsyncResult<Gender>;
-  update(id: string, input: UpdateGenderInput): AsyncResult<Gender>;
-  delete(id: string): AsyncResult<boolean>;
-  get_by_id(id: string): AsyncResult<Gender>;
+  update(
+    id: ScalarValueInput<Gender["id"]>,
+    input: UpdateGenderInput,
+  ): AsyncResult<Gender>;
+  delete(id: ScalarValueInput<Gender["id"]>): AsyncResult<boolean>;
+  get_by_id(id: ScalarValueInput<Gender["id"]>): AsyncResult<Gender>;
   list(
     filter?: GenderFilter | Record<string, string>,
     options?: QueryOptions,

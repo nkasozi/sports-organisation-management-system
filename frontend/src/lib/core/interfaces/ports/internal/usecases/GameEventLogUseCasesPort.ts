@@ -3,6 +3,7 @@ import type {
   GameEventLog,
   UpdateGameEventLogInput,
 } from "../../../../entities/GameEventLog";
+import type { ScalarValueInput } from "../../../../types/DomainScalars";
 import type {
   AsyncResult,
   PaginatedAsyncResult,
@@ -17,67 +18,67 @@ export interface GameEventLogUseCasesPort extends BaseUseCasesPort<
   GameEventLogFilter
 > {
   get_events_for_live_game(
-    live_game_log_id: string,
+    live_game_log_id: ScalarValueInput<GameEventLog["live_game_log_id"]>,
     options?: { page: number; page_size: number },
   ): PaginatedAsyncResult<GameEventLog>;
 
   get_events_for_fixture(
-    fixture_id: string,
+    fixture_id: ScalarValueInput<GameEventLog["fixture_id"]>,
     options?: { page: number; page_size: number },
   ): PaginatedAsyncResult<GameEventLog>;
 
   get_events_for_player(
-    player_id: string,
+    player_id: ScalarValueInput<GameEventLog["player_id"]>,
     options?: { page: number; page_size: number },
   ): PaginatedAsyncResult<GameEventLog>;
 
   get_scoring_events_for_live_game(
-    live_game_log_id: string,
+    live_game_log_id: ScalarValueInput<GameEventLog["live_game_log_id"]>,
   ): AsyncResult<GameEventLog[]>;
 
   get_card_events_for_live_game(
-    live_game_log_id: string,
+    live_game_log_id: ScalarValueInput<GameEventLog["live_game_log_id"]>,
   ): AsyncResult<GameEventLog[]>;
 
   void_event(
-    id: string,
+    id: ScalarValueInput<GameEventLog["id"]>,
     reason: string,
-    voided_by_user_id: string,
+    voided_by_user_id: ScalarValueInput<GameEventLog["reviewed_by_user_id"]>,
   ): AsyncResult<GameEventLog>;
 
   record_goal(
-    live_game_log_id: string,
-    fixture_id: string,
-    organization_id: string,
-    minute: number,
+    live_game_log_id: ScalarValueInput<GameEventLog["live_game_log_id"]>,
+    fixture_id: ScalarValueInput<GameEventLog["fixture_id"]>,
+    organization_id: ScalarValueInput<GameEventLog["organization_id"]>,
+    minute: ScalarValueInput<GameEventLog["minute"]>,
     team_side: "home" | "away",
-    player_id: string,
-    player_name: string,
-    recorded_by_user_id: string,
+    player_id: ScalarValueInput<GameEventLog["player_id"]>,
+    player_name: ScalarValueInput<GameEventLog["player_name"]>,
+    recorded_by_user_id: ScalarValueInput<GameEventLog["recorded_by_user_id"]>,
   ): AsyncResult<GameEventLog>;
 
   record_card(
-    live_game_log_id: string,
-    fixture_id: string,
-    organization_id: string,
-    minute: number,
+    live_game_log_id: ScalarValueInput<GameEventLog["live_game_log_id"]>,
+    fixture_id: ScalarValueInput<GameEventLog["fixture_id"]>,
+    organization_id: ScalarValueInput<GameEventLog["organization_id"]>,
+    minute: ScalarValueInput<GameEventLog["minute"]>,
     team_side: "home" | "away",
-    player_id: string,
-    player_name: string,
+    player_id: ScalarValueInput<GameEventLog["player_id"]>,
+    player_name: ScalarValueInput<GameEventLog["player_name"]>,
     card_type: "yellow_card" | "red_card" | "second_yellow" | "green_card",
-    recorded_by_user_id: string,
+    recorded_by_user_id: ScalarValueInput<GameEventLog["recorded_by_user_id"]>,
   ): AsyncResult<GameEventLog>;
 
   record_substitution(
-    live_game_log_id: string,
-    fixture_id: string,
-    organization_id: string,
-    minute: number,
+    live_game_log_id: ScalarValueInput<GameEventLog["live_game_log_id"]>,
+    fixture_id: ScalarValueInput<GameEventLog["fixture_id"]>,
+    organization_id: ScalarValueInput<GameEventLog["organization_id"]>,
+    minute: ScalarValueInput<GameEventLog["minute"]>,
     team_side: "home" | "away",
-    player_out_id: string,
-    player_out_name: string,
-    player_in_id: string,
-    player_in_name: string,
-    recorded_by_user_id: string,
+    player_out_id: ScalarValueInput<GameEventLog["player_id"]>,
+    player_out_name: ScalarValueInput<GameEventLog["player_name"]>,
+    player_in_id: ScalarValueInput<GameEventLog["secondary_player_id"]>,
+    player_in_name: ScalarValueInput<GameEventLog["secondary_player_name"]>,
+    recorded_by_user_id: ScalarValueInput<GameEventLog["recorded_by_user_id"]>,
   ): AsyncResult<GameEventLog>;
 }

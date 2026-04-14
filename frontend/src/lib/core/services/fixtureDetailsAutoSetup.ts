@@ -164,7 +164,7 @@ function extract_first_jersey_id(result: {
 function build_official_assignments(
   officials_result: { success: boolean; data?: { items?: { id: string }[] } },
   roles_result: { success: boolean; data?: { items?: { id: string }[] } },
-): OfficialAssignment[] {
+): CreateFixtureDetailsSetupInput["assigned_officials"] {
   const officials = officials_result.success
     ? officials_result.data?.items || []
     : [];
@@ -172,7 +172,7 @@ function build_official_assignments(
 
   if (officials.length === 0 || roles.length === 0) return [];
 
-  const assigned_officials: OfficialAssignment[] = [];
+  const assigned_officials: CreateFixtureDetailsSetupInput["assigned_officials"] = [];
   const used_official_ids = new Set<string>();
 
   for (const role of roles) {

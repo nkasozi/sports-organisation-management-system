@@ -9,10 +9,10 @@ import type { QueryOptions, Repository } from "./Repository";
 
 export interface JerseyColorFilter {
   holder_type?: JerseyColorHolderType;
-  holder_id?: string;
-  nickname?: string;
+  holder_id?: JerseyColor["holder_id"];
+  nickname?: JerseyColor["nickname"];
   main_color?: string;
-  status?: string;
+  status?: JerseyColor["status"];
 }
 
 export interface JerseyColorRepository extends Repository<
@@ -23,7 +23,7 @@ export interface JerseyColorRepository extends Repository<
 > {
   find_by_holder(
     holder_type: JerseyColorHolderType,
-    holder_id: string,
+    holder_id: JerseyColor["holder_id"],
     options?: QueryOptions,
   ): PaginatedAsyncResult<JerseyColor>;
 }

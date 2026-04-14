@@ -1,9 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { CompetitionFormat } from "../entities/CompetitionFormat";
+import type { CompetitionStage } from "../entities/CompetitionStage";
 import type { CompetitionFormatRepository } from "../interfaces/ports";
 import type { CompetitionStageRepository } from "../interfaces/ports";
 import type { FixtureRepository } from "../interfaces/ports";
+import type { ScalarInput } from "../types/DomainScalars";
 import { create_competition_stage_lifecycle } from "./CompetitionStageLifecycle";
 
 function create_mock_format_repository(): CompetitionFormatRepository {
@@ -20,7 +22,7 @@ function create_mock_format_repository(): CompetitionFormatRepository {
     find_by_code: vi.fn(),
     find_active_formats: vi.fn(),
     find_by_organization: vi.fn(),
-  };
+  } as CompetitionFormatRepository;
 }
 
 function create_mock_stage_repository(): CompetitionStageRepository {
@@ -34,7 +36,7 @@ function create_mock_stage_repository(): CompetitionStageRepository {
     delete_by_ids: vi.fn(),
     count: vi.fn(),
     find_by_competition: vi.fn(),
-  };
+  } as CompetitionStageRepository;
 }
 
 function create_mock_fixture_repository(): FixtureRepository {
@@ -53,11 +55,11 @@ function create_mock_fixture_repository(): FixtureRepository {
     find_by_round: vi.fn(),
     find_upcoming: vi.fn(),
     find_by_date_range: vi.fn(),
-  };
+  } as FixtureRepository;
 }
 
 function create_test_format(
-  overrides: Partial<CompetitionFormat> = {},
+  overrides: Partial<ScalarInput<CompetitionFormat>> = {},
 ): CompetitionFormat {
   return {
     id: "format-123",
@@ -92,7 +94,23 @@ function create_test_format(
     created_at: "2026-01-01T00:00:00Z",
     updated_at: "2026-01-01T00:00:00Z",
     ...overrides,
-  };
+  } as unknown as CompetitionFormat;
+}
+
+function create_test_stage(
+  overrides: Partial<ScalarInput<CompetitionStage>> = {},
+): CompetitionStage {
+  return {
+    id: "stage-1",
+    competition_id: "comp-123",
+    name: "Round 1",
+    stage_type: "league_stage",
+    stage_order: 1,
+    status: "active",
+    created_at: "2026-01-01T00:00:00Z",
+    updated_at: "2026-01-01T00:00:00Z",
+    ...overrides,
+  } as unknown as CompetitionStage;
 }
 
 describe("CompetitionStageLifecycle", () => {
@@ -129,16 +147,7 @@ describe("CompetitionStageLifecycle", () => {
     });
     vi.mocked(stage_repository.create).mockResolvedValue({
       success: true,
-      data: {
-        id: "stage-1",
-        competition_id: "comp-123",
-        name: "Round 1",
-        stage_type: "league_stage",
-        stage_order: 1,
-        status: "active",
-        created_at: "2026-01-01T00:00:00Z",
-        updated_at: "2026-01-01T00:00:00Z",
-      },
+      data: create_test_stage(),
     });
 
     const result = await lifecycle.ensure_stages_for_competition(
@@ -162,16 +171,7 @@ describe("CompetitionStageLifecycle", () => {
       success: true,
       data: {
         items: [
-          {
-            id: "stage-1",
-            competition_id: "comp-123",
-            name: "Round 1",
-            stage_type: "league_stage",
-            stage_order: 1,
-            status: "active",
-            created_at: "2026-01-01T00:00:00Z",
-            updated_at: "2026-01-01T00:00:00Z",
-          },
+          create_test_stage(),
         ],
         total_count: 1,
         page_number: 1,

@@ -3,6 +3,7 @@ import type {
   CreateCompetitionStageInput,
   UpdateCompetitionStageInput,
 } from "../entities/CompetitionStage";
+import type { ScalarValueInput } from "../types/DomainScalars";
 import { validate_competition_stage_input } from "../entities/CompetitionStage";
 import type {
   CompetitionStageFilter,
@@ -35,7 +36,7 @@ export function create_competition_stage_use_cases(
       return create_success_result(result.data);
     },
 
-    async get_by_id(id: string): AsyncResult<CompetitionStage> {
+    async get_by_id(id: CompetitionStage["id"]): AsyncResult<CompetitionStage> {
       if (!id || id.trim().length === 0) {
         return create_failure_result("Stage ID is required");
       }
@@ -54,7 +55,7 @@ export function create_competition_stage_use_cases(
     },
 
     async update(
-      id: string,
+      id: CompetitionStage["id"],
       input: UpdateCompetitionStageInput,
     ): AsyncResult<CompetitionStage> {
       if (!id || id.trim().length === 0) {
@@ -67,7 +68,7 @@ export function create_competition_stage_use_cases(
       return create_success_result(result.data);
     },
 
-    async delete(id: string): AsyncResult<boolean> {
+    async delete(id: CompetitionStage["id"]): AsyncResult<boolean> {
       if (!id || id.trim().length === 0) {
         return create_failure_result("Stage ID is required");
       }
@@ -86,7 +87,7 @@ export function create_competition_stage_use_cases(
     },
 
     async list_stages_by_competition(
-      competition_id: string,
+      competition_id: ScalarValueInput<CompetitionStage["competition_id"]>,
       options?: QueryOptions,
     ): PaginatedAsyncResult<CompetitionStage> {
       if (!competition_id || competition_id.trim().length === 0) {
@@ -109,8 +110,8 @@ export function create_competition_stage_use_cases(
     },
 
     async reorder_stages(
-      competition_id: string,
-      ordered_stage_ids: string[],
+      competition_id: ScalarValueInput<CompetitionStage["competition_id"]>,
+      ordered_stage_ids: Array<ScalarValueInput<CompetitionStage["id"]>>,
     ): AsyncResult<boolean> {
       if (!competition_id || competition_id.trim().length === 0) {
         return create_failure_result("Competition ID is required");
@@ -136,7 +137,7 @@ export function create_competition_stage_use_cases(
 }
 
 async function check_for_linked_fixtures(
-  stage_id: string,
+  stage_id: CompetitionStage["id"],
   fixture_repository: FixtureRepository,
 ): AsyncResult<boolean> {
   const fixtures_result = await fixture_repository.find_all(

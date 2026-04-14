@@ -3,6 +3,7 @@ import { validate_team_input } from "../entities/Team";
 import type { TeamFilter, TeamRepository } from "../interfaces/ports";
 import type { QueryOptions } from "../interfaces/ports";
 import type { TeamUseCasesPort } from "../interfaces/ports";
+import type { ScalarValueInput } from "../types/DomainScalars";
 import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
 import { create_failure_result } from "../types/Result";
 
@@ -19,7 +20,7 @@ export function create_team_use_cases(
       return repository.find_all(filter, options);
     },
 
-    async get_by_id(id: string): AsyncResult<Team> {
+    async get_by_id(id: ScalarValueInput<Team["id"]>): AsyncResult<Team> {
       if (!id || id.trim().length === 0) {
         return create_failure_result("Team ID is required");
       }
@@ -34,21 +35,26 @@ export function create_team_use_cases(
       return repository.create(input);
     },
 
-    async update(id: string, input: UpdateTeamInput): AsyncResult<Team> {
+    async update(
+      id: ScalarValueInput<Team["id"]>,
+      input: UpdateTeamInput,
+    ): AsyncResult<Team> {
       if (!id || id.trim().length === 0) {
         return create_failure_result("Team ID is required");
       }
       return repository.update(id, input);
     },
 
-    async delete(id: string): AsyncResult<boolean> {
+    async delete(id: ScalarValueInput<Team["id"]>): AsyncResult<boolean> {
       if (!id || id.trim().length === 0) {
         return create_failure_result("Team ID is required");
       }
       return repository.delete_by_id(id);
     },
 
-    async delete_teams(ids: string[]): AsyncResult<number> {
+    async delete_teams(
+      ids: Array<ScalarValueInput<Team["id"]>>,
+    ): AsyncResult<number> {
       if (!ids || ids.length === 0) {
         return create_failure_result("At least one team ID is required");
       }
@@ -56,7 +62,7 @@ export function create_team_use_cases(
     },
 
     async list_teams_by_organization(
-      organization_id: string,
+      organization_id: ScalarValueInput<Team["organization_id"]>,
       options?: QueryOptions,
     ): PaginatedAsyncResult<Team> {
       if (!organization_id || organization_id.trim().length === 0) {

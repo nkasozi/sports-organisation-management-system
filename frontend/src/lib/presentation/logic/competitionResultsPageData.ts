@@ -9,8 +9,8 @@ import type { CompetitionTeam } from "$lib/core/entities/CompetitionTeam";
 import type { Organization } from "$lib/core/entities/Organization";
 import type { Team } from "$lib/core/entities/Team";
 import {
+  ANY_VALUE,
   build_authorization_list_filter,
-  get_scope_value,
   type UserScopeProfile,
 } from "$lib/core/interfaces/ports";
 
@@ -80,17 +80,20 @@ function build_competition_results_auth_filter(
 }
 
 export async function load_competition_results_organizations(
-  current_profile: UserScopeProfile | null | undefined,
+  current_profile:
+    | UserScopeProfile
+    | { organization_id?: string | null }
+    | null
+    | undefined,
   organization_use_cases: CompetitionResultsDependencies["organization_use_cases"],
 ): Promise<Organization[]> {
   const result = await organization_use_cases.list({});
   if (!result.success) return [];
   const all_organizations = result.data?.items || [];
-  const organization_scope = get_scope_value(
-    current_profile ?? null,
-    "organization_id",
-  );
-  if (!organization_scope) return all_organizations;
+  const organization_scope = current_profile?.organization_id;
+  if (!organization_scope || organization_scope === ANY_VALUE) {
+    return all_organizations;
+  }
   return all_organizations.filter(
     (organization: Organization) => organization.id === organization_scope,
   );

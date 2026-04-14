@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { Player } from "$lib/core/entities/Player";
 import type { PlayerPosition } from "$lib/core/entities/PlayerPosition";
 import type { PlayerTeamMembership } from "$lib/core/entities/PlayerTeamMembership";
+import type { ScalarInput } from "$lib/core/types/DomainScalars";
 
 import {
   build_position_name_by_id,
@@ -13,7 +14,7 @@ import {
 } from "./teamPlayers";
 
 describe("teamPlayers", () => {
-  function create_player(overrides: Partial<Player>): Player {
+  function create_player(overrides: Partial<ScalarInput<Player>>): Player {
     return {
       id: "player_default",
       created_at: "",
@@ -35,11 +36,11 @@ describe("teamPlayers", () => {
       medical_notes: "",
       status: "active",
       ...overrides,
-    };
+    } as unknown as Player;
   }
 
   it("picks an active membership when present", () => {
-    const memberships: PlayerTeamMembership[] = [
+    const memberships = [
       {
         id: "m1",
         organization_id: "org_1",
@@ -62,14 +63,14 @@ describe("teamPlayers", () => {
         jersey_number: 9,
         status: "active",
       },
-    ];
+    ] as PlayerTeamMembership[];
 
     const best = pick_best_membership_for_player(memberships, "p1");
     expect(best?.id).toBe("m2");
   });
 
   it("falls back to most recent start_date when no active membership", () => {
-    const memberships: PlayerTeamMembership[] = [
+    const memberships = [
       {
         id: "m1",
         organization_id: "org_1",
@@ -92,23 +93,23 @@ describe("teamPlayers", () => {
         jersey_number: 9,
         status: "inactive",
       },
-    ];
+    ] as PlayerTeamMembership[];
 
     const best = pick_best_membership_for_player(memberships, "p1");
     expect(best?.id).toBe("m2");
   });
 
   it("builds team players with jersey + position name", () => {
-    const players: Player[] = [
+    const players = [
       create_player({
         id: "p1",
         first_name: "John",
         last_name: "Doe",
         position_id: "pos1",
       }),
-    ];
+    ] as Player[];
 
-    const memberships: PlayerTeamMembership[] = [
+    const memberships = [
       {
         id: "m1",
         organization_id: "org_1",
@@ -120,9 +121,9 @@ describe("teamPlayers", () => {
         jersey_number: 7,
         status: "active",
       },
-    ];
+    ] as PlayerTeamMembership[];
 
-    const positions: PlayerPosition[] = [
+    const positions = [
       {
         id: "pos1",
         created_at: "",
@@ -137,7 +138,7 @@ describe("teamPlayers", () => {
         status: "active",
         organization_id: "test-org-1",
       },
-    ];
+    ] as PlayerPosition[];
 
     const map = build_position_name_by_id(positions);
     const team_players = build_team_players(players, memberships, map);

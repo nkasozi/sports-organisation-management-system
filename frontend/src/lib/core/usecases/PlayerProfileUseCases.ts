@@ -9,6 +9,7 @@ import type {
   PlayerProfileRepository,
 } from "../interfaces/ports";
 import type { QueryOptions } from "../interfaces/ports";
+import type { ScalarValueInput } from "../types/DomainScalars";
 import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
 import { create_failure_result } from "../types/Result";
 
@@ -17,15 +18,19 @@ export interface PlayerProfileUseCases {
     filter?: PlayerProfileFilter | Record<string, string>,
     options?: QueryOptions,
   ): PaginatedAsyncResult<PlayerProfile>;
-  get_by_id(id: string): AsyncResult<PlayerProfile>;
-  get_by_player_id(player_id: string): AsyncResult<PlayerProfile>;
+  get_by_id(
+    id: ScalarValueInput<PlayerProfile["id"]>,
+  ): AsyncResult<PlayerProfile>;
+  get_by_player_id(
+    player_id: ScalarValueInput<PlayerProfile["player_id"]>,
+  ): AsyncResult<PlayerProfile>;
   get_by_slug(slug: string): AsyncResult<PlayerProfile>;
   create(input: CreatePlayerProfileInput): AsyncResult<PlayerProfile>;
   update(
-    id: string,
+    id: ScalarValueInput<PlayerProfile["id"]>,
     input: UpdatePlayerProfileInput,
   ): AsyncResult<PlayerProfile>;
-  delete(id: string): AsyncResult<boolean>;
+  delete(id: ScalarValueInput<PlayerProfile["id"]>): AsyncResult<boolean>;
   list_public_profiles(
     options?: QueryOptions,
   ): PaginatedAsyncResult<PlayerProfile>;
@@ -44,7 +49,7 @@ export function create_player_profile_use_cases(
       }
 
       const typed_filter: PlayerProfileFilter = {
-        player_id: filter?.player_id,
+        player_id: filter?.player_id as PlayerProfile["player_id"] | undefined,
         visibility: filter?.visibility as PlayerProfileFilter["visibility"],
         status: filter?.status as PlayerProfileFilter["status"],
       };
@@ -52,14 +57,18 @@ export function create_player_profile_use_cases(
       return repository.find_all(typed_filter, options);
     },
 
-    async get_by_id(id: string): AsyncResult<PlayerProfile> {
+    async get_by_id(
+      id: ScalarValueInput<PlayerProfile["id"]>,
+    ): AsyncResult<PlayerProfile> {
       if (!id || id.trim().length === 0) {
         return create_failure_result("Profile ID is required");
       }
       return repository.find_by_id(id);
     },
 
-    async get_by_player_id(player_id: string): AsyncResult<PlayerProfile> {
+    async get_by_player_id(
+      player_id: ScalarValueInput<PlayerProfile["player_id"]>,
+    ): AsyncResult<PlayerProfile> {
       if (!player_id || player_id.trim().length === 0) {
         return create_failure_result("Player ID is required");
       }
@@ -93,7 +102,7 @@ export function create_player_profile_use_cases(
     },
 
     async update(
-      id: string,
+      id: ScalarValueInput<PlayerProfile["id"]>,
       input: UpdatePlayerProfileInput,
     ): AsyncResult<PlayerProfile> {
       if (!id || id.trim().length === 0) {
@@ -111,7 +120,9 @@ export function create_player_profile_use_cases(
       return repository.update(id, input);
     },
 
-    async delete(id: string): AsyncResult<boolean> {
+    async delete(
+      id: ScalarValueInput<PlayerProfile["id"]>,
+    ): AsyncResult<boolean> {
       if (!id || id.trim().length === 0) {
         return create_failure_result("Profile ID is required");
       }

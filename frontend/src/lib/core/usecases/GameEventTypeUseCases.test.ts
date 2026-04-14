@@ -22,7 +22,7 @@ function create_mock_repository(): GameEventTypeRepository {
     find_by_code: vi.fn(),
     find_scoring_events: vi.fn(),
     find_by_organization: vi.fn(),
-  };
+  } as GameEventTypeRepository;
 }
 
 function create_test_event_type(
@@ -45,7 +45,7 @@ function create_test_event_type(
     created_at: "2024-01-01T00:00:00Z",
     updated_at: "2024-01-01T00:00:00Z",
     ...overrides,
-  };
+  } as GameEventType;
 }
 
 function create_valid_input(
@@ -65,7 +65,7 @@ function create_valid_input(
     status: "active",
     organization_id: "test-org-1",
     ...overrides,
-  };
+  } as CreateGameEventTypeInput;
 }
 
 describe("GameEventTypeUseCases", () => {

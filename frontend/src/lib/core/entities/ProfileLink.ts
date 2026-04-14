@@ -1,7 +1,8 @@
+import type { EntityId, ScalarInput } from "../types/DomainScalars";
 import type { BaseEntity, EntityStatus } from "./BaseEntity";
 
 export interface ProfileLink extends BaseEntity {
-  profile_id: string;
+  profile_id: EntityId;
   platform: string;
   title: string;
   url: string;
@@ -10,12 +11,15 @@ export interface ProfileLink extends BaseEntity {
 }
 
 export type CreateProfileLinkInput = Omit<
-  ProfileLink,
+  ScalarInput<ProfileLink>,
   "id" | "created_at" | "updated_at"
 >;
 
 export type UpdateProfileLinkInput = Partial<
-  Omit<ProfileLink, "id" | "created_at" | "updated_at" | "profile_id">
+  Omit<
+    ScalarInput<ProfileLink>,
+    "id" | "created_at" | "updated_at" | "profile_id"
+  >
 >;
 
 export const PROFILE_LINK_PLATFORM_OPTIONS = [
@@ -34,7 +38,7 @@ export const PROFILE_LINK_PLATFORM_OPTIONS = [
 ];
 
 export function create_empty_profile_link_input(
-  profile_id: string = "",
+  profile_id: CreateProfileLinkInput["profile_id"] = "",
 ): CreateProfileLinkInput {
   return {
     profile_id,

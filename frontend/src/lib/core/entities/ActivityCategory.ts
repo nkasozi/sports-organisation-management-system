@@ -1,3 +1,4 @@
+import type { EntityId, Name, ScalarInput } from "../types/DomainScalars";
 import type { BaseEntity } from "./BaseEntity";
 
 export type ActivityCategoryType =
@@ -12,9 +13,9 @@ export type ActivityCategoryType =
   | "custom";
 
 export interface ActivityCategory extends BaseEntity {
-  name: string;
+  name: Name;
   description: string;
-  organization_id: string;
+  organization_id: EntityId;
   category_type: ActivityCategoryType;
   color: string;
   icon: string;
@@ -22,7 +23,7 @@ export interface ActivityCategory extends BaseEntity {
 }
 
 export type CreateActivityCategoryInput = Omit<
-  ActivityCategory,
+  ScalarInput<ActivityCategory>,
   "id" | "created_at" | "updated_at"
 >;
 
@@ -113,8 +114,8 @@ export function validate_activity_category_input(
 }
 
 export function create_default_categories_for_organization(
-  organization_id: string,
-): CreateActivityCategoryInput[] {
+  organization_id: CreateActivityCategoryInput["organization_id"],
+): import("$lib/core/types/DomainScalars").ScalarInput<CreateActivityCategoryInput>[] {
   const category_types: ActivityCategoryType[] = [
     "competition",
     "fixture",

@@ -1,11 +1,18 @@
+import type {
+  EmailAddress,
+  EntityId,
+  IsoDateString,
+  Name,
+  ScalarInput,
+} from "../types/DomainScalars";
 import type { BaseEntity, EntityStatus } from "./BaseEntity";
 
 export interface Organization extends BaseEntity {
-  name: string;
+  name: Name;
   description: string;
-  sport_id: string;
-  founded_date: string | null;
-  contact_email: string;
+  sport_id: EntityId;
+  founded_date: IsoDateString | null;
+  contact_email: EmailAddress;
   contact_phone: string;
   address: string;
   website: string;
@@ -13,7 +20,7 @@ export interface Organization extends BaseEntity {
 }
 
 export type CreateOrganizationInput = Omit<
-  Organization,
+  ScalarInput<Organization>,
   "id" | "created_at" | "updated_at"
 >;
 export type UpdateOrganizationInput = Partial<CreateOrganizationInput>;

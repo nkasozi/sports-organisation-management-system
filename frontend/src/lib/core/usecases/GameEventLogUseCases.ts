@@ -10,6 +10,7 @@ import type {
   GameEventLogRepository,
   GameEventLogUseCasesPort,
 } from "../interfaces/ports";
+import type { ScalarValueInput } from "../types/DomainScalars";
 import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
 import { create_failure_result } from "../types/Result";
 import { create_game_event_recorder } from "./GameEventRecorderUseCases";
@@ -40,7 +41,9 @@ export function create_game_event_log_use_cases(
       return repository.create(input);
     },
 
-    async get_by_id(id: string): AsyncResult<GameEventLog> {
+    async get_by_id(
+      id: ScalarValueInput<GameEventLog["id"]>,
+    ): AsyncResult<GameEventLog> {
       if (!id || id.trim().length === 0) {
         return create_failure_result("GameEventLog ID is required");
       }
@@ -48,7 +51,7 @@ export function create_game_event_log_use_cases(
     },
 
     async update(
-      id: string,
+      id: ScalarValueInput<GameEventLog["id"]>,
       input: UpdateGameEventLogInput,
     ): AsyncResult<GameEventLog> {
       if (!id || id.trim().length === 0) {
@@ -67,7 +70,9 @@ export function create_game_event_log_use_cases(
       return repository.update(id, input);
     },
 
-    async delete(id: string): AsyncResult<boolean> {
+    async delete(
+      id: ScalarValueInput<GameEventLog["id"]>,
+    ): AsyncResult<boolean> {
       if (!id || id.trim().length === 0) {
         return create_failure_result("GameEventLog ID is required");
       }
@@ -88,7 +93,7 @@ export function create_game_event_log_use_cases(
     },
 
     async get_events_for_live_game(
-      live_game_log_id: string,
+      live_game_log_id: ScalarValueInput<GameEventLog["live_game_log_id"]>,
       options?: { page: number; page_size: number },
     ): PaginatedAsyncResult<GameEventLog> {
       if (!live_game_log_id || live_game_log_id.trim().length === 0) {
@@ -98,7 +103,7 @@ export function create_game_event_log_use_cases(
     },
 
     async get_events_for_fixture(
-      fixture_id: string,
+      fixture_id: ScalarValueInput<GameEventLog["fixture_id"]>,
       options?: { page: number; page_size: number },
     ): PaginatedAsyncResult<GameEventLog> {
       if (!fixture_id || fixture_id.trim().length === 0) {
@@ -108,7 +113,7 @@ export function create_game_event_log_use_cases(
     },
 
     async get_events_for_player(
-      player_id: string,
+      player_id: ScalarValueInput<GameEventLog["player_id"]>,
       options?: { page: number; page_size: number },
     ): PaginatedAsyncResult<GameEventLog> {
       if (!player_id || player_id.trim().length === 0) {
@@ -118,7 +123,7 @@ export function create_game_event_log_use_cases(
     },
 
     async get_scoring_events_for_live_game(
-      live_game_log_id: string,
+      live_game_log_id: ScalarValueInput<GameEventLog["live_game_log_id"]>,
     ): AsyncResult<GameEventLog[]> {
       if (!live_game_log_id || live_game_log_id.trim().length === 0) {
         return create_failure_result("Live game log ID is required");
@@ -127,7 +132,7 @@ export function create_game_event_log_use_cases(
     },
 
     async get_card_events_for_live_game(
-      live_game_log_id: string,
+      live_game_log_id: ScalarValueInput<GameEventLog["live_game_log_id"]>,
     ): AsyncResult<GameEventLog[]> {
       if (!live_game_log_id || live_game_log_id.trim().length === 0) {
         return create_failure_result("Live game log ID is required");
@@ -136,9 +141,9 @@ export function create_game_event_log_use_cases(
     },
 
     async void_event(
-      id: string,
+      id: ScalarValueInput<GameEventLog["id"]>,
       reason: string,
-      voided_by_user_id: string,
+      voided_by_user_id: ScalarValueInput<GameEventLog["reviewed_by_user_id"]>,
     ): AsyncResult<GameEventLog> {
       if (!id || id.trim().length === 0) {
         return create_failure_result("GameEventLog ID is required");

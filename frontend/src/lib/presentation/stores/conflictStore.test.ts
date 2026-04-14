@@ -1,5 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
 
+import {
+  parse_entity_id,
+  parse_iso_date_time_string,
+  parse_name,
+} from "$lib/core/types/DomainScalars";
 import type {
   ConflictRecord,
   ConflictResolutionAction,
@@ -10,20 +15,55 @@ vi.mock("$lib/infrastructure/sync/conflictAuditService", () => ({
   log_conflict_resolution: vi.fn().mockResolvedValue(true),
 }));
 
+function create_entity_id(raw_value: string): ConflictRecord["local_id"] {
+  const entity_id_result = parse_entity_id(raw_value, "Invalid test entity ID");
+
+  if (!entity_id_result.success) {
+    throw new Error(entity_id_result.error);
+  }
+
+  return entity_id_result.data;
+}
+
+function create_timestamp(raw_value: string): ConflictRecord["detected_at"] {
+  const timestamp_result = parse_iso_date_time_string(
+    raw_value,
+    "Invalid test timestamp",
+  );
+
+  if (!timestamp_result.success) {
+    throw new Error(timestamp_result.error);
+  }
+
+  return timestamp_result.data;
+}
+
+function create_display_name(
+  raw_value: string,
+): NonNullable<ConflictRecord["remote_updated_by_name"]> {
+  const display_name_result = parse_name(raw_value, "Invalid test name");
+
+  if (!display_name_result.success) {
+    throw new Error(display_name_result.error);
+  }
+
+  return display_name_result.data;
+}
+
 function create_mock_conflict(
   overrides: Partial<ConflictRecord> = {},
 ): ConflictRecord {
   return {
     id: "conflict_teams_team_1_123456",
     table_name: "teams",
-    local_id: "team_1",
+    local_id: create_entity_id("team_1"),
     entity_display_name: "Test Team",
     local_data: { name: "Local Team Name", city: "Kampala" },
     remote_data: { name: "Remote Team Name", city: "Kampala" },
-    local_updated_at: "2024-01-01T10:00:00.000Z",
-    remote_updated_at: "2024-01-01T12:00:00.000Z",
-    remote_updated_by: "user_123",
-    remote_updated_by_name: "John Doe",
+    local_updated_at: create_timestamp("2024-01-01T10:00:00.000Z"),
+    remote_updated_at: create_timestamp("2024-01-01T12:00:00.000Z"),
+    remote_updated_by: create_entity_id("user_123"),
+    remote_updated_by_name: create_display_name("John Doe"),
     field_differences: [
       {
         field_name: "name",
@@ -32,9 +72,9 @@ function create_mock_conflict(
         display_name: "Name",
       },
     ],
-    detected_at: "2024-01-01T14:00:00.000Z",
+    detected_at: create_timestamp("2024-01-01T14:00:00.000Z"),
     ...overrides,
-  };
+  } as ConflictRecord;
 }
 
 function get_resolved_data_for_action(
@@ -44,7 +84,7 @@ function get_resolved_data_for_action(
 ): Record<string, unknown> {
   switch (action) {
     case "keep_local":
-      return { ...conflict.local_data, updated_at: new Date().toISOString() };
+      return { ...conflict.local_data, updated_at: new Date().toISOString() } as Record<string, unknown>;
     case "keep_remote":
       return conflict.remote_data;
     case "merge":
@@ -178,15 +218,15 @@ describe("Multiple conflicts handling", () => {
     const conflicts = [
       create_mock_conflict({
         id: "conflict_teams_team_1_111",
-        local_id: "team_1",
+        local_id: create_entity_id("team_1"),
       }),
       create_mock_conflict({
         id: "conflict_teams_team_2_222",
-        local_id: "team_2",
+        local_id: create_entity_id("team_2"),
       }),
       create_mock_conflict({
         id: "conflict_teams_team_3_333",
-        local_id: "team_3",
+        local_id: create_entity_id("team_3"),
       }),
     ];
 
@@ -198,9 +238,18 @@ describe("Multiple conflicts handling", () => {
 
   it("can have conflicts from different tables", () => {
     const conflicts = [
-      create_mock_conflict({ table_name: "teams", local_id: "team_1" }),
-      create_mock_conflict({ table_name: "players", local_id: "player_1" }),
-      create_mock_conflict({ table_name: "officials", local_id: "official_1" }),
+      create_mock_conflict({
+        table_name: "teams",
+        local_id: create_entity_id("team_1"),
+      }),
+      create_mock_conflict({
+        table_name: "players",
+        local_id: create_entity_id("player_1"),
+      }),
+      create_mock_conflict({
+        table_name: "officials",
+        local_id: create_entity_id("official_1"),
+      }),
     ];
 
     const table_names = conflicts.map((c) => c.table_name);

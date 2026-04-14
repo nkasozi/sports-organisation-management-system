@@ -33,11 +33,11 @@ describe("liveGameDetailActions", () => {
   >;
 
   it("records a live-game event using the selected event label when no description is supplied", async () => {
-    const fixture_use_cases: Pick<FixtureUseCases, "record_game_event"> = {
+    const fixture_use_cases =  {
       record_game_event: vi
         .fn()
         .mockResolvedValue({ success: true, data: { id: "fixture-1" } }),
-    };
+    } as Pick<FixtureUseCases, "record_game_event">;
     const selected_event_type = {
       id: "goal",
       label: "Goal",
@@ -101,8 +101,8 @@ describe("liveGameDetailActions", () => {
       home_team_id: "team-home",
       away_team_id: "team-away",
     } as EnsureFixture;
-    const home_players: EnsureHomePlayers = [];
-    const away_players: EnsureAwayPlayers = [];
+    const home_players =  [] as EnsureHomePlayers;
+    const away_players =  [] as EnsureAwayPlayers;
 
     await expect(
       ensure_live_game_lineups_before_start(

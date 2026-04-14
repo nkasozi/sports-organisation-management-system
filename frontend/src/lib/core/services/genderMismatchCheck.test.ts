@@ -20,7 +20,7 @@ function create_mismatch_input(
       ["gender_default_female", "Female"],
     ]),
     ...overrides,
-  };
+  } as GenderMismatchInput;
 }
 
 describe("check_player_team_gender_mismatch", () => {
@@ -130,7 +130,7 @@ function create_fixture_gender_input(
       ["gender_default_female", "Female"],
     ]),
     ...overrides,
-  };
+  } as FixtureTeamGenderMismatchInput;
 }
 
 describe("check_fixture_team_gender_mismatch", () => {

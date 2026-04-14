@@ -4,6 +4,7 @@ import type { Competition } from "$lib/core/entities/Competition";
 import type { Fixture } from "$lib/core/entities/Fixture";
 import type { Official } from "$lib/core/entities/Official";
 import type { Team } from "$lib/core/entities/Team";
+import type { ScalarInput } from "$lib/core/types/DomainScalars";
 
 import {
   build_match_report_data,
@@ -11,7 +12,7 @@ import {
   type MatchReportBuildContext,
 } from "./MatchReportBuilder";
 
-function make_fixture(overrides: Partial<Fixture> = {}): Fixture {
+function make_fixture(overrides: Partial<ScalarInput<Fixture>> = {}): Fixture {
   return {
     id: "fix-1",
     created_at: "2026-01-01T00:00:00Z",
@@ -38,7 +39,10 @@ function make_fixture(overrides: Partial<Fixture> = {}): Fixture {
   } as unknown as Fixture;
 }
 
-function make_team(name: string, overrides: Partial<Team> = {}): Team {
+function make_team(
+  name: string,
+  overrides: Partial<ScalarInput<Team>> = {},
+): Team {
   return {
     id: `team-${name}`,
     created_at: "2026-01-01T00:00:00Z",
@@ -50,7 +54,9 @@ function make_team(name: string, overrides: Partial<Team> = {}): Team {
   } as unknown as Team;
 }
 
-function make_competition(overrides: Partial<Competition> = {}): Competition {
+function make_competition(
+  overrides: Partial<ScalarInput<Competition>> = {},
+): Competition {
   return {
     id: "comp-1",
     name: "Premier Cup",
@@ -84,7 +90,7 @@ function make_basic_context(
     away_lineup: [],
     assigned_officials: [],
     ...overrides,
-  };
+  } as MatchReportBuildContext;
 }
 
 describe("build_match_report_data", () => {

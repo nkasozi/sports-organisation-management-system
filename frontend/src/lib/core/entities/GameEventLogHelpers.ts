@@ -7,9 +7,9 @@ import type {
 } from "./GameEventLogTypes";
 
 export function create_empty_game_event_log_input(
-  organization_id: string = "",
-  live_game_log_id: string = "",
-  fixture_id: string = "",
+  organization_id: CreateGameEventLogInput["organization_id"] = "",
+  live_game_log_id: CreateGameEventLogInput["live_game_log_id"] = "",
+  fixture_id: CreateGameEventLogInput["fixture_id"] = "",
 ): CreateGameEventLogInput {
   return {
     organization_id,

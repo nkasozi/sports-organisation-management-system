@@ -1,13 +1,14 @@
 import { describe, expect, it } from "vitest";
 
 import type { PlayerPosition } from "../../core/entities/PlayerPosition";
+import type { ScalarInput } from "../../core/types/DomainScalars";
 import {
   apply_player_position_filter,
   sort_player_positions,
 } from "./InBrowserPlayerPositionRepositoryHelpers";
 
 function create_player_position(
-  overrides: Partial<PlayerPosition> = {},
+  overrides: Partial<ScalarInput<PlayerPosition>> = {},
 ): PlayerPosition {
   return {
     id: "position_1",

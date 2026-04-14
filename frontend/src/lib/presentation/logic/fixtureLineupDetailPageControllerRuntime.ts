@@ -5,7 +5,7 @@ import {
 import type { Fixture } from "$lib/core/entities/Fixture";
 import type { FixtureLineup } from "$lib/core/entities/FixtureLineup";
 import type { Team } from "$lib/core/entities/Team";
-import type { DataAction, UserScopeProfile } from "$lib/core/interfaces/ports";
+import type { DataAction } from "$lib/core/interfaces/ports";
 import type { TeamPlayer } from "$lib/core/services/teamPlayers";
 import { get_authorization_adapter } from "$lib/infrastructure/AuthorizationProvider";
 
@@ -21,6 +21,9 @@ import { toggle_fixture_lineup_player_selection } from "./fixtureLineupDetailPag
 type FixtureLineupDetailViewDependencies = Parameters<
   typeof load_fixture_lineup_detail_view_data
 >[2];
+type FixtureLineupDetailCurrentProfile = Parameters<
+  typeof load_fixture_lineup_detail_view_data
+>[1];
 type UpdateFixtureLineup = Parameters<typeof save_fixture_lineup_changes>[2];
 
 export function create_fixture_lineup_detail_page_controller_runtime(command: {
@@ -29,7 +32,7 @@ export function create_fixture_lineup_detail_page_controller_runtime(command: {
   access_check_failed_message: string;
   entity_type: string;
   get_auth_state: () => {
-    current_profile: UserScopeProfile | null;
+    current_profile: FixtureLineupDetailCurrentProfile;
     current_token?: { raw_token: string } | null;
   };
   get_lineup: () => FixtureLineup | null;

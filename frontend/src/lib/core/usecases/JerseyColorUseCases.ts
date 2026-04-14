@@ -30,7 +30,7 @@ export function create_jersey_color_use_cases(
     },
 
     async update(
-      id: string,
+      id: JerseyColor["id"],
       input: UpdateJerseyColorInput,
     ): AsyncResult<JerseyColor> {
       if (!id || id.trim() === "") {
@@ -55,14 +55,14 @@ export function create_jersey_color_use_cases(
       return repository.update(id, input);
     },
 
-    async delete(id: string): AsyncResult<boolean> {
+    async delete(id: JerseyColor["id"]): AsyncResult<boolean> {
       if (!id || id.trim() === "") {
         return create_failure_result("Jersey Color ID is required");
       }
       return repository.delete_by_id(id);
     },
 
-    async get_by_id(id: string): AsyncResult<JerseyColor> {
+    async get_by_id(id: JerseyColor["id"]): AsyncResult<JerseyColor> {
       if (!id || id.trim() === "") {
         return create_failure_result("Jersey Color ID is required");
       }
@@ -75,10 +75,10 @@ export function create_jersey_color_use_cases(
     ): PaginatedAsyncResult<JerseyColor> {
       const typed_filter: JerseyColorFilter = {
         holder_type: filter?.holder_type as JerseyColorHolderType | undefined,
-        holder_id: filter?.holder_id,
-        nickname: filter?.nickname,
-        main_color: filter?.main_color,
-        status: filter?.status,
+        holder_id: filter?.holder_id as JerseyColorFilter["holder_id"],
+        nickname: filter?.nickname as JerseyColorFilter["nickname"],
+        main_color: filter?.main_color as JerseyColorFilter["main_color"],
+        status: filter?.status as JerseyColorFilter["status"],
       };
 
       return repository.find_all(typed_filter, options);
@@ -86,7 +86,7 @@ export function create_jersey_color_use_cases(
 
     async list_by_holder(
       holder_type: JerseyColorHolderType,
-      holder_id: string,
+      holder_id: JerseyColor["holder_id"],
     ): PaginatedAsyncResult<JerseyColor> {
       return repository.find_by_holder(holder_type, holder_id);
     },
@@ -97,7 +97,7 @@ export function create_jersey_color_use_cases(
 
     async list_jerseys_by_entity(
       holder_type: JerseyColorHolderType,
-      holder_id: string,
+      holder_id: JerseyColor["holder_id"],
     ): PaginatedAsyncResult<JerseyColor> {
       if (!holder_id || holder_id.trim() === "") {
         return create_failure_result("Holder ID is required");

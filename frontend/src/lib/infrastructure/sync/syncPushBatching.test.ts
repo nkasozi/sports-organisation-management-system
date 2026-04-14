@@ -22,7 +22,11 @@ function create_sync_batch_record(command: {
       name: `Team ${command.local_id}`,
     },
     version: TEST_VERSION,
-  };
+  } as {
+  local_id: string;
+  data: Record<string, unknown>;
+  version: number;
+};
 }
 
 describe("syncPushBatching", () => {

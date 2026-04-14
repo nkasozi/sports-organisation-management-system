@@ -55,7 +55,7 @@ function create_base_entity(
     created_at: "2024-01-01T00:00:00Z",
     updated_at: "2024-01-01T00:00:00Z",
     ...overrides,
-  };
+  } as BaseEntity;
 }
 
 function create_field_metadata(
@@ -68,7 +68,7 @@ function create_field_metadata(
     is_required: false,
     is_read_only: false,
     ...overrides,
-  };
+  } as FieldMetadata;
 }
 
 function make_list_use_cases(entities: BaseEntity[], success = true) {
@@ -191,13 +191,13 @@ describe("fetch_unfiltered_foreign_key_options", () => {
     const player_a = create_base_entity("player_a");
     mock_get_use_cases.mockReturnValue(make_list_use_cases([player_a]));
 
-    const fields: FieldMetadata[] = [
+    const fields =  [
       create_field_metadata({
         field_name: "player_id",
         field_type: "foreign_key",
         foreign_key_entity: "player",
       }),
-    ];
+    ] as FieldMetadata[];
 
     const result = await fetch_unfiltered_foreign_key_options(fields);
 
@@ -214,14 +214,14 @@ describe("fetch_unfiltered_foreign_key_options", () => {
       data: { list: list_mock } as any,
     });
 
-    const fields: FieldMetadata[] = [
+    const fields =  [
       create_field_metadata({
         field_name: "team_id",
         field_type: "foreign_key",
         foreign_key_entity: "team",
         foreign_key_filter: { filter_type: "teams_from_competition" } as any,
       }),
-    ];
+    ] as FieldMetadata[];
 
     const result = await fetch_unfiltered_foreign_key_options(fields);
 
@@ -238,9 +238,9 @@ describe("fetch_unfiltered_foreign_key_options", () => {
       data: { list: list_mock } as any,
     });
 
-    const fields: FieldMetadata[] = [
+    const fields =  [
       create_field_metadata({ field_name: "name", field_type: "string" }),
-    ];
+    ] as FieldMetadata[];
 
     const result = await fetch_unfiltered_foreign_key_options(fields);
 
@@ -262,7 +262,7 @@ describe("fetch_unfiltered_foreign_key_options", () => {
       } as any,
     }));
 
-    const fields: FieldMetadata[] = [
+    const fields =  [
       create_field_metadata({
         field_name: "player_id",
         field_type: "foreign_key",
@@ -273,7 +273,7 @@ describe("fetch_unfiltered_foreign_key_options", () => {
         field_type: "foreign_key",
         foreign_key_entity: "team",
       }),
-    ];
+    ] as FieldMetadata[];
 
     const result = await fetch_unfiltered_foreign_key_options(fields);
 

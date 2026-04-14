@@ -3,6 +3,7 @@
 
   import type { OfficialAssignment } from "$lib/core/entities/FixtureDetailsSetup";
   import { create_empty_official_assignment } from "$lib/core/entities/FixtureDetailsSetup";
+  import type { ScalarInput } from "$lib/core/types/DomainScalars";
   import {
     get_game_official_role_use_cases,
     get_official_use_cases,
@@ -16,13 +17,15 @@
   } from "../logic/officialAssignmentArrayState";
   import OfficialAssignmentRow from "./OfficialAssignmentRow.svelte";
 
-  export let assignments: OfficialAssignment[] = [];
+  type EditableOfficialAssignment = ScalarInput<OfficialAssignment>;
+
+  export let assignments: EditableOfficialAssignment[] = [];
   export let disabled: boolean = false;
   export let errors: Record<string, string> = {};
   export let organization_id: string = "";
 
   const dispatch = createEventDispatcher<{
-    change: { assignments: OfficialAssignment[] };
+    change: { assignments: EditableOfficialAssignment[] };
   }>();
 
   const official_use_cases = get_official_use_cases();
@@ -63,7 +66,7 @@
 
   function handle_assignment_change(
     index: number,
-    field: keyof OfficialAssignment,
+    field: keyof EditableOfficialAssignment,
     value: string,
   ): void {
     const updated_assignments = [...assignments];

@@ -1,7 +1,14 @@
 import { get_authentication_adapter } from "$lib/adapters/iam/LocalAuthenticationAdapter";
 import { get_system_user_repository } from "$lib/adapters/repositories/InBrowserSystemUserRepository";
-import type { AuthToken, UserRole } from "$lib/core/interfaces/ports";
 import type { SidebarMenuGroup } from "$lib/core/interfaces/ports";
+import {
+  ANY_VALUE,
+  type AuthToken,
+  type AuthTokenPayloadCore,
+  create_auth_token_payload_core,
+  type UserRole,
+} from "$lib/core/interfaces/ports";
+import type { ScalarInput } from "$lib/core/types/DomainScalars";
 import type { Result } from "$lib/core/types/Result";
 import { get_authorization_adapter } from "$lib/infrastructure/AuthorizationProvider";
 import { get_app_settings_storage } from "$lib/infrastructure/container";
@@ -17,6 +24,34 @@ import type {
   UserProfile,
 } from "./authTypes";
 import { AUTH_STORAGE_KEY, PROFILE_STORAGE_KEY } from "./authTypes";
+
+const PUBLIC_VIEWER_PROFILE_ID = "public-viewer";
+const PUBLIC_VIEWER_DISPLAY_NAME = "Public Viewer";
+const PUBLIC_VIEWER_TOKEN_EMAIL = "public-viewer@anonymous.invalid";
+
+function build_auth_token_payload_core_input(
+  profile: UserProfile,
+): ScalarInput<AuthTokenPayloadCore> {
+  if (profile.role === "public_viewer") {
+    return {
+      user_id: profile.id,
+      email: PUBLIC_VIEWER_TOKEN_EMAIL,
+      display_name: profile.display_name,
+      role: profile.role,
+      organization_id: ANY_VALUE,
+      team_id: ANY_VALUE,
+    };
+  }
+
+  return {
+    user_id: profile.id,
+    email: profile.email,
+    display_name: profile.display_name,
+    role: profile.role,
+    organization_id: profile.organization_id,
+    team_id: profile.team_id,
+  };
+}
 
 export async function fetch_current_user_profile_from_convex(): Promise<
   Result<ConvexUserProfile>
@@ -49,11 +84,17 @@ export async function fetch_current_user_profile_from_convex(): Promise<
   }
 }
 
-export async function load_saved_profile_id(): Promise<string | null> {
-  return get_app_settings_storage().get_setting(PROFILE_STORAGE_KEY);
+export async function load_saved_profile_id(): Promise<
+  UserProfile["id"] | null
+> {
+  return (await get_app_settings_storage().get_setting(PROFILE_STORAGE_KEY)) as
+    | UserProfile["id"]
+    | null;
 }
 
-export async function save_profile_id(profile_id: string): Promise<void> {
+export async function save_profile_id(
+  profile_id: UserProfile["id"],
+): Promise<void> {
   await get_app_settings_storage().set_setting(PROFILE_STORAGE_KEY, profile_id);
 }
 
@@ -72,13 +113,13 @@ export async function clear_auth_storage(): Promise<void> {
 
 export function create_public_viewer_profile(): UserProfile {
   return {
-    id: "public-viewer",
-    display_name: "Public Viewer",
-    email: "",
+    id: PUBLIC_VIEWER_PROFILE_ID as UserProfile["id"],
+    display_name: PUBLIC_VIEWER_DISPLAY_NAME as UserProfile["display_name"],
+    email: PUBLIC_VIEWER_TOKEN_EMAIL as UserProfile["email"],
     role: "public_viewer",
-    organization_id: "",
+    organization_id: ANY_VALUE as UserProfile["organization_id"],
     organization_name: "",
-    team_id: "",
+    team_id: ANY_VALUE as UserProfile["team_id"],
   };
 }
 
@@ -86,14 +127,15 @@ export async function generate_token_for_profile(
   profile: UserProfile,
 ): Promise<Result<AuthToken>> {
   const auth_adapter = get_authentication_adapter(get_system_user_repository());
-  const token_result = await auth_adapter.generate_token({
-    user_id: profile.id,
-    email: profile.email,
-    display_name: profile.display_name,
-    role: profile.role,
-    organization_id: profile.organization_id,
-    team_id: profile.team_id,
-  });
+  const payload_result = create_auth_token_payload_core(
+    build_auth_token_payload_core_input(profile),
+  );
+
+  if (!payload_result.success) {
+    return payload_result;
+  }
+
+  const token_result = await auth_adapter.generate_token(payload_result.data);
 
   if (!token_result.success) {
     console.error(

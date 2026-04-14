@@ -41,7 +41,7 @@ class InBrowserLiveGameLogRepository
 
   protected create_entity_from_input(
     input: CreateLiveGameLogInput,
-    id: string,
+    id: LiveGameLog["id"],
     timestamps: Pick<BaseEntity, "created_at" | "updated_at">,
   ): LiveGameLog {
     return {
@@ -65,14 +65,14 @@ class InBrowserLiveGameLogRepository
       ended_by_user_id: "",
       notes: input.notes || "",
       status: input.status || "active",
-    };
+    } as LiveGameLog;
   }
 
   protected apply_updates_to_entity(
     entity: LiveGameLog,
     updates: UpdateLiveGameLogInput,
   ): LiveGameLog {
-    const now = new Date().toISOString();
+    const now = new Date().toISOString() as LiveGameLog["started_at"];
     let started_at = entity.started_at;
     let ended_at = entity.ended_at;
 
@@ -97,7 +97,7 @@ class InBrowserLiveGameLogRepository
       ...updates,
       started_at,
       ended_at,
-    };
+    } as LiveGameLog;
   }
 
   protected apply_entity_filter(
@@ -134,7 +134,7 @@ class InBrowserLiveGameLogRepository
   }
 
   async get_live_game_log_for_fixture(
-    fixture_id: string,
+    fixture_id: LiveGameLog["fixture_id"],
   ): AsyncResult<LiveGameLog> {
     const result = await this.find_all({ fixture_id });
     if (!result.success) {
@@ -146,7 +146,9 @@ class InBrowserLiveGameLogRepository
     return create_success_result(result.data.items[0]);
   }
 
-  async get_active_games(organization_id?: string): AsyncResult<LiveGameLog[]> {
+  async get_active_games(
+    organization_id?: LiveGameLog["organization_id"],
+  ): AsyncResult<LiveGameLog[]> {
     const filter: LiveGameLogFilter = organization_id
       ? { organization_id }
       : {};
@@ -169,7 +171,7 @@ class InBrowserLiveGameLogRepository
   }
 
   async find_by_organization(
-    organization_id: string,
+    organization_id: LiveGameLog["organization_id"],
     options?: { page: number; page_size: number },
   ): PaginatedAsyncResult<LiveGameLog> {
     return this.find_all(

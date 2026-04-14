@@ -36,7 +36,7 @@ class InBrowserIdentificationRepository
 
   protected create_entity_from_input(
     input: CreateIdentificationInput,
-    id: string,
+    id: Identification["id"],
     timestamps: Pick<BaseEntity, "created_at" | "updated_at">,
   ): Identification {
     return {
@@ -51,7 +51,7 @@ class InBrowserIdentificationRepository
       expiry_date: input.expiry_date,
       notes: input.notes,
       status: input.status,
-    };
+    } as Identification;
   }
 
   protected apply_updates_to_entity(
@@ -61,7 +61,7 @@ class InBrowserIdentificationRepository
     return {
       ...entity,
       ...updates,
-    };
+    } as Identification;
   }
 
   protected apply_entity_filter(
@@ -98,7 +98,7 @@ class InBrowserIdentificationRepository
 
   async find_by_holder(
     holder_type: IdentificationHolderType,
-    holder_id: string,
+    holder_id: Identification["holder_id"],
     options?: QueryOptions,
   ): PaginatedAsyncResult<Identification> {
     return this.find_all({ holder_type, holder_id }, options);

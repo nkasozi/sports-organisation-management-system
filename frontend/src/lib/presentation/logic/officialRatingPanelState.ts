@@ -3,6 +3,7 @@ import type {
   OfficialPerformanceRating,
   RatingDimensions,
 } from "$lib/core/entities/OfficialPerformanceRating";
+import type { ScalarValueInput } from "$lib/core/types/DomainScalars";
 
 export interface OfficialRatingState {
   official: Official;
@@ -51,7 +52,7 @@ export function build_default_official_rating_dimensions(): RatingDimensions & {
 export async function load_official_rating_states(
   fixture_id: string,
   organization_id: string,
-  assigned_official_ids: string[],
+  assigned_official_ids: Array<ScalarValueInput<Official["id"]>>,
   rater_user_id: string,
   dependencies: OfficialRatingPanelDependencies,
 ): Promise<OfficialRatingState[]> {
@@ -61,7 +62,7 @@ export async function load_official_rating_states(
   if (!officials_result.success || !officials_result.data) {
     return [];
   }
-  const officials_map = new Map(
+  const officials_map = new Map<ScalarValueInput<Official["id"]>, Official>(
     officials_result.data.items.map((official: Official) => [
       official.id,
       official,
@@ -78,7 +79,9 @@ export async function load_official_rating_states(
   );
   const rating_states: Array<OfficialRatingState | null> =
     assigned_official_ids.map(
-      (official_id: string): OfficialRatingState | null => {
+      (
+        official_id: ScalarValueInput<Official["id"]>,
+      ): OfficialRatingState | null => {
         const official = officials_map.get(official_id);
         if (!official) return null;
         const found_rating = rater_ratings.find(

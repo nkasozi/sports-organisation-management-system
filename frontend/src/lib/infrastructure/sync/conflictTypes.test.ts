@@ -1,10 +1,22 @@
 import { describe, expect, it } from "vitest";
 
+import { parse_entity_id } from "$lib/core/types/DomainScalars";
+
 import {
   compute_field_differences,
   generate_conflict_id,
   get_entity_display_name,
 } from "./conflictTypes";
+
+function create_entity_id(raw_value: string) {
+  const entity_id_result = parse_entity_id(raw_value, "Invalid test entity ID");
+
+  if (!entity_id_result.success) {
+    throw new Error(entity_id_result.error);
+  }
+
+  return entity_id_result.data;
+}
 
 describe("compute_field_differences", () => {
   it("returns empty array when local and remote data are identical", () => {
@@ -198,14 +210,17 @@ describe("compute_field_differences", () => {
 
 describe("generate_conflict_id", () => {
   it("generates id with table name and local id", () => {
-    const conflict_id = generate_conflict_id("teams", "team_123");
+    const conflict_id = generate_conflict_id(
+      "teams",
+      create_entity_id("team_123"),
+    );
 
     expect(conflict_id).toMatch(/^conflict_teams_team_123_\d+$/);
   });
 
   it("generates ids with timestamp component", () => {
     const before = Date.now();
-    const id = generate_conflict_id("teams", "team_123");
+    const id = generate_conflict_id("teams", create_entity_id("team_123"));
     const after = Date.now();
 
     const timestamp_match = id.match(/conflict_teams_team_123_(\d+)/);
@@ -216,7 +231,10 @@ describe("generate_conflict_id", () => {
   });
 
   it("handles table names with underscores", () => {
-    const conflict_id = generate_conflict_id("team_staff_roles", "role_1");
+    const conflict_id = generate_conflict_id(
+      "team_staff_roles",
+      create_entity_id("role_1"),
+    );
 
     expect(conflict_id).toMatch(/^conflict_team_staff_roles_role_1_\d+$/);
   });

@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { Fixture } from "$lib/core/entities/Fixture";
 import type { PreFlightCheck } from "$lib/core/services/fixtureStartChecks";
+import type { ScalarInput } from "$lib/core/types/DomainScalars";
 import { create_success_result } from "$lib/core/types/Result";
 
 import { start_live_game_fixture } from "./liveGamesStartFlow";
@@ -25,7 +26,7 @@ vi.mock("$lib/core/services/fixtureDetailsAutoSetup", () => ({
   auto_create_fixture_details_setup,
 }));
 
-function create_fixture(overrides: Partial<Fixture> = {}): Fixture {
+function create_fixture(overrides: Partial<ScalarInput<Fixture>> = {}): Fixture {
   return {
     id: "fixture_1",
     organization_id: "org_1",
@@ -38,7 +39,7 @@ function create_fixture(overrides: Partial<Fixture> = {}): Fixture {
     created_at: "2026-04-01T00:00:00Z",
     updated_at: "2026-04-01T00:00:00Z",
     ...overrides,
-  } as Fixture;
+  } as unknown as Fixture;
 }
 
 function create_passed_check(
@@ -50,7 +51,7 @@ function create_passed_check(
     status: "passed",
     message,
     fix_suggestion: null,
-  };
+  } as PreFlightCheck;
 }
 
 describe("liveGamesStartFlow", () => {

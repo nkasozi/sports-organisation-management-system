@@ -5,9 +5,15 @@ import type {
 import {
   build_ical_feed_url,
   build_webcal_feed_url,
+  parse_calendar_feed_entity_id,
 } from "$lib/core/entities/CalendarToken";
 import type { Competition } from "$lib/core/entities/Competition";
 import type { Team } from "$lib/core/entities/Team";
+import {
+  parse_calendar_token_value,
+  parse_entity_id,
+  parse_name,
+} from "$lib/core/types/DomainScalars";
 import type { UseCasesContainer } from "$lib/infrastructure/container";
 
 const CALENDAR_SUBSCRIPTION_TEXT = {
@@ -23,6 +29,18 @@ export const CALENDAR_SUBSCRIPTION_REMINDER_OPTIONS = [
   { value: 1440, label: "1 day before" },
 ] as const;
 
+function create_empty_calendar_subscription_data(): {
+  competitions: Competition[];
+  existing_feeds: CalendarToken[];
+  teams: Team[];
+} {
+  return {
+    competitions: [],
+    existing_feeds: [],
+    teams: [],
+  };
+}
+
 export async function load_calendar_subscription_manager_data(command: {
   organization_id: string;
   user_id: string;
@@ -32,13 +50,25 @@ export async function load_calendar_subscription_manager_data(command: {
   existing_feeds: CalendarToken[];
   teams: Team[];
 }> {
+  const organization_id_result = parse_entity_id(
+    command.organization_id,
+    "Organization ID is invalid",
+  );
+  const user_id_result = parse_entity_id(command.user_id, "User ID is invalid");
+
+  if (!organization_id_result.success || !user_id_result.success) {
+    return create_empty_calendar_subscription_data();
+  }
+
   const [feeds_result, teams_result, competitions_result] = await Promise.all([
-    command.use_cases.calendar_token_use_cases.list_user_feeds(command.user_id),
+    command.use_cases.calendar_token_use_cases.list_user_feeds(
+      user_id_result.data,
+    ),
     command.use_cases.team_use_cases.list({
-      organization_id: command.organization_id,
+      organization_id: organization_id_result.data,
     }),
     command.use_cases.competition_use_cases.list({
-      organization_id: command.organization_id,
+      organization_id: organization_id_result.data,
     }),
   ]);
   return {
@@ -63,12 +93,34 @@ export async function create_calendar_subscription_feed(command: {
   user_id: string;
   use_cases: UseCasesContainer;
 }): Promise<{ success: false } | { success: true; token: CalendarToken }> {
-  const entity_name = resolve_calendar_subscription_entity_name(command);
-  const result = await command.use_cases.calendar_token_use_cases.create_feed(
-    command.user_id,
+  const organization_id_result = parse_entity_id(
     command.organization_id,
+    "Organization ID is invalid",
+  );
+  const user_id_result = parse_entity_id(command.user_id, "User ID is invalid");
+  const entity_id_result = parse_calendar_feed_entity_id(
     command.selected_feed_type,
     command.selected_entity_id,
+  );
+
+  if (!organization_id_result.success) {
+    return { success: false };
+  }
+
+  if (!user_id_result.success) {
+    return { success: false };
+  }
+
+  if (!entity_id_result.success) {
+    return { success: false };
+  }
+
+  const entity_name = resolve_calendar_subscription_entity_name(command);
+  const result = await command.use_cases.calendar_token_use_cases.create_feed(
+    user_id_result.data,
+    organization_id_result.data,
+    command.selected_feed_type,
+    entity_id_result.data,
     entity_name,
     command.reminder_minutes,
   );
@@ -82,8 +134,14 @@ export async function revoke_calendar_subscription_feed(command: {
   token: string;
   use_cases: UseCasesContainer;
 }): Promise<boolean> {
+  const token_result = parse_calendar_token_value(command.token);
+
+  if (!token_result.success) {
+    return false;
+  }
+
   const result = await command.use_cases.calendar_token_use_cases.revoke_feed(
-    command.token,
+    token_result.data,
   );
   return result.success;
 }
@@ -92,14 +150,26 @@ export function get_calendar_subscription_https_url(command: {
   base_url: string;
   token: string;
 }): string {
-  return build_ical_feed_url(command.base_url, command.token);
+  const token_result = parse_calendar_token_value(command.token);
+
+  if (!token_result.success) {
+    return "";
+  }
+
+  return build_ical_feed_url(command.base_url, token_result.data);
 }
 
 export function get_calendar_subscription_webcal_url(command: {
   base_url: string;
   token: string;
 }): string {
-  return build_webcal_feed_url(command.base_url, command.token);
+  const token_result = parse_calendar_token_value(command.token);
+
+  if (!token_result.success) {
+    return "";
+  }
+
+  return build_webcal_feed_url(command.base_url, token_result.data);
 }
 
 export async function copy_calendar_subscription_to_clipboard(
@@ -151,7 +221,7 @@ function resolve_calendar_subscription_entity_name(command: {
   selected_entity_id: string | null;
   selected_feed_type: CalendarFeedType;
   teams: Team[];
-}): string | null {
+}): CalendarToken["entity_name"] {
   if (command.selected_feed_type === "team" && command.selected_entity_id) {
     return (
       command.teams.find((team: Team) => team.id === command.selected_entity_id)
@@ -169,5 +239,16 @@ function resolve_calendar_subscription_entity_name(command: {
       )?.name ?? null
     );
   }
+
+  if (command.selected_feed_type === "player") {
+    const name_result = parse_name("Player Feed");
+
+    if (!name_result.success) {
+      return null;
+    }
+
+    return name_result.data;
+  }
+
   return null;
 }

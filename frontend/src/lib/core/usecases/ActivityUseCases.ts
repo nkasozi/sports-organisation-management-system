@@ -20,6 +20,7 @@ import type {
   QueryOptions,
   TeamRepository,
 } from "../interfaces/ports";
+import type { ScalarValueInput } from "../types/DomainScalars";
 import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
 import { create_failure_result, create_success_result } from "../types/Result";
 import {
@@ -58,7 +59,7 @@ export function create_activity_use_cases(
       return activity_repository.find_all(filter, options);
     },
 
-    async get_by_id(id: string): AsyncResult<Activity> {
+    async get_by_id(id: Activity["id"]): AsyncResult<Activity> {
       if (!id?.trim()) return create_failure_result("Activity ID is required");
       return activity_repository.find_by_id(id);
     },
@@ -73,7 +74,7 @@ export function create_activity_use_cases(
     },
 
     async update(
-      id: string,
+      id: Activity["id"],
       input: UpdateActivityInput,
     ): AsyncResult<Activity> {
       if (!id?.trim()) return create_failure_result("Activity ID is required");
@@ -87,7 +88,7 @@ export function create_activity_use_cases(
       return activity_repository.update(id, input);
     },
 
-    async delete(id: string): AsyncResult<boolean> {
+    async delete(id: Activity["id"]): AsyncResult<boolean> {
       if (!id?.trim()) return create_failure_result("Activity ID is required");
       const existing_result = await activity_repository.find_by_id(id);
       if (!existing_result.success)
@@ -100,7 +101,7 @@ export function create_activity_use_cases(
     },
 
     async list_by_organization(
-      organization_id: string,
+      organization_id: ScalarValueInput<Activity["organization_id"]>,
       options?: QueryOptions,
     ): PaginatedAsyncResult<Activity> {
       if (!organization_id?.trim())
@@ -109,7 +110,7 @@ export function create_activity_use_cases(
     },
 
     async list_by_date_range(
-      organization_id: string,
+      organization_id: ScalarValueInput<Activity["organization_id"]>,
       date_range: CalendarDateRange,
       options?: QueryOptions,
     ): PaginatedAsyncResult<Activity> {
@@ -124,8 +125,8 @@ export function create_activity_use_cases(
     },
 
     async list_by_category(
-      organization_id: string,
-      category_id: string,
+      organization_id: ScalarValueInput<Activity["organization_id"]>,
+      category_id: ScalarValueInput<Activity["category_id"]>,
       options?: QueryOptions,
     ): PaginatedAsyncResult<Activity> {
       return activity_repository.find_by_category(
@@ -136,8 +137,8 @@ export function create_activity_use_cases(
     },
 
     async list_by_team(
-      organization_id: string,
-      team_id: string,
+      organization_id: ScalarValueInput<Activity["organization_id"]>,
+      team_id: ScalarValueInput<Activity["team_ids"][number]>,
       options?: QueryOptions,
     ): PaginatedAsyncResult<Activity> {
       return activity_repository.find_by_team(
@@ -148,14 +149,14 @@ export function create_activity_use_cases(
     },
 
     async list_by_competition(
-      competition_id: string,
+      competition_id: ScalarValueInput<Activity["competition_id"]>,
       options?: QueryOptions,
     ): PaginatedAsyncResult<Activity> {
       return activity_repository.find_by_competition(competition_id, options);
     },
 
     async get_calendar_events(
-      organization_id: string,
+      organization_id: ScalarValueInput<Activity["organization_id"]>,
       date_range: CalendarDateRange,
       filter?: ActivityFilter,
     ): AsyncResult<CalendarEvent[]> {

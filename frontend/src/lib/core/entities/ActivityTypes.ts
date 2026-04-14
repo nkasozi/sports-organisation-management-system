@@ -1,3 +1,10 @@
+import type {
+  EntityId,
+  IsoDateString,
+  IsoDateTimeString,
+  Name,
+  ScalarInput,
+} from "../types/DomainScalars";
 import type { ActivityCategoryType } from "./ActivityCategory";
 import type { BaseEntity } from "./BaseEntity";
 
@@ -27,26 +34,26 @@ export interface ActivityReminder {
 export interface ActivityRecurrence {
   pattern: ActivityRecurrencePattern;
   interval: number;
-  end_date: string | null;
+  end_date: IsoDateString | null;
   days_of_week: number[];
 }
 
 export interface Activity extends BaseEntity {
-  title: string;
+  title: Name;
   description: string;
-  organization_id: string;
-  category_id: string;
+  organization_id: EntityId;
+  category_id: EntityId;
   category_type: ActivityCategoryType;
-  start_datetime: string;
-  end_datetime: string;
+  start_datetime: IsoDateTimeString;
+  end_datetime: IsoDateTimeString;
   is_all_day: boolean;
   location: string;
-  venue_id: string | null;
-  team_ids: string[];
-  competition_id: string | null;
-  fixture_id: string | null;
+  venue_id: EntityId | null;
+  team_ids: EntityId[];
+  competition_id: EntityId | null;
+  fixture_id: EntityId | null;
   source_type: ActivitySourceType;
-  source_id: string | null;
+  source_id: EntityId | null;
   status: ActivityStatus;
   recurrence: ActivityRecurrence | null;
   reminders: ActivityReminder[];
@@ -55,13 +62,13 @@ export interface Activity extends BaseEntity {
 }
 
 export type CreateActivityInput = Omit<
-  Activity,
+  ScalarInput<Activity>,
   "id" | "created_at" | "updated_at"
 >;
 
 export type UpdateActivityInput = Partial<
   Omit<
-    Activity,
+    ScalarInput<Activity>,
     "id" | "created_at" | "updated_at" | "source_type" | "source_id"
   >
 >;

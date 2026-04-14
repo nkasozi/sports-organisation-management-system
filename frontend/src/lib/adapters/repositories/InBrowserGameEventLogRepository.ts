@@ -40,7 +40,7 @@ class InBrowserGameEventLogRepository
 
   protected create_entity_from_input(
     input: CreateGameEventLogInput,
-    id: string,
+    id: GameEventLog["id"],
     timestamps: Pick<BaseEntity, "created_at" | "updated_at">,
   ): GameEventLog {
     const now = new Date().toISOString();
@@ -70,14 +70,14 @@ class InBrowserGameEventLogRepository
       voided: false,
       voided_reason: "",
       status: input.status || "active",
-    };
+    } as GameEventLog;
   }
 
   protected apply_updates_to_entity(
     entity: GameEventLog,
     updates: UpdateGameEventLogInput,
   ): GameEventLog {
-    return { ...entity, ...updates };
+    return { ...entity, ...updates } as GameEventLog;
   }
 
   protected apply_entity_filter(
@@ -127,7 +127,7 @@ class InBrowserGameEventLogRepository
   }
 
   async get_events_for_live_game(
-    live_game_log_id: string,
+    live_game_log_id: GameEventLog["live_game_log_id"],
     options?: { page: number; page_size: number },
   ): PaginatedAsyncResult<GameEventLog> {
     return this.find_all(
@@ -137,7 +137,7 @@ class InBrowserGameEventLogRepository
   }
 
   async get_events_for_fixture(
-    fixture_id: string,
+    fixture_id: GameEventLog["fixture_id"],
     options?: { page: number; page_size: number },
   ): PaginatedAsyncResult<GameEventLog> {
     return this.find_all(
@@ -147,7 +147,7 @@ class InBrowserGameEventLogRepository
   }
 
   async get_events_for_player(
-    player_id: string,
+    player_id: GameEventLog["player_id"],
     options?: { page: number; page_size: number },
   ): PaginatedAsyncResult<GameEventLog> {
     return this.find_all(
@@ -157,7 +157,7 @@ class InBrowserGameEventLogRepository
   }
 
   async get_scoring_events_for_live_game(
-    live_game_log_id: string,
+    live_game_log_id: GameEventLog["live_game_log_id"],
   ): AsyncResult<GameEventLog[]> {
     const result = await this.find_all({ live_game_log_id, voided: false });
     if (!result.success) return { success: false, error: result.error };
@@ -168,7 +168,7 @@ class InBrowserGameEventLogRepository
   }
 
   async get_card_events_for_live_game(
-    live_game_log_id: string,
+    live_game_log_id: GameEventLog["live_game_log_id"],
   ): AsyncResult<GameEventLog[]> {
     const result = await this.find_all({ live_game_log_id, voided: false });
     if (!result.success) return { success: false, error: result.error };
@@ -179,9 +179,9 @@ class InBrowserGameEventLogRepository
   }
 
   async void_event(
-    id: string,
+    id: GameEventLog["id"],
     reason: string,
-    voided_by_user_id: string,
+    voided_by_user_id: GameEventLog["reviewed_by_user_id"],
   ): AsyncResult<GameEventLog> {
     return this.update(id, {
       voided: true,

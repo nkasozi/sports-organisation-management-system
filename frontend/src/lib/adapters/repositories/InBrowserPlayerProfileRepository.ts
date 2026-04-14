@@ -41,7 +41,7 @@ export class InBrowserPlayerProfileRepository
 
   protected create_entity_from_input(
     input: CreatePlayerProfileInput,
-    id: string,
+    id: PlayerProfile["id"],
     timestamps: Pick<BaseEntity, "created_at" | "updated_at">,
   ): PlayerProfile {
     return {
@@ -53,7 +53,7 @@ export class InBrowserPlayerProfileRepository
       profile_slug: input.profile_slug,
       featured_image_url: input.featured_image_url || "",
       status: input.status,
-    };
+    } as PlayerProfile;
   }
 
   protected apply_updates_to_entity(
@@ -63,7 +63,7 @@ export class InBrowserPlayerProfileRepository
     return {
       ...entity,
       ...updates,
-    };
+    } as PlayerProfile;
   }
 
   protected apply_entity_filter(
@@ -91,7 +91,9 @@ export class InBrowserPlayerProfileRepository
     return filtered;
   }
 
-  async find_by_player_id(player_id: string): AsyncResult<PlayerProfile> {
+  async find_by_player_id(
+    player_id: PlayerProfile["player_id"],
+  ): AsyncResult<PlayerProfile> {
     try {
       const profiles = await this.database.player_profiles
         .where("player_id")
@@ -153,7 +155,7 @@ export class InBrowserPlayerProfileRepository
   }
 }
 
-function create_default_player_profiles(): PlayerProfile[] {
+function create_default_player_profiles(): import("$lib/core/types/DomainScalars").ScalarInput<PlayerProfile>[] {
   const now = new Date().toISOString();
   return [
     {

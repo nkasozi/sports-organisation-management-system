@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import type { Fixture } from "$lib/core/entities/Fixture";
 import type { Team } from "$lib/core/entities/Team";
+import type { ScalarInput } from "$lib/core/types/DomainScalars";
 
 import {
   calculate_player_stats,
@@ -10,7 +11,7 @@ import {
   filter_and_sort_scorers,
 } from "./competitionResultsStats";
 
-function create_test_team(overrides: Partial<Team>): Team {
+function create_test_team(overrides: Partial<ScalarInput<Team>> = {}): Team {
   return {
     id: overrides.id ?? "team_1",
     created_at: overrides.created_at ?? "2024-01-01T00:00:00.000Z",
@@ -30,10 +31,12 @@ function create_test_team(overrides: Partial<Team>): Team {
     website: overrides.website ?? "",
     founded_year: overrides.founded_year ?? 2001,
     status: overrides.status ?? "active",
-  };
+  } as unknown as Team;
 }
 
-function create_test_fixture(overrides: Partial<Fixture>): Fixture {
+function create_test_fixture(
+  overrides: Partial<ScalarInput<Fixture>> = {},
+): Fixture {
   return {
     id: overrides.id ?? "fixture_1",
     created_at: overrides.created_at ?? "2024-01-01T00:00:00.000Z",
@@ -63,7 +66,7 @@ function create_test_fixture(overrides: Partial<Fixture>): Fixture {
     away_team_jersey: overrides.away_team_jersey,
     officials_jersey: overrides.officials_jersey,
     manual_importance_override: overrides.manual_importance_override,
-  };
+  } as unknown as Fixture;
 }
 
 describe("calculate_player_stats", () => {

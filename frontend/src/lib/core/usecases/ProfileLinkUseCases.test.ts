@@ -6,11 +6,12 @@ import type {
 } from "../entities/ProfileLink";
 import type { ProfileLinkRepository } from "../interfaces/ports";
 import type { QueryOptions } from "../interfaces/ports";
+import type { ScalarInput } from "../types/DomainScalars";
 import { create_failure_result, create_success_result } from "../types/Result";
 import { create_profile_link_use_cases } from "./ProfileLinkUseCases";
 
 function create_mock_profile_link(
-  overrides: Partial<ProfileLink> = {},
+  overrides: Partial<ScalarInput<ProfileLink>> = {},
 ): ProfileLink {
   return {
     id: "profilelink_1",
@@ -23,7 +24,7 @@ function create_mock_profile_link(
     display_order: 0,
     status: "active",
     ...overrides,
-  };
+  } as unknown as ProfileLink;
 }
 
 function create_valid_profile_link_input(
@@ -37,7 +38,7 @@ function create_valid_profile_link_input(
     display_order: 0,
     status: "active",
     ...overrides,
-  };
+  } as CreateProfileLinkInput;
 }
 
 import type { PaginatedResult, Result } from "../types/Result";
@@ -66,7 +67,7 @@ function create_mock_repository(): ProfileLinkRepository {
     delete_by_ids: vi.fn(),
     count: vi.fn(),
     find_by_profile_id: vi.fn(),
-  };
+  } as ProfileLinkRepository;
 }
 
 describe("ProfileLinkUseCases", () => {
@@ -138,7 +139,7 @@ describe("ProfileLinkUseCases", () => {
         create_paginated_result([]),
       );
 
-      const options: QueryOptions = { page_number: 2, page_size: 20 };
+      const options =  { page_number: 2, page_size: 20 } as QueryOptions;
       await use_cases.list(undefined, options);
 
       expect(mock_repository.find_all).toHaveBeenCalledWith(undefined, options);

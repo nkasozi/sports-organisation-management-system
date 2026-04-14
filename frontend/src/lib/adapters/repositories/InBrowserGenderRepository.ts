@@ -35,7 +35,7 @@ export class InBrowserGenderRepository
 
   protected create_entity_from_input(
     input: CreateGenderInput,
-    id: string,
+    id: Gender["id"],
     timestamps: Pick<BaseEntity, "created_at" | "updated_at">,
   ): Gender {
     return {
@@ -45,7 +45,7 @@ export class InBrowserGenderRepository
       description: input.description,
       status: input.status,
       organization_id: input.organization_id,
-    };
+    } as Gender;
   }
 
   protected apply_updates_to_entity(
@@ -55,7 +55,7 @@ export class InBrowserGenderRepository
     return {
       ...entity,
       ...updates,
-    };
+    } as Gender;
   }
 
   protected apply_entity_filter(
@@ -86,7 +86,7 @@ export class InBrowserGenderRepository
   }
 
   async find_by_organization(
-    organization_id: string,
+    organization_id: Gender["organization_id"],
     options?: QueryOptions,
   ): PaginatedAsyncResult<Gender> {
     return this.find_all({ organization_id }, options);

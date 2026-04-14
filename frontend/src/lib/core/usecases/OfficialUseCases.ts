@@ -7,6 +7,11 @@ import { validate_official_input } from "../entities/Official";
 import type { OfficialFilter, OfficialRepository } from "../interfaces/ports";
 import type { QueryOptions } from "../interfaces/ports";
 import type { OfficialUseCasesPort } from "../interfaces/ports";
+import type {
+  EntityId,
+  IsoDateString,
+  ScalarValueInput,
+} from "../types/DomainScalars";
 import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
 import { create_failure_result } from "../types/Result";
 
@@ -23,7 +28,7 @@ export function create_official_use_cases(
       return repository.find_all(filter, options);
     },
 
-    async get_by_id(id: string): AsyncResult<Official> {
+    async get_by_id(id: ScalarValueInput<Official["id"]>): AsyncResult<Official> {
       if (!id || id.trim().length === 0) {
         return create_failure_result("Official ID is required");
       }
@@ -39,7 +44,7 @@ export function create_official_use_cases(
     },
 
     async update(
-      id: string,
+      id: ScalarValueInput<Official["id"]>,
       input: UpdateOfficialInput,
     ): AsyncResult<Official> {
       if (!id || id.trim().length === 0) {
@@ -48,14 +53,16 @@ export function create_official_use_cases(
       return repository.update(id, input);
     },
 
-    async delete(id: string): AsyncResult<boolean> {
+    async delete(id: ScalarValueInput<Official["id"]>): AsyncResult<boolean> {
       if (!id || id.trim().length === 0) {
         return create_failure_result("Official ID is required");
       }
       return repository.delete_by_id(id);
     },
 
-    async delete_officials(ids: string[]): AsyncResult<number> {
+    async delete_officials(
+      ids: Array<ScalarValueInput<Official["id"]>>,
+    ): AsyncResult<number> {
       if (!ids || ids.length === 0) {
         return create_failure_result("Official IDs are required");
       }
@@ -63,7 +70,7 @@ export function create_official_use_cases(
     },
 
     async list_officials_by_organization(
-      organization_id: string,
+      organization_id: ScalarValueInput<Official["organization_id"]>,
       options?: QueryOptions,
     ): PaginatedAsyncResult<Official> {
       if (!organization_id || organization_id.trim().length === 0) {
@@ -73,7 +80,7 @@ export function create_official_use_cases(
     },
 
     async list_officials_by_role_id(
-      role_id: string,
+      role_id: ScalarValueInput<EntityId>,
       options?: QueryOptions,
     ): PaginatedAsyncResult<Official> {
       if (!role_id || role_id.trim().length === 0) {
@@ -83,8 +90,8 @@ export function create_official_use_cases(
     },
 
     async list_available_officials(
-      date: string,
-      organization_id?: string,
+      date: ScalarValueInput<IsoDateString>,
+      organization_id?: ScalarValueInput<Official["organization_id"]>,
       options?: QueryOptions,
     ): PaginatedAsyncResult<Official> {
       if (!date) {

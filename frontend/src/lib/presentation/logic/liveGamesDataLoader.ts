@@ -1,15 +1,14 @@
 import type { Fixture } from "$lib/core/entities/Fixture";
 import type { Organization } from "$lib/core/entities/Organization";
 import { DEFAULT_TEAM_LOGO } from "$lib/core/entities/Team";
-import {
-  ANY_VALUE,
-  build_authorization_list_filter,
-  get_scope_value,
-  type UserScopeProfile,
-} from "$lib/core/interfaces/ports";
+import { ANY_VALUE } from "$lib/core/interfaces/ports";
 
 type ListResult<T> = Promise<{ success: boolean; data?: { items: T[] } }>;
 type GetByIdResult<T> = Promise<{ success: boolean; data?: T }>;
+type LiveGamesScopeProfile = {
+  organization_id?: string | null;
+  team_id?: string | null;
+};
 
 export interface LiveGamesDataDependencies {
   organization_use_cases: {
@@ -52,21 +51,21 @@ export interface LiveGamesFixtureState {
 }
 
 export function can_user_change_live_games_organization(
-  profile: UserScopeProfile | null,
+  profile: LiveGamesScopeProfile | null,
 ): boolean {
   if (!profile) return false;
   return profile.organization_id === ANY_VALUE;
 }
 
 function build_live_games_auth_filter(
-  profile: UserScopeProfile | null,
+  profile: LiveGamesScopeProfile | null,
 ): Record<string, string> {
   if (!profile) return {};
 
-  const filter = build_authorization_list_filter(profile, [
-    "organization_id",
-    "team_id",
-  ]);
+  const filter: Record<string, string> = {};
+  if (profile.organization_id && profile.organization_id !== ANY_VALUE) {
+    filter.organization_id = profile.organization_id;
+  }
   if (profile.team_id && profile.team_id !== ANY_VALUE) {
     filter.team_id = profile.team_id;
   }
@@ -146,13 +145,13 @@ async function load_competition_sport_data_for_fixtures(
 
 export async function load_live_games_organizations(
   dependencies: Pick<LiveGamesDataDependencies, "organization_use_cases">,
-  profile: UserScopeProfile | null,
+  profile: LiveGamesScopeProfile | null,
 ): Promise<Organization[]> {
   const result = await dependencies.organization_use_cases.list({});
   if (!result.success) return [];
 
   const organizations = result.data?.items || [];
-  const organization_scope = get_scope_value(profile, "organization_id");
+  const organization_scope = profile?.organization_id;
   if (!organization_scope || organization_scope === ANY_VALUE) {
     return organizations;
   }
@@ -164,7 +163,7 @@ export async function load_live_games_organizations(
 
 export async function load_live_games_fixture_state(
   dependencies: LiveGamesDataDependencies,
-  profile: UserScopeProfile | null,
+  profile: LiveGamesScopeProfile | null,
   organization_id: string,
 ): Promise<LiveGamesFixtureState> {
   const filter = build_live_games_auth_filter(profile);

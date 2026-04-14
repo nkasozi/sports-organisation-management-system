@@ -49,15 +49,15 @@ export function validate_activity_input(input: CreateActivityInput): {
 }
 
 export function create_activity_from_fixture(
-  fixture_id: string,
-  fixture_title: string,
-  fixture_datetime: string,
-  competition_id: string,
-  home_team_id: string,
-  away_team_id: string,
-  organization_id: string,
-  category_id: string,
-  venue_location: string,
+  fixture_id: NonNullable<CreateActivityInput["fixture_id"]>,
+  fixture_title: CreateActivityInput["title"],
+  fixture_datetime: CreateActivityInput["start_datetime"],
+  competition_id: NonNullable<CreateActivityInput["competition_id"]>,
+  home_team_id: CreateActivityInput["team_ids"][number],
+  away_team_id: CreateActivityInput["team_ids"][number],
+  organization_id: CreateActivityInput["organization_id"],
+  category_id: CreateActivityInput["category_id"],
+  venue_location: CreateActivityInput["location"],
 ): CreateActivityInput {
   const start_datetime = new Date(fixture_datetime);
   const end_datetime = new Date(start_datetime.getTime() + 2 * 60 * 60 * 1000);
@@ -87,13 +87,13 @@ export function create_activity_from_fixture(
 }
 
 export function create_activity_from_competition(
-  competition_id: string,
-  competition_name: string,
-  start_date: string,
-  end_date: string,
-  organization_id: string,
-  category_id: string,
-  location: string,
+  competition_id: NonNullable<CreateActivityInput["competition_id"]>,
+  competition_name: CreateActivityInput["title"],
+  start_date: CreateActivityInput["start_datetime"],
+  end_date: CreateActivityInput["end_datetime"],
+  organization_id: CreateActivityInput["organization_id"],
+  category_id: CreateActivityInput["category_id"],
+  location: CreateActivityInput["location"],
 ): CreateActivityInput {
   return {
     title: competition_name,
@@ -151,8 +151,8 @@ function get_activity_status_display(status: ActivityStatus): {
 }
 
 function calculate_activity_duration_minutes(
-  start_datetime: string,
-  end_datetime: string,
+  start_datetime: Activity["start_datetime"],
+  end_datetime: Activity["end_datetime"],
 ): number {
   const start_date = new Date(start_datetime);
   const end_date = new Date(end_datetime);

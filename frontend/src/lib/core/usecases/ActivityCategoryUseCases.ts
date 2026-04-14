@@ -3,6 +3,7 @@ import type {
   CreateActivityCategoryInput,
   UpdateActivityCategoryInput,
 } from "../entities/ActivityCategory";
+import type { ScalarValueInput } from "../types/DomainScalars";
 import {
   create_default_categories_for_organization,
   validate_activity_category_input,
@@ -29,7 +30,7 @@ export function create_activity_category_use_cases(
       return repository.find_all(filter, options);
     },
 
-    async get_by_id(id: string): AsyncResult<ActivityCategory> {
+    async get_by_id(id: ActivityCategory["id"]): AsyncResult<ActivityCategory> {
       if (!id || id.trim().length === 0) {
         return create_failure_result("Category ID is required");
       }
@@ -51,7 +52,7 @@ export function create_activity_category_use_cases(
     },
 
     async update(
-      id: string,
+      id: ActivityCategory["id"],
       input: UpdateActivityCategoryInput,
     ): AsyncResult<ActivityCategory> {
       if (!id || id.trim().length === 0) {
@@ -61,7 +62,7 @@ export function create_activity_category_use_cases(
       return repository.update(id, input);
     },
 
-    async delete(id: string): AsyncResult<boolean> {
+    async delete(id: ActivityCategory["id"]): AsyncResult<boolean> {
       if (!id || id.trim().length === 0) {
         return create_failure_result("Category ID is required");
       }
@@ -82,7 +83,7 @@ export function create_activity_category_use_cases(
     },
 
     async list_by_organization(
-      organization_id: string,
+      organization_id: ScalarValueInput<ActivityCategory["organization_id"]>,
       options?: QueryOptions,
     ): PaginatedAsyncResult<ActivityCategory> {
       if (!organization_id || organization_id.trim().length === 0) {
@@ -96,7 +97,7 @@ export function create_activity_category_use_cases(
     },
 
     async ensure_default_categories_exist(
-      organization_id: string,
+      organization_id: ScalarValueInput<ActivityCategory["organization_id"]>,
     ): AsyncResult<{ categories_created: number }> {
       if (!organization_id || organization_id.trim().length === 0) {
         return { success: false, error: "Organization ID is required" };

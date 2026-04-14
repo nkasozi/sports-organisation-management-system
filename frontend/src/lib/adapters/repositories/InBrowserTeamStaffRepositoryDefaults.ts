@@ -1,7 +1,7 @@
 import type { TeamStaff } from "../../core/entities/TeamStaff";
 import { DEFAULT_STAFF_AVATAR } from "../../core/entities/TeamStaff";
 
-export function create_default_team_staff(): TeamStaff[] {
+export function create_default_team_staff(): import("$lib/core/types/DomainScalars").ScalarInput<TeamStaff>[] {
   const now = new Date().toISOString();
   const BASE = {
     organization_id: "org_default_1",

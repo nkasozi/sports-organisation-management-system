@@ -9,7 +9,7 @@ const SEED_TEAM_PROFILE_LINK_IDS = {
   KAMPALA_HC_WEBSITE: "team_link_006",
 };
 
-export function create_seed_team_profile_links(): import("../../../core/entities/ProfileLink").ProfileLink[] {
+export function create_seed_team_profile_links(): import("$lib/core/types/DomainScalars").ScalarInput<import("../../../core/entities/ProfileLink").ProfileLink>[] {
   const now = generate_current_timestamp();
 
   return [

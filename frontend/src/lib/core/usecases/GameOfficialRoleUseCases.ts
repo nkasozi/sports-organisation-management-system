@@ -9,6 +9,7 @@ import type {
 } from "../interfaces/ports";
 import type { QueryOptions } from "../interfaces/ports";
 import type { GameOfficialRoleUseCasesPort } from "../interfaces/ports";
+import type { ScalarValueInput } from "../types/DomainScalars";
 import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
 import { create_failure_result, create_success_result } from "../types/Result";
 
@@ -25,7 +26,9 @@ export function create_game_official_role_use_cases(
       return repository.find_all(filter, pagination);
     },
 
-    async get_by_id(id: string): AsyncResult<GameOfficialRole> {
+    async get_by_id(
+      id: ScalarValueInput<GameOfficialRole["id"]>,
+    ): AsyncResult<GameOfficialRole> {
       if (!id || id.trim().length === 0) {
         return create_failure_result("Official role ID is required");
       }
@@ -55,7 +58,7 @@ export function create_game_official_role_use_cases(
     },
 
     async update(
-      id: string,
+      id: ScalarValueInput<GameOfficialRole["id"]>,
       input: UpdateGameOfficialRoleInput,
     ): AsyncResult<GameOfficialRole> {
       if (!id || id.trim().length === 0) {
@@ -74,7 +77,9 @@ export function create_game_official_role_use_cases(
       return create_success_result(result.data);
     },
 
-    async delete(id: string): AsyncResult<boolean> {
+    async delete(
+      id: ScalarValueInput<GameOfficialRole["id"]>,
+    ): AsyncResult<boolean> {
       if (!id || id.trim().length === 0) {
         return create_failure_result("Official role ID is required");
       }
@@ -86,7 +91,7 @@ export function create_game_official_role_use_cases(
     },
 
     async list_roles_for_sport(
-      sport_id: string | null,
+      sport_id: ScalarValueInput<GameOfficialRole["sport_id"]>,
     ): AsyncResult<GameOfficialRole[]> {
       return await repository.find_by_sport(sport_id);
     },

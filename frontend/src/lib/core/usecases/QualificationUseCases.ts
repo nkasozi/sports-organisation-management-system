@@ -30,7 +30,7 @@ export function create_qualification_use_cases(
     },
 
     async update(
-      id: string,
+      id: Qualification["id"],
       input: UpdateQualificationInput,
     ): AsyncResult<Qualification> {
       const existing_result = await repository.find_by_id(id);
@@ -51,11 +51,11 @@ export function create_qualification_use_cases(
       return repository.update(id, input);
     },
 
-    async delete(id: string): AsyncResult<boolean> {
+    async delete(id: Qualification["id"]): AsyncResult<boolean> {
       return repository.delete_by_id(id);
     },
 
-    async get_by_id(id: string): AsyncResult<Qualification> {
+    async get_by_id(id: Qualification["id"]): AsyncResult<Qualification> {
       return repository.find_by_id(id);
     },
 
@@ -71,9 +71,9 @@ export function create_qualification_use_cases(
 
       const qualification_filter: QualificationFilter = {
         holder_type: filter.holder_type as QualificationHolderType | undefined,
-        holder_id: filter.holder_id,
+        holder_id: filter.holder_id as Qualification["holder_id"] | undefined,
         certification_level: filter.certification_level,
-        status: filter.status,
+        status: filter.status as Qualification["status"] | undefined,
       };
 
       return repository.find_all(qualification_filter, query_options);
@@ -81,7 +81,7 @@ export function create_qualification_use_cases(
 
     async list_by_holder(
       holder_type: QualificationHolderType,
-      holder_id: string,
+      holder_id: Qualification["holder_id"],
     ): PaginatedAsyncResult<Qualification> {
       return repository.find_by_holder(holder_type, holder_id, {
         page_number: 1,

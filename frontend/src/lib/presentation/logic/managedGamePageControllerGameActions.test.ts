@@ -35,7 +35,7 @@ describe("managedGamePageControllerGameActions", () => {
   });
 
   function create_state_store() {
-    let current_state: ManagedGamePageState = {
+    let current_state =  {
       ...create_managed_game_page_state(),
       fixture: {
         id: "fixture-1",
@@ -43,7 +43,7 @@ describe("managedGamePageControllerGameActions", () => {
         current_period: "first_half",
       } as ManagedGamePageState["fixture"],
       game_clock_seconds: 1200,
-    };
+    } as ManagedGamePageState;
     return {
       get_state: () => current_state,
       read_state: () => current_state,

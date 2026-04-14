@@ -1,29 +1,36 @@
+import type {
+  EmailAddress,
+  EntityId,
+  IsoDateString,
+  Name,
+  ScalarInput,
+} from "../types/DomainScalars";
 import type { BaseEntity, EntityStatus } from "./BaseEntity";
 
 export const DEFAULT_STAFF_AVATAR =
   "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='50' fill='%2310b981'/%3E%3Ccircle cx='50' cy='35' r='18' fill='white'/%3E%3Cpath d='M50 55c-22 0-35 12-35 30h70c0-18-13-30-35-30z' fill='white'/%3E%3C/svg%3E";
 
 export interface TeamStaff extends BaseEntity {
-  first_name: string;
-  last_name: string;
-  email: string;
+  first_name: Name;
+  last_name: Name;
+  email: EmailAddress;
   phone: string;
-  date_of_birth: string;
-  organization_id: string;
-  team_id: string;
-  role_id: string;
+  date_of_birth: IsoDateString;
+  organization_id: EntityId;
+  team_id: EntityId;
+  role_id: EntityId;
   nationality: string;
   profile_image_url: string;
-  employment_start_date: string;
-  employment_end_date: string | null;
-  emergency_contact_name: string;
+  employment_start_date: IsoDateString;
+  employment_end_date: IsoDateString | null;
+  emergency_contact_name: Name;
   emergency_contact_phone: string;
   notes: string;
   status: EntityStatus;
 }
 
 export type CreateTeamStaffInput = Omit<
-  TeamStaff,
+  ScalarInput<TeamStaff>,
   "id" | "created_at" | "updated_at"
 >;
 export type UpdateTeamStaffInput = Partial<CreateTeamStaffInput>;
@@ -49,9 +56,9 @@ function get_team_staff_initials(staff: TeamStaff): string {
 }
 
 function create_empty_team_staff_input(
-  organization_id: string = "",
-  team_id: string = "",
-  role_id: string = "",
+  organization_id: CreateTeamStaffInput["organization_id"] = "",
+  team_id: CreateTeamStaffInput["team_id"] = "",
+  role_id: CreateTeamStaffInput["role_id"] = "",
 ): CreateTeamStaffInput {
   return {
     first_name: "",

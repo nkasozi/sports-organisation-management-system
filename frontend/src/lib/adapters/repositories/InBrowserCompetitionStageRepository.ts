@@ -39,7 +39,7 @@ export class InBrowserCompetitionStageRepository
 
   protected create_entity_from_input(
     input: CreateCompetitionStageInput,
-    id: string,
+    id: CompetitionStage["id"],
     timestamps: Pick<BaseEntity, "created_at" | "updated_at">,
   ): CompetitionStage {
     return {
@@ -50,7 +50,7 @@ export class InBrowserCompetitionStageRepository
       stage_type: input.stage_type,
       stage_order: input.stage_order,
       status: input.status,
-    };
+    } as CompetitionStage;
   }
 
   protected apply_updates_to_entity(
@@ -60,7 +60,7 @@ export class InBrowserCompetitionStageRepository
     return {
       ...entity,
       ...updates,
-    };
+    } as CompetitionStage;
   }
 
   protected apply_entity_filter(
@@ -98,7 +98,7 @@ export class InBrowserCompetitionStageRepository
   }
 
   async find_by_competition(
-    competition_id: string,
+    competition_id: CompetitionStage["competition_id"],
     options?: QueryOptions,
   ): PaginatedAsyncResult<CompetitionStage> {
     try {

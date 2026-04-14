@@ -30,7 +30,9 @@ export function create_competition_format_use_cases(
       return repository.find_all(filter, pagination);
     },
 
-    async get_by_id(id: string): AsyncResult<CompetitionFormat> {
+    async get_by_id(
+      id: CompetitionFormat["id"],
+    ): AsyncResult<CompetitionFormat> {
       if (!id || id.trim().length === 0) {
         return create_failure_result("Format ID is required");
       }
@@ -70,7 +72,7 @@ export function create_competition_format_use_cases(
     },
 
     async update(
-      id: string,
+      id: CompetitionFormat["id"],
       input: UpdateCompetitionFormatInput,
     ): AsyncResult<CompetitionFormat> {
       if (!id || id.trim().length === 0) {
@@ -112,7 +114,7 @@ export function create_competition_format_use_cases(
       return create_success_result(result.data);
     },
 
-    async delete(id: string): AsyncResult<boolean> {
+    async delete(id: CompetitionFormat["id"]): AsyncResult<boolean> {
       if (!id || id.trim().length === 0) {
         return create_failure_result("Format ID is required");
       }

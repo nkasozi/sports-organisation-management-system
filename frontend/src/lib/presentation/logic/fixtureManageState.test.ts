@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { FixtureLineup } from "$lib/core/entities/FixtureLineup";
 import type { Player } from "$lib/core/entities/Player";
 import type { PlayerTeamMembership } from "$lib/core/entities/PlayerTeamMembership";
+import type { ScalarInput } from "$lib/core/types/DomainScalars";
 
 import {
   build_position_name_by_id_map,
@@ -13,7 +14,9 @@ import {
   pick_best_membership_for_player,
 } from "./fixtureManageState";
 
-function create_test_player(overrides: Partial<Player>): Player {
+function create_test_player(
+  overrides: Partial<ScalarInput<Player>> = {},
+): Player {
   return {
     id: overrides.id ?? "player_1",
     created_at: overrides.created_at ?? "2024-01-01T00:00:00.000Z",
@@ -34,11 +37,11 @@ function create_test_player(overrides: Partial<Player>): Player {
     emergency_contact_phone: overrides.emergency_contact_phone ?? "",
     medical_notes: overrides.medical_notes ?? "",
     status: overrides.status ?? "active",
-  };
+  } as unknown as Player;
 }
 
 function create_test_membership(
-  overrides: Partial<PlayerTeamMembership>,
+  overrides: Partial<ScalarInput<PlayerTeamMembership>> = {},
 ): PlayerTeamMembership {
   return {
     id: overrides.id ?? "membership_1",
@@ -50,10 +53,12 @@ function create_test_membership(
     start_date: overrides.start_date ?? "2024-01-01",
     jersey_number: overrides.jersey_number ?? 7,
     status: overrides.status ?? "active",
-  };
+  } as unknown as PlayerTeamMembership;
 }
 
-function create_test_lineup(overrides: Partial<FixtureLineup>): FixtureLineup {
+function create_test_lineup(
+  overrides: Partial<ScalarInput<FixtureLineup>> = {},
+): FixtureLineup {
   return {
     id: overrides.id ?? "lineup_1",
     created_at: overrides.created_at ?? "2024-01-01T00:00:00.000Z",
@@ -66,7 +71,7 @@ function create_test_lineup(overrides: Partial<FixtureLineup>): FixtureLineup {
     submitted_by: overrides.submitted_by ?? "user_1",
     submitted_at: overrides.submitted_at ?? "2024-01-01T00:00:00.000Z",
     notes: overrides.notes ?? "",
-  };
+  } as unknown as FixtureLineup;
 }
 
 describe("fixture manage roster helpers", () => {

@@ -30,7 +30,7 @@ export interface PlayerPositionRepository extends FilterableRepository<
   ): AsyncResult<PlayerPosition[]>;
   find_available_positions(): AsyncResult<PlayerPosition[]>;
   find_by_organization(
-    organization_id: string,
+    organization_id: PlayerPosition["organization_id"],
     options?: QueryOptions,
   ): PaginatedAsyncResult<PlayerPosition>;
 }

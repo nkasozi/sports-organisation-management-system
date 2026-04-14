@@ -3,6 +3,7 @@ import type {
   CreateActivityCategoryInput,
   UpdateActivityCategoryInput,
 } from "../../../../entities/ActivityCategory";
+import type { ScalarValueInput } from "../../../../types/DomainScalars";
 import type {
   AsyncResult,
   PaginatedAsyncResult,
@@ -18,11 +19,11 @@ export interface ActivityCategoryUseCasesPort extends BaseUseCasesPort<
   ActivityCategoryFilter
 > {
   list_by_organization(
-    organization_id: string,
+    organization_id: ScalarValueInput<ActivityCategory["organization_id"]>,
     options?: QueryOptions,
   ): PaginatedAsyncResult<ActivityCategory>;
 
   ensure_default_categories_exist(
-    organization_id: string,
+    organization_id: ScalarValueInput<ActivityCategory["organization_id"]>,
   ): AsyncResult<{ categories_created: number }>;
 }

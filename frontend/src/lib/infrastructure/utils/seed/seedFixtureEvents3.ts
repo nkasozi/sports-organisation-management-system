@@ -1,6 +1,6 @@
 import type { GameEvent } from "../../../core/entities/Fixture";
 
-export const GAME_EVENTS_COMPLETED_HOCKEY_GAME: GameEvent[] = [
+export const GAME_EVENTS_COMPLETED_HOCKEY_GAME: import("$lib/core/types/DomainScalars").ScalarInput<GameEvent>[] = [
   {
     id: "game_event_seed_1",
     event_type: "period_start",

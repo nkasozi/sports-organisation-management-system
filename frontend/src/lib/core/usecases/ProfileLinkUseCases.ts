@@ -9,6 +9,7 @@ import type {
   ProfileLinkRepository,
 } from "../interfaces/ports";
 import type { QueryOptions } from "../interfaces/ports";
+import type { ScalarValueInput } from "../types/DomainScalars";
 import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
 import { create_failure_result } from "../types/Result";
 
@@ -17,12 +18,15 @@ export interface ProfileLinkUseCases {
     filter?: ProfileLinkFilter | Record<string, string>,
     options?: QueryOptions,
   ): PaginatedAsyncResult<ProfileLink>;
-  get_by_id(id: string): AsyncResult<ProfileLink>;
+  get_by_id(id: ScalarValueInput<ProfileLink["id"]>): AsyncResult<ProfileLink>;
   create(input: CreateProfileLinkInput): AsyncResult<ProfileLink>;
-  update(id: string, input: UpdateProfileLinkInput): AsyncResult<ProfileLink>;
-  delete(id: string): AsyncResult<boolean>;
+  update(
+    id: ScalarValueInput<ProfileLink["id"]>,
+    input: UpdateProfileLinkInput,
+  ): AsyncResult<ProfileLink>;
+  delete(id: ScalarValueInput<ProfileLink["id"]>): AsyncResult<boolean>;
   list_by_profile(
-    profile_id: string,
+    profile_id: ScalarValueInput<ProfileLink["profile_id"]>,
     options?: QueryOptions,
   ): PaginatedAsyncResult<ProfileLink>;
 }
@@ -40,15 +44,17 @@ export function create_profile_link_use_cases(
       }
 
       const typed_filter: ProfileLinkFilter = {
-        profile_id: filter?.profile_id,
+        profile_id: filter?.profile_id as ProfileLink["profile_id"] | undefined,
         platform: filter?.platform,
-        status: filter?.status,
+        status: filter?.status as ProfileLink["status"] | undefined,
       };
 
       return repository.find_all(typed_filter, options);
     },
 
-    async get_by_id(id: string): AsyncResult<ProfileLink> {
+    async get_by_id(
+      id: ScalarValueInput<ProfileLink["id"]>,
+    ): AsyncResult<ProfileLink> {
       if (!id || id.trim().length === 0) {
         return create_failure_result("Link ID is required");
       }
@@ -66,7 +72,7 @@ export function create_profile_link_use_cases(
     },
 
     async update(
-      id: string,
+      id: ScalarValueInput<ProfileLink["id"]>,
       input: UpdateProfileLinkInput,
     ): AsyncResult<ProfileLink> {
       if (!id || id.trim().length === 0) {
@@ -76,7 +82,9 @@ export function create_profile_link_use_cases(
       return repository.update(id, input);
     },
 
-    async delete(id: string): AsyncResult<boolean> {
+    async delete(
+      id: ScalarValueInput<ProfileLink["id"]>,
+    ): AsyncResult<boolean> {
       if (!id || id.trim().length === 0) {
         return create_failure_result("Link ID is required");
       }
@@ -85,7 +93,7 @@ export function create_profile_link_use_cases(
     },
 
     async list_by_profile(
-      profile_id: string,
+      profile_id: ScalarValueInput<ProfileLink["profile_id"]>,
       options?: QueryOptions,
     ): PaginatedAsyncResult<ProfileLink> {
       return repository.find_by_profile_id(profile_id, options);

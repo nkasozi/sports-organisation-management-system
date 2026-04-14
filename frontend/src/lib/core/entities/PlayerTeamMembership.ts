@@ -1,27 +1,32 @@
+import type {
+  EntityId,
+  IsoDateString,
+  ScalarInput,
+} from "../types/DomainScalars";
 import type { BaseEntity } from "./BaseEntity";
 
 export type PlayerTeamMembershipStatus = "active" | "inactive" | "ended";
 
 export interface PlayerTeamMembership extends BaseEntity {
-  organization_id: string;
-  player_id: string;
-  team_id: string;
-  start_date: string;
+  organization_id: EntityId;
+  player_id: EntityId;
+  team_id: EntityId;
+  start_date: IsoDateString;
   jersey_number: number | null;
   status: PlayerTeamMembershipStatus;
 }
 
 export type CreatePlayerTeamMembershipInput = Omit<
-  PlayerTeamMembership,
+  ScalarInput<PlayerTeamMembership>,
   "id" | "created_at" | "updated_at"
 >;
 export type UpdatePlayerTeamMembershipInput =
   Partial<CreatePlayerTeamMembershipInput>;
 
 export function create_empty_player_team_membership_input(
-  organization_id: string = "",
-  player_id: string = "",
-  team_id: string = "",
+  organization_id: CreatePlayerTeamMembershipInput["organization_id"] = "",
+  player_id: CreatePlayerTeamMembershipInput["player_id"] = "",
+  team_id: CreatePlayerTeamMembershipInput["team_id"] = "",
 ): CreatePlayerTeamMembershipInput {
   return {
     organization_id,

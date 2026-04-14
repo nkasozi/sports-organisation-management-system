@@ -1,22 +1,24 @@
+import type { Competition } from "../entities/Competition";
 import type { CompetitionFormat } from "../entities/CompetitionFormat";
 import { ENTITY_STATUS } from "../entities/StatusConstants";
 import type { CompetitionFormatRepository } from "../interfaces/ports";
 import type { CompetitionStageRepository } from "../interfaces/ports";
 import type { FixtureRepository } from "../interfaces/ports";
+import type { ScalarValueInput } from "../types/DomainScalars";
 import type { AsyncResult } from "../types/Result";
 import { create_failure_result, create_success_result } from "../types/Result";
 
 interface CompetitionStageLifecycle {
   ensure_stages_for_competition(
-    competition_id: string,
-    competition_format_id: string,
+    competition_id: ScalarValueInput<Competition["id"]>,
+    competition_format_id: ScalarValueInput<Competition["competition_format_id"]>,
   ): Promise<AsyncResult<boolean>>;
   can_replace_stages_for_competition(
-    competition_id: string,
+    competition_id: ScalarValueInput<Competition["id"]>,
   ): Promise<AsyncResult<boolean>>;
   replace_stages_for_competition(
-    competition_id: string,
-    competition_format_id: string,
+    competition_id: ScalarValueInput<Competition["id"]>,
+    competition_format_id: ScalarValueInput<Competition["competition_format_id"]>,
   ): Promise<AsyncResult<boolean>>;
 }
 
@@ -27,8 +29,8 @@ export function create_competition_stage_lifecycle(
 ): CompetitionStageLifecycle {
   return {
     async ensure_stages_for_competition(
-      competition_id: string,
-      competition_format_id: string,
+      competition_id: ScalarValueInput<Competition["id"]>,
+      competition_format_id: ScalarValueInput<Competition["competition_format_id"]>,
     ): Promise<AsyncResult<boolean>> {
       const existing_stages_result =
         await competition_stage_repository.find_by_competition(competition_id, {
@@ -52,7 +54,7 @@ export function create_competition_stage_lifecycle(
     },
 
     async can_replace_stages_for_competition(
-      competition_id: string,
+      competition_id: ScalarValueInput<Competition["id"]>,
     ): Promise<AsyncResult<boolean>> {
       const fixtures_result = await fixture_repository.find_by_competition(
         competition_id,
@@ -73,8 +75,8 @@ export function create_competition_stage_lifecycle(
     },
 
     async replace_stages_for_competition(
-      competition_id: string,
-      competition_format_id: string,
+      competition_id: ScalarValueInput<Competition["id"]>,
+      competition_format_id: ScalarValueInput<Competition["competition_format_id"]>,
     ): Promise<AsyncResult<boolean>> {
       const can_replace_result =
         await this.can_replace_stages_for_competition(competition_id);
@@ -111,8 +113,8 @@ export function create_competition_stage_lifecycle(
 }
 
 async function create_stages_from_format(
-  competition_id: string,
-  competition_format_id: string,
+  competition_id: ScalarValueInput<Competition["id"]>,
+  competition_format_id: ScalarValueInput<Competition["competition_format_id"]>,
   competition_format_repository: CompetitionFormatRepository,
   competition_stage_repository: CompetitionStageRepository,
 ): Promise<AsyncResult<boolean>> {

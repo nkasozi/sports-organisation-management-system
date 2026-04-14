@@ -36,7 +36,7 @@ function create_test_competition(overrides: Partial<Competition>): Competition {
     location: overrides.location ?? "Main Stadium",
     rule_overrides: overrides.rule_overrides ?? {},
     status: overrides.status ?? "active",
-  };
+  } as Competition;
 }
 
 function create_test_competition_format(
@@ -64,7 +64,7 @@ function create_test_competition_format(
     max_teams_allowed: overrides.max_teams_allowed ?? 16,
     status: overrides.status ?? "active",
     organization_id: overrides.organization_id,
-  };
+  } as CompetitionFormat;
 }
 
 describe("competition results url helpers", () => {

@@ -53,7 +53,7 @@ function values_equal(a: unknown, b: unknown): boolean {
 function strip_convex_fields(
   record: Record<string, unknown>,
 ): Record<string, unknown> {
-  const result: Record<string, unknown> = {};
+  const result =  {} as Record<string, unknown>;
   for (const [key, value] of Object.entries(record)) {
     if (key !== "_id" && key !== "_creationTime") {
       result[key] = value;

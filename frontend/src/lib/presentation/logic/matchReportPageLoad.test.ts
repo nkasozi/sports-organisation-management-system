@@ -7,6 +7,7 @@ import type { Official } from "$lib/core/entities/Official";
 import type { Sport } from "$lib/core/entities/Sport";
 import type { Team } from "$lib/core/entities/Team";
 import type { Venue } from "$lib/core/entities/Venue";
+import type { ScalarInput } from "$lib/core/types/DomainScalars";
 import {
   create_failure_result,
   create_success_result,
@@ -17,7 +18,7 @@ import {
   refresh_match_report_fixture_data,
 } from "./matchReportPageLoad";
 
-function create_fixture(overrides: Partial<Fixture> = {}): Fixture {
+function create_fixture(overrides: Partial<ScalarInput<Fixture>> = {}): Fixture {
   return {
     id: "fixture_1",
     organization_id: "org_1",
@@ -48,10 +49,10 @@ function create_fixture(overrides: Partial<Fixture> = {}): Fixture {
     created_at: "2026-04-01T00:00:00Z",
     updated_at: "2026-04-01T00:00:00Z",
     ...overrides,
-  };
+  } as unknown as Fixture;
 }
 
-function create_team(overrides: Partial<Team> = {}): Team {
+function create_team(overrides: Partial<ScalarInput<Team>> = {}): Team {
   return {
     id: "team_1",
     name: "Lions",
@@ -72,11 +73,11 @@ function create_team(overrides: Partial<Team> = {}): Team {
     created_at: "2026-04-01T00:00:00Z",
     updated_at: "2026-04-01T00:00:00Z",
     ...overrides,
-  };
+  } as unknown as Team;
 }
 
 function create_lineup_player(
-  overrides: Partial<LineupPlayer> = {},
+  overrides: Partial<ScalarInput<LineupPlayer>> = {},
 ): LineupPlayer {
   return {
     id: "player_1",
@@ -88,10 +89,12 @@ function create_lineup_player(
     is_substitute: false,
     time_on: "present_at_start",
     ...overrides,
-  };
+  } as unknown as LineupPlayer;
 }
 
-function create_competition(overrides: Partial<Competition> = {}): Competition {
+function create_competition(
+  overrides: Partial<ScalarInput<Competition>> = {},
+): Competition {
   return {
     id: "competition_1",
     name: "National League",
@@ -115,10 +118,10 @@ function create_competition(overrides: Partial<Competition> = {}): Competition {
     created_at: "2026-04-01T00:00:00Z",
     updated_at: "2026-04-01T00:00:00Z",
     ...overrides,
-  };
+  } as unknown as Competition;
 }
 
-function create_sport(overrides: Partial<Sport> = {}): Sport {
+function create_sport(overrides: Partial<ScalarInput<Sport>> = {}): Sport {
   return {
     id: "sport_1",
     name: "Football",
@@ -138,10 +141,10 @@ function create_sport(overrides: Partial<Sport> = {}): Sport {
     created_at: "2026-04-01T00:00:00Z",
     updated_at: "2026-04-01T00:00:00Z",
     ...overrides,
-  } as Sport;
+  } as unknown as Sport;
 }
 
-function create_venue(overrides: Partial<Venue> = {}): Venue {
+function create_venue(overrides: Partial<ScalarInput<Venue>> = {}): Venue {
   return {
     id: "venue_1",
     name: "Main Stadium",
@@ -159,10 +162,12 @@ function create_venue(overrides: Partial<Venue> = {}): Venue {
     created_at: "2026-04-01T00:00:00Z",
     updated_at: "2026-04-01T00:00:00Z",
     ...overrides,
-  } as Venue;
+  } as unknown as Venue;
 }
 
-function create_official(overrides: Partial<Official> = {}): Official {
+function create_official(
+  overrides: Partial<ScalarInput<Official>> = {},
+): Official {
   return {
     id: "official_1",
     first_name: "Alex",
@@ -182,7 +187,7 @@ function create_official(overrides: Partial<Official> = {}): Official {
     created_at: "2026-04-01T00:00:00Z",
     updated_at: "2026-04-01T00:00:00Z",
     ...overrides,
-  } as Official;
+  } as unknown as Official;
 }
 
 describe("matchReportPageLoad", () => {

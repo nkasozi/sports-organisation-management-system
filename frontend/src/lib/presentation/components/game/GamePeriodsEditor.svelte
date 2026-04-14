@@ -2,6 +2,7 @@
   import { createEventDispatcher } from "svelte";
 
   import type { SportGamePeriod } from "$lib/core/entities/Sport";
+  import type { ScalarInput } from "$lib/core/types/DomainScalars";
   import {
     append_game_break,
     append_game_period,
@@ -17,15 +18,17 @@
 
   import GamePeriodsEditorRow from "./GamePeriodsEditorRow.svelte";
 
-  export let periods: SportGamePeriod[] = [];
+  type EditableSportGamePeriod = ScalarInput<SportGamePeriod>;
+
+  export let periods: EditableSportGamePeriod[] = [];
   export let readonly: boolean = false;
   export let show_totals: boolean = true;
 
   const dispatch = createEventDispatcher<{
-    change: SportGamePeriod[];
+    change: EditableSportGamePeriod[];
   }>();
 
-  function apply_change(next_periods: SportGamePeriod[]): void {
+  function apply_change(next_periods: EditableSportGamePeriod[]): void {
     periods = next_periods;
     dispatch("change", periods);
   }

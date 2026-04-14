@@ -10,6 +10,7 @@ import type {
 } from "$lib/core/interfaces/ports";
 import type { QueryOptions } from "$lib/core/interfaces/ports";
 import type { GenderUseCasesPort } from "$lib/core/interfaces/ports";
+import type { ScalarValueInput } from "$lib/core/types/DomainScalars";
 import type { AsyncResult, PaginatedAsyncResult } from "$lib/core/types/Result";
 import { create_failure_result } from "$lib/core/types/Result";
 
@@ -28,7 +29,10 @@ export function create_gender_use_cases(
       return repository.create(input);
     },
 
-    async update(id: string, input: UpdateGenderInput): AsyncResult<Gender> {
+    async update(
+      id: ScalarValueInput<Gender["id"]>,
+      input: UpdateGenderInput,
+    ): AsyncResult<Gender> {
       if (!id || id.trim() === "") {
         return create_failure_result("Gender ID is required");
       }
@@ -51,14 +55,16 @@ export function create_gender_use_cases(
       return repository.update(id, input);
     },
 
-    async delete(id: string): AsyncResult<boolean> {
+    async delete(id: ScalarValueInput<Gender["id"]>): AsyncResult<boolean> {
       if (!id || id.trim() === "") {
         return create_failure_result("Gender ID is required");
       }
       return repository.delete_by_id(id);
     },
 
-    async get_by_id(id: string): AsyncResult<Gender> {
+    async get_by_id(
+      id: ScalarValueInput<Gender["id"]>,
+    ): AsyncResult<Gender> {
       if (!id || id.trim() === "") {
         return create_failure_result("Gender ID is required");
       }
@@ -76,7 +82,7 @@ export function create_gender_use_cases(
       }
 
       const gender_filter: GenderFilter = {
-        status: filter.status,
+        status: filter.status as GenderFilter["status"],
       };
 
       return repository.find_all(gender_filter, query_options);

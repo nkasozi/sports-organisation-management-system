@@ -8,6 +8,7 @@ import {
   type ICalEvent,
   type ICalFeedConfig,
 } from "$lib/core/services/ICalService";
+import { parse_calendar_token_value } from "$lib/core/types/DomainScalars";
 import {
   get_repository_container,
   get_use_cases_container,
@@ -15,33 +16,35 @@ import {
 
 import type { RequestHandler } from "./$types";
 
-const VALID_TOKEN_PATTERN = /^[a-zA-Z0-9_-]{1,255}$/;
-
 export const GET: RequestHandler = async ({ params }) => {
   const token_with_extension = params.token;
-  const token = token_with_extension.replace(/\.ics$/, "");
+  const token_result = parse_calendar_token_value(
+    token_with_extension.replace(/\.ics$/, ""),
+  );
 
-  if (!VALID_TOKEN_PATTERN.test(token)) {
+  if (!token_result.success) {
     return new Response("Invalid token format", {
       status: 400,
       headers: { "Content-Type": "text/plain" },
     });
   }
 
+  const token = token_result.data;
+
   const use_cases = get_use_cases_container();
   const repositories = get_repository_container();
 
-  const token_result =
+  const calendar_token_result =
     await use_cases.calendar_token_use_cases.get_feed_by_token(token);
 
-  if (!token_result.success || !token_result.data) {
+  if (!calendar_token_result.success || !calendar_token_result.data) {
     return new Response("Calendar feed not found or inactive", {
       status: 404,
       headers: { "Content-Type": "text/plain" },
     });
   }
 
-  const calendar_token = token_result.data;
+  const calendar_token = calendar_token_result.data;
 
   if (is_calendar_token_expired(calendar_token.expires_at)) {
     console.log("[Calendar] Expired token access attempt", {

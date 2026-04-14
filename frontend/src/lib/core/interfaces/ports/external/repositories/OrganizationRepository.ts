@@ -8,7 +8,7 @@ import type { FilterableRepository, QueryOptions } from "./Repository";
 
 export interface OrganizationFilter {
   name_contains?: string;
-  sport_id?: string;
+  sport_id?: Organization["sport_id"];
   status?: Organization["status"];
 }
 

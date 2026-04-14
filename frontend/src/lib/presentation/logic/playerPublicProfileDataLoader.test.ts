@@ -7,11 +7,21 @@ import type { PlayerProfile } from "$lib/core/entities/PlayerProfile";
 import type { PlayerTeamMembership } from "$lib/core/entities/PlayerTeamMembership";
 import type { ProfileLink } from "$lib/core/entities/ProfileLink";
 import type { Team } from "$lib/core/entities/Team";
+import type { ScalarInput } from "$lib/core/types/DomainScalars";
 
 import { load_player_public_profile_page_data } from "./playerPublicProfileDataLoader";
 
+type EditableFixture = ScalarInput<Fixture>;
+type EditableGameEvent = ScalarInput<GameEvent>;
+type EditablePlayer = ScalarInput<Player>;
+type EditablePlayerPosition = ScalarInput<PlayerPosition>;
+type EditablePlayerProfile = ScalarInput<PlayerProfile>;
+type EditablePlayerTeamMembership = ScalarInput<PlayerTeamMembership>;
+type EditableProfileLink = ScalarInput<ProfileLink>;
+type EditableTeam = ScalarInput<Team>;
+
 function create_player_profile(
-  overrides: Partial<PlayerProfile> = {},
+  overrides: Partial<EditablePlayerProfile> = {},
 ): PlayerProfile {
   return {
     id: "profile_1",
@@ -24,10 +34,12 @@ function create_player_profile(
     created_at: "2026-04-01T00:00:00Z",
     updated_at: "2026-04-01T00:00:00Z",
     ...overrides,
-  };
+  } as unknown as PlayerProfile;
 }
 
-function create_player(overrides: Partial<Player> = {}): Player {
+function create_player(
+  overrides: Partial<EditablePlayer> = {},
+): Player {
   return {
     id: "player_1",
     first_name: "Jane",
@@ -49,11 +61,11 @@ function create_player(overrides: Partial<Player> = {}): Player {
     created_at: "2026-04-01T00:00:00Z",
     updated_at: "2026-04-01T00:00:00Z",
     ...overrides,
-  };
+  } as unknown as Player;
 }
 
 function create_position(
-  overrides: Partial<PlayerPosition> = {},
+  overrides: Partial<EditablePlayerPosition> = {},
 ): PlayerPosition {
   return {
     id: "position_1",
@@ -69,10 +81,10 @@ function create_position(
     created_at: "2026-04-01T00:00:00Z",
     updated_at: "2026-04-01T00:00:00Z",
     ...overrides,
-  };
+  } as unknown as PlayerPosition;
 }
 
-function create_team(overrides: Partial<Team> = {}): Team {
+function create_team(overrides: Partial<EditableTeam> = {}): Team {
   return {
     id: "team_1",
     name: "Kampala Queens",
@@ -93,11 +105,11 @@ function create_team(overrides: Partial<Team> = {}): Team {
     created_at: "2026-04-01T00:00:00Z",
     updated_at: "2026-04-01T00:00:00Z",
     ...overrides,
-  };
+  } as unknown as Team;
 }
 
 function create_membership(
-  overrides: Partial<PlayerTeamMembership> = {},
+  overrides: Partial<EditablePlayerTeamMembership> = {},
 ): PlayerTeamMembership {
   return {
     id: "membership_1",
@@ -110,10 +122,12 @@ function create_membership(
     created_at: "2026-04-01T00:00:00Z",
     updated_at: "2026-04-01T00:00:00Z",
     ...overrides,
-  };
+  } as unknown as PlayerTeamMembership;
 }
 
-function create_game_event(overrides: Partial<GameEvent> = {}): GameEvent {
+function create_game_event(
+  overrides: Partial<EditableGameEvent> = {},
+): GameEvent {
   return {
     id: "event_1",
     event_type: "goal",
@@ -125,10 +139,10 @@ function create_game_event(overrides: Partial<GameEvent> = {}): GameEvent {
     description: "",
     recorded_at: "2026-04-01T00:00:00Z",
     ...overrides,
-  };
+  } as unknown as GameEvent;
 }
 
-function create_fixture(overrides: Partial<Fixture> = {}): Fixture {
+function create_fixture(overrides: Partial<EditableFixture> = {}): Fixture {
   return {
     id: "fixture_1",
     organization_id: "org_1",
@@ -153,11 +167,11 @@ function create_fixture(overrides: Partial<Fixture> = {}): Fixture {
     created_at: "2026-04-01T00:00:00Z",
     updated_at: "2026-04-01T00:00:00Z",
     ...overrides,
-  };
+  } as unknown as Fixture;
 }
 
 function create_profile_link(
-  overrides: Partial<ProfileLink> = {},
+  overrides: Partial<EditableProfileLink> = {},
 ): ProfileLink {
   return {
     id: "link_1",
@@ -170,7 +184,7 @@ function create_profile_link(
     created_at: "2026-04-01T00:00:00Z",
     updated_at: "2026-04-01T00:00:00Z",
     ...overrides,
-  };
+  } as unknown as ProfileLink;
 }
 
 describe("playerPublicProfileDataLoader", () => {

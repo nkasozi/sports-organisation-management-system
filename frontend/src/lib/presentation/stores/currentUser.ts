@@ -2,24 +2,27 @@ import { derived, get, writable } from "svelte/store";
 
 import { browser } from "$app/environment";
 import type { SystemUser, SystemUserRole } from "$lib/core/entities/SystemUser";
+import type { ScalarInput } from "$lib/core/types/DomainScalars";
 import { get_app_settings_storage } from "$lib/infrastructure/container";
 import {
   type EntityUpdatedPayload,
   EventBus,
 } from "$lib/infrastructure/events/EventBus";
 
-interface CurrentUser {
-  id: string;
-  email: string;
-  first_name: string;
-  last_name: string;
+type CurrentUser = ScalarInput<{
+  id: SystemUser["id"];
+  email: SystemUser["email"];
+  first_name: SystemUser["first_name"];
+  last_name: SystemUser["last_name"];
   role: SystemUserRole;
   profile_picture_base64?: string;
-}
+}>;
+
+type StoredCurrentUser = CurrentUser;
 
 const storage_key = "sports-org-current-user";
 
-const REQUIRED_USER_FIELDS: ReadonlyArray<keyof CurrentUser> = [
+const REQUIRED_USER_FIELDS: ReadonlyArray<keyof StoredCurrentUser> = [
   "id",
   "email",
   "first_name",
@@ -27,7 +30,7 @@ const REQUIRED_USER_FIELDS: ReadonlyArray<keyof CurrentUser> = [
   "role",
 ];
 
-function validate_stored_user(parsed: unknown): parsed is CurrentUser {
+function validate_stored_user(parsed: unknown): parsed is StoredCurrentUser {
   if (typeof parsed !== "object" || parsed === null) return false;
   const record = parsed as Record<string, unknown>;
   return REQUIRED_USER_FIELDS.every(
@@ -48,7 +51,7 @@ function create_current_user_store() {
       try {
         const parsed: unknown = JSON.parse(stored);
         if (!validate_stored_user(parsed)) return;
-        set(parsed);
+        set(parsed as CurrentUser);
       } catch (error) {
         console.warn("[CurrentUser] Failed to parse stored user data", {
           event: "stored_user_parse_failed",
@@ -57,7 +60,7 @@ function create_current_user_store() {
       }
     },
 
-    set_user: async (user: SystemUser): Promise<void> => {
+    set_user: async (user: ScalarInput<SystemUser>): Promise<void> => {
       const current_user: CurrentUser = {
         id: user.id,
         email: user.email,
@@ -104,9 +107,12 @@ function create_current_user_store() {
       if (!user) return;
       const updated: CurrentUser = {
         id: user.id,
-        email: (entity_data.email as string) ?? user.email,
-        first_name: (entity_data.first_name as string) ?? user.first_name,
-        last_name: (entity_data.last_name as string) ?? user.last_name,
+        email: (entity_data.email as CurrentUser["email"]) ?? user.email,
+        first_name:
+          (entity_data.first_name as CurrentUser["first_name"]) ??
+          user.first_name,
+        last_name:
+          (entity_data.last_name as CurrentUser["last_name"]) ?? user.last_name,
         role: (entity_data.role as SystemUserRole) ?? user.role,
         profile_picture_base64:
           (entity_data.profile_picture_base64 as string) ??
@@ -121,7 +127,7 @@ function create_current_user_store() {
       set(updated);
     },
 
-    get_current_user_id: (): string | null => {
+    get_current_user_id: (): CurrentUser["id"] | null => {
       const user = get({ subscribe });
       return user?.id ?? null;
     },

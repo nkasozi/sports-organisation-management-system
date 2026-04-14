@@ -5,6 +5,7 @@ import type {
   SystemUserRole,
   UpdateSystemUserInput,
 } from "../../../../entities/SystemUser";
+import type { ScalarValueInput } from "../../../../types/DomainScalars";
 import type { PaginatedAsyncResult } from "../../../../types/Result";
 import type { FilterableRepository, QueryOptions } from "./Repository";
 
@@ -13,7 +14,7 @@ export interface SystemUserFilter {
   name_contains?: string;
   role?: SystemUserRole;
   status?: EntityStatus;
-  organization_id?: string;
+  organization_id?: SystemUser["organization_id"];
 }
 
 export interface SystemUserRepository extends FilterableRepository<
@@ -22,7 +23,9 @@ export interface SystemUserRepository extends FilterableRepository<
   UpdateSystemUserInput,
   SystemUserFilter
 > {
-  find_by_email(email: string): PaginatedAsyncResult<SystemUser>;
+  find_by_email(
+    email: ScalarValueInput<SystemUser["email"]>,
+  ): PaginatedAsyncResult<SystemUser>;
   find_by_role(
     role: SystemUserRole,
     options?: QueryOptions,

@@ -6,6 +6,7 @@
         FormatType,
         LeagueConfig,
     } from "$lib/core/entities/CompetitionFormat";
+    import type { ScalarInput } from "$lib/core/types/DomainScalars";
     import { STAGE_TYPE_OPTIONS } from "$lib/core/entities/CompetitionStage";
     import {
         add_stage_template,
@@ -15,14 +16,16 @@
         update_stage_template_at_index,
     } from "$lib/presentation/logic/competitionFormatStageTemplateLogic";
 
-    export let stage_templates: CompetitionFormatStageTemplate[] = [];
+    type EditableCompetitionFormatStageTemplate = ScalarInput<CompetitionFormatStageTemplate>;
+
+    export let stage_templates: EditableCompetitionFormatStageTemplate[] = [];
     export let format_type: FormatType = "league";
     export let league_config: LeagueConfig | null = null;
     export let disabled: boolean = false;
     export let error: string = "";
 
     const dispatch = createEventDispatcher<{
-        change: { stage_templates: CompetitionFormatStageTemplate[] };
+        change: { stage_templates: EditableCompetitionFormatStageTemplate[] };
     }>();
 
     $: displayed_stage_templates =
@@ -31,7 +34,7 @@
             : build_stage_template_defaults(format_type, league_config);
 
     function emit_change(
-        updated_stage_templates: CompetitionFormatStageTemplate[],
+        updated_stage_templates: EditableCompetitionFormatStageTemplate[],
     ): boolean {
         dispatch("change", { stage_templates: updated_stage_templates });
         return true;

@@ -1,12 +1,17 @@
+import type {
+  EntityId,
+  IsoDateTimeString,
+  ScalarInput,
+} from "../types/DomainScalars";
 import type { BaseEntity } from "./BaseEntity";
 
 export type RaterRole = "officials_manager" | "team_manager" | (string & {});
 
 export interface OfficialPerformanceRating extends BaseEntity {
-  organization_id: string;
-  official_id: string;
-  fixture_id: string;
-  rater_user_id: string;
+  organization_id: EntityId;
+  official_id: EntityId;
+  fixture_id: EntityId;
+  rater_user_id: EntityId;
   rater_role: RaterRole;
   overall: number;
   decision_accuracy: number;
@@ -14,7 +19,7 @@ export interface OfficialPerformanceRating extends BaseEntity {
   communication: number;
   fitness: number;
   notes: string;
-  submitted_at: string;
+  submitted_at: IsoDateTimeString;
 }
 
 export interface RatingDimensions {
@@ -26,7 +31,7 @@ export interface RatingDimensions {
 }
 
 export type CreateOfficialPerformanceRatingInput = Omit<
-  OfficialPerformanceRating,
+  ScalarInput<OfficialPerformanceRating>,
   "id" | "created_at" | "updated_at"
 >;
 
@@ -34,7 +39,7 @@ export type UpdateOfficialPerformanceRatingInput =
   Partial<CreateOfficialPerformanceRatingInput>;
 
 export interface WeightedOfficialSummary {
-  official_id: string;
+  official_id: EntityId;
   total_weighted_score: number;
   total_weight: number;
   rating_count: number;
@@ -123,9 +128,9 @@ export function aggregate_weighted_ratings(
 }
 
 export function create_empty_rating_input(
-  organization_id: string = "",
-  official_id: string = "",
-  fixture_id: string = "",
+  organization_id: CreateOfficialPerformanceRatingInput["organization_id"] = "",
+  official_id: CreateOfficialPerformanceRatingInput["official_id"] = "",
+  fixture_id: CreateOfficialPerformanceRatingInput["fixture_id"] = "",
 ): CreateOfficialPerformanceRatingInput {
   return {
     organization_id,

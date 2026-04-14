@@ -2,11 +2,14 @@ export type {
   AuthenticationPort,
   AuthToken,
   AuthTokenPayload,
+  AuthTokenPayloadCore,
   AuthVerificationResult,
   UserRole,
 } from "./external/iam/AuthenticationPort";
 export {
   ANY_VALUE,
+  create_auth_token_payload,
+  create_auth_token_payload_core,
   USER_ROLE_DISPLAY_NAMES,
 } from "./external/iam/AuthenticationPort";
 export type {

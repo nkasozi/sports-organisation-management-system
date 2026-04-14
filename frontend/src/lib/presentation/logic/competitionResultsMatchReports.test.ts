@@ -71,7 +71,7 @@ describe("competitionResultsMatchReports", () => {
       status: "active",
       created_at: "2024-01-01T00:00:00.000Z",
       updated_at: "2024-01-01T00:00:00.000Z",
-    };
+    } as Team;
   }
 
   const fixture = {

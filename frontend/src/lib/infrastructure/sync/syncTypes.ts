@@ -1,6 +1,13 @@
 import type { SharedEntityType } from "$convex/shared_permission_definitions";
 import type { SyncDirection, UserRole } from "$lib/core/interfaces/ports";
 import { check_entity_permission } from "$lib/core/interfaces/ports";
+import type {
+  EntityId,
+  IsoDateTimeString,
+  ScalarInput,
+} from "$lib/core/types/DomainScalars";
+
+import type { ConflictRecord, ConflictResolution } from "./conflictTypes";
 
 export type { SyncDirection };
 export type SyncStatus = "idle" | "syncing" | "success" | "error" | "conflict";
@@ -17,13 +24,13 @@ export interface SyncProgress {
 }
 
 export interface ConflictFromServer {
-  local_id: string;
+  local_id: ScalarInput<ConflictRecord>["local_id"];
   local_data: Record<string, unknown>;
   local_version: number;
   remote_data: Record<string, unknown>;
   remote_version: number;
-  remote_updated_at: string;
-  remote_updated_by: string | null;
+  remote_updated_at: ScalarInput<ConflictRecord>["remote_updated_at"];
+  remote_updated_by: ScalarInput<ConflictRecord>["remote_updated_by"];
 }
 
 export interface SyncResult {
@@ -45,8 +52,8 @@ export interface SyncConfig {
 
 export interface ConvexRecord {
   _id: string;
-  local_id: string;
-  synced_at: string;
+  local_id: EntityId;
+  synced_at: IsoDateTimeString;
   version: number;
   [key: string]: unknown;
 }
@@ -58,15 +65,15 @@ export interface ConvexClient {
 
 export interface RemoteTableState {
   record_count: number;
-  latest_modified_at: string | null;
+  latest_modified_at: ConvexRecord["synced_at"] | null;
 }
 
 export interface ConflictResolutionRequest {
   table_name: string;
-  local_id: string;
+  local_id: ScalarInput<ConflictRecord>["local_id"];
   resolved_data: Record<string, unknown>;
   resolution_action: "keep_local" | "keep_remote" | "merge";
-  resolved_by?: string;
+  resolved_by?: ScalarInput<ConflictResolution>["resolved_by"];
 }
 
 export const TABLE_NAMES = [
@@ -148,7 +155,7 @@ const TABLE_NAME_TO_ENTITY_TYPE: Partial<Record<TableName, SharedEntityType>> =
     official_performance_ratings: "officialperformancerating",
   };
 
-export const EPOCH_TIMESTAMP = "1970-01-01T00:00:00.000Z";
+export const EPOCH_TIMESTAMP = "1970-01-01T00:00:00.000Z" as IsoDateTimeString;
 
 function role_can_push_table(role: UserRole, table_name: TableName): boolean {
   const entity_type = TABLE_NAME_TO_ENTITY_TYPE[table_name];

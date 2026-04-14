@@ -12,7 +12,7 @@ import {
 describe("Qualification Entity", () => {
   describe("validate_qualification_input", () => {
     it("should return no errors for valid input", () => {
-      const valid_input: CreateQualificationInput = {
+      const valid_input =  {
         holder_type: "official",
         holder_id: "official-123",
         certification_name: "FIFA Referee License",
@@ -24,7 +24,7 @@ describe("Qualification Entity", () => {
         specializations: ["VAR", "Assistant Referee"],
         notes: "",
         status: "active",
-      };
+      } as CreateQualificationInput;
 
       const errors = validate_qualification_input(valid_input);
       expect(errors).toHaveLength(0);

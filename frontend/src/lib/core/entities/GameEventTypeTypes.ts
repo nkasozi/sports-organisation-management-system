@@ -1,3 +1,4 @@
+import type { EntityId, Name, ScalarInput } from "../types/DomainScalars";
 import type { BaseEntity, EntityStatus } from "./BaseEntity";
 
 export type EventCategory =
@@ -8,7 +9,7 @@ export type EventCategory =
   | "other";
 
 export interface GameEventType extends BaseEntity {
-  name: string;
+  name: Name;
   code: string;
   description: string;
   icon: string;
@@ -17,19 +18,19 @@ export interface GameEventType extends BaseEntity {
   affects_score: boolean;
   requires_player: boolean;
   display_order: number;
-  sport_id: string | null;
+  sport_id: EntityId | null;
   status: EntityStatus;
-  organization_id: string;
+  organization_id: EntityId;
 }
 
 export type CreateGameEventTypeInput = Omit<
-  GameEventType,
+  ScalarInput<GameEventType>,
   "id" | "created_at" | "updated_at"
 >;
 export type UpdateGameEventTypeInput = Partial<CreateGameEventTypeInput>;
 
 function create_empty_game_event_type_input(
-  sport_id: string | null = null,
+  sport_id: CreateGameEventTypeInput["sport_id"] = null,
 ): CreateGameEventTypeInput {
   return {
     name: "",

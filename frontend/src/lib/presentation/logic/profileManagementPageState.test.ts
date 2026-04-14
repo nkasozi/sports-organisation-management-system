@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { BaseEntity } from "$lib/core/entities/BaseEntity";
+import type { ScalarInput } from "$lib/core/types/DomainScalars";
 import { ANY_VALUE, type UserScopeProfile } from "$lib/core/interfaces/ports";
 
 import {
@@ -15,29 +16,29 @@ import {
 } from "./profileManagementPageState";
 
 function create_scope_profile(
-  overrides: Partial<UserScopeProfile> = {},
+  overrides: Partial<ScalarInput<UserScopeProfile>> = {},
 ): UserScopeProfile {
   return {
     organization_id: "org_1",
     team_id: "team_1",
     player_id: "player_1",
     ...overrides,
-  };
+  } as UserScopeProfile;
 }
 
 function create_related_entity(
-  overrides: Partial<BaseEntity> = {},
+  overrides: Partial<ScalarInput<BaseEntity>> = {},
 ): BaseEntity {
   return {
     id: "related_1",
     created_at: "2026-01-01T00:00:00Z",
     updated_at: "2026-01-01T00:00:00Z",
     ...overrides,
-  };
+  } as BaseEntity;
 }
 
 function create_profile_entity(
-  overrides: Partial<ProfileManagementEntity> = {},
+  overrides: Partial<ScalarInput<ProfileManagementEntity>> = {},
 ): ProfileManagementEntity {
   return {
     id: "profile_1",
@@ -47,7 +48,7 @@ function create_profile_entity(
     created_at: "2026-01-01T00:00:00Z",
     updated_at: "2026-01-01T00:00:00Z",
     ...overrides,
-  };
+  } as ProfileManagementEntity;
 }
 
 describe("profileManagementPageState", () => {

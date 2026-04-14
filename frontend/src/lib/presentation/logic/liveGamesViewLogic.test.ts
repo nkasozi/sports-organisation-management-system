@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { Fixture } from "$lib/core/entities/Fixture";
+import type { ScalarInput } from "$lib/core/types/DomainScalars";
 
 import {
   get_live_game_check_class,
@@ -10,7 +11,7 @@ import {
   get_live_game_status_badge_class,
 } from "./liveGamesViewLogic";
 
-function create_fixture(overrides: Partial<Fixture> = {}): Fixture {
+function create_fixture(overrides: Partial<ScalarInput<Fixture>> = {}): Fixture {
   return {
     id: "fixture_1",
     organization_id: "org_1",
@@ -23,7 +24,7 @@ function create_fixture(overrides: Partial<Fixture> = {}): Fixture {
     created_at: "2026-04-01T00:00:00Z",
     updated_at: "2026-04-01T00:00:00Z",
     ...overrides,
-  } as Fixture;
+  } as unknown as Fixture;
 }
 
 describe("liveGamesViewLogic", () => {

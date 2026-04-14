@@ -5,7 +5,7 @@ import {
   SEED_STAGE_IDS,
 } from "./seedIds";
 
-export function create_seed_competition_stages(): CompetitionStage[] {
+export function create_seed_competition_stages(): import("$lib/core/types/DomainScalars").ScalarInput<CompetitionStage>[] {
   const now = generate_current_timestamp();
 
   return [

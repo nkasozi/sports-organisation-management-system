@@ -1,3 +1,4 @@
+import type { EntityId, Name, ScalarInput } from "../types/DomainScalars";
 import type { BaseEntity, EntityStatus } from "./BaseEntity";
 import type { FormatType, LeagueConfig } from "./CompetitionFormat";
 import { FORMAT_TYPE } from "./StatusConstants";
@@ -10,15 +11,15 @@ export type StageType =
   | "custom";
 
 export interface CompetitionStage extends BaseEntity {
-  competition_id: string;
-  name: string;
+  competition_id: EntityId;
+  name: Name;
   stage_type: StageType;
   stage_order: number;
   status: EntityStatus;
 }
 
 export type CreateCompetitionStageInput = Omit<
-  CompetitionStage,
+  ScalarInput<CompetitionStage>,
   "id" | "created_at" | "updated_at"
 >;
 
@@ -38,7 +39,7 @@ export function get_stage_type_label(stage_type: StageType): string {
 }
 
 export function create_empty_competition_stage_input(
-  competition_id: string,
+  competition_id: CreateCompetitionStageInput["competition_id"],
 ): CreateCompetitionStageInput {
   return {
     competition_id,
@@ -72,7 +73,7 @@ export function validate_competition_stage_input(
 export function create_default_stage_templates(
   format_type: FormatType,
   league_config?: LeagueConfig,
-): CreateCompetitionStageInput[] {
+): import("$lib/core/types/DomainScalars").ScalarInput<CreateCompetitionStageInput>[] {
   switch (format_type) {
     case FORMAT_TYPE.LEAGUE:
       return build_league_templates(league_config);
@@ -125,7 +126,7 @@ function build_league_templates(
 }
 
 function build_template(
-  name: string,
+  name: CreateCompetitionStageInput["name"],
   stage_type: StageType,
   stage_order: number,
 ): CreateCompetitionStageInput {

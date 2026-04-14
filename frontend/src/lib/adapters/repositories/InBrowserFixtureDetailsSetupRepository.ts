@@ -36,11 +36,11 @@ class InBrowserFixtureDetailsSetupRepository
 
   protected create_entity_from_input(
     input: CreateFixtureDetailsSetupInput,
-    id: string,
+    id: FixtureDetailsSetup["id"],
     timestamps: Pick<BaseEntity, "created_at" | "updated_at">,
   ): FixtureDetailsSetup {
     return {
-      id,
+      id: id as FixtureDetailsSetup["id"],
       ...timestamps,
       organization_id: input.organization_id,
       fixture_id: input.fixture_id,
@@ -51,7 +51,7 @@ class InBrowserFixtureDetailsSetupRepository
       assignment_notes: input.assignment_notes || "",
       confirmation_status: input.confirmation_status || TRANSFER_STATUS.PENDING,
       status: input.status || "active",
-    };
+    } as FixtureDetailsSetup;
   }
 
   protected apply_updates_to_entity(
@@ -61,7 +61,7 @@ class InBrowserFixtureDetailsSetupRepository
     return {
       ...entity,
       ...updates,
-    };
+    } as FixtureDetailsSetup;
   }
 
   protected apply_entity_filter(
@@ -108,21 +108,21 @@ class InBrowserFixtureDetailsSetupRepository
   }
 
   async find_by_fixture(
-    fixture_id: string,
+    fixture_id: FixtureDetailsSetup["fixture_id"],
     options?: QueryOptions,
   ): PaginatedAsyncResult<FixtureDetailsSetup> {
     return this.find_all({ fixture_id }, options);
   }
 
   async find_by_official(
-    official_id: string,
+    official_id: FixtureDetailsSetup["assigned_officials"][number]["official_id"],
     options?: QueryOptions,
   ): PaginatedAsyncResult<FixtureDetailsSetup> {
     return this.find_all({ official_id }, options);
   }
 }
 
-function create_default_fixture_details_setups(): FixtureDetailsSetup[] {
+function create_default_fixture_details_setups(): import("$lib/core/types/DomainScalars").ScalarInput<FixtureDetailsSetup>[] {
   return [];
 }
 

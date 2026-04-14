@@ -4,6 +4,7 @@ import type {
   GameEventType,
   UpdateGameEventTypeInput,
 } from "../entities/GameEventType";
+import type { ScalarValueInput } from "../types/DomainScalars";
 import type {
   GameEventTypeFilter,
   GameEventTypeRepository,
@@ -26,7 +27,7 @@ export function create_game_event_type_use_cases(
       return repository.find_all(filter, pagination);
     },
 
-    async get_by_id(id: string): AsyncResult<GameEventType> {
+    async get_by_id(id: GameEventType["id"]): AsyncResult<GameEventType> {
       if (!id || id.trim().length === 0) {
         return create_failure_result("Event type ID is required");
       }
@@ -68,7 +69,7 @@ export function create_game_event_type_use_cases(
     },
 
     async update(
-      id: string,
+      id: GameEventType["id"],
       input: UpdateGameEventTypeInput,
     ): AsyncResult<GameEventType> {
       if (!id || id.trim().length === 0) {
@@ -99,7 +100,7 @@ export function create_game_event_type_use_cases(
       return create_success_result(result.data);
     },
 
-    async delete(id: string): AsyncResult<boolean> {
+    async delete(id: GameEventType["id"]): AsyncResult<boolean> {
       if (!id || id.trim().length === 0) {
         return create_failure_result("Event type ID is required");
       }
@@ -117,7 +118,7 @@ export function create_game_event_type_use_cases(
     },
 
     async list_event_types_for_sport(
-      sport_id: string | null,
+      sport_id: ScalarValueInput<NonNullable<GameEventType["sport_id"]>>,
     ): AsyncResult<GameEventType[]> {
       return await repository.find_by_sport(sport_id);
     },

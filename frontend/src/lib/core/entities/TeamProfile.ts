@@ -1,9 +1,15 @@
+import type {
+  EntityId,
+  Name,
+  ScalarInput,
+  ScalarValueInput,
+} from "../types/DomainScalars";
 import type { BaseEntity, EntityStatus } from "./BaseEntity";
 
 export type ProfileVisibility = "public" | "private";
 
 export interface TeamProfile extends BaseEntity {
-  team_id: string;
+  team_id: EntityId;
   profile_summary: string;
   visibility: ProfileVisibility;
   profile_slug: string;
@@ -12,12 +18,12 @@ export interface TeamProfile extends BaseEntity {
 }
 
 export type CreateTeamProfileInput = Omit<
-  TeamProfile,
+  ScalarInput<TeamProfile>,
   "id" | "created_at" | "updated_at"
 >;
 
 export type UpdateTeamProfileInput = Partial<
-  Omit<TeamProfile, "id" | "created_at" | "updated_at" | "team_id">
+  Omit<ScalarInput<TeamProfile>, "id" | "created_at" | "updated_at" | "team_id">
 >;
 
 export const TEAM_PROFILE_VISIBILITY_OPTIONS = [
@@ -26,7 +32,7 @@ export const TEAM_PROFILE_VISIBILITY_OPTIONS = [
 ];
 
 export function create_empty_team_profile_input(
-  team_id: string = "",
+  team_id: CreateTeamProfileInput["team_id"] = "",
 ): CreateTeamProfileInput {
   return {
     team_id,
@@ -39,8 +45,8 @@ export function create_empty_team_profile_input(
 }
 
 export function generate_team_profile_slug(
-  team_name: string,
-  team_id: string,
+  team_name: ScalarValueInput<Name>,
+  team_id: ScalarValueInput<TeamProfile["team_id"]>,
 ): string {
   const name_part = team_name
     .toLowerCase()

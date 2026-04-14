@@ -68,7 +68,8 @@ export async function auto_generate_live_game_lineup(
     loaded_players.push(result.data);
     return loaded_players;
   }, []);
-  const selected_players: LineupPlayer[] = active_memberships.map(
+  const selected_players: CreateFixtureLineupInput["selected_players"] =
+    active_memberships.map(
     (membership: { player_id: string; jersey_number?: number | null }) => {
       const player = players.find(
         (current_player) => current_player?.id === membership.player_id,

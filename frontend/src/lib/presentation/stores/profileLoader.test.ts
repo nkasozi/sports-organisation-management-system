@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
 import type { SystemUser } from "$lib/core/entities/SystemUser";
+import type { ScalarInput } from "$lib/core/types/DomainScalars";
 import type {
   OrganizationRepository,
   SystemUserRepository,
@@ -19,7 +20,7 @@ import {
 } from "./profileLoader";
 
 function create_test_system_user(
-  overrides: Partial<SystemUser> = {},
+  overrides: Partial<ScalarInput<SystemUser>> = {},
 ): SystemUser {
   return {
     id: "usr_test_1",
@@ -33,7 +34,7 @@ function create_test_system_user(
     created_at: "2024-01-01T00:00:00Z",
     updated_at: "2024-01-01T00:00:00Z",
     ...overrides,
-  };
+  } as SystemUser;
 }
 
 function create_mock_system_user_repository(

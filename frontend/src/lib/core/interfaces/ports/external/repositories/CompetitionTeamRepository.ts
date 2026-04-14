@@ -4,6 +4,7 @@ import type {
   CreateCompetitionTeamInput,
   UpdateCompetitionTeamInput,
 } from "../../../../entities/CompetitionTeam";
+import type { ScalarValueInput } from "../../../../types/DomainScalars";
 import type {
   AsyncResult,
   PaginatedAsyncResult,
@@ -11,8 +12,8 @@ import type {
 import type { FilterableRepository, QueryOptions } from "./Repository";
 
 export interface CompetitionTeamFilter {
-  competition_id?: string;
-  team_id?: string;
+  competition_id?: ScalarValueInput<CompetitionTeam["competition_id"]>;
+  team_id?: ScalarValueInput<CompetitionTeam["team_id"]>;
   status?: CompetitionTeamStatus;
 }
 
@@ -23,19 +24,19 @@ export interface CompetitionTeamRepository extends FilterableRepository<
   CompetitionTeamFilter
 > {
   find_by_competition(
-    competition_id: string,
+    competition_id: ScalarValueInput<CompetitionTeam["competition_id"]>,
     options?: QueryOptions,
   ): PaginatedAsyncResult<CompetitionTeam>;
   find_by_team(
-    team_id: string,
+    team_id: ScalarValueInput<CompetitionTeam["team_id"]>,
     options?: QueryOptions,
   ): PaginatedAsyncResult<CompetitionTeam>;
   find_team_in_competition(
-    competition_id: string,
-    team_id: string,
+    competition_id: ScalarValueInput<CompetitionTeam["competition_id"]>,
+    team_id: ScalarValueInput<CompetitionTeam["team_id"]>,
   ): AsyncResult<CompetitionTeam>;
   remove_team_from_competition(
-    competition_id: string,
-    team_id: string,
+    competition_id: ScalarValueInput<CompetitionTeam["competition_id"]>,
+    team_id: ScalarValueInput<CompetitionTeam["team_id"]>,
   ): AsyncResult<boolean>;
 }

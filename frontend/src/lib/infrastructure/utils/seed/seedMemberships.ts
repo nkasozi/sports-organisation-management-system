@@ -7,7 +7,7 @@ import { create_seed_memberships_part5 } from "./seedMemberships5";
 import { create_seed_memberships_part6 } from "./seedMemberships6";
 import { create_seed_memberships_part7 } from "./seedMemberships7";
 
-export function create_seed_player_team_memberships(): PlayerTeamMembership[] {
+export function create_seed_player_team_memberships(): import("$lib/core/types/DomainScalars").ScalarInput<PlayerTeamMembership>[] {
   return [
     ...create_seed_memberships_part1(),
     ...create_seed_memberships_part2(),

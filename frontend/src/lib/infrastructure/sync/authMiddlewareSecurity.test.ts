@@ -17,7 +17,7 @@ function create_mock_context(
         }),
       }),
     },
-  };
+  } as any;
 }
 
 const AUTH_DENIED_MESSAGE = "Access denied";

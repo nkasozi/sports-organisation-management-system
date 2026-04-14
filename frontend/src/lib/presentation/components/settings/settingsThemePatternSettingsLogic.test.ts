@@ -48,7 +48,7 @@ function create_branding_config(
     show_panel_borders: false,
     social_media_links: [],
     ...overrides,
-  };
+  } as BrandingConfigLike;
 }
 
 beforeEach(() => {

@@ -15,7 +15,7 @@ import { create_seed_fixtures_part12 } from "./seedFixtures12";
 export function create_seed_fixtures(
   referee_role_id: string,
   assistant_referee_role_id: string,
-): Fixture[] {
+): import("$lib/core/types/DomainScalars").ScalarInput<Fixture>[] {
   const next_week = new Date();
   next_week.setDate(next_week.getDate() + 7);
   const two_weeks = new Date();

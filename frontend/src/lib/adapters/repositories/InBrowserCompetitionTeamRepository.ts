@@ -44,7 +44,7 @@ export class InBrowserCompetitionTeamRepository
 
   protected create_entity_from_input(
     input: CreateCompetitionTeamInput,
-    id: string,
+    id: CompetitionTeam["id"],
     timestamps: Pick<BaseEntity, "created_at" | "updated_at">,
   ): CompetitionTeam {
     return create_competition_team_with_stats(input, id, timestamps);
@@ -57,7 +57,7 @@ export class InBrowserCompetitionTeamRepository
     const updated_entity = {
       ...entity,
       ...updates,
-    };
+    } as CompetitionTeam;
     if (
       updates.goals_for !== undefined ||
       updates.goals_against !== undefined
@@ -93,22 +93,22 @@ export class InBrowserCompetitionTeamRepository
   }
 
   async find_by_competition(
-    competition_id: string,
+    competition_id: CompetitionTeam["competition_id"],
     options?: QueryOptions,
   ): PaginatedAsyncResult<CompetitionTeam> {
     return this.find_all({ competition_id }, options);
   }
 
   async find_by_team(
-    team_id: string,
+    team_id: CompetitionTeam["team_id"],
     options?: QueryOptions,
   ): PaginatedAsyncResult<CompetitionTeam> {
     return this.find_all({ team_id }, options);
   }
 
   async find_team_in_competition(
-    competition_id: string,
-    team_id: string,
+    competition_id: CompetitionTeam["competition_id"],
+    team_id: CompetitionTeam["team_id"],
   ): AsyncResult<CompetitionTeam> {
     try {
       const all_entities = await this.database.competition_teams.toArray();
@@ -136,8 +136,8 @@ export class InBrowserCompetitionTeamRepository
   }
 
   async remove_team_from_competition(
-    competition_id: string,
-    team_id: string,
+    competition_id: CompetitionTeam["competition_id"],
+    team_id: CompetitionTeam["team_id"],
   ): AsyncResult<boolean> {
     try {
       const all_entities = await this.database.competition_teams.toArray();

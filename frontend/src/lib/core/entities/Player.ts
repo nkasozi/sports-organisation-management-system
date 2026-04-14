@@ -1,3 +1,10 @@
+import type {
+  EmailAddress,
+  EntityId,
+  IsoDateString,
+  Name,
+  ScalarInput,
+} from "../types/DomainScalars";
 import type { BaseEntity } from "./BaseEntity";
 
 export type PlayerStatus = "active" | "injured" | "suspended" | "inactive";
@@ -6,19 +13,19 @@ export const DEFAULT_PLAYER_AVATAR =
   "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='50' fill='%236366f1'/%3E%3Ccircle cx='50' cy='35' r='18' fill='white'/%3E%3Cpath d='M50 55c-22 0-35 12-35 30h70c0-18-13-30-35-30z' fill='white'/%3E%3C/svg%3E";
 
 export interface Player extends BaseEntity {
-  first_name: string;
-  last_name: string;
-  gender_id: string;
-  email: string;
+  first_name: Name;
+  last_name: Name;
+  gender_id: EntityId;
+  email: EmailAddress;
   phone: string;
-  date_of_birth: string;
-  position_id: string;
-  organization_id: string;
+  date_of_birth: IsoDateString;
+  position_id: EntityId;
+  organization_id: EntityId;
   height_cm: number | null;
   weight_kg: number | null;
   nationality: string;
   profile_image_url: string;
-  emergency_contact_name: string;
+  emergency_contact_name: Name;
   emergency_contact_phone: string;
   medical_notes: string;
   status: PlayerStatus;
@@ -41,7 +48,7 @@ export function get_player_initials(player: Player): string {
 }
 
 export type CreatePlayerInput = Omit<
-  Player,
+  ScalarInput<Player>,
   "id" | "created_at" | "updated_at"
 >;
 export type UpdatePlayerInput = Partial<CreatePlayerInput>;
@@ -51,7 +58,7 @@ export function get_player_full_name(player: Player): string {
 }
 
 export function create_empty_player_input(
-  organization_id: string = "",
+  organization_id: CreatePlayerInput["organization_id"] = "",
 ): CreatePlayerInput {
   return {
     first_name: "",

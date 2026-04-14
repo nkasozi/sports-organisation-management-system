@@ -3,13 +3,16 @@ import type {
   FormatType,
   LeagueConfig,
 } from "../../core/entities/CompetitionFormat";
+import type { ScalarInput } from "../../core/types/DomainScalars";
 import type { StageType } from "../../core/entities/CompetitionStage";
 import { create_default_stage_templates } from "../../core/entities/CompetitionStage";
+
+type EditableCompetitionFormatStageTemplate = ScalarInput<CompetitionFormatStageTemplate>;
 
 export function build_stage_template_defaults(
   format_type: FormatType,
   league_config: LeagueConfig | null = null,
-): CompetitionFormatStageTemplate[] {
+): EditableCompetitionFormatStageTemplate[] {
   return create_default_stage_templates(
     format_type,
     league_config ?? undefined,
@@ -22,7 +25,7 @@ export function build_stage_template_defaults(
 
 export function create_empty_stage_template(
   stage_order: number,
-): CompetitionFormatStageTemplate {
+): EditableCompetitionFormatStageTemplate {
   return {
     name: `Stage ${stage_order}`,
     stage_type: "custom",
@@ -31,8 +34,8 @@ export function create_empty_stage_template(
 }
 
 export function add_stage_template(
-  stage_templates: CompetitionFormatStageTemplate[],
-): CompetitionFormatStageTemplate[] {
+  stage_templates: EditableCompetitionFormatStageTemplate[],
+): EditableCompetitionFormatStageTemplate[] {
   return normalize_stage_template_order([
     ...stage_templates,
     create_empty_stage_template(stage_templates.length + 1),
@@ -40,10 +43,10 @@ export function add_stage_template(
 }
 
 export function update_stage_template_at_index(
-  stage_templates: CompetitionFormatStageTemplate[],
+  stage_templates: EditableCompetitionFormatStageTemplate[],
   template_index: number,
-  updates: Partial<CompetitionFormatStageTemplate>,
-): CompetitionFormatStageTemplate[] {
+  updates: Partial<EditableCompetitionFormatStageTemplate>,
+): EditableCompetitionFormatStageTemplate[] {
   return normalize_stage_template_order(
     stage_templates.map((template, index) =>
       index === template_index
@@ -57,17 +60,17 @@ export function update_stage_template_at_index(
 }
 
 export function remove_stage_template_at_index(
-  stage_templates: CompetitionFormatStageTemplate[],
+  stage_templates: EditableCompetitionFormatStageTemplate[],
   template_index: number,
-): CompetitionFormatStageTemplate[] {
+): EditableCompetitionFormatStageTemplate[] {
   return normalize_stage_template_order(
     stage_templates.filter((_, index) => index !== template_index),
   );
 }
 
 export function normalize_stage_template_order(
-  stage_templates: CompetitionFormatStageTemplate[],
-): CompetitionFormatStageTemplate[] {
+  stage_templates: EditableCompetitionFormatStageTemplate[],
+): EditableCompetitionFormatStageTemplate[] {
   return stage_templates.map((template, index) => ({
     name: template.name,
     stage_type: template.stage_type,

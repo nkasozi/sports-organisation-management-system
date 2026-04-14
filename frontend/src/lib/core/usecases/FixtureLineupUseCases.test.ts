@@ -6,6 +6,7 @@ import type {
   LineupPlayer,
 } from "../entities/FixtureLineup";
 import type { FixtureLineupRepository } from "../interfaces/ports";
+import type { ScalarInput } from "../types/DomainScalars";
 import { create_fixture_lineup_use_cases } from "./FixtureLineupUseCases";
 
 function create_mock_repository(): FixtureLineupRepository {
@@ -22,11 +23,11 @@ function create_mock_repository(): FixtureLineupRepository {
     find_by_fixture_and_team: vi.fn(),
     get_lineups_for_fixture: vi.fn(),
     get_lineup_for_team_in_fixture: vi.fn(),
-  };
+  } as FixtureLineupRepository;
 }
 
 function create_test_lineup_player(
-  overrides: Partial<LineupPlayer> = {},
+  overrides: Partial<ScalarInput<LineupPlayer>> = {},
 ): LineupPlayer {
   return {
     id: "player-123",
@@ -37,11 +38,11 @@ function create_test_lineup_player(
     is_captain: false,
     is_substitute: false,
     ...overrides,
-  };
+  } as unknown as LineupPlayer;
 }
 
 function create_test_lineup(
-  overrides: Partial<FixtureLineup> = {},
+  overrides: Partial<ScalarInput<FixtureLineup>> = {},
 ): FixtureLineup {
   return {
     id: "lineup-123",
@@ -56,7 +57,7 @@ function create_test_lineup(
     created_at: "2024-01-01T00:00:00Z",
     updated_at: "2024-01-01T00:00:00Z",
     ...overrides,
-  };
+  } as unknown as FixtureLineup;
 }
 
 function create_valid_input(
@@ -70,7 +71,7 @@ function create_valid_input(
     submitted_by: "coach-123",
     notes: "",
     ...overrides,
-  };
+  } as CreateFixtureLineupInput;
 }
 
 describe("FixtureLineupUseCases", () => {

@@ -1,3 +1,12 @@
+import type { UserRole } from "$lib/core/interfaces/ports";
+import type {
+  EmailAddress,
+  EntityId,
+  EntityScope,
+  IsoDateTimeString,
+  Name,
+} from "$lib/core/types/DomainScalars";
+
 export type EventHandler<T = unknown> = (payload: T) => unknown;
 
 export interface EventSubscription {
@@ -6,10 +15,10 @@ export interface EventSubscription {
 
 export interface EntityEventPayload {
   entity_type: string;
-  entity_id: string;
+  entity_id: EntityId;
   entity_display_name: string;
   entity_data: Record<string, unknown>;
-  timestamp: string;
+  timestamp: IsoDateTimeString;
   user_context?: UserContext;
 }
 
@@ -28,14 +37,14 @@ export interface AccessDeniedPayload {
   data_category: string;
   denial_reason: string;
   context?: string;
-  timestamp: string;
-  user_context?: UserContext & { role: string };
+  timestamp: IsoDateTimeString;
+  user_context?: UserContext & { role: UserRole };
 }
 
 export interface PageViewedPayload {
   page_path: string;
   page_title: string;
-  timestamp: string;
+  timestamp: IsoDateTimeString;
   user_context?: UserContext;
 }
 
@@ -47,8 +56,8 @@ export type EventType =
   | "page_viewed";
 
 export interface UserContext {
-  user_id: string;
-  user_email: string;
-  user_display_name: string;
-  organization_id: string;
+  user_id: EntityId;
+  user_email: EmailAddress;
+  user_display_name: Name;
+  organization_id: EntityScope;
 }

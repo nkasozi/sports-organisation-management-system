@@ -5,6 +5,7 @@ import type { Fixture } from "$lib/core/entities/Fixture";
 import type { Official } from "$lib/core/entities/Official";
 import type { OfficialPerformanceRating } from "$lib/core/entities/OfficialPerformanceRating";
 import type { Organization } from "$lib/core/entities/Organization";
+import type { ScalarInput } from "$lib/core/types/DomainScalars";
 import { ANY_VALUE, type UserScopeProfile } from "$lib/core/interfaces/ports";
 
 import { load_official_leaderboard_page_state } from "./officialLeaderboardPageLoad";
@@ -15,7 +16,7 @@ import {
 } from "./officialLeaderboardPageState";
 
 function create_profile(
-  overrides: Partial<UserScopeProfile> = {},
+  overrides: Partial<ScalarInput<UserScopeProfile>> = {},
 ): UserScopeProfile {
   return {
     user_id: "user_1",
@@ -24,11 +25,11 @@ function create_profile(
     team_id: "*",
     scopes: {},
     ...overrides,
-  } as UserScopeProfile;
+  } as unknown as UserScopeProfile;
 }
 
 function create_organization(
-  overrides: Partial<Organization> = {},
+  overrides: Partial<ScalarInput<Organization>> = {},
 ): Organization {
   return {
     id: "org_1",
@@ -37,10 +38,12 @@ function create_organization(
     created_at: "2026-01-01T00:00:00Z",
     updated_at: "2026-01-01T00:00:00Z",
     ...overrides,
-  } as Organization;
+  } as unknown as Organization;
 }
 
-function create_official(overrides: Partial<Official> = {}): Official {
+function create_official(
+  overrides: Partial<ScalarInput<Official>> = {},
+): Official {
   return {
     id: "official_1",
     organization_id: "org_1",
@@ -49,10 +52,12 @@ function create_official(overrides: Partial<Official> = {}): Official {
     created_at: "2026-01-01T00:00:00Z",
     updated_at: "2026-01-01T00:00:00Z",
     ...overrides,
-  } as Official;
+  } as unknown as Official;
 }
 
-function create_fixture(overrides: Partial<Fixture> = {}): Fixture {
+function create_fixture(
+  overrides: Partial<ScalarInput<Fixture>> = {},
+): Fixture {
   return {
     id: "fixture_1",
     organization_id: "org_1",
@@ -70,11 +75,11 @@ function create_fixture(overrides: Partial<Fixture> = {}): Fixture {
     created_at: "2026-01-01T00:00:00Z",
     updated_at: "2026-01-01T00:00:00Z",
     ...overrides,
-  } as Fixture;
+  } as unknown as Fixture;
 }
 
 function create_stage(
-  overrides: Partial<CompetitionStage> = {},
+  overrides: Partial<ScalarInput<CompetitionStage>> = {},
 ): CompetitionStage {
   return {
     id: "stage_1",
@@ -86,11 +91,11 @@ function create_stage(
     created_at: "2026-01-01T00:00:00Z",
     updated_at: "2026-01-01T00:00:00Z",
     ...overrides,
-  } as CompetitionStage;
+  } as unknown as CompetitionStage;
 }
 
 function create_rating(
-  overrides: Partial<OfficialPerformanceRating> = {},
+  overrides: Partial<ScalarInput<OfficialPerformanceRating>> = {},
 ): OfficialPerformanceRating {
   return {
     id: "rating_1",
@@ -109,7 +114,7 @@ function create_rating(
     created_at: "2026-01-01T00:00:00Z",
     updated_at: "2026-01-01T00:00:00Z",
     ...overrides,
-  } as OfficialPerformanceRating;
+  } as unknown as OfficialPerformanceRating;
 }
 
 describe("officialLeaderboardPageState", () => {

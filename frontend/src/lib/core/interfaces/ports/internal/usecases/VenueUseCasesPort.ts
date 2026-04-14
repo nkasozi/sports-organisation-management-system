@@ -3,6 +3,7 @@ import type {
   UpdateVenueInput,
   Venue,
 } from "../../../../entities/Venue";
+import type { ScalarValueInput } from "../../../../types/DomainScalars";
 import type { AsyncResult } from "../../../../types/Result";
 import type { VenueFilter } from "../../external/repositories/VenueRepository";
 import type { BaseUseCasesPort } from "./BaseUseCasesPort";
@@ -13,5 +14,7 @@ export interface VenueUseCasesPort extends BaseUseCasesPort<
   UpdateVenueInput,
   VenueFilter
 > {
-  delete_venues(ids: string[]): AsyncResult<number>;
+  delete_venues(
+    ids: Array<ScalarValueInput<Venue["id"]>>,
+  ): AsyncResult<number>;
 }

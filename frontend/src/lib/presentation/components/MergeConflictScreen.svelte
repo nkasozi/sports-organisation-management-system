@@ -1,6 +1,7 @@
 <script lang="ts">
   import { createEventDispatcher } from "svelte";
 
+  import type { ScalarInput } from "$lib/core/types/DomainScalars";
   import type {
     ConflictRecord,
     ConflictResolutionAction,
@@ -25,11 +26,13 @@
     show_merge_screen,
   } from "$lib/presentation/stores/conflictStoreDerived";
 
+  type EditableConflictRecord = ScalarInput<ConflictRecord>;
+
   const dispatch = createEventDispatcher<{
     dismiss: void;
     resolve: {
       action: ConflictResolutionAction;
-      conflict: ConflictRecord;
+      conflict: EditableConflictRecord;
       merged_data?: Record<string, unknown>;
     };
   }>();

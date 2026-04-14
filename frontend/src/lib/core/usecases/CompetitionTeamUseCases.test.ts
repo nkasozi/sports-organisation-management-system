@@ -21,7 +21,7 @@ function create_mock_repository(): CompetitionTeamRepository {
     find_by_team: vi.fn(),
     find_team_in_competition: vi.fn(),
     remove_team_from_competition: vi.fn(),
-  };
+  } as CompetitionTeamRepository;
 }
 
 function create_test_competition_team(
@@ -47,7 +47,7 @@ function create_test_competition_team(
     created_at: "2024-01-01T00:00:00Z",
     updated_at: "2024-01-01T00:00:00Z",
     ...overrides,
-  };
+  } as CompetitionTeam;
 }
 
 function create_valid_input(
@@ -62,7 +62,7 @@ function create_valid_input(
     notes: "",
     status: "registered",
     ...overrides,
-  };
+  } as CreateCompetitionTeamInput;
 }
 
 describe("CompetitionTeamUseCases", () => {

@@ -2,7 +2,8 @@ import { describe, expect, it } from "vitest";
 
 import type { Fixture } from "$lib/core/entities/Fixture";
 import type { Organization } from "$lib/core/entities/Organization";
-import { ANY_VALUE, type UserScopeProfile } from "$lib/core/interfaces/ports";
+import { ANY_VALUE } from "$lib/core/interfaces/ports";
+import type { ScalarInput } from "$lib/core/types/DomainScalars";
 
 import {
   can_user_change_live_games_organization,
@@ -10,20 +11,21 @@ import {
   load_live_games_organizations,
 } from "./liveGamesDataLoader";
 
+type LiveGamesProfile = NonNullable<
+  Parameters<typeof load_live_games_fixture_state>[1]
+>;
+
 function create_profile(
-  overrides: Partial<UserScopeProfile> = {},
-): UserScopeProfile {
+  overrides: Partial<LiveGamesProfile> = {},
+): LiveGamesProfile {
   return {
-    user_id: "user_1",
-    role: "organisation_admin",
     organization_id: "org_1",
     team_id: "*",
-    scopes: {},
     ...overrides,
-  } as UserScopeProfile;
+  };
 }
 
-function create_fixture(overrides: Partial<Fixture> = {}): Fixture {
+function create_fixture(overrides: Partial<ScalarInput<Fixture>> = {}): Fixture {
   return {
     id: "fixture_1",
     organization_id: "org_1",
@@ -36,11 +38,11 @@ function create_fixture(overrides: Partial<Fixture> = {}): Fixture {
     created_at: "2026-04-01T00:00:00Z",
     updated_at: "2026-04-01T00:00:00Z",
     ...overrides,
-  } as Fixture;
+  } as unknown as Fixture;
 }
 
 function create_organization(
-  overrides: Partial<Organization> = {},
+  overrides: Partial<ScalarInput<Organization>> = {},
 ): Organization {
   return {
     id: "org_1",
@@ -49,7 +51,7 @@ function create_organization(
     created_at: "2026-04-01T00:00:00Z",
     updated_at: "2026-04-01T00:00:00Z",
     ...overrides,
-  } as Organization;
+  } as unknown as Organization;
 }
 
 describe("liveGamesDataLoader", () => {

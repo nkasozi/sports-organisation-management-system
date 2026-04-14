@@ -19,7 +19,7 @@ function create_test_sport(): Sport {
     id: "sport_1",
     created_at: "2024-01-01T00:00:00.000Z",
     updated_at: "2024-01-01T00:00:00.000Z",
-  };
+  } as Sport;
 }
 
 describe("apply_sport_preset", () => {

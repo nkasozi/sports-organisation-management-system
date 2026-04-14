@@ -1,3 +1,9 @@
+import type {
+  EntityId,
+  Name,
+  ScalarInput,
+  ScalarValueInput,
+} from "../types/DomainScalars";
 import type { BaseEntity } from "./BaseEntity";
 
 export type PositionCategory =
@@ -8,7 +14,7 @@ export type PositionCategory =
   | "other";
 
 export interface PlayerPosition extends BaseEntity {
-  name: string;
+  name: Name;
   code: string;
   category: PositionCategory;
   description: string;
@@ -16,11 +22,11 @@ export interface PlayerPosition extends BaseEntity {
   display_order: number;
   is_available: boolean;
   status: "active" | "inactive";
-  organization_id: string;
+  organization_id: EntityId;
 }
 
 export type CreatePlayerPositionInput = Omit<
-  PlayerPosition,
+  ScalarInput<PlayerPosition>,
   "id" | "created_at" | "updated_at"
 >;
 
@@ -32,7 +38,7 @@ export interface PlayerPositionFilter {
   sport_type?: string;
   is_available?: boolean;
   status?: "active" | "inactive";
-  organization_id?: string;
+  organization_id?: ScalarValueInput<PlayerPosition["organization_id"]>;
 }
 
 export function validate_player_position_input(

@@ -8,7 +8,7 @@ export function create_seed_teams(
   makerere_ground_id: string,
   entebbe_club_id: string,
   jinja_ground_id: string,
-): Team[] {
+): import("$lib/core/types/DomainScalars").ScalarInput<Team>[] {
   return [
     ...create_seed_teams_men(
       lugogo_stadium_id,

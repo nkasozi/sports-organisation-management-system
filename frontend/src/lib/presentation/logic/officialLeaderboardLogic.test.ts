@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { CompetitionStage } from "$lib/core/entities/CompetitionStage";
 import type { Fixture } from "$lib/core/entities/Fixture";
 import type { OfficialPerformanceRating } from "$lib/core/entities/OfficialPerformanceRating";
+import type { ScalarInput } from "$lib/core/types/DomainScalars";
 
 import {
   build_leaderboard_entries,
@@ -11,7 +12,7 @@ import {
 } from "./officialLeaderboardLogic";
 
 function make_rating(
-  overrides: Partial<OfficialPerformanceRating> = {},
+  overrides: Partial<ScalarInput<OfficialPerformanceRating>> = {},
 ): OfficialPerformanceRating {
   return {
     id: "opr_001",
@@ -30,10 +31,12 @@ function make_rating(
     created_at: "2026-01-01T00:00:00Z",
     updated_at: "2026-01-01T00:00:00Z",
     ...overrides,
-  };
+  } as unknown as OfficialPerformanceRating;
 }
 
-function make_fixture(overrides: Partial<Fixture> = {}): Fixture {
+function make_fixture(
+  overrides: Partial<ScalarInput<Fixture>> = {},
+): Fixture {
   return {
     id: "fix_1",
     organization_id: "org_1",
@@ -49,11 +52,11 @@ function make_fixture(overrides: Partial<Fixture> = {}): Fixture {
     created_at: "2026-01-01T00:00:00Z",
     updated_at: "2026-01-01T00:00:00Z",
     ...overrides,
-  } as Fixture;
+  } as unknown as Fixture;
 }
 
 function make_stage(
-  overrides: Partial<CompetitionStage> = {},
+  overrides: Partial<ScalarInput<CompetitionStage>> = {},
 ): CompetitionStage {
   return {
     id: "stage_1",
@@ -65,7 +68,7 @@ function make_stage(
     created_at: "2026-01-01T00:00:00Z",
     updated_at: "2026-01-01T00:00:00Z",
     ...overrides,
-  } as CompetitionStage;
+  } as unknown as CompetitionStage;
 }
 
 describe("build_leaderboard_entries", () => {

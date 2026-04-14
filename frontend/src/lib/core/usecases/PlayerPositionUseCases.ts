@@ -24,7 +24,7 @@ export function create_player_position_use_cases(
       return repository.find_all(filter, pagination);
     },
 
-    async get_by_id(id: string): AsyncResult<PlayerPosition> {
+    async get_by_id(id: PlayerPosition["id"]): AsyncResult<PlayerPosition> {
       if (!id || id.trim().length === 0) {
         return create_failure_result("Position ID is required");
       }
@@ -62,7 +62,7 @@ export function create_player_position_use_cases(
     },
 
     async update(
-      id: string,
+      id: PlayerPosition["id"],
       input: UpdatePlayerPositionInput,
     ): AsyncResult<PlayerPosition> {
       if (!id || id.trim().length === 0) {
@@ -93,7 +93,7 @@ export function create_player_position_use_cases(
       return create_success_result(result.data);
     },
 
-    async delete(id: string): AsyncResult<boolean> {
+    async delete(id: PlayerPosition["id"]): AsyncResult<boolean> {
       if (!id || id.trim().length === 0) {
         return create_failure_result("Position ID is required");
       }

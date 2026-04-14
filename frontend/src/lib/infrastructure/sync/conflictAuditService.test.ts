@@ -256,7 +256,7 @@ describe("Audit log input structure", () => {
         },
       ],
       detected_at: "2024-01-01T14:00:00.000Z",
-    };
+    } as unknown as ConflictRecord;
   }
 
   it("creates valid audit input for conflict detection", () => {
@@ -346,7 +346,7 @@ describe("Audit log input structure", () => {
 
 describe("Context handling", () => {
   it("uses default system user when no context provided", () => {
-    const context: Record<string, string> = {};
+    const context =  {} as Record<string, string>;
 
     const user_id = context.user_id ?? "system";
     const user_email = context.user_email ?? "system@sport-sync.local";

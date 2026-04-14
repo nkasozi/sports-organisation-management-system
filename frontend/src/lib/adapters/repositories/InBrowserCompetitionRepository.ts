@@ -36,7 +36,7 @@ export class InBrowserCompetitionRepository
 
   protected create_entity_from_input(
     input: CreateCompetitionInput,
-    id: string,
+    id: Competition["id"],
     timestamps: Pick<BaseEntity, "created_at" | "updated_at">,
   ): Competition {
     return {
@@ -63,7 +63,7 @@ export class InBrowserCompetitionRepository
       location: input.location,
       rule_overrides: input.rule_overrides || {},
       status: input.status,
-    };
+    } as Competition;
   }
 
   protected apply_updates_to_entity(
@@ -73,7 +73,7 @@ export class InBrowserCompetitionRepository
     return {
       ...entity,
       ...updates,
-    };
+    } as Competition;
   }
 
   protected apply_entity_filter(
@@ -117,7 +117,7 @@ export class InBrowserCompetitionRepository
   }
 
   async find_by_organization(
-    organization_id: string,
+    organization_id: Competition["organization_id"],
     options?: QueryOptions,
   ): PaginatedAsyncResult<Competition> {
     return this.find_all({ organization_id }, options);

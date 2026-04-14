@@ -1,7 +1,7 @@
 import { generate_current_timestamp, SEED_PLAYER_PROFILE_IDS } from "./seedIds";
 import { SEED_PLAYER_IDS } from "./seedPlayerIds";
 
-export function create_seed_player_profiles(): import("../../../core/entities/PlayerProfile").PlayerProfile[] {
+export function create_seed_player_profiles(): import("$lib/core/types/DomainScalars").ScalarInput<import("../../../core/entities/PlayerProfile").PlayerProfile>[] {
   const now = generate_current_timestamp();
 
   return [

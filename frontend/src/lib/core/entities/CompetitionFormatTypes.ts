@@ -1,3 +1,4 @@
+import type { EntityId, Name, ScalarInput } from "../types/DomainScalars";
 import type { BaseEntity, EntityStatus } from "./BaseEntity";
 import type { StageType } from "./CompetitionStage";
 
@@ -59,13 +60,13 @@ export interface LeagueConfig {
 }
 
 export interface CompetitionFormatStageTemplate {
-  name: string;
+  name: Name;
   stage_type: StageType;
   stage_order: number;
 }
 
 export interface CompetitionFormat extends BaseEntity {
-  name: string;
+  name: Name;
   code: string;
   description: string;
   format_type: FormatType;
@@ -78,11 +79,11 @@ export interface CompetitionFormat extends BaseEntity {
   min_teams_required: number;
   max_teams_allowed: number;
   status: EntityStatus;
-  organization_id?: string;
+  organization_id?: EntityId;
 }
 
 export type CreateCompetitionFormatInput = Omit<
-  CompetitionFormat,
+  ScalarInput<CompetitionFormat>,
   "id" | "created_at" | "updated_at"
 >;
 export type UpdateCompetitionFormatInput =

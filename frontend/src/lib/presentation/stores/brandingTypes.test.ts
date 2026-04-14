@@ -12,7 +12,7 @@ import {
 
 describe("brandingTypes", () => {
   it("maps organization settings into branding config fields", () => {
-    const settings: OrganizationSettings = {
+    const settings =  {
       id: "settings-1",
       created_at: "2024-01-01T00:00:00.000Z",
       updated_at: "2024-01-02T00:00:00.000Z",
@@ -32,7 +32,7 @@ describe("brandingTypes", () => {
       primary_color: "red",
       secondary_color: "blue",
       sync_interval_ms: 600000,
-    };
+    } as OrganizationSettings;
 
     expect(map_settings_to_branding(settings)).toEqual({
       organization_name: "City Hawks",

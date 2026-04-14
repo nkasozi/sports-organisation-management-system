@@ -3,6 +3,7 @@ import type {
   OfficialPerformanceRating,
   UpdateOfficialPerformanceRatingInput,
 } from "../../../../entities/OfficialPerformanceRating";
+import type { ScalarValueInput } from "../../../../types/DomainScalars";
 import type {
   AsyncResult,
   PaginatedAsyncResult,
@@ -10,10 +11,10 @@ import type {
 import type { QueryOptions, Repository } from "./Repository";
 
 export interface OfficialPerformanceRatingFilter {
-  organization_id?: string;
-  official_id?: string;
-  fixture_id?: string;
-  rater_user_id?: string;
+  organization_id?: ScalarValueInput<OfficialPerformanceRating["organization_id"]>;
+  official_id?: ScalarValueInput<OfficialPerformanceRating["official_id"]>;
+  fixture_id?: ScalarValueInput<OfficialPerformanceRating["fixture_id"]>;
+  rater_user_id?: ScalarValueInput<OfficialPerformanceRating["rater_user_id"]>;
   rater_role?: string;
 }
 
@@ -24,24 +25,24 @@ export interface OfficialPerformanceRatingRepository extends Repository<
   OfficialPerformanceRatingFilter
 > {
   find_by_official(
-    official_id: string,
+    official_id: ScalarValueInput<OfficialPerformanceRating["official_id"]>,
     options?: QueryOptions,
   ): PaginatedAsyncResult<OfficialPerformanceRating>;
 
   find_by_fixture(
-    fixture_id: string,
+    fixture_id: ScalarValueInput<OfficialPerformanceRating["fixture_id"]>,
     options?: QueryOptions,
   ): PaginatedAsyncResult<OfficialPerformanceRating>;
 
   find_by_official_and_fixture(
-    official_id: string,
-    fixture_id: string,
+    official_id: ScalarValueInput<OfficialPerformanceRating["official_id"]>,
+    fixture_id: ScalarValueInput<OfficialPerformanceRating["fixture_id"]>,
     options?: QueryOptions,
   ): PaginatedAsyncResult<OfficialPerformanceRating>;
 
   find_existing_rating(
-    official_id: string,
-    fixture_id: string,
-    rater_user_id: string,
+    official_id: ScalarValueInput<OfficialPerformanceRating["official_id"]>,
+    fixture_id: ScalarValueInput<OfficialPerformanceRating["fixture_id"]>,
+    rater_user_id: ScalarValueInput<OfficialPerformanceRating["rater_user_id"]>,
   ): AsyncResult<OfficialPerformanceRating | null>;
 }

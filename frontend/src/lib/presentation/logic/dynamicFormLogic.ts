@@ -3,7 +3,10 @@ import type {
   EntityMetadata,
   FieldMetadata,
 } from "../../core/entities/BaseEntity";
+import type { ScalarInput } from "../../core/types/DomainScalars";
 import type { SubEntityFilter } from "../../core/types/SubEntityFilter";
+
+type BaseEntityInput = Partial<BaseEntity> | Partial<ScalarInput<BaseEntity>>;
 
 export {
   validate_field_against_rules,
@@ -21,7 +24,7 @@ export { build_foreign_key_select_options } from "./foreignKeyOptionBuilder";
 export { is_jersey_color_field } from "./foreignKeyOptionBuilder";
 
 export function determine_if_edit_mode(
-  data: Partial<BaseEntity> | null,
+  data: BaseEntityInput | null,
 ): boolean {
   return data !== null && data.id !== undefined;
 }
@@ -42,7 +45,7 @@ export function get_sub_entity_fields(
 
 export function build_sub_entity_filter(
   field: FieldMetadata,
-  parent_entity: Partial<BaseEntity> | null,
+  parent_entity: BaseEntityInput | null,
 ): SubEntityFilter | null {
   if (!field.sub_entity_config || !parent_entity?.id) return null;
   const config = field.sub_entity_config;

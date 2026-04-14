@@ -1,19 +1,29 @@
+import type {
+  CalendarFeedEntityId,
+  CalendarTokenValue,
+  EntityId,
+  IsoDateTimeString,
+  Name,
+} from "../types/DomainScalars";
+import { parse_entity_id } from "../types/DomainScalars";
+import type { Result } from "../types/Result";
+import { create_failure_result, create_success_result } from "../types/Result";
 import type { BaseEntity } from "./BaseEntity";
 
 export type CalendarFeedType = "all" | "team" | "competition" | "player";
 
 export interface CalendarToken extends BaseEntity {
-  token: string;
-  user_id: string;
-  organization_id: string;
+  token: CalendarTokenValue;
+  user_id: EntityId;
+  organization_id: EntityId;
   feed_type: CalendarFeedType;
-  entity_id: string | null;
-  entity_name: string | null;
+  entity_id: CalendarFeedEntityId | null;
+  entity_name: Name | null;
   reminder_minutes_before: number;
   is_active: boolean;
-  last_accessed_at: string | null;
+  last_accessed_at: IsoDateTimeString | null;
   access_count: number;
-  expires_at: string | null;
+  expires_at: IsoDateTimeString | null;
 }
 
 export type CreateCalendarTokenInput = Omit<
@@ -31,15 +41,19 @@ export type UpdateCalendarTokenInput = Partial<
 >;
 
 const CALENDAR_TOKEN_EXPIRY_DAYS = 90;
+const INVALID_CALENDAR_FEED_ENTITY_ID_ERROR =
+  "Calendar feed entity ID is invalid";
 
-function compute_calendar_token_expiry(): string {
+function compute_calendar_token_expiry(): NonNullable<
+  CalendarToken["expires_at"]
+> {
   const expiry_date = new Date();
   expiry_date.setDate(expiry_date.getDate() + CALENDAR_TOKEN_EXPIRY_DAYS);
-  return expiry_date.toISOString();
+  return expiry_date.toISOString() as NonNullable<CalendarToken["expires_at"]>;
 }
 
 export function is_calendar_token_expired(
-  expires_at: string | null | undefined,
+  expires_at: CalendarToken["expires_at"] | undefined,
 ): boolean {
   if (!expires_at) {
     return false;
@@ -47,21 +61,60 @@ export function is_calendar_token_expired(
   return new Date(expires_at).getTime() < Date.now();
 }
 
-export function generate_calendar_token(): string {
+export function generate_calendar_token(): CalendarTokenValue {
   const array = new Uint8Array(32);
   crypto.getRandomValues(array);
   return Array.from(array, (byte) => byte.toString(16).padStart(2, "0")).join(
     "",
-  );
+  ) as CalendarTokenValue;
 }
 
-export function build_ical_feed_url(base_url: string, token: string): string {
+export function build_ical_feed_url(
+  base_url: string,
+  token: CalendarTokenValue,
+): string {
   return `${base_url}/api/calendar/${token}.ics`;
 }
 
-export function build_webcal_feed_url(base_url: string, token: string): string {
+export function build_webcal_feed_url(
+  base_url: string,
+  token: CalendarTokenValue,
+): string {
   const https_url = build_ical_feed_url(base_url, token);
   return https_url.replace(/^https?:/, "webcal:");
+}
+
+export function parse_calendar_feed_entity_id(
+  feed_type: CalendarFeedType,
+  raw_entity_id: string | null,
+): Result<CalendarFeedEntityId | null> {
+  if (feed_type === "all") {
+    return create_success_result(null);
+  }
+
+  if (!raw_entity_id) {
+    return create_failure_result(INVALID_CALENDAR_FEED_ENTITY_ID_ERROR);
+  }
+
+  switch (feed_type) {
+    case "team":
+      return parse_entity_id(
+        raw_entity_id,
+        INVALID_CALENDAR_FEED_ENTITY_ID_ERROR,
+      );
+    case "competition":
+      return parse_entity_id(
+        raw_entity_id,
+        INVALID_CALENDAR_FEED_ENTITY_ID_ERROR,
+      );
+    case "player":
+      return parse_entity_id(
+        raw_entity_id,
+        INVALID_CALENDAR_FEED_ENTITY_ID_ERROR,
+      );
+  }
+
+  return create_failure_result(INVALID_CALENDAR_FEED_ENTITY_ID_ERROR);
 }
 
 export function get_feed_type_display_name(

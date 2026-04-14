@@ -112,7 +112,7 @@ describe("is_system_user_field_visible_for_role", () => {
   });
 
   it("returns true for non-conditional fields regardless of role", () => {
-    const roles: UserRole[] = [
+    const roles =  [
       "super_admin",
       "org_admin",
       "officials_manager",
@@ -120,7 +120,7 @@ describe("is_system_user_field_visible_for_role", () => {
       "official",
       "player",
       "public_viewer",
-    ];
+    ] as UserRole[];
     for (const role of roles) {
       expect(is_system_user_field_visible_for_role("email", role)).toBe(true);
       expect(is_system_user_field_visible_for_role("first_name", role)).toBe(

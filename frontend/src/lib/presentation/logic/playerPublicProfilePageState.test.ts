@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import type { GameEvent } from "$lib/core/entities/Fixture";
 import type { ProfileLink } from "$lib/core/entities/ProfileLink";
+import type { ScalarInput } from "$lib/core/types/DomainScalars";
 
 import {
   calculate_player_public_profile_event_stats,
@@ -10,7 +11,9 @@ import {
   split_player_public_profile_links,
 } from "./playerPublicProfilePageState";
 
-function create_game_event(overrides: Partial<GameEvent> = {}): GameEvent {
+function create_game_event(
+  overrides: Partial<ScalarInput<GameEvent>> = {},
+): GameEvent {
   return {
     id: "event_1",
     event_type: "goal",
@@ -22,11 +25,11 @@ function create_game_event(overrides: Partial<GameEvent> = {}): GameEvent {
     description: "Goal",
     recorded_at: "2026-01-01T00:00:00Z",
     ...overrides,
-  };
+  } as GameEvent;
 }
 
 function create_profile_link(
-  overrides: Partial<ProfileLink> = {},
+  overrides: Partial<ScalarInput<ProfileLink>> = {},
 ): ProfileLink {
   return {
     id: "link_1",
@@ -39,7 +42,7 @@ function create_profile_link(
     created_at: "2026-01-01T00:00:00Z",
     updated_at: "2026-01-01T00:00:00Z",
     ...overrides,
-  };
+  } as ProfileLink;
 }
 
 describe("playerPublicProfilePageState", () => {

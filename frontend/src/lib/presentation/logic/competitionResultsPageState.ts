@@ -7,7 +7,6 @@ import type { Team } from "$lib/core/entities/Team";
 import {
   check_data_permission,
   type UserRole,
-  type UserScopeProfile,
 } from "$lib/core/interfaces/ports";
 import type { CompetitionFormatUseCasesPort } from "$lib/core/interfaces/ports/internal/usecases/CompetitionFormatUseCasesPort";
 import type { CompetitionStageUseCasesPort } from "$lib/core/interfaces/ports/internal/usecases/CompetitionStageUseCasesPort";
@@ -16,6 +15,7 @@ import type { CompetitionUseCasesPort } from "$lib/core/interfaces/ports/interna
 import type { FixtureUseCasesPort } from "$lib/core/interfaces/ports/internal/usecases/FixtureUseCasesPort";
 import type { OrganizationUseCasesPort } from "$lib/core/interfaces/ports/internal/usecases/OrganizationUseCasesPort";
 import type { TeamUseCasesPort } from "$lib/core/interfaces/ports/internal/usecases/TeamUseCasesPort";
+import type { UserProfile } from "$lib/presentation/stores/auth";
 import {
   load_competitions_by_organization,
   load_selected_competition_bundle,
@@ -52,7 +52,7 @@ export function create_empty_competition_results_bundle(): CompetitionResultsSel
 }
 
 export function derive_competition_results_can_change_organizations(
-  profile: (UserScopeProfile & { role?: UserRole }) | null | undefined,
+  profile: (UserProfile & { role?: UserRole }) | null | undefined,
   url_organization_id: string,
 ): boolean {
   const organization_id = profile?.organization_id || "";

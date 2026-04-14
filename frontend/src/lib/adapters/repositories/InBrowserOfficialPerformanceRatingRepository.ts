@@ -42,7 +42,7 @@ class InBrowserOfficialPerformanceRatingRepository
 
   protected create_entity_from_input(
     input: CreateOfficialPerformanceRatingInput,
-    id: string,
+    id: OfficialPerformanceRating["id"],
     timestamps: Pick<BaseEntity, "created_at" | "updated_at">,
   ): OfficialPerformanceRating {
     return {
@@ -60,14 +60,14 @@ class InBrowserOfficialPerformanceRatingRepository
       fitness: input.fitness,
       notes: input.notes || "",
       submitted_at: new Date().toISOString(),
-    };
+    } as OfficialPerformanceRating;
   }
 
   protected apply_updates_to_entity(
     entity: OfficialPerformanceRating,
     updates: UpdateOfficialPerformanceRatingInput,
   ): OfficialPerformanceRating {
-    return { ...entity, ...updates };
+    return { ...entity, ...updates } as OfficialPerformanceRating;
   }
 
   protected apply_entity_filter(
@@ -99,31 +99,31 @@ class InBrowserOfficialPerformanceRatingRepository
   }
 
   async find_by_official(
-    official_id: string,
+    official_id: OfficialPerformanceRating["official_id"],
     options?: QueryOptions,
   ): PaginatedAsyncResult<OfficialPerformanceRating> {
     return this.find_all({ official_id }, options);
   }
 
   async find_by_fixture(
-    fixture_id: string,
+    fixture_id: OfficialPerformanceRating["fixture_id"],
     options?: QueryOptions,
   ): PaginatedAsyncResult<OfficialPerformanceRating> {
     return this.find_all({ fixture_id }, options);
   }
 
   async find_by_official_and_fixture(
-    official_id: string,
-    fixture_id: string,
+    official_id: OfficialPerformanceRating["official_id"],
+    fixture_id: OfficialPerformanceRating["fixture_id"],
     options?: QueryOptions,
   ): PaginatedAsyncResult<OfficialPerformanceRating> {
     return this.find_all({ official_id, fixture_id }, options);
   }
 
   async find_existing_rating(
-    official_id: string,
-    fixture_id: string,
-    rater_user_id: string,
+    official_id: OfficialPerformanceRating["official_id"],
+    fixture_id: OfficialPerformanceRating["fixture_id"],
+    rater_user_id: OfficialPerformanceRating["rater_user_id"],
   ): AsyncResult<OfficialPerformanceRating | null> {
     try {
       const all_result = await this.find_all(

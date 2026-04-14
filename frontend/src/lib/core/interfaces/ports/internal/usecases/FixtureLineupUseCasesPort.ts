@@ -3,6 +3,7 @@ import type {
   FixtureLineup,
   UpdateFixtureLineupInput,
 } from "../../../../entities/FixtureLineup";
+import type { ScalarValueInput } from "../../../../types/DomainScalars";
 import type {
   AsyncResult,
   PaginatedAsyncResult,
@@ -17,19 +18,25 @@ export interface FixtureLineupUseCasesPort extends BaseUseCasesPort<
   FixtureLineupFilter
 > {
   list_lineups_by_fixture(
-    fixture_id: string,
+    fixture_id: ScalarValueInput<FixtureLineup["fixture_id"]>,
     options?: { page: number; page_size: number },
   ): PaginatedAsyncResult<FixtureLineup>;
   list_lineups_by_fixture_and_team(
-    fixture_id: string,
-    team_id: string,
+    fixture_id: ScalarValueInput<FixtureLineup["fixture_id"]>,
+    team_id: ScalarValueInput<FixtureLineup["team_id"]>,
     options?: { page: number; page_size: number },
   ): PaginatedAsyncResult<FixtureLineup>;
-  get_lineups_for_fixture(fixture_id: string): AsyncResult<FixtureLineup[]>;
+  get_lineups_for_fixture(
+    fixture_id: ScalarValueInput<FixtureLineup["fixture_id"]>,
+  ): AsyncResult<FixtureLineup[]>;
   get_lineup_for_team_in_fixture(
-    fixture_id: string,
-    team_id: string,
+    fixture_id: ScalarValueInput<FixtureLineup["fixture_id"]>,
+    team_id: ScalarValueInput<FixtureLineup["team_id"]>,
   ): AsyncResult<FixtureLineup>;
-  submit_lineup(id: string): AsyncResult<FixtureLineup>;
-  lock_lineup(id: string): AsyncResult<FixtureLineup>;
+  submit_lineup(
+    id: ScalarValueInput<FixtureLineup["id"]>,
+  ): AsyncResult<FixtureLineup>;
+  lock_lineup(
+    id: ScalarValueInput<FixtureLineup["id"]>,
+  ): AsyncResult<FixtureLineup>;
 }

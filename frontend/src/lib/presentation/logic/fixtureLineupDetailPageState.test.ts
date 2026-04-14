@@ -4,6 +4,7 @@ import type { Fixture } from "$lib/core/entities/Fixture";
 import type { FixtureLineup } from "$lib/core/entities/FixtureLineup";
 import type { Team } from "$lib/core/entities/Team";
 import type { TeamPlayer } from "$lib/core/services/teamPlayers";
+import type { ScalarInput } from "$lib/core/types/DomainScalars";
 
 import {
   build_fixture_lineup_permission_info_message,
@@ -14,7 +15,9 @@ import {
   toggle_fixture_lineup_player_selection,
 } from "./fixtureLineupDetailPageState";
 
-function create_lineup(overrides: Partial<FixtureLineup> = {}): FixtureLineup {
+function create_lineup(
+  overrides: Partial<ScalarInput<FixtureLineup>> = {},
+): FixtureLineup {
   return {
     id: "lineup_1",
     organization_id: "org_1",
@@ -28,10 +31,12 @@ function create_lineup(overrides: Partial<FixtureLineup> = {}): FixtureLineup {
     created_at: "2026-01-01T00:00:00Z",
     updated_at: "2026-01-01T00:00:00Z",
     ...overrides,
-  };
+  } as unknown as FixtureLineup;
 }
 
-function create_team_player(overrides: Partial<TeamPlayer> = {}): TeamPlayer {
+function create_team_player(
+  overrides: Partial<ScalarInput<TeamPlayer>> = {},
+): TeamPlayer {
   return {
     id: "player_1",
     first_name: "Jordan",
@@ -55,10 +60,10 @@ function create_team_player(overrides: Partial<TeamPlayer> = {}): TeamPlayer {
     created_at: "2026-01-01T00:00:00Z",
     updated_at: "2026-01-01T00:00:00Z",
     ...overrides,
-  };
+  } as unknown as TeamPlayer;
 }
 
-function create_fixture(overrides: Partial<Fixture> = {}): Fixture {
+function create_fixture(overrides: Partial<ScalarInput<Fixture>> = {}): Fixture {
   return {
     id: "fixture_1",
     organization_id: "org_1",
@@ -76,10 +81,10 @@ function create_fixture(overrides: Partial<Fixture> = {}): Fixture {
     created_at: "2026-01-01T00:00:00Z",
     updated_at: "2026-01-01T00:00:00Z",
     ...overrides,
-  } as Fixture;
+  } as unknown as Fixture;
 }
 
-function create_team(overrides: Partial<Team> = {}): Team {
+function create_team(overrides: Partial<ScalarInput<Team>> = {}): Team {
   return {
     id: "team_1",
     name: "Lions",
@@ -100,7 +105,7 @@ function create_team(overrides: Partial<Team> = {}): Team {
     created_at: "2026-01-01T00:00:00Z",
     updated_at: "2026-01-01T00:00:00Z",
     ...overrides,
-  };
+  } as unknown as Team;
 }
 
 describe("fixtureLineupDetailPageState", () => {

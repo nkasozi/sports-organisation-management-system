@@ -27,7 +27,7 @@ export function create_organization_settings_use_cases(
   repository: OrganizationSettingsRepository,
 ): OrganizationSettingsUseCasesPort {
   async function get_by_organization_id(
-    organization_id: string,
+    organization_id: OrganizationSettings["organization_id"],
   ): AsyncResult<OrganizationSettings | null> {
     if (!organization_id || organization_id.trim().length === 0) {
       return create_failure_result("Organization ID is required");
@@ -57,7 +57,7 @@ export function create_organization_settings_use_cases(
 
   async function update_settings(
     caller_role: string,
-    id: string,
+    id: OrganizationSettings["id"],
     input: UpdateOrganizationSettingsInput,
   ): AsyncResult<OrganizationSettings> {
     if (!is_write_permitted(caller_role)) return reject_unauthorized_write();
@@ -77,7 +77,7 @@ export function create_organization_settings_use_cases(
 
   async function save_or_update(
     caller_role: string,
-    organization_id: string,
+    organization_id: OrganizationSettings["organization_id"],
     input: UpdateOrganizationSettingsInput,
   ): AsyncResult<OrganizationSettings> {
     if (!is_write_permitted(caller_role)) return reject_unauthorized_write();

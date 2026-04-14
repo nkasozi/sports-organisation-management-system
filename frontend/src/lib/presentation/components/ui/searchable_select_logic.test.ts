@@ -9,11 +9,11 @@ import {
 } from "./searchable_select_logic";
 
 describe("searchable_select_logic", () => {
-  const options: SelectOption[] = [
+  const options =  [
     { value: "UG", label: "Uganda" },
     { value: "KE", label: "Kenya" },
     { value: "GB", label: "United Kingdom" },
-  ];
+  ] as SelectOption[];
 
   it("normalizes query", () => {
     expect(normalize_select_query("  Uganda ")).toBe("uganda");
@@ -33,20 +33,20 @@ describe("searchable_select_logic", () => {
   });
 
   it("filters by group name", () => {
-    const grouped_options: SelectOption[] = [
+    const grouped_options =  [
       { value: "fix_1", label: "Team A vs Team B", group: "Premier League" },
       { value: "fix_2", label: "Team C vs Team D", group: "FA Cup" },
       { value: "fix_3", label: "Team E vs Team F", group: "Premier League" },
-    ];
+    ] as SelectOption[];
     const result = filter_select_options(grouped_options, "fa cup");
     expect(result.map((o) => o.value)).toEqual(["fix_2"]);
   });
 
   it("returns options matching group even when label does not match", () => {
-    const grouped_options: SelectOption[] = [
+    const grouped_options =  [
       { value: "fix_1", label: "Lions vs Tigers", group: "Champions League" },
       { value: "fix_2", label: "Eagles vs Hawks", group: "Local Cup" },
-    ];
+    ] as SelectOption[];
     const result = filter_select_options(grouped_options, "champions");
     expect(result).toHaveLength(1);
     expect(result[0].value).toBe("fix_1");

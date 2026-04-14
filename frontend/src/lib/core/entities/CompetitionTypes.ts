@@ -1,3 +1,9 @@
+import type {
+  EntityId,
+  IsoDateString,
+  Name,
+  ScalarInput,
+} from "../types/DomainScalars";
 import type { BaseEntity, EntityStatus } from "./BaseEntity";
 import type { PointsConfig, TieBreaker } from "./CompetitionFormat";
 import type {
@@ -16,13 +22,13 @@ export type SquadGenerationStrategy = "first_available" | "previous_match";
 
 export interface CompetitionRuleOverrides {
   game_duration_minutes?: number;
-  periods?: SportGamePeriod[];
-  additional_card_types?: CardType[];
-  additional_foul_categories?: FoulCategory[];
-  official_requirements?: OfficialRequirement[];
-  overtime_rules?: Partial<OvertimeRule>;
-  scoring_rules?: ScoringRule[];
-  substitution_rules?: Partial<SubstitutionRule>;
+  periods?: ScalarInput<SportGamePeriod>[];
+  additional_card_types?: ScalarInput<CardType>[];
+  additional_foul_categories?: ScalarInput<FoulCategory>[];
+  official_requirements?: ScalarInput<OfficialRequirement>[];
+  overtime_rules?: Partial<ScalarInput<OvertimeRule>>;
+  scoring_rules?: ScalarInput<ScoringRule>[];
+  substitution_rules?: Partial<ScalarInput<SubstitutionRule>>;
   max_players_on_field?: number;
   min_players_on_field?: number;
   max_squad_size?: number;
@@ -32,18 +38,18 @@ export interface CompetitionRuleOverrides {
 }
 
 export interface Competition extends BaseEntity {
-  name: string;
+  name: Name;
   description: string;
-  organization_id: string;
-  competition_format_id: string;
-  team_ids: string[];
+  organization_id: EntityId;
+  competition_format_id: EntityId;
+  team_ids: EntityId[];
   allow_auto_squad_submission: boolean;
   squad_generation_strategy: SquadGenerationStrategy;
   allow_auto_fixture_details_setup: boolean;
   lineup_submission_deadline_hours: number;
-  start_date: string;
-  end_date: string;
-  registration_deadline: string;
+  start_date: IsoDateString;
+  end_date: IsoDateString;
+  registration_deadline: IsoDateString;
   max_teams: number;
   entry_fee: number;
   prize_pool: number;
@@ -53,7 +59,7 @@ export interface Competition extends BaseEntity {
 }
 
 export type CreateCompetitionInput = Omit<
-  Competition,
+  ScalarInput<Competition>,
   "id" | "created_at" | "updated_at"
 >;
 export type UpdateCompetitionInput = Partial<CreateCompetitionInput>;

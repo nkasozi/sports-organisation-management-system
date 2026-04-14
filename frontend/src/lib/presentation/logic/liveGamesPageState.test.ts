@@ -28,7 +28,7 @@ function create_auth_state(overrides: Partial<AuthState> = {}): AuthState {
     is_initialized: true,
     is_demo_session: false,
     ...overrides,
-  };
+  } as AuthState;
 }
 
 function create_check(overrides: Partial<PreFlightCheck> = {}): PreFlightCheck {
@@ -38,7 +38,7 @@ function create_check(overrides: Partial<PreFlightCheck> = {}): PreFlightCheck {
     message: "Ready",
     fix_suggestion: null,
     ...overrides,
-  };
+  } as PreFlightCheck;
 }
 
 describe("liveGamesPageState", () => {

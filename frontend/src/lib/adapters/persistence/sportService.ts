@@ -4,6 +4,7 @@ import type {
   Sport,
   UpdateSportInput,
 } from "../../core/entities/Sport";
+import type { ScalarValueInput } from "../../core/types/DomainScalars";
 import { validate_sport_input } from "../../core/entities/Sport";
 import {
   create_sport as repo_create_sport,
@@ -35,7 +36,7 @@ async function get_all_sports(): Promise<SportServiceResult<Sport[]>> {
 }
 
 export async function get_sport_by_id(
-  id: string,
+  id: ScalarValueInput<Sport["id"]>,
 ): Promise<SportServiceResult<Sport>> {
   if (!id || id.trim() === "")
     return { success: false, error: "Sport ID is required" };
@@ -94,7 +95,7 @@ async function create_sport(
 }
 
 async function update_sport(
-  id: string,
+  id: ScalarValueInput<Sport["id"]>,
   input: UpdateSportInput,
 ): Promise<SportServiceResult<Sport>> {
   if (!id || id.trim() === "")
@@ -125,7 +126,9 @@ async function update_sport(
   }
 }
 
-async function delete_sport(id: string): Promise<SportServiceResult<boolean>> {
+async function delete_sport(
+  id: ScalarValueInput<Sport["id"]>,
+): Promise<SportServiceResult<boolean>> {
   if (!id || id.trim() === "")
     return { success: false, error: "Sport ID is required" };
   try {

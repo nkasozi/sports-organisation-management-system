@@ -1,8 +1,9 @@
 import type { PlayerPosition } from "../../core/entities/PlayerPosition";
+import type { ScalarValueInput } from "../../core/types/DomainScalars";
 
 export function create_default_player_positions_for_organization(
-  organization_id: string,
-): PlayerPosition[] {
+  organization_id: ScalarValueInput<PlayerPosition["organization_id"]>,
+): import("$lib/core/types/DomainScalars").ScalarInput<PlayerPosition>[] {
   const now = new Date().toISOString();
   const BASE = {
     sport_type: "Field Hockey",
@@ -140,5 +141,5 @@ export function create_default_player_positions_for_organization(
       description: "Inside attacking forward supporting strikers",
       display_order: 14,
     },
-  ];
+  ] as PlayerPosition[];
 }

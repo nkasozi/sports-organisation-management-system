@@ -1,3 +1,4 @@
+import type { Competition } from "../entities/Competition";
 import type { SquadGenerationStrategy } from "../entities/Competition";
 import type { CompetitionUseCases } from "../usecases/CompetitionUseCases";
 import type { OrganizationUseCases } from "../usecases/OrganizationUseCases";
@@ -12,7 +13,7 @@ interface PlayerRulesResult {
 }
 
 export async function get_player_rules_from_competition(
-  competition_id: string,
+  competition_id: Competition["id"],
   competition_use_cases: CompetitionUseCases,
   organization_use_cases: OrganizationUseCases,
   sport_use_cases: SportUseCases,

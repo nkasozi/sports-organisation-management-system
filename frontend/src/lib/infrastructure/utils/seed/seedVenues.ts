@@ -1,8 +1,11 @@
 import type { Venue } from "../../../core/entities/Venue";
+import type { ScalarValueInput } from "../../../core/types/DomainScalars";
 import { DEFAULT_VENUE_IMAGE } from "../../../core/entities/Venue";
 import { generate_current_timestamp, SEED_VENUE_IDS } from "./seedIds";
 
-export function create_seed_venues(organization_id: string): Venue[] {
+export function create_seed_venues(
+  organization_id: ScalarValueInput<Venue["organization_id"]>,
+): import("$lib/core/types/DomainScalars").ScalarInput<Venue>[] {
   const now = generate_current_timestamp();
   return [
     {

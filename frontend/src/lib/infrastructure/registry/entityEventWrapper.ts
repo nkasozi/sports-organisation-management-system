@@ -35,7 +35,7 @@ export function wrap_use_cases_with_events(
     },
 
     async update(
-      id: string,
+      id: BaseEntity["id"],
       input: Record<string, unknown>,
     ): AsyncResult<BaseEntity> {
       const old_entity_result = await original_get_by_id(id);
@@ -65,7 +65,7 @@ export function wrap_use_cases_with_events(
       return result;
     },
 
-    async delete(id: string): AsyncResult<boolean> {
+    async delete(id: BaseEntity["id"]): AsyncResult<boolean> {
       const entity_result = await original_get_by_id(id);
       const entity = entity_result.success ? entity_result.data : undefined;
       const result = await original_delete(id);

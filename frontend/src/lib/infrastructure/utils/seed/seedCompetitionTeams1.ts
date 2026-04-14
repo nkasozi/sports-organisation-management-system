@@ -5,7 +5,7 @@ import {
   SEED_TEAM_IDS,
 } from "./seedIds";
 
-export function create_seed_competition_teams_part1(): CompetitionTeam[] {
+export function create_seed_competition_teams_part1(): import("$lib/core/types/DomainScalars").ScalarInput<CompetitionTeam>[] {
   const now = generate_current_timestamp();
   const registration_date = new Date().toISOString().split("T")[0];
 

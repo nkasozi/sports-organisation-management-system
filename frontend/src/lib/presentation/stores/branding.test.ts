@@ -73,7 +73,7 @@ function build_branding_config(
     background_pattern_url: "/african-mosaic-bg.svg",
     show_panel_borders: false,
     ...overrides,
-  };
+  } as Record<string, unknown>;
 }
 
 function build_organization_settings(
@@ -98,7 +98,7 @@ function build_organization_settings(
     secondary_color: "blue",
     sync_interval_ms: 600000,
     ...overrides,
-  };
+  } as Record<string, unknown>;
 }
 
 describe("branding", () => {

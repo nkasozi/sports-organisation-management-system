@@ -1,5 +1,6 @@
 import type {
   CardType,
+  CreateSportInput,
   FoulCategory,
   OfficialRequirement,
   OvertimeRule,
@@ -8,7 +9,7 @@ import type {
   SubstitutionRule,
 } from "./SportTypes";
 
-export function create_default_card_types(): CardType[] {
+export function create_default_card_types(): CreateSportInput["card_types"] {
   return [
     {
       id: "yellow_card",
@@ -33,7 +34,7 @@ export function create_default_card_types(): CardType[] {
   ];
 }
 
-export function create_default_foul_categories(): FoulCategory[] {
+export function create_default_foul_categories(): CreateSportInput["foul_categories"] {
   return [
     {
       id: "minor_foul",
@@ -70,7 +71,7 @@ export function create_default_foul_categories(): FoulCategory[] {
   ];
 }
 
-export function create_default_football_periods(): SportGamePeriod[] {
+export function create_default_football_periods(): CreateSportInput["periods"] {
   return [
     {
       id: "first_half",
@@ -96,7 +97,7 @@ export function create_default_football_periods(): SportGamePeriod[] {
   ];
 }
 
-export function create_default_official_requirements(): OfficialRequirement[] {
+export function create_default_official_requirements(): CreateSportInput["official_requirements"] {
   return [
     {
       role_id: "referee",
@@ -133,7 +134,7 @@ export function create_default_official_requirements(): OfficialRequirement[] {
   ];
 }
 
-export function create_default_overtime_rules(): OvertimeRule {
+export function create_default_overtime_rules(): CreateSportInput["overtime_rules"] {
   return {
     is_enabled: true,
     trigger_condition: "knockout_draw",
@@ -168,7 +169,7 @@ export function create_default_overtime_rules(): OvertimeRule {
   };
 }
 
-export function create_default_scoring_rules(): ScoringRule[] {
+export function create_default_scoring_rules(): import("$lib/core/types/DomainScalars").ScalarInput<ScoringRule>[] {
   return [
     {
       event_type: "goal",

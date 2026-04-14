@@ -27,8 +27,8 @@ function create_pull_table_adapter(
   convex_client: ConvexClientWithQueryMutation,
 ): PullTableFunction {
   return async (
-    table_name: string,
-    since_timestamp: string,
+    table_name: Parameters<PullTableFunction>[0],
+    since_timestamp: Parameters<PullTableFunction>[1],
   ): Promise<{ success: boolean; records_pulled: number }> => {
     const database = get_database();
     const table = get_table_from_database(database, table_name as TableName);

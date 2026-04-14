@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { Organization } from "$lib/core/entities/Organization";
 import type { UserScopeProfile } from "$lib/core/interfaces/ports";
+import type { ScalarInput } from "$lib/core/types/DomainScalars";
 import type { UseCasesContainer } from "$lib/infrastructure/container";
 
 const { get_current_year_date_range_mock } = vi.hoisted(() => ({
@@ -21,7 +22,7 @@ import {
 } from "./calendarPageData";
 
 function create_organization(
-  overrides: Partial<Organization> = {},
+  overrides: Partial<ScalarInput<Organization>> = {},
 ): Organization {
   return {
     id: "organization-1",
@@ -37,11 +38,11 @@ function create_organization(
     website: "",
     status: "active",
     ...overrides,
-  };
+  } as unknown as Organization;
 }
 
 function create_auth_profile(organization_id: string): UserScopeProfile {
-  return { organization_id, team_id: "" };
+  return { organization_id, team_id: "" } as UserScopeProfile;
 }
 
 describe("calendarPageData", () => {
@@ -54,7 +55,7 @@ describe("calendarPageData", () => {
       create_organization({ id: "organization-1" }),
       create_organization({ id: "organization-2", name: "Regional League" }),
     ];
-    const organization_use_cases: UseCasesContainer["organization_use_cases"] =
+    const organization_use_cases =
       {
         create: vi.fn(),
         delete: vi.fn(),
@@ -72,7 +73,7 @@ describe("calendarPageData", () => {
             data: { items: organizations },
           }),
         update: vi.fn(),
-      };
+      } as UseCasesContainer["organization_use_cases"];
 
     await expect(
       load_calendar_organizations({

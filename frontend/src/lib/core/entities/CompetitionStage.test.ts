@@ -17,7 +17,7 @@ function create_valid_stage_input(
     stage_order: 1,
     status: "active",
     ...overrides,
-  };
+  } as CreateCompetitionStageInput;
 }
 
 describe("validate_competition_stage_input", () => {

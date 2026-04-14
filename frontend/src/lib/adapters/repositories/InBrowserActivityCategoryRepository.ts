@@ -35,11 +35,11 @@ class InBrowserActivityCategoryRepository
 
   protected create_entity_from_input(
     input: CreateActivityCategoryInput,
-    id: string,
+    id: ActivityCategory["id"],
     timestamps: Pick<BaseEntity, "created_at" | "updated_at">,
   ): ActivityCategory {
     return {
-      id,
+      id: id as ActivityCategory["id"],
       ...timestamps,
       name: input.name,
       description: input.description,
@@ -48,7 +48,7 @@ class InBrowserActivityCategoryRepository
       color: input.color,
       icon: input.icon,
       is_system_generated: input.is_system_generated,
-    };
+    } as ActivityCategory;
   }
 
   protected apply_updates_to_entity(
@@ -58,7 +58,7 @@ class InBrowserActivityCategoryRepository
     return {
       ...entity,
       ...updates,
-    };
+    } as ActivityCategory;
   }
 
   protected apply_entity_filter(
@@ -97,14 +97,14 @@ class InBrowserActivityCategoryRepository
   }
 
   async find_by_organization(
-    organization_id: string,
+    organization_id: ActivityCategory["organization_id"],
     options?: QueryOptions,
   ): PaginatedAsyncResult<ActivityCategory> {
     return this.find_all({ organization_id }, options);
   }
 
   async find_by_category_type(
-    organization_id: string,
+    organization_id: ActivityCategory["organization_id"],
     category_type: ActivityCategory["category_type"],
     options?: QueryOptions,
   ): PaginatedAsyncResult<ActivityCategory> {

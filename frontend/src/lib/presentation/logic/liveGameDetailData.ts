@@ -107,14 +107,14 @@ export async function load_live_game_detail_bundle(
             return official_result.success && official_result.data
               ? {
                   official: official_result.data as Official,
-                  role_name: assignment.role_name,
+                  role_name: String(assignment.role_name),
                 }
               : null;
           }),
         )
       ).filter(
         (assignment): assignment is { official: Official; role_name: string } =>
-          Boolean(assignment),
+          assignment !== null,
       )
     : [];
   const home_lineup = home_lineup_result.success

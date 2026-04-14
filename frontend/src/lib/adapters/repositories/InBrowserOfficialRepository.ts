@@ -34,7 +34,7 @@ export class InBrowserOfficialRepository
 
   protected create_entity_from_input(
     input: CreateOfficialInput,
-    id: string,
+    id: Official["id"],
     timestamps: Pick<BaseEntity, "created_at" | "updated_at">,
   ): Official {
     return {
@@ -54,7 +54,7 @@ export class InBrowserOfficialRepository
       emergency_contact_phone: input.emergency_contact_phone,
       notes: input.notes,
       status: input.status,
-    };
+    } as Official;
   }
 
   protected apply_updates_to_entity(
@@ -64,7 +64,7 @@ export class InBrowserOfficialRepository
     return {
       ...entity,
       ...updates,
-    };
+    } as Official;
   }
 
   protected apply_entity_filter(
@@ -95,7 +95,7 @@ export class InBrowserOfficialRepository
   }
 
   async find_by_organization(
-    organization_id: string,
+    organization_id: Official["organization_id"],
     options?: QueryOptions,
   ): PaginatedAsyncResult<Official> {
     return this.find_all({ organization_id }, options);
@@ -108,8 +108,8 @@ export class InBrowserOfficialRepository
   }
 
   async find_available_for_date(
-    _date: string,
-    organization_id?: string,
+    _date: Official["date_of_birth"],
+    organization_id?: Official["organization_id"],
     options?: QueryOptions,
   ): PaginatedAsyncResult<Official> {
     const filter: OfficialFilter = { status: "active" };
@@ -120,7 +120,7 @@ export class InBrowserOfficialRepository
   }
 }
 
-function create_default_officials(): Official[] {
+function create_default_officials(): import("$lib/core/types/DomainScalars").ScalarInput<Official>[] {
   const now = new Date().toISOString();
   const avatar = DEFAULT_OFFICIAL_AVATAR;
   return [

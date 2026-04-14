@@ -5,6 +5,7 @@ import type {
   CreateCompetitionInput,
 } from "../entities/Competition";
 import type { CompetitionRepository } from "../interfaces/ports";
+import type { ScalarInput } from "../types/DomainScalars";
 import {
   type CompetitionStageLifecyclePort,
   create_competition_use_cases_with_stage_lifecycle,
@@ -22,11 +23,11 @@ function create_mock_repository(): CompetitionRepository {
     count: vi.fn(),
     find_by_organization: vi.fn(),
     find_active_competitions: vi.fn(),
-  };
+  } as CompetitionRepository;
 }
 
 function create_test_competition(
-  overrides: Partial<Competition> = {},
+  overrides: Partial<ScalarInput<Competition>> = {},
 ): Competition {
   return {
     id: "comp-123",
@@ -51,7 +52,7 @@ function create_test_competition(
     created_at: "2024-01-01T00:00:00Z",
     updated_at: "2024-01-01T00:00:00Z",
     ...overrides,
-  };
+  } as unknown as Competition;
 }
 
 function create_valid_input(
@@ -77,7 +78,7 @@ function create_valid_input(
     rule_overrides: {},
     status: "active",
     ...overrides,
-  };
+  } as CreateCompetitionInput;
 }
 
 describe("CompetitionUseCases", () => {

@@ -1,21 +1,26 @@
+import type {
+  EntityId,
+  IsoDateString,
+  ScalarInput,
+} from "../types/DomainScalars";
 import type { BaseEntity, EntityStatus } from "./BaseEntity";
 
 export type IdentificationHolderType = "player" | "team_staff" | "official";
 
 export interface Identification extends BaseEntity {
   holder_type: IdentificationHolderType;
-  holder_id: string;
-  identification_type_id: string;
+  holder_id: EntityId;
+  identification_type_id: EntityId;
   identifier_value: string;
   document_image_url: string;
-  issue_date: string;
-  expiry_date: string;
+  issue_date: IsoDateString;
+  expiry_date: IsoDateString;
   notes: string;
   status: EntityStatus;
 }
 
 export type CreateIdentificationInput = Omit<
-  Identification,
+  ScalarInput<Identification>,
   "id" | "created_at" | "updated_at"
 >;
 

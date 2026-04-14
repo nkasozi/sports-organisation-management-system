@@ -41,7 +41,7 @@ class InBrowserAuditLogRepository
 
   protected create_entity_from_input(
     input: CreateAuditLogInput,
-    id: string,
+    id: AuditLog["id"],
     timestamps: Pick<BaseEntity, "created_at" | "updated_at">,
   ): AuditLog {
     const timestamp = new Date().toISOString();
@@ -61,7 +61,7 @@ class InBrowserAuditLogRepository
       timestamp,
       ip_address: input.ip_address || "",
       user_agent: input.user_agent || "",
-    };
+    } as AuditLog;
   }
 
   protected apply_updates_to_entity(
@@ -71,7 +71,7 @@ class InBrowserAuditLogRepository
     return {
       ...entity,
       ...updates,
-    };
+    } as AuditLog;
   }
 
   protected apply_entity_filter(
@@ -158,7 +158,7 @@ class InBrowserAuditLogRepository
 
   async find_by_entity(
     entity_type: string,
-    entity_id: string,
+    entity_id: AuditLog["entity_id"],
     options?: QueryOptions,
   ): PaginatedAsyncResult<AuditLog> {
     return this.find_all({ entity_type, entity_id }, options);

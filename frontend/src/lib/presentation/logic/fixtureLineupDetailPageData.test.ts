@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { ANY_VALUE, type UserScopeProfile } from "$lib/core/interfaces/ports";
+import { ANY_VALUE } from "$lib/core/interfaces/ports";
 
 const fixture_lineup_detail_page_load_mocks = vi.hoisted(() => ({
   load_fixture_lineup_detail_page_data: vi.fn(),
@@ -15,18 +15,17 @@ import { load_fixture_lineup_detail_view_data } from "./fixtureLineupDetailPageD
 
 const load_fixture_lineup_detail_page_data =
   fixture_lineup_detail_page_load_mocks.load_fixture_lineup_detail_page_data;
+type FixtureLineupDetailCurrentProfile = NonNullable<
+  Parameters<typeof load_fixture_lineup_detail_view_data>[1]
+>;
 
 function create_profile(
-  overrides: Partial<UserScopeProfile> = {},
-): UserScopeProfile {
+  overrides: Partial<FixtureLineupDetailCurrentProfile> = {},
+): FixtureLineupDetailCurrentProfile {
   return {
-    user_id: "user_1",
     organization_id: "org_1",
-    role: "manager",
-    permissions: [],
-    scopes: [],
     ...overrides,
-  } as UserScopeProfile;
+  };
 }
 
 afterEach((): void => {

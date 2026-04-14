@@ -2,7 +2,10 @@ import { describe, expect, it, vi } from "vitest";
 
 import type { Fixture } from "$lib/core/entities/Fixture";
 import type { Organization } from "$lib/core/entities/Organization";
-import type { AuthToken } from "$lib/core/interfaces/ports";
+import {
+  type AuthToken,
+  create_auth_token_payload,
+} from "$lib/core/interfaces/ports";
 import type { AuthState } from "$lib/presentation/stores/auth";
 
 import {
@@ -28,7 +31,7 @@ function create_auth_state(overrides: Partial<AuthState> = {}): AuthState {
     is_initialized: true,
     is_demo_session: false,
     ...overrides,
-  };
+  } as AuthState;
 }
 
 function create_fixture(overrides: Partial<Fixture> = {}): Fixture {
@@ -96,20 +99,28 @@ function create_fixture_state_dependencies(
 }
 
 function create_auth_token(): AuthToken {
+  const payload_result = create_auth_token_payload({
+    user_id: "user_1",
+    email: "admin@example.com",
+    display_name: "Admin User",
+    role: "org_admin",
+    organization_id: "org_1",
+    team_id: "team_1",
+    issued_at: 1,
+    expires_at: 2,
+  });
+
+  expect(payload_result.success).toBe(true);
+
+  if (!payload_result.success) {
+    return undefined as never;
+  }
+
   return {
     raw_token: "token",
     signature: "signature",
-    payload: {
-      user_id: "user_1",
-      email: "admin@example.com",
-      display_name: "Admin User",
-      role: "org_admin",
-      organization_id: "org_1",
-      team_id: "team_1",
-      issued_at: 1,
-      expires_at: 2,
-    },
-  };
+    payload: payload_result.data,
+  } as AuthToken;
 }
 
 describe("liveGamesPageFlow", () => {

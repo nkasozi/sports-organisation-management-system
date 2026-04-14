@@ -14,7 +14,7 @@ function make_input(
     total_match_days: 10,
     manual_override: null,
     ...overrides,
-  };
+  } as ImportanceWeightInput;
 }
 
 describe("compute_importance_weight", () => {

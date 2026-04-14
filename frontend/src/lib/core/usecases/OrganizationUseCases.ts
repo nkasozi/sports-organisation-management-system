@@ -10,6 +10,7 @@ import type {
 } from "../interfaces/ports";
 import type { QueryOptions } from "../interfaces/ports";
 import type { OrganizationUseCasesPort } from "../interfaces/ports";
+import type { ScalarValueInput } from "../types/DomainScalars";
 import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
 import { create_failure_result } from "../types/Result";
 
@@ -26,7 +27,9 @@ export function create_organization_use_cases(
       return repository.find_all(filter, options);
     },
 
-    async get_by_id(id: string): AsyncResult<Organization> {
+    async get_by_id(
+      id: ScalarValueInput<Organization["id"]>,
+    ): AsyncResult<Organization> {
       if (!id || id.trim().length === 0) {
         return create_failure_result("Organization ID is required");
       }
@@ -42,7 +45,7 @@ export function create_organization_use_cases(
     },
 
     async update(
-      id: string,
+      id: ScalarValueInput<Organization["id"]>,
       input: UpdateOrganizationInput,
     ): AsyncResult<Organization> {
       if (!id || id.trim().length === 0) {
@@ -51,14 +54,18 @@ export function create_organization_use_cases(
       return repository.update(id, input);
     },
 
-    async delete(id: string): AsyncResult<boolean> {
+    async delete(
+      id: ScalarValueInput<Organization["id"]>,
+    ): AsyncResult<boolean> {
       if (!id || id.trim().length === 0) {
         return create_failure_result("Organization ID is required");
       }
       return repository.delete_by_id(id);
     },
 
-    async delete_organizations(ids: string[]): AsyncResult<number> {
+    async delete_organizations(
+      ids: Array<ScalarValueInput<Organization["id"]>>,
+    ): AsyncResult<number> {
       if (!ids || ids.length === 0) {
         return create_failure_result(
           "At least one organization ID is required",
@@ -69,7 +76,9 @@ export function create_organization_use_cases(
   };
 }
 
-type OrganizationDefaultSeeder = (organization_id: string) => Promise<void>;
+type OrganizationDefaultSeeder = (
+  organization_id: ScalarValueInput<Organization["id"]>,
+) => Promise<void>;
 
 export function create_organization_use_cases_with_default_seeder(
   org_repo: OrganizationRepository,
@@ -100,7 +109,7 @@ export function create_organization_use_cases_with_default_seeder(
 function await_import() {
   return {
     seed_default_lookup_entities_for_organization: async (
-      organization_id: string,
+      organization_id: ScalarValueInput<Organization["id"]>,
     ) => {
       const { seed_default_lookup_entities_for_organization: seeder } =
         await import("../../adapters/initialization/organizationDefaultsSeeder");

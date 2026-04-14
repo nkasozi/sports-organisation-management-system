@@ -21,7 +21,7 @@ function create_mock_repository(): OfficialPerformanceRatingRepository {
     find_by_fixture: vi.fn(),
     find_by_official_and_fixture: vi.fn(),
     find_existing_rating: vi.fn(),
-  };
+  } as OfficialPerformanceRatingRepository;
 }
 
 function create_test_rating(
@@ -44,7 +44,7 @@ function create_test_rating(
     created_at: "2026-01-01T00:00:00Z",
     updated_at: "2026-01-01T00:00:00Z",
     ...overrides,
-  };
+  } as OfficialPerformanceRating;
 }
 
 function create_valid_input(
@@ -64,7 +64,7 @@ function create_valid_input(
     notes: "",
     submitted_at: "",
     ...overrides,
-  };
+  } as CreateOfficialPerformanceRatingInput;
 }
 
 describe("OfficialPerformanceRatingUseCases", () => {

@@ -1,3 +1,10 @@
+import type {
+  EntityId,
+  GameMinute,
+  IsoDateTimeString,
+  Name,
+  ScalarInput,
+} from "../types/DomainScalars";
 import type { BaseEntity, EntityStatus } from "./BaseEntity";
 
 export type GameEventLogType =
@@ -22,33 +29,33 @@ export type GameEventLogType =
 export type TeamSide = "home" | "away" | "match";
 
 export interface GameEventLog extends BaseEntity {
-  organization_id: string;
-  live_game_log_id: string;
-  fixture_id: string;
+  organization_id: EntityId;
+  live_game_log_id: EntityId;
+  fixture_id: EntityId;
   event_type: GameEventLogType;
-  minute: number;
-  stoppage_time_minute: number | null;
+  minute: GameMinute;
+  stoppage_time_minute: GameMinute | null;
   team_side: TeamSide;
-  player_id: string;
-  player_name: string;
-  secondary_player_id: string;
-  secondary_player_name: string;
+  player_id: EntityId;
+  player_name: Name;
+  secondary_player_id: EntityId;
+  secondary_player_name: Name;
   description: string;
   affects_score: boolean;
   score_change_home: number;
   score_change_away: number;
-  recorded_by_user_id: string;
-  recorded_at: string;
+  recorded_by_user_id: EntityId;
+  recorded_at: IsoDateTimeString;
   reviewed: boolean;
-  reviewed_by_user_id: string;
-  reviewed_at: string;
+  reviewed_by_user_id: EntityId;
+  reviewed_at: IsoDateTimeString;
   voided: boolean;
   voided_reason: string;
   status: EntityStatus;
 }
 
 export type CreateGameEventLogInput = Omit<
-  GameEventLog,
+  ScalarInput<GameEventLog>,
   | "id"
   | "created_at"
   | "updated_at"
@@ -62,7 +69,7 @@ export type CreateGameEventLogInput = Omit<
 
 export type UpdateGameEventLogInput = Partial<
   Omit<
-    GameEventLog,
+    ScalarInput<GameEventLog>,
     "id" | "created_at" | "updated_at" | "live_game_log_id" | "fixture_id"
   >
 >;

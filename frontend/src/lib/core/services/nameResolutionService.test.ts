@@ -37,7 +37,7 @@ function create_mock_entity(id: string, name: string): BaseEntity {
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
     version: 1,
-  } as BaseEntity;
+  } as unknown as BaseEntity;
 }
 
 describe("resolve_entity_name_to_id", () => {
@@ -49,11 +49,11 @@ describe("resolve_entity_name_to_id", () => {
         data: [mock_entity],
       });
 
-      const input: NameResolutionInput = {
+      const input =  {
         entity_name: "Acme Sports Club",
         entity_type: "organization",
         use_cases,
-      };
+      } as NameResolutionInput;
 
       const result = await resolve_entity_name_to_id(input);
 
@@ -69,11 +69,11 @@ describe("resolve_entity_name_to_id", () => {
         data: [mock_entity],
       });
 
-      const input: NameResolutionInput = {
+      const input =  {
         entity_name: "manchester united",
         entity_type: "organization",
         use_cases,
-      };
+      } as NameResolutionInput;
 
       const result = await resolve_entity_name_to_id(input);
 
@@ -88,11 +88,11 @@ describe("resolve_entity_name_to_id", () => {
         data: [mock_entity],
       });
 
-      const input: NameResolutionInput = {
+      const input =  {
         entity_name: "  FC Barcelona  ",
         entity_type: "team",
         use_cases,
-      };
+      } as NameResolutionInput;
 
       const result = await resolve_entity_name_to_id(input);
 
@@ -108,11 +108,11 @@ describe("resolve_entity_name_to_id", () => {
         data: [exact_match, partial_match],
       });
 
-      const input: NameResolutionInput = {
+      const input =  {
         entity_name: "Eagles",
         entity_type: "team",
         use_cases,
-      };
+      } as NameResolutionInput;
 
       const result = await resolve_entity_name_to_id(input);
 
@@ -128,11 +128,11 @@ describe("resolve_entity_name_to_id", () => {
         data: [],
       });
 
-      const input: NameResolutionInput = {
+      const input =  {
         entity_name: "Nonexistent Team",
         entity_type: "team",
         use_cases,
-      };
+      } as NameResolutionInput;
 
       const result = await resolve_entity_name_to_id(input);
 
@@ -154,11 +154,11 @@ describe("resolve_entity_name_to_id", () => {
         data: [partial_match],
       });
 
-      const input: NameResolutionInput = {
+      const input =  {
         entity_name: "Eagles",
         entity_type: "team",
         use_cases,
-      };
+      } as NameResolutionInput;
 
       const result = await resolve_entity_name_to_id(input);
 
@@ -178,11 +178,11 @@ describe("resolve_entity_name_to_id", () => {
         data: [match_1, match_2],
       });
 
-      const input: NameResolutionInput = {
+      const input =  {
         entity_name: "United FC",
         entity_type: "team",
         use_cases,
-      };
+      } as NameResolutionInput;
 
       const result = await resolve_entity_name_to_id(input);
 
@@ -211,11 +211,11 @@ describe("resolve_entity_name_to_id", () => {
         data: matches,
       });
 
-      const input: NameResolutionInput = {
+      const input =  {
         entity_name: "Sports Club",
         entity_type: "organization",
         use_cases,
-      };
+      } as NameResolutionInput;
 
       const result = await resolve_entity_name_to_id(input);
 
@@ -230,11 +230,11 @@ describe("resolve_entity_name_to_id", () => {
     it("should return error for empty name", async () => {
       const use_cases = create_mock_use_cases({ success: true, data: [] });
 
-      const input: NameResolutionInput = {
+      const input =  {
         entity_name: "",
         entity_type: "organization",
         use_cases,
-      };
+      } as NameResolutionInput;
 
       const result = await resolve_entity_name_to_id(input);
 
@@ -248,11 +248,11 @@ describe("resolve_entity_name_to_id", () => {
     it("should return error for whitespace-only name", async () => {
       const use_cases = create_mock_use_cases({ success: true, data: [] });
 
-      const input: NameResolutionInput = {
+      const input =  {
         entity_name: "   ",
         entity_type: "team",
         use_cases,
-      };
+      } as NameResolutionInput;
 
       const result = await resolve_entity_name_to_id(input);
 
@@ -268,11 +268,11 @@ describe("resolve_entity_name_to_id", () => {
         error_message: "Database connection failed",
       });
 
-      const input: NameResolutionInput = {
+      const input =  {
         entity_name: "Test Team",
         entity_type: "team",
         use_cases,
-      };
+      } as NameResolutionInput;
 
       const result = await resolve_entity_name_to_id(input);
 
@@ -297,7 +297,7 @@ describe("resolve_multiple_names_to_ids", () => {
       data: [team_entity],
     });
 
-    const requests: NameResolutionInput[] = [
+    const requests =  [
       {
         entity_name: "Main Organization",
         entity_type: "organization",
@@ -308,7 +308,7 @@ describe("resolve_multiple_names_to_ids", () => {
         entity_type: "team",
         use_cases: team_use_cases,
       },
-    ];
+    ] as NameResolutionInput[];
 
     const results = await resolve_multiple_names_to_ids(requests);
 
@@ -332,7 +332,7 @@ describe("resolve_multiple_names_to_ids", () => {
       data: [],
     });
 
-    const requests: NameResolutionInput[] = [
+    const requests =  [
       {
         entity_name: "Found Org",
         entity_type: "organization",
@@ -343,7 +343,7 @@ describe("resolve_multiple_names_to_ids", () => {
         entity_type: "team",
         use_cases: team_use_cases,
       },
-    ];
+    ] as NameResolutionInput[];
 
     const results = await resolve_multiple_names_to_ids(requests);
 

@@ -1,3 +1,5 @@
+import type { Organization } from "../../core/entities/Organization";
+import type { ScalarValueInput } from "../../core/types/DomainScalars";
 import type { Result } from "../../core/types/Result";
 import {
   create_failure_result,
@@ -28,7 +30,7 @@ import type { DemoSeedingRepos } from "./demoSeedingRepos";
 import type { SeedEntityIdLookups } from "./seedingTypes";
 
 export async function seed_all_demo_entities(
-  organization_id: string,
+  organization_id: ScalarValueInput<Organization["id"]>,
   entity_id_lookups: SeedEntityIdLookups,
   repos: DemoSeedingRepos,
 ): Promise<Result<boolean>> {

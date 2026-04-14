@@ -1,20 +1,25 @@
+import type {
+  EntityId,
+  IsoDateString,
+  ScalarInput,
+} from "../types/DomainScalars";
 import type { BaseEntity } from "./BaseEntity";
 
 export type PlayerTeamTransferStatus = "pending" | "approved" | "declined";
 
 export interface PlayerTeamTransferHistory extends BaseEntity {
-  organization_id: string;
-  player_id: string;
-  from_team_id: string;
-  to_team_id: string;
-  transfer_date: string;
+  organization_id: EntityId;
+  player_id: EntityId;
+  from_team_id: EntityId;
+  to_team_id: EntityId;
+  transfer_date: IsoDateString;
   status: PlayerTeamTransferStatus;
-  approved_by: string;
+  approved_by: EntityId;
   notes: string;
 }
 
 export type CreatePlayerTeamTransferHistoryInput = Omit<
-  PlayerTeamTransferHistory,
+  ScalarInput<PlayerTeamTransferHistory>,
   "id" | "created_at" | "updated_at"
 >;
 
@@ -22,10 +27,10 @@ export type UpdatePlayerTeamTransferHistoryInput =
   Partial<CreatePlayerTeamTransferHistoryInput>;
 
 function create_empty_player_team_transfer_history_input(
-  organization_id: string = "",
-  player_id: string = "",
-  from_team_id: string = "",
-  to_team_id: string = "",
+  organization_id: CreatePlayerTeamTransferHistoryInput["organization_id"] = "",
+  player_id: CreatePlayerTeamTransferHistoryInput["player_id"] = "",
+  from_team_id: CreatePlayerTeamTransferHistoryInput["from_team_id"] = "",
+  to_team_id: CreatePlayerTeamTransferHistoryInput["to_team_id"] = "",
 ): CreatePlayerTeamTransferHistoryInput {
   return {
     organization_id,

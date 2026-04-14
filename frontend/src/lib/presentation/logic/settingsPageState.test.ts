@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import type { ScalarInput } from "$lib/core/types/DomainScalars";
 import type { Organization } from "$lib/core/entities/Organization";
 import type { OrganizationSettings } from "$lib/core/entities/OrganizationSettings";
 import type { BrandingConfig } from "$lib/presentation/stores/branding";
@@ -32,7 +33,7 @@ function create_test_branding_config(
     background_pattern_url:
       overrides.background_pattern_url ?? "/african-mosaic-bg.svg",
     show_panel_borders: overrides.show_panel_borders ?? false,
-  };
+  } as BrandingConfig;
 }
 
 function create_test_theme_config(
@@ -42,11 +43,11 @@ function create_test_theme_config(
     mode: overrides.mode ?? "dark",
     primary_color: overrides.primary_color ?? "red",
     secondary_color: overrides.secondary_color ?? "blue",
-  };
+  } as ThemeConfig;
 }
 
 function create_test_organization(
-  overrides: Partial<Organization>,
+  overrides: Partial<ScalarInput<Organization>>,
 ): Organization {
   return {
     id: overrides.id ?? "organization_1",
@@ -61,11 +62,11 @@ function create_test_organization(
     address: overrides.address ?? "Arena Road",
     website: overrides.website ?? "",
     status: overrides.status ?? "active",
-  };
+  } as Organization;
 }
 
 function create_test_organization_settings(
-  overrides: Partial<OrganizationSettings>,
+  overrides: Partial<ScalarInput<OrganizationSettings>>,
 ): OrganizationSettings {
   return {
     id: overrides.id ?? "settings_1",
@@ -88,7 +89,7 @@ function create_test_organization_settings(
     primary_color: overrides.primary_color ?? "emerald",
     secondary_color: overrides.secondary_color ?? "purple",
     sync_interval_ms: overrides.sync_interval_ms ?? 900_000,
-  };
+  } as OrganizationSettings;
 }
 
 describe("settings form values", () => {

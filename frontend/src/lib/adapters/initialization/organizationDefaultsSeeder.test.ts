@@ -1,6 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import type { Organization } from "$lib/core/entities/Organization";
+
 import { seed_default_lookup_entities_for_organization } from "./organizationDefaultsSeeder";
+
+type SeedOrganizationId = Organization["id"];
 
 const success_result = { success: true, data: 2 };
 const mock_gender_seed = vi.fn().mockResolvedValue(success_result);
@@ -30,9 +34,11 @@ vi.mock("../repositories/InBrowserPlayerPositionRepository", () => ({
     seed_with_data: mock_player_position_seed,
   })),
   InBrowserPlayerPositionRepository: vi.fn(),
-  create_default_player_positions_for_organization: vi.fn((org_id: string) => [
-    { name: "Forward", organization_id: org_id },
-  ]),
+  create_default_player_positions_for_organization: vi.fn(
+    (org_id: SeedOrganizationId) => [
+      { name: "Forward", organization_id: org_id },
+    ],
+  ),
 }));
 
 vi.mock("../repositories/InBrowserGameOfficialRoleRepository", () => ({
@@ -100,7 +106,7 @@ describe("seed_default_lookup_entities_for_organization", () => {
     await seed_default_lookup_entities_for_organization("org-abc");
 
     const seeded_genders = mock_gender_seed.mock.calls[0][0] as Array<{
-      organization_id: string;
+      organization_id: SeedOrganizationId;
     }>;
     expect(seeded_genders.every((g) => g.organization_id === "org-abc")).toBe(
       true,
@@ -117,7 +123,7 @@ describe("seed_default_lookup_entities_for_organization", () => {
     await seed_default_lookup_entities_for_organization("org-abc");
 
     const seeded = mock_identification_type_seed.mock.calls[0][0] as Array<{
-      organization_id: string;
+      organization_id: SeedOrganizationId;
     }>;
     expect(seeded.every((item) => item.organization_id === "org-abc")).toBe(
       true,
@@ -269,7 +275,7 @@ describe("seed_default_lookup_entities_for_organization", () => {
     await seed_default_lookup_entities_for_organization("org-abc");
 
     const seeded = mock_competition_format_seed.mock.calls[0][0] as Array<{
-      organization_id: string;
+      organization_id: SeedOrganizationId;
     }>;
     expect(seeded.every((item) => item.organization_id === "org-abc")).toBe(
       true,

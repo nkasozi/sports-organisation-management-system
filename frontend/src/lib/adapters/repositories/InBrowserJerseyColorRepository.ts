@@ -34,7 +34,7 @@ export class InBrowserJerseyColorRepository
 
   protected create_entity_from_input(
     input: CreateJerseyColorInput,
-    id: string,
+    id: JerseyColor["id"],
     timestamps: Pick<BaseEntity, "created_at" | "updated_at">,
   ): JerseyColor {
     return {
@@ -47,7 +47,7 @@ export class InBrowserJerseyColorRepository
       secondary_color: input.secondary_color || "",
       tertiary_color: input.tertiary_color || "",
       status: input.status,
-    };
+    } as JerseyColor;
   }
 
   protected apply_updates_to_entity(
@@ -57,7 +57,7 @@ export class InBrowserJerseyColorRepository
     return {
       ...entity,
       ...updates,
-    };
+    } as JerseyColor;
   }
 
   protected apply_entity_filter(
@@ -96,14 +96,14 @@ export class InBrowserJerseyColorRepository
 
   async find_by_holder(
     holder_type: JerseyColorHolderType,
-    holder_id: string,
+    holder_id: JerseyColor["holder_id"],
     options?: QueryOptions,
   ): PaginatedAsyncResult<JerseyColor> {
     return this.find_all({ holder_type, holder_id }, options);
   }
 }
 
-function create_default_jersey_colors(): JerseyColor[] {
+function create_default_jersey_colors(): import("$lib/core/types/DomainScalars").ScalarInput<JerseyColor>[] {
   const now = new Date().toISOString();
   return [
     {

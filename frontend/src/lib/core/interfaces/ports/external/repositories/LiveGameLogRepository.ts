@@ -4,6 +4,7 @@ import type {
   LiveGameStatus,
   UpdateLiveGameLogInput,
 } from "../../../../entities/LiveGameLog";
+import type { ScalarValueInput } from "../../../../types/DomainScalars";
 import type {
   AsyncResult,
   PaginatedAsyncResult,
@@ -11,10 +12,10 @@ import type {
 import type { Repository } from "./Repository";
 
 export interface LiveGameLogFilter {
-  organization_id?: string;
-  fixture_id?: string;
+  organization_id?: ScalarValueInput<LiveGameLog["organization_id"]>;
+  fixture_id?: ScalarValueInput<LiveGameLog["fixture_id"]>;
   game_status?: LiveGameStatus;
-  started_by_user_id?: string;
+  started_by_user_id?: ScalarValueInput<LiveGameLog["started_by_user_id"]>;
 }
 
 export interface LiveGameLogRepository extends Repository<
@@ -23,17 +24,21 @@ export interface LiveGameLogRepository extends Repository<
   UpdateLiveGameLogInput,
   LiveGameLogFilter
 > {
-  get_live_game_log_for_fixture(fixture_id: string): AsyncResult<LiveGameLog>;
+  get_live_game_log_for_fixture(
+    fixture_id: ScalarValueInput<LiveGameLog["fixture_id"]>,
+  ): AsyncResult<LiveGameLog>;
 
-  get_active_games(organization_id?: string): AsyncResult<LiveGameLog[]>;
+  get_active_games(
+    organization_id?: ScalarValueInput<LiveGameLog["organization_id"]>,
+  ): AsyncResult<LiveGameLog[]>;
 
   find_by_organization(
-    organization_id: string,
+    organization_id: ScalarValueInput<LiveGameLog["organization_id"]>,
     options?: { page: number; page_size: number },
   ): PaginatedAsyncResult<LiveGameLog>;
 
   find_completed_games(
-    organization_id?: string,
+    organization_id?: ScalarValueInput<LiveGameLog["organization_id"]>,
     options?: { page: number; page_size: number },
   ): PaginatedAsyncResult<LiveGameLog>;
 }

@@ -1,9 +1,23 @@
 import type { Fixture } from "../entities/Fixture";
 import type { FixtureLineup, LineupPlayer } from "../entities/FixtureLineup";
 import type { Player } from "../entities/Player";
+import type { PlayerPosition } from "../entities/PlayerPosition";
 import type { PlayerTeamMembership } from "../entities/PlayerTeamMembership";
+import { parse_name } from "../types/DomainScalars";
+import type { ScalarValueInput } from "../types/DomainScalars";
 import type { FixtureLineupUseCases } from "../usecases/FixtureLineupUseCases";
 import type { FixtureUseCases } from "../usecases/FixtureUseCases";
+
+const UNKNOWN_FIRST_NAME_RESULT = parse_name("Unknown");
+const UNKNOWN_LAST_NAME_RESULT = parse_name("Player");
+
+const UNKNOWN_FIRST_NAME = UNKNOWN_FIRST_NAME_RESULT.success
+  ? UNKNOWN_FIRST_NAME_RESULT.data
+  : ("Unknown" as LineupPlayer["first_name"]);
+
+const UNKNOWN_LAST_NAME = UNKNOWN_LAST_NAME_RESULT.success
+  ? UNKNOWN_LAST_NAME_RESULT.data
+  : ("Player" as LineupPlayer["last_name"]);
 
 interface PreviousLineupResult {
   success: boolean;
@@ -12,7 +26,7 @@ interface PreviousLineupResult {
 
 export async function find_previous_lineup_for_team(
   current_fixture: Fixture,
-  team_id: string,
+  team_id: ScalarValueInput<FixtureLineup["team_id"]>,
   fixture_use_cases: FixtureUseCases,
   lineup_use_cases: FixtureLineupUseCases,
 ): Promise<PreviousLineupResult> {
@@ -69,9 +83,11 @@ export async function find_previous_lineup_for_team(
 export function build_lineup_players_from_memberships(
   memberships: PlayerTeamMembership[],
   players: Player[],
-  position_name_by_id: Map<string, string>,
+  position_name_by_id: Map<PlayerPosition["id"], PlayerPosition["name"]>,
 ): LineupPlayer[] {
-  const player_by_id = new Map<string, Player>(players.map((p) => [p.id, p]));
+  const player_by_id = new Map<Player["id"], Player>(
+    players.map((player: Player) => [player.id, player]),
+  );
 
   return memberships.map((membership) => {
     const player = player_by_id.get(membership.player_id);
@@ -80,8 +96,8 @@ export function build_lineup_players_from_memberships(
       : null;
     return {
       id: membership.player_id,
-      first_name: player?.first_name || "Unknown",
-      last_name: player?.last_name || "Player",
+      first_name: player?.first_name ?? UNKNOWN_FIRST_NAME,
+      last_name: player?.last_name ?? UNKNOWN_LAST_NAME,
       jersey_number: membership.jersey_number ?? null,
       position: position_name,
       is_captain: false,

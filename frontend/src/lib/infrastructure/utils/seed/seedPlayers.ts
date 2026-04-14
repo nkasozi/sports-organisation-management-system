@@ -1,4 +1,5 @@
 import type { Player } from "../../../core/entities/Player";
+import type { ScalarValueInput } from "../../../core/types/DomainScalars";
 import { generate_current_timestamp } from "./seedIds";
 import type { PositionIds } from "./seedPlayerIds";
 import { resolve_seed_gender_id_for_first_name } from "./seedPlayerIds";
@@ -17,11 +18,11 @@ import { create_seed_players_group12 } from "./seedPlayersGroup12";
 
 export function create_seed_players(
   positions: PositionIds,
-  organization_id: string,
-): Player[] {
+  organization_id: ScalarValueInput<Player["organization_id"]>,
+): import("$lib/core/types/DomainScalars").ScalarInput<Player>[] {
   const now = generate_current_timestamp();
 
-  const players_without_gender: Omit<Player, "gender_id">[] = [
+  const players_without_gender: import("$lib/core/types/DomainScalars").ScalarInput<Omit<Player, "gender_id">>[] = [
     ...create_seed_players_group1(positions, organization_id, now),
     ...create_seed_players_group2(positions, organization_id, now),
     ...create_seed_players_group3(positions, organization_id, now),

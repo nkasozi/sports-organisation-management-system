@@ -1,4 +1,5 @@
 import type { Competition } from "../../../core/entities/Competition";
+import type { ScalarInput } from "../../../core/types/DomainScalars";
 import type { SeedCompetitionFormatIds } from "./seedIds";
 import {
   generate_current_timestamp,
@@ -9,7 +10,7 @@ import {
 
 export function create_seed_competitions(
   format_ids: SeedCompetitionFormatIds,
-): Competition[] {
+): ScalarInput<Competition>[] {
   const now = generate_current_timestamp();
   const next_month = new Date();
   next_month.setMonth(next_month.getMonth() + 1);

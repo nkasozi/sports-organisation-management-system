@@ -5,11 +5,12 @@ import type {
   StageType,
   UpdateCompetitionStageInput,
 } from "../../../../entities/CompetitionStage";
+import type { ScalarValueInput } from "../../../../types/DomainScalars";
 import type { FilterableRepository } from "./Repository";
 import type { PaginatedAsyncResult, QueryOptions } from "./Repository";
 
 export interface CompetitionStageFilter {
-  competition_id?: string;
+  competition_id?: ScalarValueInput<CompetitionStage["competition_id"]>;
   stage_type?: StageType;
   name_contains?: string;
   status?: EntityStatus;
@@ -22,7 +23,7 @@ export interface CompetitionStageRepository extends FilterableRepository<
   CompetitionStageFilter
 > {
   find_by_competition(
-    competition_id: string,
+    competition_id: ScalarValueInput<CompetitionStage["competition_id"]>,
     options?: QueryOptions,
   ): PaginatedAsyncResult<CompetitionStage>;
 }

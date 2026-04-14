@@ -11,6 +11,7 @@ import type {
   FixtureLineupRepository,
   FixtureLineupUseCasesPort,
 } from "../interfaces/ports";
+import type { ScalarValueInput } from "../types/DomainScalars";
 import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
 import { create_failure_result } from "../types/Result";
 
@@ -44,7 +45,9 @@ export function create_fixture_lineup_use_cases(
       return repository.create(input);
     },
 
-    async get_by_id(id: string): AsyncResult<FixtureLineup> {
+    async get_by_id(
+      id: ScalarValueInput<FixtureLineup["id"]>,
+    ): AsyncResult<FixtureLineup> {
       if (!id || id.trim().length === 0) {
         return create_failure_result("FixtureLineup ID is required");
       }
@@ -52,7 +55,7 @@ export function create_fixture_lineup_use_cases(
     },
 
     async update(
-      id: string,
+      id: ScalarValueInput<FixtureLineup["id"]>,
       input: UpdateFixtureLineupInput,
     ): AsyncResult<FixtureLineup> {
       if (!id || id.trim().length === 0)
@@ -65,7 +68,9 @@ export function create_fixture_lineup_use_cases(
       return repository.update(id, input);
     },
 
-    async delete(id: string): AsyncResult<boolean> {
+    async delete(
+      id: ScalarValueInput<FixtureLineup["id"]>,
+    ): AsyncResult<boolean> {
       if (!id || id.trim().length === 0)
         return create_failure_result("FixtureLineup ID is required");
       const existing_result = await repository.find_by_id(id);
@@ -84,20 +89,20 @@ export function create_fixture_lineup_use_cases(
     },
 
     async get_lineups_for_fixture(
-      fixture_id: string,
+      fixture_id: ScalarValueInput<FixtureLineup["fixture_id"]>,
     ): AsyncResult<FixtureLineup[]> {
       return repository.get_lineups_for_fixture(fixture_id);
     },
 
     async get_lineup_for_team_in_fixture(
-      fixture_id: string,
-      team_id: string,
+      fixture_id: ScalarValueInput<FixtureLineup["fixture_id"]>,
+      team_id: ScalarValueInput<FixtureLineup["team_id"]>,
     ): AsyncResult<FixtureLineup> {
       return repository.get_lineup_for_team_in_fixture(fixture_id, team_id);
     },
 
     async list_lineups_by_fixture(
-      fixture_id: string,
+      fixture_id: ScalarValueInput<FixtureLineup["fixture_id"]>,
       options?: { page: number; page_size: number },
     ): PaginatedAsyncResult<FixtureLineup> {
       if (!fixture_id || fixture_id.trim().length === 0)
@@ -106,8 +111,8 @@ export function create_fixture_lineup_use_cases(
     },
 
     async list_lineups_by_fixture_and_team(
-      fixture_id: string,
-      team_id: string,
+      fixture_id: ScalarValueInput<FixtureLineup["fixture_id"]>,
+      team_id: ScalarValueInput<FixtureLineup["team_id"]>,
       options?: { page: number; page_size: number },
     ): PaginatedAsyncResult<FixtureLineup> {
       if (!fixture_id || fixture_id.trim().length === 0)
@@ -117,7 +122,9 @@ export function create_fixture_lineup_use_cases(
       return repository.find_by_fixture_and_team(fixture_id, team_id, options);
     },
 
-    async submit_lineup(id: string): AsyncResult<FixtureLineup> {
+    async submit_lineup(
+      id: ScalarValueInput<FixtureLineup["id"]>,
+    ): AsyncResult<FixtureLineup> {
       const existing_result = await repository.find_by_id(id);
       if (!existing_result.success || !existing_result.data) {
         return create_failure_result("Lineup not found");
@@ -140,7 +147,7 @@ export function create_fixture_lineup_use_cases(
 
       const result = await repository.update(id, {
         status: "submitted",
-        submitted_at: new Date().toISOString(),
+        submitted_at: new Date().toISOString() as FixtureLineup["submitted_at"],
       });
 
       if (result.success && result.data) {
@@ -157,7 +164,9 @@ export function create_fixture_lineup_use_cases(
       return result;
     },
 
-    async lock_lineup(id: string): AsyncResult<FixtureLineup> {
+    async lock_lineup(
+      id: ScalarValueInput<FixtureLineup["id"]>,
+    ): AsyncResult<FixtureLineup> {
       const existing_result = await repository.find_by_id(id);
       if (!existing_result.success || !existing_result.data) {
         return create_failure_result("Lineup not found");

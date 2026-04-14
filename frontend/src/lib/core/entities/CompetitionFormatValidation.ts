@@ -117,10 +117,10 @@ function requires_league_config(format_type: FormatType): boolean {
 }
 
 function normalize_stage_templates(
-  stage_templates: CompetitionFormatStageTemplate[],
+  stage_templates: CreateCompetitionFormatInput["stage_templates"],
   format_type: FormatType,
   league_config: LeagueConfig | null,
-): CompetitionFormatStageTemplate[] {
+): CreateCompetitionFormatInput["stage_templates"] {
   const source_templates =
     stage_templates.length > 0
       ? stage_templates

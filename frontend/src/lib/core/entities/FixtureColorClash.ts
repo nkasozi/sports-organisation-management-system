@@ -1,3 +1,4 @@
+import type { ScalarInput } from "../types/DomainScalars";
 import type { JerseyColorAssignment } from "./FixtureTypes";
 
 interface ColorClashWarning {
@@ -98,8 +99,8 @@ function get_similarity_description(delta_e: number): string {
 }
 
 function check_color_pair(
-  jersey_a: JerseyColorAssignment | undefined,
-  jersey_b: JerseyColorAssignment | undefined,
+  jersey_a: ScalarInput<JerseyColorAssignment> | undefined,
+  jersey_b: ScalarInput<JerseyColorAssignment> | undefined,
   name_a: string,
   name_b: string,
 ): ColorClashWarning | null {
@@ -118,9 +119,9 @@ function check_color_pair(
 }
 
 export function detect_jersey_color_clashes(
-  home_team_jersey: JerseyColorAssignment | undefined,
-  away_team_jersey: JerseyColorAssignment | undefined,
-  officials_jersey: JerseyColorAssignment | undefined,
+  home_team_jersey: ScalarInput<JerseyColorAssignment> | undefined,
+  away_team_jersey: ScalarInput<JerseyColorAssignment> | undefined,
+  officials_jersey: ScalarInput<JerseyColorAssignment> | undefined,
   home_team_name: string,
   away_team_name: string,
 ): ColorClashWarning[] {
@@ -154,9 +155,9 @@ export function detect_jersey_color_clashes(
 }
 
 export function has_color_clashes(
-  home_team_jersey: JerseyColorAssignment | undefined,
-  away_team_jersey: JerseyColorAssignment | undefined,
-  officials_jersey: JerseyColorAssignment | undefined,
+  home_team_jersey: ScalarInput<JerseyColorAssignment> | undefined,
+  away_team_jersey: ScalarInput<JerseyColorAssignment> | undefined,
+  officials_jersey: ScalarInput<JerseyColorAssignment> | undefined,
   home_team_name: string,
   away_team_name: string,
 ): boolean {

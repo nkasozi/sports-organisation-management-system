@@ -1,9 +1,10 @@
 import type { IdentificationType } from "../../../core/entities/IdentificationType";
+import type { ScalarValueInput } from "../../../core/types/DomainScalars";
 import { generate_current_timestamp } from "./seedIds";
 
 export function create_seed_identification_types(
-  organization_id: string,
-): IdentificationType[] {
+  organization_id: ScalarValueInput<IdentificationType["organization_id"]>,
+): import("$lib/core/types/DomainScalars").ScalarInput<IdentificationType>[] {
   const now = generate_current_timestamp();
 
   return [

@@ -1,9 +1,12 @@
 <script lang="ts">
   import type { SportGamePeriod } from "$lib/core/entities/Sport";
+  import type { ScalarInput } from "$lib/core/types/DomainScalars";
+
+  type EditableSportGamePeriod = ScalarInput<SportGamePeriod>;
 
   interface $$Props {
     index: number;
-    period: SportGamePeriod;
+    period: EditableSportGamePeriod;
     readonly: boolean;
     is_first: boolean;
     is_last: boolean;
@@ -15,7 +18,7 @@
   }
 
   export let index: number;
-  export let period: SportGamePeriod;
+  export let period: EditableSportGamePeriod;
   export let readonly: boolean;
   export let is_first: boolean;
   export let is_last: boolean;

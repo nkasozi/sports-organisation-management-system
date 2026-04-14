@@ -83,7 +83,7 @@ export async function load_team_fixtures_bundle(command: {
     }
   }
 
-  const extended_competition_map = new Map(
+  const extended_competition_map = new Map<string, Competition>(
     competitions.map((competition: Competition) => [
       competition.id,
       competition,

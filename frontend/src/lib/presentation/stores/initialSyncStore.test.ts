@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const SESSION_SYNC_KEY = "sports_org_session_synced";
 
-const mock_app_settings_store: Record<string, string> = {};
+const mock_app_settings_store =  {} as Record<string, string>;
 
 vi.mock("$lib/infrastructure/container", () => ({
   get_app_settings_storage: () => ({

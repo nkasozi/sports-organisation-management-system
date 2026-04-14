@@ -1,7 +1,12 @@
+import type { GameOfficialRole } from "$lib/core/entities/GameOfficialRole";
+import type { TeamStaffRole } from "$lib/core/entities/TeamStaffRole";
+import type { Venue } from "$lib/core/entities/Venue";
 import type { AppSettingsPort } from "$lib/core/interfaces/ports";
+import type { ScalarValueInput } from "$lib/core/types/DomainScalars";
 import { get_app_settings_storage } from "$lib/infrastructure/container";
 
 import type { DataSource } from "../../infrastructure/sync/convexSeedingService";
+import type { PositionIds } from "../../infrastructure/utils/seed/seedPlayerIds";
 import type { SeedCompetitionFormatIds } from "../../infrastructure/utils/SeedDataGenerator";
 
 export type SeedingStrategy =
@@ -25,37 +30,24 @@ export interface SeedResult {
   error_message: string;
 }
 
-export interface PositionIds {
-  gk: string;
-  sw: string;
-  cb: string;
-  lb: string;
-  rb: string;
-  cdm: string;
-  cm: string;
-  lm: string;
-  rm: string;
-  lw: string;
-  rw: string;
-  cf: string;
-}
+export type { PositionIds } from "../../infrastructure/utils/seed/seedPlayerIds";
 
 export interface SeedVenueIds {
-  dragon_stadium_id: string;
-  thunder_arena_id: string;
-  eagle_nest_id: string;
-  storm_center_id: string;
-  international_hockey_arena_id: string;
+  dragon_stadium_id: ScalarValueInput<Venue["id"]>;
+  thunder_arena_id: ScalarValueInput<Venue["id"]>;
+  eagle_nest_id: ScalarValueInput<Venue["id"]>;
+  storm_center_id: ScalarValueInput<Venue["id"]>;
+  international_hockey_arena_id: ScalarValueInput<Venue["id"]>;
 }
 
 export interface SeedEntityIdLookups {
   position_ids: PositionIds;
-  head_coach_role_id: string;
-  assistant_coach_role_id: string;
-  physio_role_id: string;
-  team_manager_role_id: string;
-  referee_role_id: string;
-  assistant_referee_role_id: string;
+  head_coach_role_id: ScalarValueInput<TeamStaffRole["id"]>;
+  assistant_coach_role_id: ScalarValueInput<TeamStaffRole["id"]>;
+  physio_role_id: ScalarValueInput<TeamStaffRole["id"]>;
+  team_manager_role_id: ScalarValueInput<TeamStaffRole["id"]>;
+  referee_role_id: ScalarValueInput<GameOfficialRole["id"]>;
+  assistant_referee_role_id: ScalarValueInput<GameOfficialRole["id"]>;
   competition_format_ids: SeedCompetitionFormatIds;
 }
 

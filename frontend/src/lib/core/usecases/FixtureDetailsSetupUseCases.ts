@@ -44,7 +44,9 @@ export function create_fixture_details_setup_use_cases(
       return repository.create(input);
     },
 
-    async get_by_id(id: string): AsyncResult<FixtureDetailsSetup> {
+    async get_by_id(
+      id: FixtureDetailsSetup["id"],
+    ): AsyncResult<FixtureDetailsSetup> {
       if (!id?.trim()) {
         return create_failure_result("Fixture Details Setup ID is required");
       }
@@ -52,7 +54,7 @@ export function create_fixture_details_setup_use_cases(
     },
 
     async update(
-      id: string,
+      id: FixtureDetailsSetup["id"],
       input: UpdateFixtureDetailsSetupInput,
     ): AsyncResult<FixtureDetailsSetup> {
       if (!id?.trim()) {
@@ -69,7 +71,7 @@ export function create_fixture_details_setup_use_cases(
       return repository.update(id, input);
     },
 
-    async delete(id: string): AsyncResult<boolean> {
+    async delete(id: FixtureDetailsSetup["id"]): AsyncResult<boolean> {
       if (!id?.trim()) {
         return create_failure_result("Fixture Details Setup ID is required");
       }
@@ -95,7 +97,7 @@ export function create_fixture_details_setup_use_cases(
     },
 
     async list_by_fixture(
-      fixture_id: string,
+      fixture_id: FixtureDetailsSetup["fixture_id"],
       options?: QueryOptions,
     ): PaginatedAsyncResult<FixtureDetailsSetup> {
       if (!fixture_id?.trim()) {
@@ -105,7 +107,7 @@ export function create_fixture_details_setup_use_cases(
     },
 
     async list_by_official(
-      official_id: string,
+      official_id: FixtureDetailsSetup["assigned_officials"][number]["official_id"],
       options?: QueryOptions,
     ): PaginatedAsyncResult<FixtureDetailsSetup> {
       if (!official_id?.trim()) {
@@ -114,7 +116,9 @@ export function create_fixture_details_setup_use_cases(
       return repository.find_by_official(official_id, options);
     },
 
-    async confirm_assignment(id: string): AsyncResult<FixtureDetailsSetup> {
+    async confirm_assignment(
+      id: FixtureDetailsSetup["id"],
+    ): AsyncResult<FixtureDetailsSetup> {
       if (!id?.trim()) {
         return create_failure_result("Fixture Details Setup ID is required");
       }
@@ -131,7 +135,9 @@ export function create_fixture_details_setup_use_cases(
       });
     },
 
-    async decline_assignment(id: string): AsyncResult<FixtureDetailsSetup> {
+    async decline_assignment(
+      id: FixtureDetailsSetup["id"],
+    ): AsyncResult<FixtureDetailsSetup> {
       if (!id?.trim()) {
         return create_failure_result("Fixture Details Setup ID is required");
       }

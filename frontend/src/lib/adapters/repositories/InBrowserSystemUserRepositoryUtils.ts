@@ -12,22 +12,24 @@ const ALL_ORGANIZATIONS_SCOPE = ANY_VALUE;
 const ACTIVE_SYSTEM_USER_STATUS = "active";
 
 export function resolve_organization_id_for_role(
-  organization_id: string,
+  organization_id:
+    | CreateSystemUserInput["organization_id"]
+    | SystemUser["organization_id"],
   role: SystemUserRole,
-): string {
+): SystemUser["organization_id"] {
   const has_platform_wide_scope = check_data_permission(
     role as UserRole,
     "root_level",
     "delete",
   );
   return has_platform_wide_scope
-    ? ALL_ORGANIZATIONS_SCOPE
-    : organization_id || "";
+    ? (ALL_ORGANIZATIONS_SCOPE as SystemUser["organization_id"])
+    : ((organization_id || "") as SystemUser["organization_id"]);
 }
 
 export function create_system_user_from_input(
   input: CreateSystemUserInput,
-  id: string,
+  id: SystemUser["id"],
   timestamps: Pick<BaseEntity, "created_at" | "updated_at">,
 ): SystemUser {
   return {
@@ -42,7 +44,7 @@ export function create_system_user_from_input(
       input.organization_id,
       input.role,
     ),
-  };
+  } as SystemUser;
 }
 
 export function apply_system_user_updates(
@@ -61,7 +63,7 @@ export function apply_system_user_updates(
       updates.organization_id ?? entity.organization_id,
       updated_role,
     ),
-  };
+  } as SystemUser;
 }
 
 export function apply_system_user_filter(

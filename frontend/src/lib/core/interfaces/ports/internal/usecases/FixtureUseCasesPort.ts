@@ -6,6 +6,7 @@ import type {
   GamePeriod,
   UpdateFixtureInput,
 } from "../../../../entities/Fixture";
+import type { ScalarValueInput } from "../../../../types/DomainScalars";
 import type {
   AsyncResult,
   PaginatedAsyncResult,
@@ -21,36 +22,39 @@ export interface FixtureUseCasesPort extends BaseUseCasesPort<
   FixtureFilter
 > {
   list_fixtures_by_competition(
-    competition_id: string,
+    competition_id: ScalarValueInput<Fixture["competition_id"]>,
     options?: QueryOptions,
   ): PaginatedAsyncResult<Fixture>;
   list_fixtures_by_team(
-    team_id: string,
+    team_id: ScalarValueInput<Fixture["home_team_id"]>,
     options?: QueryOptions,
   ): PaginatedAsyncResult<Fixture>;
   list_fixtures_by_round(
-    competition_id: string,
+    competition_id: ScalarValueInput<Fixture["competition_id"]>,
     round_number: number,
     options?: QueryOptions,
   ): PaginatedAsyncResult<Fixture>;
   list_upcoming_fixtures(
-    competition_id?: string,
+    competition_id?: ScalarValueInput<Fixture["competition_id"]>,
     options?: QueryOptions,
   ): PaginatedAsyncResult<Fixture>;
   generate_fixtures(
     config: FixtureGenerationConfig,
   ): PaginatedAsyncResult<Fixture>;
   update_fixture_score(
-    id: string,
+    id: ScalarValueInput<Fixture["id"]>,
     home_score: number,
     away_score: number,
   ): AsyncResult<Fixture>;
-  start_fixture(id: string): AsyncResult<Fixture>;
-  record_game_event(id: string, event: GameEvent): AsyncResult<Fixture>;
-  update_period(
-    id: string,
-    period: GamePeriod,
-    minute: number,
+  start_fixture(id: ScalarValueInput<Fixture["id"]>): AsyncResult<Fixture>;
+  record_game_event(
+    id: ScalarValueInput<Fixture["id"]>,
+    event: GameEvent,
   ): AsyncResult<Fixture>;
-  end_fixture(id: string): AsyncResult<Fixture>;
+  update_period(
+    id: ScalarValueInput<Fixture["id"]>,
+    period: GamePeriod,
+    minute: ScalarValueInput<Fixture["current_minute"]>,
+  ): AsyncResult<Fixture>;
+  end_fixture(id: ScalarValueInput<Fixture["id"]>): AsyncResult<Fixture>;
 }

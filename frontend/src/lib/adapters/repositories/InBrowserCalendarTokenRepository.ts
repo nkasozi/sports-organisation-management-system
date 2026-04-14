@@ -12,6 +12,10 @@ import type {
 } from "../../core/interfaces/ports";
 import type { QueryOptions } from "../../core/interfaces/ports";
 import type {
+  CalendarTokenValue,
+  EntityId,
+} from "../../core/types/DomainScalars";
+import type {
   AsyncResult,
   PaginatedAsyncResult,
 } from "../../core/types/Result";
@@ -39,7 +43,7 @@ class InBrowserCalendarTokenRepository
 
   protected create_entity_from_input(
     input: CreateCalendarTokenInput,
-    id: string,
+    id: CalendarToken["id"],
     timestamps: Pick<BaseEntity, "created_at" | "updated_at">,
   ): CalendarToken {
     return {
@@ -49,7 +53,7 @@ class InBrowserCalendarTokenRepository
       expires_at: null,
       last_accessed_at: null,
       access_count: 0,
-    };
+    } as CalendarToken;
   }
 
   protected apply_updates_to_entity(
@@ -59,7 +63,7 @@ class InBrowserCalendarTokenRepository
     return {
       ...entity,
       ...updates,
-    };
+    } as CalendarToken;
   }
 
   protected apply_entity_filter(
@@ -94,7 +98,9 @@ class InBrowserCalendarTokenRepository
     return filtered;
   }
 
-  async find_by_token(token: string): AsyncResult<CalendarToken | null> {
+  async find_by_token(
+    token: CalendarTokenValue,
+  ): AsyncResult<CalendarToken | null> {
     try {
       const all_tokens = await this.database.calendar_tokens.toArray();
       const found_token = all_tokens.find(
@@ -113,20 +119,20 @@ class InBrowserCalendarTokenRepository
   }
 
   async find_by_user(
-    user_id: string,
+    user_id: EntityId,
     options?: QueryOptions,
   ): PaginatedAsyncResult<CalendarToken> {
     return this.find_all({ user_id, is_active: true }, options);
   }
 
   async find_by_organization(
-    organization_id: string,
+    organization_id: EntityId,
     options?: QueryOptions,
   ): PaginatedAsyncResult<CalendarToken> {
     return this.find_all({ organization_id, is_active: true }, options);
   }
 
-  async record_access(token: string): AsyncResult<CalendarToken> {
+  async record_access(token: CalendarTokenValue): AsyncResult<CalendarToken> {
     try {
       const all_tokens = await this.database.calendar_tokens.toArray();
       const found_token = all_tokens.find((t) => t.token === token);
@@ -137,9 +143,10 @@ class InBrowserCalendarTokenRepository
 
       const updated_token: CalendarToken = {
         ...found_token,
-        last_accessed_at: new Date().toISOString(),
+        last_accessed_at:
+          new Date().toISOString() as CalendarToken["last_accessed_at"],
         access_count: found_token.access_count + 1,
-        updated_at: new Date().toISOString(),
+        updated_at: new Date().toISOString() as CalendarToken["updated_at"],
       };
 
       await this.database.calendar_tokens.put(updated_token);
@@ -155,7 +162,9 @@ class InBrowserCalendarTokenRepository
     }
   }
 
-  async deactivate_token(token: string): AsyncResult<CalendarToken> {
+  async deactivate_token(
+    token: CalendarTokenValue,
+  ): AsyncResult<CalendarToken> {
     try {
       const all_tokens = await this.database.calendar_tokens.toArray();
       const found_token = all_tokens.find((t) => t.token === token);
@@ -167,7 +176,7 @@ class InBrowserCalendarTokenRepository
       const updated_token: CalendarToken = {
         ...found_token,
         is_active: false,
-        updated_at: new Date().toISOString(),
+        updated_at: new Date().toISOString() as CalendarToken["updated_at"],
       };
 
       await this.database.calendar_tokens.put(updated_token);

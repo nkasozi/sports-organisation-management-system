@@ -20,21 +20,21 @@ describe("layoutRouteSubscriptions", () => {
     const on_clerk_ready_change = vi.fn();
     const on_sync_change = vi.fn();
     const on_signed_in_change = vi.fn(async () => undefined);
-    const setup_state: FirstTimeSetupState = {
+    const setup_state =  {
       is_first_time: true,
       is_setting_up: false,
       status_message: "Loading...",
       progress_percentage: 0,
       setup_complete: false,
-    };
-    const sync_state: InitialSyncState = {
+    } as FirstTimeSetupState;
+    const sync_state =  {
       is_syncing: true,
       status_message: "Syncing",
       progress_percentage: 50,
       sync_complete: false,
-    };
+    } as InitialSyncState;
 
-    const command: RootLayoutSubscriptionCommand = {
+    const command =  {
       navigating_store: {
         subscribe: (callback: (value: unknown | null) => void) => {
           callback({});
@@ -79,7 +79,7 @@ describe("layoutRouteSubscriptions", () => {
       on_clerk_ready_change,
       on_sync_change,
       on_signed_in_change,
-    };
+    } as RootLayoutSubscriptionCommand;
     const unsubscribe = subscribe_root_layout_state(command);
 
     expect(set_navigating).toHaveBeenCalledWith(true);

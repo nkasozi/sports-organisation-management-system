@@ -10,11 +10,11 @@ describe("liveGameDetailEventActions", () => {
   type SelectedEventType = Parameters<typeof record_live_game_detail_event>[1];
 
   it("records live-game events with the correct substitution description and player names", async () => {
-    const fixture_use_cases: Pick<FixtureUseCases, "record_game_event"> = {
+    const fixture_use_cases =  {
       record_game_event: vi
         .fn()
         .mockResolvedValue({ success: true, data: { id: "fixture-1" } }),
-    };
+    } as Pick<FixtureUseCases, "record_game_event">;
     const selected_event_type = {
       id: "substitution",
       label: "Substitution",
@@ -46,11 +46,11 @@ describe("liveGameDetailEventActions", () => {
   });
 
   it("records added time as a match-level period-start event", async () => {
-    const fixture_use_cases: Pick<FixtureUseCases, "record_game_event"> = {
+    const fixture_use_cases =  {
       record_game_event: vi
         .fn()
         .mockResolvedValue({ success: true, data: { id: "fixture-1" } }),
-    };
+    } as Pick<FixtureUseCases, "record_game_event">;
 
     await record_live_game_extra_time_event(
       "fixture-1",

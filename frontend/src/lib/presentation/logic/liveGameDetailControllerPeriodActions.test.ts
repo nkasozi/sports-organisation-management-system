@@ -39,7 +39,7 @@ describe("liveGameDetailControllerPeriodActions", () => {
   });
 
   function create_state_store() {
-    let page_state: LiveGameDetailPageState = {
+    let page_state =  {
       ...create_live_game_detail_page_state(),
       fixture: {
         id: "fixture-1",
@@ -48,12 +48,12 @@ describe("liveGameDetailControllerPeriodActions", () => {
       game_clock_seconds: 2700,
       extra_time_added_seconds: 60,
       extra_minutes_to_add: 3,
-    };
-    let modal_state: LiveGameDetailModalState = {
+    } as LiveGameDetailPageState;
+    let modal_state =  {
       ...create_live_game_detail_modal_state(),
       show_period_modal: true,
       show_extra_time_modal: true,
-    };
+    } as LiveGameDetailModalState;
     let toast_state: LiveGameDetailToastState | null = null;
     return {
       get_modal_state: () => modal_state,

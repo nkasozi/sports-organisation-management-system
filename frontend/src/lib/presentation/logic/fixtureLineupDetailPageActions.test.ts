@@ -22,7 +22,7 @@ function create_lineup(overrides: Partial<FixtureLineup> = {}): FixtureLineup {
     created_at: "2026-01-01T00:00:00Z",
     updated_at: "2026-01-01T00:00:00Z",
     ...overrides,
-  };
+  } as FixtureLineup;
 }
 
 describe("authorize_fixture_lineup_detail_page", () => {

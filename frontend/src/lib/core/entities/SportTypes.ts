@@ -1,8 +1,9 @@
+import type { EntityId, Name, ScalarInput } from "../types/DomainScalars";
 import type { BaseEntity } from "./BaseEntity";
 
 export type CardType = {
   id: string;
-  name: string;
+  name: Name;
   color: string;
   severity: "warning" | "ejection" | "suspension";
   description: string;
@@ -11,7 +12,7 @@ export type CardType = {
 
 export type FoulCategory = {
   id: string;
-  name: string;
+  name: Name;
   severity: "minor" | "moderate" | "major" | "severe";
   description: string;
   typical_penalty: string;
@@ -20,15 +21,15 @@ export type FoulCategory = {
 
 export type SportGamePeriod = {
   id: string;
-  name: string;
+  name: Name;
   duration_minutes: number;
   is_break: boolean;
   order: number;
 };
 
 export type OfficialRequirement = {
-  role_id: string;
-  role_name: string;
+  role_id: EntityId;
+  role_name: Name;
   minimum_count: number;
   maximum_count: number;
   is_mandatory: boolean;
@@ -68,7 +69,7 @@ export type SubstitutionRule = {
 export type SportStatus = "active" | "inactive" | "archived";
 
 export interface Sport extends BaseEntity {
-  name: string;
+  name: Name;
   code: string;
   description: string;
   icon_url: string;
@@ -98,5 +99,8 @@ export interface Sport extends BaseEntity {
   status: SportStatus;
 }
 
-export type CreateSportInput = Omit<Sport, "id" | "created_at" | "updated_at">;
+export type CreateSportInput = Omit<
+  ScalarInput<Sport>,
+  "id" | "created_at" | "updated_at"
+>;
 export type UpdateSportInput = Partial<CreateSportInput>;

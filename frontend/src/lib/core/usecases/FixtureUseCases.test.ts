@@ -6,6 +6,7 @@ import type {
   GameEvent,
 } from "../entities/Fixture";
 import type { FixtureRepository } from "../interfaces/ports";
+import type { ScalarInput } from "../types/DomainScalars";
 import { create_fixture_use_cases } from "./FixtureUseCases";
 
 function create_mock_repository(): FixtureRepository {
@@ -24,10 +25,12 @@ function create_mock_repository(): FixtureRepository {
     find_by_date_range: vi.fn(),
     find_by_ids: vi.fn(),
     count: vi.fn(),
-  };
+  } as FixtureRepository;
 }
 
-function create_test_fixture(overrides: Partial<Fixture> = {}): Fixture {
+function create_test_fixture(
+  overrides: Partial<ScalarInput<Fixture>> = {},
+): Fixture {
   return {
     id: "fixture-123",
     organization_id: "org-123",
@@ -52,7 +55,7 @@ function create_test_fixture(overrides: Partial<Fixture> = {}): Fixture {
     created_at: "2024-01-01T00:00:00Z",
     updated_at: "2024-01-01T00:00:00Z",
     ...overrides,
-  };
+  } as unknown as Fixture;
 }
 
 function create_valid_input(
@@ -74,7 +77,7 @@ function create_valid_input(
     assigned_officials: [],
     notes: "",
     ...overrides,
-  };
+  } as CreateFixtureInput;
 }
 
 describe("FixtureUseCases", () => {
@@ -428,7 +431,7 @@ describe("FixtureUseCases", () => {
         data: create_test_fixture({ home_team_score: 1 }),
       });
 
-      const event: GameEvent = {
+      const event =  {
         id: "event-1",
         event_type: "goal",
         minute: 25,
@@ -438,7 +441,7 @@ describe("FixtureUseCases", () => {
         secondary_player_name: "",
         description: "",
         recorded_at: new Date().toISOString(),
-      };
+      } as GameEvent;
 
       const result = await use_cases.record_game_event("fixture-123", event);
 
@@ -465,7 +468,7 @@ describe("FixtureUseCases", () => {
         data: create_test_fixture({ away_team_score: 1 }),
       });
 
-      const event: GameEvent = {
+      const event =  {
         id: "event-2",
         event_type: "own_goal",
         minute: 30,
@@ -475,7 +478,7 @@ describe("FixtureUseCases", () => {
         secondary_player_name: "",
         description: "",
         recorded_at: new Date().toISOString(),
-      };
+      } as GameEvent;
 
       const result = await use_cases.record_game_event("fixture-123", event);
 
@@ -489,7 +492,7 @@ describe("FixtureUseCases", () => {
     });
 
     it("should fail for empty id", async () => {
-      const event: GameEvent = {
+      const event =  {
         id: "event-3",
         event_type: "goal",
         minute: 10,
@@ -499,7 +502,7 @@ describe("FixtureUseCases", () => {
         secondary_player_name: "",
         description: "",
         recorded_at: new Date().toISOString(),
-      };
+      } as GameEvent;
       const result = await use_cases.record_game_event("", event);
 
       expect(result.success).toBe(false);

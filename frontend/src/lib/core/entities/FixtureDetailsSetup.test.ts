@@ -146,10 +146,10 @@ describe("FixtureDetailsSetup", () => {
 
   describe("OfficialAssignment type", () => {
     it("has correct structure", () => {
-      const assignment: OfficialAssignment = {
+      const assignment =  {
         official_id: "official_123",
         role_id: "role_456",
-      };
+      } as OfficialAssignment;
 
       expect(assignment.official_id).toBe("official_123");
       expect(assignment.role_id).toBe("role_456");

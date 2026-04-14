@@ -18,7 +18,7 @@ beforeEach(() => {
 
 describe("subscribe and emit", () => {
   it("delivers emitted payload to subscribed handler", () => {
-    const received: unknown[] = [];
+    const received =  [] as unknown[];
     EventBus.subscribe("entity_created", (payload) => received.push(payload));
 
     EventBus.emit("entity_created", { some: "data" });
@@ -28,8 +28,8 @@ describe("subscribe and emit", () => {
   });
 
   it("delivers to multiple handlers for the same event type", () => {
-    const calls_a: number[] = [];
-    const calls_b: number[] = [];
+    const calls_a =  [] as number[];
+    const calls_b =  [] as number[];
     EventBus.subscribe("entity_created", () => calls_a.push(1));
     EventBus.subscribe("entity_created", () => calls_b.push(1));
 
@@ -40,7 +40,7 @@ describe("subscribe and emit", () => {
   });
 
   it("does not deliver to handlers subscribed to a different event type", () => {
-    const received: unknown[] = [];
+    const received =  [] as unknown[];
     EventBus.subscribe("entity_deleted", (payload) => received.push(payload));
 
     EventBus.emit("entity_created", { some: "data" });
@@ -51,7 +51,7 @@ describe("subscribe and emit", () => {
 
 describe("unsubscribe", () => {
   it("stops delivering events after unsubscribe is called", () => {
-    const received: unknown[] = [];
+    const received =  [] as unknown[];
     const subscription = EventBus.subscribe("entity_updated", (p) =>
       received.push(p),
     );
@@ -65,8 +65,8 @@ describe("unsubscribe", () => {
   });
 
   it("unsubscribing one handler does not affect other handlers for the same event", () => {
-    const calls_a: number[] = [];
-    const calls_b: number[] = [];
+    const calls_a =  [] as number[];
+    const calls_b =  [] as number[];
     const subscription_a = EventBus.subscribe("entity_created", () =>
       calls_a.push(1),
     );
@@ -82,7 +82,7 @@ describe("unsubscribe", () => {
 
 describe("enable and disable", () => {
   it("does not deliver events while bus is disabled", () => {
-    const received: unknown[] = [];
+    const received =  [] as unknown[];
     EventBus.subscribe("entity_created", (p) => received.push(p));
 
     EventBus.disable();
@@ -92,7 +92,7 @@ describe("enable and disable", () => {
   });
 
   it("resumes delivery after re-enabling", () => {
-    const received: unknown[] = [];
+    const received =  [] as unknown[];
     EventBus.subscribe("entity_created", (p) => received.push(p));
 
     EventBus.disable();
@@ -107,7 +107,7 @@ describe("enable and disable", () => {
 
 describe("handler error isolation", () => {
   it("continues delivering to remaining handlers when one handler throws", () => {
-    const safe_calls: number[] = [];
+    const safe_calls =  [] as number[];
     EventBus.subscribe("entity_created", () => {
       throw new Error("handler exploded");
     });
@@ -120,7 +120,7 @@ describe("handler error isolation", () => {
 
 describe("clear_all_handlers", () => {
   it("removes all subscribed handlers", () => {
-    const received: unknown[] = [];
+    const received =  [] as unknown[];
     EventBus.subscribe("entity_created", (p) => received.push(p));
     EventBus.subscribe("entity_deleted", (p) => received.push(p));
 
@@ -241,7 +241,7 @@ describe("emit_access_denied", () => {
       "read",
       "player_data",
       "insufficient_permissions",
-      "viewer",
+      "public_viewer",
       "attempted cross-org access",
     );
 
@@ -263,7 +263,7 @@ describe("emit_access_denied", () => {
       "delete",
       "team_data",
       "role_too_low",
-      "editor",
+      "team_manager",
     );
 
     expect(captured?.context).toBeUndefined();
@@ -288,10 +288,10 @@ describe("emit_access_denied", () => {
       "delete",
       "team_data",
       "role_too_low",
-      "editor",
+      "team_manager",
     );
 
-    expect(captured?.user_context?.role).toBe("editor");
+    expect(captured?.user_context?.role).toBe("team_manager");
     expect(captured?.user_context?.user_id).toBe("u-2");
   });
 });

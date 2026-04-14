@@ -1,14 +1,16 @@
 import { derived, writable } from "svelte/store";
 
 import { browser } from "$app/environment";
+import type { Organization } from "$lib/core/entities/Organization";
+import type { ScalarValueInput } from "$lib/core/types/DomainScalars";
 import { get_app_settings_storage } from "$lib/infrastructure/container";
 
 const PUBLIC_ORG_STORAGE_KEY = "sports-org-public-org-id";
 const PUBLIC_ORG_NAME_STORAGE_KEY = "sports-org-public-org-name";
 
 interface PublicOrganizationState {
-  organization_id: string;
-  organization_name: string;
+  organization_id: ScalarValueInput<Organization["id"]> | "";
+  organization_name: ScalarValueInput<Organization["name"]> | "";
 }
 
 function load_saved_public_org(): PublicOrganizationState {
@@ -16,8 +18,8 @@ function load_saved_public_org(): PublicOrganizationState {
 }
 
 async function save_public_org(
-  organization_id: string,
-  organization_name: string,
+  organization_id: PublicOrganizationState["organization_id"],
+  organization_name: PublicOrganizationState["organization_name"],
 ): Promise<boolean> {
   if (!browser) return false;
 
@@ -44,8 +46,8 @@ function create_public_organization_store() {
   const { subscribe, set } = writable<PublicOrganizationState>(initial_state);
 
   async function set_organization(
-    organization_id: string,
-    organization_name: string,
+    organization_id: PublicOrganizationState["organization_id"],
+    organization_name: PublicOrganizationState["organization_name"],
   ): Promise<boolean> {
     if (!organization_id) return false;
 
@@ -60,7 +62,8 @@ function create_public_organization_store() {
   async function detect_from_url_params(
     search_params: URLSearchParams,
   ): Promise<boolean> {
-    const org_id = search_params.get("org") ?? "";
+    const org_id = (search_params.get("org") ??
+      "") as PublicOrganizationState["organization_id"];
     if (!org_id) return false;
 
     return set_organization(org_id, "");
@@ -75,10 +78,12 @@ function create_public_organization_store() {
   async function initialize(): Promise<void> {
     if (!browser) return;
     const app_settings = get_app_settings_storage();
-    const saved_id =
-      (await app_settings.get_setting(PUBLIC_ORG_STORAGE_KEY)) ?? "";
-    const saved_name =
-      (await app_settings.get_setting(PUBLIC_ORG_NAME_STORAGE_KEY)) ?? "";
+    const saved_id = ((await app_settings.get_setting(
+      PUBLIC_ORG_STORAGE_KEY,
+    )) ?? "") as PublicOrganizationState["organization_id"];
+    const saved_name = ((await app_settings.get_setting(
+      PUBLIC_ORG_NAME_STORAGE_KEY,
+    )) ?? "") as PublicOrganizationState["organization_name"];
     set({ organization_id: saved_id, organization_name: saved_name });
   }
 

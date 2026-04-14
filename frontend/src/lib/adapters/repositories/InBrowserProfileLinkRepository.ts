@@ -40,7 +40,7 @@ export class InBrowserProfileLinkRepository
 
   protected create_entity_from_input(
     input: CreateProfileLinkInput,
-    id: string,
+    id: ProfileLink["id"],
     timestamps: Pick<BaseEntity, "created_at" | "updated_at">,
   ): ProfileLink {
     return {
@@ -52,7 +52,7 @@ export class InBrowserProfileLinkRepository
       url: input.url,
       display_order: input.display_order || 0,
       status: input.status,
-    };
+    } as ProfileLink;
   }
 
   protected apply_updates_to_entity(
@@ -62,7 +62,7 @@ export class InBrowserProfileLinkRepository
     return {
       ...entity,
       ...updates,
-    };
+    } as ProfileLink;
   }
 
   protected apply_entity_filter(
@@ -113,14 +113,14 @@ export class InBrowserProfileLinkRepository
   }
 
   async find_by_profile_id(
-    profile_id: string,
+    profile_id: ProfileLink["profile_id"],
     options?: QueryOptions,
   ): PaginatedAsyncResult<ProfileLink> {
     return this.find_by_filter({ profile_id, status: "active" }, options);
   }
 }
 
-function create_default_profile_links(): ProfileLink[] {
+function create_default_profile_links(): import("$lib/core/types/DomainScalars").ScalarInput<ProfileLink>[] {
   const now = new Date().toISOString();
   return [
     {

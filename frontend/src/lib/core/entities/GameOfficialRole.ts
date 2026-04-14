@@ -1,25 +1,26 @@
+import type { EntityId, Name, ScalarInput } from "../types/DomainScalars";
 import type { BaseEntity, EntityStatus } from "./BaseEntity";
 
 export interface GameOfficialRole extends BaseEntity {
-  name: string;
+  name: Name;
   code: string;
   description: string;
-  sport_id: string | null;
+  sport_id: EntityId | null;
   is_on_field: boolean;
   is_head_official: boolean;
   display_order: number;
   status: EntityStatus;
-  organization_id: string;
+  organization_id: EntityId;
 }
 
 export type CreateGameOfficialRoleInput = Omit<
-  GameOfficialRole,
+  ScalarInput<GameOfficialRole>,
   "id" | "created_at" | "updated_at"
 >;
 export type UpdateGameOfficialRoleInput = Partial<CreateGameOfficialRoleInput>;
 
 function create_empty_game_official_role_input(
-  sport_id: string | null = null,
+  sport_id: CreateGameOfficialRoleInput["sport_id"] = null,
 ): CreateGameOfficialRoleInput {
   return {
     name: "",
@@ -107,15 +108,15 @@ function get_default_football_official_roles(): Omit<
 }
 
 export function get_default_football_official_roles_with_ids(
-  organization_id: string,
-): GameOfficialRole[] {
+  organization_id: CreateGameOfficialRoleInput["organization_id"],
+): import("$lib/core/types/DomainScalars").ScalarInput<GameOfficialRole>[] {
   const now = new Date().toISOString();
   const input_roles = get_default_football_official_roles();
   return input_roles.map((input, index) => ({
     ...input,
-    id: `role_default_${index + 1}_${organization_id}`,
-    created_at: now,
-    updated_at: now,
+    id: `role_default_${index + 1}_${organization_id}` as GameOfficialRole["id"],
+    created_at: now as BaseEntity["created_at"],
+    updated_at: now as BaseEntity["updated_at"],
     organization_id,
   }));
 }

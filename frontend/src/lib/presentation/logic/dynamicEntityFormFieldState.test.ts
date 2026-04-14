@@ -21,7 +21,7 @@ function create_field_metadata(
     is_required: false,
     is_read_only: false,
     ...overrides,
-  };
+  } as FieldMetadata;
 }
 
 function create_entity_metadata(fields: FieldMetadata[]): EntityMetadata {
@@ -29,7 +29,7 @@ function create_entity_metadata(fields: FieldMetadata[]): EntityMetadata {
     entity_name: "test_entity",
     display_name: "Test Entity",
     fields,
-  };
+  } as EntityMetadata;
 }
 
 describe("dynamicEntityFormFieldState", () => {
@@ -49,10 +49,10 @@ describe("dynamicEntityFormFieldState", () => {
         },
       }),
     ];
-    const sub_entity_filter: SubEntityFilter = {
+    const sub_entity_filter =  {
       foreign_key_field: "organization_id",
       foreign_key_value: "org_1",
-    };
+    } as SubEntityFilter;
 
     const result = get_dynamic_form_sorted_fields_for_display(
       fields,

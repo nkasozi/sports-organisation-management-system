@@ -3,10 +3,11 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { CreateTeamInput, Team, UpdateTeamInput } from "../entities/Team";
 import type { TeamFilter, TeamRepository } from "../interfaces/ports";
 import type { QueryOptions } from "../interfaces/ports";
+import type { ScalarInput } from "../types/DomainScalars";
 import type { PaginatedResult, Result } from "../types/Result";
 import { create_team_use_cases } from "./TeamUseCases";
 
-function create_mock_team(overrides: Partial<Team> = {}): Team {
+function create_mock_team(overrides: Partial<ScalarInput<Team>> = {}): Team {
   return {
     id: "team_1",
     created_at: "2024-01-01T00:00:00Z",
@@ -27,7 +28,7 @@ function create_mock_team(overrides: Partial<Team> = {}): Team {
     founded_year: 2020,
     status: "active",
     ...overrides,
-  };
+  } as unknown as Team;
 }
 
 function create_valid_team_input(
@@ -50,7 +51,7 @@ function create_valid_team_input(
     founded_year: 2020,
     status: "active",
     ...overrides,
-  };
+  } as CreateTeamInput;
 }
 
 function create_paginated_result<T>(
@@ -66,7 +67,7 @@ function create_paginated_result<T>(
       page_size: 10,
       total_pages: Math.ceil((total_count ?? items.length) / 10),
     },
-  };
+  } as Result<PaginatedResult<T>, string>;
 }
 
 function create_mock_repository(): TeamRepository {
@@ -81,7 +82,7 @@ function create_mock_repository(): TeamRepository {
     count: vi.fn(),
     find_by_organization: vi.fn(),
     find_active_teams: vi.fn(),
-  };
+  } as TeamRepository;
 }
 
 describe("TeamUseCases", () => {
@@ -116,7 +117,7 @@ describe("TeamUseCases", () => {
       const mock_teams = [
         create_mock_team({ id: "t1", organization_id: "org_1" }),
       ];
-      const filter: TeamFilter = { organization_id: "org_1" };
+      const filter =  { organization_id: "org_1" } as TeamFilter;
       vi.mocked(mock_repository.find_all).mockResolvedValue(
         create_paginated_result(mock_teams),
       );
@@ -268,7 +269,7 @@ describe("TeamUseCases", () => {
 
   describe("update", () => {
     it("updates team with valid input", async () => {
-      const update_input: UpdateTeamInput = { name: "Updated Team Name" };
+      const update_input =  { name: "Updated Team Name" } as UpdateTeamInput;
       const updated_team = create_mock_team({
         id: "t1",
         name: "Updated Team Name",
@@ -404,7 +405,7 @@ describe("TeamUseCases", () => {
     });
 
     it("passes query options to repository", async () => {
-      const options: QueryOptions = { page_number: 1, page_size: 50 };
+      const options =  { page_number: 1, page_size: 50 } as QueryOptions;
       vi.mocked(mock_repository.find_by_organization).mockResolvedValue(
         create_paginated_result([]),
       );

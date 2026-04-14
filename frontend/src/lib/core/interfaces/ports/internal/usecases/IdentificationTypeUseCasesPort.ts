@@ -3,6 +3,7 @@ import type {
   IdentificationType,
   UpdateIdentificationTypeInput,
 } from "../../../../entities/IdentificationType";
+import type { EntityId, ScalarValueInput } from "../../../../types/DomainScalars";
 import type {
   AsyncResult,
   PaginatedAsyncResult,
@@ -13,17 +14,21 @@ import type { QueryOptions } from "../../external/repositories/Repository";
 export interface IdentificationTypeUseCasesPort {
   create(input: CreateIdentificationTypeInput): AsyncResult<IdentificationType>;
   update(
-    id: string,
+    id: ScalarValueInput<IdentificationType["id"]>,
     input: UpdateIdentificationTypeInput,
   ): AsyncResult<IdentificationType>;
-  delete(id: string): AsyncResult<boolean>;
-  get_by_id(id: string): AsyncResult<IdentificationType>;
+  delete(
+    id: ScalarValueInput<IdentificationType["id"]>,
+  ): AsyncResult<boolean>;
+  get_by_id(
+    id: ScalarValueInput<IdentificationType["id"]>,
+  ): AsyncResult<IdentificationType>;
   list(
     filter?: IdentificationTypeFilter | Record<string, string>,
     options?: QueryOptions,
   ): PaginatedAsyncResult<IdentificationType>;
   list_all(): PaginatedAsyncResult<IdentificationType>;
   list_types_by_sport(
-    sport_id: string,
+    sport_id: ScalarValueInput<EntityId>,
   ): PaginatedAsyncResult<IdentificationType>;
 }

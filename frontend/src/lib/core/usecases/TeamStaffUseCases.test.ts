@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { CreateTeamStaffInput, TeamStaff } from "../entities/TeamStaff";
 import type { TeamStaffRepository } from "../interfaces/ports";
 import type { TeamStaffRoleRepository } from "../interfaces/ports";
+import type { ScalarInput } from "../types/DomainScalars";
 import { create_team_staff_use_cases } from "./TeamStaffUseCases";
 
 function create_mock_repository(): TeamStaffRepository {
@@ -17,7 +18,7 @@ function create_mock_repository(): TeamStaffRepository {
     find_by_role: vi.fn(),
     find_by_ids: vi.fn(),
     count: vi.fn(),
-  };
+  } as TeamStaffRepository;
 }
 
 function create_mock_roles_repository(): TeamStaffRoleRepository {
@@ -32,10 +33,12 @@ function create_mock_roles_repository(): TeamStaffRoleRepository {
     count: vi.fn(),
     find_by_category: vi.fn(),
     find_by_organization: vi.fn(),
-  };
+  } as TeamStaffRoleRepository;
 }
 
-function create_test_staff(overrides: Partial<TeamStaff> = {}): TeamStaff {
+function create_test_staff(
+  overrides: Partial<ScalarInput<TeamStaff>> = {},
+): TeamStaff {
   return {
     id: "staff-123",
     organization_id: "org-123",
@@ -57,7 +60,7 @@ function create_test_staff(overrides: Partial<TeamStaff> = {}): TeamStaff {
     created_at: "2024-01-01T00:00:00Z",
     updated_at: "2024-01-01T00:00:00Z",
     ...overrides,
-  };
+  } as unknown as TeamStaff;
 }
 
 function create_valid_input(
@@ -81,7 +84,7 @@ function create_valid_input(
     notes: "",
     status: "active",
     ...overrides,
-  };
+  } as CreateTeamStaffInput;
 }
 
 describe("TeamStaffUseCases", () => {

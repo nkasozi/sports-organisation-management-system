@@ -15,7 +15,7 @@ export function create_seed_fixtures_part10(
   next_week: Date,
   two_weeks: Date,
   three_weeks: Date,
-): Fixture[] {
+): import("$lib/core/types/DomainScalars").ScalarInput<Fixture>[] {
   const now = generate_current_timestamp();
 
   return [

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import type { ScalarInput } from "../types/DomainScalars";
 import {
   detect_jersey_color_clashes,
   has_color_clashes,
@@ -11,7 +12,7 @@ describe("Fixture Jersey Color Clash Detection", () => {
     const create_jersey_assignment = (
       color: string,
       nickname: string = "Test Jersey",
-    ): JerseyColorAssignment => ({
+    ): ScalarInput<JerseyColorAssignment> => ({
       jersey_color_id: `jersey_${color}`,
       nickname,
       main_color: color,
@@ -276,16 +277,16 @@ describe("Fixture Jersey Color Clash Detection", () => {
       });
 
       it("handles hex codes without # prefix", () => {
-        const home_jersey: JerseyColorAssignment = {
+        const home_jersey =  {
           jersey_color_id: "jersey_1",
           nickname: "Black",
           main_color: "1F2937",
-        };
-        const away_jersey: JerseyColorAssignment = {
+        } as ScalarInput<JerseyColorAssignment>;
+        const away_jersey =  {
           jersey_color_id: "jersey_2",
           nickname: "Black",
           main_color: "1F2937",
-        };
+        } as ScalarInput<JerseyColorAssignment>;
 
         const warnings = detect_jersey_color_clashes(
           home_jersey,
@@ -341,7 +342,7 @@ describe("Fixture Jersey Color Clash Detection", () => {
   describe("has_color_clashes", () => {
     const create_jersey_assignment = (
       color: string,
-    ): JerseyColorAssignment => ({
+    ): ScalarInput<JerseyColorAssignment> => ({
       jersey_color_id: `jersey_${color}`,
       nickname: "Test Jersey",
       main_color: color,

@@ -42,11 +42,11 @@ export class InBrowserTeamProfileRepository
 
   protected create_entity_from_input(
     input: CreateTeamProfileInput,
-    id: string,
+    id: TeamProfile["id"],
     timestamps: Pick<BaseEntity, "created_at" | "updated_at">,
   ): TeamProfile {
     return {
-      id,
+      id: id as TeamProfile["id"],
       ...timestamps,
       team_id: input.team_id,
       profile_summary: input.profile_summary,
@@ -54,7 +54,7 @@ export class InBrowserTeamProfileRepository
       profile_slug: input.profile_slug,
       featured_image_url: input.featured_image_url || "",
       status: input.status,
-    };
+    } as TeamProfile;
   }
 
   protected apply_updates_to_entity(
@@ -64,7 +64,7 @@ export class InBrowserTeamProfileRepository
     return {
       ...entity,
       ...updates,
-    };
+    } as TeamProfile;
   }
 
   protected apply_entity_filter(
@@ -92,7 +92,9 @@ export class InBrowserTeamProfileRepository
     return filtered;
   }
 
-  async find_by_team_id(team_id: string): AsyncResult<TeamProfile> {
+  async find_by_team_id(
+    team_id: TeamProfile["team_id"],
+  ): AsyncResult<TeamProfile> {
     try {
       const profiles = await this.database.team_profiles
         .where("team_id")
@@ -152,7 +154,7 @@ export class InBrowserTeamProfileRepository
   }
 }
 
-function create_default_team_profiles(): TeamProfile[] {
+function create_default_team_profiles(): import("$lib/core/types/DomainScalars").ScalarInput<TeamProfile>[] {
   const now = new Date().toISOString();
 
   return [

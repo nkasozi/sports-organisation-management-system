@@ -1,7 +1,13 @@
 import { get } from "svelte/store";
 
 import { clerk_session } from "../../adapters/iam/clerkAuthService";
+import type { BaseEntity } from "../../core/entities/BaseEntity";
 import type { SystemUser } from "../../core/entities/SystemUser";
+import {
+  parse_email_address,
+  type ScalarInput,
+  type ScalarValueInput,
+} from "../../core/types/DomainScalars";
 import type { Result } from "../../core/types/Result";
 import {
   create_failure_result,
@@ -33,8 +39,18 @@ export async function load_and_set_current_user(): Promise<Result<SystemUser>> {
     return create_failure_result("No Clerk session active");
   }
 
-  const by_email_result =
-    await system_user_repository.find_by_email(clerk_email);
+  const clerk_email_result = parse_email_address(
+    clerk_email,
+    "Clerk email is invalid",
+  );
+
+  if (!clerk_email_result.success) {
+    return create_failure_result(clerk_email_result.error);
+  }
+
+  const by_email_result = await system_user_repository.find_by_email(
+    clerk_email_result.data,
+  );
 
   if (!by_email_result.success || by_email_result.data.items.length === 0) {
     console.warn(
@@ -65,7 +81,9 @@ export async function load_and_set_current_user(): Promise<Result<SystemUser>> {
   return create_success_result(matched_user);
 }
 
-export async function seed_super_admin_user(): Promise<Result<SystemUser>> {
+export async function seed_super_admin_user(): Promise<
+  Result<ScalarInput<SystemUser>>
+> {
   const system_user_repository = get_system_user_repository();
 
   const seed_users = create_seed_system_users();
@@ -83,7 +101,9 @@ export async function seed_super_admin_user(): Promise<Result<SystemUser>> {
   return create_success_result(super_admin);
 }
 
-export function emit_entity_created_events<T extends { id: string }>(
+export function emit_entity_created_events<
+  T extends { id: ScalarValueInput<BaseEntity["id"]> },
+>(
   entity_type: string,
   entities: T[],
   get_display_name: (entity: T) => string,

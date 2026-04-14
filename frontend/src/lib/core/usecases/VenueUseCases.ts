@@ -7,6 +7,7 @@ import { validate_venue_input } from "../entities/Venue";
 import type { VenueFilter, VenueRepository } from "../interfaces/ports";
 import type { QueryOptions } from "../interfaces/ports";
 import type { VenueUseCasesPort } from "../interfaces/ports";
+import type { ScalarValueInput } from "../types/DomainScalars";
 import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
 import { create_failure_result } from "../types/Result";
 
@@ -23,7 +24,7 @@ export function create_venue_use_cases(
       return repository.find_all(filter, options);
     },
 
-    async get_by_id(id: string): AsyncResult<Venue> {
+    async get_by_id(id: ScalarValueInput<Venue["id"]>): AsyncResult<Venue> {
       if (!id || id.trim().length === 0) {
         return create_failure_result("Venue ID is required");
       }
@@ -38,21 +39,26 @@ export function create_venue_use_cases(
       return repository.create(input);
     },
 
-    async update(id: string, input: UpdateVenueInput): AsyncResult<Venue> {
+    async update(
+      id: ScalarValueInput<Venue["id"]>,
+      input: UpdateVenueInput,
+    ): AsyncResult<Venue> {
       if (!id || id.trim().length === 0) {
         return create_failure_result("Venue ID is required");
       }
       return repository.update(id, input);
     },
 
-    async delete(id: string): AsyncResult<boolean> {
+    async delete(id: ScalarValueInput<Venue["id"]>): AsyncResult<boolean> {
       if (!id || id.trim().length === 0) {
         return create_failure_result("Venue ID is required");
       }
       return repository.delete_by_id(id);
     },
 
-    async delete_venues(ids: string[]): AsyncResult<number> {
+    async delete_venues(
+      ids: Array<ScalarValueInput<Venue["id"]>>,
+    ): AsyncResult<number> {
       if (!ids || ids.length === 0) {
         return create_failure_result("At least one venue ID is required");
       }

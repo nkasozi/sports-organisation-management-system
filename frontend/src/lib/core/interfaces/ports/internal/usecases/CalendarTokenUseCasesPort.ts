@@ -5,6 +5,11 @@ import type {
   UpdateCalendarTokenInput,
 } from "../../../../entities/CalendarToken";
 import type {
+  CalendarFeedEntityId,
+  CalendarTokenValue,
+  EntityId,
+} from "../../../../types/DomainScalars";
+import type {
   AsyncResult,
   PaginatedAsyncResult,
 } from "../../../../types/Result";
@@ -25,27 +30,29 @@ export interface CalendarTokenUseCasesPort extends BaseUseCasesPort<
   CalendarTokenFilter
 > {
   create_feed(
-    user_id: string,
-    organization_id: string,
+    user_id: EntityId,
+    organization_id: EntityId,
     feed_type: CalendarFeedType,
-    entity_id: string | null,
-    entity_name: string | null,
+    entity_id: CalendarFeedEntityId | null,
+    entity_name: CalendarToken["entity_name"],
     reminder_minutes_before?: number,
   ): AsyncResult<CalendarFeedInfo>;
 
   list_user_feeds(
-    user_id: string,
+    user_id: EntityId,
     options?: QueryOptions,
   ): PaginatedAsyncResult<CalendarToken>;
 
-  get_feed_by_token(token: string): AsyncResult<CalendarToken | null>;
+  get_feed_by_token(
+    token: CalendarTokenValue,
+  ): AsyncResult<CalendarToken | null>;
 
-  revoke_feed(token: string): AsyncResult<CalendarToken>;
+  revoke_feed(token: CalendarTokenValue): AsyncResult<CalendarToken>;
 
   update_feed_settings(
-    token: string,
+    token: CalendarTokenValue,
     reminder_minutes_before: number,
   ): AsyncResult<CalendarToken>;
 
-  record_feed_access(token: string): AsyncResult<CalendarToken>;
+  record_feed_access(token: CalendarTokenValue): AsyncResult<CalendarToken>;
 }

@@ -1,11 +1,12 @@
+import type { EntityId, Name, ScalarInput } from "../types/DomainScalars";
 import type { BaseEntity, EntityStatus } from "./BaseEntity";
 
 export type JerseyColorHolderType = "team" | "competition_official";
 
 export interface JerseyColor extends BaseEntity {
   holder_type: JerseyColorHolderType;
-  holder_id: string;
-  nickname: string;
+  holder_id: EntityId;
+  nickname: Name;
   main_color: string;
   secondary_color: string;
   tertiary_color: string;
@@ -13,7 +14,7 @@ export interface JerseyColor extends BaseEntity {
 }
 
 export type CreateJerseyColorInput = Omit<
-  JerseyColor,
+  ScalarInput<JerseyColor>,
   "id" | "created_at" | "updated_at"
 >;
 

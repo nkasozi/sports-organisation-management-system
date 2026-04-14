@@ -6,6 +6,7 @@ import type {
 } from "../entities/CompetitionStage";
 import type { CompetitionStageRepository } from "../interfaces/ports";
 import type { FixtureRepository } from "../interfaces/ports";
+import type { ScalarInput } from "../types/DomainScalars";
 import { create_competition_stage_use_cases } from "./CompetitionStageUseCases";
 
 function create_mock_stage_repository(): CompetitionStageRepository {
@@ -19,7 +20,7 @@ function create_mock_stage_repository(): CompetitionStageRepository {
     delete_by_ids: vi.fn(),
     count: vi.fn(),
     find_by_competition: vi.fn(),
-  };
+  } as CompetitionStageRepository;
 }
 
 function create_mock_fixture_repository(): FixtureRepository {
@@ -38,11 +39,11 @@ function create_mock_fixture_repository(): FixtureRepository {
     find_by_round: vi.fn(),
     find_upcoming: vi.fn(),
     find_by_date_range: vi.fn(),
-  };
+  } as FixtureRepository;
 }
 
 function create_test_stage(
-  overrides: Partial<CompetitionStage> = {},
+  overrides: Partial<ScalarInput<CompetitionStage>> = {},
 ): CompetitionStage {
   return {
     id: "stage-123",
@@ -54,7 +55,7 @@ function create_test_stage(
     created_at: "2026-01-01T00:00:00Z",
     updated_at: "2026-01-01T00:00:00Z",
     ...overrides,
-  };
+  } as unknown as CompetitionStage;
 }
 
 function create_valid_input(
@@ -67,7 +68,7 @@ function create_valid_input(
     stage_order: 1,
     status: "active",
     ...overrides,
-  };
+  } as CreateCompetitionStageInput;
 }
 
 describe("CompetitionStageUseCases", () => {
@@ -221,7 +222,7 @@ describe("CompetitionStageUseCases", () => {
               status: "scheduled",
               created_at: "2026-01-01T00:00:00Z",
               updated_at: "2026-01-01T00:00:00Z",
-            },
+            } as never,
           ],
           total_count: 1,
           page_number: 1,

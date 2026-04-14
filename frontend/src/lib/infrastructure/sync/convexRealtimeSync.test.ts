@@ -8,7 +8,7 @@ import {
 } from "./convexRealtimeSync";
 
 function create_mock_subscription(): { unsubscribe: ReturnType<typeof vi.fn> } {
-  return { unsubscribe: vi.fn() };
+  return { unsubscribe: vi.fn() } as { unsubscribe: ReturnType<typeof vi.fn> };
 }
 
 function create_mock_subscribable_client(): RealtimeSyncDependencies["subscribable_client"] & {
@@ -16,7 +16,9 @@ function create_mock_subscribable_client(): RealtimeSyncDependencies["subscribab
 } {
   return {
     onUpdate: vi.fn().mockReturnValue(create_mock_subscription()),
-  };
+  } as RealtimeSyncDependencies["subscribable_client"] & {
+  onUpdate: ReturnType<typeof vi.fn>;
+};
 }
 
 function create_mock_pull_table(): RealtimeSyncDependencies["pull_table"] {
@@ -31,7 +33,7 @@ function create_dependencies(
     pull_table: create_mock_pull_table(),
     table_names: ["teams", "players"],
     ...overrides,
-  };
+  } as RealtimeSyncDependencies;
 }
 
 describe("ConvexRealtimeSync", () => {
@@ -455,11 +457,11 @@ describe("ConvexRealtimeSync", () => {
       local_sync.start();
 
       const callback = client.onUpdate.mock.calls[0][2];
-      const change: TableChangeInfo = {
+      const change =  {
         table_name: "teams",
         record_count: 5,
         latest_modified_at: "2024-01-01T00:00:00.000Z",
-      };
+      } as TableChangeInfo;
       callback(change);
       callback(change);
 
