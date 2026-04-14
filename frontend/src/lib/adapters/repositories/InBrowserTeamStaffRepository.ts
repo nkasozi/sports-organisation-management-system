@@ -41,7 +41,7 @@ export class InBrowserTeamStaffRepository
 
   protected create_entity_from_input(
     input: CreateTeamStaffInput,
-    id: string,
+    id: TeamStaff["id"],
     timestamps: Pick<BaseEntity, "created_at" | "updated_at">,
   ): TeamStaff {
     return {
@@ -63,7 +63,7 @@ export class InBrowserTeamStaffRepository
       emergency_contact_phone: input.emergency_contact_phone || "",
       notes: input.notes || "",
       status: input.status,
-    };
+    } as TeamStaff;
   }
 
   protected apply_updates_to_entity(
@@ -74,7 +74,7 @@ export class InBrowserTeamStaffRepository
       ...entity,
       ...updates,
       profile_image_url: updates.profile_image_url ?? entity.profile_image_url,
-    };
+    } as TeamStaff;
   }
 
   protected apply_entity_filter(
@@ -133,7 +133,9 @@ export class InBrowserTeamStaffRepository
     }
   }
 
-  async find_by_team(team_id: string): Promise<Result<TeamStaff[]>> {
+  async find_by_team(
+    team_id: TeamStaff["team_id"],
+  ): Promise<Result<TeamStaff[]>> {
     try {
       const staff = await this.database.team_staff
         .where("team_id")
@@ -149,7 +151,9 @@ export class InBrowserTeamStaffRepository
     }
   }
 
-  async find_by_role(role_id: string): Promise<Result<TeamStaff[]>> {
+  async find_by_role(
+    role_id: TeamStaff["role_id"],
+  ): Promise<Result<TeamStaff[]>> {
     try {
       const staff = await this.database.team_staff
         .where("role_id")

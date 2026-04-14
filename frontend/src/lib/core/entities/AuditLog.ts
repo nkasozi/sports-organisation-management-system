@@ -1,3 +1,11 @@
+import type {
+  EmailAddress,
+  EntityId,
+  EntityScope,
+  IsoDateTimeString,
+  Name,
+  ScalarInput,
+} from "../types/DomainScalars";
 import type { BaseEntity } from "./BaseEntity";
 
 export type AuditAction =
@@ -9,37 +17,31 @@ export type AuditAction =
   | "sync_conflict_detected"
   | "sync_conflict_resolved";
 
-export interface FieldChange {
-  field_name: string;
+export interface FieldChange<TFieldName extends string = string> {
+  field_name: TFieldName;
   old_value: string;
   new_value: string;
 }
 
 export interface AuditLog extends BaseEntity {
   entity_type: string;
-  entity_id: string;
-  entity_display_name: string;
+  entity_id: EntityId;
+  entity_display_name: Name;
   action: AuditAction;
-  user_id: string;
-  user_email: string;
-  user_display_name: string;
-  organization_id: string;
+  user_id: EntityId;
+  user_email: EmailAddress;
+  user_display_name: Name;
+  organization_id: EntityScope;
   changes: FieldChange[];
-  timestamp: string;
+  timestamp: IsoDateTimeString;
   ip_address: string;
   user_agent: string;
 }
 
-export interface CreateAuditLogInput {
-  entity_type: string;
-  entity_id: string;
-  entity_display_name: string;
-  action: AuditAction;
-  user_id: string;
-  user_email: string;
-  user_display_name: string;
-  organization_id: string;
-  changes: FieldChange[];
+export interface CreateAuditLogInput extends Omit<
+  ScalarInput<AuditLog>,
+  "id" | "created_at" | "updated_at" | "timestamp" | "ip_address" | "user_agent"
+> {
   ip_address?: string;
   user_agent?: string;
 }
@@ -88,9 +90,9 @@ function build_changes_summary(changes: FieldChange[]): string {
 export function compute_field_changes<T extends Record<string, unknown>>(
   old_entity: T,
   new_entity: T,
-  fields_to_track: string[],
-): FieldChange[] {
-  const changes: FieldChange[] = [];
+  fields_to_track: Array<Extract<keyof T, string>>,
+): Array<FieldChange<Extract<keyof T, string>>> {
+  const changes: Array<FieldChange<Extract<keyof T, string>>> = [];
 
   for (const field_name of fields_to_track) {
     const old_value = serialize_value_for_audit(old_entity[field_name]);

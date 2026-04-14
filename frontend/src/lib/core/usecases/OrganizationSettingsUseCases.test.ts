@@ -5,6 +5,7 @@ import type {
   OrganizationSettings,
 } from "../entities/OrganizationSettings";
 import type { OrganizationSettingsRepository } from "../interfaces/ports/external/repositories/OrganizationSettingsRepository";
+import type { ScalarInput } from "../types/DomainScalars";
 import { create_organization_settings_use_cases } from "./OrganizationSettingsUseCases";
 
 function create_mock_repository(): OrganizationSettingsRepository {
@@ -18,11 +19,11 @@ function create_mock_repository(): OrganizationSettingsRepository {
     delete_by_ids: vi.fn(),
     count: vi.fn(),
     find_by_organization_id: vi.fn(),
-  };
+  } as OrganizationSettingsRepository;
 }
 
 function create_test_settings(
-  overrides: Partial<OrganizationSettings> = {},
+  overrides: Partial<ScalarInput<OrganizationSettings>> = {},
 ): OrganizationSettings {
   return {
     id: "settings-123",
@@ -43,7 +44,7 @@ function create_test_settings(
     created_at: "2024-01-01T00:00:00Z",
     updated_at: "2024-01-01T00:00:00Z",
     ...overrides,
-  };
+  } as unknown as OrganizationSettings;
 }
 
 function create_valid_create_input(
@@ -65,7 +66,7 @@ function create_valid_create_input(
     secondary_color: "blue",
     sync_interval_ms: 3_600_000,
     ...overrides,
-  };
+  } as CreateOrganizationSettingsInput;
 }
 
 describe("OrganizationSettingsUseCases", () => {

@@ -9,6 +9,7 @@ import type {
   TeamProfileRepository,
 } from "../interfaces/ports";
 import type { QueryOptions } from "../interfaces/ports";
+import type { ScalarValueInput } from "../types/DomainScalars";
 import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
 import { create_failure_result } from "../types/Result";
 
@@ -17,12 +18,17 @@ export interface TeamProfileUseCases {
     filter?: TeamProfileFilter | Record<string, string>,
     options?: QueryOptions,
   ): PaginatedAsyncResult<TeamProfile>;
-  get_by_id(id: string): AsyncResult<TeamProfile>;
-  get_by_team_id(team_id: string): AsyncResult<TeamProfile>;
+  get_by_id(id: ScalarValueInput<TeamProfile["id"]>): AsyncResult<TeamProfile>;
+  get_by_team_id(
+    team_id: ScalarValueInput<TeamProfile["team_id"]>,
+  ): AsyncResult<TeamProfile>;
   get_by_slug(slug: string): AsyncResult<TeamProfile>;
   create(input: CreateTeamProfileInput): AsyncResult<TeamProfile>;
-  update(id: string, input: UpdateTeamProfileInput): AsyncResult<TeamProfile>;
-  delete(id: string): AsyncResult<boolean>;
+  update(
+    id: ScalarValueInput<TeamProfile["id"]>,
+    input: UpdateTeamProfileInput,
+  ): AsyncResult<TeamProfile>;
+  delete(id: ScalarValueInput<TeamProfile["id"]>): AsyncResult<boolean>;
   list_public_profiles(
     options?: QueryOptions,
   ): PaginatedAsyncResult<TeamProfile>;
@@ -41,7 +47,7 @@ export function create_team_profile_use_cases(
       }
 
       const typed_filter: TeamProfileFilter = {
-        team_id: filter?.team_id,
+        team_id: filter?.team_id as TeamProfile["team_id"] | undefined,
         visibility: filter?.visibility as TeamProfileFilter["visibility"],
         status: filter?.status as TeamProfileFilter["status"],
       };
@@ -49,14 +55,18 @@ export function create_team_profile_use_cases(
       return repository.find_all(typed_filter, options);
     },
 
-    async get_by_id(id: string): AsyncResult<TeamProfile> {
+    async get_by_id(
+      id: ScalarValueInput<TeamProfile["id"]>,
+    ): AsyncResult<TeamProfile> {
       if (!id || id.trim().length === 0) {
         return create_failure_result("Profile ID is required");
       }
       return repository.find_by_id(id);
     },
 
-    async get_by_team_id(team_id: string): AsyncResult<TeamProfile> {
+    async get_by_team_id(
+      team_id: ScalarValueInput<TeamProfile["team_id"]>,
+    ): AsyncResult<TeamProfile> {
       if (!team_id || team_id.trim().length === 0) {
         return create_failure_result("Team ID is required");
       }
@@ -81,7 +91,7 @@ export function create_team_profile_use_cases(
     },
 
     async update(
-      id: string,
+      id: ScalarValueInput<TeamProfile["id"]>,
       input: UpdateTeamProfileInput,
     ): AsyncResult<TeamProfile> {
       if (!id || id.trim().length === 0) {
@@ -97,7 +107,9 @@ export function create_team_profile_use_cases(
       return repository.update(id, input);
     },
 
-    async delete(id: string): AsyncResult<boolean> {
+    async delete(
+      id: ScalarValueInput<TeamProfile["id"]>,
+    ): AsyncResult<boolean> {
       if (!id || id.trim().length === 0) {
         return create_failure_result("Profile ID is required");
       }

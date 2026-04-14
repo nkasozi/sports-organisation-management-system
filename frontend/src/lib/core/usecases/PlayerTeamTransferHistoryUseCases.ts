@@ -13,6 +13,7 @@ import type {
   PlayerTeamTransferHistoryUseCasesPort,
   QueryOptions,
 } from "../interfaces/ports";
+import type { ScalarValueInput } from "../types/DomainScalars";
 import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
 import { create_failure_result, create_success_result } from "../types/Result";
 import { create_transfer_confirmation } from "./TransferConfirmationUseCases";
@@ -32,7 +33,9 @@ export function create_player_team_transfer_history_use_cases(
       return repository.find_all(filter, options);
     },
 
-    async get_by_id(id: string): AsyncResult<PlayerTeamTransferHistory> {
+    async get_by_id(
+      id: ScalarValueInput<PlayerTeamTransferHistory["id"]>,
+    ): AsyncResult<PlayerTeamTransferHistory> {
       if (!id || id.trim().length === 0) {
         return create_failure_result("Transfer ID is required");
       }
@@ -64,7 +67,7 @@ export function create_player_team_transfer_history_use_cases(
     },
 
     async update(
-      id: string,
+      id: ScalarValueInput<PlayerTeamTransferHistory["id"]>,
       input: UpdatePlayerTeamTransferHistoryInput,
     ): AsyncResult<PlayerTeamTransferHistory> {
       if (!id || id.trim().length === 0) {
@@ -79,7 +82,9 @@ export function create_player_team_transfer_history_use_cases(
       return create_success_result(result.data);
     },
 
-    async delete(id: string): AsyncResult<boolean> {
+    async delete(
+      id: ScalarValueInput<PlayerTeamTransferHistory["id"]>,
+    ): AsyncResult<boolean> {
       if (!id || id.trim().length === 0) {
         return create_failure_result("Transfer ID is required");
       }
@@ -93,7 +98,7 @@ export function create_player_team_transfer_history_use_cases(
     },
 
     async list_transfers_by_player(
-      player_id: string,
+      player_id: ScalarValueInput<PlayerTeamTransferHistory["player_id"]>,
       options?: QueryOptions,
     ): PaginatedAsyncResult<PlayerTeamTransferHistory> {
       if (!player_id || player_id.trim().length === 0) {
@@ -104,7 +109,7 @@ export function create_player_team_transfer_history_use_cases(
     },
 
     async list_transfers_by_team(
-      team_id: string,
+      team_id: ScalarValueInput<PlayerTeamTransferHistory["from_team_id"]>,
       options?: QueryOptions,
     ): PaginatedAsyncResult<PlayerTeamTransferHistory> {
       if (!team_id || team_id.trim().length === 0) {
@@ -122,7 +127,9 @@ export function create_player_team_transfer_history_use_cases(
 
     ...create_transfer_confirmation(repository, membership_repository),
 
-    async delete_transfers(ids: string[]): AsyncResult<number> {
+    async delete_transfers(
+      ids: Array<ScalarValueInput<PlayerTeamTransferHistory["id"]>>,
+    ): AsyncResult<number> {
       if (!ids || ids.length === 0) {
         return create_failure_result("At least one transfer ID is required");
       }

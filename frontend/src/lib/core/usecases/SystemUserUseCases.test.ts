@@ -6,6 +6,7 @@ import type {
   UpdateSystemUserInput,
 } from "../entities/SystemUser";
 import type { Repository } from "../interfaces/ports";
+import type { ScalarInput } from "../types/DomainScalars";
 import type { PaginatedResult, Result } from "../types/Result";
 import {
   create_system_user_use_cases,
@@ -28,10 +29,12 @@ function create_mock_repository(): MockRepository {
     delete_by_id: vi.fn(),
     delete_by_ids: vi.fn(),
     count: vi.fn(),
-  };
+  } as MockRepository;
 }
 
-function create_mock_user(overrides: Partial<SystemUser> = {}): SystemUser {
+function create_mock_user(
+  overrides: Partial<ScalarInput<SystemUser>> = {},
+): SystemUser {
   return {
     id: "user_1",
     email: "test@example.com",
@@ -43,7 +46,7 @@ function create_mock_user(overrides: Partial<SystemUser> = {}): SystemUser {
     created_at: "2024-01-01T00:00:00Z",
     updated_at: "2024-01-01T00:00:00Z",
     ...overrides,
-  };
+  } as unknown as SystemUser;
 }
 
 function create_valid_user_input(
@@ -56,11 +59,11 @@ function create_valid_user_input(
     role: "player",
     organization_id: "org_1",
     ...overrides,
-  };
+  } as CreateSystemUserInput;
 }
 
 function create_success_result<T>(data: T): Result<T, string> {
-  return { success: true, data };
+  return { success: true, data } as Result<T, string>;
 }
 
 function create_paginated_result<T>(
@@ -76,7 +79,7 @@ function create_paginated_result<T>(
       page_size: 10,
       total_pages: 1,
     },
-  };
+  } as Result<PaginatedResult<T>, string>;
 }
 
 describe("SystemUserUseCases", () => {

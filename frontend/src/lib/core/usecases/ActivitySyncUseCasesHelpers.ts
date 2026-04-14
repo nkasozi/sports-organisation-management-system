@@ -1,5 +1,6 @@
 import type { Activity, CreateActivityInput } from "../entities/Activity";
 import type { ActivityCategoryType } from "../entities/ActivityCategory";
+import type { ScalarValueInput } from "../types/DomainScalars";
 import type {
   ActivityCategoryRepository,
   ActivityRepository,
@@ -9,9 +10,9 @@ import { create_failure_result, create_success_result } from "../types/Result";
 
 export async function find_activity_category_by_type(
   category_repository: ActivityCategoryRepository,
-  organization_id: string,
+  organization_id: ScalarValueInput<Activity["organization_id"]>,
   category_type: ActivityCategoryType,
-): Promise<Result<string>> {
+): Promise<Result<Activity["category_id"]>> {
   const result = await category_repository.find_by_category_type(
     organization_id,
     category_type,

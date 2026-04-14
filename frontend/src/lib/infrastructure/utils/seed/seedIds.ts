@@ -1,3 +1,9 @@
+import type { CompetitionFormat } from "../../../core/entities/CompetitionFormatTypes";
+import type {
+  IsoDateTimeString,
+  ScalarValueInput,
+} from "../../../core/types/DomainScalars";
+
 export const SEED_ORGANIZATION_IDS = {
   UGANDA_HOCKEY_ASSOCIATION: "org_default_1",
 };
@@ -44,10 +50,10 @@ export const SEED_STAGE_IDS = {
 };
 
 export interface SeedCompetitionFormatIds {
-  easter_cup_format_id: string;
-  uganda_cup_format_id: string;
-  nhl_format_id: string;
-  university_format_id: string;
+  easter_cup_format_id: ScalarValueInput<CompetitionFormat["id"]>;
+  uganda_cup_format_id: ScalarValueInput<CompetitionFormat["id"]>;
+  nhl_format_id: ScalarValueInput<CompetitionFormat["id"]>;
+  university_format_id: ScalarValueInput<CompetitionFormat["id"]>;
 }
 
 export const SEED_STAFF_IDS = {
@@ -181,6 +187,6 @@ export const SEED_GENDER_IDS = {
   FEMALE: `gender_default_female_${SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION}`,
 };
 
-export function generate_current_timestamp(): string {
-  return new Date().toISOString();
+export function generate_current_timestamp(): IsoDateTimeString {
+  return new Date().toISOString() as IsoDateTimeString;
 }

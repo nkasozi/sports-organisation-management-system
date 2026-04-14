@@ -38,7 +38,7 @@ class InBrowserOrganizationRepository
 
   protected create_entity_from_input(
     input: CreateOrganizationInput,
-    id: string,
+    id: Organization["id"],
     timestamps: Pick<BaseEntity, "created_at" | "updated_at">,
   ): Organization {
     return {
@@ -53,7 +53,7 @@ class InBrowserOrganizationRepository
       address: input.address,
       website: input.website,
       status: input.status,
-    };
+    } as Organization;
   }
 
   protected apply_updates_to_entity(
@@ -63,7 +63,7 @@ class InBrowserOrganizationRepository
     return {
       ...entity,
       ...updates,
-    };
+    } as Organization;
   }
 
   protected apply_entity_filter(
@@ -119,7 +119,7 @@ function find_sport_id_by_code(
   return matched_sport.id;
 }
 
-function create_default_organizations(seeded_sports: Sport[]): Organization[] {
+function create_default_organizations(seeded_sports: Sport[]): import("$lib/core/types/DomainScalars").ScalarInput<Organization>[] {
   const now = new Date().toISOString();
   const field_hockey_sport_id = find_sport_id_by_code(
     seeded_sports,

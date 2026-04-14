@@ -37,7 +37,7 @@ function create_test_competition_format(
     max_teams_allowed: overrides.max_teams_allowed ?? 16,
     status: overrides.status ?? "active",
     organization_id: overrides.organization_id,
-  };
+  } as CompetitionFormat;
 }
 
 describe("get_next_selected_team_ids", () => {

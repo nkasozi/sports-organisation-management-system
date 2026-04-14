@@ -36,11 +36,11 @@ class InBrowserQualificationRepository
 
   protected create_entity_from_input(
     input: CreateQualificationInput,
-    id: string,
+    id: Qualification["id"],
     timestamps: Pick<BaseEntity, "created_at" | "updated_at">,
   ): Qualification {
     return {
-      id,
+      id: id as Qualification["id"],
       ...timestamps,
       holder_type: input.holder_type,
       holder_id: input.holder_id,
@@ -53,7 +53,7 @@ class InBrowserQualificationRepository
       specializations: input.specializations || [],
       notes: input.notes,
       status: input.status,
-    };
+    } as Qualification;
   }
 
   protected apply_updates_to_entity(
@@ -63,7 +63,7 @@ class InBrowserQualificationRepository
     return {
       ...entity,
       ...updates,
-    };
+    } as Qualification;
   }
 
   protected apply_entity_filter(
@@ -106,7 +106,7 @@ class InBrowserQualificationRepository
 
   async find_by_holder(
     holder_type: QualificationHolderType,
-    holder_id: string,
+    holder_id: Qualification["holder_id"],
     options?: QueryOptions,
   ): PaginatedAsyncResult<Qualification> {
     return this.find_all({ holder_type, holder_id }, options);
@@ -119,7 +119,7 @@ class InBrowserQualificationRepository
   }
 }
 
-function create_default_qualifications(): Qualification[] {
+function create_default_qualifications(): import("$lib/core/types/DomainScalars").ScalarInput<Qualification>[] {
   const now = new Date().toISOString();
   const one_year_from_now = new Date();
   one_year_from_now.setFullYear(one_year_from_now.getFullYear() + 1);
@@ -141,7 +141,7 @@ function create_default_qualifications(): Qualification[] {
       status: "active",
       created_at: now,
       updated_at: now,
-    },
+    } as Qualification,
     {
       id: "qual_default_2",
       holder_type: "team_staff",
@@ -157,7 +157,7 @@ function create_default_qualifications(): Qualification[] {
       status: "active",
       created_at: now,
       updated_at: now,
-    },
+    } as Qualification,
   ];
 }
 

@@ -1,6 +1,6 @@
 import type { CompetitionTeam } from "../../core/entities/CompetitionTeam";
 
-export function create_default_competition_teams(): CompetitionTeam[] {
+export function create_default_competition_teams(): import("$lib/core/types/DomainScalars").ScalarInput<CompetitionTeam>[] {
   const now = new Date().toISOString();
   return [
     {

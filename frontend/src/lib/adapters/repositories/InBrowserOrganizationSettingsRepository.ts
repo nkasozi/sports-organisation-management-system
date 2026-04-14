@@ -39,7 +39,7 @@ class InBrowserOrganizationSettingsRepository
 
   protected create_entity_from_input(
     input: CreateOrganizationSettingsInput,
-    id: string,
+    id: OrganizationSettings["id"],
     timestamps: Pick<BaseEntity, "created_at" | "updated_at">,
   ): OrganizationSettings {
     return {
@@ -59,14 +59,14 @@ class InBrowserOrganizationSettingsRepository
       primary_color: input.primary_color,
       secondary_color: input.secondary_color,
       sync_interval_ms: input.sync_interval_ms,
-    };
+    } as OrganizationSettings;
   }
 
   protected apply_updates_to_entity(
     entity: OrganizationSettings,
     updates: UpdateOrganizationSettingsInput,
   ): OrganizationSettings {
-    return { ...entity, ...updates };
+    return { ...entity, ...updates } as OrganizationSettings;
   }
 
   protected apply_entity_filter(
@@ -85,7 +85,7 @@ class InBrowserOrganizationSettingsRepository
   }
 
   async find_by_organization_id(
-    organization_id: string,
+    organization_id: OrganizationSettings["organization_id"],
     _options?: QueryOptions,
   ): AsyncResult<OrganizationSettings | null> {
     try {

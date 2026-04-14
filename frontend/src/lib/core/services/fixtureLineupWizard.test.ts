@@ -29,11 +29,11 @@ describe("fixtureLineupWizard", () => {
   });
 
   it("derives initial selected player ids capped by max", () => {
-    const players: TeamPlayer[] = [
+    const players =  [
       { id: "p1" } as TeamPlayer,
       { id: "p2" } as TeamPlayer,
       { id: "p3" } as TeamPlayer,
-    ];
+    ] as TeamPlayer[];
 
     expect(derive_initial_selected_player_ids(players, 2)).toEqual([
       "p1",
@@ -47,7 +47,7 @@ describe("fixtureLineupWizard", () => {
   });
 
   it("derives initial selected players with full info", () => {
-    const players: TeamPlayer[] = [
+    const players =  [
       {
         id: "p1",
         first_name: "John",
@@ -62,7 +62,7 @@ describe("fixtureLineupWizard", () => {
         jersey_number: 7,
         position: "Midfielder",
       } as TeamPlayer,
-    ];
+    ] as TeamPlayer[];
 
     const result = derive_initial_selected_players(players, 1);
     expect(result).toHaveLength(1);
@@ -92,7 +92,7 @@ describe("fixtureLineupWizard", () => {
   });
 
   it("converts team players to lineup players by ids", () => {
-    const players: TeamPlayer[] = [
+    const players =  [
       {
         id: "p1",
         first_name: "A",
@@ -107,7 +107,7 @@ describe("fixtureLineupWizard", () => {
         jersey_number: 2,
         position: "DF",
       } as TeamPlayer,
-    ];
+    ] as TeamPlayer[];
 
     const result = convert_team_players_to_lineup_players(players, ["p2"]);
     expect(result).toHaveLength(1);
@@ -115,7 +115,7 @@ describe("fixtureLineupWizard", () => {
   });
 
   it("summarizes selected players sorted by jersey then name", () => {
-    const players: TeamPlayer[] = [
+    const players =  [
       {
         id: "p2",
         first_name: "B",
@@ -137,7 +137,7 @@ describe("fixtureLineupWizard", () => {
         jersey_number: null,
         position: null,
       } as TeamPlayer,
-    ];
+    ] as TeamPlayer[];
 
     const summary = summarize_selected_team_players(players, [
       "p3",
@@ -148,7 +148,7 @@ describe("fixtureLineupWizard", () => {
   });
 
   it("sorts lineup players by jersey then name", () => {
-    const players: LineupPlayer[] = [
+    const players =  [
       {
         id: "p2",
         first_name: "B",
@@ -176,7 +176,7 @@ describe("fixtureLineupWizard", () => {
         is_captain: false,
         is_substitute: false,
       },
-    ];
+    ] as LineupPlayer[];
 
     const sorted = sort_lineup_players(players);
     expect(sorted.map((p) => p.id)).toEqual(["p1", "p2", "p3"]);

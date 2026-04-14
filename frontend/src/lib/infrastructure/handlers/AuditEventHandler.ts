@@ -12,23 +12,20 @@ import {
   type EntityUpdatedPayload,
   EventBus,
   type PageViewedPayload,
+  type UserContext as EventUserContext,
 } from "../events/EventBus";
 
-interface UserContext {
-  user_id?: string;
-  user_email?: string;
-  user_display_name?: string;
-  organization_id?: string;
-  role?: string;
-}
+type AuditEventUserContext = Partial<EventUserContext> & {
+  role?: NonNullable<AccessDeniedPayload["user_context"]>["role"];
+};
 
 function build_base_audit_input(
   entity_type: string,
-  entity_id: string,
-  entity_display_name: string,
+  entity_id: CreateAuditLogInput["entity_id"],
+  entity_display_name: CreateAuditLogInput["entity_display_name"],
   action: AuditAction,
   changes: FieldChange[],
-  user_context?: UserContext,
+  user_context?: AuditEventUserContext,
 ): CreateAuditLogInput {
   return {
     entity_type,

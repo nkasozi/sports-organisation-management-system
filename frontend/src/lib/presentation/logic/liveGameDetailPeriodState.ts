@@ -19,7 +19,9 @@ export function get_effective_periods_for(
   sport: Sport | null,
   competition: Competition | null,
 ): SportGamePeriod[] {
-  return competition?.rule_overrides?.periods ?? sport?.periods ?? [];
+  return (competition?.rule_overrides?.periods ??
+    sport?.periods ??
+    []) as unknown as SportGamePeriod[];
 }
 
 export function get_playing_periods(

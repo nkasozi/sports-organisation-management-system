@@ -24,10 +24,10 @@ describe("scoring overrides", () => {
   });
 
   it("toggles tie breakers against format defaults", () => {
-    const format_default_tie_breakers: TieBreaker[] = [
+    const format_default_tie_breakers =  [
       "goal_difference",
       "goals_scored",
-    ];
+    ] as TieBreaker[];
 
     const with_added_tie_breaker = toggle_competition_tie_breaker(
       create_test_competition({}),

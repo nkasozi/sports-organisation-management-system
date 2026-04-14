@@ -8,7 +8,7 @@ import {
 } from "./seedIds";
 import { SEED_PLAYER_IDS } from "./seedPlayerIds";
 
-export function create_seed_lineups_part13(): FixtureLineup[] {
+export function create_seed_lineups_part13(): import("$lib/core/types/DomainScalars").ScalarInput<FixtureLineup>[] {
   const now = generate_current_timestamp();
 
   return [

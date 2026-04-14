@@ -6,7 +6,7 @@ import {
 } from "./seedIds";
 import { SEED_PLAYER_IDS } from "./seedPlayerIds";
 
-export function create_seed_memberships_part6(): PlayerTeamMembership[] {
+export function create_seed_memberships_part6(): import("$lib/core/types/DomainScalars").ScalarInput<PlayerTeamMembership>[] {
   const now = generate_current_timestamp();
 
   return [

@@ -74,9 +74,9 @@ describe("liveGameDetailControllerReportActions", () => {
       report_data: { sections: [] },
       filename: "lions-vs-tigers.pdf",
     });
-    const toast_updates: LiveGameDetailToastState[] = [];
-    const download_states: boolean[] = [];
-    let page_state: LiveGameDetailPageState = {
+    const toast_updates =  [] as LiveGameDetailToastState[];
+    const download_states =  [] as boolean[];
+    let page_state =  {
       ...create_live_game_detail_page_state(),
       fixture: { id: "fixture-1" } as LiveGameDetailPageState["fixture"],
       competition: {
@@ -95,7 +95,7 @@ describe("liveGameDetailControllerReportActions", () => {
       assigned_officials_data: [
         { official: { id: "official-1" }, role_name: "Referee" },
       ] as LiveGameDetailPageState["assigned_officials_data"],
-    };
+    } as LiveGameDetailPageState;
     const action_dependencies = {
       organization_use_cases: { get_by_id: vi.fn() },
     } satisfies MockActionDependencies;

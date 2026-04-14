@@ -1,7 +1,9 @@
-export interface BaseEntity {
-  id: string;
-  created_at: string;
-  updated_at: string;
+import type { EntityId, IsoDateTimeString } from "../types/DomainScalars";
+
+export interface BaseEntity<TEntityId extends EntityId = EntityId> {
+  id: TEntityId;
+  created_at: IsoDateTimeString;
+  updated_at: IsoDateTimeString;
 }
 
 export type EntityStatus =
@@ -116,10 +118,10 @@ interface EntityListResult<T = any> {
 }
 
 // Helper function to generate UUID with entity prefix
-function generate_entity_id(entity_prefix: string): string {
+function generate_entity_id(entity_prefix: string): EntityId {
   const timestamp = Date.now();
   const random_part = Math.random().toString(36).substring(2, 15);
-  return `${entity_prefix}-${timestamp}-${random_part}`;
+  return `${entity_prefix}-${timestamp}-${random_part}` as EntityId;
 }
 
 // Helper function to create base entity fields
@@ -129,8 +131,8 @@ function create_base_entity_timestamp_fields(): Pick<
 > {
   const now = new Date().toISOString();
   return {
-    created_at: now,
-    updated_at: now,
+    created_at: now as IsoDateTimeString,
+    updated_at: now as IsoDateTimeString,
   };
 }
 
@@ -138,7 +140,7 @@ function create_base_entity_timestamp_fields(): Pick<
 function update_entity_timestamp<T extends BaseEntity>(entity: T): T {
   return {
     ...entity,
-    updated_at: new Date().toISOString(),
+    updated_at: new Date().toISOString() as IsoDateTimeString,
   };
 }
 

@@ -47,7 +47,7 @@ export class InBrowserFixtureRepository
 
   protected create_entity_from_input(
     input: CreateFixtureInput,
-    id: string,
+    id: Fixture["id"],
     timestamps: Pick<BaseEntity, "created_at" | "updated_at">,
   ): Fixture {
     return {
@@ -60,14 +60,14 @@ export class InBrowserFixtureRepository
       current_minute: 0,
       home_team_score: null,
       away_team_score: null,
-    };
+    } as unknown as Fixture;
   }
 
   protected apply_updates_to_entity(
     entity: Fixture,
     updates: UpdateFixtureInput,
   ): Fixture {
-    return { ...entity, ...updates };
+    return { ...entity, ...updates } as Fixture;
   }
 
   protected apply_entity_filter(
@@ -80,21 +80,21 @@ export class InBrowserFixtureRepository
   }
 
   async find_by_competition(
-    competition_id: string,
+    competition_id: Fixture["competition_id"],
     options?: QueryOptions,
   ): PaginatedAsyncResult<Fixture> {
     return this.find_all({ competition_id }, options);
   }
 
   async find_by_team(
-    team_id: string,
+    team_id: Fixture["home_team_id"],
     options?: QueryOptions,
   ): PaginatedAsyncResult<Fixture> {
     return this.find_all({ team_id }, options);
   }
 
   async find_by_round(
-    competition_id: string,
+    competition_id: Fixture["competition_id"],
     round_number: number,
     options?: QueryOptions,
   ): PaginatedAsyncResult<Fixture> {
@@ -102,7 +102,7 @@ export class InBrowserFixtureRepository
   }
 
   async find_upcoming(
-    competition_id?: string,
+    competition_id?: Fixture["competition_id"],
     options?: QueryOptions,
   ): PaginatedAsyncResult<Fixture> {
     const today = new Date().toISOString().split("T")[0];
@@ -117,8 +117,8 @@ export class InBrowserFixtureRepository
   }
 
   async find_by_date_range(
-    start_date: string,
-    end_date: string,
+    start_date: Fixture["scheduled_date"],
+    end_date: Fixture["scheduled_date"],
     options?: QueryOptions,
   ): PaginatedAsyncResult<Fixture> {
     return this.find_all(
@@ -161,7 +161,7 @@ export class InBrowserFixtureRepository
   }
 }
 
-function create_default_fixtures(): Fixture[] {
+function create_default_fixtures(): import("$lib/core/types/DomainScalars").ScalarInput<Fixture>[] {
   return [];
 }
 let singleton_instance: InBrowserFixtureRepository | null = null;

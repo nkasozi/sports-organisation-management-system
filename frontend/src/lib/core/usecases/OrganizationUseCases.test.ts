@@ -5,6 +5,7 @@ import type {
   Organization,
 } from "../entities/Organization";
 import type { OrganizationRepository } from "../interfaces/ports";
+import type { ScalarInput } from "../types/DomainScalars";
 import { create_organization_use_cases } from "./OrganizationUseCases";
 
 function create_mock_repository(): OrganizationRepository {
@@ -18,11 +19,11 @@ function create_mock_repository(): OrganizationRepository {
     find_active_organizations: vi.fn(),
     find_by_ids: vi.fn(),
     count: vi.fn(),
-  };
+  } as OrganizationRepository;
 }
 
 function create_test_organization(
-  overrides: Partial<Organization> = {},
+  overrides: Partial<ScalarInput<Organization>> = {},
 ): Organization {
   return {
     id: "org-123",
@@ -38,7 +39,7 @@ function create_test_organization(
     created_at: "2024-01-01T00:00:00Z",
     updated_at: "2024-01-01T00:00:00Z",
     ...overrides,
-  };
+  } as unknown as Organization;
 }
 
 function create_valid_input(
@@ -55,7 +56,7 @@ function create_valid_input(
     website: "https://new.com",
     status: "active",
     ...overrides,
-  };
+  } as CreateOrganizationInput;
 }
 
 describe("OrganizationUseCases", () => {

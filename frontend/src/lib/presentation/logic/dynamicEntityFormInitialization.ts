@@ -4,6 +4,7 @@ import type {
   LeagueConfig,
 } from "$lib/core/entities/CompetitionFormat";
 import type { EntityCrudHandlers } from "$lib/core/types/EntityHandlers";
+import type { ScalarInput } from "$lib/core/types/DomainScalars";
 import type { SubEntityFilter } from "$lib/core/types/SubEntityFilter";
 import { build_stage_template_defaults } from "$lib/presentation/logic/competitionFormatStageTemplateLogic";
 
@@ -42,7 +43,7 @@ export function is_competition_format_entity_type(
 
 export function build_dynamic_form_stage_template_defaults(
   current_form_data: Record<string, unknown>,
-): CompetitionFormatStageTemplate[] {
+): ScalarInput<CompetitionFormatStageTemplate>[] {
   const format_type =
     (current_form_data["format_type"] as FormatType | undefined) ?? "league";
   const league_config =
@@ -89,7 +90,7 @@ export function build_dynamic_form_initial_data(
   const current_stage_templates = Array.isArray(
     new_form_data["stage_templates"],
   )
-    ? (new_form_data["stage_templates"] as CompetitionFormatStageTemplate[])
+    ? (new_form_data["stage_templates"] as ScalarInput<CompetitionFormatStageTemplate>[])
     : [];
 
   if (current_stage_templates.length > 0) {

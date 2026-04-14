@@ -97,7 +97,7 @@ describe("ActivityCategory Entity", () => {
       const categories =
         create_default_categories_for_organization(organization_id);
 
-      const expected_types: ActivityCategoryType[] = [
+      const expected_types =  [
         "competition",
         "fixture",
         "training",
@@ -106,7 +106,7 @@ describe("ActivityCategory Entity", () => {
         "meeting",
         "medical",
         "travel",
-      ];
+      ] as ActivityCategoryType[];
 
       expect(categories.length).toBe(expected_types.length);
 

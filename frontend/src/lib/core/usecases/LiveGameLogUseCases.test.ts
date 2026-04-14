@@ -2,13 +2,14 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { LiveGameLog } from "../entities/LiveGameLog";
 import type { LiveGameLogRepository } from "../interfaces/ports";
+import type { ScalarInput } from "../types/DomainScalars";
 import {
   create_live_game_log_use_cases,
   type LiveGameLogUseCases,
 } from "./LiveGameLogUseCases";
 
 function create_mock_live_game_log(
-  overrides: Partial<LiveGameLog> = {},
+  overrides: Partial<ScalarInput<LiveGameLog>> = {},
 ): LiveGameLog {
   return {
     id: "livegame-001",
@@ -33,7 +34,7 @@ function create_mock_live_game_log(
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
     ...overrides,
-  };
+  } as unknown as LiveGameLog;
 }
 
 function create_mock_repository(): LiveGameLogRepository {
@@ -50,7 +51,7 @@ function create_mock_repository(): LiveGameLogRepository {
     get_active_games: vi.fn(),
     find_by_organization: vi.fn(),
     find_completed_games: vi.fn(),
-  };
+  } as LiveGameLogRepository;
 }
 
 describe("LiveGameLogUseCases", () => {

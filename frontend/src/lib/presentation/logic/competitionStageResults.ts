@@ -127,7 +127,9 @@ export function build_competition_stage_results_sections(
   points_config: PointsConfig = DEFAULT_POINTS_CONFIG,
   tie_breakers: TieBreaker[] = ["goal_difference", "goals_scored"],
 ): CompetitionStageResultsSection[] {
-  const team_map = new Map(teams.map((team) => [team.id, team]));
+  const team_map = new Map<string, Team>(
+    teams.map((team) => [team.id, team]),
+  );
   const sections: CompetitionStageResultsSection[] = [];
   for (const stage of [...stages].sort(
     (left, right) => left.stage_order - right.stage_order,

@@ -22,7 +22,7 @@ import { create_seed_lineups_part20 } from "./seedLineups20";
 import { create_seed_lineups_part21 } from "./seedLineups21";
 import { create_seed_lineups_part22 } from "./seedLineups22";
 
-export function create_seed_fixture_lineups(): FixtureLineup[] {
+export function create_seed_fixture_lineups(): import("$lib/core/types/DomainScalars").ScalarInput<FixtureLineup>[] {
   return [
     ...create_seed_lineups_part1(),
     ...create_seed_lineups_part2(),

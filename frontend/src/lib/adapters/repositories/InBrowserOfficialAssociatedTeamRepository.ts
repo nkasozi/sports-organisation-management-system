@@ -35,7 +35,7 @@ class InBrowserOfficialAssociatedTeamRepository
 
   protected create_entity_from_input(
     input: CreateOfficialAssociatedTeamInput,
-    id: string,
+    id: OfficialAssociatedTeam["id"],
     timestamps: Pick<BaseEntity, "created_at" | "updated_at">,
   ): OfficialAssociatedTeam {
     return {
@@ -48,7 +48,7 @@ class InBrowserOfficialAssociatedTeamRepository
       end_date: input.end_date || "",
       notes: input.notes || "",
       status: input.status,
-    };
+    } as OfficialAssociatedTeam;
   }
 
   protected apply_updates_to_entity(
@@ -58,7 +58,7 @@ class InBrowserOfficialAssociatedTeamRepository
     return {
       ...entity,
       ...updates,
-    };
+    } as OfficialAssociatedTeam;
   }
 
   protected apply_entity_filter(
@@ -91,21 +91,21 @@ class InBrowserOfficialAssociatedTeamRepository
   }
 
   async find_by_official(
-    official_id: string,
+    official_id: OfficialAssociatedTeam["official_id"],
     options?: QueryOptions,
   ): PaginatedAsyncResult<OfficialAssociatedTeam> {
     return this.find_all({ official_id }, options);
   }
 
   async find_by_team(
-    team_id: string,
+    team_id: OfficialAssociatedTeam["team_id"],
     options?: QueryOptions,
   ): PaginatedAsyncResult<OfficialAssociatedTeam> {
     return this.find_all({ team_id }, options);
   }
 }
 
-function create_default_official_associated_teams(): OfficialAssociatedTeam[] {
+function create_default_official_associated_teams(): import("$lib/core/types/DomainScalars").ScalarInput<OfficialAssociatedTeam>[] {
   return [];
 }
 

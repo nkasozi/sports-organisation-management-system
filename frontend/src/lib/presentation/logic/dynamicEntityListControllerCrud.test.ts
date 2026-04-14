@@ -34,7 +34,7 @@ function create_entity<TExtra extends Record<string, unknown>>(
     created_at: "2024-01-01T00:00:00.000Z",
     updated_at: "2024-01-01T00:00:00.000Z",
     ...extra,
-  };
+  } as BaseEntity & TExtra;
 }
 
 describe("dynamicEntityListControllerCrud", () => {

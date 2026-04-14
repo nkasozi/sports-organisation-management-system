@@ -1,12 +1,16 @@
 import type { Fixture } from "$lib/core/entities/Fixture";
 import type { FixtureLineup } from "$lib/core/entities/FixtureLineup";
 import type { Team } from "$lib/core/entities/Team";
-import { ANY_VALUE, type UserScopeProfile } from "$lib/core/interfaces/ports";
+import { ANY_VALUE } from "$lib/core/interfaces/ports";
 import type { TeamPlayer } from "$lib/core/services/teamPlayers";
 import { load_fixture_lineup_detail_page_data } from "$lib/presentation/logic/fixtureLineupDetailPageLoad";
+
 type FixtureLineupDetailPageDependencies = Parameters<
   typeof load_fixture_lineup_detail_page_data
 >[0]["dependencies"];
+type FixtureLineupDetailCurrentProfile = {
+  organization_id?: string | null;
+};
 
 interface FixtureLineupDetailPageViewData {
   lineup: FixtureLineup;
@@ -19,7 +23,7 @@ interface FixtureLineupDetailPageViewData {
 
 export async function load_fixture_lineup_detail_view_data(
   lineup_id: string,
-  current_profile: UserScopeProfile | null,
+  current_profile: FixtureLineupDetailCurrentProfile | null,
   dependencies: FixtureLineupDetailPageDependencies,
 ): Promise<
   | { success: true; data: FixtureLineupDetailPageViewData }

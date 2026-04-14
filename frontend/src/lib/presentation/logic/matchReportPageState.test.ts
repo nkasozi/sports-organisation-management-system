@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import type { Fixture, GameEvent } from "$lib/core/entities/Fixture";
 import type { LineupPlayer } from "$lib/core/entities/FixtureLineup";
+import type { ScalarInput } from "$lib/core/types/DomainScalars";
 
 import {
   build_match_report_lineup_groups,
@@ -14,7 +15,9 @@ import {
   should_poll_match_report_fixture,
 } from "./matchReportPageState";
 
-function create_game_event(overrides: Partial<GameEvent> = {}): GameEvent {
+function create_game_event(
+  overrides: Partial<ScalarInput<GameEvent>> = {},
+): GameEvent {
   return {
     id: "event_1",
     event_type: "goal",
@@ -26,11 +29,11 @@ function create_game_event(overrides: Partial<GameEvent> = {}): GameEvent {
     description: "Goal",
     recorded_at: "2026-04-07T10:00:00Z",
     ...overrides,
-  };
+  } as unknown as GameEvent;
 }
 
 function create_lineup_player(
-  overrides: Partial<LineupPlayer> = {},
+  overrides: Partial<ScalarInput<LineupPlayer>> = {},
 ): LineupPlayer {
   return {
     id: "player_1",
@@ -42,10 +45,10 @@ function create_lineup_player(
     is_substitute: false,
     time_on: "present_at_start",
     ...overrides,
-  };
+  } as unknown as LineupPlayer;
 }
 
-function create_fixture(overrides: Partial<Fixture> = {}): Fixture {
+function create_fixture(overrides: Partial<ScalarInput<Fixture>> = {}): Fixture {
   return {
     id: "fixture_1",
     organization_id: "org_1",
@@ -70,7 +73,7 @@ function create_fixture(overrides: Partial<Fixture> = {}): Fixture {
     created_at: "2026-04-01T00:00:00Z",
     updated_at: "2026-04-01T00:00:00Z",
     ...overrides,
-  };
+  } as unknown as Fixture;
 }
 
 describe("matchReportPageState", () => {

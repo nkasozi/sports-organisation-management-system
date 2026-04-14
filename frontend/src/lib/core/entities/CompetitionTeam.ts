@@ -1,3 +1,9 @@
+import type {
+  EntityId,
+  IsoDateString,
+  Name,
+  ScalarInput,
+} from "../types/DomainScalars";
 import type { BaseEntity } from "./BaseEntity";
 
 export type CompetitionTeamStatus =
@@ -8,11 +14,11 @@ export type CompetitionTeamStatus =
   | "eliminated";
 
 export interface CompetitionTeam extends BaseEntity {
-  competition_id: string;
-  team_id: string;
-  registration_date: string;
+  competition_id: EntityId;
+  team_id: EntityId;
+  registration_date: IsoDateString;
   seed_number: number | null;
-  group_name: string | null;
+  group_name: Name | null;
   points: number;
   goals_for: number;
   goals_against: number;
@@ -26,7 +32,7 @@ export interface CompetitionTeam extends BaseEntity {
 }
 
 export type CreateCompetitionTeamInput = Omit<
-  CompetitionTeam,
+  ScalarInput<CompetitionTeam>,
   | "id"
   | "created_at"
   | "updated_at"
@@ -40,17 +46,19 @@ export type CreateCompetitionTeamInput = Omit<
   | "matches_lost"
 >;
 export type UpdateCompetitionTeamInput = Partial<
-  Omit<CompetitionTeam, "id" | "created_at" | "updated_at">
+  Omit<ScalarInput<CompetitionTeam>, "id" | "created_at" | "updated_at">
 >;
 
 export function create_empty_competition_team_input(
-  competition_id: string = "",
-  team_id: string = "",
+  competition_id: CreateCompetitionTeamInput["competition_id"] = "",
+  team_id: CreateCompetitionTeamInput["team_id"] = "",
 ): CreateCompetitionTeamInput {
   return {
     competition_id,
     team_id,
-    registration_date: new Date().toISOString().split("T")[0],
+    registration_date: new Date()
+      .toISOString()
+      .split("T")[0] as CreateCompetitionTeamInput["registration_date"],
     seed_number: null,
     group_name: null,
     notes: "",
@@ -60,8 +68,11 @@ export function create_empty_competition_team_input(
 
 export function create_competition_team_with_stats(
   input: CreateCompetitionTeamInput,
-  id: string,
-  timestamps: { created_at: string; updated_at: string },
+  id: CompetitionTeam["id"],
+  timestamps: {
+    created_at: CompetitionTeam["created_at"];
+    updated_at: CompetitionTeam["updated_at"];
+  },
 ): CompetitionTeam {
   return {
     id,
@@ -75,7 +86,7 @@ export function create_competition_team_with_stats(
     matches_won: 0,
     matches_drawn: 0,
     matches_lost: 0,
-  };
+  } as CompetitionTeam;
 }
 
 function calculate_goal_difference(team: CompetitionTeam): number {

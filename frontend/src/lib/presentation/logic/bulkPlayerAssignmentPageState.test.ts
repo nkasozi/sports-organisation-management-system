@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { Player } from "$lib/core/entities/Player";
 import type { PlayerTeamMembership } from "$lib/core/entities/PlayerTeamMembership";
 import type { Team } from "$lib/core/entities/Team";
+import type { ScalarInput } from "$lib/core/types/DomainScalars";
 
 import {
   build_player_assignments,
@@ -11,7 +12,9 @@ import {
   filter_player_assignments_by_team_gender,
 } from "./bulkPlayerAssignmentPageState";
 
-function create_test_player(overrides: Partial<Player>): Player {
+function create_test_player(
+  overrides: Partial<ScalarInput<Player>> = {},
+): Player {
   return {
     id: overrides.id ?? "player_1",
     created_at: overrides.created_at ?? "2024-01-01T00:00:00.000Z",
@@ -32,10 +35,10 @@ function create_test_player(overrides: Partial<Player>): Player {
     emergency_contact_phone: overrides.emergency_contact_phone ?? "",
     medical_notes: overrides.medical_notes ?? "",
     status: overrides.status ?? "active",
-  };
+  } as unknown as Player;
 }
 
-function create_test_team(overrides: Partial<Team>): Team {
+function create_test_team(overrides: Partial<ScalarInput<Team>> = {}): Team {
   return {
     id: overrides.id ?? "team_1",
     created_at: overrides.created_at ?? "2024-01-01T00:00:00.000Z",
@@ -55,11 +58,11 @@ function create_test_team(overrides: Partial<Team>): Team {
     website: overrides.website ?? "",
     founded_year: overrides.founded_year ?? 2020,
     status: overrides.status ?? "active",
-  };
+  } as unknown as Team;
 }
 
 function create_test_membership(
-  overrides: Partial<PlayerTeamMembership>,
+  overrides: Partial<ScalarInput<PlayerTeamMembership>> = {},
 ): PlayerTeamMembership {
   return {
     id: overrides.id ?? "membership_1",
@@ -71,7 +74,7 @@ function create_test_membership(
     start_date: overrides.start_date ?? "2024-01-01",
     jersey_number: overrides.jersey_number ?? 10,
     status: overrides.status ?? "active",
-  };
+  } as unknown as PlayerTeamMembership;
 }
 
 describe("build_player_assignments", () => {

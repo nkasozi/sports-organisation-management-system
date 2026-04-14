@@ -1,9 +1,15 @@
+import type {
+  EntityId,
+  Name,
+  ScalarInput,
+  ScalarValueInput,
+} from "../types/DomainScalars";
 import type { BaseEntity, EntityStatus } from "./BaseEntity";
 
 export type ProfileVisibility = "public" | "private";
 
 export interface PlayerProfile extends BaseEntity {
-  player_id: string;
+  player_id: EntityId;
   profile_summary: string;
   visibility: ProfileVisibility;
   profile_slug: string;
@@ -12,12 +18,15 @@ export interface PlayerProfile extends BaseEntity {
 }
 
 export type CreatePlayerProfileInput = Omit<
-  PlayerProfile,
+  ScalarInput<PlayerProfile>,
   "id" | "created_at" | "updated_at"
 >;
 
 export type UpdatePlayerProfileInput = Partial<
-  Omit<PlayerProfile, "id" | "created_at" | "updated_at" | "player_id">
+  Omit<
+    ScalarInput<PlayerProfile>,
+    "id" | "created_at" | "updated_at" | "player_id"
+  >
 >;
 
 export const PROFILE_VISIBILITY_OPTIONS = [
@@ -26,7 +35,7 @@ export const PROFILE_VISIBILITY_OPTIONS = [
 ];
 
 export function create_empty_player_profile_input(
-  player_id: string = "",
+  player_id: CreatePlayerProfileInput["player_id"] = "",
 ): CreatePlayerProfileInput {
   return {
     player_id,
@@ -39,9 +48,9 @@ export function create_empty_player_profile_input(
 }
 
 export function generate_profile_slug(
-  first_name: string,
-  last_name: string,
-  player_id: string,
+  first_name: ScalarValueInput<Name>,
+  last_name: ScalarValueInput<Name>,
+  player_id: ScalarValueInput<PlayerProfile["player_id"]>,
 ): string {
   const name_part = `${first_name}-${last_name}`
     .toLowerCase()

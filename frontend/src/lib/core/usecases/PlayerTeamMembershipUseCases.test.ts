@@ -19,7 +19,7 @@ function create_mock_repository(): PlayerTeamMembershipRepository {
     find_by_team: vi.fn(),
     find_by_ids: vi.fn(),
     count: vi.fn(),
-  };
+  } as PlayerTeamMembershipRepository;
 }
 
 function create_test_membership(
@@ -36,7 +36,7 @@ function create_test_membership(
     created_at: "2024-01-01T00:00:00Z",
     updated_at: "2024-01-01T00:00:00Z",
     ...overrides,
-  };
+  } as PlayerTeamMembership;
 }
 
 function create_valid_input(
@@ -50,7 +50,7 @@ function create_valid_input(
     start_date: "2024-01-01",
     status: "active",
     ...overrides,
-  };
+  } as CreatePlayerTeamMembershipInput;
 }
 
 describe("PlayerTeamMembershipUseCases", () => {

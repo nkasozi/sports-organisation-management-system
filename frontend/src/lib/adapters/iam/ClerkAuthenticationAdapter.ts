@@ -2,8 +2,10 @@ import type {
   AuthenticationPort,
   AuthToken,
   AuthTokenPayload,
+  AuthTokenPayloadCore,
   AuthVerificationResult,
 } from "$lib/core/interfaces/ports";
+import { create_auth_token_payload } from "$lib/core/interfaces/ports";
 import type { Result } from "$lib/core/types/Result";
 import {
   create_failure_result,
@@ -36,7 +38,7 @@ export interface ClerkSessionProvider {
 }
 
 function build_auth_token_payload(
-  input: Omit<AuthTokenPayload, "issued_at" | "expires_at">,
+  input: AuthTokenPayloadCore,
 ): AuthTokenPayload {
   const now_in_seconds = Math.floor(Date.now() / 1000);
   return {
@@ -48,9 +50,9 @@ function build_auth_token_payload(
 
 function build_verification_payload_from_clerk_user(
   clerk_user: ClerkUserInfo,
-): AuthTokenPayload {
+): Result<AuthTokenPayload> {
   const now_in_seconds = Math.floor(Date.now() / 1000);
-  return {
+  return create_auth_token_payload({
     user_id: clerk_user.id,
     email: clerk_user.email_address,
     display_name:
@@ -61,7 +63,7 @@ function build_verification_payload_from_clerk_user(
     team_id: "*",
     issued_at: now_in_seconds,
     expires_at: now_in_seconds + TOKEN_EXPIRY_SECONDS,
-  };
+  });
 }
 
 function build_invalid_verification_result(
@@ -73,9 +75,15 @@ function build_invalid_verification_result(
 function build_valid_verification_result(
   clerk_user: ClerkUserInfo,
 ): AuthVerificationResult {
+  const payload_result = build_verification_payload_from_clerk_user(clerk_user);
+
+  if (!payload_result.success) {
+    return build_invalid_verification_result(payload_result.error);
+  }
+
   return {
     is_valid: true,
-    payload: build_verification_payload_from_clerk_user(clerk_user),
+    payload: payload_result.data,
   };
 }
 
@@ -101,7 +109,7 @@ export class ClerkAuthenticationAdapter implements AuthenticationPort {
   }
 
   async generate_token(
-    payload_input: Omit<AuthTokenPayload, "issued_at" | "expires_at">,
+    payload_input: AuthTokenPayloadCore,
   ): Promise<Result<AuthToken>> {
     const session_token = await this.session_provider.get_session_token();
     if (!session_token) {

@@ -19,7 +19,7 @@ function create_mock_repository(): TeamStaffRoleRepository {
     count: vi.fn(),
     find_by_category: vi.fn(),
     find_by_organization: vi.fn(),
-  };
+  } as TeamStaffRoleRepository;
 }
 
 function create_test_role(
@@ -38,7 +38,7 @@ function create_test_role(
     created_at: "2024-01-01T00:00:00Z",
     updated_at: "2024-01-01T00:00:00Z",
     ...overrides,
-  };
+  } as TeamStaffRole;
 }
 
 function create_valid_input(
@@ -54,7 +54,7 @@ function create_valid_input(
     status: "active",
     organization_id: "test-org-1",
     ...overrides,
-  };
+  } as CreateTeamStaffRoleInput;
 }
 
 describe("TeamStaffRoleUseCases", () => {

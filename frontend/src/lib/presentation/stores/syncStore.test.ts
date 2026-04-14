@@ -71,7 +71,7 @@ describe("syncStore", () => {
     sync_store_mocks.get_last_sync_timestamp.mockReturnValue(
       "2024-04-30T09:00:00.000Z",
     );
-    const sync_config: Partial<SyncConfig> = { direction: "pull" };
+    const sync_config =  { direction: "pull" } as Partial<SyncConfig>;
 
     const { sync_store } = await import("./syncStore");
     const manager = sync_store.initialize(sync_config);

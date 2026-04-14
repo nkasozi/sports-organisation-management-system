@@ -2,22 +2,48 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { InBrowserSystemUserRepository } from "$lib/adapters/repositories/InBrowserSystemUserRepository";
 import type { SystemUser } from "$lib/core/entities/SystemUser";
-import type { AuthTokenPayload } from "$lib/core/interfaces/ports";
+import {
+  type AuthTokenPayload,
+  create_auth_token_payload_core,
+} from "$lib/core/interfaces/ports";
 
 import { LocalAuthenticationAdapter } from "./LocalAuthenticationAdapter";
+
+interface CreateTestPayloadOverrides {
+  user_id?: string;
+  email?: string;
+  display_name?: string;
+  role?: AuthTokenPayload["role"];
+  organization_id?: string;
+  team_id?: string;
+}
 
 function create_test_payload(): Omit<
   AuthTokenPayload,
   "issued_at" | "expires_at"
 > {
-  return {
-    user_id: "test-user-123",
-    email: "test@example.com",
-    display_name: "Test User",
-    role: "super_admin",
-    organization_id: "*",
-    team_id: "*",
-  };
+  return create_test_payload_with_overrides();
+}
+
+function create_test_payload_with_overrides(
+  overrides: CreateTestPayloadOverrides = {},
+): Omit<AuthTokenPayload, "issued_at" | "expires_at"> {
+  const result = create_auth_token_payload_core({
+    user_id: overrides.user_id ?? "test-user-123",
+    email: overrides.email ?? "test@example.com",
+    display_name: overrides.display_name ?? "Test User",
+    role: overrides.role ?? "super_admin",
+    organization_id: overrides.organization_id ?? "*",
+    team_id: overrides.team_id ?? "*",
+  });
+
+  expect(result.success).toBe(true);
+
+  if (!result.success) {
+    return undefined as never;
+  }
+
+  return result.data;
 }
 
 function create_mock_system_user(): SystemUser {
@@ -31,7 +57,7 @@ function create_mock_system_user(): SystemUser {
     organization_id: "*",
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
-  };
+  } as SystemUser;
 }
 
 function create_mock_repository(): InBrowserSystemUserRepository {
@@ -130,6 +156,28 @@ describe("LocalAuthenticationAdapter", () => {
       expect(result.data.payload?.email).toBe(payload_input.email);
     });
 
+    it("should verify public viewer tokens without loading a system user", async () => {
+      const payload_input = create_test_payload_with_overrides({
+        user_id: "public-viewer",
+        email: "public-viewer@anonymous.invalid",
+        display_name: "Public Viewer",
+        role: "public_viewer",
+      });
+      const token_result = await adapter.generate_token(payload_input);
+
+      expect(token_result.success).toBe(true);
+      if (!token_result.success) return;
+
+      const result = await adapter.verify_token(token_result.data.raw_token);
+
+      expect(result.success).toBe(true);
+      if (!result.success) return;
+      expect(result.data.is_valid).toBe(true);
+      expect(result.data.system_user).toBeUndefined();
+      expect(result.data.payload?.user_id).toBe("public-viewer");
+      expect(mock_repository.find_by_email).not.toHaveBeenCalled();
+    });
+
     it("should fail verification for empty token", async () => {
       const result = await adapter.verify_token("");
 
@@ -179,11 +227,11 @@ describe("LocalAuthenticationAdapter", () => {
       if (!token_result.success) return;
       const token = token_result.data;
 
-      const expired_payload: AuthTokenPayload = {
+      const expired_payload =  {
         ...token.payload,
         issued_at: Date.now() - 400 * 24 * 60 * 60 * 1000,
         expires_at: Date.now() - 35 * 24 * 60 * 60 * 1000,
-      };
+      } as AuthTokenPayload;
 
       const header = token.raw_token.split(".")[0];
       const encoded_payload = btoa(JSON.stringify(expired_payload))

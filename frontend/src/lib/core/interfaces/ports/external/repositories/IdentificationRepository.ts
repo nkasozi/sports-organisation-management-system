@@ -4,14 +4,15 @@ import type {
   IdentificationHolderType,
   UpdateIdentificationInput,
 } from "../../../../entities/Identification";
+import type { ScalarValueInput } from "../../../../types/DomainScalars";
 import type { PaginatedAsyncResult } from "../../../../types/Result";
 import type { QueryOptions, Repository } from "./Repository";
 
 export interface IdentificationFilter {
   holder_type?: IdentificationHolderType;
-  holder_id?: string;
-  identification_type_id?: string;
-  status?: string;
+  holder_id?: ScalarValueInput<Identification["holder_id"]>;
+  identification_type_id?: ScalarValueInput<Identification["identification_type_id"]>;
+  status?: Identification["status"];
 }
 
 export interface IdentificationRepository extends Repository<
@@ -22,7 +23,7 @@ export interface IdentificationRepository extends Repository<
 > {
   find_by_holder(
     holder_type: IdentificationHolderType,
-    holder_id: string,
+    holder_id: ScalarValueInput<Identification["holder_id"]>,
     options?: QueryOptions,
   ): PaginatedAsyncResult<Identification>;
 }

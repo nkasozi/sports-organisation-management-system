@@ -59,7 +59,7 @@ function create_mock_dependencies(
       }),
     },
     ...overrides,
-  };
+  } as DashboardDependencies;
 }
 
 function create_default_filters(): DashboardFilters {
@@ -67,7 +67,7 @@ function create_default_filters(): DashboardFilters {
     organization_filter: undefined,
     fixture_filter: { status: "scheduled" },
     organization_count_override: null,
-  };
+  } as DashboardFilters;
 }
 
 describe("get_competition_initials", () => {
@@ -249,11 +249,11 @@ describe("load_dashboard_data", () => {
         }),
       },
     });
-    const filters: DashboardFilters = {
+    const filters =  {
       organization_filter: { organization_id: "org_1" },
       fixture_filter: { status: "scheduled", organization_id: "org_1" },
       organization_count_override: 1,
-    };
+    } as DashboardFilters;
 
     const result = await load_dashboard_data(dependencies, filters);
 

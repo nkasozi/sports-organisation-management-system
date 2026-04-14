@@ -1,7 +1,8 @@
 <script lang="ts">
   import type { ConflictRecord } from "$lib/infrastructure/sync/conflictTypes";
+  import type { ScalarInput } from "$lib/core/types/DomainScalars";
 
-  export let conflict: ConflictRecord;
+  export let conflict: ScalarInput<ConflictRecord>;
   export let format_timestamp: (timestamp: string) => string;
 </script>
 

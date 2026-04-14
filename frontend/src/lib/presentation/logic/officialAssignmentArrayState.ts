@@ -1,4 +1,5 @@
 import type { OfficialAssignment } from "$lib/core/entities/FixtureDetailsSetup";
+import type { ScalarInput } from "$lib/core/types/DomainScalars";
 
 export type SelectOption = { value: string; label: string };
 
@@ -79,7 +80,7 @@ export async function load_assignment_options(command: {
 
 export function compute_available_officials(
   all_officials: SelectOption[],
-  current_assignments: OfficialAssignment[],
+  current_assignments: ScalarInput<OfficialAssignment>[],
   current_index: number,
 ): SelectOption[] {
   const assigned_official_ids = new Set(

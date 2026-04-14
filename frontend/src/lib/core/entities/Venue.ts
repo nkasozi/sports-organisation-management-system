@@ -1,9 +1,15 @@
+import type {
+  EmailAddress,
+  EntityId,
+  Name,
+  ScalarInput,
+} from "../types/DomainScalars";
 import type { BaseEntity, EntityStatus } from "./BaseEntity";
 
 export interface Venue extends BaseEntity {
-  organization_id: string;
-  name: string;
-  short_name: string;
+  organization_id: EntityId;
+  name: Name;
+  short_name: Name;
   address: string;
   city: string;
   country: string;
@@ -11,14 +17,17 @@ export interface Venue extends BaseEntity {
   surface_type: string;
   has_lighting: boolean;
   has_parking: boolean;
-  contact_email: string;
+  contact_email: EmailAddress;
   contact_phone: string;
   website: string;
   image_url: string;
   status: EntityStatus;
 }
 
-export type CreateVenueInput = Omit<Venue, "id" | "created_at" | "updated_at">;
+export type CreateVenueInput = Omit<
+  ScalarInput<Venue>,
+  "id" | "created_at" | "updated_at"
+>;
 export type UpdateVenueInput = Partial<CreateVenueInput>;
 
 export const DEFAULT_VENUE_IMAGE =

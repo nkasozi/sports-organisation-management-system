@@ -12,6 +12,7 @@ import type {
   GameEventTypeRepository,
   QueryOptions,
 } from "../../core/interfaces/ports";
+import type { ScalarValueInput } from "../../core/types/DomainScalars";
 import type { PaginatedAsyncResult, Result } from "../../core/types/Result";
 import {
   create_failure_result,
@@ -45,17 +46,17 @@ export class InBrowserGameEventTypeRepository
 
   protected create_entity_from_input(
     input: CreateGameEventTypeInput,
-    id: string,
+    id: GameEventType["id"],
     timestamps: Pick<BaseEntity, "created_at" | "updated_at">,
   ): GameEventType {
-    return { id, ...timestamps, ...input };
+    return { id, ...timestamps, ...input } as GameEventType;
   }
 
   protected apply_updates_to_entity(
     entity: GameEventType,
     updates: UpdateGameEventTypeInput,
   ): GameEventType {
-    return { ...entity, ...updates };
+    return { ...entity, ...updates } as GameEventType;
   }
 
   protected apply_entity_filter(
@@ -97,7 +98,7 @@ export class InBrowserGameEventTypeRepository
   }
 
   async find_by_sport(
-    sport_id: string | null,
+    sport_id: ScalarValueInput<NonNullable<GameEventType["sport_id"]>>,
   ): Promise<Result<GameEventType[]>> {
     try {
       const all = await this.database.game_event_types.toArray();
@@ -175,7 +176,7 @@ export class InBrowserGameEventTypeRepository
   }
 
   async find_by_organization(
-    organization_id: string,
+    organization_id: GameEventType["organization_id"],
     options?: QueryOptions,
   ): PaginatedAsyncResult<GameEventType> {
     return this.find_all({ organization_id }, options);

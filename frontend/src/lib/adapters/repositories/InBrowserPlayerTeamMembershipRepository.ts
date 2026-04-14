@@ -11,6 +11,7 @@ import type {
   PlayerTeamMembershipRepository,
 } from "../../core/interfaces/ports";
 import type { QueryOptions } from "../../core/interfaces/ports";
+import type { ScalarValueInput } from "../../core/types/DomainScalars";
 import type { PaginatedAsyncResult } from "../../core/types/Result";
 import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
 
@@ -35,7 +36,7 @@ export class InBrowserPlayerTeamMembershipRepository
 
   protected create_entity_from_input(
     input: CreatePlayerTeamMembershipInput,
-    id: string,
+    id: PlayerTeamMembership["id"],
     timestamps: Pick<BaseEntity, "created_at" | "updated_at">,
   ): PlayerTeamMembership {
     return {
@@ -47,7 +48,7 @@ export class InBrowserPlayerTeamMembershipRepository
       start_date: input.start_date,
       jersey_number: input.jersey_number,
       status: input.status,
-    };
+    } as PlayerTeamMembership;
   }
 
   protected apply_updates_to_entity(
@@ -57,7 +58,7 @@ export class InBrowserPlayerTeamMembershipRepository
     return {
       ...entity,
       ...updates,
-    };
+    } as PlayerTeamMembership;
   }
 
   protected apply_entity_filter(
@@ -88,21 +89,21 @@ export class InBrowserPlayerTeamMembershipRepository
   }
 
   async find_by_team(
-    team_id: string,
+    team_id: ScalarValueInput<PlayerTeamMembership["team_id"]>,
     options?: QueryOptions,
   ): PaginatedAsyncResult<PlayerTeamMembership> {
     return this.find_all({ team_id }, options);
   }
 
   async find_by_player(
-    player_id: string,
+    player_id: ScalarValueInput<PlayerTeamMembership["player_id"]>,
     options?: QueryOptions,
   ): PaginatedAsyncResult<PlayerTeamMembership> {
     return this.find_all({ player_id }, options);
   }
 }
 
-function create_default_player_team_memberships(): PlayerTeamMembership[] {
+function create_default_player_team_memberships(): import("$lib/core/types/DomainScalars").ScalarInput<PlayerTeamMembership>[] {
   const now = new Date().toISOString();
 
   return [
@@ -150,7 +151,7 @@ function create_default_player_team_memberships(): PlayerTeamMembership[] {
       created_at: now,
       updated_at: now,
     },
-  ];
+  ] as PlayerTeamMembership[];
 }
 
 let singleton_instance: InBrowserPlayerTeamMembershipRepository | null = null;

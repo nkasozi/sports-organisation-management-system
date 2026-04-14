@@ -3,6 +3,7 @@ import type {
   GameOfficialRole,
   UpdateGameOfficialRoleInput,
 } from "../../../../entities/GameOfficialRole";
+import type { ScalarValueInput } from "../../../../types/DomainScalars";
 import type { AsyncResult } from "../../../../types/Result";
 import type { GameOfficialRoleFilter } from "../../external/repositories/GameOfficialRoleRepository";
 import type { BaseUseCasesPort } from "./BaseUseCasesPort";
@@ -14,6 +15,6 @@ export interface GameOfficialRoleUseCasesPort extends BaseUseCasesPort<
   GameOfficialRoleFilter
 > {
   list_roles_for_sport(
-    sport_id: string | null,
+    sport_id: ScalarValueInput<GameOfficialRole["sport_id"]>,
   ): AsyncResult<GameOfficialRole[]>;
 }

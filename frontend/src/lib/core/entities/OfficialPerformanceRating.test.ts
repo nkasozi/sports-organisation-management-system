@@ -34,7 +34,7 @@ function make_rating(
     updated_at: "2026-01-01T00:00:00Z",
     importance_weight: 1.0,
     ...overrides,
-  };
+  } as OfficialPerformanceRating & { importance_weight: number };
 }
 
 describe("get_performance_tier", () => {
@@ -82,35 +82,35 @@ describe("get_tier_label", () => {
 
 describe("compute_composite_score", () => {
   it("returns 10 when all dimensions are 10", () => {
-    const perfect: RatingDimensions = {
+    const perfect =  {
       overall: 10,
       decision_accuracy: 10,
       game_control: 10,
       communication: 10,
       fitness: 10,
-    };
+    } as RatingDimensions;
     expect(compute_composite_score(perfect)).toBe(10);
   });
 
   it("returns 1 when all dimensions are 1", () => {
-    const lowest: RatingDimensions = {
+    const lowest =  {
       overall: 1,
       decision_accuracy: 1,
       game_control: 1,
       communication: 1,
       fitness: 1,
-    };
+    } as RatingDimensions;
     expect(compute_composite_score(lowest)).toBe(1);
   });
 
   it("returns correct average for mixed dimensions", () => {
-    const mixed: RatingDimensions = {
+    const mixed =  {
       overall: 10,
       decision_accuracy: 5,
       game_control: 5,
       communication: 5,
       fitness: 5,
-    };
+    } as RatingDimensions;
     expect(compute_composite_score(mixed)).toBe(6);
   });
 });

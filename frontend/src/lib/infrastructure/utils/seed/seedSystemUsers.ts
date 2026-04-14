@@ -9,7 +9,7 @@ import {
 } from "./seedIds";
 import { SEED_PLAYER_IDS } from "./seedPlayerIds";
 
-export function create_seed_system_users(): SystemUser[] {
+export function create_seed_system_users(): import("$lib/core/types/DomainScalars").ScalarInput<SystemUser>[] {
   const now = generate_current_timestamp();
 
   return [

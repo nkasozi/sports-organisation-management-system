@@ -3,6 +3,7 @@ import type {
   PlayerTeamMembership,
   UpdatePlayerTeamMembershipInput,
 } from "../../../../entities/PlayerTeamMembership";
+import type { ScalarValueInput } from "../../../../types/DomainScalars";
 import type {
   AsyncResult,
   PaginatedAsyncResult,
@@ -18,12 +19,14 @@ export interface PlayerTeamMembershipUseCasesPort extends BaseUseCasesPort<
   PlayerTeamMembershipFilter
 > {
   list_memberships_by_team(
-    team_id: string,
+    team_id: ScalarValueInput<PlayerTeamMembership["team_id"]>,
     options?: QueryOptions,
   ): PaginatedAsyncResult<PlayerTeamMembership>;
   list_memberships_by_player(
-    player_id: string,
+    player_id: ScalarValueInput<PlayerTeamMembership["player_id"]>,
     options?: QueryOptions,
   ): PaginatedAsyncResult<PlayerTeamMembership>;
-  delete_memberships(ids: string[]): AsyncResult<number>;
+  delete_memberships(
+    ids: ScalarValueInput<PlayerTeamMembership["id"]>[],
+  ): AsyncResult<number>;
 }

@@ -1,6 +1,7 @@
 import type { Table } from "dexie";
 
 import type { BaseEntity } from "../../core/entities/BaseEntity";
+import type { ScalarValueInput } from "../../core/types/DomainScalars";
 import {
   create_timestamp_fields,
   generate_unique_id,
@@ -31,7 +32,9 @@ interface RepositoryFailureDetails {
   log_level?: "warn" | "error";
 }
 
-function create_entity_not_found_result(id: string): Result<never, string> {
+function create_entity_not_found_result(
+  id: ScalarValueInput<BaseEntity["id"]>,
+): Result<never, string> {
   return create_failure_result(`Entity with id '${id}' not found`);
 }
 
@@ -95,7 +98,7 @@ export function find_all_entities<TEntity extends BaseEntity, TFilter>(
 
 export async function find_entity_by_id<TEntity extends BaseEntity>(
   table: Table<TEntity, string>,
-  id: string,
+  id: ScalarValueInput<TEntity["id"]>,
 ): AsyncResult<TEntity> {
   const entity_result = await execute_repository_operation(
     {
@@ -112,7 +115,7 @@ export async function find_entity_by_id<TEntity extends BaseEntity>(
 
 export function find_entities_by_ids<TEntity extends BaseEntity>(
   table: Table<TEntity, string>,
-  ids: string[],
+  ids: Array<ScalarValueInput<TEntity["id"]>>,
 ): AsyncResult<TEntity[]> {
   return execute_repository_operation(
     {
@@ -133,7 +136,7 @@ export function create_entity<TEntity extends BaseEntity, TCreateInput>(
   entity_prefix: string,
   create_entity_from_input: (
     input: TCreateInput,
-    id: string,
+    id: TEntity["id"],
     timestamps: Pick<BaseEntity, "created_at" | "updated_at">,
   ) => TEntity,
 ): AsyncResult<TEntity> {
@@ -144,7 +147,7 @@ export function create_entity<TEntity extends BaseEntity, TCreateInput>(
       operation: "create entity",
     },
     async () => {
-      const entity_id = generate_unique_id(entity_prefix);
+      const entity_id = generate_unique_id(entity_prefix) as TEntity["id"];
       const new_entity = create_entity_from_input(
         input,
         entity_id,
@@ -158,7 +161,7 @@ export function create_entity<TEntity extends BaseEntity, TCreateInput>(
 
 export async function update_entity<TEntity extends BaseEntity, TUpdateInput>(
   table: Table<TEntity, string>,
-  id: string,
+  id: ScalarValueInput<TEntity["id"]>,
   updates: TUpdateInput,
   apply_updates_to_entity: (entity: TEntity, updates: TUpdateInput) => TEntity,
 ): AsyncResult<TEntity> {
@@ -182,7 +185,7 @@ export async function update_entity<TEntity extends BaseEntity, TUpdateInput>(
 
 export async function delete_entity_by_id<TEntity extends BaseEntity>(
   table: Table<TEntity, string>,
-  id: string,
+  id: ScalarValueInput<TEntity["id"]>,
 ): AsyncResult<boolean> {
   const existing_entity_result = await find_entity_by_id(table, id);
   if (!existing_entity_result.success) return existing_entity_result;
@@ -201,7 +204,7 @@ export async function delete_entity_by_id<TEntity extends BaseEntity>(
 
 export function delete_entities_by_ids<TEntity extends BaseEntity>(
   table: Table<TEntity, string>,
-  ids: string[],
+  ids: Array<ScalarValueInput<TEntity["id"]>>,
 ): AsyncResult<number> {
   return execute_repository_operation(
     {

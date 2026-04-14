@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { CreateOfficialInput, Official } from "../entities/Official";
 import type { OfficialRepository } from "../interfaces/ports";
+import type { ScalarInput } from "../types/DomainScalars";
 import { create_official_use_cases } from "./OfficialUseCases";
 
 function create_mock_repository(): OfficialRepository {
@@ -17,10 +18,12 @@ function create_mock_repository(): OfficialRepository {
     find_available_for_date: vi.fn(),
     find_by_ids: vi.fn(),
     count: vi.fn(),
-  };
+  } as OfficialRepository;
 }
 
-function create_test_official(overrides: Partial<Official> = {}): Official {
+function create_test_official(
+  overrides: Partial<ScalarInput<Official>> = {},
+): Official {
   return {
     id: "official-123",
     first_name: "John",
@@ -40,7 +43,7 @@ function create_test_official(overrides: Partial<Official> = {}): Official {
     created_at: "2024-01-01T00:00:00Z",
     updated_at: "2024-01-01T00:00:00Z",
     ...overrides,
-  };
+  } as unknown as Official;
 }
 
 function create_valid_input(
@@ -62,7 +65,7 @@ function create_valid_input(
     notes: "",
     status: "active",
     ...overrides,
-  };
+  } as CreateOfficialInput;
 }
 
 describe("OfficialUseCases", () => {

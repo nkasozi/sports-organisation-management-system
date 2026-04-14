@@ -140,11 +140,11 @@ describe("authHelpers", () => {
     expect(public_viewer).toEqual({
       id: "public-viewer",
       display_name: "Public Viewer",
-      email: "",
+      email: "public-viewer@anonymous.invalid",
       role: "public_viewer",
-      organization_id: "",
+      organization_id: "*",
       organization_name: "",
-      team_id: "",
+      team_id: "*",
     });
 
     expect(
@@ -184,6 +184,51 @@ describe("authHelpers", () => {
       success: false,
       error: "token failed",
     });
+  });
+
+  it("generates public viewer tokens with anonymous scope values", async () => {
+    const profile = create_public_viewer_profile();
+
+    generate_token_mock.mockResolvedValueOnce({
+      success: true,
+      data: { raw_token: "public.token.sig" },
+    });
+
+    await expect(generate_token_for_profile(profile)).resolves.toEqual({
+      success: true,
+      data: { raw_token: "public.token.sig" },
+    });
+
+    expect(generate_token_mock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        user_id: "public-viewer",
+        role: "public_viewer",
+        organization_id: "*",
+        team_id: "*",
+      }),
+    );
+
+    const generated_payload = generate_token_mock.mock.calls[0]?.[0];
+
+    expect(generated_payload.email).not.toBe("");
+  });
+
+  it("fails before token generation when the profile identifiers are invalid", async () => {
+    const invalid_profile = {
+      id: "",
+      email: "admin@example.com",
+      display_name: "Admin User",
+      role: "org_admin",
+      organization_id: "*",
+      team_id: "team_1",
+    } as never;
+
+    await expect(generate_token_for_profile(invalid_profile)).resolves.toEqual({
+      success: false,
+      error: "User ID is invalid",
+    });
+
+    expect(generate_token_mock).not.toHaveBeenCalled();
   });
 
   it("syncs event-bus user context and loads sidebar menus for a role", async () => {

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { BaseEntity } from "../../core/entities/BaseEntity";
+import type { ScalarInput } from "../../core/types/DomainScalars";
 import {
   build_entity_display_label,
   build_foreign_entity_cta_label,
@@ -10,13 +11,15 @@ import {
   get_display_value_for_foreign_key,
 } from "./entityDisplayFormatter";
 
-function create_base_entity(overrides: Partial<BaseEntity> = {}): BaseEntity {
+function create_base_entity(
+  overrides: Partial<ScalarInput<BaseEntity>> = {},
+): BaseEntity {
   return {
     id: "entity_1",
     created_at: "2024-01-01T00:00:00Z",
     updated_at: "2024-01-01T00:00:00Z",
     ...overrides,
-  };
+  } as unknown as BaseEntity;
 }
 
 describe("entityDisplayFormatter", () => {

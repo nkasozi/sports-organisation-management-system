@@ -1,9 +1,10 @@
 import type { GameEventType } from "../../core/entities/GameEventType";
+import type { ScalarValueInput } from "../../core/types/DomainScalars";
 import { get_default_game_event_types } from "../../core/entities/GameEventType";
 
 export function create_default_game_event_types_for_organization(
-  organization_id: string,
-): GameEventType[] {
+  organization_id: ScalarValueInput<GameEventType["organization_id"]>,
+): import("$lib/core/types/DomainScalars").ScalarInput<GameEventType>[] {
   const now = new Date().toISOString();
   const default_inputs = get_default_game_event_types(organization_id);
   return default_inputs.map((input, index) => ({

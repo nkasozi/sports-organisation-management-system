@@ -18,7 +18,7 @@ function create_mock_repository(): IdentificationRepository {
     delete_by_ids: vi.fn(),
     count: vi.fn(),
     find_by_holder: vi.fn(),
-  };
+  } as IdentificationRepository;
 }
 
 function create_test_identification(
@@ -38,7 +38,7 @@ function create_test_identification(
     created_at: "2024-01-01T00:00:00Z",
     updated_at: "2024-01-01T00:00:00Z",
     ...overrides,
-  };
+  } as Identification;
 }
 
 function create_valid_input(
@@ -55,7 +55,7 @@ function create_valid_input(
     notes: "",
     status: "active",
     ...overrides,
-  };
+  } as CreateIdentificationInput;
 }
 
 describe("IdentificationUseCases", () => {

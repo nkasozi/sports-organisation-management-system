@@ -10,6 +10,7 @@ import type {
 } from "$lib/core/interfaces/ports";
 import type { QueryOptions } from "$lib/core/interfaces/ports";
 import type { IdentificationTypeUseCasesPort } from "$lib/core/interfaces/ports";
+import type { EntityId, ScalarValueInput } from "$lib/core/types/DomainScalars";
 import type { AsyncResult, PaginatedAsyncResult } from "$lib/core/types/Result";
 import { create_failure_result } from "$lib/core/types/Result";
 
@@ -31,7 +32,7 @@ export function create_identification_type_use_cases(
     },
 
     async update(
-      id: string,
+      id: ScalarValueInput<IdentificationType["id"]>,
       input: UpdateIdentificationTypeInput,
     ): AsyncResult<IdentificationType> {
       if (!id || id.trim() === "") {
@@ -57,14 +58,18 @@ export function create_identification_type_use_cases(
       return repository.update(id, input);
     },
 
-    async delete(id: string): AsyncResult<boolean> {
+    async delete(
+      id: ScalarValueInput<IdentificationType["id"]>,
+    ): AsyncResult<boolean> {
       if (!id || id.trim() === "") {
         return create_failure_result("Identification type ID is required");
       }
       return repository.delete_by_id(id);
     },
 
-    async get_by_id(id: string): AsyncResult<IdentificationType> {
+    async get_by_id(
+      id: ScalarValueInput<IdentificationType["id"]>,
+    ): AsyncResult<IdentificationType> {
       if (!id || id.trim() === "") {
         return create_failure_result("Identification type ID is required");
       }
@@ -82,7 +87,7 @@ export function create_identification_type_use_cases(
       }
 
       const type_filter: IdentificationTypeFilter = {
-        status: filter.status,
+        status: filter.status as IdentificationType["status"] | undefined,
       };
 
       return repository.find_all(type_filter, query_options);
@@ -96,7 +101,7 @@ export function create_identification_type_use_cases(
     },
 
     async list_types_by_sport(
-      sport_id: string,
+      sport_id: ScalarValueInput<EntityId>,
     ): PaginatedAsyncResult<IdentificationType> {
       if (!sport_id || sport_id.trim() === "") {
         return create_failure_result("Sport ID is required");

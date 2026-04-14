@@ -1,9 +1,46 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { create_auth_token_payload_core } from "$lib/core/interfaces/ports";
+
 import {
   ClerkAuthenticationAdapter,
   type ClerkSessionProvider,
 } from "./ClerkAuthenticationAdapter";
+
+function create_auth_token_input(
+  overrides: {
+    display_name?: string;
+    email?: string;
+    organization_id?: string;
+    role?:
+      | "super_admin"
+      | "org_admin"
+      | "officials_manager"
+      | "team_manager"
+      | "official"
+      | "player"
+      | "public_viewer";
+    team_id?: string;
+    user_id?: string;
+  } = {},
+) {
+  const result = create_auth_token_payload_core({
+    user_id: overrides.user_id ?? "clerk-user-123",
+    email: overrides.email ?? "testuser@example.com",
+    display_name: overrides.display_name ?? "Test User",
+    role: overrides.role ?? "team_manager",
+    organization_id: overrides.organization_id ?? "org-1",
+    team_id: overrides.team_id ?? "team-1",
+  });
+
+  expect(result.success).toBe(true);
+
+  if (!result.success) {
+    return undefined as never;
+  }
+
+  return result.data;
+}
 
 function create_mock_clerk_session_provider(
   overrides?: Partial<ClerkSessionProvider>,
@@ -20,7 +57,7 @@ function create_mock_clerk_session_provider(
     }),
     is_signed_in: vi.fn().mockReturnValue(true),
     ...overrides,
-  };
+  } as ClerkSessionProvider;
 }
 
 describe("ClerkAuthenticationAdapter", () => {
@@ -34,14 +71,9 @@ describe("ClerkAuthenticationAdapter", () => {
 
   describe("generate_token", () => {
     it("should return a token using the clerk session token", async () => {
-      const token_result = await adapter.generate_token({
-        user_id: "clerk-user-123",
-        email: "testuser@example.com",
-        display_name: "Test User",
-        role: "team_manager",
-        organization_id: "org-1",
-        team_id: "team-1",
-      });
+      const token_result = await adapter.generate_token(
+        create_auth_token_input(),
+      );
 
       expect(token_result.success).toBe(true);
       if (!token_result.success) return;
@@ -64,12 +96,7 @@ describe("ClerkAuthenticationAdapter", () => {
       );
 
       const result = await no_session_adapter.generate_token({
-        user_id: "clerk-user-123",
-        email: "testuser@example.com",
-        display_name: "Test User",
-        role: "team_manager",
-        organization_id: "org-1",
-        team_id: "team-1",
+        ...create_auth_token_input(),
       });
 
       expect(result.success).toBe(false);
@@ -79,12 +106,7 @@ describe("ClerkAuthenticationAdapter", () => {
       const before_generation = Math.floor(Date.now() / 1000);
 
       const token_result = await adapter.generate_token({
-        user_id: "clerk-user-123",
-        email: "testuser@example.com",
-        display_name: "Test User",
-        role: "team_manager",
-        organization_id: "org-1",
-        team_id: "team-1",
+        ...create_auth_token_input(),
       });
 
       const after_generation = Math.floor(Date.now() / 1000);

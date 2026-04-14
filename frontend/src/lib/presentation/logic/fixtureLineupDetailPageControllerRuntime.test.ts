@@ -76,7 +76,7 @@ function create_lineup(overrides: Partial<FixtureLineup> = {}): FixtureLineup {
     created_at: "2026-01-01T00:00:00Z",
     updated_at: "2026-01-01T00:00:00Z",
     ...overrides,
-  };
+  } as FixtureLineup;
 }
 
 function create_team_player(overrides: Partial<TeamPlayer> = {}): TeamPlayer {
@@ -103,12 +103,12 @@ function create_team_player(overrides: Partial<TeamPlayer> = {}): TeamPlayer {
     created_at: "2026-01-01T00:00:00Z",
     updated_at: "2026-01-01T00:00:00Z",
     ...overrides,
-  };
+  } as TeamPlayer;
 }
 
 function create_command() {
   let lineup: FixtureLineup | null = create_lineup();
-  let team_players: TeamPlayer[] = [create_team_player()];
+  let team_players =  [create_team_player()] as TeamPlayer[];
   const goto = vi.fn(async () => undefined);
   const set_access_denial = vi.fn();
   const set_away_team = vi.fn();

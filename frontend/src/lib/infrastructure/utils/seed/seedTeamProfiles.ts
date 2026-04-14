@@ -4,7 +4,7 @@ import {
   SEED_TEAM_PROFILE_IDS,
 } from "./seedIds";
 
-export function create_seed_team_profiles(): import("../../../core/entities/TeamProfile").TeamProfile[] {
+export function create_seed_team_profiles(): import("$lib/core/types/DomainScalars").ScalarInput<import("../../../core/entities/TeamProfile").TeamProfile>[] {
   const now = generate_current_timestamp();
 
   return [

@@ -39,11 +39,11 @@ export class InBrowserPlayerTeamTransferHistoryRepository
 
   protected create_entity_from_input(
     input: CreatePlayerTeamTransferHistoryInput,
-    id: string,
+    id: PlayerTeamTransferHistory["id"],
     timestamps: Pick<BaseEntity, "created_at" | "updated_at">,
   ): PlayerTeamTransferHistory {
     return {
-      id,
+      id: id as PlayerTeamTransferHistory["id"],
       ...timestamps,
       organization_id: input.organization_id,
       player_id: input.player_id,
@@ -53,7 +53,7 @@ export class InBrowserPlayerTeamTransferHistoryRepository
       status: input.status,
       approved_by: input.approved_by,
       notes: input.notes,
-    };
+    } as PlayerTeamTransferHistory;
   }
 
   protected apply_updates_to_entity(
@@ -63,7 +63,7 @@ export class InBrowserPlayerTeamTransferHistoryRepository
     return {
       ...entity,
       ...updates,
-    };
+    } as PlayerTeamTransferHistory;
   }
 
   protected apply_entity_filter(
@@ -106,14 +106,14 @@ export class InBrowserPlayerTeamTransferHistoryRepository
   }
 
   async find_by_player(
-    player_id: string,
+    player_id: PlayerTeamTransferHistory["player_id"],
     options?: QueryOptions,
   ): PaginatedAsyncResult<PlayerTeamTransferHistory> {
     return this.find_all({ player_id }, options);
   }
 
   async find_by_team(
-    team_id: string,
+    team_id: PlayerTeamTransferHistory["from_team_id"],
     options?: QueryOptions,
   ): PaginatedAsyncResult<PlayerTeamTransferHistory> {
     try {

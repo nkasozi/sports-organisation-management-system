@@ -1,3 +1,10 @@
+import type {
+  EmailAddress,
+  EntityId,
+  IsoDateString,
+  Name,
+  ScalarInput,
+} from "../types/DomainScalars";
 import type { BaseEntity, EntityStatus } from "./BaseEntity";
 
 export type OfficialStatus = EntityStatus;
@@ -6,17 +13,17 @@ export const DEFAULT_OFFICIAL_AVATAR =
   "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='50' fill='%23f59e0b'/%3E%3Ccircle cx='50' cy='35' r='18' fill='white'/%3E%3Cpath d='M50 55c-22 0-35 12-35 30h70c0-18-13-30-35-30z' fill='white'/%3E%3C/svg%3E";
 
 export interface Official extends BaseEntity {
-  first_name: string;
-  last_name: string;
-  gender_id: string;
-  email: string;
+  first_name: Name;
+  last_name: Name;
+  gender_id: EntityId;
+  email: EmailAddress;
   phone: string;
-  date_of_birth: string;
-  organization_id: string;
+  date_of_birth: IsoDateString;
+  organization_id: EntityId;
   years_of_experience: number;
   nationality: string;
   profile_image_url: string;
-  emergency_contact_name: string;
+  emergency_contact_name: Name;
   emergency_contact_phone: string;
   notes: string;
   status: OfficialStatus;
@@ -39,7 +46,7 @@ function get_official_initials(official: Official): string {
 }
 
 export type CreateOfficialInput = Omit<
-  Official,
+  ScalarInput<Official>,
   "id" | "created_at" | "updated_at"
 >;
 export type UpdateOfficialInput = Partial<CreateOfficialInput>;
@@ -49,7 +56,7 @@ export function get_official_full_name(official: Official): string {
 }
 
 function create_empty_official_input(
-  organization_id: string = "",
+  organization_id: CreateOfficialInput["organization_id"] = "",
 ): CreateOfficialInput {
   return {
     first_name: "",

@@ -6,11 +6,12 @@ import type {
 } from "../entities/TeamProfile";
 import type { TeamProfileRepository } from "../interfaces/ports";
 import type { QueryOptions } from "../interfaces/ports";
+import type { ScalarInput } from "../types/DomainScalars";
 import { create_failure_result, create_success_result } from "../types/Result";
 import { create_team_profile_use_cases } from "./TeamProfileUseCases";
 
 function create_mock_team_profile(
-  overrides: Partial<TeamProfile> = {},
+  overrides: Partial<ScalarInput<TeamProfile>> = {},
 ): TeamProfile {
   return {
     id: "teamprofile_1",
@@ -23,7 +24,7 @@ function create_mock_team_profile(
     featured_image_url: "",
     status: "active",
     ...overrides,
-  };
+  } as unknown as TeamProfile;
 }
 
 function create_valid_team_profile_input(
@@ -37,7 +38,7 @@ function create_valid_team_profile_input(
     featured_image_url: "",
     status: "active",
     ...overrides,
-  };
+  } as CreateTeamProfileInput;
 }
 
 import type { PaginatedResult, Result } from "../types/Result";
@@ -68,7 +69,7 @@ function create_mock_repository(): TeamProfileRepository {
     find_by_team_id: vi.fn(),
     find_by_slug: vi.fn(),
     find_public_profiles: vi.fn(),
-  };
+  } as TeamProfileRepository;
 }
 
 describe("TeamProfileUseCases", () => {
@@ -140,7 +141,7 @@ describe("TeamProfileUseCases", () => {
         create_paginated_result([]),
       );
 
-      const options: QueryOptions = { page_number: 2, page_size: 20 };
+      const options =  { page_number: 2, page_size: 20 } as QueryOptions;
       await use_cases.list(undefined, options);
 
       expect(mock_repository.find_all).toHaveBeenCalledWith(undefined, options);
@@ -445,7 +446,7 @@ describe("TeamProfileUseCases", () => {
         create_paginated_result([]),
       );
 
-      const options: QueryOptions = { page_number: 2, page_size: 20 };
+      const options =  { page_number: 2, page_size: 20 } as QueryOptions;
       await use_cases.list_public_profiles(options);
 
       expect(mock_repository.find_public_profiles).toHaveBeenCalledWith(

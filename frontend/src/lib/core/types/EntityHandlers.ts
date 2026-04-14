@@ -26,7 +26,9 @@ export type EntityUpdateHandler<
   TEntity extends BaseEntity = BaseEntity,
 > = (id: string, input: TInput) => AsyncResult<TEntity>;
 
-export type EntityDeleteHandler = (id: string) => AsyncResult<boolean>;
+export type EntityDeleteHandler<TEntity extends BaseEntity = BaseEntity> = (
+  id: string,
+) => AsyncResult<boolean>;
 
 export type EntityListHandler<TEntity extends BaseEntity = BaseEntity> = (
   filter?: Record<string, string>,
@@ -44,7 +46,7 @@ export interface EntityCrudHandlers<
 > {
   create?: EntityCreateHandler<TCreateInput, TEntity>;
   update?: EntityUpdateHandler<TUpdateInput, TEntity>;
-  delete?: EntityDeleteHandler;
+  delete?: EntityDeleteHandler<TEntity>;
   list?: EntityListHandler<TEntity>;
   get_by_id?: EntityGetByIdHandler<TEntity>;
 }

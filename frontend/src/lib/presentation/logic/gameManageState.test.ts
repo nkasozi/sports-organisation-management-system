@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { GameEvent } from "$lib/core/entities/Fixture";
+import type { ScalarInput } from "$lib/core/types/DomainScalars";
 
 import {
   build_game_clock_state,
@@ -11,7 +12,9 @@ import {
   sort_game_events,
 } from "./gameManageState";
 
-function create_test_game_event(overrides: Partial<GameEvent>): GameEvent {
+function create_test_game_event(
+  overrides: Partial<ScalarInput<GameEvent>> = {},
+): GameEvent {
   return {
     id: overrides.id ?? "event_1",
     event_type: overrides.event_type ?? "goal",
@@ -22,7 +25,7 @@ function create_test_game_event(overrides: Partial<GameEvent>): GameEvent {
     secondary_player_name: overrides.secondary_player_name ?? "",
     description: overrides.description ?? "Goal",
     recorded_at: overrides.recorded_at ?? "2024-01-01T10:00:00.000Z",
-  };
+  } as unknown as GameEvent;
 }
 
 describe("game manage clock helpers", () => {

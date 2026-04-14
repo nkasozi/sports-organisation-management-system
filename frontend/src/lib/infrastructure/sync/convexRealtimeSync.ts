@@ -1,4 +1,5 @@
 import type { SubscribableConvexClient } from "../cache/AuthCacheInvalidator";
+import type { ConvexRecord, RemoteTableState } from "./syncTypes";
 
 export {
   get_realtime_sync_adapter,
@@ -9,19 +10,19 @@ export {
 export interface TableChangeInfo {
   table_name: string;
   record_count: number;
-  latest_modified_at: string;
+  latest_modified_at: NonNullable<RemoteTableState["latest_modified_at"]>;
 }
 
 export interface TableWatchStatus {
   table_name: string;
   remote_record_count: number;
-  remote_latest_timestamp: string;
+  remote_latest_timestamp: RemoteTableState["latest_modified_at"] | "";
   pull_count: number;
 }
 
 export type PullTableFunction = (
   table_name: string,
-  since_timestamp: string,
+  since_timestamp: ConvexRecord["synced_at"],
 ) => Promise<{ success: boolean; records_pulled: number }>;
 
 export interface RealtimeSyncDependencies {
@@ -38,11 +39,14 @@ export interface ConvexRealtimeSync {
   is_running(): boolean;
   get_watched_tables(): string[];
   get_table_status(table_name: string): TableWatchStatus | null;
-  get_all_table_statuses(): Record<string, string | null>;
+  get_all_table_statuses(): Record<
+    string,
+    RemoteTableState["latest_modified_at"]
+  >;
 }
 
 interface TableTrackingState {
-  latest_timestamp: string | null;
+  latest_timestamp: RemoteTableState["latest_modified_at"];
   remote_record_count: number;
   pull_count: number;
 }
@@ -172,8 +176,11 @@ export function create_convex_realtime_sync(
     };
   }
 
-  function get_all_table_statuses_map(): Record<string, string | null> {
-    const result: Record<string, string | null> = {};
+  function get_all_table_statuses_map(): Record<
+    string,
+    RemoteTableState["latest_modified_at"]
+  > {
+    const result: Record<string, RemoteTableState["latest_modified_at"]> = {};
     for (const [table_name, state] of table_tracking.entries()) {
       result[table_name] = state.latest_timestamp;
     }

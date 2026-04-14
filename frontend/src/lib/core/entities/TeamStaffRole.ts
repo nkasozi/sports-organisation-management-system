@@ -1,18 +1,19 @@
+import type { EntityId, Name, ScalarInput } from "../types/DomainScalars";
 import type { BaseEntity, EntityStatus } from "./BaseEntity";
 
 export interface TeamStaffRole extends BaseEntity {
-  name: string;
+  name: Name;
   code: string;
   description: string;
   category: "coaching" | "medical" | "administrative" | "technical" | "other";
   is_primary_contact: boolean;
   display_order: number;
   status: EntityStatus;
-  organization_id: string;
+  organization_id: EntityId;
 }
 
 export type CreateTeamStaffRoleInput = Omit<
-  TeamStaffRole,
+  ScalarInput<TeamStaffRole>,
   "id" | "created_at" | "updated_at"
 >;
 export type UpdateTeamStaffRoleInput = Partial<CreateTeamStaffRoleInput>;

@@ -104,7 +104,7 @@ function transform_convex_audit_log(record: unknown): AuditLog {
     user_agent: (raw.user_agent as string) || "",
     created_at: (raw.created_at as string) || "",
     updated_at: (raw.updated_at as string) || "",
-  };
+  } as AuditLog;
 }
 
 async function get_recent_audit_logs_from_convex(

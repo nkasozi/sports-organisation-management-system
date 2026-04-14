@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { BaseEntity, FieldMetadata } from "../../core/entities/BaseEntity";
+import type { ScalarInput } from "../../core/types/DomainScalars";
 import {
   build_foreign_key_select_options,
   is_jersey_color_field,
@@ -16,16 +17,18 @@ function create_field_metadata(
     is_required: false,
     is_read_only: false,
     ...overrides,
-  };
+  } as FieldMetadata;
 }
 
-function create_base_entity(overrides: Partial<BaseEntity> = {}): BaseEntity {
+function create_base_entity(
+  overrides: Partial<ScalarInput<BaseEntity>> = {},
+): BaseEntity {
   return {
     id: "entity_1",
     created_at: "2024-01-01T00:00:00Z",
     updated_at: "2024-01-01T00:00:00Z",
     ...overrides,
-  };
+  } as unknown as BaseEntity;
 }
 
 function create_fixture_entity(

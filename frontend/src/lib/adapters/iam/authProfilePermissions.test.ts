@@ -81,16 +81,16 @@ describe("authProfilePermissions", () => {
   });
 
   it("returns cached permissions without re-verifying the token", async () => {
-    const cached_result: Result<{
-      permissions: Record<string, unknown>;
-      role: "org_admin";
-    }> = {
+    const cached_result =  {
       success: true,
       data: {
         role: "org_admin",
         permissions: { organisation_level: { read: true } },
       },
-    };
+    } as Result<{
+      permissions: Record<string, unknown>;
+      role: "org_admin";
+    }>;
     const auth_port = {
       verify_token: vi.fn(),
     };

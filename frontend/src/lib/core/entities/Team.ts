@@ -1,3 +1,4 @@
+import type { EntityId, Name, ScalarInput } from "../types/DomainScalars";
 import type { BaseEntity, EntityStatus } from "./BaseEntity";
 
 type SportType =
@@ -14,15 +15,15 @@ export const DEFAULT_TEAM_LOGO =
   "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='48' fill='%233b82f6' stroke='%231d4ed8' stroke-width='2'/%3E%3Cpath d='M50 15L65 40H35L50 15Z' fill='white'/%3E%3Ccircle cx='50' cy='55' r='20' fill='white'/%3E%3Cpath d='M30 75L50 85L70 75' stroke='white' stroke-width='4' fill='none'/%3E%3C/svg%3E";
 
 export interface Team extends BaseEntity {
-  name: string;
-  short_name: string;
+  name: Name;
+  short_name: Name;
   description: string;
-  organization_id: string;
-  gender_id: string;
-  captain_player_id: string | null;
-  vice_captain_player_id: string | null;
+  organization_id: EntityId;
+  gender_id: EntityId;
+  captain_player_id: EntityId | null;
+  vice_captain_player_id: EntityId | null;
   max_squad_size: number;
-  home_venue_id: string;
+  home_venue_id: EntityId;
   primary_color: string;
   secondary_color: string;
   logo_url: string;
@@ -48,11 +49,14 @@ export function get_team_initials(team: Team): string {
   return team.name.substring(0, 2).toUpperCase();
 }
 
-export type CreateTeamInput = Omit<Team, "id" | "created_at" | "updated_at">;
+export type CreateTeamInput = Omit<
+  ScalarInput<Team>,
+  "id" | "created_at" | "updated_at"
+>;
 export type UpdateTeamInput = Partial<CreateTeamInput>;
 
 function create_empty_team_input(
-  organization_id: string = "",
+  organization_id: CreateTeamInput["organization_id"] = "",
 ): CreateTeamInput {
   return {
     name: "",

@@ -3,6 +3,10 @@ import type { Table } from "dexie";
 import type { BaseEntity } from "../../core/entities/BaseEntity";
 import type { QueryOptions, Repository } from "../../core/interfaces/ports";
 import type {
+  ScalarInput,
+  ScalarValueInput,
+} from "../../core/types/DomainScalars";
+import type {
   AsyncResult,
   PaginatedAsyncResult,
 } from "../../core/types/Result";
@@ -47,7 +51,7 @@ export abstract class InBrowserBaseRepository<
   protected abstract get_table(): Table<TEntity, string>;
   protected abstract create_entity_from_input(
     input: TCreateInput,
-    id: string,
+    id: TEntity["id"],
     timestamps: Pick<BaseEntity, "created_at" | "updated_at">,
   ): TEntity;
   protected abstract apply_updates_to_entity(
@@ -93,11 +97,11 @@ export abstract class InBrowserBaseRepository<
     );
   }
 
-  find_by_id(id: string): AsyncResult<TEntity> {
+  find_by_id(id: ScalarValueInput<TEntity["id"]>): AsyncResult<TEntity> {
     return find_entity_by_id(this.get_table(), id);
   }
 
-  find_by_ids(ids: string[]): AsyncResult<TEntity[]> {
+  find_by_ids(ids: Array<ScalarValueInput<TEntity["id"]>>): AsyncResult<TEntity[]> {
     return find_entities_by_ids(this.get_table(), ids);
   }
 
@@ -110,7 +114,7 @@ export abstract class InBrowserBaseRepository<
     );
   }
 
-  update(id: string, updates: TUpdateInput): AsyncResult<TEntity> {
+  update(id: ScalarValueInput<TEntity["id"]>, updates: TUpdateInput): AsyncResult<TEntity> {
     return update_entity(
       this.get_table(),
       id,
@@ -119,11 +123,11 @@ export abstract class InBrowserBaseRepository<
     );
   }
 
-  delete_by_id(id: string): AsyncResult<boolean> {
+  delete_by_id(id: ScalarValueInput<TEntity["id"]>): AsyncResult<boolean> {
     return delete_entity_by_id(this.get_table(), id);
   }
 
-  delete_by_ids(ids: string[]): AsyncResult<number> {
+  delete_by_ids(ids: Array<ScalarValueInput<TEntity["id"]>>): AsyncResult<number> {
     return delete_entities_by_ids(this.get_table(), ids);
   }
 
@@ -131,7 +135,7 @@ export abstract class InBrowserBaseRepository<
     return count_entities(this.get_table());
   }
 
-  seed_with_data(entities: TEntity[]): AsyncResult<number> {
+  seed_with_data(entities: ScalarInput<TEntity>[]): AsyncResult<number> {
     return seed_entities(this.get_table(), entities, this.entity_prefix);
   }
 

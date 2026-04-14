@@ -2,9 +2,10 @@ import type {
   ConflictRecord,
   FieldDifference,
 } from "$lib/infrastructure/sync/conflictTypes";
+import type { ScalarInput } from "$lib/core/types/DomainScalars";
 
 export function build_merge_conflict_resolved_data(
-  conflict: ConflictRecord,
+  conflict: ScalarInput<ConflictRecord>,
   custom_merge_values: Record<string, unknown>,
 ): Record<string, unknown> {
   return {

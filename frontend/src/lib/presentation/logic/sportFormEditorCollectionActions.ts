@@ -6,9 +6,16 @@ import type {
   ScoringRule,
   SportGamePeriod,
 } from "$lib/core/entities/Sport";
+import type { ScalarInput } from "$lib/core/types/DomainScalars";
+
+type EditableSportGamePeriod = ScalarInput<SportGamePeriod>;
+type EditableCardType = ScalarInput<CardType>;
+type EditableFoulCategory = ScalarInput<FoulCategory>;
+type EditableOfficialRequirement = ScalarInput<OfficialRequirement>;
+type EditableScoringRule = ScalarInput<ScoringRule>;
 
 export function add_game_period(form_data: CreateSportInput): CreateSportInput {
-  const next_period: SportGamePeriod = {
+  const next_period: EditableSportGamePeriod = {
     id: `period_${form_data.periods.length + 1}`,
     name: `Period ${form_data.periods.length + 1}`,
     duration_minutes: 15,
@@ -24,7 +31,7 @@ export function remove_game_period(
 ): CreateSportInput {
   const reordered_periods = form_data.periods
     .filter((_, current_index: number) => current_index !== index)
-    .map((current_period: SportGamePeriod, current_index: number) => ({
+    .map((current_period: EditableSportGamePeriod, current_index: number) => ({
       ...current_period,
       order: current_index + 1,
     }));
@@ -32,7 +39,7 @@ export function remove_game_period(
 }
 
 export function add_card_type(form_data: CreateSportInput): CreateSportInput {
-  const next_card_type: CardType = {
+  const next_card_type: EditableCardType = {
     id: `card_${form_data.card_types.length + 1}`,
     name: "",
     color: "#FBBF24",
@@ -61,7 +68,7 @@ export function remove_card_type(
 export function add_foul_category(
   form_data: CreateSportInput,
 ): CreateSportInput {
-  const next_foul_category: FoulCategory = {
+  const next_foul_category: EditableFoulCategory = {
     id: `foul_${form_data.foul_categories.length + 1}`,
     name: "",
     severity: "minor",
@@ -90,7 +97,7 @@ export function remove_foul_category(
 export function add_official_requirement(
   form_data: CreateSportInput,
 ): CreateSportInput {
-  const next_official_requirement: OfficialRequirement = {
+  const next_official_requirement: EditableOfficialRequirement = {
     role_id: `official_${form_data.official_requirements.length + 1}`,
     role_name: "",
     minimum_count: 1,
@@ -122,7 +129,7 @@ export function remove_official_requirement(
 export function add_scoring_rule(
   form_data: CreateSportInput,
 ): CreateSportInput {
-  const next_scoring_rule: ScoringRule = {
+  const next_scoring_rule: EditableScoringRule = {
     event_type: "",
     points_awarded: 1,
     description: "",

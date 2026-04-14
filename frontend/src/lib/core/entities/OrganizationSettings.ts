@@ -1,3 +1,9 @@
+import type {
+  EmailAddress,
+  EntityId,
+  Name,
+  ScalarInput,
+} from "../types/DomainScalars";
 import type { BaseEntity } from "./BaseEntity";
 
 export interface SocialMediaLink {
@@ -14,11 +20,11 @@ export const ALLOWED_SYNC_INTERVALS_MS = [
 ] as const;
 
 export interface OrganizationSettings extends BaseEntity {
-  organization_id: string;
-  display_name: string;
+  organization_id: EntityId;
+  display_name: Name;
   logo_url: string;
   tagline: string;
-  contact_email: string;
+  contact_email: EmailAddress;
   contact_address: string;
   social_media_links: SocialMediaLink[];
   header_pattern: HeaderFooterPattern;
@@ -31,7 +37,7 @@ export interface OrganizationSettings extends BaseEntity {
 }
 
 export type CreateOrganizationSettingsInput = Omit<
-  OrganizationSettings,
+  ScalarInput<OrganizationSettings>,
   "id" | "created_at" | "updated_at"
 >;
 

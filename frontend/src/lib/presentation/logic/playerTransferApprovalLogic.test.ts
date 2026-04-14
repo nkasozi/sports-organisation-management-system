@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { PlayerTeamMembership } from "../../core/entities/PlayerTeamMembership";
+import type { ScalarInput } from "../../core/types/DomainScalars";
 import type { PlayerTeamMembershipUseCases } from "../../core/usecases/PlayerTeamMembershipUseCases";
 import {
   apply_player_transfer_membership_change,
@@ -19,11 +20,11 @@ function create_mock_use_cases(): PlayerTeamMembershipUseCases {
     list_memberships_by_team: vi.fn(),
     list_memberships_by_player: vi.fn(),
     delete_memberships: vi.fn(),
-  };
+  } as PlayerTeamMembershipUseCases;
 }
 
 function create_test_membership(
-  overrides: Partial<PlayerTeamMembership> = {},
+  overrides: Partial<ScalarInput<PlayerTeamMembership>> = {},
 ): PlayerTeamMembership {
   return {
     id: "membership-1",
@@ -36,7 +37,7 @@ function create_test_membership(
     created_at: "2024-01-01T00:00:00Z",
     updated_at: "2024-01-01T00:00:00Z",
     ...overrides,
-  };
+  } as PlayerTeamMembership;
 }
 
 function create_test_transfer(
@@ -49,7 +50,7 @@ function create_test_transfer(
     organization_id: "org-1",
     transfer_date: "2026-03-11",
     ...overrides,
-  };
+  } as TransferApprovalDetails;
 }
 
 function make_paginated_response(items: PlayerTeamMembership[]) {

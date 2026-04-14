@@ -10,17 +10,20 @@ import type {
 import { hydrate_competition_format_input } from "./CompetitionFormatValidation";
 
 export function get_default_competition_formats_for_organization(
-  organization_id: string,
+  organization_id: NonNullable<CreateCompetitionFormatInput["organization_id"]>,
 ): CompetitionFormat[] {
   const now = new Date().toISOString();
   const default_inputs = get_default_competition_formats();
-  return default_inputs.map((input, index) => ({
-    ...input,
-    id: `comp_fmt_default_${index + 1}_${organization_id}`,
-    created_at: now,
-    updated_at: now,
-    organization_id,
-  }));
+  return default_inputs.map(
+    (input, index) =>
+      ({
+        ...input,
+        id: `comp_fmt_default_${index + 1}_${organization_id}` as CompetitionFormat["id"],
+        created_at: now as CompetitionFormat["created_at"],
+        updated_at: now as CompetitionFormat["updated_at"],
+        organization_id,
+      }) as CompetitionFormat,
+  );
 }
 
 function get_default_competition_formats(): CreateCompetitionFormatInput[] {

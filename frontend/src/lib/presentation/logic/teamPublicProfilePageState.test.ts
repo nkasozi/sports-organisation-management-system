@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import type { ScalarInput } from "$lib/core/types/DomainScalars";
 import type { Fixture } from "$lib/core/entities/Fixture";
 import type { Team } from "$lib/core/entities/Team";
 
@@ -10,7 +11,7 @@ import {
   format_team_public_profile_date,
 } from "./teamPublicProfilePageState";
 
-function create_team(overrides: Partial<Team> = {}): Team {
+function create_team(overrides: Partial<ScalarInput<Team>> = {}): Team {
   return {
     id: "team_1",
     name: "Lions",
@@ -31,10 +32,10 @@ function create_team(overrides: Partial<Team> = {}): Team {
     created_at: "2026-01-01T00:00:00Z",
     updated_at: "2026-01-01T00:00:00Z",
     ...overrides,
-  };
+  } as Team;
 }
 
-function create_fixture(overrides: Partial<Fixture> = {}): Fixture {
+function create_fixture(overrides: Partial<ScalarInput<Fixture>> = {}): Fixture {
   return {
     id: "fixture_1",
     organization_id: "org_1",
@@ -82,7 +83,7 @@ function create_fixture(overrides: Partial<Fixture> = {}): Fixture {
     created_at: "2026-03-04T00:00:00Z",
     updated_at: "2026-03-04T00:00:00Z",
     ...overrides,
-  };
+  } as Fixture;
 }
 
 describe("teamPublicProfilePageState", () => {

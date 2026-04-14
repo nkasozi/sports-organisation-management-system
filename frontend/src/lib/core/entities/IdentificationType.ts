@@ -1,15 +1,16 @@
+import type { EntityId, Name, ScalarInput } from "../types/DomainScalars";
 import type { BaseEntity, EntityStatus } from "./BaseEntity";
 
 export interface IdentificationType extends BaseEntity {
-  name: string;
+  name: Name;
   identifier_field_label: string;
   description: string;
   status: EntityStatus;
-  organization_id: string;
+  organization_id: EntityId;
 }
 
 export type CreateIdentificationTypeInput = Omit<
-  IdentificationType,
+  ScalarInput<IdentificationType>,
   "id" | "created_at" | "updated_at"
 >;
 

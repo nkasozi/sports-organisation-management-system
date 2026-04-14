@@ -37,7 +37,7 @@ export class InBrowserTeamRepository
 
   protected create_entity_from_input(
     input: CreateTeamInput,
-    id: string,
+    id: Team["id"],
     timestamps: Pick<BaseEntity, "created_at" | "updated_at">,
   ): Team {
     return {
@@ -58,7 +58,7 @@ export class InBrowserTeamRepository
       website: input.website,
       founded_year: input.founded_year,
       status: input.status,
-    };
+    } as Team;
   }
 
   protected apply_updates_to_entity(
@@ -68,7 +68,7 @@ export class InBrowserTeamRepository
     return {
       ...entity,
       ...updates,
-    };
+    } as Team;
   }
 
   protected apply_entity_filter(entities: Team[], filter: TeamFilter): Team[] {
@@ -97,7 +97,7 @@ export class InBrowserTeamRepository
   }
 
   async find_by_organization(
-    organization_id: string,
+    organization_id: Team["organization_id"],
     options?: QueryOptions,
   ): PaginatedAsyncResult<Team> {
     return this.find_all({ organization_id }, options);

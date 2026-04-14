@@ -12,7 +12,7 @@ function make_paginated_result<T>(items: T[]): PaginatedResult<T> {
     page_number: 1,
     page_size: 100,
     total_pages: 1,
-  };
+  } as PaginatedResult<T>;
 }
 
 function make_paginated_success<T>(items: T[]) {

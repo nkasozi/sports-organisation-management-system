@@ -1,16 +1,18 @@
+import type { EntityId, Name, ScalarInput } from "../types/DomainScalars";
 import type { BaseEntity, EntityStatus } from "./BaseEntity";
+import type { OfficialTeamAssociationType } from "./OfficialAssociatedTeam";
 
 export interface OfficialAssignment {
-  official_id: string;
-  role_id: string;
+  official_id: EntityId;
+  role_id: EntityId;
 }
 
 export interface FixtureDetailsSetup extends BaseEntity {
-  organization_id: string;
-  fixture_id: string;
-  home_team_jersey_id: string;
-  away_team_jersey_id: string;
-  official_jersey_id: string;
+  organization_id: EntityId;
+  fixture_id: EntityId;
+  home_team_jersey_id: EntityId;
+  away_team_jersey_id: EntityId;
+  official_jersey_id: EntityId;
   assigned_officials: OfficialAssignment[];
   assignment_notes: string;
   confirmation_status: FixtureDetailsSetupConfirmationStatus;
@@ -24,15 +26,18 @@ export type FixtureDetailsSetupConfirmationStatus =
   | "replaced";
 
 export type CreateFixtureDetailsSetupInput = Omit<
-  FixtureDetailsSetup,
+  ScalarInput<FixtureDetailsSetup>,
   "id" | "created_at" | "updated_at"
 >;
 
 export type UpdateFixtureDetailsSetupInput = Partial<
-  Omit<FixtureDetailsSetup, "id" | "created_at" | "updated_at" | "fixture_id">
+  Omit<
+    ScalarInput<FixtureDetailsSetup>,
+    "id" | "created_at" | "updated_at" | "fixture_id"
+  >
 >;
 
-export function create_empty_official_assignment(): OfficialAssignment {
+export function create_empty_official_assignment(): ScalarInput<OfficialAssignment> {
   return {
     official_id: "",
     role_id: "",
@@ -40,8 +45,8 @@ export function create_empty_official_assignment(): OfficialAssignment {
 }
 
 export function create_empty_fixture_details_setup_input(
-  organization_id: string = "",
-  fixture_id: string = "",
+  organization_id: CreateFixtureDetailsSetupInput["organization_id"] = "",
+  fixture_id: CreateFixtureDetailsSetupInput["fixture_id"] = "",
 ): CreateFixtureDetailsSetupInput {
   return {
     organization_id,
@@ -110,32 +115,32 @@ export function validate_fixture_details_setup_input(
 }
 
 interface OfficialTeamConflict {
-  official_id: string;
+  official_id: EntityId;
   official_name: string;
-  team_id: string;
-  team_name: string;
-  association_type: string;
+  team_id: EntityId;
+  team_name: Name;
+  association_type: OfficialTeamAssociationType;
   message: string;
 }
 
 export interface OfficialWithAssociations {
-  id: string;
-  first_name: string;
-  last_name: string;
-  associated_team_ids: string[];
+  id: EntityId;
+  first_name: Name;
+  last_name: Name;
+  associated_team_ids: EntityId[];
   association_details: {
-    team_id: string;
-    association_type: string;
+    team_id: EntityId;
+    association_type: OfficialTeamAssociationType;
   }[];
 }
 
 export function detect_official_team_conflicts(
   assigned_officials: OfficialAssignment[],
   officials_with_associations: OfficialWithAssociations[],
-  home_team_id: string,
-  away_team_id: string,
-  home_team_name: string,
-  away_team_name: string,
+  home_team_id: EntityId,
+  away_team_id: EntityId,
+  home_team_name: Name,
+  away_team_name: Name,
 ): OfficialTeamConflict[] {
   const conflicts: OfficialTeamConflict[] = [];
   const fixture_team_ids = new Set([home_team_id, away_team_id]);
@@ -172,7 +177,9 @@ export function detect_official_team_conflicts(
   return conflicts;
 }
 
-function format_association_type_for_display(association_type: string): string {
+function format_association_type_for_display(
+  association_type: OfficialTeamAssociationType,
+): string {
   const type_labels: Record<string, string> = {
     current_member: "current membership",
     former_member: "former membership",

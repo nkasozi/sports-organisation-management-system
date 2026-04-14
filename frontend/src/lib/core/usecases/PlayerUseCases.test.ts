@@ -7,10 +7,13 @@ import type {
 } from "../entities/Player";
 import type { PlayerFilter, PlayerRepository } from "../interfaces/ports";
 import type { QueryOptions } from "../interfaces/ports";
+import type { ScalarInput } from "../types/DomainScalars";
 import type { PaginatedResult, Result } from "../types/Result";
 import { create_player_use_cases } from "./PlayerUseCases";
 
-function create_mock_player(overrides: Partial<Player> = {}): Player {
+function create_mock_player(
+  overrides: Partial<ScalarInput<Player>> = {},
+): Player {
   return {
     id: "player_1",
     created_at: "2024-01-01T00:00:00Z",
@@ -32,7 +35,7 @@ function create_mock_player(overrides: Partial<Player> = {}): Player {
     medical_notes: "",
     status: "active",
     ...overrides,
-  };
+  } as unknown as Player;
 }
 
 function create_valid_player_input(
@@ -56,7 +59,7 @@ function create_valid_player_input(
     medical_notes: "",
     status: "active",
     ...overrides,
-  };
+  } as CreatePlayerInput;
 }
 
 function create_paginated_result<T>(
@@ -72,7 +75,7 @@ function create_paginated_result<T>(
       page_size: 10,
       total_pages: Math.ceil((total_count ?? items.length) / 10),
     },
-  };
+  } as Result<PaginatedResult<T>, string>;
 }
 
 function create_mock_repository(): PlayerRepository {
@@ -88,7 +91,7 @@ function create_mock_repository(): PlayerRepository {
     find_by_team: vi.fn(),
     find_active_players: vi.fn(),
     find_by_jersey_number: vi.fn(),
-  };
+  } as PlayerRepository;
 }
 
 describe("PlayerUseCases", () => {
@@ -121,7 +124,7 @@ describe("PlayerUseCases", () => {
 
     it("returns filtered players when filter provided", async () => {
       const mock_players = [create_mock_player({ id: "p1", status: "active" })];
-      const filter: PlayerFilter = { status: "active" };
+      const filter =  { status: "active" } as PlayerFilter;
       vi.mocked(mock_repository.find_all).mockResolvedValue(
         create_paginated_result(mock_players),
       );
@@ -148,7 +151,7 @@ describe("PlayerUseCases", () => {
     });
 
     it("passes query options to repository", async () => {
-      const options: QueryOptions = { page_number: 2, page_size: 20 };
+      const options =  { page_number: 2, page_size: 20 } as QueryOptions;
       vi.mocked(mock_repository.find_all).mockResolvedValue(
         create_paginated_result([]),
       );
@@ -163,7 +166,7 @@ describe("PlayerUseCases", () => {
         create_mock_player({ id: "p1" }),
         create_mock_player({ id: "p2" }),
       ];
-      const filter: PlayerFilter = { team_id: "team_123" };
+      const filter =  { team_id: "team_123" } as PlayerFilter;
       vi.mocked(mock_repository.find_all).mockResolvedValue(
         create_paginated_result(team_players),
       );
@@ -180,10 +183,10 @@ describe("PlayerUseCases", () => {
     });
 
     it("passes combined team_id and organization_id filter to repository", async () => {
-      const filter: PlayerFilter = {
+      const filter =  {
         team_id: "team_456",
         status: "active",
-      };
+      } as PlayerFilter;
       vi.mocked(mock_repository.find_all).mockResolvedValue(
         create_paginated_result([create_mock_player({ id: "p1" })]),
       );
@@ -343,7 +346,7 @@ describe("PlayerUseCases", () => {
 
   describe("update", () => {
     it("updates player with valid input", async () => {
-      const update_input: UpdatePlayerInput = { first_name: "Jane" };
+      const update_input =  { first_name: "Jane" } as UpdatePlayerInput;
       const updated_player = create_mock_player({
         id: "p1",
         first_name: "Jane",
@@ -524,7 +527,7 @@ describe("PlayerUseCases", () => {
     });
 
     it("passes query options to repository", async () => {
-      const options: QueryOptions = { page_number: 1, page_size: 50 };
+      const options =  { page_number: 1, page_size: 50 } as QueryOptions;
       vi.mocked(mock_repository.find_by_team).mockResolvedValue(
         create_paginated_result([]),
       );

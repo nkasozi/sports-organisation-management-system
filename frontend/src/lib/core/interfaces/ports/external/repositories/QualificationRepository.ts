@@ -9,9 +9,9 @@ import type { QueryOptions, Repository } from "./Repository";
 
 export interface QualificationFilter {
   holder_type?: QualificationHolderType;
-  holder_id?: string;
+  holder_id?: Qualification["holder_id"];
   certification_level?: string;
-  status?: string;
+  status?: Qualification["status"];
   is_expired?: boolean;
 }
 
@@ -23,7 +23,7 @@ export interface QualificationRepository extends Repository<
 > {
   find_by_holder(
     holder_type: QualificationHolderType,
-    holder_id: string,
+    holder_id: Qualification["holder_id"],
     options?: QueryOptions,
   ): PaginatedAsyncResult<Qualification>;
   find_active_qualifications(

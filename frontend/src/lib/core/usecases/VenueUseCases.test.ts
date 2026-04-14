@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { CreateVenueInput, Venue } from "../entities/Venue";
 import type { VenueRepository } from "../interfaces/ports";
+import type { ScalarInput } from "../types/DomainScalars";
 import { create_venue_use_cases } from "./VenueUseCases";
 
 function create_mock_repository(): VenueRepository {
@@ -15,10 +16,10 @@ function create_mock_repository(): VenueRepository {
     delete_by_ids: vi.fn(),
     count: vi.fn(),
     find_active_venues: vi.fn(),
-  };
+  } as VenueRepository;
 }
 
-function create_test_venue(overrides: Partial<Venue> = {}): Venue {
+function create_test_venue(overrides: Partial<ScalarInput<Venue>> = {}): Venue {
   return {
     id: "venue-123",
     organization_id: "org-123",
@@ -39,7 +40,7 @@ function create_test_venue(overrides: Partial<Venue> = {}): Venue {
     created_at: "2024-01-01T00:00:00Z",
     updated_at: "2024-01-01T00:00:00Z",
     ...overrides,
-  };
+  } as unknown as Venue;
 }
 
 function create_valid_input(
@@ -62,7 +63,7 @@ function create_valid_input(
     image_url: "https://example.com/new.jpg",
     status: "active",
     ...overrides,
-  };
+  } as CreateVenueInput;
 }
 
 describe("VenueUseCases", () => {

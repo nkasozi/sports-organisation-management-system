@@ -58,7 +58,7 @@ describe("dynamicEntityListControllerRuntimeView", () => {
       id,
       created_at: "2024-01-01T00:00:00.000Z",
       updated_at: "2024-01-01T00:00:00.000Z",
-    };
+    } as BaseEntity;
   }
 
   function create_options(
@@ -80,7 +80,7 @@ describe("dynamicEntityListControllerRuntimeView", () => {
       sub_entity_filter: null,
       view_callbacks: null,
       ...overrides,
-    };
+    } as DynamicEntityListControllerOptions;
   }
 
   function create_state(
@@ -136,7 +136,7 @@ describe("dynamicEntityListControllerRuntimeView", () => {
       visible_column_list: [],
       visible_columns: new Set<string>(),
       ...overrides,
-    };
+    } as DynamicEntityListViewState;
   }
 
   beforeEach(() => {

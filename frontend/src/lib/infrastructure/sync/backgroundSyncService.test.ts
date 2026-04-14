@@ -61,7 +61,7 @@ function create_initial_state(): BackgroundSyncState {
     offline_retry_timer_id: null,
     scheduled_sync_timer_id: null,
     hooks_installed: false,
-  };
+  } as BackgroundSyncState;
 }
 
 function should_trigger_on_write(
@@ -244,7 +244,7 @@ describe("port configuration", () => {
     return {
       sync_now: vi.fn(),
       is_configured: vi.fn().mockReturnValue(true),
-    };
+    } as MockOrchestrator;
   }
 
   interface MockRemoteSubscriber {
@@ -263,11 +263,11 @@ describe("port configuration", () => {
         players: "2024-06-01T00:00:00.000Z",
         teams: "2024-05-01T00:00:00.000Z",
       }),
-    };
+    } as MockRemoteSubscriber;
   }
 
   it("configure_orchestrator stores the orchestrator and returns success", () => {
-    const orchestrators: MockOrchestrator[] = [];
+    const orchestrators =  [] as MockOrchestrator[];
     let stored_orchestrator: MockOrchestrator | null = null;
 
     function configure_orchestrator(orch: MockOrchestrator) {
@@ -415,7 +415,7 @@ describe("execute_push_sync behavior", () => {
 
 describe("network restoration sync behavior", () => {
   it("stops WebSocket before bidirectional sync and restarts after", async () => {
-    const call_order: string[] = [];
+    const call_order =  [] as string[];
 
     const mock_handlers = {
       stop_remote_sync: vi.fn(() => {
@@ -605,7 +605,7 @@ describe("flush_pending_changes returns AsyncResult", () => {
 describe("scheduled sync timer behavior", () => {
   it("start_scheduled_sync_timer starts interval with 1-hour period and calls sync on each tick", () => {
     vi.useFakeTimers();
-    const sync_calls: string[] = [];
+    const sync_calls =  [] as string[];
 
     function mock_run_restoration_sync(): void {
       sync_calls.push("bidirectional_sync");
@@ -635,7 +635,7 @@ describe("scheduled sync timer behavior", () => {
 
   it("start_scheduled_sync_timer is idempotent — calling twice starts only one timer", () => {
     vi.useFakeTimers();
-    const sync_calls: string[] = [];
+    const sync_calls =  [] as string[];
 
     let stored_timer_id: ReturnType<typeof setInterval> | null = null;
 
@@ -658,7 +658,7 @@ describe("scheduled sync timer behavior", () => {
 
   it("stop_scheduled_sync_timer clears the interval so no further syncs fire", () => {
     vi.useFakeTimers();
-    const sync_calls: string[] = [];
+    const sync_calls =  [] as string[];
 
     let stored_timer_id: ReturnType<typeof setInterval> | null = null;
 
@@ -702,7 +702,7 @@ describe("scheduled sync timer behavior", () => {
 
 describe("trigger_full_sync_on_page_reload behavior", () => {
   it("delegates to run_network_restoration_sync", async () => {
-    const call_log: string[] = [];
+    const call_log =  [] as string[];
 
     async function mock_run_network_restoration_sync(): Promise<void> {
       call_log.push("restoration_sync");
@@ -801,7 +801,7 @@ describe("configure_scheduled_interval behavior", () => {
 
   it("replaces the current interval with the new one on success", () => {
     vi.useFakeTimers();
-    const sync_ticks: number[] = [];
+    const sync_ticks =  [] as number[];
     let active_interval_ms = DEFAULT_SYNC_INTERVAL_MS;
     let timer_id: ReturnType<typeof setInterval> | null = null;
 

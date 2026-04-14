@@ -31,7 +31,7 @@ export function create_official_associated_team_use_cases(
     },
 
     async update(
-      id: string,
+      id: OfficialAssociatedTeam["id"],
       input: UpdateOfficialAssociatedTeamInput,
     ): AsyncResult<OfficialAssociatedTeam> {
       const existing_result = await repository.find_by_id(id);
@@ -53,11 +53,13 @@ export function create_official_associated_team_use_cases(
       return repository.update(id, input);
     },
 
-    async delete(id: string): AsyncResult<boolean> {
+    async delete(id: OfficialAssociatedTeam["id"]): AsyncResult<boolean> {
       return repository.delete_by_id(id);
     },
 
-    async get_by_id(id: string): AsyncResult<OfficialAssociatedTeam> {
+    async get_by_id(
+      id: OfficialAssociatedTeam["id"],
+    ): AsyncResult<OfficialAssociatedTeam> {
       return repository.find_by_id(id);
     },
 
@@ -72,10 +74,14 @@ export function create_official_associated_team_use_cases(
       }
 
       const official_associated_team_filter: OfficialAssociatedTeamFilter = {
-        official_id: filter.official_id,
-        team_id: filter.team_id,
+        official_id: filter.official_id as
+          | OfficialAssociatedTeam["official_id"]
+          | undefined,
+        team_id: filter.team_id as
+          | OfficialAssociatedTeam["team_id"]
+          | undefined,
         association_type: filter.association_type,
-        status: filter.status,
+        status: filter.status as OfficialAssociatedTeam["status"] | undefined,
       };
 
       return repository.find_all(
@@ -85,7 +91,7 @@ export function create_official_associated_team_use_cases(
     },
 
     async list_by_official(
-      official_id: string,
+      official_id: OfficialAssociatedTeam["official_id"],
     ): PaginatedAsyncResult<OfficialAssociatedTeam> {
       return repository.find_by_official(official_id, {
         page_number: 1,
@@ -94,7 +100,7 @@ export function create_official_associated_team_use_cases(
     },
 
     async list_by_team(
-      team_id: string,
+      team_id: OfficialAssociatedTeam["team_id"],
     ): PaginatedAsyncResult<OfficialAssociatedTeam> {
       return repository.find_by_team(team_id, {
         page_number: 1,

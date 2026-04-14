@@ -1,13 +1,14 @@
 import { describe, expect, it } from "vitest";
 
 import type { Player } from "../../core/entities/Player";
+import type { ScalarInput } from "../../core/types/DomainScalars";
 import {
   apply_player_entity_filter,
   filter_players_by_player_ids,
   get_membership_player_ids_by_jersey_number,
 } from "./InBrowserPlayerRepositoryFilters";
 
-function create_player(overrides: Partial<Player> = {}): Player {
+function create_player(overrides: Partial<ScalarInput<Player>> = {}): Player {
   return {
     id: "player_1",
     first_name: "Grace",

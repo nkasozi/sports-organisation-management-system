@@ -1,18 +1,19 @@
 import { get } from "svelte/store";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import type { ScalarInput } from "$lib/core/types/DomainScalars";
 import type { ConflictRecord } from "$lib/infrastructure/sync/conflictTypes";
 
 import type { ConflictStoreState } from "./conflictStoreHelpers";
 
 const conflict_store_mock = vi.hoisted(() => {
-  let current_value: ConflictStoreState = {
+  let current_value =  {
     pending_conflicts: [],
     resolved_conflicts: [],
     is_resolution_in_progress: false,
     current_conflict_index: 0,
     show_merge_screen: false,
-  };
+  } as ConflictStoreState;
   const subscribers = new Set<(value: ConflictStoreState) => void>();
 
   return {
@@ -43,7 +44,9 @@ import {
   show_merge_screen,
 } from "./conflictStoreDerived";
 
-function build_conflict_record(conflict_id: string): ConflictRecord {
+function build_conflict_record(
+  conflict_id: string,
+): ScalarInput<ConflictRecord> {
   return {
     id: conflict_id,
     table_name: "teams",

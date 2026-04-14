@@ -7,6 +7,7 @@ import type {
   AsyncResult,
   PaginatedAsyncResult,
 } from "../../../../types/Result";
+import type { ScalarValueInput } from "../../../../types/DomainScalars";
 import type { QueryOptions } from "../../external/repositories/Repository";
 import type { TeamFilter } from "../../external/repositories/TeamRepository";
 import type { BaseUseCasesPort } from "./BaseUseCasesPort";
@@ -17,9 +18,9 @@ export interface TeamUseCasesPort extends BaseUseCasesPort<
   UpdateTeamInput,
   TeamFilter
 > {
-  delete_teams(ids: string[]): AsyncResult<number>;
+  delete_teams(ids: Array<ScalarValueInput<Team["id"]>>): AsyncResult<number>;
   list_teams_by_organization(
-    organization_id: string,
+    organization_id: ScalarValueInput<Team["organization_id"]>,
     options?: QueryOptions,
   ): PaginatedAsyncResult<Team>;
 }

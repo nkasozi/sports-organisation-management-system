@@ -7,6 +7,7 @@ import type {
 } from "../entities/PlayerTeamTransferHistory";
 import type { PlayerTeamTransferHistoryRepository } from "../interfaces/ports";
 import type { PlayerTeamMembershipRepository } from "../interfaces/ports";
+import type { ScalarInput } from "../types/DomainScalars";
 import { create_player_team_transfer_history_use_cases } from "./PlayerTeamTransferHistoryUseCases";
 
 function create_mock_transfer_repository(): PlayerTeamTransferHistoryRepository {
@@ -22,7 +23,7 @@ function create_mock_transfer_repository(): PlayerTeamTransferHistoryRepository 
     find_pending_transfers: vi.fn(),
     find_by_ids: vi.fn(),
     count: vi.fn(),
-  };
+  } as PlayerTeamTransferHistoryRepository;
 }
 
 function create_mock_membership_repository(): PlayerTeamMembershipRepository {
@@ -37,11 +38,11 @@ function create_mock_membership_repository(): PlayerTeamMembershipRepository {
     find_by_team: vi.fn(),
     find_by_ids: vi.fn(),
     count: vi.fn(),
-  };
+  } as PlayerTeamMembershipRepository;
 }
 
 function create_test_transfer(
-  overrides: Partial<PlayerTeamTransferHistory> = {},
+  overrides: Partial<ScalarInput<PlayerTeamTransferHistory>> = {},
 ): PlayerTeamTransferHistory {
   return {
     id: "transfer-123",
@@ -56,11 +57,11 @@ function create_test_transfer(
     created_at: "2024-01-01T00:00:00Z",
     updated_at: "2024-01-01T00:00:00Z",
     ...overrides,
-  };
+  } as unknown as PlayerTeamTransferHistory;
 }
 
 function create_test_membership(
-  overrides: Partial<PlayerTeamMembership> = {},
+  overrides: Partial<ScalarInput<PlayerTeamMembership>> = {},
 ): PlayerTeamMembership {
   return {
     id: "membership-123",
@@ -73,7 +74,7 @@ function create_test_membership(
     created_at: "2024-01-01T00:00:00Z",
     updated_at: "2024-01-01T00:00:00Z",
     ...overrides,
-  };
+  } as unknown as PlayerTeamMembership;
 }
 
 function create_valid_transfer_input(
@@ -89,7 +90,7 @@ function create_valid_transfer_input(
     approved_by: "",
     notes: "",
     ...overrides,
-  };
+  } as CreatePlayerTeamTransferHistoryInput;
 }
 
 describe("PlayerTeamTransferHistoryUseCases", () => {
@@ -220,7 +221,10 @@ describe("PlayerTeamTransferHistoryUseCases", () => {
 
       vi.mocked(mock_membership_repository.update).mockResolvedValue({
         success: true,
-        data: { ...existing_membership, team_id: "team-B" },
+        data: {
+          ...existing_membership,
+          team_id: "team-B",
+        } as unknown as PlayerTeamMembership,
       });
 
       vi.mocked(mock_transfer_repository.update).mockResolvedValue({

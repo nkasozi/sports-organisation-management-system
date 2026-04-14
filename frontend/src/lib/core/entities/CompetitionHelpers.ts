@@ -5,8 +5,8 @@ import type {
 } from "./CompetitionTypes";
 
 export function derive_competition_status(
-  start_date: string,
-  end_date: string,
+  start_date: CreateCompetitionInput["start_date"],
+  end_date: CreateCompetitionInput["end_date"],
   reference_date: Date = new Date(),
 ): CompetitionDerivedStatus {
   const start = new Date(start_date);
@@ -46,7 +46,7 @@ export function get_competition_status_display(
 }
 
 export function create_empty_competition_input(
-  organization_id: string = "",
+  organization_id: CreateCompetitionInput["organization_id"] = "",
 ): CreateCompetitionInput {
   const today = new Date();
   const next_month = new Date(

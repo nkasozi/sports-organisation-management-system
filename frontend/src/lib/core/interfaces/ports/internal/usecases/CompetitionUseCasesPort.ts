@@ -3,6 +3,7 @@ import type {
   CreateCompetitionInput,
   UpdateCompetitionInput,
 } from "../../../../entities/Competition";
+import type { ScalarValueInput } from "../../../../types/DomainScalars";
 import type {
   AsyncResult,
   PaginatedAsyncResult,
@@ -17,9 +18,11 @@ export interface CompetitionUseCasesPort extends BaseUseCasesPort<
   UpdateCompetitionInput,
   CompetitionFilter
 > {
-  delete_competitions(ids: string[]): AsyncResult<number>;
+  delete_competitions(
+    ids: Array<ScalarValueInput<Competition["id"]>>,
+  ): AsyncResult<number>;
   list_competitions_by_organization(
-    organization_id: string,
+    organization_id: ScalarValueInput<Competition["organization_id"]>,
     options?: QueryOptions,
   ): PaginatedAsyncResult<Competition>;
 }

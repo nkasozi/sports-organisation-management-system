@@ -8,6 +8,7 @@ import type {
   UserRole,
 } from "$lib/core/interfaces/ports";
 import { get_role_permissions } from "$lib/core/interfaces/ports";
+import type { EmailAddress, ScalarValueInput } from "$lib/core/types/DomainScalars";
 import type { Result } from "$lib/core/types/Result";
 import {
   create_failure_result,
@@ -19,7 +20,7 @@ import { ENTITY_STATUS } from "../../core/entities/StatusConstants";
 
 export async function get_role_for_email(
   system_user_repository: SystemUserRepository,
-  email: string,
+  email: ScalarValueInput<EmailAddress>,
 ): Promise<Result<UserRole>> {
   const user_result = await system_user_repository.find_by_email(email);
 

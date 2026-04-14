@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
 import type { BaseEntity } from "$lib/core/entities/BaseEntity";
+import type { ScalarInput } from "$lib/core/types/DomainScalars";
 
 vi.mock("./listDisplayValueLogic", () => ({
   get_display_value_for_entity_field: vi.fn(
@@ -23,7 +24,9 @@ type TestEntity = BaseEntity & {
   team_id: string;
 };
 
-function create_entity(overrides: Partial<TestEntity> = {}): TestEntity {
+function create_entity(
+  overrides: Partial<ScalarInput<TestEntity>> = {},
+): TestEntity {
   return {
     id: "entity_1",
     created_at: "2024-01-01T00:00:00.000Z",
@@ -32,7 +35,7 @@ function create_entity(overrides: Partial<TestEntity> = {}): TestEntity {
     team_id: "team_1",
     status: "active",
     ...overrides,
-  };
+  } as unknown as TestEntity;
 }
 
 describe("listFilterSortLogic", () => {

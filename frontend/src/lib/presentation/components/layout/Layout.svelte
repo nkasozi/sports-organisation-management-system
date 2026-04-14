@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
 
+  import type { ScalarInput } from "$lib/core/types/DomainScalars";
   import type {
     ConflictRecord,
     ConflictResolutionAction,
@@ -62,7 +63,7 @@
 
   async function handle_conflict_resolve(
     event: CustomEvent<{
-      conflict: ConflictRecord;
+      conflict: ScalarInput<ConflictRecord>;
       action: ConflictResolutionAction;
       merged_data?: Record<string, unknown>;
     }>,

@@ -22,7 +22,7 @@ function create_mock_repository(): PlayerPositionRepository {
     find_by_category: vi.fn(),
     find_available_positions: vi.fn(),
     find_by_organization: vi.fn(),
-  };
+  } as PlayerPositionRepository;
 }
 
 function create_test_position(
@@ -42,7 +42,7 @@ function create_test_position(
     created_at: "2024-01-01T00:00:00Z",
     updated_at: "2024-01-01T00:00:00Z",
     ...overrides,
-  };
+  } as PlayerPosition;
 }
 
 function create_valid_input(
@@ -59,7 +59,7 @@ function create_valid_input(
     status: "active",
     organization_id: "test-org-1",
     ...overrides,
-  };
+  } as CreatePlayerPositionInput;
 }
 
 describe("PlayerPositionUseCases", () => {

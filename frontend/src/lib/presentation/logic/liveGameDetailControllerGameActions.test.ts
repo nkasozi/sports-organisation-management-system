@@ -44,7 +44,7 @@ describe("liveGameDetailControllerGameActions", () => {
       is_captain: false,
       is_substitute: false,
       time_on: undefined,
-    };
+    } as LiveGameDetailPageState["home_players"][number];
   }
 
   beforeEach(() => {
@@ -52,7 +52,7 @@ describe("liveGameDetailControllerGameActions", () => {
   });
 
   function create_state_store() {
-    let page_state: LiveGameDetailPageState = {
+    let page_state =  {
       ...create_live_game_detail_page_state(),
       fixture: {
         id: "fixture-1",
@@ -65,12 +65,12 @@ describe("liveGameDetailControllerGameActions", () => {
       away_team: { name: "Tigers" } as LiveGameDetailPageState["away_team"],
       home_players: [create_lineup_player("home-1")],
       away_players: [create_lineup_player("away-1")],
-    };
-    let modal_state: LiveGameDetailModalState = {
+    } as LiveGameDetailPageState;
+    let modal_state =  {
       ...create_live_game_detail_modal_state(),
       show_start_modal: true,
       show_end_modal: true,
-    };
+    } as LiveGameDetailModalState;
     let toast_state: LiveGameDetailToastState | null = null;
     return {
       get_modal_state: () => modal_state,

@@ -1,5 +1,9 @@
+import type { Organization } from "$lib/core/entities/Organization";
+import type { SystemUser } from "$lib/core/entities/SystemUser";
+import type { Team } from "$lib/core/entities/Team";
 import type { AuthToken, UserRole } from "$lib/core/interfaces/ports";
 import type { SidebarMenuGroup } from "$lib/core/interfaces/ports";
+import type { ScalarValueInput } from "$lib/core/types/DomainScalars";
 
 export interface ConvexUserProfile {
   local_id?: string;
@@ -23,16 +27,16 @@ export interface ConvexGetProfileResponse {
 }
 
 export interface UserProfile {
-  id: string;
+  id: ScalarValueInput<SystemUser["id"]>;
   display_name: string;
-  email: string;
+  email: ScalarValueInput<SystemUser["email"]> | "";
   role: UserRole;
-  organization_id: string;
+  organization_id: ScalarValueInput<SystemUser["organization_id"]> | "";
   organization_name: string;
-  team_id: string;
+  team_id: ScalarValueInput<NonNullable<SystemUser["team_id"]>> | "";
   team_name?: string;
-  player_id?: string;
-  official_id?: string;
+  player_id?: ScalarValueInput<NonNullable<SystemUser["player_id"]>>;
+  official_id?: ScalarValueInput<NonNullable<SystemUser["official_id"]>>;
 }
 
 export interface AuthState {

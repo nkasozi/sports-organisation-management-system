@@ -5,6 +5,7 @@ import type {
   CreateActivityCategoryInput,
 } from "../entities/ActivityCategory";
 import type { ActivityCategoryRepository } from "../interfaces/ports";
+import type { ScalarInput } from "../types/DomainScalars";
 import { create_activity_category_use_cases } from "./ActivityCategoryUseCases";
 
 function make_mock_repository(): ActivityCategoryRepository {
@@ -23,7 +24,7 @@ function make_mock_repository(): ActivityCategoryRepository {
 }
 
 function make_category(
-  overrides: Partial<ActivityCategory> = {},
+  overrides: Partial<ScalarInput<ActivityCategory>> = {},
 ): ActivityCategory {
   return {
     id: "cat-1",
@@ -37,7 +38,7 @@ function make_category(
     icon: "trophy",
     is_system_generated: false,
     ...overrides,
-  };
+  } as unknown as ActivityCategory;
 }
 
 function make_create_input(
@@ -52,7 +53,7 @@ function make_create_input(
     icon: "star",
     is_system_generated: false,
     ...overrides,
-  };
+  } as CreateActivityCategoryInput;
 }
 
 describe("list", () => {
@@ -347,7 +348,7 @@ describe("ensure_default_categories_exist", () => {
 
   it("skips categories that already exist as system-generated", async () => {
     const repo = make_mock_repository();
-    const existing_categories: ActivityCategory[] = [
+    const existing_categories =  [
       make_category({
         category_type: "competition",
         is_system_generated: true,
@@ -357,7 +358,7 @@ describe("ensure_default_categories_exist", () => {
         category_type: "fixture",
         is_system_generated: true,
       }),
-    ];
+    ] as ActivityCategory[];
     (repo.find_by_organization as ReturnType<typeof vi.fn>).mockResolvedValue({
       success: true,
       data: { items: existing_categories, total: 2 },
@@ -430,12 +431,12 @@ describe("ensure_default_categories_exist", () => {
 
   it("does not count user-created (non-system) categories as already existing", async () => {
     const repo = make_mock_repository();
-    const user_created: ActivityCategory[] = [
+    const user_created =  [
       make_category({
         category_type: "competition",
         is_system_generated: false,
       }),
-    ];
+    ] as ActivityCategory[];
     (repo.find_by_organization as ReturnType<typeof vi.fn>).mockResolvedValue({
       success: true,
       data: { items: user_created, total: 1 },

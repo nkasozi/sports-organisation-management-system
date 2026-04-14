@@ -7,7 +7,7 @@ import type {
   FormatType,
   UpdateCompetitionFormatInput,
 } from "../../core/entities/CompetitionFormat";
-import { get_default_competition_formats_for_organization } from "../../core/entities/CompetitionFormat";
+import { get_default_competition_formats_for_organization as get_default_competition_formats_for_organization_core } from "../../core/entities/CompetitionFormat";
 import { ENTITY_STATUS } from "../../core/entities/StatusConstants";
 import type {
   CompetitionFormatFilter,
@@ -41,11 +41,11 @@ export class InBrowserCompetitionFormatRepository
 
   protected create_entity_from_input(
     input: CreateCompetitionFormatInput,
-    id: string,
+    id: CompetitionFormat["id"],
     timestamps: Pick<BaseEntity, "created_at" | "updated_at">,
   ): CompetitionFormat {
     return {
-      id,
+      id: id as CompetitionFormat["id"],
       ...timestamps,
       name: input.name,
       code: input.code,
@@ -61,7 +61,7 @@ export class InBrowserCompetitionFormatRepository
       points_config: input.points_config,
       stage_templates: input.stage_templates ?? [],
       organization_id: input.organization_id,
-    };
+    } as CompetitionFormat;
   }
 
   protected apply_updates_to_entity(
@@ -71,7 +71,7 @@ export class InBrowserCompetitionFormatRepository
     return {
       ...entity,
       ...updates,
-    };
+    } as CompetitionFormat;
   }
 
   protected apply_entity_filter(
@@ -170,7 +170,7 @@ export class InBrowserCompetitionFormatRepository
   }
 
   async find_by_organization(
-    organization_id: string,
+    organization_id: CompetitionFormat["organization_id"],
     options?: import("../../core/interfaces/ports").QueryOptions,
   ): ReturnType<
     import("../../core/interfaces/ports").CompetitionFormatRepository["find_by_organization"]
@@ -194,7 +194,9 @@ export async function reset_competition_format_repository(): Promise<void> {
 }
 
 export function create_default_competition_formats_for_organization(
-  organization_id: string,
-): CompetitionFormat[] {
-  return get_default_competition_formats_for_organization(organization_id);
+  organization_id: NonNullable<CreateCompetitionFormatInput["organization_id"]>,
+): import("$lib/core/types/DomainScalars").ScalarInput<CompetitionFormat>[] {
+  return get_default_competition_formats_for_organization_core(
+    organization_id,
+  );
 }

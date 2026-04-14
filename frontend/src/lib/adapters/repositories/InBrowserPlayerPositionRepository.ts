@@ -45,17 +45,17 @@ export class InBrowserPlayerPositionRepository
 
   protected create_entity_from_input(
     input: CreatePlayerPositionInput,
-    id: string,
+    id: PlayerPosition["id"],
     timestamps: Pick<BaseEntity, "created_at" | "updated_at">,
   ): PlayerPosition {
-    return { id, ...timestamps, ...input };
+    return { id, ...timestamps, ...input } as PlayerPosition;
   }
 
   protected apply_updates_to_entity(
     entity: PlayerPosition,
     updates: UpdatePlayerPositionInput,
   ): PlayerPosition {
-    return { ...entity, ...updates };
+    return { ...entity, ...updates } as PlayerPosition;
   }
 
   protected apply_entity_filter(
@@ -182,7 +182,7 @@ export class InBrowserPlayerPositionRepository
   }
 
   async find_by_organization(
-    organization_id: string,
+    organization_id: PlayerPosition["organization_id"],
     options?: QueryOptions,
   ): PaginatedAsyncResult<PlayerPosition> {
     return this.find_all({ organization_id }, options);

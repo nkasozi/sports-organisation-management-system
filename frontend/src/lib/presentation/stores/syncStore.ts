@@ -10,6 +10,7 @@ import {
   create_failure_result,
   create_success_result,
 } from "$lib/core/types/Result";
+import type { ScalarInput } from "$lib/core/types/DomainScalars";
 import type {
   ConflictRecord,
   ConflictResolutionAction,
@@ -27,6 +28,8 @@ import { conflict_store } from "$lib/presentation/stores/conflictStore";
 
 import { execute_conflict_resolution } from "./syncStoreResolveConflict";
 import { SYNC_INITIAL_STATE, type SyncState } from "./syncStoreTypes";
+
+type EditableConflictRecord = ScalarInput<ConflictRecord>;
 
 const SYNC_CONFLICT_ERROR_MESSAGE =
   "Conflicts detected. Please review and resolve.";
@@ -181,7 +184,7 @@ function create_sync_store() {
       set(SYNC_INITIAL_STATE);
     },
     resolve_conflict_and_sync: async (
-      conflict: ConflictRecord,
+      conflict: EditableConflictRecord,
       action: ConflictResolutionAction,
       merged_data?: Record<string, unknown>,
     ): Promise<{ success: boolean; error: string | null }> => {

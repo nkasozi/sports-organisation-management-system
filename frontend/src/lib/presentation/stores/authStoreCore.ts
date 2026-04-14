@@ -74,7 +74,9 @@ function create_auth_store() {
     return true;
   }
 
-  async function switch_profile(profile_id: string): Promise<boolean> {
+  async function switch_profile(
+    profile_id: AuthState["available_profiles"][number]["id"],
+  ): Promise<boolean> {
     const state = get({ subscribe });
     const target_profile = state.available_profiles.find(
       (p) => p.id === profile_id,

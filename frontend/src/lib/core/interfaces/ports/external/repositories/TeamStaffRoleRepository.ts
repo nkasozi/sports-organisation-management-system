@@ -13,7 +13,7 @@ export interface TeamStaffRoleFilter {
   name_contains?: string;
   category?: TeamStaffRole["category"];
   status?: TeamStaffRole["status"];
-  organization_id?: string;
+  organization_id?: TeamStaffRole["organization_id"];
 }
 
 export interface TeamStaffRoleRepository extends Repository<
@@ -26,7 +26,7 @@ export interface TeamStaffRoleRepository extends Repository<
     category: TeamStaffRole["category"],
   ): AsyncResult<TeamStaffRole[]>;
   find_by_organization(
-    organization_id: string,
+    organization_id: TeamStaffRole["organization_id"],
     options?: QueryOptions,
   ): PaginatedAsyncResult<TeamStaffRole>;
 }

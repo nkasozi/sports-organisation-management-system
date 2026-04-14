@@ -3,6 +3,7 @@ import type {
   ConflictResolutionAction,
 } from "$lib/infrastructure/sync/conflictTypes";
 import type { ConflictResolutionRequest } from "$lib/infrastructure/sync/convexSyncService";
+import type { ScalarInput } from "$lib/core/types/DomainScalars";
 import { resolve_conflict } from "$lib/infrastructure/sync/convexSyncService";
 
 type ConvexClient = {
@@ -10,8 +11,10 @@ type ConvexClient = {
   query: (name: string, args: Record<string, unknown>) => Promise<unknown>;
 };
 
+type EditableConflictRecord = ScalarInput<ConflictRecord>;
+
 function build_resolved_data(
-  conflict: ConflictRecord,
+  conflict: EditableConflictRecord,
   action: ConflictResolutionAction,
   merged_data?: Record<string, unknown>,
 ): Record<string, unknown> {
@@ -29,7 +32,7 @@ function build_resolved_data(
 
 export async function execute_conflict_resolution(
   convex_client: ConvexClient | null,
-  conflict: ConflictRecord,
+  conflict: EditableConflictRecord,
   action: ConflictResolutionAction,
   merged_data?: Record<string, unknown>,
 ): Promise<{ success: boolean; error: string | null }> {

@@ -1,12 +1,15 @@
 import { describe, expect, it } from "vitest";
 
 import type { Fixture } from "../../core/entities/Fixture";
+import type { ScalarInput } from "../../core/types/DomainScalars";
 import {
   apply_fixture_entity_filter,
   sort_fixtures_by_schedule,
 } from "./InBrowserFixtureRepositoryHelpers";
 
-function create_fixture(overrides: Partial<Fixture> = {}): Fixture {
+function create_fixture(
+  overrides: Partial<ScalarInput<Fixture>> = {},
+): Fixture {
   return {
     id: "fixture_1",
     organization_id: "org_1",

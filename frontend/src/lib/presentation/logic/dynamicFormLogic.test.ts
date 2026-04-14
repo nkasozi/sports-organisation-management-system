@@ -6,6 +6,7 @@ import type {
   FieldMetadata,
   ValidationRule,
 } from "../../core/entities/BaseEntity";
+import type { ScalarInput } from "../../core/types/DomainScalars";
 import type { SubEntityFilter } from "../../core/types/SubEntityFilter";
 import {
   build_entity_display_label,
@@ -43,7 +44,7 @@ function create_field_metadata(
     is_required: false,
     is_read_only: false,
     ...overrides,
-  };
+  } as FieldMetadata;
 }
 
 function create_entity_metadata(
@@ -54,16 +55,18 @@ function create_entity_metadata(
     display_name: "Test Entity",
     fields: [],
     ...overrides,
-  };
+  } as EntityMetadata;
 }
 
-function create_base_entity(overrides: Partial<BaseEntity> = {}): BaseEntity {
+function create_base_entity(
+  overrides: Partial<ScalarInput<BaseEntity>> = {},
+): BaseEntity {
   return {
     id: "entity_1",
     created_at: "2024-01-01T00:00:00Z",
     updated_at: "2024-01-01T00:00:00Z",
     ...overrides,
-  };
+  } as unknown as BaseEntity;
 }
 
 describe("dynamicFormLogic", () => {
@@ -389,9 +392,9 @@ describe("dynamicFormLogic", () => {
 
   describe("validate_field_against_rules", () => {
     it("validates min_length rule", () => {
-      const rules: ValidationRule[] = [
+      const rules =  [
         { rule_type: "min_length", rule_value: 3, error_message: "Too short" },
-      ];
+      ] as ValidationRule[];
 
       expect(validate_field_against_rules("ab", rules).is_valid).toBe(false);
       expect(validate_field_against_rules("abc", rules).is_valid).toBe(true);
@@ -399,9 +402,9 @@ describe("dynamicFormLogic", () => {
     });
 
     it("validates max_length rule", () => {
-      const rules: ValidationRule[] = [
+      const rules =  [
         { rule_type: "max_length", rule_value: 5, error_message: "Too long" },
-      ];
+      ] as ValidationRule[];
 
       expect(validate_field_against_rules("abcdef", rules).is_valid).toBe(
         false,
@@ -411,9 +414,9 @@ describe("dynamicFormLogic", () => {
     });
 
     it("validates min_value rule", () => {
-      const rules: ValidationRule[] = [
+      const rules =  [
         { rule_type: "min_value", rule_value: 10, error_message: "Too small" },
-      ];
+      ] as ValidationRule[];
 
       expect(validate_field_against_rules(5, rules).is_valid).toBe(false);
       expect(validate_field_against_rules(10, rules).is_valid).toBe(true);
@@ -421,9 +424,9 @@ describe("dynamicFormLogic", () => {
     });
 
     it("validates max_value rule", () => {
-      const rules: ValidationRule[] = [
+      const rules =  [
         { rule_type: "max_value", rule_value: 100, error_message: "Too large" },
-      ];
+      ] as ValidationRule[];
 
       expect(validate_field_against_rules(150, rules).is_valid).toBe(false);
       expect(validate_field_against_rules(100, rules).is_valid).toBe(true);
@@ -431,33 +434,33 @@ describe("dynamicFormLogic", () => {
     });
 
     it("validates pattern rule", () => {
-      const rules: ValidationRule[] = [
+      const rules =  [
         {
           rule_type: "pattern",
           rule_value: "^[A-Z]+$",
           error_message: "Must be uppercase",
         },
-      ];
+      ] as ValidationRule[];
 
       expect(validate_field_against_rules("abc", rules).is_valid).toBe(false);
       expect(validate_field_against_rules("ABC", rules).is_valid).toBe(true);
     });
 
     it("returns valid when no rules fail", () => {
-      const rules: ValidationRule[] = [];
+      const rules =  [] as ValidationRule[];
       expect(validate_field_against_rules("anything", rules).is_valid).toBe(
         true,
       );
     });
 
     it("returns error message from failed rule", () => {
-      const rules: ValidationRule[] = [
+      const rules =  [
         {
           rule_type: "min_length",
           rule_value: 10,
           error_message: "Custom error message",
         },
-      ];
+      ] as ValidationRule[];
 
       const result = validate_field_against_rules("short", rules);
       expect(result.is_valid).toBe(false);
@@ -795,13 +798,13 @@ describe("dynamicFormLogic", () => {
     });
 
     it("handles empty value", () => {
-      const options: BaseEntity[] = [];
+      const options =  [] as BaseEntity[];
       const result = get_display_value_for_foreign_key(options, "");
       expect(result).toBe("");
     });
 
     it("handles null value", () => {
-      const options: BaseEntity[] = [];
+      const options =  [] as BaseEntity[];
       const result = get_display_value_for_foreign_key(options, null as any);
       expect(result).toBe("");
     });
@@ -942,32 +945,32 @@ describe("dynamicFormLogic", () => {
     });
 
     it("returns true when field matches foreign_key_field", () => {
-      const filter: SubEntityFilter = {
+      const filter =  {
         foreign_key_field: "player_id",
         foreign_key_value: "p1",
-      };
+      } as SubEntityFilter;
       expect(
         is_field_controlled_by_sub_entity_filter("player_id", filter),
       ).toBe(true);
     });
 
     it("returns true when field matches holder_type_field", () => {
-      const filter: SubEntityFilter = {
+      const filter =  {
         foreign_key_field: "player_id",
         foreign_key_value: "p1",
         holder_type_field: "entity_type",
         holder_type_value: "player",
-      };
+      } as SubEntityFilter;
       expect(
         is_field_controlled_by_sub_entity_filter("entity_type", filter),
       ).toBe(true);
     });
 
     it("returns false for an unrelated field", () => {
-      const filter: SubEntityFilter = {
+      const filter =  {
         foreign_key_field: "player_id",
         foreign_key_value: "p1",
-      };
+      } as SubEntityFilter;
       expect(is_field_controlled_by_sub_entity_filter("name", filter)).toBe(
         false,
       );
@@ -1083,7 +1086,7 @@ describe("dynamicFormLogic", () => {
             name: "Arsenal",
             created_at: "",
             updated_at: "",
-          } as BaseEntity,
+          } as unknown as BaseEntity,
         ],
       };
 
@@ -1103,7 +1106,7 @@ describe("dynamicFormLogic", () => {
             name: "Empty",
             created_at: "",
             updated_at: "",
-          } as BaseEntity,
+          } as unknown as BaseEntity,
         ],
       };
 

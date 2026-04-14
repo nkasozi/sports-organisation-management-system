@@ -9,6 +9,7 @@ import type {
   LiveGameLogRepository,
   LiveGameLogUseCasesPort,
 } from "../interfaces/ports";
+import type { ScalarValueInput } from "../types/DomainScalars";
 import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
 import { create_failure_result } from "../types/Result";
 import { create_live_game_state_management } from "./LiveGameStateManagementUseCases";
@@ -41,7 +42,9 @@ export function create_live_game_log_use_cases(
       return repository.create(input);
     },
 
-    async get_by_id(id: string): AsyncResult<LiveGameLog> {
+    async get_by_id(
+      id: ScalarValueInput<LiveGameLog["id"]>,
+    ): AsyncResult<LiveGameLog> {
       if (!id || id.trim().length === 0) {
         return create_failure_result("LiveGameLog ID is required");
       }
@@ -49,7 +52,7 @@ export function create_live_game_log_use_cases(
     },
 
     async update(
-      id: string,
+      id: ScalarValueInput<LiveGameLog["id"]>,
       input: UpdateLiveGameLogInput,
     ): AsyncResult<LiveGameLog> {
       if (!id || id.trim().length === 0) {
@@ -64,7 +67,9 @@ export function create_live_game_log_use_cases(
       return repository.update(id, input);
     },
 
-    async delete(id: string): AsyncResult<boolean> {
+    async delete(
+      id: ScalarValueInput<LiveGameLog["id"]>,
+    ): AsyncResult<boolean> {
       if (!id || id.trim().length === 0) {
         return create_failure_result("LiveGameLog ID is required");
       }
@@ -89,7 +94,7 @@ export function create_live_game_log_use_cases(
     },
 
     async get_live_game_log_for_fixture(
-      fixture_id: string,
+      fixture_id: ScalarValueInput<LiveGameLog["fixture_id"]>,
     ): AsyncResult<LiveGameLog> {
       if (!fixture_id || fixture_id.trim().length === 0) {
         return create_failure_result("Fixture ID is required");
@@ -98,7 +103,7 @@ export function create_live_game_log_use_cases(
     },
 
     async get_active_games(
-      organization_id?: string,
+      organization_id?: ScalarValueInput<LiveGameLog["organization_id"]>,
     ): AsyncResult<LiveGameLog[]> {
       return repository.get_active_games(organization_id);
     },
@@ -106,14 +111,14 @@ export function create_live_game_log_use_cases(
     ...create_live_game_state_management(repository),
 
     async list_by_organization(
-      organization_id: string,
+      organization_id: ScalarValueInput<LiveGameLog["organization_id"]>,
       options?: { page: number; page_size: number },
     ): PaginatedAsyncResult<LiveGameLog> {
       return repository.find_by_organization(organization_id, options);
     },
 
     async list_completed_games(
-      organization_id?: string,
+      organization_id?: ScalarValueInput<LiveGameLog["organization_id"]>,
       options?: { page: number; page_size: number },
     ): PaginatedAsyncResult<LiveGameLog> {
       return repository.find_completed_games(organization_id, options);

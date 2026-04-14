@@ -1,6 +1,6 @@
 import type { Organization } from "$lib/core/entities/Organization";
-import type { UserScopeProfile } from "$lib/core/interfaces/ports";
 import { load_competition_results_organizations } from "$lib/presentation/logic/competitionResultsPageData";
+import type { UserProfile } from "$lib/presentation/stores/auth";
 import {
   type CompetitionResultsPageStateDependencies,
   type CompetitionResultsSelectedBundle,
@@ -31,7 +31,7 @@ type CompetitionResultsSelectedCompetition =
     : never;
 
 export async function initialize_competition_results_page(command: {
-  current_profile: UserScopeProfile | null | undefined;
+  current_profile: UserProfile | null | undefined;
   competition_results_dependencies: CompetitionResultsPageStateDependencies;
   url_params: { org_id: string; competition_id: string };
   is_public: boolean;

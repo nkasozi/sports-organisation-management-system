@@ -1,7 +1,9 @@
 import type {
+  AuditLog,
   CreateAuditLogInput,
   FieldChange,
 } from "$lib/core/entities/AuditLog";
+import type { ScalarInput } from "$lib/core/types/DomainScalars";
 import { get_repository_container } from "$lib/infrastructure/container";
 import type {
   ConflictRecord,
@@ -12,10 +14,10 @@ import type {
 import { WILDCARD_SCOPE } from "../../core/entities/StatusConstants";
 
 interface ConflictAuditContext {
-  user_id?: string;
-  user_email?: string;
-  user_display_name?: string;
-  organization_id?: string;
+  user_id?: CreateAuditLogInput["user_id"];
+  user_email?: CreateAuditLogInput["user_email"];
+  user_display_name?: CreateAuditLogInput["user_display_name"];
+  organization_id?: AuditLog["organization_id"];
 }
 
 function build_conflict_changes(
@@ -40,7 +42,7 @@ function format_table_name_for_display(table_name: string): string {
 }
 
 export async function log_conflict_detected(
-  conflict: ConflictRecord,
+  conflict: ScalarInput<ConflictRecord>,
   context: ConflictAuditContext = {},
 ): Promise<boolean> {
   try {
@@ -73,7 +75,7 @@ export async function log_conflict_detected(
 }
 
 export async function log_conflict_resolution(
-  conflict: ConflictRecord,
+  conflict: ScalarInput<ConflictRecord>,
   resolution_action: ConflictResolutionAction,
   resolved_data: Record<string, unknown>,
   context: ConflictAuditContext = {},

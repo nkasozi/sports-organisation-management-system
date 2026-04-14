@@ -12,7 +12,7 @@ function create_profile(overrides: Partial<UserProfile> = {}): UserProfile {
     organization_name: "Premier League",
     team_id: "",
     ...overrides,
-  };
+  } as UserProfile;
 }
 
 function create_auth_state(
@@ -27,7 +27,7 @@ function create_auth_state(
     is_initialized: false,
     is_demo_session: false,
     ...overrides,
-  };
+  } as AuthState;
 }
 
 const {

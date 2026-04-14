@@ -1,6 +1,6 @@
 import type { Competition } from "../../core/entities/Competition";
 
-export function create_default_competitions(): Competition[] {
+export function create_default_competitions(): import("$lib/core/types/DomainScalars").ScalarInput<Competition>[] {
   const now = new Date().toISOString();
   const BASE = {
     organization_id: "org_default_1",

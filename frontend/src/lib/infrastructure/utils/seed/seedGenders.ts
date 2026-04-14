@@ -1,7 +1,10 @@
 import type { Gender } from "../../../core/entities/Gender";
+import type { ScalarValueInput } from "../../../core/types/DomainScalars";
 import { generate_current_timestamp } from "./seedIds";
 
-export function create_seed_genders(organization_id: string): Gender[] {
+export function create_seed_genders(
+  organization_id: ScalarValueInput<Gender["organization_id"]>,
+): import("$lib/core/types/DomainScalars").ScalarInput<Gender>[] {
   const now = generate_current_timestamp();
 
   return [

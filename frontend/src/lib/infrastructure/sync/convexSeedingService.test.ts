@@ -12,12 +12,12 @@ interface MockTable {
   bulkPut: ReturnType<typeof vi.fn>;
 }
 
-const mock_database_tables: Record<string, MockTable> = {};
+const mock_database_tables =  {} as Record<string, MockTable>;
 
 function create_mock_table(): MockTable {
   return {
     bulkPut: vi.fn().mockResolvedValue(undefined),
-  };
+  } as MockTable;
 }
 
 vi.mock("$lib/adapters/repositories/database", () => ({

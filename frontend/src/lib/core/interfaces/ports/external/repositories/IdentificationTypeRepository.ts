@@ -7,8 +7,8 @@ import type { PaginatedAsyncResult } from "../../../../types/Result";
 import type { QueryOptions, Repository } from "./Repository";
 
 export interface IdentificationTypeFilter {
-  status?: string;
-  organization_id?: string;
+  status?: IdentificationType["status"];
+  organization_id?: IdentificationType["organization_id"];
 }
 
 export interface IdentificationTypeRepository extends Repository<
@@ -21,7 +21,7 @@ export interface IdentificationTypeRepository extends Repository<
     options?: QueryOptions,
   ): PaginatedAsyncResult<IdentificationType>;
   find_by_organization(
-    organization_id: string,
+    organization_id: IdentificationType["organization_id"],
     options?: QueryOptions,
   ): PaginatedAsyncResult<IdentificationType>;
 }

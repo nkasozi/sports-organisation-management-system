@@ -4,7 +4,13 @@ export type {
   EntityDeletedPayload,
   EntityUpdatedPayload,
   PageViewedPayload,
+  UserContext,
 } from "./EventBusTypes";
+import type {
+  IsoDateTimeString,
+  ScalarInput,
+} from "$lib/core/types/DomainScalars";
+
 import type {
   AccessDeniedPayload,
   EntityCreatedPayload,
@@ -65,55 +71,55 @@ class EventBusImpl {
   }
 
   emit_entity_created(
-    entity_type: string,
-    entity_id: string,
-    entity_display_name: string,
-    entity_data: Record<string, unknown>,
+    entity_type: EntityCreatedPayload["entity_type"],
+    entity_id: ScalarInput<EntityCreatedPayload>["entity_id"],
+    entity_display_name: EntityCreatedPayload["entity_display_name"],
+    entity_data: EntityCreatedPayload["entity_data"],
   ): void {
     const payload: EntityCreatedPayload = {
       entity_type,
-      entity_id,
+      entity_id: entity_id as EntityCreatedPayload["entity_id"],
       entity_display_name,
       entity_data,
-      timestamp: new Date().toISOString(),
+      timestamp: create_event_timestamp(),
       user_context: get_current_user_context(),
     };
     this.emit("entity_created", payload);
   }
 
   emit_entity_updated(
-    entity_type: string,
-    entity_id: string,
-    entity_display_name: string,
-    old_entity_data: Record<string, unknown>,
-    new_entity_data: Record<string, unknown>,
-    changed_fields: string[],
+    entity_type: EntityUpdatedPayload["entity_type"],
+    entity_id: ScalarInput<EntityUpdatedPayload>["entity_id"],
+    entity_display_name: EntityUpdatedPayload["entity_display_name"],
+    old_entity_data: EntityUpdatedPayload["old_entity_data"],
+    new_entity_data: EntityUpdatedPayload["entity_data"],
+    changed_fields: EntityUpdatedPayload["changed_fields"],
   ): void {
     const payload: EntityUpdatedPayload = {
       entity_type,
-      entity_id,
+      entity_id: entity_id as EntityUpdatedPayload["entity_id"],
       entity_display_name,
       entity_data: new_entity_data,
       old_entity_data,
       changed_fields,
-      timestamp: new Date().toISOString(),
+      timestamp: create_event_timestamp(),
       user_context: get_current_user_context(),
     };
     this.emit("entity_updated", payload);
   }
 
   emit_entity_deleted(
-    entity_type: string,
-    entity_id: string,
-    entity_display_name: string,
-    entity_data: Record<string, unknown>,
+    entity_type: EntityDeletedPayload["entity_type"],
+    entity_id: ScalarInput<EntityDeletedPayload>["entity_id"],
+    entity_display_name: EntityDeletedPayload["entity_display_name"],
+    entity_data: EntityDeletedPayload["entity_data"],
   ): void {
     const payload: EntityDeletedPayload = {
       entity_type,
-      entity_id,
+      entity_id: entity_id as EntityDeletedPayload["entity_id"],
       entity_display_name,
       entity_data,
-      timestamp: new Date().toISOString(),
+      timestamp: create_event_timestamp(),
       user_context: get_current_user_context(),
     };
     this.emit("entity_deleted", payload);
@@ -125,7 +131,7 @@ class EventBusImpl {
     attempted_action: string,
     data_category: string,
     denial_reason: string,
-    role: string,
+    role: NonNullable<AccessDeniedPayload["user_context"]>["role"],
     context?: string,
   ): void {
     const base_context = get_current_user_context();
@@ -136,7 +142,7 @@ class EventBusImpl {
       data_category,
       denial_reason,
       context,
-      timestamp: new Date().toISOString(),
+      timestamp: create_event_timestamp(),
       user_context: base_context ? { ...base_context, role } : undefined,
     };
     this.emit("access_denied", payload);
@@ -146,7 +152,7 @@ class EventBusImpl {
     const payload: PageViewedPayload = {
       page_path,
       page_title,
-      timestamp: new Date().toISOString(),
+      timestamp: create_event_timestamp(),
       user_context: get_current_user_context(),
     };
     this.emit("page_viewed", payload);
@@ -167,8 +173,14 @@ class EventBusImpl {
 
 let current_user_context: UserContext | undefined;
 
-export function set_user_context(context: UserContext | undefined): void {
-  current_user_context = context;
+function create_event_timestamp(): IsoDateTimeString {
+  return new Date().toISOString() as IsoDateTimeString;
+}
+
+export function set_user_context(
+  context: UserContext | ScalarInput<UserContext> | undefined,
+): void {
+  current_user_context = context as UserContext | undefined;
 }
 
 function get_current_user_context(): UserContext | undefined {

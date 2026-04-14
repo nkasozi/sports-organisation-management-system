@@ -7,6 +7,8 @@ import {
   vi,
 } from "vitest";
 
+import type { ConflictFromServer } from "./syncTypes";
+
 const auth_state = vi.hoisted(() => {
   let current_value = false;
 
@@ -23,7 +25,7 @@ const auth_state = vi.hoisted(() => {
   };
 });
 
-const mock_app_settings_store: Record<string, string> = {};
+const mock_app_settings_store =  {} as Record<string, string>;
 const mock_remove_setting = vi.fn((key: string) => {
   delete mock_app_settings_store[key];
   return Promise.resolve();
@@ -63,16 +65,6 @@ interface LocalRecord {
   updated_at?: string;
   created_at?: string;
   [key: string]: unknown;
-}
-
-interface ConflictFromServer {
-  local_id: string;
-  local_data: Record<string, unknown>;
-  local_version: number;
-  remote_data: Record<string, unknown>;
-  remote_version: number;
-  remote_updated_at: string;
-  remote_updated_by: string | null;
 }
 
 interface PushResult {
@@ -121,7 +113,7 @@ function create_mock_convex_client(): MockConvexClient {
   return {
     mutation: vi.fn() as MockedFunction<ConvexClient["mutation"]>,
     query: vi.fn() as MockedFunction<ConvexClient["query"]>,
-  };
+  } as MockConvexClient;
 }
 
 function create_mock_table(records: LocalRecord[] = []): MockTable {
@@ -131,7 +123,7 @@ function create_mock_table(records: LocalRecord[] = []): MockTable {
       return records.find((r) => r.id === id) || null;
     }) as MockedFunction<TableGet>,
     put: vi.fn().mockResolvedValue(undefined) as MockedFunction<TablePut>,
-  };
+  } as MockTable;
 }
 
 function create_record(
@@ -141,7 +133,7 @@ function create_record(
     updated_at: "2024-01-15T10:00:00.000Z",
     created_at: "2024-01-01T00:00:00.000Z",
     ...overrides,
-  };
+  } as LocalRecord;
 }
 
 async function push_table_to_convex(
@@ -168,7 +160,7 @@ async function push_table_to_convex(
 
   const batch_size = 25;
   let total_pushed = 0;
-  const all_conflicts: ConflictFromServer[] = [];
+  const all_conflicts =  [] as ConflictFromServer[];
 
   try {
     for (let i = 0; i < records_to_push.length; i += batch_size) {
@@ -551,7 +543,7 @@ describe("push_table_to_convex", () => {
   it("reports conflicts from server without counting them as pushed", async () => {
     const records = [create_record({ id: "r1" }), create_record({ id: "r2" })];
 
-    const mock_conflict: ConflictFromServer = {
+    const mock_conflict =  {
       local_id: "r2",
       local_data: { id: "r2", name: "local" },
       local_version: 1,
@@ -559,7 +551,7 @@ describe("push_table_to_convex", () => {
       remote_version: 2,
       remote_updated_at: "2024-06-01T00:00:00.000Z",
       remote_updated_by: "user-1",
-    };
+    } as ConflictFromServer;
 
     mock_client.mutation.mockResolvedValue({
       success: true,
@@ -601,10 +593,10 @@ describe("push_table_to_convex", () => {
   });
 
   it("uses created_at for filtering when updated_at is missing", async () => {
-    const record_with_only_created_at: LocalRecord = {
+    const record_with_only_created_at =  {
       id: "r1",
       created_at: "2024-08-01T00:00:00.000Z",
-    };
+    } as LocalRecord;
 
     mock_client.mutation.mockResolvedValue({
       success: true,
@@ -1111,7 +1103,7 @@ describe("push and pull record timestamp edge cases", () => {
   });
 
   it("push treats record with no timestamps as EPOCH (always older than any remote)", async () => {
-    const record_without_timestamps: LocalRecord = { id: "r1" };
+    const record_without_timestamps =  { id: "r1" } as LocalRecord;
 
     const result = await push_table_to_convex(
       mock_client,
@@ -1125,10 +1117,10 @@ describe("push and pull record timestamp edge cases", () => {
   });
 
   it("push treats record with only created_at correctly for filtering", async () => {
-    const record: LocalRecord = {
+    const record =  {
       id: "r1",
       created_at: "2024-06-01T00:00:00.000Z",
-    };
+    } as LocalRecord;
 
     mock_client.mutation.mockResolvedValue({
       success: true,
@@ -1345,7 +1337,7 @@ describe("get_remote_state_for_table with SyncHints", () => {
   ): RemoteTableState {
     const cached = remote_timestamp_cache?.[table_name];
     if (cached !== undefined && !use_fresh_timestamps) {
-      return { record_count: 0, latest_modified_at: cached ?? null };
+      return { record_count: 0, latest_modified_at: cached ?? null } as RemoteTableState;
     }
     return fetcher(table_name);
   }
@@ -1390,7 +1382,7 @@ describe("get_remote_state_for_table with SyncHints", () => {
   });
 
   it("returns null latest when cache has null value for table", () => {
-    const cache: Record<string, string | null> = { players: null };
+    const cache =  { players: null } as Record<string, string | null>;
     const fetcher = vi.fn(() => ({
       record_count: 0,
       latest_modified_at: null,

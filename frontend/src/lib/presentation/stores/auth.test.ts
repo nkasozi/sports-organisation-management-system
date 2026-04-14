@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { UserProfile } from "./auth";
 
-const mock_app_settings_store: Record<string, string> = {};
+const mock_app_settings_store =  {} as Record<string, string>;
 
 vi.mock("$lib/infrastructure/container", () => ({
   get_app_settings_storage: () => ({
@@ -132,7 +132,7 @@ function create_test_profiles(): UserProfile[] {
       team_id: "team_1",
       player_id: "player_1",
     },
-  ];
+  ] as UserProfile[];
 }
 
 vi.mock("./profileLoader", () => ({

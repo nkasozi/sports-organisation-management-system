@@ -1,5 +1,6 @@
 <script lang="ts">
     import type { CreateFixtureLineupInput } from "$lib/core/entities/FixtureLineup";
+    import type { LineupPlayer } from "$lib/core/entities/FixtureLineup";
     import { sort_lineup_players } from "$lib/core/services/fixtureLineupWizard";
 
     export let current_fixture_title: string;
@@ -11,6 +12,14 @@
     export let notes: string;
     export let on_confirm_change: (is_checked: boolean) => void;
     export let on_notes_change: (notes: string) => void;
+
+    function sort_selected_players(
+        players: CreateFixtureLineupInput["selected_players"],
+    ): CreateFixtureLineupInput["selected_players"] {
+        return sort_lineup_players(
+            players as unknown as LineupPlayer[],
+        ) as CreateFixtureLineupInput["selected_players"];
+    }
 </script>
 
 <div class="space-y-5">
@@ -59,7 +68,7 @@
                     ></span>Starters ({starters.length})
                 </h3>
                 <div class="space-y-2">
-                    {#each sort_lineup_players(starters) as player}<div
+                    {#each sort_selected_players(starters) as player}<div
                             class="p-3 rounded-lg border border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20"
                         >
                             <div class="flex items-center justify-between">
@@ -88,7 +97,7 @@
                         ></span>Substitutes ({substitutes.length})
                     </h3>
                     <div class="space-y-2">
-                        {#each sort_lineup_players(substitutes) as player}<div
+                        {#each sort_selected_players(substitutes) as player}<div
                                 class="p-3 rounded-lg border border-violet-200 dark:border-violet-800 bg-violet-50 dark:bg-violet-900/20"
                             >
                                 <div class="flex items-center justify-between">

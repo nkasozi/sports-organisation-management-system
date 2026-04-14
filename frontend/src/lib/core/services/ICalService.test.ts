@@ -13,13 +13,13 @@ import {
 describe("ICalService", () => {
   describe("generate_ical_feed", () => {
     it("should generate valid iCal feed with proper headers", () => {
-      const events: ICalEvent[] = [];
-      const config: ICalFeedConfig = {
+      const events =  [] as ICalEvent[];
+      const config =  {
         feed_name: "Test Calendar",
         organization_name: "Test Organization",
         timezone: "UTC",
         reminder_minutes_before: 60,
-      };
+      } as ICalFeedConfig;
 
       const result = generate_ical_feed(events, config);
 
@@ -34,13 +34,13 @@ describe("ICalService", () => {
     });
 
     it("should include refresh interval headers", () => {
-      const events: ICalEvent[] = [];
-      const config: ICalFeedConfig = {
+      const events =  [] as ICalEvent[];
+      const config =  {
         feed_name: "Test Calendar",
         organization_name: "Test Organization",
         timezone: "UTC",
         reminder_minutes_before: 60,
-      };
+      } as ICalFeedConfig;
 
       const result = generate_ical_feed(events, config);
 
@@ -49,7 +49,7 @@ describe("ICalService", () => {
     });
 
     it("should generate event blocks for each event", () => {
-      const events: ICalEvent[] = [
+      const events =  [
         {
           uid: "event-1@test",
           title: "Test Match",
@@ -60,13 +60,13 @@ describe("ICalService", () => {
           is_all_day: false,
           reminder_minutes_before: 60,
         },
-      ];
-      const config: ICalFeedConfig = {
+      ] as ICalEvent[];
+      const config =  {
         feed_name: "Test Calendar",
         organization_name: "Test Organization",
         timezone: "UTC",
         reminder_minutes_before: 60,
-      };
+      } as ICalFeedConfig;
 
       const result = generate_ical_feed(events, config);
 
@@ -79,7 +79,7 @@ describe("ICalService", () => {
     });
 
     it("should include VALARM for reminders", () => {
-      const events: ICalEvent[] = [
+      const events =  [
         {
           uid: "event-1@test",
           title: "Test Match",
@@ -90,13 +90,13 @@ describe("ICalService", () => {
           is_all_day: false,
           reminder_minutes_before: 30,
         },
-      ];
-      const config: ICalFeedConfig = {
+      ] as ICalEvent[];
+      const config =  {
         feed_name: "Test Calendar",
         organization_name: "Test Organization",
         timezone: "UTC",
         reminder_minutes_before: 60,
-      };
+      } as ICalFeedConfig;
 
       const result = generate_ical_feed(events, config);
 
@@ -107,7 +107,7 @@ describe("ICalService", () => {
     });
 
     it("should format all-day events correctly", () => {
-      const events: ICalEvent[] = [
+      const events =  [
         {
           uid: "event-1@test",
           title: "All Day Event",
@@ -118,13 +118,13 @@ describe("ICalService", () => {
           is_all_day: true,
           reminder_minutes_before: null,
         },
-      ];
-      const config: ICalFeedConfig = {
+      ] as ICalEvent[];
+      const config =  {
         feed_name: "Test Calendar",
         organization_name: "Test Organization",
         timezone: "UTC",
         reminder_minutes_before: 60,
-      };
+      } as ICalFeedConfig;
 
       const result = generate_ical_feed(events, config);
 
@@ -133,7 +133,7 @@ describe("ICalService", () => {
     });
 
     it("should escape special characters in text fields", () => {
-      const events: ICalEvent[] = [
+      const events =  [
         {
           uid: "event-1@test",
           title: "Match; Home vs Away, Important",
@@ -144,13 +144,13 @@ describe("ICalService", () => {
           is_all_day: false,
           reminder_minutes_before: null,
         },
-      ];
-      const config: ICalFeedConfig = {
+      ] as ICalEvent[];
+      const config =  {
         feed_name: "Test Calendar",
         organization_name: "Test Organization",
         timezone: "UTC",
         reminder_minutes_before: 60,
-      };
+      } as ICalFeedConfig;
 
       const result = generate_ical_feed(events, config);
 
@@ -162,7 +162,7 @@ describe("ICalService", () => {
 
   describe("convert_activity_to_ical_event", () => {
     it("should convert activity to iCal event", () => {
-      const activity: Activity = {
+      const activity =  {
         id: "activity-123",
         title: "Team Practice",
         description: "Weekly practice session",
@@ -186,7 +186,7 @@ describe("ICalService", () => {
         notes: "",
         created_at: "2026-01-01T00:00:00.000Z",
         updated_at: "2026-01-01T00:00:00.000Z",
-      };
+      } as unknown as Activity;
 
       const result = convert_activity_to_ical_event(activity, "Test Org");
 
@@ -199,7 +199,7 @@ describe("ICalService", () => {
     });
 
     it("should use first enabled reminder", () => {
-      const activity: Activity = {
+      const activity =  {
         id: "activity-123",
         title: "Event",
         description: "",
@@ -226,7 +226,7 @@ describe("ICalService", () => {
         notes: "",
         created_at: "2026-01-01T00:00:00.000Z",
         updated_at: "2026-01-01T00:00:00.000Z",
-      };
+      } as unknown as Activity;
 
       const result = convert_activity_to_ical_event(activity, "Test Org");
 
@@ -236,7 +236,7 @@ describe("ICalService", () => {
 
   describe("convert_fixture_to_ical_event", () => {
     it("should convert fixture to iCal event with proper title", () => {
-      const fixture: Fixture = {
+      const fixture =  {
         id: "fixture-123",
         organization_id: "org-1",
         competition_id: "comp-1",
@@ -259,7 +259,7 @@ describe("ICalService", () => {
         status: "scheduled",
         created_at: "2026-01-01T00:00:00.000Z",
         updated_at: "2026-01-01T00:00:00.000Z",
-      };
+      } as unknown as Fixture;
 
       const result = convert_fixture_to_ical_event(
         fixture,
@@ -281,7 +281,7 @@ describe("ICalService", () => {
     });
 
     it("should calculate end time as 2 hours after start", () => {
-      const fixture: Fixture = {
+      const fixture =  {
         id: "fixture-123",
         organization_id: "org-1",
         competition_id: "comp-1",
@@ -304,7 +304,7 @@ describe("ICalService", () => {
         status: "scheduled",
         created_at: "2026-01-01T00:00:00.000Z",
         updated_at: "2026-01-01T00:00:00.000Z",
-      };
+      } as unknown as Fixture;
 
       const result = convert_fixture_to_ical_event(
         fixture,

@@ -19,7 +19,7 @@ function create_mock_repository(): IdentificationTypeRepository {
     delete_by_ids: vi.fn(),
     count: vi.fn(),
     find_by_organization: vi.fn(),
-  };
+  } as IdentificationTypeRepository;
 }
 
 function create_test_type(
@@ -35,7 +35,7 @@ function create_test_type(
     created_at: "2024-01-01T00:00:00Z",
     updated_at: "2024-01-01T00:00:00Z",
     ...overrides,
-  };
+  } as IdentificationType;
 }
 
 function create_valid_input(
@@ -48,7 +48,7 @@ function create_valid_input(
     status: "active",
     organization_id: "test-org-1",
     ...overrides,
-  };
+  } as CreateIdentificationTypeInput;
 }
 
 describe("IdentificationTypeUseCases", () => {

@@ -10,13 +10,17 @@ import type {
 } from "$lib/core/interfaces/ports";
 import type { QueryOptions } from "$lib/core/interfaces/ports";
 import type { OfficialPerformanceRatingUseCasesPort } from "$lib/core/interfaces/ports";
+import type { ScalarValueInput } from "$lib/core/types/DomainScalars";
 import type { AsyncResult, PaginatedAsyncResult } from "$lib/core/types/Result";
 import { create_failure_result } from "$lib/core/types/Result";
 
 export type OfficialPerformanceRatingUseCases =
   OfficialPerformanceRatingUseCasesPort;
 
-type CurrentUserProvider = () => { id: string; role: string } | null;
+type CurrentUserProvider = () => {
+  id: ScalarValueInput<OfficialPerformanceRating["rater_user_id"]>;
+  role: string;
+} | null;
 
 function create_official_performance_rating_use_cases(
   repository: OfficialPerformanceRatingRepository,
@@ -40,7 +44,7 @@ function create_official_performance_rating_use_cases(
     },
 
     async update(
-      id: string,
+      id: OfficialPerformanceRating["id"],
       input: UpdateOfficialPerformanceRatingInput,
     ): AsyncResult<OfficialPerformanceRating> {
       const existing_result = await repository.find_by_id(id);
@@ -61,11 +65,13 @@ function create_official_performance_rating_use_cases(
       return repository.update(id, input);
     },
 
-    async delete(id: string): AsyncResult<boolean> {
+    async delete(id: OfficialPerformanceRating["id"]): AsyncResult<boolean> {
       return repository.delete_by_id(id);
     },
 
-    async get_by_id(id: string): AsyncResult<OfficialPerformanceRating> {
+    async get_by_id(
+      id: OfficialPerformanceRating["id"],
+    ): AsyncResult<OfficialPerformanceRating> {
       return repository.find_by_id(id);
     },
 
@@ -79,10 +85,18 @@ function create_official_performance_rating_use_cases(
       }
 
       const typed_filter: OfficialPerformanceRatingFilter = {
-        organization_id: filter.organization_id,
-        official_id: filter.official_id,
-        fixture_id: filter.fixture_id,
-        rater_user_id: filter.rater_user_id,
+        organization_id: filter.organization_id as
+          | OfficialPerformanceRating["organization_id"]
+          | undefined,
+        official_id: filter.official_id as
+          | OfficialPerformanceRating["official_id"]
+          | undefined,
+        fixture_id: filter.fixture_id as
+          | OfficialPerformanceRating["fixture_id"]
+          | undefined,
+        rater_user_id: filter.rater_user_id as
+          | OfficialPerformanceRating["rater_user_id"]
+          | undefined,
         rater_role: filter.rater_role,
       };
 
@@ -90,7 +104,7 @@ function create_official_performance_rating_use_cases(
     },
 
     async list_by_official(
-      official_id: string,
+      official_id: OfficialPerformanceRating["official_id"],
     ): PaginatedAsyncResult<OfficialPerformanceRating> {
       return repository.find_by_official(official_id, {
         page_number: 1,
@@ -99,7 +113,7 @@ function create_official_performance_rating_use_cases(
     },
 
     async list_by_fixture(
-      fixture_id: string,
+      fixture_id: OfficialPerformanceRating["fixture_id"],
     ): PaginatedAsyncResult<OfficialPerformanceRating> {
       return repository.find_by_fixture(fixture_id, {
         page_number: 1,

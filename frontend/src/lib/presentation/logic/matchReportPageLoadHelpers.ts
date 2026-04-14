@@ -107,7 +107,7 @@ export async function load_match_report_assigned_officials(
         }
         return {
           official: official_result.data,
-          role_name: current_assignment.role_name,
+          role_name: String(current_assignment.role_name),
         };
       },
     ),

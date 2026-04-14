@@ -1,3 +1,9 @@
+import type {
+  EntityId,
+  GameMinute,
+  IsoDateTimeString,
+  ScalarInput,
+} from "../types/DomainScalars";
 import type { BaseEntity, EntityStatus } from "./BaseEntity";
 import type { GamePeriod } from "./Fixture";
 
@@ -9,28 +15,28 @@ export type LiveGameStatus =
   | "abandoned";
 
 export interface LiveGameLog extends BaseEntity {
-  organization_id: string;
-  fixture_id: string;
-  home_lineup_id: string;
-  away_lineup_id: string;
+  organization_id: EntityId;
+  fixture_id: EntityId;
+  home_lineup_id: EntityId;
+  away_lineup_id: EntityId;
   current_period: GamePeriod;
-  current_minute: number;
-  stoppage_time_minutes: number;
+  current_minute: GameMinute;
+  stoppage_time_minutes: GameMinute;
   clock_running: boolean;
   clock_paused_at_seconds: number;
   home_team_score: number;
   away_team_score: number;
   game_status: LiveGameStatus;
-  started_at: string;
-  ended_at: string;
-  started_by_user_id: string;
-  ended_by_user_id: string;
+  started_at: IsoDateTimeString;
+  ended_at: IsoDateTimeString;
+  started_by_user_id: EntityId;
+  ended_by_user_id: EntityId;
   notes: string;
   status: EntityStatus;
 }
 
 export type CreateLiveGameLogInput = Omit<
-  LiveGameLog,
+  ScalarInput<LiveGameLog>,
   | "id"
   | "created_at"
   | "updated_at"
@@ -46,12 +52,15 @@ export type CreateLiveGameLogInput = Omit<
 >;
 
 export type UpdateLiveGameLogInput = Partial<
-  Omit<LiveGameLog, "id" | "created_at" | "updated_at" | "fixture_id">
+  Omit<
+    ScalarInput<LiveGameLog>,
+    "id" | "created_at" | "updated_at" | "fixture_id"
+  >
 >;
 
 function create_empty_live_game_log_input(
-  organization_id: string = "",
-  fixture_id: string = "",
+  organization_id: CreateLiveGameLogInput["organization_id"] = "",
+  fixture_id: CreateLiveGameLogInput["fixture_id"] = "",
 ): CreateLiveGameLogInput {
   return {
     organization_id,

@@ -21,7 +21,7 @@ function create_profile(overrides: Partial<UserProfile> = {}): UserProfile {
     organization_name: "Premier League",
     team_id: "",
     ...overrides,
-  };
+  } as UserProfile;
 }
 
 const {
@@ -50,7 +50,7 @@ const {
         listeners.add(run);
         return () => listeners.delete(run);
       },
-    };
+    } as TestStore<TValue>;
   }
 
   return {
@@ -179,7 +179,7 @@ describe("authInitializationHelpers", () => {
     load_sidebar_menu_for_role_mock.mockResolvedValueOnce([
       { group_name: "General", items: [] },
     ]);
-    const available_profiles: UserProfile[] = [create_profile()];
+    const available_profiles =  [create_profile()] as UserProfile[];
 
     await expect(
       try_restore_anonymous_session(available_profiles, "a.b.signature"),
@@ -254,7 +254,7 @@ describe("authInitializationHelpers", () => {
         payload: { user_id: "profile_1" },
       },
     });
-    const available_profiles: UserProfile[] = [create_profile()];
+    const available_profiles =  [create_profile()] as UserProfile[];
 
     await expect(
       try_restore_signed_in_session(

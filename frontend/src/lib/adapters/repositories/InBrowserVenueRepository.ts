@@ -32,7 +32,7 @@ export class InBrowserVenueRepository
 
   protected create_entity_from_input(
     input: CreateVenueInput,
-    id: string,
+    id: Venue["id"],
     timestamps: Pick<BaseEntity, "created_at" | "updated_at">,
   ): Venue {
     return {
@@ -53,7 +53,7 @@ export class InBrowserVenueRepository
       website: input.website,
       image_url: input.image_url,
       status: input.status,
-    };
+    } as Venue;
   }
 
   protected apply_updates_to_entity(
@@ -63,7 +63,7 @@ export class InBrowserVenueRepository
     return {
       ...entity,
       ...updates,
-    };
+    } as Venue;
   }
 
   protected apply_entity_filter(
@@ -107,7 +107,7 @@ export class InBrowserVenueRepository
   }
 }
 
-function create_default_venues(): Venue[] {
+function create_default_venues(): import("$lib/core/types/DomainScalars").ScalarInput<Venue>[] {
   const now = new Date().toISOString();
 
   return [

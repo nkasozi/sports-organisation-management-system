@@ -1,4 +1,5 @@
 import type { BaseEntity } from "../../../../entities/BaseEntity";
+import type { ScalarValueInput } from "../../../../types/DomainScalars";
 import type {
   AsyncResult,
   PaginatedAsyncResult,
@@ -21,12 +22,19 @@ export interface Repository<
     filter?: TFilter,
     options?: QueryOptions,
   ): PaginatedAsyncResult<TEntity>;
-  find_by_id(id: string): AsyncResult<TEntity>;
-  find_by_ids(ids: string[]): AsyncResult<TEntity[]>;
+  find_by_id(id: ScalarValueInput<TEntity["id"]>): AsyncResult<TEntity>;
+  find_by_ids(
+    ids: ScalarValueInput<TEntity["id"]>[],
+  ): AsyncResult<TEntity[]>;
   create(input: TCreateInput): AsyncResult<TEntity>;
-  update(id: string, input: TUpdateInput): AsyncResult<TEntity>;
-  delete_by_id(id: string): AsyncResult<boolean>;
-  delete_by_ids(ids: string[]): AsyncResult<number>;
+  update(
+    id: ScalarValueInput<TEntity["id"]>,
+    input: TUpdateInput,
+  ): AsyncResult<TEntity>;
+  delete_by_id(id: ScalarValueInput<TEntity["id"]>): AsyncResult<boolean>;
+  delete_by_ids(
+    ids: ScalarValueInput<TEntity["id"]>[],
+  ): AsyncResult<number>;
   count(): AsyncResult<number>;
 }
 

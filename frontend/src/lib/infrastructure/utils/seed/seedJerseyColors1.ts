@@ -6,7 +6,7 @@ import {
   SEED_TEAM_IDS,
 } from "./seedIds";
 
-export function create_seed_jersey_colors_part1(): JerseyColor[] {
+export function create_seed_jersey_colors_part1(): import("$lib/core/types/DomainScalars").ScalarInput<JerseyColor>[] {
   const now = generate_current_timestamp();
 
   return [

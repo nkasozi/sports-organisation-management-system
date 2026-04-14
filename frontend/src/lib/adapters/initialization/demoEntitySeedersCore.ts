@@ -1,3 +1,5 @@
+import type { Organization } from "../../core/entities/Organization";
+import type { ScalarValueInput } from "../../core/types/DomainScalars";
 import type { Result } from "../../core/types/Result";
 import {
   create_failure_result,
@@ -27,7 +29,7 @@ import type {
 import { emit_entity_created_events } from "./seedingUserSetup";
 
 export async function seed_demo_players(
-  organization_id: string,
+  organization_id: ScalarValueInput<Organization["id"]>,
   player_repository: InBrowserPlayerRepository,
   position_ids: PositionIds,
 ): Promise<Result<number>> {
@@ -50,7 +52,7 @@ export async function seed_demo_players(
 }
 
 export async function seed_demo_venues(
-  organization_id: string,
+  organization_id: ScalarValueInput<Organization["id"]>,
   venue_repository: InBrowserVenueRepository,
 ): Promise<Result<SeedVenueIds>> {
   console.log(`[Seeding] Seeding demo venues for org: ${organization_id}`);
@@ -60,14 +62,30 @@ export async function seed_demo_venues(
     console.error(`[Seeding] Venue seeding failed: ${result.error}`);
     return create_failure_result(`Venue seeding failed: ${result.error}`);
   }
+  const [
+    dragon_stadium,
+    thunder_arena,
+    eagle_nest,
+    storm_center,
+    international_hockey_arena,
+  ] = seed_venues;
+  if (
+    !dragon_stadium ||
+    !thunder_arena ||
+    !eagle_nest ||
+    !storm_center ||
+    !international_hockey_arena
+  ) {
+    return create_failure_result("Venue seeding returned incomplete venue IDs");
+  }
   emit_entity_created_events("venue", seed_venues, (v) => v.name);
   console.log(`[Seeding] Seeded ${seed_venues.length} venues`);
   return create_success_result({
-    dragon_stadium_id: seed_venues[0]?.id ?? "",
-    thunder_arena_id: seed_venues[1]?.id ?? "",
-    eagle_nest_id: seed_venues[2]?.id ?? "",
-    storm_center_id: seed_venues[3]?.id ?? "",
-    international_hockey_arena_id: seed_venues[4]?.id ?? "",
+    dragon_stadium_id: dragon_stadium.id,
+    thunder_arena_id: thunder_arena.id,
+    eagle_nest_id: eagle_nest.id,
+    storm_center_id: storm_center.id,
+    international_hockey_arena_id: international_hockey_arena.id,
   });
 }
 
@@ -119,7 +137,7 @@ export async function seed_demo_team_staff(
 }
 
 export async function seed_demo_officials(
-  organization_id: string,
+  organization_id: ScalarValueInput<Organization["id"]>,
   official_repository: InBrowserOfficialRepository,
 ): Promise<Result<number>> {
   console.log(`[Seeding] Seeding demo officials for org: ${organization_id}`);

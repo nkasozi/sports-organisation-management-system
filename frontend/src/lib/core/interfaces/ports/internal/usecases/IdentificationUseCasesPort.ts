@@ -4,6 +4,7 @@ import type {
   IdentificationHolderType,
   UpdateIdentificationInput,
 } from "../../../../entities/Identification";
+import type { ScalarValueInput } from "../../../../types/DomainScalars";
 import type {
   AsyncResult,
   PaginatedAsyncResult,
@@ -14,22 +15,24 @@ import type { QueryOptions } from "../../external/repositories/Repository";
 export interface IdentificationUseCasesPort {
   create(input: CreateIdentificationInput): AsyncResult<Identification>;
   update(
-    id: string,
+    id: ScalarValueInput<Identification["id"]>,
     input: UpdateIdentificationInput,
   ): AsyncResult<Identification>;
-  delete(id: string): AsyncResult<boolean>;
-  get_by_id(id: string): AsyncResult<Identification>;
+  delete(id: ScalarValueInput<Identification["id"]>): AsyncResult<boolean>;
+  get_by_id(
+    id: ScalarValueInput<Identification["id"]>,
+  ): AsyncResult<Identification>;
   list(
     filter?: IdentificationFilter | Record<string, string>,
     options?: QueryOptions,
   ): PaginatedAsyncResult<Identification>;
   list_by_holder(
     holder_type: IdentificationHolderType,
-    holder_id: string,
+    holder_id: ScalarValueInput<Identification["holder_id"]>,
   ): PaginatedAsyncResult<Identification>;
   list_all(): PaginatedAsyncResult<Identification>;
   list_identifications_by_entity(
     holder_type: IdentificationHolderType,
-    holder_id: string,
+    holder_id: ScalarValueInput<Identification["holder_id"]>,
   ): PaginatedAsyncResult<Identification>;
 }

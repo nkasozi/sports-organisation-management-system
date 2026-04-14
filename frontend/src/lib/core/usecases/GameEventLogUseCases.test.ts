@@ -2,13 +2,14 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { GameEventLog } from "../entities/GameEventLog";
 import type { GameEventLogRepository } from "../interfaces/ports";
+import type { ScalarInput } from "../types/DomainScalars";
 import {
   create_game_event_log_use_cases,
   type GameEventLogUseCases,
 } from "./GameEventLogUseCases";
 
 function create_mock_game_event_log(
-  overrides: Partial<GameEventLog> = {},
+  overrides: Partial<ScalarInput<GameEventLog>> = {},
 ): GameEventLog {
   return {
     id: "event-001",
@@ -38,7 +39,7 @@ function create_mock_game_event_log(
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
     ...overrides,
-  };
+  } as unknown as GameEventLog;
 }
 
 function create_mock_repository(): GameEventLogRepository {
@@ -57,7 +58,7 @@ function create_mock_repository(): GameEventLogRepository {
     get_scoring_events_for_live_game: vi.fn(),
     get_card_events_for_live_game: vi.fn(),
     void_event: vi.fn(),
-  };
+  } as GameEventLogRepository;
 }
 
 describe("GameEventLogUseCases", () => {

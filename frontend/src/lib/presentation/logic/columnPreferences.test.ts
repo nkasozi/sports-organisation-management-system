@@ -10,7 +10,7 @@ import {
 } from "./columnPreferences";
 
 function create_mock_storage(): AppSettingsPort {
-  const store: Record<string, string> = {};
+  const store =  {} as Record<string, string>;
   return {
     get_setting: vi.fn((key: string) => Promise.resolve(store[key] ?? null)),
     set_setting: vi.fn((key: string, value: string) => {
@@ -25,7 +25,7 @@ function create_mock_storage(): AppSettingsPort {
       Object.keys(store).forEach((k) => delete store[k]);
       return Promise.resolve();
     }),
-  };
+  } as AppSettingsPort;
 }
 
 describe("build_column_cache_key", () => {

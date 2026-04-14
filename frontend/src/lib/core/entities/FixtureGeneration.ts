@@ -1,26 +1,32 @@
 import type { CreateFixtureInput } from "./FixtureTypes";
 
+const BYE_TEAM_IDENTIFIER = "BYE";
+
+type FixtureGenerationTeamIdentifier =
+  | CreateFixtureInput["home_team_id"]
+  | typeof BYE_TEAM_IDENTIFIER;
+
 export interface FixtureGenerationConfig {
-  organization_id: string;
-  competition_id: string;
-  team_ids: string[];
-  start_date: string;
+  organization_id: CreateFixtureInput["organization_id"];
+  competition_id: CreateFixtureInput["competition_id"];
+  team_ids: Array<CreateFixtureInput["home_team_id"]>;
+  start_date: CreateFixtureInput["scheduled_date"];
   match_days_per_week: number[];
-  default_time: string;
+  default_time: CreateFixtureInput["scheduled_time"];
   venue_rotation: "home_away" | "neutral" | "single_venue";
-  single_venue?: string;
+  single_venue?: CreateFixtureInput["venue"];
   rounds: number;
-  stage_id_per_round: Record<number, string>;
+  stage_id_per_round: Record<number, CreateFixtureInput["stage_id"]>;
 }
 
 export function generate_round_robin_fixtures(
   config: FixtureGenerationConfig,
 ): CreateFixtureInput[] {
   const fixtures: CreateFixtureInput[] = [];
-  const teams = [...config.team_ids];
+  const teams: FixtureGenerationTeamIdentifier[] = [...config.team_ids];
 
   if (teams.length % 2 !== 0) {
-    teams.push("BYE");
+    teams.push(BYE_TEAM_IDENTIFIER);
   }
 
   const total_teams = teams.length;
@@ -44,7 +50,10 @@ export function generate_round_robin_fixtures(
         [home_team, away_team] = [away_team, home_team];
       }
 
-      if (home_team === "BYE" || away_team === "BYE") {
+      if (
+        home_team === BYE_TEAM_IDENTIFIER ||
+        away_team === BYE_TEAM_IDENTIFIER
+      ) {
         continue;
       }
 

@@ -16,7 +16,7 @@ function create_mock_repository(): GenderRepository {
     delete_by_ids: vi.fn(),
     count: vi.fn(),
     find_by_organization: vi.fn(),
-  };
+  } as GenderRepository;
 }
 
 function create_test_gender(overrides: Partial<Gender> = {}): Gender {
@@ -29,7 +29,7 @@ function create_test_gender(overrides: Partial<Gender> = {}): Gender {
     created_at: "2024-01-01T00:00:00Z",
     updated_at: "2024-01-01T00:00:00Z",
     ...overrides,
-  };
+  } as Gender;
 }
 
 function create_valid_input(
@@ -41,7 +41,7 @@ function create_valid_input(
     status: "active",
     organization_id: "test-org-1",
     ...overrides,
-  };
+  } as CreateGenderInput;
 }
 
 describe("GenderUseCases", () => {

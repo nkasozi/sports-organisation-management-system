@@ -14,7 +14,7 @@ export function create_seed_teams_men(
   makerere_ground_id: string,
   entebbe_club_id: string,
   jinja_ground_id: string,
-): Team[] {
+): import("$lib/core/types/DomainScalars").ScalarInput<Team>[] {
   const now = generate_current_timestamp();
 
   return [

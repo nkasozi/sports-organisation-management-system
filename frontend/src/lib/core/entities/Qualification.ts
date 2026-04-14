@@ -1,3 +1,10 @@
+import type {
+  EntityId,
+  IsoDateString,
+  Name,
+  ScalarInput,
+  ScalarValueInput,
+} from "../types/DomainScalars";
 import type { BaseEntity, EntityStatus } from "./BaseEntity";
 
 export type QualificationHolderType = "official" | "team_staff";
@@ -13,20 +20,20 @@ export type CertificationLevel =
 
 export interface Qualification extends BaseEntity {
   holder_type: QualificationHolderType;
-  holder_id: string;
-  certification_name: string;
+  holder_id: EntityId;
+  certification_name: Name;
   certification_level: CertificationLevel;
   certification_number: string;
   issuing_authority: string;
-  issue_date: string;
-  expiry_date: string;
+  issue_date: IsoDateString;
+  expiry_date: IsoDateString;
   specializations: string[];
   notes: string;
   status: EntityStatus;
 }
 
 export type CreateQualificationInput = Omit<
-  Qualification,
+  ScalarInput<Qualification>,
   "id" | "created_at" | "updated_at"
 >;
 
@@ -49,7 +56,7 @@ const HOLDER_TYPE_OPTIONS = [
 
 export function create_empty_qualification_input(
   holder_type: QualificationHolderType,
-  holder_id: string,
+  holder_id: CreateQualificationInput["holder_id"],
 ): CreateQualificationInput {
   const one_year_from_now = new Date();
   one_year_from_now.setFullYear(one_year_from_now.getFullYear() + 1);
@@ -101,7 +108,9 @@ export function validate_qualification_input(
   return validation_errors;
 }
 
-export function is_qualification_expired(expiry_date: string): boolean {
+export function is_qualification_expired(
+  expiry_date: ScalarValueInput<Qualification["expiry_date"]>,
+): boolean {
   if (!expiry_date) {
     return false;
   }
@@ -109,7 +118,9 @@ export function is_qualification_expired(expiry_date: string): boolean {
   return expiry < new Date();
 }
 
-export function get_days_until_expiry(expiry_date: string): number | null {
+export function get_days_until_expiry(
+  expiry_date: ScalarValueInput<Qualification["expiry_date"]>,
+): number | null {
   if (!expiry_date) {
     return null;
   }
@@ -127,7 +138,9 @@ function get_qualification_display_name(qualification: Qualification): string {
   return `${qualification.certification_name} (${qualification.certification_level})`;
 }
 
-function get_expiry_status_color(expiry_date: string): string {
+function get_expiry_status_color(
+  expiry_date: Qualification["expiry_date"],
+): string {
   const days = get_days_until_expiry(expiry_date);
   if (days === null) return "gray";
   if (days < 0) return "red";

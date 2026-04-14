@@ -1,13 +1,14 @@
 import { describe, expect, it } from "vitest";
 
 import type { GameEventType } from "../../core/entities/GameEventType";
+import type { ScalarInput } from "../../core/types/DomainScalars";
 import {
   apply_game_event_type_filter,
   sort_game_event_types,
 } from "./InBrowserGameEventTypeRepositoryHelpers";
 
 function create_game_event_type(
-  overrides: Partial<GameEventType> = {},
+  overrides: Partial<ScalarInput<GameEventType>> = {},
 ): GameEventType {
   return {
     id: "event_type_1",

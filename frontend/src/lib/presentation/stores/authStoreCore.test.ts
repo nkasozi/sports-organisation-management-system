@@ -85,7 +85,7 @@ function build_profile(
     organization_name: "City Hawks",
     team_id: "team-1",
     ...overrides,
-  };
+  } as Record<string, unknown>;
 }
 
 function build_auth_state(
@@ -99,7 +99,7 @@ function build_auth_state(
     is_initialized: false,
     is_demo_session: false,
     ...overrides,
-  };
+  } as Record<string, unknown>;
 }
 
 async function import_auth_store() {
@@ -286,6 +286,72 @@ describe("authStoreCore", () => {
     expect(auth_store_core_mocks.save_token).toHaveBeenCalledWith("new-token");
     expect(auth_store_core_mocks.save_profile_id).toHaveBeenCalledWith(
       "profile-2",
+    );
+    expect(
+      auth_store_core_mocks.sync_user_context_with_event_bus,
+    ).toHaveBeenCalledWith(target_profile);
+    expect(
+      auth_store_core_mocks.sync_branding_with_profile,
+    ).toHaveBeenCalledWith(target_profile);
+    expect(get(auth_store)).toEqual(
+      expect.objectContaining({
+        current_token: generated_token,
+        current_profile: target_profile,
+        sidebar_menu_items: sidebar_groups,
+      }),
+    );
+  });
+
+  it("switches to public viewer through the persisted profile flow", async () => {
+    const target_profile = build_profile({
+      id: "public-viewer",
+      display_name: "Public Viewer",
+      email: "",
+      role: "public_viewer",
+      organization_id: "",
+      organization_name: "",
+      team_id: "",
+    });
+    const generated_token = { raw_token: "public-viewer-token" };
+    const sidebar_groups = [{ title: "Explore", items: [] }];
+
+    auth_store_core_mocks.execute_auth_initialization.mockImplementation(
+      async (
+        _state: unknown,
+        set_state: (state: Record<string, unknown>) => void,
+      ) => {
+        set_state(
+          build_auth_state({
+            available_profiles: [target_profile],
+            is_initialized: true,
+            is_demo_session: true,
+          }),
+        );
+        return { success: true, data: true };
+      },
+    );
+    auth_store_core_mocks.generate_token_for_profile.mockResolvedValue({
+      success: true,
+      data: generated_token,
+    });
+    auth_store_core_mocks.load_sidebar_menu_for_role.mockResolvedValue(
+      sidebar_groups,
+    );
+
+    const { auth_store } = await import_auth_store();
+
+    await auth_store.initialize();
+    expect(await auth_store.switch_profile("public-viewer")).toBe(true);
+
+    expect(
+      auth_store_core_mocks.generate_token_for_profile,
+    ).toHaveBeenCalledWith(target_profile);
+    expect(auth_store_core_mocks.clear_auth_storage).not.toHaveBeenCalled();
+    expect(auth_store_core_mocks.save_token).toHaveBeenCalledWith(
+      "public-viewer-token",
+    );
+    expect(auth_store_core_mocks.save_profile_id).toHaveBeenCalledWith(
+      "public-viewer",
     );
     expect(
       auth_store_core_mocks.sync_user_context_with_event_bus,

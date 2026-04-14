@@ -1,12 +1,13 @@
 import type { Player } from "../../../core/entities/Player";
+import type { ScalarValueInput } from "../../../core/types/DomainScalars";
 import type { PositionIds } from "./seedPlayerIds";
 import { SEED_PLAYER_IDS } from "./seedPlayerIds";
 
 export function create_seed_players_group5(
   positions: PositionIds,
-  organization_id: string,
-  now: string,
-): Omit<Player, "gender_id">[] {
+  organization_id: ScalarValueInput<Omit<Player, "gender_id">["organization_id"]>,
+  now: Omit<Player, "gender_id">["created_at"],
+): import("$lib/core/types/DomainScalars").ScalarInput<Omit<Player, "gender_id">>[] {
   return [
     {
       id: SEED_PLAYER_IDS.KAMPALA_P4,

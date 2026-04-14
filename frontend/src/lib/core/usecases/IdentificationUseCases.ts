@@ -11,6 +11,7 @@ import type {
 } from "$lib/core/interfaces/ports";
 import type { QueryOptions } from "$lib/core/interfaces/ports";
 import type { IdentificationUseCasesPort } from "$lib/core/interfaces/ports";
+import type { ScalarValueInput } from "$lib/core/types/DomainScalars";
 import type { AsyncResult, PaginatedAsyncResult } from "$lib/core/types/Result";
 import { create_failure_result } from "$lib/core/types/Result";
 
@@ -32,7 +33,7 @@ export function create_identification_use_cases(
     },
 
     async update(
-      id: string,
+      id: ScalarValueInput<Identification["id"]>,
       input: UpdateIdentificationInput,
     ): AsyncResult<Identification> {
       if (!id || id.trim() === "") {
@@ -57,14 +58,18 @@ export function create_identification_use_cases(
       return repository.update(id, input);
     },
 
-    async delete(id: string): AsyncResult<boolean> {
+    async delete(
+      id: ScalarValueInput<Identification["id"]>,
+    ): AsyncResult<boolean> {
       if (!id || id.trim() === "") {
         return create_failure_result("Identification ID is required");
       }
       return repository.delete_by_id(id);
     },
 
-    async get_by_id(id: string): AsyncResult<Identification> {
+    async get_by_id(
+      id: ScalarValueInput<Identification["id"]>,
+    ): AsyncResult<Identification> {
       if (!id || id.trim() === "") {
         return create_failure_result("Identification ID is required");
       }
@@ -83,9 +88,11 @@ export function create_identification_use_cases(
 
       const identification_filter: IdentificationFilter = {
         holder_type: filter.holder_type as IdentificationHolderType | undefined,
-        holder_id: filter.holder_id,
-        identification_type_id: filter.identification_type_id,
-        status: filter.status,
+        holder_id: filter.holder_id as Identification["holder_id"] | undefined,
+        identification_type_id: filter.identification_type_id as
+          | Identification["identification_type_id"]
+          | undefined,
+        status: filter.status as Identification["status"] | undefined,
       };
 
       return repository.find_all(identification_filter, query_options);
@@ -93,7 +100,7 @@ export function create_identification_use_cases(
 
     async list_by_holder(
       holder_type: IdentificationHolderType,
-      holder_id: string,
+      holder_id: ScalarValueInput<Identification["holder_id"]>,
     ): PaginatedAsyncResult<Identification> {
       return repository.find_by_holder(holder_type, holder_id);
     },
@@ -107,7 +114,7 @@ export function create_identification_use_cases(
 
     async list_identifications_by_entity(
       holder_type: IdentificationHolderType,
-      holder_id: string,
+      holder_id: ScalarValueInput<Identification["holder_id"]>,
     ): PaginatedAsyncResult<Identification> {
       if (!holder_id || holder_id.trim() === "") {
         return create_failure_result("Entity ID is required");

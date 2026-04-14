@@ -1,8 +1,9 @@
 import type { TeamStaffRole } from "../../core/entities/TeamStaffRole";
+import type { ScalarValueInput } from "../../core/types/DomainScalars";
 
 export function create_default_team_staff_roles_for_organization(
-  organization_id: string,
-): TeamStaffRole[] {
+  organization_id: ScalarValueInput<TeamStaffRole["organization_id"]>,
+): import("$lib/core/types/DomainScalars").ScalarInput<TeamStaffRole>[] {
   const now = new Date().toISOString();
   const BASE = {
     status: "active" as const,
@@ -113,5 +114,5 @@ export function create_default_team_staff_roles_for_organization(
       is_primary_contact: false,
       display_order: 10,
     },
-  ];
+  ] as TeamStaffRole[];
 }

@@ -1,46 +1,34 @@
 import type { UserRole } from "../interfaces/ports";
+import type {
+  EmailAddress,
+  EntityId,
+  EntityScope,
+  Name,
+  ScalarInput,
+} from "../types/DomainScalars";
 import type { BaseEntity, EntityStatus } from "./BaseEntity";
 
 export type SystemUserRole = UserRole;
 
 export interface SystemUser extends BaseEntity {
-  email: string;
-  first_name: string;
-  last_name: string;
+  email: EmailAddress;
+  first_name: Name;
+  last_name: Name;
   role: SystemUserRole;
   status: EntityStatus;
-  organization_id: string;
-  team_id?: string;
-  player_id?: string;
-  official_id?: string;
+  organization_id: EntityScope;
+  team_id?: EntityId;
+  player_id?: EntityId;
+  official_id?: EntityId;
   profile_picture_base64?: string;
 }
 
-export interface CreateSystemUserInput {
-  email: string;
-  first_name: string;
-  last_name: string;
-  role: SystemUserRole;
-  organization_id: string;
-  status?: EntityStatus;
-  team_id?: string;
-  player_id?: string;
-  official_id?: string;
-  profile_picture_base64?: string;
-}
+export type CreateSystemUserInput = Omit<
+  ScalarInput<SystemUser>,
+  "id" | "created_at" | "updated_at"
+>;
 
-export interface UpdateSystemUserInput {
-  email?: string;
-  first_name?: string;
-  last_name?: string;
-  role?: SystemUserRole;
-  organization_id?: string;
-  status?: EntityStatus;
-  team_id?: string;
-  player_id?: string;
-  official_id?: string;
-  profile_picture_base64?: string;
-}
+export type UpdateSystemUserInput = Partial<CreateSystemUserInput>;
 
 export function validate_system_user_input(
   input: CreateSystemUserInput,

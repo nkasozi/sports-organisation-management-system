@@ -25,7 +25,7 @@ function create_team_record(command: {
     logo_url: `data:image/png;base64,${command.payload}`,
     updated_at: command.updated_at ?? TEST_UPDATED_AT,
     created_at: TEST_CREATED_AT,
-  };
+  } as SyncRemediableRecord;
 }
 
 function create_mock_table(): Table<SyncRemediableRecord, string> {

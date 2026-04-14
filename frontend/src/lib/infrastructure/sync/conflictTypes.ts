@@ -1,3 +1,9 @@
+import type {
+  EntityId,
+  IsoDateTimeString,
+  Name,
+} from "$lib/core/types/DomainScalars";
+
 export type ConflictResolutionAction = "keep_local" | "keep_remote" | "merge";
 
 export interface FieldDifference {
@@ -10,25 +16,25 @@ export interface FieldDifference {
 export interface ConflictRecord {
   id: string;
   table_name: string;
-  local_id: string;
+  local_id: EntityId;
   entity_display_name: string;
   local_data: Record<string, unknown>;
   remote_data: Record<string, unknown>;
-  local_updated_at: string;
-  remote_updated_at: string;
-  remote_updated_by: string | null;
-  remote_updated_by_name: string | null;
+  local_updated_at: IsoDateTimeString;
+  remote_updated_at: IsoDateTimeString;
+  remote_updated_by: EntityId | null;
+  remote_updated_by_name: Name | null;
   field_differences: FieldDifference[];
-  detected_at: string;
+  detected_at: IsoDateTimeString;
 }
 
 export interface ConflictResolution {
   conflict_id: string;
   table_name: string;
-  local_id: string;
+  local_id: ConflictRecord["local_id"];
   action: ConflictResolutionAction;
-  resolved_at: string;
-  resolved_by: string | null;
+  resolved_at: IsoDateTimeString;
+  resolved_by: EntityId | null;
   merged_data?: Record<string, unknown>;
 }
 
@@ -36,7 +42,7 @@ interface ConflictDetectionResult {
   has_conflicts: boolean;
   conflicts: ConflictRecord[];
   records_without_conflicts: Array<{
-    local_id: string;
+    local_id: ConflictRecord["local_id"];
     data: Record<string, unknown>;
     version: number;
   }>;
@@ -114,7 +120,7 @@ function format_field_name(field_name: string): string {
 
 export function generate_conflict_id(
   table_name: string,
-  local_id: string,
+  local_id: ConflictRecord["local_id"],
 ): string {
   return `conflict_${table_name}_${local_id}_${Date.now()}`;
 }

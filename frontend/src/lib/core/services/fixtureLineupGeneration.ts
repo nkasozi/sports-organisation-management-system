@@ -4,6 +4,8 @@ import type { Player } from "../entities/Player";
 import type { PlayerPosition } from "../entities/PlayerPosition";
 import type { PlayerTeamMembership } from "../entities/PlayerTeamMembership";
 import { LINEUP_STATUS, MEMBERSHIP_STATUS } from "../entities/StatusConstants";
+import type { Team } from "../entities/Team";
+import type { ScalarValueInput } from "../types/DomainScalars";
 import type { Result } from "../types/Result";
 import type { CompetitionUseCases } from "../usecases/CompetitionUseCases";
 import type { FixtureLineupUseCases } from "../usecases/FixtureLineupUseCases";
@@ -29,8 +31,8 @@ interface LineupGenerationResult {
 
 export async function auto_generate_lineups_if_possible(
   fixture: Fixture,
-  team_id: string,
-  team_name: string,
+  team_id: ScalarValueInput<Fixture["home_team_id"]>,
+  team_name: ScalarValueInput<Team["name"]>,
   membership_use_cases: PlayerTeamMembershipUseCases,
   player_use_cases: PlayerUseCases,
   player_position_use_cases: PlayerPositionUseCases,
@@ -93,8 +95,8 @@ export async function auto_generate_lineups_if_possible(
 
 async function try_previous_match_strategy(
   fixture: Fixture,
-  team_id: string,
-  team_name: string,
+  team_id: ScalarValueInput<Fixture["home_team_id"]>,
+  team_name: ScalarValueInput<Team["name"]>,
   fixture_use_cases: FixtureUseCases,
   lineup_use_cases: FixtureLineupUseCases,
 ): Promise<LineupGenerationResult | null> {
@@ -138,8 +140,8 @@ async function try_previous_match_strategy(
 
 async function generate_first_available_lineup(
   fixture: Fixture,
-  team_id: string,
-  team_name: string,
+  team_id: ScalarValueInput<Fixture["home_team_id"]>,
+  team_name: ScalarValueInput<Team["name"]>,
   min_players: number,
   max_players: number,
   membership_use_cases: PlayerTeamMembershipUseCases,
@@ -166,7 +168,7 @@ async function generate_first_available_lineup(
     (m: PlayerTeamMembership) => m.player_id,
   );
   const player_results: Result<Player, string>[] = await Promise.all(
-    player_ids.map((player_id: string) =>
+    player_ids.map((player_id: Player["id"]) =>
       player_use_cases.get_by_id(player_id),
     ),
   );
@@ -178,9 +180,10 @@ async function generate_first_available_lineup(
     page_size: 100,
   });
   const positions = positions_result.success ? positions_result.data.items : [];
-  const position_name_by_id = new Map<string, string>(
-    positions.map((p: PlayerPosition) => [p.id, p.name]),
-  );
+  const position_name_by_id = new Map<
+    PlayerPosition["id"],
+    PlayerPosition["name"]
+  >(positions.map((position: PlayerPosition) => [position.id, position.name]));
   const all_lineup_players = build_lineup_players_from_memberships(
     active_memberships,
     players,

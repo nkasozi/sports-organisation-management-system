@@ -12,7 +12,7 @@ export function create_seed_team_staff(
   assistant_coach_role_id: string,
   physio_role_id: string,
   team_manager_role_id: string,
-): TeamStaff[] {
+): import("$lib/core/types/DomainScalars").ScalarInput<TeamStaff>[] {
   const now = generate_current_timestamp();
 
   return [

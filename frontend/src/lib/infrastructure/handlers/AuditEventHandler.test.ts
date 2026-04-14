@@ -169,7 +169,7 @@ describe("handle_access_denied", () => {
       "read",
       "player_data",
       "insufficient_permissions",
-      "viewer",
+      "public_viewer",
     );
     await Promise.resolve();
 
@@ -188,7 +188,7 @@ describe("handle_access_denied", () => {
       "delete",
       "team_roster",
       "role_too_low",
-      "editor",
+      "team_manager",
     );
     await Promise.resolve();
 
@@ -210,7 +210,7 @@ describe("handle_access_denied", () => {
       "update",
       "fixture_data",
       "cross_org_access",
-      "admin",
+      "org_admin",
       "user tried to access org-2 data from org-1 session",
     );
     await Promise.resolve();
@@ -231,7 +231,7 @@ describe("handle_access_denied", () => {
       "update",
       "fixture_data",
       "cross_org_access",
-      "admin",
+      "org_admin",
     );
     await Promise.resolve();
 
@@ -251,7 +251,7 @@ describe("handle_access_denied", () => {
       "read",
       "team_data",
       "unauthenticated",
-      "none",
+      "public_viewer",
     );
     await Promise.resolve();
 

@@ -14,6 +14,7 @@ import type {
   UserRole,
 } from "../../core/interfaces/ports";
 import { check_data_permission } from "../../core/interfaces/ports";
+import type { ScalarValueInput } from "../../core/types/DomainScalars";
 import type {
   AsyncResult,
   PaginatedAsyncResult,
@@ -75,7 +76,7 @@ export class InBrowserSystemUserRepository
 
   protected create_entity_from_input(
     input: CreateSystemUserInput,
-    id: string,
+    id: SystemUser["id"],
     timestamps: Pick<BaseEntity, "created_at" | "updated_at">,
   ): SystemUser {
     return create_system_user_from_input(input, id, timestamps);
@@ -95,7 +96,9 @@ export class InBrowserSystemUserRepository
     return apply_system_user_filter(entities, filter);
   }
 
-  async find_by_email(email: string): PaginatedAsyncResult<SystemUser> {
+  async find_by_email(
+    email: ScalarValueInput<SystemUser["email"]>,
+  ): PaginatedAsyncResult<SystemUser> {
     try {
       const users = await this.database.system_users
         .where("email")

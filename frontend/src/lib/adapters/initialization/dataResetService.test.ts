@@ -109,7 +109,7 @@ vi.mock("$lib/adapters/iam/clerkAuthService", () => ({
   },
 }));
 
-const mock_app_settings_store: Record<string, string> = {};
+const mock_app_settings_store =  {} as Record<string, string>;
 const mock_clear_all_settings = vi.fn(() => {
   Object.keys(mock_app_settings_store).forEach(
     (k) => delete mock_app_settings_store[k],
@@ -177,7 +177,7 @@ describe("reset_all_data", () => {
   });
 
   it("stops background sync before doing anything else", async () => {
-    const call_order: string[] = [];
+    const call_order =  [] as string[];
     vi.mocked(stop_background_sync).mockImplementation(() => {
       call_order.push("stop");
       return true;
@@ -193,7 +193,7 @@ describe("reset_all_data", () => {
   });
 
   it("sets pulling_from_remote to true before resetting and false after", async () => {
-    const call_order: string[] = [];
+    const call_order =  [] as string[];
     vi.mocked(set_pulling_from_remote).mockImplementation((value: boolean) => {
       call_order.push(value ? "pulling_true" : "pulling_false");
     });
@@ -243,7 +243,7 @@ describe("reset_all_data", () => {
   });
 
   it("re-seeds default data after clearing repositories", async () => {
-    const call_order: string[] = [];
+    const call_order =  [] as string[];
     vi.mocked(reset_team_repository).mockImplementation(async () => {
       call_order.push("reset_team");
     });
@@ -276,7 +276,7 @@ describe("reset_all_data", () => {
   });
 
   it("reports progress milestones via the callback", async () => {
-    const reported_steps: Array<{ message: string; percentage: number }> = [];
+    const reported_steps =  [] as Array<{ message: string; percentage: number }>;
 
     await reset_all_data((message, percentage) => {
       reported_steps.push({ message, percentage });
@@ -289,7 +289,7 @@ describe("reset_all_data", () => {
   });
 
   it("reports progress in ascending order", async () => {
-    const percentages: number[] = [];
+    const percentages =  [] as number[];
 
     await reset_all_data((_message, percentage) => {
       percentages.push(percentage);

@@ -10,6 +10,7 @@ import type {
   FixtureRepository,
   FixtureUseCasesPort,
 } from "../interfaces/ports";
+import type { ScalarValueInput } from "../types/DomainScalars";
 import type { AsyncResult } from "../types/Result";
 import { create_failure_result } from "../types/Result";
 
@@ -49,7 +50,7 @@ function emit_fixture_updated(
 
 async function update_and_emit(
   repository: FixtureRepository,
-  fixture_id: string,
+  fixture_id: ScalarValueInput<Fixture["id"]>,
   updates: UpdateFixtureInput,
   changed_fields: string[],
   old_fixture?: Fixture,

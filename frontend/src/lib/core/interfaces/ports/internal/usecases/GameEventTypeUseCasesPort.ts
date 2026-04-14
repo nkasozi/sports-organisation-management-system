@@ -4,6 +4,7 @@ import type {
   GameEventType,
   UpdateGameEventTypeInput,
 } from "../../../../entities/GameEventType";
+import type { ScalarValueInput } from "../../../../types/DomainScalars";
 import type { AsyncResult } from "../../../../types/Result";
 import type { GameEventTypeFilter } from "../../external/repositories/GameEventTypeRepository";
 import type { BaseUseCasesPort } from "./BaseUseCasesPort";
@@ -16,7 +17,7 @@ export interface GameEventTypeUseCasesPort extends BaseUseCasesPort<
 > {
   get_event_type_by_code(code: string): AsyncResult<GameEventType | null>;
   list_event_types_for_sport(
-    sport_id: string | null,
+    sport_id: ScalarValueInput<NonNullable<GameEventType["sport_id"]>>,
   ): AsyncResult<GameEventType[]>;
   list_event_types_by_category(
     category: EventCategory,

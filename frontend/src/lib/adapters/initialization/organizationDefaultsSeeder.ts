@@ -1,3 +1,5 @@
+import type { Organization } from "../../core/entities/Organization";
+import type { ScalarValueInput } from "../../core/types/DomainScalars";
 import type { AsyncResult } from "../../core/types/Result";
 import {
   create_failure_result,
@@ -42,7 +44,7 @@ import {
 } from "../repositories/InBrowserTeamStaffRoleRepository";
 
 interface OrgSeedResult {
-  organization_id: string;
+  organization_id: ScalarValueInput<Organization["id"]>;
   genders_seeded: number;
   identification_types_seeded: number;
   player_positions_seeded: number;
@@ -83,7 +85,7 @@ async function execute_seed_step<T>(
 }
 
 export async function seed_default_lookup_entities_for_organization(
-  organization_id: string,
+  organization_id: ScalarValueInput<Organization["id"]>,
 ): AsyncResult<OrgSeedResult> {
   console.log(`[OrganizationDefaults] Starting seeding`, {
     event: "org_seeding_start",

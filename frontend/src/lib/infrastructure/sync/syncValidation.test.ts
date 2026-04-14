@@ -21,7 +21,7 @@ function build_mock_system_user(
     organization_id: "org_123",
     status: "active",
     ...overrides,
-  };
+  } as SystemUserRecord;
 }
 
 describe("validate_table_name", () => {

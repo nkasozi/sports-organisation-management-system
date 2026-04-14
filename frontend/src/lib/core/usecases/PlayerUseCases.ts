@@ -7,6 +7,7 @@ import { validate_player_input } from "../entities/Player";
 import type { PlayerFilter, PlayerRepository } from "../interfaces/ports";
 import type { QueryOptions } from "../interfaces/ports";
 import type { PlayerUseCasesPort } from "../interfaces/ports";
+import type { ScalarValueInput } from "../types/DomainScalars";
 import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
 import { create_failure_result } from "../types/Result";
 
@@ -23,7 +24,7 @@ export function create_player_use_cases(
       return repository.find_all(filter, options);
     },
 
-    async get_by_id(id: string): AsyncResult<Player> {
+    async get_by_id(id: ScalarValueInput<Player["id"]>): AsyncResult<Player> {
       if (!id || id.trim().length === 0) {
         return create_failure_result("Player ID is required");
       }
@@ -40,7 +41,10 @@ export function create_player_use_cases(
       return repository.create(input);
     },
 
-    async update(id: string, input: UpdatePlayerInput): AsyncResult<Player> {
+    async update(
+      id: ScalarValueInput<Player["id"]>,
+      input: UpdatePlayerInput,
+    ): AsyncResult<Player> {
       if (!id || id.trim().length === 0) {
         return create_failure_result("Player ID is required");
       }
@@ -48,14 +52,16 @@ export function create_player_use_cases(
       return repository.update(id, input);
     },
 
-    async delete(id: string): AsyncResult<boolean> {
+    async delete(id: ScalarValueInput<Player["id"]>): AsyncResult<boolean> {
       if (!id || id.trim().length === 0) {
         return create_failure_result("Player ID is required");
       }
       return repository.delete_by_id(id);
     },
 
-    async delete_players(ids: string[]): AsyncResult<number> {
+    async delete_players(
+      ids: Array<ScalarValueInput<Player["id"]>>,
+    ): AsyncResult<number> {
       if (!ids || ids.length === 0) {
         return create_failure_result("At least one player ID is required");
       }
@@ -63,7 +69,7 @@ export function create_player_use_cases(
     },
 
     async list_players_by_team(
-      team_id: string,
+      team_id: ScalarValueInput<Player["id"]>,
       options?: QueryOptions,
     ): PaginatedAsyncResult<Player> {
       if (!team_id || team_id.trim().length === 0) {

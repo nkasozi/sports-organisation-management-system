@@ -40,17 +40,33 @@ export class InBrowserTeamStaffRoleRepository
 
   protected create_entity_from_input(
     input: CreateTeamStaffRoleInput,
-    id: string,
+    id: TeamStaffRole["id"],
     timestamps: Pick<BaseEntity, "created_at" | "updated_at">,
   ): TeamStaffRole {
-    return { id, ...timestamps, ...input };
+    return {
+      id: id as TeamStaffRole["id"],
+      ...timestamps,
+      ...input,
+      name: input.name as TeamStaffRole["name"],
+      organization_id:
+        input.organization_id as TeamStaffRole["organization_id"],
+    };
   }
 
   protected apply_updates_to_entity(
     entity: TeamStaffRole,
     updates: UpdateTeamStaffRoleInput,
   ): TeamStaffRole {
-    return { ...entity, ...updates };
+    return {
+      ...entity,
+      ...updates,
+      name: updates.name
+        ? (updates.name as TeamStaffRole["name"])
+        : entity.name,
+      organization_id: updates.organization_id
+        ? (updates.organization_id as TeamStaffRole["organization_id"])
+        : entity.organization_id,
+    };
   }
 
   protected apply_entity_filter(
@@ -130,7 +146,7 @@ export class InBrowserTeamStaffRoleRepository
   }
 
   async find_by_organization(
-    organization_id: string,
+    organization_id: TeamStaffRole["organization_id"],
     options?: QueryOptions,
   ): PaginatedAsyncResult<TeamStaffRole> {
     return this.find_all({ organization_id }, options);

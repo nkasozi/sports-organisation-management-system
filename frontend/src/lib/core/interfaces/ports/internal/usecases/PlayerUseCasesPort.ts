@@ -3,6 +3,7 @@ import type {
   Player,
   UpdatePlayerInput,
 } from "../../../../entities/Player";
+import type { ScalarValueInput } from "../../../../types/DomainScalars";
 import type {
   AsyncResult,
   PaginatedAsyncResult,
@@ -17,9 +18,9 @@ export interface PlayerUseCasesPort extends BaseUseCasesPort<
   UpdatePlayerInput,
   PlayerFilter
 > {
-  delete_players(ids: string[]): AsyncResult<number>;
+  delete_players(ids: Array<ScalarValueInput<Player["id"]>>): AsyncResult<number>;
   list_players_by_team(
-    team_id: string,
+    team_id: ScalarValueInput<Player["id"]>,
     options?: QueryOptions,
   ): PaginatedAsyncResult<Player>;
 }

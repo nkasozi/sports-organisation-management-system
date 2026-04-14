@@ -49,7 +49,7 @@ export function build_error_message(
 export function derive_initial_selected_player_ids(
   team_players: TeamPlayer[],
   max_players: number,
-): string[] {
+): Array<TeamPlayer["id"]> {
   const limit = Math.max(0, max_players);
   return team_players.slice(0, limit).map((player) => player.id);
 }
@@ -74,7 +74,7 @@ export function convert_team_player_to_lineup_player(
     first_name: team_player.first_name,
     last_name: team_player.last_name,
     jersey_number: team_player.jersey_number,
-    position: team_player.position,
+    position: team_player.position as LineupPlayer["position"],
     is_captain,
     is_substitute,
   };
@@ -121,7 +121,16 @@ export function summarize_selected_team_players(
     });
 }
 
-export function sort_lineup_players(players: LineupPlayer[]): LineupPlayer[] {
+type SortableLineupPlayer = {
+  jersey_number: number | null;
+  first_name: string;
+  last_name: string;
+  position?: string | null;
+};
+
+export function sort_lineup_players<TPlayer extends SortableLineupPlayer>(
+  players: TPlayer[],
+): TPlayer[] {
   return [...players].sort((a, b) => {
     const jersey_comparison = compare_nullable_numbers(
       a.jersey_number,

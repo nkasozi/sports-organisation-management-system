@@ -7,8 +7,8 @@ import type { PaginatedAsyncResult } from "../../../../types/Result";
 import type { QueryOptions, Repository } from "./Repository";
 
 export interface OfficialAssociatedTeamFilter {
-  official_id?: string;
-  team_id?: string;
+  official_id?: OfficialAssociatedTeam["official_id"];
+  team_id?: OfficialAssociatedTeam["team_id"];
   association_type?: string;
   status?: string;
 }
@@ -20,11 +20,11 @@ export interface OfficialAssociatedTeamRepository extends Repository<
   OfficialAssociatedTeamFilter
 > {
   find_by_official(
-    official_id: string,
+    official_id: OfficialAssociatedTeam["official_id"],
     options?: QueryOptions,
   ): PaginatedAsyncResult<OfficialAssociatedTeam>;
   find_by_team(
-    team_id: string,
+    team_id: OfficialAssociatedTeam["team_id"],
     options?: QueryOptions,
   ): PaginatedAsyncResult<OfficialAssociatedTeam>;
 }

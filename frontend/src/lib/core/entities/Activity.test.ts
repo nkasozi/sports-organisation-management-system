@@ -132,31 +132,32 @@ describe("Activity Entity", () => {
   });
 
   describe("can_edit_activity", () => {
-    const create_activity = (source_type: ActivitySourceType): Activity => ({
-      id: "activity-123",
-      title: "Test Activity",
-      description: "Test description",
-      organization_id: "org-123",
-      category_id: "cat-456",
-      category_type: "training",
-      start_datetime: "2025-01-15T10:00:00Z",
-      end_datetime: "2025-01-15T12:00:00Z",
-      is_all_day: false,
-      location: "Main Field",
-      venue_id: null,
-      team_ids: [],
-      competition_id: null,
-      fixture_id: null,
-      source_type,
-      source_id: null,
-      status: "scheduled",
-      recurrence: null,
-      reminders: [],
-      color_override: null,
-      notes: "",
-      created_at: "2025-01-01T00:00:00Z",
-      updated_at: "2025-01-01T00:00:00Z",
-    });
+    const create_activity = (source_type: ActivitySourceType): Activity =>
+      ({
+        id: "activity-123",
+        title: "Test Activity",
+        description: "Test description",
+        organization_id: "org-123",
+        category_id: "cat-456",
+        category_type: "training",
+        start_datetime: "2025-01-15T10:00:00Z",
+        end_datetime: "2025-01-15T12:00:00Z",
+        is_all_day: false,
+        location: "Main Field",
+        venue_id: null,
+        team_ids: [],
+        competition_id: null,
+        fixture_id: null,
+        source_type,
+        source_id: null,
+        status: "scheduled",
+        recurrence: null,
+        reminders: [],
+        color_override: null,
+        notes: "",
+        created_at: "2025-01-01T00:00:00Z",
+        updated_at: "2025-01-01T00:00:00Z",
+      }) as unknown as Activity;
 
     it("allows editing manual activities", () => {
       const activity = create_activity("manual");
@@ -175,31 +176,32 @@ describe("Activity Entity", () => {
   });
 
   describe("can_delete_activity", () => {
-    const create_activity = (source_type: ActivitySourceType): Activity => ({
-      id: "activity-123",
-      title: "Test Activity",
-      description: "Test description",
-      organization_id: "org-123",
-      category_id: "cat-456",
-      category_type: "training",
-      start_datetime: "2025-01-15T10:00:00Z",
-      end_datetime: "2025-01-15T12:00:00Z",
-      is_all_day: false,
-      location: "Main Field",
-      venue_id: null,
-      team_ids: [],
-      competition_id: null,
-      fixture_id: null,
-      source_type,
-      source_id: null,
-      status: "scheduled",
-      recurrence: null,
-      reminders: [],
-      color_override: null,
-      notes: "",
-      created_at: "2025-01-01T00:00:00Z",
-      updated_at: "2025-01-01T00:00:00Z",
-    });
+    const create_activity = (source_type: ActivitySourceType): Activity =>
+      ({
+        id: "activity-123",
+        title: "Test Activity",
+        description: "Test description",
+        organization_id: "org-123",
+        category_id: "cat-456",
+        category_type: "training",
+        start_datetime: "2025-01-15T10:00:00Z",
+        end_datetime: "2025-01-15T12:00:00Z",
+        is_all_day: false,
+        location: "Main Field",
+        venue_id: null,
+        team_ids: [],
+        competition_id: null,
+        fixture_id: null,
+        source_type,
+        source_id: null,
+        status: "scheduled",
+        recurrence: null,
+        reminders: [],
+        color_override: null,
+        notes: "",
+        created_at: "2025-01-01T00:00:00Z",
+        updated_at: "2025-01-01T00:00:00Z",
+      }) as unknown as Activity;
 
     it("allows deleting manual activities", () => {
       const activity = create_activity("manual");

@@ -112,9 +112,9 @@ const {
   mock_competition_stages,
   mock_competition_stage_repository,
 } = vi.hoisted(() => {
-  const mock_competition_formats: Array<Record<string, unknown>> = [];
-  const mock_fixtures: Array<Record<string, unknown>> = [];
-  const mock_competition_stages: Array<Record<string, unknown>> = [];
+  const mock_competition_formats = [] as Array<Record<string, unknown>>;
+  const mock_fixtures = [] as Array<Record<string, unknown>>;
+  const mock_competition_stages = [] as Array<Record<string, unknown>>;
 
   return {
     create_empty_repo: () => ({
@@ -293,7 +293,33 @@ vi.mock("../../infrastructure/utils/SeedDataGenerator", () => ({
   create_seed_officials: vi.fn().mockReturnValue([]),
   create_seed_fixtures: vi.fn().mockReturnValue([]),
   create_seed_fixture_lineups: vi.fn().mockReturnValue([]),
-  create_seed_venues: vi.fn().mockReturnValue([]),
+  create_seed_venues: vi.fn().mockImplementation((organization_id: string) => [
+    {
+      id: "venue-dragon-stadium",
+      name: "Dragon Stadium",
+      organization_id,
+    },
+    {
+      id: "venue-thunder-arena",
+      name: "Thunder Arena",
+      organization_id,
+    },
+    {
+      id: "venue-eagle-nest",
+      name: "Eagle Nest",
+      organization_id,
+    },
+    {
+      id: "venue-storm-center",
+      name: "Storm Center",
+      organization_id,
+    },
+    {
+      id: "venue-international-hockey-arena",
+      name: "International Hockey Arena",
+      organization_id,
+    },
+  ]),
   create_seed_jersey_colors: vi.fn().mockReturnValue([]),
   create_seed_player_profiles: vi.fn().mockReturnValue([]),
   create_seed_profile_links: vi.fn().mockReturnValue([]),

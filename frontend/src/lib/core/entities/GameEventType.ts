@@ -10,7 +10,7 @@ import { get_scoring_and_discipline_event_types } from "./GameEventTypeScoringDe
 import type { CreateGameEventTypeInput } from "./GameEventTypeTypes";
 
 export function get_default_game_event_types(
-  organization_id: string,
+  organization_id: CreateGameEventTypeInput["organization_id"],
 ): CreateGameEventTypeInput[] {
   return [
     ...get_scoring_and_discipline_event_types(organization_id),

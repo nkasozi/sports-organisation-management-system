@@ -49,7 +49,7 @@ vi.mock("./fixtureLineupCreateData", () => ({
 import { initialize_fixture_lineup_create_page } from "./fixtureLineupCreatePageControllerInitialization";
 
 function create_auth_profile(organization_id: string): UserScopeProfile {
-  return { organization_id, team_id: "" };
+  return { organization_id, team_id: "" } as UserScopeProfile;
 }
 
 describe("fixtureLineupCreatePageControllerInitialization", () => {

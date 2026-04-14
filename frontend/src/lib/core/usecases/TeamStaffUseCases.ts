@@ -13,6 +13,7 @@ import type {
   TeamStaffRoleRepository,
   TeamStaffUseCasesPort,
 } from "../interfaces/ports";
+import type { ScalarValueInput } from "../types/DomainScalars";
 import type {
   AsyncResult,
   PaginatedAsyncResult,
@@ -37,7 +38,7 @@ export function create_team_staff_use_cases(
       return staff_repository.find_all(filter, pagination);
     },
 
-    async get_by_id(id: string): AsyncResult<TeamStaff> {
+    async get_by_id(id: ScalarValueInput<TeamStaff["id"]>): AsyncResult<TeamStaff> {
       if (!id || id.trim().length === 0) {
         return create_failure_result("Team staff ID is required");
       }
@@ -62,7 +63,7 @@ export function create_team_staff_use_cases(
     },
 
     async update(
-      id: string,
+      id: ScalarValueInput<TeamStaff["id"]>,
       input: UpdateTeamStaffInput,
     ): AsyncResult<TeamStaff> {
       if (!id || id.trim().length === 0) {
@@ -76,7 +77,7 @@ export function create_team_staff_use_cases(
       return create_success_result(result.data);
     },
 
-    async delete(id: string): AsyncResult<boolean> {
+    async delete(id: ScalarValueInput<TeamStaff["id"]>): AsyncResult<boolean> {
       if (!id || id.trim().length === 0) {
         return create_failure_result("Team staff ID is required");
       }
@@ -88,7 +89,7 @@ export function create_team_staff_use_cases(
     },
 
     async list_staff_by_team(
-      team_id: string,
+      team_id: ScalarValueInput<TeamStaff["team_id"]>,
       options?: QueryOptions,
     ): AsyncResult<PaginatedResult<TeamStaff>> {
       if (!team_id || team_id.trim().length === 0) {

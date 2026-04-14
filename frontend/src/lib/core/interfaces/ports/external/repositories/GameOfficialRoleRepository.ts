@@ -3,6 +3,7 @@ import type {
   GameOfficialRole,
   UpdateGameOfficialRoleInput,
 } from "../../../../entities/GameOfficialRole";
+import type { ScalarValueInput } from "../../../../types/DomainScalars";
 import type {
   AsyncResult,
   PaginatedAsyncResult,
@@ -11,11 +12,11 @@ import type { QueryOptions, Repository } from "./Repository";
 
 export interface GameOfficialRoleFilter {
   name_contains?: string;
-  sport_id?: string | null;
+  sport_id?: ScalarValueInput<GameOfficialRole["sport_id"]>;
   is_on_field?: boolean;
   is_head_official?: boolean;
   status?: GameOfficialRole["status"];
-  organization_id?: string;
+  organization_id?: ScalarValueInput<GameOfficialRole["organization_id"]>;
 }
 
 export interface GameOfficialRoleRepository extends Repository<
@@ -24,10 +25,12 @@ export interface GameOfficialRoleRepository extends Repository<
   UpdateGameOfficialRoleInput,
   GameOfficialRoleFilter
 > {
-  find_by_sport(sport_id: string | null): AsyncResult<GameOfficialRole[]>;
+  find_by_sport(
+    sport_id: ScalarValueInput<GameOfficialRole["sport_id"]>,
+  ): AsyncResult<GameOfficialRole[]>;
   find_head_officials(): AsyncResult<GameOfficialRole[]>;
   find_by_organization(
-    organization_id: string,
+    organization_id: ScalarValueInput<GameOfficialRole["organization_id"]>,
     options?: QueryOptions,
   ): PaginatedAsyncResult<GameOfficialRole>;
 }

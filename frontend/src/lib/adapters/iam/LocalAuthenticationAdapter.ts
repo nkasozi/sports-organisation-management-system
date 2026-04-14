@@ -3,7 +3,13 @@ import type {
   AuthenticationPort,
   AuthToken,
   AuthTokenPayload,
+  AuthTokenPayloadCore,
   AuthVerificationResult,
+  UserRole,
+} from "$lib/core/interfaces/ports";
+import {
+  create_auth_token_payload,
+  USER_ROLE_DISPLAY_NAMES,
 } from "$lib/core/interfaces/ports";
 import {
   create_failure_result,
@@ -28,6 +34,67 @@ const VERIFICATION_CACHE_MAX_ENTRIES = 50;
 const VERIFICATION_CACHE_TTL_MS = 30 * 60 * 1000;
 const TOKEN_EXPIRY_DAYS = 7;
 
+function is_user_role(value: unknown): value is UserRole {
+  return typeof value === "string" && value in USER_ROLE_DISPLAY_NAMES;
+}
+
+function parse_decoded_token_payload(
+  decoded_payload: unknown,
+): Result<AuthTokenPayload> {
+  if (typeof decoded_payload !== "object" || decoded_payload === null) {
+    return create_failure_result("Token payload is invalid");
+  }
+
+  const payload_record = decoded_payload as Record<string, unknown>;
+
+  if (typeof payload_record.user_id !== "string") {
+    return create_failure_result("Token payload is invalid");
+  }
+
+  if (typeof payload_record.email !== "string") {
+    return create_failure_result("Token payload is invalid");
+  }
+
+  if (typeof payload_record.display_name !== "string") {
+    return create_failure_result("Token payload is invalid");
+  }
+
+  if (!is_user_role(payload_record.role)) {
+    return create_failure_result("Token payload is invalid");
+  }
+
+  if (typeof payload_record.organization_id !== "string") {
+    return create_failure_result("Token payload is invalid");
+  }
+
+  if (typeof payload_record.team_id !== "string") {
+    return create_failure_result("Token payload is invalid");
+  }
+
+  if (typeof payload_record.issued_at !== "number") {
+    return create_failure_result("Token payload is invalid");
+  }
+
+  if (typeof payload_record.expires_at !== "number") {
+    return create_failure_result("Token payload is invalid");
+  }
+
+  return create_auth_token_payload({
+    user_id: payload_record.user_id,
+    email: payload_record.email,
+    display_name: payload_record.display_name,
+    role: payload_record.role,
+    organization_id: payload_record.organization_id,
+    team_id: payload_record.team_id,
+    issued_at: payload_record.issued_at,
+    expires_at: payload_record.expires_at,
+  });
+}
+
+function is_public_viewer_token_payload(payload: AuthTokenPayload): boolean {
+  return payload.role === "public_viewer";
+}
+
 export class LocalAuthenticationAdapter implements AuthenticationPort {
   private system_user_repository: InBrowserSystemUserRepository;
   private verification_cache: AuthCache<AuthVerificationResult>;
@@ -50,7 +117,7 @@ export class LocalAuthenticationAdapter implements AuthenticationPort {
   }
 
   async generate_token(
-    payload_input: Omit<AuthTokenPayload, "issued_at" | "expires_at">,
+    payload_input: AuthTokenPayloadCore,
   ): Promise<Result<AuthToken>> {
     const secret_key_result = get_local_auth_secret_key();
     if (!secret_key_result.success) return secret_key_result;
@@ -138,6 +205,16 @@ export class LocalAuthenticationAdapter implements AuthenticationPort {
       console.warn("[Auth] Token has expired", { event: "token_expired" });
       return { is_valid: false, error_message: "Token has expired" };
     }
+
+    if (is_public_viewer_token_payload(payload)) {
+      console.log("[Auth] Token verified", {
+        event: "token_verified",
+        user_id: payload.user_id,
+        role: payload.role,
+      });
+      return { is_valid: true, payload };
+    }
+
     const user_result = await this.system_user_repository.find_by_email(
       payload.email,
     );
@@ -163,8 +240,8 @@ export class LocalAuthenticationAdapter implements AuthenticationPort {
         "Token format is invalid (expected 3 parts)",
       );
     try {
-      return create_success_result(
-        JSON.parse(base64_url_decode(parts[1])) as AuthTokenPayload,
+      return parse_decoded_token_payload(
+        JSON.parse(base64_url_decode(parts[1])),
       );
     } catch (error) {
       console.error("[Auth] Failed to decode token", {

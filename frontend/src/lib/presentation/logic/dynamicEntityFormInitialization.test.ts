@@ -21,7 +21,7 @@ function create_field_metadata(
     is_required: false,
     is_read_only: false,
     ...overrides,
-  };
+  } as FieldMetadata;
 }
 
 function create_entity_metadata(
@@ -32,7 +32,7 @@ function create_entity_metadata(
     display_name: "Test Entity",
     fields: [],
     ...overrides,
-  };
+  } as EntityMetadata;
 }
 
 describe("dynamicEntityFormInitialization", () => {
@@ -55,7 +55,7 @@ describe("dynamicEntityFormInitialization", () => {
       name: "Existing Name",
       created_at: "2024-01-01T00:00:00Z",
       updated_at: "2024-01-01T00:00:00Z",
-    } as Partial<BaseEntity>;
+    } as unknown as Partial<BaseEntity>;
 
     const result = build_dynamic_form_initial_data(
       metadata,
@@ -107,7 +107,7 @@ describe("dynamicEntityFormInitialization", () => {
       id: "team_1",
       name: "Makers HC",
       logo_url: "data:image/png;base64,abc123",
-    } as Partial<BaseEntity>;
+    } as unknown as Partial<BaseEntity>;
 
     const first_key = create_dynamic_form_initialization_key({
       entity_type: "team",
@@ -130,7 +130,7 @@ describe("dynamicEntityFormInitialization", () => {
         id: "team_1",
         name: "Makers HC",
         logo_url: "data:image/png;base64,abc123",
-      } as Partial<BaseEntity>,
+      } as unknown as Partial<BaseEntity>,
       authorization_preselect: { organization_id: "org_1" },
     });
 
@@ -151,7 +151,7 @@ describe("dynamicEntityFormInitialization", () => {
       existing_data: {
         id: "team_1",
         name: "Original Name",
-      } as Partial<BaseEntity>,
+      } as unknown as Partial<BaseEntity>,
       authorization_preselect: { organization_id: "org_1" },
     });
     const second_key = create_dynamic_form_initialization_key({
@@ -160,7 +160,7 @@ describe("dynamicEntityFormInitialization", () => {
       existing_data: {
         id: "team_1",
         name: "Updated Name",
-      } as Partial<BaseEntity>,
+      } as unknown as Partial<BaseEntity>,
       authorization_preselect: { organization_id: "org_1" },
     });
 

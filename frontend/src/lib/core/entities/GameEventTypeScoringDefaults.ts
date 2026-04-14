@@ -1,7 +1,7 @@
 import type { CreateGameEventTypeInput } from "./GameEventTypeTypes";
 
 export function get_scoring_and_discipline_event_types(
-  organization_id: string,
+  organization_id: CreateGameEventTypeInput["organization_id"],
 ): CreateGameEventTypeInput[] {
   return [
     {

@@ -381,21 +381,21 @@ describe("build_filter_from_sub_entity_config", () => {
   });
 
   it("should build filter with foreign key field", () => {
-    const config: SubEntityFilter = {
+    const config =  {
       foreign_key_field: "team_id",
       foreign_key_value: "team-123",
-    };
+    } as SubEntityFilter;
     const result = build_filter_from_sub_entity_config(config);
     expect(result).toEqual({ team_id: "team-123" });
   });
 
   it("should include holder type fields when present", () => {
-    const config: SubEntityFilter = {
+    const config =  {
       foreign_key_field: "holder_id",
       foreign_key_value: "holder-456",
       holder_type_field: "holder_type",
       holder_type_value: "competition",
-    };
+    } as SubEntityFilter;
     const result = build_filter_from_sub_entity_config(config);
     expect(result).toEqual({
       holder_id: "holder-456",
@@ -404,11 +404,11 @@ describe("build_filter_from_sub_entity_config", () => {
   });
 
   it("should not include holder type when holder_type_field is missing", () => {
-    const config: SubEntityFilter = {
+    const config =  {
       foreign_key_field: "team_id",
       foreign_key_value: "team-123",
       holder_type_value: "competition",
-    };
+    } as SubEntityFilter;
     const result = build_filter_from_sub_entity_config(config);
     expect(result).toEqual({ team_id: "team-123" });
   });
@@ -864,21 +864,21 @@ describe("create_new_entity_with_defaults", () => {
   });
 
   it("should include foreign key from filter config", () => {
-    const filter: SubEntityFilter = {
+    const filter =  {
       foreign_key_field: "team_id",
       foreign_key_value: "team-123",
-    };
+    } as SubEntityFilter;
     const result = create_new_entity_with_defaults(filter);
     expect(result).toEqual({ id: "", team_id: "team-123" });
   });
 
   it("should include holder type from filter config", () => {
-    const filter: SubEntityFilter = {
+    const filter =  {
       foreign_key_field: "holder_id",
       foreign_key_value: "holder-456",
       holder_type_field: "holder_type",
       holder_type_value: "competition",
-    };
+    } as SubEntityFilter;
     const result = create_new_entity_with_defaults(filter);
     expect(result).toEqual({
       id: "",

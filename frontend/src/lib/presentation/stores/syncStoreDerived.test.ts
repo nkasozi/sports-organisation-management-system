@@ -6,7 +6,7 @@ import type { SyncProgress } from "$lib/infrastructure/sync/convexSyncService";
 import type { SyncState } from "./syncStoreTypes";
 
 const sync_store_mock = vi.hoisted(() => {
-  let current_value: SyncState = {
+  let current_value =  {
     is_configured: false,
     is_syncing: false,
     last_sync_at: null,
@@ -15,7 +15,7 @@ const sync_store_mock = vi.hoisted(() => {
     auto_sync_enabled: false,
     error_message: null,
     has_pending_conflicts: false,
-  };
+  } as SyncState;
   const subscribers = new Set<(value: SyncState) => void>();
 
   return {
@@ -72,7 +72,7 @@ describe("syncStoreDerived", () => {
   });
 
   it("projects active sync progress, timestamps, and conflict flags", () => {
-    const progress: SyncProgress = {
+    const progress =  {
       percentage: 45,
       status: "syncing",
       table_name: "players",
@@ -81,7 +81,7 @@ describe("syncStoreDerived", () => {
       error_message: null,
       tables_completed: 1,
       total_tables: 3,
-    };
+    } as SyncProgress;
 
     sync_store_mock.set_state({
       is_configured: true,

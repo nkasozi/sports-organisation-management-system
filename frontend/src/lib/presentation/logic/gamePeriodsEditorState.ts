@@ -1,9 +1,12 @@
 import type { SportGamePeriod } from "$lib/core/entities/Sport";
+import type { ScalarInput } from "$lib/core/types/DomainScalars";
+
+type EditableSportGamePeriod = ScalarInput<SportGamePeriod>;
 
 export type PeriodPreset = "halves" | "quarters" | "thirds";
 
-export function build_game_period_editor_summary(periods: SportGamePeriod[]): {
-  sorted_periods: SportGamePeriod[];
+export function build_game_period_editor_summary(periods: EditableSportGamePeriod[]): {
+  sorted_periods: EditableSportGamePeriod[];
   total_break_time: number;
   total_playing_time: number;
   total_time: number;
@@ -30,8 +33,8 @@ export function build_game_period_editor_summary(periods: SportGamePeriod[]): {
 }
 
 export function append_game_period(
-  periods: SportGamePeriod[],
-): SportGamePeriod[] {
+  periods: EditableSportGamePeriod[],
+): EditableSportGamePeriod[] {
   const next_order = get_next_period_order(periods);
   return [
     ...periods,
@@ -46,8 +49,8 @@ export function append_game_period(
 }
 
 export function append_game_break(
-  periods: SportGamePeriod[],
-): SportGamePeriod[] {
+  periods: EditableSportGamePeriod[],
+): EditableSportGamePeriod[] {
   const next_order = get_next_period_order(periods);
   return [
     ...periods,
@@ -62,47 +65,47 @@ export function append_game_break(
 }
 
 export function remove_game_period(
-  periods: SportGamePeriod[],
+  periods: EditableSportGamePeriod[],
   period_id: string,
-): SportGamePeriod[] {
+): EditableSportGamePeriod[] {
   return reorder_game_periods(
     periods.filter((period) => period.id !== period_id),
   );
 }
 
 export function move_game_period_up(
-  periods: SportGamePeriod[],
+  periods: EditableSportGamePeriod[],
   period_id: string,
-): SportGamePeriod[] {
+): EditableSportGamePeriod[] {
   const current_index = periods.findIndex((period) => period.id === period_id);
   if (current_index <= 0) return periods;
   return swap_game_period_orders(periods, current_index, current_index - 1);
 }
 
 export function move_game_period_down(
-  periods: SportGamePeriod[],
+  periods: EditableSportGamePeriod[],
   period_id: string,
-): SportGamePeriod[] {
+): EditableSportGamePeriod[] {
   const current_index = periods.findIndex((period) => period.id === period_id);
   if (current_index < 0 || current_index >= periods.length - 1) return periods;
   return swap_game_period_orders(periods, current_index, current_index + 1);
 }
 
 export function rename_game_period(
-  periods: SportGamePeriod[],
+  periods: EditableSportGamePeriod[],
   period_id: string,
   name: string,
-): SportGamePeriod[] {
+): EditableSportGamePeriod[] {
   return periods.map((period) =>
     period.id === period_id ? { ...period, name } : period,
   );
 }
 
 export function set_game_period_duration(
-  periods: SportGamePeriod[],
+  periods: EditableSportGamePeriod[],
   period_id: string,
   duration_minutes: number,
-): SportGamePeriod[] {
+): EditableSportGamePeriod[] {
   return periods.map((period) =>
     period.id === period_id ? { ...period, duration_minutes } : period,
   );
@@ -110,7 +113,7 @@ export function set_game_period_duration(
 
 export function build_game_period_preset(
   preset: PeriodPreset,
-): SportGamePeriod[] {
+): EditableSportGamePeriod[] {
   switch (preset) {
     case "halves":
       return [
@@ -139,13 +142,17 @@ export function build_game_period_preset(
   }
 }
 
-function sort_game_periods(periods: SportGamePeriod[]): SportGamePeriod[] {
+function sort_game_periods(
+  periods: EditableSportGamePeriod[],
+): EditableSportGamePeriod[] {
   return [...periods].sort(
     (left_period, right_period) => left_period.order - right_period.order,
   );
 }
 
-function reorder_game_periods(periods: SportGamePeriod[]): SportGamePeriod[] {
+function reorder_game_periods(
+  periods: EditableSportGamePeriod[],
+): EditableSportGamePeriod[] {
   return sort_game_periods(periods).map((period, index) => ({
     ...period,
     order: index + 1,
@@ -153,10 +160,10 @@ function reorder_game_periods(periods: SportGamePeriod[]): SportGamePeriod[] {
 }
 
 function swap_game_period_orders(
-  periods: SportGamePeriod[],
+  periods: EditableSportGamePeriod[],
   first_index: number,
   second_index: number,
-): SportGamePeriod[] {
+): EditableSportGamePeriod[] {
   const reordered_periods = periods.map((period) => ({ ...period }));
   const first_order = reordered_periods[first_index].order;
   reordered_periods[first_index].order = reordered_periods[second_index].order;
@@ -164,14 +171,14 @@ function swap_game_period_orders(
   return reorder_game_periods(reordered_periods);
 }
 
-function get_next_period_order(periods: SportGamePeriod[]): number {
+function get_next_period_order(periods: EditableSportGamePeriod[]): number {
   return periods.length > 0
     ? Math.max(...periods.map((period) => period.order)) + 1
     : 1;
 }
 
 function build_custom_period_id(
-  periods: SportGamePeriod[],
+  periods: EditableSportGamePeriod[],
   prefix: "break" | "period",
 ): string {
   const next_sequence = periods.reduce((current_maximum, period) => {
@@ -190,6 +197,6 @@ function create_preset_period(
   duration_minutes: number,
   is_break: boolean,
   order: number,
-): SportGamePeriod {
+): EditableSportGamePeriod {
   return { id, name, duration_minutes, is_break, order };
 }

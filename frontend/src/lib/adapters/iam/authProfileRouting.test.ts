@@ -32,12 +32,7 @@ afterEach(() => {
 
 describe("authProfileRouting", () => {
   it("returns cached sidebar menus without re-verifying tokens", async () => {
-    const cached_result: Result<
-      Array<{
-        group_name: string;
-        items: Array<{ href: string; icon: string; name: string }>;
-      }>
-    > = {
+    const cached_result =  {
       success: true,
       data: [
         {
@@ -45,7 +40,12 @@ describe("authProfileRouting", () => {
           items: [{ href: "/", icon: "home", name: "Dashboard" }],
         },
       ],
-    };
+    } as Result<
+      Array<{
+        group_name: string;
+        items: Array<{ href: string; icon: string; name: string }>;
+      }>
+    >;
     const auth_port = {
       verify_token: vi.fn(),
     };

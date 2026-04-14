@@ -1,9 +1,12 @@
 <script lang="ts">
     import type { OfficialAssignment } from "$lib/core/entities/FixtureDetailsSetup";
+    import type { ScalarInput } from "$lib/core/types/DomainScalars";
     import SearchableSelectField from "$lib/presentation/components/ui/SearchableSelectField.svelte";
     import type { SelectOption } from "$lib/presentation/logic/officialAssignmentArrayState";
 
-    export let assignment: OfficialAssignment;
+    type EditableOfficialAssignment = ScalarInput<OfficialAssignment>;
+
+    export let assignment: EditableOfficialAssignment;
     export let index: number;
     export let disabled: boolean;
     export let available_officials: SelectOption[];
@@ -20,7 +23,7 @@
     export let on_remove: (index: number) => void;
 
     interface $$Props {
-        assignment: OfficialAssignment;
+        assignment: EditableOfficialAssignment;
         index: number;
         disabled: boolean;
         available_officials: SelectOption[];
@@ -31,7 +34,7 @@
         can_remove: boolean;
         on_change: (
             index: number,
-            field: keyof OfficialAssignment,
+            field: keyof EditableOfficialAssignment,
             value: string,
         ) => void;
         on_remove: (index: number) => void;

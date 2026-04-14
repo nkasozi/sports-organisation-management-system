@@ -1,7 +1,8 @@
 import type { Competition } from "$lib/core/entities/Competition";
 import type { Organization } from "$lib/core/entities/Organization";
-import type { UserRole, UserScopeProfile } from "$lib/core/interfaces/ports";
+import type { UserRole } from "$lib/core/interfaces/ports";
 import { fetch_public_data_from_convex } from "$lib/infrastructure/sync/convexPublicDataService";
+import type { UserProfile } from "$lib/presentation/stores/auth";
 
 import { ensure_auth_profile } from "./authGuard";
 import { competition_results_page_dependencies } from "./competitionResultsPageControllerDependencies";
@@ -19,7 +20,7 @@ import {
 export function create_competition_results_page_controller_runtime(command: {
   apply_bundle: (bundle: CompetitionResultsSelectedBundle) => void;
   get_auth_state: () => {
-    current_profile: (UserScopeProfile & { role?: UserRole }) | null;
+    current_profile: (UserProfile & { role?: UserRole }) | null;
   };
   get_is_public: () => boolean;
   get_organizations: () => Organization[];

@@ -1,6 +1,7 @@
 import type { Activity } from "../entities/Activity";
 import { can_delete_activity, can_edit_activity } from "../entities/Activity";
 import type { ActivityCategory } from "../entities/ActivityCategory";
+import type { ScalarValueInput } from "../types/DomainScalars";
 import type {
   ActivityFilter,
   CalendarDateRange,
@@ -13,7 +14,7 @@ const UNKNOWN_CATEGORY_NAME = "Unknown";
 export function build_activity_date_range_filter(command: {
   date_range: CalendarDateRange;
   filter?: ActivityFilter;
-  organization_id: string;
+  organization_id: ScalarValueInput<Activity["organization_id"]>;
 }): ActivityFilter {
   return {
     ...command.filter,
@@ -25,15 +26,15 @@ export function build_activity_date_range_filter(command: {
 
 export function create_activity_categories_map(
   categories: ActivityCategory[],
-): Map<string, ActivityCategory> {
-  return new Map<string, ActivityCategory>(
+): Map<ActivityCategory["id"], ActivityCategory> {
+  return new Map<ActivityCategory["id"], ActivityCategory>(
     categories.map((category: ActivityCategory) => [category.id, category]),
   );
 }
 
 export function map_activities_to_calendar_events(
   activities: Activity[],
-  categories_map: Map<string, ActivityCategory>,
+  categories_map: Map<ActivityCategory["id"], ActivityCategory>,
 ): CalendarEvent[] {
   return activities.map((activity: Activity) => {
     const category = categories_map.get(activity.category_id);

@@ -7,6 +7,7 @@ import type {
   AsyncResult,
   PaginatedAsyncResult,
 } from "../../../../types/Result";
+import type { ScalarValueInput } from "../../../../types/DomainScalars";
 import type { OfficialPerformanceRatingFilter } from "../../external/repositories/OfficialPerformanceRatingRepository";
 import type { QueryOptions } from "../../external/repositories/Repository";
 
@@ -16,13 +17,17 @@ export interface OfficialPerformanceRatingUseCasesPort {
   ): AsyncResult<OfficialPerformanceRating>;
 
   update(
-    id: string,
+    id: ScalarValueInput<OfficialPerformanceRating["id"]>,
     input: UpdateOfficialPerformanceRatingInput,
   ): AsyncResult<OfficialPerformanceRating>;
 
-  delete(id: string): AsyncResult<boolean>;
+  delete(
+    id: ScalarValueInput<OfficialPerformanceRating["id"]>,
+  ): AsyncResult<boolean>;
 
-  get_by_id(id: string): AsyncResult<OfficialPerformanceRating>;
+  get_by_id(
+    id: ScalarValueInput<OfficialPerformanceRating["id"]>,
+  ): AsyncResult<OfficialPerformanceRating>;
 
   list(
     filter?: OfficialPerformanceRatingFilter | Record<string, string>,
@@ -30,11 +35,11 @@ export interface OfficialPerformanceRatingUseCasesPort {
   ): PaginatedAsyncResult<OfficialPerformanceRating>;
 
   list_by_official(
-    official_id: string,
+    official_id: ScalarValueInput<OfficialPerformanceRating["official_id"]>,
   ): PaginatedAsyncResult<OfficialPerformanceRating>;
 
   list_by_fixture(
-    fixture_id: string,
+    fixture_id: ScalarValueInput<OfficialPerformanceRating["fixture_id"]>,
   ): PaginatedAsyncResult<OfficialPerformanceRating>;
 
   list_all(): PaginatedAsyncResult<OfficialPerformanceRating>;

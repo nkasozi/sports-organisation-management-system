@@ -74,7 +74,7 @@ function build_profile(
     organization_name: "City Hawks",
     team_id: "team-1",
     ...overrides,
-  };
+  } as Record<string, unknown>;
 }
 
 function build_auth_state(
@@ -88,7 +88,7 @@ function build_auth_state(
     is_initialized: false,
     is_demo_session: false,
     ...overrides,
-  };
+  } as Record<string, unknown>;
 }
 
 describe("authInitialize", () => {

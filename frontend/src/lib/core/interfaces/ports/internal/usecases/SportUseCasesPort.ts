@@ -3,6 +3,7 @@ import type {
   Sport,
   UpdateSportInput,
 } from "../../../../entities/Sport";
+import type { ScalarValueInput } from "../../../../types/DomainScalars";
 import type { AsyncResult } from "../../../../types/Result";
 import type { BaseUseCasesPort } from "./BaseUseCasesPort";
 
@@ -11,5 +12,5 @@ export interface SportUseCasesPort extends BaseUseCasesPort<
   CreateSportInput,
   UpdateSportInput
 > {
-  delete_sports(ids: string[]): AsyncResult<number>;
+  delete_sports(ids: Array<ScalarValueInput<Sport["id"]>>): AsyncResult<number>;
 }

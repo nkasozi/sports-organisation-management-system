@@ -1,11 +1,16 @@
+import type {
+  EntityId,
+  IsoDateString,
+  ScalarInput,
+} from "../types/DomainScalars";
 import type { BaseEntity, EntityStatus } from "./BaseEntity";
 
 export interface OfficialAssociatedTeam extends BaseEntity {
-  official_id: string;
-  team_id: string;
+  official_id: EntityId;
+  team_id: EntityId;
   association_type: OfficialTeamAssociationType;
-  start_date: string;
-  end_date: string;
+  start_date: IsoDateString;
+  end_date: IsoDateString;
   notes: string;
   status: EntityStatus;
 }
@@ -26,7 +31,7 @@ export const OFFICIAL_TEAM_ASSOCIATION_TYPE_OPTIONS = [
 ];
 
 export type CreateOfficialAssociatedTeamInput = Omit<
-  OfficialAssociatedTeam,
+  ScalarInput<OfficialAssociatedTeam>,
   "id" | "created_at" | "updated_at"
 >;
 
@@ -34,7 +39,7 @@ export type UpdateOfficialAssociatedTeamInput =
   Partial<CreateOfficialAssociatedTeamInput>;
 
 function create_empty_official_associated_team_input(
-  official_id: string = "",
+  official_id: CreateOfficialAssociatedTeamInput["official_id"] = "",
 ): CreateOfficialAssociatedTeamInput {
   return {
     official_id,

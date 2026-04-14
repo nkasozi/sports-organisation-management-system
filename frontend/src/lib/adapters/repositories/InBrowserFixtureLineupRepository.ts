@@ -42,7 +42,7 @@ export class InBrowserFixtureLineupRepository
 
   protected create_entity_from_input(
     input: CreateFixtureLineupInput,
-    id: string,
+    id: FixtureLineup["id"],
     timestamps: Pick<BaseEntity, "created_at" | "updated_at">,
   ): FixtureLineup {
     const now = new Date().toISOString();
@@ -61,7 +61,7 @@ export class InBrowserFixtureLineupRepository
       submitted_by: input.submitted_by || "",
       submitted_at: input.submitted_at || (is_submitted_or_locked ? now : ""),
       notes: input.notes || "",
-    };
+    } as FixtureLineup;
   }
 
   protected apply_updates_to_entity(
@@ -84,7 +84,7 @@ export class InBrowserFixtureLineupRepository
       ...entity,
       ...updates,
       submitted_at: submitted_at_value,
-    };
+    } as FixtureLineup;
   }
 
   protected apply_entity_filter(
@@ -132,7 +132,7 @@ export class InBrowserFixtureLineupRepository
   }
 
   async get_lineups_for_fixture(
-    fixture_id: string,
+    fixture_id: FixtureLineup["fixture_id"],
   ): AsyncResult<FixtureLineup[]> {
     const result = await this.find_all({ fixture_id });
     if (!result.success) {
@@ -142,8 +142,8 @@ export class InBrowserFixtureLineupRepository
   }
 
   async get_lineup_for_team_in_fixture(
-    fixture_id: string,
-    team_id: string,
+    fixture_id: FixtureLineup["fixture_id"],
+    team_id: FixtureLineup["team_id"],
   ): AsyncResult<FixtureLineup> {
     const result = await this.find_all({ fixture_id, team_id });
     if (!result.success) {
@@ -158,15 +158,15 @@ export class InBrowserFixtureLineupRepository
   }
 
   async find_by_fixture(
-    fixture_id: string,
+    fixture_id: FixtureLineup["fixture_id"],
     options?: { page: number; page_size: number },
   ): PaginatedAsyncResult<FixtureLineup> {
     return this.find_all({ fixture_id }, this.build_query_options(options));
   }
 
   async find_by_fixture_and_team(
-    fixture_id: string,
-    team_id: string,
+    fixture_id: FixtureLineup["fixture_id"],
+    team_id: FixtureLineup["team_id"],
     options?: { page: number; page_size: number },
   ): PaginatedAsyncResult<FixtureLineup> {
     return this.find_all(
@@ -176,7 +176,7 @@ export class InBrowserFixtureLineupRepository
   }
 }
 
-function create_default_fixture_lineups(): FixtureLineup[] {
+function create_default_fixture_lineups(): import("$lib/core/types/DomainScalars").ScalarInput<FixtureLineup>[] {
   return [];
 }
 

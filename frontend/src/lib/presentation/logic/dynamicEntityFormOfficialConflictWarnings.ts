@@ -3,6 +3,7 @@ import {
   type OfficialAssignment,
   type OfficialWithAssociations,
 } from "../../core/entities/FixtureDetailsSetup";
+import type { EntityId, Name } from "../../core/types/DomainScalars";
 
 type ReadByIdUseCases = {
   get_by_id: (id: string) => Promise<{ success: boolean; data?: unknown }>;
@@ -72,10 +73,10 @@ export async function load_dynamic_form_official_conflict_warnings(
   return detect_official_team_conflicts(
     assigned_officials,
     officials_with_associations,
-    fixture.home_team_id ?? "",
-    fixture.away_team_id ?? "",
-    home_team_name,
-    away_team_name,
+    (fixture.home_team_id ?? "") as unknown as EntityId,
+    (fixture.away_team_id ?? "") as unknown as EntityId,
+    home_team_name as unknown as Name,
+    away_team_name as unknown as Name,
   ).map((warning) => warning.message);
 }
 
@@ -117,7 +118,7 @@ async function build_official_with_associations(
     last_name: last_name_parts.join(" ") || "",
     associated_team_ids,
     association_details,
-  };
+  } as unknown as OfficialWithAssociations;
 }
 
 async function load_official_name(

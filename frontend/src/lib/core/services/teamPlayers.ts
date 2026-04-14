@@ -1,6 +1,7 @@
 import type { Player } from "$lib/core/entities/Player";
 import type { PlayerPosition } from "$lib/core/entities/PlayerPosition";
 import type { PlayerTeamMembership } from "$lib/core/entities/PlayerTeamMembership";
+import type { ScalarValueInput } from "$lib/core/types/DomainScalars";
 
 import { MEMBERSHIP_STATUS } from "../entities/StatusConstants";
 
@@ -11,7 +12,7 @@ export type TeamPlayer = Player & {
 
 export function build_position_name_by_id(
   positions: PlayerPosition[],
-): Map<string, string> {
+): Map<PlayerPosition["id"], PlayerPosition["name"]> {
   return new Map(
     positions
       .filter((position) => Boolean(position.id && position.name))
@@ -21,7 +22,7 @@ export function build_position_name_by_id(
 
 export function pick_best_membership_for_player(
   memberships: PlayerTeamMembership[],
-  player_id: string,
+  player_id: ScalarValueInput<Player["id"]>,
 ): PlayerTeamMembership | null {
   const candidates = memberships
     .filter((membership) => membership.player_id === player_id)
@@ -37,7 +38,7 @@ export function pick_best_membership_for_player(
 export function build_team_players(
   players: Player[],
   memberships: PlayerTeamMembership[],
-  position_name_by_id: Map<string, string>,
+  position_name_by_id: Map<PlayerPosition["id"], PlayerPosition["name"]>,
 ): TeamPlayer[] {
   return players.map((player) => {
     const membership = pick_best_membership_for_player(memberships, player.id);

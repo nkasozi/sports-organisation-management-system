@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { CreateSportInput, Sport } from "../entities/Sport";
 import type { SportRepository } from "../interfaces/ports";
+import type { ScalarInput } from "../types/DomainScalars";
 import { create_sport_use_cases } from "./SportUseCases";
 
 function create_mock_repository(): SportRepository {
@@ -14,10 +15,12 @@ function create_mock_repository(): SportRepository {
     delete_by_ids: vi.fn(),
     find_by_ids: vi.fn(),
     count: vi.fn(),
-  };
+  } as SportRepository;
 }
 
-function create_test_sport(overrides: Partial<Sport> = {}): Sport {
+function create_test_sport(
+  overrides: Partial<ScalarInput<Sport>> = {},
+): Sport {
   return {
     id: "sport-123",
     name: "Football",
@@ -53,7 +56,7 @@ function create_test_sport(overrides: Partial<Sport> = {}): Sport {
     created_at: "2024-01-01T00:00:00Z",
     updated_at: "2024-01-01T00:00:00Z",
     ...overrides,
-  };
+  } as unknown as Sport;
 }
 
 function create_valid_input(
@@ -91,7 +94,7 @@ function create_valid_input(
     additional_rules: {},
     status: "active",
     ...overrides,
-  };
+  } as CreateSportInput;
 }
 
 describe("SportUseCases", () => {

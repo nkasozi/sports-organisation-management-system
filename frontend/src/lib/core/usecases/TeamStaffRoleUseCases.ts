@@ -26,7 +26,7 @@ export function create_team_staff_role_use_cases(
       return repository.find_all(filter, pagination);
     },
 
-    async get_by_id(id: string): AsyncResult<TeamStaffRole> {
+    async get_by_id(id: TeamStaffRole["id"]): AsyncResult<TeamStaffRole> {
       if (!id || id.trim().length === 0) {
         return create_failure_result("Staff role ID is required");
       }
@@ -51,7 +51,7 @@ export function create_team_staff_role_use_cases(
     },
 
     async update(
-      id: string,
+      id: TeamStaffRole["id"],
       input: UpdateTeamStaffRoleInput,
     ): AsyncResult<TeamStaffRole> {
       if (!id || id.trim().length === 0) {
@@ -70,7 +70,7 @@ export function create_team_staff_role_use_cases(
       return create_success_result(result.data);
     },
 
-    async delete(id: string): AsyncResult<boolean> {
+    async delete(id: TeamStaffRole["id"]): AsyncResult<boolean> {
       if (!id || id.trim().length === 0) {
         return create_failure_result("Staff role ID is required");
       }

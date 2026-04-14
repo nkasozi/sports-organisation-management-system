@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
+import type { ScalarInput } from "$lib/core/types/DomainScalars";
+
 import {
   auto_generate_live_game_lineup,
   ensure_live_game_lineups_before_start,
@@ -32,7 +34,7 @@ describe("liveGameDetailLineupActions", () => {
   >;
 
   function create_lineup_player(
-    overrides: Partial<UpdatedPlayers[number]> = {},
+    overrides: Partial<ScalarInput<UpdatedPlayers[number]>> = {},
   ): UpdatedPlayers[number] {
     return {
       id: "player-1",
@@ -44,13 +46,13 @@ describe("liveGameDetailLineupActions", () => {
       is_substitute: false,
       time_on: undefined,
       ...overrides,
-    };
+    } as unknown as UpdatedPlayers[number];
   }
 
   it("updates only the selected player time-on value and persists the revised lineup", async () => {
-    const fixture_lineup_use_cases: Pick<FixtureLineupUseCases, "update"> = {
+    const fixture_lineup_use_cases =  {
       update: vi.fn().mockResolvedValue({ success: true }),
-    };
+    } as Pick<FixtureLineupUseCases, "update">;
 
     const result = await update_live_game_player_time_on(
       "lineup-1",
@@ -79,7 +81,7 @@ describe("liveGameDetailLineupActions", () => {
   });
 
   it("auto-generates a lineup from active memberships and fills missing player details with fallbacks", async () => {
-    const player_membership_use_cases: Pick<PlayerMembershipUseCases, "list"> =
+    const player_membership_use_cases =
       {
         list: vi.fn().mockResolvedValue({
           success: true,
@@ -91,8 +93,8 @@ describe("liveGameDetailLineupActions", () => {
             ],
           },
         }),
-      };
-    const player_use_cases: Pick<PlayerUseCases, "get_by_id"> = {
+      } as Pick<PlayerMembershipUseCases, "list">;
+    const player_use_cases =  {
       get_by_id: vi.fn().mockImplementation(async (player_id: string) =>
         player_id === "player-1"
           ? {
@@ -101,13 +103,13 @@ describe("liveGameDetailLineupActions", () => {
             }
           : { success: false, error: "Missing" },
       ),
-    };
-    const fixture_lineup_use_cases: Pick<
+    } as Pick<PlayerUseCases, "get_by_id">;
+    const fixture_lineup_use_cases =  {
+      create: vi.fn().mockResolvedValue({ success: true }),
+    } as Pick<
       Parameters<typeof auto_generate_live_game_lineup>[4],
       "create"
-    > = {
-      create: vi.fn().mockResolvedValue({ success: true }),
-    };
+    >;
 
     const result = await auto_generate_live_game_lineup(
       {
@@ -154,8 +156,8 @@ describe("liveGameDetailLineupActions", () => {
     } as EnsureFixture;
     const home_team = { name: "Lions" } as EnsureTeam;
     const away_team = { name: "Tigers" } as EnsureTeam;
-    const home_players: EnsureHomePlayers = [];
-    const away_players: EnsureAwayPlayers = [];
+    const home_players =  [] as EnsureHomePlayers;
+    const away_players =  [] as EnsureAwayPlayers;
 
     await expect(
       ensure_live_game_lineups_before_start(
@@ -177,7 +179,7 @@ describe("liveGameDetailLineupActions", () => {
   });
 
   it("auto-generates a missing lineup and asks the caller to reload before game start", async () => {
-    const player_membership_use_cases: Pick<PlayerMembershipUseCases, "list"> =
+    const player_membership_use_cases =
       {
         list: vi.fn().mockResolvedValue({
           success: true,
@@ -187,19 +189,19 @@ describe("liveGameDetailLineupActions", () => {
             ],
           },
         }),
-      };
-    const player_use_cases: Pick<PlayerUseCases, "get_by_id"> = {
+      } as Pick<PlayerMembershipUseCases, "list">;
+    const player_use_cases =  {
       get_by_id: vi.fn().mockResolvedValue({
         success: true,
         data: { id: "player-1", first_name: "Ada", last_name: "Stone" },
       }),
-    };
-    const fixture_lineup_use_cases: Pick<
+    } as Pick<PlayerUseCases, "get_by_id">;
+    const fixture_lineup_use_cases =  {
+      create: vi.fn().mockResolvedValue({ success: true }),
+    } as Pick<
       Parameters<typeof auto_generate_live_game_lineup>[4],
       "create"
-    > = {
-      create: vi.fn().mockResolvedValue({ success: true }),
-    };
+    >;
 
     await expect(
       ensure_live_game_lineups_before_start(

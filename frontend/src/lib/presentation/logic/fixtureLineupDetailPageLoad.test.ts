@@ -6,6 +6,7 @@ import type { Player } from "$lib/core/entities/Player";
 import type { PlayerPosition } from "$lib/core/entities/PlayerPosition";
 import type { PlayerTeamMembership } from "$lib/core/entities/PlayerTeamMembership";
 import type { Team } from "$lib/core/entities/Team";
+import type { ScalarInput } from "$lib/core/types/DomainScalars";
 import {
   create_failure_result,
   create_success_result,
@@ -16,7 +17,9 @@ import {
   load_fixture_lineup_detail_page_data,
 } from "./fixtureLineupDetailPageLoad";
 
-function create_lineup(overrides: Partial<FixtureLineup> = {}): FixtureLineup {
+function create_lineup(
+  overrides: Partial<ScalarInput<FixtureLineup>> = {},
+): FixtureLineup {
   return {
     id: "lineup_1",
     organization_id: "org_1",
@@ -30,10 +33,10 @@ function create_lineup(overrides: Partial<FixtureLineup> = {}): FixtureLineup {
     created_at: "2026-01-01T00:00:00Z",
     updated_at: "2026-01-01T00:00:00Z",
     ...overrides,
-  };
+  } as unknown as FixtureLineup;
 }
 
-function create_fixture(overrides: Partial<Fixture> = {}): Fixture {
+function create_fixture(overrides: Partial<ScalarInput<Fixture>> = {}): Fixture {
   return {
     id: "fixture_1",
     organization_id: "org_1",
@@ -51,10 +54,10 @@ function create_fixture(overrides: Partial<Fixture> = {}): Fixture {
     created_at: "2026-01-01T00:00:00Z",
     updated_at: "2026-01-01T00:00:00Z",
     ...overrides,
-  } as Fixture;
+  } as unknown as Fixture;
 }
 
-function create_team(overrides: Partial<Team> = {}): Team {
+function create_team(overrides: Partial<ScalarInput<Team>> = {}): Team {
   return {
     id: "team_1",
     name: "Lions",
@@ -75,10 +78,10 @@ function create_team(overrides: Partial<Team> = {}): Team {
     created_at: "2026-01-01T00:00:00Z",
     updated_at: "2026-01-01T00:00:00Z",
     ...overrides,
-  };
+  } as unknown as Team;
 }
 
-function create_player(overrides: Partial<Player> = {}): Player {
+function create_player(overrides: Partial<ScalarInput<Player>> = {}): Player {
   return {
     id: "player_1",
     first_name: "Jordan",
@@ -100,11 +103,11 @@ function create_player(overrides: Partial<Player> = {}): Player {
     created_at: "2026-01-01T00:00:00Z",
     updated_at: "2026-01-01T00:00:00Z",
     ...overrides,
-  };
+  } as unknown as Player;
 }
 
 function create_membership(
-  overrides: Partial<PlayerTeamMembership> = {},
+  overrides: Partial<ScalarInput<PlayerTeamMembership>> = {},
 ): PlayerTeamMembership {
   return {
     id: "membership_1",
@@ -117,11 +120,11 @@ function create_membership(
     created_at: "2026-01-01T00:00:00Z",
     updated_at: "2026-01-01T00:00:00Z",
     ...overrides,
-  };
+  } as unknown as PlayerTeamMembership;
 }
 
 function create_position(
-  overrides: Partial<PlayerPosition> = {},
+  overrides: Partial<ScalarInput<PlayerPosition>> = {},
 ): PlayerPosition {
   return {
     id: "position_1",
@@ -137,7 +140,7 @@ function create_position(
     created_at: "2026-01-01T00:00:00Z",
     updated_at: "2026-01-01T00:00:00Z",
     ...overrides,
-  };
+  } as unknown as PlayerPosition;
 }
 
 function create_paginated_result<TData>(items: TData[]) {
@@ -175,7 +178,7 @@ function create_dependencies(
       create_paginated_result([create_membership()]),
     list_positions: async () => create_paginated_result([create_position()]),
     ...overrides,
-  };
+  } as FixtureLineupDetailPageDependencies;
 }
 
 describe("load_fixture_lineup_detail_page_data", () => {

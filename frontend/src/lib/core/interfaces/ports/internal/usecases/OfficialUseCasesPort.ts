@@ -4,6 +4,11 @@ import type {
   UpdateOfficialInput,
 } from "../../../../entities/Official";
 import type {
+  EntityId,
+  IsoDateString,
+  ScalarValueInput,
+} from "../../../../types/DomainScalars";
+import type {
   AsyncResult,
   PaginatedAsyncResult,
 } from "../../../../types/Result";
@@ -17,18 +22,20 @@ export interface OfficialUseCasesPort extends BaseUseCasesPort<
   UpdateOfficialInput,
   OfficialFilter
 > {
-  delete_officials(ids: string[]): AsyncResult<number>;
+  delete_officials(
+    ids: Array<ScalarValueInput<Official["id"]>>,
+  ): AsyncResult<number>;
   list_officials_by_organization(
-    organization_id: string,
+    organization_id: ScalarValueInput<Official["organization_id"]>,
     options?: QueryOptions,
   ): PaginatedAsyncResult<Official>;
   list_officials_by_role_id(
-    role_id: string,
+    role_id: ScalarValueInput<EntityId>,
     options?: QueryOptions,
   ): PaginatedAsyncResult<Official>;
   list_available_officials(
-    date: string,
-    organization_id?: string,
+    date: ScalarValueInput<IsoDateString>,
+    organization_id?: ScalarValueInput<Official["organization_id"]>,
     options?: QueryOptions,
   ): PaginatedAsyncResult<Official>;
 }

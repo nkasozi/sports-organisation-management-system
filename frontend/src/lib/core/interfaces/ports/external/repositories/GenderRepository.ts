@@ -7,8 +7,8 @@ import type { PaginatedAsyncResult } from "../../../../types/Result";
 import type { QueryOptions, Repository } from "./Repository";
 
 export interface GenderFilter {
-  status?: string;
-  organization_id?: string;
+  status?: Gender["status"];
+  organization_id?: Gender["organization_id"];
 }
 
 export interface GenderRepository extends Repository<
@@ -19,7 +19,7 @@ export interface GenderRepository extends Repository<
 > {
   find_active_genders(options?: QueryOptions): PaginatedAsyncResult<Gender>;
   find_by_organization(
-    organization_id: string,
+    organization_id: Gender["organization_id"],
     options?: QueryOptions,
   ): PaginatedAsyncResult<Gender>;
 }

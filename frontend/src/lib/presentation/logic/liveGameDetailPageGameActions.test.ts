@@ -25,7 +25,7 @@ describe("liveGameDetailPageGameActions", () => {
       is_captain: false,
       is_substitute: false,
       time_on: undefined,
-    };
+    } as StartCommand["home_players"][number];
   }
 
   it("starts a fixture session through the shell export when lineups are already present", async () => {
@@ -66,16 +66,16 @@ describe("liveGameDetailPageGameActions", () => {
   });
 
   it("records the final whistle and ends the game through the shell export", async () => {
-    const fixture_use_cases: Pick<
-      EndCommand["fixture_use_cases"],
-      "end_fixture" | "record_game_event"
-    > = {
+    const fixture_use_cases =  {
       end_fixture: vi.fn().mockResolvedValue({
         success: true,
         data: { id: "fixture-1", status: "completed" },
       }),
       record_game_event: vi.fn().mockResolvedValue({ success: true }),
-    };
+    } as Pick<
+      EndCommand["fixture_use_cases"],
+      "end_fixture" | "record_game_event"
+    >;
 
     await expect(
       end_live_game_detail_action({

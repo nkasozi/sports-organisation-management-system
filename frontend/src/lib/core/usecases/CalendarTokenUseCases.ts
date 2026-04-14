@@ -18,6 +18,11 @@ import type {
   CalendarFeedInfo,
   CalendarTokenUseCasesPort,
 } from "../interfaces/ports";
+import type {
+  CalendarFeedEntityId,
+  CalendarTokenValue,
+  EntityId,
+} from "../types/DomainScalars";
 import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
 import { create_failure_result, create_success_result } from "../types/Result";
 
@@ -43,7 +48,7 @@ export function create_calendar_token_use_cases(
       return calendar_token_repository.find_all(filter ?? {}, options);
     },
 
-    async get_by_id(id: string): AsyncResult<CalendarToken> {
+    async get_by_id(id: CalendarToken["id"]): AsyncResult<CalendarToken> {
       const result = await calendar_token_repository.find_by_id(id);
 
       if (!result.success) {
@@ -72,7 +77,7 @@ export function create_calendar_token_use_cases(
     },
 
     async update(
-      id: string,
+      id: CalendarToken["id"],
       updates: UpdateCalendarTokenInput,
     ): AsyncResult<CalendarToken> {
       const result = await calendar_token_repository.update(id, updates);
@@ -86,7 +91,7 @@ export function create_calendar_token_use_cases(
       return create_success_result(result.data!);
     },
 
-    async delete(id: string): AsyncResult<boolean> {
+    async delete(id: CalendarToken["id"]): AsyncResult<boolean> {
       const result = await calendar_token_repository.delete_by_id(id);
 
       if (!result.success) {
@@ -99,11 +104,11 @@ export function create_calendar_token_use_cases(
     },
 
     async create_feed(
-      user_id: string,
-      organization_id: string,
+      user_id: EntityId,
+      organization_id: EntityId,
       feed_type: CalendarFeedType,
-      entity_id: string | null,
-      entity_name: string | null,
+      entity_id: CalendarFeedEntityId | null,
+      entity_name: CalendarToken["entity_name"],
       reminder_minutes_before: number = DEFAULT_REMINDER_MINUTES,
     ): AsyncResult<CalendarFeedInfo> {
       const token = generate_calendar_token();
@@ -139,22 +144,24 @@ export function create_calendar_token_use_cases(
     },
 
     async list_user_feeds(
-      user_id: string,
+      user_id: EntityId,
       options?: QueryOptions,
     ): PaginatedAsyncResult<CalendarToken> {
       return calendar_token_repository.find_by_user(user_id, options);
     },
 
-    async get_feed_by_token(token: string): AsyncResult<CalendarToken | null> {
+    async get_feed_by_token(
+      token: CalendarTokenValue,
+    ): AsyncResult<CalendarToken | null> {
       return calendar_token_repository.find_by_token(token);
     },
 
-    async revoke_feed(token: string): AsyncResult<CalendarToken> {
+    async revoke_feed(token: CalendarTokenValue): AsyncResult<CalendarToken> {
       return calendar_token_repository.deactivate_token(token);
     },
 
     async update_feed_settings(
-      token: string,
+      token: CalendarTokenValue,
       reminder_minutes_before: number,
     ): AsyncResult<CalendarToken> {
       const find_result = await calendar_token_repository.find_by_token(token);
@@ -168,7 +175,9 @@ export function create_calendar_token_use_cases(
       });
     },
 
-    async record_feed_access(token: string): AsyncResult<CalendarToken> {
+    async record_feed_access(
+      token: CalendarTokenValue,
+    ): AsyncResult<CalendarToken> {
       return calendar_token_repository.record_access(token);
     },
   };

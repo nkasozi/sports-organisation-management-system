@@ -26,7 +26,7 @@ export function create_competition_team_use_cases(
       return repository.find_all(filter, options);
     },
 
-    async get_by_id(id: string): AsyncResult<CompetitionTeam> {
+    async get_by_id(id: CompetitionTeam["id"]): AsyncResult<CompetitionTeam> {
       if (!id || id.trim().length === 0) {
         return create_failure_result("Competition team ID is required");
       }
@@ -55,7 +55,7 @@ export function create_competition_team_use_cases(
     },
 
     async update(
-      id: string,
+      id: CompetitionTeam["id"],
       input: UpdateCompetitionTeamInput,
     ): AsyncResult<CompetitionTeam> {
       if (!id || id.trim().length === 0) {
@@ -64,7 +64,7 @@ export function create_competition_team_use_cases(
       return repository.update(id, input);
     },
 
-    async delete(id: string): AsyncResult<boolean> {
+    async delete(id: CompetitionTeam["id"]): AsyncResult<boolean> {
       if (!id || id.trim().length === 0) {
         return create_failure_result("Competition team ID is required");
       }
@@ -93,8 +93,8 @@ export function create_competition_team_use_cases(
     },
 
     async remove_team_from_competition(
-      competition_id: string,
-      team_id: string,
+      competition_id: CompetitionTeam["competition_id"],
+      team_id: CompetitionTeam["team_id"],
     ): AsyncResult<boolean> {
       if (!competition_id || competition_id.trim().length === 0) {
         return create_failure_result("Competition ID is required");
@@ -106,7 +106,7 @@ export function create_competition_team_use_cases(
     },
 
     async list_teams_in_competition(
-      competition_id: string,
+      competition_id: CompetitionTeam["competition_id"],
       options?: QueryOptions,
     ): PaginatedAsyncResult<CompetitionTeam> {
       if (!competition_id || competition_id.trim().length === 0) {
@@ -116,7 +116,7 @@ export function create_competition_team_use_cases(
     },
 
     async list_competitions_for_team(
-      team_id: string,
+      team_id: CompetitionTeam["team_id"],
       options?: QueryOptions,
     ): PaginatedAsyncResult<CompetitionTeam> {
       if (!team_id || team_id.trim().length === 0) {
@@ -126,8 +126,8 @@ export function create_competition_team_use_cases(
     },
 
     async is_team_in_competition(
-      competition_id: string,
-      team_id: string,
+      competition_id: CompetitionTeam["competition_id"],
+      team_id: CompetitionTeam["team_id"],
     ): AsyncResult<CompetitionTeam> {
       if (!competition_id || !team_id) {
         return create_failure_result(

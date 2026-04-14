@@ -1,3 +1,9 @@
+import type {
+  EntityId,
+  IsoDateTimeString,
+  Name,
+  ScalarInput,
+} from "../types/DomainScalars";
 import type { BaseEntity } from "./BaseEntity";
 
 export type LineupStatus = "draft" | "submitted" | "locked";
@@ -5,29 +11,29 @@ export type LineupStatus = "draft" | "submitted" | "locked";
 export type PlayerTimeOnStatus = "present_at_start" | "didnt_play" | string;
 
 export interface LineupPlayer {
-  id: string;
-  first_name: string;
-  last_name: string;
+  id: EntityId;
+  first_name: Name;
+  last_name: Name;
   jersey_number: number | null;
-  position: string | null;
+  position: Name | null;
   is_captain: boolean;
   is_substitute: boolean;
   time_on?: PlayerTimeOnStatus;
 }
 
 export interface FixtureLineup extends BaseEntity {
-  organization_id: string;
-  fixture_id: string;
-  team_id: string;
+  organization_id: EntityId;
+  fixture_id: EntityId;
+  team_id: EntityId;
   selected_players: LineupPlayer[];
   status: LineupStatus;
-  submitted_by: string;
-  submitted_at: string;
+  submitted_by: EntityId;
+  submitted_at: IsoDateTimeString;
   notes: string;
 }
 
 export type CreateFixtureLineupInput = Omit<
-  FixtureLineup,
+  ScalarInput<FixtureLineup>,
   "id" | "created_at" | "updated_at" | "submitted_at" | "status"
 > & {
   status?: LineupStatus;
@@ -36,15 +42,15 @@ export type CreateFixtureLineupInput = Omit<
 
 export type UpdateFixtureLineupInput = Partial<
   Omit<
-    FixtureLineup,
+    ScalarInput<FixtureLineup>,
     "id" | "created_at" | "updated_at" | "fixture_id" | "team_id"
   >
 >;
 
 export function create_empty_fixture_lineup_input(
-  organization_id: string = "",
-  fixture_id: string = "",
-  team_id: string = "",
+  organization_id: CreateFixtureLineupInput["organization_id"] = "",
+  fixture_id: CreateFixtureLineupInput["fixture_id"] = "",
+  team_id: CreateFixtureLineupInput["team_id"] = "",
 ): CreateFixtureLineupInput {
   return {
     organization_id,
@@ -57,11 +63,11 @@ export function create_empty_fixture_lineup_input(
 }
 
 function create_lineup_player(
-  id: string,
-  first_name: string,
-  last_name: string,
+  id: LineupPlayer["id"],
+  first_name: LineupPlayer["first_name"],
+  last_name: LineupPlayer["last_name"],
   jersey_number: number | null = null,
-  position: string | null = null,
+  position: LineupPlayer["position"] = null,
   is_captain: boolean = false,
   is_substitute: boolean = false,
   time_on: PlayerTimeOnStatus = "didnt_play",

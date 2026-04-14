@@ -32,7 +32,7 @@ function create_team(id: string, name: string): Team {
     status: "active",
     created_at: "2026-01-01T00:00:00Z",
     updated_at: "2026-01-01T00:00:00Z",
-  };
+  } as Team;
 }
 
 function create_stage(
@@ -48,7 +48,7 @@ function create_stage(
     created_at: "2026-01-01T00:00:00Z",
     updated_at: "2026-01-01T00:00:00Z",
     ...overrides,
-  };
+  } as CompetitionStage;
 }
 
 function create_fixture(
@@ -80,7 +80,7 @@ function create_fixture(
     created_at: "2026-01-01T00:00:00Z",
     updated_at: "2026-01-01T00:00:00Z",
     ...overrides,
-  };
+  } as Fixture;
 }
 
 describe("competitionStageResults", () => {
@@ -156,11 +156,11 @@ describe("competitionStageResults", () => {
   });
 
   it("awards configured points_for_win instead of hardcoded 3", () => {
-    const custom_points: PointsConfig = {
+    const custom_points =  {
       points_for_win: 2,
       points_for_draw: 1,
       points_for_loss: 0,
-    };
+    } as PointsConfig;
 
     const standings = calculate_team_standings(
       [
@@ -180,11 +180,11 @@ describe("competitionStageResults", () => {
   });
 
   it("awards configured points_for_draw instead of hardcoded 1", () => {
-    const custom_points: PointsConfig = {
+    const custom_points =  {
       points_for_win: 3,
       points_for_draw: 0,
       points_for_loss: 0,
-    };
+    } as PointsConfig;
 
     const standings = calculate_team_standings(
       [
@@ -203,11 +203,11 @@ describe("competitionStageResults", () => {
   });
 
   it("uses head_to_head tie-breaker when points and goal_difference are equal", () => {
-    const tie_breakers: TieBreaker[] = [
+    const tie_breakers =  [
       "goal_difference",
       "head_to_head",
       "goals_scored",
-    ];
+    ] as TieBreaker[];
 
     const standings = calculate_team_standings(
       [
@@ -244,7 +244,7 @@ describe("competitionStageResults", () => {
   });
 
   it("uses goals_scored tie-breaker when points and goal_difference are equal between tied teams", () => {
-    const tie_breakers: TieBreaker[] = ["goal_difference", "goals_scored"];
+    const tie_breakers =  ["goal_difference", "goals_scored"] as TieBreaker[];
 
     const standings = calculate_team_standings(
       [

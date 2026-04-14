@@ -1,9 +1,10 @@
 import type { Competition } from "$lib/core/entities/Competition";
 import type { CompetitionTeam } from "$lib/core/entities/CompetitionTeam";
 import type { Team } from "$lib/core/entities/Team";
+import type { ScalarInput } from "$lib/core/types/DomainScalars";
 
 export function create_test_competition(
-  overrides: Partial<Competition>,
+  overrides: Partial<ScalarInput<Competition>> = {},
 ): Competition {
   return {
     id: overrides.id ?? "competition_1",
@@ -30,10 +31,12 @@ export function create_test_competition(
     location: overrides.location ?? "Main Stadium",
     rule_overrides: overrides.rule_overrides ?? {},
     status: overrides.status ?? "active",
-  };
+  } as unknown as Competition;
 }
 
-export function create_test_team(overrides: Partial<Team>): Team {
+export function create_test_team(
+  overrides: Partial<ScalarInput<Team>> = {},
+): Team {
   return {
     id: overrides.id ?? "team_1",
     created_at: overrides.created_at ?? "2024-01-01T00:00:00.000Z",
@@ -53,11 +56,11 @@ export function create_test_team(overrides: Partial<Team>): Team {
     website: overrides.website ?? "",
     founded_year: overrides.founded_year ?? 2001,
     status: overrides.status ?? "active",
-  };
+  } as unknown as Team;
 }
 
 export function create_test_competition_team(
-  overrides: Partial<CompetitionTeam>,
+  overrides: Partial<ScalarInput<CompetitionTeam>> = {},
 ): CompetitionTeam {
   return {
     id: overrides.id ?? "competition_team_1",
@@ -78,5 +81,5 @@ export function create_test_competition_team(
     matches_lost: overrides.matches_lost ?? 0,
     notes: overrides.notes ?? "",
     status: overrides.status ?? "registered",
-  };
+  } as unknown as CompetitionTeam;
 }
