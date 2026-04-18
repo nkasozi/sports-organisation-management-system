@@ -47,7 +47,7 @@
         <a href="/" class="flex items-center space-x-3">
           <div class="flex-shrink-0">
             <div
-              class="h-8 w-8 rounded-lg flex items-center justify-center overflow-hidden {has_custom_logo
+              class="h-8 w-8 rounded-full flex items-center justify-center overflow-hidden {has_custom_logo
                 ? ''
                 : 'bg-theme-secondary-600'}"
             >
