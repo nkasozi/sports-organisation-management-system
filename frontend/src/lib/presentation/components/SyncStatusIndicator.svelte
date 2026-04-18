@@ -11,51 +11,26 @@
     sync_percentage,
     sync_progress,
   } from "$lib/presentation/stores/syncStoreDerived";
-  import type {
-    LastSyncTimeState,
-    SyncErrorState,
-  } from "$lib/presentation/stores/syncStoreTypes";
+  import type { SyncErrorState } from "$lib/presentation/stores/syncStoreTypes";
 
   let show_details = false;
-  let sync_in_progress = false;
-  let current_percentage = 0;
-  let current_table = "";
   let relative_time_tick = 0;
 
   const SYNC_PROGRESS_ICON_COLOR = "rgb(59 130 246 / 1)";
   const SYNC_ERROR_ICON_COLOR = "rgb(239 68 68 / 1)";
   const SYNC_SUCCESS_ICON_COLOR = "rgb(16 185 129 / 1)";
 
-  is_syncing.subscribe((value) => {
-    sync_in_progress = value;
-  });
-
-  sync_percentage.subscribe((value) => {
-    current_percentage = value;
-  });
-
-  sync_progress.subscribe((value) => {
-    current_table = value.status === "active" ? value.progress.table_name : "";
-  });
-
-  let last_sync: LastSyncTimeState = { status: "never" };
-  last_sync_time.subscribe((value) => {
-    last_sync = value;
-  });
-
-  let error_state: SyncErrorState = { status: "clear" };
-  sync_error.subscribe((value) => {
-    error_state = value;
-  });
-
   const tick_interval = setInterval(() => {
     relative_time_tick++;
   }, 15000);
 
+  $: current_table =
+    $sync_progress.status === "active" ? $sync_progress.progress.table_name : "";
+
   $: sync_status_text = format_sync_status_text({
-    sync_in_progress,
-    last_sync,
-    current_percentage,
+    sync_in_progress: $is_syncing,
+    last_sync: $last_sync_time,
+    current_percentage: $sync_percentage,
     relative_time_tick,
   });
 
@@ -67,11 +42,14 @@
     await sync_store.sync_now();
   }
 
-  function get_sync_icon_class(): string {
+  function get_sync_icon_class(sync_in_progress: boolean): string {
     return sync_in_progress ? "animate-spin" : "";
   }
 
-  function get_sync_icon_color(): string {
+  function get_sync_icon_color(
+    sync_in_progress: boolean,
+    error_state: SyncErrorState,
+  ): string {
     if (sync_in_progress) return SYNC_PROGRESS_ICON_COLOR;
     if (error_state.status === "present") return SYNC_ERROR_ICON_COLOR;
     return SYNC_SUCCESS_ICON_COLOR;
@@ -82,12 +60,12 @@
   <button
     type="button"
     on:click={() => (show_details = !show_details)}
-    class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/15 hover:bg-white/25 transition-colors text-sm"
+    class="flex items-center gap-2 px-3 py-1.5 rounded-[0.175rem] bg-white/15 hover:bg-white/25 transition-colors text-sm"
     title="Sync Status"
   >
     <svg
-      class="w-4 h-4 sync-status-indicator-icon {get_sync_icon_class()}"
-      style="--sync-status-color: {get_sync_icon_color()};"
+      class="w-4 h-4 sync-status-indicator-icon {get_sync_icon_class($is_syncing)}"
+      style="--sync-status-color: {get_sync_icon_color($is_syncing, $sync_error)};"
       fill="none"
       stroke="currentColor"
       viewBox="0 0 24 24"
@@ -106,12 +84,12 @@
 
   {#if show_details}
     <SyncStatusIndicatorDetails
-      {sync_in_progress}
-      {current_percentage}
+      sync_in_progress={$is_syncing}
+      current_percentage={$sync_percentage}
       {current_table}
-      {last_sync}
+      last_sync={$last_sync_time}
       {relative_time_tick}
-      sync_error_state={error_state}
+      sync_error_state={$sync_error}
       {trigger_manual_sync}
       on_close={() => (show_details = false)}
     />
