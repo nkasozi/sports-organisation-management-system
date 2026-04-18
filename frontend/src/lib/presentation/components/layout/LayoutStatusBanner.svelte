@@ -31,7 +31,9 @@
     <div
         class="w-full border-b border-violet-200 bg-violet-50 py-2 text-center dark:border-violet-800 dark:bg-violet-950/60"
     >
-        <div class="flex flex-col items-center gap-0.5 px-6">
+        <div
+            class="flex flex-col items-center gap-0.5 px-6 text-center md:flex-row md:flex-wrap md:justify-center md:gap-x-4 md:gap-y-1"
+        >
             <div class="flex items-center gap-1.5">
                 <svg
                     class="h-3.5 w-3.5 flex-shrink-0 text-violet-600 dark:text-violet-400"
