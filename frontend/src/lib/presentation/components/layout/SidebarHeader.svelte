@@ -16,7 +16,7 @@
   {#if sidebar_open}
     <div class="flex items-center space-x-3">
       <div
-        class="h-8 w-8 shrink-0 rounded-lg flex items-center justify-center overflow-hidden {has_custom_logo
+        class="h-8 w-8 shrink-0 rounded-full flex items-center justify-center overflow-hidden {has_custom_logo
           ? ''
           : 'bg-theme-secondary-600'}"
       >
@@ -79,7 +79,7 @@
     </button>
   {:else}
     <div
-      class="h-8 w-8 bg-theme-secondary-600 rounded-lg flex items-center justify-center mx-auto"
+      class="h-8 w-8 bg-theme-secondary-600 rounded-full flex items-center justify-center mx-auto"
     >
       <svg class="h-5 w-5 text-white" fill="currentColor" viewBox="0 0 20 20">
         <path
