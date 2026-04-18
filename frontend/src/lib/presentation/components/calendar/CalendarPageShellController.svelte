@@ -31,7 +31,7 @@
     import CalendarPageOverlays from "./CalendarPageOverlays.svelte";
     import CalendarPageView from "./CalendarPageView.svelte";
     const use_cases: UseCasesContainer = get_use_cases_container();
-    let loading_state: LoadingState = "idle",
+    let loading_state: LoadingState = "loading",
         error_message = "",
         is_using_cached_data = false,
         organizations: Organization[] = [],

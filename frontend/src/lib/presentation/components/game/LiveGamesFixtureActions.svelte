@@ -46,7 +46,7 @@
                     type="button"
                     on:click={() => on_start_click(fixture)}
                     disabled={is_starting}
-                    class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 disabled:bg-accent-400 dark:disabled:bg-accent-600 disabled:cursor-not-allowed transition-colors text-sm font-medium"
+                    class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 text-white rounded-[0.175rem] hover:bg-emerald-700 disabled:bg-accent-400 dark:disabled:bg-accent-600 disabled:cursor-not-allowed transition-colors text-sm font-medium"
                 >
                     {#if is_starting}
                         <svg

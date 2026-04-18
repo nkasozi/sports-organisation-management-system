@@ -21,7 +21,7 @@
     <div class="flex items-center justify-between max-w-4xl mx-auto">
         <button
             type="button"
-            class="p-2 hover:bg-gray-800 rounded-lg"
+            class="p-2 hover:bg-gray-800 rounded-[0.175rem]"
             aria-label="Go back"
             on:click={on_back}
         >
@@ -79,20 +79,20 @@
         <div class="flex gap-2">
             {#if status === "scheduled"}
                 <button
-                    class="px-4 py-2 bg-green-600 hover:bg-green-700 rounded-md text-sm font-medium"
+                    class="px-4 py-2 bg-green-600 hover:bg-green-700 rounded-[0.175rem] text-sm font-medium"
                     on:click={on_start}
                 >
                     ▶️ Start
                 </button>
             {:else if is_game_active}
                 <button
-                    class={`px-3 py-2 rounded-md text-sm font-medium ${is_clock_running ? "bg-yellow-500 text-black" : "bg-green-500 text-white"}`}
+                    class={`px-3 py-2 rounded-[0.175rem] text-sm font-medium ${is_clock_running ? "bg-yellow-500 text-black" : "bg-green-500 text-white"}`}
                     on:click={on_toggle_clock}
                 >
                     {is_clock_running ? "⏸️ Pause" : "▶️ Resume"}
                 </button>
                 <button
-                    class="px-3 py-2 bg-red-600 hover:bg-red-700 rounded-md text-sm font-medium"
+                    class="px-3 py-2 bg-red-600 hover:bg-red-700 rounded-[0.175rem] text-sm font-medium"
                     on:click={on_end}
                 >
                     🏁 End

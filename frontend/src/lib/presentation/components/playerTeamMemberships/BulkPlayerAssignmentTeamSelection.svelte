@@ -20,7 +20,7 @@
             <select
                 id="team_select"
                 bind:value={selected_team_id}
-                class="w-full px-3 py-2 border border-accent-300 dark:border-accent-600 rounded-lg bg-white dark:bg-accent-700 text-accent-900 dark:text-accent-100"
+                class="w-full px-3 py-2 border border-accent-300 dark:border-accent-600 rounded-[0.175rem] bg-white dark:bg-accent-700 text-accent-900 dark:text-accent-100"
             >
                 <option value="">-- Select a team --</option>
                 {#each teams as current_team}

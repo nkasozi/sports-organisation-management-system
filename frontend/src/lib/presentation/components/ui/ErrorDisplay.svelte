@@ -59,7 +59,7 @@
                     {#if on_retry}
                         <button
                             type="button"
-                            class="inline-flex items-center justify-center px-5 py-2.5 text-sm font-semibold rounded-lg transition-all duration-200 w-full sm:w-auto {severity ===
+                            class="inline-flex items-center justify-center px-5 py-2.5 text-sm font-semibold rounded-[0.175rem] transition-all duration-200 w-full sm:w-auto {severity ===
                             'error'
                                 ? 'bg-secondary-500 text-white hover:bg-secondary-600'
                                 : 'bg-primary-500 text-white hover:bg-primary-600'}"
@@ -84,7 +84,7 @@
                     {#if on_back}
                         <button
                             type="button"
-                            class="inline-flex items-center justify-center px-5 py-2.5 text-sm font-semibold rounded-lg transition-all duration-200 w-full sm:w-auto bg-accent-100 dark:bg-accent-700 text-accent-700 dark:text-accent-200 hover:bg-accent-200 dark:hover:bg-accent-600"
+                            class="inline-flex items-center justify-center px-5 py-2.5 text-sm font-semibold rounded-[0.175rem] transition-all duration-200 w-full sm:w-auto bg-accent-100 dark:bg-accent-700 text-accent-700 dark:text-accent-200 hover:bg-accent-200 dark:hover:bg-accent-600"
                             on:click={on_back}
                         >
                             <svg

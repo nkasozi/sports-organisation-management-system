@@ -23,27 +23,27 @@
         <div class="flex justify-center gap-3 max-w-4xl mx-auto flex-wrap">
             {#if current_period === "first_half" && !is_clock_running}
                 <button
-                    class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-md text-sm font-medium"
+                    class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-[0.175rem] text-sm font-medium"
                     on:click={() => void on_end_current_period()}
                 >
                     ⏹️ End 1st Half
                 </button>
             {:else if current_period === "half_time"}
                 <button
-                    class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-md text-sm font-medium"
+                    class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-[0.175rem] text-sm font-medium"
                     on:click={() => void on_change_period("second_half")}
                 >
                     ▶️ Start 2nd Half
                 </button>
             {:else if current_period === "second_half" && !is_clock_running}
                 <button
-                    class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-md text-sm font-medium"
+                    class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-[0.175rem] text-sm font-medium"
                     on:click={() => void on_end_current_period()}
                 >
                     ⏹️ End 2nd Half
                 </button>
                 <button
-                    class="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-md text-sm font-medium"
+                    class="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-[0.175rem] text-sm font-medium"
                     on:click={() => void on_change_period("extra_time_first")}
                 >
                     ⚡ Extra Time
@@ -66,7 +66,7 @@
                     <div class="grid grid-cols-4 gap-2">
                         {#each primary_events as event_button}
                             <button
-                                class={`flex flex-col items-center justify-center p-2 rounded-md text-white transition-all active:scale-95 ${event_button.color}`}
+                                class={`flex flex-col items-center justify-center p-2 rounded-[0.175rem] text-white transition-all active:scale-95 ${event_button.color}`}
                                 disabled={!is_clock_running}
                                 on:click={() =>
                                     on_open_event_modal(event_button, "home")}
@@ -89,7 +89,7 @@
                     <div class="grid grid-cols-4 gap-2">
                         {#each primary_events as event_button}
                             <button
-                                class={`flex flex-col items-center justify-center p-2 rounded-md text-white transition-all active:scale-95 ${event_button.color}`}
+                                class={`flex flex-col items-center justify-center p-2 rounded-[0.175rem] text-white transition-all active:scale-95 ${event_button.color}`}
                                 disabled={!is_clock_running}
                                 on:click={() =>
                                     on_open_event_modal(event_button, "away")}
@@ -116,7 +116,7 @@
                     <div class="flex flex-wrap justify-center gap-2">
                         {#each secondary_events as event_button}
                             <button
-                                class={`px-3 py-1.5 rounded-md text-xs font-medium text-white flex items-center gap-1 ${event_button.color}`}
+                                class={`px-3 py-1.5 rounded-[0.175rem] text-xs font-medium text-white flex items-center gap-1 ${event_button.color}`}
                                 disabled={!is_clock_running}
                                 on:click={() =>
                                     on_open_event_modal(event_button, "home")}

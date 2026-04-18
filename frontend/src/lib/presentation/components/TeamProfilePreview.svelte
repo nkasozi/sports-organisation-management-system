@@ -74,13 +74,13 @@
     <div class="flex gap-2">
       <button
         on:click={open_preview}
-        class="px-4 py-2 rounded-lg bg-primary-600 dark:bg-primary-500 text-white hover:bg-primary-700 dark:hover:bg-primary-600 transition-colors text-sm font-medium"
+        class="px-4 py-2 rounded-[0.175rem] bg-primary-600 dark:bg-primary-500 text-white hover:bg-primary-700 dark:hover:bg-primary-600 transition-colors text-sm font-medium"
       >
         Preview
       </button>
       <button
         on:click={copy_link}
-        class="px-4 py-2 rounded-lg bg-accent-200 dark:bg-accent-700 text-accent-900 dark:text-accent-100 hover:bg-accent-300 dark:hover:bg-accent-600 transition-colors text-sm font-medium"
+        class="px-4 py-2 rounded-[0.175rem] bg-accent-200 dark:bg-accent-700 text-accent-900 dark:text-accent-100 hover:bg-accent-300 dark:hover:bg-accent-600 transition-colors text-sm font-medium"
       >
         Copy Link
       </button>

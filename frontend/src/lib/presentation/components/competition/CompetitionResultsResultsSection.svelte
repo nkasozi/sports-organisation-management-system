@@ -38,7 +38,7 @@
         >
         <button
             type="button"
-            class="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 dark:bg-primary-500 dark:hover:bg-primary-600 rounded-lg transition-colors disabled:opacity-50"
+            class="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 dark:bg-primary-500 dark:hover:bg-primary-600 rounded-[0.175rem] transition-colors disabled:opacity-50"
             disabled={downloading_all_reports}
             on:click={() => void on_download_all_reports()}
         >

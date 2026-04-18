@@ -83,21 +83,21 @@
       <button
         type="button"
         on:click={() => apply_preset("halves")}
-        class="px-3 py-1 text-sm rounded-md bg-accent-100 dark:bg-accent-700 text-accent-700 dark:text-accent-200 hover:bg-accent-200 dark:hover:bg-accent-600 transition-colors"
+        class="px-3 py-1 text-sm rounded-[0.175rem] bg-accent-100 dark:bg-accent-700 text-accent-700 dark:text-accent-200 hover:bg-accent-200 dark:hover:bg-accent-600 transition-colors"
       >
         2 Halves (90 min)
       </button>
       <button
         type="button"
         on:click={() => apply_preset("quarters")}
-        class="px-3 py-1 text-sm rounded-md bg-accent-100 dark:bg-accent-700 text-accent-700 dark:text-accent-200 hover:bg-accent-200 dark:hover:bg-accent-600 transition-colors"
+        class="px-3 py-1 text-sm rounded-[0.175rem] bg-accent-100 dark:bg-accent-700 text-accent-700 dark:text-accent-200 hover:bg-accent-200 dark:hover:bg-accent-600 transition-colors"
       >
         4 Quarters (48 min)
       </button>
       <button
         type="button"
         on:click={() => apply_preset("thirds")}
-        class="px-3 py-1 text-sm rounded-md bg-accent-100 dark:bg-accent-700 text-accent-700 dark:text-accent-200 hover:bg-accent-200 dark:hover:bg-accent-600 transition-colors"
+        class="px-3 py-1 text-sm rounded-[0.175rem] bg-accent-100 dark:bg-accent-700 text-accent-700 dark:text-accent-200 hover:bg-accent-200 dark:hover:bg-accent-600 transition-colors"
       >
         3 Periods (60 min)
       </button>
@@ -133,7 +133,7 @@
       <button
         type="button"
         on:click={() => apply_change(append_game_period(periods))}
-        class="flex items-center gap-1 px-3 py-2 text-sm rounded-md bg-primary-100 dark:bg-primary-900 text-primary-700 dark:text-primary-300 hover:bg-primary-200 dark:hover:bg-primary-800 transition-colors"
+        class="flex items-center gap-1 px-3 py-2 text-sm rounded-[0.175rem] bg-primary-100 dark:bg-primary-900 text-primary-700 dark:text-primary-300 hover:bg-primary-200 dark:hover:bg-primary-800 transition-colors"
       >
         <svg
           class="w-4 h-4"
@@ -153,7 +153,7 @@
       <button
         type="button"
         on:click={() => apply_change(append_game_break(periods))}
-        class="flex items-center gap-1 px-3 py-2 text-sm rounded-md bg-violet-100 dark:bg-violet-900 text-violet-700 dark:text-violet-300 hover:bg-violet-200 dark:hover:bg-violet-800 transition-colors"
+        class="flex items-center gap-1 px-3 py-2 text-sm rounded-[0.175rem] bg-violet-100 dark:bg-violet-900 text-violet-700 dark:text-violet-300 hover:bg-violet-200 dark:hover:bg-violet-800 transition-colors"
       >
         <svg
           class="w-4 h-4"

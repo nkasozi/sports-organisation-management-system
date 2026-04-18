@@ -118,7 +118,7 @@
                     <div class="flex gap-3">
                         <button
                             type="button"
-                            class="px-4 py-2 text-sm font-medium text-accent-700 dark:text-accent-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600"
+                            class="px-4 py-2 text-sm font-medium text-accent-700 dark:text-accent-300 bg-gray-100 dark:bg-gray-700 rounded-[0.175rem] hover:bg-gray-200 dark:hover:bg-gray-600"
                             on:click={handle_close}>Cancel</button
                         ><button
                             type="button"

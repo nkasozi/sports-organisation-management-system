@@ -59,7 +59,7 @@
 
     <button
       type="button"
-      class="lg:hidden p-1 rounded-md text-accent-400 hover:text-accent-500 hover:bg-accent-100 dark:hover:bg-accent-700"
+      class="lg:hidden p-1 rounded-[0.175rem] text-accent-400 hover:text-accent-500 hover:bg-accent-100 dark:hover:bg-accent-700"
       on:click={on_close_sidebar}
       aria-label="Close sidebar"
     >

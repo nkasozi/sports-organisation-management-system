@@ -71,7 +71,7 @@
             <input
               id="filter_{field.field_name}"
               type="date"
-              class="w-full rounded-lg border border-accent-300 bg-white px-3 py-2 text-sm text-accent-900 dark:border-accent-600 dark:bg-accent-800 dark:text-accent-100"
+              class="w-full rounded-[0.175rem] border border-accent-300 bg-white px-3 py-2 text-sm text-accent-900 dark:border-accent-600 dark:bg-accent-800 dark:text-accent-100"
               value={filter_values[field.field_name] ?? ""}
               on:input={(event) =>
                 on_filter_value_change(
@@ -83,7 +83,7 @@
             <input
               id="filter_{field.field_name}"
               type="text"
-              class="w-full rounded-lg border border-accent-300 bg-white px-3 py-2 text-sm text-accent-900 dark:border-accent-600 dark:bg-accent-800 dark:text-accent-100"
+              class="w-full rounded-[0.175rem] border border-accent-300 bg-white px-3 py-2 text-sm text-accent-900 dark:border-accent-600 dark:bg-accent-800 dark:text-accent-100"
               placeholder={`Filter by ${field.display_name.toLowerCase()}`}
               value={filter_values[field.field_name] ?? ""}
               on:input={(event) =>

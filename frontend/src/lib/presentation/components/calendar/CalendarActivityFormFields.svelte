@@ -17,7 +17,7 @@
             id="activity_title"
             type="text"
             bind:value={activity_form_values.title}
-            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-accent-900 dark:text-accent-100"
+            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-[0.175rem] bg-white dark:bg-gray-700 text-accent-900 dark:text-accent-100"
             placeholder="e.g., Team Training Session"
         />
     </div>
@@ -30,7 +30,7 @@
         <select
             id="activity_category"
             bind:value={activity_form_values.category_id}
-            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-accent-900 dark:text-accent-100"
+            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-[0.175rem] bg-white dark:bg-gray-700 text-accent-900 dark:text-accent-100"
         >
             <option value="">Select a category</option>
             {#each categories as category}
@@ -48,7 +48,7 @@
             id="activity_description"
             bind:value={activity_form_values.description}
             rows="2"
-            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-accent-900 dark:text-accent-100"
+            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-[0.175rem] bg-white dark:bg-gray-700 text-accent-900 dark:text-accent-100"
             placeholder="Optional description"
         ></textarea>
     </div>
@@ -76,7 +76,7 @@
                 id="activity_start_date"
                 type="date"
                 bind:value={activity_form_values.start_date}
-                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-accent-900 dark:text-accent-100"
+                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-[0.175rem] bg-white dark:bg-gray-700 text-accent-900 dark:text-accent-100"
             />
         </div>
         {#if !activity_form_values.is_all_day}
@@ -90,7 +90,7 @@
                     id="activity_start_time"
                     type="time"
                     bind:value={activity_form_values.start_time}
-                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-accent-900 dark:text-accent-100"
+                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-[0.175rem] bg-white dark:bg-gray-700 text-accent-900 dark:text-accent-100"
                 />
             </div>
         {/if}
@@ -106,7 +106,7 @@
                 id="activity_end_date"
                 type="date"
                 bind:value={activity_form_values.end_date}
-                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-accent-900 dark:text-accent-100"
+                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-[0.175rem] bg-white dark:bg-gray-700 text-accent-900 dark:text-accent-100"
             />
         </div>
         {#if !activity_form_values.is_all_day}
@@ -120,7 +120,7 @@
                     id="activity_end_time"
                     type="time"
                     bind:value={activity_form_values.end_time}
-                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-accent-900 dark:text-accent-100"
+                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-[0.175rem] bg-white dark:bg-gray-700 text-accent-900 dark:text-accent-100"
                 />
             </div>
         {/if}
@@ -135,7 +135,7 @@
             id="activity_location"
             type="text"
             bind:value={activity_form_values.location}
-            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-accent-900 dark:text-accent-100"
+            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-[0.175rem] bg-white dark:bg-gray-700 text-accent-900 dark:text-accent-100"
             placeholder="Optional location"
         />
     </div>

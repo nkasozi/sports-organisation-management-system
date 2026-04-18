@@ -105,7 +105,7 @@
                         ><select
                             id="category_type"
                             bind:value={category_type}
-                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-accent-900 dark:text-accent-100"
+                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-[0.175rem] bg-white dark:bg-gray-700 text-accent-900 dark:text-accent-100"
                             ><option value="custom">Custom</option><option
                                 value="training">Training</option
                             ><option value="administrative"
@@ -121,7 +121,7 @@
                 >
                     <button
                         type="button"
-                        class="px-4 py-2 text-sm font-medium text-accent-700 dark:text-accent-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600"
+                        class="px-4 py-2 text-sm font-medium text-accent-700 dark:text-accent-300 bg-gray-100 dark:bg-gray-700 rounded-[0.175rem] hover:bg-gray-200 dark:hover:bg-gray-600"
                         on:click={handle_close}>Cancel</button
                     ><button
                         type="button"

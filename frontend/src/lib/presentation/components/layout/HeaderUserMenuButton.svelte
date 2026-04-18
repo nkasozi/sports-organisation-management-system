@@ -10,7 +10,7 @@
 
 <button
   type="button"
-  class="flex items-center space-x-2 p-2 rounded-md text-black hover:bg-theme-primary-400 dark:hover:bg-theme-primary-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-black transition-colors duration-200"
+  class="flex items-center space-x-2 p-2 rounded-[0.175rem] text-black hover:bg-theme-primary-400 dark:hover:bg-theme-primary-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-black transition-colors duration-200"
   aria-label="User menu"
   aria-expanded={user_menu_open}
   on:click|stopPropagation={on_toggle_user_menu}

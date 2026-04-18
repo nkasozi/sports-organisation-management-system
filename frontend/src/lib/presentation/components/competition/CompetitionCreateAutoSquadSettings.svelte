@@ -47,7 +47,7 @@
                 <select
                     id="squad_generation_strategy"
                     bind:value={form_data.squad_generation_strategy}
-                    class="block w-full sm:w-64 px-3 py-2 border border-accent-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 dark:bg-accent-800 dark:border-accent-600 dark:text-white"
+                    class="block w-full sm:w-64 px-3 py-2 border border-accent-300 rounded-[0.175rem] shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 dark:bg-accent-800 dark:border-accent-600 dark:text-white"
                 >
                     <option value="first_available"
                         >First Available Players</option

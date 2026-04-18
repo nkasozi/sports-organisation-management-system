@@ -30,7 +30,7 @@
                     {@const is_selected = selected_player_ids.has(player.id)}
                     <button
                         type="button"
-                        class="p-4 rounded-lg border-2 transition-all {is_selected
+                        class="p-4 rounded-[0.175rem] border-2 transition-all {is_selected
                             ? 'border-secondary-500 bg-secondary-50 dark:bg-secondary-900/20'
                             : 'border-accent-200 dark:border-accent-700 hover:border-secondary-300'}"
                         on:click={() => on_toggle_player_selection(player.id)}

@@ -95,7 +95,7 @@
         <div class="flex items-center gap-2">
             <button
                 type="button"
-                class="inline-flex items-center gap-1.5 rounded-lg bg-accent-600 px-3 py-1.5 text-sm font-medium text-white transition-colors duration-200 hover:bg-accent-700 disabled:cursor-not-allowed disabled:opacity-50"
+                class="inline-flex items-center gap-1.5 rounded-[0.175rem] bg-accent-600 px-3 py-1.5 text-sm font-medium text-white transition-colors duration-200 hover:bg-accent-700 disabled:cursor-not-allowed disabled:opacity-50"
                 on:click={handle_add_stage_template}
                 {disabled}
             >

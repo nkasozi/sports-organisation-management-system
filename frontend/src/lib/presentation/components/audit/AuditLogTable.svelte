@@ -161,7 +161,7 @@
                     <button
                         on:click={() => on_page_change(current_page - 1)}
                         disabled={current_page === 1}
-                        class="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-700"
+                        class="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded-[0.175rem] text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-700"
                     >
                         Previous
                     </button>
@@ -180,7 +180,7 @@
                                 total_count,
                                 page_size,
                             )}
-                        class="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-700"
+                        class="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded-[0.175rem] text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-700"
                     >
                         Next
                     </button>

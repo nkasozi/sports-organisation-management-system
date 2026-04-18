@@ -112,7 +112,7 @@
                     <span class="text-2xl font-bold text-gray-500">'</span>
                     <button
                         type="button"
-                        class="rounded-lg bg-gray-100 px-3 py-2 text-sm text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+                        class="rounded-[0.175rem] bg-gray-100 px-3 py-2 text-sm text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
                         on:click={() =>
                             (event_minute = Math.floor(game_clock_seconds / 60))}
                         >Reset to {Math.floor(game_clock_seconds / 60)}'</button
@@ -203,7 +203,7 @@
                 on:click={on_cancel}>Cancel</button
             >
             <button
-                class="px-6 py-2 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-md disabled:opacity-50"
+                class="px-6 py-2 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-[0.175rem] disabled:opacity-50"
                 disabled={is_updating}
                 on:click={() => void on_record()}
             >

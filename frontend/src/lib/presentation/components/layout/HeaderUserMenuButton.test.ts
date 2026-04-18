@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import HeaderUserMenuButton from "./HeaderUserMenuButton.svelte";
 
 const DUPLICATE_PADDING_CLASS_PATTERN =
-  /p-2 rounded-md text-black hover:bg-theme-primary-400 dark:hover:bg-theme-primary-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-black transition-colors duration-200/g;
+  /p-2 rounded-\[0\.175rem\] text-black hover:bg-theme-primary-400 dark:hover:bg-theme-primary-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-black transition-colors duration-200/g;
 
 describe("HeaderUserMenuButton", () => {
   it("renders only one padded interactive layer so the header account panel stays vertically inset", () => {

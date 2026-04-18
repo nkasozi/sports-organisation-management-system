@@ -95,7 +95,7 @@
                 >
                     <button
                         type="button"
-                        class={`inline-flex items-center justify-center px-6 py-3 text-sm font-semibold rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 ${config.accent_color === "red" ? "bg-secondary-500 text-white hover:bg-secondary-600 focus:ring-secondary-500" : "bg-primary-500 text-white hover:bg-primary-600 focus:ring-primary-500"}`}
+                        class={`inline-flex items-center justify-center px-6 py-3 text-sm font-semibold rounded-[0.175rem] transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 ${config.accent_color === "red" ? "bg-secondary-500 text-white hover:bg-secondary-600 focus:ring-secondary-500" : "bg-primary-500 text-white hover:bg-primary-600 focus:ring-primary-500"}`}
                         on:click={on_primary_action}
                         >{#if config.primary_action_label === "Try Again"}<svg
                                 class="w-4 h-4 mr-2"
@@ -133,7 +133,7 @@
                             >{/if}{config.primary_action_label}</button
                     ><button
                         type="button"
-                        class="inline-flex items-center justify-center px-6 py-3 text-sm font-semibold rounded-lg transition-all duration-200 bg-accent-100 dark:bg-accent-700 text-accent-700 dark:text-accent-200 hover:bg-accent-200 dark:hover:bg-accent-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent-400"
+                        class="inline-flex items-center justify-center px-6 py-3 text-sm font-semibold rounded-[0.175rem] transition-all duration-200 bg-accent-100 dark:bg-accent-700 text-accent-700 dark:text-accent-200 hover:bg-accent-200 dark:hover:bg-accent-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent-400"
                         on:click={on_secondary_action}
                         >{#if config.secondary_action_label === "Go Back"}<svg
                                 class="w-4 h-4 mr-2"

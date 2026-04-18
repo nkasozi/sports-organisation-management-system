@@ -91,14 +91,14 @@
                 <button
                     type="button"
                     on:click={on_cancel}
-                    class="rounded-md border border-accent-300 px-4 py-2 text-sm font-medium text-accent-700 transition-colors hover:bg-accent-100 dark:border-accent-600 dark:text-accent-200 dark:hover:bg-accent-800"
+                    class="rounded-[0.175rem] border border-accent-300 px-4 py-2 text-sm font-medium text-accent-700 transition-colors hover:bg-accent-100 dark:border-accent-600 dark:text-accent-200 dark:hover:bg-accent-800"
                 >
                     Cancel
                 </button>
                 <button
                     type="button"
                     on:click={on_confirm}
-                    class="rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-700"
+                    class="rounded-[0.175rem] bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-700"
                 >
                     Confirm Start
                 </button>

@@ -65,7 +65,7 @@
         {/if}
         <button
             type="button"
-            class="px-4 py-2 text-sm font-medium rounded-lg border-2 border-primary-500 dark:border-primary-400 bg-white dark:bg-gray-800 text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 whitespace-nowrap flex items-center gap-2 transition-colors shadow-sm"
+            class="px-4 py-2 text-sm font-medium rounded-[0.175rem] border-2 border-primary-500 dark:border-primary-400 bg-white dark:bg-gray-800 text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 whitespace-nowrap flex items-center gap-2 transition-colors shadow-sm"
             on:click={on_open_subscribe_modal}
         >
             <svg

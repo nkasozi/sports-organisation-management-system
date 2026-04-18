@@ -44,7 +44,7 @@
       {/key}
       <button
         type="button"
-        class="absolute inset-0 flex items-center justify-center bg-black/40 hover:bg-black/60 rounded-lg transition group-hover:opacity-100 opacity-0"
+        class="absolute inset-0 flex items-center justify-center bg-black/40 hover:bg-black/60 rounded-[0.175rem] transition group-hover:opacity-100 opacity-0"
         style="border:none;"
         on:click={() =>
           document.getElementById(`file_input_${field.field_name}`)?.click()}
@@ -84,7 +84,7 @@
       id={`field_${field.field_name}`}
       type="file"
       accept="image/*"
-      class="block w-full text-sm text-accent-900 dark:text-accent-100 file:mr-4 file:py-2.5 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-secondary-100 dark:file:bg-secondary-800 file:text-secondary-700 dark:file:text-secondary-200 hover:file:bg-secondary-200 dark:hover:file:bg-secondary-700 file:cursor-pointer cursor-pointer file:transition-colors"
+      class="block w-full text-sm text-accent-900 dark:text-accent-100 file:mr-4 file:py-2.5 file:px-4 file:rounded-[0.175rem] file:border-0 file:text-sm file:font-semibold file:bg-secondary-100 dark:file:bg-secondary-800 file:text-secondary-700 dark:file:text-secondary-200 hover:file:bg-secondary-200 dark:hover:file:bg-secondary-700 file:cursor-pointer cursor-pointer file:transition-colors"
       on:change={(event) => handle_file_change(event, field.field_name)}
       disabled={is_read_only}
     />

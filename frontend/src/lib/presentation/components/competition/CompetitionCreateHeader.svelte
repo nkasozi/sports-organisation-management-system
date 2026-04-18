@@ -5,7 +5,7 @@
 <div class="flex items-center gap-4">
     <button
         type="button"
-        class="p-2 rounded-lg text-accent-500 hover:bg-accent-100 dark:hover:bg-accent-700"
+        class="p-2 rounded-[0.175rem] text-accent-500 hover:bg-accent-100 dark:hover:bg-accent-700"
         on:click={on_cancel}
         aria-label="Go back"
     >
