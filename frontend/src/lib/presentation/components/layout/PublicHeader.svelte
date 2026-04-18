@@ -40,7 +40,7 @@
   <div class="px-4 sm:px-6 lg:px-8 relative z-10">
     <div class="flex justify-between items-center h-16">
       <div
-        class="flex items-center space-x-4 bg-black/25 dark:bg-black/40 backdrop-blur-sm rounded-lg px-4 py-2 header-panel {$branding_store.show_panel_borders
+        class="flex items-center space-x-4 bg-black/25 dark:bg-black/40 backdrop-blur-sm rounded-[0.175rem] px-4 py-2 header-panel {$branding_store.show_panel_borders
           ? 'border-2 border-white/60'
           : ''}"
       >
@@ -97,7 +97,7 @@
       </div>
 
       <div
-        class="flex items-center bg-black/25 dark:bg-black/40 backdrop-blur-sm rounded-lg px-3 py-2 header-panel {$branding_store.show_panel_borders
+        class="flex items-center bg-black/25 dark:bg-black/40 backdrop-blur-sm rounded-[0.175rem] px-3 py-2 header-panel {$branding_store.show_panel_borders
           ? 'border-2 border-white/60'
           : ''}"
       >

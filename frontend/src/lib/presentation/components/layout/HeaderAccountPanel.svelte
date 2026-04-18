@@ -28,7 +28,7 @@
 </script>
 
 <div
-  class="flex items-center space-x-4 bg-black/25 dark:bg-black/40 backdrop-blur-sm rounded-lg px-3 py-2 header-panel {show_panel_borders
+  class="flex items-center space-x-4 bg-black/25 dark:bg-black/40 backdrop-blur-sm rounded-[0.175rem] px-3 py-2 header-panel {show_panel_borders
     ? 'border-2 border-white/60'
     : ''}"
 >

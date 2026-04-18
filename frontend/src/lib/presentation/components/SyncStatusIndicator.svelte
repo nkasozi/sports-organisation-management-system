@@ -2,6 +2,7 @@
   import { onDestroy } from "svelte";
 
   import SyncStatusIndicatorDetails from "$lib/presentation/components/SyncStatusIndicatorDetails.svelte";
+  import { format_sync_status_text } from "$lib/presentation/logic/syncStatusIndicatorText";
   import { sync_store } from "$lib/presentation/stores/syncStore";
   import {
     is_syncing,
@@ -51,6 +52,13 @@
     relative_time_tick++;
   }, 15000);
 
+  $: sync_status_text = format_sync_status_text({
+    sync_in_progress,
+    last_sync,
+    current_percentage,
+    relative_time_tick,
+  });
+
   onDestroy(() => {
     clearInterval(tick_interval);
   });
@@ -67,24 +75,6 @@
     if (sync_in_progress) return SYNC_PROGRESS_ICON_COLOR;
     if (error_state.status === "present") return SYNC_ERROR_ICON_COLOR;
     return SYNC_SUCCESS_ICON_COLOR;
-  }
-
-  function format_sync_status_text(): string {
-    if (!sync_in_progress) {
-      if (last_sync.status === "never") return "Never";
-      const date = new Date(last_sync.value);
-      const now = new Date();
-      const diff_ms = now.getTime() - date.getTime();
-      const diff_seconds = Math.floor(diff_ms / 1000);
-      const diff_minutes = Math.floor(diff_seconds / 60);
-      const diff_hours = Math.floor(diff_minutes / 60);
-      if (diff_seconds < 15) return "Just now";
-      if (diff_seconds < 60) return `${diff_seconds}s ago`;
-      if (diff_minutes < 60) return `${diff_minutes}m ago`;
-      if (diff_hours < 24) return `${diff_hours}h ago`;
-      return date.toLocaleDateString();
-    }
-    return `${current_percentage}%`;
   }
 </script>
 
@@ -110,7 +100,7 @@
       />
     </svg>
     <span class="hidden sm:inline text-white/80">
-      {format_sync_status_text()}
+      {sync_status_text}
     </span>
   </button>
 
