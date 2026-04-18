@@ -117,4 +117,43 @@ describe("SyncStatusIndicator", () => {
       "--sync-status-color: rgb(239 68 68 / 1);",
     );
   });
+
+  it("stops spinning after sync completion", () => {
+    sync_indicator_store_state.set_state({
+      is_syncing: false,
+      sync_progress: { status: "idle" },
+      last_sync_time: {
+        status: "recorded",
+        value: "2024-05-01T10:00:00.000Z",
+      },
+    });
+
+    const rendered_markup = render(SyncStatusIndicator).body;
+
+    expect(rendered_markup).not.toContain("animate-spin");
+  });
+
+  it("keeps spinning while sync is active", () => {
+    sync_indicator_store_state.set_state({
+      is_syncing: true,
+      sync_progress: {
+        status: "active",
+        progress: {
+          table_name: "teams",
+          total_records: 10,
+          synced_records: 5,
+          status: "syncing",
+          errors: [],
+          tables_completed: 1,
+          total_tables: 2,
+          percentage: 50,
+        },
+      },
+      sync_percentage: 50,
+    });
+
+    const rendered_markup = render(SyncStatusIndicator).body;
+
+    expect(rendered_markup).toContain("animate-spin");
+  });
 });
