@@ -61,7 +61,7 @@
     on:input={on_input}
     on:keydown={on_keydown}
     disabled={disabled || is_loading}
-    class="w-full py-2 border rounded-lg text-sm cursor-pointer bg-white dark:bg-accent-800 text-accent-900 dark:text-accent-100 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none disabled:bg-accent-100 dark:disabled:bg-accent-700 disabled:cursor-not-allowed {selected_option?.color_swatch &&
+    class="w-full py-2 border rounded-[0.175rem] text-sm cursor-pointer bg-white dark:bg-accent-800 text-accent-900 dark:text-accent-100 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none disabled:bg-accent-100 dark:disabled:bg-accent-700 disabled:cursor-not-allowed {selected_option?.color_swatch &&
     !is_open
       ? 'pl-11 pr-3'
       : 'px-3'} {has_error

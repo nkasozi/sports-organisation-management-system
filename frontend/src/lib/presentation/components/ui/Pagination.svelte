@@ -96,7 +96,7 @@
         <div class="flex items-center gap-1">
             <button
                 type="button"
-                class="p-1.5 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                class="p-1.5 rounded-[0.175rem] text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                 disabled={current_page === 1}
                 aria-label="Previous page"
                 on:click={() => go_to_page(current_page - 1)}
@@ -125,7 +125,7 @@
                 {:else}
                     <button
                         type="button"
-                        class="min-w-[2rem] h-8 px-2 rounded-lg text-sm font-medium transition-colors
+                        class="min-w-[2rem] h-8 px-2 rounded-[0.175rem] text-sm font-medium transition-colors
               {page_number === current_page
                             ? 'bg-primary-600 text-white shadow-sm'
                             : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'}"
@@ -138,7 +138,7 @@
 
             <button
                 type="button"
-                class="p-1.5 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                class="p-1.5 rounded-[0.175rem] text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                 disabled={current_page === total_pages || total_pages === 0}
                 aria-label="Next page"
                 on:click={() => go_to_page(current_page + 1)}

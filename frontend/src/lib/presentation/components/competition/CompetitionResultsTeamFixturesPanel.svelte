@@ -37,7 +37,7 @@
                 <div class="flex items-center gap-3">
                     <button
                         type="button"
-                        class="p-1.5 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                        class="p-1.5 rounded-[0.175rem] hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
                         on:click={on_close}
                         aria-label="Close"
                     >

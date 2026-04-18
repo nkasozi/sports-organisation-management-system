@@ -19,7 +19,7 @@
         >
         <select
             bind:value={stats_team_filter}
-            class="text-sm rounded-lg border border-accent-200 dark:border-accent-700 bg-white dark:bg-accent-800 text-accent-900 dark:text-accent-100 px-3 py-1.5 focus:ring-2 focus:ring-theme-primary-500 focus:border-transparent w-full sm:w-auto sm:max-w-xs"
+            class="text-sm rounded-[0.175rem] border border-accent-200 dark:border-accent-700 bg-white dark:bg-accent-800 text-accent-900 dark:text-accent-100 px-3 py-1.5 focus:ring-2 focus:ring-theme-primary-500 focus:border-transparent w-full sm:w-auto sm:max-w-xs"
         >
             <option value="all">All Teams</option>
             {#each stats_available_teams as team_name}

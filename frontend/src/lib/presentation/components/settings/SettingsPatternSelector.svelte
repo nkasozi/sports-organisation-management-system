@@ -15,7 +15,7 @@
     <div class="flex gap-2">
         <button
             type="button"
-            class={`relative flex-1 p-3 rounded-lg border-2 transition-all ${
+            class={`relative flex-1 p-3 rounded-[0.175rem] border-2 transition-all ${
                 selected_pattern === "pattern"
                     ? "border-theme-primary-500 bg-theme-primary-50 dark:bg-theme-primary-900/20"
                     : "border-accent-200 dark:border-accent-700 hover:border-accent-300 dark:hover:border-accent-600"
@@ -56,7 +56,7 @@
 
         <button
             type="button"
-            class={`relative flex-1 p-3 rounded-lg border-2 transition-all ${
+            class={`relative flex-1 p-3 rounded-[0.175rem] border-2 transition-all ${
                 selected_pattern === "solid_color"
                     ? "border-theme-primary-500 bg-theme-primary-50 dark:bg-theme-primary-900/20"
                     : "border-accent-200 dark:border-accent-700 hover:border-accent-300 dark:hover:border-accent-600"

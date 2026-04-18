@@ -125,7 +125,7 @@
         </h2>
         <button
           type="button"
-          class="p-2 rounded-lg text-accent-500 hover:bg-accent-100 dark:hover:bg-accent-700"
+          class="p-2 rounded-[0.175rem] text-accent-500 hover:bg-accent-100 dark:hover:bg-accent-700"
           on:click={handle_close}
           aria-label="Close">×</button
         >

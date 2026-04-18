@@ -65,7 +65,7 @@
 
         <button
             type="button"
-            class={`inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${share_link_copied ? "bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300" : "bg-accent-100 text-accent-700 dark:bg-accent-800 dark:text-accent-300 hover:bg-accent-200 dark:hover:bg-accent-700"}`}
+            class={`inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-[0.175rem] transition-colors ${share_link_copied ? "bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300" : "bg-accent-100 text-accent-700 dark:bg-accent-800 dark:text-accent-300 hover:bg-accent-200 dark:hover:bg-accent-700"}`}
             on:click={on_copy_share_link}
             title="Copy shareable link"
         >

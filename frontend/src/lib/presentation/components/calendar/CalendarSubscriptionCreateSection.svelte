@@ -21,7 +21,7 @@
   {#if !show_create_form}
     <button
       type="button"
-      class="w-full flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-accent-300 dark:border-accent-600 rounded-lg text-accent-600 dark:text-accent-400 hover:border-primary-500 hover:text-primary-600 dark:hover:border-primary-400 dark:hover:text-primary-400 transition-colors"
+      class="w-full flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-accent-300 dark:border-accent-600 rounded-[0.175rem] text-accent-600 dark:text-accent-400 hover:border-primary-500 hover:text-primary-600 dark:hover:border-primary-400 dark:hover:text-primary-400 transition-colors"
       on:click={on_show_form}
     >
       <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"
@@ -105,12 +105,12 @@
       <div class="form-actions mt-6 flex gap-3">
         <button
           type="button"
-          class="flex-1 px-4 py-2 bg-accent-200 hover:bg-accent-300 dark:bg-accent-600 dark:hover:bg-accent-500 text-accent-700 dark:text-accent-200 rounded-md transition-colors"
+          class="flex-1 px-4 py-2 bg-accent-200 hover:bg-accent-300 dark:bg-accent-600 dark:hover:bg-accent-500 text-accent-700 dark:text-accent-200 rounded-[0.175rem] transition-colors"
           on:click={on_hide_form}>Cancel</button
         >
         <button
           type="button"
-          class="flex-1 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          class="flex-1 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-[0.175rem] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           disabled={is_creating ||
             (selected_feed_type !== "all" && !selected_entity_id)}
           on:click={on_create}

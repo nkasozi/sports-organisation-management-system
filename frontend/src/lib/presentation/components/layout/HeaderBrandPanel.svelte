@@ -16,7 +16,7 @@
 >
   <button
     type="button"
-    class="lg:hidden inline-flex items-center justify-center p-2 rounded-md text-black hover:text-gray-800 hover:bg-theme-primary-400 dark:hover:bg-theme-primary-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-black transition-colors duration-200"
+    class="lg:hidden inline-flex items-center justify-center p-2 rounded-[0.175rem] text-black hover:text-gray-800 hover:bg-theme-primary-400 dark:hover:bg-theme-primary-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-black transition-colors duration-200"
     on:click={on_sidebar_toggle}
     aria-expanded={sidebar_open}
     aria-label="Toggle sidebar"
@@ -41,7 +41,7 @@
   </button>
   <button
     type="button"
-    class="hidden lg:inline-flex items-center justify-center p-2 rounded-md text-black hover:text-gray-800 hover:bg-theme-primary-400 dark:hover:bg-theme-primary-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-black transition-colors duration-200"
+    class="hidden lg:inline-flex items-center justify-center p-2 rounded-[0.175rem] text-black hover:text-gray-800 hover:bg-theme-primary-400 dark:hover:bg-theme-primary-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-black transition-colors duration-200"
     on:click={on_sidebar_toggle}
     aria-label="Toggle sidebar"
   >

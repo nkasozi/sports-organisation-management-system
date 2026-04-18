@@ -43,7 +43,7 @@
   <div class="feed-actions mt-4 space-y-2">
     <button
       type="button"
-      class="w-full flex items-center justify-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-md transition-colors"
+      class="w-full flex items-center justify-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-[0.175rem] transition-colors"
       on:click={() => on_open_webcal(feed.token)}
     >
       <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"
@@ -66,11 +66,11 @@
           type="text"
           readonly
           value={get_https_url(feed.token)}
-          class="flex-1 text-xs px-3 py-2 bg-accent-100 dark:bg-accent-700 border border-accent-200 dark:border-accent-600 rounded-md text-accent-600 dark:text-accent-300"
+          class="flex-1 text-xs px-3 py-2 bg-accent-100 dark:bg-accent-700 border border-accent-200 dark:border-accent-600 rounded-[0.175rem] text-accent-600 dark:text-accent-300"
         />
         <button
           type="button"
-          class="px-3 py-2 bg-accent-200 hover:bg-accent-300 dark:bg-accent-600 dark:hover:bg-accent-500 rounded-md transition-colors"
+          class="px-3 py-2 bg-accent-200 hover:bg-accent-300 dark:bg-accent-600 dark:hover:bg-accent-500 rounded-[0.175rem] transition-colors"
           on:click={() => on_copy(get_https_url(feed.token), feed.token)}
         >
           {#if copy_success_token === feed.token}

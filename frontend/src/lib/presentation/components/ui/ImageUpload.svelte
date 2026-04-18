@@ -153,7 +153,7 @@
 
       <button
         type="button"
-        class="px-4 py-2 text-sm font-medium rounded-lg border border-accent-300 dark:border-accent-600 bg-white dark:bg-accent-700 text-accent-700 dark:text-accent-200 hover:bg-accent-50 dark:hover:bg-accent-600 disabled:opacity-50 disabled:cursor-not-allowed"
+        class="px-4 py-2 text-sm font-medium rounded-[0.175rem] border border-accent-300 dark:border-accent-600 bg-white dark:bg-accent-700 text-accent-700 dark:text-accent-200 hover:bg-accent-50 dark:hover:bg-accent-600 disabled:opacity-50 disabled:cursor-not-allowed"
         on:click={trigger_file_input}
         {disabled}
       >

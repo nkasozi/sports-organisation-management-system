@@ -66,7 +66,7 @@
         <div class="flex items-center justify-between mb-3">
             <button
                 type="button"
-                class="p-2 hover:bg-gray-800 rounded-lg"
+                class="p-2 hover:bg-gray-800 rounded-[0.175rem]"
                 on:click={on_back}
                 aria-label="Go back"
             >
@@ -148,7 +148,7 @@
         {#if view_state.is_game_completed}
             <div class="flex justify-center mt-4">
                 <button
-                    class="px-4 py-2 bg-primary-600 hover:bg-primary-700 rounded-md text-sm font-medium flex items-center gap-2 disabled:opacity-50"
+                    class="px-4 py-2 bg-primary-600 hover:bg-primary-700 rounded-[0.175rem] text-sm font-medium flex items-center gap-2 disabled:opacity-50"
                     disabled={downloading_report}
                     on:click={on_download}
                 >

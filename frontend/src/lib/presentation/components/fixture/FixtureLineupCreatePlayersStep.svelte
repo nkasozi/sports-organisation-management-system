@@ -91,7 +91,7 @@
                     !is_selected &&
                     selected_players.length >= max_players}<button
                     type="button"
-                    class={`flex items-center p-4 rounded-lg border-2 transition-all cursor-pointer select-none text-left ${is_selected ? "border-secondary-500 bg-secondary-50 dark:bg-secondary-900/20" : "border-accent-200 dark:border-accent-700 hover:border-secondary-300"} ${selection_disabled ? "opacity-60 cursor-not-allowed" : ""}`}
+                    class={`flex items-center p-4 rounded-[0.175rem] border-2 transition-all cursor-pointer select-none text-left ${is_selected ? "border-secondary-500 bg-secondary-50 dark:bg-secondary-900/20" : "border-accent-200 dark:border-accent-700 hover:border-secondary-300"} ${selection_disabled ? "opacity-60 cursor-not-allowed" : ""}`}
                     on:click={() =>
                         !selection_disabled && on_toggle_player(player.id)}
                     aria-disabled={selection_disabled}

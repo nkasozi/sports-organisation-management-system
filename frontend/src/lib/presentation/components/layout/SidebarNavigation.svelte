@@ -37,7 +37,7 @@
         {@const is_active = is_item_active(item.href, current_path)}
         <a
           href={item.href}
-          class="group flex items-center px-2 py-2 text-sm font-medium rounded-md transition-all duration-200 {is_active
+          class="group flex items-center px-2 py-2 text-sm font-medium rounded-[0.175rem] transition-all duration-200 {is_active
             ? 'border-r-2'
             : 'text-accent-600 dark:text-accent-300 hover:bg-accent-100 dark:hover:bg-accent-700 hover:text-accent-900 dark:hover:text-accent-100'}"
           style={is_active

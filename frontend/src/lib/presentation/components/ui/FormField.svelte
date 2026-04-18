@@ -45,7 +45,7 @@
       {required}
       {disabled}
       {rows}
-      class="w-full px-3 py-2 border rounded-lg text-sm
+      class="w-full px-3 py-2 border rounded-[0.175rem] text-sm
              bg-white dark:bg-accent-800
              text-accent-900 dark:text-accent-100
              placeholder-accent-400 dark:placeholder-accent-500
@@ -66,7 +66,7 @@
       {disabled}
       {min}
       {max}
-      class="w-full px-3 py-2 border rounded-lg text-sm
+      class="w-full px-3 py-2 border rounded-[0.175rem] text-sm
              bg-white dark:bg-accent-800
              text-accent-900 dark:text-accent-100
              placeholder-accent-400 dark:placeholder-accent-500

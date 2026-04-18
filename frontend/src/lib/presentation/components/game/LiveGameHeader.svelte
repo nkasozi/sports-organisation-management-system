@@ -48,7 +48,7 @@
     <div class="flex items-center justify-between max-w-4xl mx-auto relative">
         <button
             type="button"
-            class="p-2 hover:bg-gray-800 rounded-lg absolute left-4 top-1/2 -translate-y-1/2 md:static md:translate-y-0"
+            class="p-2 hover:bg-gray-800 rounded-[0.175rem] absolute left-4 top-1/2 -translate-y-1/2 md:static md:translate-y-0"
             on:click={on_back}
             aria-label="Go back"
             ><svg
@@ -121,27 +121,27 @@
             </div>
             <div class="flex gap-2 mt-3 flex-wrap justify-center">
                 {#if can_modify_game}{#if fixture_status === "scheduled"}<button
-                            class="px-4 py-2 bg-green-600 hover:bg-green-700 rounded-md text-sm font-medium"
+                            class="px-4 py-2 bg-green-600 hover:bg-green-700 rounded-[0.175rem] text-sm font-medium"
                             on:click={on_start}>▶️ Start</button
                         >{:else if is_game_active}<button
-                            class="px-3 py-2 rounded-md text-sm font-medium bg-blue-600 text-white hover:bg-blue-700"
+                            class="px-3 py-2 rounded-[0.175rem] text-sm font-medium bg-blue-600 text-white hover:bg-blue-700"
                             on:click={on_toggle_clock}
                             >{is_clock_running
                                 ? "⏸️ Pause Time"
                                 : "▶️ Resume"}</button
                         >{#if period_button_config}<button
-                                class="px-3 py-2 bg-purple-600 hover:bg-purple-700 rounded-md text-sm font-medium"
+                                class="px-3 py-2 bg-purple-600 hover:bg-purple-700 rounded-[0.175rem] text-sm font-medium"
                                 on:click={on_period_action}
                                 >{period_button_config.icon}
                                 {period_button_config.label}</button
                             >{/if}{#if show_extra_time_button}<button
-                                class="px-3 py-2 rounded-md text-sm font-medium bg-green-600 hover:bg-green-700 text-white"
+                                class="px-3 py-2 rounded-[0.175rem] text-sm font-medium bg-green-600 hover:bg-green-700 text-white"
                                 on:click={on_extra_time}>⏱️ Add Time</button
                             >{/if}<button
-                            class="px-3 py-2 bg-red-600 hover:bg-red-700 rounded-md text-sm font-medium"
+                            class="px-3 py-2 bg-red-600 hover:bg-red-700 rounded-[0.175rem] text-sm font-medium"
                             on:click={on_end}>🏁 End Game</button
                         >{/if}{/if}{#if is_game_completed}<button
-                        class="px-4 py-2 bg-primary-600 hover:bg-primary-700 rounded-md text-sm font-medium flex items-center gap-2 disabled:opacity-50"
+                        class="px-4 py-2 bg-primary-600 hover:bg-primary-700 rounded-[0.175rem] text-sm font-medium flex items-center gap-2 disabled:opacity-50"
                         disabled={downloading_report}
                         on:click={() => void on_download_match_report()}
                         >{#if downloading_report}<svg

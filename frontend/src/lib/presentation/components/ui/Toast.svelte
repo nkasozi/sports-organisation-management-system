@@ -120,7 +120,7 @@
 
           <button
             type="button"
-            class="flex-shrink-0 p-1 rounded-md {config.dismiss_color} transition-colors"
+            class="flex-shrink-0 p-1 rounded-[0.175rem] {config.dismiss_color} transition-colors"
             on:click={handle_dismiss}
             aria-label="Dismiss"
           >

@@ -38,10 +38,10 @@
                 class="p-4 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-3"
             >
                 <button
-                    class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
+                    class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-[0.175rem]"
                     on:click={on_close}>Cancel</button
                 ><button
-                    class="px-4 py-2 text-sm font-medium text-white bg-violet-600 hover:bg-violet-700 rounded-md disabled:opacity-50"
+                    class="px-4 py-2 text-sm font-medium text-white bg-violet-600 hover:bg-violet-700 rounded-[0.175rem] disabled:opacity-50"
                     disabled={extra_minutes_to_add < 1 || is_updating}
                     on:click={() => void on_confirm()}
                     >Add {extra_minutes_to_add} min</button
