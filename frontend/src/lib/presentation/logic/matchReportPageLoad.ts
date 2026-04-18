@@ -1,7 +1,9 @@
+import type { Team } from "$lib/core/entities/Team";
 import {
   type AsyncResult,
   create_failure_result,
   create_success_result,
+  type Result,
 } from "$lib/core/types/Result";
 import {
   load_match_report_assigned_officials,
@@ -13,11 +15,22 @@ import type {
   MatchReportPageDependencies,
   MatchReportRefreshData,
   MatchReportRefreshDependencies,
+  MatchReportTeamState,
 } from "$lib/presentation/logic/matchReportPageLoadTypes";
 
 const MATCH_REPORT_PAGE_LOAD_MESSAGE = {
   fixture_not_found: "Failed to load match",
 } as const;
+
+function build_match_report_team_state(
+  team_result: Result<Team>,
+): MatchReportTeamState {
+  if (!team_result.success || !team_result.data) {
+    return { status: "missing" };
+  }
+
+  return { status: "present", team: team_result.data };
+}
 
 export async function load_match_report_page_data(command: {
   fixture_id: string;
@@ -52,13 +65,11 @@ export async function load_match_report_page_data(command: {
 
   return create_success_result({
     fixture,
-    home_team: home_team_result.success ? home_team_result.data : null,
-    away_team: away_team_result.success ? away_team_result.data : null,
-    competition: competition_bundle.competition,
-    sport: competition_bundle.sport,
-    venue: assigned_officials_bundle.venue_result.success
-      ? assigned_officials_bundle.venue_result.data
-      : null,
+    home_team_state: build_match_report_team_state(home_team_result),
+    away_team_state: build_match_report_team_state(away_team_result),
+    competition_state: competition_bundle.competition_state,
+    sport_state: competition_bundle.sport_state,
+    venue_state: assigned_officials_bundle.venue_state,
     organization_name: competition_bundle.organization_name,
     assigned_officials_data: assigned_officials_bundle.assigned_officials_data,
     home_players: lineups.home_players,

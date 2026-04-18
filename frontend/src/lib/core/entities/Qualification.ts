@@ -39,6 +39,10 @@ export type CreateQualificationInput = Omit<
 
 export type UpdateQualificationInput = Partial<CreateQualificationInput>;
 
+type QualificationExpiryDayCount =
+  | { status: "missing" }
+  | { status: "present"; day_count: number };
+
 const CERTIFICATION_LEVEL_OPTIONS = [
   { value: "trainee", label: "Trainee" },
   { value: "local", label: "Local" },
@@ -120,9 +124,9 @@ export function is_qualification_expired(
 
 export function get_days_until_expiry(
   expiry_date: ScalarValueInput<Qualification["expiry_date"]>,
-): number | null {
+): QualificationExpiryDayCount {
   if (!expiry_date) {
-    return null;
+    return { status: "missing" };
   }
   const expiry = new Date(expiry_date);
   const today = new Date();
@@ -131,7 +135,7 @@ export function get_days_until_expiry(
 
   const diff_time = expiry.getTime() - today.getTime();
   const diff_days = Math.ceil(diff_time / (1000 * 60 * 60 * 24));
-  return diff_days;
+  return { status: "present", day_count: diff_days };
 }
 
 function get_qualification_display_name(qualification: Qualification): string {
@@ -141,10 +145,11 @@ function get_qualification_display_name(qualification: Qualification): string {
 function get_expiry_status_color(
   expiry_date: Qualification["expiry_date"],
 ): string {
-  const days = get_days_until_expiry(expiry_date);
-  if (days === null) return "gray";
-  if (days < 0) return "red";
-  if (days <= 30) return "blue";
-  if (days <= 90) return "yellow";
+  const expiry_day_count = get_days_until_expiry(expiry_date);
+
+  if (expiry_day_count.status !== "present") return "gray";
+  if (expiry_day_count.day_count < 0) return "red";
+  if (expiry_day_count.day_count <= 30) return "blue";
+  if (expiry_day_count.day_count <= 90) return "yellow";
   return "green";
 }

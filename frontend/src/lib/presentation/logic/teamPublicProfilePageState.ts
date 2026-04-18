@@ -37,11 +37,7 @@ export function apply_fixture_to_team_public_profile_stats(
   fixture: Fixture,
   team_id: string,
 ): TeamPublicProfileStats {
-  if (
-    fixture.status !== "completed" ||
-    fixture.home_team_score === null ||
-    fixture.away_team_score === null
-  ) {
+  if (fixture.status !== "completed") {
     return stats;
   }
 

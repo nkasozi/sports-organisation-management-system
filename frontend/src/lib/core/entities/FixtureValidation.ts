@@ -73,7 +73,7 @@ function derive_groups_from_fixtures(
   function find_root(
     team_id: Fixture["home_team_id"],
   ): Fixture["home_team_id"] {
-    if (parent[team_id] === undefined) {
+    if (parent[team_id] === void 0) {
       parent[team_id] = team_id;
     }
     if (parent[team_id] !== team_id) {

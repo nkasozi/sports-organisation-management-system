@@ -35,7 +35,7 @@ export const foul_category_validator = v.object({
   severity: v.string(),
   description: v.string(),
   typical_penalty: v.string(),
-  results_in_card: v.union(v.string(), v.null()),
+  results_in_card: v.string(),
 });
 
 export const official_requirement_validator = v.object({
@@ -57,7 +57,7 @@ export const overtime_rule_validator = v.object({
   trigger_condition: v.string(),
   overtime_type: v.string(),
   extra_time_periods: v.array(sport_game_period_validator),
-  penalties_config: v.union(penalties_config_validator, v.null()),
+  penalties_config: penalties_config_validator,
 });
 
 export const scoring_rule_validator = v.object({
@@ -68,7 +68,7 @@ export const scoring_rule_validator = v.object({
 
 export const substitution_rule_validator = v.object({
   max_substitutions_per_game: v.number(),
-  max_substitution_windows: v.union(v.number(), v.null()),
+  max_substitution_windows: v.number(),
   rolling_substitutions_allowed: v.boolean(),
   return_after_substitution_allowed: v.boolean(),
 });
@@ -77,7 +77,7 @@ export const game_event_validator = v.object({
   id: v.string(),
   event_type: v.string(),
   minute: v.number(),
-  stoppage_time_minute: v.union(v.number(), v.null()),
+  stoppage_time_minute: v.number(),
   team_side: v.string(),
   player_name: v.string(),
   secondary_player_name: v.string(),
@@ -106,8 +106,8 @@ export const lineup_player_validator = v.object({
   id: v.string(),
   first_name: v.string(),
   last_name: v.string(),
-  jersey_number: v.union(v.number(), v.null()),
-  position: v.union(v.string(), v.null()),
+  jersey_number: v.number(),
+  position: v.string(),
   is_captain: v.boolean(),
   is_substitute: v.boolean(),
   time_on: v.optional(v.string()),

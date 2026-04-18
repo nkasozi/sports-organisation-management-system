@@ -7,9 +7,12 @@
     import type { CompetitionFormat } from "$lib/core/entities/CompetitionFormat";
     import type { CompetitionTeam } from "$lib/core/entities/CompetitionTeam";
     import type { Organization } from "$lib/core/entities/Organization";
-    import type { Sport } from "$lib/core/entities/Sport";
     import type { Team } from "$lib/core/entities/Team";
     import type { SelectOption } from "$lib/presentation/components/ui/SelectField.svelte";
+    import type {
+        CompetitionEditSelectedFormatState,
+        CompetitionEditSelectedSportState,
+    } from "$lib/presentation/logic/competitionEditPageContracts";
     import {
         create_competition_team_collections,
         normalize_competition_auto_squad_settings,
@@ -30,8 +33,8 @@
         all_teams: Team[],
         competition_team_entries: CompetitionTeam[],
         form_data: UpdateCompetitionInput,
-        selected_format: CompetitionFormat | null,
-        selected_sport: Sport | null,
+        selected_format_state: CompetitionEditSelectedFormatState,
+        selected_sport_state: CompetitionEditSelectedSportState,
         is_customizing_scoring: boolean,
         can_edit_competition: boolean,
         permission_info_message: string;
@@ -86,7 +89,7 @@
         competition_team_entries,
         get_available_teams: () => available_teams,
         get_form_data: () => form_data,
-        get_selected_format: () => selected_format,
+        get_selected_format_state: () => selected_format_state,
         get_teams_in_competition: () => teams_in_competition,
         goto,
         organizations,
@@ -97,9 +100,10 @@
         set_is_customizing_scoring: (value: boolean) =>
             (is_customizing_scoring = value),
         set_is_saving: (value: boolean) => (is_saving = value),
-        set_selected_format: (value: CompetitionFormat | null) =>
-            (selected_format = value),
-        set_selected_sport: (value: Sport | null) => (selected_sport = value),
+        set_selected_format_state: (value: CompetitionEditSelectedFormatState) =>
+            (selected_format_state = value),
+        set_selected_sport_state: (value: CompetitionEditSelectedSportState) =>
+            (selected_sport_state = value),
         set_teams_in_competition: (value: Team[]) =>
             (teams_in_competition = value),
         show_toast,
@@ -111,8 +115,8 @@
     bind:form_data
     {organization_options}
     {competition_format_options}
-    {selected_format}
-    {selected_sport}
+    {selected_format_state}
+    {selected_sport_state}
     {teams_in_competition}
     {available_teams}
     {can_edit_competition}

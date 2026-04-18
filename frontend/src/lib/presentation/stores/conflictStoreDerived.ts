@@ -1,6 +1,7 @@
 import { derived } from "svelte/store";
 
 import { conflict_store } from "./conflictStore";
+import { create_current_conflict_state } from "./conflictStoreHelpers";
 
 export const pending_conflicts = derived(
   conflict_store,
@@ -22,9 +23,11 @@ export const show_merge_screen = derived(
   ($store) => $store.show_merge_screen,
 );
 
-export const current_conflict = derived(
-  conflict_store,
-  ($store) => $store.pending_conflicts[$store.current_conflict_index] || null,
+export const current_conflict = derived(conflict_store, ($store) =>
+  create_current_conflict_state(
+    $store.pending_conflicts,
+    $store.current_conflict_index,
+  ),
 );
 
 export const conflict_progress = derived(conflict_store, ($store) => ({

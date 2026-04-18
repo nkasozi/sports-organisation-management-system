@@ -9,7 +9,7 @@ function createUnusedImportFix(parent, sourceCode) {
     fix(fixer) {
       const grandParent = parent.parent;
       if (!grandParent) {
-        return null;
+        return [];
       }
 
       if (grandParent.specifiers.length === 1) {

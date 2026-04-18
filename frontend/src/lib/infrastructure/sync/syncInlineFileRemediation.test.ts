@@ -9,6 +9,7 @@ import {
   type SyncRemediableRecord,
 } from "./syncInlineFileRemediation";
 import { get_pulling_from_remote, set_pulling_from_remote } from "./syncState";
+import { EPOCH_TIMESTAMP } from "./syncTypes";
 
 const TEST_PAYLOAD_LIMIT_BYTES = 420;
 const TEST_UPDATED_AT = "2024-05-02T10:00:00.000Z";
@@ -30,7 +31,7 @@ function create_team_record(command: {
 
 function create_mock_table(): Table<SyncRemediableRecord, string> {
   return {
-    bulkPut: vi.fn().mockResolvedValue(undefined),
+    bulkPut: vi.fn().mockImplementation(async () => {}),
   } as unknown as Table<SyncRemediableRecord, string>;
 }
 
@@ -48,7 +49,7 @@ describe("syncInlineFileRemediation", () => {
     const result = build_remediated_sync_records({
       table_name: "teams",
       all_local_records: [oversized_record],
-      remote_latest_modified_at: null,
+      remote_latest_modified_at: EPOCH_TIMESTAMP,
       detect_conflicts: true,
       max_payload_bytes: TEST_PAYLOAD_LIMIT_BYTES,
     });
@@ -87,7 +88,7 @@ describe("syncInlineFileRemediation", () => {
       table: mock_table,
       table_name: "teams",
       all_local_records: [oversized_record],
-      remote_latest_modified_at: null,
+      remote_latest_modified_at: EPOCH_TIMESTAMP,
       detect_conflicts: true,
       get_is_remote_sync_in_progress: get_pulling_from_remote,
       set_remote_sync_in_progress: set_pulling_from_remote,
@@ -100,7 +101,11 @@ describe("syncInlineFileRemediation", () => {
         logo_url: DEFAULT_TEAM_LOGO,
       }),
     ]);
-    expect(result.records[0].logo_url).toBe(DEFAULT_TEAM_LOGO);
+    expect(result).toMatchObject({ success: true });
+    if (!result.success) {
+      throw new Error("Expected remediation to succeed");
+    }
+    expect(result.data.records[0].logo_url).toBe(DEFAULT_TEAM_LOGO);
     expect(get_pulling_from_remote()).toBe(false);
   });
 });

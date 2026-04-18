@@ -24,6 +24,7 @@
     toggle_theme_mode,
   } from "$lib/presentation/stores/theme";
 
+  import { execute_logout_flow } from "../../logic/logoutFlow";
   import HeaderAccountPanel from "./HeaderAccountPanel.svelte";
   import HeaderBrandPanel from "./HeaderBrandPanel.svelte";
   export let sidebar_open = false;
@@ -35,8 +36,9 @@
     !!$branding_store.organization_logo_url &&
     $branding_store.organization_logo_url.length > 0;
   $: has_profile_picture =
-    !!$current_user_store?.profile_picture_base64 &&
-    $current_user_store.profile_picture_base64.length > 0;
+    $current_user_store.status === "present" &&
+    !!$current_user_store.user.profile_picture_base64 &&
+    $current_user_store.user.profile_picture_base64.length > 0;
 
   function handle_sidebar_toggle(): void {
     dispatch("toggle-sidebar");
@@ -68,12 +70,23 @@
     goto("/sign-in");
   }
 
-  function handle_logout_confirmed(): void {
+  async function handle_logout_confirmed(): Promise<void> {
     show_logout_warning = false;
-    clear_session_sync_flag();
-    auth_store.logout();
-    sign_out();
-    goto("/sign-in");
+
+    const logout_result = await execute_logout_flow({
+      clear_session_sync_flag,
+      before_sign_out: async (): Promise<void> => {
+        auth_store.logout();
+      },
+      sign_out,
+      after_sign_out: async (): Promise<void> => {
+        await goto("/sign-in");
+      },
+    });
+
+    if (!logout_result.success) {
+      return;
+    }
   }
 
   function handle_logout_cancelled(): void {
@@ -122,14 +135,19 @@
       />
       <HeaderAccountPanel
         {has_profile_picture}
-        profile_picture_base64={$current_user_store?.profile_picture_base64 ||
-          ""}
+        profile_picture_base64={$current_user_store.status === "present"
+          ? $current_user_store.user.profile_picture_base64 || ""
+          : ""}
         current_profile_initials={$current_profile_initials}
         current_profile_display_name={$current_profile_display_name}
         current_profile_organization_name={$current_profile_organization_name}
         current_profile_email={$current_profile_email}
         current_profile_team_id={$current_profile_team_id}
-        current_profile_team_name={$auth_store.current_profile?.team_name ?? ""}
+        current_profile_team_name={$auth_store.current_profile.status === "present"
+          ? $auth_store.current_profile.profile.team_name
+            ? $auth_store.current_profile.profile.team_name
+            : ""
+          : ""}
         current_user_role_display={$current_user_role_display}
         is_signed_in={$is_signed_in}
         other_available_profiles={$other_available_profiles}

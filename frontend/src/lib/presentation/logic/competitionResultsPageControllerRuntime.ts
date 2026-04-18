@@ -1,10 +1,9 @@
 import type { Competition } from "$lib/core/entities/Competition";
 import type { Organization } from "$lib/core/entities/Organization";
-import type { UserRole } from "$lib/core/interfaces/ports";
 import { fetch_public_data_from_convex } from "$lib/infrastructure/sync/convexPublicDataService";
-import type { UserProfile } from "$lib/presentation/stores/auth";
 
 import { ensure_auth_profile } from "./authGuard";
+import type { CompetitionResultsProfileState } from "./competitionResultsPageContracts";
 import { competition_results_page_dependencies } from "./competitionResultsPageControllerDependencies";
 import { extract_competition_results_url_params } from "./competitionResultsPageData";
 import { initialize_competition_results_page } from "./competitionResultsPageInitialization";
@@ -20,7 +19,7 @@ import {
 export function create_competition_results_page_controller_runtime(command: {
   apply_bundle: (bundle: CompetitionResultsSelectedBundle) => void;
   get_auth_state: () => {
-    current_profile: (UserProfile & { role?: UserRole }) | null;
+    current_profile_state: CompetitionResultsProfileState;
   };
   get_is_public: () => boolean;
   get_organizations: () => Organization[];
@@ -66,9 +65,9 @@ export function create_competition_results_page_controller_runtime(command: {
           command.get_organizations(),
           selected_organization_id,
         );
-        if (selected_org) {
-          await command.sync_public_organization(selected_org);
-          await command.sync_branding_for_org(selected_org);
+        if (selected_org.status === "present") {
+          await command.sync_public_organization(selected_org.organization);
+          await command.sync_branding_for_org(selected_org.organization);
         }
       }
       command.set_fixtures_loading(true);
@@ -95,14 +94,14 @@ export function create_competition_results_page_controller_runtime(command: {
       }
       command.set_can_change_organizations(
         derive_competition_results_can_change_organizations(
-          command.get_auth_state().current_profile,
+          command.get_auth_state().current_profile_state,
           url_params.org_id,
         ),
       );
       command.set_loading_state("loading");
       try {
         const initialized_page = await initialize_competition_results_page({
-          current_profile: command.get_auth_state().current_profile,
+          current_profile_state: command.get_auth_state().current_profile_state,
           competition_results_dependencies:
             competition_results_page_dependencies,
           url_params,

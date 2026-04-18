@@ -7,6 +7,7 @@ import type {
 import type { TeamProfileRepository } from "../interfaces/ports";
 import type { QueryOptions } from "../interfaces/ports";
 import type { ScalarInput } from "../types/DomainScalars";
+import type { PaginatedResult, Result } from "../types/Result";
 import { create_failure_result, create_success_result } from "../types/Result";
 import { create_team_profile_use_cases } from "./TeamProfileUseCases";
 
@@ -40,8 +41,6 @@ function create_valid_team_profile_input(
     ...overrides,
   } as CreateTeamProfileInput;
 }
-
-import type { PaginatedResult, Result } from "../types/Result";
 
 function create_paginated_result<T>(
   items: T[],
@@ -113,7 +112,7 @@ describe("TeamProfileUseCases", () => {
       expect(result.data.items).toHaveLength(1);
       expect(mock_repository.find_all).toHaveBeenCalledWith(
         expect.objectContaining({ team_id: "team_1" }),
-        undefined,
+        {},
       );
     });
 
@@ -132,7 +131,7 @@ describe("TeamProfileUseCases", () => {
       expect(result.data.items).toHaveLength(1);
       expect(mock_repository.find_all).toHaveBeenCalledWith(
         expect.objectContaining({ visibility: "public" }),
-        undefined,
+        {},
       );
     });
 
@@ -141,10 +140,10 @@ describe("TeamProfileUseCases", () => {
         create_paginated_result([]),
       );
 
-      const options =  { page_number: 2, page_size: 20 } as QueryOptions;
-      await use_cases.list(undefined, options);
+      const options = { page_number: 2, page_size: 20 } as QueryOptions;
+      await use_cases.list({}, options);
 
-      expect(mock_repository.find_all).toHaveBeenCalledWith(undefined, options);
+      expect(mock_repository.find_all).toHaveBeenCalledWith({}, options);
     });
 
     it("handles repository failure", async () => {
@@ -446,7 +445,7 @@ describe("TeamProfileUseCases", () => {
         create_paginated_result([]),
       );
 
-      const options =  { page_number: 2, page_size: 20 } as QueryOptions;
+      const options = { page_number: 2, page_size: 20 } as QueryOptions;
       await use_cases.list_public_profiles(options);
 
       expect(mock_repository.find_public_profiles).toHaveBeenCalledWith(

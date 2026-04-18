@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { load_calendar_shell_initial_data } from "./calendarPageShellControllerInitialData";
+
 const {
   ensure_auth_profile_mock,
   fetch_public_data_from_convex_mock,
@@ -25,8 +27,6 @@ vi.mock("./calendarPageData", () => ({
   load_calendar_organizations: load_calendar_organizations_mock,
 }));
 
-import { load_calendar_shell_initial_data } from "./calendarPageShellControllerInitialData";
-
 describe("calendarPageShellControllerInitialData", () => {
   beforeEach(() => {
     ensure_auth_profile_mock.mockReset();
@@ -44,7 +44,7 @@ describe("calendarPageShellControllerInitialData", () => {
     await expect(
       load_calendar_shell_initial_data({
         is_public: false,
-        current_profile: null,
+        current_profile_state: { status: "missing" },
         preferred_organization_id: "organization-1",
         use_cases: {} as never,
       }),
@@ -61,7 +61,7 @@ describe("calendarPageShellControllerInitialData", () => {
     await expect(
       load_calendar_shell_initial_data({
         is_public: true,
-        current_profile: null,
+        current_profile_state: { status: "missing" },
         preferred_organization_id: "organization-1",
         use_cases: {} as never,
       }),
@@ -70,7 +70,6 @@ describe("calendarPageShellControllerInitialData", () => {
       is_using_cached_data: true,
       organizations: [],
       selected_organization_id: "",
-      bundle: null,
     });
   });
 
@@ -88,7 +87,7 @@ describe("calendarPageShellControllerInitialData", () => {
     await expect(
       load_calendar_shell_initial_data({
         is_public: true,
-        current_profile: null,
+        current_profile_state: { status: "missing" },
         preferred_organization_id: "organization-2",
         use_cases: {} as never,
       }),

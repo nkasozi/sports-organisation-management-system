@@ -1,24 +1,33 @@
 import {
+  type AsyncResult,
+  create_failure_result,
+  create_success_result,
+} from "$lib/core/types/Result";
+
+import {
   build_sync_push_batches,
   type SyncBatchRecord,
 } from "./syncPushBatching";
-import type { ConflictFromServer, ConvexClient, TableName } from "./syncTypes";
-import { EPOCH_TIMESTAMP } from "./syncTypes";
+import type {
+  ConflictFromServer,
+  ConvexClient,
+  RawConflictFromServer,
+  TableName,
+} from "./syncTypes";
+import { EPOCH_TIMESTAMP, normalize_conflict_from_server } from "./syncTypes";
 
 export async function push_table_to_convex(
   convex_client: ConvexClient,
   table_name: TableName,
   all_records: Array<{ id: string; updated_at?: string; created_at?: string }>,
-  remote_latest_modified_at: string | null,
+  remote_latest_modified_at: string,
   detect_conflicts: boolean = true,
-): Promise<{
-  success: boolean;
+): AsyncResult<{
   records_pushed: number;
-  error: string | null;
   conflicts: ConflictFromServer[];
 }> {
-  const remote_cutoff = remote_latest_modified_at || EPOCH_TIMESTAMP;
-  const server_is_empty = !remote_latest_modified_at;
+  const remote_cutoff = remote_latest_modified_at;
+  const server_is_empty = remote_latest_modified_at === EPOCH_TIMESTAMP;
 
   const push_log_context = server_is_empty
     ? `server is EMPTY, pushing all ${all_records.length} local records`
@@ -37,7 +46,7 @@ export async function push_table_to_convex(
     console.log(
       `[Sync:Push] ${table_name} — no local records newer than server, nothing to push`,
     );
-    return { success: true, records_pushed: 0, error: null, conflicts: [] };
+    return create_success_result({ records_pushed: 0, conflicts: [] });
   }
 
   console.log(
@@ -64,23 +73,18 @@ export async function push_table_to_convex(
       table_name,
       error: batch_partition_result.error,
     });
-    return {
-      success: false,
-      records_pushed: 0,
-      error: batch_partition_result.error,
-      conflicts: [],
-    };
+    return create_failure_result(batch_partition_result.error);
   }
 
   try {
     for (
       let batch_index = 0;
-      batch_index < batch_partition_result.batches.length;
+      batch_index < batch_partition_result.data.length;
       batch_index++
     ) {
-      const batch = batch_partition_result.batches[batch_index];
+      const batch = batch_partition_result.data[batch_index];
       const batch_number = batch_index + 1;
-      const total_batches = batch_partition_result.batches.length;
+      const total_batches = batch_partition_result.data.length;
       console.log(
         `[Sync:Push] ${table_name} — sending batch ${batch_number}/${total_batches} (${batch.length} records)`,
       );
@@ -95,7 +99,7 @@ export async function push_table_to_convex(
         message?: string;
         results: Array<{ local_id: string; success: boolean; action: string }>;
         has_conflicts: boolean;
-        conflicts: ConflictFromServer[];
+        conflicts: RawConflictFromServer[];
       };
 
       if (!result.success) {
@@ -105,12 +109,7 @@ export async function push_table_to_convex(
         console.error(
           `[Sync:Push] ${table_name} — batch ${batch_number} REJECTED by server: ${auth_error_message}`,
         );
-        return {
-          success: false,
-          records_pushed: total_pushed,
-          error: auth_error_message,
-          conflicts: all_conflicts,
-        };
+        return create_failure_result(auth_error_message);
       }
 
       console.log(
@@ -121,7 +120,9 @@ export async function push_table_to_convex(
         console.warn(
           `[Sync:Push] ${table_name} — batch ${batch_number} has ${result.conflicts.length} conflicts`,
         );
-        all_conflicts.push(...result.conflicts);
+        all_conflicts.push(
+          ...result.conflicts.map(normalize_conflict_from_server),
+        );
       }
 
       const non_conflict_count = result.results.filter(
@@ -137,21 +138,15 @@ export async function push_table_to_convex(
       context: String(table_name),
       error: String(error_message),
     });
-    return {
-      success: false,
-      records_pushed: total_pushed,
-      error: error_message,
-      conflicts: all_conflicts,
-    };
+
+    return create_failure_result(error_message);
   }
 
   console.log(
     `[Sync:Push] ${table_name} — completed, pushed ${total_pushed} records`,
   );
-  return {
-    success: true,
+  return create_success_result({
     records_pushed: total_pushed,
-    error: null,
     conflicts: all_conflicts,
-  };
+  });
 }

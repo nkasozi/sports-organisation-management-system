@@ -1,5 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import {
+  confirm_live_game_extra_time_action,
+  confirm_live_game_period_action,
+} from "./liveGameDetailPagePeriodActions";
+
 const {
   change_game_period_mock,
   end_game_period_mock,
@@ -18,11 +23,6 @@ vi.mock("$lib/presentation/logic/gameManageActions", () => ({
 vi.mock("$lib/presentation/logic/liveGameDetailActions", () => ({
   record_live_game_extra_time_event: record_live_game_extra_time_event_mock,
 }));
-
-import {
-  confirm_live_game_extra_time_action,
-  confirm_live_game_period_action,
-} from "./liveGameDetailPagePeriodActions";
 
 describe("liveGameDetailPagePeriodActions", () => {
   beforeEach(() => {

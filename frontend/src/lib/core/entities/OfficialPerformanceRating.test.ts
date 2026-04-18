@@ -82,7 +82,7 @@ describe("get_tier_label", () => {
 
 describe("compute_composite_score", () => {
   it("returns 10 when all dimensions are 10", () => {
-    const perfect =  {
+    const perfect = {
       overall: 10,
       decision_accuracy: 10,
       game_control: 10,
@@ -93,7 +93,7 @@ describe("compute_composite_score", () => {
   });
 
   it("returns 1 when all dimensions are 1", () => {
-    const lowest =  {
+    const lowest = {
       overall: 1,
       decision_accuracy: 1,
       game_control: 1,
@@ -104,7 +104,7 @@ describe("compute_composite_score", () => {
   });
 
   it("returns correct average for mixed dimensions", () => {
-    const mixed =  {
+    const mixed = {
       overall: 10,
       decision_accuracy: 5,
       game_control: 5,
@@ -116,8 +116,8 @@ describe("compute_composite_score", () => {
 });
 
 describe("aggregate_weighted_ratings", () => {
-  it("returns null for empty array", () => {
-    expect(aggregate_weighted_ratings([])).toBeNull();
+  it("returns empty status for empty array", () => {
+    expect(aggregate_weighted_ratings([])).toEqual({ status: "empty" });
   });
 
   it("returns correct summary for single uniform rating with weight 1", () => {
@@ -129,12 +129,18 @@ describe("aggregate_weighted_ratings", () => {
       fitness: 8,
       importance_weight: 1.0,
     });
-    const summary = aggregate_weighted_ratings([rating]);
+    const aggregation_result = aggregate_weighted_ratings([rating]);
 
-    expect(summary).not.toBeNull();
-    expect(summary!.total_weighted_score).toBeCloseTo(8, 5);
-    expect(summary!.rating_count).toBe(1);
-    expect(summary!.official_id).toBe("off_1");
+    expect(aggregation_result).toMatchObject({ status: "present" });
+
+    if (aggregation_result.status !== "present") {
+      expect(aggregation_result.status).toBe("present");
+      return;
+    }
+
+    expect(aggregation_result.summary.total_weighted_score).toBeCloseTo(8, 5);
+    expect(aggregation_result.summary.rating_count).toBe(1);
+    expect(aggregation_result.summary.official_id).toBe("off_1");
   });
 
   it("weights high-importance fixture more heavily in composite score", () => {
@@ -155,20 +161,37 @@ describe("aggregate_weighted_ratings", () => {
       importance_weight: 3.0,
     });
 
-    const summary = aggregate_weighted_ratings([
+    const aggregation_result = aggregate_weighted_ratings([
       low_importance_rating,
       high_importance_rating,
     ]);
 
-    expect(summary).not.toBeNull();
-    expect(summary!.total_weighted_score).toBeGreaterThan(6.5);
+    expect(aggregation_result).toMatchObject({ status: "present" });
+
+    if (aggregation_result.status !== "present") {
+      expect(aggregation_result.status).toBe("present");
+      return;
+    }
+
+    expect(aggregation_result.summary.total_weighted_score).toBeGreaterThan(
+      6.5,
+    );
   });
 
-  it("returns null total_weighted_score-safe when total_weight is zero", () => {
+  it("returns finite total_weighted_score when total_weight is zero", () => {
     const rating = make_rating({ importance_weight: 0 });
-    const summary = aggregate_weighted_ratings([rating]);
-    expect(summary).not.toBeNull();
-    expect(isFinite(summary!.total_weighted_score)).toBe(true);
+    const aggregation_result = aggregate_weighted_ratings([rating]);
+
+    expect(aggregation_result).toMatchObject({ status: "present" });
+
+    if (aggregation_result.status !== "present") {
+      expect(aggregation_result.status).toBe("present");
+      return;
+    }
+
+    expect(isFinite(aggregation_result.summary.total_weighted_score)).toBe(
+      true,
+    );
   });
 });
 

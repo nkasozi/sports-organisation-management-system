@@ -1,5 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { get_period_display_name } from "$lib/core/entities/Fixture";
+import { create_present_managed_game_fixture_state } from "$lib/presentation/logic/managedGamePageTypes";
+
+import { create_managed_game_game_action_handlers } from "./managedGamePageControllerGameActions";
+import type { ManagedGamePageState } from "./managedGamePageControllerState";
+import { create_managed_game_page_state } from "./managedGamePageControllerState";
+
 const {
   change_managed_game_period_mock,
   end_managed_game_mock,
@@ -19,12 +26,6 @@ vi.mock("$lib/presentation/logic/managedGamePageActions", () => ({
   start_managed_game: start_managed_game_mock,
 }));
 
-import { get_period_display_name } from "$lib/core/entities/Fixture";
-
-import { create_managed_game_game_action_handlers } from "./managedGamePageControllerGameActions";
-import type { ManagedGamePageState } from "./managedGamePageControllerState";
-import { create_managed_game_page_state } from "./managedGamePageControllerState";
-
 describe("managedGamePageControllerGameActions", () => {
   type HandlerCommand = Parameters<
     typeof create_managed_game_game_action_handlers
@@ -35,13 +36,14 @@ describe("managedGamePageControllerGameActions", () => {
   });
 
   function create_state_store() {
-    let current_state =  {
+    let current_state = {
       ...create_managed_game_page_state(),
-      fixture: {
+      fixture: create_present_managed_game_fixture_state({
         id: "fixture-1",
         status: "in_progress",
         current_period: "first_half",
-      } as ManagedGamePageState["fixture"],
+        game_events: [],
+      } as never),
       game_clock_seconds: 1200,
     } as ManagedGamePageState;
     return {
@@ -54,7 +56,7 @@ describe("managedGamePageControllerGameActions", () => {
   }
 
   it("blocks start when the preflight check rejects and redirects when requested", async () => {
-    const goto = vi.fn().mockResolvedValue(undefined);
+    const goto = vi.fn().mockResolvedValue({});
     const state_store = create_state_store();
     const handlers = create_managed_game_game_action_handlers({
       before_start: vi.fn().mockResolvedValue({
@@ -95,6 +97,7 @@ describe("managedGamePageControllerGameActions", () => {
         id: "fixture-1",
         status: "in_progress",
         current_period: "first_half",
+        game_events: [],
       },
     });
     const handlers = create_managed_game_game_action_handlers({
@@ -129,6 +132,7 @@ describe("managedGamePageControllerGameActions", () => {
         id: "fixture-1",
         current_period: "second_half",
         status: "in_progress",
+        game_events: [],
       },
     });
     const handlers = create_managed_game_game_action_handlers({
@@ -147,11 +151,12 @@ describe("managedGamePageControllerGameActions", () => {
     expect(state_store.read_state()).toEqual(
       expect.objectContaining({
         game_clock_seconds: 2700,
-        fixture: {
+        fixture: create_present_managed_game_fixture_state({
           id: "fixture-1",
           current_period: "second_half",
           status: "in_progress",
-        },
+          game_events: [],
+        } as never),
         toast_message: `${get_period_display_name("second_half")} started!`,
       }),
     );
@@ -167,6 +172,7 @@ describe("managedGamePageControllerGameActions", () => {
           id: "fixture-1",
           current_period: "half_time",
           status: "in_progress",
+          game_events: [],
         },
         completed_period_label: "First Half",
       },
@@ -186,11 +192,12 @@ describe("managedGamePageControllerGameActions", () => {
     expect(stop_clock).toHaveBeenCalled();
     expect(state_store.read_state()).toEqual(
       expect.objectContaining({
-        fixture: {
+        fixture: create_present_managed_game_fixture_state({
           id: "fixture-1",
           current_period: "half_time",
           status: "in_progress",
-        },
+          game_events: [],
+        } as never),
         toast_message: "First Half ended",
         toast_type: "info",
       }),
@@ -206,6 +213,7 @@ describe("managedGamePageControllerGameActions", () => {
         id: "fixture-1",
         status: "completed",
         current_period: "finished",
+        game_events: [],
       },
     });
     const handlers = create_managed_game_game_action_handlers({
@@ -223,11 +231,12 @@ describe("managedGamePageControllerGameActions", () => {
     expect(stop_clock).toHaveBeenCalled();
     expect(state_store.read_state()).toEqual(
       expect.objectContaining({
-        fixture: {
+        fixture: create_present_managed_game_fixture_state({
           id: "fixture-1",
           status: "completed",
           current_period: "finished",
-        },
+          game_events: [],
+        } as never),
         toast_message: "Game completed!",
         toast_type: "success",
       }),

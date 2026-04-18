@@ -23,7 +23,7 @@ export function create_competition_team_use_cases(
       filter?: CompetitionTeamFilter,
       options?: QueryOptions,
     ): PaginatedAsyncResult<CompetitionTeam> {
-      return repository.find_all(filter, options);
+      return repository.find_all(filter ?? {}, options ?? {});
     },
 
     async get_by_id(id: CompetitionTeam["id"]): AsyncResult<CompetitionTeam> {

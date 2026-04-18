@@ -26,12 +26,12 @@ import type { DynamicFormFieldCallbacks } from "./dynamicFormComponentTypes";
 
 type ControllerDependencies = {
   entity_type: string;
-  crud_handlers: EntityCrudHandlers | null;
+  crud_handlers?: EntityCrudHandlers;
   is_inline_mode: boolean;
   player_team_membership_use_cases: PlayerTeamMembershipUseCasesPort;
-  get_entity_metadata: () => EntityMetadata | null;
+  get_entity_metadata: () => EntityMetadata | undefined;
   get_is_edit_mode: () => boolean;
-  get_entity_data: () => Partial<BaseEntity> | null;
+  get_entity_data: () => Partial<BaseEntity> | undefined;
   get_form_state: () => DynamicEntityFormState;
   set_form_state: (next_state: DynamicEntityFormState) => void;
   get_ui_state: () => DynamicEntityFormUiState;
@@ -107,16 +107,17 @@ export function create_dynamic_entity_form_controller(
       save_error_message: "",
     });
     dependencies.set_form_state({ ...form_state, validation_errors: {} });
-    const submit_result = await submit_dynamic_entity_form(
-      dependencies.entity_type,
-      dependencies.get_entity_metadata(),
-      dependencies.get_form_state().form_data,
-      dependencies.get_is_edit_mode(),
-      dependencies.get_entity_data(),
-      dependencies.crud_handlers,
-      ui_state.permission_denied,
-      dependencies.player_team_membership_use_cases,
-    );
+    const submit_result = await submit_dynamic_entity_form({
+      entity_type: dependencies.entity_type,
+      entity_metadata: dependencies.get_entity_metadata(),
+      form_data: dependencies.get_form_state().form_data,
+      is_edit_mode: dependencies.get_is_edit_mode(),
+      entity_data: dependencies.get_entity_data(),
+      crud_handlers: dependencies.crud_handlers,
+      permission_denied: ui_state.permission_denied,
+      player_team_membership_use_cases:
+        dependencies.player_team_membership_use_cases,
+    });
     apply_submit_result(dependencies, submit_result);
   }
 

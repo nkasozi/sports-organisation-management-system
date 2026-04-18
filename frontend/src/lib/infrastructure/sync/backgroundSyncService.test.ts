@@ -46,9 +46,9 @@ interface BackgroundSyncState {
   is_running: boolean;
   has_pending_changes: boolean;
   is_online: boolean;
-  debounce_timer_id: ReturnType<typeof setTimeout> | null;
-  offline_retry_timer_id: ReturnType<typeof setInterval> | null;
-  scheduled_sync_timer_id: ReturnType<typeof setInterval> | null;
+  debounce_timer_id?: ReturnType<typeof setTimeout>;
+  offline_retry_timer_id?: ReturnType<typeof setInterval>;
+  scheduled_sync_timer_id?: ReturnType<typeof setInterval>;
   hooks_installed: boolean;
 }
 
@@ -57,9 +57,7 @@ function create_initial_state(): BackgroundSyncState {
     is_running: false,
     has_pending_changes: false,
     is_online: true,
-    debounce_timer_id: null,
-    offline_retry_timer_id: null,
-    scheduled_sync_timer_id: null,
+
     hooks_installed: false,
   } as BackgroundSyncState;
 }
@@ -128,9 +126,9 @@ describe("create_initial_state", () => {
     expect(state.is_running).toBe(false);
     expect(state.has_pending_changes).toBe(false);
     expect(state.is_online).toBe(true);
-    expect(state.debounce_timer_id).toBeNull();
-    expect(state.offline_retry_timer_id).toBeNull();
-    expect(state.scheduled_sync_timer_id).toBeNull();
+    expect(state.debounce_timer_id).toBeUndefined();
+    expect(state.offline_retry_timer_id).toBeUndefined();
+    expect(state.scheduled_sync_timer_id).toBeUndefined();
     expect(state.hooks_installed).toBe(false);
   });
 });
@@ -267,8 +265,8 @@ describe("port configuration", () => {
   }
 
   it("configure_orchestrator stores the orchestrator and returns success", () => {
-    const orchestrators =  [] as MockOrchestrator[];
-    let stored_orchestrator: MockOrchestrator | null = null;
+    const orchestrators = [] as MockOrchestrator[];
+    let stored_orchestrator: MockOrchestrator | undefined = undefined;
 
     function configure_orchestrator(orch: MockOrchestrator) {
       stored_orchestrator = orch;
@@ -285,7 +283,7 @@ describe("port configuration", () => {
   });
 
   it("configure_remote_subscriber stores the subscriber and returns success", () => {
-    let stored_subscriber: MockRemoteSubscriber | null = null;
+    let stored_subscriber: MockRemoteSubscriber | undefined = undefined;
 
     function configure_remote_subscriber(sub: MockRemoteSubscriber) {
       stored_subscriber = sub;
@@ -300,10 +298,12 @@ describe("port configuration", () => {
   });
 
   it("configure_restoration_handlers stores the handlers and returns success", () => {
-    let stored_handlers: {
-      stop_remote_sync: () => void;
-      start_remote_sync: () => void;
-    } | null = null;
+    let stored_handlers:
+      | {
+          stop_remote_sync: () => void;
+          start_remote_sync: () => void;
+        }
+      | undefined = undefined;
 
     function configure_restoration_handlers(handlers: {
       stop_remote_sync: () => void;
@@ -321,7 +321,7 @@ describe("port configuration", () => {
     });
 
     expect(result.success).toBe(true);
-    expect(stored_handlers).not.toBeNull();
+    expect(stored_handlers).toBeDefined();
   });
 });
 
@@ -329,7 +329,7 @@ describe("execute_push_sync behavior", () => {
   it("uses push direction and passes timestamp cache from remote subscriber", async () => {
     const timestamp_cache = {
       players: "2024-06-01T00:00:00.000Z",
-      teams: null,
+      teams: "1970-01-01T00:00:00.000Z",
     };
 
     let called_direction: string | undefined;
@@ -415,7 +415,7 @@ describe("execute_push_sync behavior", () => {
 
 describe("network restoration sync behavior", () => {
   it("stops WebSocket before bidirectional sync and restarts after", async () => {
-    const call_order =  [] as string[];
+    const call_order = [] as string[];
 
     const mock_handlers = {
       stop_remote_sync: vi.fn(() => {
@@ -605,16 +605,16 @@ describe("flush_pending_changes returns AsyncResult", () => {
 describe("scheduled sync timer behavior", () => {
   it("start_scheduled_sync_timer starts interval with 1-hour period and calls sync on each tick", () => {
     vi.useFakeTimers();
-    const sync_calls =  [] as string[];
+    const sync_calls = [] as string[];
 
     function mock_run_restoration_sync(): void {
       sync_calls.push("bidirectional_sync");
     }
 
-    let stored_timer_id: ReturnType<typeof setInterval> | null = null;
+    let stored_timer_id: ReturnType<typeof setInterval> | undefined = undefined;
 
     function start_scheduled_sync_timer(): void {
-      if (stored_timer_id !== null) return;
+      if (stored_timer_id !== void 0) return;
       stored_timer_id = setInterval(() => {
         mock_run_restoration_sync();
       }, SCHEDULED_SYNC_INTERVAL_MS);
@@ -635,12 +635,12 @@ describe("scheduled sync timer behavior", () => {
 
   it("start_scheduled_sync_timer is idempotent — calling twice starts only one timer", () => {
     vi.useFakeTimers();
-    const sync_calls =  [] as string[];
+    const sync_calls = [] as string[];
 
-    let stored_timer_id: ReturnType<typeof setInterval> | null = null;
+    let stored_timer_id: ReturnType<typeof setInterval> | undefined = undefined;
 
     function start_scheduled_sync_timer(): void {
-      if (stored_timer_id !== null) return;
+      if (stored_timer_id !== void 0) return;
       stored_timer_id = setInterval(() => {
         sync_calls.push("tick");
       }, SCHEDULED_SYNC_INTERVAL_MS);
@@ -658,21 +658,21 @@ describe("scheduled sync timer behavior", () => {
 
   it("stop_scheduled_sync_timer clears the interval so no further syncs fire", () => {
     vi.useFakeTimers();
-    const sync_calls =  [] as string[];
+    const sync_calls = [] as string[];
 
-    let stored_timer_id: ReturnType<typeof setInterval> | null = null;
+    let stored_timer_id: ReturnType<typeof setInterval> | undefined = void 0;
 
     function start_scheduled_sync_timer(): void {
-      if (stored_timer_id !== null) return;
+      if (stored_timer_id != void 0) return;
       stored_timer_id = setInterval(() => {
         sync_calls.push("tick");
       }, SCHEDULED_SYNC_INTERVAL_MS);
     }
 
     function stop_scheduled_sync_timer(): void {
-      if (stored_timer_id === null) return;
+      if (stored_timer_id === void 0) return;
       clearInterval(stored_timer_id);
-      stored_timer_id = null;
+      stored_timer_id = void 0;
     }
 
     start_scheduled_sync_timer();
@@ -687,22 +687,22 @@ describe("scheduled sync timer behavior", () => {
   });
 
   it("stop_scheduled_sync_timer is safe to call when timer is not running", () => {
-    let stored_timer_id: ReturnType<typeof setInterval> | null = null;
+    let stored_timer_id: ReturnType<typeof setInterval> | undefined = undefined;
 
     function stop_scheduled_sync_timer(): void {
-      if (stored_timer_id === null) return;
+      if (stored_timer_id === void 0) return;
       clearInterval(stored_timer_id);
-      stored_timer_id = null;
+      stored_timer_id = void 0;
     }
 
     expect(() => stop_scheduled_sync_timer()).not.toThrow();
-    expect(stored_timer_id).toBeNull();
+    expect(stored_timer_id).toBeUndefined();
   });
 });
 
 describe("trigger_full_sync_on_page_reload behavior", () => {
   it("delegates to run_network_restoration_sync", async () => {
-    const call_log =  [] as string[];
+    const call_log = [] as string[];
 
     async function mock_run_network_restoration_sync(): Promise<void> {
       call_log.push("restoration_sync");
@@ -801,21 +801,21 @@ describe("configure_scheduled_interval behavior", () => {
 
   it("replaces the current interval with the new one on success", () => {
     vi.useFakeTimers();
-    const sync_ticks =  [] as number[];
+    const sync_ticks = [] as number[];
     let active_interval_ms = DEFAULT_SYNC_INTERVAL_MS;
-    let timer_id: ReturnType<typeof setInterval> | null = null;
+    let timer_id: ReturnType<typeof setInterval> | undefined = undefined;
 
     function start_timer(): void {
-      if (timer_id !== null) return;
+      if (timer_id !== void 0) return;
       timer_id = setInterval(() => {
         sync_ticks.push(Date.now());
       }, active_interval_ms);
     }
 
     function stop_timer(): void {
-      if (timer_id === null) return;
+      if (timer_id === void 0) return;
       clearInterval(timer_id);
-      timer_id = null;
+      timer_id = void 0;
     }
 
     function reconfigure(interval_ms: number): boolean {

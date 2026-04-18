@@ -44,7 +44,7 @@ describe("ActivitySyncUseCasesHelpers", () => {
           update: vi.fn().mockResolvedValue({ success: true, data: true }),
           create: vi.fn(),
         } as never,
-        { id: "activity_1" } as never,
+        { status: "existing", activity: { id: "activity_1" } as never },
         {} as never,
         { title: "Updated" } as never,
       ),
@@ -58,7 +58,7 @@ describe("ActivitySyncUseCasesHelpers", () => {
             .fn()
             .mockResolvedValue({ success: true, data: { id: "activity_2" } }),
         } as never,
-        null,
+        { status: "missing" },
         { title: "Created" } as never,
         {} as never,
       ),

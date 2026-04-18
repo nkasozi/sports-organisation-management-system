@@ -17,8 +17,8 @@ function create_mock_subscribable_client(): RealtimeSyncDependencies["subscribab
   return {
     onUpdate: vi.fn().mockReturnValue(create_mock_subscription()),
   } as RealtimeSyncDependencies["subscribable_client"] & {
-  onUpdate: ReturnType<typeof vi.fn>;
-};
+    onUpdate: ReturnType<typeof vi.fn>;
+  };
 }
 
 function create_mock_pull_table(): RealtimeSyncDependencies["pull_table"] {
@@ -285,15 +285,20 @@ describe("ConvexRealtimeSync", () => {
       const status = local_sync.get_table_status("teams");
 
       expect(status).toEqual({
-        table_name: "teams",
-        remote_record_count: 5,
-        remote_latest_timestamp: "2024-06-15T12:00:00.000Z",
-        pull_count: 0,
+        status: "found",
+        table_status: {
+          table_name: "teams",
+          remote_record_count: 5,
+          remote_latest_timestamp: "2024-06-15T12:00:00.000Z",
+          pull_count: 0,
+        },
       });
     });
 
-    it("returns null for unknown table", () => {
-      expect(sync_service.get_table_status("nonexistent")).toBeNull();
+    it("returns a missing status for unknown table", () => {
+      expect(sync_service.get_table_status("nonexistent")).toEqual({
+        status: "missing",
+      });
     });
 
     it("increments pull_count after each triggered pull", () => {
@@ -327,7 +332,15 @@ describe("ConvexRealtimeSync", () => {
       });
 
       const status = local_sync.get_table_status("teams");
-      expect(status?.pull_count).toBe(2);
+      expect(status).toEqual({
+        status: "found",
+        table_status: {
+          table_name: "teams",
+          remote_record_count: 7,
+          remote_latest_timestamp: "2024-03-01T00:00:00.000Z",
+          pull_count: 2,
+        },
+      });
     });
   });
 
@@ -457,7 +470,7 @@ describe("ConvexRealtimeSync", () => {
       local_sync.start();
 
       const callback = client.onUpdate.mock.calls[0][2];
-      const change =  {
+      const change = {
         table_name: "teams",
         record_count: 5,
         latest_modified_at: "2024-01-01T00:00:00.000Z",

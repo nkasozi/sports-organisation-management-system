@@ -36,7 +36,7 @@ function get_success_data<TData>(result: Result<TData>): TData {
   expect(result.success).toBe(true);
 
   if (!result.success) {
-    return undefined as TData;
+    throw new Error("Expected a success result");
   }
 
   return result.data;
@@ -77,9 +77,9 @@ function create_calendar_token(
     entity_name: get_success_data(parse_name("Uganda Cranes")),
     reminder_minutes_before: 30,
     is_active: true,
-    last_accessed_at: null,
+    last_accessed_at: "",
     access_count: 0,
-    expires_at: null,
+    expires_at: "2026-07-01T00:00:00.000Z",
     ...overrides,
   } as CalendarToken;
 }
@@ -210,7 +210,7 @@ describe("calendarSubscriptionManagerLogic", () => {
       competitions: [],
       organization_id: "org_1",
       reminder_minutes: 15,
-      selected_entity_id: null,
+      selected_entity_id: "",
       selected_feed_type: "all",
       teams: [],
       user_id: "user_1",
@@ -277,7 +277,7 @@ describe("calendarSubscriptionManagerLogic", () => {
   });
 
   it("copies subscription links to the clipboard and reports failures", async () => {
-    const write_text = vi.fn().mockResolvedValue(undefined);
+    const write_text = vi.fn().mockImplementation(async () => {});
     vi.stubGlobal("navigator", {
       clipboard: { writeText: write_text },
     });
@@ -310,7 +310,7 @@ describe("calendarSubscriptionManagerLogic", () => {
       }),
     ).resolves.toBe(true);
 
-    expect(format_calendar_subscription_date(null)).toBe("Never");
+    expect(format_calendar_subscription_date("")).toBe("Never");
     expect(
       format_calendar_subscription_date("2026-04-07T00:00:00.000Z"),
     ).not.toBe("Never");

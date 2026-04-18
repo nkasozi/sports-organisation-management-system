@@ -3,7 +3,6 @@ import type {
   CreateActivityCategoryInput,
   UpdateActivityCategoryInput,
 } from "../entities/ActivityCategory";
-import type { ScalarValueInput } from "../types/DomainScalars";
 import {
   create_default_categories_for_organization,
   validate_activity_category_input,
@@ -14,6 +13,7 @@ import type {
 } from "../interfaces/ports";
 import type { QueryOptions } from "../interfaces/ports";
 import type { ActivityCategoryUseCasesPort } from "../interfaces/ports";
+import type { ScalarValueInput } from "../types/DomainScalars";
 import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
 import { create_failure_result } from "../types/Result";
 
@@ -27,7 +27,7 @@ export function create_activity_category_use_cases(
       filter?: ActivityCategoryFilter,
       options?: QueryOptions,
     ): PaginatedAsyncResult<ActivityCategory> {
-      return repository.find_all(filter, options);
+      return repository.find_all(filter ?? {}, options ?? {});
     },
 
     async get_by_id(id: ActivityCategory["id"]): AsyncResult<ActivityCategory> {
@@ -93,7 +93,7 @@ export function create_activity_category_use_cases(
         };
       }
 
-      return repository.find_by_organization(organization_id, options);
+      return repository.find_by_organization(organization_id, options ?? {});
     },
 
     async ensure_default_categories_exist(

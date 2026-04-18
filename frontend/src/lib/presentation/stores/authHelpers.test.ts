@@ -1,5 +1,19 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import {
+  build_profiles_with_public_viewer,
+  clear_auth_storage,
+  create_public_viewer_profile,
+  fetch_current_user_profile_from_convex,
+  generate_token_for_profile,
+  load_saved_profile_id,
+  load_saved_token,
+  load_sidebar_menu_for_role,
+  save_profile_id,
+  save_token,
+  sync_user_context_with_event_bus,
+} from "./authHelpers";
+
 const {
   clear_user_context_mock,
   generate_token_mock,
@@ -57,20 +71,6 @@ vi.mock("$lib/infrastructure/sync/convexSyncService", () => ({
   })),
 }));
 
-import {
-  build_profiles_with_public_viewer,
-  clear_auth_storage,
-  create_public_viewer_profile,
-  fetch_current_user_profile_from_convex,
-  generate_token_for_profile,
-  load_saved_profile_id,
-  load_saved_token,
-  load_sidebar_menu_for_role,
-  save_profile_id,
-  save_token,
-  sync_user_context_with_event_bus,
-} from "./authHelpers";
-
 describe("authHelpers", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -83,7 +83,10 @@ describe("authHelpers", () => {
   });
 
   it("returns a failure result when the convex client is unavailable", async () => {
-    get_convex_client_mock.mockReturnValue(null);
+    get_convex_client_mock.mockReturnValue({
+      success: false,
+      error: "Convex client not initialized",
+    });
 
     await expect(fetch_current_user_profile_from_convex()).resolves.toEqual({
       success: false,
@@ -92,7 +95,10 @@ describe("authHelpers", () => {
   });
 
   it("loads the current user profile from convex and surfaces query failures", async () => {
-    get_convex_client_mock.mockReturnValue({ query: query_mock });
+    get_convex_client_mock.mockReturnValue({
+      success: true,
+      data: { query: query_mock },
+    });
     query_mock.mockResolvedValueOnce({
       success: true,
       data: { email: "admin@example.com", role: "org_admin" },
@@ -114,9 +120,15 @@ describe("authHelpers", () => {
     get_setting_mock.mockResolvedValueOnce("profile_1");
     get_setting_mock.mockResolvedValueOnce("raw_token");
 
-    await expect(load_saved_profile_id()).resolves.toBe("profile_1");
+    await expect(load_saved_profile_id()).resolves.toEqual({
+      status: "present",
+      profile_id: "profile_1",
+    });
     await save_profile_id("profile_2");
-    await expect(load_saved_token()).resolves.toBe("raw_token");
+    await expect(load_saved_token()).resolves.toEqual({
+      status: "present",
+      raw_token: "raw_token",
+    });
     await save_token("next_raw_token");
     await clear_auth_storage();
 
@@ -241,13 +253,16 @@ describe("authHelpers", () => {
       error: "menu failed",
     });
 
-    sync_user_context_with_event_bus(null);
+    sync_user_context_with_event_bus({ status: "cleared" });
     sync_user_context_with_event_bus({
-      id: "profile_1",
-      email: "admin@example.com",
-      display_name: "Admin User",
-      organization_id: "org_1",
-    } as never);
+      status: "present",
+      profile: {
+        id: "profile_1",
+        email: "admin@example.com",
+        display_name: "Admin User",
+        organization_id: "org_1",
+      } as never,
+    });
 
     await expect(
       load_sidebar_menu_for_role("org_admin" as never),

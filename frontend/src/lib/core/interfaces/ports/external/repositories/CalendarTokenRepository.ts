@@ -15,6 +15,21 @@ import type {
 } from "../../../../types/Result";
 import type { FilterableRepository, QueryOptions } from "./Repository";
 
+const CALENDAR_TOKEN_NOT_FOUND_ERROR_PREFIX = "Calendar token not found";
+
+export function build_calendar_token_not_found_error(
+  token: CalendarTokenValue,
+): string {
+  return `${CALENDAR_TOKEN_NOT_FOUND_ERROR_PREFIX}: ${token}`;
+}
+
+export function is_calendar_token_not_found_error(
+  error: string,
+  token: CalendarTokenValue,
+): boolean {
+  return error === build_calendar_token_not_found_error(token);
+}
+
 export interface CalendarTokenFilter {
   user_id?: EntityId;
   organization_id?: EntityId;
@@ -29,7 +44,7 @@ export interface CalendarTokenRepository extends FilterableRepository<
   UpdateCalendarTokenInput,
   CalendarTokenFilter
 > {
-  find_by_token(token: CalendarTokenValue): AsyncResult<CalendarToken | null>;
+  find_by_token(token: CalendarTokenValue): AsyncResult<CalendarToken>;
 
   find_by_user(
     user_id: EntityId,

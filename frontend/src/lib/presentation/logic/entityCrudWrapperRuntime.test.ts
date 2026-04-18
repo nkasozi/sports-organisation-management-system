@@ -9,11 +9,11 @@ describe("entityCrudWrapperRuntime", () => {
     >,
   ) {
     return {
-      after_save_redirect_url: null,
+      after_save_redirect_url: "",
       dispatch: vi.fn(),
       entity_type: "Fixture Lineup",
       get_current_view: vi.fn(() => "list" as const),
-      goto: vi.fn(async () => undefined),
+      goto: vi.fn(async () => {}),
       normalized_entity_type: "fixturelineup",
       set_current_entity_for_editing: vi.fn(),
       set_current_view: vi.fn(),
@@ -38,7 +38,6 @@ describe("entityCrudWrapperRuntime", () => {
     expect(team_command.set_current_view).toHaveBeenCalledWith("create");
     expect(team_command.dispatch).toHaveBeenCalledWith("view_changed", {
       current_view: "create",
-      entity: undefined,
     });
   });
 

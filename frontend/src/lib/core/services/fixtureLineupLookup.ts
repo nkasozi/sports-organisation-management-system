@@ -3,8 +3,8 @@ import type { FixtureLineup, LineupPlayer } from "../entities/FixtureLineup";
 import type { Player } from "../entities/Player";
 import type { PlayerPosition } from "../entities/PlayerPosition";
 import type { PlayerTeamMembership } from "../entities/PlayerTeamMembership";
-import { parse_name } from "../types/DomainScalars";
 import type { ScalarValueInput } from "../types/DomainScalars";
+import { parse_name } from "../types/DomainScalars";
 import type { FixtureLineupUseCases } from "../usecases/FixtureLineupUseCases";
 import type { FixtureUseCases } from "../usecases/FixtureUseCases";
 
@@ -92,13 +92,14 @@ export function build_lineup_players_from_memberships(
   return memberships.map((membership) => {
     const player = player_by_id.get(membership.player_id);
     const position_name = player?.position_id
-      ? position_name_by_id.get(player.position_id) || null
-      : null;
+      ? ((position_name_by_id.get(player.position_id) ??
+          "") as LineupPlayer["position"])
+      : ("" as LineupPlayer["position"]);
     return {
       id: membership.player_id,
       first_name: player?.first_name ?? UNKNOWN_FIRST_NAME,
       last_name: player?.last_name ?? UNKNOWN_LAST_NAME,
-      jersey_number: membership.jersey_number ?? null,
+      jersey_number: membership.jersey_number,
       position: position_name,
       is_captain: false,
       is_substitute: false,

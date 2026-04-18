@@ -11,20 +11,20 @@ import type {
 import type { SubEntityFilter } from "$lib/core/types/SubEntityFilter";
 
 export interface DynamicEntityListControllerOptions {
-  bulk_create_handler: (() => void) | null;
+  bulk_create_handler?: () => void;
   button_color_class: string;
-  crud_handlers: EntityCrudHandlers | null;
+  crud_handlers?: EntityCrudHandlers;
   disabled_functionalities: CrudFunctionality[];
   enable_bulk_import: boolean;
   entity_type: string;
-  info_message: string | null;
+  info_message: string;
   is_mobile_view: boolean;
-  on_entities_batch_deleted: ((entities: BaseEntity[]) => void) | null;
-  on_selection_changed: ((selected: BaseEntity[]) => void) | null;
-  on_total_count_changed: ((count: number) => void) | null;
+  on_entities_batch_deleted?: (entities: BaseEntity[]) => void;
+  on_selection_changed?: (selected: BaseEntity[]) => void;
+  on_total_count_changed?: (count: number) => void;
   show_actions: boolean;
-  sub_entity_filter: SubEntityFilter | null;
-  view_callbacks: EntityViewCallbacks | null;
+  sub_entity_filter?: SubEntityFilter;
+  view_callbacks?: EntityViewCallbacks;
 }
 
 export interface DynamicEntityListViewState {
@@ -33,21 +33,21 @@ export interface DynamicEntityListViewState {
   button_color_class: string;
   can_show_bulk_actions: boolean;
   columns_restored_from_cache: boolean;
-  crud_handlers: EntityCrudHandlers | null;
+  crud_handlers?: EntityCrudHandlers;
   current_page: number;
   display_name: string;
   enable_bulk_import: boolean;
   entities: BaseEntity[];
   entities_to_delete: BaseEntity[];
-  entity_metadata: EntityMetadata | null;
+  entity_metadata?: EntityMetadata;
   entity_type: string;
   error_message: string;
   filtered_entities: BaseEntity[];
   filter_values: Record<string, string>;
   foreign_key_options: Record<string, BaseEntity[]>;
   has_bulk_create_handler: boolean;
-  info_message: string | null;
-  inline_form_entity: Partial<BaseEntity> | null;
+  info_message: string;
+  inline_form_entity?: Partial<BaseEntity>;
   is_create_disabled: boolean;
   is_delete_disabled: boolean;
   is_deleting: boolean;
@@ -68,7 +68,7 @@ export interface DynamicEntityListViewState {
   show_export_modal: boolean;
   sort_column: string;
   sort_direction: "asc" | "desc";
-  sub_entity_filter: SubEntityFilter | null;
+  sub_entity_filter?: SubEntityFilter;
   total_pages: number;
   visible_column_list: string[];
   visible_columns: Set<string>;

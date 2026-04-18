@@ -39,7 +39,7 @@ export { set_pulling_from_remote };
 export function configure_orchestrator(
   sync_orchestrator: SyncOrchestratorPort,
 ): Result<boolean> {
-  sync_deps.orchestrator = sync_orchestrator;
+  sync_deps.orchestrator = { status: "configured", value: sync_orchestrator };
   console.log("[BackgroundSync] Orchestrator configured");
   return create_success_result(true);
 }
@@ -47,7 +47,7 @@ export function configure_orchestrator(
 export function configure_restoration_handlers(
   handlers: SyncRestorationHandlers,
 ): Result<boolean> {
-  sync_deps.restoration_handlers = handlers;
+  sync_deps.restoration_handlers = { status: "configured", value: handlers };
   console.log("[BackgroundSync] Restoration handlers configured");
   return create_success_result(true);
 }
@@ -55,7 +55,7 @@ export function configure_restoration_handlers(
 export function configure_remote_subscriber(
   subscriber: RemoteChangeSubscriberPort,
 ): Result<boolean> {
-  sync_deps.remote_subscriber = subscriber;
+  sync_deps.remote_subscriber = { status: "configured", value: subscriber };
   console.log("[BackgroundSync] Remote subscriber configured");
   return create_success_result(true);
 }

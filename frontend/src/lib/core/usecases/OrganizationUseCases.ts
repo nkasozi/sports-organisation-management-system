@@ -24,7 +24,7 @@ export function create_organization_use_cases(
       filter?: OrganizationFilter,
       options?: QueryOptions,
     ): PaginatedAsyncResult<Organization> {
-      return repository.find_all(filter, options);
+      return repository.find_all(filter ?? {}, options ?? {});
     },
 
     async get_by_id(

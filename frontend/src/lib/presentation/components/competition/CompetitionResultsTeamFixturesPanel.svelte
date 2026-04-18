@@ -3,7 +3,7 @@
     import CompetitionResultsTeamFixtureCard from "$lib/presentation/components/competition/CompetitionResultsTeamFixtureCard.svelte";
     import Pagination from "$lib/presentation/components/ui/Pagination.svelte";
 
-    export let selected_team_id: string | null;
+    export let selected_team_id: string;
     export let selected_team_name: string;
     export let team_fixtures_loading: boolean;
     export let displayed_team_fixtures: Fixture[];

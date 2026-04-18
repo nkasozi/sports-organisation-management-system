@@ -58,11 +58,18 @@
     let sport_names: Record<string, string> = {};
     let competition_sport_names: Record<string, string> = {};
 
+    $: current_profile_state = $auth_store.current_profile;
     $: current_user_organization_id =
-        $auth_store.current_profile?.organization_id || "";
+        current_profile_state.status === "present"
+            ? current_profile_state.profile.organization_id
+            : "";
+    $: current_user_role =
+        current_profile_state.status === "present"
+            ? current_profile_state.profile.role
+            : "player";
     $: user_is_super_admin = current_user_organization_id === ANY_VALUE;
     $: user_has_org_admin_access = check_data_permission(
-        $auth_store.current_profile?.role || "player",
+        current_user_role,
         "org_administrator_level",
         "read",
     );
@@ -74,8 +81,8 @@
     async function refresh_dashboard_data(): Promise<void> {
         loading = true;
         const dashboard_filters = build_dashboard_filters(
-            $auth_store.current_profile?.role || "player",
-            $auth_store.current_profile?.organization_id || "",
+            current_user_role,
+            current_user_organization_id,
         );
         const result = await load_dashboard_data(
             dashboard_dependencies,
@@ -133,7 +140,7 @@
             loading = false;
             return;
         }
-        const user_role = $auth_store.current_profile?.role || "player";
+        const user_role = current_user_role;
         const default_route_result =
             await get_authorization_adapter().get_default_route_for_role(
                 user_role,

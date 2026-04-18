@@ -39,7 +39,7 @@ interface CalendarCategoryUseCases {
 export async function save_calendar_activity_action(command: {
   activity_form_values: ActivityFormValues;
   categories: ActivityCategory[];
-  editing_activity: Activity | null;
+  editing_activity: Activity | undefined;
   selected_organization_id: string;
   activity_use_cases: CalendarActivityUseCases;
 }): Promise<CalendarPageActionFailure | CalendarPageActionSuccess> {
@@ -114,7 +114,7 @@ export async function save_calendar_activity_action(command: {
 }
 
 export async function delete_calendar_activity_action(command: {
-  editing_activity: Activity | null;
+  editing_activity: Activity | undefined;
   activity_use_cases: CalendarActivityUseCases;
 }): Promise<CalendarPageActionFailure | CalendarPageActionSuccess> {
   if (!command.editing_activity)

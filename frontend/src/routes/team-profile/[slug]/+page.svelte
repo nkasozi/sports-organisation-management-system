@@ -32,7 +32,13 @@
         profile_link_use_cases: get_profile_link_use_cases(),
     };
 
-    let page_data: TeamPublicProfilePageData | null = null;
+    type TeamPublicProfilePageDataState =
+        | { status: "empty" }
+        | { status: "present"; page_data: TeamPublicProfilePageData };
+
+    let page_data_state: TeamPublicProfilePageDataState = {
+        status: "empty",
+    };
     let loading = true;
     let not_found = false;
     let error_title = TEAM_PROFILE_ERROR_TITLE_RESTRICTED;
@@ -60,7 +66,7 @@
         loading = true;
         not_found = false;
         error_message = "";
-        page_data = null;
+        page_data_state = { status: "empty" };
 
         const result = await load_team_public_profile_page_data({
             slug,
@@ -76,7 +82,7 @@
             return;
         }
 
-        page_data = result.data;
+        page_data_state = { status: "present", page_data: result.data };
     }
 
     $: current_slug = $page.params.slug;
@@ -85,7 +91,7 @@
         loading = false;
         not_found = true;
         error_message = "";
-        page_data = null;
+        page_data_state = { status: "empty" };
     }
 
     $: if (browser && current_slug && current_slug !== last_requested_slug) {
@@ -95,7 +101,9 @@
 
 <svelte:head>
     <title
-        >{page_data?.team.name || "Team Profile"} - {TEAM_PROFILE_TITLE_SUFFIX}</title
+        >{page_data_state.status === "present"
+            ? page_data_state.page_data.team.name
+            : "Team Profile"} - {TEAM_PROFILE_TITLE_SUFFIX}</title
     >
 </svelte:head>
 
@@ -108,9 +116,9 @@
     not_found_title={TEAM_PROFILE_NOT_FOUND_TITLE}
     not_found_message={TEAM_PROFILE_NOT_FOUND_MESSAGE}
 >
-    {#if page_data}
+    {#if page_data_state.status === "present"}
         <div class="max-w-4xl mx-auto px-4 py-8 sm:py-12">
-            <TeamPublicProfilePage {...page_data} />
+            <TeamPublicProfilePage {...page_data_state.page_data} />
         </div>
     {/if}
 </PublicProfilePageShell>

@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { sync_verified_user_login_session } from "./layoutLoginSync";
+
 const {
   build_sync_progress_message_mock,
   scale_sync_percentage_mock,
@@ -16,40 +18,42 @@ vi.mock("./layoutLogic", () => ({
   should_pull_org_from_server: should_pull_org_from_server_mock,
 }));
 
-import { sync_verified_user_login_session } from "./layoutLoginSync";
-
 describe("layoutLoginSync", () => {
   function create_dependencies() {
     const unsubscribe = vi.fn();
     const sync_now = vi.fn();
     const dependencies = {
       auth_store: {
-        initialize: vi.fn().mockResolvedValue(undefined),
+        initialize: vi.fn().mockImplementation(async () => {}),
         reset_initialized_state: vi.fn(),
       },
-      clear_session_sync_flag: vi.fn().mockResolvedValue(undefined),
-      delay: vi.fn().mockResolvedValue(undefined),
+      clear_session_sync_flag: vi.fn().mockImplementation(async () => {}),
+      delay: vi.fn().mockImplementation(async () => {}),
       fetch_current_user_profile_from_convex: vi.fn(),
-      goto: vi.fn().mockResolvedValue(undefined),
+      goto: vi.fn().mockImplementation(async () => {}),
       initial_sync_store: {
-        complete_sync: vi.fn().mockResolvedValue(undefined),
+        complete_sync: vi.fn().mockImplementation(async () => {}),
         get_state: vi.fn(() => ({ is_syncing: false })),
         reset: vi.fn(),
         start_sync: vi.fn(),
         update_progress: vi.fn(),
       },
-      pull_user_scoped_record_from_convex: vi.fn().mockResolvedValue(undefined),
-      reset_database: vi.fn().mockResolvedValue(undefined),
-      reset_sync_metadata: vi.fn().mockResolvedValue(undefined),
+      pull_user_scoped_record_from_convex: vi
+        .fn()
+        .mockImplementation(async () => {}),
+      reset_database: vi.fn().mockImplementation(async () => {}),
+      reset_sync_metadata: vi.fn().mockImplementation(async () => {}),
       set_pulling_from_remote: vi.fn(),
-      sign_out: vi.fn().mockResolvedValue(undefined),
+      sign_out: vi.fn().mockImplementation(async () => {}),
       start_background_sync: vi.fn(),
       stop_background_sync: vi.fn(),
       sync_store: {
         subscribe: vi.fn(() => unsubscribe),
         sync_now,
       },
-      write_convex_user_to_local_dexie: vi.fn().mockResolvedValue(undefined),
+      write_convex_user_to_local_dexie: vi
+        .fn()
+        .mockImplementation(async () => {}),
     };
 
     return { dependencies, sync_now, unsubscribe };
@@ -82,8 +86,8 @@ describe("layoutLoginSync", () => {
   it("signs the user out and redirects to unauthorized when no profile is returned", async () => {
     const { dependencies } = create_dependencies();
     dependencies.fetch_current_user_profile_from_convex.mockResolvedValueOnce({
-      success: true,
-      data: null,
+      success: false,
+      error: "Profile not found in Convex",
     });
 
     await expect(

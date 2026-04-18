@@ -74,7 +74,7 @@ export function add_foul_category(
     severity: "minor",
     description: "",
     typical_penalty: "",
-    results_in_card: null,
+    results_in_card: "",
   };
   return {
     ...form_data,

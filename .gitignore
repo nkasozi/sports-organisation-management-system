@@ -53,3 +53,4 @@ dist/
 .github/prompts/
 .github/copilot-instructions.md
 /frontend/.vercel
+*.log

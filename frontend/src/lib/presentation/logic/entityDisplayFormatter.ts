@@ -108,7 +108,7 @@ function build_fixture_display_label(
 
 export function get_display_value_for_foreign_key(
   options: BaseEntity[],
-  value: string,
+  value?: string,
 ): string {
   const normalized_value = String(value ?? "").trim();
   const found_option = options.find(
@@ -137,9 +137,7 @@ export function format_enum_label(value: string): string {
     .join(" ");
 }
 
-export function build_foreign_entity_route(
-  entity_type: string | undefined,
-): string {
+export function build_foreign_entity_route(entity_type?: string): string {
   const normalized =
     typeof entity_type === "string" ? entity_type.toLowerCase() : "";
   if (normalized === "player") return "/players";
@@ -152,9 +150,7 @@ export function build_foreign_entity_route(
   return "";
 }
 
-export function build_foreign_entity_cta_label(
-  entity_type: string | undefined,
-): string {
+export function build_foreign_entity_cta_label(entity_type?: string): string {
   const normalized =
     typeof entity_type === "string" ? entity_type.toLowerCase() : "";
   if (normalized === "player") return "Create Players";

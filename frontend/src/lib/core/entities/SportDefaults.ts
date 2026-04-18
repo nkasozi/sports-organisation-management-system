@@ -1,13 +1,16 @@
 import type {
-  CardType,
   CreateSportInput,
-  FoulCategory,
-  OfficialRequirement,
-  OvertimeRule,
+  PenaltiesConfig,
   ScoringRule,
-  SportGamePeriod,
   SubstitutionRule,
 } from "./SportTypes";
+
+export function create_default_penalties_config(): PenaltiesConfig {
+  return {
+    initial_rounds: 5,
+    sudden_death_after: true,
+  };
+}
 
 export function create_default_card_types(): CreateSportInput["card_types"] {
   return [
@@ -42,7 +45,7 @@ export function create_default_foul_categories(): CreateSportInput["foul_categor
       severity: "minor",
       description: "Technical infringement or minor contact",
       typical_penalty: "Free kick to opposing team",
-      results_in_card: null,
+      results_in_card: "",
     },
     {
       id: "tactical_foul",
@@ -162,10 +165,7 @@ export function create_default_overtime_rules(): CreateSportInput["overtime_rule
         order: 3,
       },
     ],
-    penalties_config: {
-      initial_rounds: 5,
-      sudden_death_after: true,
-    },
+    penalties_config: create_default_penalties_config(),
   };
 }
 

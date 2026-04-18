@@ -14,7 +14,7 @@ import {
 
 describe("officialAssignmentLogic", () => {
   describe("compute_available_officials", () => {
-    const all_officials =  [
+    const all_officials = [
       { value: "official_1", label: "Michael Anderson" },
       { value: "official_2", label: "Sarah Johnson" },
       { value: "official_3", label: "James Williams" },
@@ -22,7 +22,7 @@ describe("officialAssignmentLogic", () => {
     ] as SelectOption[];
 
     it("returns all officials when no assignments exist", () => {
-      const assignments =  [] as OfficialAssignment[];
+      const assignments = [] as OfficialAssignment[];
 
       const available = compute_available_officials(
         all_officials,
@@ -40,7 +40,7 @@ describe("officialAssignmentLogic", () => {
     });
 
     it("returns all officials for the first empty assignment", () => {
-      const assignments =  [
+      const assignments = [
         { official_id: "", role_id: "" },
       ] as OfficialAssignment[];
 
@@ -54,7 +54,7 @@ describe("officialAssignmentLogic", () => {
     });
 
     it("excludes already assigned officials from other indices", () => {
-      const assignments =  [
+      const assignments = [
         { official_id: "official_1", role_id: "role_1" },
         { official_id: "", role_id: "" },
       ] as OfficialAssignment[];
@@ -70,7 +70,7 @@ describe("officialAssignmentLogic", () => {
     });
 
     it("includes the current assignment's official in its own dropdown", () => {
-      const assignments =  [
+      const assignments = [
         { official_id: "official_1", role_id: "role_1" },
         { official_id: "official_2", role_id: "role_2" },
       ] as OfficialAssignment[];
@@ -87,7 +87,7 @@ describe("officialAssignmentLogic", () => {
     });
 
     it("excludes multiple assigned officials", () => {
-      const assignments =  [
+      const assignments = [
         { official_id: "official_1", role_id: "role_1" },
         { official_id: "official_2", role_id: "role_2" },
         { official_id: "", role_id: "" },
@@ -107,7 +107,7 @@ describe("officialAssignmentLogic", () => {
     });
 
     it("handles all officials being assigned except current", () => {
-      const assignments =  [
+      const assignments = [
         { official_id: "official_1", role_id: "role_1" },
         { official_id: "official_2", role_id: "role_2" },
         { official_id: "official_3", role_id: "role_3" },
@@ -125,7 +125,7 @@ describe("officialAssignmentLogic", () => {
     });
 
     it("returns empty when trying to add fifth assignment and all are taken", () => {
-      const assignments =  [
+      const assignments = [
         { official_id: "official_1", role_id: "role_1" },
         { official_id: "official_2", role_id: "role_2" },
         { official_id: "official_3", role_id: "role_3" },
@@ -143,7 +143,7 @@ describe("officialAssignmentLogic", () => {
     });
 
     it("ignores empty official_id strings when filtering", () => {
-      const assignments =  [
+      const assignments = [
         { official_id: "", role_id: "role_1" },
         { official_id: "", role_id: "role_2" },
       ] as OfficialAssignment[];
@@ -158,7 +158,7 @@ describe("officialAssignmentLogic", () => {
     });
 
     it("handles empty all_officials array", () => {
-      const assignments =  [
+      const assignments = [
         { official_id: "official_1", role_id: "role_1" },
       ] as OfficialAssignment[];
 
@@ -198,7 +198,7 @@ describe("officialAssignmentLogic", () => {
   });
 
   describe("filter_officials_by_organization", () => {
-    const all_officials =  [
+    const all_officials = [
       {
         id: "off_1",
         first_name: "John",
@@ -263,7 +263,7 @@ describe("officialAssignmentLogic", () => {
 
   describe("build_official_options_from_records", () => {
     it("maps official records to select options with full name label", () => {
-      const records =  [
+      const records = [
         {
           id: "off_1",
           first_name: "John",
@@ -300,10 +300,10 @@ describe("officialAssignmentLogic", () => {
       expect(filter).toEqual({ organization_id: "org_123" });
     });
 
-    it("returns undefined when organization_id is empty", () => {
+    it("returns an empty filter object when organization_id is empty", () => {
       const filter = build_organization_official_filter("");
 
-      expect(filter).toBeUndefined();
+      expect(filter).toEqual({});
     });
   });
 });

@@ -111,7 +111,7 @@ class InBrowserGameEventLogRepository
           e.secondary_player_id === filter.player_id,
       );
     }
-    if (filter.voided !== undefined) {
+    if ("voided" in filter) {
       filtered = filtered.filter((e) => e.voided === filter.voided);
     }
     return filtered;
@@ -123,7 +123,7 @@ class InBrowserGameEventLogRepository
   }) {
     return pagination
       ? { page_number: pagination.page, page_size: pagination.page_size }
-      : undefined;
+      : void 0;
   }
 
   async get_events_for_live_game(
@@ -193,11 +193,24 @@ class InBrowserGameEventLogRepository
   }
 }
 
-let singleton_instance: InBrowserGameEventLogRepository | null = null;
+type GameEventLogRepositoryState =
+  | { status: "uninitialized" }
+  | {
+      status: "ready";
+      repository: InBrowserGameEventLogRepository;
+    };
+
+let game_event_log_repository_state: GameEventLogRepositoryState = {
+  status: "uninitialized",
+};
 
 export function get_game_event_log_repository(): GameEventLogRepository {
-  if (!singleton_instance) {
-    singleton_instance = new InBrowserGameEventLogRepository();
+  if (game_event_log_repository_state.status === "ready") {
+    return game_event_log_repository_state.repository;
   }
-  return singleton_instance;
+
+  const repository = new InBrowserGameEventLogRepository();
+  game_event_log_repository_state = { status: "ready", repository };
+
+  return repository;
 }

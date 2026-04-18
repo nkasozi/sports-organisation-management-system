@@ -1,4 +1,9 @@
 import type { SyncDirection, SyncHints } from "$lib/core/interfaces/ports";
+import {
+  create_failure_result,
+  create_success_result,
+  type Result,
+} from "$lib/core/types/Result";
 
 import { sync_all_tables } from "./syncOrchestrator";
 import type {
@@ -10,9 +15,21 @@ import type {
 } from "./syncTypes";
 import { TABLE_NAMES } from "./syncTypes";
 
+type ConvexClientState =
+  | { status: "unconfigured" }
+  | { status: "configured"; client: ConvexClient };
+
+type AutoSyncIntervalState =
+  | { status: "stopped" }
+  | { status: "running"; timer_id: number };
+
 export class ConvexSyncManager {
-  private convex_client: ConvexClient | null = null;
-  private sync_interval_id: number | null = null;
+  private convex_client_state: ConvexClientState = {
+    status: "unconfigured",
+  };
+  private auto_sync_interval_state: AutoSyncIntervalState = {
+    status: "stopped",
+  };
   private config: SyncConfig;
   private is_syncing = false;
 
@@ -26,15 +43,20 @@ export class ConvexSyncManager {
   }
 
   set_convex_client(client: ConvexClient): void {
-    this.convex_client = client;
+    this.convex_client_state = { status: "configured", client };
   }
 
-  get_convex_client(): ConvexClient | null {
-    return this.convex_client;
+  get_convex_client(): Result<ConvexClient> {
+    return this.convex_client_state.status === "configured"
+      ? create_success_result(this.convex_client_state.client)
+      : create_failure_result("Convex client not configured");
   }
 
   is_configured(): boolean {
-    return this.convex_client !== null && this.config.convex_url !== "";
+    return (
+      this.convex_client_state.status === "configured" &&
+      this.config.convex_url !== ""
+    );
   }
 
   async sync_now(
@@ -42,7 +64,7 @@ export class ConvexSyncManager {
     direction_override?: SyncDirection,
     hints?: SyncHints,
   ): Promise<SyncResult> {
-    if (!this.convex_client) {
+    if (this.convex_client_state.status !== "configured") {
       console.error(
         "[Sync:Manager] sync_now called but Convex client is NOT configured",
       );
@@ -56,6 +78,8 @@ export class ConvexSyncManager {
         conflicts: [],
       };
     }
+
+    const convex_client = this.convex_client_state.client;
 
     if (this.is_syncing) {
       console.warn(
@@ -79,11 +103,11 @@ export class ConvexSyncManager {
     );
 
     const result = await sync_all_tables(
-      this.convex_client,
+      convex_client,
       effective_direction,
       this.config.enabled_tables,
       on_progress,
-      undefined,
+      void 0,
       hints,
     );
 
@@ -92,19 +116,22 @@ export class ConvexSyncManager {
   }
 
   start_auto_sync(on_sync_complete?: (result: SyncResult) => void): void {
-    if (this.sync_interval_id !== null) return;
+    if (this.auto_sync_interval_state.status === "running") return;
 
-    this.sync_interval_id = window.setInterval(async () => {
-      const result = await this.sync_now();
-      if (on_sync_complete) on_sync_complete(result);
-    }, this.config.sync_interval_ms);
+    this.auto_sync_interval_state = {
+      status: "running",
+      timer_id: window.setInterval(async () => {
+        const result = await this.sync_now();
+        if (on_sync_complete) on_sync_complete(result);
+      }, this.config.sync_interval_ms),
+    };
   }
 
   stop_auto_sync(): void {
-    if (this.sync_interval_id !== null) {
-      window.clearInterval(this.sync_interval_id);
-      this.sync_interval_id = null;
-    }
+    if (this.auto_sync_interval_state.status !== "running") return;
+
+    window.clearInterval(this.auto_sync_interval_state.timer_id);
+    this.auto_sync_interval_state = { status: "stopped" };
   }
 
   update_config(new_config: Partial<SyncConfig>): void {
@@ -120,18 +147,28 @@ export class ConvexSyncManager {
   }
 }
 
-let sync_manager_instance: ConvexSyncManager | null = null;
+type SyncManagerState =
+  | { status: "uninitialized" }
+  | { status: "ready"; manager: ConvexSyncManager };
+
+let sync_manager_state: SyncManagerState = { status: "uninitialized" };
 
 export function get_sync_manager(): ConvexSyncManager {
-  if (!sync_manager_instance) {
-    sync_manager_instance = new ConvexSyncManager();
+  if (sync_manager_state.status === "ready") {
+    return sync_manager_state.manager;
   }
-  return sync_manager_instance;
+
+  const manager = new ConvexSyncManager();
+  sync_manager_state = { status: "ready", manager };
+
+  return manager;
 }
 
 export function initialize_sync_manager(
   config: Partial<SyncConfig>,
 ): ConvexSyncManager {
-  sync_manager_instance = new ConvexSyncManager(config);
-  return sync_manager_instance;
+  const manager = new ConvexSyncManager(config);
+  sync_manager_state = { status: "ready", manager };
+
+  return manager;
 }

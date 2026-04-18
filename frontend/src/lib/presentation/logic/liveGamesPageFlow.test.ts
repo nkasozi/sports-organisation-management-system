@@ -7,6 +7,11 @@ import {
   create_auth_token_payload,
 } from "$lib/core/interfaces/ports";
 import type { AuthState } from "$lib/presentation/stores/auth";
+import {
+  create_missing_auth_token_state,
+  create_present_auth_profile_state,
+  create_present_auth_token_state,
+} from "$lib/presentation/stores/authTypes";
 
 import {
   build_live_games_start_flow_dependencies,
@@ -16,8 +21,8 @@ import {
 
 function create_auth_state(overrides: Partial<AuthState> = {}): AuthState {
   return {
-    current_token: null,
-    current_profile: {
+    current_token: create_missing_auth_token_state(),
+    current_profile: create_present_auth_profile_state({
       id: "profile_1",
       display_name: "Admin User",
       email: "admin@example.com",
@@ -25,7 +30,7 @@ function create_auth_state(overrides: Partial<AuthState> = {}): AuthState {
       organization_id: "org_1",
       organization_name: "Org 1",
       team_id: "team_1",
-    },
+    } as never),
     available_profiles: [],
     sidebar_menu_items: [],
     is_initialized: true,
@@ -113,7 +118,7 @@ function create_auth_token(): AuthToken {
   expect(payload_result.success).toBe(true);
 
   if (!payload_result.success) {
-    return undefined as never;
+    return false as never;
   }
 
   return {
@@ -138,7 +143,9 @@ describe("liveGamesPageFlow", () => {
     const fixture_state_dependencies = create_fixture_state_dependencies();
     const result = await initialize_live_games_page({
       ensure_auth_profile: async () => ({ success: true, error_message: "" }),
-      auth_state: create_auth_state({ current_token: create_auth_token() }),
+      auth_state: create_auth_state({
+        current_token: create_present_auth_token_state(create_auth_token()),
+      }),
       authorization_adapter: {
         check_entity_authorized: async (
           _raw_token: string,
@@ -163,7 +170,9 @@ describe("liveGamesPageFlow", () => {
     const fixture_state_dependencies = create_fixture_state_dependencies();
     const result = await initialize_live_games_page({
       ensure_auth_profile: async () => ({ success: true, error_message: "" }),
-      auth_state: create_auth_state({ current_token: create_auth_token() }),
+      auth_state: create_auth_state({
+        current_token: create_present_auth_token_state(create_auth_token()),
+      }),
       authorization_adapter: {
         check_entity_authorized: async () => ({
           success: true,

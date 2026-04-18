@@ -3,11 +3,13 @@
         Competition,
         UpdateCompetitionInput,
     } from "$lib/core/entities/Competition";
-    import type { CompetitionFormat } from "$lib/core/entities/CompetitionFormat";
-    import type { Sport } from "$lib/core/entities/Sport";
     import type { Team } from "$lib/core/entities/Team";
     import type { SubEntityFilter } from "$lib/core/types/SubEntityFilter";
     import type { SelectOption } from "$lib/presentation/components/ui/SelectField.svelte";
+    import type {
+        CompetitionEditSelectedFormatState,
+        CompetitionEditSelectedSportState,
+    } from "$lib/presentation/logic/competitionEditPageContracts";
 
     import CompetitionEditDetailsTab from "./CompetitionEditDetailsTab.svelte";
     import CompetitionEditHeader from "./CompetitionEditHeader.svelte";
@@ -18,12 +20,16 @@
     import CompetitionEditTabs from "./CompetitionEditTabs.svelte";
     import CompetitionEditTeamsTab from "./CompetitionEditTeamsTab.svelte";
 
-    export let competition: Competition | null;
+    export let competition: Competition;
     export let form_data: UpdateCompetitionInput;
     export let organization_options: SelectOption[];
     export let competition_format_options: SelectOption[];
-    export let selected_format: CompetitionFormat | null;
-    export let selected_sport: Sport | null;
+    export let selected_format_state: CompetitionEditSelectedFormatState = {
+        status: "missing",
+    };
+    export let selected_sport_state: CompetitionEditSelectedSportState = {
+        status: "missing",
+    };
     export let teams_in_competition: Team[];
     export let available_teams: Team[];
     export let can_edit_competition: boolean;
@@ -67,7 +73,7 @@
 
 <div class="max-w-4xl mx-auto space-y-6">
     <CompetitionEditHeader
-        competition_name={competition?.name ?? "Edit Competition"}
+        competition_name={competition.name}
         {derived_status}
         {status_label}
         {on_cancel}
@@ -136,8 +142,8 @@
             {:else if active_tab === "rules"}
                 <CompetitionEditRulesTab
                     bind:form_data
-                    {selected_format}
-                    {selected_sport}
+                    {selected_format_state}
+                    {selected_sport_state}
                     bind:is_customizing_scoring
                     {can_edit_competition}
                     {is_saving}

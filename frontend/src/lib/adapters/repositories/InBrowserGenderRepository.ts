@@ -93,11 +93,24 @@ export class InBrowserGenderRepository
   }
 }
 
-let singleton_instance: InBrowserGenderRepository | null = null;
+type GenderRepositoryState =
+  | { status: "uninitialized" }
+  | {
+      status: "ready";
+      repository: InBrowserGenderRepository;
+    };
+
+let gender_repository_state: GenderRepositoryState = {
+  status: "uninitialized",
+};
 
 export function get_gender_repository(): GenderRepository {
-  if (!singleton_instance) {
-    singleton_instance = new InBrowserGenderRepository();
+  if (gender_repository_state.status === "ready") {
+    return gender_repository_state.repository;
   }
-  return singleton_instance;
+
+  const repository = new InBrowserGenderRepository();
+  gender_repository_state = { status: "ready", repository };
+
+  return repository;
 }

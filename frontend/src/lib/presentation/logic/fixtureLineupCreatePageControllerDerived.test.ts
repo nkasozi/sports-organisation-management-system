@@ -8,26 +8,38 @@ import {
 describe("fixtureLineupCreatePageControllerDerived", () => {
   it("builds restricted, filtered fixture options and wizard state for the current authorization scope", () => {
     const derived_state = build_fixture_lineup_create_page_derived_state({
-      current_auth_profile: {
-        organization_id: "organization-1",
-        team_id: "team-a",
+      current_auth_profile_state: {
+        status: "present",
+        profile: {
+          organization_id: "organization-1",
+          team_id: "team-a",
+        },
       },
       form_data: {
         organization_id: "organization-1",
         selected_players: [{ id: "1" }, { id: "2" }],
       },
-      selected_organization: { id: "organization-1" },
-      selected_fixture: {
-        id: "fixture-1",
-        organization_id: "organization-1",
-        competition_id: "competition-1",
-        home_team_id: "team-a",
-        away_team_id: "team-b",
-        scheduled_date: "2024-06-01",
-        scheduled_time: "15:00",
-        status: "scheduled",
+      selected_organization_state: {
+        status: "present",
+        organization: { id: "organization-1" },
       },
-      selected_team: { id: "team-a" },
+      selected_fixture_state: {
+        status: "present",
+        fixture: {
+          id: "fixture-1",
+          organization_id: "organization-1",
+          competition_id: "competition-1",
+          home_team_id: "team-a",
+          away_team_id: "team-b",
+          scheduled_date: "2024-06-01",
+          scheduled_time: "15:00",
+          status: "scheduled",
+        },
+      },
+      selected_team_state: {
+        status: "present",
+        team: { id: "team-a" },
+      },
       team_players: [
         {
           id: "player-1",
@@ -117,9 +129,12 @@ describe("fixtureLineupCreatePageControllerDerived", () => {
       sync_fixture_lineup_create_selected_organization("organization-1", [
         { id: "organization-1", name: "Premier League" },
       ] as never),
-    ).toEqual({ id: "organization-1", name: "Premier League" });
+    ).toEqual({
+      status: "present",
+      organization: { id: "organization-1", name: "Premier League" },
+    });
     expect(
       sync_fixture_lineup_create_selected_organization("missing", [] as never),
-    ).toBeNull();
+    ).toEqual({ status: "missing" });
   });
 });

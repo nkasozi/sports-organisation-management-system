@@ -1,9 +1,9 @@
 import type { Player } from "../../core/entities/Player";
-import type { ScalarValueInput } from "../../core/types/DomainScalars";
 import type { PlayerFilter } from "../../core/interfaces/ports";
+import type { ScalarValueInput } from "../../core/types/DomainScalars";
 
 type PlayerMembershipLike = {
-  jersey_number?: number | null;
+  jersey_number?: number;
   player_id: ScalarValueInput<Player["id"]>;
 };
 

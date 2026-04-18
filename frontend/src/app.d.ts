@@ -2,7 +2,7 @@ declare global {
   namespace App {
     interface Locals {}
     interface PageData {
-      userId?: string | null;
+      userId?: string;
     }
   }
   interface Window {

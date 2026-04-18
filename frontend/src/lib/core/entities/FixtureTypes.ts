@@ -49,7 +49,7 @@ export interface GameEvent {
   id: EntityId;
   event_type: GameEventType;
   minute: GameMinute;
-  stoppage_time_minute: GameMinute | null;
+  stoppage_time_minute: GameMinute;
   team_side: "home" | "away" | "match";
   player_name: Name;
   secondary_player_name: Name;
@@ -79,8 +79,8 @@ export interface Fixture extends BaseEntity {
   venue: string;
   scheduled_date: IsoDateString;
   scheduled_time: string;
-  home_team_score: number | null;
-  away_team_score: number | null;
+  home_team_score: number;
+  away_team_score: number;
   assigned_officials: AssignedOfficial[];
   game_events: GameEvent[];
   current_period: GamePeriod;
@@ -94,7 +94,7 @@ export interface Fixture extends BaseEntity {
   home_team_jersey?: JerseyColorAssignment;
   away_team_jersey?: JerseyColorAssignment;
   officials_jersey?: JerseyColorAssignment;
-  manual_importance_override?: number | null;
+  manual_importance_override?: number;
 }
 
 export type CreateFixtureInput = Omit<

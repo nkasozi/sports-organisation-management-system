@@ -1,4 +1,6 @@
 <script lang="ts">
+    import type { HelpSectionExpansionState } from "$lib/presentation/logic/helpPageState";
+
     import {
         HELP_GUIDE_SECTION_DESCRIPTION,
         HELP_GUIDE_SECTION_ID,
@@ -6,11 +8,14 @@
     } from "../../logic/helpPageContent";
     import { HELP_GUIDE_STEPS } from "../../logic/helpPageGuideSteps";
 
-    export let expanded_guide_index: number | null;
+    export let expanded_guide_state: HelpSectionExpansionState;
     export let on_toggle: (selected_index: number) => void;
 
     function is_guide_step_expanded(selected_index: number): boolean {
-        return expanded_guide_index === selected_index;
+        return (
+            expanded_guide_state.status === "expanded" &&
+            expanded_guide_state.index === selected_index
+        );
     }
 </script>
 

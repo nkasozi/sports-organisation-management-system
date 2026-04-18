@@ -8,6 +8,7 @@
     import {
         can_user_change_official_leaderboard_organizations,
         get_selected_official_leaderboard_organization_name,
+        type OfficialLeaderboardProfileState,
     } from "$lib/presentation/logic/officialLeaderboardPageState";
     import { auth_store } from "$lib/presentation/stores/auth";
 
@@ -19,12 +20,25 @@
     export let leaderboard_entries: OfficialLeaderboardEntry[];
     export let organizations: Organization[];
     export let selected_breakdown: PerFixtureRating[];
-    export let selected_entry: OfficialLeaderboardEntry | null;
+    export let selected_entry: OfficialLeaderboardEntry | undefined;
     export let selected_organization_id: string;
-    export let user_official_id: string | null;
+    export let user_official_id: string;
     export let on_close_breakdown: () => void;
     export let on_organization_change: () => void;
     export let on_select_official: (entry: OfficialLeaderboardEntry) => void;
+
+    function get_official_leaderboard_profile_state(): OfficialLeaderboardProfileState {
+        const current_profile_state = $auth_store.current_profile;
+
+        if (current_profile_state.status !== "present") {
+            return { status: "missing" };
+        }
+
+        return {
+            status: "present",
+            profile: current_profile_state.profile as unknown as UserScopeProfile,
+        };
+    }
 </script>
 
 <div class="space-y-4">
@@ -43,7 +57,7 @@
             </p>
         </div>
         <div class="shrink-0">
-            {#if can_user_change_official_leaderboard_organizations($auth_store.current_profile as UserScopeProfile | null)}
+            {#if can_user_change_official_leaderboard_organizations(get_official_leaderboard_profile_state())}
                 <select
                     bind:value={selected_organization_id}
                     onchange={on_organization_change}

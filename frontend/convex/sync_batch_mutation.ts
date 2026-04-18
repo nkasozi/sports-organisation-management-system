@@ -106,7 +106,7 @@ export const batch_upsert = mutation({
       remote_data: Record<string, unknown>;
       remote_version: number;
       remote_updated_at: string;
-      remote_updated_by: string | null;
+      remote_updated_by?: string;
     }> = [];
     for (const record of records) {
       const existing = await ctx.db
@@ -169,7 +169,9 @@ export const batch_upsert = mutation({
               remote_version: existing.version,
               remote_updated_at:
                 existing.updated_at || existing.synced_at || "",
-              remote_updated_by: existing.updated_by || null,
+              ...(existing.updated_by
+                ? { remote_updated_by: existing.updated_by }
+                : {}),
             });
             results.push({
               local_id: record.local_id,

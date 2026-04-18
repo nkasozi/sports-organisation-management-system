@@ -1,5 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import {
+  record_live_game_detail_page_event_action,
+  update_live_game_detail_player_time_on_action,
+} from "./liveGameDetailPagePlayerActions";
+
 const {
   record_live_game_detail_event_mock,
   update_live_game_player_time_on_mock,
@@ -12,11 +17,6 @@ vi.mock("$lib/presentation/logic/liveGameDetailActions", () => ({
   record_live_game_detail_event: record_live_game_detail_event_mock,
   update_live_game_player_time_on: update_live_game_player_time_on_mock,
 }));
-
-import {
-  record_live_game_detail_page_event_action,
-  update_live_game_detail_player_time_on_action,
-} from "./liveGameDetailPagePlayerActions";
 
 describe("liveGameDetailPagePlayerActions", () => {
   beforeEach(() => {

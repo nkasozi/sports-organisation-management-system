@@ -4,7 +4,11 @@ import type {
   CreateOfficialPerformanceRatingInput,
   OfficialPerformanceRating,
 } from "../entities/OfficialPerformanceRating";
-import type { OfficialPerformanceRatingRepository } from "../interfaces/ports";
+import {
+  build_official_performance_rating_not_found_error,
+  type OfficialPerformanceRatingRepository,
+} from "../interfaces/ports";
+import { create_failure_result } from "../types/Result";
 import { create_official_performance_rating_use_cases } from "./OfficialPerformanceRatingUseCases";
 
 function create_mock_repository(): OfficialPerformanceRatingRepository {
@@ -204,7 +208,7 @@ describe("OfficialPerformanceRatingUseCases", () => {
       await use_cases.list();
 
       expect(mock_repository.find_all).toHaveBeenCalledWith(
-        undefined,
+        {},
         expect.objectContaining({ page_number: 1 }),
       );
     });
@@ -283,10 +287,15 @@ describe("OfficialPerformanceRatingUseCases", () => {
     });
 
     it("creates new rating when no existing one is found", async () => {
-      vi.mocked(mock_repository.find_existing_rating).mockResolvedValue({
-        success: true,
-        data: null,
-      });
+      vi.mocked(mock_repository.find_existing_rating).mockResolvedValue(
+        create_failure_result(
+          build_official_performance_rating_not_found_error(
+            "off_1",
+            "fix_1",
+            "user_1",
+          ),
+        ),
+      );
       vi.mocked(mock_repository.create).mockResolvedValue({
         success: true,
         data: create_test_rating(),

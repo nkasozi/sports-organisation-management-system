@@ -130,13 +130,24 @@ export class InBrowserCompetitionRepository
   }
 }
 
-let singleton_instance: InBrowserCompetitionRepository | null = null;
+type CompetitionRepositoryState =
+  | { status: "uninitialized" }
+  | { status: "ready"; repository: InBrowserCompetitionRepository };
+
+let competition_repository_state: CompetitionRepositoryState = {
+  status: "uninitialized",
+};
 
 export function get_competition_repository(): CompetitionRepository {
-  if (!singleton_instance) {
-    singleton_instance = new InBrowserCompetitionRepository();
+  if (competition_repository_state.status === "ready") {
+    return competition_repository_state.repository;
   }
-  return singleton_instance;
+
+  const repository = new InBrowserCompetitionRepository();
+
+  competition_repository_state = { status: "ready", repository };
+
+  return repository;
 }
 
 export async function reset_competition_repository(): Promise<void> {

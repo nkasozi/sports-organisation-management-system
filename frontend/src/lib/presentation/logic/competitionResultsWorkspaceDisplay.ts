@@ -29,7 +29,7 @@ export function format_competition_results_date(date_string: string): string {
 }
 
 export function get_competition_results_stage_name(
-  stage_id: string | null | undefined,
+  stage_id: string,
   competition_stages: CompetitionStage[],
   competition_stage_map: Map<string, CompetitionStage>,
 ): string {
@@ -45,7 +45,7 @@ export function get_competition_results_stage_name(
 }
 
 export function get_competition_results_stage_type(
-  stage_id: string | null | undefined,
+  stage_id: string,
   competition_stage_map: Map<string, CompetitionStage>,
 ): string {
   if (!stage_id) return "";

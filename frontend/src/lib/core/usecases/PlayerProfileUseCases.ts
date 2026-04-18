@@ -45,16 +45,25 @@ export function create_player_profile_use_cases(
       options?: QueryOptions,
     ): PaginatedAsyncResult<PlayerProfile> {
       if (!filter) {
-        return repository.find_all(undefined, options);
+        return repository.find_all({}, options);
       }
 
       const typed_filter: PlayerProfileFilter = {
-        player_id: filter?.player_id as PlayerProfile["player_id"] | undefined,
-        visibility: filter?.visibility as PlayerProfileFilter["visibility"],
-        status: filter?.status as PlayerProfileFilter["status"],
+        ...(filter.player_id
+          ? { player_id: filter.player_id as PlayerProfile["player_id"] }
+          : {}),
+        ...(filter.visibility
+          ? {
+              visibility:
+                filter.visibility as PlayerProfileFilter["visibility"],
+            }
+          : {}),
+        ...(filter.status
+          ? { status: filter.status as PlayerProfileFilter["status"] }
+          : {}),
       };
 
-      return repository.find_all(typed_filter, options);
+      return repository.find_all(typed_filter, options ?? {});
     },
 
     async get_by_id(

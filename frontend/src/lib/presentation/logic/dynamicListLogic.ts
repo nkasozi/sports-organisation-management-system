@@ -29,14 +29,14 @@ export {
 export function normalize_entity_type_for_filter(type: string): string {
   return type.toLowerCase().replace(/[\s_-]/g, "");
 }
-export { build_csv_content, build_csv_filename } from "./listCsvExportLogic";
+export {
+  build_csv_content,
+  build_csv_filename,
+  create_present_csv_metadata_state,
+} from "./listCsvExportLogic";
 
 export function extract_items_from_result_data(
-  data:
-    | BaseEntity[]
-    | { items: BaseEntity[]; total_count: number }
-    | null
-    | undefined,
+  data?: BaseEntity[] | { items: BaseEntity[]; total_count: number },
 ): BaseEntity[] {
   if (!data) return [];
   if (Array.isArray(data)) return data;
@@ -45,11 +45,7 @@ export function extract_items_from_result_data(
 }
 
 export function extract_total_count_from_result_data(
-  data:
-    | BaseEntity[]
-    | { items: BaseEntity[]; total_count: number }
-    | null
-    | undefined,
+  data?: BaseEntity[] | { items: BaseEntity[]; total_count: number },
 ): number {
   if (!data) return 0;
   if (Array.isArray(data)) return data.length;
@@ -58,12 +54,11 @@ export function extract_total_count_from_result_data(
   return 0;
 }
 
-export function extract_error_message_from_result(
-  result:
-    | { success: boolean; error?: string; error_message?: string }
-    | null
-    | undefined,
-): string {
+export function extract_error_message_from_result(result?: {
+  success: boolean;
+  error?: string;
+  error_message?: string;
+}): string {
   if (!result) return "Unknown error";
   if (!result.success) {
     if ("error_message" in result && result.error_message)
@@ -121,11 +116,16 @@ export function toggle_column_in_set(
   return new_columns;
 }
 
+type DynamicListSubEntityFilterState =
+  | { status: "missing" }
+  | { status: "present"; filter: SubEntityFilter };
+
 export function create_new_entity_with_defaults(
-  sub_entity_filter: SubEntityFilter | null | undefined,
+  sub_entity_filter_state: DynamicListSubEntityFilterState,
 ): Partial<BaseEntity> {
   const new_entity: Record<string, unknown> = { id: "" };
-  if (sub_entity_filter) {
+  if (sub_entity_filter_state.status === "present") {
+    const sub_entity_filter = sub_entity_filter_state.filter;
     new_entity[sub_entity_filter.foreign_key_field] =
       sub_entity_filter.foreign_key_value;
     if (
@@ -154,12 +154,19 @@ export function remove_entities_by_ids(
   return entities.filter((entity) => !ids_set.has(entity.id));
 }
 
+type DynamicListMetadataState =
+  | { status: "missing" }
+  | { status: "present"; entity_metadata: EntityMetadata };
+
 export function build_display_name_from_metadata(
-  entity_metadata: EntityMetadata | null | undefined,
+  metadata_state: DynamicListMetadataState,
   entity_type: string,
 ): string {
-  if (entity_metadata?.display_name) {
-    return entity_metadata.display_name;
+  if (
+    metadata_state.status === "present" &&
+    metadata_state.entity_metadata.display_name
+  ) {
+    return metadata_state.entity_metadata.display_name;
   }
   if (typeof entity_type === "string" && entity_type.length > 0) {
     return entity_type;

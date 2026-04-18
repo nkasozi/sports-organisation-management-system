@@ -185,13 +185,23 @@ function create_default_player_profiles(): import("$lib/core/types/DomainScalars
   ];
 }
 
-let singleton_instance: InBrowserPlayerProfileRepository | null = null;
+type PlayerProfileRepositoryState =
+  | { status: "uninitialized" }
+  | { status: "ready"; repository: InBrowserPlayerProfileRepository };
+
+let player_profile_repository_state: PlayerProfileRepositoryState = {
+  status: "uninitialized",
+};
 
 export function get_player_profile_repository(): PlayerProfileRepository {
-  if (!singleton_instance) {
-    singleton_instance = new InBrowserPlayerProfileRepository();
+  if (player_profile_repository_state.status === "ready") {
+    return player_profile_repository_state.repository;
   }
-  return singleton_instance;
+
+  const repository = new InBrowserPlayerProfileRepository();
+  player_profile_repository_state = { status: "ready", repository };
+
+  return repository;
 }
 
 export async function reset_player_profile_repository(): Promise<void> {

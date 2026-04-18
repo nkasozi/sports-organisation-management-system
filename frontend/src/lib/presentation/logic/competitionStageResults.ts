@@ -43,6 +43,23 @@ export interface CompetitionStageResultsSection {
   inferred_groups: InferredStageGroup[];
 }
 
+function collect_present_teams(
+  team_ids: string[],
+  team_map: Map<string, Team>,
+): Team[] {
+  const teams: Team[] = [];
+
+  for (const team_id of team_ids) {
+    const team = team_map.get(team_id);
+
+    if (team) {
+      teams.push(team);
+    }
+  }
+
+  return teams;
+}
+
 export function calculate_team_standings(
   fixtures: Fixture[],
   teams: Team[],
@@ -127,9 +144,7 @@ export function build_competition_stage_results_sections(
   points_config: PointsConfig = DEFAULT_POINTS_CONFIG,
   tie_breakers: TieBreaker[] = ["goal_difference", "goals_scored"],
 ): CompetitionStageResultsSection[] {
-  const team_map = new Map<string, Team>(
-    teams.map((team) => [team.id, team]),
-  );
+  const team_map = new Map<string, Team>(teams.map((team) => [team.id, team]));
   const sections: CompetitionStageResultsSection[] = [];
   for (const stage of [...stages].sort(
     (left, right) => left.stage_order - right.stage_order,
@@ -146,9 +161,7 @@ export function build_competition_stage_results_sections(
               group_team_set.has(fixture.home_team_id) &&
               group_team_set.has(fixture.away_team_id),
           );
-          const group_teams = team_ids
-            .map((team_id) => team_map.get(team_id))
-            .filter((team): team is Team => team !== undefined);
+          const group_teams = collect_present_teams(team_ids, team_map);
           return {
             label: `Group ${String.fromCharCode(65 + index)}`,
             team_ids,
@@ -178,9 +191,7 @@ export function build_competition_stage_results_sections(
       stage_team_ids.add(fixture.home_team_id);
       stage_team_ids.add(fixture.away_team_id);
     }
-    const stage_teams = [...stage_team_ids]
-      .map((team_id) => team_map.get(team_id))
-      .filter((team): team is Team => team !== undefined);
+    const stage_teams = collect_present_teams([...stage_team_ids], team_map);
     sections.push({
       stage,
       fixtures: stage_fixtures,

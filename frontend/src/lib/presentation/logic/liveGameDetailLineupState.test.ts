@@ -19,7 +19,6 @@ describe("liveGameDetailLineupState", () => {
       last_name: "Stone",
       jersey_number: 9,
       is_substitute: false,
-      time_on: null,
     },
     {
       id: "player-2",
@@ -70,6 +69,12 @@ describe("liveGameDetailLineupState", () => {
         normalize_lineup_players(lineup_players),
         [] as never,
       ),
+    ).toEqual([{ value: "player-1", label: "#9 Ada Stone" }]);
+  });
+
+  it("treats players with omitted time-on values as on-field options", () => {
+    expect(
+      build_players_on_field_options("home", lineup_players, [] as never),
     ).toEqual([{ value: "player-1", label: "#9 Ada Stone" }]);
   });
 });

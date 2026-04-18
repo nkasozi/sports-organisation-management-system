@@ -1,4 +1,3 @@
-import type { Competition } from "$lib/core/entities/Competition";
 import type { Fixture } from "$lib/core/entities/Fixture";
 import type { Team } from "$lib/core/entities/Team";
 import type { MatchReportData } from "$lib/core/types/MatchReportTypes";
@@ -17,30 +16,35 @@ import {
   build_staff_roles_map,
   COMPETITION_RESULTS_MATCH_REPORT_TEXT,
   type CompetitionResultsMatchReportDependencies,
+  type MatchReportCompetitionState,
   resolve_match_report_organization_name,
 } from "$lib/presentation/logic/competitionResultsMatchReportHelpers";
 
 export async function build_report_data_for_fixture(command: {
   fixture: Fixture;
-  selected_competition: Competition | null;
+  selected_competition_state: MatchReportCompetitionState;
   team_map: Map<string, Team>;
   organization_name: string;
   organization_logo_url: string;
   staff_roles_map: Map<string, string>;
   dependencies: CompetitionResultsMatchReportDependencies;
-}): Promise<MatchReportData | null> {
+}): Promise<MatchReportData | undefined> {
   const {
     fixture,
-    selected_competition,
+    selected_competition_state,
     team_map,
     organization_name,
     organization_logo_url,
     staff_roles_map,
     dependencies,
   } = command;
+  const selected_competition =
+    selected_competition_state.status === "present"
+      ? selected_competition_state.competition
+      : void 0;
   const home_team = team_map.get(fixture.home_team_id);
   const away_team = team_map.get(fixture.away_team_id);
-  if (!home_team || !away_team) return null;
+  if (!home_team || !away_team) return;
 
   const [home_lineup_result, away_lineup_result, home_staff, away_staff] =
     await Promise.all([
@@ -93,26 +97,26 @@ export async function build_report_data_for_fixture(command: {
 
 export async function download_fixture_report(command: {
   fixture: Fixture;
-  selected_competition: Competition | null;
+  selected_competition_state: MatchReportCompetitionState;
   team_map: Map<string, Team>;
   organization_logo_url: string;
   dependencies: CompetitionResultsMatchReportDependencies;
 }): Promise<boolean> {
   const {
     fixture,
-    selected_competition,
+    selected_competition_state,
     team_map,
     organization_logo_url,
     dependencies,
   } = command;
   const organization_name = await resolve_match_report_organization_name(
-    selected_competition,
+    selected_competition_state,
     dependencies,
   );
   const staff_roles_map = await build_staff_roles_map(dependencies);
   const report_data = await build_report_data_for_fixture({
     fixture,
-    selected_competition,
+    selected_competition_state,
     team_map,
     organization_name,
     organization_logo_url,
@@ -135,21 +139,21 @@ export async function download_fixture_report(command: {
 
 export async function download_all_fixture_reports(command: {
   completed_fixtures: Fixture[];
-  selected_competition: Competition | null;
+  selected_competition_state: MatchReportCompetitionState;
   team_map: Map<string, Team>;
   organization_logo_url: string;
   dependencies: CompetitionResultsMatchReportDependencies;
 }): Promise<boolean> {
   const {
     completed_fixtures,
-    selected_competition,
+    selected_competition_state,
     team_map,
     organization_logo_url,
     dependencies,
   } = command;
   if (completed_fixtures.length === 0) return false;
   const organization_name = await resolve_match_report_organization_name(
-    selected_competition,
+    selected_competition_state,
     dependencies,
   );
   const staff_roles_map = await build_staff_roles_map(dependencies);
@@ -157,7 +161,7 @@ export async function download_all_fixture_reports(command: {
     completed_fixtures.map((fixture: Fixture) =>
       build_report_data_for_fixture({
         fixture,
-        selected_competition,
+        selected_competition_state,
         team_map,
         organization_name,
         organization_logo_url,
@@ -167,12 +171,12 @@ export async function download_all_fixture_reports(command: {
     ),
   );
   const valid_reports = report_data.filter(
-    (item): item is MatchReportData => item !== null,
+    (item): item is MatchReportData => item != void 0,
   );
   if (valid_reports.length === 0) return false;
   download_all_match_reports(
     valid_reports,
-    `${selected_competition?.name || COMPETITION_RESULTS_MATCH_REPORT_TEXT.default_competition_name}${COMPETITION_RESULTS_MATCH_REPORT_TEXT.all_reports_suffix}`,
+    `${selected_competition_state.status === "present" ? selected_competition_state.competition.name : COMPETITION_RESULTS_MATCH_REPORT_TEXT.default_competition_name}${COMPETITION_RESULTS_MATCH_REPORT_TEXT.all_reports_suffix}`,
   );
   return true;
 }

@@ -39,13 +39,16 @@ export function wrap_use_cases_with_events(
       input: Record<string, unknown>,
     ): AsyncResult<BaseEntity> {
       const old_entity_result = await original_get_by_id(id);
-      const old_entity = old_entity_result.success
-        ? old_entity_result.data
-        : undefined;
+      if (!old_entity_result.success || !old_entity_result.data) {
+        return original_update(id, input);
+      }
       const result = await original_update(id, input);
 
-      if (result.success && result.data && old_entity) {
-        const old_data = old_entity as unknown as Record<string, unknown>;
+      if (result.success && result.data) {
+        const old_data = old_entity_result.data as unknown as Record<
+          string,
+          unknown
+        >;
         const new_data = result.data as unknown as Record<string, unknown>;
         const changed_fields = Object.keys(input).filter(
           (field) => old_data[field] !== new_data[field],
@@ -67,15 +70,17 @@ export function wrap_use_cases_with_events(
 
     async delete(id: BaseEntity["id"]): AsyncResult<boolean> {
       const entity_result = await original_get_by_id(id);
-      const entity = entity_result.success ? entity_result.data : undefined;
+      if (!entity_result.success || !entity_result.data) {
+        return original_delete(id);
+      }
       const result = await original_delete(id);
 
-      if (result.success && result.data && entity) {
+      if (result.success && result.data) {
         EventBus.emit_entity_deleted(
           entity_type,
           id,
-          get_entity_display_name(entity_type, entity),
-          entity as unknown as Record<string, unknown>,
+          get_entity_display_name(entity_type, entity_result.data),
+          entity_result.data as unknown as Record<string, unknown>,
         );
       }
       return result;

@@ -4,14 +4,16 @@
         UpdateCompetitionInput,
     } from "$lib/core/entities/Competition";
     import type {
-        CompetitionFormat,
         TieBreaker,
     } from "$lib/core/entities/CompetitionFormat";
-    import type { Sport } from "$lib/core/entities/Sport";
     import type { Team } from "$lib/core/entities/Team";
     import type { SubEntityFilter } from "$lib/core/types/SubEntityFilter";
     import type { SelectOption } from "$lib/presentation/components/ui/SelectField.svelte";
     import Toast from "$lib/presentation/components/ui/Toast.svelte";
+    import type {
+        CompetitionEditSelectedFormatState,
+        CompetitionEditSelectedSportState,
+    } from "$lib/presentation/logic/competitionEditPageContracts";
 
     import CompetitionEditShell from "./CompetitionEditShell.svelte";
 
@@ -19,8 +21,12 @@
     export let form_data: UpdateCompetitionInput;
     export let organization_options: SelectOption[];
     export let competition_format_options: SelectOption[];
-    export let selected_format: CompetitionFormat | null;
-    export let selected_sport: Sport | null;
+    export let selected_format_state: CompetitionEditSelectedFormatState = {
+        status: "missing",
+    };
+    export let selected_sport_state: CompetitionEditSelectedSportState = {
+        status: "missing",
+    };
     export let teams_in_competition: Team[];
     export let available_teams: Team[];
     export let can_edit_competition: boolean;
@@ -62,8 +68,8 @@
     bind:form_data
     {organization_options}
     {competition_format_options}
-    {selected_format}
-    {selected_sport}
+    {selected_format_state}
+    {selected_sport_state}
     {teams_in_competition}
     {available_teams}
     {can_edit_competition}

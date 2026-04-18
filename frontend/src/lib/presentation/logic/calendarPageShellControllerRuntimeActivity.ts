@@ -23,7 +23,7 @@ export function create_calendar_page_shell_controller_activity_actions(command: 
   get_activity_form_values: () => ActivityFormValues;
   get_calendar_events: () => CalendarEvent[];
   get_categories: () => ActivityCategory[];
-  get_editing_activity: () => Activity | null;
+  get_editing_activity: () => Activity | undefined;
   get_filter_category_id: () => string;
   get_filter_competition_id: () => string;
   get_filter_team_id: () => string;
@@ -32,8 +32,8 @@ export function create_calendar_page_shell_controller_activity_actions(command: 
   set_calendar_events: (value: CalendarEvent[]) => void;
   set_categories: (value: ActivityCategory[]) => void;
   set_competitions: (value: Competition[]) => void;
-  set_editing_activity: (value: Activity | null) => void;
-  set_selected_event_details: (value: CalendarEvent | null) => void;
+  set_editing_activity: (value?: Activity) => void;
+  set_selected_event_details: (value?: CalendarEvent) => void;
   set_show_category_modal: (value: boolean) => void;
   set_show_create_modal: (value: boolean) => void;
   set_show_subscribe_modal: (value: boolean) => void;
@@ -62,12 +62,12 @@ export function create_calendar_page_shell_controller_activity_actions(command: 
 } {
   const close_create_modal = (): void => {
     command.set_show_create_modal(false);
-    command.set_editing_activity(null);
+    command.set_editing_activity();
     command.set_activity_form_values(create_empty_activity_form_values());
   };
   return {
     close_create_modal,
-    close_event_details_modal: () => command.set_selected_event_details(null),
+    close_event_details_modal: () => command.set_selected_event_details(),
     close_subscribe_modal: () => command.set_show_subscribe_modal(false),
     delete_current_activity: async (): Promise<boolean> => {
       const editing_activity = command.get_editing_activity();
@@ -118,7 +118,7 @@ export function create_calendar_page_shell_controller_activity_actions(command: 
       command.set_activity_form_values(
         create_activity_form_values_for_date(date_string),
       );
-      command.set_editing_activity(null);
+      command.set_editing_activity();
       command.set_show_create_modal(true);
     },
     handle_date_time_click: (
@@ -128,7 +128,7 @@ export function create_calendar_page_shell_controller_activity_actions(command: 
       command.set_activity_form_values(
         create_activity_form_values_for_date_time(date_string, time_string),
       );
-      command.set_editing_activity(null);
+      command.set_editing_activity();
       command.set_show_create_modal(true);
     },
     handle_event_click: (event_id: string): void => {

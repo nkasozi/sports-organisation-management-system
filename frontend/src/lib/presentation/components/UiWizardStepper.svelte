@@ -24,7 +24,7 @@
   export let is_busy = false;
   export let validate_step_change:
     | ((from_index: number, to_index: number) => boolean)
-    | null = null;
+    | undefined = undefined;
 
   const dispatch = createEventDispatcher<{
     step_changed: {
@@ -39,6 +39,8 @@
   }>();
 
   $: current_step = get_current_wizard_step(steps, current_step_index);
+  $: current_step_display =
+    current_step.status === "present" ? current_step.step : {};
   $: progress_percentage = get_wizard_progress_percentage(
     current_step_index,
     steps.length,
@@ -48,7 +50,7 @@
     current_step_index,
     steps,
     allow_skip_steps,
-    validate_step_change !== null,
+    validate_step_change != void 0,
   );
   $: is_final_step = is_final_wizard_step(current_step_index, steps.length);
 
@@ -91,11 +93,11 @@
   }
 
   function mark_current_step_completed(): void {
-    if (is_busy || !current_step) return;
-    current_step.is_completed = true;
+    if (is_busy || current_step.status !== "present") return;
+    current_step.step.is_completed = true;
     dispatch("step_completed", {
       step_index: current_step_index,
-      step: current_step,
+      step: current_step.step,
     });
     if (are_all_required_wizard_steps_completed(steps))
       dispatch("wizard_completed", { completed_steps: steps });
@@ -103,13 +105,6 @@
 
   function cancel_wizard(): void {
     if (!is_busy) dispatch("wizard_cancelled");
-  }
-
-  function get_step_status_class(
-    step: WizardStep | null,
-    step_index: number,
-  ): string {
-    return get_wizard_step_status_class(step, current_step_index, step_index);
   }
 
   function get_step_connector_class(step_index: number): string {
@@ -151,9 +146,14 @@
       <UiWizardMobileIndicators
         {can_go_to_next_step}
         {can_go_to_previous_step}
-        {current_step}
+        current_step={current_step_display}
         {current_step_index}
-        {get_step_status_class}
+        get_step_status_class={(step, step_index) =>
+          get_wizard_step_status_class(
+            step ? step : {},
+            current_step_index,
+            step_index,
+          )}
         on_next={navigate_to_next_step}
         on_previous={navigate_to_previous_step}
         {steps}
@@ -163,7 +163,12 @@
         {allow_skip_steps}
         {current_step_index}
         {get_step_connector_class}
-        {get_step_status_class}
+        get_step_status_class={(step, step_index) =>
+          get_wizard_step_status_class(
+            step ? step : {},
+            current_step_index,
+            step_index,
+          )}
         on_navigate_to_step={navigate_to_step}
         {steps}
       />
@@ -172,7 +177,7 @@
 
   <div style="min-height: {is_mobile_view ? '300px' : '400px'};">
     <slot
-      {current_step}
+      current_step={current_step_display}
       step_index={current_step_index}
       can_go_previous={can_go_to_previous_step}
       can_go_next={can_go_to_next_step}
@@ -183,7 +188,7 @@
   <UiWizardNavigation
     {can_go_to_next_step}
     {can_go_to_previous_step}
-    {current_step}
+    current_step={current_step_display}
     {is_busy}
     {is_final_step}
     on_cancel={cancel_wizard}

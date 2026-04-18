@@ -10,6 +10,7 @@ import {
   type Sport,
   type SportGamePeriod,
 } from "$lib/core/entities/Sport";
+import { create_default_penalties_config } from "$lib/core/entities/SportDefaults";
 export {
   add_card_type,
   add_foul_category,
@@ -84,7 +85,7 @@ export function create_sport_form_data_from_sport(
       ),
       penalties_config: sport.overtime_rules.penalties_config
         ? { ...sport.overtime_rules.penalties_config }
-        : null,
+        : create_default_penalties_config(),
     },
     scoring_rules: sport.scoring_rules.map((current_rule: ScoringRule) => ({
       ...current_rule,

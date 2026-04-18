@@ -9,7 +9,7 @@ const BASE_ENTITY_FIELDS = ["id", "created_at", "updated_at"];
 
 const CONVEX_ONLY_FIELDS = ["local_id", "synced_at", "version"];
 
-const ENTITY_TO_TABLE_MAP =  {
+const ENTITY_TO_TABLE_MAP = {
   Organization: "organizations",
   Competition: "competitions",
   Team: "teams",
@@ -89,10 +89,10 @@ function extract_interface_fields(file_content: string): string[] {
 
   const interface_body = file_content.slice(content_start, position - 1);
   const field_pattern = /^\s+(\w+)\??:\s/gm;
-  const fields =  [] as string[];
+  const fields = [] as string[];
   let field_match;
 
-  while ((field_match = field_pattern.exec(interface_body)) !== null) {
+  while ((field_match = field_pattern.exec(interface_body)) != void 0) {
     fields.push(field_match[1]);
   }
 
@@ -102,11 +102,11 @@ function extract_interface_fields(file_content: string): string[] {
 function extract_table_block(
   schema_content: string,
   table_name: string,
-): string | null {
+): string | undefined {
   const start_marker = `${table_name}: defineTable({`;
   const start_index = schema_content.indexOf(start_marker);
 
-  if (start_index === -1) return null;
+  if (start_index === -1) return;
 
   const content_start = start_index + start_marker.length;
   let brace_depth = 1;
@@ -131,7 +131,7 @@ function extract_table_block(
 }
 
 function extract_convex_table_fields(table_block: string): string[] {
-  const fields =  [] as string[];
+  const fields = [] as string[];
   let brace_depth = 0;
 
   const lines = table_block.split("\n");
@@ -220,7 +220,7 @@ describe("extract_interface_fields", () => {
         first_name: string;
         last_name: string;
         email?: string;
-        height_cm: number | null;
+        height_cm: number;
       }
     `;
 
@@ -328,7 +328,7 @@ describe("extract_table_block", () => {
     expect(block).toContain("...timestamp_fields");
   });
 
-  it("should return null for a table that does not exist", () => {
+  it("should return undefined for a table that does not exist", () => {
     const schema_content = `
       genders: defineTable({
         name: v.string(),
@@ -337,7 +337,7 @@ describe("extract_table_block", () => {
 
     const block = extract_table_block(schema_content, "unknown_table");
 
-    expect(block).toBeNull();
+    expect(block).toBeUndefined();
   });
 });
 
@@ -377,7 +377,7 @@ describe("Schema Alignment: Local Entities vs Convex Schema", () => {
   });
 
   it("should have a Convex table definition for every mapped entity", () => {
-    const missing_tables =  [] as string[];
+    const missing_tables = [] as string[];
 
     for (const [entity_name, table_name] of Object.entries(
       ENTITY_TO_TABLE_MAP,

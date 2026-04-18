@@ -7,6 +7,7 @@ import type {
 import type { ProfileLinkRepository } from "../interfaces/ports";
 import type { QueryOptions } from "../interfaces/ports";
 import type { ScalarInput } from "../types/DomainScalars";
+import type { PaginatedResult, Result } from "../types/Result";
 import { create_failure_result, create_success_result } from "../types/Result";
 import { create_profile_link_use_cases } from "./ProfileLinkUseCases";
 
@@ -40,8 +41,6 @@ function create_valid_profile_link_input(
     ...overrides,
   } as CreateProfileLinkInput;
 }
-
-import type { PaginatedResult, Result } from "../types/Result";
 
 function create_paginated_result<T>(
   items: T[],
@@ -113,7 +112,7 @@ describe("ProfileLinkUseCases", () => {
       expect(result.data.items).toHaveLength(1);
       expect(mock_repository.find_all).toHaveBeenCalledWith(
         expect.objectContaining({ profile_id: "profile_1" }),
-        undefined,
+        {},
       );
     });
 
@@ -130,7 +129,7 @@ describe("ProfileLinkUseCases", () => {
       expect(result.data.items).toHaveLength(1);
       expect(mock_repository.find_all).toHaveBeenCalledWith(
         expect.objectContaining({ platform: "twitter" }),
-        undefined,
+        {},
       );
     });
 
@@ -139,10 +138,10 @@ describe("ProfileLinkUseCases", () => {
         create_paginated_result([]),
       );
 
-      const options =  { page_number: 2, page_size: 20 } as QueryOptions;
-      await use_cases.list(undefined, options);
+      const options = { page_number: 2, page_size: 20 } as QueryOptions;
+      await use_cases.list({}, options);
 
-      expect(mock_repository.find_all).toHaveBeenCalledWith(undefined, options);
+      expect(mock_repository.find_all).toHaveBeenCalledWith({}, options);
     });
 
     it("handles repository failure", async () => {
@@ -215,7 +214,7 @@ describe("ProfileLinkUseCases", () => {
       expect(result.data.items).toHaveLength(2);
       expect(mock_repository.find_by_profile_id).toHaveBeenCalledWith(
         "profile_1",
-        undefined,
+        {},
       );
     });
 

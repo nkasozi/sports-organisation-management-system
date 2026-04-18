@@ -1,5 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import {
+  load_dynamic_entity_list_entities,
+  load_dynamic_entity_list_filter_options,
+} from "./dynamicEntityListRecords";
+
 const {
   apply_id_filter_to_entities_mock,
   build_entity_authorization_filter_mock,
@@ -38,11 +43,6 @@ vi.mock("$lib/presentation/logic/dynamicListLogic", () => ({
   extract_items_from_result_data: extract_items_from_result_data_mock,
   merge_entity_list_filters: merge_entity_list_filters_mock,
 }));
-
-import {
-  load_dynamic_entity_list_entities,
-  load_dynamic_entity_list_filter_options,
-} from "./dynamicEntityListRecords";
 
 describe("dynamicEntityListRecords", () => {
   beforeEach(() => {
@@ -89,13 +89,11 @@ describe("dynamicEntityListRecords", () => {
   it("returns an error when metadata is missing", async () => {
     await expect(
       load_dynamic_entity_list_entities({
-        crud_handlers: null,
-        current_profile: null,
+        current_profile_state: { status: "missing" },
         display_name: "Teams",
-        entity_metadata: null,
+
         entity_type: "team",
-        raw_token: null,
-        sub_entity_filter: null,
+        raw_token: "",
       }),
     ).resolves.toEqual({
       auth_profile_missing: false,
@@ -106,19 +104,16 @@ describe("dynamicEntityListRecords", () => {
 
   it("stops loading when the user scope profile is missing", async () => {
     build_entity_authorization_filter_mock.mockReturnValueOnce({
-      profile_missing: true,
-      filter: {},
+      status: "profile_missing",
     });
 
     await expect(
       load_dynamic_entity_list_entities({
-        crud_handlers: null,
-        current_profile: null,
+        current_profile_state: { status: "missing" },
         display_name: "Teams",
         entity_metadata: { fields: [] } as never,
         entity_type: "team",
-        raw_token: null,
-        sub_entity_filter: null,
+        raw_token: "",
       }),
     ).resolves.toEqual({
       auth_profile_missing: true,
@@ -130,8 +125,11 @@ describe("dynamicEntityListRecords", () => {
 
   it("blocks unauthorized reads when the token cannot access the entity type", async () => {
     build_entity_authorization_filter_mock.mockReturnValueOnce({
-      profile_missing: false,
-      filter: { organization_id: "org-1" },
+      status: "ready",
+      filter_state: {
+        status: "present",
+        filter: { organization_id: "org-1" },
+      },
     });
     check_entity_authorized_mock.mockResolvedValueOnce({
       success: true,
@@ -140,13 +138,14 @@ describe("dynamicEntityListRecords", () => {
 
     await expect(
       load_dynamic_entity_list_entities({
-        crud_handlers: null,
-        current_profile: { organization_id: "org-1" } as never,
+        current_profile_state: {
+          status: "present",
+          profile: { organization_id: "org-1" } as never,
+        },
         display_name: "Team Memberships",
         entity_metadata: { fields: [] } as never,
         entity_type: "Player Team_Membership",
         raw_token: "token-1",
-        sub_entity_filter: null,
       }),
     ).resolves.toEqual({
       auth_profile_missing: false,
@@ -168,8 +167,11 @@ describe("dynamicEntityListRecords", () => {
       .mockResolvedValueOnce({ success: true, data: filtered_entities });
 
     build_entity_authorization_filter_mock.mockReturnValueOnce({
-      profile_missing: false,
-      filter: { organization_id: "org-1" },
+      status: "ready",
+      filter_state: {
+        status: "present",
+        filter: { organization_id: "org-1" },
+      },
     });
     build_filter_from_sub_entity_config_mock.mockReturnValueOnce({
       team_id: "team-1",
@@ -184,11 +186,14 @@ describe("dynamicEntityListRecords", () => {
     await expect(
       load_dynamic_entity_list_entities({
         crud_handlers: { list } as never,
-        current_profile: { organization_id: "org-1" } as never,
+        current_profile_state: {
+          status: "present",
+          profile: { organization_id: "org-1" } as never,
+        },
         display_name: "Teams",
         entity_metadata: { fields: [] } as never,
         entity_type: "team",
-        raw_token: null,
+        raw_token: "",
         sub_entity_filter: {
           foreign_key_field: "team_id",
           foreign_key_value: "team-1",
@@ -207,8 +212,11 @@ describe("dynamicEntityListRecords", () => {
 
   it("falls back to entity use cases and surfaces list errors when custom handlers are absent", async () => {
     build_entity_authorization_filter_mock.mockReturnValueOnce({
-      profile_missing: false,
-      filter: {},
+      status: "ready",
+      filter_state: {
+        status: "present",
+        filter: {},
+      },
     });
     build_filter_from_sub_entity_config_mock.mockReturnValueOnce({});
     merge_entity_list_filters_mock.mockReturnValueOnce({});
@@ -225,13 +233,14 @@ describe("dynamicEntityListRecords", () => {
 
     await expect(
       load_dynamic_entity_list_entities({
-        crud_handlers: null,
-        current_profile: { organization_id: "org-1" } as never,
+        current_profile_state: {
+          status: "present",
+          profile: { organization_id: "org-1" } as never,
+        },
         display_name: "Teams",
         entity_metadata: { fields: [] } as never,
         entity_type: "team",
-        raw_token: null,
-        sub_entity_filter: null,
+        raw_token: "",
       }),
     ).resolves.toEqual({
       auth_profile_missing: false,

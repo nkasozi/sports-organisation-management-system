@@ -13,16 +13,31 @@ import { get_current_year_date_range } from "$lib/presentation/logic/calendarPag
 
 type CalendarPageUseCases = UseCasesContainer;
 
+export type CalendarProfileState =
+  | { status: "missing" }
+  | { status: "present"; profile: UserScopeProfile };
+
 export async function load_calendar_organizations(command: {
-  current_profile: UserScopeProfile | null;
+  current_profile_state: CalendarProfileState;
   organization_use_cases: UseCasesContainer["organization_use_cases"];
 }): Promise<Organization[]> {
   const result = await command.organization_use_cases.list({});
   if (!result.success) return [];
   if (!result.data) return [];
-  if (command.current_profile?.organization_id === ANY_VALUE)
+  if (
+    command.current_profile_state.status === "present" &&
+    command.current_profile_state.profile.organization_id === ANY_VALUE
+  )
     return result.data.items;
-  const org_scope = get_scope_value(command.current_profile, "organization_id");
+
+  const org_scope =
+    command.current_profile_state.status === "present"
+      ? get_scope_value(
+          command.current_profile_state.profile,
+          "organization_id",
+        )
+      : "";
+
   return org_scope
     ? result.data.items.filter((organization) => organization.id === org_scope)
     : result.data.items;

@@ -3,8 +3,8 @@
     export let message: string =
         "An unexpected error occurred. Please try again.";
     export let variant: "inline" | "page" = "inline";
-    export let on_retry: (() => void) | null = null;
-    export let on_back: (() => void) | null = null;
+    export let on_retry: (() => void) | undefined = undefined;
+    export let on_back: (() => void) | undefined = undefined;
     export let retry_label: string = "Try Again";
     export let back_label: string = "Go Back";
     export let severity: "warning" | "error" = "warning";

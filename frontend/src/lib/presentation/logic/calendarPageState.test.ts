@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { Activity } from "$lib/core/entities/Activity";
+import { NO_ACTIVITY_RECURRENCE } from "$lib/core/entities/Activity";
 import type { ActivityCategory } from "$lib/core/entities/ActivityCategory";
 
 import {
@@ -25,16 +26,16 @@ function create_test_activity(overrides: Partial<Activity>): Activity {
     end_datetime: overrides.end_datetime ?? "2024-06-01T11:00:00",
     is_all_day: overrides.is_all_day ?? false,
     location: overrides.location ?? "Main Arena",
-    venue_id: overrides.venue_id ?? null,
+    venue_id: overrides.venue_id ?? "",
     team_ids: overrides.team_ids ?? [],
-    competition_id: overrides.competition_id ?? null,
-    fixture_id: overrides.fixture_id ?? null,
+    competition_id: overrides.competition_id ?? "",
+    fixture_id: overrides.fixture_id ?? "",
     source_type: overrides.source_type ?? "manual",
-    source_id: overrides.source_id ?? null,
+    source_id: overrides.source_id ?? "",
     status: overrides.status ?? "scheduled",
-    recurrence: overrides.recurrence ?? null,
+    recurrence: overrides.recurrence ?? NO_ACTIVITY_RECURRENCE,
     reminders: overrides.reminders ?? [],
-    color_override: overrides.color_override ?? null,
+    color_override: overrides.color_override ?? "",
     notes: overrides.notes ?? "",
   } as Activity;
 }
@@ -111,6 +112,12 @@ describe("calendar page form helpers", () => {
       category_type: "training",
       source_type: "manual",
       title: "Training Session",
+      venue_id: "",
+      competition_id: "",
+      fixture_id: "",
+      source_id: "",
+      recurrence: NO_ACTIVITY_RECURRENCE,
+      color_override: "",
     });
   });
 });

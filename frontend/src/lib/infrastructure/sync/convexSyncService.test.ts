@@ -7,6 +7,7 @@ import {
   vi,
 } from "vitest";
 
+import { create_known_conflict_field_value } from "./conflictTypes";
 import type { ConflictFromServer } from "./syncTypes";
 
 const auth_state = vi.hoisted(() => {
@@ -16,7 +17,7 @@ const auth_state = vi.hoisted(() => {
     is_signed_in: {
       subscribe(run: (value: boolean) => void) {
         run(current_value);
-        return () => undefined;
+        return () => {};
       },
     },
     set_signed_in(value: boolean) {
@@ -25,7 +26,7 @@ const auth_state = vi.hoisted(() => {
   };
 });
 
-const mock_app_settings_store =  {} as Record<string, string>;
+const mock_app_settings_store = {} as Record<string, string>;
 const mock_remove_setting = vi.fn((key: string) => {
   delete mock_app_settings_store[key];
   return Promise.resolve();
@@ -34,7 +35,7 @@ const mock_remove_setting = vi.fn((key: string) => {
 vi.mock("$lib/infrastructure/container", () => ({
   get_app_settings_storage: () => ({
     get_setting: (key: string) =>
-      Promise.resolve(mock_app_settings_store[key] ?? null),
+      Promise.resolve(mock_app_settings_store[key] ?? ""),
     set_setting: (key: string, value: string) => {
       mock_app_settings_store[key] = value;
       return Promise.resolve();
@@ -57,7 +58,7 @@ const EPOCH_TIMESTAMP = "1970-01-01T00:00:00.000Z";
 
 interface RemoteTableState {
   record_count: number;
-  latest_modified_at: string | null;
+  latest_modified_at: string;
 }
 
 interface LocalRecord {
@@ -70,14 +71,14 @@ interface LocalRecord {
 interface PushResult {
   success: boolean;
   records_pushed: number;
-  error: string | null;
+  error?: string;
   conflicts: ConflictFromServer[];
 }
 
 interface PullResult {
   success: boolean;
   records_pulled: number;
-  error: string | null;
+  error?: string;
 }
 
 interface ConvexClient {
@@ -86,7 +87,7 @@ interface ConvexClient {
 }
 
 type TableToArray = () => Promise<LocalRecord[]>;
-type TableGet = (id: string) => Promise<LocalRecord | null>;
+type TableGet = (id: string) => Promise<LocalRecord | undefined>;
 type TablePut = (record: Record<string, unknown>) => Promise<void>;
 
 interface MockTable {
@@ -120,9 +121,9 @@ function create_mock_table(records: LocalRecord[] = []): MockTable {
   return {
     toArray: vi.fn().mockResolvedValue(records) as MockedFunction<TableToArray>,
     get: vi.fn().mockImplementation(async (id: string) => {
-      return records.find((r) => r.id === id) || null;
+      return records.find((r) => r.id === id);
     }) as MockedFunction<TableGet>,
-    put: vi.fn().mockResolvedValue(undefined) as MockedFunction<TablePut>,
+    put: vi.fn().mockImplementation(async () => {}) as MockedFunction<TablePut>,
   } as MockTable;
 }
 
@@ -140,11 +141,11 @@ async function push_table_to_convex(
   convex_client: ConvexClient,
   table_name: string,
   all_records: LocalRecord[],
-  remote_latest_modified_at: string | null,
+  remote_latest_modified_at?: string,
   detect_conflicts: boolean = true,
 ): Promise<PushResult> {
-  const remote_cutoff = remote_latest_modified_at || EPOCH_TIMESTAMP;
-  const server_is_empty = !remote_latest_modified_at;
+  const remote_cutoff = remote_latest_modified_at ?? EPOCH_TIMESTAMP;
+  const server_is_empty = remote_latest_modified_at == void 0;
 
   const records_to_push = server_is_empty
     ? all_records
@@ -155,12 +156,12 @@ async function push_table_to_convex(
       });
 
   if (records_to_push.length === 0) {
-    return { success: true, records_pushed: 0, error: null, conflicts: [] };
+    return { success: true, records_pushed: 0, conflicts: [] };
   }
 
   const batch_size = 25;
   let total_pushed = 0;
-  const all_conflicts =  [] as ConflictFromServer[];
+  const all_conflicts = [] as ConflictFromServer[];
 
   try {
     for (let i = 0; i < records_to_push.length; i += batch_size) {
@@ -224,7 +225,6 @@ async function push_table_to_convex(
   return {
     success: true,
     records_pushed: total_pushed,
-    error: null,
     conflicts: all_conflicts,
   };
 }
@@ -250,7 +250,7 @@ async function pull_table_from_convex(
             updated_at?: string;
             [key: string]: unknown;
           }>;
-          error: string | null;
+          error?: string;
         }
       | Array<{
           _id: string;
@@ -259,10 +259,11 @@ async function pull_table_from_convex(
           version: number;
           updated_at?: string;
           [key: string]: unknown;
-        }>;
+        }>
+      | undefined;
 
     const is_result_type =
-      sync_result !== null &&
+      sync_result != void 0 &&
       typeof sync_result === "object" &&
       !Array.isArray(sync_result) &&
       "success" in sync_result;
@@ -286,8 +287,8 @@ async function pull_table_from_convex(
       };
     }
 
-    if (!remote_changes || remote_changes.length === 0) {
-      return { success: true, records_pulled: 0, error: null };
+    if (remote_changes == void 0 || remote_changes.length === 0) {
+      return { success: true, records_pulled: 0 };
     }
 
     let records_pulled = 0;
@@ -323,7 +324,7 @@ async function pull_table_from_convex(
       }
     }
 
-    return { success: true, records_pulled, error: null };
+    return { success: true, records_pulled };
   } catch (error) {
     const error_message =
       error instanceof Error ? error.message : String(error);
@@ -410,7 +411,7 @@ describe("push_table_to_convex", () => {
     auth_state.set_signed_in(false);
   });
 
-  it("pushes all records when server is empty (null remote_latest_modified_at)", async () => {
+  it("pushes all records when server is empty (missing remote_latest_modified_at)", async () => {
     const records = [create_record({ id: "r1" }), create_record({ id: "r2" })];
 
     mock_client.mutation.mockResolvedValue({
@@ -423,16 +424,11 @@ describe("push_table_to_convex", () => {
       conflicts: [],
     });
 
-    const result = await push_table_to_convex(
-      mock_client,
-      "players",
-      records,
-      null,
-    );
+    const result = await push_table_to_convex(mock_client, "players", records);
 
     expect(result.success).toBe(true);
     expect(result.records_pushed).toBe(2);
-    expect(result.error).toBeNull();
+    expect(result.error).toBeUndefined();
     expect(result.conflicts).toHaveLength(0);
     expect(mock_client.mutation).toHaveBeenCalledTimes(1);
   });
@@ -519,12 +515,7 @@ describe("push_table_to_convex", () => {
         conflicts: [],
       });
 
-    const result = await push_table_to_convex(
-      mock_client,
-      "players",
-      records,
-      null,
-    );
+    const result = await push_table_to_convex(mock_client, "players", records);
 
     expect(result.success).toBe(true);
     expect(result.records_pushed).toBe(30);
@@ -543,14 +534,14 @@ describe("push_table_to_convex", () => {
   it("reports conflicts from server without counting them as pushed", async () => {
     const records = [create_record({ id: "r1" }), create_record({ id: "r2" })];
 
-    const mock_conflict =  {
+    const mock_conflict = {
       local_id: "r2",
       local_data: { id: "r2", name: "local" },
       local_version: 1,
       remote_data: { id: "r2", name: "remote" },
       remote_version: 2,
       remote_updated_at: "2024-06-01T00:00:00.000Z",
-      remote_updated_by: "user-1",
+      remote_updated_by: create_known_conflict_field_value("user-1" as never),
     } as ConflictFromServer;
 
     mock_client.mutation.mockResolvedValue({
@@ -563,12 +554,7 @@ describe("push_table_to_convex", () => {
       conflicts: [mock_conflict],
     });
 
-    const result = await push_table_to_convex(
-      mock_client,
-      "players",
-      records,
-      null,
-    );
+    const result = await push_table_to_convex(mock_client, "players", records);
 
     expect(result.success).toBe(true);
     expect(result.records_pushed).toBe(1);
@@ -580,12 +566,7 @@ describe("push_table_to_convex", () => {
     const records = [create_record({ id: "r1" })];
     mock_client.mutation.mockRejectedValue(new Error("Network timeout"));
 
-    const result = await push_table_to_convex(
-      mock_client,
-      "players",
-      records,
-      null,
-    );
+    const result = await push_table_to_convex(mock_client, "players", records);
 
     expect(result.success).toBe(false);
     expect(result.error).toBe("Network timeout");
@@ -593,7 +574,7 @@ describe("push_table_to_convex", () => {
   });
 
   it("uses created_at for filtering when updated_at is missing", async () => {
-    const record_with_only_created_at =  {
+    const record_with_only_created_at = {
       id: "r1",
       created_at: "2024-08-01T00:00:00.000Z",
     } as LocalRecord;
@@ -626,7 +607,7 @@ describe("push_table_to_convex", () => {
       conflicts: [],
     });
 
-    await push_table_to_convex(mock_client, "players", records, null, false);
+    await push_table_to_convex(mock_client, "players", records, void 0, false);
 
     const mutation_args = mock_client.mutation.mock.calls[0][1] as {
       detect_conflicts: boolean;
@@ -635,7 +616,7 @@ describe("push_table_to_convex", () => {
   });
 
   it("pushes empty records array returns zero pushed", async () => {
-    const result = await push_table_to_convex(mock_client, "players", [], null);
+    const result = await push_table_to_convex(mock_client, "players", []);
 
     expect(result.success).toBe(true);
     expect(result.records_pushed).toBe(0);
@@ -665,9 +646,9 @@ describe("pull_table_from_convex", () => {
     expect(result.records_pulled).toBe(0);
   });
 
-  it("returns zero pulled when remote changes is null", async () => {
+  it("returns zero pulled when remote changes are missing", async () => {
     const mock_table = create_mock_table();
-    mock_client.query.mockResolvedValue(null);
+    mock_client.query.mockImplementation(async () => {});
 
     const result = await pull_table_from_convex(
       mock_client,
@@ -682,7 +663,7 @@ describe("pull_table_from_convex", () => {
 
   it("inserts new records that dont exist locally", async () => {
     const mock_table = create_mock_table([]);
-    mock_table.get.mockResolvedValue(null);
+    mock_table.get.mockResolvedValue(void 0);
 
     mock_client.query.mockResolvedValue([
       {
@@ -814,7 +795,7 @@ describe("pull_table_from_convex", () => {
 
   it("strips convex metadata fields before saving locally", async () => {
     const mock_table = create_mock_table([]);
-    mock_table.get.mockResolvedValue(null);
+    mock_table.get.mockResolvedValue(void 0);
 
     mock_client.query.mockResolvedValue([
       {
@@ -860,9 +841,9 @@ describe("pull_table_from_convex", () => {
         case "player-1":
           return existing_local;
         case "player-2":
-          return null;
+          return;
         default:
-          return null;
+          return;
       }
     });
 
@@ -930,9 +911,9 @@ describe("sync direction detection", () => {
     expect(result).toBe("in_sync");
   });
 
-  it("detects local ahead when remote has null (treated as EPOCH)", () => {
-    const maybe_null: string | null = null;
-    const remote_latest_or_epoch = maybe_null || EPOCH_TIMESTAMP;
+  it("detects local ahead when remote timestamp is missing (treated as EPOCH)", () => {
+    const maybe_remote_latest: string | undefined = undefined;
+    const remote_latest_or_epoch = maybe_remote_latest ?? EPOCH_TIMESTAMP;
     const result = determine_sync_direction(
       "2024-01-01T00:00:00.000Z",
       remote_latest_or_epoch,
@@ -1103,7 +1084,7 @@ describe("push and pull record timestamp edge cases", () => {
   });
 
   it("push treats record with no timestamps as EPOCH (always older than any remote)", async () => {
-    const record_without_timestamps =  { id: "r1" } as LocalRecord;
+    const record_without_timestamps = { id: "r1" } as LocalRecord;
 
     const result = await push_table_to_convex(
       mock_client,
@@ -1117,7 +1098,7 @@ describe("push and pull record timestamp edge cases", () => {
   });
 
   it("push treats record with only created_at correctly for filtering", async () => {
-    const record =  {
+    const record = {
       id: "r1",
       created_at: "2024-06-01T00:00:00.000Z",
     } as LocalRecord;
@@ -1178,7 +1159,7 @@ describe("push and pull record timestamp edge cases", () => {
   });
 });
 
-function is_auth_error(error_message: string | null): boolean {
+function is_auth_error(error_message: string | undefined): boolean {
   if (!error_message) return false;
   return (
     error_message.includes("authentication_required") ||
@@ -1200,8 +1181,8 @@ describe("is_auth_error", () => {
     ).toBe(true);
   });
 
-  it("returns false for null error", () => {
-    expect(is_auth_error(null)).toBe(false);
+  it("returns false for missing error", () => {
+    expect(is_auth_error(void 0)).toBe(false);
   });
 
   it("returns false for non-auth errors", () => {
@@ -1238,12 +1219,7 @@ describe("push_table_to_convex auth error handling", () => {
       conflicts: [],
     });
 
-    const result = await push_table_to_convex(
-      mock_client,
-      "players",
-      records,
-      null,
-    );
+    const result = await push_table_to_convex(mock_client, "players", records);
 
     expect(result.success).toBe(false);
     expect(result.error).toBe("authentication_required: Not authenticated");
@@ -1262,12 +1238,7 @@ describe("push_table_to_convex auth error handling", () => {
       conflicts: [],
     });
 
-    const result = await push_table_to_convex(
-      mock_client,
-      "players",
-      records,
-      null,
-    );
+    const result = await push_table_to_convex(mock_client, "players", records);
 
     expect(result.success).toBe(false);
     expect(result.error).toContain("unauthorized");
@@ -1288,12 +1259,7 @@ describe("push_table_to_convex auth error handling", () => {
       conflicts: [],
     });
 
-    const result = await push_table_to_convex(
-      mock_client,
-      "players",
-      records,
-      null,
-    );
+    const result = await push_table_to_convex(mock_client, "players", records);
 
     expect(result.success).toBe(false);
     expect(mock_client.mutation).toHaveBeenCalledTimes(1);
@@ -1309,12 +1275,7 @@ describe("push_table_to_convex auth error handling", () => {
       conflicts: [],
     });
 
-    const result = await push_table_to_convex(
-      mock_client,
-      "players",
-      records,
-      null,
-    );
+    const result = await push_table_to_convex(mock_client, "players", records);
 
     expect(result.success).toBe(false);
     expect(result.error).toContain("Server rejected");
@@ -1331,13 +1292,16 @@ describe("push_table_to_convex auth error handling", () => {
 describe("get_remote_state_for_table with SyncHints", () => {
   function get_remote_state_for_table(
     table_name: string,
-    remote_timestamp_cache: Record<string, string | null> | undefined,
+    remote_timestamp_cache: Record<string, string> | undefined,
     use_fresh_timestamps: boolean | undefined,
     fetcher: (t: string) => RemoteTableState,
   ): RemoteTableState {
     const cached = remote_timestamp_cache?.[table_name];
-    if (cached !== undefined && !use_fresh_timestamps) {
-      return { record_count: 0, latest_modified_at: cached ?? null } as RemoteTableState;
+    if (cached != void 0 && !use_fresh_timestamps) {
+      return {
+        record_count: 0,
+        latest_modified_at: cached,
+      } as RemoteTableState;
     }
     return fetcher(table_name);
   }
@@ -1381,16 +1345,16 @@ describe("get_remote_state_for_table with SyncHints", () => {
     expect(fetcher).toHaveBeenCalledOnce();
   });
 
-  it("returns null latest when cache has null value for table", () => {
-    const cache =  { players: null } as Record<string, string | null>;
+  it("returns epoch latest when cache has the empty-table baseline", () => {
+    const cache = { players: EPOCH_TIMESTAMP } as Record<string, string>;
     const fetcher = vi.fn(() => ({
       record_count: 0,
-      latest_modified_at: null,
+      latest_modified_at: EPOCH_TIMESTAMP,
     }));
 
     const result = get_remote_state_for_table("players", cache, false, fetcher);
 
-    expect(result.latest_modified_at).toBeNull();
+    expect(result.latest_modified_at).toBe(EPOCH_TIMESTAMP);
     expect(fetcher).not.toHaveBeenCalled();
   });
 
@@ -1402,8 +1366,8 @@ describe("get_remote_state_for_table with SyncHints", () => {
 
     const result = get_remote_state_for_table(
       "players",
-      undefined,
-      undefined,
+      void 0,
+      void 0,
       fetcher,
     );
 

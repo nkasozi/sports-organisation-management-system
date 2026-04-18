@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { create_dynamic_entity_form_controller } from "./dynamicEntityFormControllerFactory";
+
 const {
   build_dynamic_form_fake_data_state_mock,
   create_dynamic_form_field_callbacks_mock,
@@ -29,8 +31,6 @@ vi.mock("./dynamicEntityFormSubmitFlow", () => ({
   submit_dynamic_entity_form: submit_dynamic_entity_form_mock,
 }));
 
-import { create_dynamic_entity_form_controller } from "./dynamicEntityFormControllerFactory";
-
 describe("dynamicEntityFormControllerFactory", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -41,7 +41,7 @@ describe("dynamicEntityFormControllerFactory", () => {
 
   function create_controller_dependencies(command?: {
     is_inline_mode?: boolean;
-    entity_metadata?: Record<string, unknown> | null;
+    entity_metadata?: Record<string, unknown> | undefined;
   }) {
     let form_state = {
       form_data: { name: "Uganda" },
@@ -68,7 +68,7 @@ describe("dynamicEntityFormControllerFactory", () => {
       get_entity_metadata: () =>
         (command?.entity_metadata ?? { fields: [] }) as never,
       get_is_edit_mode: () => false,
-      get_entity_data: () => null,
+      get_entity_data: () => ({}) as never,
       get_form_state: () => form_state,
       set_form_state: (next_state) => {
         form_state = next_state as never;
@@ -127,7 +127,6 @@ describe("dynamicEntityFormControllerFactory", () => {
     submit_dynamic_entity_form_mock.mockResolvedValue({
       save_error_message: "",
       validation_errors: { name: "Required" },
-      saved_entity: null,
     });
     const { controller, get_form_state, get_ui_state, on_save_completed } =
       create_controller_dependencies();

@@ -119,7 +119,9 @@ function find_sport_id_by_code(
   return matched_sport.id;
 }
 
-function create_default_organizations(seeded_sports: Sport[]): import("$lib/core/types/DomainScalars").ScalarInput<Organization>[] {
+function create_default_organizations(
+  seeded_sports: Sport[],
+): import("$lib/core/types/DomainScalars").ScalarInput<Organization>[] {
   const now = new Date().toISOString();
   const field_hockey_sport_id = find_sport_id_by_code(
     seeded_sports,
@@ -145,13 +147,24 @@ function create_default_organizations(seeded_sports: Sport[]): import("$lib/core
   ];
 }
 
-let singleton_instance: InBrowserOrganizationRepository | null = null;
+type OrganizationRepositoryState =
+  | { status: "uninitialized" }
+  | { status: "ready"; repository: InBrowserOrganizationRepository };
+
+let organization_repository_state: OrganizationRepositoryState = {
+  status: "uninitialized",
+};
 
 export function get_organization_repository(): OrganizationRepository {
-  if (!singleton_instance) {
-    singleton_instance = new InBrowserOrganizationRepository();
+  if (organization_repository_state.status === "ready") {
+    return organization_repository_state.repository;
   }
-  return singleton_instance;
+
+  const repository = new InBrowserOrganizationRepository();
+
+  organization_repository_state = { status: "ready", repository };
+
+  return repository;
 }
 
 async function ensure_default_organization_exists(

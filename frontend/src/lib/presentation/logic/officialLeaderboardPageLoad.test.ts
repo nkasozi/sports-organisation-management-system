@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { load_official_leaderboard_page_state } from "./officialLeaderboardPageLoad";
+
 const {
   rebuild_official_leaderboard_view_mock,
   resolve_official_leaderboard_organizations_mock,
@@ -13,8 +15,6 @@ vi.mock("./officialLeaderboardPageState", () => ({
   resolve_official_leaderboard_organizations:
     resolve_official_leaderboard_organizations_mock,
 }));
-
-import { load_official_leaderboard_page_state } from "./officialLeaderboardPageLoad";
 
 describe("officialLeaderboardPageLoad", () => {
   function create_dependencies() {
@@ -56,7 +56,7 @@ describe("officialLeaderboardPageLoad", () => {
 
     await expect(
       load_official_leaderboard_page_state({
-        profile: null,
+        profile_state: { status: "missing" },
         dependencies: dependencies as never,
       }),
     ).resolves.toEqual({
@@ -92,13 +92,16 @@ describe("officialLeaderboardPageLoad", () => {
     ]);
     rebuild_official_leaderboard_view_mock.mockReturnValue({
       leaderboard_entries: [{ official_id: "official-1" }],
-      selected_entry: null,
+
       selected_breakdown: [],
     });
 
     await expect(
       load_official_leaderboard_page_state({
-        profile: { official_id: "official-1" } as never,
+        profile_state: {
+          status: "present",
+          profile: { official_id: "official-1" } as never,
+        },
         dependencies: dependencies as never,
       }),
     ).resolves.toEqual({
@@ -112,7 +115,7 @@ describe("officialLeaderboardPageLoad", () => {
         all_fixtures: [{ id: "fixture-1" }],
         all_stages: [{ id: "stage-1" }],
         leaderboard_entries: [{ official_id: "official-1" }],
-        selected_entry: null,
+
         selected_breakdown: [],
       },
     });
@@ -120,6 +123,68 @@ describe("officialLeaderboardPageLoad", () => {
       expect.objectContaining({
         selected_organization_id: "organization-1",
         user_official_id: "official-1",
+      }),
+    );
+  });
+
+  it("uses an empty official scope string when the signed-in profile has no official id", async () => {
+    const dependencies = create_dependencies();
+    dependencies.organization_use_cases.list.mockResolvedValue({
+      success: true,
+      data: { items: [{ id: "organization-1", name: "Premier League" }] },
+    });
+    dependencies.official_performance_rating_use_cases.list.mockResolvedValue({
+      success: true,
+      data: { items: [{ id: "rating-1" }] },
+    });
+    dependencies.official_use_cases.list.mockResolvedValue({
+      success: true,
+      data: { items: [{ id: "official-1" }] },
+    });
+    dependencies.fixture_use_cases.list.mockResolvedValue({
+      success: true,
+      data: { items: [{ id: "fixture-1" }] },
+    });
+    dependencies.competition_stage_use_cases.list.mockResolvedValue({
+      success: true,
+      data: { items: [{ id: "stage-1" }] },
+    });
+    resolve_official_leaderboard_organizations_mock.mockReturnValue([
+      { id: "organization-1", name: "Premier League" },
+    ]);
+    rebuild_official_leaderboard_view_mock.mockReturnValue({
+      leaderboard_entries: [{ official_id: "official-1" }],
+
+      selected_breakdown: [],
+    });
+
+    await expect(
+      load_official_leaderboard_page_state({
+        profile_state: {
+          status: "present",
+          profile: {} as never,
+        },
+        dependencies: dependencies as never,
+      }),
+    ).resolves.toEqual({
+      success: true,
+      data: {
+        organizations: [{ id: "organization-1", name: "Premier League" }],
+        selected_organization_id: "organization-1",
+        user_official_id: "",
+        all_ratings: [{ id: "rating-1" }],
+        all_officials: [{ id: "official-1" }],
+        all_fixtures: [{ id: "fixture-1" }],
+        all_stages: [{ id: "stage-1" }],
+        leaderboard_entries: [{ official_id: "official-1" }],
+
+        selected_breakdown: [],
+      },
+    });
+    expect(rebuild_official_leaderboard_view_mock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        selected_organization_id: "organization-1",
+        user_official_id: "",
       }),
     );
   });

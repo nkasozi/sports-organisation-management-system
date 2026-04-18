@@ -23,10 +23,10 @@ function create_sync_batch_record(command: {
     },
     version: TEST_VERSION,
   } as {
-  local_id: string;
-  data: Record<string, unknown>;
-  version: number;
-};
+    local_id: string;
+    data: Record<string, unknown>;
+    version: number;
+  };
 }
 
 describe("syncPushBatching", () => {
@@ -48,10 +48,12 @@ describe("syncPushBatching", () => {
     });
 
     expect(result.success).toBe(true);
-    expect(result.error).toBeNull();
-    expect(result.batches).toHaveLength(2);
-    expect(result.batches[0]).toEqual([first_record]);
-    expect(result.batches[1]).toEqual([second_record]);
+    if (!result.success) {
+      throw new Error("Expected batch construction to succeed");
+    }
+    expect(result.data).toHaveLength(2);
+    expect(result.data[0]).toEqual([first_record]);
+    expect(result.data[1]).toEqual([second_record]);
   });
 
   it("fails when a single record is too large to fit in one sync payload", () => {
@@ -68,7 +70,9 @@ describe("syncPushBatching", () => {
     });
 
     expect(result.success).toBe(false);
-    expect(result.batches).toEqual([]);
+    if (result.success) {
+      throw new Error("Expected batch construction to fail");
+    }
     expect(result.error).toContain("team-3");
     expect(result.error).toContain("logo_url");
     expect(result.error).toContain("smaller image");

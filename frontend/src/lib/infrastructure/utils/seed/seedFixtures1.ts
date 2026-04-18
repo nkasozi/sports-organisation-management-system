@@ -30,8 +30,8 @@ export function create_seed_fixtures_part1(
       venue: "Lugogo Hockey Stadium",
       scheduled_date: next_week.toISOString().split("T")[0],
       scheduled_time: "15:00",
-      home_team_score: null,
-      away_team_score: null,
+      home_team_score: 0,
+      away_team_score: 0,
       assigned_officials: [
         {
           official_id: SEED_OFFICIAL_IDS.MICHAEL_ANDERSON,
@@ -65,8 +65,8 @@ export function create_seed_fixtures_part1(
       venue: "Entebbe Sports Club",
       scheduled_date: two_weeks.toISOString().split("T")[0],
       scheduled_time: "16:00",
-      home_team_score: null,
-      away_team_score: null,
+      home_team_score: 0,
+      away_team_score: 0,
       assigned_officials: [
         {
           official_id: SEED_OFFICIAL_IDS.EMILY_DAVIS,

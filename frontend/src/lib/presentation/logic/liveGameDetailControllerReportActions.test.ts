@@ -1,5 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { create_live_game_detail_report_handlers } from "./liveGameDetailControllerReportActions";
+import type {
+  LiveGameDetailPageState,
+  LiveGameDetailToastState,
+} from "./liveGameDetailPageState";
+import { create_live_game_detail_page_state } from "./liveGameDetailPageStateFactories";
+
 const {
   build_live_game_detail_report_mock,
   download_match_report_mock,
@@ -21,13 +28,6 @@ vi.mock("$lib/infrastructure/utils/MatchReportPdfGenerator", () => ({
 vi.mock("$lib/presentation/logic/liveGameDetailReport", () => ({
   build_live_game_detail_report: build_live_game_detail_report_mock,
 }));
-
-import { create_live_game_detail_report_handlers } from "./liveGameDetailControllerReportActions";
-import type {
-  LiveGameDetailPageState,
-  LiveGameDetailToastState,
-} from "./liveGameDetailPageState";
-import { create_live_game_detail_page_state } from "./liveGameDetailPageStateFactories";
 
 describe("liveGameDetailControllerReportActions", () => {
   type HandlerCommand = Parameters<
@@ -74,9 +74,9 @@ describe("liveGameDetailControllerReportActions", () => {
       report_data: { sections: [] },
       filename: "lions-vs-tigers.pdf",
     });
-    const toast_updates =  [] as LiveGameDetailToastState[];
-    const download_states =  [] as boolean[];
-    let page_state =  {
+    const toast_updates = [] as LiveGameDetailToastState[];
+    const download_states = [] as boolean[];
+    let page_state = {
       ...create_live_game_detail_page_state(),
       fixture: { id: "fixture-1" } as LiveGameDetailPageState["fixture"],
       competition: {

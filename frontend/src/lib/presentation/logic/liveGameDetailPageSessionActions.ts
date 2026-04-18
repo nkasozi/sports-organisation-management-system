@@ -16,12 +16,12 @@ export async function start_live_game_detail_action(
   command: {
     allow_auto_submission: boolean;
     away_players: Parameters<typeof ensure_live_game_lineups_before_start>[2];
-    away_team: Team | null;
+    away_team: Team | undefined;
     fixture: Fixture;
     home_players: Parameters<typeof ensure_live_game_lineups_before_start>[1];
-    home_team: Team | null;
+    home_team: Team | undefined;
     playing_periods: SportGamePeriod[];
-    reload_fixture: () => Promise<Fixture | null>;
+    reload_fixture: () => Promise<Fixture | undefined>;
   } & LiveGameDetailPageActionDependencies,
 ): Promise<
   | { fixture: Fixture; success: true; toast_message: string }

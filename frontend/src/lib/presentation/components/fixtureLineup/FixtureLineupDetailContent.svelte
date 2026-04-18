@@ -1,18 +1,20 @@
 <script lang="ts">
-    import type { Fixture } from "$lib/core/entities/Fixture";
     import type { FixtureLineup } from "$lib/core/entities/FixtureLineup";
-    import type { Team } from "$lib/core/entities/Team";
     import type { TeamPlayer } from "$lib/core/services/teamPlayers";
+    import type {
+        FixtureLineupDetailFixtureState,
+        FixtureLineupDetailTeamState,
+    } from "$lib/presentation/logic/fixtureLineupDetailPageContracts";
 
     import FixtureLineupDetailSummary from "./FixtureLineupDetailSummary.svelte";
     import FixtureLineupPlayerSection from "./FixtureLineupPlayerSection.svelte";
 
     export let lineup: FixtureLineup;
-    export let fixture: Fixture | null;
-    export let team: Team | null;
+    export let fixture_state: FixtureLineupDetailFixtureState;
+    export let team_state: FixtureLineupDetailTeamState;
     export let team_players: TeamPlayer[];
-    export let home_team: Team | null;
-    export let away_team: Team | null;
+    export let home_team_state: FixtureLineupDetailTeamState;
+    export let away_team_state: FixtureLineupDetailTeamState;
     export let can_modify_lineup: boolean;
     export let permission_info_message: string;
     export let selected_player_ids: Set<string>;
@@ -26,10 +28,10 @@
 <div class="space-y-6">
     <FixtureLineupDetailSummary
         {lineup}
-        {fixture}
-        {team}
-        {home_team}
-        {away_team}
+        {fixture_state}
+        {team_state}
+        {home_team_state}
+        {away_team_state}
         {permission_info_message}
     />
 

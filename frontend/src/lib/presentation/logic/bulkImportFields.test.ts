@@ -1,5 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import {
+  get_bulk_import_enum_fields,
+  get_bulk_import_fields,
+  get_bulk_import_foreign_key_fields,
+  get_bulk_import_related_entity_display_name,
+} from "./bulkImportFields";
+
 const { get_entity_metadata_mock } = vi.hoisted(() => ({
   get_entity_metadata_mock: vi.fn(),
 }));
@@ -9,13 +16,6 @@ vi.mock("$lib/infrastructure/registry/EntityMetadataRegistry", () => ({
     get_entity_metadata: get_entity_metadata_mock,
   },
 }));
-
-import {
-  get_bulk_import_enum_fields,
-  get_bulk_import_fields,
-  get_bulk_import_foreign_key_fields,
-  get_bulk_import_related_entity_display_name,
-} from "./bulkImportFields";
 
 describe("bulkImportFields", () => {
   beforeEach(() => {

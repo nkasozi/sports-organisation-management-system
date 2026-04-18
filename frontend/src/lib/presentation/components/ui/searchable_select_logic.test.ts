@@ -9,7 +9,7 @@ import {
 } from "./searchable_select_logic";
 
 describe("searchable_select_logic", () => {
-  const options =  [
+  const options = [
     { value: "UG", label: "Uganda" },
     { value: "KE", label: "Kenya" },
     { value: "GB", label: "United Kingdom" },
@@ -33,7 +33,7 @@ describe("searchable_select_logic", () => {
   });
 
   it("filters by group name", () => {
-    const grouped_options =  [
+    const grouped_options = [
       { value: "fix_1", label: "Team A vs Team B", group: "Premier League" },
       { value: "fix_2", label: "Team C vs Team D", group: "FA Cup" },
       { value: "fix_3", label: "Team E vs Team F", group: "Premier League" },
@@ -43,7 +43,7 @@ describe("searchable_select_logic", () => {
   });
 
   it("returns options matching group even when label does not match", () => {
-    const grouped_options =  [
+    const grouped_options = [
       { value: "fix_1", label: "Lions vs Tigers", group: "Champions League" },
       { value: "fix_2", label: "Eagles vs Hawks", group: "Local Cup" },
     ] as SelectOption[];
@@ -54,7 +54,7 @@ describe("searchable_select_logic", () => {
 
   it("finds option by exact value", () => {
     expect(find_select_option_by_value(options, "KE")?.label).toBe("Kenya");
-    expect(find_select_option_by_value(options, "XX")).toBeNull();
+    expect(find_select_option_by_value(options, "XX")).toBeUndefined();
   });
 
   it("clamps index", () => {

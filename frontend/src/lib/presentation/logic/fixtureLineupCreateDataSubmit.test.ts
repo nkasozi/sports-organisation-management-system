@@ -46,9 +46,9 @@ describe("fixtureLineupCreateDataSubmit", () => {
     await expect(
       submit_fixture_lineup_create_form(
         { ...base_form_data, organization_id: "" },
-        null,
-        { id: "fixture-1" } as never,
-        { id: "team-1" } as never,
+        { status: "missing" },
+        { status: "present", fixture: { id: "fixture-1" } as never },
+        { status: "present", team: { id: "team-1" } as never },
         2,
         18,
         true,
@@ -70,9 +70,12 @@ describe("fixtureLineupCreateDataSubmit", () => {
           ...base_form_data,
           selected_players: [create_selected_player("player-1")],
         },
-        { id: "organization-1" } as never,
-        { id: "fixture-1" } as never,
-        { id: "team-1" } as never,
+        {
+          status: "present",
+          organization: { id: "organization-1" } as never,
+        },
+        { status: "present", fixture: { id: "fixture-1" } as never },
+        { status: "present", team: { id: "team-1" } as never },
         2,
         18,
         true,
@@ -94,9 +97,12 @@ describe("fixtureLineupCreateDataSubmit", () => {
     await expect(
       submit_fixture_lineup_create_form(
         base_form_data,
-        { id: "organization-1" } as never,
-        { id: "fixture-1" } as never,
-        { id: "team-1" } as never,
+        {
+          status: "present",
+          organization: { id: "organization-1" } as never,
+        },
+        { status: "present", fixture: { id: "fixture-1" } as never },
+        { status: "present", team: { id: "team-1" } as never },
         2,
         18,
         true,
@@ -127,9 +133,12 @@ describe("fixtureLineupCreateDataSubmit", () => {
     await expect(
       submit_fixture_lineup_create_form(
         base_form_data,
-        { id: "organization-1" } as never,
-        { id: "fixture-1" } as never,
-        { id: "team-1" } as never,
+        {
+          status: "present",
+          organization: { id: "organization-1" } as never,
+        },
+        { status: "present", fixture: { id: "fixture-1" } as never },
+        { status: "present", team: { id: "team-1" } as never },
         2,
         18,
         true,

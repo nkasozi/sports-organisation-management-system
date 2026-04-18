@@ -5,6 +5,8 @@ import type {
   GameEventType,
 } from "../entities/GameEventType";
 import type { GameEventTypeRepository } from "../interfaces/ports";
+import { build_game_event_type_not_found_by_code_error } from "../interfaces/ports";
+import { create_failure_result } from "../types/Result";
 import { create_game_event_type_use_cases } from "./GameEventTypeUseCases";
 
 function create_mock_repository(): GameEventTypeRepository {
@@ -117,10 +119,11 @@ describe("GameEventTypeUseCases", () => {
 
   describe("create", () => {
     it("should create with valid input", async () => {
-      vi.mocked(mock_repository.find_by_code).mockResolvedValue({
-        success: true,
-        data: null,
-      });
+      vi.mocked(mock_repository.find_by_code).mockResolvedValue(
+        create_failure_result(
+          build_game_event_type_not_found_by_code_error("YELLOW"),
+        ),
+      );
       vi.mocked(mock_repository.create).mockResolvedValue({
         success: true,
         data: create_test_event_type(),
@@ -144,10 +147,11 @@ describe("GameEventTypeUseCases", () => {
         success: true,
         data: create_test_event_type(),
       });
-      vi.mocked(mock_repository.find_by_code).mockResolvedValue({
-        success: true,
-        data: null,
-      });
+      vi.mocked(mock_repository.find_by_code).mockResolvedValue(
+        create_failure_result(
+          build_game_event_type_not_found_by_code_error("GOAL"),
+        ),
+      );
       vi.mocked(mock_repository.update).mockResolvedValue({
         success: true,
         data: create_test_event_type(),

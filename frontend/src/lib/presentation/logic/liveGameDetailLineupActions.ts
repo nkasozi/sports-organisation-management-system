@@ -70,21 +70,21 @@ export async function auto_generate_live_game_lineup(
   }, []);
   const selected_players: CreateFixtureLineupInput["selected_players"] =
     active_memberships.map(
-    (membership: { player_id: string; jersey_number?: number | null }) => {
-      const player = players.find(
-        (current_player) => current_player?.id === membership.player_id,
-      );
-      return {
-        id: membership.player_id,
-        first_name: player?.first_name || "Unknown",
-        last_name: player?.last_name || "Player",
-        jersey_number: membership.jersey_number ?? null,
-        position: null,
-        is_captain: false,
-        is_substitute: false,
-      };
-    },
-  );
+      (membership: { player_id: string; jersey_number?: number }) => {
+        const player = players.find(
+          (current_player) => current_player?.id === membership.player_id,
+        );
+        return {
+          id: membership.player_id,
+          first_name: player?.first_name || "Unknown",
+          last_name: player?.last_name || "Player",
+          jersey_number: membership.jersey_number ?? 0,
+          position: "",
+          is_captain: false,
+          is_substitute: false,
+        };
+      },
+    );
   const lineup_input: CreateFixtureLineupInput = {
     organization_id: fixture.organization_id,
     fixture_id: fixture.id,
@@ -103,8 +103,8 @@ export async function ensure_live_game_lineups_before_start(
   fixture: Fixture,
   home_players: LineupPlayer[],
   away_players: LineupPlayer[],
-  home_team: Team | null,
-  away_team: Team | null,
+  home_team: Team | undefined,
+  away_team: Team | undefined,
   allow_auto_submission: boolean,
   player_membership_use_cases: PlayerMembershipUseCases,
   player_use_cases: PlayerUseCases,

@@ -6,7 +6,7 @@
     export let on_cancel: () => void;
     export let on_apply_preset:
         | ((preset_type: SportPresetType) => void)
-        | null = null;
+        | undefined = undefined;
 
     function apply_preset(preset_type: SportPresetType): void {
         if (!on_apply_preset) return;

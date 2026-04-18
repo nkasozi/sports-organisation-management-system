@@ -23,10 +23,8 @@ export {
 export { build_foreign_key_select_options } from "./foreignKeyOptionBuilder";
 export { is_jersey_color_field } from "./foreignKeyOptionBuilder";
 
-export function determine_if_edit_mode(
-  data: BaseEntityInput | null,
-): boolean {
-  return data !== null && data.id !== undefined;
+export function determine_if_edit_mode(data?: BaseEntityInput): boolean {
+  return typeof data?.id === "string" && data.id.length > 0;
 }
 
 export function build_form_title(
@@ -37,7 +35,7 @@ export function build_form_title(
 }
 
 export function get_sub_entity_fields(
-  metadata: EntityMetadata | null,
+  metadata?: EntityMetadata,
 ): FieldMetadata[] {
   if (!metadata) return [];
   return metadata.fields.filter((field) => field.field_type === "sub_entity");
@@ -45,9 +43,9 @@ export function get_sub_entity_fields(
 
 export function build_sub_entity_filter(
   field: FieldMetadata,
-  parent_entity: BaseEntityInput | null,
-): SubEntityFilter | null {
-  if (!field.sub_entity_config || !parent_entity?.id) return null;
+  parent_entity?: BaseEntityInput,
+): SubEntityFilter | undefined {
+  if (!field.sub_entity_config || !parent_entity?.id) return;
   const config = field.sub_entity_config;
   return {
     foreign_key_field: config.foreign_key_field,
@@ -106,13 +104,13 @@ export function get_input_type_for_field(field: FieldMetadata): string {
 
 export function initialize_form_data_from_metadata(
   metadata: EntityMetadata,
-  existing_data: Partial<BaseEntity> | null,
+  existing_data?: Partial<BaseEntity>,
 ): Record<string, any> {
   const new_form_data: Record<string, any> = {};
   for (const field of metadata.fields) {
     if (
       existing_data &&
-      existing_data[field.field_name as keyof BaseEntity] !== undefined
+      Object.prototype.hasOwnProperty.call(existing_data, field.field_name)
     ) {
       new_form_data[field.field_name] =
         existing_data[field.field_name as keyof BaseEntity];
@@ -136,7 +134,7 @@ export function is_field_visible_by_visible_when_condition(
 
 export function is_field_controlled_by_sub_entity_filter(
   field_name: string,
-  filter: SubEntityFilter | null,
+  filter?: SubEntityFilter,
 ): boolean {
   if (!filter) return false;
   if (field_name === filter.foreign_key_field) return true;
@@ -149,7 +147,7 @@ export function should_field_be_read_only(
   field: FieldMetadata,
   is_edit_mode: boolean,
   auth_restricted_fields: Set<string>,
-  sub_entity_filter: SubEntityFilter | null,
+  sub_entity_filter?: SubEntityFilter,
 ): boolean {
   if (field.is_read_only) return true;
   if (field.is_read_only_on_edit && is_edit_mode) return true;

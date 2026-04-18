@@ -17,7 +17,7 @@
     !field.field_name.toLowerCase().includes("summary");
 
   function hide_broken_image(event: Event): boolean {
-    const target = event.currentTarget as HTMLImageElement | null;
+    const target = event.currentTarget as HTMLImageElement | undefined;
     if (!target) return false;
     target.style.display = "none";
     return true;

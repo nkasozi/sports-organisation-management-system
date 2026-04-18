@@ -12,6 +12,7 @@ import type {
   PlayerPositionRepository,
   QueryOptions,
 } from "../../core/interfaces/ports";
+import { build_player_position_not_found_by_code_error } from "../../core/interfaces/ports";
 import type { PaginatedAsyncResult, Result } from "../../core/types/Result";
 import {
   create_failure_result,
@@ -65,12 +66,18 @@ export class InBrowserPlayerPositionRepository
     return apply_player_position_filter(entities, filter);
   }
 
-  async find_by_code(code: string): Promise<Result<PlayerPosition | null>> {
+  async find_by_code(code: string): Promise<Result<PlayerPosition>> {
     try {
       const all = await this.database.player_positions.toArray();
-      return create_success_result(
-        all.find((p) => p.code.toLowerCase() === code.toLowerCase()) ?? null,
+      const found_position = all.find(
+        (position) => position.code.toLowerCase() === code.toLowerCase(),
       );
+      if (!found_position) {
+        return create_failure_result(
+          build_player_position_not_found_by_code_error(code),
+        );
+      }
+      return create_success_result(found_position);
     } catch (error) {
       console.warn(
         "[PlayerPositionRepository] Failed to find position by code",
@@ -189,12 +196,23 @@ export class InBrowserPlayerPositionRepository
   }
 }
 
-let singleton_instance: InBrowserPlayerPositionRepository | null = null;
+type PlayerPositionRepositoryState =
+  | { status: "uninitialized" }
+  | { status: "ready"; repository: InBrowserPlayerPositionRepository };
+
+let player_position_repository_state: PlayerPositionRepositoryState = {
+  status: "uninitialized",
+};
 
 export function get_player_position_repository(): PlayerPositionRepository {
-  if (!singleton_instance)
-    singleton_instance = new InBrowserPlayerPositionRepository();
-  return singleton_instance;
+  if (player_position_repository_state.status === "ready") {
+    return player_position_repository_state.repository;
+  }
+
+  const repository = new InBrowserPlayerPositionRepository();
+  player_position_repository_state = { status: "ready", repository };
+
+  return repository;
 }
 
 export async function reset_player_position_repository(): Promise<void> {

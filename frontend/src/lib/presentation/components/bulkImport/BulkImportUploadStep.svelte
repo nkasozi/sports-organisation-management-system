@@ -1,5 +1,5 @@
 <script lang="ts">
-  export let selected_file: File | null;
+  export let selected_file: File | undefined;
   export let on_file_selected: (event: Event) => void;
   export let on_start_import: () => Promise<void>;
   export let on_start_over: () => void;

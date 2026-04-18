@@ -4,6 +4,7 @@ import { ANY_VALUE } from "$lib/core/interfaces/ports";
 
 import { load_fixture_lineup_create_reference_data } from "./fixtureLineupCreateDataReference";
 import type { FixtureLineupCreateDependencies } from "./fixtureLineupCreateDataTypes";
+import type { FixtureLineupCreateAuthProfileState } from "./fixtureLineupCreatePageContracts";
 
 describe("fixtureLineupCreateDataReference", () => {
   type MockDependencies = {
@@ -11,10 +12,6 @@ describe("fixtureLineupCreateDataReference", () => {
       FixtureLineupCreateDependencies[Key]
     >;
   };
-  type CurrentAuthProfile = Parameters<
-    typeof load_fixture_lineup_create_reference_data
-  >[0];
-
   function create_dependencies() {
     return {
       competition_use_cases: { list: vi.fn() },
@@ -49,7 +46,10 @@ describe("fixtureLineupCreateDataReference", () => {
     });
 
     const result = await load_fixture_lineup_create_reference_data(
-      { organization_id: "organization-1" } as CurrentAuthProfile,
+      {
+        status: "present",
+        profile: { organization_id: "organization-1", team_id: "" },
+      } as FixtureLineupCreateAuthProfileState,
       "",
       dependencies as unknown as FixtureLineupCreateDependencies,
     );
@@ -57,9 +57,12 @@ describe("fixtureLineupCreateDataReference", () => {
     expect(result.organizations).toEqual([
       { id: "organization-1", name: "Premier League" },
     ]);
-    expect(result.selected_organization).toEqual({
-      id: "organization-1",
-      name: "Premier League",
+    expect(result.selected_organization_state).toEqual({
+      status: "present",
+      organization: {
+        id: "organization-1",
+        name: "Premier League",
+      },
     });
     expect(result.error_message).toContain("No fixtures available.");
   });
@@ -89,15 +92,21 @@ describe("fixtureLineupCreateDataReference", () => {
     });
 
     const result = await load_fixture_lineup_create_reference_data(
-      { organization_id: ANY_VALUE } as CurrentAuthProfile,
+      {
+        status: "present",
+        profile: { organization_id: ANY_VALUE, team_id: "" },
+      } as FixtureLineupCreateAuthProfileState,
       "organization-2",
       dependencies as unknown as FixtureLineupCreateDependencies,
     );
 
     expect(result.organizations).toHaveLength(2);
-    expect(result.selected_organization).toEqual({
-      id: "organization-2",
-      name: "Cup",
+    expect(result.selected_organization_state).toEqual({
+      status: "present",
+      organization: {
+        id: "organization-2",
+        name: "Cup",
+      },
     });
     expect(result.error_message).toBe("");
   });

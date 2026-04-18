@@ -111,7 +111,7 @@ export class InBrowserTeamStaffRepository
   ): PaginatedAsyncResult<TeamStaff> {
     try {
       let filtered_entities = await this.database.team_staff.toArray();
-      if (filter) {
+      if (filter && Object.keys(filter).length > 0) {
         filtered_entities = this.apply_entity_filter(filtered_entities, filter);
       }
       const total_count = filtered_entities.length;
@@ -170,13 +170,23 @@ export class InBrowserTeamStaffRepository
   }
 }
 
-let singleton_instance: InBrowserTeamStaffRepository | null = null;
+type TeamStaffRepositoryState =
+  | { status: "uninitialized" }
+  | { status: "ready"; repository: InBrowserTeamStaffRepository };
+
+let team_staff_repository_state: TeamStaffRepositoryState = {
+  status: "uninitialized",
+};
 
 export function get_team_staff_repository(): TeamStaffRepository {
-  if (!singleton_instance) {
-    singleton_instance = new InBrowserTeamStaffRepository();
+  if (team_staff_repository_state.status === "ready") {
+    return team_staff_repository_state.repository;
   }
-  return singleton_instance;
+
+  const repository = new InBrowserTeamStaffRepository();
+  team_staff_repository_state = { status: "ready", repository };
+
+  return repository;
 }
 
 export async function reset_team_staff_repository(): Promise<void> {

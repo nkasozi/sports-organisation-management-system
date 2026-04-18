@@ -20,7 +20,11 @@ export function create_managed_game_clock_handlers(command: {
   stop_clock: () => void;
   toggle_clock: () => void;
 } {
-  let clock_interval: ReturnType<typeof setInterval> | null = null;
+  let clock_interval_state:
+    | { status: "stopped" }
+    | { status: "running"; interval_id: ReturnType<typeof setInterval> } = {
+    status: "stopped",
+  };
 
   const update_state = (
     updater: (state: ManagedGamePageState) => ManagedGamePageState,
@@ -31,20 +35,23 @@ export function create_managed_game_clock_handlers(command: {
   };
 
   const stop_clock = (): void => {
-    if (clock_interval) clearInterval(clock_interval);
-    clock_interval = null;
+    if (clock_interval_state.status === "running") {
+      clearInterval(clock_interval_state.interval_id);
+    }
+    clock_interval_state = { status: "stopped" };
     update_state((state) => ({ ...state, is_clock_running: false }));
   };
 
   const start_clock = (): void => {
-    if (clock_interval) return;
+    if (clock_interval_state.status === "running") return;
     update_state((state) => ({ ...state, is_clock_running: true }));
-    clock_interval = setInterval(() => {
+    const interval_id = setInterval(() => {
       update_state((state) => ({
         ...state,
         game_clock_seconds: state.game_clock_seconds + 1,
       }));
     }, 1000);
+    clock_interval_state = { status: "running", interval_id };
   };
 
   const load_fixture = async (): Promise<void> => {

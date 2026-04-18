@@ -75,8 +75,11 @@ export function build_sync_progress_message(
   return `Syncing ${table_display} (${tables_completed}/${total_tables})`;
 }
 
-export function should_pull_org_from_server(
-  organization_id: string | undefined | null,
-): boolean {
-  return !!organization_id && organization_id !== WILDCARD_SCOPE;
+export function should_pull_org_from_server(organization_id: string): boolean {
+  const normalized_organization_id = organization_id.trim();
+
+  return (
+    normalized_organization_id.length > 0 &&
+    normalized_organization_id !== WILDCARD_SCOPE
+  );
 }

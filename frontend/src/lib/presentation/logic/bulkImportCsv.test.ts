@@ -47,7 +47,7 @@ describe("bulkImportCsv", () => {
     ]);
   });
 
-  it("converts record values to typed entity input and nulls missing required fields", () => {
+  it("converts record values to typed entity input and preserves missing required fields as empty strings", () => {
     expect(
       convert_bulk_import_record_to_entity_input(
         [
@@ -66,7 +66,7 @@ describe("bulkImportCsv", () => {
       age: 18,
       active: true,
       joined_on: "2024-01-01",
-      team_id: null,
+      team_id: "",
     });
   });
 

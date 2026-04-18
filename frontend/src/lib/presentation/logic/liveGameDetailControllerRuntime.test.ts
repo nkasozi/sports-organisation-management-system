@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { create_live_game_detail_controller_runtime } from "./liveGameDetailControllerRuntime";
+
 const {
   create_live_game_detail_clock_handlers_mock,
   create_live_game_detail_event_handlers_mock,
@@ -38,8 +40,6 @@ vi.mock("./liveGameDetailControllerReportActions", () => ({
   create_live_game_detail_report_handlers:
     create_live_game_detail_report_handlers_mock,
 }));
-
-import { create_live_game_detail_controller_runtime } from "./liveGameDetailControllerRuntime";
 
 describe("liveGameDetailControllerRuntime", () => {
   beforeEach(() => {

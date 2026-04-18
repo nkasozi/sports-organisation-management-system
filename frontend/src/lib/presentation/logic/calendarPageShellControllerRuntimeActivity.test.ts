@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { create_calendar_page_shell_controller_activity_actions } from "./calendarPageShellControllerRuntimeActivity";
+
 const {
   create_activity_form_values_for_date_mock,
   create_activity_form_values_for_date_time_mock,
@@ -35,8 +37,6 @@ vi.mock("$lib/presentation/logic/calendarPageShellControllerHelpers", () => ({
 vi.mock("$lib/presentation/logic/calendarPageState", () => ({
   create_empty_activity_form_values: create_empty_activity_form_values_mock,
 }));
-
-import { create_calendar_page_shell_controller_activity_actions } from "./calendarPageShellControllerRuntimeActivity";
 
 describe("calendarPageShellControllerRuntimeActivity", () => {
   function create_command() {
@@ -117,7 +117,7 @@ describe("calendarPageShellControllerRuntimeActivity", () => {
       title: "Date-time form",
     });
     expect(command.set_show_create_modal).toHaveBeenCalledWith(false);
-    expect(command.set_editing_activity).toHaveBeenCalledWith(null);
+    expect(command.set_editing_activity).toHaveBeenCalledWith();
   });
 
   it("routes event clicks to edit mode or event details based on the resolved selection", () => {
@@ -231,7 +231,7 @@ describe("calendarPageShellControllerRuntimeActivity", () => {
     expect(command.set_show_category_modal).toHaveBeenCalledWith(true);
     expect(command.set_show_subscribe_modal).toHaveBeenCalledWith(true);
     expect(command.set_show_subscribe_modal).toHaveBeenCalledWith(false);
-    expect(command.set_selected_event_details).toHaveBeenCalledWith(null);
+    expect(command.set_selected_event_details).toHaveBeenCalledWith();
     expect(command.show_toast).toHaveBeenCalledWith(
       "category failed",
       "warning",

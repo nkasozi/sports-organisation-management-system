@@ -11,7 +11,9 @@ import type { QueryOptions, Repository } from "./Repository";
 export interface IdentificationFilter {
   holder_type?: IdentificationHolderType;
   holder_id?: ScalarValueInput<Identification["holder_id"]>;
-  identification_type_id?: ScalarValueInput<Identification["identification_type_id"]>;
+  identification_type_id?: ScalarValueInput<
+    Identification["identification_type_id"]
+  >;
   status?: Identification["status"];
 }
 

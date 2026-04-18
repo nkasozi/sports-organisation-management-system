@@ -1,5 +1,3 @@
-import type { Fixture } from "$lib/core/entities/Fixture";
-import type { Team } from "$lib/core/entities/Team";
 import type { FixtureUseCasesPort } from "$lib/core/interfaces/ports/internal/usecases/FixtureUseCasesPort";
 import type { PlayerPositionUseCasesPort } from "$lib/core/interfaces/ports/internal/usecases/PlayerPositionUseCasesPort";
 import type { PlayerTeamMembershipUseCasesPort } from "$lib/core/interfaces/ports/internal/usecases/PlayerTeamMembershipUseCasesPort";
@@ -8,21 +6,12 @@ import type { TeamUseCasesPort } from "$lib/core/interfaces/ports/internal/useca
 import {
   build_position_name_by_id_map,
   build_team_players,
-  type TeamPlayer,
 } from "$lib/presentation/logic/fixtureManageState";
-
-interface FixtureManageBundle {
-  fixture: Fixture;
-  home_team: Team | null;
-  away_team: Team | null;
-  home_players: TeamPlayer[];
-  away_players: TeamPlayer[];
-  game_clock_seconds: number;
-}
-
-type FixtureManageLoadResult =
-  | { success: true; data: FixtureManageBundle }
-  | { success: false; error_message: string };
+import {
+  create_missing_managed_game_team_state,
+  create_present_managed_game_team_state,
+  type ManagedGameLoadResult,
+} from "$lib/presentation/logic/managedGamePageTypes";
 
 interface FixtureManageDataDependencies {
   fixture_use_cases: Pick<FixtureUseCasesPort, "get_by_id">;
@@ -38,7 +27,7 @@ interface FixtureManageDataDependencies {
 export async function load_fixture_manage_bundle(
   fixture_id: string,
   dependencies: FixtureManageDataDependencies,
-): Promise<FixtureManageLoadResult> {
+): Promise<ManagedGameLoadResult> {
   const fixture_result =
     await dependencies.fixture_use_cases.get_by_id(fixture_id);
   if (!fixture_result.success) {
@@ -49,6 +38,9 @@ export async function load_fixture_manage_bundle(
   }
 
   const fixture = fixture_result.data;
+  const position_filter = fixture.organization_id
+    ? { organization_id: fixture.organization_id }
+    : {};
   const [
     home_result,
     away_result,
@@ -70,12 +62,10 @@ export async function load_fixture_manage_bundle(
       fixture.away_team_id,
       { page_number: 1, page_size: 10000 },
     ),
-    dependencies.player_position_use_cases.list(
-      fixture.organization_id
-        ? { organization_id: fixture.organization_id }
-        : undefined,
-      { page_number: 1, page_size: 1000 },
-    ),
+    dependencies.player_position_use_cases.list(position_filter, {
+      page_number: 1,
+      page_size: 1000,
+    }),
   ]);
 
   const position_name_by_id = build_position_name_by_id_map(
@@ -86,8 +76,12 @@ export async function load_fixture_manage_bundle(
     success: true,
     data: {
       fixture,
-      home_team: home_result.success ? home_result.data : null,
-      away_team: away_result.success ? away_result.data : null,
+      home_team: home_result.success
+        ? create_present_managed_game_team_state(home_result.data)
+        : create_missing_managed_game_team_state(),
+      away_team: away_result.success
+        ? create_present_managed_game_team_state(away_result.data)
+        : create_missing_managed_game_team_state(),
       home_players:
         home_players_result.success && home_memberships_result.success
           ? build_team_players(

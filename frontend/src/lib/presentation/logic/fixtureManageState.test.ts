@@ -29,8 +29,8 @@ function create_test_player(
     date_of_birth: overrides.date_of_birth ?? "2000-01-01",
     position_id: overrides.position_id ?? "position_1",
     organization_id: overrides.organization_id ?? "organization_1",
-    height_cm: overrides.height_cm ?? null,
-    weight_kg: overrides.weight_kg ?? null,
+    height_cm: overrides.height_cm ?? 0,
+    weight_kg: overrides.weight_kg ?? 0,
     nationality: overrides.nationality ?? "UG",
     profile_image_url: overrides.profile_image_url ?? "",
     emergency_contact_name: overrides.emergency_contact_name ?? "",
@@ -76,18 +76,23 @@ function create_test_lineup(
 
 describe("fixture manage roster helpers", () => {
   it("prefers the active membership when multiple records exist", () => {
+    const membership_result = pick_best_membership_for_player(
+      [
+        create_test_membership({ id: "membership_1", status: "inactive" }),
+        create_test_membership({
+          id: "membership_2",
+          status: "active",
+          start_date: "2024-02-01",
+        }),
+      ],
+      "player_1",
+    );
+
+    expect(membership_result.status).toBe("found");
     expect(
-      pick_best_membership_for_player(
-        [
-          create_test_membership({ id: "membership_1", status: "inactive" }),
-          create_test_membership({
-            id: "membership_2",
-            status: "active",
-            start_date: "2024-02-01",
-          }),
-        ],
-        "player_1",
-      )?.id,
+      membership_result.status === "found"
+        ? membership_result.membership.id
+        : "",
     ).toBe("membership_2");
   });
 

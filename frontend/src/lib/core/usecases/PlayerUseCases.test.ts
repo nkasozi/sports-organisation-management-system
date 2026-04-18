@@ -124,7 +124,7 @@ describe("PlayerUseCases", () => {
 
     it("returns filtered players when filter provided", async () => {
       const mock_players = [create_mock_player({ id: "p1", status: "active" })];
-      const filter =  { status: "active" } as PlayerFilter;
+      const filter = { status: "active" } as PlayerFilter;
       vi.mocked(mock_repository.find_all).mockResolvedValue(
         create_paginated_result(mock_players),
       );
@@ -134,7 +134,7 @@ describe("PlayerUseCases", () => {
       expect(result.success).toBe(true);
       if (!result.success) return;
       expect(result.data.items).toHaveLength(1);
-      expect(mock_repository.find_all).toHaveBeenCalledWith(filter, undefined);
+      expect(mock_repository.find_all).toHaveBeenCalledWith(filter, {});
     });
 
     it("returns empty array with error message when repository fails", async () => {
@@ -151,14 +151,14 @@ describe("PlayerUseCases", () => {
     });
 
     it("passes query options to repository", async () => {
-      const options =  { page_number: 2, page_size: 20 } as QueryOptions;
+      const options = { page_number: 2, page_size: 20 } as QueryOptions;
       vi.mocked(mock_repository.find_all).mockResolvedValue(
         create_paginated_result([]),
       );
 
-      await use_cases.list(undefined, options);
+      await use_cases.list({}, options);
 
-      expect(mock_repository.find_all).toHaveBeenCalledWith(undefined, options);
+      expect(mock_repository.find_all).toHaveBeenCalledWith({}, options);
     });
 
     it("passes team_id filter to repository for team manager scoping", async () => {
@@ -166,7 +166,7 @@ describe("PlayerUseCases", () => {
         create_mock_player({ id: "p1" }),
         create_mock_player({ id: "p2" }),
       ];
-      const filter =  { team_id: "team_123" } as PlayerFilter;
+      const filter = { team_id: "team_123" } as PlayerFilter;
       vi.mocked(mock_repository.find_all).mockResolvedValue(
         create_paginated_result(team_players),
       );
@@ -178,12 +178,12 @@ describe("PlayerUseCases", () => {
       expect(result.data.items).toHaveLength(2);
       expect(mock_repository.find_all).toHaveBeenCalledWith(
         { team_id: "team_123" },
-        undefined,
+        {},
       );
     });
 
     it("passes combined team_id and organization_id filter to repository", async () => {
-      const filter =  {
+      const filter = {
         team_id: "team_456",
         status: "active",
       } as PlayerFilter;
@@ -194,7 +194,7 @@ describe("PlayerUseCases", () => {
       const result = await use_cases.list(filter);
 
       expect(result.success).toBe(true);
-      expect(mock_repository.find_all).toHaveBeenCalledWith(filter, undefined);
+      expect(mock_repository.find_all).toHaveBeenCalledWith(filter, {});
     });
   });
 
@@ -346,7 +346,7 @@ describe("PlayerUseCases", () => {
 
   describe("update", () => {
     it("updates player with valid input", async () => {
-      const update_input =  { first_name: "Jane" } as UpdatePlayerInput;
+      const update_input = { first_name: "Jane" } as UpdatePlayerInput;
       const updated_player = create_mock_player({
         id: "p1",
         first_name: "Jane",
@@ -473,10 +473,8 @@ describe("PlayerUseCases", () => {
       expect(mock_repository.delete_by_ids).not.toHaveBeenCalled();
     });
 
-    it("returns error when ids is undefined", async () => {
-      const result = await use_cases.delete_players(
-        undefined as unknown as string[],
-      );
+    it("returns error when ids array is missing", async () => {
+      const result = await use_cases.delete_players([] as unknown as string[]);
 
       expect(result.success).toBe(false);
       if (!result.success) {
@@ -501,10 +499,7 @@ describe("PlayerUseCases", () => {
       if (result.success) {
         expect(result.data?.items).toHaveLength(2);
       }
-      expect(mock_repository.find_by_team).toHaveBeenCalledWith(
-        "team_1",
-        undefined,
-      );
+      expect(mock_repository.find_by_team).toHaveBeenCalledWith("team_1", {});
     });
 
     it("returns error when team id is empty", async () => {
@@ -527,7 +522,7 @@ describe("PlayerUseCases", () => {
     });
 
     it("passes query options to repository", async () => {
-      const options =  { page_number: 1, page_size: 50 } as QueryOptions;
+      const options = { page_number: 1, page_size: 50 } as QueryOptions;
       vi.mocked(mock_repository.find_by_team).mockResolvedValue(
         create_paginated_result([]),
       );

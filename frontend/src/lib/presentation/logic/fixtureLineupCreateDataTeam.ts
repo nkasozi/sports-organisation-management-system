@@ -1,5 +1,5 @@
 import type { Fixture } from "$lib/core/entities/Fixture";
-import { ANY_VALUE, type UserScopeProfile } from "$lib/core/interfaces/ports";
+import { ANY_VALUE } from "$lib/core/interfaces/ports";
 import {
   build_error_message,
   derive_initial_selected_players,
@@ -13,17 +13,25 @@ import type {
   FixtureLineupCreateDependencies,
   FixtureLineupCreateTeamData,
 } from "./fixtureLineupCreateDataTypes";
+import type {
+  FixtureLineupCreateAuthProfileState,
+  FixtureLineupCreateFixtureState,
+} from "./fixtureLineupCreatePageContracts";
+import {
+  create_missing_fixture_lineup_create_team_state,
+  create_present_fixture_lineup_create_team_state,
+} from "./fixtureLineupCreatePageContracts";
 
 export async function load_fixture_lineup_create_team_data(
   team_id: string,
-  selected_fixture: Fixture | null,
-  current_auth_profile: UserScopeProfile | null,
+  selected_fixture_state: FixtureLineupCreateFixtureState,
+  current_auth_profile_state: FixtureLineupCreateAuthProfileState,
   max_players: number,
   dependencies: FixtureLineupCreateDependencies,
 ): Promise<FixtureLineupCreateTeamData> {
-  if (!selected_fixture)
+  if (selected_fixture_state.status === "missing")
     return {
-      selected_team: null,
+      selected_team_state: create_missing_fixture_lineup_create_team_state(),
       team_players: [],
       selected_players: [],
       validation_error: build_error_message(
@@ -32,13 +40,14 @@ export async function load_fixture_lineup_create_team_data(
         "Select a fixture in Step 1, then continue.",
       ),
     };
+  const selected_fixture: Fixture = selected_fixture_state.fixture;
   const fixture_team_ids = new Set<string>([
     selected_fixture.home_team_id,
     selected_fixture.away_team_id,
   ]);
   if (!fixture_team_ids.has(team_id))
     return {
-      selected_team: null,
+      selected_team_state: create_missing_fixture_lineup_create_team_state(),
       team_players: [],
       selected_players: [],
       validation_error: build_error_message(
@@ -59,14 +68,21 @@ export async function load_fixture_lineup_create_team_data(
         page_size: 5000,
       }),
       dependencies.player_position_use_cases.list(
-        current_auth_profile?.organization_id &&
-          current_auth_profile.organization_id !== ANY_VALUE
-          ? { organization_id: current_auth_profile.organization_id }
-          : undefined,
+        current_auth_profile_state.status === "present" &&
+          current_auth_profile_state.profile.organization_id &&
+          current_auth_profile_state.profile.organization_id !== ANY_VALUE
+          ? {
+              organization_id:
+                current_auth_profile_state.profile.organization_id,
+            }
+          : {},
         { page_number: 1, page_size: 500 },
       ),
     ]);
-  const selected_team = team_result.success ? (team_result.data ?? null) : null;
+  const selected_team_state =
+    team_result.success && team_result.data
+      ? create_present_fixture_lineup_create_team_state(team_result.data)
+      : create_missing_fixture_lineup_create_team_state();
   const position_name_by_id = build_position_name_by_id(
     positions_result.success ? positions_result.data.items : [],
   );
@@ -81,7 +97,7 @@ export async function load_fixture_lineup_create_team_data(
   );
   if (team_players.length === 0)
     return {
-      selected_team,
+      selected_team_state,
       team_players: [],
       selected_players: [],
       validation_error: build_error_message(
@@ -91,7 +107,7 @@ export async function load_fixture_lineup_create_team_data(
       ),
     };
   return {
-    selected_team,
+    selected_team_state,
     team_players,
     selected_players: derive_initial_selected_players(
       team_players,

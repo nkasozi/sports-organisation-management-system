@@ -174,13 +174,26 @@ function create_default_venues(): import("$lib/core/types/DomainScalars").Scalar
   ];
 }
 
-let singleton_instance: InBrowserVenueRepository | null = null;
+type VenueRepositoryState =
+  | { status: "uninitialized" }
+  | {
+      status: "ready";
+      repository: InBrowserVenueRepository;
+    };
+
+let venue_repository_state: VenueRepositoryState = {
+  status: "uninitialized",
+};
 
 export function get_venue_repository(): VenueRepository {
-  if (!singleton_instance) {
-    singleton_instance = new InBrowserVenueRepository();
+  if (venue_repository_state.status === "ready") {
+    return venue_repository_state.repository;
   }
-  return singleton_instance;
+
+  const repository = new InBrowserVenueRepository();
+  venue_repository_state = { status: "ready", repository };
+
+  return repository;
 }
 
 export async function reset_venue_repository(): Promise<void> {

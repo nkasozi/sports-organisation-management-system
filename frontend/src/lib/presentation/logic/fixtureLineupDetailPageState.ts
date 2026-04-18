@@ -1,8 +1,12 @@
-import type { Fixture } from "$lib/core/entities/Fixture";
 import type { FixtureLineup } from "$lib/core/entities/FixtureLineup";
-import type { Team } from "$lib/core/entities/Team";
 import { convert_team_player_to_lineup_player } from "$lib/core/services/fixtureLineupWizard";
 import type { TeamPlayer } from "$lib/core/services/teamPlayers";
+
+import type {
+  FixtureLineupDetailFixtureState,
+  FixtureLineupDetailLineupState,
+  FixtureLineupDetailTeamState,
+} from "./fixtureLineupDetailPageContracts";
 
 const FIXTURE_LINEUP_STATUS_CLASS_BY_VALUE: Record<string, string> = {
   draft: "status-warning",
@@ -18,9 +22,15 @@ const FIXTURE_LINEUP_FALLBACK_TEXT = {
 } as const;
 
 export function build_fixture_lineup_selected_player_ids(
-  lineup: FixtureLineup | null,
+  lineup_state: FixtureLineupDetailLineupState,
 ): Set<string> {
-  return new Set(lineup?.selected_players.map((player) => player.id) || []);
+  if (lineup_state.status === "missing") {
+    return new Set();
+  }
+
+  return new Set(
+    lineup_state.lineup.selected_players.map((player) => player.id),
+  );
 }
 
 export function toggle_fixture_lineup_player_selection(
@@ -59,18 +69,22 @@ export function toggle_fixture_lineup_player_selection(
 }
 
 export function get_fixture_lineup_name(
-  fixture: Fixture | null,
-  home_team: Team | null,
-  away_team: Team | null,
+  fixture_state: FixtureLineupDetailFixtureState,
+  home_team_state: FixtureLineupDetailTeamState,
+  away_team_state: FixtureLineupDetailTeamState,
 ): string {
-  if (!fixture) {
+  if (fixture_state.status === "missing") {
     return FIXTURE_LINEUP_FALLBACK_TEXT.UNKNOWN_FIXTURE;
   }
 
   const home_team_name =
-    home_team?.name || FIXTURE_LINEUP_FALLBACK_TEXT.UNKNOWN_TEAM;
+    home_team_state.status === "present"
+      ? home_team_state.team.name
+      : FIXTURE_LINEUP_FALLBACK_TEXT.UNKNOWN_TEAM;
   const away_team_name =
-    away_team?.name || FIXTURE_LINEUP_FALLBACK_TEXT.UNKNOWN_TEAM;
+    away_team_state.status === "present"
+      ? away_team_state.team.name
+      : FIXTURE_LINEUP_FALLBACK_TEXT.UNKNOWN_TEAM;
   return `${home_team_name} vs ${away_team_name}`;
 }
 

@@ -87,7 +87,7 @@ export async function create_calendar_subscription_feed(command: {
   competitions: Competition[];
   organization_id: string;
   reminder_minutes: number;
-  selected_entity_id: string | null;
+  selected_entity_id: string;
   selected_feed_type: CalendarFeedType;
   teams: Team[];
   user_id: string;
@@ -207,9 +207,7 @@ export function get_calendar_subscription_entity_options(command: {
   return [];
 }
 
-export function format_calendar_subscription_date(
-  iso_string: string | null,
-): string {
+export function format_calendar_subscription_date(iso_string: string): string {
   if (!iso_string) {
     return "Never";
   }
@@ -218,14 +216,14 @@ export function format_calendar_subscription_date(
 
 function resolve_calendar_subscription_entity_name(command: {
   competitions: Competition[];
-  selected_entity_id: string | null;
+  selected_entity_id: string;
   selected_feed_type: CalendarFeedType;
   teams: Team[];
 }): CalendarToken["entity_name"] {
   if (command.selected_feed_type === "team" && command.selected_entity_id) {
     return (
       command.teams.find((team: Team) => team.id === command.selected_entity_id)
-        ?.name ?? null
+        ?.name ?? ""
     );
   }
   if (
@@ -236,7 +234,7 @@ function resolve_calendar_subscription_entity_name(command: {
       command.competitions.find(
         (competition: Competition) =>
           competition.id === command.selected_entity_id,
-      )?.name ?? null
+      )?.name ?? ""
     );
   }
 
@@ -244,11 +242,11 @@ function resolve_calendar_subscription_entity_name(command: {
     const name_result = parse_name("Player Feed");
 
     if (!name_result.success) {
-      return null;
+      return "";
     }
 
     return name_result.data;
   }
 
-  return null;
+  return "";
 }

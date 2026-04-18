@@ -36,7 +36,7 @@ export function create_audit_log_use_cases(
       filter?: AuditLogFilter,
       options?: QueryOptions,
     ): PaginatedAsyncResult<AuditLog> {
-      return repository.find_all(filter, options);
+      return repository.find_all(filter ?? {}, options ?? {});
     },
 
     async get_by_id(

@@ -54,20 +54,20 @@ describe("InBrowserBaseRepositoryHelpers", () => {
   });
 
   it("sorts and paginates entity slices from query options", () => {
-    const entities =  [
+    const entities = [
       create_entity({ id: "team_1", name: "Zulu", order: 3 }),
       create_entity({ id: "team_2", name: "Alpha", order: 1 }),
       create_entity({ id: "team_3", name: "Bravo", order: 2 }),
     ] as TestEntity[];
-    const name_sort_options =  {
+    const name_sort_options = {
       sort_by: "name",
       sort_direction: "asc",
     } as QueryOptions;
-    const order_sort_options =  {
+    const order_sort_options = {
       sort_by: "order",
       sort_direction: "desc",
     } as QueryOptions;
-    const pagination_options =  {
+    const pagination_options = {
       page_number: 2,
       page_size: 1,
     } as QueryOptions;

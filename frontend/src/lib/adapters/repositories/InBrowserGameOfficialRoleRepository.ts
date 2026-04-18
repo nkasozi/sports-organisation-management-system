@@ -6,13 +6,13 @@ import type {
   GameOfficialRole,
   UpdateGameOfficialRoleInput,
 } from "../../core/entities/GameOfficialRole";
-import type { ScalarValueInput } from "../../core/types/DomainScalars";
 import { get_default_football_official_roles_with_ids } from "../../core/entities/GameOfficialRole";
 import type {
   GameOfficialRoleFilter,
   GameOfficialRoleRepository,
   QueryOptions,
 } from "../../core/interfaces/ports";
+import type { ScalarValueInput } from "../../core/types/DomainScalars";
 import type { PaginatedAsyncResult, Result } from "../../core/types/Result";
 import {
   create_failure_result,
@@ -21,6 +21,7 @@ import {
 import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
 
 const ENTITY_PREFIX = "game_official_role";
+const GLOBAL_GAME_OFFICIAL_ROLE_SPORT_ID = "" as GameOfficialRole["sport_id"];
 
 export class InBrowserGameOfficialRoleRepository
   extends InBrowserBaseRepository<
@@ -67,13 +68,13 @@ export class InBrowserGameOfficialRoleRepository
       const term = filter.name_contains.toLowerCase();
       filtered = filtered.filter((r) => r.name.toLowerCase().includes(term));
     }
-    if (filter.sport_id !== undefined) {
+    if ("sport_id" in filter) {
       filtered = filtered.filter((r) => r.sport_id === filter.sport_id);
     }
-    if (filter.is_on_field !== undefined) {
+    if ("is_on_field" in filter) {
       filtered = filtered.filter((r) => r.is_on_field === filter.is_on_field);
     }
-    if (filter.is_head_official !== undefined) {
+    if ("is_head_official" in filter) {
       filtered = filtered.filter(
         (r) => r.is_head_official === filter.is_head_official,
       );
@@ -95,7 +96,7 @@ export class InBrowserGameOfficialRoleRepository
   ): PaginatedAsyncResult<GameOfficialRole> {
     try {
       let filtered_entities = await this.database.game_official_roles.toArray();
-      if (filter) {
+      if (filter && Object.keys(filter).length > 0) {
         filtered_entities = this.apply_entity_filter(filtered_entities, filter);
       }
       filtered_entities.sort((a, b) => a.display_order - b.display_order);
@@ -127,7 +128,11 @@ export class InBrowserGameOfficialRoleRepository
       const all = await this.database.game_official_roles.toArray();
       return create_success_result(
         all
-          .filter((r) => r.sport_id === sport_id || r.sport_id === null)
+          .filter(
+            (role) =>
+              role.sport_id === sport_id ||
+              role.sport_id === GLOBAL_GAME_OFFICIAL_ROLE_SPORT_ID,
+          )
           .sort((a, b) => a.display_order - b.display_order),
       );
     } catch (error) {
@@ -170,13 +175,26 @@ export function create_default_game_official_roles_for_organization(
   return get_default_football_official_roles_with_ids(organization_id);
 }
 
-let singleton_instance: InBrowserGameOfficialRoleRepository | null = null;
+type GameOfficialRoleRepositoryState =
+  | { status: "uninitialized" }
+  | {
+      status: "ready";
+      repository: InBrowserGameOfficialRoleRepository;
+    };
+
+let game_official_role_repository_state: GameOfficialRoleRepositoryState = {
+  status: "uninitialized",
+};
 
 export function get_game_official_role_repository(): GameOfficialRoleRepository {
-  if (!singleton_instance) {
-    singleton_instance = new InBrowserGameOfficialRoleRepository();
+  if (game_official_role_repository_state.status === "ready") {
+    return game_official_role_repository_state.repository;
   }
-  return singleton_instance;
+
+  const repository = new InBrowserGameOfficialRoleRepository();
+  game_official_role_repository_state = { status: "ready", repository };
+
+  return repository;
 }
 
 export async function reset_game_official_role_repository(): Promise<void> {

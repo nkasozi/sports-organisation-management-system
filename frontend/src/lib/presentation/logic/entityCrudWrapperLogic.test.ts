@@ -1,5 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import {
+  build_crud_handlers_for_entity_type,
+  build_form_view_callbacks,
+  build_list_view_callbacks,
+  build_page_title_for_current_view,
+  compute_effective_disabled_functionalities,
+  get_disabled_crud_actions_for_profile,
+  normalize_entity_type,
+} from "./entityCrudWrapperLogic";
+
 const {
   check_entity_permission_mock,
   get_entity_data_category_mock,
@@ -26,16 +36,6 @@ vi.mock("../../infrastructure/registry/entityUseCasesRegistry", () => ({
   get_use_cases_for_entity_type: get_use_cases_for_entity_type_mock,
 }));
 
-import {
-  build_crud_handlers_for_entity_type,
-  build_form_view_callbacks,
-  build_list_view_callbacks,
-  build_page_title_for_current_view,
-  compute_effective_disabled_functionalities,
-  get_disabled_crud_actions_for_profile,
-  normalize_entity_type,
-} from "./entityCrudWrapperLogic";
-
 describe("entityCrudWrapperLogic", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -47,11 +47,9 @@ describe("entityCrudWrapperLogic", () => {
   });
 
   it("disables all crud actions when no profile is available", () => {
-    expect(get_disabled_crud_actions_for_profile("team", null)).toEqual([
-      "create",
-      "edit",
-      "delete",
-    ]);
+    expect(
+      get_disabled_crud_actions_for_profile("team", { status: "missing" }),
+    ).toEqual(["create", "edit", "delete"]);
   });
 
   it("combines permission-based and explicit disabled functionalities", () => {
@@ -62,8 +60,11 @@ describe("entityCrudWrapperLogic", () => {
 
     expect(
       get_disabled_crud_actions_for_profile("team", {
-        role: "org_admin",
-      } as never),
+        status: "present",
+        profile: {
+          role: "org_admin",
+        } as never,
+      }),
     ).toEqual(["create", "delete", "edit"]);
 
     expect(
@@ -119,6 +120,14 @@ describe("entityCrudWrapperLogic", () => {
       { organization_id: "org_1", status: "active" },
       { page_number: 2, page_size: 10 },
     );
+  });
+
+  it("returns an empty handler object when no use case registry entry exists", () => {
+    get_use_cases_for_entity_type_mock.mockReturnValue({
+      success: false,
+    });
+
+    expect(build_crud_handlers_for_entity_type("team", {})).toEqual({});
   });
 
   it("builds list and form view callbacks based on disabled actions", () => {

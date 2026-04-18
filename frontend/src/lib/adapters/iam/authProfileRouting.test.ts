@@ -32,7 +32,7 @@ afterEach(() => {
 
 describe("authProfileRouting", () => {
   it("returns cached sidebar menus without re-verifying tokens", async () => {
-    const cached_result =  {
+    const cached_result = {
       success: true,
       data: [
         {
@@ -88,7 +88,7 @@ describe("authProfileRouting", () => {
         ),
     };
     const authorization_cache = {
-      get_or_miss: vi.fn().mockReturnValue({ is_hit: false, value: null }),
+      get_or_miss: vi.fn().mockReturnValue({ is_hit: false }),
       set: vi.fn(),
     };
 
@@ -130,7 +130,7 @@ describe("authProfileRouting", () => {
         ),
     };
     const authorization_cache = {
-      get_or_miss: vi.fn().mockReturnValue({ is_hit: false, value: null }),
+      get_or_miss: vi.fn().mockReturnValue({ is_hit: false }),
       set: vi.fn(),
     };
 

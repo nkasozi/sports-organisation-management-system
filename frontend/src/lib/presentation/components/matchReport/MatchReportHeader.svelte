@@ -1,11 +1,13 @@
 <script lang="ts">
-    import type { Competition } from "$lib/core/entities/Competition";
     import type { Fixture } from "$lib/core/entities/Fixture";
     import { get_period_display_name } from "$lib/core/entities/Fixture";
-    import type { Team } from "$lib/core/entities/Team";
     import { get_team_logo } from "$lib/core/entities/Team";
-    import type { Venue } from "$lib/core/entities/Venue";
     import MatchReportHeaderTeam from "$lib/presentation/components/matchReport/MatchReportHeaderTeam.svelte";
+    import type {
+        MatchReportCompetitionState,
+        MatchReportTeamState,
+        MatchReportVenueState,
+    } from "$lib/presentation/logic/matchReportPageLoadTypes";
     import {
         format_match_report_kickoff_display,
         get_match_report_status_color,
@@ -13,22 +15,38 @@
         type MatchReportViewState,
     } from "$lib/presentation/logic/matchReportPageState";
 
-    export let fixture: Fixture;
-    export let home_team: Team | null;
-    export let away_team: Team | null;
-    export let competition: Competition | null;
-    export let organization_name: string;
-    export let venue: Venue | null;
-    export let view_state: MatchReportViewState;
-    export let live_poll_interval_ms: number;
-    export let downloading_report: boolean;
-    export let on_back: () => void;
-    export let on_download: () => void;
+    const default_match_report_view_state: MatchReportViewState = {
+        home_score: 0,
+        away_score: 0,
+        sorted_events: [],
+        home_starters: [],
+        home_substitutes: [],
+        away_starters: [],
+        away_substitutes: [],
+        is_game_scheduled: false,
+        is_game_in_progress: false,
+        is_game_completed: false,
+        has_lineups: false,
+    };
+
+    export let fixture: Fixture = {} as Fixture;
+    export let home_team_state: MatchReportTeamState = { status: "missing" };
+    export let away_team_state: MatchReportTeamState = { status: "missing" };
+    export let competition_state: MatchReportCompetitionState = {
+        status: "missing",
+    };
+    export let organization_name = "";
+    export let venue_state: MatchReportVenueState = { status: "missing" };
+    export let view_state: MatchReportViewState = default_match_report_view_state;
+    export let live_poll_interval_ms = 0;
+    export let downloading_report = false;
+    export let on_back: () => void = () => {};
+    export let on_download: () => void = () => {};
 </script>
 
 <div class="bg-gray-900 text-white px-4 py-4 sticky top-0 z-40">
     <div class="max-w-4xl mx-auto">
-        {#if organization_name || competition?.name}
+        {#if organization_name || competition_state.status === "present"}
             <div class="text-center pb-2">
                 {#if organization_name}
                     <p
@@ -37,9 +55,9 @@
                         {organization_name}
                     </p>
                 {/if}
-                {#if competition?.name}
+                {#if competition_state.status === "present"}
                     <p class="text-sm font-semibold text-gray-200">
-                        {competition.name}
+                        {competition_state.competition.name}
                     </p>
                 {/if}
             </div>
@@ -98,8 +116,12 @@
 
         <div class="flex items-center gap-4 sm:gap-8 justify-center">
             <MatchReportHeaderTeam
-                team_logo_url={home_team ? get_team_logo(home_team) : ""}
-                team_name={home_team?.name ?? "HOME"}
+                team_logo_url={home_team_state.status === "present"
+                    ? get_team_logo(home_team_state.team)
+                    : ""}
+                team_name={home_team_state.status === "present"
+                    ? home_team_state.team.name
+                    : "HOME"}
                 score={view_state.home_score}
                 is_game_scheduled={view_state.is_game_scheduled}
             />
@@ -113,8 +135,12 @@
             </div>
 
             <MatchReportHeaderTeam
-                team_logo_url={away_team ? get_team_logo(away_team) : ""}
-                team_name={away_team?.name ?? "AWAY"}
+                team_logo_url={away_team_state.status === "present"
+                    ? get_team_logo(away_team_state.team)
+                    : ""}
+                team_name={away_team_state.status === "present"
+                    ? away_team_state.team.name
+                    : "AWAY"}
                 score={view_state.away_score}
                 is_game_scheduled={view_state.is_game_scheduled}
             />
@@ -162,8 +188,8 @@
     <div
         class="max-w-4xl mx-auto flex items-center justify-center gap-3 flex-wrap"
     >
-        {#if competition}
-            <span class="font-medium">{competition.name}</span>
+            {#if competition_state.status === "present"}
+                <span class="font-medium">{competition_state.competition.name}</span>
             <span class="text-gray-600">·</span>
         {/if}
         <span class="text-gray-400">
@@ -172,9 +198,9 @@
                 fixture.scheduled_time,
             )}
         </span>
-        {#if venue}
+            {#if venue_state.status === "present"}
             <span class="text-gray-600">·</span>
-            <span class="text-gray-400">📍 {venue.name}</span>
+                <span class="text-gray-400">📍 {venue_state.venue.name}</span>
         {/if}
     </div>
 </div>

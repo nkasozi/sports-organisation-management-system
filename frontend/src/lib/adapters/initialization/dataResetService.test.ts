@@ -1,29 +1,43 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import {
+  set_pulling_from_remote,
+  start_background_sync,
+  stop_background_sync,
+} from "$lib/infrastructure/sync/backgroundSyncService";
+import { clear_all_demo_data_in_convex } from "$lib/infrastructure/sync/convexSyncService";
+import { clear_session_sync_flag } from "$lib/presentation/stores/initialSyncStore";
+
+import { reset_team_repository } from "../repositories/InBrowserTeamRepository";
+import { reset_all_data } from "./dataResetService";
+import { seed_all_data_if_needed } from "./seedingService";
+
 let mock_is_signed_in = false;
 
 vi.mock("../repositories/InBrowserOrganizationRepository", () => ({
-  reset_organization_repository: vi.fn().mockResolvedValue(undefined),
+  reset_organization_repository: vi.fn().mockImplementation(async () => {}),
   get_organization_repository: vi.fn(),
 }));
 vi.mock("../repositories/InBrowserTeamRepository", () => ({
-  reset_team_repository: vi.fn().mockResolvedValue(undefined),
+  reset_team_repository: vi.fn().mockImplementation(async () => {}),
   get_team_repository: vi.fn(),
 }));
 vi.mock("../repositories/InBrowserCompetitionRepository", () => ({
-  reset_competition_repository: vi.fn().mockResolvedValue(undefined),
+  reset_competition_repository: vi.fn().mockImplementation(async () => {}),
   get_competition_repository: vi.fn(),
 }));
 vi.mock("../repositories/InBrowserPlayerRepository", () => ({
-  reset_player_repository: vi.fn().mockResolvedValue(undefined),
+  reset_player_repository: vi.fn().mockImplementation(async () => {}),
   get_player_repository: vi.fn(),
 }));
 vi.mock("../repositories/InBrowserPlayerTeamMembershipRepository", () => ({
-  reset_player_team_membership_repository: vi.fn().mockResolvedValue(undefined),
+  reset_player_team_membership_repository: vi
+    .fn()
+    .mockImplementation(async () => {}),
   get_player_team_membership_repository: vi.fn(),
 }));
 vi.mock("../repositories/InBrowserOfficialRepository", () => ({
-  reset_official_repository: vi.fn().mockResolvedValue(undefined),
+  reset_official_repository: vi.fn().mockImplementation(async () => {}),
   get_official_repository: vi.fn(),
 }));
 vi.mock("../repositories/InBrowserSportRepository", () => ({
@@ -36,58 +50,64 @@ vi.mock("../repositories/InBrowserSportRepository", () => ({
   ]),
 }));
 vi.mock("../repositories/InBrowserFixtureRepository", () => ({
-  reset_fixture_repository: vi.fn().mockResolvedValue(undefined),
+  reset_fixture_repository: vi.fn().mockImplementation(async () => {}),
 }));
 vi.mock("../repositories/InBrowserTeamStaffRepository", () => ({
-  reset_team_staff_repository: vi.fn().mockResolvedValue(undefined),
+  reset_team_staff_repository: vi.fn().mockImplementation(async () => {}),
 }));
 vi.mock("../repositories/InBrowserGameEventTypeRepository", () => ({
-  reset_game_event_type_repository: vi.fn().mockResolvedValue(undefined),
+  reset_game_event_type_repository: vi.fn().mockImplementation(async () => {}),
 }));
 vi.mock("../repositories/InBrowserPlayerPositionRepository", () => ({
-  reset_player_position_repository: vi.fn().mockResolvedValue(undefined),
+  reset_player_position_repository: vi.fn().mockImplementation(async () => {}),
 }));
 vi.mock("../repositories/InBrowserTeamStaffRoleRepository", () => ({
-  reset_team_staff_role_repository: vi.fn().mockResolvedValue(undefined),
+  reset_team_staff_role_repository: vi.fn().mockImplementation(async () => {}),
 }));
 vi.mock("../repositories/InBrowserGameOfficialRoleRepository", () => ({
-  reset_game_official_role_repository: vi.fn().mockResolvedValue(undefined),
+  reset_game_official_role_repository: vi
+    .fn()
+    .mockImplementation(async () => {}),
 }));
 vi.mock("../repositories/InBrowserCompetitionFormatRepository", () => ({
-  reset_competition_format_repository: vi.fn().mockResolvedValue(undefined),
+  reset_competition_format_repository: vi
+    .fn()
+    .mockImplementation(async () => {}),
 }));
 vi.mock("../repositories/InBrowserVenueRepository", () => ({
-  reset_venue_repository: vi.fn().mockResolvedValue(undefined),
+  reset_venue_repository: vi.fn().mockImplementation(async () => {}),
 }));
 vi.mock("../repositories/InBrowserJerseyColorRepository", () => ({
-  reset_jersey_color_repository: vi.fn().mockResolvedValue(undefined),
+  reset_jersey_color_repository: vi.fn().mockImplementation(async () => {}),
 }));
 vi.mock("../repositories/InBrowserCompetitionTeamRepository", () => ({
-  reset_competition_team_repository: vi.fn().mockResolvedValue(undefined),
+  reset_competition_team_repository: vi.fn().mockImplementation(async () => {}),
 }));
 vi.mock("../repositories/InBrowserPlayerProfileRepository", () => ({
-  reset_player_profile_repository: vi.fn().mockResolvedValue(undefined),
+  reset_player_profile_repository: vi.fn().mockImplementation(async () => {}),
 }));
 vi.mock("../repositories/InBrowserTeamProfileRepository", () => ({
-  reset_team_profile_repository: vi.fn().mockResolvedValue(undefined),
+  reset_team_profile_repository: vi.fn().mockImplementation(async () => {}),
 }));
 vi.mock("../repositories/InBrowserProfileLinkRepository", () => ({
-  reset_profile_link_repository: vi.fn().mockResolvedValue(undefined),
+  reset_profile_link_repository: vi.fn().mockImplementation(async () => {}),
 }));
 vi.mock("../repositories/InBrowserQualificationRepository", () => ({
-  reset_qualification_repository: vi.fn().mockResolvedValue(undefined),
+  reset_qualification_repository: vi.fn().mockImplementation(async () => {}),
 }));
 vi.mock("../repositories/InBrowserFixtureDetailsSetupRepository", () => ({
-  reset_fixture_details_setup_repository: vi.fn().mockResolvedValue(undefined),
+  reset_fixture_details_setup_repository: vi
+    .fn()
+    .mockImplementation(async () => {}),
 }));
 vi.mock("../repositories/InBrowserFixtureLineupRepository", () => ({
-  reset_fixture_lineup_repository: vi.fn().mockResolvedValue(undefined),
+  reset_fixture_lineup_repository: vi.fn().mockImplementation(async () => {}),
 }));
 vi.mock("../persistence/sportService", () => ({
   get_all_sports: vi.fn().mockResolvedValue([]),
 }));
 vi.mock("./seedingService", () => ({
-  seed_all_data_if_needed: vi.fn().mockResolvedValue(undefined),
+  seed_all_data_if_needed: vi.fn().mockImplementation(async () => {}),
 }));
 vi.mock("$lib/infrastructure/sync/convexSyncService", () => ({
   clear_all_demo_data_in_convex: vi.fn().mockResolvedValue(true),
@@ -109,7 +129,7 @@ vi.mock("$lib/adapters/iam/clerkAuthService", () => ({
   },
 }));
 
-const mock_app_settings_store =  {} as Record<string, string>;
+const mock_app_settings_store = {} as Record<string, string>;
 const mock_clear_all_settings = vi.fn(() => {
   Object.keys(mock_app_settings_store).forEach(
     (k) => delete mock_app_settings_store[k],
@@ -120,7 +140,7 @@ const mock_clear_all_settings = vi.fn(() => {
 vi.mock("$lib/infrastructure/container", () => ({
   get_app_settings_storage: () => ({
     get_setting: (key: string) =>
-      Promise.resolve(mock_app_settings_store[key] ?? null),
+      Promise.resolve(mock_app_settings_store[key] ?? ""),
     set_setting: (key: string, value: string) => {
       mock_app_settings_store[key] = value;
       return Promise.resolve();
@@ -132,18 +152,6 @@ vi.mock("$lib/infrastructure/container", () => ({
     clear_all_settings: mock_clear_all_settings,
   }),
 }));
-
-import {
-  set_pulling_from_remote,
-  start_background_sync,
-  stop_background_sync,
-} from "$lib/infrastructure/sync/backgroundSyncService";
-import { clear_all_demo_data_in_convex } from "$lib/infrastructure/sync/convexSyncService";
-import { clear_session_sync_flag } from "$lib/presentation/stores/initialSyncStore";
-
-import { reset_team_repository } from "../repositories/InBrowserTeamRepository";
-import { reset_all_data } from "./dataResetService";
-import { seed_all_data_if_needed } from "./seedingService";
 
 describe("reset_all_data", () => {
   const setup_window = () => {
@@ -177,7 +185,7 @@ describe("reset_all_data", () => {
   });
 
   it("stops background sync before doing anything else", async () => {
-    const call_order =  [] as string[];
+    const call_order = [] as string[];
     vi.mocked(stop_background_sync).mockImplementation(() => {
       call_order.push("stop");
       return true;
@@ -193,7 +201,7 @@ describe("reset_all_data", () => {
   });
 
   it("sets pulling_from_remote to true before resetting and false after", async () => {
-    const call_order =  [] as string[];
+    const call_order = [] as string[];
     vi.mocked(set_pulling_from_remote).mockImplementation((value: boolean) => {
       call_order.push(value ? "pulling_true" : "pulling_false");
     });
@@ -243,7 +251,7 @@ describe("reset_all_data", () => {
   });
 
   it("re-seeds default data after clearing repositories", async () => {
-    const call_order =  [] as string[];
+    const call_order = [] as string[];
     vi.mocked(reset_team_repository).mockImplementation(async () => {
       call_order.push("reset_team");
     });
@@ -276,7 +284,7 @@ describe("reset_all_data", () => {
   });
 
   it("reports progress milestones via the callback", async () => {
-    const reported_steps =  [] as Array<{ message: string; percentage: number }>;
+    const reported_steps = [] as Array<{ message: string; percentage: number }>;
 
     await reset_all_data((message, percentage) => {
       reported_steps.push({ message, percentage });
@@ -289,7 +297,7 @@ describe("reset_all_data", () => {
   });
 
   it("reports progress in ascending order", async () => {
-    const percentages =  [] as number[];
+    const percentages = [] as number[];
 
     await reset_all_data((_message, percentage) => {
       percentages.push(percentage);

@@ -1,12 +1,16 @@
 import type { Activity, CreateActivityInput } from "../entities/Activity";
 import type { ActivityCategoryType } from "../entities/ActivityCategory";
-import type { ScalarValueInput } from "../types/DomainScalars";
 import type {
   ActivityCategoryRepository,
   ActivityRepository,
 } from "../interfaces/ports";
+import type { ScalarValueInput } from "../types/DomainScalars";
 import type { AsyncResult, Result } from "../types/Result";
 import { create_failure_result, create_success_result } from "../types/Result";
+
+export type ExistingSyncedActivityState =
+  | { status: "missing" }
+  | { status: "existing"; activity: Activity };
 
 export async function find_activity_category_by_type(
   category_repository: ActivityCategoryRepository,
@@ -27,13 +31,13 @@ export async function find_activity_category_by_type(
 
 export async function upsert_synced_activity(
   activity_repository: ActivityRepository,
-  existing_activity: Activity | null,
+  existing_activity_state: ExistingSyncedActivityState,
   activity_input: CreateActivityInput,
   update_fields: Partial<Activity>,
 ): AsyncResult<boolean> {
-  if (existing_activity) {
+  if (existing_activity_state.status === "existing") {
     const update_result = await activity_repository.update(
-      existing_activity.id,
+      existing_activity_state.activity.id,
       update_fields,
     );
     return update_result.success

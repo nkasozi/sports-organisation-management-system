@@ -1,7 +1,7 @@
 <script lang="ts">
     import type { CalendarEvent } from "$lib/core/interfaces/ports/internal/usecases/ActivityUseCasesPort";
 
-    export let selected_event_details: CalendarEvent | null;
+    export let selected_event_details: CalendarEvent | undefined;
     export let on_close: () => void;
 </script>
 
@@ -74,7 +74,7 @@
                             ><span
                                 >{new Date(
                                     selected_event_details.start,
-                                ).toLocaleDateString(undefined, {
+                                    ).toLocaleDateString([], {
                                     weekday: "long",
                                     year: "numeric",
                                     month: "long",
@@ -99,12 +99,12 @@
                                 ><span
                                     >{new Date(
                                         selected_event_details.start,
-                                    ).toLocaleTimeString(undefined, {
+                                    ).toLocaleTimeString([], {
                                         hour: "2-digit",
                                         minute: "2-digit",
                                     })} - {new Date(
                                         selected_event_details.end,
-                                    ).toLocaleTimeString(undefined, {
+                                    ).toLocaleTimeString([], {
                                         hour: "2-digit",
                                         minute: "2-digit",
                                     })}</span

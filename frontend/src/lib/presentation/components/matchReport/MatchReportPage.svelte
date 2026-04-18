@@ -14,6 +14,7 @@
     } from "$lib/presentation/logic/matchReportPageLoad";
     import type {
         MatchReportPageData,
+        MatchReportPageDataState,
         MatchReportRefreshData,
     } from "$lib/presentation/logic/matchReportPageLoadTypes";
     import {
@@ -33,26 +34,22 @@
         missing_fixture_id: "No fixture ID provided",
     } as const;
 
-    let page_data: MatchReportPageData | null = null,
+    type MatchReportLivePollState =
+        | { status: "stopped" }
+        | { status: "active"; interval_id: ReturnType<typeof setInterval> };
+
+    let page_data_state: MatchReportPageDataState = { status: "missing" },
         is_loading = true,
         error_message = "",
         downloading_report = false,
-        live_poll_interval: ReturnType<typeof setInterval> | null = null,
+        live_poll_state: MatchReportLivePollState = { status: "stopped" },
         toast_visible = false,
         toast_message = "",
         toast_type: "success" | "error" | "info" = "info";
 
     $: fixture_id = $page.params.id ?? "";
-    $: view_state = build_match_report_view_state({
-        fixture: page_data?.fixture ?? null,
-        home_players: page_data?.home_players ?? [],
-        away_players: page_data?.away_players ?? [],
-    });
-    $: page_title = build_match_report_page_title(
-        page_data?.fixture ?? null,
-        page_data?.home_team?.name ?? null,
-        page_data?.away_team?.name ?? null,
-    );
+    $: view_state = build_match_report_view_state({ page_data_state });
+    $: page_title = build_match_report_page_title(page_data_state);
 
     function show_toast(
         message: string,
@@ -69,32 +66,37 @@
     }
 
     function stop_live_polling(): void {
-        if (!live_poll_interval) return;
-        clearInterval(live_poll_interval);
-        live_poll_interval = null;
+        if (live_poll_state.status === "stopped") return;
+        clearInterval(live_poll_state.interval_id);
+        live_poll_state = { status: "stopped" };
     }
 
     function start_live_polling_if_needed(): void {
         if (
-            live_poll_interval ||
-            !should_poll_match_report_fixture(page_data?.fixture ?? null)
+            live_poll_state.status === "active" ||
+            !should_poll_match_report_fixture(page_data_state)
         )
             return;
-        live_poll_interval = setInterval(
-            refresh_fixture_data,
-            LIVE_POLL_INTERVAL_MS,
-        );
+        live_poll_state = {
+            status: "active",
+            interval_id: setInterval(refresh_fixture_data, LIVE_POLL_INTERVAL_MS),
+        };
     }
 
     function apply_refreshed_match_report_data(
         refresh_data: MatchReportRefreshData,
     ): void {
-        if (!page_data) return;
-        page_data = {
-            ...page_data,
-            fixture: refresh_data.fixture,
-            home_players: refresh_data.home_players,
-            away_players: refresh_data.away_players,
+        if (page_data_state.status === "missing") return;
+        const current_page_data: MatchReportPageData = page_data_state.page_data;
+
+        page_data_state = {
+            status: "present",
+            page_data: {
+                ...current_page_data,
+                fixture: refresh_data.fixture,
+                home_players: refresh_data.home_players,
+                away_players: refresh_data.away_players,
+            },
         };
     }
 
@@ -115,7 +117,7 @@
             error_message = result.error;
             return false;
         }
-        page_data = result.data;
+        page_data_state = { status: "present", page_data: result.data };
         return true;
     }
 
@@ -127,24 +129,30 @@
         });
         if (!result.success) return false;
         apply_refreshed_match_report_data(result.data);
-        if (!should_poll_match_report_fixture(result.data.fixture))
+        if (!should_poll_match_report_fixture(page_data_state))
             stop_live_polling();
         return true;
     }
 
     async function handle_download_match_report(): Promise<boolean> {
-        if (!page_data?.home_team || !page_data.away_team) return false;
+        if (page_data_state.status === "missing") return false;
+        const current_page_data: MatchReportPageData = page_data_state.page_data;
+        if (
+            current_page_data.home_team_state.status === "missing" ||
+            current_page_data.away_team_state.status === "missing"
+        )
+            return false;
         downloading_report = true;
         const result = await download_match_report_for_fixture({
-            fixture: page_data.fixture,
-            home_team: page_data.home_team,
-            away_team: page_data.away_team,
-            competition: page_data.competition,
-            sport: page_data.sport,
-            venue: page_data.venue,
-            assigned_officials_data: page_data.assigned_officials_data,
-            home_players: page_data.home_players,
-            away_players: page_data.away_players,
+            fixture: current_page_data.fixture,
+            home_team: current_page_data.home_team_state.team,
+            away_team: current_page_data.away_team_state.team,
+            competition_state: current_page_data.competition_state,
+            sport_state: current_page_data.sport_state,
+            venue_state: current_page_data.venue_state,
+            assigned_officials_data: current_page_data.assigned_officials_data,
+            home_players: current_page_data.home_players,
+            away_players: current_page_data.away_players,
             organization_logo_url: get(branding_store).organization_logo_url,
             dependencies: match_report_page_dependencies,
         });
@@ -177,7 +185,7 @@
 >
 
 <MatchReportPageShell
-    {page_data}
+    {page_data_state}
     {view_state}
     {is_loading}
     {error_message}

@@ -1,5 +1,18 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import {
+  create_missing_managed_game_selected_event_type_state,
+  create_present_managed_game_fixture_state,
+  create_present_managed_game_selected_event_type_state,
+  create_present_managed_game_team_state,
+} from "$lib/presentation/logic/managedGamePageTypes";
+
+import { create_managed_game_event_action_handlers } from "./managedGamePageControllerEventActions";
+import {
+  apply_managed_game_bundle,
+  create_managed_game_page_state,
+} from "./managedGamePageControllerState";
+
 const { record_managed_game_event_mock } = vi.hoisted(() => ({
   record_managed_game_event_mock: vi.fn(),
 }));
@@ -7,12 +20,6 @@ const { record_managed_game_event_mock } = vi.hoisted(() => ({
 vi.mock("$lib/presentation/logic/managedGamePageActions", () => ({
   record_managed_game_event: record_managed_game_event_mock,
 }));
-
-import { create_managed_game_event_action_handlers } from "./managedGamePageControllerEventActions";
-import {
-  apply_managed_game_bundle,
-  create_managed_game_page_state,
-} from "./managedGamePageControllerState";
 
 describe("managedGamePageControllerEventActions", () => {
   beforeEach(() => {
@@ -27,9 +34,14 @@ describe("managedGamePageControllerEventActions", () => {
           id: "fixture-1",
           status: "in_progress",
           current_period: "first_half",
+          game_events: [],
         },
-        home_team: { name: "Lions" },
-        away_team: { name: "Tigers" },
+        home_team: create_present_managed_game_team_state({
+          name: "Lions",
+        } as never),
+        away_team: create_present_managed_game_team_state({
+          name: "Tigers",
+        } as never),
         home_players: [],
         away_players: [],
         game_clock_seconds: 600,
@@ -65,7 +77,8 @@ describe("managedGamePageControllerEventActions", () => {
     expect(state_store.read_state()).toEqual(
       expect.objectContaining({
         show_event_modal: false,
-        selected_event_type: null,
+        selected_event_type:
+          create_missing_managed_game_selected_event_type_state(),
         event_player_name: "",
       }),
     );
@@ -76,7 +89,11 @@ describe("managedGamePageControllerEventActions", () => {
     state_store.set_state({
       ...state_store.read_state(),
       show_event_modal: true,
-      selected_event_type: { id: "goal", label: "Goal" } as never,
+      selected_event_type:
+        create_present_managed_game_selected_event_type_state({
+          id: "goal",
+          label: "Goal",
+        } as never),
       event_minute: 18,
     });
     record_managed_game_event_mock.mockResolvedValue({
@@ -105,7 +122,11 @@ describe("managedGamePageControllerEventActions", () => {
     state_store.set_state({
       ...state_store.read_state(),
       show_event_modal: true,
-      selected_event_type: { id: "goal", label: "Goal" } as never,
+      selected_event_type:
+        create_present_managed_game_selected_event_type_state({
+          id: "goal",
+          label: "Goal",
+        } as never),
       event_minute: 22,
     });
     record_managed_game_event_mock.mockResolvedValue({
@@ -114,6 +135,7 @@ describe("managedGamePageControllerEventActions", () => {
         id: "fixture-1",
         status: "in_progress",
         current_period: "first_half",
+        game_events: [],
       },
     });
     const handlers = create_managed_game_event_action_handlers({
@@ -130,11 +152,12 @@ describe("managedGamePageControllerEventActions", () => {
         toast_visible: true,
         toast_message: "Goal recorded!",
         toast_type: "success",
-        fixture: {
+        fixture: create_present_managed_game_fixture_state({
           id: "fixture-1",
           status: "in_progress",
           current_period: "first_half",
-        },
+          game_events: [],
+        } as never),
       }),
     );
   });

@@ -16,7 +16,7 @@ export function create_settings_page_shell_controller_runtime(command: {
   apply_form_values: (form_values: SettingsFormValues) => void;
   get_branding_state: () => BrandingConfig;
   get_current_form_values: () => SettingsFormValues;
-  get_current_profile_organization_id: () => string | undefined;
+  get_current_profile_organization_id: () => string;
   get_pathname: () => string;
   get_selected_organization_id: () => string;
   get_theme_state: () => ThemeConfig;
@@ -41,12 +41,16 @@ export function create_settings_page_shell_controller_runtime(command: {
     const selected_organization = command
       .get_organizations()
       .find((organization: Organization) => organization.id === org_id);
+    const selected_organization_state = selected_organization
+      ? { status: "present" as const, organization: selected_organization }
+      : { status: "missing" as const };
+
     if (!org_id) {
       command.apply_form_values(
         apply_organization_settings_form_values(
           command.get_current_form_values(),
-          selected_organization,
-          null,
+          selected_organization_state,
+          { status: "missing" },
         ),
       );
       return true;
@@ -58,10 +62,13 @@ export function create_settings_page_shell_controller_runtime(command: {
     command.apply_form_values(
       apply_organization_settings_form_values(
         command.get_current_form_values(),
-        selected_organization,
+        selected_organization_state,
         organization_settings_result.success
-          ? organization_settings_result.data
-          : null,
+          ? {
+              status: "present",
+              organization_settings: organization_settings_result.data,
+            }
+          : { status: "missing" },
       ),
     );
     return true;

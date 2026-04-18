@@ -1,9 +1,7 @@
-import {
-  type Fixture,
-  type QuickEventButton,
-} from "$lib/core/entities/Fixture";
+import { type QuickEventButton } from "$lib/core/entities/Fixture";
 import type { FixtureUseCasesPort } from "$lib/core/interfaces/ports/internal/usecases/FixtureUseCasesPort";
 import { record_managed_game_event } from "$lib/presentation/logic/managedGamePageActions";
+import { create_present_managed_game_fixture_state } from "$lib/presentation/logic/managedGamePageTypes";
 
 import {
   close_managed_game_event_modal,
@@ -56,9 +54,10 @@ export function create_managed_game_event_action_handlers(command: {
     },
     record_event: async (): Promise<void> => {
       const current_state = command.get_state();
+      const selected_event_type_state = current_state.selected_event_type;
       const result = await record_managed_game_event({
-        fixture: current_state.fixture as Fixture | null,
-        selected_event_type: current_state.selected_event_type,
+        fixture: current_state.fixture,
+        selected_event_type: selected_event_type_state,
         event_minute: current_state.event_minute,
         selected_team_side: current_state.selected_team_side,
         event_player_name: current_state.event_player_name,
@@ -79,12 +78,12 @@ export function create_managed_game_event_action_handlers(command: {
         const next_state = close_managed_game_event_modal({
           ...state,
           is_updating: false,
-          fixture: result.data,
+          fixture: create_present_managed_game_fixture_state(result.data),
         });
-        return current_state.selected_event_type
+        return selected_event_type_state.status === "present"
           ? set_managed_game_toast(
               next_state,
-              `${current_state.selected_event_type.label} recorded!`,
+              `${selected_event_type_state.event_type.label} recorded!`,
               "success",
             )
           : next_state;

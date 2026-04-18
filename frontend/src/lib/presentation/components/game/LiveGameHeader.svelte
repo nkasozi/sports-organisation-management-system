@@ -9,8 +9,8 @@
     export let competition_name: string;
     export let fixture_status: Fixture["status"];
     export let scheduled_time: string;
-    export let home_team: Team | null;
-    export let away_team: Team | null;
+    export let home_team: Team | undefined;
+    export let away_team: Team | undefined;
     export let home_score: number;
     export let away_score: number;
     export let current_period_label: string;
@@ -21,7 +21,7 @@
     export let is_game_completed: boolean;
     export let show_extra_time_button: boolean;
     export let downloading_report: boolean;
-    export let period_button_config: PeriodButtonConfig | null;
+    export let period_button_config: PeriodButtonConfig | undefined;
     export let on_back: () => void;
     export let on_start: () => void;
     export let on_toggle_clock: () => void;

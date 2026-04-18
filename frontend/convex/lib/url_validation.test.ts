@@ -9,14 +9,14 @@ describe("url_validation", () => {
   it("allows data image urls for image fields", () => {
     expect(
       validate_url_field_value("logo_url", "data:image/png;base64,abc123"),
-    ).toEqual({ is_valid: true, error: null });
+    ).toEqual({ is_valid: true, error: "" });
 
     expect(
       validate_url_field_value(
         "profile_image_url",
         "data:image/svg+xml,%3Csvg%3E%3C/svg%3E",
       ),
-    ).toEqual({ is_valid: true, error: null });
+    ).toEqual({ is_valid: true, error: "" });
   });
 
   it("allows trusted app asset paths for branding image fields", () => {
@@ -25,7 +25,7 @@ describe("url_validation", () => {
         "background_pattern_url",
         "/african-mosaic-bg.svg",
       ),
-    ).toEqual({ is_valid: true, error: null });
+    ).toEqual({ is_valid: true, error: "" });
   });
 
   it("rejects non-image data urls for image fields", () => {
@@ -62,6 +62,6 @@ describe("url_validation", () => {
         background_pattern_url: "/african-mosaic-bg.svg",
         website: "https://example.com",
       }),
-    ).toEqual({ is_valid: true, error: null });
+    ).toEqual({ is_valid: true, error: "" });
   });
 });

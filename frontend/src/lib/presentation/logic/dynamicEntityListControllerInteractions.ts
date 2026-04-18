@@ -15,7 +15,7 @@ import {
 interface DynamicEntityListColumnToggleCommand {
   entity_type: string;
   field_name: string;
-  sub_entity_filter: SubEntityFilter | null;
+  sub_entity_filter?: SubEntityFilter;
   visible_columns: Set<string>;
 }
 
@@ -41,18 +41,20 @@ export async function toggle_dynamic_entity_list_column_visibility(
     command.visible_columns,
     command.field_name,
   );
-  await save_column_preferences(
-    command.entity_type,
-    command.sub_entity_filter,
-    next_visible_columns,
-  );
+  await save_column_preferences({
+    entity_type: command.entity_type,
+    sub_entity_filter: command.sub_entity_filter,
+    visible_columns: next_visible_columns,
+  });
   return next_visible_columns;
 }
 
 export function export_dynamic_entity_list_to_csv(
   entities: BaseEntity[],
   visible_column_list: string[],
-  entity_metadata: EntityMetadata | null,
+  entity_metadata_state:
+    | { status: "missing" }
+    | { status: "present"; metadata: EntityMetadata },
   entity_type: string,
   foreign_key_options: Record<string, BaseEntity[]>,
 ): void {
@@ -61,7 +63,7 @@ export function export_dynamic_entity_list_to_csv(
       build_csv_content(
         entities,
         visible_column_list,
-        entity_metadata,
+        entity_metadata_state,
         foreign_key_options,
       ),
     ],

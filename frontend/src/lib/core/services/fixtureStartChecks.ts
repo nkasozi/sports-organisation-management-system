@@ -13,7 +13,7 @@ export interface PreFlightCheck {
   check_name: string;
   status: CheckStatus;
   message: string;
-  fix_suggestion: string | null;
+  fix_suggestion: string;
 }
 
 interface FixtureCanStartResult {
@@ -87,7 +87,7 @@ function build_officials_check(officials: unknown[]): PreFlightCheck {
       ? `${officials.length} official(s) assigned`
       : "No officials assigned to this fixture",
     fix_suggestion: has_officials
-      ? null
+      ? ""
       : "Go to the Fixture Details Setup page and assign officials, team jerseys and official jerseys for this fixture",
   };
 }
@@ -106,7 +106,7 @@ function build_lineup_check(
       check_name,
       status: "passed",
       message: `${team_label} team lineup submitted with ${lineup.selected_players.length} players`,
-      fix_suggestion: null,
+      fix_suggestion: "",
     };
   }
   const message = lineup

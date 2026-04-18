@@ -1,5 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import {
+  get_dynamic_entity_list_metadata,
+  load_dynamic_entity_list_columns,
+} from "./dynamicEntityListMetadata";
+
 const {
   build_default_visible_column_names_mock,
   get_entity_metadata_mock,
@@ -23,11 +28,6 @@ vi.mock("$lib/presentation/logic/columnPreferences", () => ({
 vi.mock("$lib/presentation/logic/dynamicListLogic", () => ({
   build_default_visible_column_names: build_default_visible_column_names_mock,
 }));
-
-import {
-  get_dynamic_entity_list_metadata,
-  load_dynamic_entity_list_columns,
-} from "./dynamicEntityListMetadata";
 
 describe("dynamicEntityListMetadata", () => {
   beforeEach(() => {
@@ -59,7 +59,7 @@ describe("dynamicEntityListMetadata", () => {
           fields: [{ field_name: "name" }, { field_name: "status" }],
         } as never,
         entity_type: "team",
-        sub_entity_filter: null,
+        sub_entity_filter: void 0,
       }),
     ).resolves.toEqual({
       columns_restored_from_cache: true,
@@ -70,7 +70,7 @@ describe("dynamicEntityListMetadata", () => {
   it("builds default visible columns when cached preferences are unavailable", async () => {
     load_column_preferences_mock.mockResolvedValueOnce({
       restored: false,
-      columns: null,
+      columns: new Set(),
     });
     build_default_visible_column_names_mock.mockReturnValueOnce([
       "name",
@@ -83,15 +83,16 @@ describe("dynamicEntityListMetadata", () => {
           fields: [{ field_name: "name" }, { field_name: "status" }],
         } as never,
         entity_type: "team",
-        sub_entity_filter: null,
+        sub_entity_filter: void 0,
       }),
     ).resolves.toEqual({
       columns_restored_from_cache: false,
       visible_columns: new Set(["name", "status"]),
     });
-    expect(load_column_preferences_mock).toHaveBeenCalledWith("team", null, [
-      "name",
-      "status",
-    ]);
+    expect(load_column_preferences_mock).toHaveBeenCalledWith({
+      available_field_names: ["name", "status"],
+      entity_type: "team",
+      sub_entity_filter: void 0,
+    });
   });
 });

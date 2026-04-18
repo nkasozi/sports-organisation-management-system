@@ -11,38 +11,71 @@ import {
 } from "$lib/core/interfaces/ports";
 
 import { auth_store } from "./authStoreCore";
+import type { AuthState } from "./authTypes";
 
-export const current_user_role = derived(
-  auth_store,
-  ($auth) => $auth.current_profile?.role || null,
-);
+type AuthDerivedProfileState =
+  | { status: "missing" }
+  | { status: "present"; profile: AuthState["available_profiles"][number] };
+
+function build_auth_derived_profile_state(
+  current_profile: AuthState["current_profile"],
+): AuthDerivedProfileState {
+  if (current_profile.status !== "present") {
+    return { status: "missing" };
+  }
+
+  return { status: "present", profile: current_profile.profile };
+}
+
+export const current_user_role = derived(auth_store, ($auth) => {
+  const profile_state = build_auth_derived_profile_state($auth.current_profile);
+  return profile_state.status === "present" ? profile_state.profile.role : "";
+});
 
 export const current_user_role_display = derived(auth_store, ($auth) => {
-  const role = $auth.current_profile?.role;
+  const profile_state = build_auth_derived_profile_state($auth.current_profile);
+  const role =
+    profile_state.status === "present" ? profile_state.profile.role : "";
   return role ? USER_ROLE_DISPLAY_NAMES[role] : "Unknown";
 });
 
 export const current_profile_organization_name = derived(
   auth_store,
   ($auth) => {
-    return $auth.current_profile?.organization_name ?? "";
+    const profile_state = build_auth_derived_profile_state(
+      $auth.current_profile,
+    );
+    return profile_state.status === "present"
+      ? profile_state.profile.organization_name
+      : "";
   },
 );
 
 export const current_profile_display_name = derived(auth_store, ($auth) => {
-  return $auth.current_profile?.display_name ?? "Guest";
+  const profile_state = build_auth_derived_profile_state($auth.current_profile);
+  return profile_state.status === "present"
+    ? profile_state.profile.display_name
+    : "Guest";
 });
 
 export const current_profile_email = derived(auth_store, ($auth) => {
-  return $auth.current_profile?.email ?? "";
+  const profile_state = build_auth_derived_profile_state($auth.current_profile);
+  return profile_state.status === "present" ? profile_state.profile.email : "";
 });
 
 export const current_profile_team_id = derived(auth_store, ($auth) => {
-  return $auth.current_profile?.team_id ?? "";
+  const profile_state = build_auth_derived_profile_state($auth.current_profile);
+  return profile_state.status === "present"
+    ? profile_state.profile.team_id
+    : "";
 });
 
 export const current_profile_initials = derived(auth_store, ($auth) => {
-  const name = $auth.current_profile?.display_name ?? "";
+  const profile_state = build_auth_derived_profile_state($auth.current_profile);
+  const name =
+    profile_state.status === "present"
+      ? profile_state.profile.display_name
+      : "";
   if (!name) return "?";
   const words = name.split(" ").filter((w) => w.length > 0);
   if (words.length >= 2) {
@@ -52,7 +85,9 @@ export const current_profile_initials = derived(auth_store, ($auth) => {
 });
 
 export const other_available_profiles = derived(auth_store, ($auth) => {
-  const current_id = $auth.current_profile?.id;
+  const profile_state = build_auth_derived_profile_state($auth.current_profile);
+  const current_id =
+    profile_state.status === "present" ? profile_state.profile.id : "";
   return $auth.available_profiles.filter((p) => p.id !== current_id);
 });
 
@@ -62,7 +97,9 @@ export const is_auth_initialized = derived(
 );
 
 export const is_public_viewer = derived(auth_store, ($auth) => {
-  const role = $auth.current_profile?.role;
+  const profile_state = build_auth_derived_profile_state($auth.current_profile);
+  const role =
+    profile_state.status === "present" ? profile_state.profile.role : "";
   if (!role) return false;
   return !check_data_permission(role, "public_level", "create");
 });

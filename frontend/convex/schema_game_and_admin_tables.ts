@@ -35,7 +35,7 @@ export const schema_game_and_admin_tables = {
     fixture_id: v.string(),
     event_type: v.string(),
     minute: v.optional(v.number()),
-    stoppage_time_minute: v.optional(v.union(v.number(), v.null())),
+    stoppage_time_minute: v.optional(v.number()),
     team_side: v.optional(v.string()),
     player_id: v.optional(v.string()),
     player_name: v.optional(v.string()),

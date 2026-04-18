@@ -14,7 +14,7 @@ export interface CompetitionFormatUseCasesPort extends BaseUseCasesPort<
   UpdateCompetitionFormatInput,
   CompetitionFormatFilter
 > {
-  get_format_by_code(code: string): AsyncResult<CompetitionFormat | null>;
+  get_format_by_code(code: string): AsyncResult<CompetitionFormat>;
   list_formats_by_type(
     format_type: FormatType,
   ): AsyncResult<CompetitionFormat[]>;

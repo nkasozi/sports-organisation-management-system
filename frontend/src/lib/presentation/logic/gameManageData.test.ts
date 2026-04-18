@@ -31,7 +31,6 @@ describe("gameManageData", () => {
     const dependencies = create_dependencies();
     dependencies.fixture_use_cases.get_by_id.mockResolvedValue({
       success: true,
-      data: null,
     });
 
     await expect(
@@ -74,7 +73,7 @@ describe("gameManageData", () => {
       data: {
         fixture: expect.objectContaining({ id: "fixture-1" }),
         home_team: { id: "team-home", name: "Lions" },
-        away_team: null,
+
         home_players: [{ id: "player-1" }],
         away_players: [],
         game_clock_seconds: 720,

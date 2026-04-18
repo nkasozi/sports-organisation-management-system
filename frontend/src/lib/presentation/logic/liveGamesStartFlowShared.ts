@@ -89,7 +89,7 @@ export async function process_lineup_check(
     check_name: failed_check_name,
     status: "checking",
     message: checking_message,
-    fix_suggestion: null,
+    fix_suggestion: "",
   });
   await publish_checks(fixture.id, checks, dependencies);
 
@@ -108,7 +108,7 @@ export async function process_lineup_check(
     check_name: auto_generate_check_name,
     status: "checking",
     message: `Attempting to auto-generate lineup for ${team_name}...`,
-    fix_suggestion: null,
+    fix_suggestion: "",
   });
   await publish_checks(fixture.id, checks, dependencies);
 
@@ -131,9 +131,7 @@ export async function process_lineup_check(
       check_name: failed_check_name,
       status: "failed",
       message: auto_generate_result.error_message || fallback_failure_message,
-      fix_suggestion: (auto_generate_result.fix_suggestion || null) as
-        | string
-        | null,
+      fix_suggestion: auto_generate_result.fix_suggestion || "",
     });
     dependencies.update_checks(fixture.id, checks);
     dependencies.set_is_starting(fixture.id, false);
@@ -146,7 +144,7 @@ export async function process_lineup_check(
     message:
       auto_generate_result.generation_message ||
       `Auto-generated lineup for ${team_name}`,
-    fix_suggestion: null,
+    fix_suggestion: "",
   });
   await publish_checks(fixture.id, checks, dependencies);
   return true;

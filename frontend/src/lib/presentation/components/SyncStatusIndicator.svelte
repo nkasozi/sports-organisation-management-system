@@ -10,6 +10,10 @@
     sync_percentage,
     sync_progress,
   } from "$lib/presentation/stores/syncStoreDerived";
+  import type {
+    LastSyncTimeState,
+    SyncErrorState,
+  } from "$lib/presentation/stores/syncStoreTypes";
 
   let show_details = false;
   let sync_in_progress = false;
@@ -30,17 +34,17 @@
   });
 
   sync_progress.subscribe((value) => {
-    current_table = value?.table_name ?? "";
+    current_table = value.status === "active" ? value.progress.table_name : "";
   });
 
-  let last_sync: string | null = null;
+  let last_sync: LastSyncTimeState = { status: "never" };
   last_sync_time.subscribe((value) => {
     last_sync = value;
   });
 
-  let error_message: string | null = null;
+  let error_state: SyncErrorState = { status: "clear" };
   sync_error.subscribe((value) => {
-    error_message = value;
+    error_state = value;
   });
 
   const tick_interval = setInterval(() => {
@@ -61,14 +65,14 @@
 
   function get_sync_icon_color(): string {
     if (sync_in_progress) return SYNC_PROGRESS_ICON_COLOR;
-    if (error_message) return SYNC_ERROR_ICON_COLOR;
+    if (error_state.status === "present") return SYNC_ERROR_ICON_COLOR;
     return SYNC_SUCCESS_ICON_COLOR;
   }
 
   function format_sync_status_text(): string {
     if (!sync_in_progress) {
-      if (!last_sync) return "Never";
-      const date = new Date(last_sync);
+      if (last_sync.status === "never") return "Never";
+      const date = new Date(last_sync.value);
       const now = new Date();
       const diff_ms = now.getTime() - date.getTime();
       const diff_seconds = Math.floor(diff_ms / 1000);
@@ -117,7 +121,7 @@
       {current_table}
       {last_sync}
       {relative_time_tick}
-      {error_message}
+      sync_error_state={error_state}
       {trigger_manual_sync}
       on_close={() => (show_details = false)}
     />

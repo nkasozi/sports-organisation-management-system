@@ -43,5 +43,7 @@ export function get_bulk_import_related_entity_display_name(
   const related_metadata = entityMetadataRegistry.get_entity_metadata(
     field.foreign_key_entity.toLowerCase(),
   );
-  return related_metadata?.display_name || field.foreign_key_entity;
+  return related_metadata
+    ? related_metadata.display_name
+    : field.foreign_key_entity;
 }

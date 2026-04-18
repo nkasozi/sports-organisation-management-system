@@ -30,7 +30,7 @@ describe("InBrowserGameEventTypeRepositoryHelpers", () => {
     const global_event_type = create_game_event_type({
       id: "event_type_2",
       name: "Card",
-      sport_id: null,
+      sport_id: "",
       category: "discipline",
       affects_score: false,
       requires_player: false,

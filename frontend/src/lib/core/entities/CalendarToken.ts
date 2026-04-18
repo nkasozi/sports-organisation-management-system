@@ -17,13 +17,13 @@ export interface CalendarToken extends BaseEntity {
   user_id: EntityId;
   organization_id: EntityId;
   feed_type: CalendarFeedType;
-  entity_id: CalendarFeedEntityId | null;
-  entity_name: Name | null;
+  entity_id: CalendarFeedEntityId | "";
+  entity_name: Name | "";
   reminder_minutes_before: number;
   is_active: boolean;
-  last_accessed_at: IsoDateTimeString | null;
+  last_accessed_at: IsoDateTimeString | "";
   access_count: number;
-  expires_at: IsoDateTimeString | null;
+  expires_at: IsoDateTimeString;
 }
 
 export type CreateCalendarTokenInput = Omit<
@@ -44,20 +44,15 @@ const CALENDAR_TOKEN_EXPIRY_DAYS = 90;
 const INVALID_CALENDAR_FEED_ENTITY_ID_ERROR =
   "Calendar feed entity ID is invalid";
 
-function compute_calendar_token_expiry(): NonNullable<
-  CalendarToken["expires_at"]
-> {
+export function compute_calendar_token_expiry(): CalendarToken["expires_at"] {
   const expiry_date = new Date();
   expiry_date.setDate(expiry_date.getDate() + CALENDAR_TOKEN_EXPIRY_DAYS);
-  return expiry_date.toISOString() as NonNullable<CalendarToken["expires_at"]>;
+  return expiry_date.toISOString() as CalendarToken["expires_at"];
 }
 
 export function is_calendar_token_expired(
-  expires_at: CalendarToken["expires_at"] | undefined,
+  expires_at: CalendarToken["expires_at"],
 ): boolean {
-  if (!expires_at) {
-    return false;
-  }
   return new Date(expires_at).getTime() < Date.now();
 }
 
@@ -86,10 +81,10 @@ export function build_webcal_feed_url(
 
 export function parse_calendar_feed_entity_id(
   feed_type: CalendarFeedType,
-  raw_entity_id: string | null,
-): Result<CalendarFeedEntityId | null> {
+  raw_entity_id: string,
+): Result<CalendarFeedEntityId | ""> {
   if (feed_type === "all") {
-    return create_success_result(null);
+    return create_success_result("");
   }
 
   if (!raw_entity_id) {

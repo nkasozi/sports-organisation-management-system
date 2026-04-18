@@ -24,6 +24,16 @@ export interface BrandingConfig {
   show_panel_borders: boolean;
 }
 
+export type BrandingOrganizationContext =
+  | { status: "platform" }
+  | {
+      status: "scoped";
+      organization_id: string;
+      organization_name?: string;
+      organization_email?: string;
+      organization_address?: string;
+    };
+
 export const DEFAULT_PLATFORM_BRANDING: BrandingConfig = {
   organization_name: "Sport-Sync",
   organization_logo_url: "",

@@ -33,7 +33,7 @@ function convert_value_for_field_type(
   switch (field_type) {
     case "number": {
       const numeric_value = parseFloat(value);
-      return Number.isNaN(numeric_value) ? null : numeric_value;
+      return Number.isNaN(numeric_value) ? value : numeric_value;
     }
     case "boolean":
       return value.toLowerCase() === "true" || value === "1";
@@ -103,8 +103,8 @@ export function convert_bulk_import_record_to_entity_input(
   return importable_fields.reduce(
     (entity_input: Record<string, unknown>, field: FieldMetadata) => {
       const raw_value = record[field.field_name];
-      if (raw_value === undefined || raw_value === "") {
-        if (field.is_required) entity_input[field.field_name] = null;
+      if (raw_value === void 0 || raw_value === "") {
+        if (field.is_required) entity_input[field.field_name] = "";
         return entity_input;
       }
       entity_input[field.field_name] = convert_value_for_field_type(

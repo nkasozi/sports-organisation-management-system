@@ -6,7 +6,7 @@
     import CompetitionStandingsRow from "./CompetitionStandingsRow.svelte";
 
     export let standings: TeamStanding[] = [];
-    export let selected_team_id: string | null = null;
+    export let selected_team_id: string = "";
     export let empty_message: string =
         "No teams registered for this section yet.";
     export let show_legend: boolean = true;

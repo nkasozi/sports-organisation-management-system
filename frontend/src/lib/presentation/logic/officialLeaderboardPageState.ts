@@ -21,9 +21,13 @@ import {
 } from "./officialLeaderboardLogic";
 const DEFAULT_ORGANIZATION_NAME = "Organization";
 
+export type OfficialLeaderboardProfileState =
+  | { status: "missing" }
+  | { status: "present"; profile: UserScopeProfile };
+
 export interface OfficialLeaderboardViewState {
   leaderboard_entries: OfficialLeaderboardEntry[];
-  selected_entry: OfficialLeaderboardEntry | null;
+  selected_entry?: OfficialLeaderboardEntry;
   selected_breakdown: PerFixtureRating[];
 }
 
@@ -33,7 +37,7 @@ interface OfficialLeaderboardRebuildCommand {
   all_fixtures: Fixture[];
   all_stages: CompetitionStage[];
   selected_organization_id: string;
-  user_official_id: string | null;
+  user_official_id: string;
 }
 
 interface OfficialLeaderboardSelectionCommand {
@@ -44,10 +48,13 @@ interface OfficialLeaderboardSelectionCommand {
 }
 
 export function can_user_change_official_leaderboard_organizations(
-  profile: UserScopeProfile | null,
+  profile_state: OfficialLeaderboardProfileState,
 ): boolean {
-  if (!profile) return false;
-  return profile.organization_id === ANY_VALUE || !profile.organization_id;
+  if (profile_state.status === "missing") return false;
+  return (
+    profile_state.profile.organization_id === ANY_VALUE ||
+    !profile_state.profile.organization_id
+  );
 }
 
 export function get_selected_official_leaderboard_organization_name(
@@ -63,9 +70,12 @@ export function get_selected_official_leaderboard_organization_name(
 
 export function resolve_official_leaderboard_organizations(
   organizations: Organization[],
-  profile: UserScopeProfile | null,
+  profile_state: OfficialLeaderboardProfileState,
 ): Organization[] {
-  const organization_scope = get_scope_value(profile, "organization_id");
+  const organization_scope =
+    profile_state.status === "present"
+      ? get_scope_value(profile_state.profile, "organization_id")
+      : void 0;
   if (!organization_scope) return organizations;
   return organizations.filter(
     (organization) => organization.id === organization_scope,
@@ -132,9 +142,9 @@ export function rebuild_official_leaderboard_view(
   if (!command.user_official_id || leaderboard_entries.length === 0) {
     return {
       leaderboard_entries,
-      selected_entry: null,
+      selected_entry: void 0,
       selected_breakdown: [],
-    };
+    } as OfficialLeaderboardViewState;
   }
 
   return {

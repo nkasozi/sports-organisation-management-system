@@ -16,7 +16,9 @@ import {
   load_dynamic_entity_list_entities,
   load_dynamic_entity_list_filter_options,
 } from "$lib/presentation/logic/dynamicEntityListData";
+import type { ListAuthorizationProfileState } from "$lib/presentation/logic/listAuthorizationFilterLogic";
 import { auth_store } from "$lib/presentation/stores/auth";
+import { normalize_auth_profile_state } from "$lib/presentation/stores/authTypes";
 
 export function create_dynamic_entity_list_controller_runtime(
   initial_options: DynamicEntityListControllerOptions,
@@ -72,13 +74,28 @@ export function create_dynamic_entity_list_controller_runtime(
     set_state({ error_message: "", is_loading: true });
     const current_state = get(state_store);
     const auth_state = get(auth_store);
+    const normalized_profile_state = normalize_auth_profile_state(
+      auth_state.current_profile,
+    );
+    const current_profile_state: ListAuthorizationProfileState =
+      normalized_profile_state.status === "present"
+        ? {
+            status: "present",
+            profile:
+              normalized_profile_state.profile as unknown as UserScopeProfile,
+          }
+        : { status: "missing" };
+    const raw_token =
+      auth_state.current_token.status === "present"
+        ? auth_state.current_token.token.raw_token
+        : "";
     const result = await load_dynamic_entity_list_entities({
       crud_handlers: current_options.crud_handlers,
-      current_profile: auth_state.current_profile as UserScopeProfile | null,
+      current_profile_state,
       display_name: current_state.display_name,
       entity_metadata: current_state.entity_metadata,
       entity_type: current_options.entity_type,
-      raw_token: auth_state.current_token?.raw_token ?? null,
+      raw_token,
       sub_entity_filter: current_options.sub_entity_filter,
     });
     set_state({

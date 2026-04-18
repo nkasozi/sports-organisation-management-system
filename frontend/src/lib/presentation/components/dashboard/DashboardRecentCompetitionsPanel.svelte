@@ -55,7 +55,7 @@
                     this={user_has_org_admin_access ? "a" : "div"}
                     href={user_has_org_admin_access
                         ? "/competitions"
-                        : undefined}
+                        : void 0}
                     class="flex items-center space-x-4 p-2 -mx-2 rounded-lg {user_has_org_admin_access
                         ? 'hover:bg-accent-50 dark:hover:bg-accent-700/50 cursor-pointer'
                         : ''} transition-colors"

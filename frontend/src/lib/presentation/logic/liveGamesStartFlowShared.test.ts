@@ -1,5 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import {
+  process_lineup_check,
+  publish_checks,
+  replace_last_check,
+} from "./liveGamesStartFlowShared";
+
 const { auto_generate_lineups_if_possible_mock } = vi.hoisted(() => ({
   auto_generate_lineups_if_possible_mock: vi.fn(),
 }));
@@ -8,19 +14,13 @@ vi.mock("$lib/core/services/fixtureStartChecks", () => ({
   auto_generate_lineups_if_possible: auto_generate_lineups_if_possible_mock,
 }));
 
-import {
-  process_lineup_check,
-  publish_checks,
-  replace_last_check,
-} from "./liveGamesStartFlowShared";
-
 describe("liveGamesStartFlowShared", () => {
   function create_dependencies() {
     return {
       team_use_cases: { get_by_id: vi.fn() },
       update_checks: vi.fn(),
       set_is_starting: vi.fn(),
-      delay: vi.fn().mockResolvedValue(undefined),
+      delay: vi.fn().mockImplementation(async () => {}),
       check_delay_ms: 25,
       membership_use_cases: {} as never,
       player_use_cases: {} as never,
@@ -43,7 +43,7 @@ describe("liveGamesStartFlowShared", () => {
         check_name: "lineup",
         status: "checking",
         message: "old",
-        fix_suggestion: null,
+        fix_suggestion: "",
       },
     ];
 
@@ -53,7 +53,7 @@ describe("liveGamesStartFlowShared", () => {
         check_name: "lineup",
         status: "passed",
         message: "updated",
-        fix_suggestion: null,
+        fix_suggestion: "",
       } as never,
     );
 
@@ -61,7 +61,7 @@ describe("liveGamesStartFlowShared", () => {
       check_name: "lineup",
       status: "passed",
       message: "updated",
-      fix_suggestion: null,
+      fix_suggestion: "",
     });
   });
 
@@ -72,7 +72,7 @@ describe("liveGamesStartFlowShared", () => {
         check_name: "lineup",
         status: "checking",
         message: "Checking",
-        fix_suggestion: null,
+        fix_suggestion: "",
       },
     ];
 
@@ -97,7 +97,7 @@ describe("liveGamesStartFlowShared", () => {
           check_name: "home_lineup",
           status: "passed",
           message: "Ready",
-          fix_suggestion: null,
+          fix_suggestion: "",
         } as never,
         "team-1",
         "Checking lineup",
@@ -132,7 +132,7 @@ describe("liveGamesStartFlowShared", () => {
           check_name: "home_lineup",
           status: "failed",
           message: "Missing",
-          fix_suggestion: null,
+          fix_suggestion: "",
         } as never,
         "team-1",
         "Checking lineup",

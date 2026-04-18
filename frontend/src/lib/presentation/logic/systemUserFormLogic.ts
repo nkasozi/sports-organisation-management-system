@@ -1,4 +1,7 @@
-import type { UserRole } from "../../core/interfaces/ports";
+import {
+  USER_ROLE_DISPLAY_NAMES,
+  type UserRole,
+} from "../../core/interfaces/ports";
 
 const ROLE_CREATION_HIERARCHY: Record<UserRole, UserRole[]> = {
   super_admin: [
@@ -57,6 +60,32 @@ const REQUIRED_FIELDS_BY_ROLE: Record<UserRole, Set<string>> = {
   public_viewer: new Set(),
 };
 
+export type UserRoleState =
+  | { status: "missing" }
+  | { status: "present"; role: UserRole };
+
+type UserRoleInput = UserRoleState | UserRole;
+
+const USER_ROLE_VALUES: Set<UserRole> = new Set(
+  Object.keys(USER_ROLE_DISPLAY_NAMES) as UserRole[],
+);
+
+function resolve_user_role_state(role: UserRoleInput): UserRoleState {
+  return typeof role === "string" ? { status: "present", role } : role;
+}
+
+export function build_user_role_state(role?: unknown): UserRoleState {
+  if (typeof role !== "string") {
+    return { status: "missing" };
+  }
+
+  if (!USER_ROLE_VALUES.has(role as UserRole)) {
+    return { status: "missing" };
+  }
+
+  return { status: "present", role: role as UserRole };
+}
+
 export function get_allowed_roles_for_creator(
   creator_role: UserRole,
 ): UserRole[] {
@@ -71,12 +100,16 @@ export function get_visible_fields_for_role(
 
 export function is_system_user_field_visible_for_role(
   field_name: string,
-  selected_role: UserRole | null,
+  selected_role: UserRoleInput,
 ): boolean {
   if (ALWAYS_VISIBLE_FIELDS.has(field_name)) return true;
-  if (!selected_role) return false;
 
-  const visible_conditional_fields = FIELD_VISIBILITY_BY_ROLE[selected_role];
+  const selected_role_state = resolve_user_role_state(selected_role);
+
+  if (selected_role_state.status !== "present") return false;
+
+  const visible_conditional_fields =
+    FIELD_VISIBILITY_BY_ROLE[selected_role_state.role];
   if (!visible_conditional_fields) return false;
 
   return visible_conditional_fields.includes(field_name as ConditionalField);
@@ -84,23 +117,30 @@ export function is_system_user_field_visible_for_role(
 
 export function should_field_be_required_for_role(
   field_name: string,
-  selected_role: UserRole | null,
+  selected_role: UserRoleInput,
 ): boolean {
-  if (!selected_role) return false;
-  const required = REQUIRED_FIELDS_BY_ROLE[selected_role];
+  const selected_role_state = resolve_user_role_state(selected_role);
+
+  if (selected_role_state.status !== "present") return false;
+
+  const required = REQUIRED_FIELDS_BY_ROLE[selected_role_state.role];
   if (!required) return false;
+
   return required.has(field_name);
 }
 
 export function filter_enum_values_by_creator_role(
   field_name: string,
   all_enum_values: string[],
-  creator_role: UserRole | null,
+  creator_role: UserRoleInput,
 ): string[] {
   if (field_name !== "role") return all_enum_values;
-  if (!creator_role) return [];
 
-  const allowed_roles = get_allowed_roles_for_creator(creator_role);
+  const creator_role_state = resolve_user_role_state(creator_role);
+
+  if (creator_role_state.status !== "present") return [];
+
+  const allowed_roles = get_allowed_roles_for_creator(creator_role_state.role);
   return all_enum_values.filter((value) =>
     allowed_roles.includes(value as UserRole),
   );

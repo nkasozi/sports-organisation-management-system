@@ -25,9 +25,9 @@
     image_alt={team.name}
     fallback_text={get_team_initials(team)}
     title={team.name}
-    title_suffix={team.founded_year ? `Est. ${team.founded_year}` : null}
-    subtitle={team.short_name || null}
-    summary={profile.profile_summary || null}
+    title_suffix={team.founded_year ? `Est. ${team.founded_year}` : void 0}
+    subtitle={team.short_name || void 0}
+    summary={profile.profile_summary || void 0}
 >
     <svelte:fragment slot="supplementary">
         {#if profile_links.length > 0}

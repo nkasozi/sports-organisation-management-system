@@ -1,6 +1,17 @@
 import { get } from "svelte/store";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import type { AuthToken } from "$lib/core/interfaces/ports";
+
+import {
+  type AuthState,
+  create_missing_auth_profile_state,
+  create_missing_auth_token_state,
+  create_present_auth_profile_state,
+  create_present_auth_token_state,
+  type UserProfile,
+} from "./authTypes";
+
 const auth_store_core_mocks = vi.hoisted(() => ({
   sync_branding_with_profile: vi.fn(),
   get_organization_repository: vi.fn(),
@@ -73,9 +84,7 @@ vi.mock("./profileLoader", () => ({
     auth_store_core_mocks.load_profiles_from_repository,
 }));
 
-function build_profile(
-  overrides: Partial<Record<string, unknown>> = {},
-): Record<string, unknown> {
+function build_profile(overrides: Partial<UserProfile> = {}): UserProfile {
   return {
     id: "profile-1",
     display_name: "Jane Doe",
@@ -85,21 +94,39 @@ function build_profile(
     organization_name: "City Hawks",
     team_id: "team-1",
     ...overrides,
-  } as Record<string, unknown>;
+  } as UserProfile;
 }
 
-function build_auth_state(
-  overrides: Partial<Record<string, unknown>> = {},
-): Record<string, unknown> {
+function build_auth_state(overrides: Partial<AuthState> = {}): AuthState {
   return {
-    current_token: null,
-    current_profile: null,
+    current_token: create_missing_auth_token_state(),
+    current_profile: create_missing_auth_profile_state(),
     available_profiles: [],
     sidebar_menu_items: [],
     is_initialized: false,
     is_demo_session: false,
     ...overrides,
-  } as Record<string, unknown>;
+  } as AuthState;
+}
+
+function build_auth_token(
+  raw_token: string,
+  user_id: string = "profile-1",
+): AuthToken {
+  return {
+    payload: {
+      user_id,
+      email: "jane@example.test",
+      display_name: "Jane Doe",
+      role: "org_admin",
+      organization_id: "organization-1",
+      team_id: "team-1",
+      issued_at: 1,
+      expires_at: 2,
+    },
+    signature: "signature",
+    raw_token,
+  } as AuthToken;
 }
 
 async function import_auth_store() {
@@ -109,9 +136,9 @@ async function import_auth_store() {
 describe("authStoreCore", () => {
   beforeEach(() => {
     vi.resetModules();
-    vi.spyOn(console, "debug").mockImplementation(() => undefined);
-    vi.spyOn(console, "error").mockImplementation(() => undefined);
-    vi.spyOn(console, "log").mockImplementation(() => undefined);
+    vi.spyOn(console, "debug").mockImplementation(() => {});
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.spyOn(console, "log").mockImplementation(() => {});
     auth_store_core_mocks.sync_branding_with_profile.mockReset();
     auth_store_core_mocks.get_organization_repository.mockReset();
     auth_store_core_mocks.get_system_user_repository.mockReset();
@@ -164,8 +191,8 @@ describe("authStoreCore", () => {
       auth_store_core_mocks.execute_auth_initialization,
     ).toHaveBeenCalledWith(
       {
-        current_token: null,
-        current_profile: null,
+        current_token: create_missing_auth_token_state(),
+        current_profile: create_missing_auth_profile_state(),
         available_profiles: [],
         sidebar_menu_items: [],
         is_initialized: false,
@@ -180,13 +207,10 @@ describe("authStoreCore", () => {
     const refreshed_profile = build_profile({ display_name: "Updated Name" });
 
     auth_store_core_mocks.execute_auth_initialization.mockImplementation(
-      async (
-        _state: unknown,
-        set_state: (state: Record<string, unknown>) => void,
-      ) => {
+      async (_state: unknown, set_state: (state: AuthState) => void) => {
         set_state(
           build_auth_state({
-            current_profile: initial_profile,
+            current_profile: create_present_auth_profile_state(initial_profile),
             available_profiles: [initial_profile],
             is_initialized: true,
           }),
@@ -213,7 +237,7 @@ describe("authStoreCore", () => {
     expect(get(auth_store)).toEqual(
       expect.objectContaining({
         available_profiles: [refreshed_profile],
-        current_profile: refreshed_profile,
+        current_profile: create_present_auth_profile_state(refreshed_profile),
       }),
     );
   });
@@ -222,10 +246,7 @@ describe("authStoreCore", () => {
     const target_profile = build_profile({ id: "profile-2" });
 
     auth_store_core_mocks.execute_auth_initialization.mockImplementation(
-      async (
-        _state: unknown,
-        set_state: (state: Record<string, unknown>) => void,
-      ) => {
+      async (_state: unknown, set_state: (state: AuthState) => void) => {
         set_state(
           build_auth_state({
             available_profiles: [target_profile],
@@ -253,14 +274,11 @@ describe("authStoreCore", () => {
       id: "profile-2",
       role: "team_manager",
     });
-    const generated_token = { raw_token: "new-token" };
-    const sidebar_groups = [{ title: "Team", items: [] }];
+    const generated_token = build_auth_token("new-token", "profile-2");
+    const sidebar_groups = [{ group_name: "Team", items: [] }];
 
     auth_store_core_mocks.execute_auth_initialization.mockImplementation(
-      async (
-        _state: unknown,
-        set_state: (state: Record<string, unknown>) => void,
-      ) => {
+      async (_state: unknown, set_state: (state: AuthState) => void) => {
         set_state(
           build_auth_state({
             available_profiles: [target_profile],
@@ -289,14 +307,20 @@ describe("authStoreCore", () => {
     );
     expect(
       auth_store_core_mocks.sync_user_context_with_event_bus,
-    ).toHaveBeenCalledWith(target_profile);
+    ).toHaveBeenCalledWith({
+      status: "present",
+      profile: target_profile,
+    });
     expect(
       auth_store_core_mocks.sync_branding_with_profile,
-    ).toHaveBeenCalledWith(target_profile);
+    ).toHaveBeenCalledWith({
+      status: "present",
+      profile: target_profile,
+    });
     expect(get(auth_store)).toEqual(
       expect.objectContaining({
-        current_token: generated_token,
-        current_profile: target_profile,
+        current_token: create_present_auth_token_state(generated_token),
+        current_profile: create_present_auth_profile_state(target_profile),
         sidebar_menu_items: sidebar_groups,
       }),
     );
@@ -312,14 +336,14 @@ describe("authStoreCore", () => {
       organization_name: "",
       team_id: "",
     });
-    const generated_token = { raw_token: "public-viewer-token" };
-    const sidebar_groups = [{ title: "Explore", items: [] }];
+    const generated_token = build_auth_token(
+      "public-viewer-token",
+      "public-viewer",
+    );
+    const sidebar_groups = [{ group_name: "Explore", items: [] }];
 
     auth_store_core_mocks.execute_auth_initialization.mockImplementation(
-      async (
-        _state: unknown,
-        set_state: (state: Record<string, unknown>) => void,
-      ) => {
+      async (_state: unknown, set_state: (state: AuthState) => void) => {
         set_state(
           build_auth_state({
             available_profiles: [target_profile],
@@ -355,14 +379,20 @@ describe("authStoreCore", () => {
     );
     expect(
       auth_store_core_mocks.sync_user_context_with_event_bus,
-    ).toHaveBeenCalledWith(target_profile);
+    ).toHaveBeenCalledWith({
+      status: "present",
+      profile: target_profile,
+    });
     expect(
       auth_store_core_mocks.sync_branding_with_profile,
-    ).toHaveBeenCalledWith(target_profile);
+    ).toHaveBeenCalledWith({
+      status: "present",
+      profile: target_profile,
+    });
     expect(get(auth_store)).toEqual(
       expect.objectContaining({
-        current_token: generated_token,
-        current_profile: target_profile,
+        current_token: create_present_auth_token_state(generated_token),
+        current_profile: create_present_auth_profile_state(target_profile),
         sidebar_menu_items: sidebar_groups,
       }),
     );
@@ -370,16 +400,13 @@ describe("authStoreCore", () => {
 
   it("clears auth state and delegates permission helpers from the current store state", async () => {
     const current_profile = build_profile({ role: "org_admin" });
-    const sidebar_groups = [{ title: "Operations", items: [] }];
+    const sidebar_groups = [{ group_name: "Operations", items: [] }];
 
     auth_store_core_mocks.execute_auth_initialization.mockImplementation(
-      async (
-        _state: unknown,
-        set_state: (state: Record<string, unknown>) => void,
-      ) => {
+      async (_state: unknown, set_state: (state: AuthState) => void) => {
         set_state(
           build_auth_state({
-            current_profile,
+            current_profile: create_present_auth_profile_state(current_profile),
             available_profiles: [current_profile],
             sidebar_menu_items: sidebar_groups,
             is_initialized: true,
@@ -439,10 +466,10 @@ describe("authStoreCore", () => {
     expect(auth_store_core_mocks.clear_auth_storage).toHaveBeenCalled();
     expect(
       auth_store_core_mocks.sync_user_context_with_event_bus,
-    ).toHaveBeenCalledWith(null);
+    ).toHaveBeenCalledWith({ status: "cleared" });
     expect(get(auth_store)).toEqual({
-      current_token: null,
-      current_profile: null,
+      current_token: create_missing_auth_token_state(),
+      current_profile: create_missing_auth_profile_state(),
       available_profiles: [],
       sidebar_menu_items: [],
       is_initialized: false,

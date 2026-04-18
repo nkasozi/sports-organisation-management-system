@@ -6,8 +6,6 @@ import type {
   Sport,
   UpdateSportInput,
 } from "../../core/entities/Sport";
-import type { ScalarInput } from "../../core/types/DomainScalars";
-import type { ScalarValueInput } from "../../core/types/DomainScalars";
 import {
   create_basketball_sport_preset,
   create_field_hockey_sport_preset,
@@ -15,7 +13,13 @@ import {
 } from "../../core/entities/Sport";
 import { ENTITY_STATUS } from "../../core/entities/StatusConstants";
 import type { SportFilter, SportRepository } from "../../core/interfaces/ports";
-import type { Result } from "../../core/types/Result";
+import type { ScalarInput } from "../../core/types/DomainScalars";
+import type { ScalarValueInput } from "../../core/types/DomainScalars";
+import {
+  create_failure_result,
+  create_success_result,
+  type Result,
+} from "../../core/types/Result";
 import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
 
 const ENTITY_PREFIX = "sport";
@@ -25,12 +29,34 @@ const DEFAULT_SPORT_IDS = {
   BASKETBALL: "sport-basketball-default",
   FIELD_HOCKEY: "sport-field-hockey-default",
 };
+const SPORT_NOT_FOUND_ERROR_PREFIX = "Sport not found";
 
 const SPORT_ID_BY_CODE: Record<string, string> = {
   FOOTBALL: DEFAULT_SPORT_IDS.FOOTBALL,
   BASKETBALL: DEFAULT_SPORT_IDS.BASKETBALL,
   FIELD_HOCKEY: DEFAULT_SPORT_IDS.FIELD_HOCKEY,
 };
+
+type SportRepositoryState =
+  | { status: "uninitialized" }
+  | { status: "ready"; repository: InBrowserSportRepository };
+
+function create_sport_not_found_by_id_error(
+  id: ScalarValueInput<Sport["id"]>,
+): string {
+  return `${SPORT_NOT_FOUND_ERROR_PREFIX}: id=${id}`;
+}
+
+function create_sport_not_found_by_code_error(code: string): string {
+  return `${SPORT_NOT_FOUND_ERROR_PREFIX}: code=${code.toLowerCase()}`;
+}
+
+export function is_sport_not_found_by_code_error(
+  error: string,
+  code: string,
+): boolean {
+  return error === create_sport_not_found_by_code_error(code);
+}
 
 function create_default_sports(): ScalarInput<Sport>[] {
   const now = new Date().toISOString();
@@ -103,9 +129,17 @@ class InBrowserSportRepository
     return filtered;
   }
 
-  async find_by_code(code: string): Promise<Sport | null> {
+  async find_by_code(code: string): Promise<Result<Sport>> {
     const all = await this.get_table().toArray();
-    return all.find((s) => s.code.toLowerCase() === code.toLowerCase()) || null;
+    const matched_sport = all.find(
+      (sport) => sport.code.toLowerCase() === code.toLowerCase(),
+    );
+
+    if (!matched_sport) {
+      return create_failure_result(create_sport_not_found_by_code_error(code));
+    }
+
+    return create_success_result(matched_sport);
   }
 
   async find_active(): Promise<Sport[]> {
@@ -114,17 +148,18 @@ class InBrowserSportRepository
   }
 }
 
-function get_sport_id_by_code_sync(code: string): Sport["id"] | null {
-  return (SPORT_ID_BY_CODE[code.toUpperCase()] ?? null) as Sport["id"] | null;
-}
-
-let singleton_instance: InBrowserSportRepository | null = null;
+let repository_state: SportRepositoryState = { status: "uninitialized" };
 
 function get_concrete_repository(): InBrowserSportRepository {
-  if (!singleton_instance) {
-    singleton_instance = new InBrowserSportRepository();
+  if (repository_state.status === "ready") {
+    return repository_state.repository;
   }
-  return singleton_instance;
+
+  const repository = new InBrowserSportRepository();
+
+  repository_state = { status: "ready", repository };
+
+  return repository;
 }
 
 export function get_sport_repository(): SportRepository {
@@ -159,12 +194,17 @@ export async function get_all_sports(): Promise<Sport[]> {
 
 export async function get_sport_by_id(
   id: ScalarValueInput<Sport["id"]>,
-): Promise<Sport | null> {
-  const result = await get_concrete_repository().find_by_id(id);
-  return result.success && result.data ? result.data : null;
+): Promise<Result<Sport>> {
+  const sport_result = await get_concrete_repository().find_by_id(id);
+
+  if (!sport_result.success) {
+    return create_failure_result(create_sport_not_found_by_id_error(id));
+  }
+
+  return sport_result;
 }
 
-export async function get_sport_by_code(code: string): Promise<Sport | null> {
+export async function get_sport_by_code(code: string): Promise<Result<Sport>> {
   return get_concrete_repository().find_by_code(code);
 }
 
@@ -181,9 +221,8 @@ export async function create_sport(
 export async function update_sport(
   id: ScalarValueInput<Sport["id"]>,
   input: UpdateSportInput,
-): Promise<Sport | null> {
-  const result = await get_concrete_repository().update(id, input);
-  return result.success && result.data ? result.data : null;
+): Promise<Result<Sport>> {
+  return get_concrete_repository().update(id, input);
 }
 
 export async function delete_sport(

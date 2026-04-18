@@ -37,9 +37,7 @@ function create_player_profile(
   } as unknown as PlayerProfile;
 }
 
-function create_player(
-  overrides: Partial<EditablePlayer> = {},
-): Player {
+function create_player(overrides: Partial<EditablePlayer> = {}): Player {
   return {
     id: "player_1",
     first_name: "Jane",
@@ -92,8 +90,8 @@ function create_team(overrides: Partial<EditableTeam> = {}): Team {
     description: "",
     organization_id: "org_1",
     gender_id: "gender_1",
-    captain_player_id: null,
-    vice_captain_player_id: null,
+    captain_player_id: "",
+    vice_captain_player_id: "",
     max_squad_size: 25,
     home_venue_id: "venue_1",
     primary_color: "#000000",
@@ -132,7 +130,7 @@ function create_game_event(
     id: "event_1",
     event_type: "goal",
     minute: 10,
-    stoppage_time_minute: null,
+    stoppage_time_minute: 0,
     team_side: "home",
     player_name: "Jane Doe",
     secondary_player_name: "Mary Smith",
@@ -311,7 +309,10 @@ describe("playerPublicProfileDataLoader", () => {
       return;
     }
 
-    expect(result.data.position?.name).toBe("Winger");
+    expect(result.data.position_state).toEqual({
+      status: "present",
+      position: expect.objectContaining({ name: "Winger" }),
+    });
     expect(result.data.overall_stats.total_matches).toBe(1);
     expect(result.data.overall_stats.goals).toBe(1);
     expect(result.data.overall_stats.yellow_cards).toBe(1);

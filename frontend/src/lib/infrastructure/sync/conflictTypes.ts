@@ -6,6 +6,22 @@ import type {
 
 export type ConflictResolutionAction = "keep_local" | "keep_remote" | "merge";
 
+export type ConflictFieldValue<TValue> =
+  | { status: "unknown" }
+  | { status: "known"; value: TValue };
+
+export function create_unknown_conflict_field_value<
+  TValue,
+>(): ConflictFieldValue<TValue> {
+  return { status: "unknown" };
+}
+
+export function create_known_conflict_field_value<TValue>(
+  value: TValue,
+): ConflictFieldValue<TValue> {
+  return { status: "known", value };
+}
+
 export interface FieldDifference {
   field_name: string;
   local_value: unknown;
@@ -22,8 +38,8 @@ export interface ConflictRecord {
   remote_data: Record<string, unknown>;
   local_updated_at: IsoDateTimeString;
   remote_updated_at: IsoDateTimeString;
-  remote_updated_by: EntityId | null;
-  remote_updated_by_name: Name | null;
+  remote_updated_by: ConflictFieldValue<EntityId>;
+  remote_updated_by_name: ConflictFieldValue<Name>;
   field_differences: FieldDifference[];
   detected_at: IsoDateTimeString;
 }
@@ -34,7 +50,7 @@ export interface ConflictResolution {
   local_id: ConflictRecord["local_id"];
   action: ConflictResolutionAction;
   resolved_at: IsoDateTimeString;
-  resolved_by: EntityId | null;
+  resolved_by: ConflictFieldValue<EntityId>;
   merged_data?: Record<string, unknown>;
 }
 
@@ -88,8 +104,7 @@ export function compute_field_differences(
 
 function values_are_equal(a: unknown, b: unknown): boolean {
   if (a === b) return true;
-  if (a === null && b === undefined) return true;
-  if (a === undefined && b === null) return true;
+  if (a == void 0 && b == void 0) return true;
   if (typeof a !== typeof b) return false;
 
   if (Array.isArray(a) && Array.isArray(b)) {
@@ -97,7 +112,7 @@ function values_are_equal(a: unknown, b: unknown): boolean {
     return a.every((val, idx) => values_are_equal(val, b[idx]));
   }
 
-  if (typeof a === "object" && a !== null && b !== null) {
+  if (typeof a === "object" && a != void 0 && b != void 0) {
     const a_keys = Object.keys(a as object);
     const b_keys = Object.keys(b as object);
     if (a_keys.length !== b_keys.length) return false;

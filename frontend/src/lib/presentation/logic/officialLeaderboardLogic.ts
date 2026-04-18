@@ -35,13 +35,16 @@ function build_fixture_weight_map(
   const weight_map = new Map<string, number>();
 
   for (const fixture of fixtures) {
-    const stage = fixture.stage_id ? stage_by_id.get(fixture.stage_id) : null;
+    const stage = fixture.stage_id ? stage_by_id.get(fixture.stage_id) : void 0;
 
     const weight_input: ImportanceWeightInput = {
       stage_type: stage?.stage_type ?? "custom",
       match_day: fixture.match_day ?? 1,
       total_match_days: 0,
-      manual_override: fixture.manual_importance_override ?? null,
+      manual_override:
+        typeof fixture.manual_importance_override === "number"
+          ? { status: "manual", value: fixture.manual_importance_override }
+          : { status: "automatic" },
     };
 
     weight_map.set(fixture.id, compute_importance_weight(weight_input));
@@ -86,9 +89,10 @@ export function build_leaderboard_entries(
   const entries: OfficialLeaderboardEntry[] = [];
 
   for (const [official_id, weighted_ratings] of grouped) {
-    const summary: WeightedOfficialSummary | null =
-      aggregate_weighted_ratings(weighted_ratings);
-    if (!summary) continue;
+    const aggregation_result = aggregate_weighted_ratings(weighted_ratings);
+    if (aggregation_result.status !== "present") continue;
+
+    const summary: WeightedOfficialSummary = aggregation_result.summary;
 
     entries.push({
       official_id,

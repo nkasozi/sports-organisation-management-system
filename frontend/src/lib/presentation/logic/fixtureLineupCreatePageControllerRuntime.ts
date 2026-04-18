@@ -35,7 +35,7 @@ export function create_fixture_lineup_create_page_controller_runtime(
       ...command.get_form_data(),
       ...reset_state.form_data,
     });
-    command.set_selected_team(reset_state.selected_team);
+    command.set_selected_team_state(reset_state.selected_team_state);
     command.set_team_players(reset_state.team_players);
     command.set_available_teams(reset_state.available_teams);
   };
@@ -43,8 +43,8 @@ export function create_fixture_lineup_create_page_controller_runtime(
     reset_interaction_state();
     const result = await handle_fixture_lineup_create_team_change({
       team_id,
-      selected_fixture: command.get_selected_fixture(),
-      current_auth_profile: command.get_current_auth_profile(),
+      selected_fixture_state: command.get_selected_fixture_state(),
+      current_auth_profile_state: command.get_current_auth_profile_state(),
       max_players: command.get_max_players(),
       dependencies: command.dependencies,
     });
@@ -53,7 +53,7 @@ export function create_fixture_lineup_create_page_controller_runtime(
       command.get_form_data(),
       team_id,
     );
-    command.set_selected_team(next_state.selected_team);
+    command.set_selected_team_state(next_state.selected_team_state);
     command.set_team_players(next_state.team_players);
     command.set_form_data(next_state.form_data);
     command.set_validation_errors(next_state.validation_errors);
@@ -64,7 +64,7 @@ export function create_fixture_lineup_create_page_controller_runtime(
       const initialization_result = await initialize_fixture_lineup_create_page(
         {
           is_browser: command.is_browser,
-          current_auth_profile: command.get_current_auth_profile(),
+          current_auth_profile_state: command.get_current_auth_profile_state(),
           form_organization_id: command.get_form_data().organization_id,
           organization_is_restricted: command.get_organization_is_restricted(),
           dependencies: command.dependencies,
@@ -87,7 +87,9 @@ export function create_fixture_lineup_create_page_controller_runtime(
       command.set_all_teams(reference_state.all_teams);
       command.set_all_competitions(reference_state.all_competitions);
       command.set_organizations(reference_state.organizations);
-      command.set_selected_organization(reference_state.selected_organization);
+      command.set_selected_organization_state(
+        reference_state.selected_organization_state,
+      );
       command.set_error_message(reference_state.error_message);
       command.set_loading(false);
       command.set_current_step_index(initialization_result.current_step_index);
@@ -103,8 +105,10 @@ export function create_fixture_lineup_create_page_controller_runtime(
       });
       command.set_error_message(next_state.error_message);
       command.set_validation_errors(next_state.validation_errors);
-      command.set_selected_organization(next_state.selected_organization);
-      command.set_selected_fixture(next_state.selected_fixture);
+      command.set_selected_organization_state(
+        next_state.selected_organization_state,
+      );
+      command.set_selected_fixture_state(next_state.selected_fixture_state);
       apply_team_reset();
       command.set_current_step_index(next_state.current_step_index);
     },
@@ -112,7 +116,7 @@ export function create_fixture_lineup_create_page_controller_runtime(
       reset_interaction_state();
       const result = await handle_fixture_lineup_create_fixture_change({
         fixture_id,
-        current_auth_profile: command.get_current_auth_profile(),
+        current_auth_profile_state: command.get_current_auth_profile_state(),
         organizations: command.get_organizations(),
         dependencies: command.dependencies,
         fixtures_with_complete_lineups:
@@ -125,8 +129,10 @@ export function create_fixture_lineup_create_page_controller_runtime(
       );
       command.set_error_message(next_state.error_message);
       command.set_form_data(next_state.form_data);
-      command.set_selected_fixture(next_state.selected_fixture);
-      command.set_selected_organization(next_state.selected_organization);
+      command.set_selected_fixture_state(next_state.selected_fixture_state);
+      command.set_selected_organization_state(
+        next_state.selected_organization_state,
+      );
       command.set_min_players(next_state.min_players);
       command.set_max_players(next_state.max_players);
       command.set_starters_count(next_state.starters_count);
@@ -137,7 +143,7 @@ export function create_fixture_lineup_create_page_controller_runtime(
       command.set_teams_with_existing_lineups(
         next_state.teams_with_existing_lineups,
       );
-      command.set_selected_team(next_state.selected_team);
+      command.set_selected_team_state(next_state.selected_team_state);
       command.set_team_players(next_state.team_players);
       command.set_fixtures_with_complete_lineups(
         next_state.fixtures_with_complete_lineups,
@@ -200,9 +206,9 @@ export function create_fixture_lineup_create_page_controller_runtime(
       command.set_error_message("");
       const result = await submit_fixture_lineup_create_form(
         command.get_form_data(),
-        command.get_selected_organization(),
-        command.get_selected_fixture(),
-        command.get_selected_team(),
+        command.get_selected_organization_state(),
+        command.get_selected_fixture_state(),
+        command.get_selected_team_state(),
         command.get_min_players(),
         command.get_max_players(),
         command.get_confirm_lock_understood(),

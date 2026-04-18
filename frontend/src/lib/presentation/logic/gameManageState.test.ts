@@ -19,7 +19,7 @@ function create_test_game_event(
     id: overrides.id ?? "event_1",
     event_type: overrides.event_type ?? "goal",
     minute: overrides.minute ?? 12,
-    stoppage_time_minute: overrides.stoppage_time_minute ?? null,
+    stoppage_time_minute: overrides.stoppage_time_minute ?? 0,
     team_side: overrides.team_side ?? "home",
     player_name: overrides.player_name ?? "Player One",
     secondary_player_name: overrides.secondary_player_name ?? "",

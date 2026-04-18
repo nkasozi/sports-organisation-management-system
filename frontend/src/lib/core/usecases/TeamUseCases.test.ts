@@ -17,8 +17,8 @@ function create_mock_team(overrides: Partial<ScalarInput<Team>> = {}): Team {
     description: "A test team",
     organization_id: "org_1",
     gender_id: "",
-    captain_player_id: null,
-    vice_captain_player_id: null,
+    captain_player_id: "",
+    vice_captain_player_id: "",
     max_squad_size: 25,
     home_venue_id: "",
     primary_color: "#3B82F6",
@@ -40,8 +40,8 @@ function create_valid_team_input(
     description: "A test team",
     organization_id: "org_1",
     gender_id: "",
-    captain_player_id: null,
-    vice_captain_player_id: null,
+    captain_player_id: "",
+    vice_captain_player_id: "",
     max_squad_size: 25,
     home_venue_id: "",
     primary_color: "#3B82F6",
@@ -117,7 +117,7 @@ describe("TeamUseCases", () => {
       const mock_teams = [
         create_mock_team({ id: "t1", organization_id: "org_1" }),
       ];
-      const filter =  { organization_id: "org_1" } as TeamFilter;
+      const filter = { organization_id: "org_1" } as TeamFilter;
       vi.mocked(mock_repository.find_all).mockResolvedValue(
         create_paginated_result(mock_teams),
       );
@@ -127,7 +127,7 @@ describe("TeamUseCases", () => {
       expect(result.success).toBe(true);
       if (!result.success) return;
       expect(result.data.items).toHaveLength(1);
-      expect(mock_repository.find_all).toHaveBeenCalledWith(filter, undefined);
+      expect(mock_repository.find_all).toHaveBeenCalledWith(filter, {});
     });
 
     it("returns empty array with error message when repository fails", async () => {
@@ -269,7 +269,7 @@ describe("TeamUseCases", () => {
 
   describe("update", () => {
     it("updates team with valid input", async () => {
-      const update_input =  { name: "Updated Team Name" } as UpdateTeamInput;
+      const update_input = { name: "Updated Team Name" } as UpdateTeamInput;
       const updated_team = create_mock_team({
         id: "t1",
         name: "Updated Team Name",
@@ -385,7 +385,7 @@ describe("TeamUseCases", () => {
       }
       expect(mock_repository.find_by_organization).toHaveBeenCalledWith(
         "org_1",
-        undefined,
+        {},
       );
     });
 
@@ -405,7 +405,7 @@ describe("TeamUseCases", () => {
     });
 
     it("passes query options to repository", async () => {
-      const options =  { page_number: 1, page_size: 50 } as QueryOptions;
+      const options = { page_number: 1, page_size: 50 } as QueryOptions;
       vi.mocked(mock_repository.find_by_organization).mockResolvedValue(
         create_paginated_result([]),
       );

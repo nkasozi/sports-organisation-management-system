@@ -3,9 +3,10 @@
 
   import CalendarSubscriptionFeedCard from "./CalendarSubscriptionFeedCard.svelte";
 
-  export let copy_success_token: string | null = null;
+  export let copy_success_token: string | undefined = undefined;
   export let existing_feeds: CalendarToken[] = [];
-  export let format_date: (iso_string: string | null) => string = () => "";
+  export let format_date: (iso_string: CalendarToken["last_accessed_at"]) => string =
+    () => "";
   export let get_https_url: (token: string) => string = () => "";
   export let is_loading: boolean = false;
   export let on_copy: (

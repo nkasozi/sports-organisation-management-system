@@ -83,16 +83,25 @@ export function create_identification_use_cases(
       const query_options = options || { page_number: 1, page_size: 100 };
 
       if (!filter) {
-        return repository.find_all(undefined, query_options);
+        return repository.find_all({}, query_options);
       }
 
       const identification_filter: IdentificationFilter = {
-        holder_type: filter.holder_type as IdentificationHolderType | undefined,
-        holder_id: filter.holder_id as Identification["holder_id"] | undefined,
-        identification_type_id: filter.identification_type_id as
-          | Identification["identification_type_id"]
-          | undefined,
-        status: filter.status as Identification["status"] | undefined,
+        ...(filter.holder_type
+          ? { holder_type: filter.holder_type as IdentificationHolderType }
+          : {}),
+        ...(filter.holder_id
+          ? { holder_id: filter.holder_id as Identification["holder_id"] }
+          : {}),
+        ...(filter.identification_type_id
+          ? {
+              identification_type_id:
+                filter.identification_type_id as Identification["identification_type_id"],
+            }
+          : {}),
+        ...(filter.status
+          ? { status: filter.status as Identification["status"] }
+          : {}),
       };
 
       return repository.find_all(identification_filter, query_options);
@@ -106,10 +115,13 @@ export function create_identification_use_cases(
     },
 
     async list_all(): PaginatedAsyncResult<Identification> {
-      return repository.find_all(undefined, {
-        page_number: 1,
-        page_size: 1000,
-      });
+      return repository.find_all(
+        {},
+        {
+          page_number: 1,
+          page_size: 1000,
+        },
+      );
     },
 
     async list_identifications_by_entity(

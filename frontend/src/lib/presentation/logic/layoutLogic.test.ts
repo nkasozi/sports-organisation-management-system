@@ -214,15 +214,15 @@ describe("should_pull_org_from_server", () => {
     expect(should_pull_org_from_server("*")).toBe(false);
   });
 
-  it("returns false for undefined", () => {
-    expect(should_pull_org_from_server(undefined)).toBe(false);
-  });
-
-  it("returns false for null", () => {
-    expect(should_pull_org_from_server(null)).toBe(false);
-  });
-
-  it("returns false for empty string", () => {
+  it("returns false for an empty organization id", () => {
     expect(should_pull_org_from_server("")).toBe(false);
+  });
+
+  it("returns false for whitespace-only organization ids", () => {
+    expect(should_pull_org_from_server("   ")).toBe(false);
+  });
+
+  it("returns false for the wildcard after trimming", () => {
+    expect(should_pull_org_from_server(" * ")).toBe(false);
   });
 });

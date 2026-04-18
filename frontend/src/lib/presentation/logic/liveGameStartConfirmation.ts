@@ -30,7 +30,7 @@ export function format_fixture_scheduled_date_label(
     return scheduled_date;
   }
 
-  return parsed_date.toLocaleDateString(undefined, {
+  return parsed_date.toLocaleDateString([], {
     weekday: "long",
     year: "numeric",
     month: "long",

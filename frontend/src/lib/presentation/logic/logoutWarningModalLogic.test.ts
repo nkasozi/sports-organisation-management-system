@@ -1,5 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
 
+import {
+  get_logout_warning_modal_state,
+  sync_logout_warning_modal_changes,
+} from "./logoutWarningModalLogic";
+
 const {
   flush_pending_changes_mock,
   get_background_sync_status_mock,
@@ -15,11 +20,6 @@ vi.mock("$lib/infrastructure/sync/backgroundSyncService", () => ({
   get_background_sync_status: get_background_sync_status_mock,
   has_pending_unsynced_changes: has_pending_unsynced_changes_mock,
 }));
-
-import {
-  get_logout_warning_modal_state,
-  sync_logout_warning_modal_changes,
-} from "./logoutWarningModalLogic";
 
 describe("logoutWarningModalLogic", () => {
   it("returns offline, warning, or checking states based on sync status", () => {

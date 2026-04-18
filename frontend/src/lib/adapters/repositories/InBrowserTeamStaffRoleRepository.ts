@@ -98,7 +98,7 @@ export class InBrowserTeamStaffRoleRepository
   ): PaginatedAsyncResult<TeamStaffRole> {
     try {
       let filtered_entities = await this.database.team_staff_roles.toArray();
-      if (filter) {
+      if (filter && Object.keys(filter).length > 0) {
         filtered_entities = this.apply_entity_filter(filtered_entities, filter);
       }
       filtered_entities.sort((a, b) => a.display_order - b.display_order);
@@ -153,13 +153,23 @@ export class InBrowserTeamStaffRoleRepository
   }
 }
 
-let singleton_instance: InBrowserTeamStaffRoleRepository | null = null;
+type TeamStaffRoleRepositoryState =
+  | { status: "uninitialized" }
+  | { status: "ready"; repository: InBrowserTeamStaffRoleRepository };
+
+let team_staff_role_repository_state: TeamStaffRoleRepositoryState = {
+  status: "uninitialized",
+};
 
 export function get_team_staff_role_repository(): TeamStaffRoleRepository {
-  if (!singleton_instance) {
-    singleton_instance = new InBrowserTeamStaffRoleRepository();
+  if (team_staff_role_repository_state.status === "ready") {
+    return team_staff_role_repository_state.repository;
   }
-  return singleton_instance;
+
+  const repository = new InBrowserTeamStaffRoleRepository();
+  team_staff_role_repository_state = { status: "ready", repository };
+
+  return repository;
 }
 
 export async function reset_team_staff_role_repository(): Promise<void> {

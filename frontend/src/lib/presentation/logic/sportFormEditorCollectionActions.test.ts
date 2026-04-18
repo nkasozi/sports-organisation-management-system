@@ -68,7 +68,7 @@ describe("sportFormEditorCollectionActions", () => {
       severity: "minor",
       description: "",
       typical_penalty: "",
-      results_in_card: null,
+      results_in_card: "",
     });
     expect(remove_foul_category(with_foul_category, 0).foul_categories).toEqual(
       with_foul_category.foul_categories.slice(1),

@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
+import { create_fixture_lineup_create_dependencies } from "./fixtureLineupCreateDataTypes";
+
 const fixture_lineup_create_data_type_mocks = vi.hoisted(() => ({
   get_competition_team_use_cases: vi.fn(),
   get_competition_use_cases: vi.fn(),
@@ -31,8 +33,6 @@ vi.mock("$lib/infrastructure/registry/useCaseFactories", () => ({
     fixture_lineup_create_data_type_mocks.get_player_use_cases,
   get_team_use_cases: fixture_lineup_create_data_type_mocks.get_team_use_cases,
 }));
-
-import { create_fixture_lineup_create_dependencies } from "./fixtureLineupCreateDataTypes";
 
 describe("fixtureLineupCreateDataTypes", () => {
   it("builds lineup-create dependencies from use-case factories", () => {

@@ -6,11 +6,13 @@ import type {
   CreateCalendarTokenInput,
   UpdateCalendarTokenInput,
 } from "../../core/entities/CalendarToken";
+import { compute_calendar_token_expiry } from "../../core/entities/CalendarToken";
 import type {
   CalendarTokenFilter,
   CalendarTokenRepository,
 } from "../../core/interfaces/ports";
 import type { QueryOptions } from "../../core/interfaces/ports";
+import { build_calendar_token_not_found_error } from "../../core/interfaces/ports";
 import type {
   CalendarTokenValue,
   EntityId,
@@ -50,8 +52,8 @@ class InBrowserCalendarTokenRepository
       id,
       ...timestamps,
       ...input,
-      expires_at: null,
-      last_accessed_at: null,
+      expires_at: compute_calendar_token_expiry(),
+      last_accessed_at: "",
       access_count: 0,
     } as CalendarToken;
   }
@@ -89,7 +91,7 @@ class InBrowserCalendarTokenRepository
         (token) => token.entity_id === filter.entity_id,
       );
     }
-    if (filter.is_active !== undefined) {
+    if ("is_active" in filter) {
       filtered = filtered.filter(
         (token) => token.is_active === filter.is_active,
       );
@@ -98,15 +100,18 @@ class InBrowserCalendarTokenRepository
     return filtered;
   }
 
-  async find_by_token(
-    token: CalendarTokenValue,
-  ): AsyncResult<CalendarToken | null> {
+  async find_by_token(token: CalendarTokenValue): AsyncResult<CalendarToken> {
     try {
       const all_tokens = await this.database.calendar_tokens.toArray();
       const found_token = all_tokens.find(
         (t) => t.token === token && t.is_active,
       );
-      return create_success_result(found_token ?? null);
+      if (!found_token) {
+        return create_failure_result(
+          build_calendar_token_not_found_error(token),
+        );
+      }
+      return create_success_result(found_token);
     } catch (error) {
       console.warn("[CalendarTokenRepository] Failed to find token", {
         event: "repository_find_token_failed",
@@ -195,11 +200,21 @@ class InBrowserCalendarTokenRepository
   }
 }
 
-let singleton_instance: InBrowserCalendarTokenRepository | null = null;
+type CalendarTokenRepositoryState =
+  | { status: "uninitialized" }
+  | { status: "ready"; repository: InBrowserCalendarTokenRepository };
+
+let calendar_token_repository_state: CalendarTokenRepositoryState = {
+  status: "uninitialized",
+};
 
 export function get_calendar_token_repository(): CalendarTokenRepository {
-  if (!singleton_instance) {
-    singleton_instance = new InBrowserCalendarTokenRepository();
+  if (calendar_token_repository_state.status === "ready") {
+    return calendar_token_repository_state.repository;
   }
-  return singleton_instance;
+
+  const repository = new InBrowserCalendarTokenRepository();
+  calendar_token_repository_state = { status: "ready", repository };
+
+  return repository;
 }

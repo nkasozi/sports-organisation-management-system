@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { create_settings_page_shell_controller_runtime } from "./settingsPageShellControllerRuntime";
+
 const {
   apply_organization_settings_form_values_mock,
   branding_store_set_mock,
@@ -38,8 +40,6 @@ vi.mock("./settingsPageState", () => ({
   get_default_selected_organization_id:
     get_default_selected_organization_id_mock,
 }));
-
-import { create_settings_page_shell_controller_runtime } from "./settingsPageShellControllerRuntime";
 
 describe("settingsPageShellControllerRuntime", () => {
   function create_command() {
@@ -155,6 +155,17 @@ describe("settingsPageShellControllerRuntime", () => {
     ).initialize_page();
 
     expect(command.apply_form_values).toHaveBeenCalledWith({ form: "base" });
+    expect(apply_organization_settings_form_values_mock).toHaveBeenCalledWith(
+      { form: "base" },
+      {
+        status: "present",
+        organization: { id: "organization-1", name: "Org One" },
+      },
+      {
+        status: "present",
+        organization_settings: { timezone: "UTC" },
+      },
+    );
     expect(command.set_organizations).toHaveBeenCalledWith([
       { id: "organization-1", name: "Org One" },
     ]);
@@ -185,6 +196,14 @@ describe("settingsPageShellControllerRuntime", () => {
     await runtime.handle_selected_organization_switch();
     runtime.handle_logo_change({ detail: { url: "/new-logo.svg" } } as never);
 
+    expect(apply_organization_settings_form_values_mock).toHaveBeenCalledWith(
+      expect.objectContaining({ organization_name: "Org One" }),
+      {
+        status: "present",
+        organization: { id: "organization-1", name: "Org One" },
+      },
+      { status: "missing" },
+    );
     expect(command.apply_form_values).toHaveBeenCalledWith({
       form: "switched",
     });

@@ -1,16 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { end_live_game_detail_action_mock, start_live_game_detail_action_mock } =
-  vi.hoisted(() => ({
-    end_live_game_detail_action_mock: vi.fn(),
-    start_live_game_detail_action_mock: vi.fn(),
-  }));
-
-vi.mock("$lib/presentation/logic/liveGameDetailPageActions", () => ({
-  end_live_game_detail_action: end_live_game_detail_action_mock,
-  start_live_game_detail_action: start_live_game_detail_action_mock,
-}));
-
 import { create_live_game_detail_game_handlers } from "./liveGameDetailControllerGameActions";
 import type {
   LiveGameDetailModalState,
@@ -21,6 +10,17 @@ import {
   create_live_game_detail_modal_state,
   create_live_game_detail_page_state,
 } from "./liveGameDetailPageStateFactories";
+
+const { end_live_game_detail_action_mock, start_live_game_detail_action_mock } =
+  vi.hoisted(() => ({
+    end_live_game_detail_action_mock: vi.fn(),
+    start_live_game_detail_action_mock: vi.fn(),
+  }));
+
+vi.mock("$lib/presentation/logic/liveGameDetailPageActions", () => ({
+  end_live_game_detail_action: end_live_game_detail_action_mock,
+  start_live_game_detail_action: start_live_game_detail_action_mock,
+}));
 
 describe("liveGameDetailControllerGameActions", () => {
   type HandlerCommand = Parameters<
@@ -39,11 +39,10 @@ describe("liveGameDetailControllerGameActions", () => {
       id,
       first_name: "Ada",
       last_name: "Stone",
-      jersey_number: null,
-      position: null,
+      jersey_number: 0,
+      position: "",
       is_captain: false,
       is_substitute: false,
-      time_on: undefined,
     } as LiveGameDetailPageState["home_players"][number];
   }
 
@@ -52,7 +51,7 @@ describe("liveGameDetailControllerGameActions", () => {
   });
 
   function create_state_store() {
-    let page_state =  {
+    let page_state = {
       ...create_live_game_detail_page_state(),
       fixture: {
         id: "fixture-1",
@@ -66,18 +65,23 @@ describe("liveGameDetailControllerGameActions", () => {
       home_players: [create_lineup_player("home-1")],
       away_players: [create_lineup_player("away-1")],
     } as LiveGameDetailPageState;
-    let modal_state =  {
+    let modal_state = {
       ...create_live_game_detail_modal_state(),
       show_start_modal: true,
       show_end_modal: true,
     } as LiveGameDetailModalState;
-    let toast_state: LiveGameDetailToastState | null = null;
+    let toast_state:
+      | { status: "hidden" }
+      | { status: "visible"; toast: LiveGameDetailToastState } = {
+      status: "hidden",
+    };
     return {
       get_modal_state: () => modal_state,
       get_page_state: () => page_state,
       read_modal_state: () => modal_state,
       read_page_state: () => page_state,
-      read_toast_state: () => toast_state,
+      read_toast_state: () =>
+        toast_state.status === "visible" ? toast_state.toast : void 0,
       set_modal_state: (next_state: typeof modal_state) => {
         modal_state = next_state;
       },
@@ -85,7 +89,7 @@ describe("liveGameDetailControllerGameActions", () => {
         page_state = next_state;
       },
       set_toast_state: (next_state: LiveGameDetailToastState) => {
-        toast_state = next_state;
+        toast_state = { status: "visible", toast: next_state };
       },
     };
   }

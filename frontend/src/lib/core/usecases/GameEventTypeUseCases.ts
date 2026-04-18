@@ -4,13 +4,14 @@ import type {
   GameEventType,
   UpdateGameEventTypeInput,
 } from "../entities/GameEventType";
-import type { ScalarValueInput } from "../types/DomainScalars";
 import type {
   GameEventTypeFilter,
   GameEventTypeRepository,
 } from "../interfaces/ports";
 import type { QueryOptions } from "../interfaces/ports";
 import type { GameEventTypeUseCasesPort } from "../interfaces/ports";
+import { is_game_event_type_not_found_by_code_error } from "../interfaces/ports";
+import type { ScalarValueInput } from "../types/DomainScalars";
 import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
 import { create_failure_result, create_success_result } from "../types/Result";
 
@@ -52,10 +53,16 @@ export function create_game_event_type_use_cases(
       }
 
       const existing_result = await repository.find_by_code(input.code);
-      if (!existing_result.success) {
+      if (
+        !existing_result.success &&
+        !is_game_event_type_not_found_by_code_error(
+          existing_result.error,
+          input.code,
+        )
+      ) {
         return create_failure_result(existing_result.error);
       }
-      if (existing_result.data) {
+      if (existing_result.success) {
         return create_failure_result(
           `Event type with code '${input.code}' already exists`,
         );
@@ -83,10 +90,16 @@ export function create_game_event_type_use_cases(
 
       if (input.code) {
         const code_check_result = await repository.find_by_code(input.code);
-        if (!code_check_result.success) {
+        if (
+          !code_check_result.success &&
+          !is_game_event_type_not_found_by_code_error(
+            code_check_result.error,
+            input.code,
+          )
+        ) {
           return create_failure_result(code_check_result.error);
         }
-        if (code_check_result.data && code_check_result.data.id !== id) {
+        if (code_check_result.success && code_check_result.data.id !== id) {
           return create_failure_result(
             `Event type with code '${input.code}' already exists`,
           );
@@ -111,9 +124,7 @@ export function create_game_event_type_use_cases(
       return create_success_result(result.data);
     },
 
-    async get_event_type_by_code(
-      code: string,
-    ): AsyncResult<GameEventType | null> {
+    async get_event_type_by_code(code: string): AsyncResult<GameEventType> {
       return await repository.find_by_code(code);
     },
 

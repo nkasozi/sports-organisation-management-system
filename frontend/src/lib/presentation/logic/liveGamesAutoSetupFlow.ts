@@ -21,7 +21,7 @@ export async function handle_missing_fixture_details(
     check_name: "officials",
     status: "failed",
     message: "No assigned fixture details found",
-    fix_suggestion: null,
+    fix_suggestion: "",
   });
   await publish_checks(fixture.id, checks, dependencies);
 
@@ -43,7 +43,7 @@ export async function handle_missing_fixture_details(
     check_name: "auto_setup_check",
     status: "passed",
     message: "Auto Fixture Details Setup is enabled for this competition",
-    fix_suggestion: null,
+    fix_suggestion: "",
   });
   await publish_checks(fixture.id, checks, dependencies);
 
@@ -53,7 +53,7 @@ export async function handle_missing_fixture_details(
       check_name: "redirect",
       status: "checking",
       message: "Redirecting you to confirm Fixture Details...",
-      fix_suggestion: null,
+      fix_suggestion: "",
     });
     await publish_checks(fixture.id, checks, dependencies);
     dependencies.set_is_starting(fixture.id, false);
@@ -67,7 +67,7 @@ export async function handle_missing_fixture_details(
     check_name: "silent_create",
     status: "checking",
     message: "Auto-creating fixture details in the background...",
-    fix_suggestion: null,
+    fix_suggestion: "",
   });
   dependencies.update_checks(fixture.id, checks);
   const auto_create_result = await auto_create_fixture_details_setup(fixture, {
@@ -95,7 +95,7 @@ export async function handle_missing_fixture_details(
     check_name: "silent_create",
     status: "passed",
     message: "Fixture details auto-created successfully",
-    fix_suggestion: null,
+    fix_suggestion: "",
   });
   await publish_checks(fixture.id, checks, dependencies);
   dependencies.set_is_starting(fixture.id, false);

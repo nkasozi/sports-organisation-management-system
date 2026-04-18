@@ -4,7 +4,7 @@
   export let permission_denied: boolean = false;
   export let permission_denied_message: string = "";
   export let save_error_message: string = "";
-  export let info_message: string | null = null;
+  export let info_message: string = "";
 </script>
 
 <div class="space-y-4">

@@ -1,15 +1,20 @@
 <script lang="ts">
+    import type { HelpSectionExpansionState } from "$lib/presentation/logic/helpPageState";
+
     import {
         HELP_FAQ_ITEMS,
         HELP_FAQ_SECTION_ID,
         HELP_FAQ_SECTION_TITLE,
     } from "../../logic/helpPageContent";
 
-    export let expanded_faq_index: number | null;
+    export let expanded_faq_state: HelpSectionExpansionState;
     export let on_toggle: (selected_index: number) => void;
 
     function is_faq_item_expanded(selected_index: number): boolean {
-        return expanded_faq_index === selected_index;
+        return (
+            expanded_faq_state.status === "expanded" &&
+            expanded_faq_state.index === selected_index
+        );
     }
 </script>
 

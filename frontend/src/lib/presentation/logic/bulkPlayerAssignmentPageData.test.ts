@@ -1,5 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import {
+  build_bulk_player_assignment_auth_filter,
+  load_bulk_player_assignment_page_data,
+  save_bulk_player_assignments,
+} from "./bulkPlayerAssignmentPageData";
+
 const {
   build_authorization_list_filter_mock,
   build_player_assignments_mock,
@@ -31,12 +37,6 @@ vi.mock("$lib/presentation/logic/bulkPlayerAssignmentPageState", () => ({
   get_today_date: get_today_date_mock,
 }));
 
-import {
-  build_bulk_player_assignment_auth_filter,
-  load_bulk_player_assignment_page_data,
-  save_bulk_player_assignments,
-} from "./bulkPlayerAssignmentPageData";
-
 describe("bulkPlayerAssignmentPageData", () => {
   function create_dependencies() {
     return {
@@ -60,11 +60,16 @@ describe("bulkPlayerAssignmentPageData", () => {
       organization_id: "organization-1",
     });
 
-    expect(build_bulk_player_assignment_auth_filter(null)).toEqual({});
+    expect(
+      build_bulk_player_assignment_auth_filter({ status: "missing" }),
+    ).toEqual({});
     expect(
       build_bulk_player_assignment_auth_filter({
-        organization_id: "organization-1",
-      } as never),
+        status: "present",
+        profile: {
+          organization_id: "organization-1",
+        } as never,
+      }),
     ).toEqual({
       organization_id: "organization-1",
     });
@@ -78,7 +83,7 @@ describe("bulkPlayerAssignmentPageData", () => {
 
     await expect(
       load_bulk_player_assignment_page_data({
-        current_profile: null,
+        profile_state: { status: "missing" },
         dependencies: error_dependencies as never,
       }),
     ).resolves.toEqual({
@@ -113,7 +118,10 @@ describe("bulkPlayerAssignmentPageData", () => {
 
     await expect(
       load_bulk_player_assignment_page_data({
-        current_profile: { organization_id: "organization-1" } as never,
+        profile_state: {
+          status: "present",
+          profile: { organization_id: "organization-1" } as never,
+        },
         dependencies: dependencies as never,
       }),
     ).resolves.toEqual({
@@ -141,7 +149,10 @@ describe("bulkPlayerAssignmentPageData", () => {
       save_bulk_player_assignments({
         assigned_players_on_other_teams: [],
         dependencies: dependencies as never,
-        selected_team: { id: "team-1", name: "Lions" } as never,
+        selected_team_state: {
+          status: "present",
+          team: { id: "team-1", name: "Lions" } as never,
+        },
         selected_team_id: "team-1",
         unassigned_players: [],
       }),

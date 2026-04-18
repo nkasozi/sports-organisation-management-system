@@ -62,7 +62,7 @@ describe("localAuthenticationSessionKey", () => {
   });
 
   it("generates and stores a new session key when none exists", async () => {
-    const get_item = vi.fn().mockReturnValue(null);
+    const get_item = vi.fn().mockReturnValue("");
     const set_item = vi.fn();
     vi.stubGlobal("sessionStorage", {
       getItem: get_item,

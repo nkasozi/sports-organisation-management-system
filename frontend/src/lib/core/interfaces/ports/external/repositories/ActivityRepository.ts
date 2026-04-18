@@ -13,6 +13,25 @@ import type {
 } from "../../../../types/Result";
 import type { FilterableRepository, QueryOptions } from "./Repository";
 
+const ACTIVITY_NOT_FOUND_BY_SOURCE_ERROR_PREFIX = "Activity not found";
+
+export function build_activity_not_found_by_source_error(
+  source_type: ActivitySourceType,
+  source_id: ScalarValueInput<Activity["source_id"]>,
+): string {
+  return `${ACTIVITY_NOT_FOUND_BY_SOURCE_ERROR_PREFIX}: source_type=${source_type}, source_id=${source_id}`;
+}
+
+export function is_activity_not_found_by_source_error(
+  error: string,
+  source_type: ActivitySourceType,
+  source_id: ScalarValueInput<Activity["source_id"]>,
+): boolean {
+  return (
+    error === build_activity_not_found_by_source_error(source_type, source_id)
+  );
+}
+
 export interface ActivityFilter {
   title_contains?: string;
   organization_id?: ScalarValueInput<Activity["organization_id"]>;
@@ -66,5 +85,5 @@ export interface ActivityRepository extends FilterableRepository<
   find_by_source(
     source_type: ActivitySourceType,
     source_id: ScalarValueInput<Activity["source_id"]>,
-  ): AsyncResult<Activity | null>;
+  ): AsyncResult<Activity>;
 }

@@ -2,6 +2,11 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { Organization } from "$lib/core/entities/Organization";
 
+import {
+  initialize_competition_create_page,
+  load_competition_create_organization_state,
+} from "./competitionCreatePageFlow";
+
 const {
   check_entity_authorized_mock,
   ensure_auth_profile_mock,
@@ -37,11 +42,6 @@ vi.mock("./competitionCreatePageData", () => ({
     load_competition_create_team_options_mock,
 }));
 
-import {
-  initialize_competition_create_page,
-  load_competition_create_organization_state,
-} from "./competitionCreatePageFlow";
-
 describe("competitionCreatePageFlow", () => {
   function create_organization(
     overrides: Partial<Organization> = {},
@@ -51,7 +51,7 @@ describe("competitionCreatePageFlow", () => {
       name: "Premier League",
       description: "Top division",
       sport_id: "sport-1",
-      founded_date: null,
+      founded_date: "",
       contact_email: "admin@example.com",
       contact_phone: "123456789",
       address: "Kampala",
@@ -80,10 +80,10 @@ describe("competitionCreatePageFlow", () => {
 
     await expect(
       initialize_competition_create_page({
-        current_auth_profile: null,
+        current_auth_profile_state: { status: "missing" },
         dependencies: {} as never,
         is_organization_restricted: false,
-        raw_token: null,
+        raw_token_state: { status: "missing" },
       }),
     ).resolves.toEqual({
       access_denied: false,
@@ -103,10 +103,10 @@ describe("competitionCreatePageFlow", () => {
 
     await expect(
       initialize_competition_create_page({
-        current_auth_profile: null,
+        current_auth_profile_state: { status: "missing" },
         dependencies: {} as never,
         is_organization_restricted: false,
-        raw_token: "token-1",
+        raw_token_state: { status: "present", value: "token-1" },
       }),
     ).resolves.toEqual({
       access_denied: true,
@@ -129,10 +129,13 @@ describe("competitionCreatePageFlow", () => {
 
     await expect(
       initialize_competition_create_page({
-        current_auth_profile: { organization_id: "organization-1" } as never,
+        current_auth_profile_state: {
+          status: "present",
+          profile: { organization_id: "organization-1" } as never,
+        },
         dependencies: {} as never,
         is_organization_restricted: true,
-        raw_token: null,
+        raw_token_state: { status: "missing" },
       }),
     ).resolves.toEqual({
       access_denied: false,
@@ -154,8 +157,11 @@ describe("competitionCreatePageFlow", () => {
       competition_format_options: [{ value: "format-1", label: "Round Robin" }],
     });
     load_competition_create_sport_mock.mockResolvedValue({
-      id: "sport-1",
-      name: "Football",
+      success: true,
+      data: {
+        id: "sport-1",
+        name: "Football",
+      },
     });
 
     await expect(
@@ -168,7 +174,10 @@ describe("competitionCreatePageFlow", () => {
       team_options: [{ value: "team-1", label: "Lions" }],
       competition_formats: [{ id: "format-1", name: "Round Robin" }],
       competition_format_options: [{ value: "format-1", label: "Round Robin" }],
-      selected_sport: { id: "sport-1", name: "Football" },
+      selected_sport_state: {
+        status: "present",
+        sport: { id: "sport-1", name: "Football" },
+      },
     });
   });
 });

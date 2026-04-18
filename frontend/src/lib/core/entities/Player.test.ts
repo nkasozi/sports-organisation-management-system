@@ -3,6 +3,13 @@ import { describe, expect, it } from "vitest";
 import { create_empty_player_input, validate_player_input } from "./Player";
 
 describe("Player", () => {
+  it("creates empty player input with explicit zero measurements", () => {
+    const input = create_empty_player_input("org_1");
+
+    expect(input.height_cm).toBe(0);
+    expect(input.weight_kg).toBe(0);
+  });
+
   it("requires first_name, last_name, date_of_birth, nationality, position_id", () => {
     const input = create_empty_player_input();
     const errors = validate_player_input(input);

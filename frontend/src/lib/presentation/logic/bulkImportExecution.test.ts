@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { execute_bulk_import } from "./bulkImportExecution";
+
 const {
   convert_bulk_import_record_to_entity_input_mock,
   convert_bulk_import_record_with_name_resolution_mock,
@@ -33,8 +35,6 @@ vi.mock("$lib/presentation/logic/bulkImportNameResolution", () => ({
   validate_bulk_import_required_fields:
     validate_bulk_import_required_fields_mock,
 }));
-
-import { execute_bulk_import } from "./bulkImportExecution";
 
 describe("bulkImportExecution", () => {
   beforeEach(() => {

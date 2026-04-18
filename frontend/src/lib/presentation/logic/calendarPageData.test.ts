@@ -2,8 +2,15 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { Organization } from "$lib/core/entities/Organization";
 import type { UserScopeProfile } from "$lib/core/interfaces/ports";
+import { ANY_VALUE } from "$lib/core/interfaces/ports";
 import type { ScalarInput } from "$lib/core/types/DomainScalars";
 import type { UseCasesContainer } from "$lib/infrastructure/container";
+
+import {
+  load_calendar_organization_bundle,
+  load_calendar_organizations,
+  sync_and_load_calendar_events,
+} from "./calendarPageData";
 
 const { get_current_year_date_range_mock } = vi.hoisted(() => ({
   get_current_year_date_range_mock: vi.fn(),
@@ -12,14 +19,6 @@ const { get_current_year_date_range_mock } = vi.hoisted(() => ({
 vi.mock("$lib/presentation/logic/calendarPageState", () => ({
   get_current_year_date_range: get_current_year_date_range_mock,
 }));
-
-import { ANY_VALUE } from "$lib/core/interfaces/ports";
-
-import {
-  load_calendar_organization_bundle,
-  load_calendar_organizations,
-  sync_and_load_calendar_events,
-} from "./calendarPageData";
 
 function create_organization(
   overrides: Partial<ScalarInput<Organization>> = {},
@@ -31,7 +30,7 @@ function create_organization(
     name: "Premier League",
     description: "League",
     sport_id: "sport-1",
-    founded_date: null,
+    founded_date: "",
     contact_email: "info@example.test",
     contact_phone: "",
     address: "Main Road",
@@ -55,41 +54,46 @@ describe("calendarPageData", () => {
       create_organization({ id: "organization-1" }),
       create_organization({ id: "organization-2", name: "Regional League" }),
     ];
-    const organization_use_cases =
-      {
-        create: vi.fn(),
-        delete: vi.fn(),
-        delete_organizations: vi.fn(),
-        get_by_id: vi.fn(),
-        list: vi
-          .fn()
-          .mockResolvedValueOnce({ success: false })
-          .mockResolvedValueOnce({
-            success: true,
-            data: { items: organizations },
-          })
-          .mockResolvedValueOnce({
-            success: true,
-            data: { items: organizations },
-          }),
-        update: vi.fn(),
-      } as UseCasesContainer["organization_use_cases"];
+    const organization_use_cases = {
+      create: vi.fn(),
+      delete: vi.fn(),
+      delete_organizations: vi.fn(),
+      get_by_id: vi.fn(),
+      list: vi
+        .fn()
+        .mockResolvedValueOnce({ success: false })
+        .mockResolvedValueOnce({
+          success: true,
+          data: { items: organizations },
+        })
+        .mockResolvedValueOnce({
+          success: true,
+          data: { items: organizations },
+        }),
+      update: vi.fn(),
+    } as UseCasesContainer["organization_use_cases"];
 
     await expect(
       load_calendar_organizations({
-        current_profile: null,
+        current_profile_state: { status: "missing" },
         organization_use_cases,
       }),
     ).resolves.toEqual([]);
     await expect(
       load_calendar_organizations({
-        current_profile: create_auth_profile("organization-1"),
+        current_profile_state: {
+          status: "present",
+          profile: create_auth_profile("organization-1"),
+        },
         organization_use_cases,
       }),
     ).resolves.toEqual([organizations[0]]);
     await expect(
       load_calendar_organizations({
-        current_profile: create_auth_profile(ANY_VALUE),
+        current_profile_state: {
+          status: "present",
+          profile: create_auth_profile(ANY_VALUE),
+        },
         organization_use_cases,
       }),
     ).resolves.toEqual(organizations);
@@ -104,8 +108,10 @@ describe("calendarPageData", () => {
       get_calendar_events: vi
         .fn()
         .mockResolvedValueOnce({ success: true, data: [{ id: "event-1" }] }),
-      sync_competitions_to_activities: vi.fn().mockResolvedValue(undefined),
-      sync_fixtures_to_activities: vi.fn().mockResolvedValue(undefined),
+      sync_competitions_to_activities: vi
+        .fn()
+        .mockImplementation(async () => {}),
+      sync_fixtures_to_activities: vi.fn().mockImplementation(async () => {}),
     };
 
     await expect(
@@ -135,7 +141,9 @@ describe("calendarPageData", () => {
     });
     const use_cases = {
       activity_category_use_cases: {
-        ensure_default_categories_exist: vi.fn().mockResolvedValue(undefined),
+        ensure_default_categories_exist: vi
+          .fn()
+          .mockImplementation(async () => {}),
         list_by_organization: vi.fn().mockResolvedValueOnce({
           success: true,
           data: { items: [{ id: "category-1" }] },
@@ -143,8 +151,10 @@ describe("calendarPageData", () => {
       },
       activity_use_cases: {
         get_calendar_events: vi.fn().mockResolvedValueOnce({ success: false }),
-        sync_competitions_to_activities: vi.fn().mockResolvedValue(undefined),
-        sync_fixtures_to_activities: vi.fn().mockResolvedValue(undefined),
+        sync_competitions_to_activities: vi
+          .fn()
+          .mockImplementation(async () => {}),
+        sync_fixtures_to_activities: vi.fn().mockImplementation(async () => {}),
       },
       competition_use_cases: {
         list: vi.fn().mockResolvedValueOnce({

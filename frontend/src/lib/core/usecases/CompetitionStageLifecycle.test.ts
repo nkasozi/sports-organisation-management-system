@@ -1,6 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { CompetitionFormat } from "../entities/CompetitionFormat";
+import {
+  create_default_group_stage_config,
+  create_default_knockout_stage_config,
+  create_default_league_config,
+} from "../entities/CompetitionFormatFactories";
 import type { CompetitionStage } from "../entities/CompetitionStage";
 import type { CompetitionFormatRepository } from "../interfaces/ports";
 import type { CompetitionStageRepository } from "../interfaces/ports";
@@ -68,17 +73,9 @@ function create_test_format(
     description: "League format",
     format_type: "league",
     tie_breakers: ["goal_difference"],
-    group_stage_config: null,
-    knockout_stage_config: null,
-    league_config: {
-      number_of_rounds: 2,
-      points_for_win: 3,
-      points_for_draw: 1,
-      points_for_loss: 0,
-      promotion_spots: 0,
-      relegation_spots: 0,
-      playoff_spots: 0,
-    },
+    group_stage_config: create_default_group_stage_config(),
+    knockout_stage_config: create_default_knockout_stage_config(),
+    league_config: { ...create_default_league_config(), number_of_rounds: 2 },
     points_config: {
       points_for_win: 3,
       points_for_draw: 1,
@@ -170,9 +167,7 @@ describe("CompetitionStageLifecycle", () => {
     vi.mocked(stage_repository.find_by_competition).mockResolvedValue({
       success: true,
       data: {
-        items: [
-          create_test_stage(),
-        ],
+        items: [create_test_stage()],
         total_count: 1,
         page_number: 1,
         page_size: 100,

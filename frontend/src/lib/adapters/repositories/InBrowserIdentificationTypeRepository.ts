@@ -95,11 +95,24 @@ export class InBrowserIdentificationTypeRepository
   }
 }
 
-let singleton_instance: InBrowserIdentificationTypeRepository | null = null;
+type IdentificationTypeRepositoryState =
+  | { status: "uninitialized" }
+  | {
+      status: "ready";
+      repository: InBrowserIdentificationTypeRepository;
+    };
+
+let identification_type_repository_state: IdentificationTypeRepositoryState = {
+  status: "uninitialized",
+};
 
 export function get_identification_type_repository(): IdentificationTypeRepository {
-  if (!singleton_instance) {
-    singleton_instance = new InBrowserIdentificationTypeRepository();
+  if (identification_type_repository_state.status === "ready") {
+    return identification_type_repository_state.repository;
   }
-  return singleton_instance;
+
+  const repository = new InBrowserIdentificationTypeRepository();
+  identification_type_repository_state = { status: "ready", repository };
+
+  return repository;
 }

@@ -3,7 +3,6 @@ import type {
   EntityMetadata,
   FieldMetadata,
 } from "$lib/core/entities/BaseEntity";
-import type { UserScopeProfile } from "$lib/core/interfaces/ports";
 import type { EntityCrudHandlers } from "$lib/core/types/EntityHandlers";
 import type { SubEntityFilter } from "$lib/core/types/SubEntityFilter";
 import { get_authorization_adapter } from "$lib/infrastructure/AuthorizationProvider";
@@ -16,22 +15,32 @@ import {
   extract_items_from_result_data,
   merge_entity_list_filters,
 } from "$lib/presentation/logic/dynamicListLogic";
+import type {
+  ListAuthorizationMetadataState,
+  ListAuthorizationProfileState,
+} from "$lib/presentation/logic/listAuthorizationFilterLogic";
 
 interface DynamicEntityListResult {
   success: boolean;
-  data?: BaseEntity[] | { items: BaseEntity[]; total_count: number } | null;
+  data?: BaseEntity[] | { items: BaseEntity[]; total_count: number };
   error?: string;
   error_message?: string;
 }
 
 interface DynamicEntityListCommand {
-  crud_handlers: EntityCrudHandlers | null;
-  current_profile: UserScopeProfile | null;
+  crud_handlers?: EntityCrudHandlers;
+  current_profile_state: ListAuthorizationProfileState;
   display_name: string;
-  entity_metadata: EntityMetadata | null;
+  entity_metadata?: EntityMetadata;
   entity_type: string;
-  raw_token: string | null;
-  sub_entity_filter: SubEntityFilter | null;
+  raw_token: string;
+  sub_entity_filter?: SubEntityFilter;
+}
+
+function build_list_authorization_metadata_state(
+  entity_metadata: EntityMetadata,
+): ListAuthorizationMetadataState {
+  return { status: "present", entity_metadata };
 }
 
 function get_dynamic_entity_list_items(
@@ -61,9 +70,12 @@ export async function load_dynamic_entity_list_filter_options(
       next_options[field.field_name] = [];
       continue;
     }
-    const result = await use_cases_result.data.list(undefined, {
-      page_size: 100,
-    });
+    const result = await use_cases_result.data.list(
+      {},
+      {
+        page_size: 100,
+      },
+    );
     next_options[field.field_name] = get_dynamic_entity_list_items(
       result as DynamicEntityListResult,
     );
@@ -86,11 +98,11 @@ export async function load_dynamic_entity_list_entities(
     };
   }
   const auth_filter_result = build_entity_authorization_filter(
-    command.current_profile,
-    command.entity_metadata,
+    command.current_profile_state,
+    build_list_authorization_metadata_state(command.entity_metadata),
     command.entity_type,
   );
-  if (auth_filter_result.profile_missing) {
+  if (auth_filter_result.status === "profile_missing") {
     return {
       auth_profile_missing: true,
       entities: [],
@@ -121,7 +133,7 @@ export async function load_dynamic_entity_list_entities(
   }
   const filter = merge_entity_list_filters(
     build_filter_from_sub_entity_config(command.sub_entity_filter),
-    auth_filter_result.filter,
+    auth_filter_result.filter_state,
   );
   if (command.crud_handlers?.list) {
     const custom_list_result = await command.crud_handlers.list(filter, {

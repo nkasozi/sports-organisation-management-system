@@ -4,8 +4,8 @@ import type {
   Sport,
   UpdateSportInput,
 } from "../../core/entities/Sport";
-import type { ScalarValueInput } from "../../core/types/DomainScalars";
 import { validate_sport_input } from "../../core/entities/Sport";
+import type { ScalarValueInput } from "../../core/types/DomainScalars";
 import {
   create_sport as repo_create_sport,
   delete_sport as repo_delete_sport,
@@ -13,6 +13,7 @@ import {
   get_all_sports as repo_get_all_sports,
   get_sport_by_code as repo_get_sport_by_code,
   get_sport_by_id as repo_get_sport_by_id,
+  is_sport_not_found_by_code_error,
   update_sport as repo_update_sport,
 } from "../repositories/InBrowserSportRepository";
 
@@ -41,10 +42,10 @@ export async function get_sport_by_id(
   if (!id || id.trim() === "")
     return { success: false, error: "Sport ID is required" };
   try {
-    const sport = await repo_get_sport_by_id(id);
-    if (!sport)
-      return { success: false, error: `Sport with ID '${id}' not found` };
-    return { success: true, data: sport };
+    const sport_result = await repo_get_sport_by_id(id);
+    if (!sport_result.success)
+      return { success: false, error: sport_result.error };
+    return { success: true, data: sport_result.data };
   } catch (error) {
     console.error("[SportService] Failed to get sport by ID", {
       event: "failed_to_get_sport_by_id_failed",
@@ -60,10 +61,10 @@ async function get_sport_by_code(
   if (!code || code.trim() === "")
     return { success: false, error: "Sport code is required" };
   try {
-    const sport = await repo_get_sport_by_code(code);
-    if (!sport)
-      return { success: false, error: `Sport with code '${code}' not found` };
-    return { success: true, data: sport };
+    const sport_result = await repo_get_sport_by_code(code);
+    if (!sport_result.success)
+      return { success: false, error: sport_result.error };
+    return { success: true, data: sport_result.data };
   } catch (error) {
     console.error("[SportService] Failed to get sport by code", {
       event: "failed_to_get_sport_by_code_failed",
@@ -79,13 +80,20 @@ async function create_sport(
   const validation_errors = validate_sport_input(input);
   if (validation_errors.length > 0)
     return { success: false, error: validation_errors.join(", ") };
-  const existing_sport = await repo_get_sport_by_code(input.code);
-  if (existing_sport) {
+  const existing_sport_result = await repo_get_sport_by_code(input.code);
+  if (existing_sport_result.success) {
     return {
       success: false,
       error: `Sport with code '${input.code}' already exists`,
     };
   }
+
+  if (
+    !is_sport_not_found_by_code_error(existing_sport_result.error, input.code)
+  ) {
+    return { success: false, error: existing_sport_result.error };
+  }
+
   const result = await repo_create_sport(input);
   if (!result.success) {
     console.error("[SportService] Failed to create sport:", result.error);
@@ -101,22 +109,35 @@ async function update_sport(
   if (!id || id.trim() === "")
     return { success: false, error: "Sport ID is required" };
   try {
-    const existing_sport = await repo_get_sport_by_id(id);
-    if (!existing_sport)
-      return { success: false, error: `Sport with ID '${id}' not found` };
-    if (input.code && input.code !== existing_sport.code) {
-      const sport_with_code = await repo_get_sport_by_code(input.code);
-      if (sport_with_code && sport_with_code.id !== id) {
+    const existing_sport_result = await repo_get_sport_by_id(id);
+    if (!existing_sport_result.success)
+      return { success: false, error: existing_sport_result.error };
+    if (input.code && input.code !== existing_sport_result.data.code) {
+      const sport_with_code_result = await repo_get_sport_by_code(input.code);
+      if (
+        sport_with_code_result.success &&
+        sport_with_code_result.data.id !== id
+      ) {
         return {
           success: false,
           error: `Sport with code '${input.code}' already exists`,
         };
       }
+
+      if (
+        !sport_with_code_result.success &&
+        !is_sport_not_found_by_code_error(
+          sport_with_code_result.error,
+          input.code,
+        )
+      ) {
+        return { success: false, error: sport_with_code_result.error };
+      }
     }
-    const updated_sport = await repo_update_sport(id, input);
-    if (!updated_sport)
-      return { success: false, error: "Failed to update sport" };
-    return { success: true, data: updated_sport };
+    const updated_sport_result = await repo_update_sport(id, input);
+    if (!updated_sport_result.success)
+      return { success: false, error: updated_sport_result.error };
+    return { success: true, data: updated_sport_result.data };
   } catch (error) {
     console.error("[SportService] Failed to update sport", {
       event: "failed_to_update_sport_failed",

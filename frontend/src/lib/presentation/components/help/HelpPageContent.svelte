@@ -1,4 +1,6 @@
 <script lang="ts">
+    import type { HelpSectionExpansionState } from "$lib/presentation/logic/helpPageState";
+
     import {
         HELP_PAGE_DESCRIPTION,
         HELP_PAGE_TITLE,
@@ -8,8 +10,8 @@
     import HelpOverviewCards from "./HelpOverviewCards.svelte";
     import HelpSupportPanel from "./HelpSupportPanel.svelte";
 
-    export let expanded_faq_index: number | null;
-    export let expanded_guide_index: number | null;
+    export let expanded_faq_state: HelpSectionExpansionState;
+    export let expanded_guide_state: HelpSectionExpansionState;
     export let on_faq_toggle: (selected_index: number) => void;
     export let on_guide_toggle: (selected_index: number) => void;
 </script>
@@ -24,6 +26,6 @@
 </div>
 
 <HelpOverviewCards />
-<HelpGuideSection {expanded_guide_index} on_toggle={on_guide_toggle} />
-<HelpFaqSection {expanded_faq_index} on_toggle={on_faq_toggle} />
+<HelpGuideSection {expanded_guide_state} on_toggle={on_guide_toggle} />
+<HelpFaqSection {expanded_faq_state} on_toggle={on_faq_toggle} />
 <HelpSupportPanel />

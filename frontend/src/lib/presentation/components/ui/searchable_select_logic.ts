@@ -33,9 +33,9 @@ export function filter_select_options(
 export function find_select_option_by_value(
   options: readonly SelectOption[],
   value: string,
-): SelectOption | null {
+): SelectOption | undefined {
   const matched_option = options.find((option) => option.value === value);
-  return matched_option ?? null;
+  return matched_option;
 }
 
 export function clamp_index(index: number, min: number, max: number): number {
@@ -98,7 +98,7 @@ export function get_flat_index_for_grouped(
 export function get_display_input_value(
   is_open: boolean,
   query: string,
-  selected_option: SelectOption | null,
+  selected_option: SelectOption | undefined,
 ): string {
   if (is_open) return query;
   return selected_option ? selected_option.label : "";
@@ -119,7 +119,7 @@ export function get_highlighted_index_for_selected_value(
 }
 
 export function focus_input_cursor_to_end(
-  input_element: HTMLInputElement | null,
+  input_element: HTMLInputElement | undefined,
 ): Promise<void> {
   return Promise.resolve().then(() => {
     if (!input_element) return;
@@ -141,8 +141,8 @@ export function get_next_highlighted_index(
 }
 
 export function should_close_dropdown_from_pointer(
-  container_element: HTMLDivElement | null,
-  target_node: Node | null,
+  container_element: HTMLDivElement | undefined,
+  target_node: Node | undefined,
   is_open: boolean,
 ): boolean {
   if (!target_node || !container_element || !is_open) return false;

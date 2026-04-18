@@ -1,5 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import {
+  type DynamicEntityFormSubmitCommand,
+  submit_dynamic_entity_form,
+} from "./dynamicEntityFormSubmitFlow";
+
 const {
   check_if_player_transfer_is_being_approved_mock,
   execute_dynamic_form_transfer_membership_change_mock,
@@ -31,7 +36,18 @@ vi.mock("./dynamicFormLogic", () => ({
   validate_form_data_against_metadata: validate_form_data_against_metadata_mock,
 }));
 
-import { submit_dynamic_entity_form } from "./dynamicEntityFormSubmitFlow";
+function create_submit_command(
+  overrides: Partial<DynamicEntityFormSubmitCommand> = {},
+): DynamicEntityFormSubmitCommand {
+  return {
+    entity_type: "team",
+    form_data: {},
+    is_edit_mode: false,
+    permission_denied: false,
+    player_team_membership_use_cases: {} as never,
+    ...overrides,
+  };
+}
 
 describe("dynamicEntityFormSubmitFlow", () => {
   beforeEach(() => {
@@ -45,38 +61,25 @@ describe("dynamicEntityFormSubmitFlow", () => {
 
   it("returns an empty result when metadata is missing or the action is permission denied", async () => {
     await expect(
-      submit_dynamic_entity_form(
-        "team",
-        null,
-        {},
-        false,
-        null,
-        null,
-        false,
-        {} as never,
-      ),
+      submit_dynamic_entity_form(create_submit_command()),
     ).resolves.toEqual({
       validation_errors: {},
       save_error_message: "",
-      saved_entity: null,
+
       transfer_declined: false,
     });
 
     await expect(
       submit_dynamic_entity_form(
-        "team",
-        { fields: [] } as never,
-        {},
-        false,
-        null,
-        null,
-        true,
-        {} as never,
+        create_submit_command({
+          entity_metadata: { fields: [] } as never,
+          permission_denied: true,
+        }),
       ),
     ).resolves.toEqual({
       validation_errors: {},
       save_error_message: "",
-      saved_entity: null,
+
       transfer_declined: false,
     });
   });
@@ -89,19 +92,15 @@ describe("dynamicEntityFormSubmitFlow", () => {
 
     await expect(
       submit_dynamic_entity_form(
-        "team",
-        { fields: [] } as never,
-        { name: "" },
-        false,
-        null,
-        null,
-        false,
-        {} as never,
+        create_submit_command({
+          entity_metadata: { fields: [] } as never,
+          form_data: { name: "" },
+        }),
       ),
     ).resolves.toEqual({
       validation_errors: { name: "Required" },
       save_error_message: "",
-      saved_entity: null,
+
       transfer_declined: false,
     });
   });
@@ -120,36 +119,30 @@ describe("dynamicEntityFormSubmitFlow", () => {
 
     await expect(
       submit_dynamic_entity_form(
-        "team",
-        { fields: [] } as never,
-        { name: "Lions" },
-        false,
-        null,
-        null,
-        false,
-        {} as never,
+        create_submit_command({
+          entity_metadata: { fields: [] } as never,
+          form_data: { name: "Lions" },
+        }),
       ),
     ).resolves.toEqual({
       validation_errors: {},
       save_error_message: "create failed",
-      saved_entity: null,
+
       transfer_declined: false,
     });
     await expect(
       submit_dynamic_entity_form(
-        "team",
-        { fields: [] } as never,
-        { name: "Lions" },
-        true,
-        { id: "team-1" } as never,
-        null,
-        false,
-        {} as never,
+        create_submit_command({
+          entity_metadata: { fields: [] } as never,
+          form_data: { name: "Lions" },
+          is_edit_mode: true,
+          entity_data: { id: "team-1" } as never,
+        }),
       ),
     ).resolves.toEqual({
       validation_errors: {},
       save_error_message: "update failed",
-      saved_entity: null,
+
       transfer_declined: false,
     });
   });
@@ -171,14 +164,13 @@ describe("dynamicEntityFormSubmitFlow", () => {
 
     await expect(
       submit_dynamic_entity_form(
-        "PlayerTeamTransferHistory",
-        { fields: [] } as never,
-        { status: "approved" },
-        true,
-        { id: "transfer-1", status: "pending" } as never,
-        null,
-        false,
-        {} as never,
+        create_submit_command({
+          entity_type: "PlayerTeamTransferHistory",
+          entity_metadata: { fields: [] } as never,
+          form_data: { status: "approved" },
+          is_edit_mode: true,
+          entity_data: { id: "transfer-1", status: "pending" } as never,
+        }),
       ),
     ).resolves.toEqual({
       validation_errors: {},

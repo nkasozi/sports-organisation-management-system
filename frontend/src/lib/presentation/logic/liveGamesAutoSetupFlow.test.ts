@@ -1,9 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { handle_missing_fixture_details } from "./liveGamesAutoSetupFlow";
+
 const { auto_create_fixture_details_setup_mock, publish_checks_mock } =
   vi.hoisted(() => ({
     auto_create_fixture_details_setup_mock: vi.fn(),
-    publish_checks_mock: vi.fn().mockResolvedValue(undefined),
+    publish_checks_mock: vi.fn().mockImplementation(async () => {}),
   }));
 
 vi.mock("$lib/core/services/fixtureDetailsAutoSetup", () => ({
@@ -20,8 +22,6 @@ vi.mock("./liveGamesStartFlowShared", async () => {
   };
 });
 
-import { handle_missing_fixture_details } from "./liveGamesAutoSetupFlow";
-
 describe("liveGamesAutoSetupFlow", () => {
   function create_dependencies() {
     return {
@@ -30,8 +30,8 @@ describe("liveGamesAutoSetupFlow", () => {
       can_access_route: vi.fn(() => false),
       update_checks: vi.fn(),
       set_is_starting: vi.fn(),
-      goto: vi.fn(async () => undefined),
-      restart: vi.fn(async () => undefined),
+      goto: vi.fn(async () => {}),
+      restart: vi.fn(async () => {}),
       fixture_details_setup_use_cases: {} as never,
       jersey_color_use_cases: {} as never,
       official_use_cases: {} as never,
@@ -55,14 +55,14 @@ describe("liveGamesAutoSetupFlow", () => {
         check_name: "officials",
         status: "failed",
         message: "Original failure",
-        fix_suggestion: null,
+        fix_suggestion: "",
       },
     ];
     const officials_check = {
       check_name: "officials",
       status: "failed",
       message: "Original failure",
-      fix_suggestion: null,
+      fix_suggestion: "",
     };
 
     await expect(
@@ -92,7 +92,7 @@ describe("liveGamesAutoSetupFlow", () => {
         check_name: "officials",
         status: "failed",
         message: "Missing",
-        fix_suggestion: null,
+        fix_suggestion: "",
       },
     ];
 
@@ -104,7 +104,7 @@ describe("liveGamesAutoSetupFlow", () => {
           check_name: "officials",
           status: "failed",
           message: "Missing",
-          fix_suggestion: null,
+          fix_suggestion: "",
         } as never,
         dependencies as never,
       ),
@@ -129,7 +129,7 @@ describe("liveGamesAutoSetupFlow", () => {
         check_name: "officials",
         status: "failed",
         message: "Missing",
-        fix_suggestion: null,
+        fix_suggestion: "",
       },
     ];
 
@@ -141,7 +141,7 @@ describe("liveGamesAutoSetupFlow", () => {
           check_name: "officials",
           status: "failed",
           message: "Missing",
-          fix_suggestion: null,
+          fix_suggestion: "",
         } as never,
         dependencies as never,
       ),
@@ -172,7 +172,7 @@ describe("liveGamesAutoSetupFlow", () => {
         check_name: "officials",
         status: "failed",
         message: "Missing",
-        fix_suggestion: null,
+        fix_suggestion: "",
       },
     ];
 
@@ -184,7 +184,7 @@ describe("liveGamesAutoSetupFlow", () => {
           check_name: "officials",
           status: "failed",
           message: "Missing",
-          fix_suggestion: null,
+          fix_suggestion: "",
         } as never,
         dependencies as never,
       ),

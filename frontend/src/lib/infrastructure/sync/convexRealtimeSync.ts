@@ -13,12 +13,16 @@ export interface TableChangeInfo {
   latest_modified_at: NonNullable<RemoteTableState["latest_modified_at"]>;
 }
 
-export interface TableWatchStatus {
+interface TableWatchStatus {
   table_name: string;
   remote_record_count: number;
   remote_latest_timestamp: RemoteTableState["latest_modified_at"] | "";
   pull_count: number;
 }
+
+export type TableStatusLookupResult =
+  | { status: "found"; table_status: TableWatchStatus }
+  | { status: "missing" };
 
 export type PullTableFunction = (
   table_name: string,
@@ -38,15 +42,15 @@ export interface ConvexRealtimeSync {
   stop(): boolean;
   is_running(): boolean;
   get_watched_tables(): string[];
-  get_table_status(table_name: string): TableWatchStatus | null;
+  get_table_status(table_name: string): TableStatusLookupResult;
   get_all_table_statuses(): Record<
     string,
-    RemoteTableState["latest_modified_at"]
+    TableWatchStatus["remote_latest_timestamp"]
   >;
 }
 
 interface TableTrackingState {
-  latest_timestamp: RemoteTableState["latest_modified_at"];
+  latest_timestamp: TableWatchStatus["remote_latest_timestamp"];
   remote_record_count: number;
   pull_count: number;
 }
@@ -68,7 +72,7 @@ function create_table_change_handler(
 
     current_state.remote_record_count = change_info.record_count;
 
-    if (previous_timestamp === null) {
+    if (previous_timestamp === "") {
       current_state.latest_timestamp = new_timestamp;
       return;
     }
@@ -108,7 +112,7 @@ export function create_convex_realtime_sync(
 
     for (const table_name of deps.table_names) {
       table_tracking.set(table_name, {
-        latest_timestamp: null,
+        latest_timestamp: "",
         remote_record_count: 0,
         pull_count: 0,
       });
@@ -164,23 +168,29 @@ export function create_convex_realtime_sync(
     return [...deps.table_names];
   }
 
-  function get_table_status(table_name: string): TableWatchStatus | null {
+  function get_table_status(table_name: string): TableStatusLookupResult {
     const state = table_tracking.get(table_name);
-    if (!state) return null;
+    if (!state) {
+      return { status: "missing" };
+    }
 
     return {
-      table_name,
-      remote_record_count: state.remote_record_count,
-      remote_latest_timestamp: state.latest_timestamp ?? "",
-      pull_count: state.pull_count,
+      status: "found",
+      table_status: {
+        table_name,
+        remote_record_count: state.remote_record_count,
+        remote_latest_timestamp: state.latest_timestamp ?? "",
+        pull_count: state.pull_count,
+      },
     };
   }
 
   function get_all_table_statuses_map(): Record<
     string,
-    RemoteTableState["latest_modified_at"]
+    TableWatchStatus["remote_latest_timestamp"]
   > {
-    const result: Record<string, RemoteTableState["latest_modified_at"]> = {};
+    const result: Record<string, TableWatchStatus["remote_latest_timestamp"]> =
+      {};
     for (const [table_name, state] of table_tracking.entries()) {
       result[table_name] = state.latest_timestamp;
     }

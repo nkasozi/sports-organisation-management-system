@@ -1,12 +1,14 @@
 import type { CompetitionFormat } from "$lib/core/entities/CompetitionFormat";
 import type { Organization } from "$lib/core/entities/Organization";
 import type { Sport } from "$lib/core/entities/Sport";
-import type { UserScopeProfile } from "$lib/core/interfaces/ports";
 import { get_authorization_adapter } from "$lib/infrastructure/AuthorizationProvider";
 import type { SelectOption } from "$lib/presentation/components/ui/SelectField.svelte";
 import { ensure_auth_profile } from "$lib/presentation/logic/authGuard";
 
-import type { CompetitionCreatePageDependencies } from "./competitionCreatePageData";
+import type {
+  CompetitionCreatePageDependencies,
+  CompetitionCreateProfileState,
+} from "./competitionCreatePageData";
 import {
   load_competition_create_formats,
   load_competition_create_organizations,
@@ -14,11 +16,19 @@ import {
   load_competition_create_team_options,
 } from "./competitionCreatePageData";
 
+export type CompetitionCreateSelectedSportState =
+  | { status: "missing" }
+  | { status: "present"; sport: Sport };
+
+export type CompetitionCreateRawTokenState =
+  | { status: "missing" }
+  | { status: "present"; value: string };
+
 export async function initialize_competition_create_page(command: {
-  current_auth_profile: UserScopeProfile | null;
+  current_auth_profile_state: CompetitionCreateProfileState;
   dependencies: CompetitionCreatePageDependencies;
   is_organization_restricted: boolean;
-  raw_token: string | null;
+  raw_token_state: CompetitionCreateRawTokenState;
 }): Promise<{
   access_denied: boolean;
   error_message: string;
@@ -37,10 +47,10 @@ export async function initialize_competition_create_page(command: {
     };
   }
 
-  if (command.raw_token) {
+  if (command.raw_token_state.status === "present") {
     const authorization_check =
       await get_authorization_adapter().check_entity_authorized(
-        command.raw_token,
+        command.raw_token_state.value,
         "competition",
         "create",
       );
@@ -59,7 +69,7 @@ export async function initialize_competition_create_page(command: {
   }
 
   const organizations_result = await load_competition_create_organizations({
-    current_auth_profile: command.current_auth_profile,
+    current_auth_profile_state: command.current_auth_profile_state,
     dependencies: command.dependencies,
     is_organization_restricted: command.is_organization_restricted,
   });
@@ -80,27 +90,31 @@ export async function load_competition_create_organization_state(command: {
 }): Promise<{
   competition_format_options: SelectOption[];
   competition_formats: CompetitionFormat[];
-  selected_sport: Sport | null;
+  selected_sport_state: CompetitionCreateSelectedSportState;
   team_options: SelectOption[];
 }> {
-  const [team_options, formats_result, selected_sport] = await Promise.all([
-    load_competition_create_team_options(
-      command.organization_id,
-      command.dependencies,
-    ),
-    load_competition_create_formats(
-      command.organization_id,
-      command.dependencies,
-    ),
-    load_competition_create_sport(
-      command.organization_id,
-      command.organizations,
-    ),
-  ]);
+  const [team_options, formats_result, selected_sport_result] =
+    await Promise.all([
+      load_competition_create_team_options(
+        command.organization_id,
+        command.dependencies,
+      ),
+      load_competition_create_formats(
+        command.organization_id,
+        command.dependencies,
+      ),
+      load_competition_create_sport(
+        command.organization_id,
+        command.organizations,
+      ),
+    ]);
   return {
     team_options,
     competition_formats: formats_result.competition_formats,
     competition_format_options: formats_result.competition_format_options,
-    selected_sport,
+    selected_sport_state:
+      selected_sport_result.success && selected_sport_result.data
+        ? { status: "present", sport: selected_sport_result.data }
+        : { status: "missing" },
   };
 }

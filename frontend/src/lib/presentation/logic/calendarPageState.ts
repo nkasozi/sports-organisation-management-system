@@ -2,7 +2,10 @@ import type {
   Activity,
   CreateActivityInput,
 } from "$lib/core/entities/Activity";
-import { DEFAULT_REMINDERS } from "$lib/core/entities/Activity";
+import {
+  DEFAULT_REMINDERS,
+  NO_ACTIVITY_RECURRENCE,
+} from "$lib/core/entities/Activity";
 import type { ActivityCategory } from "$lib/core/entities/ActivityCategory";
 
 export interface ActivityFormValues {
@@ -121,16 +124,16 @@ export function build_manual_activity_input(
     end_datetime: activity_datetimes.end_datetime,
     is_all_day: activity_form_values.is_all_day,
     location: activity_form_values.location,
-    venue_id: null,
+    venue_id: "",
     team_ids: [],
-    competition_id: null,
-    fixture_id: null,
+    competition_id: "",
+    fixture_id: "",
     source_type: "manual",
-    source_id: null,
+    source_id: "",
     status: "scheduled",
-    recurrence: null,
+    recurrence: NO_ACTIVITY_RECURRENCE,
     reminders: [...DEFAULT_REMINDERS],
-    color_override: null,
+    color_override: "",
     notes: "",
   };
 }

@@ -1,6 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { create_auth_token_payload_core } from "$lib/core/interfaces/ports";
+import {
+  create_failure_result,
+  create_success_result,
+} from "$lib/core/types/Result";
 
 import {
   ClerkAuthenticationAdapter,
@@ -35,26 +39,35 @@ function create_auth_token_input(
 
   expect(result.success).toBe(true);
 
-  if (!result.success) {
-    return undefined as never;
-  }
-
-  return result.data;
+  return (
+    result as {
+      success: true;
+      data: ReturnType<typeof create_auth_token_payload_core> extends infer T
+        ? T extends { success: true; data: infer TData }
+          ? TData
+          : never
+        : never;
+    }
+  ).data;
 }
 
 function create_mock_clerk_session_provider(
   overrides?: Partial<ClerkSessionProvider>,
 ): ClerkSessionProvider {
   return {
-    get_session_token: vi.fn().mockResolvedValue("mock-clerk-jwt-token-abc123"),
-    get_current_user: vi.fn().mockReturnValue({
-      id: "clerk-user-123",
-      email_address: "testuser@example.com",
-      full_name: "Test User",
-      first_name: "Test",
-      last_name: "User",
-      image_url: "https://img.clerk.com/avatar.png",
-    }),
+    get_session_token: vi
+      .fn()
+      .mockResolvedValue(create_success_result("mock-clerk-jwt-token-abc123")),
+    get_current_user: vi.fn().mockReturnValue(
+      create_success_result({
+        id: "clerk-user-123",
+        email_address: "testuser@example.com",
+        full_name: "Test User",
+        first_name: "Test",
+        last_name: "User",
+        image_url: "https://img.clerk.com/avatar.png",
+      }),
+    ),
     is_signed_in: vi.fn().mockReturnValue(true),
     ...overrides,
   } as ClerkSessionProvider;
@@ -88,7 +101,13 @@ describe("ClerkAuthenticationAdapter", () => {
 
     it("should return failure when no clerk session is available", async () => {
       const no_session_provider = create_mock_clerk_session_provider({
-        get_session_token: vi.fn().mockResolvedValue(null),
+        get_session_token: vi
+          .fn()
+          .mockResolvedValue(
+            create_failure_result(
+              "No active Clerk session - cannot generate token",
+            ),
+          ),
         is_signed_in: vi.fn().mockReturnValue(false),
       });
       const no_session_adapter = new ClerkAuthenticationAdapter(
@@ -136,8 +155,14 @@ describe("ClerkAuthenticationAdapter", () => {
     it("should return invalid result when clerk user is not signed in", async () => {
       const signed_out_provider = create_mock_clerk_session_provider({
         is_signed_in: vi.fn().mockReturnValue(false),
-        get_current_user: vi.fn().mockReturnValue(null),
-        get_session_token: vi.fn().mockResolvedValue(null),
+        get_current_user: vi
+          .fn()
+          .mockReturnValue(create_failure_result("Clerk user is unavailable")),
+        get_session_token: vi
+          .fn()
+          .mockResolvedValue(
+            create_failure_result("No Clerk session available"),
+          ),
       });
       const signed_out_adapter = new ClerkAuthenticationAdapter(
         signed_out_provider,
@@ -151,10 +176,12 @@ describe("ClerkAuthenticationAdapter", () => {
       expect(result.data.error_message).toBeDefined();
     });
 
-    it("should return invalid result when clerk user is null", async () => {
+    it("should return invalid result when clerk user is unavailable", async () => {
       const no_user_provider = create_mock_clerk_session_provider({
         is_signed_in: vi.fn().mockReturnValue(true),
-        get_current_user: vi.fn().mockReturnValue(null),
+        get_current_user: vi
+          .fn()
+          .mockReturnValue(create_failure_result("Clerk user is unavailable")),
       });
       const no_user_adapter = new ClerkAuthenticationAdapter(no_user_provider);
 
@@ -185,13 +212,15 @@ describe("ClerkAuthenticationAdapter", () => {
           .fn()
           .mockReturnValueOnce(false)
           .mockReturnValueOnce(true),
-        get_current_user: vi.fn().mockReturnValue({
-          id: "clerk-user-123",
-          email_address: "testuser@example.com",
-          full_name: "Test User",
-          first_name: "Test",
-          last_name: "User",
-        }),
+        get_current_user: vi.fn().mockReturnValue(
+          create_success_result({
+            id: "clerk-user-123",
+            email_address: "testuser@example.com",
+            full_name: "Test User",
+            first_name: "Test",
+            last_name: "User",
+          }),
+        ),
       });
       const flaky_adapter = new ClerkAuthenticationAdapter(flaky_provider);
 

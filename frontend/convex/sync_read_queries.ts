@@ -10,6 +10,11 @@ import {
   validate_table_name,
 } from "./lib/sync_validation";
 
+const RECORD_LOOKUP_FOUND_STATUS = "found";
+const RECORD_LOOKUP_NOT_FOUND_STATUS = "not_found";
+const RECORD_LOOKUP_FAILURE_STATUS = "failure";
+const EMPTY_ERROR_MESSAGE = "";
+
 export const get_changes_since = query({
   args: { table_name: v.string(), since_timestamp: v.string() },
   handler: async (ctx, args) => {
@@ -38,7 +43,7 @@ export const get_changes_since = query({
           (record.synced_at || record.updated_at || record.created_at) >
           args.since_timestamp,
       ),
-      error: null,
+      error: EMPTY_ERROR_MESSAGE,
     };
   },
 });
@@ -71,14 +76,33 @@ export const get_record_by_local_id = query({
   args: { table_name: v.string(), local_id: v.string() },
   handler: async (ctx, args) => {
     const table_validation = validate_table_name(args.table_name);
-    if (!table_validation.success) return null;
+    if (!table_validation.success) {
+      return {
+        status: RECORD_LOOKUP_FAILURE_STATUS,
+        error: table_validation.error,
+      };
+    }
+
     const auth_result = await require_auth(ctx);
-    if (!auth_result.success) return null;
+    if (!auth_result.success) {
+      return {
+        status: RECORD_LOOKUP_FAILURE_STATUS,
+        error: "Access denied",
+      };
+    }
+
     const record = await ctx.db
       .query(args.table_name as any)
       .withIndex("by_local_id", (q) => q.eq("local_id", args.local_id))
       .first();
-    if (!record || check_is_global_table(args.table_name)) return record;
+    if (!record) {
+      return { status: RECORD_LOOKUP_NOT_FOUND_STATUS };
+    }
+
+    if (check_is_global_table(args.table_name)) {
+      return { status: RECORD_LOOKUP_FOUND_STATUS, record };
+    }
+
     const filtered = filter_records_by_organization_scope(
       [record],
       auth_result.data,
@@ -88,6 +112,14 @@ export const get_record_by_local_id = query({
         get_entity_type_for_table(args.table_name),
       ),
     );
-    return filtered.length > 0 ? filtered[0] : null;
+
+    if (filtered.length === 0) {
+      return { status: RECORD_LOOKUP_NOT_FOUND_STATUS };
+    }
+
+    return {
+      status: RECORD_LOOKUP_FOUND_STATUS,
+      record: filtered[0],
+    };
   },
 });

@@ -8,9 +8,17 @@ const SYNC_IMAGE_LIMIT_MESSAGE_SUFFIX = "Upload a smaller image and try again.";
 export const MAX_SYNCABLE_IMAGE_FILE_BYTES = 700 * ONE_KIBIBYTE;
 
 interface SyncableImageFileValidationResult {
-  is_valid: boolean;
-  error_message: string | null;
+  is_valid: true;
 }
+
+interface SyncableImageFileValidationFailureResult {
+  is_valid: false;
+  error_message: string;
+}
+
+type ValidateSyncableImageFileResult =
+  | SyncableImageFileValidationResult
+  | SyncableImageFileValidationFailureResult;
 
 export function format_syncable_file_size(size_bytes: number): string {
   if (size_bytes % ONE_MEBIBYTE === 0) {
@@ -28,7 +36,7 @@ export function build_syncable_image_file_size_error(
 export function validate_syncable_image_file(
   file: Pick<File, "size" | "type">,
   max_size_bytes: number = MAX_SYNCABLE_IMAGE_FILE_BYTES,
-): SyncableImageFileValidationResult {
+): ValidateSyncableImageFileResult {
   if (!file.type.startsWith(IMAGE_MIME_TYPE_PREFIX)) {
     return {
       is_valid: false,
@@ -43,5 +51,5 @@ export function validate_syncable_image_file(
     };
   }
 
-  return { is_valid: true, error_message: null };
+  return { is_valid: true };
 }

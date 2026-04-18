@@ -50,8 +50,6 @@ describe("dynamicEntityListControllerFields", () => {
         {
           foreign_key_field: "team_id",
           foreign_key_value: "team-1",
-          holder_type_field: null,
-          holder_type_value: null,
         } as never,
       ),
     ).toEqual([
@@ -82,7 +80,7 @@ describe("dynamicEntityListControllerFields", () => {
       ],
     };
 
-    expect(get_dynamic_entity_list_available_fields(null, null)).toEqual([]);
+    expect(get_dynamic_entity_list_available_fields()).toEqual([]);
     expect(
       get_dynamic_entity_list_field_metadata_by_name(
         entity_metadata as never,

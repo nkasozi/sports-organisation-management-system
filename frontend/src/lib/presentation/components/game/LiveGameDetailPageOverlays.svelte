@@ -37,7 +37,9 @@
 </script>
 
 <LiveGameStartConfirmationDialog
-    fixture={page_state.fixture}
+    pending_start_fixture_state={page_state.fixture
+        ? { status: "confirming", fixture: page_state.fixture }
+        : { status: "idle" }}
     team_names={view_state.team_names}
     on_cancel={on_close_start}
     on_confirm={() => void on_start_confirm()}

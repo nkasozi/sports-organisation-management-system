@@ -6,7 +6,6 @@ import type {
   Player,
   UpdatePlayerInput,
 } from "../../core/entities/Player";
-import type { ScalarValueInput } from "../../core/types/DomainScalars";
 import { ENTITY_STATUS } from "../../core/entities/StatusConstants";
 import type {
   PlayerFilter,
@@ -14,6 +13,7 @@ import type {
   PlayerTeamMembershipRepository,
   QueryOptions,
 } from "../../core/interfaces/ports";
+import type { ScalarValueInput } from "../../core/types/DomainScalars";
 import type { PaginatedAsyncResult } from "../../core/types/Result";
 import {
   create_failure_result,
@@ -53,10 +53,10 @@ export class InBrowserPlayerRepository
     filter?: PlayerFilter,
     options?: QueryOptions,
   ): PaginatedAsyncResult<Player> {
-    if (filter) {
+    if (filter && Object.keys(filter).length > 0) {
       return this.find_by_filter(filter, options);
     }
-    return super.find_all(undefined, options);
+    return super.find_all({}, options);
   }
 
   protected create_entity_from_input(
@@ -181,14 +181,24 @@ export class InBrowserPlayerRepository
   }
 }
 
-let singleton_instance: InBrowserPlayerRepository | null = null;
+type PlayerRepositoryState =
+  | { status: "uninitialized" }
+  | { status: "ready"; repository: InBrowserPlayerRepository };
+
+let player_repository_state: PlayerRepositoryState = {
+  status: "uninitialized",
+};
 
 export function get_player_repository(): PlayerRepository {
-  if (!singleton_instance) {
-    const membership_repository = get_player_team_membership_repository();
-    singleton_instance = new InBrowserPlayerRepository(membership_repository);
+  if (player_repository_state.status === "ready") {
+    return player_repository_state.repository;
   }
-  return singleton_instance;
+
+  const membership_repository = get_player_team_membership_repository();
+  const repository = new InBrowserPlayerRepository(membership_repository);
+  player_repository_state = { status: "ready", repository };
+
+  return repository;
 }
 
 export async function reset_player_repository(): Promise<void> {

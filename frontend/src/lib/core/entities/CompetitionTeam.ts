@@ -17,8 +17,8 @@ export interface CompetitionTeam extends BaseEntity {
   competition_id: EntityId;
   team_id: EntityId;
   registration_date: IsoDateString;
-  seed_number: number | null;
-  group_name: Name | null;
+  seed_number: number | "";
+  group_name: Name | "";
   points: number;
   goals_for: number;
   goals_against: number;
@@ -59,8 +59,8 @@ export function create_empty_competition_team_input(
     registration_date: new Date()
       .toISOString()
       .split("T")[0] as CreateCompetitionTeamInput["registration_date"],
-    seed_number: null,
-    group_name: null,
+    seed_number: "",
+    group_name: "",
     notes: "",
     status: "registered",
   };

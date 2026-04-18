@@ -184,13 +184,23 @@ function create_default_officials(): import("$lib/core/types/DomainScalars").Sca
   ];
 }
 
-let singleton_instance: InBrowserOfficialRepository | null = null;
+type OfficialRepositoryState =
+  | { status: "uninitialized" }
+  | { status: "ready"; repository: InBrowserOfficialRepository };
+
+let official_repository_state: OfficialRepositoryState = {
+  status: "uninitialized",
+};
 
 export function get_official_repository(): OfficialRepository {
-  if (!singleton_instance) {
-    singleton_instance = new InBrowserOfficialRepository();
+  if (official_repository_state.status === "ready") {
+    return official_repository_state.repository;
   }
-  return singleton_instance;
+
+  const repository = new InBrowserOfficialRepository();
+  official_repository_state = { status: "ready", repository };
+
+  return repository;
 }
 export async function reset_official_repository(): Promise<void> {
   const repository = get_official_repository() as InBrowserOfficialRepository;

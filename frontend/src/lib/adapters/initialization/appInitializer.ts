@@ -154,10 +154,13 @@ export async function initialize_app_data(
       table_name: string,
     ): Promise<void> => {
       if (table_name !== "organization_settings") return;
-      const org_id = branding_store.get_current_org_id();
-      if (!org_id) return;
+      const organization_context_state =
+        branding_store.get_current_org_id_state();
+      if (organization_context_state.status !== "scoped") return;
       const use_cases = get_organization_settings_use_cases();
-      const settings_result = await use_cases.get_by_organization_id(org_id);
+      const settings_result = await use_cases.get_by_organization_id(
+        organization_context_state.organization_id,
+      );
       if (!settings_result.success || !settings_result.data) return;
       branding_store.refresh_from_organization_settings(settings_result.data);
       configure_scheduled_interval(settings_result.data.sync_interval_ms);

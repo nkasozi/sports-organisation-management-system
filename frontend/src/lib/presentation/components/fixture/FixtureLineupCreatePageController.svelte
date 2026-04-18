@@ -14,6 +14,12 @@
     import type { UserScopeProfile } from "$lib/core/interfaces/ports/external/iam/AuthorizationPort";
     import type { TeamPlayer } from "$lib/core/services/teamPlayers";
     import { create_fixture_lineup_create_dependencies } from "$lib/presentation/logic/fixtureLineupCreateData";
+    import type {
+        FixtureLineupCreateAuthProfileState,
+        FixtureLineupCreateFixtureState,
+        FixtureLineupCreateOrganizationState,
+        FixtureLineupCreateTeamState,
+    } from "$lib/presentation/logic/fixtureLineupCreatePageContracts";
     import {
         build_fixture_lineup_create_page_derived_state,
         sync_fixture_lineup_create_selected_organization,
@@ -28,9 +34,15 @@
     const dependencies = create_fixture_lineup_create_dependencies();
     let form_data: CreateFixtureLineupInput =
             create_empty_fixture_lineup_input(),
-        selected_fixture: Fixture | null = null,
-        selected_team: Team | null = null,
-        selected_organization: Organization | null = null,
+        selected_fixture_state: FixtureLineupCreateFixtureState = {
+            status: "missing",
+        },
+        selected_team_state: FixtureLineupCreateTeamState = {
+            status: "missing",
+        },
+        selected_organization_state: FixtureLineupCreateOrganizationState = {
+            status: "missing",
+        },
         team_players: TeamPlayer[] = [],
         min_players = 2,
         max_players = 18,
@@ -50,14 +62,16 @@
         validation_errors: Record<string, string> = {},
         fixture_team_label_by_team_id = new Map<string, string>(),
         teams_with_existing_lineups = new Map<string, string>();
-    let current_auth_profile: UserScopeProfile | null = null;
+    let current_auth_profile_state: FixtureLineupCreateAuthProfileState = {
+        status: "missing",
+    };
     function get_derived_state_input() {
         return {
-            current_auth_profile,
+            current_auth_profile_state,
             form_data,
-            selected_organization,
-            selected_fixture,
-            selected_team,
+            selected_organization_state,
+            selected_fixture_state,
+            selected_team_state,
             team_players,
             player_search_text,
             organizations,
@@ -72,19 +86,28 @@
             confirm_lock_understood,
         };
     }
+
     let derived_state = build_fixture_lineup_create_page_derived_state(
         get_derived_state_input(),
     );
 
-    $: current_auth_profile =
-        $auth_store.current_profile as UserScopeProfile | null;
+    $: current_auth_profile_state =
+        $auth_store.current_profile.status === "present"
+            ? {
+                  status: "present",
+                  profile:
+                      $auth_store.current_profile.profile as unknown as UserScopeProfile,
+              }
+            : {
+                  status: "missing",
+              };
     $: derived_state = build_fixture_lineup_create_page_derived_state(
         get_derived_state_input(),
     );
     $: {
         const next_form_data = apply_fixture_lineup_authorization_defaults({
             form_data,
-            current_auth_profile,
+            current_auth_profile_state,
         });
         if (
             next_form_data.organization_id !== form_data.organization_id ||
@@ -95,9 +118,9 @@
     $: if (
         form_data.organization_id &&
         organizations.length > 0 &&
-        !selected_organization
+        selected_organization_state.status === "missing"
     )
-        selected_organization =
+        selected_organization_state =
             sync_fixture_lineup_create_selected_organization(
                 form_data.organization_id,
                 organizations,
@@ -105,7 +128,7 @@
     const runtime = create_fixture_lineup_create_page_controller_runtime({
         dependencies,
         get_confirm_lock_understood: () => confirm_lock_understood,
-        get_current_auth_profile: () => current_auth_profile,
+        get_current_auth_profile_state: () => current_auth_profile_state,
         get_fixtures_with_complete_lineups: () =>
             fixtures_with_complete_lineups,
         get_form_data: () => form_data,
@@ -114,9 +137,9 @@
         get_organization_is_restricted: () =>
             derived_state.organization_is_restricted,
         get_organizations: () => organizations,
-        get_selected_fixture: () => selected_fixture,
-        get_selected_organization: () => selected_organization,
-        get_selected_team: () => selected_team,
+        get_selected_fixture_state: () => selected_fixture_state,
+        get_selected_organization_state: () => selected_organization_state,
+        get_selected_team_state: () => selected_team_state,
         get_team_players: () => team_players,
         goto,
         is_browser: browser,
@@ -140,11 +163,13 @@
         set_organizations: (value: Organization[]) => (organizations = value),
         set_player_search_text: (value: string) => (player_search_text = value),
         set_saving: (value: boolean) => (saving = value),
-        set_selected_fixture: (value: Fixture | null) =>
-            (selected_fixture = value),
-        set_selected_organization: (value: Organization | null) =>
-            (selected_organization = value),
-        set_selected_team: (value: Team | null) => (selected_team = value),
+        set_selected_fixture_state: (value: FixtureLineupCreateFixtureState) =>
+            (selected_fixture_state = value),
+        set_selected_organization_state: (
+            value: FixtureLineupCreateOrganizationState,
+        ) => (selected_organization_state = value),
+        set_selected_team_state: (value: FixtureLineupCreateTeamState) =>
+            (selected_team_state = value),
         set_starters_count: (value: number) => (starters_count = value),
         set_team_players: (value: TeamPlayer[]) => (team_players = value),
         set_teams_with_existing_lineups: (value: Map<string, string>) =>
@@ -173,7 +198,7 @@
     organization_select_options={derived_state.organization_select_options}
     organization_is_restricted={derived_state.organization_is_restricted}
     organizations_count={organizations.length}
-    has_selected_organization={Boolean(selected_organization)}
+    has_selected_organization={selected_organization_state.status === "present"}
     fixture_select_options={derived_state.fixture_select_options}
     fixtures_for_organization_count={derived_state.fixtures_for_organization
         .length}
@@ -191,7 +216,9 @@
     {starters_count}
     {player_search_text}
     filtered_team_players={derived_state.filtered_team_players}
-    selected_team_name={selected_team?.name || ""}
+    selected_team_name={selected_team_state.status === "present"
+        ? selected_team_state.team.name
+        : ""}
     {confirm_lock_understood}
     notes={form_data.notes || ""}
     on_validate_step_change={runtime.handle_step_change_attempt}

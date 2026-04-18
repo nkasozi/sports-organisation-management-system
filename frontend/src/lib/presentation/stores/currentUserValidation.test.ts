@@ -9,7 +9,7 @@ const REQUIRED_USER_FIELDS = [
 ] as const;
 
 function validate_stored_user(parsed: unknown): boolean {
-  if (typeof parsed !== "object" || parsed === null) return false;
+  if (!parsed || typeof parsed !== "object") return false;
   const record = parsed as Record<string, unknown>;
   return REQUIRED_USER_FIELDS.every(
     (field) => typeof record[field] === "string" && record[field] !== "",
@@ -40,12 +40,17 @@ describe("currentUser schema validation", () => {
     expect(validate_stored_user(user_with_picture)).toBe(true);
   });
 
-  it("rejects null", () => {
-    expect(validate_stored_user(null)).toBe(false);
+  it("rejects a missing regex match result", () => {
+    const missing_match = /x/.exec("a");
+
+    expect(validate_stored_user(missing_match)).toBe(false);
   });
 
-  it("rejects undefined", () => {
-    expect(validate_stored_user(undefined)).toBe(false);
+  it("rejects a missing object property", () => {
+    const missing_property_source: Record<string, unknown> = {};
+    const missing_property_value = missing_property_source["missing_property"];
+
+    expect(validate_stored_user(missing_property_value)).toBe(false);
   });
 
   it("rejects string", () => {

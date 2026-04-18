@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import type { Activity } from "../entities/Activity";
+import { type Activity, NO_ACTIVITY_RECURRENCE } from "../entities/Activity";
 import type { Fixture } from "../entities/Fixture";
 import {
   convert_activity_to_ical_event,
@@ -13,8 +13,8 @@ import {
 describe("ICalService", () => {
   describe("generate_ical_feed", () => {
     it("should generate valid iCal feed with proper headers", () => {
-      const events =  [] as ICalEvent[];
-      const config =  {
+      const events = [] as ICalEvent[];
+      const config = {
         feed_name: "Test Calendar",
         organization_name: "Test Organization",
         timezone: "UTC",
@@ -34,8 +34,8 @@ describe("ICalService", () => {
     });
 
     it("should include refresh interval headers", () => {
-      const events =  [] as ICalEvent[];
-      const config =  {
+      const events = [] as ICalEvent[];
+      const config = {
         feed_name: "Test Calendar",
         organization_name: "Test Organization",
         timezone: "UTC",
@@ -49,7 +49,7 @@ describe("ICalService", () => {
     });
 
     it("should generate event blocks for each event", () => {
-      const events =  [
+      const events = [
         {
           uid: "event-1@test",
           title: "Test Match",
@@ -61,7 +61,7 @@ describe("ICalService", () => {
           reminder_minutes_before: 60,
         },
       ] as ICalEvent[];
-      const config =  {
+      const config = {
         feed_name: "Test Calendar",
         organization_name: "Test Organization",
         timezone: "UTC",
@@ -79,7 +79,7 @@ describe("ICalService", () => {
     });
 
     it("should include VALARM for reminders", () => {
-      const events =  [
+      const events = [
         {
           uid: "event-1@test",
           title: "Test Match",
@@ -91,7 +91,7 @@ describe("ICalService", () => {
           reminder_minutes_before: 30,
         },
       ] as ICalEvent[];
-      const config =  {
+      const config = {
         feed_name: "Test Calendar",
         organization_name: "Test Organization",
         timezone: "UTC",
@@ -107,7 +107,7 @@ describe("ICalService", () => {
     });
 
     it("should format all-day events correctly", () => {
-      const events =  [
+      const events = [
         {
           uid: "event-1@test",
           title: "All Day Event",
@@ -116,10 +116,10 @@ describe("ICalService", () => {
           start_datetime: "2026-01-15T00:00:00.000Z",
           end_datetime: "2026-01-16T00:00:00.000Z",
           is_all_day: true,
-          reminder_minutes_before: null,
+          reminder_minutes_before: 0,
         },
       ] as ICalEvent[];
-      const config =  {
+      const config = {
         feed_name: "Test Calendar",
         organization_name: "Test Organization",
         timezone: "UTC",
@@ -133,7 +133,7 @@ describe("ICalService", () => {
     });
 
     it("should escape special characters in text fields", () => {
-      const events =  [
+      const events = [
         {
           uid: "event-1@test",
           title: "Match; Home vs Away, Important",
@@ -142,10 +142,10 @@ describe("ICalService", () => {
           start_datetime: "2026-01-15T14:00:00.000Z",
           end_datetime: "2026-01-15T16:00:00.000Z",
           is_all_day: false,
-          reminder_minutes_before: null,
+          reminder_minutes_before: 0,
         },
       ] as ICalEvent[];
-      const config =  {
+      const config = {
         feed_name: "Test Calendar",
         organization_name: "Test Organization",
         timezone: "UTC",
@@ -162,7 +162,7 @@ describe("ICalService", () => {
 
   describe("convert_activity_to_ical_event", () => {
     it("should convert activity to iCal event", () => {
-      const activity =  {
+      const activity = {
         id: "activity-123",
         title: "Team Practice",
         description: "Weekly practice session",
@@ -173,16 +173,16 @@ describe("ICalService", () => {
         end_datetime: "2026-01-15T12:00:00.000Z",
         is_all_day: false,
         location: "Training Ground",
-        venue_id: null,
+        venue_id: "",
         team_ids: ["team-1"],
-        competition_id: null,
-        fixture_id: null,
+        competition_id: "",
+        fixture_id: "",
         source_type: "manual",
-        source_id: null,
+        source_id: "",
         status: "scheduled",
-        recurrence: null,
+        recurrence: NO_ACTIVITY_RECURRENCE,
         reminders: [{ id: "rem-1", minutes_before: 30, is_enabled: true }],
-        color_override: null,
+        color_override: "",
         notes: "",
         created_at: "2026-01-01T00:00:00.000Z",
         updated_at: "2026-01-01T00:00:00.000Z",
@@ -199,7 +199,7 @@ describe("ICalService", () => {
     });
 
     it("should use first enabled reminder", () => {
-      const activity =  {
+      const activity = {
         id: "activity-123",
         title: "Event",
         description: "",
@@ -210,19 +210,19 @@ describe("ICalService", () => {
         end_datetime: "2026-01-15T12:00:00.000Z",
         is_all_day: false,
         location: "",
-        venue_id: null,
+        venue_id: "",
         team_ids: [],
-        competition_id: null,
-        fixture_id: null,
+        competition_id: "",
+        fixture_id: "",
         source_type: "manual",
-        source_id: null,
+        source_id: "",
         status: "scheduled",
-        recurrence: null,
+        recurrence: NO_ACTIVITY_RECURRENCE,
         reminders: [
           { id: "rem-1", minutes_before: 60, is_enabled: false },
           { id: "rem-2", minutes_before: 15, is_enabled: true },
         ],
-        color_override: null,
+        color_override: "",
         notes: "",
         created_at: "2026-01-01T00:00:00.000Z",
         updated_at: "2026-01-01T00:00:00.000Z",
@@ -232,11 +232,43 @@ describe("ICalService", () => {
 
       expect(result.reminder_minutes_before).toBe(15);
     });
+
+    it("should return zero reminder minutes when no reminders are enabled", () => {
+      const activity = {
+        id: "activity-456",
+        title: "Event",
+        description: "",
+        organization_id: "org-1",
+        category_id: "cat-1",
+        category_type: "custom",
+        start_datetime: "2026-01-15T10:00:00.000Z",
+        end_datetime: "2026-01-15T12:00:00.000Z",
+        is_all_day: false,
+        location: "",
+        venue_id: "",
+        team_ids: [],
+        competition_id: "",
+        fixture_id: "",
+        source_type: "manual",
+        source_id: "",
+        status: "scheduled",
+        recurrence: NO_ACTIVITY_RECURRENCE,
+        reminders: [{ id: "rem-1", minutes_before: 60, is_enabled: false }],
+        color_override: "",
+        notes: "",
+        created_at: "2026-01-01T00:00:00.000Z",
+        updated_at: "2026-01-01T00:00:00.000Z",
+      } as unknown as Activity;
+
+      const result = convert_activity_to_ical_event(activity, "Test Org");
+
+      expect(result.reminder_minutes_before).toBe(0);
+    });
   });
 
   describe("convert_fixture_to_ical_event", () => {
     it("should convert fixture to iCal event with proper title", () => {
-      const fixture =  {
+      const fixture = {
         id: "fixture-123",
         organization_id: "org-1",
         competition_id: "comp-1",
@@ -247,8 +279,8 @@ describe("ICalService", () => {
         venue: "Main Stadium",
         scheduled_date: "2026-01-20",
         scheduled_time: "15:00",
-        home_team_score: null,
-        away_team_score: null,
+        home_team_score: 0,
+        away_team_score: 0,
         assigned_officials: [],
         game_events: [],
         current_period: "pre_game",
@@ -281,7 +313,7 @@ describe("ICalService", () => {
     });
 
     it("should calculate end time as 2 hours after start", () => {
-      const fixture =  {
+      const fixture = {
         id: "fixture-123",
         organization_id: "org-1",
         competition_id: "comp-1",
@@ -292,8 +324,8 @@ describe("ICalService", () => {
         venue: "",
         scheduled_date: "2026-01-20",
         scheduled_time: "19:30",
-        home_team_score: null,
-        away_team_score: null,
+        home_team_score: 0,
+        away_team_score: 0,
         assigned_officials: [],
         game_events: [],
         current_period: "pre_game",

@@ -10,8 +10,8 @@
     export let upcoming_per_page: number;
     export let page_size_options: number[];
     export let format_date: (date_string: string) => string;
-    export let get_fixture_stage_name: (stage_id?: string | null) => string;
-    export let get_fixture_stage_type: (stage_id?: string | null) => string;
+    export let get_fixture_stage_name: (stage_id: string) => string;
+    export let get_fixture_stage_type: (stage_id: string) => string;
     export let get_team_name: (team_id: string) => string;
     export let get_team_logo_url: (team_id: string) => string;
     export let on_open_match_report: (fixture_id: string) => void;
@@ -25,10 +25,10 @@
     <div class="space-y-3">
         {#each paginated_upcoming as fixture}
             {@const fixture_stage_name = get_fixture_stage_name(
-                fixture.stage_id,
+                fixture.stage_id || "",
             )}
             {@const fixture_stage_type = get_fixture_stage_type(
-                fixture.stage_id,
+                fixture.stage_id || "",
             )}
             <div
                 class={`p-3 sm:p-4 bg-gray-50 dark:bg-gray-800 rounded-lg ${fixture.status === "in_progress" ? "border border-red-200 dark:border-red-800" : ""}`}

@@ -12,8 +12,8 @@
     export let configuration: ProfileManagementConfiguration;
     export let current_view: ProfileManagementViewMode;
     export let form_title: string;
-    export let preview_path: string | null;
-    export let selected_profile: ProfileManagementEntity | null;
+    export let preview_path: string;
+    export let selected_profile: ProfileManagementEntity | undefined;
     export let rows: ProfileManagementRow[];
     export let is_loading: boolean;
     export let error_message: string;

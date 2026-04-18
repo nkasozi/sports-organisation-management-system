@@ -1,3 +1,4 @@
+import type { Fixture } from "$lib/core/entities/Fixture";
 import type { Organization } from "$lib/core/entities/Organization";
 import type { UserScopeProfile } from "$lib/core/interfaces/ports";
 import type { PreFlightCheck } from "$lib/core/services/fixtureStartChecks";
@@ -8,6 +9,7 @@ import { load_live_games_permissions } from "./liveGamesAccessLogic";
 import {
   type LiveGamesDataDependencies,
   type LiveGamesFixtureState,
+  type LiveGamesProfileState,
   load_live_games_fixture_state,
   load_live_games_organizations,
 } from "./liveGamesDataLoader";
@@ -18,6 +20,14 @@ const NO_USER_PROFILE_FOUND_MESSAGE = "No user profile found";
 const LIVE_GAMES_PAGE_STATUS_ERROR = "error";
 const LIVE_GAMES_PAGE_STATUS_DENIED = "denied";
 const LIVE_GAMES_PAGE_STATUS_READY = "ready";
+
+type LiveGamesTokenState =
+  | { status: "missing" }
+  | { status: "present"; raw_token: string };
+
+export type LiveGamesPendingStartFixtureState =
+  | { status: "idle" }
+  | { status: "confirming"; fixture: Fixture };
 
 interface EnsureAuthProfileResult {
   success: boolean;
@@ -73,19 +83,40 @@ function create_empty_live_games_fixture_state(): LiveGamesFixtureState {
   };
 }
 
-export function get_live_games_current_profile(
+export function get_live_games_current_profile_state(
   auth_state: Pick<AuthState, "current_profile">,
-): UserScopeProfile | null {
-  return auth_state.current_profile as UserScopeProfile | null;
+): LiveGamesProfileState {
+  if (auth_state.current_profile.status !== "present") {
+    return { status: "missing" };
+  }
+
+  return {
+    status: "present",
+    profile: auth_state.current_profile.profile as unknown as UserScopeProfile,
+  };
+}
+
+export function get_live_games_current_token_state(
+  auth_state: Pick<AuthState, "current_token">,
+): LiveGamesTokenState {
+  if (auth_state.current_token.status !== "present") {
+    return { status: "missing" };
+  }
+
+  return {
+    status: "present",
+    raw_token: auth_state.current_token.token.raw_token,
+  };
 }
 
 export function get_live_games_current_role(
   auth_state: Pick<AuthState, "current_profile">,
 ): string {
-  return (
-    (auth_state.current_profile as { role?: string } | null)?.role ||
-    DEFAULT_LIVE_GAMES_ROLE
-  );
+  if (auth_state.current_profile.status !== "present") {
+    return DEFAULT_LIVE_GAMES_ROLE;
+  }
+
+  return auth_state.current_profile.profile.role || DEFAULT_LIVE_GAMES_ROLE;
 }
 
 export function update_live_games_checks(
@@ -117,7 +148,7 @@ export async function refresh_live_games_page_fixture_state(
 
   return load_live_games_fixture_state(
     command.fixture_state_dependencies,
-    get_live_games_current_profile(command.auth_state),
+    get_live_games_current_profile_state(command.auth_state),
     command.organization_id,
   );
 }
@@ -133,7 +164,8 @@ export async function initialize_live_games_page(
     };
   }
 
-  if (!command.auth_state.current_token) {
+  const token_state = get_live_games_current_token_state(command.auth_state);
+  if (token_state.status === "missing") {
     return {
       status: LIVE_GAMES_PAGE_STATUS_ERROR,
       error_message: NO_USER_PROFILE_FOUND_MESSAGE,
@@ -141,7 +173,7 @@ export async function initialize_live_games_page(
   }
 
   const permissions = await load_live_games_permissions(
-    command.auth_state.current_token.raw_token,
+    token_state.raw_token,
     command.authorization_adapter,
   );
   if (!permissions.authorization_succeeded) {
@@ -159,7 +191,7 @@ export async function initialize_live_games_page(
 
   const organizations = await load_live_games_organizations(
     { organization_use_cases: command.organization_use_cases },
-    get_live_games_current_profile(command.auth_state),
+    get_live_games_current_profile_state(command.auth_state),
   );
   const selected_organization_id = organizations[0]?.id || "";
   const fixture_state = await refresh_live_games_page_fixture_state({

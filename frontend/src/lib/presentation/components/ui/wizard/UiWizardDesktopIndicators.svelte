@@ -5,7 +5,7 @@
   export let current_step_index: number;
   export let get_step_connector_class: (step_index: number) => string;
   export let get_step_status_class: (
-    step: WizardStep | null,
+    step: WizardStep,
     step_index: number,
   ) => string;
   export let on_navigate_to_step: (step_index: number) => void;

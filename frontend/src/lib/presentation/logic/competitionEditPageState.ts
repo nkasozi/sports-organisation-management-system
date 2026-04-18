@@ -149,13 +149,16 @@ export function toggle_competition_tie_breaker(
 export function reset_competition_scoring_overrides(
   form_data: UpdateCompetitionInput,
 ): UpdateCompetitionInput {
+  const current_rule_overrides = form_data.rule_overrides ?? {};
+  const {
+    points_config_override: _ignored_points_config_override,
+    tie_breakers_override: _ignored_tie_breakers_override,
+    ...remaining_rule_overrides
+  } = current_rule_overrides;
+
   return {
     ...form_data,
-    rule_overrides: {
-      ...form_data.rule_overrides,
-      points_config_override: undefined,
-      tie_breakers_override: undefined,
-    },
+    rule_overrides: remaining_rule_overrides,
   };
 }
 

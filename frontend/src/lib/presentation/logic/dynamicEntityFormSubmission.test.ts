@@ -1,5 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import {
+  check_if_player_transfer_is_being_approved,
+  execute_dynamic_form_transfer_membership_change,
+  is_transfer_entity_and_status_just_changed_to_declined,
+  resolve_dynamic_form_create_result,
+  resolve_dynamic_form_update_result,
+} from "./dynamicEntityFormSubmission";
+
 const {
   apply_player_transfer_membership_change_mock,
   get_use_cases_for_entity_type_mock,
@@ -16,14 +24,6 @@ vi.mock("$lib/presentation/logic/playerTransferApprovalLogic", () => ({
 vi.mock("../../infrastructure/registry/entityUseCasesRegistry", () => ({
   get_use_cases_for_entity_type: get_use_cases_for_entity_type_mock,
 }));
-
-import {
-  check_if_player_transfer_is_being_approved,
-  execute_dynamic_form_transfer_membership_change,
-  is_transfer_entity_and_status_just_changed_to_declined,
-  resolve_dynamic_form_create_result,
-  resolve_dynamic_form_update_result,
-} from "./dynamicEntityFormSubmission";
 
 describe("dynamicEntityFormSubmission", () => {
   beforeEach(() => {
@@ -69,25 +69,43 @@ describe("dynamicEntityFormSubmission", () => {
       .mockReturnValueOnce({ success: true, data: {} });
 
     await expect(
-      resolve_dynamic_form_create_result("team", null, { name: "Lions" }),
+      resolve_dynamic_form_create_result(
+        "team",
+        {},
+        {
+          name: "Lions",
+        },
+      ),
     ).resolves.toEqual({
       success: false,
       error: 'No handler found for "team"',
     });
     await expect(
-      resolve_dynamic_form_create_result("team", null, { name: "Lions" }),
+      resolve_dynamic_form_create_result(
+        "team",
+        {},
+        {
+          name: "Lions",
+        },
+      ),
     ).resolves.toEqual({
       success: false,
       error: 'Create is not supported for "team"',
     });
     await expect(
-      resolve_dynamic_form_create_result("team", null, { name: "Lions" }),
+      resolve_dynamic_form_create_result(
+        "team",
+        {},
+        {
+          name: "Lions",
+        },
+      ),
     ).resolves.toEqual({
       success: true,
       data: { id: "entity-2" },
     });
     await expect(
-      resolve_dynamic_form_update_result("team", null, "entity-2", {
+      resolve_dynamic_form_update_result("team", {}, "entity-2", {
         name: "Lions",
       }),
     ).resolves.toEqual({

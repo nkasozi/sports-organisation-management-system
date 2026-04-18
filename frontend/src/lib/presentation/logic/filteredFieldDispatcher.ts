@@ -24,8 +24,6 @@ type FilteredFetchResult = {
   auto_select_team_id?: string;
 };
 
-type FilterType = string | undefined;
-
 const ORGANIZATION_ENTITY_FILTERS: Record<string, string> = {
   competitions_from_organization: "competition",
   fixtures_from_organization: "fixture",
@@ -41,9 +39,13 @@ export async function fetch_filtered_entities_for_field(
   cached_players: BaseEntity[],
   form_data: Record<string, unknown>,
 ): Promise<FilteredFetchResult> {
-  const filter_type: FilterType = field.foreign_key_filter?.filter_type;
+  const filter_type = field.foreign_key_filter?.filter_type || "";
   const exclude_field = field.foreign_key_filter?.exclude_field;
-  const organization_id = form_data["organization_id"] as string | undefined;
+  const organization_id_candidate = form_data["organization_id"];
+  const organization_id =
+    typeof organization_id_candidate === "string"
+      ? organization_id_candidate
+      : "";
 
   if (filter_type === "teams_from_competition") {
     const result = await fetch_teams_from_competition(
@@ -63,9 +65,14 @@ export async function fetch_filtered_entities_for_field(
   }
 
   if (filter_type === "teams_from_player_memberships") {
+    const current_field_value_candidate = form_data[field.field_name];
+    const current_field_value =
+      typeof current_field_value_candidate === "string"
+        ? current_field_value_candidate
+        : "";
     const result = await fetch_teams_from_player_memberships(
       dependency_value,
-      form_data[field.field_name] as string | undefined,
+      current_field_value,
     );
     return {
       entities: result.teams,
@@ -101,7 +108,7 @@ export async function fetch_filtered_entities_for_field(
     return {
       entities: await fetch_officials_from_fixture(
         dependency_value,
-        organization_id ?? "",
+        organization_id,
       ),
     };
   }
@@ -110,16 +117,18 @@ export async function fetch_filtered_entities_for_field(
     return {
       entities: await fetch_fixtures_from_official(
         dependency_value,
-        organization_id ?? "",
+        organization_id,
       ),
     };
   }
 
-  const org_entity_type = filter_type
-    ? ORGANIZATION_ENTITY_FILTERS[filter_type]
-    : undefined;
-  if (org_entity_type !== undefined) {
-    const resolved_type = org_entity_type || field.foreign_key_entity!;
+  const has_organization_entity_filter = Object.prototype.hasOwnProperty.call(
+    ORGANIZATION_ENTITY_FILTERS,
+    filter_type,
+  );
+  if (has_organization_entity_filter) {
+    const resolved_type =
+      ORGANIZATION_ENTITY_FILTERS[filter_type] || field.foreign_key_entity!;
     return {
       entities: await fetch_entities_filtered_by_organization(
         resolved_type,

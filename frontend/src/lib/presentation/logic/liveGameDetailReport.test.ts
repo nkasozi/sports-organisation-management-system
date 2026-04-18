@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { build_live_game_detail_report } from "./liveGameDetailReport";
+
 const { build_match_report_data_mock, generate_match_report_filename_mock } =
   vi.hoisted(() => ({
     build_match_report_data_mock: vi.fn(),
@@ -10,8 +12,6 @@ vi.mock("$lib/infrastructure/utils/MatchReportBuilder", () => ({
   build_match_report_data: build_match_report_data_mock,
   generate_match_report_filename: generate_match_report_filename_mock,
 }));
-
-import { build_live_game_detail_report } from "./liveGameDetailReport";
 
 describe("liveGameDetailReport", () => {
   beforeEach(() => {
@@ -123,10 +123,10 @@ describe("liveGameDetailReport", () => {
         scheduled_date: "2024-06-02",
       } as never,
       { organization_id: "organization-1" } as never,
-      null,
+      void 0,
       { name: "Lions" } as never,
       { name: "Tigers" } as never,
-      null,
+      void 0,
       [] as never,
       [] as never,
       [] as never,
@@ -154,7 +154,6 @@ describe("liveGameDetailReport", () => {
         home_staff: [],
         away_staff: [],
         card_types: [],
-        venue_name: undefined,
       }),
     );
   });

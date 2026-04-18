@@ -1,5 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { create_live_game_detail_period_handlers } from "./liveGameDetailControllerPeriodActions";
+import type {
+  LiveGameDetailModalState,
+  LiveGameDetailPageState,
+  LiveGameDetailToastState,
+} from "./liveGameDetailPageState";
+import {
+  create_live_game_detail_modal_state,
+  create_live_game_detail_page_state,
+} from "./liveGameDetailPageStateFactories";
+
 const {
   confirm_live_game_extra_time_action_mock,
   confirm_live_game_period_action_mock,
@@ -12,17 +23,6 @@ vi.mock("$lib/presentation/logic/liveGameDetailPageActions", () => ({
   confirm_live_game_extra_time_action: confirm_live_game_extra_time_action_mock,
   confirm_live_game_period_action: confirm_live_game_period_action_mock,
 }));
-
-import { create_live_game_detail_period_handlers } from "./liveGameDetailControllerPeriodActions";
-import type {
-  LiveGameDetailModalState,
-  LiveGameDetailPageState,
-  LiveGameDetailToastState,
-} from "./liveGameDetailPageState";
-import {
-  create_live_game_detail_modal_state,
-  create_live_game_detail_page_state,
-} from "./liveGameDetailPageStateFactories";
 
 describe("liveGameDetailControllerPeriodActions", () => {
   type HandlerCommand = Parameters<
@@ -39,7 +39,7 @@ describe("liveGameDetailControllerPeriodActions", () => {
   });
 
   function create_state_store() {
-    let page_state =  {
+    let page_state = {
       ...create_live_game_detail_page_state(),
       fixture: {
         id: "fixture-1",
@@ -49,18 +49,23 @@ describe("liveGameDetailControllerPeriodActions", () => {
       extra_time_added_seconds: 60,
       extra_minutes_to_add: 3,
     } as LiveGameDetailPageState;
-    let modal_state =  {
+    let modal_state = {
       ...create_live_game_detail_modal_state(),
       show_period_modal: true,
       show_extra_time_modal: true,
     } as LiveGameDetailModalState;
-    let toast_state: LiveGameDetailToastState | null = null;
+    let toast_state:
+      | { status: "hidden" }
+      | { status: "visible"; toast: LiveGameDetailToastState } = {
+      status: "hidden",
+    };
     return {
       get_modal_state: () => modal_state,
       get_page_state: () => page_state,
       read_modal_state: () => modal_state,
       read_page_state: () => page_state,
-      read_toast_state: () => toast_state,
+      read_toast_state: () =>
+        toast_state.status === "visible" ? toast_state.toast : void 0,
       set_modal_state: (next_state: typeof modal_state) => {
         modal_state = next_state;
       },
@@ -68,7 +73,7 @@ describe("liveGameDetailControllerPeriodActions", () => {
         page_state = next_state;
       },
       set_toast_state: (next_state: LiveGameDetailToastState) => {
-        toast_state = next_state;
+        toast_state = { status: "visible", toast: next_state };
       },
     };
   }

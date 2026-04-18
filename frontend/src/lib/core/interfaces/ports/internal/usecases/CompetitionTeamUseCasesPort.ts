@@ -3,11 +3,11 @@ import type {
   CreateCompetitionTeamInput,
   UpdateCompetitionTeamInput,
 } from "../../../../entities/CompetitionTeam";
+import type { ScalarValueInput } from "../../../../types/DomainScalars";
 import type {
   AsyncResult,
   PaginatedAsyncResult,
 } from "../../../../types/Result";
-import type { ScalarValueInput } from "../../../../types/DomainScalars";
 import type { CompetitionTeamFilter } from "../../external/repositories/CompetitionTeamRepository";
 import type { QueryOptions } from "../../external/repositories/Repository";
 import type { BaseUseCasesPort } from "./BaseUseCasesPort";

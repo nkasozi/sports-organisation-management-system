@@ -41,7 +41,7 @@ describe("competitionResultsMatchReportHelpers", () => {
 
   it("resolves the organization name and staff-role map with safe fallbacks", async () => {
     await expect(
-      resolve_match_report_organization_name(null, {
+      resolve_match_report_organization_name({ status: "missing" }, {
         organization_use_cases: { get_by_id: vi.fn() },
       } as never),
     ).resolves.toBe(
@@ -50,7 +50,10 @@ describe("competitionResultsMatchReportHelpers", () => {
 
     await expect(
       resolve_match_report_organization_name(
-        { organization_id: "org_1" } as never,
+        {
+          status: "present",
+          competition: { organization_id: "org_1" } as never,
+        },
         {
           organization_use_cases: {
             get_by_id: vi.fn().mockResolvedValue({

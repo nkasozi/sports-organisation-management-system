@@ -10,12 +10,12 @@ import type {
 
 export function create_live_game_detail_page_state(): LiveGameDetailPageState {
   return {
-    fixture: null,
-    home_team: null,
-    away_team: null,
-    competition: null,
-    sport: null,
-    venue: null,
+    fixture: void 0,
+    home_team: void 0,
+    away_team: void 0,
+    competition: void 0,
+    sport: void 0,
+    venue: void 0,
     organization_name: "",
     assigned_officials_data: [],
     home_players: [],
@@ -35,7 +35,7 @@ export function create_live_game_detail_page_state(): LiveGameDetailPageState {
     permission_info_message: "",
     home_lineup_expanded: false,
     away_lineup_expanded: false,
-  };
+  } as LiveGameDetailPageState;
 }
 
 export function create_live_game_detail_modal_state(): LiveGameDetailModalState {
@@ -50,7 +50,6 @@ export function create_live_game_detail_modal_state(): LiveGameDetailModalState 
 export function create_live_game_detail_event_state(): LiveGameDetailEventState {
   return {
     show_event_modal: false,
-    selected_event_type: null,
     selected_team_side: "home",
     selected_player_id: "",
     secondary_player_id: "",
@@ -58,7 +57,7 @@ export function create_live_game_detail_event_state(): LiveGameDetailEventState 
     secondary_player_name: "",
     event_description: "",
     event_minute: 0,
-  };
+  } as LiveGameDetailEventState;
 }
 
 export function create_live_game_detail_toast_state(): LiveGameDetailToastState {
@@ -89,9 +88,7 @@ export function apply_live_game_detail_bundle(
 
 export function open_live_game_detail_event_state(command: {
   elapsed_minutes: number;
-  event_button: LiveGameDetailEventState["selected_event_type"] extends infer EventType
-    ? Exclude<EventType, null>
-    : never;
+  event_button: NonNullable<LiveGameDetailEventState["selected_event_type"]>;
   team_side: "home" | "away";
 }): LiveGameDetailEventState {
   return {

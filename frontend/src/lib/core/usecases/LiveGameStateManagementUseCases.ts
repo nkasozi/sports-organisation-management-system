@@ -50,7 +50,7 @@ function emit_live_game_updated(
 async function execute_game_transition(
   repository: LiveGameLogRepository,
   game_id: ScalarValueInput<LiveGameLog["id"]>,
-  validate: (game: LiveGameLog) => string | null,
+  validate: (game: LiveGameLog) => string,
   build_updates: (game: LiveGameLog) => UpdateLiveGameLogInput,
   changed_fields: string[],
 ): AsyncResult<LiveGameLog> {
@@ -79,7 +79,7 @@ export function create_live_game_state_management(
           game.game_status !== GAME_STATUS.PRE_GAME &&
           game.game_status !== GAME_STATUS.PAUSED
             ? `Cannot start a game that is ${game.game_status}`
-            : null,
+            : "",
         (game) => ({
           game_status: GAME_STATUS.IN_PROGRESS,
           clock_running: true,
@@ -104,7 +104,7 @@ export function create_live_game_state_management(
         (game) =>
           game.game_status !== GAME_STATUS.IN_PROGRESS
             ? "Can only pause an in-progress game"
-            : null,
+            : "",
         () => ({ game_status: GAME_STATUS.PAUSED, clock_running: false }),
         ["game_status", "clock_running"],
       );
@@ -116,7 +116,7 @@ export function create_live_game_state_management(
         (game) =>
           game.game_status !== GAME_STATUS.PAUSED
             ? "Can only resume a paused game"
-            : null,
+            : "",
         () => ({ game_status: GAME_STATUS.IN_PROGRESS, clock_running: true }),
         ["game_status", "clock_running"],
       );
@@ -129,7 +129,7 @@ export function create_live_game_state_management(
           game.game_status !== GAME_STATUS.IN_PROGRESS &&
           game.game_status !== GAME_STATUS.PAUSED
             ? `Cannot end a game that is ${game.game_status}`
-            : null,
+            : "",
         () => ({
           game_status: GAME_STATUS.COMPLETED,
           clock_running: false,
@@ -147,7 +147,7 @@ export function create_live_game_state_management(
           game.game_status === GAME_STATUS.COMPLETED ||
           game.game_status === GAME_STATUS.ABANDONED
             ? `Cannot abandon a game that is already ${game.game_status}`
-            : null,
+            : "",
         () => ({
           game_status: GAME_STATUS.ABANDONED,
           clock_running: false,
@@ -160,14 +160,16 @@ export function create_live_game_state_management(
     async update_score(id, home_score, away_score) {
       if (home_score < 0 || away_score < 0)
         return create_failure_result("Scores cannot be negative");
-      const old_result = await repository.find_by_id(id),
-        old_game = old_result.success ? old_result.data : undefined;
+      const old_result = await repository.find_by_id(id);
       const result = await repository.update(id, {
         home_team_score: home_score,
         away_team_score: away_score,
       });
-      if (result.success && result.data && old_game)
-        emit_live_game_updated(old_game, result.data, [
+      if (!old_result.success || !old_result.data) {
+        return result;
+      }
+      if (result.success && result.data)
+        emit_live_game_updated(old_result.data, result.data, [
           "home_team_score",
           "away_team_score",
         ]);
@@ -176,30 +178,36 @@ export function create_live_game_state_management(
     async update_game_clock(id, current_minute, stoppage_time_minutes) {
       if (current_minute < 0)
         return create_failure_result("Current minute cannot be negative");
-      const old_result = await repository.find_by_id(id),
-        old_game = old_result.success ? old_result.data : undefined;
+      const old_result = await repository.find_by_id(id);
       const updates: UpdateLiveGameLogInput = { current_minute };
-      if (stoppage_time_minutes !== undefined) {
+      if (typeof stoppage_time_minutes === "number") {
         updates.stoppage_time_minutes = stoppage_time_minutes;
       }
       const result = await repository.update(id, updates);
-      if (result.success && result.data && old_game) {
+      if (!old_result.success || !old_result.data) {
+        return result;
+      }
+      if (result.success && result.data) {
         const changed =
-          stoppage_time_minutes !== undefined
+          typeof stoppage_time_minutes === "number"
             ? ["current_minute", "stoppage_time_minutes"]
             : ["current_minute"];
-        emit_live_game_updated(old_game, result.data, changed);
+        emit_live_game_updated(old_result.data, result.data, changed);
       }
       return result;
     },
     async advance_period(id, new_period) {
-      const old_result = await repository.find_by_id(id),
-        old_game = old_result.success ? old_result.data : undefined;
+      const old_result = await repository.find_by_id(id);
       const result = await repository.update(id, {
         current_period: new_period as GamePeriod,
       });
-      if (result.success && result.data && old_game) {
-        emit_live_game_updated(old_game, result.data, ["current_period"]);
+      if (!old_result.success || !old_result.data) {
+        return result;
+      }
+      if (result.success && result.data) {
+        emit_live_game_updated(old_result.data, result.data, [
+          "current_period",
+        ]);
       }
       return result;
     },

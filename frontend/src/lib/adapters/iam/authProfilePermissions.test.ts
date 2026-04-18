@@ -81,7 +81,7 @@ describe("authProfilePermissions", () => {
   });
 
   it("returns cached permissions without re-verifying the token", async () => {
-    const cached_result =  {
+    const cached_result = {
       success: true,
       data: {
         role: "org_admin",
@@ -133,7 +133,7 @@ describe("authProfilePermissions", () => {
         ),
     };
     const authorization_cache = {
-      get_or_miss: vi.fn().mockReturnValue({ is_hit: false, value: null }),
+      get_or_miss: vi.fn().mockReturnValue({ is_hit: false }),
       set: vi.fn(),
     };
 
@@ -165,7 +165,7 @@ describe("authProfilePermissions", () => {
       ),
     };
     const authorization_cache = {
-      get_or_miss: vi.fn().mockReturnValue({ is_hit: false, value: null }),
+      get_or_miss: vi.fn().mockReturnValue({ is_hit: false }),
       set: vi.fn(),
     };
 

@@ -2,6 +2,12 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { Team } from "$lib/core/entities/Team";
 
+import {
+  build_report_data_for_fixture,
+  download_all_fixture_reports,
+  download_fixture_report,
+} from "./competitionResultsMatchReports";
+
 const {
   build_assigned_officials_mock,
   build_match_report_data_mock,
@@ -44,12 +50,6 @@ vi.mock("$lib/presentation/logic/competitionResultsMatchReportHelpers", () => ({
     resolve_match_report_organization_name_mock,
 }));
 
-import {
-  build_report_data_for_fixture,
-  download_all_fixture_reports,
-  download_fixture_report,
-} from "./competitionResultsMatchReports";
-
 describe("competitionResultsMatchReports", () => {
   function create_team(id: string, name: string): Team {
     return {
@@ -59,8 +59,8 @@ describe("competitionResultsMatchReports", () => {
       description: `${name} description`,
       organization_id: "organization-1",
       gender_id: "gender-1",
-      captain_player_id: null,
-      vice_captain_player_id: null,
+      captain_player_id: "",
+      vice_captain_player_id: "",
       max_squad_size: 25,
       home_venue_id: "venue-1",
       primary_color: "#111111",
@@ -121,7 +121,10 @@ describe("competitionResultsMatchReports", () => {
     await expect(
       build_report_data_for_fixture({
         fixture: fixture as never,
-        selected_competition: { id: "competition-1" } as never,
+        selected_competition_state: {
+          status: "present",
+          competition: { id: "competition-1" },
+        } as never,
         team_map,
         organization_name: "Org One",
         organization_logo_url: "/logo.svg",
@@ -148,7 +151,7 @@ describe("competitionResultsMatchReports", () => {
       .mockResolvedValueOnce([]);
     build_match_report_data_mock
       .mockReturnValueOnce({ id: "report-1" })
-      .mockReturnValueOnce(null);
+      .mockImplementationOnce(() => {});
     generate_match_report_filename_mock.mockReturnValueOnce(
       "lions-vs-falcons.pdf",
     );
@@ -156,7 +159,10 @@ describe("competitionResultsMatchReports", () => {
     await expect(
       download_fixture_report({
         fixture: fixture as never,
-        selected_competition: { id: "competition-1" } as never,
+        selected_competition_state: {
+          status: "present",
+          competition: { id: "competition-1" },
+        } as never,
         team_map,
         organization_logo_url: "/logo.svg",
         dependencies: {
@@ -170,6 +176,13 @@ describe("competitionResultsMatchReports", () => {
         } as never,
       }),
     ).resolves.toBe(true);
+    expect(resolve_match_report_organization_name_mock).toHaveBeenCalledWith(
+      {
+        status: "present",
+        competition: { id: "competition-1" },
+      },
+      expect.any(Object),
+    );
     expect(download_match_report_mock).toHaveBeenCalledWith(
       { id: "report-1" },
       "lions-vs-falcons.pdf",
@@ -178,7 +191,10 @@ describe("competitionResultsMatchReports", () => {
     await expect(
       download_fixture_report({
         fixture: fixture as never,
-        selected_competition: { id: "competition-1" } as never,
+        selected_competition_state: {
+          status: "present",
+          competition: { id: "competition-1" },
+        } as never,
         team_map,
         organization_logo_url: "/logo.svg",
         dependencies: {
@@ -198,7 +214,7 @@ describe("competitionResultsMatchReports", () => {
     await expect(
       download_all_fixture_reports({
         completed_fixtures: [],
-        selected_competition: null,
+        selected_competition_state: { status: "missing" },
         team_map,
         organization_logo_url: "/logo.svg",
         dependencies: {} as never,
@@ -221,7 +237,7 @@ describe("competitionResultsMatchReports", () => {
       .mockResolvedValueOnce([]);
     build_match_report_data_mock
       .mockReturnValueOnce({ id: "report-1" })
-      .mockReturnValueOnce(null);
+      .mockImplementationOnce(() => {});
 
     await expect(
       download_all_fixture_reports({
@@ -233,9 +249,12 @@ describe("competitionResultsMatchReports", () => {
             scheduled_date: "2024-06-02",
           } as never,
         ],
-        selected_competition: {
-          id: "competition-1",
-          name: "Summer Cup",
+        selected_competition_state: {
+          status: "present",
+          competition: {
+            id: "competition-1",
+            name: "Summer Cup",
+          },
         } as never,
         team_map,
         organization_logo_url: "/logo.svg",
@@ -250,6 +269,16 @@ describe("competitionResultsMatchReports", () => {
         } as never,
       }),
     ).resolves.toBe(true);
+    expect(resolve_match_report_organization_name_mock).toHaveBeenCalledWith(
+      {
+        status: "present",
+        competition: {
+          id: "competition-1",
+          name: "Summer Cup",
+        },
+      },
+      expect.any(Object),
+    );
     expect(download_all_match_reports_mock).toHaveBeenCalledWith(
       [{ id: "report-1" }],
       "Summer Cup Match Reports",

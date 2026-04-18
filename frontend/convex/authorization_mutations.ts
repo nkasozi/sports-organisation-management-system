@@ -66,7 +66,7 @@ export const seed_super_admin = mutation({
     ).filter(
       (user: any) => user.role === "super_admin" && user.status !== "inactive",
     ).length;
-    let caller_role: string | null = null;
+    let caller_role = "";
     const identity = await ctx.auth.getUserIdentity();
     if (identity?.email) {
       const caller = await ctx.db
@@ -75,7 +75,7 @@ export const seed_super_admin = mutation({
           q.eq("email", identity.email!.toLowerCase()),
         )
         .first();
-      caller_role = caller?.role ?? null;
+      caller_role = caller ? caller.role : "";
     }
     const seed_allowed = is_seed_super_admin_allowed(
       caller_role,

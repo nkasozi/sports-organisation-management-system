@@ -1,11 +1,32 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import type { AuthProfileState } from "$lib/presentation/stores/authTypes";
+
+import {
+  fetch_fixtures_from_official,
+  fetch_officials_from_fixture,
+  fetch_officials_from_organization,
+} from "./officialDataFetcher";
+
 const {
   auth_state,
   fetch_entities_for_type_mock,
   get_use_cases_for_entity_type_mock,
 } = vi.hoisted(() => ({
-  auth_state: { current_profile: { id: "rater-1" } },
+  auth_state: {
+    current_profile: {
+      status: "present",
+      profile: {
+        id: "rater-1",
+        display_name: "Rater One",
+        email: "rater@example.com",
+        role: "team_manager",
+        organization_id: "organization-1",
+        organization_name: "Organization 1",
+        team_id: "team-1",
+      },
+    } as AuthProfileState,
+  },
   fetch_entities_for_type_mock: vi.fn(),
   get_use_cases_for_entity_type_mock: vi.fn(),
 }));
@@ -24,15 +45,20 @@ vi.mock("./dynamicFormDataLoader", () => ({
   fetch_entities_for_type: fetch_entities_for_type_mock,
 }));
 
-import {
-  fetch_fixtures_from_official,
-  fetch_officials_from_fixture,
-  fetch_officials_from_organization,
-} from "./officialDataFetcher";
-
 describe("officialDataFetcher", () => {
   beforeEach(() => {
-    auth_state.current_profile = { id: "rater-1" };
+    auth_state.current_profile = {
+      status: "present",
+      profile: {
+        id: "rater-1",
+        display_name: "Rater One",
+        email: "rater@example.com",
+        role: "team_manager",
+        organization_id: "organization-1",
+        organization_name: "Organization 1",
+        team_id: "team-1",
+      },
+    };
     fetch_entities_for_type_mock.mockReset();
     get_use_cases_for_entity_type_mock.mockReset();
   });
@@ -100,5 +126,31 @@ describe("officialDataFetcher", () => {
     await expect(
       fetch_fixtures_from_official("official-1", "organization-1"),
     ).resolves.toEqual([{ id: "fixture-1", status: "completed" }]);
+  });
+
+  it("omits the rater filter when the auth profile is missing", async () => {
+    auth_state.current_profile = { status: "missing" };
+    get_use_cases_for_entity_type_mock.mockReturnValue({
+      success: true,
+      data: {
+        get_by_id: vi.fn().mockResolvedValue({
+          success: true,
+          data: { assigned_officials: [] },
+        }),
+      },
+    });
+    fetch_entities_for_type_mock
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([]);
+
+    await fetch_officials_from_fixture("fixture-1", "organization-1");
+
+    expect(fetch_entities_for_type_mock).toHaveBeenCalledWith(
+      "officialperformancerating",
+      {
+        fixture_id: "fixture-1",
+        rater_user_id: "",
+      },
+    );
   });
 });

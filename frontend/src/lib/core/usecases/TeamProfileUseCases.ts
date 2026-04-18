@@ -43,16 +43,22 @@ export function create_team_profile_use_cases(
       options?: QueryOptions,
     ): PaginatedAsyncResult<TeamProfile> {
       if (!filter) {
-        return repository.find_all(undefined, options);
+        return repository.find_all({}, options);
       }
 
       const typed_filter: TeamProfileFilter = {
-        team_id: filter?.team_id as TeamProfile["team_id"] | undefined,
-        visibility: filter?.visibility as TeamProfileFilter["visibility"],
-        status: filter?.status as TeamProfileFilter["status"],
+        ...(filter.team_id
+          ? { team_id: filter.team_id as TeamProfile["team_id"] }
+          : {}),
+        ...(filter.visibility
+          ? { visibility: filter.visibility as TeamProfileFilter["visibility"] }
+          : {}),
+        ...(filter.status
+          ? { status: filter.status as TeamProfileFilter["status"] }
+          : {}),
       };
 
-      return repository.find_all(typed_filter, options);
+      return repository.find_all(typed_filter, options ?? {});
     },
 
     async get_by_id(

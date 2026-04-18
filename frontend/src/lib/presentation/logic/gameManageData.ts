@@ -7,8 +7,8 @@ import type { TeamUseCasesPort } from "$lib/core/interfaces/ports/internal/useca
 
 interface GameManageBundle {
   fixture: Fixture;
-  home_team: Team | null;
-  away_team: Team | null;
+  home_team?: Team;
+  away_team?: Team;
   home_players: Player[];
   away_players: Player[];
   game_clock_seconds: number;
@@ -52,8 +52,8 @@ export async function load_game_manage_bundle(
     success: true,
     data: {
       fixture,
-      home_team: home_result.success ? home_result.data : null,
-      away_team: away_result.success ? away_result.data : null,
+      home_team: home_result.success ? home_result.data : undefined,
+      away_team: away_result.success ? away_result.data : undefined,
       home_players: home_players_result.success
         ? home_players_result.data.items
         : [],

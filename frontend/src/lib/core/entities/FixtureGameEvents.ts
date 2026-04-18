@@ -25,7 +25,7 @@ export function create_game_event(
     id: `evt_${Date.now()}_${Math.random().toString(36).substr(2, 9)}` as GameEvent["id"],
     event_type,
     minute: minute as GameEvent["minute"],
-    stoppage_time_minute: null,
+    stoppage_time_minute: 0 as GameEvent["stoppage_time_minute"],
     team_side,
     player_name: player_name as GameEvent["player_name"],
     secondary_player_name:

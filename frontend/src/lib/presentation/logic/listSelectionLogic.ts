@@ -10,9 +10,8 @@ export function check_if_all_entities_selected(
 }
 
 export function check_if_some_entities_selected(
-  selected_ids: Set<string> | null | undefined,
+  selected_ids: Set<string>,
 ): boolean {
-  if (!selected_ids) return false;
   return selected_ids.size > 0;
 }
 

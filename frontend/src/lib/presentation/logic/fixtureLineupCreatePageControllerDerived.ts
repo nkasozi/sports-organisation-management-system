@@ -3,12 +3,16 @@ import type { Fixture } from "$lib/core/entities/Fixture";
 import type { CreateFixtureLineupInput } from "$lib/core/entities/FixtureLineup";
 import type { Organization } from "$lib/core/entities/Organization";
 import type { Team } from "$lib/core/entities/Team";
-import {
-  is_field_restricted_by_authorization,
-  type UserScopeProfile,
-} from "$lib/core/interfaces/ports";
+import { is_field_restricted_by_authorization } from "$lib/core/interfaces/ports";
 import type { TeamPlayer } from "$lib/core/services/teamPlayers";
 
+import type {
+  FixtureLineupCreateAuthProfileState,
+  FixtureLineupCreateFixtureState,
+  FixtureLineupCreateOrganizationState,
+  FixtureLineupCreateTeamState,
+} from "./fixtureLineupCreatePageContracts";
+import { resolve_fixture_lineup_create_organization_state } from "./fixtureLineupCreatePageContracts";
 import {
   build_filtered_team_players,
   build_fixture_lineup_create_wizard_steps,
@@ -16,11 +20,11 @@ import {
 } from "./fixtureLineupCreateState";
 
 interface FixtureLineupCreateDerivedStateParams {
-  current_auth_profile: UserScopeProfile | null;
+  current_auth_profile_state: FixtureLineupCreateAuthProfileState;
   form_data: CreateFixtureLineupInput;
-  selected_organization: Organization | null;
-  selected_fixture: Fixture | null;
-  selected_team: Team | null;
+  selected_organization_state: FixtureLineupCreateOrganizationState;
+  selected_fixture_state: FixtureLineupCreateFixtureState;
+  selected_team_state: FixtureLineupCreateTeamState;
   team_players: TeamPlayer[];
   player_search_text: string;
   organizations: Organization[];
@@ -38,7 +42,7 @@ interface FixtureLineupCreateDerivedStateParams {
 interface FixtureLineupCreateDerivedState {
   organization_is_restricted: boolean;
   team_is_restricted: boolean;
-  user_team_id: string | undefined;
+  user_team_id?: string;
   current_fixture_title: string;
   organization_select_options: Array<{ value: string; label: string }>;
   all_fixtures_for_org: Fixture[];
@@ -55,25 +59,48 @@ interface FixtureLineupCreateDerivedState {
   wizard_steps: ReturnType<typeof build_fixture_lineup_create_wizard_steps>;
 }
 
+function is_fixture_lineup_create_field_restricted(
+  current_auth_profile_state: FixtureLineupCreateAuthProfileState,
+  field_name: string,
+): boolean {
+  return current_auth_profile_state.status === "present"
+    ? is_field_restricted_by_authorization(
+        current_auth_profile_state.profile,
+        field_name,
+      )
+    : true;
+}
+
+function get_fixture_lineup_create_user_team_id(
+  current_auth_profile_state: FixtureLineupCreateAuthProfileState,
+): string | undefined {
+  return current_auth_profile_state.status === "present"
+    ? current_auth_profile_state.profile.team_id
+    : void 0;
+}
+
 export function build_fixture_lineup_create_page_derived_state(
   params: FixtureLineupCreateDerivedStateParams,
 ): FixtureLineupCreateDerivedState {
-  const organization_is_restricted = is_field_restricted_by_authorization(
-    params.current_auth_profile,
+  const organization_is_restricted = is_fixture_lineup_create_field_restricted(
+    params.current_auth_profile_state,
     "organization_id",
   );
-  const team_is_restricted = is_field_restricted_by_authorization(
-    params.current_auth_profile,
+  const team_is_restricted = is_fixture_lineup_create_field_restricted(
+    params.current_auth_profile_state,
     "team_id",
   );
-  const user_team_id = params.current_auth_profile?.team_id;
-  const current_fixture_title = params.selected_fixture
-    ? get_fixture_display_name(
-        params.selected_fixture,
-        params.all_teams,
-        params.all_competitions,
-      )
-    : "";
+  const user_team_id = get_fixture_lineup_create_user_team_id(
+    params.current_auth_profile_state,
+  );
+  const current_fixture_title =
+    params.selected_fixture_state.status === "present"
+      ? get_fixture_display_name(
+          params.selected_fixture_state.fixture,
+          params.all_teams,
+          params.all_competitions,
+        )
+      : "";
   const organization_select_options = params.organizations.map(
     (organization: Organization) => ({
       value: organization.id,
@@ -138,9 +165,9 @@ export function build_fixture_lineup_create_page_derived_state(
       params.player_search_text,
     ),
     wizard_steps: build_fixture_lineup_create_wizard_steps(
-      params.selected_organization,
-      params.selected_fixture,
-      params.selected_team,
+      params.selected_organization_state.status === "present",
+      params.selected_fixture_state.status === "present",
+      params.selected_team_state.status === "present",
       params.form_data.selected_players.length,
       params.min_players,
       params.max_players,
@@ -152,10 +179,9 @@ export function build_fixture_lineup_create_page_derived_state(
 export function sync_fixture_lineup_create_selected_organization(
   organization_id: string,
   organizations: Organization[],
-): Organization | null {
-  return (
-    organizations.find(
-      (organization: Organization) => organization.id === organization_id,
-    ) || null
+): FixtureLineupCreateOrganizationState {
+  return resolve_fixture_lineup_create_organization_state(
+    organization_id,
+    organizations,
   );
 }

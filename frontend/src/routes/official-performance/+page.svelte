@@ -2,11 +2,12 @@
     import EntityCrudWrapper from "$lib/presentation/components/EntityCrudWrapper.svelte";
     import { auth_store } from "$lib/presentation/stores/auth";
 
-    $: current_profile = $auth_store.current_profile;
+    $: current_profile_state = $auth_store.current_profile;
     $: rater_filter =
-        current_profile?.role === "team_manager"
-            ? { rater_user_id: current_profile.id }
-            : null;
+        current_profile_state.status === "present" &&
+        current_profile_state.profile.role === "team_manager"
+            ? { rater_user_id: current_profile_state.profile.id }
+            : {};
 </script>
 
 <svelte:head>

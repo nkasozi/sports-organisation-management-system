@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { load_dynamic_form_official_conflict_warnings } from "./dynamicEntityFormOfficialConflictWarnings";
+
 const { detect_official_team_conflicts_mock } = vi.hoisted(() => ({
   detect_official_team_conflicts_mock: vi.fn(),
 }));
@@ -7,8 +9,6 @@ const { detect_official_team_conflicts_mock } = vi.hoisted(() => ({
 vi.mock("../../core/entities/FixtureDetailsSetup", () => ({
   detect_official_team_conflicts: detect_official_team_conflicts_mock,
 }));
-
-import { load_dynamic_form_official_conflict_warnings } from "./dynamicEntityFormOfficialConflictWarnings";
 
 describe("dynamicEntityFormOfficialConflictWarnings", () => {
   beforeEach(() => {
@@ -20,7 +20,7 @@ describe("dynamicEntityFormOfficialConflictWarnings", () => {
       load_dynamic_form_official_conflict_warnings("fixture", {}, {
         fixture_use_cases: { get_by_id: vi.fn() },
         team_use_cases: { get_by_id: vi.fn() },
-        official_use_cases: null,
+
         official_associated_team_use_cases: { list_by_official: vi.fn() },
       } as never),
     ).resolves.toEqual([]);

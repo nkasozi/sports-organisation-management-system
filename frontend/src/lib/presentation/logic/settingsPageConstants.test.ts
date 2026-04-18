@@ -85,29 +85,38 @@ describe("settingsPageConstants", () => {
     expect(
       apply_organization_settings_form_values(
         current_values,
-        { name: "Selected Club" } as never,
-        null,
+        {
+          status: "present",
+          organization: { name: "Selected Club" },
+        } as never,
+        { status: "missing" },
       ).organization_name,
     ).toBe("Selected Club");
 
     expect(
       apply_organization_settings_form_values(
         current_values,
-        { name: "Selected Club" } as never,
         {
-          display_name: "Stored Club",
-          logo_url: "/stored.svg",
-          tagline: "Stored tagline",
-          contact_email: "stored@test.example",
-          contact_address: "22 Arena Road",
-          header_pattern: "solid_color",
-          footer_pattern: "pattern",
-          background_pattern_url: "/stored-bg.svg",
-          show_panel_borders: true,
-          social_media_links: [
-            { platform: "linkedin", url: "https://linkedin.test/club" },
-          ],
-          sync_interval_ms: 900000,
+          status: "present",
+          organization: { name: "Selected Club" },
+        } as never,
+        {
+          status: "present",
+          organization_settings: {
+            display_name: "Stored Club",
+            logo_url: "/stored.svg",
+            tagline: "Stored tagline",
+            contact_email: "stored@test.example",
+            contact_address: "22 Arena Road",
+            header_pattern: "solid_color",
+            footer_pattern: "pattern",
+            background_pattern_url: "/stored-bg.svg",
+            show_panel_borders: true,
+            social_media_links: [
+              { platform: "linkedin", url: "https://linkedin.test/club" },
+            ],
+            sync_interval_ms: 900000,
+          },
         } as never,
       ),
     ).toEqual(

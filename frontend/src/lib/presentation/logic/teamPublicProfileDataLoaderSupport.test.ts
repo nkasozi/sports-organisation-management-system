@@ -20,7 +20,10 @@ describe("teamPublicProfileDataLoaderSupport", () => {
       } as never),
     ).toEqual({
       success: false,
-      error: { kind: "not_found", message: "Team profile not found" },
+      error: {
+        kind: "not_found",
+        message: "Team profile not found",
+      },
     });
 
     expect(
@@ -37,7 +40,10 @@ describe("teamPublicProfileDataLoaderSupport", () => {
       } as never),
     ).toEqual({
       success: false,
-      error: { kind: "restricted", message: "This profile is private" },
+      error: {
+        kind: "restricted",
+        message: "This profile is private",
+      },
     });
   });
 
@@ -155,8 +161,8 @@ describe("teamPublicProfileDataLoaderSupport", () => {
                       home_team_id: "team-2",
                       away_team_id: "team-1",
                       status: "scheduled",
-                      home_team_score: null,
-                      away_team_score: null,
+                      home_team_score: 0,
+                      away_team_score: 0,
                       scheduled_date: "2024-06-01T10:00:00.000Z",
                       game_events: [],
                     },
@@ -207,8 +213,8 @@ describe("teamPublicProfileDataLoaderSupport", () => {
               home_team_id: "team-2",
               away_team_id: "team-1",
               status: "scheduled",
-              home_team_score: null,
-              away_team_score: null,
+              home_team_score: 0,
+              away_team_score: 0,
               scheduled_date: "2024-06-01T10:00:00.000Z",
               game_events: [],
             },

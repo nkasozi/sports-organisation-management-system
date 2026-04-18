@@ -39,7 +39,7 @@ export function get_local_latest_modified_at(
 export function get_table_from_database(
   database: SportSyncDatabase,
   table_name: TableName,
-): SyncTable | null {
+): SyncTable {
   const table_map: Record<TableName, SyncTable> = {
     organizations: cast_sync_table(database.organizations),
     competitions: cast_sync_table(database.competitions),
@@ -85,7 +85,8 @@ export function get_table_from_database(
     ),
     organization_settings: cast_sync_table(database.organization_settings),
   };
-  return table_map[table_name] || null;
+
+  return table_map[table_name];
 }
 
 async function get_remote_latest_modified_at(
@@ -104,11 +105,10 @@ export async function get_remote_state_for_table(
   hints: SyncHints | undefined,
 ): Promise<RemoteTableState> {
   const cached = hints?.remote_timestamp_cache?.[table_name];
-  if (cached !== undefined && !hints?.use_fresh_timestamps) {
+  if (cached != void 0 && !hints?.use_fresh_timestamps) {
     return {
       record_count: 0,
-      latest_modified_at:
-        (cached as RemoteTableState["latest_modified_at"]) ?? null,
+      latest_modified_at: cached as RemoteTableState["latest_modified_at"],
     };
   }
   return get_remote_latest_modified_at(convex_client, table_name);

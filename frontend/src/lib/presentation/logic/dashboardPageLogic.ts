@@ -25,6 +25,43 @@ export type { DashboardDependencies } from "./dashboardPageTypes";
 const RECENT_COMPETITIONS_LIMIT = 3;
 const UPCOMING_FIXTURES_LIMIT = 3;
 
+function build_dashboard_organization_filter(filters: DashboardFilters): {
+  organization_id?: string;
+} {
+  if (filters.organization_scope_state.status === "unscoped") {
+    return {};
+  }
+
+  return {
+    organization_id: filters.organization_scope_state.organization_id,
+  };
+}
+
+function build_dashboard_fixture_filter(filters: DashboardFilters): {
+  status: string;
+  organization_id?: string;
+} {
+  if (filters.organization_scope_state.status === "unscoped") {
+    return { status: filters.fixture_status };
+  }
+
+  return {
+    status: filters.fixture_status,
+    organization_id: filters.organization_scope_state.organization_id,
+  };
+}
+
+function get_dashboard_organization_count(
+  filters: DashboardFilters,
+  org_result: Result<{ items: unknown[]; total_count: number }>,
+): number {
+  if (filters.organization_count_state.status === "fixed") {
+    return filters.organization_count_state.value;
+  }
+
+  return org_result.success ? (org_result.data?.total_count ?? 0) : 0;
+}
+
 function extract_stats(
   filters: DashboardFilters,
   org_result: Result<{ items: unknown[]; total_count: number }>,
@@ -33,9 +70,7 @@ function extract_stats(
   player_result: Result<{ items: unknown[]; total_count: number }>,
 ): DashboardStats {
   return {
-    organizations:
-      filters.organization_count_override ??
-      (org_result.success ? (org_result.data?.total_count ?? 0) : 0),
+    organizations: get_dashboard_organization_count(filters, org_result),
     competitions: comp_result.success
       ? (comp_result.data?.total_count ?? 0)
       : 0,
@@ -48,25 +83,30 @@ export async function load_dashboard_data(
   dependencies: DashboardDependencies,
   filters: DashboardFilters,
 ): Promise<Result<DashboardData>> {
+  const organization_filter = build_dashboard_organization_filter(filters);
+  const fixture_filter = build_dashboard_fixture_filter(filters);
   const [org_result, comp_result, team_result, player_result, fixture_result] =
     await Promise.all([
-      dependencies.organization_use_cases.list(undefined, {
-        page_number: 1,
-        page_size: 1,
-      }),
-      dependencies.competition_use_cases.list(filters.organization_filter, {
+      dependencies.organization_use_cases.list(
+        {},
+        {
+          page_number: 1,
+          page_size: 1,
+        },
+      ),
+      dependencies.competition_use_cases.list(organization_filter, {
         page_number: 1,
         page_size: 5,
       }),
-      dependencies.team_use_cases.list(filters.organization_filter, {
+      dependencies.team_use_cases.list(organization_filter, {
         page_number: 1,
         page_size: 100,
       }),
-      dependencies.player_use_cases.list(filters.organization_filter, {
+      dependencies.player_use_cases.list(organization_filter, {
         page_number: 1,
         page_size: 1,
       }),
-      dependencies.fixture_use_cases.list(filters.fixture_filter, {
+      dependencies.fixture_use_cases.list(fixture_filter, {
         page_number: 1,
         page_size: 5,
       }),

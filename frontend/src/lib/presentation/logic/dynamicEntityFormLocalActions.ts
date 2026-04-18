@@ -6,11 +6,16 @@ import type { DynamicEntityFormState } from "./dynamicEntityFormState";
 import { build_foreign_entity_route } from "./dynamicFormLogic";
 
 export function build_dynamic_form_fake_data_state(
-  entity_metadata: EntityMetadata | null,
+  entity_metadata: EntityMetadata | undefined,
   is_edit_mode: boolean,
   form_state: DynamicEntityFormState,
 ): DynamicEntityFormState {
-  if (!entity_metadata || is_edit_mode) return form_state;
+  if (
+    !entity_metadata ||
+    !Array.isArray((entity_metadata as Partial<EntityMetadata>).fields) ||
+    is_edit_mode
+  )
+    return form_state;
   const fake_data_result =
     fakeDataGenerator.generate_fake_data_for_entity_fields(
       entity_metadata.fields,
@@ -27,7 +32,7 @@ export function build_dynamic_form_fake_data_state(
 }
 
 export function navigate_to_dynamic_form_foreign_entity(
-  foreign_entity_type: string | undefined,
+  foreign_entity_type?: string,
 ): boolean {
   const route = build_foreign_entity_route(foreign_entity_type);
   if (!route) return false;

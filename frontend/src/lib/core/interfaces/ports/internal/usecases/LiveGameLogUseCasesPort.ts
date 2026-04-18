@@ -56,7 +56,9 @@ export interface LiveGameLogUseCasesPort extends BaseUseCasesPort<
   update_game_clock(
     id: ScalarValueInput<LiveGameLog["id"]>,
     current_minute: ScalarValueInput<LiveGameLog["current_minute"]>,
-    stoppage_time_minutes?: ScalarValueInput<LiveGameLog["stoppage_time_minutes"]>,
+    stoppage_time_minutes?: ScalarValueInput<
+      LiveGameLog["stoppage_time_minutes"]
+    >,
   ): AsyncResult<LiveGameLog>;
 
   advance_period(

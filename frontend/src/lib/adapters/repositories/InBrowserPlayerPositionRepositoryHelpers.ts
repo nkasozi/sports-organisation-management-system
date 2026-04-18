@@ -22,7 +22,7 @@ export function apply_player_position_filter(
       (entity: PlayerPosition) => entity.sport_type === filter.sport_type,
     );
   }
-  if (filter.is_available !== undefined) {
+  if ("is_available" in filter) {
     filtered = filtered.filter(
       (entity: PlayerPosition) => entity.is_available === filter.is_available,
     );

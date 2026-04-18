@@ -1,7 +1,11 @@
 import type { ConvexClient } from "./syncTypes";
 
-export function is_auth_error(error_message: string | null): boolean {
-  if (!error_message) return false;
+const AUTHENTICATED_STATUS = "authenticated";
+const UNAUTHENTICATED_STATUS = "unauthenticated";
+const AUTHENTICATION_REQUIRED_MESSAGE = "Convex client is not authenticated";
+
+export function is_auth_error(error_message: string): boolean {
+  if (error_message.length === 0) return false;
   return (
     error_message.includes("authentication_required") ||
     error_message.includes("unauthorized") ||
@@ -11,12 +15,21 @@ export function is_auth_error(error_message: string | null): boolean {
 
 export async function verify_sync_auth(
   convex_client: ConvexClient,
-): Promise<{ authenticated: boolean; error: string | null }> {
+): Promise<
+  | { status: typeof AUTHENTICATED_STATUS }
+  | { status: typeof UNAUTHENTICATED_STATUS; error: string }
+> {
   try {
     const result = (await convex_client.query("sync:check_auth", {})) as {
       authenticated: boolean;
     };
-    return { authenticated: result.authenticated, error: null };
+
+    return result.authenticated
+      ? { status: AUTHENTICATED_STATUS }
+      : {
+          status: UNAUTHENTICATED_STATUS,
+          error: AUTHENTICATION_REQUIRED_MESSAGE,
+        };
   } catch (error) {
     console.warn("[SyncAuth] Failed to perform operation", {
       event: "repository_perform_operation_failed",
@@ -24,6 +37,7 @@ export async function verify_sync_auth(
     });
     const error_message =
       error instanceof Error ? error.message : String(error);
-    return { authenticated: false, error: error_message };
+
+    return { status: UNAUTHENTICATED_STATUS, error: error_message };
   }
 }

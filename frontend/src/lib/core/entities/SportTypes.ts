@@ -16,7 +16,12 @@ export type FoulCategory = {
   severity: "minor" | "moderate" | "major" | "severe";
   description: string;
   typical_penalty: string;
-  results_in_card: string | null;
+  results_in_card: string;
+};
+
+export type PenaltiesConfig = {
+  initial_rounds: number;
+  sudden_death_after: boolean;
 };
 
 export type SportGamePeriod = {
@@ -47,10 +52,7 @@ export type OvertimeRule = {
     | "replay"
     | "shootout";
   extra_time_periods: SportGamePeriod[];
-  penalties_config: {
-    initial_rounds: number;
-    sudden_death_after: boolean;
-  } | null;
+  penalties_config: PenaltiesConfig;
 };
 
 export type ScoringRule = {
@@ -61,7 +63,7 @@ export type ScoringRule = {
 
 export type SubstitutionRule = {
   max_substitutions_per_game: number;
-  max_substitution_windows: number | null;
+  max_substitution_windows: number;
   rolling_substitutions_allowed: boolean;
   return_after_substitution_allowed: boolean;
 };

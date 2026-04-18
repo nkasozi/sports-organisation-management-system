@@ -35,14 +35,11 @@ describe("matchReportPageLoadHelpers", () => {
 
   it("loads the competition bundle and short-circuits missing relationships", async () => {
     await expect(
-      load_match_report_competition_bundle(
-        { competition_id: null } as never,
-        {} as never,
-      ),
+      load_match_report_competition_bundle({} as never, {} as never),
     ).resolves.toEqual({
-      competition: null,
+      competition_state: { status: "missing" },
       organization_name: "",
-      sport: null,
+      sport_state: { status: "missing" },
     });
 
     await expect(
@@ -73,9 +70,12 @@ describe("matchReportPageLoadHelpers", () => {
         } as never,
       ),
     ).resolves.toEqual({
-      competition: { id: "competition_1", organization_id: "org_1" },
+      competition_state: {
+        status: "present",
+        competition: { id: "competition_1", organization_id: "org_1" },
+      },
       organization_name: "Uganda Hockey Association",
-      sport: { id: "sport_1" },
+      sport_state: { status: "present", sport: { id: "sport_1" } },
     });
   });
 
@@ -110,7 +110,7 @@ describe("matchReportPageLoadHelpers", () => {
       assigned_officials_data: [
         { official: { id: "official_1" }, role_name: "Umpire" },
       ],
-      venue_result: { success: true, data: { id: "venue_1" } },
+      venue_state: { status: "present", venue: { id: "venue_1" } },
     });
   });
 });

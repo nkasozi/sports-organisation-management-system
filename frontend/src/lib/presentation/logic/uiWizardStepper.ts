@@ -6,11 +6,19 @@ export interface WizardStep {
   [key: string]: unknown;
 }
 
+type WizardCurrentStepState =
+  | { status: "missing" }
+  | { status: "present"; step: WizardStep };
+
 export function get_current_wizard_step(
   step_list: WizardStep[],
   index: number,
-): WizardStep | null {
-  return index < 0 || index >= step_list.length ? null : step_list[index];
+): WizardCurrentStepState {
+  if (index < 0 || index >= step_list.length) {
+    return { status: "missing" };
+  }
+
+  return { status: "present", step: step_list[index] };
 }
 
 export function get_wizard_progress_percentage(
@@ -57,13 +65,13 @@ export function are_all_required_wizard_steps_completed(
 }
 
 export function get_wizard_step_status_class(
-  step: WizardStep | null,
+  step: WizardStep,
   current_step_index: number,
   step_index: number,
 ): string {
   if (step_index === current_step_index)
     return "bg-secondary-600 text-white dark:bg-secondary-500";
-  if (step?.is_completed)
+  if (step.is_completed)
     return "bg-secondary-100 text-secondary-800 dark:bg-secondary-800 dark:text-secondary-100";
   return "bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400";
 }

@@ -66,14 +66,22 @@ export function create_qualification_use_cases(
       const query_options = options || { page_number: 1, page_size: 100 };
 
       if (!filter) {
-        return repository.find_all(undefined, query_options);
+        return repository.find_all({}, query_options);
       }
 
       const qualification_filter: QualificationFilter = {
-        holder_type: filter.holder_type as QualificationHolderType | undefined,
-        holder_id: filter.holder_id as Qualification["holder_id"] | undefined,
-        certification_level: filter.certification_level,
-        status: filter.status as Qualification["status"] | undefined,
+        ...(filter.holder_type
+          ? { holder_type: filter.holder_type as QualificationHolderType }
+          : {}),
+        ...(filter.holder_id
+          ? { holder_id: filter.holder_id as Qualification["holder_id"] }
+          : {}),
+        ...(filter.certification_level
+          ? { certification_level: filter.certification_level }
+          : {}),
+        ...(filter.status
+          ? { status: filter.status as Qualification["status"] }
+          : {}),
       };
 
       return repository.find_all(qualification_filter, query_options);
@@ -90,7 +98,7 @@ export function create_qualification_use_cases(
     },
 
     async list_all(): PaginatedAsyncResult<Qualification> {
-      return repository.find_all(undefined, { page_number: 1, page_size: 100 });
+      return repository.find_all({}, { page_number: 1, page_size: 100 });
     },
   };
 }

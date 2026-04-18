@@ -12,7 +12,7 @@ import {
 describe("Qualification Entity", () => {
   describe("validate_qualification_input", () => {
     it("should return no errors for valid input", () => {
-      const valid_input =  {
+      const valid_input = {
         holder_type: "official",
         holder_id: "official-123",
         certification_name: "FIFA Referee License",
@@ -102,9 +102,9 @@ describe("Qualification Entity", () => {
   });
 
   describe("get_days_until_expiry", () => {
-    it("should return null when no expiry date", () => {
+    it("should return missing status when no expiry date", () => {
       const result = get_days_until_expiry("");
-      expect(result).toBeNull();
+      expect(result).toEqual({ status: "missing" });
     });
 
     it("should return negative number for expired qualifications", () => {
@@ -113,7 +113,14 @@ describe("Qualification Entity", () => {
       const result = get_days_until_expiry(
         past_date.toISOString().split("T")[0],
       );
-      expect(result).toBeLessThan(0);
+      expect(result).toMatchObject({ status: "present" });
+
+      if (result.status !== "present") {
+        expect(result.status).toBe("present");
+        return;
+      }
+
+      expect(result.day_count).toBeLessThan(0);
     });
 
     it("should return positive number for valid qualifications", () => {
@@ -122,7 +129,14 @@ describe("Qualification Entity", () => {
       const result = get_days_until_expiry(
         future_date.toISOString().split("T")[0],
       );
-      expect(result).toBeGreaterThan(0);
+      expect(result).toMatchObject({ status: "present" });
+
+      if (result.status !== "present") {
+        expect(result.status).toBe("present");
+        return;
+      }
+
+      expect(result.day_count).toBeGreaterThan(0);
     });
   });
 

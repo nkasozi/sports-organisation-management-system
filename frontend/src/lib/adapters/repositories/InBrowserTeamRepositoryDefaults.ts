@@ -6,8 +6,8 @@ export function create_default_teams(): import("$lib/core/types/DomainScalars").
   const BASE = {
     organization_id: "org_default_1",
     gender_id: "",
-    captain_player_id: null,
-    vice_captain_player_id: null,
+    captain_player_id: "",
+    vice_captain_player_id: "",
     logo_url: DEFAULT_TEAM_LOGO,
     status: "active" as const,
     created_at: now,

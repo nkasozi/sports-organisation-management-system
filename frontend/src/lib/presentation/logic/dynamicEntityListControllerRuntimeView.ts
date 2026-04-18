@@ -15,6 +15,10 @@ import type {
   DynamicEntityListControllerOptions,
   DynamicEntityListViewState,
 } from "$lib/presentation/logic/dynamicEntityListControllerTypes";
+import {
+  create_missing_csv_metadata_state,
+  create_present_csv_metadata_state,
+} from "$lib/presentation/logic/listCsvExportLogic";
 
 export function create_dynamic_entity_list_controller_view_actions(command: {
   get_options: () => DynamicEntityListControllerOptions;
@@ -50,10 +54,13 @@ export function create_dynamic_entity_list_controller_view_actions(command: {
       command.set_state({ columns_restored_from_cache: false }),
     export_to_csv: () => {
       const current_state = get(command.state_store);
+      const metadata_state = current_state.entity_metadata
+        ? create_present_csv_metadata_state(current_state.entity_metadata)
+        : create_missing_csv_metadata_state();
       export_dynamic_entity_list_to_csv(
         current_state.filtered_entities,
         current_state.visible_column_list,
-        current_state.entity_metadata,
+        metadata_state,
         current_state.entity_type,
         current_state.foreign_key_options,
       );

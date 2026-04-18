@@ -1,5 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import {
+  create_present_managed_game_fixture_state,
+  create_present_managed_game_team_state,
+} from "$lib/presentation/logic/managedGamePageTypes";
+
+import { create_managed_game_clock_handlers } from "./managedGamePageControllerClock";
+import { create_managed_game_page_state } from "./managedGamePageControllerState";
+
 const { ensure_auth_profile_mock } = vi.hoisted(() => ({
   ensure_auth_profile_mock: vi.fn(),
 }));
@@ -9,9 +17,6 @@ vi.mock("$app/environment", () => ({ browser: true }));
 vi.mock("$lib/presentation/logic/authGuard", () => ({
   ensure_auth_profile: ensure_auth_profile_mock,
 }));
-
-import { create_managed_game_clock_handlers } from "./managedGamePageControllerClock";
-import { create_managed_game_page_state } from "./managedGamePageControllerState";
 
 describe("managedGamePageControllerClock", () => {
   beforeEach(() => {
@@ -40,8 +45,12 @@ describe("managedGamePageControllerClock", () => {
       success: true,
       data: {
         fixture: { id: "fixture-1", status: "in_progress" },
-        home_team: { name: "Lions" },
-        away_team: { name: "Tigers" },
+        home_team: create_present_managed_game_team_state({
+          name: "Lions",
+        } as never),
+        away_team: create_present_managed_game_team_state({
+          name: "Tigers",
+        } as never),
         home_players: [],
         away_players: [],
         game_clock_seconds: 75,
@@ -59,9 +68,16 @@ describe("managedGamePageControllerClock", () => {
     expect(load_bundle).toHaveBeenCalledWith("fixture-1");
     expect(state_store.read_state()).toEqual(
       expect.objectContaining({
-        fixture: { id: "fixture-1", status: "in_progress" },
-        home_team: { name: "Lions" },
-        away_team: { name: "Tigers" },
+        fixture: create_present_managed_game_fixture_state({
+          id: "fixture-1",
+          status: "in_progress",
+        } as never),
+        home_team: create_present_managed_game_team_state({
+          name: "Lions",
+        } as never),
+        away_team: create_present_managed_game_team_state({
+          name: "Tigers",
+        } as never),
         game_clock_seconds: 75,
         is_loading: false,
       }),

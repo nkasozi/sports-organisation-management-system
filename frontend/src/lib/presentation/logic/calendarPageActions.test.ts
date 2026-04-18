@@ -1,5 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import {
+  create_calendar_category_action,
+  delete_calendar_activity_action,
+  save_calendar_activity_action,
+} from "./calendarPageActions";
+
 const { build_activity_datetime_range_mock, build_manual_activity_input_mock } =
   vi.hoisted(() => ({
     build_activity_datetime_range_mock: vi.fn(),
@@ -10,12 +16,6 @@ vi.mock("$lib/presentation/logic/calendarPageState", () => ({
   build_activity_datetime_range: build_activity_datetime_range_mock,
   build_manual_activity_input: build_manual_activity_input_mock,
 }));
-
-import {
-  create_calendar_category_action,
-  delete_calendar_activity_action,
-  save_calendar_activity_action,
-} from "./calendarPageActions";
 
 describe("calendarPageActions", () => {
   beforeEach(() => {
@@ -39,7 +39,8 @@ describe("calendarPageActions", () => {
           end_date: "2024-06-01",
         } as never,
         categories: [],
-        editing_activity: null,
+        editing_activity: void 0,
+
         selected_organization_id: "organization-1",
         activity_use_cases,
       }),
@@ -108,7 +109,8 @@ describe("calendarPageActions", () => {
           end_date: "2024-06-01",
         } as never,
         categories: [{ id: "category-1", category_type: "training" }] as never,
-        editing_activity: null,
+        editing_activity: void 0,
+
         selected_organization_id: "organization-1",
         activity_use_cases: {
           create,

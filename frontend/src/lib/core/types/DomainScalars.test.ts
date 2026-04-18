@@ -6,7 +6,6 @@ import {
   type IsoDateString,
   type IsoDateTimeString,
   type Name,
-  type ScalarInput,
   parse_calendar_token_value,
   parse_email_address,
   parse_entity_id,
@@ -15,6 +14,7 @@ import {
   parse_iso_date_string,
   parse_iso_date_time_string,
   parse_name,
+  type ScalarInput,
 } from "./DomainScalars";
 
 describe("DomainScalars", () => {
@@ -101,7 +101,7 @@ describe("DomainScalars", () => {
       scheduled_date: IsoDateString;
     }>;
 
-    const input =  {
+    const input = {
       created_at: "2026-04-14T12:30:00.000Z",
       entity_id: "team_123",
       minute: 45,

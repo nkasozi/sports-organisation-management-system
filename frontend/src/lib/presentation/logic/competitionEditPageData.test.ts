@@ -1,5 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import {
+  build_competition_edit_auth_filter,
+  load_competition_edit_page_data,
+  load_competition_edit_sport,
+} from "./competitionEditPageData";
+
 const {
   build_authorization_list_filter_mock,
   create_competition_update_form_data_mock,
@@ -28,12 +34,6 @@ vi.mock("./competitionEditPageState", () => ({
   create_competition_update_form_data: create_competition_update_form_data_mock,
 }));
 
-import {
-  build_competition_edit_auth_filter,
-  load_competition_edit_page_data,
-  load_competition_edit_sport,
-} from "./competitionEditPageData";
-
 describe("competitionEditPageData", () => {
   function create_dependencies() {
     return {
@@ -56,11 +56,17 @@ describe("competitionEditPageData", () => {
       organization_id: "organization-1",
     });
 
-    expect(build_competition_edit_auth_filter(null)).toEqual({});
+    expect(build_competition_edit_auth_filter({ status: "missing" })).toEqual(
+      {},
+    );
     expect(
       build_competition_edit_auth_filter({
-        organization_id: "organization-1",
-      } as never),
+        status: "present",
+        profile: {
+          organization_id: "organization-1",
+          team_id: "",
+        } as never,
+      }),
     ).toEqual({ organization_id: "organization-1" });
   });
 
@@ -70,15 +76,24 @@ describe("competitionEditPageData", () => {
         [{ id: "organization-1" }] as never,
         "organization-1",
       ),
-    ).resolves.toBeNull();
+    ).resolves.toEqual({
+      success: false,
+      error: "Organization sport is unavailable",
+    });
 
-    get_sport_by_id_mock.mockResolvedValueOnce({ success: false });
+    get_sport_by_id_mock.mockResolvedValueOnce({
+      success: false,
+      error: "Sport not found: id=sport-1",
+    });
     await expect(
       load_competition_edit_sport(
         [{ id: "organization-1", sport_id: "sport-1" }] as never,
         "organization-1",
       ),
-    ).resolves.toBeNull();
+    ).resolves.toEqual({
+      success: false,
+      error: "Sport not found: id=sport-1",
+    });
 
     get_sport_by_id_mock.mockResolvedValueOnce({
       success: true,
@@ -89,7 +104,10 @@ describe("competitionEditPageData", () => {
         [{ id: "organization-1", sport_id: "sport-1" }] as never,
         "organization-1",
       ),
-    ).resolves.toEqual({ id: "sport-1", name: "Football" });
+    ).resolves.toEqual({
+      success: true,
+      data: { id: "sport-1", name: "Football" },
+    });
   });
 
   it("returns load failures and assembles edit-page state on success", async () => {
@@ -119,8 +137,7 @@ describe("competitionEditPageData", () => {
     await expect(
       load_competition_edit_page_data({
         competition_id: "competition-1",
-        current_profile: null,
-        current_profile_organization_id: undefined,
+        current_profile_state: { status: "missing" },
         dependencies: failed_dependencies as never,
       }),
     ).resolves.toEqual({ success: false, error_message: "boom" });
@@ -175,8 +192,13 @@ describe("competitionEditPageData", () => {
     await expect(
       load_competition_edit_page_data({
         competition_id: "competition-1",
-        current_profile: { organization_id: "organization-1" } as never,
-        current_profile_organization_id: "organization-1",
+        current_profile_state: {
+          status: "present",
+          profile: {
+            organization_id: "organization-1",
+            team_id: "",
+          } as never,
+        },
         dependencies: dependencies as never,
       }),
     ).resolves.toEqual({
@@ -190,8 +212,18 @@ describe("competitionEditPageData", () => {
         all_teams: teams,
         competition_team_entries,
         form_data,
-        selected_format: { id: "format-1", name: "League", status: "active" },
-        selected_sport: { id: "sport-1", name: "Football" },
+        selected_format_state: {
+          status: "present",
+          competition_format: {
+            id: "format-1",
+            name: "League",
+            status: "active",
+          },
+        },
+        selected_sport_state: {
+          status: "present",
+          sport: { id: "sport-1", name: "Football" },
+        },
         is_customizing_scoring: true,
       },
     });

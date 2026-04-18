@@ -5,8 +5,8 @@ import type { Fixture } from "$lib/core/entities/Fixture";
 import type { Official } from "$lib/core/entities/Official";
 import type { OfficialPerformanceRating } from "$lib/core/entities/OfficialPerformanceRating";
 import type { Organization } from "$lib/core/entities/Organization";
-import type { ScalarInput } from "$lib/core/types/DomainScalars";
 import { ANY_VALUE, type UserScopeProfile } from "$lib/core/interfaces/ports";
+import type { ScalarInput } from "$lib/core/types/DomainScalars";
 
 import { load_official_leaderboard_page_state } from "./officialLeaderboardPageLoad";
 import {
@@ -71,7 +71,6 @@ function create_fixture(
     scheduled_time: "15:00",
     status: "completed",
     match_day: 1,
-    manual_importance_override: null,
     created_at: "2026-01-01T00:00:00Z",
     updated_at: "2026-01-01T00:00:00Z",
     ...overrides,
@@ -120,17 +119,27 @@ function create_rating(
 describe("officialLeaderboardPageState", () => {
   it("allows organization switching only for wildcard or empty organization scope", () => {
     expect(
-      can_user_change_official_leaderboard_organizations(
-        create_profile({ organization_id: ANY_VALUE }),
-      ),
+      can_user_change_official_leaderboard_organizations({
+        status: "present",
+        profile: create_profile({ organization_id: ANY_VALUE }),
+      }),
     ).toBe(true);
     expect(
-      can_user_change_official_leaderboard_organizations(
-        create_profile({ organization_id: "" }),
-      ),
+      can_user_change_official_leaderboard_organizations({
+        status: "present",
+        profile: create_profile({ organization_id: "" }),
+      }),
     ).toBe(true);
     expect(
-      can_user_change_official_leaderboard_organizations(create_profile()),
+      can_user_change_official_leaderboard_organizations({
+        status: "missing",
+      }),
+    ).toBe(false);
+    expect(
+      can_user_change_official_leaderboard_organizations({
+        status: "present",
+        profile: create_profile(),
+      }),
     ).toBe(false);
   });
 
@@ -140,7 +149,10 @@ describe("officialLeaderboardPageState", () => {
         create_organization(),
         create_organization({ id: "org_2", name: "Org 2" }),
       ],
-      create_profile({ organization_id: "org_2" }),
+      {
+        status: "present",
+        profile: create_profile({ organization_id: "org_2" }),
+      },
     );
 
     expect(result.map((organization) => organization.id)).toEqual(["org_2"]);
@@ -163,7 +175,10 @@ describe("officialLeaderboardPageState", () => {
 
   it("returns a failure result when leaderboard data loading fails", async () => {
     const result = await load_official_leaderboard_page_state({
-      profile: create_profile(),
+      profile_state: {
+        status: "present",
+        profile: create_profile(),
+      },
       dependencies: {
         organization_use_cases: {
           list: async () => ({
@@ -200,7 +215,10 @@ describe("officialLeaderboardPageState", () => {
 
   it("loads leaderboard page state with resolved organizations and entries", async () => {
     const result = await load_official_leaderboard_page_state({
-      profile: create_profile({ official_id: "official_1" }),
+      profile_state: {
+        status: "present",
+        profile: create_profile({ official_id: "official_1" }),
+      },
       dependencies: {
         organization_use_cases: {
           list: async () => ({

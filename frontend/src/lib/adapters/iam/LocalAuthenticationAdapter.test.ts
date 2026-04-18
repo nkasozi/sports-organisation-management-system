@@ -39,11 +39,12 @@ function create_test_payload_with_overrides(
 
   expect(result.success).toBe(true);
 
-  if (!result.success) {
-    return undefined as never;
-  }
-
-  return result.data;
+  return (
+    result as {
+      success: true;
+      data: Omit<AuthTokenPayload, "issued_at" | "expires_at">;
+    }
+  ).data;
 }
 
 function create_mock_system_user(): SystemUser {
@@ -173,7 +174,7 @@ describe("LocalAuthenticationAdapter", () => {
       expect(result.success).toBe(true);
       if (!result.success) return;
       expect(result.data.is_valid).toBe(true);
-      expect(result.data.system_user).toBeUndefined();
+      expect("system_user" in result.data).toBe(false);
       expect(result.data.payload?.user_id).toBe("public-viewer");
       expect(mock_repository.find_by_email).not.toHaveBeenCalled();
     });
@@ -227,7 +228,7 @@ describe("LocalAuthenticationAdapter", () => {
       if (!token_result.success) return;
       const token = token_result.data;
 
-      const expired_payload =  {
+      const expired_payload = {
         ...token.payload,
         issued_at: Date.now() - 400 * 24 * 60 * 60 * 1000,
         expires_at: Date.now() - 35 * 24 * 60 * 60 * 1000,

@@ -56,7 +56,7 @@ export function create_activity_use_cases(
       filter?: ActivityFilter,
       options?: QueryOptions,
     ): PaginatedAsyncResult<Activity> {
-      return activity_repository.find_all(filter, options);
+      return activity_repository.find_all(filter ?? {}, options ?? {});
     },
 
     async get_by_id(id: Activity["id"]): AsyncResult<Activity> {
@@ -106,7 +106,10 @@ export function create_activity_use_cases(
     ): PaginatedAsyncResult<Activity> {
       if (!organization_id?.trim())
         return { success: false, error: "Organization ID is required" };
-      return activity_repository.find_by_organization(organization_id, options);
+      return activity_repository.find_by_organization(
+        organization_id,
+        options ?? {},
+      );
     },
 
     async list_by_date_range(

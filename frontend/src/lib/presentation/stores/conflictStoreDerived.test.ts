@@ -2,12 +2,23 @@ import { get } from "svelte/store";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { ScalarInput } from "$lib/core/types/DomainScalars";
-import type { ConflictRecord } from "$lib/infrastructure/sync/conflictTypes";
+import {
+  type ConflictRecord,
+  create_unknown_conflict_field_value,
+} from "$lib/infrastructure/sync/conflictTypes";
 
+import {
+  conflict_progress,
+  current_conflict,
+  has_pending_conflicts,
+  pending_conflict_count,
+  pending_conflicts,
+  show_merge_screen,
+} from "./conflictStoreDerived";
 import type { ConflictStoreState } from "./conflictStoreHelpers";
 
 const conflict_store_mock = vi.hoisted(() => {
-  let current_value =  {
+  let current_value = {
     pending_conflicts: [],
     resolved_conflicts: [],
     is_resolution_in_progress: false,
@@ -35,15 +46,6 @@ vi.mock("./conflictStore", () => ({
   conflict_store: conflict_store_mock.conflict_store,
 }));
 
-import {
-  conflict_progress,
-  current_conflict,
-  has_pending_conflicts,
-  pending_conflict_count,
-  pending_conflicts,
-  show_merge_screen,
-} from "./conflictStoreDerived";
-
 function build_conflict_record(
   conflict_id: string,
 ): ScalarInput<ConflictRecord> {
@@ -56,8 +58,8 @@ function build_conflict_record(
     remote_data: {},
     local_updated_at: "2024-01-01T00:00:00.000Z",
     remote_updated_at: "2024-01-02T00:00:00.000Z",
-    remote_updated_by: null,
-    remote_updated_by_name: null,
+    remote_updated_by: create_unknown_conflict_field_value(),
+    remote_updated_by_name: create_unknown_conflict_field_value(),
     field_differences: [],
     detected_at: "2024-01-03T00:00:00.000Z",
   };
@@ -87,7 +89,7 @@ describe("conflictStoreDerived", () => {
           local_id: "resolved-1",
           action: "keep_local",
           resolved_at: "2024-01-04T00:00:00.000Z",
-          resolved_by: null,
+          resolved_by: create_unknown_conflict_field_value(),
         },
       ],
       is_resolution_in_progress: false,
@@ -99,7 +101,10 @@ describe("conflictStoreDerived", () => {
     expect(get(has_pending_conflicts)).toBe(true);
     expect(get(pending_conflict_count)).toBe(2);
     expect(get(show_merge_screen)).toBe(true);
-    expect(get(current_conflict)).toEqual(second_conflict);
+    expect(get(current_conflict)).toEqual({
+      status: "present",
+      conflict: second_conflict,
+    });
     expect(get(conflict_progress)).toEqual({
       current: 2,
       total: 3,
@@ -116,6 +121,6 @@ describe("conflictStoreDerived", () => {
       show_merge_screen: true,
     });
 
-    expect(get(current_conflict)).toBeNull();
+    expect(get(current_conflict)).toEqual({ status: "absent" });
   });
 });

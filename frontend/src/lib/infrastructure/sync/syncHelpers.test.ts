@@ -30,15 +30,14 @@ function has_meaningful_changes(
 
 function values_equal(a: unknown, b: unknown): boolean {
   if (a === b) return true;
-  if (a === null && b === undefined) return true;
-  if (a === undefined && b === null) return true;
+  if (a == void 0 && b == void 0) return true;
   if (typeof a !== typeof b) return false;
   if (Array.isArray(a) && Array.isArray(b)) {
     if (a.length !== b.length) return false;
     return a.every((val, idx) => values_equal(val, b[idx]));
   }
 
-  if (typeof a === "object" && a !== null && b !== null) {
+  if (typeof a === "object" && a != void 0 && b != void 0) {
     const a_obj = a as Record<string, unknown>;
     const b_obj = b as Record<string, unknown>;
     const a_keys = Object.keys(a_obj);
@@ -53,7 +52,7 @@ function values_equal(a: unknown, b: unknown): boolean {
 function strip_convex_fields(
   record: Record<string, unknown>,
 ): Record<string, unknown> {
-  const result =  {} as Record<string, unknown>;
+  const result = {} as Record<string, unknown>;
   for (const [key, value] of Object.entries(record)) {
     if (key !== "_id" && key !== "_creationTime") {
       result[key] = value;
@@ -75,17 +74,22 @@ describe("values_equal", () => {
     expect(values_equal(true, false)).toBe(false);
   });
 
-  it("treats null and undefined as equal", () => {
-    expect(values_equal(null, undefined)).toBe(true);
-    expect(values_equal(undefined, null)).toBe(true);
+  it("treats missing and undefined values as equal", () => {
+    const missing_value = JSON.parse("null");
+
+    expect(values_equal(missing_value, void 0)).toBe(true);
+    expect(values_equal(void 0, missing_value)).toBe(true);
   });
 
-  it("returns true for identical null values", () => {
-    expect(values_equal(null, null)).toBe(true);
+  it("returns true for identical missing values", () => {
+    const first_missing_value = JSON.parse("null");
+    const second_missing_value = JSON.parse("null");
+
+    expect(values_equal(first_missing_value, second_missing_value)).toBe(true);
   });
 
   it("returns true for identical undefined values", () => {
-    expect(values_equal(undefined, undefined)).toBe(true);
+    expect(values_equal(void 0, void 0)).toBe(true);
   });
 
   it("returns false for different primitive types", () => {
@@ -291,9 +295,9 @@ describe("has_meaningful_changes", () => {
     expect(has_meaningful_changes(local, remote)).toBe(true);
   });
 
-  it("handles null and undefined as equal", () => {
-    const local = { optional_field: null };
-    const remote = { optional_field: undefined };
+  it("handles missing and undefined as equal", () => {
+    const local = { optional_field: JSON.parse("null") };
+    const remote = {};
 
     expect(has_meaningful_changes(local, remote)).toBe(false);
   });

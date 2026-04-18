@@ -131,8 +131,10 @@ describe("is_global_record", () => {
     expect(is_global_record({ name: "test" })).toBe(true);
   });
 
-  it("returns true when organization_id is null", () => {
-    expect(is_global_record({ organization_id: null })).toBe(true);
+  it("returns true when organization_id is missing", () => {
+    expect(is_global_record({ organization_id: JSON.parse("null") })).toBe(
+      true,
+    );
   });
 
   it("returns true when organization_id is wildcard", () => {

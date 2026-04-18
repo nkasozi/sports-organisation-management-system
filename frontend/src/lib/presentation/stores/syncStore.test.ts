@@ -1,11 +1,13 @@
 import { get } from "svelte/store";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { create_unknown_conflict_field_value } from "$lib/infrastructure/sync/conflictTypes";
 import type { SyncConfig } from "$lib/infrastructure/sync/convexSyncService";
 
 const sync_store_mocks = vi.hoisted(() => {
   const manager = {
-    convex_client: null as unknown,
+    convex_client: void 0 as unknown,
+    get_convex_client: vi.fn(),
     is_configured: vi.fn(),
     set_convex_client: vi.fn(),
     sync_now: vi.fn(),
@@ -46,9 +48,10 @@ describe("syncStore", () => {
     vi.resetModules();
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2024-05-01T10:00:00.000Z"));
-    vi.spyOn(console, "error").mockImplementation(() => undefined);
-    sync_store_mocks.manager.convex_client = null;
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    sync_store_mocks.manager.convex_client = void 0;
     sync_store_mocks.manager.is_configured.mockReset();
+    sync_store_mocks.manager.get_convex_client.mockReset();
     sync_store_mocks.manager.set_convex_client.mockReset();
     sync_store_mocks.manager.sync_now.mockReset();
     sync_store_mocks.manager.start_auto_sync.mockReset();
@@ -71,7 +74,7 @@ describe("syncStore", () => {
     sync_store_mocks.get_last_sync_timestamp.mockReturnValue(
       "2024-04-30T09:00:00.000Z",
     );
-    const sync_config =  { direction: "pull" } as Partial<SyncConfig>;
+    const sync_config = { direction: "pull" } as Partial<SyncConfig>;
 
     const { sync_store } = await import("./syncStore");
     const manager = sync_store.initialize(sync_config);
@@ -82,7 +85,10 @@ describe("syncStore", () => {
     );
     expect(get(sync_store)).toMatchObject({
       is_configured: true,
-      last_sync_at: "2024-04-30T09:00:00.000Z",
+      last_sync_at: {
+        status: "recorded",
+        value: "2024-04-30T09:00:00.000Z",
+      },
     });
   });
 
@@ -105,7 +111,7 @@ describe("syncStore", () => {
               remote_data: { name: "Remote Team" },
               remote_version: 2,
               remote_updated_at: "2024-04-30T09:00:00.000Z",
-              remote_updated_by: null,
+              remote_updated_by: create_unknown_conflict_field_value(),
             },
           ],
         },
@@ -128,11 +134,14 @@ describe("syncStore", () => {
     ).toHaveBeenCalledWith("teams", conflict_result.conflicts[0].conflicts);
     expect(get(sync_store)).toMatchObject({
       is_syncing: false,
-      current_progress: null,
-      error_message: "Conflicts detected. Please review and resolve.",
+      current_progress: { status: "idle" },
+      error_message: {
+        status: "present",
+        message: "Conflicts detected. Please review and resolve.",
+      },
       has_pending_conflicts: true,
-      last_sync_at: "2024-05-01T10:00:00.000Z",
-      last_sync_result: conflict_result,
+      last_sync_at: { status: "recorded", value: "2024-05-01T10:00:00.000Z" },
+      last_sync_result: { status: "recorded", result: conflict_result },
     });
   });
 
@@ -161,9 +170,12 @@ describe("syncStore", () => {
     expect(result).toEqual(failed_result);
     expect(get(sync_store)).toMatchObject({
       is_syncing: false,
-      error_message: failed_result.errors[0].error,
+      error_message: {
+        status: "present",
+        message: failed_result.errors[0].error,
+      },
       has_pending_conflicts: false,
-      last_sync_result: failed_result,
+      last_sync_result: { status: "recorded", result: failed_result },
     });
   });
 
@@ -187,7 +199,7 @@ describe("syncStore", () => {
     });
     expect(get(sync_store)).toMatchObject({
       is_syncing: false,
-      error_message: "network down",
+      error_message: { status: "present", message: "network down" },
       has_pending_conflicts: false,
     });
   });
@@ -211,7 +223,7 @@ describe("syncStore", () => {
               remote_data: { name: "Remote Team" },
               remote_version: 2,
               remote_updated_at: "2024-04-30T09:00:00.000Z",
-              remote_updated_by: null,
+              remote_updated_by: create_unknown_conflict_field_value(),
             },
           ],
         },
@@ -221,13 +233,15 @@ describe("syncStore", () => {
     sync_store_mocks.manager.sync_now.mockResolvedValue(
       sync_failure_with_conflict,
     );
-    sync_store_mocks.manager.convex_client = {
-      mutation: vi.fn(),
-      query: vi.fn(),
-    };
+    sync_store_mocks.manager.get_convex_client.mockReturnValue({
+      success: true,
+      data: {
+        mutation: vi.fn(),
+        query: vi.fn(),
+      },
+    });
     sync_store_mocks.execute_conflict_resolution.mockResolvedValue({
       success: true,
-      error: null,
     });
 
     const { sync_store } = await import("./syncStore");
@@ -243,15 +257,15 @@ describe("syncStore", () => {
         remote_data: { name: "Remote Team" },
         local_updated_at: "2024-04-29T00:00:00.000Z",
         remote_updated_at: "2024-04-30T00:00:00.000Z",
-        remote_updated_by: null,
-        remote_updated_by_name: null,
+        remote_updated_by: create_unknown_conflict_field_value(),
+        remote_updated_by_name: create_unknown_conflict_field_value(),
         field_differences: [],
         detected_at: "2024-05-01T09:59:00.000Z",
       },
       "keep_remote",
     );
 
-    expect(result).toEqual({ success: true, error: null });
+    expect(result).toEqual({ success: true });
     expect(sync_store_mocks.execute_conflict_resolution).toHaveBeenCalled();
     expect(get(sync_store).has_pending_conflicts).toBe(false);
   });

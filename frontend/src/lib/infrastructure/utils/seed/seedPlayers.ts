@@ -22,7 +22,9 @@ export function create_seed_players(
 ): import("$lib/core/types/DomainScalars").ScalarInput<Player>[] {
   const now = generate_current_timestamp();
 
-  const players_without_gender: import("$lib/core/types/DomainScalars").ScalarInput<Omit<Player, "gender_id">>[] = [
+  const players_without_gender: import("$lib/core/types/DomainScalars").ScalarInput<
+    Omit<Player, "gender_id">
+  >[] = [
     ...create_seed_players_group1(positions, organization_id, now),
     ...create_seed_players_group2(positions, organization_id, now),
     ...create_seed_players_group3(positions, organization_id, now),

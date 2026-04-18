@@ -1,13 +1,16 @@
 <script lang="ts">
     import { goto } from "$app/navigation";
     import type { Competition } from "$lib/core/entities/Competition";
-    import type { CompetitionFormat } from "$lib/core/entities/CompetitionFormat";
     import type { CompetitionStage } from "$lib/core/entities/CompetitionStage";
     import type { Fixture } from "$lib/core/entities/Fixture";
     import type { Organization } from "$lib/core/entities/Organization";
     import type { Team } from "$lib/core/entities/Team";
     import type { LoadingState } from "$lib/presentation/components/ui/LoadingStateWrapper.svelte";
     import LoadingStateWrapper from "$lib/presentation/components/ui/LoadingStateWrapper.svelte";
+    import type {
+        CompetitionResultsCompetitionFormatState,
+        CompetitionResultsSelectedCompetitionState,
+    } from "$lib/presentation/logic/competitionResultsPageContracts";
 
     import CompetitionResultsWorkspace from "./CompetitionResultsWorkspace.svelte";
 
@@ -18,8 +21,12 @@
     export let selected_organization_id: string;
     export let competitions: Competition[];
     export let selected_competition_id: string;
-    export let selected_competition: Competition | null;
-    export let competition_format: CompetitionFormat | null;
+    export let selected_competition_state: CompetitionResultsSelectedCompetitionState = {
+        status: "missing",
+    };
+    export let competition_format_state: CompetitionResultsCompetitionFormatState = {
+        status: "missing",
+    };
     export let competition_stages: CompetitionStage[];
     export let fixtures: Fixture[];
     export let teams: Team[];
@@ -126,8 +133,8 @@
                 bind:selected_organization_id
                 {competitions}
                 bind:selected_competition_id
-                {selected_competition}
-                {competition_format}
+                {selected_competition_state}
+                {competition_format_state}
                 {competition_stages}
                 {fixtures}
                 {teams}

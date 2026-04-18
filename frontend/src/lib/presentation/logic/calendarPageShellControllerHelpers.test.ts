@@ -1,5 +1,17 @@
 import { describe, expect, it, vi } from "vitest";
 
+import { ANY_VALUE } from "$lib/core/interfaces/ports";
+
+import {
+  can_user_add_activities,
+  can_user_change_organizations,
+  create_activity_form_values_for_date,
+  create_activity_form_values_for_date_time,
+  extract_url_org_id,
+  resolve_calendar_event_click,
+  resolve_selected_organization_name,
+} from "./calendarPageShellControllerHelpers";
+
 const {
   create_activity_form_values_from_activity_mock,
   create_empty_activity_form_values_mock,
@@ -14,47 +26,47 @@ vi.mock("./calendarPageState", () => ({
   create_empty_activity_form_values: create_empty_activity_form_values_mock,
 }));
 
-import { ANY_VALUE } from "$lib/core/interfaces/ports";
-
-import {
-  can_user_add_activities,
-  can_user_change_organizations,
-  create_activity_form_values_for_date,
-  create_activity_form_values_for_date_time,
-  extract_url_org_id,
-  resolve_calendar_event_click,
-  resolve_selected_organization_name,
-} from "./calendarPageShellControllerHelpers";
-
 describe("calendarPageShellControllerHelpers", () => {
   it("extracts organization ids and enforces organization-level activity access", () => {
     expect(extract_url_org_id(new URLSearchParams("org=org_1"))).toBe("org_1");
-    expect(can_user_add_activities(null)).toBe(false);
+    expect(can_user_add_activities({ status: "missing" })).toBe(false);
     expect(
       can_user_add_activities({
-        organization_id: ANY_VALUE,
-        team_id: "",
-      } as never),
+        status: "present",
+        profile: {
+          organization_id: ANY_VALUE,
+          team_id: "",
+        } as never,
+      }),
     ).toBe(true);
     expect(
       can_user_add_activities({
-        organization_id: "org_1",
-        team_id: "team_1",
-      } as never),
+        status: "present",
+        profile: {
+          organization_id: "org_1",
+          team_id: "team_1",
+        } as never,
+      }),
     ).toBe(false);
   });
 
   it("controls organization switching and resolves selected organization names", () => {
-    expect(can_user_change_organizations(null, "")).toBe(true);
+    expect(can_user_change_organizations({ status: "missing" }, "")).toBe(true);
     expect(
       can_user_change_organizations(
-        { organization_id: ANY_VALUE } as never,
+        {
+          status: "present",
+          profile: { organization_id: ANY_VALUE } as never,
+        },
         "org_1",
       ),
     ).toBe(true);
     expect(
       can_user_change_organizations(
-        { organization_id: "org_1" } as never,
+        {
+          status: "present",
+          profile: { organization_id: "org_1" } as never,
+        },
         "org_2",
       ),
     ).toBe(false);
@@ -98,9 +110,6 @@ describe("calendarPageShellControllerHelpers", () => {
         event_id: "missing",
       }),
     ).toEqual({
-      editing_activity: null,
-      selected_event_details: null,
-      activity_form_values: null,
       show_create_modal: false,
     });
 
@@ -111,9 +120,8 @@ describe("calendarPageShellControllerHelpers", () => {
         event_id: "event_1",
       }),
     ).toEqual({
-      editing_activity: null,
       selected_event_details: read_only_event,
-      activity_form_values: null,
+
       show_create_modal: false,
     });
 
@@ -126,7 +134,7 @@ describe("calendarPageShellControllerHelpers", () => {
       }),
     ).toEqual({
       editing_activity: { id: "activity_1" },
-      selected_event_details: null,
+
       activity_form_values: { id: "form_1" },
       show_create_modal: true,
     });

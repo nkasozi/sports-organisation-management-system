@@ -23,18 +23,49 @@ import {
   compute_is_authorized_to_execute,
   compute_is_functionality_disabled,
 } from "./authPermissions";
-import type { AuthState } from "./authTypes";
+import {
+  type AuthProfileState,
+  type AuthState,
+  create_missing_auth_profile_state,
+  create_missing_auth_token_state,
+  create_present_auth_profile_state,
+  create_present_auth_token_state,
+  type UserProfile,
+} from "./authTypes";
 import { load_profiles_from_repository } from "./profileLoader";
 
-function create_auth_store() {
-  const initial_state: AuthState = {
-    current_token: null,
-    current_profile: null,
+function build_initial_auth_state(): AuthState {
+  return {
+    current_token: create_missing_auth_token_state(),
+    current_profile: create_missing_auth_profile_state(),
     available_profiles: [],
     sidebar_menu_items: [],
     is_initialized: false,
     is_demo_session: false,
   };
+}
+
+function build_refreshed_current_profile_state(
+  current_profile_state: AuthProfileState,
+  refreshed_profiles: UserProfile[],
+): AuthProfileState {
+  if (current_profile_state.status !== "present") {
+    return current_profile_state;
+  }
+
+  const refreshed_profile = refreshed_profiles.find(
+    (profile) => profile.id === current_profile_state.profile.id,
+  );
+
+  if (!refreshed_profile) {
+    return current_profile_state;
+  }
+
+  return create_present_auth_profile_state(refreshed_profile);
+}
+
+function create_auth_store() {
+  const initial_state = build_initial_auth_state();
 
   const { subscribe, set, update } = writable<AuthState>(initial_state);
 
@@ -56,16 +87,16 @@ function create_auth_store() {
 
     const state = get({ subscribe });
     const previous_count = state.available_profiles.length;
-    const current_profile_still_exists = state.current_profile
-      ? refreshed_profiles.some((p) => p.id === state.current_profile!.id)
-      : false;
+    const refreshed_current_profile_state =
+      build_refreshed_current_profile_state(
+        state.current_profile,
+        refreshed_profiles,
+      );
 
     update((s) => ({
       ...s,
       available_profiles: refreshed_profiles,
-      current_profile: current_profile_still_exists
-        ? refreshed_profiles.find((p) => p.id === s.current_profile!.id)!
-        : s.current_profile,
+      current_profile: refreshed_current_profile_state,
     }));
 
     console.debug(
@@ -97,16 +128,22 @@ function create_auth_store() {
     const new_token = token_result.data;
     await save_token(new_token.raw_token);
     await save_profile_id(target_profile.id);
-    sync_user_context_with_event_bus(target_profile);
+    sync_user_context_with_event_bus({
+      status: "present",
+      profile: target_profile,
+    });
     const sidebar = await load_sidebar_menu_for_role(target_profile.role);
 
     update((s) => ({
       ...s,
-      current_token: new_token,
-      current_profile: target_profile,
+      current_token: create_present_auth_token_state(new_token),
+      current_profile: create_present_auth_profile_state(target_profile),
       sidebar_menu_items: sidebar,
     }));
-    await sync_branding_with_profile(target_profile);
+    await sync_branding_with_profile({
+      status: "present",
+      profile: target_profile,
+    });
     console.log(
       `[AuthStore] Switched to profile: ${target_profile.display_name}`,
     );
@@ -115,15 +152,8 @@ function create_auth_store() {
 
   async function logout(): Promise<void> {
     await clear_auth_storage();
-    sync_user_context_with_event_bus(null);
-    set({
-      current_token: null,
-      current_profile: null,
-      available_profiles: [],
-      sidebar_menu_items: [],
-      is_initialized: false,
-      is_demo_session: false,
-    });
+    sync_user_context_with_event_bus({ status: "cleared" });
+    set(build_initial_auth_state());
     console.log("[AuthStore] Logged out");
   }
 
@@ -132,7 +162,12 @@ function create_auth_store() {
     initialize,
     switch_profile,
     refresh_profiles,
-    get_current_role: () => get({ subscribe }).current_profile?.role || null,
+    get_current_role: () => {
+      const current_profile = get({ subscribe }).current_profile;
+      return current_profile.status === "present"
+        ? current_profile.profile.role
+        : "";
+    },
     logout,
     reset_initialized_state: (): void => {
       update((s) => ({ ...s, is_initialized: false, is_demo_session: false }));

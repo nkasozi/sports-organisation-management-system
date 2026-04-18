@@ -12,9 +12,7 @@ function mask_email_for_logging(email: string): string {
   return `${first_char}***${domain}`;
 }
 
-function check_caller_platform_access(
-  organization_id: string | undefined,
-): boolean {
+function check_caller_platform_access(organization_id: string): boolean {
   return organization_id === PLATFORM_WIDE_SCOPE;
 }
 
@@ -52,8 +50,13 @@ export const seed_admin_user = mutation({
     if (!is_bootstrap_mode) {
       const caller_email = identity.email.toLowerCase();
       const caller = all_users.find((u: any) => u.email === caller_email);
-      const has_platform_access =
-        caller && check_caller_platform_access(caller.organization_id);
+      const caller_organization_id =
+        caller && typeof caller.organization_id === "string"
+          ? caller.organization_id
+          : "";
+      const has_platform_access = check_caller_platform_access(
+        caller_organization_id,
+      );
       if (!has_platform_access) {
         console.log("[admin_seed] Non-bootstrap seed rejected", {
           event: "seed_access_denied",

@@ -10,6 +10,12 @@ import {
 } from "./lib/sync_validation";
 import { strip_convex_fields } from "./sync_record_helpers";
 
+const EPOCH_TIMESTAMP = "1970-01-01T00:00:00.000Z";
+const SYNC_METADATA_STATUS_UNAUTHORIZED = "unauthorized";
+const SYNC_METADATA_STATUS_RECORD = "record";
+const SYNC_METADATA_STATUS_NOT_FOUND = "not_found";
+const SYNC_METADATA_STATUS_RECORDS = "records";
+
 export const get_latest_modified_at = query({
   args: { table_name: v.string() },
   handler: async (ctx, args) => {
@@ -18,14 +24,14 @@ export const get_latest_modified_at = query({
       return {
         table_name: args.table_name,
         record_count: 0,
-        latest_modified_at: null,
+        latest_modified_at: EPOCH_TIMESTAMP,
       };
     const auth_result = await require_auth(ctx);
     if (!auth_result.success)
       return {
         table_name: args.table_name,
         record_count: 0,
-        latest_modified_at: null,
+        latest_modified_at: EPOCH_TIMESTAMP,
       };
     let records = await ctx.db.query(args.table_name as any).collect();
     if (!check_is_global_table(args.table_name))
@@ -50,7 +56,7 @@ export const get_latest_modified_at = query({
     return {
       table_name: args.table_name,
       record_count: records.length,
-      latest_modified_at: latest_modified_at || null,
+      latest_modified_at: latest_modified_at || EPOCH_TIMESTAMP,
     };
   },
 });
@@ -59,13 +65,29 @@ export const get_sync_metadata = query({
   args: { table_name: v.optional(v.string()) },
   handler: async (ctx, args) => {
     const auth_result = await require_auth(ctx);
-    if (!auth_result.success) return null;
-    return args.table_name
-      ? await ctx.db
-          .query("sync_metadata")
-          .withIndex("by_table", (q) => q.eq("table_name", args.table_name!))
-          .first()
-      : await ctx.db.query("sync_metadata").collect();
+    if (!auth_result.success) {
+      return { status: SYNC_METADATA_STATUS_UNAUTHORIZED };
+    }
+
+    const table_name = args.table_name;
+
+    if (!table_name) {
+      return {
+        status: SYNC_METADATA_STATUS_RECORDS,
+        records: await ctx.db.query("sync_metadata").collect(),
+      };
+    }
+
+    const record = await ctx.db
+      .query("sync_metadata")
+      .withIndex("by_table", (q) => q.eq("table_name", table_name))
+      .first();
+
+    if (!record) {
+      return { status: SYNC_METADATA_STATUS_NOT_FOUND };
+    }
+
+    return { status: SYNC_METADATA_STATUS_RECORD, record };
   },
 });
 
@@ -115,7 +137,8 @@ export const subscribe_to_table_changes = query({
 
 export const check_auth = query({
   args: {},
-  handler: async (ctx) => ({
-    authenticated: (await ctx.auth.getUserIdentity()) !== null,
-  }),
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity();
+    return { authenticated: Boolean(identity) };
+  },
 });

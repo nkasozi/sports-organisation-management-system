@@ -12,12 +12,12 @@ import type { Venue } from "$lib/core/entities/Venue";
 
 export interface LiveGameDetailBundle {
   fixture: Fixture;
-  home_team: Team | null;
-  away_team: Team | null;
-  competition: Competition | null;
-  sport: Sport | null;
+  home_team?: Team;
+  away_team?: Team;
+  competition?: Competition;
+  sport?: Sport;
   organization_name: string;
-  venue: Venue | null;
+  venue?: Venue;
   assigned_officials_data: Array<{ official: Official; role_name: string }>;
   home_players: LineupPlayer[];
   away_players: LineupPlayer[];
@@ -115,8 +115,7 @@ export function build_players_on_field_options(
   away_players: LineupPlayer[],
 ): Array<{ value: string; label: string }> {
   const players = (team_side === "home" ? home_players : away_players).filter(
-    (player) =>
-      player.time_on && player.time_on !== ("didnt_play" as PlayerTimeOnStatus),
+    (player) => player.time_on !== ("didnt_play" as PlayerTimeOnStatus),
   );
   return players.map((player) => ({
     value: player.id,

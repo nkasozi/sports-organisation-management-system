@@ -1,8 +1,10 @@
-import type { Competition } from "$lib/core/entities/Competition";
-import type { CompetitionFormat } from "$lib/core/entities/CompetitionFormat";
 import type { CompetitionStage } from "$lib/core/entities/CompetitionStage";
 import type { Fixture } from "$lib/core/entities/Fixture";
 import type { Team } from "$lib/core/entities/Team";
+import type {
+  CompetitionResultsCompetitionFormatState,
+  CompetitionResultsSelectedCompetitionState,
+} from "$lib/presentation/logic/competitionResultsPageContracts";
 import {
   derive_effective_points_config,
   derive_effective_tie_breakers,
@@ -21,8 +23,8 @@ import {
 } from "$lib/presentation/logic/competitionStageResults";
 
 export function derive_competition_results_workspace_state(command: {
-  competition_format: CompetitionFormat | null;
-  selected_competition: Competition | null;
+  competition_format_state: CompetitionResultsCompetitionFormatState;
+  selected_competition_state: CompetitionResultsSelectedCompetitionState;
   competition_stages: CompetitionStage[];
   fixtures: Fixture[];
   teams: Team[];
@@ -62,12 +64,12 @@ export function derive_competition_results_workspace_state(command: {
   paginated_team_fixtures: Fixture[];
 } {
   const effective_points_config = derive_effective_points_config(
-    command.competition_format,
-    command.selected_competition,
+    command.competition_format_state,
+    command.selected_competition_state,
   );
   const effective_tie_breakers = derive_effective_tie_breakers(
-    command.competition_format,
-    command.selected_competition,
+    command.competition_format_state,
+    command.selected_competition_state,
   );
   const standings = calculate_team_standings(
     command.fixtures,

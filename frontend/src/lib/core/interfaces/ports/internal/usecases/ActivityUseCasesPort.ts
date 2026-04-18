@@ -5,11 +5,11 @@ import type {
   UpdateActivityInput,
 } from "../../../../entities/Activity";
 import type { ActivityCategory } from "../../../../entities/ActivityCategory";
+import type { ScalarValueInput } from "../../../../types/DomainScalars";
 import type {
   AsyncResult,
   PaginatedAsyncResult,
 } from "../../../../types/Result";
-import type { ScalarValueInput } from "../../../../types/DomainScalars";
 import type { ActivityFilter } from "../../external/repositories/ActivityRepository";
 import type { QueryOptions } from "../../external/repositories/Repository";
 import type { BaseUseCasesPort } from "./BaseUseCasesPort";
@@ -87,5 +87,5 @@ export interface ActivityUseCasesPort extends BaseUseCasesPort<
   find_activity_by_source(
     source_type: ActivitySourceType,
     source_id: ScalarValueInput<Activity["source_id"]>,
-  ): AsyncResult<Activity | null>;
+  ): AsyncResult<Activity>;
 }

@@ -70,18 +70,25 @@ export function create_official_associated_team_use_cases(
       const query_options = options || { page_number: 1, page_size: 100 };
 
       if (!filter) {
-        return repository.find_all(undefined, query_options);
+        return repository.find_all({}, query_options);
       }
 
       const official_associated_team_filter: OfficialAssociatedTeamFilter = {
-        official_id: filter.official_id as
-          | OfficialAssociatedTeam["official_id"]
-          | undefined,
-        team_id: filter.team_id as
-          | OfficialAssociatedTeam["team_id"]
-          | undefined,
-        association_type: filter.association_type,
-        status: filter.status as OfficialAssociatedTeam["status"] | undefined,
+        ...(filter.official_id
+          ? {
+              official_id:
+                filter.official_id as OfficialAssociatedTeam["official_id"],
+            }
+          : {}),
+        ...(filter.team_id
+          ? { team_id: filter.team_id as OfficialAssociatedTeam["team_id"] }
+          : {}),
+        ...(filter.association_type
+          ? { association_type: filter.association_type }
+          : {}),
+        ...(filter.status
+          ? { status: filter.status as OfficialAssociatedTeam["status"] }
+          : {}),
       };
 
       return repository.find_all(
@@ -109,7 +116,7 @@ export function create_official_associated_team_use_cases(
     },
 
     async list_all(): PaginatedAsyncResult<OfficialAssociatedTeam> {
-      return repository.find_all(undefined, { page_number: 1, page_size: 100 });
+      return repository.find_all({}, { page_number: 1, page_size: 100 });
     },
   };
 }

@@ -2,6 +2,11 @@ import { describe, expect, it } from "vitest";
 
 import { create_empty_competition_input } from "$lib/core/entities/Competition";
 import type { CompetitionFormat } from "$lib/core/entities/CompetitionFormat";
+import {
+  create_default_group_stage_config,
+  create_default_knockout_stage_config,
+  create_default_league_config,
+} from "$lib/core/entities/CompetitionFormatFactories";
 
 import {
   create_competition_team_inputs,
@@ -29,9 +34,11 @@ function create_test_competition_format(
       points_for_loss: 0,
     },
     tie_breakers: overrides.tie_breakers ?? ["goal_difference"],
-    group_stage_config: overrides.group_stage_config ?? null,
-    knockout_stage_config: overrides.knockout_stage_config ?? null,
-    league_config: overrides.league_config ?? null,
+    group_stage_config:
+      overrides.group_stage_config ?? create_default_group_stage_config(),
+    knockout_stage_config:
+      overrides.knockout_stage_config ?? create_default_knockout_stage_config(),
+    league_config: overrides.league_config ?? create_default_league_config(),
     stage_templates: overrides.stage_templates ?? [],
     min_teams_required: overrides.min_teams_required ?? 4,
     max_teams_allowed: overrides.max_teams_allowed ?? 16,
@@ -63,12 +70,13 @@ describe("get_next_selected_team_ids", () => {
 describe("competition team requirements", () => {
   it("formats the selected format limits", () => {
     expect(
-      get_competition_format_team_requirements(
-        create_test_competition_format({
+      get_competition_format_team_requirements({
+        status: "present",
+        competition_format: create_test_competition_format({
           min_teams_required: 8,
           max_teams_allowed: 12,
         }),
-      ),
+      }),
     ).toBe("Requires 8 to 12 teams");
   });
 
@@ -78,9 +86,21 @@ describe("competition team requirements", () => {
       max_teams_allowed: 6,
     });
 
-    expect(is_competition_team_count_valid(selected_format, 4)).toBe(true);
-    expect(is_competition_team_count_valid(selected_format, 7)).toBe(false);
-    expect(is_competition_team_count_valid(null, 0)).toBe(true);
+    expect(
+      is_competition_team_count_valid(
+        { status: "present", competition_format: selected_format },
+        4,
+      ),
+    ).toBe(true);
+    expect(
+      is_competition_team_count_valid(
+        { status: "present", competition_format: selected_format },
+        7,
+      ),
+    ).toBe(false);
+    expect(is_competition_team_count_valid({ status: "missing" }, 0)).toBe(
+      true,
+    );
   });
 });
 

@@ -1,6 +1,6 @@
 <script lang="ts">
-  import type { ConflictRecord } from "$lib/infrastructure/sync/conflictTypes";
   import type { ScalarInput } from "$lib/core/types/DomainScalars";
+  import type { ConflictRecord } from "$lib/infrastructure/sync/conflictTypes";
 
   export let conflict: ScalarInput<ConflictRecord>;
   export let format_timestamp: (timestamp: string) => string;
@@ -37,8 +37,8 @@
       <p class="text-sm text-green-700">
         Updated: {format_timestamp(conflict.remote_updated_at)}
       </p>
-      {#if conflict.remote_updated_by_name}<p class="text-sm text-green-700">
-          By: {conflict.remote_updated_by_name}
+      {#if conflict.remote_updated_by_name.status === "known"}<p class="text-sm text-green-700">
+          By: {conflict.remote_updated_by_name.value}
         </p>{/if}
     </div>
   </div>

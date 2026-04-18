@@ -3,11 +3,11 @@ import type { ActivityCategory } from "$lib/core/entities/ActivityCategory";
 import type { Competition } from "$lib/core/entities/Competition";
 import type { Organization } from "$lib/core/entities/Organization";
 import type { Team } from "$lib/core/entities/Team";
-import type {
-  CalendarEvent,
-  UserScopeProfile,
-} from "$lib/core/interfaces/ports";
+import type { CalendarEvent } from "$lib/core/interfaces/ports";
 import type { UseCasesContainer } from "$lib/infrastructure/container";
+
+import type { CalendarProfileState } from "./calendarPageData";
+import type { ActivityFormValues } from "./calendarPageState";
 
 export interface CalendarOrganizationBundle {
   teams: Team[];
@@ -40,7 +40,7 @@ export type CalendarShellLoadCommand = {
 
 export type CalendarShellInitialDataCommand = {
   is_public: boolean;
-  current_profile: UserScopeProfile | null;
+  current_profile_state: CalendarProfileState;
   preferred_organization_id: string;
   use_cases: UseCasesContainer;
 };
@@ -52,13 +52,13 @@ export type CalendarShellInitialDataResult =
       is_using_cached_data: boolean;
       organizations: Organization[];
       selected_organization_id: string;
-      bundle: CalendarOrganizationBundle | null;
+      bundle: CalendarOrganizationBundle | undefined;
     };
 
 export type SaveCalendarShellActivityCommand = {
   activity_form_values: ActivityFormValues;
   categories: ActivityCategory[];
-  editing_activity: Activity | null;
+  editing_activity?: Activity;
 } & CalendarShellScopedCommand;
 
 export type DeleteCalendarShellActivityCommand = {
@@ -70,8 +70,6 @@ export type CreateCalendarShellCategoryCommand = {
   category_color: string;
   category_type: string;
 } & CalendarShellScopedCommand;
-
-import type { ActivityFormValues } from "./calendarPageState";
 
 export function build_calendar_shell_load_command(
   command: CalendarShellScopedCommand,

@@ -66,50 +66,48 @@
             </div>
 
             {#if form_data.overtime_rules.overtime_type === "penalties" || form_data.overtime_rules.overtime_type === "shootout"}
-                {#if form_data.overtime_rules.penalties_config}
-                    <div
-                        class="p-4 bg-accent-50 dark:bg-accent-700/50 rounded-lg space-y-4"
+                <div
+                    class="p-4 bg-accent-50 dark:bg-accent-700/50 rounded-lg space-y-4"
+                >
+                    <h4
+                        class="text-sm font-medium text-accent-900 dark:text-accent-100"
                     >
-                        <h4
-                            class="text-sm font-medium text-accent-900 dark:text-accent-100"
-                        >
-                            Penalties Configuration
-                        </h4>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label
-                                    for="sport-initial-rounds"
-                                    class="block text-sm text-accent-600 dark:text-accent-400 mb-1"
-                                    >Initial Rounds</label
-                                >
-                                <input
-                                    id="sport-initial-rounds"
-                                    type="number"
-                                    class="input w-full"
-                                    bind:value={
-                                        form_data.overtime_rules
-                                            .penalties_config.initial_rounds
-                                    }
-                                    min="1"
-                                />
-                            </div>
-                            <label class="flex items-center gap-3">
-                                <input
-                                    type="checkbox"
-                                    bind:checked={
-                                        form_data.overtime_rules
-                                            .penalties_config.sudden_death_after
-                                    }
-                                    class="rounded"
-                                />
-                                <span
-                                    class="text-accent-700 dark:text-accent-300"
-                                    >Sudden death after initial rounds</span
-                                >
-                            </label>
+                        Penalties Configuration
+                    </h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label
+                                for="sport-initial-rounds"
+                                class="block text-sm text-accent-600 dark:text-accent-400 mb-1"
+                                >Initial Rounds</label
+                            >
+                            <input
+                                id="sport-initial-rounds"
+                                type="number"
+                                class="input w-full"
+                                bind:value={
+                                    form_data.overtime_rules.penalties_config
+                                        .initial_rounds
+                                }
+                                min="1"
+                            />
                         </div>
+                        <label class="flex items-center gap-3">
+                            <input
+                                type="checkbox"
+                                bind:checked={
+                                    form_data.overtime_rules.penalties_config
+                                        .sudden_death_after
+                                }
+                                class="rounded"
+                            />
+                            <span
+                                class="text-accent-700 dark:text-accent-300"
+                                >Sudden death after initial rounds</span
+                            >
+                        </label>
                     </div>
-                {/if}
+                </div>
             {/if}
         {/if}
     </div>

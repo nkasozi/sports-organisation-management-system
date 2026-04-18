@@ -10,7 +10,7 @@ const STATUS_FIELD_NAME = "status";
 
 function is_field_controlled_by_sub_entity_filter(
   field_name: string,
-  sub_entity_filter: SubEntityFilter | null,
+  sub_entity_filter?: SubEntityFilter,
 ): boolean {
   return Boolean(
     sub_entity_filter &&
@@ -20,8 +20,8 @@ function is_field_controlled_by_sub_entity_filter(
 }
 
 export function get_dynamic_entity_list_available_fields(
-  entity_metadata: EntityMetadata | null,
-  sub_entity_filter: SubEntityFilter | null,
+  entity_metadata?: EntityMetadata,
+  sub_entity_filter?: SubEntityFilter,
 ): FieldMetadata[] {
   if (!entity_metadata) return [];
   const id_field: FieldMetadata = {
@@ -48,7 +48,7 @@ export function get_dynamic_entity_list_available_fields(
 }
 
 export function get_dynamic_entity_list_field_metadata_by_name(
-  entity_metadata: EntityMetadata | null,
+  entity_metadata: EntityMetadata | undefined,
   field_name: string,
 ): FieldMetadata | undefined {
   return entity_metadata?.fields.find(

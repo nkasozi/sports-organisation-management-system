@@ -21,14 +21,18 @@ export type CompetitionUseCases = CompetitionUseCasesPort;
 export interface CompetitionStageLifecyclePort {
   ensure_stages_for_competition(
     competition_id: ScalarValueInput<Competition["id"]>,
-    competition_format_id: ScalarValueInput<Competition["competition_format_id"]>,
+    competition_format_id: ScalarValueInput<
+      Competition["competition_format_id"]
+    >,
   ): Promise<AsyncResult<boolean>>;
   can_replace_stages_for_competition(
     competition_id: ScalarValueInput<Competition["id"]>,
   ): Promise<AsyncResult<boolean>>;
   replace_stages_for_competition(
     competition_id: ScalarValueInput<Competition["id"]>,
-    competition_format_id: ScalarValueInput<Competition["competition_format_id"]>,
+    competition_format_id: ScalarValueInput<
+      Competition["competition_format_id"]
+    >,
   ): Promise<AsyncResult<boolean>>;
 }
 
@@ -41,7 +45,7 @@ export function create_competition_use_cases_with_stage_lifecycle(
       filter?: CompetitionFilter,
       options?: QueryOptions,
     ): PaginatedAsyncResult<Competition> {
-      return repository.find_all(filter, options);
+      return repository.find_all(filter ?? {}, options ?? {});
     },
 
     async get_by_id(
@@ -179,7 +183,7 @@ export function create_competition_use_cases_with_stage_lifecycle(
       if (!organization_id || organization_id.trim().length === 0) {
         return create_failure_result("Organization ID is required");
       }
-      return repository.find_by_organization(organization_id, options);
+      return repository.find_by_organization(organization_id, options ?? {});
     },
   };
 }

@@ -85,7 +85,7 @@ export function create_fixture_lineup_use_cases(
       filter?: FixtureLineupFilter,
       pagination?: { page: number; page_size: number },
     ): PaginatedAsyncResult<FixtureLineup> {
-      return repository.find_all(filter, pagination);
+      return repository.find_all(filter ?? {}, pagination ?? {});
     },
 
     async get_lineups_for_fixture(

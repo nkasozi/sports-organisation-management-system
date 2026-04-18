@@ -50,6 +50,10 @@ export interface WeightedOfficialSummary {
   weighted_fitness: number;
 }
 
+type WeightedOfficialSummaryResult =
+  | { status: "empty" }
+  | { status: "present"; summary: WeightedOfficialSummary };
+
 export type PerformanceTier =
   | "elite"
   | "strong"
@@ -85,8 +89,8 @@ export function compute_composite_score(rating: RatingDimensions): number {
 
 export function aggregate_weighted_ratings(
   ratings: Array<OfficialPerformanceRating & { importance_weight: number }>,
-): WeightedOfficialSummary | null {
-  if (ratings.length === 0) return null;
+): WeightedOfficialSummaryResult {
+  if (ratings.length === 0) return { status: "empty" };
 
   const official_id = ratings[0].official_id;
   let total_weight = 0;
@@ -109,21 +113,24 @@ export function aggregate_weighted_ratings(
   const safe_total = total_weight === 0 ? 1 : total_weight;
 
   return {
-    official_id,
-    total_weighted_score:
-      (weighted_overall +
-        weighted_decision_accuracy +
-        weighted_game_control +
-        weighted_communication +
-        weighted_fitness) /
-      (5 * safe_total),
-    total_weight,
-    rating_count: ratings.length,
-    weighted_overall: weighted_overall / safe_total,
-    weighted_decision_accuracy: weighted_decision_accuracy / safe_total,
-    weighted_game_control: weighted_game_control / safe_total,
-    weighted_communication: weighted_communication / safe_total,
-    weighted_fitness: weighted_fitness / safe_total,
+    status: "present",
+    summary: {
+      official_id,
+      total_weighted_score:
+        (weighted_overall +
+          weighted_decision_accuracy +
+          weighted_game_control +
+          weighted_communication +
+          weighted_fitness) /
+        (5 * safe_total),
+      total_weight,
+      rating_count: ratings.length,
+      weighted_overall: weighted_overall / safe_total,
+      weighted_decision_accuracy: weighted_decision_accuracy / safe_total,
+      weighted_game_control: weighted_game_control / safe_total,
+      weighted_communication: weighted_communication / safe_total,
+      weighted_fitness: weighted_fitness / safe_total,
+    },
   };
 }
 

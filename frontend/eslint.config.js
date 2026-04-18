@@ -22,7 +22,7 @@ export default [
   },
   ...sveltePlugin.configs["flat/recommended"],
   {
-    files: ["**/*.{js,mjs,cjs,ts}"],
+    files: ["**/*.{js,mjs,cjs,ts}", "**/*.d.ts"],
     plugins: {
       "@typescript-eslint": tsEslintPlugin,
       "simple-import-sort": simpleImportSortPlugin,
@@ -35,6 +35,15 @@ export default [
     rules: {
       "no-unused-vars": "off",
       "@typescript-eslint/no-unused-vars": "off",
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector:
+            "Program > :not(ImportDeclaration):not(ExpressionStatement[directive=true]) ~ ImportDeclaration",
+          message:
+            "Move all imports into a single block at the top of the file.",
+        },
+      ],
       "simple-import-sort/imports": "error",
       "simple-import-sort/exports": "error",
       "unused-imports/no-unused-imports": "error",
@@ -60,6 +69,15 @@ export default [
     rules: {
       "no-unused-vars": "off",
       "@typescript-eslint/no-unused-vars": "off",
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector:
+            "Program > :not(ImportDeclaration):not(ExpressionStatement[directive=true]) ~ ImportDeclaration",
+          message:
+            "Move all imports into a single block at the top of the file.",
+        },
+      ],
       "simple-import-sort/imports": "error",
       "simple-import-sort/exports": "error",
       "svelte-unused-imports/no-unused-imports": "error",

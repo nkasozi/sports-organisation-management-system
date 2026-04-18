@@ -132,11 +132,24 @@ export class InBrowserCompetitionStageRepository
   }
 }
 
-let singleton_instance: InBrowserCompetitionStageRepository | null = null;
+type CompetitionStageRepositoryState =
+  | { status: "uninitialized" }
+  | {
+      status: "ready";
+      repository: InBrowserCompetitionStageRepository;
+    };
+
+let competition_stage_repository_state: CompetitionStageRepositoryState = {
+  status: "uninitialized",
+};
 
 export function get_competition_stage_repository(): CompetitionStageRepository {
-  if (!singleton_instance) {
-    singleton_instance = new InBrowserCompetitionStageRepository();
+  if (competition_stage_repository_state.status === "ready") {
+    return competition_stage_repository_state.repository;
   }
-  return singleton_instance;
+
+  const repository = new InBrowserCompetitionStageRepository();
+  competition_stage_repository_state = { status: "ready", repository };
+
+  return repository;
 }

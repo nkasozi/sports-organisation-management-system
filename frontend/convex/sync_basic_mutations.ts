@@ -139,7 +139,7 @@ export const force_resolve_conflict = mutation({
       version: args.new_version,
       conflict_resolved_at: synced_at,
       conflict_resolution_action: args.resolution_action,
-      conflict_resolved_by: args.resolved_by || null,
+      ...(args.resolved_by ? { conflict_resolved_by: args.resolved_by } : {}),
     };
     if (existing) {
       await ctx.db.patch(existing._id, record_data);

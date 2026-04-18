@@ -11,8 +11,10 @@ import type {
   FixtureRepository,
   TeamRepository,
 } from "../interfaces/ports";
+import { is_activity_not_found_by_source_error } from "../interfaces/ports/external/repositories/ActivityRepository";
 import { create_failure_result, create_success_result } from "../types/Result";
 import {
+  type ExistingSyncedActivityState,
   find_activity_category_by_type,
   upsert_synced_activity,
 } from "./ActivitySyncUseCasesHelpers";
@@ -54,7 +56,22 @@ export function create_activity_sync(
           "competition",
           competition.id,
         );
-        if (!existing_result.success) continue;
+        if (
+          !existing_result.success &&
+          !is_activity_not_found_by_source_error(
+            existing_result.error,
+            "competition",
+            competition.id,
+          )
+        ) {
+          continue;
+        }
+
+        const existing_activity_state: ExistingSyncedActivityState =
+          existing_result.success
+            ? { status: "existing", activity: existing_result.data }
+            : { status: "missing" };
+
         const activity_input = create_activity_from_competition(
           competition.id,
           competition.name,
@@ -66,7 +83,7 @@ export function create_activity_sync(
         );
         const upsert_result = await upsert_synced_activity(
           activity_repository,
-          existing_result.data,
+          existing_activity_state,
           activity_input,
           {
             title: activity_input.title,
@@ -104,7 +121,7 @@ export function create_activity_sync(
       }
       const fixtures_result = competition_id
         ? await fixture_repository.find_by_competition(competition_id)
-        : await fixture_repository.find_all(undefined, { page_size: 1000 });
+        : await fixture_repository.find_all({}, { page_size: 1000 });
       if (!fixtures_result.success) {
         console.log("[ActivitySync] Failed to fetch fixtures", {
           event: "fixture_fetch_failed",
@@ -124,7 +141,22 @@ export function create_activity_sync(
           "fixture",
           fixture.id,
         );
-        if (!existing_result.success) continue;
+        if (
+          !existing_result.success &&
+          !is_activity_not_found_by_source_error(
+            existing_result.error,
+            "fixture",
+            fixture.id,
+          )
+        ) {
+          continue;
+        }
+
+        const existing_activity_state: ExistingSyncedActivityState =
+          existing_result.success
+            ? { status: "existing", activity: existing_result.data }
+            : { status: "missing" };
+
         const home_result = await team_repository.find_by_id(
           fixture.home_team_id,
         );
@@ -151,7 +183,7 @@ export function create_activity_sync(
         );
         const upsert_result = await upsert_synced_activity(
           activity_repository,
-          existing_result.data,
+          existing_activity_state,
           activity_input,
           {
             title: activity_input.title,

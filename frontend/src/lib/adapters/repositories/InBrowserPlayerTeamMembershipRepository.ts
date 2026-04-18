@@ -154,13 +154,24 @@ function create_default_player_team_memberships(): import("$lib/core/types/Domai
   ] as PlayerTeamMembership[];
 }
 
-let singleton_instance: InBrowserPlayerTeamMembershipRepository | null = null;
+type PlayerTeamMembershipRepositoryState =
+  | { status: "uninitialized" }
+  | { status: "ready"; repository: InBrowserPlayerTeamMembershipRepository };
+
+let player_team_membership_repository_state: PlayerTeamMembershipRepositoryState =
+  {
+    status: "uninitialized",
+  };
 
 export function get_player_team_membership_repository(): PlayerTeamMembershipRepository {
-  if (!singleton_instance) {
-    singleton_instance = new InBrowserPlayerTeamMembershipRepository();
+  if (player_team_membership_repository_state.status === "ready") {
+    return player_team_membership_repository_state.repository;
   }
-  return singleton_instance;
+
+  const repository = new InBrowserPlayerTeamMembershipRepository();
+  player_team_membership_repository_state = { status: "ready", repository };
+
+  return repository;
 }
 
 export async function reset_player_team_membership_repository(): Promise<void> {

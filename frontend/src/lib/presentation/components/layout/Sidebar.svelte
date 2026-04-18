@@ -24,8 +24,9 @@
     !!$branding_store.organization_logo_url &&
     $branding_store.organization_logo_url.length > 0;
   $: has_profile_picture =
-    !!$current_user_store?.profile_picture_base64 &&
-    $current_user_store.profile_picture_base64.length > 0;
+    $current_user_store.status === "present" &&
+    !!$current_user_store.user.profile_picture_base64 &&
+    $current_user_store.user.profile_picture_base64.length > 0;
 
   interface NavigationItem {
     name: string;
@@ -112,7 +113,9 @@
     <SidebarUserInfo
       {sidebar_open}
       {has_profile_picture}
-      profile_picture_base64={$current_user_store?.profile_picture_base64}
+      profile_picture_base64={$current_user_store.status === "present"
+        ? $current_user_store.user.profile_picture_base64
+        : ""}
       profile_initials={$current_profile_initials}
       profile_display_name={$current_profile_display_name}
       user_role_display={$current_user_role_display}

@@ -17,13 +17,20 @@ import type {
 } from "$lib/infrastructure/sync/conflictTypes";
 import {
   compute_field_differences,
+  create_unknown_conflict_field_value,
   generate_conflict_id,
   get_entity_display_name,
 } from "$lib/infrastructure/sync/conflictTypes";
 import type { ConflictFromServer } from "$lib/infrastructure/sync/syncTypes";
 
-import type { ConflictStoreState } from "./conflictStoreHelpers";
-import { get_resolved_data_for_action } from "./conflictStoreHelpers";
+import type {
+  ConflictStoreState,
+  CurrentConflictState,
+} from "./conflictStoreHelpers";
+import {
+  create_current_conflict_state,
+  get_resolved_data_for_action,
+} from "./conflictStoreHelpers";
 const INITIAL_STATE: ConflictStoreState = {
   pending_conflicts: [],
   resolved_conflicts: [],
@@ -42,34 +49,35 @@ function create_conflict_store() {
   ): boolean {
     if (conflicts.length === 0) return false;
 
-    const new_conflicts: ScalarInput<ConflictRecord>[] = conflicts.map((conflict) => ({
-      id: generate_conflict_id(
+    const new_conflicts: ScalarInput<ConflictRecord>[] = conflicts.map(
+      (conflict) => ({
+        id: generate_conflict_id(
+          table_name,
+          conflict.local_id as ConflictRecord["local_id"],
+        ),
         table_name,
-        conflict.local_id as ConflictRecord["local_id"],
-      ),
-      table_name,
-      local_id: conflict.local_id as ConflictRecord["local_id"],
-      entity_display_name: get_entity_display_name(
-        conflict.local_data,
-        table_name,
-      ),
-      local_data: conflict.local_data,
-      remote_data: conflict.remote_data,
-      local_updated_at:
-        (conflict.local_data
-          .updated_at as ConflictRecord["local_updated_at"]) ||
-        create_conflict_timestamp(),
-      remote_updated_at:
-        conflict.remote_updated_at as ConflictRecord["remote_updated_at"],
-      remote_updated_by:
-        conflict.remote_updated_by as ConflictRecord["remote_updated_by"],
-      remote_updated_by_name: null,
-      field_differences: compute_field_differences(
-        conflict.local_data,
-        conflict.remote_data,
-      ),
-      detected_at: create_conflict_timestamp(),
-    }));
+        local_id: conflict.local_id as ConflictRecord["local_id"],
+        entity_display_name: get_entity_display_name(
+          conflict.local_data,
+          table_name,
+        ),
+        local_data: conflict.local_data,
+        remote_data: conflict.remote_data,
+        local_updated_at:
+          (conflict.local_data
+            .updated_at as ConflictRecord["local_updated_at"]) ||
+          create_conflict_timestamp(),
+        remote_updated_at:
+          conflict.remote_updated_at as ConflictRecord["remote_updated_at"],
+        remote_updated_by: conflict.remote_updated_by,
+        remote_updated_by_name: create_unknown_conflict_field_value(),
+        field_differences: compute_field_differences(
+          conflict.local_data,
+          conflict.remote_data,
+        ),
+        detected_at: create_conflict_timestamp(),
+      }),
+    );
 
     for (const conflict of new_conflicts) {
       log_conflict_detected(conflict).catch((err) => {
@@ -106,7 +114,7 @@ function create_conflict_store() {
       local_id: conflict.local_id,
       action,
       resolved_at: create_conflict_timestamp(),
-      resolved_by: null,
+      resolved_by: create_unknown_conflict_field_value(),
       merged_data,
     };
 
@@ -160,11 +168,11 @@ function create_conflict_store() {
     return true;
   }
 
-  function get_current_conflict(): ScalarInput<ConflictRecord> | null {
+  function get_current_conflict(): CurrentConflictState {
     const current_state = get({ subscribe });
-    return (
-      current_state.pending_conflicts[current_state.current_conflict_index] ||
-      null
+    return create_current_conflict_state(
+      current_state.pending_conflicts,
+      current_state.current_conflict_index,
     );
   }
 

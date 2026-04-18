@@ -3,10 +3,10 @@
     import TeamLogoThumbnail from "$lib/presentation/components/ui/TeamLogoThumbnail.svelte";
 
     export let fixture: Fixture;
-    export let downloading_fixture_id: string | null;
+    export let downloading_fixture_id: string;
     export let format_date: (date_string: string) => string;
-    export let get_fixture_stage_name: (stage_id?: string | null) => string;
-    export let get_fixture_stage_type: (stage_id?: string | null) => string;
+    export let get_fixture_stage_name: (stage_id: string) => string;
+    export let get_fixture_stage_type: (stage_id: string) => string;
     export let get_team_name: (team_id: string) => string;
     export let get_team_logo_url: (team_id: string) => string;
     export let on_open_match_report: (fixture_id: string) => void;
@@ -17,8 +17,8 @@
 
     $: home_score = fixture.home_team_score ?? 0;
     $: away_score = fixture.away_team_score ?? 0;
-    $: fixture_stage_name = get_fixture_stage_name(fixture.stage_id);
-    $: fixture_stage_type = get_fixture_stage_type(fixture.stage_id);
+    $: fixture_stage_name = get_fixture_stage_name(fixture.stage_id || "");
+    $: fixture_stage_type = get_fixture_stage_type(fixture.stage_id || "");
 </script>
 
 <div

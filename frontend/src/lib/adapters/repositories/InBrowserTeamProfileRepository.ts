@@ -185,13 +185,23 @@ function create_default_team_profiles(): import("$lib/core/types/DomainScalars")
   ];
 }
 
-let singleton_instance: InBrowserTeamProfileRepository | null = null;
+type TeamProfileRepositoryState =
+  | { status: "uninitialized" }
+  | { status: "ready"; repository: InBrowserTeamProfileRepository };
+
+let team_profile_repository_state: TeamProfileRepositoryState = {
+  status: "uninitialized",
+};
 
 export function get_team_profile_repository(): TeamProfileRepository {
-  if (!singleton_instance) {
-    singleton_instance = new InBrowserTeamProfileRepository();
+  if (team_profile_repository_state.status === "ready") {
+    return team_profile_repository_state.repository;
   }
-  return singleton_instance;
+
+  const repository = new InBrowserTeamProfileRepository();
+  team_profile_repository_state = { status: "ready", repository };
+
+  return repository;
 }
 
 export async function reset_team_profile_repository(): Promise<void> {

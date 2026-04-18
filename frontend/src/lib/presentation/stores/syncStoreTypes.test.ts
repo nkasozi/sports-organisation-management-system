@@ -7,11 +7,11 @@ describe("syncStoreTypes", () => {
     expect(SYNC_INITIAL_STATE).toEqual({
       is_configured: false,
       is_syncing: false,
-      last_sync_at: null,
-      last_sync_result: null,
-      current_progress: null,
+      last_sync_at: { status: "never" },
+      last_sync_result: { status: "empty" },
+      current_progress: { status: "idle" },
       auto_sync_enabled: false,
-      error_message: null,
+      error_message: { status: "clear" },
       has_pending_conflicts: false,
     });
   });

@@ -1,7 +1,6 @@
 import type { Competition } from "$lib/core/entities/Competition";
 import type { CompetitionTeam } from "$lib/core/entities/CompetitionTeam";
 import type { Fixture } from "$lib/core/entities/Fixture";
-import type { Organization } from "$lib/core/entities/Organization";
 import type { Team } from "$lib/core/entities/Team";
 import {
   matches_team_player_search,
@@ -17,9 +16,9 @@ export type FixtureLineupCreateWizardStep = {
 };
 
 export function build_fixture_lineup_create_wizard_steps(
-  organization: Organization | null,
-  fixture: Fixture | null,
-  team: Team | null,
+  has_selected_organization: boolean,
+  has_selected_fixture: boolean,
+  has_selected_team: boolean,
   selected_player_count: number,
   minimum_players: number,
   maximum_players: number,
@@ -33,19 +32,19 @@ export function build_fixture_lineup_create_wizard_steps(
       step_key: "organization",
       step_title: "Organization",
       step_description: "Choose the organization",
-      is_completed: Boolean(organization),
+      is_completed: has_selected_organization,
     },
     {
       step_key: "fixture",
       step_title: "Fixture",
       step_description: "Choose the fixture",
-      is_completed: Boolean(fixture),
+      is_completed: has_selected_fixture,
     },
     {
       step_key: "team",
       step_title: "Team",
       step_description: "Choose home/away competition team",
-      is_completed: Boolean(team),
+      is_completed: has_selected_team,
     },
     {
       step_key: "players",
@@ -131,7 +130,8 @@ export function build_fixture_team_label_map(
   );
   return new Map(
     fixture_teams.map((team) => {
-      const competition_team = competition_team_by_team_id.get(team.id) || null;
+      const competition_team =
+        competition_team_by_team_id.get(team.id) || undefined;
       const seed = competition_team?.seed_number
         ? ` • Seed ${competition_team.seed_number}`
         : "";

@@ -1,34 +1,33 @@
 import type { CreateCompetitionInput } from "$lib/core/entities/Competition";
 import type { CompetitionFormat } from "$lib/core/entities/CompetitionFormat";
 import type { Organization } from "$lib/core/entities/Organization";
-import type { Sport } from "$lib/core/entities/Sport";
-import {
-  is_scope_restricted,
-  type UserScopeProfile,
-} from "$lib/core/interfaces/ports";
+import { is_scope_restricted } from "$lib/core/interfaces/ports";
 import type { SelectOption } from "$lib/presentation/components/ui/SelectField.svelte";
 import {
   competition_create_dependencies,
   COMPETITION_CREATE_PAGE_TEXT,
 } from "$lib/presentation/logic/competitionCreatePageControllerDependencies";
+import type { CompetitionCreateProfileState } from "$lib/presentation/logic/competitionCreatePageData";
 import {
+  type CompetitionCreateRawTokenState,
+  type CompetitionCreateSelectedSportState,
   initialize_competition_create_page,
   load_competition_create_organization_state,
 } from "$lib/presentation/logic/competitionCreatePageFlow";
 import {
+  type CompetitionCreateSelectedFormatState,
   get_next_selected_team_ids,
   update_competition_auto_squad_submission,
 } from "$lib/presentation/logic/competitionCreatePageState";
 import { submit_competition_create_form } from "$lib/presentation/logic/competitionCreatePageSubmit";
 import { access_denial_store } from "$lib/presentation/stores/accessDenial";
-import type { AuthState } from "$lib/presentation/stores/authTypes";
 
 export function create_competition_create_page_controller_runtime(command: {
-  get_auth_state: () => AuthState;
   get_competition_formats: () => CompetitionFormat[];
-  get_current_auth_profile: () => UserScopeProfile | null;
+  get_current_auth_profile_state: () => CompetitionCreateProfileState;
+  get_current_raw_token_state: () => CompetitionCreateRawTokenState;
   get_form_data: () => CreateCompetitionInput;
-  get_selected_format: () => CompetitionFormat | null;
+  get_selected_format_state: () => CompetitionCreateSelectedFormatState;
   get_selected_team_ids: () => Set<string>;
   get_is_team_count_valid: () => boolean;
   get_organizations: () => Organization[];
@@ -44,8 +43,12 @@ export function create_competition_create_page_controller_runtime(command: {
   set_is_saving: (value: boolean) => void;
   set_organization_options: (value: SelectOption[]) => void;
   set_organizations: (value: Organization[]) => void;
-  set_selected_format: (value: CompetitionFormat | null) => void;
-  set_selected_sport: (value: Sport | null) => void;
+  set_selected_format_state: (
+    value: CompetitionCreateSelectedFormatState,
+  ) => void;
+  set_selected_sport_state: (
+    value: CompetitionCreateSelectedSportState,
+  ) => void;
   set_selected_team_ids: (value: Set<string>) => void;
   set_team_options: (value: SelectOption[]) => void;
   show_toast: (message: string, type: "success" | "error" | "info") => void;
@@ -60,18 +63,23 @@ export function create_competition_create_page_controller_runtime(command: {
   initialize: () => Promise<void>;
 } {
   const is_organization_restricted = (): boolean => {
-    const current_auth_profile = command.get_current_auth_profile();
-    return (
-      current_auth_profile !== null &&
-      is_scope_restricted(current_auth_profile, "organization_id")
+    const current_auth_profile_state = command.get_current_auth_profile_state();
+
+    if (current_auth_profile_state.status === "missing") {
+      return false;
+    }
+
+    return is_scope_restricted(
+      current_auth_profile_state.profile,
+      "organization_id",
     );
   };
   const trigger_organization_side_effects = async (
     organization_id: string,
   ): Promise<void> => {
     command.set_selected_team_ids(new Set());
-    command.set_selected_format(null);
-    command.set_selected_sport(null);
+    command.set_selected_format_state({ status: "missing" });
+    command.set_selected_sport_state({ status: "missing" });
     command.set_form_data({
       ...command.get_form_data(),
       competition_format_id: "",
@@ -91,7 +99,7 @@ export function create_competition_create_page_controller_runtime(command: {
     command.set_competition_format_options(
       organization_state.competition_format_options,
     );
-    command.set_selected_sport(organization_state.selected_sport);
+    command.set_selected_sport_state(organization_state.selected_sport_state);
     command.set_is_loading_teams(false);
     command.set_is_loading_formats(false);
   };
@@ -109,13 +117,17 @@ export function create_competition_create_page_controller_runtime(command: {
         ...command.get_form_data(),
         competition_format_id: event.detail.value,
       });
-      command.set_selected_format(
-        command
-          .get_competition_formats()
-          .find(
-            (competition_format: CompetitionFormat) =>
-              competition_format.id === event.detail.value,
-          ) || null,
+      const selected_format = command
+        .get_competition_formats()
+        .find(
+          (competition_format: CompetitionFormat) =>
+            competition_format.id === event.detail.value,
+        );
+
+      command.set_selected_format_state(
+        selected_format
+          ? { status: "present", competition_format: selected_format }
+          : { status: "missing" },
       );
     },
     handle_organization_change: async (
@@ -129,10 +141,10 @@ export function create_competition_create_page_controller_runtime(command: {
     },
     handle_submit: async (): Promise<void> => {
       if (!command.get_is_team_count_valid()) {
-        const selected_format = command.get_selected_format();
+        const selected_format_state = command.get_selected_format_state();
         command.show_toast(
-          selected_format
-            ? `Please select between ${selected_format.min_teams_required} and ${selected_format.max_teams_allowed} teams`
+          selected_format_state.status === "present"
+            ? `Please select between ${selected_format_state.competition_format.min_teams_required} and ${selected_format_state.competition_format.max_teams_allowed} teams`
             : "Please select valid teams for the chosen competition format",
           "error",
         );
@@ -163,12 +175,11 @@ export function create_competition_create_page_controller_runtime(command: {
       if (!command.is_browser) {
         return;
       }
-      const auth_state = command.get_auth_state();
       const page_result = await initialize_competition_create_page({
-        current_auth_profile: command.get_current_auth_profile(),
+        current_auth_profile_state: command.get_current_auth_profile_state(),
         dependencies: competition_create_dependencies,
         is_organization_restricted: is_organization_restricted(),
-        raw_token: auth_state.current_token?.raw_token ?? null,
+        raw_token_state: command.get_current_raw_token_state(),
       });
       if (page_result.access_denied) {
         access_denial_store.set_denial(

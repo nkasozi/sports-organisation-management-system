@@ -1,5 +1,13 @@
 import { describe, expect, it, vi } from "vitest";
 
+import {
+  create_table_sync_progress,
+  load_remote_table_state,
+  log_sync_summary,
+  update_table_sync_progress,
+  verify_push_sync_auth_or_fail,
+} from "./syncOrchestratorHelpers";
+
 const { get_remote_state_for_table_mock, verify_sync_auth_mock } = vi.hoisted(
   () => ({
     get_remote_state_for_table_mock: vi.fn(),
@@ -15,39 +23,34 @@ vi.mock("./syncDataAccess", () => ({
   get_remote_state_for_table: get_remote_state_for_table_mock,
 }));
 
-import {
-  create_table_sync_progress,
-  load_remote_table_state,
-  log_sync_summary,
-  update_table_sync_progress,
-  verify_push_sync_auth_or_fail,
-} from "./syncOrchestratorHelpers";
-
 describe("syncOrchestratorHelpers", () => {
   it("verifies push auth and returns a failure result when unauthenticated", async () => {
     await expect(
       verify_push_sync_auth_or_fail({} as never, "pull", 100),
-    ).resolves.toBeNull();
+    ).resolves.toEqual({ status: "continue" });
 
-    verify_sync_auth_mock.mockResolvedValueOnce({ authenticated: true });
+    verify_sync_auth_mock.mockResolvedValueOnce({ status: "authenticated" });
     await expect(
       verify_push_sync_auth_or_fail({} as never, "push", 100),
-    ).resolves.toBeNull();
+    ).resolves.toEqual({ status: "continue" });
 
     verify_sync_auth_mock.mockResolvedValueOnce({
-      authenticated: false,
+      status: "unauthenticated",
       error: "token missing",
     });
     await expect(
       verify_push_sync_auth_or_fail({} as never, "push", 100),
     ).resolves.toMatchObject({
-      success: false,
-      errors: [
-        {
-          table_name: "auth_check",
-          error: "Auth verification failed: token missing",
-        },
-      ],
+      status: "stop",
+      result: {
+        success: false,
+        errors: [
+          {
+            table_name: "auth_check",
+            error: "Auth verification failed: token missing",
+          },
+        ],
+      },
     });
   });
 
@@ -59,7 +62,7 @@ describe("syncOrchestratorHelpers", () => {
       total_records: 0,
       synced_records: 0,
       status: "syncing",
-      error_message: null,
+      errors: [],
       tables_completed: 2,
       total_tables: 5,
       percentage: 40,
@@ -71,14 +74,15 @@ describe("syncOrchestratorHelpers", () => {
         {
           records_pushed: 2,
           records_pulled: 3,
-          conflicts: null,
-          error: null,
+          conflicts: [],
+          errors: [],
         },
         3,
       ),
     ).toMatchObject({
       status: "success",
       synced_records: 5,
+      errors: [],
       tables_completed: 3,
       percentage: 60,
     });
@@ -91,18 +95,12 @@ describe("syncOrchestratorHelpers", () => {
 
     await expect(
       load_remote_table_state({} as never, "teams"),
-    ).resolves.toEqual({
-      state: { version: 3 },
-      error_message: null,
-    });
+    ).resolves.toEqual({ success: true, data: { version: 3 } });
 
     get_remote_state_for_table_mock.mockRejectedValueOnce(new Error("network"));
     await expect(
       load_remote_table_state({} as never, "teams"),
-    ).resolves.toEqual({
-      state: null,
-      error_message: "network",
-    });
+    ).resolves.toEqual({ success: false, error: "network" });
 
     log_sync_summary({
       sync_succeeded: false,

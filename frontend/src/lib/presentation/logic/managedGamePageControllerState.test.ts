@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  create_missing_managed_game_fixture_state,
+  create_missing_managed_game_selected_event_type_state,
+  create_missing_managed_game_team_state,
+  create_present_managed_game_team_state,
+} from "$lib/presentation/logic/managedGamePageTypes";
+
+import {
   apply_managed_game_bundle,
   build_managed_game_page_title,
   close_managed_game_event_modal,
@@ -16,9 +23,9 @@ import {
 describe("managedGamePageControllerState", () => {
   it("creates the default managed-game state and exposes quick-event groupings", () => {
     expect(create_managed_game_page_state()).toEqual({
-      fixture: null,
-      home_team: null,
-      away_team: null,
+      fixture: create_missing_managed_game_fixture_state(),
+      home_team: create_missing_managed_game_team_state(),
+      away_team: create_missing_managed_game_team_state(),
       home_players: [],
       away_players: [],
       is_loading: true,
@@ -29,7 +36,8 @@ describe("managedGamePageControllerState", () => {
       show_start_modal: false,
       show_end_modal: false,
       show_event_modal: false,
-      selected_event_type: null,
+      selected_event_type:
+        create_missing_managed_game_selected_event_type_state(),
       selected_team_side: "home",
       event_player_name: "",
       event_description: "",
@@ -55,8 +63,12 @@ describe("managedGamePageControllerState", () => {
           { minute: 20, recorded_at: "2024-01-01T10:05:00.000Z" },
         ],
       },
-      home_team: { name: "Lions" },
-      away_team: { name: "Tigers" },
+      home_team: create_present_managed_game_team_state({
+        name: "Lions",
+      } as never),
+      away_team: create_present_managed_game_team_state({
+        name: "Tigers",
+      } as never),
       home_players: [{ id: "home-player" }],
       away_players: [{ id: "away-player" }],
       game_clock_seconds: 75,
@@ -113,7 +125,8 @@ describe("managedGamePageControllerState", () => {
     expect(close_managed_game_event_modal(modal_open)).toEqual(
       expect.objectContaining({
         show_event_modal: false,
-        selected_event_type: null,
+        selected_event_type:
+          create_missing_managed_game_selected_event_type_state(),
         event_player_name: "",
         event_description: "",
         event_minute: 0,

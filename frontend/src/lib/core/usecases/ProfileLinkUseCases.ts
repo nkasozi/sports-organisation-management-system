@@ -40,16 +40,20 @@ export function create_profile_link_use_cases(
       options?: QueryOptions,
     ): PaginatedAsyncResult<ProfileLink> {
       if (!filter) {
-        return repository.find_all(undefined, options);
+        return repository.find_all({}, options);
       }
 
       const typed_filter: ProfileLinkFilter = {
-        profile_id: filter?.profile_id as ProfileLink["profile_id"] | undefined,
-        platform: filter?.platform,
-        status: filter?.status as ProfileLink["status"] | undefined,
+        ...(filter.profile_id
+          ? { profile_id: filter.profile_id as ProfileLink["profile_id"] }
+          : {}),
+        ...(filter.platform ? { platform: filter.platform } : {}),
+        ...(filter.status
+          ? { status: filter.status as ProfileLink["status"] }
+          : {}),
       };
 
-      return repository.find_all(typed_filter, options);
+      return repository.find_all(typed_filter, options ?? {});
     },
 
     async get_by_id(
@@ -96,7 +100,7 @@ export function create_profile_link_use_cases(
       profile_id: ScalarValueInput<ProfileLink["profile_id"]>,
       options?: QueryOptions,
     ): PaginatedAsyncResult<ProfileLink> {
-      return repository.find_by_profile_id(profile_id, options);
+      return repository.find_by_profile_id(profile_id, options ?? {});
     },
   };
 }

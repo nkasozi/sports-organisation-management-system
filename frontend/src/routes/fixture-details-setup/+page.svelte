@@ -17,10 +17,10 @@ import {
   const game_official_role_use_cases = get_game_official_role_use_cases();
 
   let initial_view: "list" | "create" | "edit" = "list";
-  let initial_create_data: Record<string, unknown> | null = null;
+  let initial_create_data: Record<string, unknown> = {};
   let is_ready: boolean = false;
-  let after_save_redirect_url: string | null = null;
-  let info_message: string | null = null;
+  let after_save_redirect_url = "";
+  let info_message = "";
 
   async function load_auto_populated_data(
     fixture_id: string,

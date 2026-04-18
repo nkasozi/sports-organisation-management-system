@@ -40,17 +40,16 @@ describe("liveGameDetailLineupActions", () => {
       id: "player-1",
       first_name: "Ada",
       last_name: "Stone",
-      jersey_number: null,
-      position: null,
+      jersey_number: 0,
+      position: "",
       is_captain: false,
       is_substitute: false,
-      time_on: undefined,
       ...overrides,
     } as unknown as UpdatedPlayers[number];
   }
 
   it("updates only the selected player time-on value and persists the revised lineup", async () => {
-    const fixture_lineup_use_cases =  {
+    const fixture_lineup_use_cases = {
       update: vi.fn().mockResolvedValue({ success: true }),
     } as Pick<FixtureLineupUseCases, "update">;
 
@@ -81,20 +80,19 @@ describe("liveGameDetailLineupActions", () => {
   });
 
   it("auto-generates a lineup from active memberships and fills missing player details with fallbacks", async () => {
-    const player_membership_use_cases =
-      {
-        list: vi.fn().mockResolvedValue({
-          success: true,
-          data: {
-            items: [
-              { player_id: "player-1", status: "active", jersey_number: 9 },
-              { player_id: "player-2", status: "inactive", jersey_number: 12 },
-              { player_id: "player-3", status: "active", jersey_number: null },
-            ],
-          },
-        }),
-      } as Pick<PlayerMembershipUseCases, "list">;
-    const player_use_cases =  {
+    const player_membership_use_cases = {
+      list: vi.fn().mockResolvedValue({
+        success: true,
+        data: {
+          items: [
+            { player_id: "player-1", status: "active", jersey_number: 9 },
+            { player_id: "player-2", status: "inactive", jersey_number: 12 },
+            { player_id: "player-3", status: "active", jersey_number: 0 },
+          ],
+        },
+      }),
+    } as Pick<PlayerMembershipUseCases, "list">;
+    const player_use_cases = {
       get_by_id: vi.fn().mockImplementation(async (player_id: string) =>
         player_id === "player-1"
           ? {
@@ -104,12 +102,9 @@ describe("liveGameDetailLineupActions", () => {
           : { success: false, error: "Missing" },
       ),
     } as Pick<PlayerUseCases, "get_by_id">;
-    const fixture_lineup_use_cases =  {
+    const fixture_lineup_use_cases = {
       create: vi.fn().mockResolvedValue({ success: true }),
-    } as Pick<
-      Parameters<typeof auto_generate_live_game_lineup>[4],
-      "create"
-    >;
+    } as Pick<Parameters<typeof auto_generate_live_game_lineup>[4], "create">;
 
     const result = await auto_generate_live_game_lineup(
       {
@@ -142,7 +137,7 @@ describe("liveGameDetailLineupActions", () => {
             id: "player-3",
             first_name: "Unknown",
             last_name: "Player",
-            jersey_number: null,
+            jersey_number: 0,
           }),
         ],
       }),
@@ -156,8 +151,8 @@ describe("liveGameDetailLineupActions", () => {
     } as EnsureFixture;
     const home_team = { name: "Lions" } as EnsureTeam;
     const away_team = { name: "Tigers" } as EnsureTeam;
-    const home_players =  [] as EnsureHomePlayers;
-    const away_players =  [] as EnsureAwayPlayers;
+    const home_players = [] as EnsureHomePlayers;
+    const away_players = [] as EnsureAwayPlayers;
 
     await expect(
       ensure_live_game_lineups_before_start(
@@ -179,29 +174,25 @@ describe("liveGameDetailLineupActions", () => {
   });
 
   it("auto-generates a missing lineup and asks the caller to reload before game start", async () => {
-    const player_membership_use_cases =
-      {
-        list: vi.fn().mockResolvedValue({
-          success: true,
-          data: {
-            items: [
-              { player_id: "player-1", status: "active", jersey_number: 9 },
-            ],
-          },
-        }),
-      } as Pick<PlayerMembershipUseCases, "list">;
-    const player_use_cases =  {
+    const player_membership_use_cases = {
+      list: vi.fn().mockResolvedValue({
+        success: true,
+        data: {
+          items: [
+            { player_id: "player-1", status: "active", jersey_number: 9 },
+          ],
+        },
+      }),
+    } as Pick<PlayerMembershipUseCases, "list">;
+    const player_use_cases = {
       get_by_id: vi.fn().mockResolvedValue({
         success: true,
         data: { id: "player-1", first_name: "Ada", last_name: "Stone" },
       }),
     } as Pick<PlayerUseCases, "get_by_id">;
-    const fixture_lineup_use_cases =  {
+    const fixture_lineup_use_cases = {
       create: vi.fn().mockResolvedValue({ success: true }),
-    } as Pick<
-      Parameters<typeof auto_generate_live_game_lineup>[4],
-      "create"
-    >;
+    } as Pick<Parameters<typeof auto_generate_live_game_lineup>[4], "create">;
 
     await expect(
       ensure_live_game_lineups_before_start(

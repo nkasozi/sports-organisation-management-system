@@ -15,7 +15,7 @@ export interface GameEventTypeUseCasesPort extends BaseUseCasesPort<
   UpdateGameEventTypeInput,
   GameEventTypeFilter
 > {
-  get_event_type_by_code(code: string): AsyncResult<GameEventType | null>;
+  get_event_type_by_code(code: string): AsyncResult<GameEventType>;
   list_event_types_for_sport(
     sport_id: ScalarValueInput<NonNullable<GameEventType["sport_id"]>>,
   ): AsyncResult<GameEventType[]>;

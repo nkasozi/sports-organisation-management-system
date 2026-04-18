@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import type { ScalarInput } from "$lib/core/types/DomainScalars";
 import type { Competition } from "$lib/core/entities/Competition";
 import type { Fixture, GameEvent } from "$lib/core/entities/Fixture";
 import type { ProfileLink } from "$lib/core/entities/ProfileLink";
 import type { Team } from "$lib/core/entities/Team";
 import type { TeamProfile } from "$lib/core/entities/TeamProfile";
+import type { ScalarInput } from "$lib/core/types/DomainScalars";
 
 import { load_team_public_profile_page_data } from "./teamPublicProfileDataLoader";
 
@@ -34,8 +34,8 @@ function create_team(overrides: Partial<ScalarInput<Team>> = {}): Team {
     description: "",
     organization_id: "org_1",
     gender_id: "gender_1",
-    captain_player_id: null,
-    vice_captain_player_id: null,
+    captain_player_id: "",
+    vice_captain_player_id: "",
     max_squad_size: 25,
     home_venue_id: "venue_1",
     primary_color: "#000000",
@@ -86,7 +86,7 @@ function create_game_event(
     id: "event_1",
     event_type: "yellow_card",
     minute: 33,
-    stoppage_time_minute: null,
+    stoppage_time_minute: 0,
     team_side: "home",
     player_name: "Jane Doe",
     secondary_player_name: "",
@@ -96,7 +96,9 @@ function create_game_event(
   } as GameEvent;
 }
 
-function create_fixture(overrides: Partial<ScalarInput<Fixture>> = {}): Fixture {
+function create_fixture(
+  overrides: Partial<ScalarInput<Fixture>> = {},
+): Fixture {
   return {
     id: "fixture_1",
     organization_id: "org_1",
@@ -177,8 +179,8 @@ describe("teamPublicProfileDataLoader", () => {
         id: `fixture_${day_number}`,
         scheduled_date: `2026-04-0${day_number}`,
         status: "scheduled",
-        home_team_score: null,
-        away_team_score: null,
+        home_team_score: 0,
+        away_team_score: 0,
       }),
     );
     const dependencies = {

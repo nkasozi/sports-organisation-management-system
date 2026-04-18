@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 
-import type { ScalarInput } from "$lib/core/types/DomainScalars";
 import type { Fixture } from "$lib/core/entities/Fixture";
 import type { Team } from "$lib/core/entities/Team";
+import type { ScalarInput } from "$lib/core/types/DomainScalars";
 
 import {
   apply_fixture_to_team_public_profile_stats,
@@ -19,8 +19,8 @@ function create_team(overrides: Partial<ScalarInput<Team>> = {}): Team {
     description: "",
     organization_id: "org_1",
     gender_id: "gender_1",
-    captain_player_id: null,
-    vice_captain_player_id: null,
+    captain_player_id: "",
+    vice_captain_player_id: "",
     max_squad_size: 25,
     home_venue_id: "venue_1",
     primary_color: "#000000",
@@ -35,7 +35,9 @@ function create_team(overrides: Partial<ScalarInput<Team>> = {}): Team {
   } as Team;
 }
 
-function create_fixture(overrides: Partial<ScalarInput<Fixture>> = {}): Fixture {
+function create_fixture(
+  overrides: Partial<ScalarInput<Fixture>> = {},
+): Fixture {
   return {
     id: "fixture_1",
     organization_id: "org_1",
@@ -55,7 +57,7 @@ function create_fixture(overrides: Partial<ScalarInput<Fixture>> = {}): Fixture 
         id: "event_1",
         event_type: "yellow_card",
         minute: 10,
-        stoppage_time_minute: null,
+        stoppage_time_minute: 0,
         team_side: "home",
         player_name: "Player 1",
         secondary_player_name: "",
@@ -66,7 +68,7 @@ function create_fixture(overrides: Partial<ScalarInput<Fixture>> = {}): Fixture 
         id: "event_2",
         event_type: "red_card",
         minute: 80,
-        stoppage_time_minute: null,
+        stoppage_time_minute: 0,
         team_side: "home",
         player_name: "Player 2",
         secondary_player_name: "",

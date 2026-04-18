@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { create_competition_create_page_controller_runtime } from "./competitionCreatePageControllerRuntime";
+
 const {
   initialize_competition_create_page_mock,
   load_competition_create_organization_state_mock,
@@ -38,8 +40,6 @@ vi.mock("$lib/presentation/stores/accessDenial", () => ({
   },
 }));
 
-import { create_competition_create_page_controller_runtime } from "./competitionCreatePageControllerRuntime";
-
 describe("competitionCreatePageControllerRuntime", () => {
   function create_command() {
     const state = {
@@ -56,30 +56,43 @@ describe("competitionCreatePageControllerRuntime", () => {
       is_loading_teams: true,
       is_saving: false,
       organizations: [{ id: "organization-1", name: "Premier League" }],
-      selected_format: {
-        id: "format-1",
-        min_teams_required: 2,
-        max_teams_allowed: 4,
-      } as {
-        id: string;
-        min_teams_required: number;
-        max_teams_allowed: number;
-      } | null,
+      selected_format_state: {
+        status: "present",
+        competition_format: {
+          id: "format-1",
+          min_teams_required: 2,
+          max_teams_allowed: 4,
+        },
+      } as
+        | {
+            status: "present";
+            competition_format: {
+              id: string;
+              min_teams_required: number;
+              max_teams_allowed: number;
+            };
+          }
+        | { status: "missing" },
       selected_team_ids: new Set<string>(),
       team_options: [] as unknown[],
     };
 
     const command = {
-      get_auth_state: () => ({ current_token: { raw_token: "token-1" } }),
       get_competition_formats: () => state.competition_formats as never,
-      get_current_auth_profile: () =>
-        ({ organization_id: "organization-1" }) as never,
+      get_current_auth_profile_state: () => ({
+        status: "present",
+        profile: { organization_id: "organization-1" } as never,
+      }),
+      get_current_raw_token_state: () => ({
+        status: "present",
+        value: "token-1",
+      }),
       get_form_data: () => state.form_data as never,
       get_is_team_count_valid: () => true,
       get_organizations: () => state.organizations as never,
-      get_selected_format: () => state.selected_format as never,
+      get_selected_format_state: () => state.selected_format_state as never,
       get_selected_team_ids: () => state.selected_team_ids,
-      goto: vi.fn(async () => undefined),
+      goto: vi.fn(async () => {}),
       is_browser: true,
       set_competition_format_options: vi.fn(),
       set_competition_formats: vi.fn(
@@ -107,12 +120,12 @@ describe("competitionCreatePageControllerRuntime", () => {
       set_organizations: vi.fn((value: typeof state.organizations) => {
         state.organizations = value;
       }),
-      set_selected_format: vi.fn(
-        (value: typeof state.selected_format | null) => {
-          state.selected_format = value;
+      set_selected_format_state: vi.fn(
+        (value: typeof state.selected_format_state) => {
+          state.selected_format_state = value;
         },
       ),
-      set_selected_sport: vi.fn(),
+      set_selected_sport_state: vi.fn(),
       set_selected_team_ids: vi.fn((value: Set<string>) => {
         state.selected_team_ids = value;
       }),
@@ -168,13 +181,25 @@ describe("competitionCreatePageControllerRuntime", () => {
       team_options: [{ value: "team-1", label: "Lions" }],
       competition_formats: [{ id: "format-1" }],
       competition_format_options: [{ value: "format-1", label: "Round Robin" }],
-      selected_sport: { id: "sport-1" },
+      selected_sport_state: {
+        status: "present",
+        sport: { id: "sport-1" },
+      },
     });
 
     await create_competition_create_page_controller_runtime(
       command as never,
     ).initialize();
 
+    expect(initialize_competition_create_page_mock).toHaveBeenCalledWith({
+      current_auth_profile_state: {
+        status: "present",
+        profile: { organization_id: "organization-1" },
+      },
+      dependencies: expect.any(Object),
+      is_organization_restricted: true,
+      raw_token_state: { status: "present", value: "token-1" },
+    });
     expect(state.form_data.organization_id).toBe("organization-1");
     expect(command.set_team_options).toHaveBeenCalledWith([
       { value: "team-1", label: "Lions" },
@@ -189,7 +214,10 @@ describe("competitionCreatePageControllerRuntime", () => {
       team_options: [{ value: "team-2", label: "Tigers" }],
       competition_formats: [{ id: "format-2" }],
       competition_format_options: [{ value: "format-2", label: "Knockout" }],
-      selected_sport: { id: "sport-2" },
+      selected_sport_state: {
+        status: "present",
+        sport: { id: "sport-2" },
+      },
     });
 
     await create_competition_create_page_controller_runtime(
@@ -200,7 +228,9 @@ describe("competitionCreatePageControllerRuntime", () => {
 
     expect(state.form_data.organization_id).toBe("organization-2");
     expect(state.selected_team_ids).toEqual(new Set());
-    expect(command.set_selected_format).toHaveBeenCalledWith(null);
+    expect(command.set_selected_format_state).toHaveBeenCalledWith({
+      status: "missing",
+    });
   });
 
   it("shows validation errors for invalid team counts and navigates after a successful submit", async () => {

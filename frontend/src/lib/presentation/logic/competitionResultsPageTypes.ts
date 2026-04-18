@@ -6,6 +6,11 @@ import type { Fixture } from "$lib/core/entities/Fixture";
 import type { Organization } from "$lib/core/entities/Organization";
 import type { Team } from "$lib/core/entities/Team";
 
+import type {
+  CompetitionResultsCompetitionFormatState,
+  CompetitionResultsSelectedCompetitionState,
+} from "./competitionResultsPageContracts";
+
 export interface EntityListResult<EntityType> {
   success: boolean;
   data?: { items: EntityType[] };
@@ -59,8 +64,8 @@ export interface CompetitionResultsDependencies {
 }
 
 export interface CompetitionResultsCompetitionBundle {
-  selected_competition: Competition | null;
-  competition_format: CompetitionFormat | null;
+  selected_competition_state: CompetitionResultsSelectedCompetitionState;
+  competition_format_state: CompetitionResultsCompetitionFormatState;
   competition_stages: CompetitionStage[];
   teams: Team[];
   team_map: Map<string, Team>;

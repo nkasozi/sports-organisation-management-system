@@ -8,7 +8,10 @@ describe("signInPageState", () => {
       new URL("https://example.com/sign-in?error=server_unavailable"),
     );
 
-    expect(result.error_param).toBe("server_unavailable");
+    expect(result.error_param_state).toEqual({
+      status: "present",
+      value: "server_unavailable",
+    });
     expect(result.has_server_error).toBe(true);
     expect(result.has_sync_error).toBe(false);
   });
@@ -27,7 +30,7 @@ describe("signInPageState", () => {
       new URL("https://example.com/sign-in"),
     );
 
-    expect(result.error_param).toBeNull();
+    expect(result.error_param_state).toEqual({ status: "missing" });
     expect(result.has_server_error).toBe(false);
     expect(result.has_sync_error).toBe(false);
   });

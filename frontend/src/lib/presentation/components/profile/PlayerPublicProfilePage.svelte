@@ -5,8 +5,8 @@
         get_player_full_name,
         get_player_initials,
     } from "$lib/core/entities/Player";
-    import type { PlayerPosition } from "$lib/core/entities/PlayerPosition";
     import type { PlayerProfile } from "$lib/core/entities/PlayerProfile";
+    import type { PlayerPublicPositionState } from "$lib/presentation/logic/playerPublicProfileDataLoaderContracts";
     import type {
         PlayerPublicProfileLinkSections,
         PlayerPublicProfileStats,
@@ -24,7 +24,7 @@
 
     export let profile: PlayerProfile;
     export let player: Player;
-    export let position: PlayerPosition | null;
+    export let position_state: PlayerPublicPositionState;
     export let overall_stats: PlayerPublicProfileStats;
     export let team_stats: PlayerPublicTeamStats[];
     export let link_sections: PlayerPublicProfileLinkSections;
@@ -63,8 +63,12 @@
     image_alt={get_player_full_name(player)}
     fallback_text={get_player_initials(player)}
     title={get_player_full_name(player)}
-    subtitle={position?.name || null}
-    summary={profile.profile_summary || null}
+    subtitle={
+        position_state.status === "present"
+            ? position_state.position.name
+            : ""
+    }
+    summary={profile.profile_summary || ""}
     {metadata_items}
 />
 

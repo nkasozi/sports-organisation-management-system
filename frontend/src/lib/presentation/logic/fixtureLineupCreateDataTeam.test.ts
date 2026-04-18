@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import { load_fixture_lineup_create_team_data } from "./fixtureLineupCreateDataTeam";
 import type { FixtureLineupCreateDependencies } from "./fixtureLineupCreateDataTypes";
+import type { FixtureLineupCreateAuthProfileState } from "./fixtureLineupCreatePageContracts";
 
 describe("fixtureLineupCreateDataTeam", () => {
   type MockDependencies = {
@@ -9,13 +10,10 @@ describe("fixtureLineupCreateDataTeam", () => {
       FixtureLineupCreateDependencies[Key]
     >;
   };
-  type SelectedFixture = NonNullable<
-    Parameters<typeof load_fixture_lineup_create_team_data>[1]
-  >;
-  type CurrentAuthProfile = Parameters<
-    typeof load_fixture_lineup_create_team_data
-  >[2];
-
+  type SelectedFixture = Extract<
+    Parameters<typeof load_fixture_lineup_create_team_data>[1],
+    { status: "present" }
+  >["fixture"];
   function create_dependencies() {
     return {
       team_use_cases: { get_by_id: vi.fn() },
@@ -31,13 +29,13 @@ describe("fixtureLineupCreateDataTeam", () => {
     await expect(
       load_fixture_lineup_create_team_data(
         "team-1",
-        null,
-        null,
+        { status: "missing" },
+        { status: "missing" },
         18,
         dependencies as unknown as FixtureLineupCreateDependencies,
       ),
     ).resolves.toEqual({
-      selected_team: null,
+      selected_team_state: { status: "missing" },
       team_players: [],
       selected_players: [],
       validation_error: expect.stringContaining("No fixture selected."),
@@ -51,15 +49,18 @@ describe("fixtureLineupCreateDataTeam", () => {
       load_fixture_lineup_create_team_data(
         "team-other",
         {
-          home_team_id: "team-home",
-          away_team_id: "team-away",
-        } as SelectedFixture,
-        null,
+          status: "present",
+          fixture: {
+            home_team_id: "team-home",
+            away_team_id: "team-away",
+          } as SelectedFixture,
+        },
+        { status: "missing" },
         18,
         dependencies as unknown as FixtureLineupCreateDependencies,
       ),
     ).resolves.toEqual({
-      selected_team: null,
+      selected_team_state: { status: "missing" },
       team_players: [],
       selected_players: [],
       validation_error: expect.stringContaining("Invalid team selection."),
@@ -68,6 +69,7 @@ describe("fixtureLineupCreateDataTeam", () => {
 
   it("builds team players with position and membership data, then preselects up to the squad limit", async () => {
     const dependencies = create_dependencies();
+
     dependencies.team_use_cases.get_by_id.mockResolvedValue({
       success: true,
       data: { id: "team-home", name: "Lions" },
@@ -125,10 +127,16 @@ describe("fixtureLineupCreateDataTeam", () => {
     const result = await load_fixture_lineup_create_team_data(
       "team-home",
       {
-        home_team_id: "team-home",
-        away_team_id: "team-away",
-      } as SelectedFixture,
-      { organization_id: "organization-1" } as CurrentAuthProfile,
+        status: "present",
+        fixture: {
+          home_team_id: "team-home",
+          away_team_id: "team-away",
+        } as SelectedFixture,
+      },
+      {
+        status: "present",
+        profile: { organization_id: "organization-1", team_id: "" },
+      } as FixtureLineupCreateAuthProfileState,
       1,
       dependencies as unknown as FixtureLineupCreateDependencies,
     );
@@ -138,7 +146,10 @@ describe("fixtureLineupCreateDataTeam", () => {
       { page_number: 1, page_size: 500 },
     );
     expect(result).toEqual({
-      selected_team: { id: "team-home", name: "Lions" },
+      selected_team_state: {
+        status: "present",
+        team: { id: "team-home", name: "Lions" },
+      },
       team_players: [
         {
           id: "player-1",

@@ -12,18 +12,38 @@ export interface MatchReportAssignedOfficialData {
   role_name: string;
 }
 
+export type MatchReportTeamState =
+  | { status: "missing" }
+  | { status: "present"; team: Team };
+
+export type MatchReportCompetitionState =
+  | { status: "missing" }
+  | { status: "present"; competition: Competition };
+
+export type MatchReportSportState =
+  | { status: "missing" }
+  | { status: "present"; sport: Sport };
+
+export type MatchReportVenueState =
+  | { status: "missing" }
+  | { status: "present"; venue: Venue };
+
 export interface MatchReportPageData {
   fixture: Fixture;
-  home_team: Team | null;
-  away_team: Team | null;
-  competition: Competition | null;
-  sport: Sport | null;
-  venue: Venue | null;
+  home_team_state: MatchReportTeamState;
+  away_team_state: MatchReportTeamState;
+  competition_state: MatchReportCompetitionState;
+  sport_state: MatchReportSportState;
+  venue_state: MatchReportVenueState;
   organization_name: string;
   assigned_officials_data: MatchReportAssignedOfficialData[];
   home_players: LineupPlayer[];
   away_players: LineupPlayer[];
 }
+
+export type MatchReportPageDataState =
+  | { status: "missing" }
+  | { status: "present"; page_data: MatchReportPageData };
 
 export interface MatchReportRefreshData {
   fixture: Fixture;

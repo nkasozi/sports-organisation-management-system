@@ -9,7 +9,7 @@
 
     import CompetitionCreateActions from "./CompetitionCreateActions.svelte";
 
-    export let competition: Competition | null;
+    export let competition: Competition;
     export let form_data: UpdateCompetitionInput;
     export let organization_options: SelectOption[];
     export let competition_format_options: SelectOption[];
@@ -77,7 +77,7 @@
             placeholder="Select a format..."
             required={true}
             disabled={!!(
-                competition?.competition_format_id &&
+                competition.competition_format_id &&
                 competition.competition_format_id.trim() &&
                 competition_format_options.some(
                     (option: SelectOption) =>

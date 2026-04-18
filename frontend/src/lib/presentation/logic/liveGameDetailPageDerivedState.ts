@@ -28,9 +28,10 @@ export function derive_live_game_detail_view_state(command: {
     command.page_state.competition,
   );
   const playing_periods = get_playing_periods(effective_periods);
-  const current_period_id = command.page_state.fixture?.current_period ?? null;
+  const current_period_id =
+    command.page_state.fixture?.current_period ?? void 0;
   const is_current_period_playing = check_is_playing_period(
-    current_period_id ?? undefined,
+    current_period_id,
     effective_periods,
   );
   const current_period_duration = !current_period_id

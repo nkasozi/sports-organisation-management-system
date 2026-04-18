@@ -106,7 +106,7 @@ function validate_live_game_log_input(
 
   if (
     "home_team_score" in input &&
-    input.home_team_score !== undefined &&
+    typeof input.home_team_score === "number" &&
     input.home_team_score < 0
   ) {
     errors.home_team_score = "Home team score cannot be negative";
@@ -114,7 +114,7 @@ function validate_live_game_log_input(
 
   if (
     "away_team_score" in input &&
-    input.away_team_score !== undefined &&
+    typeof input.away_team_score === "number" &&
     input.away_team_score < 0
   ) {
     errors.away_team_score = "Away team score cannot be negative";
@@ -122,7 +122,7 @@ function validate_live_game_log_input(
 
   if (
     "current_minute" in input &&
-    input.current_minute !== undefined &&
+    typeof input.current_minute === "number" &&
     input.current_minute < 0
   ) {
     errors.current_minute = "Current minute cannot be negative";

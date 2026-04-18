@@ -1,5 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import {
+  load_dynamic_form_fixture_gender_warnings,
+  load_dynamic_form_player_gender_warnings,
+} from "./dynamicEntityFormGenderWarnings";
+
 const {
   check_fixture_team_gender_mismatch_mock,
   check_player_team_gender_mismatch_mock,
@@ -12,11 +17,6 @@ vi.mock("../../core/services/genderMismatchCheck", () => ({
   check_fixture_team_gender_mismatch: check_fixture_team_gender_mismatch_mock,
   check_player_team_gender_mismatch: check_player_team_gender_mismatch_mock,
 }));
-
-import {
-  load_dynamic_form_fixture_gender_warnings,
-  load_dynamic_form_player_gender_warnings,
-} from "./dynamicEntityFormGenderWarnings";
 
 describe("dynamicEntityFormGenderWarnings", () => {
   beforeEach(() => {

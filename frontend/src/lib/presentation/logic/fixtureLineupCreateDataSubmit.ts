@@ -1,16 +1,18 @@
-import type { Fixture } from "$lib/core/entities/Fixture";
 import type { CreateFixtureLineupInput } from "$lib/core/entities/FixtureLineup";
-import type { Organization } from "$lib/core/entities/Organization";
-import type { Team } from "$lib/core/entities/Team";
 import { build_error_message } from "$lib/core/services/fixtureLineupWizard";
 
 import type { FixtureLineupCreateDependencies } from "./fixtureLineupCreateDataTypes";
+import type {
+  FixtureLineupCreateFixtureState,
+  FixtureLineupCreateOrganizationState,
+  FixtureLineupCreateTeamState,
+} from "./fixtureLineupCreatePageContracts";
 
 export async function submit_fixture_lineup_create_form(
   form_data: CreateFixtureLineupInput,
-  selected_organization: Organization | null,
-  selected_fixture: Fixture | null,
-  selected_team: Team | null,
+  selected_organization_state: FixtureLineupCreateOrganizationState,
+  selected_fixture_state: FixtureLineupCreateFixtureState,
+  selected_team_state: FixtureLineupCreateTeamState,
   min_players: number,
   max_players: number,
   confirm_lock_understood: boolean,
@@ -19,7 +21,10 @@ export async function submit_fixture_lineup_create_form(
   | { success: true; lineup_id: string }
   | { success: false; error_message: string; step_index: number }
 > {
-  if (!selected_organization || !form_data.organization_id)
+  if (
+    selected_organization_state.status === "missing" ||
+    !form_data.organization_id
+  )
     return {
       success: false,
       error_message: build_error_message(
@@ -29,7 +34,7 @@ export async function submit_fixture_lineup_create_form(
       ),
       step_index: 0,
     };
-  if (!selected_fixture || !form_data.fixture_id)
+  if (selected_fixture_state.status === "missing" || !form_data.fixture_id)
     return {
       success: false,
       error_message: build_error_message(
@@ -39,7 +44,7 @@ export async function submit_fixture_lineup_create_form(
       ),
       step_index: 1,
     };
-  if (!selected_team || !form_data.team_id)
+  if (selected_team_state.status === "missing" || !form_data.team_id)
     return {
       success: false,
       error_message: build_error_message(
@@ -98,7 +103,7 @@ export async function submit_fixture_lineup_create_form(
     return {
       success: false,
       error_message:
-        (!create_result.success ? create_result.error : null) ||
+        (!create_result.success ? create_result.error : void 0) ||
         build_error_message(
           "Failed to submit lineup.",
           "The lineup could not be saved.",

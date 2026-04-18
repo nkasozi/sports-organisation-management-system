@@ -1,6 +1,5 @@
 <script lang="ts">
     import { onMount } from "svelte";
-    import { get } from "svelte/store";
 
     import { browser } from "$app/environment";
     import { goto } from "$app/navigation";
@@ -10,7 +9,6 @@
     } from "$lib/core/entities/Competition";
     import type { CompetitionFormat } from "$lib/core/entities/CompetitionFormat";
     import type { Organization } from "$lib/core/entities/Organization";
-    import type { Sport } from "$lib/core/entities/Sport";
     import {
         is_scope_restricted,
         type UserScopeProfile,
@@ -18,8 +16,14 @@
     import type { SelectOption } from "$lib/presentation/components/ui/SelectField.svelte";
     import { COMPETITION_CREATE_PAGE_TEXT } from "$lib/presentation/logic/competitionCreatePageControllerDependencies";
     import { create_competition_create_page_controller_runtime } from "$lib/presentation/logic/competitionCreatePageControllerRuntime";
+    import type { CompetitionCreateProfileState } from "$lib/presentation/logic/competitionCreatePageData";
     import { competition_create_status_options } from "$lib/presentation/logic/competitionCreatePageData";
+    import type {
+        CompetitionCreateRawTokenState,
+        CompetitionCreateSelectedSportState,
+    } from "$lib/presentation/logic/competitionCreatePageFlow";
     import {
+        type CompetitionCreateSelectedFormatState,
         get_competition_format_team_requirements,
         is_competition_team_count_valid,
         normalize_competition_auto_squad_settings,
@@ -32,8 +36,12 @@
         organizations: Organization[] = [],
         competition_formats: CompetitionFormat[] = [],
         selected_team_ids: Set<string> = new Set(),
-        selected_format: CompetitionFormat | null = null,
-        selected_sport: Sport | null = null,
+        selected_format_state: CompetitionCreateSelectedFormatState = {
+            status: "missing",
+        },
+        selected_sport_state: CompetitionCreateSelectedSportState = {
+            status: "missing",
+        },
         is_loading_organizations = true,
         is_loading_formats = true,
         is_loading_teams = false,
@@ -47,16 +55,41 @@
         competition_format_options: SelectOption[] = [],
         team_options: SelectOption[] = [];
 
-    $: current_auth_profile =
-        $auth_store.current_profile as UserScopeProfile | null;
+    function build_competition_create_profile_state(): CompetitionCreateProfileState {
+        const current_profile = $auth_store.current_profile;
+
+        if (current_profile.status !== "present") {
+            return { status: "missing" };
+        }
+
+        return {
+            status: "present",
+            profile: current_profile.profile as unknown as UserScopeProfile,
+        };
+    }
+
+    function build_competition_create_raw_token_state(): CompetitionCreateRawTokenState {
+        const current_token = $auth_store.current_token;
+
+        if (current_token.status !== "present") {
+            return { status: "missing" };
+        }
+
+        return { status: "present", value: current_token.token.raw_token };
+    }
+
+    $: current_auth_profile_state = build_competition_create_profile_state();
     $: is_organization_restricted =
-        current_auth_profile !== null &&
-        is_scope_restricted(current_auth_profile, "organization_id");
+        current_auth_profile_state.status === "present" &&
+        is_scope_restricted(
+            current_auth_profile_state.profile,
+            "organization_id",
+        );
     $: form_data.team_ids = Array.from(selected_team_ids);
     $: format_team_requirements =
-        get_competition_format_team_requirements(selected_format);
+        get_competition_format_team_requirements(selected_format_state);
     $: is_team_count_valid = is_competition_team_count_valid(
-        selected_format,
+        selected_format_state,
         selected_team_ids.size,
     );
     $: {
@@ -74,11 +107,12 @@
         toast_visible = true;
     }
     const runtime = create_competition_create_page_controller_runtime({
-        get_auth_state: () => get(auth_store),
         get_competition_formats: () => competition_formats,
-        get_current_auth_profile: () => current_auth_profile,
+        get_current_auth_profile_state: () => current_auth_profile_state,
+        get_current_raw_token_state: () =>
+            build_competition_create_raw_token_state(),
         get_form_data: () => form_data,
-        get_selected_format: () => selected_format,
+        get_selected_format_state: () => selected_format_state,
         get_selected_team_ids: () => selected_team_ids,
         get_is_team_count_valid: () => is_team_count_valid,
         get_organizations: () => organizations,
@@ -99,9 +133,10 @@
         set_organization_options: (value: SelectOption[]) =>
             (organization_options = value),
         set_organizations: (value: Organization[]) => (organizations = value),
-        set_selected_format: (value: CompetitionFormat | null) =>
-            (selected_format = value),
-        set_selected_sport: (value: Sport | null) => (selected_sport = value),
+        set_selected_format_state: (value: CompetitionCreateSelectedFormatState) =>
+            (selected_format_state = value),
+        set_selected_sport_state: (value: CompetitionCreateSelectedSportState) =>
+            (selected_sport_state = value),
         set_selected_team_ids: (value: Set<string>) =>
             (selected_team_ids = value),
         set_team_options: (value: SelectOption[]) => (team_options = value),
@@ -121,7 +156,7 @@
     {competition_format_options}
     {team_options}
     {selected_team_ids}
-    {selected_sport}
+    {selected_sport_state}
     {is_loading_organizations}
     {is_loading_formats}
     {is_loading_teams}

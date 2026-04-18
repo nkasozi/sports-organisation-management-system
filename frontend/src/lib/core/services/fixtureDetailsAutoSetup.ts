@@ -2,7 +2,6 @@ import type { Fixture } from "../entities/Fixture";
 import type {
   CreateFixtureDetailsSetupInput,
   FixtureDetailsSetup,
-  OfficialAssignment,
 } from "../entities/FixtureDetailsSetup";
 import {
   CONFIRMATION_STATUS,
@@ -155,9 +154,9 @@ async function build_auto_populated_input(
 function extract_first_jersey_id(result: {
   success: boolean;
   data?: { items?: { id: string }[] };
-}): string | null {
-  if (!result.success) return null;
-  if (!result.data?.items?.length) return null;
+}): string | undefined {
+  if (!result.success) return;
+  if (!result.data?.items?.length) return;
   return result.data.items[0].id;
 }
 
@@ -172,7 +171,8 @@ function build_official_assignments(
 
   if (officials.length === 0 || roles.length === 0) return [];
 
-  const assigned_officials: CreateFixtureDetailsSetupInput["assigned_officials"] = [];
+  const assigned_officials: CreateFixtureDetailsSetupInput["assigned_officials"] =
+    [];
   const used_official_ids = new Set<string>();
 
   for (const role of roles) {

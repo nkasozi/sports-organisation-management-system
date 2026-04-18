@@ -170,13 +170,23 @@ function create_default_profile_links(): import("$lib/core/types/DomainScalars")
   ];
 }
 
-let singleton_instance: InBrowserProfileLinkRepository | null = null;
+type ProfileLinkRepositoryState =
+  | { status: "uninitialized" }
+  | { status: "ready"; repository: InBrowserProfileLinkRepository };
+
+let profile_link_repository_state: ProfileLinkRepositoryState = {
+  status: "uninitialized",
+};
 
 export function get_profile_link_repository(): ProfileLinkRepository {
-  if (!singleton_instance) {
-    singleton_instance = new InBrowserProfileLinkRepository();
+  if (profile_link_repository_state.status === "ready") {
+    return profile_link_repository_state.repository;
   }
-  return singleton_instance;
+
+  const repository = new InBrowserProfileLinkRepository();
+  profile_link_repository_state = { status: "ready", repository };
+
+  return repository;
 }
 
 export async function reset_profile_link_repository(): Promise<void> {

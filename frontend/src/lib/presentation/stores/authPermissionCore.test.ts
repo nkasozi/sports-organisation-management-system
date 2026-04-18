@@ -1,4 +1,6 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, expectTypeOf, it, vi } from "vitest";
+
+import type { DataAction } from "$lib/core/interfaces/ports";
 
 import {
   check_entity_permission,
@@ -43,17 +45,19 @@ describe("authPermissionCore", () => {
     }
   });
 
-  it("maps authorizable actions and reports unknown roles as failures", () => {
+  it("maps authorizable actions exhaustively and reports unknown roles as failures", () => {
     const console_error_spy = vi
       .spyOn(console, "error")
-      .mockImplementation(() => undefined);
+      .mockImplementation(() => {});
 
+    expectTypeOf(
+      map_authorizable_action_to_data_action,
+    ).returns.toEqualTypeOf<DataAction>();
     expect(map_authorizable_action_to_data_action("create")).toBe("create");
     expect(map_authorizable_action_to_data_action("edit")).toBe("update");
+    expect(map_authorizable_action_to_data_action("delete")).toBe("delete");
+    expect(map_authorizable_action_to_data_action("list")).toBe("read");
     expect(map_authorizable_action_to_data_action("view")).toBe("read");
-    expect(
-      map_authorizable_action_to_data_action("archive" as never),
-    ).toBeNull();
     expect(get_role_permissions_sync("ghost_role" as never)).toEqual({
       success: false,
       error: 'Unknown role: "ghost_role"',

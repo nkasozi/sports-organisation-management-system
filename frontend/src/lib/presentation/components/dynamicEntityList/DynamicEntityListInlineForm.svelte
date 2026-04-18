@@ -4,12 +4,12 @@
   import type { SubEntityFilter } from "$lib/core/types/SubEntityFilter";
   import DynamicEntityForm from "$lib/presentation/components/DynamicEntityForm.svelte";
 
-  export let crud_handlers: EntityCrudHandlers | null;
+  export let crud_handlers: EntityCrudHandlers | undefined;
   export let display_name: string;
   export let entity_type: string;
   export let inline_form_entity: Partial<BaseEntity>;
   export let is_mobile_view: boolean;
-  export let sub_entity_filter: SubEntityFilter | null;
+  export let sub_entity_filter: SubEntityFilter | undefined;
   export let on_inline_cancel: () => boolean;
   export let on_inline_save_success: (
     event: CustomEvent<{ entity: BaseEntity }>,
@@ -52,6 +52,7 @@
     is_inline_mode={true}
     {crud_handlers}
     {sub_entity_filter}
+    view_callbacks={void 0}
     on:inline_save_success={on_inline_save_success}
     on:inline_cancel={on_inline_cancel}
   />

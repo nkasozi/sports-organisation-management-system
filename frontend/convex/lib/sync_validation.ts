@@ -143,13 +143,22 @@ export function is_global_table(table_name: string): boolean {
   return GLOBAL_TABLES.has(table_name);
 }
 
+const EMPTY_SCOPE_VALUE = "";
+const GLOBAL_ORGANIZATION_ID = "*";
+
+function get_record_field_value(
+  record: Record<string, unknown>,
+  field_name: string,
+): string {
+  const field_value = record[field_name];
+  return typeof field_value === "string" ? field_value : EMPTY_SCOPE_VALUE;
+}
+
 export function is_global_record(record: Record<string, unknown>): boolean {
-  const organization_id = record.organization_id;
+  const organization_id = get_record_field_value(record, "organization_id");
   return (
-    organization_id === undefined ||
-    organization_id === null ||
-    organization_id === "*" ||
-    organization_id === ""
+    organization_id === GLOBAL_ORGANIZATION_ID ||
+    organization_id === EMPTY_SCOPE_VALUE
   );
 }
 
@@ -159,11 +168,13 @@ export function validate_record_organization_ownership(
   table_name: string,
 ): ConvexResult<true> {
   if (is_global_table(table_name)) return { success: true, data: true };
-  if (caller.organization_id === "*") return { success: true, data: true };
+  if (caller.organization_id === GLOBAL_ORGANIZATION_ID)
+    return { success: true, data: true };
 
-  const record_organization_id = record_data.organization_id as
-    | string
-    | undefined;
+  const record_organization_id = get_record_field_value(
+    record_data,
+    "organization_id",
+  );
 
   if (is_global_record(record_data)) return { success: true, data: true };
   if (record_organization_id !== caller.organization_id) {
@@ -180,30 +191,42 @@ export function filter_records_by_organization_scope(
   records: Array<Record<string, unknown>>,
   caller: SystemUserRecord,
   table_name: string,
-  scope_filter: Record<string, string | undefined>,
+  scope_filter: Record<string, string>,
 ): Array<Record<string, unknown>> {
-  if (caller.organization_id === "*" || is_global_table(table_name))
+  if (
+    caller.organization_id === GLOBAL_ORGANIZATION_ID ||
+    is_global_table(table_name)
+  )
     return records;
 
-  const caller_organization_id = scope_filter.organization_id;
+  const caller_organization_id = get_record_field_value(
+    scope_filter,
+    "organization_id",
+  );
   if (!caller_organization_id) return records;
 
   if (table_name === "organizations") {
     return records.filter(
-      (record) => record.local_id === caller_organization_id,
+      (record) =>
+        get_record_field_value(record, "local_id") === caller_organization_id,
     );
   }
 
   return records.filter((record) => {
     if (is_global_record(record)) return true;
 
-    if (scope_filter.team_id && record.team_id) {
+    const scoped_team_id = get_record_field_value(scope_filter, "team_id");
+    if (scoped_team_id) {
       return (
-        record.organization_id === caller_organization_id &&
-        record.team_id === scope_filter.team_id
+        get_record_field_value(record, "organization_id") ===
+          caller_organization_id &&
+        get_record_field_value(record, "team_id") === scoped_team_id
       );
     }
 
-    return record.organization_id === caller_organization_id;
+    return (
+      get_record_field_value(record, "organization_id") ===
+      caller_organization_id
+    );
   });
 }

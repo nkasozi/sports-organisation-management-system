@@ -47,16 +47,26 @@
         show_create_modal = false,
         show_category_modal = false,
         show_subscribe_modal = false,
-        editing_activity: Activity | null = null,
-        selected_event_details: CalendarEvent | null = null,
+        editing_activity: Activity | undefined = undefined,
+        selected_event_details: CalendarEvent | undefined = undefined,
         activity_form_values: ActivityFormValues =
             create_empty_activity_form_values(),
         toast_visible = false,
         toast_message = "",
         toast_type: "success" | "error" | "warning" | "info" = "info";
 
-    $: current_auth_profile = get(auth_store)
-        .current_profile as UserScopeProfile | null;
+    $: current_auth_profile_state = (() => {
+        const current_profile = get(auth_store).current_profile;
+
+        if (current_profile.status !== "present") {
+            return { status: "missing" as const };
+        }
+
+        return {
+            status: "present" as const,
+            profile: current_profile.profile as unknown as UserScopeProfile,
+        };
+    })();
     $: url_org_id = extract_url_org_id(get(page).url.searchParams);
     $: selected_organization_name = resolve_selected_organization_name(
         organizations,
@@ -76,7 +86,7 @@
         get_activity_form_values: () => activity_form_values,
         get_calendar_events: () => calendar_events,
         get_categories: () => categories,
-        get_current_auth_profile: () => current_auth_profile,
+        get_current_auth_profile_state: () => current_auth_profile_state,
         get_editing_activity: () => editing_activity,
         get_filter_category_id: () => filter_category_id,
         get_filter_competition_id: () => filter_competition_id,
@@ -91,7 +101,7 @@
             (calendar_events = value),
         set_categories: (value: ActivityCategory[]) => (categories = value),
         set_competitions: (value: Competition[]) => (competitions = value),
-        set_editing_activity: (value: Activity | null) =>
+        set_editing_activity: (value: Activity | undefined) =>
             (editing_activity = value),
         set_error_message: (value: string) => (error_message = value),
         set_filter_category_id: (value: string) => (filter_category_id = value),
@@ -103,7 +113,7 @@
             (is_using_cached_data = value),
         set_loading_state: (value: LoadingState) => (loading_state = value),
         set_organizations: (value: Organization[]) => (organizations = value),
-        set_selected_event_details: (value: CalendarEvent | null) =>
+        set_selected_event_details: (value: CalendarEvent | undefined) =>
             (selected_event_details = value),
         set_selected_organization_id: (value: string) =>
             (selected_organization_id = value),
@@ -146,10 +156,10 @@
     {calendar_events}
     {filter_loading}
     can_user_change_organizations={can_user_change_organizations(
-        current_auth_profile,
+        current_auth_profile_state,
         url_org_id,
     )}
-    can_user_add_activities={can_user_add_activities(current_auth_profile)}
+    can_user_add_activities={can_user_add_activities(current_auth_profile_state)}
     on_organization_change={runtime.handle_organization_change}
     on_open_create_modal={() => runtime.handle_date_click()}
     on_open_subscribe_modal={runtime.open_subscribe_modal}

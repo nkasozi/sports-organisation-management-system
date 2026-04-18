@@ -23,7 +23,7 @@ export interface MatchReportBuildContext {
   fixture: Fixture;
   home_team: Team;
   away_team: Team;
-  competition: Competition | null;
+  competition?: Competition;
   home_lineup: LineupPlayer[];
   away_lineup: LineupPlayer[];
   assigned_officials: Array<{ official: Official; role_name: string }>;

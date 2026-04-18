@@ -19,6 +19,11 @@ import {
 import { get_sync_manager } from "$lib/infrastructure/sync/convexSyncService";
 
 import type {
+  EventBusUserContextState,
+  SavedProfileIdState,
+  SavedTokenState,
+} from "./authHelperContracts";
+import type {
   ConvexGetProfileResponse,
   ConvexUserProfile,
   UserProfile,
@@ -56,11 +61,13 @@ function build_auth_token_payload_core_input(
 export async function fetch_current_user_profile_from_convex(): Promise<
   Result<ConvexUserProfile>
 > {
-  const convex_client = get_sync_manager().get_convex_client();
+  const convex_client_result = get_sync_manager().get_convex_client();
 
-  if (!convex_client) {
-    return { success: false, error: "Convex client not initialized" };
+  if (!convex_client_result.success) {
+    return { success: false, error: convex_client_result.error };
   }
+
+  const convex_client = convex_client_result.data;
 
   try {
     const response = (await convex_client.query(
@@ -84,12 +91,18 @@ export async function fetch_current_user_profile_from_convex(): Promise<
   }
 }
 
-export async function load_saved_profile_id(): Promise<
-  UserProfile["id"] | null
-> {
-  return (await get_app_settings_storage().get_setting(PROFILE_STORAGE_KEY)) as
-    | UserProfile["id"]
-    | null;
+export async function load_saved_profile_id(): Promise<SavedProfileIdState> {
+  const saved_profile_id =
+    await get_app_settings_storage().get_setting(PROFILE_STORAGE_KEY);
+
+  if (!saved_profile_id) {
+    return { status: "missing" };
+  }
+
+  return {
+    status: "present",
+    profile_id: saved_profile_id as UserProfile["id"],
+  };
 }
 
 export async function save_profile_id(
@@ -98,8 +111,18 @@ export async function save_profile_id(
   await get_app_settings_storage().set_setting(PROFILE_STORAGE_KEY, profile_id);
 }
 
-export async function load_saved_token(): Promise<string | null> {
-  return get_app_settings_storage().get_setting(AUTH_STORAGE_KEY);
+export async function load_saved_token(): Promise<SavedTokenState> {
+  const saved_token =
+    await get_app_settings_storage().get_setting(AUTH_STORAGE_KEY);
+
+  if (!saved_token) {
+    return { status: "missing" };
+  }
+
+  return {
+    status: "present",
+    raw_token: saved_token,
+  };
 }
 
 export async function save_token(raw_token: string): Promise<void> {
@@ -147,12 +170,15 @@ export async function generate_token_for_profile(
 }
 
 export function sync_user_context_with_event_bus(
-  profile: UserProfile | null,
+  context_state: EventBusUserContextState,
 ): void {
-  if (!profile) {
+  if (context_state.status !== "present") {
     clear_user_context();
     return;
   }
+
+  const profile = context_state.profile;
+
   set_user_context({
     user_id: profile.id,
     user_email: profile.email,

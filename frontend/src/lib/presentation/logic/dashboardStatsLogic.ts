@@ -2,10 +2,18 @@ import type { FixtureStatus } from "$lib/core/entities/Fixture";
 import { FIXTURE_STATUS } from "$lib/core/entities/StatusConstants";
 import { ANY_VALUE } from "$lib/core/interfaces/ports";
 
+export type DashboardOrganizationScopeState =
+  | { status: "unscoped" }
+  | { status: "scoped"; organization_id: string };
+
+export type DashboardOrganizationCountState =
+  | { status: "calculated" }
+  | { status: "fixed"; value: number };
+
 export interface DashboardFilters {
-  organization_filter: { organization_id: string } | undefined;
-  fixture_filter: { status: FixtureStatus; organization_id?: string };
-  organization_count_override: number | null;
+  organization_scope_state: DashboardOrganizationScopeState;
+  fixture_status: FixtureStatus;
+  organization_count_state: DashboardOrganizationCountState;
 }
 
 export function build_dashboard_filters(
@@ -17,15 +25,15 @@ export function build_dashboard_filters(
 
   if (has_unrestricted_org_scope) {
     return {
-      organization_filter: undefined,
-      fixture_filter: { status: FIXTURE_STATUS.SCHEDULED },
-      organization_count_override: null,
+      organization_scope_state: { status: "unscoped" },
+      fixture_status: FIXTURE_STATUS.SCHEDULED,
+      organization_count_state: { status: "calculated" },
     };
   }
 
   return {
-    organization_filter: { organization_id },
-    fixture_filter: { status: FIXTURE_STATUS.SCHEDULED, organization_id },
-    organization_count_override: 1,
+    organization_scope_state: { status: "scoped", organization_id },
+    fixture_status: FIXTURE_STATUS.SCHEDULED,
+    organization_count_state: { status: "fixed", value: 1 },
   };
 }

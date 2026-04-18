@@ -6,7 +6,6 @@
   import {
     get_authorization_preselect_values,
     get_authorization_restricted_fields,
-    type UserRole,
     type UserScopeProfile,
   } from "$lib/core/interfaces/ports";
   import type {
@@ -23,7 +22,6 @@
 
   import type {
     BaseEntity,
-    EntityMetadata,
   } from "../../core/entities/BaseEntity";
   import { get_use_cases_for_entity_type } from "../../infrastructure/registry/entityUseCasesRegistry";
   import { fakeDataGenerator } from "../../infrastructure/utils/FakeDataGenerator";
@@ -48,19 +46,27 @@
     format_entity_display_name,
     get_sub_entity_fields,
   } from "../logic/dynamicFormLogic";
+  import {
+    build_user_role_state,
+    type UserRoleState,
+  } from "../logic/systemUserFormLogic";
   import { auth_store } from "../stores/auth";
   import DynamicEntityFormContent from "./dynamicForm/DynamicEntityFormContent.svelte";
 
   export let entity_type: string;
-  export let entity_data: Partial<BaseEntity> | null = null;
+  export let entity_data: Partial<BaseEntity> | undefined = void 0;
   export let show_fake_data_button: boolean = true;
   export let is_mobile_view: boolean = true;
   export let is_inline_mode: boolean = false;
-  export let crud_handlers: EntityCrudHandlers | null = null;
-  export let view_callbacks: EntityViewCallbacks | null = null;
-  export let sub_entity_filter: SubEntityFilter | null = null;
+  export let crud_handlers: EntityCrudHandlers | undefined = void 0;
+  export let view_callbacks: EntityViewCallbacks | undefined = void 0;
+  export let sub_entity_filter: SubEntityFilter | undefined = void 0;
   export let button_color_class: string = "btn-primary-action";
-  export let info_message: string | null = null;
+  export let info_message: string = "";
+
+  type DynamicEntityFormAuthProfileState =
+    | { status: "missing" }
+    | { status: "present"; profile: UserScopeProfile };
 
   const dispatch = createEventDispatcher<{
     inline_save_success: { entity: BaseEntity };
@@ -96,9 +102,25 @@
     fixture_team_gender_mismatch_warnings: [] as string[],
   };
   let applied_initialization_key = "";
+  let current_auth_profile_state: DynamicEntityFormAuthProfileState = {
+    status: "missing",
+  };
+  let current_auth_role_state: UserRoleState = { status: "missing" };
 
-  $: current_auth_profile = $auth_store.current_profile;
-  $: entity_metadata = get_dynamic_entity_metadata_for_type(entity_type);
+  $: current_auth_profile_state =
+    $auth_store.current_profile.status === "present"
+      ? {
+          status: "present",
+          profile:
+            $auth_store.current_profile.profile as unknown as UserScopeProfile,
+        }
+      : { status: "missing" };
+  $: current_auth_role_state =
+    $auth_store.current_profile.status === "present"
+      ? build_user_role_state($auth_store.current_profile.profile.role)
+      : build_user_role_state();
+  $: entity_metadata_result = get_dynamic_entity_metadata_for_type(entity_type);
+  $: entity_metadata = entity_metadata_result || undefined;
   $: is_edit_mode = determine_if_edit_mode(entity_data);
   $: form_title = build_form_title(
     entity_metadata?.display_name || format_entity_display_name(entity_type),
@@ -106,17 +128,17 @@
   );
   $: sub_entity_fields = get_sub_entity_fields(entity_metadata);
   $: authorization_restricted_fields = get_authorization_restricted_fields(
-    current_auth_profile as UserScopeProfile | null,
+    current_auth_profile_state,
   );
   $: authorization_preselect_values = get_authorization_preselect_values(
-    current_auth_profile as UserScopeProfile | null,
+    current_auth_profile_state,
   );
   $: sorted_fields = entity_metadata
     ? get_dynamic_form_sorted_fields_for_display(
         entity_metadata.fields,
         is_edit_mode,
         form_state.form_data,
-        sub_entity_filter,
+        sub_entity_filter as never,
       )
     : [];
   $: can_show_fake_data_button =
@@ -127,22 +149,18 @@
   $: show_transfer_notice =
     entity_type.toLowerCase() === "playerteamtransferhistory" && !is_edit_mode;
   $: initialization_key =
-    entity_metadata && current_auth_profile
+    entity_metadata
       ? create_dynamic_form_initialization_key({
           entity_type,
           metadata: entity_metadata,
-          existing_data: entity_data,
+          existing_data: entity_data as never,
           authorization_preselect: authorization_preselect_values,
         })
       : "";
-  $: if (
-    entity_metadata &&
-    current_auth_profile &&
-    initialization_key !== applied_initialization_key
-  ) {
+  $: if (entity_metadata && initialization_key !== applied_initialization_key) {
     const form_data = build_dynamic_form_initial_data(
       entity_metadata,
-      entity_data,
+      entity_data as never,
       authorization_preselect_values,
       entity_type,
     );
@@ -190,7 +208,7 @@
       team_use_cases,
       official_use_cases: official_use_cases_result.success
         ? official_use_cases_result.data
-        : null,
+        : (void 0 as never),
       official_associated_team_use_cases,
     },
     gender_dependencies: {
@@ -205,7 +223,7 @@
 <div class="w-full">
   <DynamicEntityFormContent
     {ui_state}
-    entity_metadata={entity_metadata as EntityMetadata | null}
+    {entity_metadata}
     {entity_type}
     {is_mobile_view}
     {form_title}
@@ -218,7 +236,7 @@
     {sub_entity_filter}
     foreign_key_options={form_state.foreign_key_options}
     filtered_fields_loading={form_state.filtered_fields_loading}
-    current_auth_role={(current_auth_profile?.role as UserRole | null) ?? null}
+    {current_auth_role_state}
     {callbacks}
     {sub_entity_fields}
     {entity_data}

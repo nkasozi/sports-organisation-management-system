@@ -11,7 +11,6 @@
     import type { CompetitionFormat } from "$lib/core/entities/CompetitionFormat";
     import type { CompetitionTeam } from "$lib/core/entities/CompetitionTeam";
     import type { Organization } from "$lib/core/entities/Organization";
-    import type { Sport } from "$lib/core/entities/Sport";
     import type { Team } from "$lib/core/entities/Team";
     import type { UserScopeProfile } from "$lib/core/interfaces/ports";
     import { get_authorization_adapter } from "$lib/infrastructure/AuthorizationProvider";
@@ -25,6 +24,10 @@
     import type { LoadingState } from "$lib/presentation/components/ui/LoadingStateWrapper.svelte";
     import LoadingStateWrapper from "$lib/presentation/components/ui/LoadingStateWrapper.svelte";
     import { ensure_auth_profile } from "$lib/presentation/logic/authGuard";
+    import type {
+        CompetitionEditSelectedFormatState,
+        CompetitionEditSelectedSportState,
+    } from "$lib/presentation/logic/competitionEditPageContracts";
     import { load_competition_edit_page_data } from "$lib/presentation/logic/competitionEditPageData";
     import { access_denial_store } from "$lib/presentation/stores/accessDenial";
     import { auth_store } from "$lib/presentation/stores/auth";
@@ -39,13 +42,27 @@
     const competition_team_use_cases = get_competition_team_use_cases();
     const competition_format_use_cases = get_competition_format_use_cases();
 
-    let competition: Competition | null = null;
+    type CompetitionEditCompetitionState =
+        | { status: "missing" }
+        | { status: "present"; competition: Competition };
+
+    type CompetitionEditCurrentProfileState =
+        | { status: "missing" }
+        | { status: "present"; profile: UserScopeProfile };
+
+    let competition_state: CompetitionEditCompetitionState = {
+        status: "missing",
+    };
     let organizations: Organization[] = [];
     let competition_formats: CompetitionFormat[] = [];
     let all_teams: Team[] = [];
     let competition_team_entries: CompetitionTeam[] = [];
-    let selected_format: CompetitionFormat | null = null;
-    let selected_sport: Sport | null = null;
+    let selected_format_state: CompetitionEditSelectedFormatState = {
+        status: "missing",
+    };
+    let selected_sport_state: CompetitionEditSelectedSportState = {
+        status: "missing",
+    };
     let form_data: UpdateCompetitionInput = {};
     let loading_state: LoadingState = "idle";
     let error_message = "";
@@ -56,6 +73,34 @@
     onMount(() => {
         void initialize_page();
     });
+
+    function build_competition_edit_current_profile_state(): CompetitionEditCurrentProfileState {
+        const current_profile_state = get(auth_store).current_profile;
+
+        if (current_profile_state.status !== "present") {
+            return { status: "missing" };
+        }
+
+        return {
+            status: "present",
+            profile: current_profile_state.profile as unknown as UserScopeProfile,
+        };
+    }
+
+    function build_competition_edit_raw_token_state():
+        | { status: "missing" }
+        | { status: "present"; raw_token: string } {
+        const current_token_state = get(auth_store).current_token;
+
+        if (current_token_state.status !== "present") {
+            return { status: "missing" };
+        }
+
+        return {
+            status: "present",
+            raw_token: current_token_state.token.raw_token,
+        };
+    }
 
     async function initialize_page(): Promise<void> {
         if (!browser) return;
@@ -75,11 +120,13 @@
     }
 
     async function authorize_page(): Promise<boolean> {
-        const auth_state = get(auth_store);
-        if (!auth_state.current_token) return true;
+        const current_token_state = build_competition_edit_raw_token_state();
+
+        if (current_token_state.status !== "present") return true;
+
         const read_auth_check =
             await get_authorization_adapter().check_entity_authorized(
-                auth_state.current_token.raw_token,
+                current_token_state.raw_token,
                 "competition",
                 "read",
             );
@@ -94,7 +141,7 @@
         }
         const update_auth_check =
             await get_authorization_adapter().check_entity_authorized(
-                auth_state.current_token.raw_token,
+                current_token_state.raw_token,
                 "competition",
                 "update",
             );
@@ -108,15 +155,9 @@
 
     async function load_competition_data(): Promise<void> {
         loading_state = "loading";
-        const auth_state = get(auth_store);
         const load_result = await load_competition_edit_page_data({
             competition_id,
-            current_profile: auth_state.current_profile as
-                | UserScopeProfile
-                | null
-                | undefined,
-            current_profile_organization_id:
-                auth_state.current_profile?.organization_id,
+            current_profile_state: build_competition_edit_current_profile_state(),
             dependencies: {
                 competition_use_cases,
                 organization_use_cases,
@@ -130,21 +171,28 @@
             loading_state = "error";
             return;
         }
-        competition = load_result.data.competition;
+        competition_state = {
+            status: "present",
+            competition: load_result.data.competition,
+        };
         organizations = load_result.data.organizations;
         competition_formats = load_result.data.competition_formats;
         all_teams = load_result.data.all_teams;
         competition_team_entries = load_result.data.competition_team_entries;
         form_data = load_result.data.form_data;
-        selected_format = load_result.data.selected_format;
-        selected_sport = load_result.data.selected_sport;
+        selected_format_state = load_result.data.selected_format_state;
+        selected_sport_state = load_result.data.selected_sport_state;
         is_customizing_scoring = load_result.data.is_customizing_scoring;
         loading_state = "success";
     }
 </script>
 
 <svelte:head>
-    <title>{competition?.name || "Edit Competition"} - Sports Management</title>
+    <title>
+        {competition_state.status === "present"
+            ? competition_state.competition.name
+            : "Edit Competition"} - Sports Management
+    </title>
 </svelte:head>
 
 <LoadingStateWrapper
@@ -152,17 +200,17 @@
     {error_message}
     loading_text="Loading competition..."
 >
-    {#if competition}
+    {#if competition_state.status === "present"}
         <CompetitionEditWorkspace
             {competition_id}
-            {competition}
+            competition={competition_state.competition}
             {organizations}
             {competition_formats}
             {all_teams}
             {competition_team_entries}
             bind:form_data
-            {selected_format}
-            {selected_sport}
+            {selected_format_state}
+            {selected_sport_state}
             bind:is_customizing_scoring
             {can_edit_competition}
             {permission_info_message}

@@ -4,7 +4,18 @@ import type { BaseEntity } from "../../core/entities/BaseEntity";
 import { FIXTURE_STATUS } from "../../core/entities/StatusConstants";
 import { get_use_cases_for_entity_type } from "../../infrastructure/registry/entityUseCasesRegistry";
 import { auth_store } from "../stores/auth";
+import { normalize_auth_profile_state } from "../stores/authTypes";
 import { fetch_entities_for_type } from "./dynamicFormDataLoader";
+
+function get_current_rater_user_id(): string {
+  const current_profile_state = normalize_auth_profile_state(
+    get(auth_store).current_profile,
+  );
+
+  return current_profile_state.status === "present"
+    ? current_profile_state.profile.id
+    : "";
+}
 
 function build_official_display_name(
   official: BaseEntity,
@@ -44,7 +55,7 @@ export async function fetch_officials_from_fixture(
   fixture_id: string,
   organization_id: string,
 ): Promise<BaseEntity[]> {
-  const rater_user_id = get(auth_store).current_profile?.id ?? "";
+  const rater_user_id = get_current_rater_user_id();
   const fixture_use_cases_result = get_use_cases_for_entity_type("fixture");
   if (!fixture_use_cases_result.success) {
     console.warn("[DataLoader] Missing fixture use cases", {
@@ -102,7 +113,7 @@ export async function fetch_fixtures_from_official(
   official_id: string,
   organization_id: string,
 ): Promise<BaseEntity[]> {
-  const rater_user_id = get(auth_store).current_profile?.id ?? "";
+  const rater_user_id = get_current_rater_user_id();
   const [all_fixtures, fixture_setups, existing_ratings] = await Promise.all([
     fetch_entities_for_type("fixture", { organization_id }),
     fetch_entities_for_type("fixturedetailssetup", { organization_id }),

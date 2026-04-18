@@ -1,12 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
 
 import type { SystemUser } from "$lib/core/entities/SystemUser";
-import type { ScalarInput } from "$lib/core/types/DomainScalars";
 import type {
   OrganizationRepository,
   SystemUserRepository,
   TeamRepository,
 } from "$lib/core/interfaces/ports";
+import type { ScalarInput } from "$lib/core/types/DomainScalars";
 import {
   create_failure_result,
   create_success_result,
@@ -69,7 +69,7 @@ function create_mock_org_repository(
           name: org.name,
           description: "",
           sport_id: "",
-          founded_date: null,
+          founded_date: "",
           contact_email: "",
           contact_phone: "",
           address: "",
@@ -106,8 +106,8 @@ function create_mock_team_repository(
           description: "",
           organization_id: "org_1",
           gender_id: "",
-          captain_player_id: null,
-          vice_captain_player_id: null,
+          captain_player_id: "",
+          vice_captain_player_id: "",
           max_squad_size: 25,
           home_venue_id: "",
           primary_color: "#000000",
@@ -168,7 +168,7 @@ describe("convert_system_user_to_profile", () => {
   });
 
   it("sets team_id to empty string when system user has no team_id", () => {
-    const system_user = create_test_system_user({ team_id: undefined });
+    const system_user = create_test_system_user({ team_id: void 0 });
 
     const profile = convert_system_user_to_profile(system_user, "Org", "");
 

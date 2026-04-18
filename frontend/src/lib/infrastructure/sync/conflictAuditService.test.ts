@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 
 import type { FieldChange } from "$lib/core/entities/AuditLog";
-import type { ConflictRecord } from "$lib/infrastructure/sync/conflictTypes";
+import {
+  type ConflictRecord,
+  create_known_conflict_field_value,
+} from "$lib/infrastructure/sync/conflictTypes";
 
 function build_conflict_changes(
   field_differences: Array<{
@@ -19,8 +22,9 @@ function build_conflict_changes(
 }
 
 function format_value_for_audit(value: unknown): string {
-  if (value === null) return "null";
-  if (value === undefined) return "undefined";
+  if (value == void 0) {
+    return value === void 0 ? "undefined" : "null";
+  }
   if (typeof value === "object") return JSON.stringify(value);
   return String(value);
 }
@@ -45,12 +49,12 @@ function get_resolution_description(
 }
 
 describe("format_value_for_audit", () => {
-  it("formats null as string null", () => {
-    expect(format_value_for_audit(null)).toBe("null");
+  it("formats missing values as string null", () => {
+    expect(format_value_for_audit(JSON.parse("null"))).toBe("null");
   });
 
   it("formats undefined as string undefined", () => {
-    expect(format_value_for_audit(undefined)).toBe("undefined");
+    expect(format_value_for_audit(void 0)).toBe("undefined");
   });
 
   it("formats objects as JSON strings", () => {
@@ -159,11 +163,11 @@ describe("build_conflict_changes", () => {
     expect(changes[1].field_name).toBe("city");
   });
 
-  it("formats null values in changes", () => {
+  it("formats missing values in changes", () => {
     const differences = [
       {
         field_name: "optional",
-        local_value: null,
+        local_value: JSON.parse("null"),
         remote_value: "value",
         display_name: "Optional",
       },
@@ -180,7 +184,8 @@ describe("build_conflict_changes", () => {
       {
         field_name: "field",
         local_value: "value",
-        remote_value: undefined,
+        remote_value: void 0,
+
         display_name: "Field",
       },
     ];
@@ -245,8 +250,8 @@ describe("Audit log input structure", () => {
       remote_data: { name: "Remote" },
       local_updated_at: "2024-01-01T10:00:00.000Z",
       remote_updated_at: "2024-01-01T12:00:00.000Z",
-      remote_updated_by: "user_123",
-      remote_updated_by_name: "John",
+      remote_updated_by: create_known_conflict_field_value("user_123"),
+      remote_updated_by_name: create_known_conflict_field_value("John"),
       field_differences: [
         {
           field_name: "name",
@@ -346,7 +351,7 @@ describe("Audit log input structure", () => {
 
 describe("Context handling", () => {
   it("uses default system user when no context provided", () => {
-    const context =  {} as Record<string, string>;
+    const context = {} as Record<string, string>;
 
     const user_id = context.user_id ?? "system";
     const user_email = context.user_email ?? "system@sport-sync.local";
@@ -374,10 +379,12 @@ describe("Context handling", () => {
   });
 
   it("handles partial context with some undefined values", () => {
-    const context = {
+    const context: {
+      user_display_name?: string;
+      user_email?: string;
+      user_id: string;
+    } = {
       user_id: "user_123",
-      user_email: undefined,
-      user_display_name: undefined,
     };
 
     const user_id = context.user_id ?? "system";

@@ -73,7 +73,7 @@ async function handle_membership_transfer(
     player_id: transfer.player_id,
     team_id: transfer.to_team_id,
     start_date: transfer.transfer_date,
-    jersey_number: null,
+    jersey_number: 0,
     status: "active",
   });
   if (!create_result.success)

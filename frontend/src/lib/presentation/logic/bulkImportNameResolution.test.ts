@@ -1,5 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import {
+  convert_bulk_import_record_with_name_resolution,
+  find_bulk_import_name_columns,
+  validate_bulk_import_required_fields,
+} from "./bulkImportNameResolution";
+
 const { get_use_cases_for_entity_type_mock, resolve_entity_name_to_id_mock } =
   vi.hoisted(() => ({
     get_use_cases_for_entity_type_mock: vi.fn(),
@@ -19,12 +25,6 @@ vi.mock("$lib/core/services/nameResolutionService", async () => {
     resolve_entity_name_to_id: resolve_entity_name_to_id_mock,
   };
 });
-
-import {
-  convert_bulk_import_record_with_name_resolution,
-  find_bulk_import_name_columns,
-  validate_bulk_import_required_fields,
-} from "./bulkImportNameResolution";
 
 describe("bulkImportNameResolution", () => {
   beforeEach(() => {
@@ -67,7 +67,6 @@ describe("bulkImportNameResolution", () => {
     resolve_entity_name_to_id_mock.mockResolvedValue({
       success: true,
       resolved_id: "team_default_1",
-      error_message: null,
     });
 
     await expect(

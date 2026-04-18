@@ -4,6 +4,11 @@ import type { Organization } from "$lib/core/entities/Organization";
 import type { Sport } from "$lib/core/entities/Sport";
 import type { Team } from "$lib/core/entities/Team";
 import type { UserScopeProfile } from "$lib/core/interfaces/ports";
+import {
+  create_failure_result,
+  create_success_result,
+  type Result,
+} from "$lib/core/types/Result";
 import type { SelectOption } from "$lib/presentation/components/ui/SelectField.svelte";
 
 const COMPETITION_CREATE_PAGE_TEXT = {
@@ -12,6 +17,8 @@ const COMPETITION_CREATE_PAGE_TEXT = {
   upcoming: "Upcoming",
   active: "Active",
 } as const;
+const ORGANIZATION_SPORT_UNAVAILABLE_ERROR =
+  "Organization sport is unavailable";
 
 type EntityListResult<EntityType> = {
   success: boolean;
@@ -47,6 +54,10 @@ export interface CompetitionCreatePageDependencies {
   };
 }
 
+export type CompetitionCreateProfileState =
+  | { status: "missing" }
+  | { status: "present"; profile: UserScopeProfile };
+
 export const competition_create_status_options: SelectOption[] = [
   { value: "upcoming", label: COMPETITION_CREATE_PAGE_TEXT.upcoming },
   { value: "active", label: COMPETITION_CREATE_PAGE_TEXT.active },
@@ -55,7 +66,7 @@ export const competition_create_status_options: SelectOption[] = [
 ];
 
 export async function load_competition_create_organizations(command: {
-  current_auth_profile: UserScopeProfile | null;
+  current_auth_profile_state: CompetitionCreateProfileState;
   dependencies: CompetitionCreatePageDependencies;
   is_organization_restricted: boolean;
 }): Promise<{
@@ -65,11 +76,12 @@ export async function load_competition_create_organizations(command: {
 }> {
   if (
     command.is_organization_restricted &&
-    command.current_auth_profile?.organization_id
+    command.current_auth_profile_state.status === "present" &&
+    command.current_auth_profile_state.profile.organization_id
   ) {
     const organization_result =
       await command.dependencies.organization_use_cases.get_by_id(
-        command.current_auth_profile.organization_id,
+        command.current_auth_profile_state.profile.organization_id,
       );
     if (!organization_result.success || !organization_result.data) {
       return {
@@ -91,10 +103,13 @@ export async function load_competition_create_organizations(command: {
   }
 
   const organizations_result =
-    await command.dependencies.organization_use_cases.list(undefined, {
-      page_number: 1,
-      page_size: 100,
-    });
+    await command.dependencies.organization_use_cases.list(
+      {},
+      {
+        page_number: 1,
+        page_size: 100,
+      },
+    );
   const organizations = organizations_result.success
     ? organizations_result.data?.items || []
     : [];
@@ -118,7 +133,7 @@ export async function load_competition_create_formats(
   competition_formats: CompetitionFormat[];
 }> {
   const formats_result = await dependencies.competition_format_use_cases.list(
-    organization_id ? { organization_id } : undefined,
+    organization_id ? { organization_id } : {},
     {
       page_number: 1,
       page_size: 100,
@@ -144,18 +159,23 @@ export async function load_competition_create_formats(
 export async function load_competition_create_sport(
   organization_id: string,
   organizations: Organization[],
-): Promise<Sport | null> {
+): Promise<Result<Sport>> {
   const selected_organization = organizations.find(
     (organization: Organization) => organization.id === organization_id,
   );
   if (!selected_organization?.sport_id) {
-    return null;
+    return create_failure_result(ORGANIZATION_SPORT_UNAVAILABLE_ERROR);
   }
+
   const sport_result = await get_sport_by_id(selected_organization.sport_id);
+
   if (!sport_result.success || !sport_result.data) {
-    return null;
+    return create_failure_result(
+      sport_result.error || ORGANIZATION_SPORT_UNAVAILABLE_ERROR,
+    );
   }
-  return sport_result.data;
+
+  return create_success_result(sport_result.data);
 }
 
 export async function load_competition_create_team_options(

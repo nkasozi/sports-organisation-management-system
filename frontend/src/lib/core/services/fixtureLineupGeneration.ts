@@ -24,10 +24,14 @@ import { get_player_rules_from_competition } from "./fixturePlayerRules";
 interface LineupGenerationResult {
   success: boolean;
   lineup?: CreateFixtureLineupInput;
-  error_message?: string | null;
-  fix_suggestion?: string | null;
+  error_message?: string;
+  fix_suggestion?: string;
   generation_message?: string;
 }
+
+type PreviousMatchStrategyResult =
+  | { status: "unavailable" }
+  | { status: "available"; result: LineupGenerationResult };
 
 export async function auto_generate_lineups_if_possible(
   fixture: Fixture,
@@ -75,7 +79,7 @@ export async function auto_generate_lineups_if_possible(
       fixture_use_cases,
       lineup_use_cases,
     );
-    if (previous_result) return previous_result;
+    if (previous_result.status === "available") return previous_result.result;
     console.log(
       "[fixtureStartChecks] No previous lineup — falling back to first_available",
     );
@@ -99,7 +103,7 @@ async function try_previous_match_strategy(
   team_name: ScalarValueInput<Team["name"]>,
   fixture_use_cases: FixtureUseCases,
   lineup_use_cases: FixtureLineupUseCases,
-): Promise<LineupGenerationResult | null> {
+): Promise<PreviousMatchStrategyResult> {
   const previous_lineup_result = await find_previous_lineup_for_team(
     fixture,
     team_id,
@@ -107,7 +111,7 @@ async function try_previous_match_strategy(
     lineup_use_cases,
   );
   if (!previous_lineup_result.success || !previous_lineup_result.lineup)
-    return null;
+    return { status: "unavailable" };
   const previous_players = previous_lineup_result.lineup.selected_players;
   console.log(
     "[fixtureStartChecks] Found previous lineup with",
@@ -128,13 +132,19 @@ async function try_previous_match_strategy(
   const create_result = await lineup_use_cases.create(lineup);
   if (!create_result.success)
     return {
-      success: false,
-      error_message: create_result.error || "Failed to create lineup",
+      status: "available",
+      result: {
+        success: false,
+        error_message: create_result.error || "Failed to create lineup",
+      },
     };
   return {
-    success: true,
-    lineup,
-    generation_message: `Used previous match squad for ${team_name} (${previous_players.length} players)`,
+    status: "available",
+    result: {
+      success: true,
+      lineup,
+      generation_message: `Used previous match squad for ${team_name} (${previous_players.length} players)`,
+    },
   };
 }
 
@@ -175,10 +185,13 @@ async function generate_first_available_lineup(
   const players: Player[] = player_results
     .filter((r): r is { success: true; data: Player } => r.success)
     .map((r) => r.data);
-  const positions_result = await player_position_use_cases.list(undefined, {
-    page_number: 1,
-    page_size: 100,
-  });
+  const positions_result = await player_position_use_cases.list(
+    {},
+    {
+      page_number: 1,
+      page_size: 100,
+    },
+  );
   const positions = positions_result.success ? positions_result.data.items : [];
   const position_name_by_id = new Map<
     PlayerPosition["id"],

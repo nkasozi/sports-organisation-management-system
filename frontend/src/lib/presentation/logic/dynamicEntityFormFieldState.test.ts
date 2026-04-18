@@ -10,6 +10,7 @@ import {
   get_dynamic_form_sorted_fields_for_display,
   update_dynamic_form_field_value,
 } from "./dynamicEntityFormFieldState";
+import { build_user_role_state } from "./systemUserFormLogic";
 
 function create_field_metadata(
   overrides: Partial<FieldMetadata> = {},
@@ -49,7 +50,7 @@ describe("dynamicEntityFormFieldState", () => {
         },
       }),
     ];
-    const sub_entity_filter =  {
+    const sub_entity_filter = {
       foreign_key_field: "organization_id",
       foreign_key_value: "org_1",
     } as SubEntityFilter;
@@ -135,7 +136,7 @@ describe("dynamicEntityFormFieldState", () => {
       field,
       { format_type: "league" },
       "competition_format",
-      null,
+      build_user_role_state(),
     );
 
     expect(result).toEqual([{ value: "round_robin", label: "Round Robin" }]);

@@ -76,8 +76,8 @@ describe("dynamicFormLogic", () => {
       expect(result).toBe(true);
     });
 
-    it("returns false when entity is null", () => {
-      const result = determine_if_edit_mode(null);
+    it("returns false when entity is missing", () => {
+      const result = determine_if_edit_mode();
       expect(result).toBe(false);
     });
 
@@ -86,8 +86,8 @@ describe("dynamicFormLogic", () => {
       expect(result).toBe(false);
     });
 
-    it("returns false when id is undefined", () => {
-      const result = determine_if_edit_mode({ id: undefined } as any);
+    it("returns false when entity has no id field", () => {
+      const result = determine_if_edit_mode({} as any);
       expect(result).toBe(false);
     });
   });
@@ -110,8 +110,8 @@ describe("dynamicFormLogic", () => {
   });
 
   describe("get_sub_entity_fields", () => {
-    it("returns empty array when metadata is null", () => {
-      const result = get_sub_entity_fields(null);
+    it("returns empty array when metadata is missing", () => {
+      const result = get_sub_entity_fields();
       expect(result).toEqual([]);
     });
 
@@ -155,13 +155,13 @@ describe("dynamicFormLogic", () => {
   });
 
   describe("build_sub_entity_filter", () => {
-    it("returns null when field has no sub_entity_config", () => {
+    it("returns undefined when field has no sub_entity_config", () => {
       const field = create_field_metadata({ field_type: "sub_entity" });
       const result = build_sub_entity_filter(field, { id: "123" });
-      expect(result).toBeNull();
+      expect(result).toBeUndefined();
     });
 
-    it("returns null when parent entity has no id", () => {
+    it("returns undefined when parent entity has no id", () => {
       const field = create_field_metadata({
         field_type: "sub_entity",
         sub_entity_config: {
@@ -170,10 +170,10 @@ describe("dynamicFormLogic", () => {
         },
       });
       const result = build_sub_entity_filter(field, {});
-      expect(result).toBeNull();
+      expect(result).toBeUndefined();
     });
 
-    it("returns null when parent entity is null", () => {
+    it("returns undefined when parent entity is missing", () => {
       const field = create_field_metadata({
         field_type: "sub_entity",
         sub_entity_config: {
@@ -181,8 +181,8 @@ describe("dynamicFormLogic", () => {
           foreign_key_field: "holder_id",
         },
       });
-      const result = build_sub_entity_filter(field, null);
-      expect(result).toBeNull();
+      const result = build_sub_entity_filter(field);
+      expect(result).toBeUndefined();
     });
 
     it("builds filter with required fields", () => {
@@ -392,7 +392,7 @@ describe("dynamicFormLogic", () => {
 
   describe("validate_field_against_rules", () => {
     it("validates min_length rule", () => {
-      const rules =  [
+      const rules = [
         { rule_type: "min_length", rule_value: 3, error_message: "Too short" },
       ] as ValidationRule[];
 
@@ -402,7 +402,7 @@ describe("dynamicFormLogic", () => {
     });
 
     it("validates max_length rule", () => {
-      const rules =  [
+      const rules = [
         { rule_type: "max_length", rule_value: 5, error_message: "Too long" },
       ] as ValidationRule[];
 
@@ -414,7 +414,7 @@ describe("dynamicFormLogic", () => {
     });
 
     it("validates min_value rule", () => {
-      const rules =  [
+      const rules = [
         { rule_type: "min_value", rule_value: 10, error_message: "Too small" },
       ] as ValidationRule[];
 
@@ -424,7 +424,7 @@ describe("dynamicFormLogic", () => {
     });
 
     it("validates max_value rule", () => {
-      const rules =  [
+      const rules = [
         { rule_type: "max_value", rule_value: 100, error_message: "Too large" },
       ] as ValidationRule[];
 
@@ -434,7 +434,7 @@ describe("dynamicFormLogic", () => {
     });
 
     it("validates pattern rule", () => {
-      const rules =  [
+      const rules = [
         {
           rule_type: "pattern",
           rule_value: "^[A-Z]+$",
@@ -447,14 +447,14 @@ describe("dynamicFormLogic", () => {
     });
 
     it("returns valid when no rules fail", () => {
-      const rules =  [] as ValidationRule[];
+      const rules = [] as ValidationRule[];
       expect(validate_field_against_rules("anything", rules).is_valid).toBe(
         true,
       );
     });
 
     it("returns error message from failed rule", () => {
-      const rules =  [
+      const rules = [
         {
           rule_type: "min_length",
           rule_value: 10,
@@ -798,14 +798,14 @@ describe("dynamicFormLogic", () => {
     });
 
     it("handles empty value", () => {
-      const options =  [] as BaseEntity[];
+      const options = [] as BaseEntity[];
       const result = get_display_value_for_foreign_key(options, "");
       expect(result).toBe("");
     });
 
-    it("handles null value", () => {
-      const options =  [] as BaseEntity[];
-      const result = get_display_value_for_foreign_key(options, null as any);
+    it("handles missing value", () => {
+      const options = [] as BaseEntity[];
+      const result = get_display_value_for_foreign_key(options);
       expect(result).toBe("");
     });
   });
@@ -823,7 +823,7 @@ describe("dynamicFormLogic", () => {
         ],
       });
 
-      const result = initialize_form_data_from_metadata(metadata, null);
+      const result = initialize_form_data_from_metadata(metadata);
 
       expect(result.name).toBe("");
       expect(result.count).toBe(0);
@@ -938,14 +938,12 @@ describe("dynamicFormLogic", () => {
   });
 
   describe("is_field_controlled_by_sub_entity_filter", () => {
-    it("returns false when filter is null", () => {
-      expect(is_field_controlled_by_sub_entity_filter("player_id", null)).toBe(
-        false,
-      );
+    it("returns false when filter is missing", () => {
+      expect(is_field_controlled_by_sub_entity_filter("player_id")).toBe(false);
     });
 
     it("returns true when field matches foreign_key_field", () => {
-      const filter =  {
+      const filter = {
         foreign_key_field: "player_id",
         foreign_key_value: "p1",
       } as SubEntityFilter;
@@ -955,7 +953,7 @@ describe("dynamicFormLogic", () => {
     });
 
     it("returns true when field matches holder_type_field", () => {
-      const filter =  {
+      const filter = {
         foreign_key_field: "player_id",
         foreign_key_value: "p1",
         holder_type_field: "entity_type",
@@ -967,7 +965,7 @@ describe("dynamicFormLogic", () => {
     });
 
     it("returns false for an unrelated field", () => {
-      const filter =  {
+      const filter = {
         foreign_key_field: "player_id",
         foreign_key_value: "p1",
       } as SubEntityFilter;
@@ -982,35 +980,27 @@ describe("dynamicFormLogic", () => {
 
     it("returns true when field is_read_only", () => {
       const field = create_field_metadata({ is_read_only: true });
-      expect(should_field_be_read_only(field, false, empty_auth, null)).toBe(
-        true,
-      );
+      expect(should_field_be_read_only(field, false, empty_auth)).toBe(true);
     });
 
     it("returns true when is_read_only_on_edit in edit mode", () => {
       const field = create_field_metadata({
         is_read_only_on_edit: true,
       } as any);
-      expect(should_field_be_read_only(field, true, empty_auth, null)).toBe(
-        true,
-      );
+      expect(should_field_be_read_only(field, true, empty_auth)).toBe(true);
     });
 
     it("returns false when is_read_only_on_edit but not in edit mode", () => {
       const field = create_field_metadata({
         is_read_only_on_edit: true,
       } as any);
-      expect(should_field_be_read_only(field, false, empty_auth, null)).toBe(
-        false,
-      );
+      expect(should_field_be_read_only(field, false, empty_auth)).toBe(false);
     });
 
     it("returns true when field is in auth restricted set", () => {
       const field = create_field_metadata({ field_name: "organization_id" });
       const restricted = new Set(["organization_id"]);
-      expect(should_field_be_read_only(field, false, restricted, null)).toBe(
-        true,
-      );
+      expect(should_field_be_read_only(field, false, restricted)).toBe(true);
     });
   });
 
@@ -1132,9 +1122,12 @@ describe("dynamicFormLogic", () => {
       ["playerposition", "/player-positions"],
       ["venue", "/venues"],
       ["unknown", ""],
-      [undefined, ""],
     ])("%s -> %s", (entity_type, expected) => {
       expect(build_foreign_entity_route(entity_type)).toBe(expected);
+    });
+
+    it("returns an empty route when the entity type is missing", () => {
+      expect(build_foreign_entity_route()).toBe("");
     });
   });
 
@@ -1146,7 +1139,7 @@ describe("dynamicFormLogic", () => {
 
     it("returns generic Create for unknown type", () => {
       expect(build_foreign_entity_cta_label("unknown")).toBe("Create");
-      expect(build_foreign_entity_cta_label(undefined)).toBe("Create");
+      expect(build_foreign_entity_cta_label()).toBe("Create");
     });
   });
 

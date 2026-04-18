@@ -81,14 +81,13 @@ async function resolve_bulk_import_name_columns(
       entity_type: name_column.entity_type,
       use_cases: name_resolver_result.data,
     });
-    if (resolution_result.success && resolution_result.resolved_id) {
+    if (resolution_result.success) {
       resolved_values[name_column.id_column] = resolution_result.resolved_id;
       continue;
     }
     errors.push({
       column_name: name_column.name_column,
-      error_message:
-        resolution_result.error_message || "Unknown resolution error",
+      error_message: resolution_result.error_message,
     });
   }
   return { errors, resolved_values };
@@ -143,7 +142,7 @@ export function validate_bulk_import_required_fields(
   const resolved_values = name_columns.reduce(
     (values: Record<string, string>, name_column: BulkImportNameColumn) => {
       const resolved_value = entity_input[name_column.id_column];
-      if (resolved_value !== undefined && resolved_value !== null)
+      if (resolved_value !== void 0 && resolved_value !== "")
         values[name_column.id_column] = String(resolved_value);
       return values;
     },
@@ -153,11 +152,7 @@ export function validate_bulk_import_required_fields(
     (missing_fields: string[], field: FieldMetadata) => {
       if (!field.is_required) return missing_fields;
       const raw_value = { ...record, ...resolved_values }[field.field_name];
-      if (
-        raw_value === undefined ||
-        raw_value === null ||
-        raw_value.trim() === ""
-      )
+      if (raw_value === void 0 || raw_value.trim() === "")
         missing_fields.push(field.display_name);
       return missing_fields;
     },

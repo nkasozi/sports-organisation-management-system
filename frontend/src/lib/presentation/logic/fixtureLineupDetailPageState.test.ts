@@ -47,8 +47,8 @@ function create_team_player(
     date_of_birth: "2000-01-01",
     position_id: "position_1",
     organization_id: "org_1",
-    height_cm: null,
-    weight_kg: null,
+    height_cm: 0,
+    weight_kg: 0,
     nationality: "UG",
     profile_image_url: "",
     emergency_contact_name: "Coach",
@@ -63,7 +63,26 @@ function create_team_player(
   } as unknown as TeamPlayer;
 }
 
-function create_fixture(overrides: Partial<ScalarInput<Fixture>> = {}): Fixture {
+function create_selected_player(
+  overrides: Partial<
+    ScalarInput<FixtureLineup["selected_players"][number]>
+  > = {},
+): FixtureLineup["selected_players"][number] {
+  return {
+    id: "player_1",
+    first_name: "Jordan",
+    last_name: "Miles",
+    jersey_number: 9,
+    position: "Forward",
+    is_captain: false,
+    is_substitute: false,
+    ...overrides,
+  } as unknown as FixtureLineup["selected_players"][number];
+}
+
+function create_fixture(
+  overrides: Partial<ScalarInput<Fixture>> = {},
+): Fixture {
   return {
     id: "fixture_1",
     organization_id: "org_1",
@@ -77,7 +96,6 @@ function create_fixture(overrides: Partial<ScalarInput<Fixture>> = {}): Fixture 
     scheduled_time: "10:00",
     status: "scheduled",
     match_day: 1,
-    manual_importance_override: null,
     created_at: "2026-01-01T00:00:00Z",
     updated_at: "2026-01-01T00:00:00Z",
     ...overrides,
@@ -92,8 +110,8 @@ function create_team(overrides: Partial<ScalarInput<Team>> = {}): Team {
     description: "",
     organization_id: "org_1",
     gender_id: "gender_1",
-    captain_player_id: null,
-    vice_captain_player_id: null,
+    captain_player_id: "",
+    vice_captain_player_id: "",
     max_squad_size: 25,
     home_venue_id: "venue_1",
     primary_color: "#000000",
@@ -110,13 +128,12 @@ function create_team(overrides: Partial<ScalarInput<Team>> = {}): Team {
 
 describe("fixtureLineupDetailPageState", () => {
   it("builds selected player ids from the lineup", () => {
-    const result = build_fixture_lineup_selected_player_ids(
-      create_lineup({
-        selected_players: [
-          { ...create_team_player(), is_captain: false, is_substitute: false },
-        ] as FixtureLineup["selected_players"],
+    const result = build_fixture_lineup_selected_player_ids({
+      status: "present",
+      lineup: create_lineup({
+        selected_players: [create_selected_player()],
       }),
-    );
+    });
 
     expect(Array.from(result)).toEqual(["player_1"]);
   });
@@ -136,9 +153,15 @@ describe("fixtureLineupDetailPageState", () => {
 
   it("builds a fixture label from the home and away teams", () => {
     const result = get_fixture_lineup_name(
-      create_fixture(),
-      create_team({ id: "team_home", name: "Lions" }),
-      create_team({ id: "team_away", name: "Tigers" }),
+      { status: "present", fixture: create_fixture() },
+      {
+        status: "present",
+        team: create_team({ id: "team_home", name: "Lions" }),
+      },
+      {
+        status: "present",
+        team: create_team({ id: "team_away", name: "Tigers" }),
+      },
     );
 
     expect(result).toBe("Lions vs Tigers");
@@ -148,7 +171,7 @@ describe("fixtureLineupDetailPageState", () => {
 
   it("formats submission dates and permission messages with fallbacks", () => {
     expect(format_fixture_lineup_submission_date("")).toBe("-");
-    expect(build_fixture_lineup_permission_info_message(undefined)).toContain(
+    expect(build_fixture_lineup_permission_info_message(void 0)).toContain(
       '"unknown"',
     );
     expect(

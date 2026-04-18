@@ -2,7 +2,6 @@ import type {
   EntityMetadata,
   FieldMetadata,
 } from "../../core/entities/BaseEntity";
-import type { UserRole } from "../../core/interfaces/ports";
 import type { SubEntityFilter } from "../../core/types/SubEntityFilter";
 import {
   build_dynamic_form_stage_template_defaults,
@@ -14,13 +13,16 @@ import {
   is_field_controlled_by_sub_entity_filter,
   is_field_visible_by_visible_when_condition,
 } from "./dynamicFormLogic";
-import { filter_enum_values_by_creator_role } from "./systemUserFormLogic";
+import {
+  filter_enum_values_by_creator_role,
+  type UserRoleState,
+} from "./systemUserFormLogic";
 
 export function get_dynamic_form_sorted_fields_for_display(
   fields: FieldMetadata[],
   in_edit_mode: boolean,
   current_form_data: Record<string, any>,
-  sub_entity_filter: SubEntityFilter | null,
+  sub_entity_filter?: SubEntityFilter,
 ): FieldMetadata[] {
   const renderable_fields = fields.filter(
     (field) => field.field_type !== "sub_entity",
@@ -48,7 +50,7 @@ export function get_dynamic_form_sorted_fields_for_display(
 }
 
 export function update_dynamic_form_field_value(
-  entity_metadata: EntityMetadata | null,
+  entity_metadata: EntityMetadata | undefined,
   current_form_data: Record<string, any>,
   entity_type: string,
   field_name: string,
@@ -88,7 +90,7 @@ export function build_dynamic_form_enum_select_options(
   field: FieldMetadata,
   form_data: Record<string, any>,
   entity_type: string,
-  current_auth_role: UserRole | null,
+  current_auth_role_state: UserRoleState,
 ): { value: string; label: string }[] {
   if (field.enum_dependency) {
     const dependency_value = form_data[field.enum_dependency.depends_on_field];
@@ -112,7 +114,7 @@ export function build_dynamic_form_enum_select_options(
       ? filter_enum_values_by_creator_role(
           field.field_name,
           field.enum_values,
-          current_auth_role,
+          current_auth_role_state,
         )
       : field.enum_values;
 
@@ -123,7 +125,7 @@ export function build_dynamic_form_enum_select_options(
 }
 
 function clear_dependent_enum_values(
-  entity_metadata: EntityMetadata | null,
+  entity_metadata: EntityMetadata | undefined,
   current_form_data: Record<string, any>,
   parent_field_name: string,
 ): Record<string, any> {
@@ -142,7 +144,7 @@ function clear_dependent_enum_values(
 }
 
 function clear_fields_hidden_by_visible_when(
-  entity_metadata: EntityMetadata | null,
+  entity_metadata: EntityMetadata | undefined,
   current_form_data: Record<string, any>,
   changed_field_name: string,
 ): Record<string, any> {

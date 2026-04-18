@@ -1,8 +1,21 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import {
+  check_route_access,
+  ensure_auth_profile,
+  ensure_route_access,
+  extract_route_base,
+  format_route_as_page_name,
+  get_current_auth_profile_state,
+  invalidate_route_access_cache,
+  is_auth_initialized,
+  is_route_in_accessible_set,
+} from "./authGuard";
+
 const {
   auth_store,
   create_profile,
+  create_present_profile_state,
   get_accessible_routes_for_role_mock,
   goto_mock,
   reset_auth_state,
@@ -29,9 +42,11 @@ const {
   };
 
   type MockAuthState = {
-    current_profile: MockProfile | null;
+    current_profile:
+      | { status: "missing" }
+      | { status: "present"; profile: MockProfile };
     is_initialized: boolean;
-    current_token: null;
+    current_token: { status: "missing" };
     available_profiles: never[];
     sidebar_menu_items: never[];
   };
@@ -43,9 +58,9 @@ const {
   };
 
   const create_initial_auth_state = (): MockAuthState => ({
-    current_profile: null,
+    current_profile: { status: "missing" },
     is_initialized: true,
-    current_token: null,
+    current_token: { status: "missing" },
     available_profiles: [],
     sidebar_menu_items: [],
   });
@@ -107,9 +122,17 @@ const {
     ...overrides,
   });
 
+  const create_present_profile_state = (
+    profile: MockProfile,
+  ): MockAuthState["current_profile"] => ({
+    status: "present",
+    profile,
+  });
+
   return {
     auth_store,
     create_profile,
+    create_present_profile_state,
     get_accessible_routes_for_role_mock,
     goto_mock,
     reset_auth_state,
@@ -137,18 +160,6 @@ vi.mock("$lib/infrastructure/AuthorizationProvider", () => ({
     get_accessible_routes_for_role: get_accessible_routes_for_role_mock,
   }),
 }));
-
-import {
-  check_route_access,
-  ensure_auth_profile,
-  ensure_route_access,
-  extract_route_base,
-  format_route_as_page_name,
-  get_current_auth_profile,
-  invalidate_route_access_cache,
-  is_auth_initialized,
-  is_route_in_accessible_set,
-} from "./authGuard";
 
 describe("authGuard", () => {
   beforeEach(() => {
@@ -196,7 +207,9 @@ describe("authGuard", () => {
 
     it("allows a route when the exact path is accessible", async () => {
       set_auth_state({
-        current_profile: create_profile({ role: "super_admin" }),
+        current_profile: create_present_profile_state(
+          create_profile({ role: "super_admin" }),
+        ),
       });
       get_accessible_routes_for_role_mock.mockResolvedValue({
         success: true,
@@ -210,7 +223,9 @@ describe("authGuard", () => {
 
     it("allows a nested route when the base route is accessible", async () => {
       set_auth_state({
-        current_profile: create_profile({ role: "team_manager" }),
+        current_profile: create_present_profile_state(
+          create_profile({ role: "team_manager" }),
+        ),
       });
       get_accessible_routes_for_role_mock.mockResolvedValue({
         success: true,
@@ -224,7 +239,9 @@ describe("authGuard", () => {
 
     it("denies inaccessible routes with a role-specific message", async () => {
       set_auth_state({
-        current_profile: create_profile({ role: "player" }),
+        current_profile: create_present_profile_state(
+          create_profile({ role: "player" }),
+        ),
       });
 
       const result = await check_route_access("/system-users");
@@ -236,7 +253,9 @@ describe("authGuard", () => {
 
     it("caches accessible routes for repeated checks with the same role", async () => {
       set_auth_state({
-        current_profile: create_profile({ role: "org_admin" }),
+        current_profile: create_present_profile_state(
+          create_profile({ role: "org_admin" }),
+        ),
       });
       get_accessible_routes_for_role_mock.mockResolvedValue({
         success: true,
@@ -269,12 +288,16 @@ describe("authGuard", () => {
       );
 
       set_auth_state({
-        current_profile: create_profile({ role: "super_admin" }),
+        current_profile: create_present_profile_state(
+          create_profile({ role: "super_admin" }),
+        ),
       });
       const admin_result = await check_route_access("/system-users");
 
       set_auth_state({
-        current_profile: create_profile({ role: "player", id: "profile-2" }),
+        current_profile: create_present_profile_state(
+          create_profile({ role: "player", id: "profile-2" }),
+        ),
       });
       const player_result = await check_route_access("/system-users");
 
@@ -285,7 +308,9 @@ describe("authGuard", () => {
 
     it("denies access when route loading fails", async () => {
       set_auth_state({
-        current_profile: create_profile({ role: "official" }),
+        current_profile: create_present_profile_state(
+          create_profile({ role: "official" }),
+        ),
       });
       get_accessible_routes_for_role_mock.mockResolvedValue({
         success: false,
@@ -302,7 +327,9 @@ describe("authGuard", () => {
   describe("ensure_route_access", () => {
     it("stores the denial and redirects when access is denied", async () => {
       set_auth_state({
-        current_profile: create_profile({ role: "player" }),
+        current_profile: create_present_profile_state(
+          create_profile({ role: "player" }),
+        ),
       });
 
       const result = await ensure_route_access("/settings");
@@ -317,7 +344,9 @@ describe("authGuard", () => {
 
     it("returns true and does not redirect when access is allowed", async () => {
       set_auth_state({
-        current_profile: create_profile({ role: "super_admin" }),
+        current_profile: create_present_profile_state(
+          create_profile({ role: "super_admin" }),
+        ),
       });
       get_accessible_routes_for_role_mock.mockResolvedValue({
         success: true,
@@ -338,7 +367,10 @@ describe("authGuard", () => {
       set_auth_state({ is_initialized: false });
       auth_store.initialize.mockImplementation(
         async (): Promise<{ success: true; data: true }> => {
-          set_auth_state({ is_initialized: true, current_profile: profile });
+          set_auth_state({
+            is_initialized: true,
+            current_profile: create_present_profile_state(profile),
+          });
           return { success: true, data: true };
         },
       );
@@ -347,28 +379,36 @@ describe("authGuard", () => {
 
       expect(result).toEqual({
         success: true,
-        profile,
+        profile_state: { status: "present", profile },
         error_message: "",
       });
     });
 
     it("returns a failure result when no profile exists after initialization", async () => {
-      set_auth_state({ is_initialized: false, current_profile: null });
+      set_auth_state({
+        is_initialized: false,
+        current_profile: { status: "missing" },
+      });
 
       const result = await ensure_auth_profile();
 
       expect(result.success).toBe(false);
-      expect(result.profile).toBeNull();
+      expect(result.profile_state).toEqual({ status: "missing" });
       expect(result.error_message).toContain("No user profile");
     });
   });
 
   describe("auth state helpers", () => {
-    it("returns the current profile", () => {
+    it("returns the current profile state", () => {
       const profile = create_profile({ role: "officials_manager" });
-      set_auth_state({ current_profile: profile });
+      set_auth_state({
+        current_profile: create_present_profile_state(profile),
+      });
 
-      expect(get_current_auth_profile()).toEqual(profile);
+      expect(get_current_auth_profile_state()).toEqual({
+        status: "present",
+        profile,
+      });
     });
 
     it("returns whether auth is initialized", () => {
@@ -417,7 +457,9 @@ describe("authGuard", () => {
       expect(invalidate_route_access_cache()).toBe(false);
 
       set_auth_state({
-        current_profile: create_profile({ role: "super_admin" }),
+        current_profile: create_present_profile_state(
+          create_profile({ role: "super_admin" }),
+        ),
       });
       get_accessible_routes_for_role_mock.mockResolvedValue({
         success: true,

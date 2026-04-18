@@ -13,8 +13,20 @@ import {
   build_authorization_list_filter,
   type UserScopeProfile,
 } from "$lib/core/interfaces/ports";
+import {
+  create_failure_result,
+  create_success_result,
+  type Result,
+} from "$lib/core/types/Result";
 
+import type {
+  CompetitionEditSelectedFormatState,
+  CompetitionEditSelectedSportState,
+} from "./competitionEditPageContracts";
 import { create_competition_update_form_data } from "./competitionEditPageState";
+
+const ORGANIZATION_SPORT_UNAVAILABLE_ERROR =
+  "Organization sport is unavailable";
 
 interface EntityListResult<EntityType> {
   success: boolean;
@@ -67,24 +79,65 @@ interface CompetitionEditPageLoadedData {
   all_teams: Team[];
   competition_team_entries: CompetitionTeam[];
   form_data: UpdateCompetitionInput;
-  selected_format: CompetitionFormat | null;
-  selected_sport: Sport | null;
+  selected_format_state: CompetitionEditSelectedFormatState;
+  selected_sport_state: CompetitionEditSelectedSportState;
   is_customizing_scoring: boolean;
 }
 
+type CompetitionEditCurrentProfileState =
+  | { status: "missing" }
+  | { status: "present"; profile: UserScopeProfile };
+
+function build_competition_edit_selected_format_state(
+  competition_formats: CompetitionFormat[],
+  competition_format_id: string | undefined,
+): CompetitionEditSelectedFormatState {
+  const selected_format = competition_formats.find(
+    (competition_format: CompetitionFormat) =>
+      competition_format.id === competition_format_id,
+  );
+
+  if (!selected_format) {
+    return { status: "missing" };
+  }
+
+  return { status: "present", competition_format: selected_format };
+}
+
+function build_competition_edit_selected_sport_state(
+  selected_sport_result: Result<Sport>,
+): CompetitionEditSelectedSportState {
+  if (!selected_sport_result.success) {
+    return { status: "missing" };
+  }
+
+  return { status: "present", sport: selected_sport_result.data };
+}
+
 export function build_competition_edit_auth_filter(
-  current_profile: UserScopeProfile | null | undefined,
+  current_profile_state: CompetitionEditCurrentProfileState,
 ): Record<string, string> {
-  if (!current_profile) return {};
-  return build_authorization_list_filter(current_profile, ["organization_id"]);
+  if (current_profile_state.status !== "present") {
+    return {};
+  }
+
+  return build_authorization_list_filter(current_profile_state, [
+    "organization_id",
+  ]);
 }
 
 function get_accessible_organizations(
   all_organizations: Organization[],
-  current_profile_organization_id: string | undefined,
+  current_profile_state: CompetitionEditCurrentProfileState,
 ): Organization[] {
+  if (current_profile_state.status !== "present") return [];
+
+  const current_profile_organization_id =
+    current_profile_state.profile.organization_id;
+
   if (current_profile_organization_id === ANY_VALUE) return all_organizations;
   if (!current_profile_organization_id) return [];
+
   return all_organizations.filter(
     (organization: Organization) =>
       organization.id === current_profile_organization_id,
@@ -94,31 +147,34 @@ function get_accessible_organizations(
 export async function load_competition_edit_sport(
   organizations: Organization[],
   organization_id: string,
-): Promise<Sport | null> {
+): Promise<Result<Sport>> {
   const selected_organization = organizations.find(
     (organization: Organization) => organization.id === organization_id,
   );
-  if (!selected_organization?.sport_id) return null;
+
+  if (!selected_organization?.sport_id)
+    return create_failure_result(ORGANIZATION_SPORT_UNAVAILABLE_ERROR);
+
   const sport_result = await get_sport_by_id(selected_organization.sport_id);
-  if (!sport_result.success || !sport_result.data) return null;
-  return sport_result.data;
+
+  if (!sport_result.success || !sport_result.data) {
+    return create_failure_result(
+      sport_result.error || ORGANIZATION_SPORT_UNAVAILABLE_ERROR,
+    );
+  }
+
+  return create_success_result(sport_result.data);
 }
 
 export async function load_competition_edit_page_data(command: {
   competition_id: string;
-  current_profile: UserScopeProfile | null | undefined;
-  current_profile_organization_id: string | undefined;
+  current_profile_state: CompetitionEditCurrentProfileState;
   dependencies: CompetitionEditPageDependencies;
 }): Promise<
   | { success: true; data: CompetitionEditPageLoadedData }
   | { success: false; error_message: string }
 > {
-  const {
-    competition_id,
-    current_profile,
-    current_profile_organization_id,
-    dependencies,
-  } = command;
+  const { competition_id, current_profile_state, dependencies } = command;
   const [
     competition_result,
     organizations_result,
@@ -132,17 +188,20 @@ export async function load_competition_edit_page_data(command: {
       { page_number: 1, page_size: 100 },
     ),
     dependencies.team_use_cases.list(
-      build_competition_edit_auth_filter(current_profile),
+      build_competition_edit_auth_filter(current_profile_state),
       { page_number: 1, page_size: 100 },
     ),
     dependencies.competition_team_use_cases.list_teams_in_competition(
       competition_id,
       { page_number: 1, page_size: 100 },
     ),
-    dependencies.competition_format_use_cases.list(undefined, {
-      page_number: 1,
-      page_size: 100,
-    }),
+    dependencies.competition_format_use_cases.list(
+      {},
+      {
+        page_number: 1,
+        page_size: 100,
+      },
+    ),
   ]);
 
   if (!competition_result.success) {
@@ -159,13 +218,17 @@ export async function load_competition_edit_page_data(command: {
   const competition = competition_result.data;
   const organizations = get_accessible_organizations(
     organizations_result.success ? organizations_result.data?.items || [] : [],
-    current_profile_organization_id,
+    current_profile_state,
   );
   const competition_formats = (
     formats_result.success ? formats_result.data?.items || [] : []
   ).filter(
     (competition_format: CompetitionFormat) =>
       competition_format.status === "active",
+  );
+  const selected_sport_result = await load_competition_edit_sport(
+    organizations,
+    competition.organization_id,
   );
 
   return {
@@ -179,14 +242,12 @@ export async function load_competition_edit_page_data(command: {
         ? competition_teams_result.data?.items || []
         : [],
       form_data: create_competition_update_form_data(competition),
-      selected_format:
-        competition_formats.find(
-          (competition_format: CompetitionFormat) =>
-            competition_format.id === competition.competition_format_id,
-        ) || null,
-      selected_sport: await load_competition_edit_sport(
-        organizations,
-        competition.organization_id,
+      selected_format_state: build_competition_edit_selected_format_state(
+        competition_formats,
+        competition.competition_format_id,
+      ),
+      selected_sport_state: build_competition_edit_selected_sport_state(
+        selected_sport_result,
       ),
       is_customizing_scoring: !!(
         competition.rule_overrides?.points_config_override ||

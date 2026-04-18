@@ -1,6 +1,6 @@
 import type { GameEventType } from "../../core/entities/GameEventType";
-import type { ScalarValueInput } from "../../core/types/DomainScalars";
 import { get_default_game_event_types } from "../../core/entities/GameEventType";
+import type { ScalarValueInput } from "../../core/types/DomainScalars";
 
 export function create_default_game_event_types_for_organization(
   organization_id: ScalarValueInput<GameEventType["organization_id"]>,

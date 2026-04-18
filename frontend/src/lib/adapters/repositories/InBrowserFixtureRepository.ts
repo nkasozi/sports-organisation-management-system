@@ -58,8 +58,8 @@ export class InBrowserFixtureRepository
       game_events: [],
       current_period: "pre_game",
       current_minute: 0,
-      home_team_score: null,
-      away_team_score: null,
+      home_team_score: 0,
+      away_team_score: 0,
     } as unknown as Fixture;
   }
 
@@ -164,13 +164,23 @@ export class InBrowserFixtureRepository
 function create_default_fixtures(): import("$lib/core/types/DomainScalars").ScalarInput<Fixture>[] {
   return [];
 }
-let singleton_instance: InBrowserFixtureRepository | null = null;
+type FixtureRepositoryState =
+  | { status: "uninitialized" }
+  | { status: "ready"; repository: InBrowserFixtureRepository };
+
+let fixture_repository_state: FixtureRepositoryState = {
+  status: "uninitialized",
+};
 
 export function get_fixture_repository(): FixtureRepository {
-  if (!singleton_instance) {
-    singleton_instance = new InBrowserFixtureRepository();
+  if (fixture_repository_state.status === "ready") {
+    return fixture_repository_state.repository;
   }
-  return singleton_instance;
+
+  const repository = new InBrowserFixtureRepository();
+  fixture_repository_state = { status: "ready", repository };
+
+  return repository;
 }
 
 export async function reset_fixture_repository(): Promise<void> {

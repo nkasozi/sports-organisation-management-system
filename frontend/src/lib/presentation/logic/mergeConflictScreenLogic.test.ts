@@ -27,8 +27,11 @@ describe("mergeConflictScreenLogic", () => {
   });
 
   it("formats merge values and timestamps safely", () => {
-    expect(format_merge_conflict_value(null)).toBe("null");
-    expect(format_merge_conflict_value(undefined)).toBe("undefined");
+    const parsed_null_value = JSON.parse("null") as unknown;
+    const missing_value = ({} as Record<string, unknown>).missing_value;
+
+    expect(format_merge_conflict_value(parsed_null_value)).toBe("null");
+    expect(format_merge_conflict_value(missing_value)).toBe("undefined");
     expect(format_merge_conflict_value({ score: 3 })).toContain('"score": 3');
     expect(format_merge_conflict_timestamp("")).toBe("Unknown");
     expect(

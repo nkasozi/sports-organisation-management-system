@@ -1,7 +1,7 @@
 <script lang="ts">
     import type { CreateCompetitionInput } from "$lib/core/entities/Competition";
-    import type { Sport } from "$lib/core/entities/Sport";
     import type { SelectOption } from "$lib/presentation/components/ui/SelectField.svelte";
+    import type { CompetitionCreateSelectedSportState } from "$lib/presentation/logic/competitionCreatePageFlow";
 
     import CompetitionCreateActions from "./CompetitionCreateActions.svelte";
     import CompetitionCreateDetailsTab from "./CompetitionCreateDetailsTab.svelte";
@@ -9,31 +9,34 @@
     import CompetitionCreateRulesTab from "./CompetitionCreateRulesTab.svelte";
     import CompetitionCreateTabs from "./CompetitionCreateTabs.svelte";
 
-    export let form_data: CreateCompetitionInput;
-    export let organization_options: SelectOption[];
-    export let competition_format_options: SelectOption[];
-    export let team_options: SelectOption[];
-    export let selected_team_ids: Set<string>;
-    export let selected_sport: Sport | null;
-    export let is_loading_organizations: boolean;
-    export let is_loading_formats: boolean;
-    export let is_loading_teams: boolean;
-    export let is_organization_restricted: boolean;
-    export let errors: Record<string, string>;
-    export let status_options: { value: string; label: string }[];
-    export let format_team_requirements: string;
-    export let is_team_count_valid: boolean;
-    export let is_saving: boolean;
-    export let on_cancel: () => void;
+    export let form_data: CreateCompetitionInput = {} as CreateCompetitionInput;
+    export let organization_options: SelectOption[] = [];
+    export let competition_format_options: SelectOption[] = [];
+    export let team_options: SelectOption[] = [];
+    export let selected_team_ids: Set<string> = new Set();
+    export let selected_sport_state: CompetitionCreateSelectedSportState = {
+        status: "missing",
+    };
+    export let is_loading_organizations = false;
+    export let is_loading_formats = false;
+    export let is_loading_teams = false;
+    export let is_organization_restricted = false;
+    export let errors: Record<string, string> = {};
+    export let status_options: { value: string; label: string }[] = [];
+    export let format_team_requirements = "";
+    export let is_team_count_valid = true;
+    export let is_saving = false;
+    export let on_cancel: () => void = () => {};
     export let on_organization_change: (
         event: CustomEvent<{ value: string }>,
-    ) => Promise<void>;
+    ) => Promise<void> = async () => {};
     export let on_format_change: (
         event: CustomEvent<{ value: string }>,
-    ) => void;
-    export let on_toggle_team: (team_id: string) => boolean;
-    export let on_toggle_auto_squad_submission: (enabled: boolean) => void;
-    export let on_submit: () => Promise<void>;
+    ) => void = () => {};
+    export let on_toggle_team: (team_id: string) => boolean = () => false;
+    export let on_toggle_auto_squad_submission: (enabled: boolean) => void =
+        () => {};
+    export let on_submit: () => Promise<void> = async () => {};
 
     let active_tab: "details" | "rules" = "details";
 </script>
@@ -71,7 +74,7 @@
             {:else}
                 <CompetitionCreateRulesTab
                     organization_id={form_data.organization_id}
-                    {selected_sport}
+                    {selected_sport_state}
                     bind:rule_overrides={form_data.rule_overrides}
                 />
             {/if}

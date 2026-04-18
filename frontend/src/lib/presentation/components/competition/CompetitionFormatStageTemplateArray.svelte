@@ -6,8 +6,9 @@
         FormatType,
         LeagueConfig,
     } from "$lib/core/entities/CompetitionFormat";
-    import type { ScalarInput } from "$lib/core/types/DomainScalars";
+    import { create_default_league_config } from "$lib/core/entities/CompetitionFormatFactories";
     import { STAGE_TYPE_OPTIONS } from "$lib/core/entities/CompetitionStage";
+    import type { ScalarInput } from "$lib/core/types/DomainScalars";
     import {
         add_stage_template,
         build_stage_template_defaults,
@@ -20,7 +21,7 @@
 
     export let stage_templates: EditableCompetitionFormatStageTemplate[] = [];
     export let format_type: FormatType = "league";
-    export let league_config: LeagueConfig | null = null;
+    export let league_config: LeagueConfig = create_default_league_config();
     export let disabled: boolean = false;
     export let error: string = "";
 

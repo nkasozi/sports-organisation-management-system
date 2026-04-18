@@ -27,8 +27,8 @@
         time_string: string,
     ) => void;
 
-    let calendar_container_element: HTMLDivElement | null = null;
-    let calendar_instance: ReturnType<typeof createCalendar> | null = null;
+    let calendar_container_element: HTMLDivElement | undefined = undefined;
+    let calendar_instance: ReturnType<typeof createCalendar> | undefined = undefined;
     let previous_event_signature: string = "";
     let previous_category_signature: string = "";
     let is_dark_mode: boolean = false;
@@ -112,7 +112,7 @@
 
     function destroy_calendar(): void {
         calendar_instance?.destroy();
-        calendar_instance = null;
+        calendar_instance = void 0;
     }
 
     function get_event_signature(): string {

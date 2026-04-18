@@ -26,7 +26,9 @@ vi.mock("$lib/core/services/fixtureDetailsAutoSetup", () => ({
   auto_create_fixture_details_setup,
 }));
 
-function create_fixture(overrides: Partial<ScalarInput<Fixture>> = {}): Fixture {
+function create_fixture(
+  overrides: Partial<ScalarInput<Fixture>> = {},
+): Fixture {
   return {
     id: "fixture_1",
     organization_id: "org_1",
@@ -50,7 +52,7 @@ function create_passed_check(
     check_name,
     status: "passed",
     message,
-    fix_suggestion: null,
+    fix_suggestion: "",
   } as PreFlightCheck;
 }
 
@@ -60,7 +62,7 @@ describe("liveGamesStartFlow", () => {
   });
 
   it("navigates to the live game when all pre-flight checks pass", async () => {
-    const goto = vi.fn(async () => undefined);
+    const goto = vi.fn(async () => {});
     const update_checks = vi.fn();
     const set_is_starting = vi.fn();
     check_fixture_can_start.mockResolvedValue(
@@ -91,7 +93,7 @@ describe("liveGamesStartFlow", () => {
       can_access_route: () => false,
       update_checks,
       set_is_starting,
-      delay: async () => undefined,
+      delay: async () => {},
       check_delay_ms: 0,
     });
 
@@ -102,7 +104,7 @@ describe("liveGamesStartFlow", () => {
   });
 
   it("returns early when the fixture has no id", async () => {
-    const goto = vi.fn(async () => undefined);
+    const goto = vi.fn(async () => {});
     const update_checks = vi.fn();
     const set_is_starting = vi.fn();
 
@@ -125,7 +127,7 @@ describe("liveGamesStartFlow", () => {
       can_access_route: () => false,
       update_checks,
       set_is_starting,
-      delay: async () => undefined,
+      delay: async () => {},
       check_delay_ms: 0,
     });
 

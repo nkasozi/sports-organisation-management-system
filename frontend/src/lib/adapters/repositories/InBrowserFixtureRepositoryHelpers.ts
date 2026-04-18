@@ -38,12 +38,12 @@ export function apply_fixture_entity_filter(
         fixture.away_team_id === filter.team_id,
     );
   }
-  if (filter.round_number !== undefined) {
+  if ("round_number" in filter) {
     filtered = filtered.filter(
       (fixture: Fixture) => fixture.round_number === filter.round_number,
     );
   }
-  if (filter.match_day !== undefined) {
+  if ("match_day" in filter) {
     filtered = filtered.filter(
       (fixture: Fixture) => fixture.match_day === filter.match_day,
     );

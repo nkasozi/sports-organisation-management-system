@@ -165,13 +165,23 @@ export class InBrowserSystemUserRepository
   }
 }
 
-let singleton_instance: InBrowserSystemUserRepository | null = null;
+type SystemUserRepositoryState =
+  | { status: "uninitialized" }
+  | { status: "ready"; repository: InBrowserSystemUserRepository };
+
+let system_user_repository_state: SystemUserRepositoryState = {
+  status: "uninitialized",
+};
 
 export function get_system_user_repository(): InBrowserSystemUserRepository {
-  if (!singleton_instance) {
-    singleton_instance = new InBrowserSystemUserRepository();
+  if (system_user_repository_state.status === "ready") {
+    return system_user_repository_state.repository;
   }
-  return singleton_instance;
+
+  const repository = new InBrowserSystemUserRepository();
+  system_user_repository_state = { status: "ready", repository };
+
+  return repository;
 }
 
 async function reset_system_user_repository(): Promise<void> {

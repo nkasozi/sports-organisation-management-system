@@ -2,11 +2,15 @@ import type { StageType } from "../entities/CompetitionStage";
 
 type ImportanceWeight = 1.0 | 1.5 | 2.0 | 2.5 | 3.0;
 
+export type ImportanceWeightOverride =
+  | { status: "automatic" }
+  | { status: "manual"; value: number };
+
 export interface ImportanceWeightInput {
   stage_type: StageType;
   match_day: number;
   total_match_days: number;
-  manual_override: number | null;
+  manual_override: ImportanceWeightOverride;
 }
 
 function is_final_round(match_day: number, total_match_days: number): boolean {
@@ -45,9 +49,10 @@ function compute_raw_importance_weight(
 export function compute_importance_weight(
   input: ImportanceWeightInput,
 ): number {
-  if (input.manual_override !== null && input.manual_override !== undefined) {
-    return input.manual_override;
+  if (input.manual_override.status === "manual") {
+    return input.manual_override.value;
   }
+
   return compute_raw_importance_weight(
     input.stage_type,
     input.match_day,

@@ -1,13 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { get_sport_by_id_mock } = vi.hoisted(() => ({
-  get_sport_by_id_mock: vi.fn(),
-}));
-
-vi.mock("$lib/adapters/persistence/sportService", () => ({
-  get_sport_by_id: get_sport_by_id_mock,
-}));
-
 import {
   competition_create_status_options,
   load_competition_create_formats,
@@ -15,6 +7,14 @@ import {
   load_competition_create_sport,
   load_competition_create_team_options,
 } from "./competitionCreatePageData";
+
+const { get_sport_by_id_mock } = vi.hoisted(() => ({
+  get_sport_by_id_mock: vi.fn(),
+}));
+
+vi.mock("$lib/adapters/persistence/sportService", () => ({
+  get_sport_by_id: get_sport_by_id_mock,
+}));
 
 describe("competitionCreatePageData", () => {
   function create_dependencies() {
@@ -47,7 +47,10 @@ describe("competitionCreatePageData", () => {
 
     await expect(
       load_competition_create_organizations({
-        current_auth_profile: { organization_id: "organization-1" } as never,
+        current_auth_profile_state: {
+          status: "present",
+          profile: { organization_id: "organization-1" } as never,
+        },
         dependencies: dependencies as never,
         is_organization_restricted: true,
       }),
@@ -102,9 +105,30 @@ describe("competitionCreatePageData", () => {
       load_competition_create_sport("organization-1", [
         { id: "organization-1", sport_id: "sport-1" },
       ] as never),
-    ).resolves.toEqual({ id: "sport-1", name: "Football" });
+    ).resolves.toEqual({
+      success: true,
+      data: { id: "sport-1", name: "Football" },
+    });
+
+    get_sport_by_id_mock.mockResolvedValueOnce({
+      success: false,
+      error: "Sport not found: id=sport-1",
+    });
+
+    await expect(
+      load_competition_create_sport("organization-1", [
+        { id: "organization-1", sport_id: "sport-1" },
+      ] as never),
+    ).resolves.toEqual({
+      success: false,
+      error: "Sport not found: id=sport-1",
+    });
+
     await expect(
       load_competition_create_sport("missing", [] as never),
-    ).resolves.toBeNull();
+    ).resolves.toEqual({
+      success: false,
+      error: "Organization sport is unavailable",
+    });
   });
 });

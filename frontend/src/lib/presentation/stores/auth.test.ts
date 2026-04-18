@@ -1,14 +1,24 @@
 import { get } from "svelte/store";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { UserProfile } from "./auth";
+import { get_sidebar_menu_for_role } from "$lib/adapters/iam/LocalAuthorizationAdapter";
 
-const mock_app_settings_store =  {} as Record<string, string>;
+import type { UserProfile } from "./auth";
+import {
+  auth_store,
+  can_switch_profiles,
+  current_profile_display_name,
+  current_user_role,
+  current_user_role_display,
+  sidebar_menu_items,
+} from "./auth";
+
+const mock_app_settings_store = {} as Record<string, string>;
 
 vi.mock("$lib/infrastructure/container", () => ({
   get_app_settings_storage: () => ({
     get_setting: (key: string) =>
-      Promise.resolve(mock_app_settings_store[key] ?? null),
+      Promise.resolve(mock_app_settings_store[key] ?? ""),
     set_setting: (key: string, value: string) => {
       mock_app_settings_store[key] = value;
       return Promise.resolve();
@@ -35,7 +45,7 @@ vi.mock("$app/navigation", () => ({
 }));
 
 vi.mock("$lib/adapters/initialization/brandingSyncService", () => ({
-  sync_branding_with_profile: vi.fn().mockResolvedValue(undefined),
+  sync_branding_with_profile: vi.fn().mockImplementation(async () => {}),
 }));
 
 const { mock_convex_query } = vi.hoisted(() => ({
@@ -52,7 +62,7 @@ vi.mock("$lib/infrastructure/sync/convexSyncService", () => ({
       mutation: vi.fn(),
     }),
   }),
-  write_convex_user_to_local_dexie: vi.fn().mockResolvedValue(undefined),
+  write_convex_user_to_local_dexie: vi.fn().mockImplementation(async () => {}),
 }));
 
 vi.mock("$lib/adapters/iam/clerkAuthService", () => {
@@ -68,8 +78,14 @@ vi.mock("$lib/adapters/iam/clerkAuthService", () => {
     clerk_session: make_readable({
       is_loaded: true,
       is_signed_in: true,
-      user: { email_address: "admin@test.com" },
-      session_id: "test-session",
+      user_state: {
+        status: "present",
+        user: { email_address: "admin@test.com" },
+      },
+      session_id_state: {
+        status: "present",
+        session_id: "test-session",
+      },
     }),
   };
 });
@@ -140,17 +156,6 @@ vi.mock("./profileLoader", () => ({
     return Promise.resolve(create_test_profiles());
   }),
 }));
-
-import { get_sidebar_menu_for_role } from "$lib/adapters/iam/LocalAuthorizationAdapter";
-
-import {
-  auth_store,
-  can_switch_profiles,
-  current_profile_display_name,
-  current_user_role,
-  current_user_role_display,
-  sidebar_menu_items,
-} from "./auth";
 
 describe("auth_store integration", () => {
   beforeEach(async () => {
@@ -245,10 +250,10 @@ describe("auth_store integration", () => {
   });
 
   describe("current_user_role derived store", () => {
-    it("returns null when no profile is set", async () => {
+    it("returns an empty role when no profile is set", async () => {
       await auth_store.logout();
       const role = get(current_user_role);
-      expect(role).toBeNull();
+      expect(role).toBe("");
     });
 
     it("returns correct role after profile switch", async () => {
@@ -362,9 +367,11 @@ describe("auth_store integration", () => {
       await auth_store.switch_profile(target_profile!.id);
       const state = get(auth_store);
 
-      expect(state.current_profile).toBeDefined();
-      expect(state.current_profile!.id).toBe(target_profile!.id);
-      expect(state.current_profile!.role).toBe("official");
+      expect(state.current_profile.status).toBe("present");
+      if (state.current_profile.status === "present") {
+        expect(state.current_profile.profile.id).toBe(target_profile!.id);
+        expect(state.current_profile.profile.role).toBe("official");
+      }
     });
   });
 
@@ -565,8 +572,12 @@ describe("auth_store — Convex unavailable fallback", () => {
     expect(result.success).toBe(true);
     const state = get(auth_store);
     expect(state.is_initialized).toBe(true);
-    expect(state.current_profile).not.toBeNull();
-    expect(state.current_profile?.email).toBe("admin@test.com");
+    expect(state.current_profile.status).toBe("present");
+    expect(
+      state.current_profile.status === "present"
+        ? state.current_profile.profile.email
+        : "",
+    ).toBe("admin@test.com");
   });
 
   it("succeeds using clerk email when Convex returns a failed response", async () => {
@@ -580,7 +591,11 @@ describe("auth_store — Convex unavailable fallback", () => {
     expect(result.success).toBe(true);
     const state = get(auth_store);
     expect(state.is_initialized).toBe(true);
-    expect(state.current_profile?.email).toBe("admin@test.com");
+    expect(
+      state.current_profile.status === "present"
+        ? state.current_profile.profile.email
+        : "",
+    ).toBe("admin@test.com");
   });
 
   it("initializes is_initialized to false before the fallback succeeds", async () => {

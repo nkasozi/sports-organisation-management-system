@@ -35,10 +35,12 @@ export function create_team_staff_use_cases(
       filter?: TeamStaffFilter,
       pagination?: QueryOptions,
     ): PaginatedAsyncResult<TeamStaff> {
-      return staff_repository.find_all(filter, pagination);
+      return staff_repository.find_all(filter ?? {}, pagination ?? {});
     },
 
-    async get_by_id(id: ScalarValueInput<TeamStaff["id"]>): AsyncResult<TeamStaff> {
+    async get_by_id(
+      id: ScalarValueInput<TeamStaff["id"]>,
+    ): AsyncResult<TeamStaff> {
       if (!id || id.trim().length === 0) {
         return create_failure_result("Team staff ID is required");
       }

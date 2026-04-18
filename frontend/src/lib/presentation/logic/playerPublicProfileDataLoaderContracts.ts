@@ -77,10 +77,14 @@ export interface PlayerPublicProfileDataDependencies {
   };
 }
 
+export type PlayerPublicPositionState =
+  | { status: "missing" }
+  | { status: "present"; position: PlayerPosition };
+
 export interface PlayerPublicProfilePageData {
   profile: PlayerProfile;
   player: Player;
-  position: PlayerPosition | null;
+  position_state: PlayerPublicPositionState;
   overall_stats: PlayerPublicProfileStats;
   team_stats: PlayerPublicTeamStats[];
   link_sections: PlayerPublicProfileLinkSections;

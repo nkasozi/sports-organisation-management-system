@@ -13,6 +13,7 @@ import type {
   CompetitionFormatFilter,
   CompetitionFormatRepository,
 } from "../../core/interfaces/ports";
+import { build_competition_format_not_found_by_code_error } from "../../core/interfaces/ports";
 import type { Result } from "../../core/types/Result";
 import {
   create_failure_result,
@@ -132,11 +133,16 @@ export class InBrowserCompetitionFormatRepository
     }
   }
 
-  async find_by_code(code: string): Promise<Result<CompetitionFormat | null>> {
+  async find_by_code(code: string): Promise<Result<CompetitionFormat>> {
     try {
       const all_formats = await this.database.competition_formats.toArray();
       const found = all_formats.find((format) => format.code === code);
-      return create_success_result(found ?? null);
+      if (!found) {
+        return create_failure_result(
+          build_competition_format_not_found_by_code_error(code),
+        );
+      }
+      return create_success_result(found);
     } catch (error) {
       console.warn(
         "[CompetitionFormatRepository] Failed to find format by code",
@@ -179,13 +185,23 @@ export class InBrowserCompetitionFormatRepository
   }
 }
 
-let singleton_instance: InBrowserCompetitionFormatRepository | null = null;
+type CompetitionFormatRepositoryState =
+  | { status: "uninitialized" }
+  | { status: "ready"; repository: InBrowserCompetitionFormatRepository };
+
+let competition_format_repository_state: CompetitionFormatRepositoryState = {
+  status: "uninitialized",
+};
 
 export function get_competition_format_repository(): CompetitionFormatRepository {
-  if (!singleton_instance) {
-    singleton_instance = new InBrowserCompetitionFormatRepository();
+  if (competition_format_repository_state.status === "ready") {
+    return competition_format_repository_state.repository;
   }
-  return singleton_instance;
+
+  const repository = new InBrowserCompetitionFormatRepository();
+  competition_format_repository_state = { status: "ready", repository };
+
+  return repository;
 }
 export async function reset_competition_format_repository(): Promise<void> {
   const repository =
@@ -196,7 +212,5 @@ export async function reset_competition_format_repository(): Promise<void> {
 export function create_default_competition_formats_for_organization(
   organization_id: NonNullable<CreateCompetitionFormatInput["organization_id"]>,
 ): import("$lib/core/types/DomainScalars").ScalarInput<CompetitionFormat>[] {
-  return get_default_competition_formats_for_organization_core(
-    organization_id,
-  );
+  return get_default_competition_formats_for_organization_core(organization_id);
 }

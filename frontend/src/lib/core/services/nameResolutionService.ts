@@ -1,11 +1,9 @@
 import type { BaseEntity } from "$lib/core/entities/BaseEntity";
 import type { GenericEntityUseCases } from "$lib/infrastructure/registry/entityUseCasesRegistry";
 
-interface NameResolutionResult {
-  success: boolean;
-  resolved_id: string | null;
-  error_message: string | null;
-}
+export type NameResolutionResult =
+  | { success: true; resolved_id: string }
+  | { success: false; error_message: string };
 
 export interface NameResolutionInput {
   entity_name: string;
@@ -40,11 +38,11 @@ function build_empty_name_error_message(entity_type: string): string {
 }
 
 function build_success_result(resolved_id: string): NameResolutionResult {
-  return { success: true, resolved_id, error_message: null };
+  return { success: true, resolved_id };
 }
 
 function build_failure_result(error_message: string): NameResolutionResult {
-  return { success: false, resolved_id: null, error_message };
+  return { success: false, error_message };
 }
 
 function is_empty_or_whitespace(value: string): boolean {

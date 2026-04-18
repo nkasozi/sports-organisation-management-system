@@ -7,6 +7,7 @@ import {
 } from "$lib/core/interfaces/ports";
 import {
   build_player_assignments,
+  type BulkPlayerAssignmentSelectedTeamState,
   create_membership_input,
   get_selected_player_assignments,
   get_today_date,
@@ -48,18 +49,23 @@ export interface BulkPlayerAssignmentPageDependencies {
   };
 }
 
+export type BulkPlayerAssignmentProfileState =
+  | { status: "missing" }
+  | { status: "present"; profile: UserScopeProfile };
+
 export function build_bulk_player_assignment_auth_filter(
-  current_profile: UserScopeProfile | null,
+  profile_state: BulkPlayerAssignmentProfileState,
 ): Record<string, string> {
-  if (!current_profile) return {};
-  return build_authorization_list_filter(current_profile, [
+  if (profile_state.status === "missing") return {};
+
+  return build_authorization_list_filter(profile_state.profile, [
     "organization_id",
     "team_id",
   ]);
 }
 
 export async function load_bulk_player_assignment_page_data(command: {
-  current_profile: UserScopeProfile | null;
+  profile_state: BulkPlayerAssignmentProfileState;
   dependencies: BulkPlayerAssignmentPageDependencies;
 }): Promise<{
   all_player_assignments: PlayerAssignment[];
@@ -68,7 +74,7 @@ export async function load_bulk_player_assignment_page_data(command: {
   teams: Team[];
 }> {
   const auth_filter = build_bulk_player_assignment_auth_filter(
-    command.current_profile,
+    command.profile_state,
   );
   const [teams_result, players_result, memberships_result] = await Promise.all([
     command.dependencies.team_use_cases.list(auth_filter, {
@@ -101,7 +107,10 @@ export async function load_bulk_player_assignment_page_data(command: {
     };
   }
   const teams = teams_result.data?.items ?? [];
-  const user_organization_id = command.current_profile?.organization_id;
+  const user_organization_id =
+    command.profile_state.status === "present"
+      ? command.profile_state.profile.organization_id
+      : "";
   const gender_filter: Record<string, string> =
     user_organization_id && user_organization_id !== "*"
       ? { organization_id: user_organization_id }
@@ -130,7 +139,7 @@ export async function load_bulk_player_assignment_page_data(command: {
 export async function save_bulk_player_assignments(command: {
   assigned_players_on_other_teams: PlayerAssignment[];
   dependencies: BulkPlayerAssignmentPageDependencies;
-  selected_team: Team | null;
+  selected_team_state: BulkPlayerAssignmentSelectedTeamState;
   selected_team_id: string;
   unassigned_players: PlayerAssignment[];
 }): Promise<{ error_count: number; success_count: number }> {
@@ -143,7 +152,7 @@ export async function save_bulk_player_assignments(command: {
     const result = await command.dependencies.membership_use_cases.create(
       create_membership_input(
         assignment,
-        command.selected_team,
+        command.selected_team_state,
         command.selected_team_id,
       ),
     );

@@ -12,12 +12,12 @@ import type { Venue } from "$lib/core/entities/Venue";
 import { type PeriodButtonConfig } from "$lib/presentation/logic/liveGameDetailState";
 
 export interface LiveGameDetailPageState {
-  fixture: Fixture | null;
-  home_team: Team | null;
-  away_team: Team | null;
-  competition: Competition | null;
-  sport: Sport | null;
-  venue: Venue | null;
+  fixture?: Fixture;
+  home_team?: Team;
+  away_team?: Team;
+  competition?: Competition;
+  sport?: Sport;
+  venue?: Venue;
   organization_name: string;
   assigned_officials_data: Array<{
     official: Official;
@@ -51,7 +51,7 @@ export interface LiveGameDetailModalState {
 
 export interface LiveGameDetailEventState {
   show_event_modal: boolean;
-  selected_event_type: QuickEventButton | null;
+  selected_event_type?: QuickEventButton;
   selected_team_side: "home" | "away";
   selected_player_id: string;
   secondary_player_id: string;
@@ -70,7 +70,7 @@ export interface LiveGameDetailToastState {
 export interface LiveGameDetailDerivedState {
   effective_periods: SportGamePeriod[];
   playing_periods: SportGamePeriod[];
-  current_period_id: GamePeriod | null;
+  current_period_id?: GamePeriod;
   current_period_label: string;
   is_current_period_playing: boolean;
   elapsed_minutes: number;
@@ -85,7 +85,7 @@ export interface LiveGameDetailDerivedState {
   sorted_events: Fixture["game_events"];
   is_game_active: boolean;
   is_game_completed: boolean;
-  period_button_config: PeriodButtonConfig | null;
+  period_button_config?: PeriodButtonConfig;
   show_extra_time_button: boolean;
   all_event_buttons: QuickEventButton[];
   player_select_options: Array<{ value: string; label: string }>;

@@ -6,11 +6,11 @@ import type {
   SyncOrchestratorPort,
   SyncTableError,
 } from "$lib/core/interfaces/ports";
+import type { ScalarInput } from "$lib/core/types/DomainScalars";
 import {
   create_failure_result,
   create_success_result,
 } from "$lib/core/types/Result";
-import type { ScalarInput } from "$lib/core/types/DomainScalars";
 import type {
   ConflictRecord,
   ConflictResolutionAction,
@@ -24,10 +24,18 @@ import {
   type SyncProgress,
   type SyncResult,
 } from "$lib/infrastructure/sync/convexSyncService";
+import { EPOCH_TIMESTAMP } from "$lib/infrastructure/sync/syncTypes";
 import { conflict_store } from "$lib/presentation/stores/conflictStore";
 
 import { execute_conflict_resolution } from "./syncStoreResolveConflict";
-import { SYNC_INITIAL_STATE, type SyncState } from "./syncStoreTypes";
+import {
+  create_empty_last_sync_result_state,
+  create_never_last_sync_time_state,
+  create_recorded_last_sync_result_state,
+  create_recorded_last_sync_time_state,
+  SYNC_INITIAL_STATE,
+  type SyncState,
+} from "./syncStoreTypes";
 
 type EditableConflictRecord = ScalarInput<ConflictRecord>;
 
@@ -44,12 +52,20 @@ function resolve_sync_error_message(result: SyncResult): string {
   return result.errors[0]?.error ?? SYNC_FALLBACK_ERROR_MESSAGE;
 }
 
+function create_last_sync_time_state(timestamp: string) {
+  if (timestamp === EPOCH_TIMESTAMP) {
+    return create_never_last_sync_time_state();
+  }
+
+  return create_recorded_last_sync_time_state(timestamp);
+}
+
 function create_sync_store() {
   const { subscribe, set, update } = writable<SyncState>(SYNC_INITIAL_STATE);
   function handle_progress(progress: SyncProgress): void {
     update((state) => ({
       ...state,
-      current_progress: progress,
+      current_progress: { status: "active", progress },
       is_syncing: progress.status === "syncing",
     }));
   }
@@ -70,10 +86,17 @@ function create_sync_store() {
     update((state) => ({
       ...state,
       is_syncing: false,
-      last_sync_at: new Date().toISOString(),
-      last_sync_result: result,
-      current_progress: null,
-      error_message: result.success ? null : resolve_sync_error_message(result),
+      last_sync_at: create_recorded_last_sync_time_state(
+        new Date().toISOString(),
+      ),
+      last_sync_result: create_recorded_last_sync_result_state(result),
+      current_progress: { status: "idle" },
+      error_message: result.success
+        ? { status: "clear" }
+        : {
+            status: "present",
+            message: resolve_sync_error_message(result),
+          },
       has_pending_conflicts: has_conflicts,
     }));
   }
@@ -85,7 +108,8 @@ function create_sync_store() {
       update((state) => ({
         ...state,
         is_configured: manager.is_configured(),
-        last_sync_at: get_last_sync_timestamp(),
+        last_sync_at: create_last_sync_time_state(get_last_sync_timestamp()),
+        last_sync_result: create_empty_last_sync_result_state(),
       }));
       return manager;
     },
@@ -109,8 +133,8 @@ function create_sync_store() {
       update((state) => ({
         ...state,
         is_syncing: true,
-        error_message: null,
-        current_progress: null,
+        error_message: { status: "clear" },
+        current_progress: { status: "idle" },
       }));
       try {
         const manager = get_sync_manager();
@@ -187,21 +211,11 @@ function create_sync_store() {
       conflict: EditableConflictRecord,
       action: ConflictResolutionAction,
       merged_data?: Record<string, unknown>,
-    ): Promise<{ success: boolean; error: string | null }> => {
+    ): Promise<{ success: true } | { success: false; error: string }> => {
       const manager = get_sync_manager();
-      const convex_client = (
-        manager as unknown as {
-          convex_client: {
-            mutation: (
-              n: string,
-              a: Record<string, unknown>,
-            ) => Promise<unknown>;
-            query: (n: string, a: Record<string, unknown>) => Promise<unknown>;
-          } | null;
-        }
-      ).convex_client;
+      const convex_client_result = manager.get_convex_client();
       const result = await execute_conflict_resolution(
-        convex_client,
+        convex_client_result,
         conflict,
         action,
         merged_data,

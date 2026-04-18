@@ -3,7 +3,6 @@ import type {
   CreateCompetitionStageInput,
   UpdateCompetitionStageInput,
 } from "../entities/CompetitionStage";
-import type { ScalarValueInput } from "../types/DomainScalars";
 import { validate_competition_stage_input } from "../entities/CompetitionStage";
 import type {
   CompetitionStageFilter,
@@ -12,6 +11,7 @@ import type {
 } from "../interfaces/ports";
 import type { FixtureRepository } from "../interfaces/ports";
 import type { CompetitionStageUseCasesPort } from "../interfaces/ports";
+import type { ScalarValueInput } from "../types/DomainScalars";
 import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
 import { create_failure_result, create_success_result } from "../types/Result";
 
@@ -51,7 +51,7 @@ export function create_competition_stage_use_cases(
       filter?: CompetitionStageFilter,
       options?: QueryOptions,
     ): PaginatedAsyncResult<CompetitionStage> {
-      return repository.find_all(filter, options);
+      return repository.find_all(filter ?? {}, options ?? {});
     },
 
     async update(

@@ -1,14 +1,14 @@
 import type { Fixture } from "$lib/core/entities/Fixture";
 import type { Organization } from "$lib/core/entities/Organization";
 import { DEFAULT_TEAM_LOGO } from "$lib/core/entities/Team";
-import { ANY_VALUE } from "$lib/core/interfaces/ports";
+import { ANY_VALUE, type UserScopeProfile } from "$lib/core/interfaces/ports";
 
 type ListResult<T> = Promise<{ success: boolean; data?: { items: T[] } }>;
 type GetByIdResult<T> = Promise<{ success: boolean; data?: T }>;
-type LiveGamesScopeProfile = {
-  organization_id?: string | null;
-  team_id?: string | null;
-};
+
+export type LiveGamesProfileState =
+  | { status: "missing" }
+  | { status: "present"; profile: UserScopeProfile };
 
 export interface LiveGamesDataDependencies {
   organization_use_cases: {
@@ -51,23 +51,23 @@ export interface LiveGamesFixtureState {
 }
 
 export function can_user_change_live_games_organization(
-  profile: LiveGamesScopeProfile | null,
+  profile_state: LiveGamesProfileState,
 ): boolean {
-  if (!profile) return false;
-  return profile.organization_id === ANY_VALUE;
+  if (profile_state.status === "missing") return false;
+  return profile_state.profile.organization_id === ANY_VALUE;
 }
 
 function build_live_games_auth_filter(
-  profile: LiveGamesScopeProfile | null,
+  profile_state: LiveGamesProfileState,
 ): Record<string, string> {
-  if (!profile) return {};
+  if (profile_state.status === "missing") return {};
 
   const filter: Record<string, string> = {};
-  if (profile.organization_id && profile.organization_id !== ANY_VALUE) {
-    filter.organization_id = profile.organization_id;
+  if (profile_state.profile.organization_id !== ANY_VALUE) {
+    filter.organization_id = profile_state.profile.organization_id;
   }
-  if (profile.team_id && profile.team_id !== ANY_VALUE) {
-    filter.team_id = profile.team_id;
+  if (profile_state.profile.team_id !== ANY_VALUE) {
+    filter.team_id = profile_state.profile.team_id;
   }
   return filter;
 }
@@ -145,28 +145,31 @@ async function load_competition_sport_data_for_fixtures(
 
 export async function load_live_games_organizations(
   dependencies: Pick<LiveGamesDataDependencies, "organization_use_cases">,
-  profile: LiveGamesScopeProfile | null,
+  profile_state: LiveGamesProfileState,
 ): Promise<Organization[]> {
   const result = await dependencies.organization_use_cases.list({});
   if (!result.success) return [];
 
   const organizations = result.data?.items || [];
-  const organization_scope = profile?.organization_id;
-  if (!organization_scope || organization_scope === ANY_VALUE) {
+  if (profile_state.status === "missing") {
+    return organizations;
+  }
+
+  if (profile_state.profile.organization_id === ANY_VALUE) {
     return organizations;
   }
 
   return organizations.filter(
-    (organization) => organization.id === organization_scope,
+    (organization) => organization.id === profile_state.profile.organization_id,
   );
 }
 
 export async function load_live_games_fixture_state(
   dependencies: LiveGamesDataDependencies,
-  profile: LiveGamesScopeProfile | null,
+  profile_state: LiveGamesProfileState,
   organization_id: string,
 ): Promise<LiveGamesFixtureState> {
-  const filter = build_live_games_auth_filter(profile);
+  const filter = build_live_games_auth_filter(profile_state);
   filter.organization_id = organization_id;
 
   const fixtures_result = await dependencies.fixture_use_cases.list(filter);

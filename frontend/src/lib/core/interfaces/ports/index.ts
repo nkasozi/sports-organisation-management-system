@@ -123,6 +123,18 @@ export type {
   VenueFilter,
   VenueRepository,
 } from "./external/repositories/index";
+export {
+  build_calendar_token_not_found_error,
+  build_competition_format_not_found_by_code_error,
+  build_game_event_type_not_found_by_code_error,
+  build_official_performance_rating_not_found_error,
+  build_player_position_not_found_by_code_error,
+  is_calendar_token_not_found_error,
+  is_competition_format_not_found_by_code_error,
+  is_game_event_type_not_found_by_code_error,
+  is_official_performance_rating_not_found_error,
+  is_player_position_not_found_by_code_error,
+} from "./external/repositories/index";
 export type {
   LocalChangePublisherPort,
   LocalSyncStatus,

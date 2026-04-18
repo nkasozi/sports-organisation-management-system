@@ -29,7 +29,7 @@ describe("fixtureLineupWizard", () => {
   });
 
   it("derives initial selected player ids capped by max", () => {
-    const players =  [
+    const players = [
       { id: "p1" } as TeamPlayer,
       { id: "p2" } as TeamPlayer,
       { id: "p3" } as TeamPlayer,
@@ -47,7 +47,7 @@ describe("fixtureLineupWizard", () => {
   });
 
   it("derives initial selected players with full info", () => {
-    const players =  [
+    const players = [
       {
         id: "p1",
         first_name: "John",
@@ -92,7 +92,7 @@ describe("fixtureLineupWizard", () => {
   });
 
   it("converts team players to lineup players by ids", () => {
-    const players =  [
+    const players = [
       {
         id: "p1",
         first_name: "A",
@@ -115,7 +115,7 @@ describe("fixtureLineupWizard", () => {
   });
 
   it("summarizes selected players sorted by jersey then name", () => {
-    const players =  [
+    const players = [
       {
         id: "p2",
         first_name: "B",
@@ -134,8 +134,8 @@ describe("fixtureLineupWizard", () => {
         id: "p3",
         first_name: "C",
         last_name: "Three",
-        jersey_number: null,
-        position: null,
+        jersey_number: 0,
+        position: "",
       } as TeamPlayer,
     ] as TeamPlayer[];
 
@@ -148,7 +148,7 @@ describe("fixtureLineupWizard", () => {
   });
 
   it("sorts lineup players by jersey then name", () => {
-    const players =  [
+    const players = [
       {
         id: "p2",
         first_name: "B",
@@ -171,8 +171,8 @@ describe("fixtureLineupWizard", () => {
         id: "p3",
         first_name: "C",
         last_name: "Three",
-        jersey_number: null,
-        position: null,
+        jersey_number: 0,
+        position: "",
         is_captain: false,
         is_substitute: false,
       },

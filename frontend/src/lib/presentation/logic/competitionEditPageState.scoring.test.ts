@@ -24,7 +24,7 @@ describe("scoring overrides", () => {
   });
 
   it("toggles tie breakers against format defaults", () => {
-    const format_default_tie_breakers =  [
+    const format_default_tie_breakers = [
       "goal_difference",
       "goals_scored",
     ] as TieBreaker[];
@@ -63,8 +63,6 @@ describe("scoring overrides", () => {
 
     expect(reset_form_data.rule_overrides).toEqual({
       custom_rules: { travel_window: "48h" },
-      points_config_override: undefined,
-      tie_breakers_override: undefined,
     });
   });
 });

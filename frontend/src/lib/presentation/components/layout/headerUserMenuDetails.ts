@@ -3,6 +3,10 @@ interface HeaderUserMenuDetailRow {
   value: string;
 }
 
+type HeaderUserMenuDetailRowState =
+  | { status: "omitted" }
+  | { status: "present"; row: HeaderUserMenuDetailRow };
+
 interface BuildHeaderUserMenuDetailsCommand {
   current_profile_email: string;
   current_user_role_display: string;
@@ -18,19 +22,29 @@ const DETAIL_LABEL_TEAM = "Team";
 const TEAM_SCOPE_ALL = "All Teams";
 const TEAM_SCOPE_WILDCARD = "*";
 
+function create_omitted_header_user_menu_detail_row_state(): HeaderUserMenuDetailRowState {
+  return { status: "omitted" };
+}
+
+function create_present_header_user_menu_detail_row_state(
+  row: HeaderUserMenuDetailRow,
+): HeaderUserMenuDetailRowState {
+  return { status: "present", row };
+}
+
 function create_header_user_menu_detail_row(
   label: string,
   value: string,
-): HeaderUserMenuDetailRow | null {
+): HeaderUserMenuDetailRowState {
   const normalized_value = value.trim();
   if (!normalized_value) {
-    return null;
+    return create_omitted_header_user_menu_detail_row_state();
   }
 
-  return {
+  return create_present_header_user_menu_detail_row_state({
     label,
     value: normalized_value,
-  };
+  });
 }
 
 function format_header_user_menu_team_value(
@@ -57,7 +71,7 @@ function format_header_user_menu_team_value(
 export function build_header_user_menu_details(
   command: BuildHeaderUserMenuDetailsCommand,
 ): HeaderUserMenuDetailRow[] {
-  const header_user_menu_detail_rows = [
+  const header_user_menu_detail_row_states = [
     create_header_user_menu_detail_row(
       DETAIL_LABEL_EMAIL,
       command.current_profile_email,
@@ -79,10 +93,10 @@ export function build_header_user_menu_details(
     ),
   ];
 
-  return header_user_menu_detail_rows.filter(
-    (
-      header_user_menu_detail_row,
-    ): header_user_menu_detail_row is HeaderUserMenuDetailRow =>
-      header_user_menu_detail_row !== null,
+  return header_user_menu_detail_row_states.flatMap(
+    (header_user_menu_detail_row_state: HeaderUserMenuDetailRowState) =>
+      header_user_menu_detail_row_state.status === "present"
+        ? [header_user_menu_detail_row_state.row]
+        : [],
   );
 }

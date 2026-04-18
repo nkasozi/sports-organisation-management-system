@@ -122,7 +122,7 @@ describe("FixtureLineupUseCases", () => {
 
       const result = await use_cases.list(filter);
 
-      expect(mock_repository.find_all).toHaveBeenCalledWith(filter, undefined);
+      expect(mock_repository.find_all).toHaveBeenCalledWith(filter, {});
     });
   });
 
@@ -257,7 +257,7 @@ describe("FixtureLineupUseCases", () => {
       expect(result.success).toBe(true);
       expect(mock_repository.find_by_fixture).toHaveBeenCalledWith(
         "fixture-123",
-        undefined,
+        void 0,
       );
     });
 
@@ -290,7 +290,7 @@ describe("FixtureLineupUseCases", () => {
       expect(mock_repository.find_by_fixture_and_team).toHaveBeenCalledWith(
         "fixture-123",
         "team-123",
-        undefined,
+        void 0,
       );
     });
 

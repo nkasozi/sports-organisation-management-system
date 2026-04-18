@@ -8,20 +8,18 @@
 
     import ManagedGamePageController from "./ManagedGamePageController.svelte";
 
-    export let back_path: string;
-    export let back_button_label: string;
-    export let error_title: string;
-    export let event_modal_component: any;
-    export let fixture_use_cases: Pick<
+    export let back_path!: string;
+    export let back_button_label!: string;
+    export let error_title!: string;
+    export let event_modal_component!: any;
+    export let fixture_use_cases!: Pick<
         FixtureUseCasesPort,
         "start_fixture" | "end_fixture" | "record_game_event" | "update_period"
     >;
-    export let load_bundle: (
+    export let load_bundle!: (
         fixture_id: string,
     ) => Promise<ManagedGameLoadResult>;
-    export let before_start: (
-        fixture: Fixture | null,
-    ) => Promise<ManagedGameStartCheck>;
+    export let before_start!: (fixture: Fixture) => Promise<ManagedGameStartCheck>;
 </script>
 
 <ManagedGamePageController

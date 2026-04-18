@@ -1,13 +1,13 @@
 import type { Table } from "dexie";
 
 import type { BaseEntity } from "../../core/entities/BaseEntity";
-import type { ScalarValueInput } from "../../core/types/DomainScalars";
 import {
   create_timestamp_fields,
   generate_unique_id,
   update_timestamp,
 } from "../../core/entities/BaseEntity";
 import type { QueryOptions } from "../../core/interfaces/ports";
+import type { ScalarValueInput } from "../../core/types/DomainScalars";
 import type {
   AsyncResult,
   PaginatedAsyncResult,
@@ -30,6 +30,10 @@ interface RepositoryFailureDetails {
   operation: string;
   entity_prefix?: string;
   log_level?: "warn" | "error";
+}
+
+function has_filter_fields<TFilter extends object>(filter: TFilter): boolean {
+  return Object.keys(filter).length > 0;
 }
 
 function create_entity_not_found_result(
@@ -65,11 +69,14 @@ async function execute_repository_operation<TData>(
   }
 }
 
-export function find_all_entities<TEntity extends BaseEntity, TFilter>(
+export function find_all_entities<
+  TEntity extends BaseEntity,
+  TFilter extends object,
+>(
   table: Table<TEntity, string>,
-  filter: TFilter | undefined,
-  options: QueryOptions | undefined,
+  filter: Partial<TFilter>,
   apply_entity_filter: (entities: TEntity[], filter: TFilter) => TEntity[],
+  options?: QueryOptions,
 ): PaginatedAsyncResult<TEntity> {
   return execute_repository_operation(
     {
@@ -79,8 +86,8 @@ export function find_all_entities<TEntity extends BaseEntity, TFilter>(
     },
     async () => {
       let all_entities = await table.toArray();
-      if (filter !== undefined)
-        all_entities = apply_entity_filter(all_entities, filter);
+      if (has_filter_fields(filter))
+        all_entities = apply_entity_filter(all_entities, filter as TFilter);
       const total_count = all_entities.length;
       const sorted_entities = sort_entities_by_options(all_entities, options);
       const paginated_entities = paginate_entity_slice(
@@ -124,8 +131,8 @@ export function find_entities_by_ids<TEntity extends BaseEntity>(
       operation: "fetch entities by ids",
     },
     async () =>
-      (await table.bulkGet(ids)).filter(
-        (entity): entity is TEntity => entity !== undefined,
+      (await table.bulkGet(ids)).filter((entity): entity is TEntity =>
+        Boolean(entity),
       ),
   );
 }

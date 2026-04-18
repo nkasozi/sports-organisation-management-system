@@ -12,7 +12,7 @@ export interface PlayerTeamMembership extends BaseEntity {
   player_id: EntityId;
   team_id: EntityId;
   start_date: IsoDateString;
-  jersey_number: number | null;
+  jersey_number: number;
   status: PlayerTeamMembershipStatus;
 }
 
@@ -60,7 +60,7 @@ export function validate_player_team_membership_input(
   }
 
   if (
-    typeof input.jersey_number === "number" &&
+    input.jersey_number !== 0 &&
     (input.jersey_number < 1 || input.jersey_number > 99)
   ) {
     validation_errors.push("Jersey number must be between 1 and 99");

@@ -14,9 +14,9 @@ import {
 describe("uiWizardStepper", () => {
   it("returns the current step and computes progress safely", () => {
     expect(get_current_wizard_step([{ step_title: "Select Team" }], 0)).toEqual(
-      { step_title: "Select Team" },
+      { status: "present", step: { step_title: "Select Team" } },
     );
-    expect(get_current_wizard_step([], 0)).toBeNull();
+    expect(get_current_wizard_step([], 0)).toEqual({ status: "missing" });
     expect(get_wizard_progress_percentage(1, 4)).toBe(50);
     expect(get_wizard_progress_percentage(0, 0)).toBe(0);
   });

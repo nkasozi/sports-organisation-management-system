@@ -15,7 +15,7 @@ import { get_use_cases_for_entity_type } from "../../infrastructure/registry/ent
 
 export async function resolve_dynamic_form_create_result(
   entity_type: string,
-  crud_handlers: EntityCrudHandlers | null,
+  crud_handlers: EntityCrudHandlers | undefined,
   data: Record<string, unknown>,
 ): Promise<Result<BaseEntity, string>> {
   if (crud_handlers?.create) {
@@ -38,7 +38,7 @@ export async function resolve_dynamic_form_create_result(
 
 export async function resolve_dynamic_form_update_result(
   entity_type: string,
-  crud_handlers: EntityCrudHandlers | null,
+  crud_handlers: EntityCrudHandlers | undefined,
   id: string,
   data: Record<string, unknown>,
 ): Promise<Result<BaseEntity, string>> {
@@ -63,7 +63,7 @@ export async function resolve_dynamic_form_update_result(
 export function check_if_player_transfer_is_being_approved(
   entity_type: string,
   is_edit_mode: boolean,
-  entity_data: Partial<BaseEntity> | null,
+  entity_data: Partial<BaseEntity> | undefined,
   form_data: Record<string, unknown>,
 ): boolean {
   return (
@@ -77,7 +77,7 @@ export function check_if_player_transfer_is_being_approved(
 export function is_transfer_entity_and_status_just_changed_to_declined(
   entity_type: string,
   is_edit_mode: boolean,
-  entity_data: Partial<BaseEntity> | null,
+  entity_data: Partial<BaseEntity> | undefined,
   form_data: Record<string, unknown>,
 ): boolean {
   return (

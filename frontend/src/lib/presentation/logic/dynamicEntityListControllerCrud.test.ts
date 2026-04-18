@@ -2,6 +2,15 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { BaseEntity } from "$lib/core/entities/BaseEntity";
 
+import {
+  confirm_dynamic_entity_list_deletion,
+  get_dynamic_entity_list_bulk_delete_state,
+  get_dynamic_entity_list_create_state,
+  get_dynamic_entity_list_edit_state,
+  get_dynamic_entity_list_inline_cancel_state,
+  get_dynamic_entity_list_single_delete_state,
+} from "./dynamicEntityListControllerCrud";
+
 const {
   build_dynamic_entity_list_sub_entity_defaults_mock,
   delete_dynamic_entity_list_entities_mock,
@@ -15,15 +24,6 @@ vi.mock("./dynamicEntityListMutations", () => ({
     build_dynamic_entity_list_sub_entity_defaults_mock,
   delete_dynamic_entity_list_entities: delete_dynamic_entity_list_entities_mock,
 }));
-
-import {
-  confirm_dynamic_entity_list_deletion,
-  get_dynamic_entity_list_bulk_delete_state,
-  get_dynamic_entity_list_create_state,
-  get_dynamic_entity_list_edit_state,
-  get_dynamic_entity_list_inline_cancel_state,
-  get_dynamic_entity_list_single_delete_state,
-} from "./dynamicEntityListControllerCrud";
 
 function create_entity<TExtra extends Record<string, unknown>>(
   id: string,
@@ -49,15 +49,15 @@ describe("dynamicEntityListControllerCrud", () => {
     const entity = create_entity("entity-1", { name: "Lions" });
 
     expect(
-      get_dynamic_entity_list_create_state(null, {
+      get_dynamic_entity_list_create_state(void 0, {
         on_create_requested,
       } as never),
-    ).toEqual({ inline_form_entity: null, show_inline_form: false });
+    ).toEqual({ show_inline_form: false });
     expect(
-      get_dynamic_entity_list_edit_state(entity as never, null, {
+      get_dynamic_entity_list_edit_state(entity as never, void 0, {
         on_edit_requested,
       } as never),
-    ).toEqual({ inline_form_entity: null, show_inline_form: false });
+    ).toEqual({ show_inline_form: false });
     expect(on_create_requested).toHaveBeenCalledOnce();
     expect(on_edit_requested).toHaveBeenCalledWith(entity);
   });
@@ -78,7 +78,7 @@ describe("dynamicEntityListControllerCrud", () => {
     });
 
     expect(
-      get_dynamic_entity_list_create_state(sub_entity_filter as never, null),
+      get_dynamic_entity_list_create_state(sub_entity_filter as never, void 0),
     ).toEqual({
       inline_form_entity: { id: "", team_id: "team-1" },
       show_inline_form: true,
@@ -87,14 +87,13 @@ describe("dynamicEntityListControllerCrud", () => {
       get_dynamic_entity_list_edit_state(
         entity as never,
         sub_entity_filter as never,
-        null,
+        void 0,
       ),
     ).toEqual({
       inline_form_entity: entity,
       show_inline_form: true,
     });
     expect(get_dynamic_entity_list_inline_cancel_state()).toEqual({
-      inline_form_entity: null,
       show_inline_form: false,
     });
   });
@@ -136,7 +135,6 @@ describe("dynamicEntityListControllerCrud", () => {
 
     await expect(
       confirm_dynamic_entity_list_deletion({
-        crud_handlers: null,
         entities: [entity],
         entities_to_delete: [entity],
         entity_type: "team",
@@ -149,7 +147,6 @@ describe("dynamicEntityListControllerCrud", () => {
     });
     await expect(
       confirm_dynamic_entity_list_deletion({
-        crud_handlers: null,
         entities: [entity],
         entities_to_delete: [entity],
         entity_type: "team",

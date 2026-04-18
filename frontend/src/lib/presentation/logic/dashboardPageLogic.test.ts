@@ -64,9 +64,9 @@ function create_mock_dependencies(
 
 function create_default_filters(): DashboardFilters {
   return {
-    organization_filter: undefined,
-    fixture_filter: { status: "scheduled" },
-    organization_count_override: null,
+    organization_scope_state: { status: "unscoped" },
+    fixture_status: "scheduled",
+    organization_count_state: { status: "calculated" },
   } as DashboardFilters;
 }
 
@@ -164,6 +164,18 @@ describe("load_dashboard_data", () => {
       teams: 0,
       players: 0,
     });
+    expect(dependencies.competition_use_cases.list).toHaveBeenCalledWith(
+      {},
+      expect.any(Object),
+    );
+    expect(dependencies.team_use_cases.list).toHaveBeenCalledWith(
+      {},
+      expect.any(Object),
+    );
+    expect(dependencies.player_use_cases.list).toHaveBeenCalledWith(
+      {},
+      expect.any(Object),
+    );
   });
 
   it("returns correct counts from use case responses", async () => {
@@ -249,10 +261,13 @@ describe("load_dashboard_data", () => {
         }),
       },
     });
-    const filters =  {
-      organization_filter: { organization_id: "org_1" },
-      fixture_filter: { status: "scheduled", organization_id: "org_1" },
-      organization_count_override: 1,
+    const filters = {
+      organization_scope_state: {
+        status: "scoped",
+        organization_id: "org_1",
+      },
+      fixture_status: "scheduled",
+      organization_count_state: { status: "fixed", value: 1 },
     } as DashboardFilters;
 
     const result = await load_dashboard_data(dependencies, filters);

@@ -15,7 +15,10 @@ describe("fixtureLineupCreatePageControllerUpdates", () => {
       all_teams: [{ id: "team-1" }],
       all_competitions: [{ id: "competition-1" }],
       organizations: [{ id: "organization-1" }],
-      selected_organization: { id: "organization-1" },
+      selected_organization_state: {
+        status: "present",
+        organization: { id: "organization-1" },
+      },
       error_message: "",
     } as never);
 
@@ -23,7 +26,10 @@ describe("fixtureLineupCreatePageControllerUpdates", () => {
       expect.objectContaining({
         fixtures: [{ id: "fixture-1" }],
         teams: [{ id: "team-1" }],
-        selected_organization: { id: "organization-1" },
+        selected_organization_state: {
+          status: "present",
+          organization: { id: "organization-1" },
+        },
       }),
     );
   });
@@ -36,8 +42,14 @@ describe("fixtureLineupCreatePageControllerUpdates", () => {
           fixture_id: "fixture-1",
           organization_id: "organization-1",
         },
-        selected_fixture: { id: "fixture-1" } as never,
-        selected_organization: { id: "organization-1" } as never,
+        selected_fixture_state: {
+          status: "present",
+          fixture: { id: "fixture-1" },
+        } as never,
+        selected_organization_state: {
+          status: "present",
+          organization: { id: "organization-1" },
+        } as never,
         min_players: 7,
         max_players: 18,
         starters_count: 11,
@@ -61,7 +73,7 @@ describe("fixtureLineupCreatePageControllerUpdates", () => {
           fixture_id: "fixture-1",
           team_id: "team-old",
         }),
-        selected_team: null,
+        selected_team_state: { status: "missing" },
         team_players: [],
         available_teams: [{ id: "team-1" }],
       }),
@@ -72,7 +84,10 @@ describe("fixtureLineupCreatePageControllerUpdates", () => {
     expect(
       build_fixture_lineup_create_team_change_state(
         {
-          selected_team: { id: "team-1" },
+          selected_team_state: {
+            status: "present",
+            team: { id: "team-1" },
+          },
           team_players: [{ id: "player-1" }],
           selected_players: [{ id: "player-1" }],
           validation_error: "Pick more players",
@@ -86,7 +101,10 @@ describe("fixtureLineupCreatePageControllerUpdates", () => {
         "team-1",
       ),
     ).toEqual({
-      selected_team: { id: "team-1" },
+      selected_team_state: {
+        status: "present",
+        team: { id: "team-1" },
+      },
       team_players: [{ id: "player-1" }],
       form_data: {
         organization_id: "organization-1",

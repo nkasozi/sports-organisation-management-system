@@ -1,5 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import {
+  seed_all_data_if_needed,
+  seed_from_convex_or_local,
+} from "./seedingService";
+
 let seeding_complete_flag = false;
 let mock_convex_seed_result = {
   success: false,
@@ -36,7 +41,7 @@ vi.mock("../../infrastructure/events/EventBus", () => ({
 
 vi.mock("../../presentation/stores/currentUser", () => ({
   current_user_store: {
-    set_user: vi.fn().mockResolvedValue(undefined),
+    set_user: vi.fn().mockImplementation(async () => {}),
   },
 }));
 
@@ -62,7 +67,7 @@ vi.mock("../../infrastructure/container", () => ({
   }),
   get_app_settings_storage: () => ({
     get_setting: (key: string) =>
-      Promise.resolve(mock_app_settings_store[key] ?? null),
+      Promise.resolve(mock_app_settings_store[key] ?? ""),
     set_setting: (key: string, value: string) => {
       mock_app_settings_store[key] = value;
       return Promise.resolve();
@@ -127,7 +132,7 @@ const {
         success: true,
         data: { items: [], total_count: 0 },
       }),
-      update: vi.fn().mockResolvedValue({ success: true, data: null }),
+      update: vi.fn().mockResolvedValue({ success: true, data: {} }),
     }),
     mock_competition_formats,
     mock_fixtures,
@@ -342,11 +347,6 @@ vi.mock("../../infrastructure/utils/SeedDataGenerator", () => ({
 }));
 
 vi.stubGlobal("window", globalThis);
-
-import {
-  seed_all_data_if_needed,
-  seed_from_convex_or_local,
-} from "./seedingService";
 
 beforeEach(() => {
   mock_competition_formats.splice(0, mock_competition_formats.length);

@@ -3,7 +3,7 @@ import type {
   ActivityStatus,
   CreateActivityInput,
 } from "./ActivityTypes";
-import { DEFAULT_REMINDERS } from "./ActivityTypes";
+import { DEFAULT_REMINDERS, NO_ACTIVITY_RECURRENCE } from "./ActivityTypes";
 import { ACTIVITY_SOURCE_TYPE } from "./StatusConstants";
 
 export function validate_activity_input(input: CreateActivityInput): {
@@ -72,16 +72,16 @@ export function create_activity_from_fixture(
     end_datetime: end_datetime.toISOString(),
     is_all_day: false,
     location: venue_location,
-    venue_id: null,
+    venue_id: "",
     team_ids: [home_team_id, away_team_id],
     competition_id,
     fixture_id,
     source_type: "fixture",
     source_id: fixture_id,
     status: "scheduled",
-    recurrence: null,
+    recurrence: NO_ACTIVITY_RECURRENCE,
     reminders: [...DEFAULT_REMINDERS],
-    color_override: null,
+    color_override: "",
     notes: "",
   };
 }
@@ -105,16 +105,16 @@ export function create_activity_from_competition(
     end_datetime: end_date,
     is_all_day: true,
     location,
-    venue_id: null,
+    venue_id: "",
     team_ids: [],
     competition_id,
-    fixture_id: null,
+    fixture_id: "",
     source_type: "competition",
     source_id: competition_id,
     status: "scheduled",
-    recurrence: null,
+    recurrence: NO_ACTIVITY_RECURRENCE,
     reminders: [...DEFAULT_REMINDERS],
-    color_override: null,
+    color_override: "",
     notes: "",
   };
 }
@@ -160,7 +160,7 @@ function calculate_activity_duration_minutes(
 }
 
 function is_activity_recurring(activity: Activity): boolean {
-  return activity.recurrence !== null && activity.recurrence.pattern !== "none";
+  return activity.recurrence.pattern !== "none";
 }
 
 function is_activity_from_external_source(activity: Activity): boolean {

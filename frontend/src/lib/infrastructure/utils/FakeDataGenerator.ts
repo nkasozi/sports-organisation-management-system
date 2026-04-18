@@ -26,12 +26,11 @@ class FakeDataGeneratorService {
   constructor(config: FakeDataGeneratorConfig = {}) {
     this.config = {
       locale: "en",
-      seed: undefined,
       enable_fake_data_generation: true,
       ...config,
     };
 
-    if (this.config.seed) {
+    if (typeof this.config.seed === "number") {
       faker.seed(this.config.seed);
     }
   }
@@ -113,7 +112,7 @@ class FakeDataGeneratorService {
 
   update_config(new_config: Partial<FakeDataGeneratorConfig>): void {
     this.config = { ...this.config, ...new_config };
-    if (new_config.seed !== undefined) {
+    if (typeof new_config.seed === "number") {
       faker.seed(new_config.seed);
     }
   }

@@ -4,7 +4,7 @@
     import type { CompetitionStageResultsSection as CompetitionStageSection } from "$lib/presentation/logic/competitionStageResults";
 
     export let stage_section: CompetitionStageSection;
-    export let selected_team_id: string | null;
+    export let selected_team_id: string;
     export let live_team_ids: Set<string>;
     export let format_date: (date_string: string) => string;
     export let get_team_name: (team_id: string) => string;

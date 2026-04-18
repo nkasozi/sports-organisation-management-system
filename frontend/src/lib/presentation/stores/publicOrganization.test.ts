@@ -1,6 +1,8 @@
 import { get } from "svelte/store";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { public_organization_store } from "./publicOrganization";
+
 const public_organization_mocks = vi.hoisted(() => ({
   get_setting: vi.fn(),
   set_setting: vi.fn(),
@@ -18,8 +20,6 @@ vi.mock("$lib/infrastructure/container", () => ({
     remove_setting: public_organization_mocks.remove_setting,
   }),
 }));
-
-import { public_organization_store } from "./publicOrganization";
 
 describe("publicOrganization", () => {
   beforeEach(async () => {

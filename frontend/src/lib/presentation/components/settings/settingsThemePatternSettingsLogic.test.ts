@@ -2,6 +2,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { HeaderFooterStyle } from "$lib/presentation/stores/branding";
 
+import {
+  reset_custom_pattern,
+  save_footer_pattern,
+  save_header_pattern,
+  save_panel_borders_enabled,
+  upload_custom_pattern,
+} from "./settingsThemePatternSettingsLogic";
+
 const { branding_store_update } = vi.hoisted(() => ({
   branding_store_update: vi.fn(),
 }));
@@ -11,14 +19,6 @@ vi.mock("$lib/presentation/stores/branding", () => ({
     update: branding_store_update,
   },
 }));
-
-import {
-  reset_custom_pattern,
-  save_footer_pattern,
-  save_header_pattern,
-  save_panel_borders_enabled,
-  upload_custom_pattern,
-} from "./settingsThemePatternSettingsLogic";
 
 type BrandingConfigLike = {
   background_pattern_url: string;
@@ -152,8 +152,8 @@ describe("settingsThemePatternSettingsLogic", () => {
     });
 
     class FakeFileReader {
-      onerror: (() => void) | null = null;
-      onload: ((event: ProgressEvent<FileReader>) => void) | null = null;
+      onerror: (() => void) | undefined = void 0;
+      onload: ((event: ProgressEvent<FileReader>) => void) | undefined = void 0;
 
       readAsDataURL(): void {
         if (!this.onload) {

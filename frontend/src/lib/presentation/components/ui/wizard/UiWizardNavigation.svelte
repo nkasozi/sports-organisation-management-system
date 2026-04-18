@@ -3,7 +3,7 @@
 
   export let can_go_to_next_step: boolean;
   export let can_go_to_previous_step: boolean;
-  export let current_step: WizardStep | null;
+  export let current_step: WizardStep;
   export let is_busy: boolean;
   export let is_final_step: boolean;
   export let on_cancel: () => void;

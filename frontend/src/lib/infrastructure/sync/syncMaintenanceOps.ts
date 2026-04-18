@@ -1,5 +1,6 @@
 import { get } from "svelte/store";
 
+import type { Result } from "$lib/core/types/Result";
 import { get_app_settings_storage } from "$lib/infrastructure/container";
 
 import { is_signed_in } from "../../adapters/iam/clerkAuthService";
@@ -7,7 +8,7 @@ import type { ConvexClient } from "./syncTypes";
 import { EPOCH_TIMESTAMP, TABLE_NAMES } from "./syncTypes";
 
 interface SyncManagerAccessor {
-  get_convex_client(): ConvexClient | null;
+  get_convex_client(): Result<ConvexClient>;
 }
 
 export function get_last_sync_timestamp(): string {
@@ -28,9 +29,11 @@ export async function delete_record_in_convex(
 ): Promise<boolean> {
   if (!get(is_signed_in)) return false;
 
-  const convex_client = get_sync_manager_fn().get_convex_client();
+  const convex_client_result = get_sync_manager_fn().get_convex_client();
 
-  if (!convex_client) return false;
+  if (!convex_client_result.success) return false;
+
+  const convex_client = convex_client_result.data;
 
   try {
     const result = (await convex_client.mutation("sync:delete_record", {
@@ -65,14 +68,16 @@ export async function clear_all_synced_tables_in_convex(
     return false;
   }
 
-  const convex_client = get_sync_manager_fn().get_convex_client();
+  const convex_client_result = get_sync_manager_fn().get_convex_client();
 
-  if (!convex_client) {
+  if (!convex_client_result.success) {
     console.warn(
       "[Sync:Reset] Convex client not configured, skipping remote clear",
     );
     return false;
   }
+
+  const convex_client = convex_client_result.data;
 
   console.log("[Sync:Reset] Clearing all synced tables in Convex...");
   let total_deleted = 0;
@@ -114,14 +119,16 @@ export async function clear_all_demo_data_in_convex(
     return false;
   }
 
-  const convex_client = get_sync_manager_fn().get_convex_client();
+  const convex_client_result = get_sync_manager_fn().get_convex_client();
 
-  if (!convex_client) {
+  if (!convex_client_result.success) {
     console.warn(
       "[Sync:Reset] Convex client not configured, skipping remote clear",
     );
     return false;
   }
+
+  const convex_client = convex_client_result.data;
 
   console.log(
     "[Sync:Reset] Clearing all demo data in Convex (system_users preserved)...",

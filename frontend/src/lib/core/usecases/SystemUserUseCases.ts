@@ -44,7 +44,7 @@ export function create_system_user_use_cases(
       filter?: SystemUserFilter,
       options?: QueryOptions,
     ): PaginatedAsyncResult<SystemUser> {
-      const result = await repository.find_all(undefined, options);
+      const result = await repository.find_all({}, options);
 
       if (!result.success) {
         return result;

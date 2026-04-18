@@ -55,7 +55,9 @@ export async function fetch_teams_from_competition(
   const filtered_teams = all_teams.filter((team) =>
     competition_team_ids.has(team.id),
   );
-  const exclude_value = exclude_field ? form_data[exclude_field] : null;
+  const exclude_candidate = exclude_field ? form_data[exclude_field] : "";
+  const exclude_value =
+    typeof exclude_candidate === "string" ? exclude_candidate : "";
   const final_teams = exclude_value
     ? filtered_teams.filter((team) => team.id !== exclude_value)
     : filtered_teams;
@@ -82,7 +84,7 @@ export async function fetch_stages_from_competition(
 
 export async function fetch_teams_from_player_memberships(
   player_id: string,
-  field_current_value: string | undefined,
+  field_current_value: string,
 ): Promise<PlayerMembershipTeamsResult> {
   const [memberships, all_teams] = await Promise.all([
     fetch_entities_for_type("playerteammembership", { player_id }),
@@ -103,14 +105,14 @@ export async function fetch_teams_from_player_memberships(
   const auto_select_team_id =
     membership_teams.length > 0 && !field_current_value
       ? membership_teams[0].id
-      : undefined;
+      : void 0;
   return { teams: membership_teams, auto_select_team_id };
 }
 
 export async function fetch_teams_excluding_player_memberships(
   player_id: string,
   cached_players: BaseEntity[],
-  organization_id: string | undefined,
+  organization_id: string,
 ): Promise<BaseEntity[]> {
   const [memberships, all_teams] = await Promise.all([
     fetch_entities_for_type("playerteammembership", { player_id }),
@@ -154,7 +156,7 @@ export async function fetch_teams_excluding_player_memberships(
 
 export function compute_teams_after_exclusion(
   all_competition_teams: BaseEntity[],
-  exclude_value: string | null,
+  exclude_value: string,
 ): BaseEntity[] {
   if (!exclude_value) return [...all_competition_teams];
   return all_competition_teams.filter((team) => team.id !== exclude_value);
@@ -163,30 +165,38 @@ export function compute_teams_after_exclusion(
 export async function fetch_venue_name_for_team(
   team_id: string,
   all_competition_teams: BaseEntity[],
-): Promise<string | null> {
-  const selected_team = all_competition_teams.find(
+): Promise<string> {
+  const selected_team_matches = all_competition_teams.filter(
     (team) => team.id === team_id,
-  ) as { home_venue_id?: string } | undefined;
-  if (!selected_team?.home_venue_id) return null;
+  );
+  const selected_team =
+    selected_team_matches.length > 0
+      ? (selected_team_matches[0] as unknown as Record<string, unknown>)
+      : {};
+  const home_venue_id =
+    typeof selected_team.home_venue_id === "string"
+      ? selected_team.home_venue_id
+      : "";
+  if (!home_venue_id) return "";
 
   const venue_use_cases_result = get_use_cases_for_entity_type("venue");
   if (!venue_use_cases_result.success) {
     console.warn("[DataLoader] Missing venue use cases");
-    return null;
+    return "";
   }
 
-  const venue_result = await venue_use_cases_result.data.get_by_id(
-    selected_team.home_venue_id,
-  );
+  const venue_result =
+    await venue_use_cases_result.data.get_by_id(home_venue_id);
   if (!venue_result.success || !venue_result.data) {
-    console.warn(
-      "[DataLoader] Failed to load venue:",
-      selected_team.home_venue_id,
-    );
-    return null;
+    console.warn("[DataLoader] Failed to load venue:", home_venue_id);
+    return "";
   }
 
-  const venue_name = (venue_result.data as { name?: string }).name ?? null;
+  const venue_name_candidate = (
+    venue_result.data as unknown as Record<string, unknown>
+  ).name;
+  const venue_name =
+    typeof venue_name_candidate === "string" ? venue_name_candidate : "";
   console.debug("[DataLoader] Resolved home venue name:", venue_name);
   return venue_name;
 }

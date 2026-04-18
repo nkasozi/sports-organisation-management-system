@@ -98,8 +98,8 @@ describe("compute_teams_after_exclusion", () => {
   const team_c = create_base_entity("team_c");
   const all_teams = [team_a, team_b, team_c];
 
-  it("returns all teams when exclude_value is null", () => {
-    const result = compute_teams_after_exclusion(all_teams, null);
+  it("returns all teams when exclude_value is empty", () => {
+    const result = compute_teams_after_exclusion(all_teams, "");
     expect(result).toHaveLength(3);
     expect(result).toContainEqual(team_a);
   });
@@ -191,7 +191,7 @@ describe("fetch_unfiltered_foreign_key_options", () => {
     const player_a = create_base_entity("player_a");
     mock_get_use_cases.mockReturnValue(make_list_use_cases([player_a]));
 
-    const fields =  [
+    const fields = [
       create_field_metadata({
         field_name: "player_id",
         field_type: "foreign_key",
@@ -214,7 +214,7 @@ describe("fetch_unfiltered_foreign_key_options", () => {
       data: { list: list_mock } as any,
     });
 
-    const fields =  [
+    const fields = [
       create_field_metadata({
         field_name: "team_id",
         field_type: "foreign_key",
@@ -238,7 +238,7 @@ describe("fetch_unfiltered_foreign_key_options", () => {
       data: { list: list_mock } as any,
     });
 
-    const fields =  [
+    const fields = [
       create_field_metadata({ field_name: "name", field_type: "string" }),
     ] as FieldMetadata[];
 
@@ -262,7 +262,7 @@ describe("fetch_unfiltered_foreign_key_options", () => {
       } as any,
     }));
 
-    const fields =  [
+    const fields = [
       create_field_metadata({
         field_name: "player_id",
         field_type: "foreign_key",
@@ -426,10 +426,7 @@ describe("fetch_teams_from_player_memberships", () => {
       } as any,
     }));
 
-    const result = await fetch_teams_from_player_memberships(
-      "player_1",
-      undefined,
-    );
+    const result = await fetch_teams_from_player_memberships("player_1", "");
 
     expect(result.teams).toHaveLength(1);
     expect(result.teams[0].id).toBe("team_a");
@@ -450,10 +447,7 @@ describe("fetch_teams_from_player_memberships", () => {
       } as any,
     }));
 
-    const result = await fetch_teams_from_player_memberships(
-      "player_1",
-      undefined,
-    );
+    const result = await fetch_teams_from_player_memberships("player_1", "");
 
     expect(result.auto_select_team_id).toBe("team_a");
   });
@@ -502,7 +496,7 @@ describe("fetch_teams_excluding_player_memberships", () => {
     const result = await fetch_teams_excluding_player_memberships(
       "player_1",
       [],
-      undefined,
+      "",
     );
 
     expect(result).toHaveLength(1);
@@ -564,7 +558,7 @@ describe("fetch_teams_excluding_player_memberships", () => {
     const result = await fetch_teams_excluding_player_memberships(
       "player_1",
       cached_players,
-      undefined,
+      "",
     );
 
     expect(result).toHaveLength(1);
@@ -832,8 +826,8 @@ describe("fetch_fixtures_from_official", () => {
     expect(result).toHaveLength(0);
   });
 
-  it("uses empty string as rater_user_id when auth profile is null", async () => {
-    mock_get.mockReturnValue({ current_profile: null } as any);
+  it("uses empty string as rater_user_id when auth profile is missing", async () => {
+    mock_get.mockReturnValue({ current_profile: { status: "missing" } } as any);
     const fixture_a = create_base_entity("fix_a", { status: "completed" });
     const setup_a = create_base_entity("setup_1", {
       fixture_id: "fix_a",
@@ -977,8 +971,8 @@ describe("fetch_fixtures_for_rating", () => {
     expect(result).toHaveLength(0);
   });
 
-  it("uses no team filter when auth profile is null", async () => {
-    mock_get.mockReturnValue({ current_profile: null } as any);
+  it("uses no team filter when auth profile is missing", async () => {
+    mock_get.mockReturnValue({ current_profile: { status: "missing" } } as any);
     const completed = create_base_entity("fix_a", {
       status: "completed",
       home_team_id: "team_1",
@@ -1063,7 +1057,7 @@ describe("fetch_officials_from_fixture", () => {
 
   it("returns empty when fixture is not found", async () => {
     mock_get_use_cases.mockReturnValueOnce(
-      make_fixture_use_cases_with_data(null, false),
+      make_fixture_use_cases_with_data(void 0, false),
     );
 
     const result = await fetch_officials_from_fixture("fix-missing", "org-1");
@@ -1089,8 +1083,8 @@ describe("fetch_officials_from_fixture", () => {
     expect(result).toHaveLength(0);
   });
 
-  it("uses empty rater_user_id when auth profile is null", async () => {
-    mock_get.mockReturnValue({ current_profile: null } as any);
+  it("uses empty rater_user_id when auth profile is missing", async () => {
+    mock_get.mockReturnValue({ current_profile: { status: "missing" } } as any);
     const fixture_data = {
       id: "fix-1",
       assigned_officials: [

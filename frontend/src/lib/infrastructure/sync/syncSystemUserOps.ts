@@ -10,23 +10,34 @@ import { pull_table_from_convex } from "./syncPullService";
 import type { ConvexClient } from "./syncTypes";
 import { EPOCH_TIMESTAMP } from "./syncTypes";
 
-export async function pull_system_users_from_convex(
-  get_sync_manager_fn: () => { get_convex_client: () => ConvexClient | null },
-): Promise<boolean> {
-  const convex_client = get_sync_manager_fn().get_convex_client();
+const RECORD_LOOKUP_FOUND_STATUS = "found";
+const RECORD_LOOKUP_NOT_FOUND_STATUS = "not_found";
+const RECORD_LOOKUP_FAILURE_STATUS = "failure";
 
-  if (!convex_client) {
+type ScopedRecordLookupResult =
+  | {
+      status: typeof RECORD_LOOKUP_FOUND_STATUS;
+      record: Record<string, unknown>;
+    }
+  | { status: typeof RECORD_LOOKUP_NOT_FOUND_STATUS }
+  | { status: typeof RECORD_LOOKUP_FAILURE_STATUS; error: string };
+
+export async function pull_system_users_from_convex(
+  get_sync_manager_fn: () => {
+    get_convex_client: () => Result<ConvexClient>;
+  },
+): Promise<boolean> {
+  const convex_client_result = get_sync_manager_fn().get_convex_client();
+
+  if (!convex_client_result.success) {
     console.warn("[Sync:SystemUsers] Convex client not configured");
     return false;
   }
 
+  const convex_client = convex_client_result.data;
+
   const database = get_database();
   const table = get_table_from_database(database, "system_users");
-
-  if (!table) {
-    console.warn("[Sync:SystemUsers] system_users table not found in database");
-    return false;
-  }
 
   console.log(
     "[Sync:SystemUsers] Pulling all system_users from Convex (full fetch for auth recovery)...",
@@ -40,7 +51,7 @@ export async function pull_system_users_from_convex(
 
   if (result.success) {
     console.log(
-      `[Sync:SystemUsers] Pulled ${result.records_pulled} record(s) from Convex`,
+      `[Sync:SystemUsers] Pulled ${result.data.records_pulled} record(s) from Convex`,
     );
   } else {
     console.warn(`[Sync:SystemUsers] Pull failed: ${result.error}`);
@@ -87,32 +98,48 @@ export async function write_convex_user_to_local_dexie(convex_user: {
 export async function pull_user_scoped_record_from_convex(
   table_name: "organizations" | "teams",
   local_id: string,
-  get_sync_manager_fn: () => { get_convex_client: () => ConvexClient | null },
+  get_sync_manager_fn: () => {
+    get_convex_client: () => Result<ConvexClient>;
+  },
 ): Promise<Result<boolean>> {
-  const convex_client = get_sync_manager_fn().get_convex_client();
+  const convex_client_result = get_sync_manager_fn().get_convex_client();
 
-  if (!convex_client) {
-    return create_failure_result("Convex client not initialized");
+  if (!convex_client_result.success) {
+    return create_failure_result(convex_client_result.error);
   }
 
-  try {
-    const record = await convex_client.query("sync:get_record_by_local_id", {
-      table_name,
-      local_id,
-    });
+  const convex_client = convex_client_result.data;
 
-    if (!record) {
+  try {
+    const record_lookup_result = (await convex_client.query(
+      "sync:get_record_by_local_id",
+      {
+        table_name,
+        local_id,
+      },
+    )) as ScopedRecordLookupResult;
+
+    switch (record_lookup_result.status) {
+      case RECORD_LOOKUP_NOT_FOUND_STATUS:
+        return create_success_result(false);
+
+      case RECORD_LOOKUP_FAILURE_STATUS:
+        return create_failure_result(
+          `Failed to pull ${table_name} record: ${record_lookup_result.error}`,
+        );
+
+      case RECORD_LOOKUP_FOUND_STATUS:
+        break;
+    }
+
+    if (record_lookup_result.status !== RECORD_LOOKUP_FOUND_STATUS) {
       return create_success_result(false);
     }
 
     const database = get_database();
     const table = get_table_from_database(database, table_name);
 
-    if (!table) {
-      return create_failure_result(`Table ${table_name} not found in database`);
-    }
-
-    const raw = record as Record<string, unknown>;
+    const raw = record_lookup_result.record;
     const local_data = { ...raw };
     delete local_data._id;
     delete local_data._creationTime;
