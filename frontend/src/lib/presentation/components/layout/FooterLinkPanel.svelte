@@ -7,7 +7,7 @@
 </script>
 
 <div
-  class="bg-black/25 dark:bg-black/40 backdrop-blur-sm rounded-lg p-4 footer-panel {show_panel_borders
+  class="bg-black/25 dark:bg-black/40 backdrop-blur-sm rounded-[0.175rem] p-4 footer-panel {show_panel_borders
     ? 'border-2 border-white/60'
     : ''} text-white"
 >

@@ -13,6 +13,8 @@ const FOOTER_LIGHT_TEXT_CLASS = "text-white";
 const FOOTER_BLACK_TEXT_CLASS = "text-black";
 const FOOTER_DARK_TEXT_CLASS = "text-gray-800";
 const FOOTER_COPYRIGHT_LABEL = "All rights reserved.";
+const GLASS_PANEL_RADIUS_CLASS = "rounded-[0.175rem]";
+const LEGACY_GLASS_PANEL_RADIUS_CLASS = "backdrop-blur-sm rounded-lg";
 
 describe("src/lib/presentation/components/layout footer color classes", () => {
   it("renders footer panels without dark text utility classes", () => {
@@ -44,11 +46,23 @@ describe("src/lib/presentation/components/layout footer color classes", () => {
     expect(rendered_brand_panel_markup).toContain(FOOTER_LIGHT_TEXT_CLASS);
     expect(rendered_link_panel_markup).toContain(FOOTER_LIGHT_TEXT_CLASS);
     expect(rendered_bottom_bar_markup).toContain(FOOTER_LIGHT_TEXT_CLASS);
+    expect(rendered_brand_panel_markup).toContain(GLASS_PANEL_RADIUS_CLASS);
+    expect(rendered_link_panel_markup).toContain(GLASS_PANEL_RADIUS_CLASS);
+    expect(rendered_bottom_bar_markup).toContain(GLASS_PANEL_RADIUS_CLASS);
 
     expect(rendered_brand_panel_markup).not.toContain(FOOTER_BLACK_TEXT_CLASS);
     expect(rendered_brand_panel_markup).not.toContain(FOOTER_DARK_TEXT_CLASS);
     expect(rendered_link_panel_markup).not.toContain(FOOTER_DARK_TEXT_CLASS);
     expect(rendered_bottom_bar_markup).not.toContain(FOOTER_DARK_TEXT_CLASS);
+    expect(rendered_brand_panel_markup).not.toContain(
+      LEGACY_GLASS_PANEL_RADIUS_CLASS,
+    );
+    expect(rendered_link_panel_markup).not.toContain(
+      LEGACY_GLASS_PANEL_RADIUS_CLASS,
+    );
+    expect(rendered_bottom_bar_markup).not.toContain(
+      LEGACY_GLASS_PANEL_RADIUS_CLASS,
+    );
     expect(rendered_bottom_bar_markup).toContain(FOOTER_COPYRIGHT_LABEL);
   });
 });

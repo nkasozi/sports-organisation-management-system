@@ -16,7 +16,7 @@
   {#if sidebar_open}
     <div class="flex items-center space-x-3">
       <div
-        class="h-8 w-8 rounded-lg flex items-center justify-center overflow-hidden {has_custom_logo
+        class="h-8 w-8 shrink-0 rounded-lg flex items-center justify-center overflow-hidden {has_custom_logo
           ? ''
           : 'bg-theme-secondary-600'}"
       >
@@ -24,7 +24,7 @@
           <img
             src={organization_logo_url}
             alt="Organization Logo"
-            class="h-full w-full object-cover"
+            class="h-full w-full object-contain"
           />
         {:else}
           <svg

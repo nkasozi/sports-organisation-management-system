@@ -5,7 +5,7 @@
 </script>
 
 <div
-  class="mt-6 pt-4 bg-black/25 dark:bg-black/40 backdrop-blur-sm rounded-lg px-4 py-3 footer-panel {show_panel_borders
+  class="mt-6 pt-4 bg-black/25 dark:bg-black/40 backdrop-blur-sm rounded-[0.175rem] px-4 py-3 footer-panel {show_panel_borders
     ? 'border-2 border-white/60'
     : ''} text-white"
 >

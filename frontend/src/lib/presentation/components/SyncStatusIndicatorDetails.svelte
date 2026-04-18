@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { format_relative_sync_time } from "$lib/presentation/logic/syncStatusIndicatorText";
   import type {
     LastSyncTimeState,
     SyncErrorState,
@@ -23,24 +24,6 @@
   export let sync_error_state: SyncErrorState;
   export let trigger_manual_sync: () => Promise<void>;
   export let on_close: () => void;
-
-  function format_relative_time(
-    timestamp: LastSyncTimeState,
-    _tick: number,
-  ): string {
-    if (timestamp.status === "never") return "Never";
-    const date = new Date(timestamp.value);
-    const now = new Date();
-    const diff_ms = now.getTime() - date.getTime();
-    const diff_seconds = Math.floor(diff_ms / 1000);
-    const diff_minutes = Math.floor(diff_seconds / 60);
-    const diff_hours = Math.floor(diff_minutes / 60);
-    if (diff_seconds < 15) return "Just now";
-    if (diff_seconds < 60) return `${diff_seconds}s ago`;
-    if (diff_minutes < 60) return `${diff_minutes}m ago`;
-    if (diff_hours < 24) return `${diff_hours}h ago`;
-    return date.toLocaleDateString();
-  }
 </script>
 
 <div
@@ -109,7 +92,10 @@
     <div class="flex items-center justify-between text-sm">
       <span class="text-accent-600 dark:text-accent-400">Last Sync</span>
       <span class="text-accent-900 dark:text-white"
-        >{format_relative_time(last_sync, relative_time_tick)}</span
+        >{format_relative_sync_time({
+          last_sync,
+          relative_time_tick,
+        })}</span
       >
     </div>
 
