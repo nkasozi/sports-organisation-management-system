@@ -52,7 +52,7 @@
             </select>
         {:else}
             <span
-                class="text-sm font-medium text-accent-700 dark:text-accent-300 px-3 py-2 bg-accent-100 dark:bg-accent-800 rounded-lg"
+                class="text-sm font-medium text-accent-700 dark:text-accent-300 px-3 py-2 bg-accent-100 dark:bg-accent-800 rounded-[0.175rem]"
                 >{selected_organization_name}</span
             >
         {/if}
@@ -163,7 +163,7 @@
 <div class="flex flex-wrap gap-2 pb-2">
     {#each categories as category}
         <span
-            class="inline-flex items-center gap-1.5 px-2 py-1 text-xs rounded-full"
+            class="inline-flex items-center gap-1.5 px-2 py-1 text-xs rounded-[0.175rem]"
             style={`background-color: ${category.color}20; color: ${category.color};`}
         >
             <span

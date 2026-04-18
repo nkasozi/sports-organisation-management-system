@@ -39,16 +39,25 @@ vi.mock("$lib/presentation/logic/calendarPageState", () => ({
 }));
 
 describe("calendarPageShellControllerRuntimeActivity", () => {
-  function create_command() {
+  function create_command(overrides?: {
+    can_user_add_activities?: boolean;
+    editing_activity?: Record<string, unknown> | undefined;
+  }) {
+    const has_editing_activity_override =
+      overrides !== undefined && "editing_activity" in overrides;
     const state = {
       activity_form_values: { title: "Training" },
       calendar_events: [{ id: "event-1" }],
       categories: [{ id: "category-1" }],
-      editing_activity: { id: "activity-1" },
+      editing_activity: has_editing_activity_override
+        ? (overrides.editing_activity as never)
+        : ({ id: "activity-1" } as never),
     };
 
     const command = {
       get_activity_form_values: () => state.activity_form_values as never,
+      get_can_user_add_activities: () =>
+        overrides?.can_user_add_activities ?? true,
       get_calendar_events: () => state.calendar_events as never,
       get_categories: () => state.categories as never,
       get_editing_activity: () => state.editing_activity as never,
@@ -145,6 +154,31 @@ describe("calendarPageShellControllerRuntimeActivity", () => {
     expect(command.set_selected_event_details).toHaveBeenCalledWith({
       id: "event-2",
     });
+  });
+
+  it("blocks unauthorized create flows from opening or saving a new activity", async () => {
+    const { command } = create_command({
+      can_user_add_activities: false,
+      editing_activity: undefined,
+    });
+    const runtime = create_calendar_page_shell_controller_activity_actions(
+      command as never,
+    );
+
+    runtime.handle_date_click("2024-06-01");
+    runtime.handle_date_time_click("2024-06-01", "09:30");
+    await runtime.handle_save_activity();
+
+    expect(create_activity_form_values_for_date_mock).not.toHaveBeenCalled();
+    expect(
+      create_activity_form_values_for_date_time_mock,
+    ).not.toHaveBeenCalled();
+    expect(command.set_show_create_modal).not.toHaveBeenCalledWith(true);
+    expect(save_calendar_shell_activity_mock).not.toHaveBeenCalled();
+    expect(command.show_toast).toHaveBeenCalledWith(
+      "You do not have permission to create activities.",
+      "warning",
+    );
   });
 
   it("saves and deletes activities, refreshing events on success and surfacing failures as toasts", async () => {

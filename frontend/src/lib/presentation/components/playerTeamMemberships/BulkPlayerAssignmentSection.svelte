@@ -38,7 +38,7 @@
             </h2>
             {#if gender_filter_active}
                 <span
-                    class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300"
+                    class="inline-flex items-center px-2 py-0.5 rounded-[0.175rem] text-xs font-medium bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300"
                     >{target_gender_label}</span
                 >
             {/if}

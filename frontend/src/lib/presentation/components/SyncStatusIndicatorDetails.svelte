@@ -59,7 +59,7 @@
     <div class="flex items-center justify-between text-sm">
       <span class="text-accent-600 dark:text-accent-400">Status</span>
       <span
-        class="px-2 py-0.5 rounded-full text-xs font-medium {sync_in_progress
+        class="px-2 py-0.5 rounded-[0.175rem] text-xs font-medium {sync_in_progress
           ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300'
           : sync_error_state.status === 'present'
             ? 'bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300'

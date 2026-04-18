@@ -68,7 +68,7 @@
             </h3>
             {#if has_scoring_override}
                 <span
-                    class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary-100 text-primary-700 dark:bg-primary-900 dark:text-primary-300"
+                    class="inline-flex items-center px-2 py-0.5 rounded-[0.175rem] text-xs font-medium bg-primary-100 text-primary-700 dark:bg-primary-900 dark:text-primary-300"
                     >Custom</span
                 >
             {/if}

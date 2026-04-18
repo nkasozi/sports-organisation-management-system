@@ -19,8 +19,13 @@ import {
   create_empty_activity_form_values,
 } from "$lib/presentation/logic/calendarPageState";
 
+const CREATE_ACTIVITY_PERMISSION_DENIED_MESSAGE =
+  "You do not have permission to create activities.";
+const CREATE_ACTIVITY_PERMISSION_DENIED_TOAST_TYPE = "warning" as const;
+
 export function create_calendar_page_shell_controller_activity_actions(command: {
   get_activity_form_values: () => ActivityFormValues;
+  get_can_user_add_activities: () => boolean;
   get_calendar_events: () => CalendarEvent[];
   get_categories: () => ActivityCategory[];
   get_editing_activity: () => Activity | undefined;
@@ -65,6 +70,38 @@ export function create_calendar_page_shell_controller_activity_actions(command: 
     command.set_editing_activity();
     command.set_activity_form_values(create_empty_activity_form_values());
   };
+
+  const show_create_activity_permission_denied_toast = (): void => {
+    command.show_toast(
+      CREATE_ACTIVITY_PERMISSION_DENIED_MESSAGE,
+      CREATE_ACTIVITY_PERMISSION_DENIED_TOAST_TYPE,
+    );
+  };
+
+  const can_open_create_activity_modal = (): boolean => {
+    if (command.get_can_user_add_activities()) {
+      return true;
+    }
+
+    show_create_activity_permission_denied_toast();
+
+    return false;
+  };
+
+  const can_save_current_activity = (): boolean => {
+    if (command.get_editing_activity()) {
+      return true;
+    }
+
+    if (command.get_can_user_add_activities()) {
+      return true;
+    }
+
+    show_create_activity_permission_denied_toast();
+
+    return false;
+  };
+
   return {
     close_create_modal,
     close_event_details_modal: () => command.set_selected_event_details(),
@@ -115,6 +152,10 @@ export function create_calendar_page_shell_controller_activity_actions(command: 
     handle_date_click: (
       date_string = new Date().toISOString().split("T")[0],
     ): void => {
+      if (!can_open_create_activity_modal()) {
+        return;
+      }
+
       command.set_activity_form_values(
         create_activity_form_values_for_date(date_string),
       );
@@ -125,6 +166,10 @@ export function create_calendar_page_shell_controller_activity_actions(command: 
       date_string: string,
       time_string: string,
     ): void => {
+      if (!can_open_create_activity_modal()) {
+        return;
+      }
+
       command.set_activity_form_values(
         create_activity_form_values_for_date_time(date_string, time_string),
       );
@@ -147,6 +192,10 @@ export function create_calendar_page_shell_controller_activity_actions(command: 
       );
     },
     handle_save_activity: async (): Promise<void> => {
+      if (!can_save_current_activity()) {
+        return;
+      }
+
       const result = await save_calendar_shell_activity({
         activity_form_values: command.get_activity_form_values(),
         categories: command.get_categories(),

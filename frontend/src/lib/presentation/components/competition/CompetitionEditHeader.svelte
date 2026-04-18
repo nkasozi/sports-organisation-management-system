@@ -6,7 +6,7 @@
 
     function get_status_badge_classes(status: string): string {
         const base_classes =
-            "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium";
+            "inline-flex items-center px-2.5 py-0.5 rounded-[0.175rem] text-xs font-medium";
         switch (status) {
             case "active":
                 return `${base_classes} bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400`;
