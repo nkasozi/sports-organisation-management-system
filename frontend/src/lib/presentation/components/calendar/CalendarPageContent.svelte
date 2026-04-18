@@ -123,6 +123,7 @@
                 <CalendarScheduleView
                     {calendar_events}
                     {categories}
+                    {can_user_add_activities}
                     {on_event_click}
                     {on_date_click}
                     {on_date_time_click}

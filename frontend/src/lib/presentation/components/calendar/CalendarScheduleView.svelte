@@ -20,6 +20,7 @@
 
     export let calendar_events: CalendarEvent[];
     export let categories: ActivityCategory[];
+    export let can_user_add_activities: boolean;
     export let on_event_click: (event_id: string) => void;
     export let on_date_click: (date_string: string) => void;
     export let on_date_time_click: (
@@ -96,13 +97,23 @@
             callbacks: {
                 onEventClick: (event_data: unknown) =>
                     on_event_click(String((event_data as { id: string }).id)),
-                onClickDate: (date_value: Temporal.PlainDate) =>
-                    on_date_click(date_value.toString()),
-                onClickDateTime: (date_time: Temporal.ZonedDateTime) =>
+                onClickDate: (date_value: Temporal.PlainDate) => {
+                    if (!can_user_add_activities) {
+                        return;
+                    }
+
+                    on_date_click(date_value.toString());
+                },
+                onClickDateTime: (date_time: Temporal.ZonedDateTime) => {
+                    if (!can_user_add_activities) {
+                        return;
+                    }
+
                     on_date_time_click(
                         date_time.toPlainDate().toString(),
                         `${String(date_time.hour).padStart(2, "0")}:${String(date_time.minute).padStart(2, "0")}`,
-                    ),
+                    );
+                },
             },
         });
         calendar_instance.render(calendar_container_element);

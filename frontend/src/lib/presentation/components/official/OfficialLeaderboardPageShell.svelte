@@ -71,7 +71,7 @@
                 </select>
             {:else if organizations.length > 0}
                 <span
-                    class="rounded-md bg-accent-100 px-3 py-2 text-sm font-medium text-accent-700 dark:bg-accent-800 dark:text-accent-300"
+                    class="rounded-[0.175rem] bg-accent-100 px-3 py-2 text-sm font-medium text-accent-700 dark:bg-accent-800 dark:text-accent-300"
                     >{get_selected_official_leaderboard_organization_name(
                         organizations,
                         selected_organization_id,

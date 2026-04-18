@@ -26,7 +26,7 @@
     <svelte:fragment slot="header-actions">
         {#if is_super_admin && organizations.length > 0}
             <select
-                class="input text-xs py-1 px-2 rounded-full"
+                class="input text-xs py-1 px-2 rounded-[0.175rem]"
                 bind:value={selected_organization_id}
                 on:change={() => void on_organization_switch()}
             >
@@ -36,7 +36,7 @@
             </select>
         {:else}
             <span
-                class={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
+                class={`inline-flex items-center px-3 py-1 rounded-[0.175rem] text-xs font-medium ${
                     is_platform_branding
                         ? "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200"
                         : "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"

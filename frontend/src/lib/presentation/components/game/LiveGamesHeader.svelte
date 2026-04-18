@@ -49,7 +49,7 @@
                     </select>
                 {:else}
                     <span
-                        class="inline-block text-sm font-medium text-accent-700 dark:text-accent-300 px-3 py-2 bg-accent-100 dark:bg-accent-800 rounded-lg"
+                        class="inline-block text-sm font-medium text-accent-700 dark:text-accent-300 px-3 py-2 bg-accent-100 dark:bg-accent-800 rounded-[0.175rem]"
                     >
                         {get_current_organization_name()}
                     </span>

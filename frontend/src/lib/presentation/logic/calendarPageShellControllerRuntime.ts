@@ -12,7 +12,10 @@ import {
   load_calendar_shell_bundle,
   load_calendar_shell_events,
 } from "$lib/presentation/logic/calendarPageShellControllerData";
-import { type LoadingState } from "$lib/presentation/logic/calendarPageShellControllerHelpers";
+import {
+  can_user_add_activities,
+  type LoadingState,
+} from "$lib/presentation/logic/calendarPageShellControllerHelpers";
 import { load_calendar_shell_initial_data } from "$lib/presentation/logic/calendarPageShellControllerInitialData";
 import type { ActivityFormValues } from "$lib/presentation/logic/calendarPageState";
 import { is_public_viewer } from "$lib/presentation/stores/auth";
@@ -59,7 +62,11 @@ export function create_calendar_page_shell_controller_runtime(command: {
   use_cases: UseCasesContainer;
 }) {
   const activity_actions =
-    create_calendar_page_shell_controller_activity_actions(command);
+    create_calendar_page_shell_controller_activity_actions({
+      ...command,
+      get_can_user_add_activities: (): boolean =>
+        can_user_add_activities(command.get_current_auth_profile_state()),
+    });
   const refresh_calendar_bundle = async (): Promise<void> => {
     const selected_organization_id = command.get_selected_organization_id();
     if (!selected_organization_id) {

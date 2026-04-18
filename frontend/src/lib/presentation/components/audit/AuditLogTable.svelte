@@ -107,7 +107,7 @@
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <span
-                                    class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {get_audit_log_action_badge_class(
+                                    class="inline-flex items-center px-2.5 py-0.5 rounded-[0.175rem] text-xs font-medium {get_audit_log_action_badge_class(
                                         log.action,
                                     )}"
                                 >

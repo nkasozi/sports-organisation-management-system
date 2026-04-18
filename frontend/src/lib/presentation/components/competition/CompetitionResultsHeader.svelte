@@ -43,7 +43,7 @@
             </select>
         {:else}
             <span
-                class="text-sm font-medium text-accent-700 dark:text-accent-300 px-3 py-2 bg-accent-100 dark:bg-accent-800 rounded-lg"
+                class="text-sm font-medium text-accent-700 dark:text-accent-300 px-3 py-2 bg-accent-100 dark:bg-accent-800 rounded-[0.175rem]"
             >
                 {organizations.find(
                     (organization: Organization) =>
@@ -105,7 +105,7 @@
 {#if selected_competition_format_name}
     <div class="flex flex-wrap items-center gap-2">
         <span
-            class="px-2 py-1 text-xs bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300 rounded-full"
+            class="px-2 py-1 text-xs bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300 rounded-[0.175rem]"
         >
             {selected_competition_format_name}
         </span>
