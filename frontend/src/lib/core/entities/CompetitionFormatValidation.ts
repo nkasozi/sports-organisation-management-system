@@ -4,7 +4,6 @@ import {
   create_default_league_config,
 } from "./CompetitionFormatFactories";
 import type {
-  CompetitionFormatStageTemplate,
   CreateCompetitionFormatInput,
   FormatType,
   LeagueConfig,
@@ -70,17 +69,11 @@ export function validate_competition_format_input(
 export function hydrate_competition_format_input(
   input: CreateCompetitionFormatInput,
 ): CreateCompetitionFormatInput {
-  const league_config = requires_league_config(input.format_type)
-    ? (input.league_config ?? create_default_league_config())
-    : null;
-  const group_stage_config = requires_group_stage_config(input.format_type)
-    ? (input.group_stage_config ?? create_default_group_stage_config())
-    : null;
-  const knockout_stage_config = requires_knockout_stage_config(
-    input.format_type,
-  )
-    ? (input.knockout_stage_config ?? create_default_knockout_stage_config())
-    : null;
+  const league_config = input.league_config ?? create_default_league_config();
+  const group_stage_config =
+    input.group_stage_config ?? create_default_group_stage_config();
+  const knockout_stage_config =
+    input.knockout_stage_config ?? create_default_knockout_stage_config();
 
   const points_config: PointsConfig = input.points_config ?? {
     ...DEFAULT_POINTS_CONFIG,
@@ -119,12 +112,12 @@ function requires_league_config(format_type: FormatType): boolean {
 function normalize_stage_templates(
   stage_templates: CreateCompetitionFormatInput["stage_templates"],
   format_type: FormatType,
-  league_config: LeagueConfig | null,
+  league_config: LeagueConfig,
 ): CreateCompetitionFormatInput["stage_templates"] {
   const source_templates =
     stage_templates.length > 0
       ? stage_templates
-      : create_default_stage_templates(format_type, league_config ?? undefined);
+      : create_default_stage_templates(format_type, league_config);
 
   return source_templates.map((template, index) => ({
     name: template.name,

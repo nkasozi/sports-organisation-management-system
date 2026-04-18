@@ -1,13 +1,12 @@
 import { type CreateFixtureLineupInput } from "$lib/core/entities/FixtureLineup";
-import {
-  get_authorization_preselect_values,
-  type UserScopeProfile,
-} from "$lib/core/interfaces/ports/external/iam/AuthorizationPort";
+import { get_authorization_preselect_values } from "$lib/core/interfaces/ports/external/iam/AuthorizationPort";
 import {
   build_error_message,
   convert_team_player_to_lineup_player,
 } from "$lib/core/services/fixtureLineupWizard";
 import type { TeamPlayer } from "$lib/core/services/teamPlayers";
+
+import type { FixtureLineupCreateAuthProfileState } from "./fixtureLineupCreatePageContracts";
 
 export function validate_fixture_lineup_create_players(command: {
   selected_players: CreateFixtureLineupInput["selected_players"];
@@ -131,11 +130,14 @@ export function select_all_fixture_lineup_create_players(command: {
 
 export function apply_fixture_lineup_authorization_defaults(command: {
   form_data: CreateFixtureLineupInput;
-  current_auth_profile: UserScopeProfile | null;
+  current_auth_profile_state: FixtureLineupCreateAuthProfileState;
 }): CreateFixtureLineupInput {
-  const preselect_values = get_authorization_preselect_values(
-    command.current_auth_profile,
-  );
+  const preselect_values =
+    command.current_auth_profile_state.status === "present"
+      ? get_authorization_preselect_values(
+          command.current_auth_profile_state.profile,
+        )
+      : {};
   return {
     ...command.form_data,
     organization_id:

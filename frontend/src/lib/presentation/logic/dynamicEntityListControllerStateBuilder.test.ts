@@ -2,6 +2,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { BaseEntity } from "$lib/core/entities/BaseEntity";
 
+import { build_dynamic_entity_list_view_state } from "./dynamicEntityListControllerStateBuilder";
+
 const {
   apply_filters_and_sorting_mock,
   check_if_all_entities_selected_mock,
@@ -43,8 +45,6 @@ vi.mock("$lib/presentation/logic/dynamicListLogic", () => ({
   check_if_some_entities_selected: check_if_some_entities_selected_mock,
 }));
 
-import { build_dynamic_entity_list_view_state } from "./dynamicEntityListControllerStateBuilder";
-
 function create_entity<TExtra extends Record<string, unknown>>(
   id: string,
   extra: TExtra,
@@ -69,7 +69,7 @@ describe("dynamicEntityListControllerStateBuilder", () => {
   });
 
   it("builds a default view state when no current state has been provided", () => {
-    get_dynamic_entity_list_metadata_mock.mockReturnValueOnce(null);
+    get_dynamic_entity_list_metadata_mock.mockReturnValueOnce(void 0);
     format_entity_display_name_mock.mockReturnValueOnce("Team Profiles");
     get_dynamic_entity_list_available_fields_mock.mockReturnValueOnce([]);
     apply_filters_and_sorting_mock.mockReturnValueOnce([]);
@@ -82,16 +82,13 @@ describe("dynamicEntityListControllerStateBuilder", () => {
     expect(
       build_dynamic_entity_list_view_state(
         {
-          bulk_create_handler: null,
           button_color_class: "primary",
-          crud_handlers: null,
           disabled_functionalities: ["create"],
           enable_bulk_import: true,
           entity_type: "team_profile",
           info_message: "Info",
           is_mobile_view: false,
           show_actions: true,
-          sub_entity_filter: null,
         } as never,
         {},
       ),
@@ -102,7 +99,7 @@ describe("dynamicEntityListControllerStateBuilder", () => {
       can_show_bulk_actions: false,
       current_page: 1,
       display_name: "Team Profiles",
-      entity_metadata: null,
+
       entity_type: "team_profile",
       has_bulk_create_handler: false,
       is_create_disabled: true,

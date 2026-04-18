@@ -17,6 +17,7 @@
   import { auth_store } from "$lib/presentation/stores/auth";
 
   import {
+    type AuditLogOrganizationFilterState,
     build_audit_log_filter,
     get_audit_log_organization_filter,
   } from "../../lib/presentation/logic/auditLogPageState";
@@ -32,9 +33,16 @@
 
   const audit_log_use_cases = get_audit_log_use_cases();
 
-  function get_organization_filter(): string | null {
+  function get_organization_filter(): AuditLogOrganizationFilterState {
+    const current_profile_state = get(auth_store).current_profile;
+
     return get_audit_log_organization_filter(
-      get(auth_store).current_profile as UserScopeProfile | null,
+      current_profile_state.status === "present"
+        ? {
+            status: "present",
+            profile: current_profile_state.profile as unknown as UserScopeProfile,
+          }
+        : { status: "missing" },
     );
   }
 
@@ -47,7 +55,7 @@
       filter_entity_type,
       filter_action,
       filter_user: "",
-      organization_id: get_organization_filter(),
+      organization_filter_state: get_organization_filter(),
     });
 
     const result = await audit_log_use_cases.list(filter, {

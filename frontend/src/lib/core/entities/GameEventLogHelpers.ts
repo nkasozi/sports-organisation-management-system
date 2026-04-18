@@ -17,7 +17,7 @@ export function create_empty_game_event_log_input(
     fixture_id,
     event_type: "goal",
     minute: 0,
-    stoppage_time_minute: null,
+    stoppage_time_minute: 0,
     team_side: "home",
     player_id: "",
     player_name: "",
@@ -53,11 +53,19 @@ export function validate_game_event_log_input(
     errors.event_type = "Event type is required";
   }
 
-  if ("minute" in input && input.minute !== undefined && input.minute < 0) {
+  if (
+    "minute" in input &&
+    typeof input.minute === "number" &&
+    input.minute < 0
+  ) {
     errors.minute = "Minute cannot be negative";
   }
 
-  if ("minute" in input && input.minute !== undefined && input.minute > 200) {
+  if (
+    "minute" in input &&
+    typeof input.minute === "number" &&
+    input.minute > 200
+  ) {
     errors.minute = "Minute value is too high";
   }
 
@@ -77,7 +85,7 @@ export function validate_game_event_log_input(
 
 function get_game_event_log_display(event: GameEventLog): string {
   const minute_display =
-    event.stoppage_time_minute !== null
+    event.stoppage_time_minute > 0
       ? `${event.minute}+${event.stoppage_time_minute}'`
       : `${event.minute}'`;
   const player_display = event.player_name || "Unknown";

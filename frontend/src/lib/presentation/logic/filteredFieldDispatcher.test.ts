@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { fetch_filtered_entities_for_field } from "./filteredFieldDispatcher";
+
 const filtered_field_dispatcher_mocks = vi.hoisted(() => ({
   fetch_entities_filtered_by_organization: vi.fn(),
   fetch_filtered_jersey_options: vi.fn(),
@@ -47,8 +49,6 @@ vi.mock("./officialDataFetcher", () => ({
   fetch_officials_from_organization:
     filtered_field_dispatcher_mocks.fetch_officials_from_organization,
 }));
-
-import { fetch_filtered_entities_for_field } from "./filteredFieldDispatcher";
 
 describe("filteredFieldDispatcher", () => {
   beforeEach(() => {

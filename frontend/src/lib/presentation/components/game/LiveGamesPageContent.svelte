@@ -2,6 +2,7 @@
     import type { Fixture } from "$lib/core/entities/Fixture";
     import type { Organization } from "$lib/core/entities/Organization";
     import type { PreFlightCheck } from "$lib/core/services/fixtureStartChecks";
+    import type { LiveGamesPendingStartFixtureState } from "$lib/presentation/logic/liveGamesPageState";
 
     import LiveGamesBody from "./LiveGamesBody.svelte";
     import LiveGamesHeader from "./LiveGamesHeader.svelte";
@@ -25,7 +26,9 @@
     export let current_checks: Record<string, PreFlightCheck[]> = {};
     export let is_starting: Record<string, boolean> = {};
     export let on_start_click: (fixture: Fixture) => Promise<void>;
-    export let pending_start_fixture: Fixture | null = null;
+    export let pending_start_fixture_state: LiveGamesPendingStartFixtureState = {
+        status: "idle",
+    };
     export let on_cancel_start: () => void;
     export let on_confirm_start: () => void;
 </script>
@@ -57,7 +60,7 @@
 </div>
 
 <LiveGameStartConfirmationDialog
-    fixture={pending_start_fixture}
+    {pending_start_fixture_state}
     {team_names}
     on_cancel={on_cancel_start}
     on_confirm={on_confirm_start}

@@ -257,7 +257,7 @@ describe("entityDisplayFormatter", () => {
     });
 
     it("returns empty string for undefined", () => {
-      expect(build_foreign_entity_route(undefined)).toBe("");
+      expect(build_foreign_entity_route(void 0)).toBe("");
     });
   });
 

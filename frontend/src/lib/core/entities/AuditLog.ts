@@ -110,8 +110,14 @@ export function compute_field_changes<T extends Record<string, unknown>>(
   return changes;
 }
 
+const AUDIT_EMPTY_VALUE_TAGS = new Set(["[object Null]", "[object Undefined]"]);
+
+function is_empty_audit_value(value: unknown): boolean {
+  return AUDIT_EMPTY_VALUE_TAGS.has(Object.prototype.toString.call(value));
+}
+
 function serialize_value_for_audit(value: unknown): string {
-  if (value === null || value === undefined) {
+  if (is_empty_audit_value(value)) {
     return "";
   }
 

@@ -4,7 +4,7 @@ import type { FirstTimeSetupState } from "$lib/presentation/stores/firstTimeSetu
 import type { InitialSyncState } from "$lib/presentation/stores/initialSyncStore";
 
 export interface RootLayoutSubscriptionCommand {
-  navigating_store: Readable<unknown | null>;
+  navigating_store: Readable<boolean>;
   page_store: Readable<{ url: { pathname: string } }>;
   first_time_setup_store: Readable<FirstTimeSetupState>;
   clerk_loaded_store: Readable<boolean>;
@@ -21,9 +21,11 @@ export interface RootLayoutSubscriptionCommand {
 export function subscribe_root_layout_state(
   command: RootLayoutSubscriptionCommand,
 ): () => void {
-  const unsubscribe_navigating = command.navigating_store.subscribe((nav) => {
-    command.set_navigating(nav !== null);
-  });
+  const unsubscribe_navigating = command.navigating_store.subscribe(
+    (is_navigating) => {
+      command.set_navigating(is_navigating);
+    },
+  );
   const unsubscribe_page = command.page_store.subscribe((page_state) => {
     command.on_path_change(page_state.url.pathname);
   });

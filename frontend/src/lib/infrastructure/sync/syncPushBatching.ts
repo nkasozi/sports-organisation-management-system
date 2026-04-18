@@ -1,3 +1,9 @@
+import {
+  create_failure_result,
+  create_success_result,
+  type Result,
+} from "$lib/core/types/Result";
+
 import type { TableName } from "./syncTypes";
 
 const ONE_KIBIBYTE = 1024;
@@ -27,11 +33,15 @@ interface BuildSyncPushBatchesCommand {
   max_payload_bytes?: number;
 }
 
-interface BuildSyncPushBatchesResult {
-  success: boolean;
-  batches: SyncBatchRecord[][];
-  error: string | null;
-}
+const INLINE_DATA_FIELD_FOUND_STATUS = "found";
+const INLINE_DATA_FIELD_NOT_FOUND_STATUS = "not_found";
+
+type InlineDataFieldLookupResult =
+  | {
+      status: typeof INLINE_DATA_FIELD_FOUND_STATUS;
+      field_name: string;
+    }
+  | { status: typeof INLINE_DATA_FIELD_NOT_FOUND_STATUS };
 
 function calculate_sync_mutation_payload_bytes(command: {
   table_name: string;
@@ -49,7 +59,7 @@ function calculate_sync_mutation_payload_bytes(command: {
 
 function find_inline_data_field_name(
   record_data: Record<string, unknown>,
-): string | null {
+): InlineDataFieldLookupResult {
   for (const [field_name, field_value] of Object.entries(record_data)) {
     if (typeof field_value !== "string") {
       continue;
@@ -57,22 +67,26 @@ function find_inline_data_field_name(
     if (!field_value.startsWith(DATA_URL_PREFIX)) {
       continue;
     }
-    return field_name;
+    return {
+      status: INLINE_DATA_FIELD_FOUND_STATUS,
+      field_name,
+    };
   }
-  return null;
+
+  return { status: INLINE_DATA_FIELD_NOT_FOUND_STATUS };
 }
 
 function build_oversized_record_error(command: {
   table_name: string;
   record: SyncBatchRecord;
 }): string {
-  const inline_data_field_name = find_inline_data_field_name(
+  const inline_data_field_lookup = find_inline_data_field_name(
     command.record.data,
   );
   const record_label = `Record "${command.record.local_id}" in "${command.table_name}"`;
 
-  if (inline_data_field_name) {
-    return `${record_label} is too large to sync because "${inline_data_field_name}" ${INLINE_DATA_SUFFIX_MESSAGE}. ${SMALLER_IMAGE_RETRY_MESSAGE}`;
+  if (inline_data_field_lookup.status === INLINE_DATA_FIELD_FOUND_STATUS) {
+    return `${record_label} is too large to sync because "${inline_data_field_lookup.field_name}" ${INLINE_DATA_SUFFIX_MESSAGE}. ${SMALLER_IMAGE_RETRY_MESSAGE}`;
   }
 
   return `${record_label} ${OVERSIZED_RECORD_SUFFIX_MESSAGE}. ${SMALLER_IMAGE_RETRY_MESSAGE}`;
@@ -105,33 +119,27 @@ function build_single_record_batch(command: {
   current_record: SyncBatchRecord;
   detect_conflicts: boolean;
   max_payload_bytes: number;
-}): BuildSyncPushBatchesResult {
+}): Result<SyncBatchRecord[][]> {
   const single_record_payload_bytes = calculate_sync_mutation_payload_bytes({
     table_name: command.table_name,
     records: [command.current_record],
     detect_conflicts: command.detect_conflicts,
   });
   if (single_record_payload_bytes > command.max_payload_bytes) {
-    return {
-      success: false,
-      batches: [],
-      error: build_oversized_record_error({
+    return create_failure_result(
+      build_oversized_record_error({
         table_name: command.table_name,
         record: command.current_record,
       }),
-    };
+    );
   }
 
-  return {
-    success: true,
-    batches: [[command.current_record]],
-    error: null,
-  };
+  return create_success_result([[command.current_record]]);
 }
 
 export function build_sync_push_batches(
   command: BuildSyncPushBatchesCommand,
-): BuildSyncPushBatchesResult {
+): Result<SyncBatchRecord[][]> {
   const max_batch_record_count =
     command.max_batch_record_count ?? MAX_SYNC_BATCH_RECORD_COUNT;
   const max_payload_bytes =
@@ -168,16 +176,12 @@ export function build_sync_push_batches(
       return single_record_batch;
     }
 
-    current_batch = single_record_batch.batches[0];
+    current_batch = single_record_batch.data[0];
   }
 
   if (current_batch.length > 0) {
     batches.push(current_batch);
   }
 
-  return {
-    success: true,
-    batches,
-    error: null,
-  };
+  return create_success_result(batches);
 }

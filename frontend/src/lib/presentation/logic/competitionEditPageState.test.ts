@@ -116,10 +116,7 @@ describe("competitionEditPageState", () => {
         },
       } as never),
     ).toEqual({
-      rule_overrides: {
-        points_config_override: undefined,
-        tie_breakers_override: undefined,
-      },
+      rule_overrides: {},
     });
 
     expect(

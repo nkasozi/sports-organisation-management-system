@@ -10,7 +10,7 @@
     export let not_found_message =
         "The profile you're looking for doesn't exist or has been removed.";
     export let error_icon = "🔒";
-    export let home_href: string | null = null;
+    export let home_href: string | undefined = undefined;
     export let home_label = "Go Home";
 </script>
 

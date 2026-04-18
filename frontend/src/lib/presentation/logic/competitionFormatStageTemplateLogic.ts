@@ -3,24 +3,25 @@ import type {
   FormatType,
   LeagueConfig,
 } from "../../core/entities/CompetitionFormat";
-import type { ScalarInput } from "../../core/types/DomainScalars";
+import { create_default_league_config } from "../../core/entities/CompetitionFormatFactories";
 import type { StageType } from "../../core/entities/CompetitionStage";
 import { create_default_stage_templates } from "../../core/entities/CompetitionStage";
+import type { ScalarInput } from "../../core/types/DomainScalars";
 
-type EditableCompetitionFormatStageTemplate = ScalarInput<CompetitionFormatStageTemplate>;
+type EditableCompetitionFormatStageTemplate =
+  ScalarInput<CompetitionFormatStageTemplate>;
 
 export function build_stage_template_defaults(
   format_type: FormatType,
-  league_config: LeagueConfig | null = null,
+  league_config: LeagueConfig = create_default_league_config(),
 ): EditableCompetitionFormatStageTemplate[] {
-  return create_default_stage_templates(
-    format_type,
-    league_config ?? undefined,
-  ).map((template, index) => ({
-    name: template.name,
-    stage_type: template.stage_type,
-    stage_order: index + 1,
-  }));
+  return create_default_stage_templates(format_type, league_config).map(
+    (template, index) => ({
+      name: template.name,
+      stage_type: template.stage_type,
+      stage_order: index + 1,
+    }),
+  );
 }
 
 export function create_empty_stage_template(

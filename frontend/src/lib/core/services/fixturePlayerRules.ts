@@ -38,8 +38,14 @@ export async function get_player_rules_from_competition(
   const rule_overrides = competition.rule_overrides;
   const strategy: SquadGenerationStrategy =
     competition.squad_generation_strategy || "first_available";
-  const has_min = rule_overrides?.min_players_on_field !== undefined;
-  const has_max = rule_overrides?.max_players_on_field !== undefined;
+  const has_min = Object.prototype.hasOwnProperty.call(
+    rule_overrides ?? {},
+    "min_players_on_field",
+  );
+  const has_max = Object.prototype.hasOwnProperty.call(
+    rule_overrides ?? {},
+    "max_players_on_field",
+  );
 
   if (has_min && has_max) {
     return {

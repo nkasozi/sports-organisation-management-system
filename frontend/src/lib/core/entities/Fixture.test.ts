@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import type { ScalarInput } from "../types/DomainScalars";
 import {
+  create_empty_jersey_assignment,
   detect_jersey_color_clashes,
   has_color_clashes,
   type JerseyColorAssignment,
@@ -17,6 +18,12 @@ describe("Fixture Jersey Color Clash Detection", () => {
       nickname,
       main_color: color,
     });
+    const create_empty_jersey_assignment =
+      (): ScalarInput<JerseyColorAssignment> => ({
+        jersey_color_id: "",
+        nickname: "",
+        main_color: "",
+      });
 
     describe("identical colors (Delta E = 0)", () => {
       it("detects identical black jerseys between home and away teams", () => {
@@ -26,7 +33,7 @@ describe("Fixture Jersey Color Clash Detection", () => {
         const warnings = detect_jersey_color_clashes(
           home_jersey,
           away_jersey,
-          undefined,
+          create_empty_jersey_assignment(),
           "Home Team",
           "Away Team",
         );
@@ -47,7 +54,7 @@ describe("Fixture Jersey Color Clash Detection", () => {
 
         const warnings = detect_jersey_color_clashes(
           home_jersey,
-          undefined,
+          create_empty_jersey_assignment(),
           official_jersey,
           "Home Team",
           "Away Team",
@@ -66,7 +73,7 @@ describe("Fixture Jersey Color Clash Detection", () => {
         );
 
         const warnings = detect_jersey_color_clashes(
-          undefined,
+          create_empty_jersey_assignment(),
           away_jersey,
           official_jersey,
           "Home Team",
@@ -106,7 +113,7 @@ describe("Fixture Jersey Color Clash Detection", () => {
         const warnings = detect_jersey_color_clashes(
           home_jersey,
           away_jersey,
-          undefined,
+          create_empty_jersey_assignment(),
           "Home Team",
           "Away Team",
         );
@@ -122,7 +129,7 @@ describe("Fixture Jersey Color Clash Detection", () => {
         const warnings = detect_jersey_color_clashes(
           home_jersey,
           away_jersey,
-          undefined,
+          create_empty_jersey_assignment(),
           "Home Team",
           "Away Team",
         );
@@ -140,7 +147,7 @@ describe("Fixture Jersey Color Clash Detection", () => {
         const warnings = detect_jersey_color_clashes(
           home_jersey,
           away_jersey,
-          undefined,
+          create_empty_jersey_assignment(),
           "Home Team",
           "Away Team",
         );
@@ -155,7 +162,7 @@ describe("Fixture Jersey Color Clash Detection", () => {
         const warnings = detect_jersey_color_clashes(
           home_jersey,
           away_jersey,
-          undefined,
+          create_empty_jersey_assignment(),
           "Home Team",
           "Away Team",
         );
@@ -170,7 +177,7 @@ describe("Fixture Jersey Color Clash Detection", () => {
         const warnings = detect_jersey_color_clashes(
           home_jersey,
           away_jersey,
-          undefined,
+          create_empty_jersey_assignment(),
           "Home Team",
           "Away Team",
         );
@@ -185,7 +192,7 @@ describe("Fixture Jersey Color Clash Detection", () => {
         const warnings = detect_jersey_color_clashes(
           home_jersey,
           away_jersey,
-          undefined,
+          create_empty_jersey_assignment(),
           "Home Team",
           "Away Team",
         );
@@ -195,7 +202,7 @@ describe("Fixture Jersey Color Clash Detection", () => {
     });
 
     describe("edge cases", () => {
-      it("handles undefined home jersey", () => {
+      it("handles empty home jersey", () => {
         const away_jersey = create_jersey_assignment("#DC2626", "Away Red");
         const official_jersey = create_jersey_assignment(
           "#DC2626",
@@ -203,7 +210,7 @@ describe("Fixture Jersey Color Clash Detection", () => {
         );
 
         const warnings = detect_jersey_color_clashes(
-          undefined,
+          create_empty_jersey_assignment(),
           away_jersey,
           official_jersey,
           "Home Team",
@@ -214,7 +221,7 @@ describe("Fixture Jersey Color Clash Detection", () => {
         expect(warnings[0].party_a).toBe("Away Team");
       });
 
-      it("handles undefined away jersey", () => {
+      it("handles empty away jersey", () => {
         const home_jersey = create_jersey_assignment("#DC2626", "Home Red");
         const official_jersey = create_jersey_assignment(
           "#DC2626",
@@ -223,7 +230,7 @@ describe("Fixture Jersey Color Clash Detection", () => {
 
         const warnings = detect_jersey_color_clashes(
           home_jersey,
-          undefined,
+          create_empty_jersey_assignment(),
           official_jersey,
           "Home Team",
           "Away Team",
@@ -233,14 +240,14 @@ describe("Fixture Jersey Color Clash Detection", () => {
         expect(warnings[0].party_a).toBe("Home Team");
       });
 
-      it("handles undefined official jersey", () => {
+      it("handles empty official jersey", () => {
         const home_jersey = create_jersey_assignment("#DC2626", "Home Red");
         const away_jersey = create_jersey_assignment("#DC2626", "Away Red");
 
         const warnings = detect_jersey_color_clashes(
           home_jersey,
           away_jersey,
-          undefined,
+          create_empty_jersey_assignment(),
           "Home Team",
           "Away Team",
         );
@@ -248,11 +255,11 @@ describe("Fixture Jersey Color Clash Detection", () => {
         expect(warnings.length).toBe(1);
       });
 
-      it("handles all undefined jerseys", () => {
+      it("handles all empty jerseys", () => {
         const warnings = detect_jersey_color_clashes(
-          undefined,
-          undefined,
-          undefined,
+          create_empty_jersey_assignment(),
+          create_empty_jersey_assignment(),
+          create_empty_jersey_assignment(),
           "Home Team",
           "Away Team",
         );
@@ -267,7 +274,7 @@ describe("Fixture Jersey Color Clash Detection", () => {
         const warnings = detect_jersey_color_clashes(
           home_jersey,
           away_jersey,
-          undefined,
+          create_empty_jersey_assignment(),
           "Home Team",
           "Away Team",
         );
@@ -277,12 +284,12 @@ describe("Fixture Jersey Color Clash Detection", () => {
       });
 
       it("handles hex codes without # prefix", () => {
-        const home_jersey =  {
+        const home_jersey = {
           jersey_color_id: "jersey_1",
           nickname: "Black",
           main_color: "1F2937",
         } as ScalarInput<JerseyColorAssignment>;
-        const away_jersey =  {
+        const away_jersey = {
           jersey_color_id: "jersey_2",
           nickname: "Black",
           main_color: "1F2937",
@@ -291,7 +298,7 @@ describe("Fixture Jersey Color Clash Detection", () => {
         const warnings = detect_jersey_color_clashes(
           home_jersey,
           away_jersey,
-          undefined,
+          create_empty_jersey_assignment(),
           "Home Team",
           "Away Team",
         );
@@ -308,7 +315,7 @@ describe("Fixture Jersey Color Clash Detection", () => {
         const warnings = detect_jersey_color_clashes(
           home_jersey,
           away_jersey,
-          undefined,
+          create_empty_jersey_assignment(),
           "Home Team",
           "Away Team",
         );
@@ -323,7 +330,7 @@ describe("Fixture Jersey Color Clash Detection", () => {
         const warnings = detect_jersey_color_clashes(
           home_jersey,
           away_jersey,
-          undefined,
+          create_empty_jersey_assignment(),
           "Home Team",
           "Away Team",
         );
@@ -355,7 +362,7 @@ describe("Fixture Jersey Color Clash Detection", () => {
       const result = has_color_clashes(
         home_jersey,
         away_jersey,
-        undefined,
+        create_empty_jersey_assignment(),
         "Home Team",
         "Away Team",
       );
@@ -370,7 +377,7 @@ describe("Fixture Jersey Color Clash Detection", () => {
       const result = has_color_clashes(
         home_jersey,
         away_jersey,
-        undefined,
+        create_empty_jersey_assignment(),
         "Home Team",
         "Away Team",
       );

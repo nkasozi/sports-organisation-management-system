@@ -3,7 +3,7 @@
   export let page_title: string = "";
   export let current_view: "list" | "create" | "edit" = "list";
   export let total_entity_count: number = 0;
-  export let info_message: string | null = null;
+  export let info_message: string = "";
   export let on_back: () => void = () => {};
 </script>
 

@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
+import type { SyncProgressState } from "$lib/presentation/stores/syncStoreTypes";
+
 import { sync_verified_user_login_session } from "./layoutLoginSync";
 import {
   handle_first_time_anonymous_user_session,
@@ -30,22 +32,20 @@ function create_sync_store_mock(sync_result: {
 }) {
   return {
     subscribe: vi.fn(
-      (
-        handler: (state: {
-          current_progress: {
-            table_name: string;
-            tables_completed: number;
-            total_tables: number;
-            percentage: number;
-          } | null;
-        }) => void,
-      ) => {
+      (handler: (state: { current_progress: SyncProgressState }) => void) => {
         handler({
           current_progress: {
-            table_name: "fixtures",
-            tables_completed: 1,
-            total_tables: 10,
-            percentage: 50,
+            status: "active",
+            progress: {
+              total_records: 1,
+              synced_records: 1,
+              status: "syncing",
+              errors: [],
+              table_name: "fixtures",
+              tables_completed: 1,
+              total_tables: 10,
+              percentage: 50,
+            },
           },
         });
         return () => {};
@@ -131,8 +131,8 @@ describe("layoutSessionFlows", () => {
   it("fails login sync when no profile is returned and redirects to unauthorized", async () => {
     const dependencies = create_login_dependencies({
       fetch_current_user_profile_from_convex: vi.fn(async () => ({
-        success: true,
-        data: null,
+        success: false,
+        error: "Profile not found in Convex",
       })),
     });
 

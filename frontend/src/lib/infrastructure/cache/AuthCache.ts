@@ -5,7 +5,7 @@ export interface AuthCacheConfig {
 
 export interface CacheLookupResult<T> {
   is_hit: boolean;
-  value: T | undefined;
+  value?: T;
 }
 
 export interface CacheStats {
@@ -36,7 +36,7 @@ function is_entry_expired<T>(
 
 function evict_oldest_entry<T>(entries: Map<string, CacheEntry<T>>): boolean {
   const oldest_key = entries.keys().next().value;
-  if (oldest_key === undefined) return false;
+  if (oldest_key === void 0) return false;
   entries.delete(oldest_key);
   return true;
 }
@@ -52,7 +52,7 @@ export function create_auth_cache<T>(config: AuthCacheConfig): AuthCache<T> {
     if (!entry || is_entry_expired(entry, config.fallback_ttl_ms)) {
       if (entry) entries.delete(key);
       miss_count++;
-      return { is_hit: false, value: undefined };
+      return { is_hit: false };
     }
 
     hit_count++;

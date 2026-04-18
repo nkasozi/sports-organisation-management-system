@@ -16,7 +16,7 @@ export interface SyncTableError {
 }
 
 export interface SyncHints {
-  remote_timestamp_cache?: Record<string, string | null>;
+  remote_timestamp_cache?: Record<string, string>;
   use_fresh_timestamps?: boolean;
 }
 

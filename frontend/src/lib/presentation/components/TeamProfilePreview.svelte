@@ -1,11 +1,11 @@
 <script lang="ts">
   import { browser } from "$app/environment";
   import type { TeamProfile } from "$lib/core/entities/TeamProfile";
-import { get_team_profile_use_cases } from "$lib/infrastructure/registry/useCaseFactories";
+  import { get_team_profile_use_cases } from "$lib/infrastructure/registry/useCaseFactories";
 
   export let team_id: string;
 
-  let profile: TeamProfile | null = null;
+  let profile: TeamProfile | undefined = undefined;
   let loading = false;
   let preview_url = "";
 
@@ -24,7 +24,7 @@ import { get_team_profile_use_cases } from "$lib/infrastructure/registry/useCase
     const result = await profile_use_cases.list({ team_id });
 
     if (result.success && (result.data?.items?.length ?? 0) > 0) {
-      profile = result.data?.items?.[0] ?? null;
+      profile = result.data?.items?.[0] ?? void 0;
       update_preview_url();
     }
 

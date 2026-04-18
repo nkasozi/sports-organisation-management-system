@@ -71,17 +71,16 @@ async function fetch_and_store_single_table(
 
 function is_convex_client_available(): boolean {
   const manager = get_sync_manager();
-  const convex_client = manager.get_convex_client();
-  return convex_client !== null;
+  return manager.get_convex_client().success;
 }
 
 async function try_seed_all_tables_from_convex(
   on_progress: ProgressCallback,
 ): Promise<ConvexSeedResult> {
   const manager = get_sync_manager();
-  const convex_client = manager.get_convex_client();
+  const convex_client_result = manager.get_convex_client();
 
-  if (!convex_client) {
+  if (!convex_client_result.success) {
     console.warn("[ConvexSeeding] Convex client not available");
     return {
       success: false,
@@ -91,6 +90,8 @@ async function try_seed_all_tables_from_convex(
       failed_tables: [],
     };
   }
+
+  const convex_client = convex_client_result.data;
 
   let tables_fetched = 0;
   let total_records = 0;

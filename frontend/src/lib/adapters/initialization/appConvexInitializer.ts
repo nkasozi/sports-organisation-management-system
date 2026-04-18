@@ -19,7 +19,13 @@ import {
 } from "$lib/infrastructure/cache/AuthCacheInvalidator";
 import { sync_store } from "$lib/presentation/stores/syncStore";
 
-let auth_cache_invalidator: AuthCacheInvalidator | null = null;
+type AuthCacheInvalidatorState =
+  | { status: "stopped" }
+  | { status: "ready"; invalidator: AuthCacheInvalidator };
+
+let auth_cache_invalidator_state: AuthCacheInvalidatorState = {
+  status: "stopped",
+};
 
 export function initialize_convex_client(): Result<ConvexClient> {
   const convex_url = PUBLIC_CONVEX_URL;
@@ -32,8 +38,13 @@ export function initialize_convex_client(): Result<ConvexClient> {
   try {
     const client = new ConvexClient(convex_url);
     client.setAuth(async () => {
-      const token = await get_session_token();
-      return token ?? undefined;
+      const token_result = await get_session_token();
+
+      if (!token_result.success) {
+        return;
+      }
+
+      return token_result.data;
     });
     sync_store.set_convex_client({
       mutation: (name: string, args: Record<string, unknown>) =>
@@ -60,13 +71,20 @@ export function initialize_convex_client(): Result<ConvexClient> {
 export function start_auth_cache_invalidation(
   convex_client: ConvexClient,
 ): boolean {
-  if (auth_cache_invalidator?.is_running()) return false;
+  if (
+    auth_cache_invalidator_state.status === "ready" &&
+    auth_cache_invalidator_state.invalidator.is_running()
+  ) {
+    return false;
+  }
+
   const local_auth_adapter = get_authentication_adapter(
     get_system_user_repository(),
   );
   const clerk_auth_adapter = get_clerk_authentication_adapter();
   const authz_adapter = get_authorization_adapter();
-  auth_cache_invalidator = create_auth_cache_invalidator({
+
+  const invalidator = create_auth_cache_invalidator({
     convex_client: convex_client as unknown as SubscribableConvexClient,
     caches_to_invalidate: [
       local_auth_adapter.get_verification_cache(),
@@ -75,7 +93,9 @@ export function start_auth_cache_invalidation(
     ],
     queries_to_watch: [api.authorization.get_current_user_profile],
   });
-  const started = auth_cache_invalidator.start();
+  auth_cache_invalidator_state = { status: "ready", invalidator };
+
+  const started = invalidator.start();
   if (started) {
     console.log(
       "[AppInitializer] Auth cache invalidation started via Convex subscriptions",
@@ -85,8 +105,16 @@ export function start_auth_cache_invalidation(
 }
 
 export function stop_auth_cache_invalidation(): boolean {
-  if (!auth_cache_invalidator?.is_running()) return false;
-  auth_cache_invalidator.stop();
-  auth_cache_invalidator = null;
+  if (auth_cache_invalidator_state.status !== "ready") {
+    return false;
+  }
+
+  if (!auth_cache_invalidator_state.invalidator.is_running()) {
+    return false;
+  }
+
+  auth_cache_invalidator_state.invalidator.stop();
+  auth_cache_invalidator_state = { status: "stopped" };
+
   return true;
 }

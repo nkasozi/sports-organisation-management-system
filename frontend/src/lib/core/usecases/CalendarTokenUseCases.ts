@@ -18,6 +18,7 @@ import type {
   CalendarFeedInfo,
   CalendarTokenUseCasesPort,
 } from "../interfaces/ports";
+import { is_calendar_token_not_found_error } from "../interfaces/ports";
 import type {
   CalendarFeedEntityId,
   CalendarTokenValue,
@@ -107,7 +108,7 @@ export function create_calendar_token_use_cases(
       user_id: EntityId,
       organization_id: EntityId,
       feed_type: CalendarFeedType,
-      entity_id: CalendarFeedEntityId | null,
+      entity_id: CalendarFeedEntityId | "",
       entity_name: CalendarToken["entity_name"],
       reminder_minutes_before: number = DEFAULT_REMINDER_MINUTES,
     ): AsyncResult<CalendarFeedInfo> {
@@ -152,7 +153,7 @@ export function create_calendar_token_use_cases(
 
     async get_feed_by_token(
       token: CalendarTokenValue,
-    ): AsyncResult<CalendarToken | null> {
+    ): AsyncResult<CalendarToken> {
       return calendar_token_repository.find_by_token(token);
     },
 
@@ -166,7 +167,14 @@ export function create_calendar_token_use_cases(
     ): AsyncResult<CalendarToken> {
       const find_result = await calendar_token_repository.find_by_token(token);
 
-      if (!find_result.success || !find_result.data) {
+      if (
+        !find_result.success &&
+        !is_calendar_token_not_found_error(find_result.error, token)
+      ) {
+        return create_failure_result(find_result.error);
+      }
+
+      if (!find_result.success) {
         return create_failure_result("Token not found");
       }
 

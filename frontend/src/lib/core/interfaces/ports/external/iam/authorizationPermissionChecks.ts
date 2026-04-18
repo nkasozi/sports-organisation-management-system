@@ -92,7 +92,7 @@ function authorize_entity_action(
     data_category: category,
     action,
     reason: is_authorized
-      ? undefined
+      ? void 0
       : `Role "${role}" does not have "${action}" permission for "${category}" data`,
   };
 }

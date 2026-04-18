@@ -3,6 +3,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { FixtureLineup } from "$lib/core/entities/FixtureLineup";
 import type { TeamPlayer } from "$lib/core/services/teamPlayers";
 
+import type {
+  FixtureLineupDetailLineupState,
+  FixtureLineupDetailProfileState,
+  FixtureLineupDetailTokenState,
+} from "./fixtureLineupDetailPageContracts";
+import { create_fixture_lineup_detail_page_controller_runtime } from "./fixtureLineupDetailPageControllerRuntime";
+
 const fixture_lineup_detail_page_controller_mocks = vi.hoisted(() => ({
   get_authorization_adapter: vi.fn(),
   ensure_auth_profile: vi.fn(),
@@ -43,8 +50,6 @@ vi.mock("./fixtureLineupDetailPageData", () => ({
   load_fixture_lineup_detail_view_data:
     fixture_lineup_detail_page_controller_mocks.load_fixture_lineup_detail_view_data,
 }));
-
-import { create_fixture_lineup_detail_page_controller_runtime } from "./fixtureLineupDetailPageControllerRuntime";
 
 const get_authorization_adapter =
   fixture_lineup_detail_page_controller_mocks.get_authorization_adapter;
@@ -90,8 +95,8 @@ function create_team_player(overrides: Partial<TeamPlayer> = {}): TeamPlayer {
     date_of_birth: "2000-01-01",
     position_id: "position_1",
     organization_id: "org_1",
-    height_cm: null,
-    weight_kg: null,
+    height_cm: 0,
+    weight_kg: 0,
     nationality: "UG",
     profile_image_url: "",
     emergency_contact_name: "Coach",
@@ -107,22 +112,25 @@ function create_team_player(overrides: Partial<TeamPlayer> = {}): TeamPlayer {
 }
 
 function create_command() {
-  let lineup: FixtureLineup | null = create_lineup();
-  let team_players =  [create_team_player()] as TeamPlayer[];
-  const goto = vi.fn(async () => undefined);
+  let lineup_state: FixtureLineupDetailLineupState = {
+    status: "present",
+    lineup: create_lineup(),
+  };
+  let team_players = [create_team_player()] as TeamPlayer[];
+  const goto = vi.fn(async () => {});
   const set_access_denial = vi.fn();
-  const set_away_team = vi.fn();
+  const set_away_team_state = vi.fn();
   const set_can_modify_lineup = vi.fn();
   const set_error_message = vi.fn();
-  const set_fixture = vi.fn();
-  const set_home_team = vi.fn();
-  const set_lineup = vi.fn((value: FixtureLineup | null) => {
-    lineup = value;
+  const set_fixture_state = vi.fn();
+  const set_home_team_state = vi.fn();
+  const set_lineup_state = vi.fn((value: FixtureLineupDetailLineupState) => {
+    lineup_state = value;
   });
   const set_loading = vi.fn();
   const set_permission_info_message = vi.fn();
   const set_saving = vi.fn();
-  const set_team = vi.fn();
+  const set_team_state = vi.fn();
   const set_team_players = vi.fn((value: TeamPlayer[]) => {
     team_players = value;
   });
@@ -132,18 +140,20 @@ function create_command() {
     access_denial_path: "/unauthorized",
     access_check_failed_message: "Access check failed",
     entity_type: "fixture_lineup",
-    get_auth_state: () => ({
-      current_profile: {
-        user_id: "user_1",
-        organization_id: "org_1",
-        team_id: "team_1",
-        role: "manager",
-        permissions: [],
-        scopes: [],
+    get_auth_state: (): {
+      current_profile_state: FixtureLineupDetailProfileState;
+      current_token_state: FixtureLineupDetailTokenState;
+    } => ({
+      current_profile_state: {
+        status: "present",
+        organization_scope_state: {
+          status: "scoped",
+          organization_id: "org_1",
+        },
       },
-      current_token: { raw_token: "raw-token" },
+      current_token_state: { status: "present", raw_token: "raw-token" },
     }),
-    get_lineup: () => lineup,
+    get_lineup_state: () => lineup_state,
     get_team_players: () => team_players,
     goto,
     is_browser: true,
@@ -151,16 +161,16 @@ function create_command() {
     lineup_list_path: "/fixture-lineups",
     read_action: "read" as const,
     set_access_denial,
-    set_away_team,
+    set_away_team_state,
     set_can_modify_lineup,
     set_error_message,
-    set_fixture,
-    set_home_team,
-    set_lineup,
+    set_fixture_state,
+    set_home_team_state,
+    set_lineup_state,
     set_loading,
     set_permission_info_message,
     set_saving,
-    set_team,
+    set_team_state,
     set_team_players,
     submit_confirmation: "Submit lineup?",
     submit_failed_message: "Submit failed",
@@ -180,18 +190,18 @@ function create_command() {
     command,
     goto,
     set_access_denial,
-    set_away_team,
+    set_away_team_state,
     set_can_modify_lineup,
     set_error_message,
-    set_fixture,
-    set_home_team,
-    set_lineup,
+    set_fixture_state,
+    set_home_team_state,
+    set_lineup_state,
     set_loading,
     set_permission_info_message,
     set_saving,
-    set_team,
+    set_team_state,
     set_team_players,
-    get_current_lineup: () => lineup,
+    get_current_lineup_state: () => lineup_state,
   };
 }
 
@@ -208,11 +218,11 @@ beforeEach((): void => {
     success: true,
     data: {
       lineup: create_lineup(),
-      fixture: { id: "fixture_1" },
-      team: { id: "team_1" },
+      fixture_state: { status: "present", fixture: { id: "fixture_1" } },
+      team_state: { status: "present", team: { id: "team_1" } },
       team_players: [create_team_player()],
-      home_team: { id: "team_home" },
-      away_team: { id: "team_away" },
+      home_team_state: { status: "present", team: { id: "team_home" } },
+      away_team_state: { status: "present", team: { id: "team_away" } },
     },
   });
   save_fixture_lineup_changes.mockResolvedValue({ success: true });
@@ -247,7 +257,7 @@ describe("create_fixture_lineup_detail_page_controller_runtime", () => {
     );
     expect(load_fixture_lineup_detail_view_data).toHaveBeenCalledWith(
       "lineup_1",
-      context.command.get_auth_state().current_profile,
+      context.command.get_auth_state().current_profile_state,
       expect.objectContaining({
         get_fixture_lineup_by_id,
         get_fixture_by_id:
@@ -255,10 +265,22 @@ describe("create_fixture_lineup_detail_page_controller_runtime", () => {
       }),
     );
     expect(context.set_loading).toHaveBeenCalledWith(true);
-    expect(context.set_lineup).toHaveBeenCalledWith(create_lineup());
-    expect(context.set_fixture).toHaveBeenCalledWith({ id: "fixture_1" });
-    expect(context.set_home_team).toHaveBeenCalledWith({ id: "team_home" });
-    expect(context.set_away_team).toHaveBeenCalledWith({ id: "team_away" });
+    expect(context.set_lineup_state).toHaveBeenCalledWith({
+      status: "present",
+      lineup: create_lineup(),
+    });
+    expect(context.set_fixture_state).toHaveBeenCalledWith({
+      status: "present",
+      fixture: { id: "fixture_1" },
+    });
+    expect(context.set_home_team_state).toHaveBeenCalledWith({
+      status: "present",
+      team: { id: "team_home" },
+    });
+    expect(context.set_away_team_state).toHaveBeenCalledWith({
+      status: "present",
+      team: { id: "team_away" },
+    });
     expect(context.set_loading).toHaveBeenLastCalledWith(false);
   });
 
@@ -309,10 +331,20 @@ describe("create_fixture_lineup_detail_page_controller_runtime", () => {
     runtime.handle_toggle_player_selection("player_1");
     await runtime.handle_save();
 
-    expect(context.get_current_lineup()?.selected_players).toHaveLength(1);
+    const current_lineup_state = context.get_current_lineup_state();
+
+    expect(current_lineup_state).toEqual({
+      status: "present",
+      lineup: expect.objectContaining({
+        selected_players: [expect.objectContaining({ id: "player_1" })],
+      }),
+    });
+    if (current_lineup_state.status !== "present") {
+      return;
+    }
     expect(save_fixture_lineup_changes).toHaveBeenCalledWith(
       "lineup_1",
-      context.get_current_lineup(),
+      current_lineup_state.lineup,
       context.command.use_cases.fixture_lineup_use_cases.update,
       "Update failed",
     );

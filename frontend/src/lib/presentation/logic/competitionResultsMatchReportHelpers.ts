@@ -1,4 +1,3 @@
-import type { Competition } from "$lib/core/entities/Competition";
 import type { Fixture } from "$lib/core/entities/Fixture";
 import type { Official } from "$lib/core/entities/Official";
 import {
@@ -11,6 +10,8 @@ import type { OfficialUseCasesPort } from "$lib/core/interfaces/ports/internal/u
 import type { OrganizationUseCasesPort } from "$lib/core/interfaces/ports/internal/usecases/OrganizationUseCasesPort";
 import type { TeamStaffUseCasesPort } from "$lib/core/interfaces/ports/internal/usecases/TeamStaffUseCasesPort";
 import type { MatchStaffEntry } from "$lib/core/types/MatchReportTypes";
+
+import type { CompetitionResultsSelectedCompetitionState } from "./competitionResultsPageContracts";
 
 export const COMPETITION_RESULTS_MATCH_REPORT_TEXT = {
   default_organization_name: "SPORT-SYNC",
@@ -32,6 +33,9 @@ export interface CompetitionResultsMatchReportDependencies {
   >;
 }
 
+export type MatchReportCompetitionState =
+  CompetitionResultsSelectedCompetitionState;
+
 export async function build_staff_entries(
   team_id: string,
   staff_roles_map: Map<string, string>,
@@ -48,15 +52,20 @@ export async function build_staff_entries(
 }
 
 export async function resolve_match_report_organization_name(
-  selected_competition: Competition | null,
+  selected_competition_state: MatchReportCompetitionState,
   dependencies: CompetitionResultsMatchReportDependencies,
 ): Promise<string> {
-  if (!selected_competition?.organization_id) {
+  if (selected_competition_state.status === "missing") {
     return COMPETITION_RESULTS_MATCH_REPORT_TEXT.default_organization_name;
   }
+
+  if (!selected_competition_state.competition.organization_id) {
+    return COMPETITION_RESULTS_MATCH_REPORT_TEXT.default_organization_name;
+  }
+
   const organization_result =
     await dependencies.organization_use_cases.get_by_id(
-      selected_competition.organization_id,
+      selected_competition_state.competition.organization_id,
     );
   if (!organization_result.success) {
     return COMPETITION_RESULTS_MATCH_REPORT_TEXT.default_organization_name;

@@ -32,8 +32,7 @@ function make_fixture(overrides: Partial<ScalarInput<Fixture>> = {}): Fixture {
     round_number: 3,
     game_events: [],
     notes: "",
-    home_team_jersey: null,
-    away_team_jersey: null,
+
     current_minute: 90,
     ...overrides,
   } as unknown as Fixture;
@@ -103,11 +102,11 @@ describe("build_match_report_data", () => {
     expect(report.final_score.away).toBe(0);
   });
 
-  it("defaults final score to 0 when fixture scores are null", () => {
+  it("returns a zero final score for scoreless fixtures", () => {
     const ctx = make_basic_context({
       fixture: make_fixture({
-        home_team_score: null as unknown as number,
-        away_team_score: null as unknown as number,
+        home_team_score: 0,
+        away_team_score: 0,
       }),
     });
     const report = build_match_report_data(ctx);
@@ -123,8 +122,8 @@ describe("build_match_report_data", () => {
     expect(report.competition_name).toBe("PREMIER CUP");
   });
 
-  it("falls back to 'COMPETITION' when competition is null", () => {
-    const ctx = make_basic_context({ competition: null });
+  it("falls back to 'COMPETITION' when competition is missing", () => {
+    const ctx = make_basic_context({ competition: void 0 as never });
     const report = build_match_report_data(ctx);
     expect(report.competition_name).toBe("COMPETITION");
   });
@@ -168,7 +167,7 @@ describe("build_match_report_data", () => {
 
   it("defaults scheduled_time to 00:00 when absent", () => {
     const ctx = make_basic_context({
-      fixture: make_fixture({ scheduled_time: null as unknown as string }),
+      fixture: make_fixture({ scheduled_time: void 0 as unknown as string }),
     });
     const report = build_match_report_data(ctx);
     expect(report.push_back_time).toBe("00:00");

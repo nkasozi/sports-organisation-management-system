@@ -1,5 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { create_live_game_detail_clock_handlers } from "./liveGameDetailControllerClock";
+import { create_live_game_detail_page_state } from "./liveGameDetailPageStateFactories";
+
 const {
   check_entity_authorized_mock,
   derive_live_game_detail_view_state_mock,
@@ -38,9 +41,6 @@ vi.mock("$lib/presentation/stores/accessDenial", () => ({
   access_denial_store: { set_denial: set_denial_mock },
 }));
 
-import { create_live_game_detail_clock_handlers } from "./liveGameDetailControllerClock";
-import { create_live_game_detail_page_state } from "./liveGameDetailPageStateFactories";
-
 describe("liveGameDetailControllerClock", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -73,7 +73,7 @@ describe("liveGameDetailControllerClock", () => {
       get_event_state: vi.fn(),
       get_page_state: state_store.get_page_state,
       goto: vi.fn(),
-      raw_token: () => null,
+      raw_token: () => "",
       set_page_state: state_store.set_page_state,
     });
 
@@ -89,7 +89,7 @@ describe("liveGameDetailControllerClock", () => {
   });
 
   it("records an access denial and redirects when read authorization is denied", async () => {
-    const goto = vi.fn().mockResolvedValue(undefined);
+    const goto = vi.fn().mockImplementation(async () => {});
     const state_store = create_state_store();
     ensure_auth_profile_mock.mockResolvedValue({ success: true });
     check_entity_authorized_mock.mockResolvedValueOnce({
@@ -123,10 +123,9 @@ describe("liveGameDetailControllerClock", () => {
         fixture: { id: "fixture-1", status: "completed" },
         home_team: { name: "Lions" },
         away_team: { name: "Tigers" },
-        competition: null,
-        sport: null,
+
         organization_name: "",
-        venue: null,
+
         assigned_officials_data: [],
         home_players: [],
         away_players: [],
@@ -141,7 +140,7 @@ describe("liveGameDetailControllerClock", () => {
       get_event_state: vi.fn(),
       get_page_state: state_store.get_page_state,
       goto: vi.fn(),
-      raw_token: () => null,
+      raw_token: () => "",
       set_page_state: state_store.set_page_state,
     });
 
@@ -176,7 +175,7 @@ describe("liveGameDetailControllerClock", () => {
       get_event_state: vi.fn(),
       get_page_state: state_store.get_page_state,
       goto: vi.fn(),
-      raw_token: () => null,
+      raw_token: () => "",
       set_page_state: state_store.set_page_state,
     });
 

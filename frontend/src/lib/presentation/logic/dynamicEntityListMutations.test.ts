@@ -1,5 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import {
+  build_dynamic_entity_list_sub_entity_defaults,
+  delete_dynamic_entity_list_entities,
+} from "./dynamicEntityListMutations";
+
 const { get_use_cases_for_entity_type_mock } = vi.hoisted(() => ({
   get_use_cases_for_entity_type_mock: vi.fn(),
 }));
@@ -8,18 +13,13 @@ vi.mock("$lib/infrastructure/registry/entityUseCasesRegistry", () => ({
   get_use_cases_for_entity_type: get_use_cases_for_entity_type_mock,
 }));
 
-import {
-  build_dynamic_entity_list_sub_entity_defaults,
-  delete_dynamic_entity_list_entities,
-} from "./dynamicEntityListMutations";
-
 describe("dynamicEntityListMutations", () => {
   beforeEach(() => {
     get_use_cases_for_entity_type_mock.mockReset();
   });
 
   it("builds sub-entity defaults with foreign key and holder type values", () => {
-    expect(build_dynamic_entity_list_sub_entity_defaults(null)).toEqual({
+    expect(build_dynamic_entity_list_sub_entity_defaults(void 0)).toEqual({
       id: "",
     });
     expect(
@@ -102,7 +102,7 @@ describe("dynamicEntityListMutations", () => {
 
     await expect(
       delete_dynamic_entity_list_entities({
-        crud_handlers: null,
+        crud_handlers: void 0,
         entities: entities as never,
         entities_to_delete: [entities[0], entities[1]] as never,
         entity_type: "team",
@@ -123,7 +123,7 @@ describe("dynamicEntityListMutations", () => {
 
     await expect(
       delete_dynamic_entity_list_entities({
-        crud_handlers: null,
+        crud_handlers: void 0,
         entities: entities as never,
         entities_to_delete: entities as never,
         entity_type: "team",

@@ -1,5 +1,7 @@
-import type { Fixture, GameEvent } from "$lib/core/entities/Fixture";
+import type { GameEvent } from "$lib/core/entities/Fixture";
 import type { LineupPlayer } from "$lib/core/entities/FixtureLineup";
+
+import type { MatchReportPageDataState } from "./matchReportPageLoadTypes";
 
 const MATCH_REPORT_STATUS_COLOR_BY_VALUE: Record<string, string> = {
   in_progress: "text-green-400",
@@ -49,6 +51,22 @@ export interface MatchReportViewState {
   has_lineups: boolean;
 }
 
+function create_empty_match_report_view_state(): MatchReportViewState {
+  return {
+    home_score: 0,
+    away_score: 0,
+    sorted_events: [],
+    home_starters: [],
+    home_substitutes: [],
+    away_starters: [],
+    away_substitutes: [],
+    is_game_scheduled: false,
+    is_game_in_progress: false,
+    is_game_completed: false,
+    has_lineups: false,
+  };
+}
+
 function sort_match_report_events(game_events: GameEvent[]): GameEvent[] {
   return [...game_events].sort(
     (first_event: GameEvent, second_event: GameEvent) =>
@@ -72,30 +90,35 @@ export function build_match_report_lineup_groups(
 }
 
 export function build_match_report_view_state(command: {
-  fixture: Fixture | null;
-  home_players: LineupPlayer[];
-  away_players: LineupPlayer[];
+  page_data_state: MatchReportPageDataState;
 }): MatchReportViewState {
+  if (command.page_data_state.status === "missing") {
+    return create_empty_match_report_view_state();
+  }
+
+  const page_data = command.page_data_state.page_data;
   const home_lineup_groups = build_match_report_lineup_groups(
-    command.home_players,
+    page_data.home_players,
   );
   const away_lineup_groups = build_match_report_lineup_groups(
-    command.away_players,
+    page_data.away_players,
   );
 
   return {
-    home_score: command.fixture?.home_team_score ?? 0,
-    away_score: command.fixture?.away_team_score ?? 0,
-    sorted_events: sort_match_report_events(command.fixture?.game_events ?? []),
+    home_score: page_data.fixture.home_team_score ?? 0,
+    away_score: page_data.fixture.away_team_score ?? 0,
+    sorted_events: sort_match_report_events(
+      page_data.fixture.game_events ?? [],
+    ),
     home_starters: home_lineup_groups.starters,
     home_substitutes: home_lineup_groups.substitutes,
     away_starters: away_lineup_groups.starters,
     away_substitutes: away_lineup_groups.substitutes,
-    is_game_scheduled: command.fixture?.status === "scheduled",
-    is_game_in_progress: command.fixture?.status === "in_progress",
-    is_game_completed: command.fixture?.status === "completed",
+    is_game_scheduled: page_data.fixture.status === "scheduled",
+    is_game_in_progress: page_data.fixture.status === "in_progress",
+    is_game_completed: page_data.fixture.status === "completed",
     has_lineups:
-      command.home_players.length > 0 || command.away_players.length > 0,
+      page_data.home_players.length > 0 || page_data.away_players.length > 0,
   };
 }
 
@@ -118,21 +141,35 @@ export function get_match_report_status_label(status: string): string {
 }
 
 export function should_poll_match_report_fixture(
-  fixture: Fixture | null,
+  page_data_state: MatchReportPageDataState,
 ): boolean {
-  return fixture?.status === "scheduled" || fixture?.status === "in_progress";
+  if (page_data_state.status === "missing") {
+    return false;
+  }
+
+  return (
+    page_data_state.page_data.fixture.status === "scheduled" ||
+    page_data_state.page_data.fixture.status === "in_progress"
+  );
 }
 
 export function build_match_report_page_title(
-  fixture: Fixture | null,
-  home_team_name: string | null,
-  away_team_name: string | null,
+  page_data_state: MatchReportPageDataState,
 ): string {
-  if (!fixture) {
+  if (page_data_state.status === "missing") {
     return "Match Viewer";
   }
 
-  return `${home_team_name || "Home"} vs ${away_team_name || "Away"} - Match Viewer`;
+  const home_team_name =
+    page_data_state.page_data.home_team_state.status === "present"
+      ? page_data_state.page_data.home_team_state.team.name
+      : "Home";
+  const away_team_name =
+    page_data_state.page_data.away_team_state.status === "present"
+      ? page_data_state.page_data.away_team_state.team.name
+      : "Away";
+
+  return `${home_team_name} vs ${away_team_name} - Match Viewer`;
 }
 
 export function format_match_report_kickoff_display(

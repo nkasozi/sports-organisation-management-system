@@ -94,18 +94,48 @@ export function create_fixture_game_events(
       if (home_score < 0 || away_score < 0)
         return create_failure_result("Scores cannot be negative");
       const old_result = await repository.find_by_id(id);
+      if (!old_result.success || !old_result.data) {
+        return update_and_emit(
+          repository,
+          id,
+          { home_team_score: home_score, away_team_score: away_score },
+          ["home_team_score", "away_team_score"],
+        );
+      }
       return update_and_emit(
         repository,
         id,
         { home_team_score: home_score, away_team_score: away_score },
         ["home_team_score", "away_team_score"],
-        old_result.success ? old_result.data : undefined,
+        old_result.data,
       );
     },
 
     async start_fixture(id) {
       if (!id?.trim()) return create_failure_result("Fixture ID is required");
       const old_result = await repository.find_by_id(id);
+      if (!old_result.success || !old_result.data) {
+        return update_and_emit(
+          repository,
+          id,
+          {
+            status: FIXTURE_STATUS.IN_PROGRESS,
+            current_period: GAME_PERIOD.FIRST_HALF,
+            current_minute: 0,
+            home_team_score: 0,
+            away_team_score: 0,
+            game_events: [],
+          },
+          [
+            "status",
+            "current_period",
+            "current_minute",
+            "home_team_score",
+            "away_team_score",
+            "game_events",
+          ],
+        );
+      }
       return update_and_emit(
         repository,
         id,
@@ -125,7 +155,7 @@ export function create_fixture_game_events(
           "away_team_score",
           "game_events",
         ],
-        old_result.success ? old_result.data : undefined,
+        old_result.data,
       );
     },
 
@@ -156,12 +186,20 @@ export function create_fixture_game_events(
     async update_period(id, period, minute) {
       if (!id?.trim()) return create_failure_result("Fixture ID is required");
       const old_result = await repository.find_by_id(id);
+      if (!old_result.success || !old_result.data) {
+        return update_and_emit(
+          repository,
+          id,
+          { current_period: period, current_minute: minute },
+          ["current_period", "current_minute"],
+        );
+      }
       return update_and_emit(
         repository,
         id,
         { current_period: period, current_minute: minute },
         ["current_period", "current_minute"],
-        old_result.success ? old_result.data : undefined,
+        old_result.data,
       );
     },
 

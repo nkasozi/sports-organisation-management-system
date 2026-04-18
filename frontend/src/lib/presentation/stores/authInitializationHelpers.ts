@@ -17,7 +17,19 @@ import {
   load_sidebar_menu_for_role,
   sync_user_context_with_event_bus,
 } from "./authHelpers";
-import type { AuthState, UserProfile } from "./authTypes";
+import {
+  type ClerkEmailState,
+  find_profile_by_id,
+  type RestoredAnonymousSessionState,
+  type RestoredSignedInSessionState,
+} from "./authInitializationContracts";
+import {
+  type AuthState,
+  create_missing_auth_token_state,
+  create_present_auth_profile_state,
+  create_present_auth_token_state,
+  type UserProfile,
+} from "./authTypes";
 import { load_profiles_from_repository } from "./profileLoader";
 
 export async function wait_for_clerk(): Promise<boolean> {
@@ -45,7 +57,7 @@ export async function load_available_profiles(): Promise<UserProfile[]> {
 export async function try_restore_anonymous_session(
   available_profiles: UserProfile[],
   saved_token_raw: string,
-): Promise<AuthState | null> {
+): Promise<RestoredAnonymousSessionState> {
   const local_auth_adapter = get_authentication_adapter(
     get_system_user_repository(),
   );
@@ -60,38 +72,50 @@ export async function try_restore_anonymous_session(
       { event: "auth_saved_token_invalid_on_anonymous_restore" },
     );
     await clear_auth_storage();
-    return null;
+    return { status: "not_restored" };
   }
-  const switched_profile =
-    available_profiles.find(
-      (profile) => profile.id === verify_result.data.payload?.user_id,
-    ) ?? null;
-  if (!switched_profile) {
+  const switched_profile_state = find_profile_by_id(
+    available_profiles,
+    verify_result.data.payload.user_id,
+  );
+
+  if (switched_profile_state.status !== "found") {
     await clear_auth_storage();
-    return null;
+    return { status: "not_restored" };
   }
+
+  const switched_profile = switched_profile_state.profile;
   const restored_token: AuthToken = {
     payload: verify_result.data.payload,
     signature: saved_token_raw.split(".")[2],
     raw_token: saved_token_raw,
   };
-  sync_user_context_with_event_bus(switched_profile);
+  sync_user_context_with_event_bus({
+    status: "present",
+    profile: switched_profile,
+  });
   const sidebar_menu_items = await load_sidebar_menu_for_role(
     switched_profile.role,
   );
-  await sync_branding_with_profile(switched_profile);
+  await sync_branding_with_profile({
+    status: "present",
+    profile: switched_profile,
+  });
   console.log("[AuthStore] Restored switched profile from saved token", {
     event: "auth_switched_profile_restored",
     display_name: switched_profile.display_name,
     role: switched_profile.role,
   });
   return {
-    current_token: restored_token,
-    current_profile: switched_profile,
-    available_profiles,
-    sidebar_menu_items,
-    is_initialized: true,
-    is_demo_session: true,
+    status: "restored",
+    auth_state: {
+      current_token: create_present_auth_token_state(restored_token),
+      current_profile: create_present_auth_profile_state(switched_profile),
+      available_profiles,
+      sidebar_menu_items,
+      is_initialized: true,
+      is_demo_session: true,
+    },
   };
 }
 
@@ -105,8 +129,8 @@ export async function create_default_anonymous_state(
     (profile) => profile.id === "public-viewer",
   )!;
   return {
-    current_token: null,
-    current_profile: public_profile,
+    current_token: create_missing_auth_token_state(),
+    current_profile: create_present_auth_profile_state(public_profile),
     available_profiles,
     sidebar_menu_items: await load_sidebar_menu_for_role("public_viewer"),
     is_initialized: true,
@@ -117,8 +141,8 @@ export async function create_default_anonymous_state(
 export async function try_restore_signed_in_session(
   available_profiles: UserProfile[],
   saved_token_raw: string,
-  clerk_email: string | null,
-): Promise<{ profile: UserProfile; token: AuthToken } | null> {
+  clerk_email_state: ClerkEmailState,
+): Promise<RestoredSignedInSessionState> {
   const auth_adapter = get_authentication_adapter(get_system_user_repository());
   const verify_result = await auth_adapter.verify_token(saved_token_raw);
   if (
@@ -130,37 +154,76 @@ export async function try_restore_signed_in_session(
       "[AuthStore] Saved token is invalid or expired, clearing storage",
     );
     await clear_auth_storage();
-    return null;
+    return { status: "not_restored" };
   }
+
   const verification = verify_result.data;
-  const token_profile =
-    available_profiles.find(
-      (profile) => profile.id === verification.payload?.user_id,
-    ) ?? null;
-  const token_matches_clerk_user =
-    clerk_email === null ||
-    (token_profile !== null &&
-      token_profile.email.toLowerCase() === clerk_email);
-  if (!token_profile || !token_matches_clerk_user || !verification.payload) {
+  const verified_payload = verification.payload;
+
+  if (!verified_payload) {
     console.warn(
-      `[AuthStore] Saved token belongs to a different user (token: ${token_profile?.email ?? "unknown"}, clerk: ${clerk_email}). Clearing stale token.`,
+      "[AuthStore] Saved token is invalid or expired, clearing storage",
     );
     await clear_auth_storage();
-    return null;
+    return { status: "not_restored" };
   }
+
+  const token_profile_state = find_profile_by_id(
+    available_profiles,
+    verified_payload.user_id,
+  );
+  const token_matches_clerk_user =
+    clerk_email_state.status !== "present" ||
+    (token_profile_state.status === "found" &&
+      token_profile_state.profile.email.toLowerCase() ===
+        clerk_email_state.email);
+
+  if (token_profile_state.status !== "found" || !token_matches_clerk_user) {
+    const token_profile_email =
+      token_profile_state.status === "found"
+        ? token_profile_state.profile.email
+        : "unknown";
+    const clerk_email =
+      clerk_email_state.status === "present"
+        ? clerk_email_state.email
+        : "missing";
+    console.warn(
+      `[AuthStore] Saved token belongs to a different user (token: ${token_profile_email}, clerk: ${clerk_email}). Clearing stale token.`,
+    );
+    await clear_auth_storage();
+    return { status: "not_restored" };
+  }
+
+  const token_profile = token_profile_state.profile;
   console.log(
     `[AuthStore] Restored session for profile: ${token_profile.display_name}`,
   );
   return {
+    status: "restored",
     profile: token_profile,
     token: {
-      payload: verification.payload,
+      payload: verified_payload,
       signature: saved_token_raw.split(".")[2],
       raw_token: saved_token_raw,
     },
   };
 }
 
-export function get_clerk_email(): string | null {
-  return get(clerk_session).user?.email_address?.toLowerCase() ?? null;
+export function get_clerk_email(): ClerkEmailState {
+  const clerk_state = get(clerk_session);
+
+  if (clerk_state.user_state.status !== "present") {
+    return { status: "missing" };
+  }
+
+  const email_address = clerk_state.user_state.user.email_address;
+
+  if (!email_address) {
+    return { status: "missing" };
+  }
+
+  return {
+    status: "present",
+    email: email_address.toLowerCase(),
+  };
 }

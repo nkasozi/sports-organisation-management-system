@@ -1,13 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const { save_column_preferences_mock } = vi.hoisted(() => ({
-  save_column_preferences_mock: vi.fn(),
-}));
-
-vi.mock("$lib/presentation/logic/columnPreferences", () => ({
-  save_column_preferences: save_column_preferences_mock,
-}));
-
 import {
   export_dynamic_entity_list_to_csv,
   get_dynamic_entity_list_cleared_filter_state,
@@ -17,6 +9,15 @@ import {
   get_dynamic_entity_list_toggle_single_selection,
   toggle_dynamic_entity_list_column_visibility,
 } from "./dynamicEntityListControllerInteractions";
+import { create_present_csv_metadata_state } from "./listCsvExportLogic";
+
+const { save_column_preferences_mock } = vi.hoisted(() => ({
+  save_column_preferences_mock: vi.fn(),
+}));
+
+vi.mock("$lib/presentation/logic/columnPreferences", () => ({
+  save_column_preferences: save_column_preferences_mock,
+}));
 
 describe("dynamicEntityListControllerInteractions", () => {
   beforeEach(() => {
@@ -64,21 +65,22 @@ describe("dynamicEntityListControllerInteractions", () => {
   });
 
   it("persists visible column changes and returns the updated column set", async () => {
-    save_column_preferences_mock.mockResolvedValueOnce(undefined);
+    save_column_preferences_mock.mockImplementationOnce(async () => {});
 
     await expect(
       toggle_dynamic_entity_list_column_visibility({
         entity_type: "team",
         field_name: "status",
-        sub_entity_filter: null,
+        sub_entity_filter: void 0,
+
         visible_columns: new Set(["name"]),
       }),
     ).resolves.toEqual(new Set(["name", "status"]));
-    expect(save_column_preferences_mock).toHaveBeenCalledWith(
-      "team",
-      null,
-      new Set(["name", "status"]),
-    );
+    expect(save_column_preferences_mock).toHaveBeenCalledWith({
+      entity_type: "team",
+      sub_entity_filter: void 0,
+      visible_columns: new Set(["name", "status"]),
+    });
   });
 
   it("creates a download link and clicks it when exporting CSV data", () => {
@@ -104,7 +106,7 @@ describe("dynamicEntityListControllerInteractions", () => {
     export_dynamic_entity_list_to_csv(
       [{ id: "entity-1", name: "Lions" }] as never,
       ["name"],
-      {
+      create_present_csv_metadata_state({
         fields: [
           {
             display_name: "Name",
@@ -112,7 +114,7 @@ describe("dynamicEntityListControllerInteractions", () => {
             field_type: "string",
           },
         ],
-      } as never,
+      } as never),
       "team",
       {},
     );

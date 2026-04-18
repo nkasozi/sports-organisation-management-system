@@ -20,7 +20,7 @@ export async function load_calendar_shell_initial_data(
   }
   const fetch_result = await fetch_public_data_from_convex("calendar");
   const organizations = await load_calendar_organizations({
-    current_profile: command.current_profile,
+    current_profile_state: command.current_profile_state,
     organization_use_cases: command.use_cases.organization_use_cases,
   });
   if (organizations.length === 0) {
@@ -29,7 +29,7 @@ export async function load_calendar_shell_initial_data(
       is_using_cached_data: !fetch_result.success,
       organizations,
       selected_organization_id: "",
-      bundle: null,
+      bundle: void 0,
     };
   }
   const selected_organization_id = resolve_selected_organization_id(

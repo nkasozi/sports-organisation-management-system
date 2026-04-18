@@ -34,7 +34,7 @@ export interface GameEventLog extends BaseEntity {
   fixture_id: EntityId;
   event_type: GameEventLogType;
   minute: GameMinute;
-  stoppage_time_minute: GameMinute | null;
+  stoppage_time_minute: GameMinute;
   team_side: TeamSide;
   player_id: EntityId;
   player_name: Name;

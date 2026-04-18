@@ -3,9 +3,9 @@
     export let image_alt: string;
     export let fallback_text: string;
     export let title: string;
-    export let title_suffix: string | null = null;
-    export let subtitle: string | null = null;
-    export let summary: string | null = null;
+    export let title_suffix: string | undefined = undefined;
+    export let subtitle: string | undefined = undefined;
+    export let summary: string | undefined = undefined;
     export let metadata_items: Array<{ label: string; value: string }> = [];
 </script>
 

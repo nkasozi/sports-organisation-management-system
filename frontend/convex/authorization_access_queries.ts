@@ -78,7 +78,7 @@ export const check_entity_authorized = query({
         user_role: user_result.data.role,
         data_category,
         reason: is_authorized
-          ? undefined
+          ? void 0
           : `Role "${user_result.data.role}" does not have "${args.action}" permission for "${data_category}" data`,
       },
     };

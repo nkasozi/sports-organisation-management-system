@@ -21,7 +21,7 @@ export function create_player_use_cases(
       filter?: PlayerFilter,
       options?: QueryOptions,
     ): PaginatedAsyncResult<Player> {
-      return repository.find_all(filter, options);
+      return repository.find_all(filter ?? {}, options ?? {});
     },
 
     async get_by_id(id: ScalarValueInput<Player["id"]>): AsyncResult<Player> {
@@ -75,7 +75,7 @@ export function create_player_use_cases(
       if (!team_id || team_id.trim().length === 0) {
         return create_failure_result("Team ID is required");
       }
-      return repository.find_by_team(team_id, options);
+      return repository.find_by_team(team_id, options ?? {});
     },
   };
 }

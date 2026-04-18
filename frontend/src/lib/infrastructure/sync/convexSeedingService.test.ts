@@ -1,5 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import {
+  is_convex_client_available,
+  try_seed_all_tables_from_convex,
+} from "./convexSeedingService";
+import type { ConvexClient } from "./syncTypes";
+
 interface ConvexRecord {
   _id: string;
   local_id: string;
@@ -12,11 +18,11 @@ interface MockTable {
   bulkPut: ReturnType<typeof vi.fn>;
 }
 
-const mock_database_tables =  {} as Record<string, MockTable>;
+const mock_database_tables = {} as Record<string, MockTable>;
 
 function create_mock_table(): MockTable {
   return {
-    bulkPut: vi.fn().mockResolvedValue(undefined),
+    bulkPut: vi.fn().mockImplementation(async () => {}),
   } as MockTable;
 }
 
@@ -35,14 +41,18 @@ vi.mock("./syncState", () => ({
   set_pulling_from_remote: vi.fn(),
 }));
 
-let mock_convex_client: {
-  query: ReturnType<typeof vi.fn>;
-  mutation: ReturnType<typeof vi.fn>;
-} | null = null;
+type MockConvexClientResult =
+  | { success: false; error: string }
+  | { success: true; data: ConvexClient };
+
+let mock_convex_client_result: MockConvexClientResult = {
+  success: false,
+  error: "Convex client not configured",
+};
 
 vi.mock("./convexSyncService", () => ({
   get_sync_manager: () => ({
-    get_convex_client: () => mock_convex_client,
+    get_convex_client: () => mock_convex_client_result,
   }),
   TABLE_NAMES: [
     "organizations",
@@ -52,11 +62,6 @@ vi.mock("./convexSyncService", () => ({
     "fixtures",
   ] as const,
 }));
-
-import {
-  is_convex_client_available,
-  try_seed_all_tables_from_convex,
-} from "./convexSeedingService";
 
 function create_mock_convex_records(
   table_name: string,
@@ -73,22 +78,27 @@ function create_mock_convex_records(
 
 describe("is_convex_client_available", () => {
   beforeEach(() => {
-    mock_convex_client = null;
+    mock_convex_client_result = {
+      success: false,
+      error: "Convex client not configured",
+    };
     Object.keys(mock_database_tables).forEach(
       (key) => delete mock_database_tables[key],
     );
   });
 
-  it("returns false when convex client is null", () => {
-    mock_convex_client = null;
+  it("returns false when convex client is unavailable", () => {
     const result = is_convex_client_available();
     expect(result).toBe(false);
   });
 
   it("returns true when convex client exists", () => {
-    mock_convex_client = {
-      query: vi.fn(),
-      mutation: vi.fn(),
+    mock_convex_client_result = {
+      success: true,
+      data: {
+        query: vi.fn(),
+        mutation: vi.fn(),
+      } as unknown as ConvexClient,
     };
     const result = is_convex_client_available();
     expect(result).toBe(true);
@@ -100,7 +110,10 @@ describe("try_seed_all_tables_from_convex", () => {
   let on_progress: (message: string, percentage: number) => void;
 
   beforeEach(() => {
-    mock_convex_client = null;
+    mock_convex_client_result = {
+      success: false,
+      error: "Convex client not configured",
+    };
     progress_messages = [];
     on_progress = (message: string, percentage: number) => {
       progress_messages.push({ message, percentage });
@@ -111,8 +124,6 @@ describe("try_seed_all_tables_from_convex", () => {
   });
 
   it("returns failure when convex client is not available", async () => {
-    mock_convex_client = null;
-
     const result = await try_seed_all_tables_from_convex(on_progress);
 
     expect(result.success).toBe(false);
@@ -122,14 +133,19 @@ describe("try_seed_all_tables_from_convex", () => {
   });
 
   it("seeds all tables successfully from convex", async () => {
-    mock_convex_client = {
-      query: vi
-        .fn()
-        .mockImplementation((_name: string, args: Record<string, unknown>) => {
-          const table_name = args.table_name as string;
-          return Promise.resolve(create_mock_convex_records(table_name, 5));
-        }),
-      mutation: vi.fn(),
+    mock_convex_client_result = {
+      success: true,
+      data: {
+        query: vi
+          .fn()
+          .mockImplementation(
+            (_name: string, args: Record<string, unknown>) => {
+              const table_name = args.table_name as string;
+              return Promise.resolve(create_mock_convex_records(table_name, 5));
+            },
+          ),
+        mutation: vi.fn(),
+      } as unknown as ConvexClient,
     };
 
     const result = await try_seed_all_tables_from_convex(on_progress);
@@ -142,9 +158,12 @@ describe("try_seed_all_tables_from_convex", () => {
   });
 
   it("reports progress for each table", async () => {
-    mock_convex_client = {
-      query: vi.fn().mockResolvedValue([]),
-      mutation: vi.fn(),
+    mock_convex_client_result = {
+      success: true,
+      data: {
+        query: vi.fn().mockResolvedValue([]),
+        mutation: vi.fn(),
+      } as unknown as ConvexClient,
     };
 
     await try_seed_all_tables_from_convex(on_progress);
@@ -157,9 +176,12 @@ describe("try_seed_all_tables_from_convex", () => {
   });
 
   it("returns failure when convex returns no data", async () => {
-    mock_convex_client = {
-      query: vi.fn().mockResolvedValue([]),
-      mutation: vi.fn(),
+    mock_convex_client_result = {
+      success: true,
+      data: {
+        query: vi.fn().mockResolvedValue([]),
+        mutation: vi.fn(),
+      } as unknown as ConvexClient,
     };
 
     const result = await try_seed_all_tables_from_convex(on_progress);
@@ -170,18 +192,23 @@ describe("try_seed_all_tables_from_convex", () => {
 
   it("handles partial failures gracefully", async () => {
     let call_count = 0;
-    mock_convex_client = {
-      query: vi
-        .fn()
-        .mockImplementation((_name: string, args: Record<string, unknown>) => {
-          call_count++;
-          if (call_count === 1) {
-            return Promise.reject(new Error("Network error"));
-          }
-          const table_name = args.table_name as string;
-          return Promise.resolve(create_mock_convex_records(table_name, 3));
-        }),
-      mutation: vi.fn(),
+    mock_convex_client_result = {
+      success: true,
+      data: {
+        query: vi
+          .fn()
+          .mockImplementation(
+            (_name: string, args: Record<string, unknown>) => {
+              call_count++;
+              if (call_count === 1) {
+                return Promise.reject(new Error("Network error"));
+              }
+              const table_name = args.table_name as string;
+              return Promise.resolve(create_mock_convex_records(table_name, 3));
+            },
+          ),
+        mutation: vi.fn(),
+      } as unknown as ConvexClient,
     };
 
     const result = await try_seed_all_tables_from_convex(on_progress);
@@ -194,15 +221,18 @@ describe("try_seed_all_tables_from_convex", () => {
 
   it("returns failure when too many tables fail", async () => {
     let call_count = 0;
-    mock_convex_client = {
-      query: vi.fn().mockImplementation(() => {
-        call_count++;
-        if (call_count <= 3) {
-          return Promise.reject(new Error("Network error"));
-        }
-        return Promise.resolve(create_mock_convex_records("test", 2));
-      }),
-      mutation: vi.fn(),
+    mock_convex_client_result = {
+      success: true,
+      data: {
+        query: vi.fn().mockImplementation(() => {
+          call_count++;
+          if (call_count <= 3) {
+            return Promise.reject(new Error("Network error"));
+          }
+          return Promise.resolve(create_mock_convex_records("test", 2));
+        }),
+        mutation: vi.fn(),
+      } as unknown as ConvexClient,
     };
 
     const result = await try_seed_all_tables_from_convex(on_progress);
@@ -213,17 +243,22 @@ describe("try_seed_all_tables_from_convex", () => {
 
   it("stores records in local database after fetching", async () => {
     const org_records = create_mock_convex_records("organizations", 3);
-    mock_convex_client = {
-      query: vi
-        .fn()
-        .mockImplementation((_name: string, args: Record<string, unknown>) => {
-          const table_name = args.table_name as string;
-          if (table_name === "organizations") {
-            return Promise.resolve(org_records);
-          }
-          return Promise.resolve([]);
-        }),
-      mutation: vi.fn(),
+    mock_convex_client_result = {
+      success: true,
+      data: {
+        query: vi
+          .fn()
+          .mockImplementation(
+            (_name: string, args: Record<string, unknown>) => {
+              const table_name = args.table_name as string;
+              if (table_name === "organizations") {
+                return Promise.resolve(org_records);
+              }
+              return Promise.resolve([]);
+            },
+          ),
+        mutation: vi.fn(),
+      } as unknown as ConvexClient,
     };
 
     await try_seed_all_tables_from_convex(on_progress);

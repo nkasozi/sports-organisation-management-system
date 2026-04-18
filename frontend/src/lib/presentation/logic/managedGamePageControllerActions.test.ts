@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { create_managed_game_action_handlers } from "./managedGamePageControllerActions";
+
 const {
   create_managed_game_event_action_handlers_mock,
   create_managed_game_game_action_handlers_mock,
@@ -17,8 +19,6 @@ vi.mock("./managedGamePageControllerGameActions", () => ({
   create_managed_game_game_action_handlers:
     create_managed_game_game_action_handlers_mock,
 }));
-
-import { create_managed_game_action_handlers } from "./managedGamePageControllerActions";
 
 describe("managedGamePageControllerActions", () => {
   beforeEach(() => {

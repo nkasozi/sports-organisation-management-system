@@ -22,7 +22,7 @@ import { convert_file_to_base64 } from "./dynamicFormLogic";
 
 type CallbackDependencies = {
   entity_type: string;
-  get_entity_metadata: () => EntityMetadata | null;
+  get_entity_metadata: () => EntityMetadata | undefined;
   get_form_state: () => DynamicEntityFormState;
   set_form_state: (next_state: DynamicEntityFormState) => void;
   get_warning_state: () => DynamicEntityFormWarningState;

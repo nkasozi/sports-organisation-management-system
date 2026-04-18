@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { Fixture, GameEvent } from "$lib/core/entities/Fixture";
 import type { LineupPlayer } from "$lib/core/entities/FixtureLineup";
 import type { ScalarInput } from "$lib/core/types/DomainScalars";
+import type { MatchReportPageDataState } from "$lib/presentation/logic/matchReportPageLoadTypes";
 
 import {
   build_match_report_lineup_groups,
@@ -22,7 +23,7 @@ function create_game_event(
     id: "event_1",
     event_type: "goal",
     minute: 10,
-    stoppage_time_minute: null,
+    stoppage_time_minute: 0,
     team_side: "home",
     player_name: "Jordan Miles",
     secondary_player_name: "",
@@ -48,7 +49,9 @@ function create_lineup_player(
   } as unknown as LineupPlayer;
 }
 
-function create_fixture(overrides: Partial<ScalarInput<Fixture>> = {}): Fixture {
+function create_fixture(
+  overrides: Partial<ScalarInput<Fixture>> = {},
+): Fixture {
   return {
     id: "fixture_1",
     organization_id: "org_1",
@@ -76,6 +79,33 @@ function create_fixture(overrides: Partial<ScalarInput<Fixture>> = {}): Fixture 
   } as unknown as Fixture;
 }
 
+function create_match_report_page_data_state(
+  overrides: Partial<MatchReportPageDataState> = {},
+): MatchReportPageDataState {
+  return {
+    status: "present",
+    page_data: {
+      fixture: create_fixture(),
+      home_team_state: {
+        status: "present",
+        team: { id: "team_1", name: "Lions" } as never,
+      },
+      away_team_state: {
+        status: "present",
+        team: { id: "team_2", name: "Tigers" } as never,
+      },
+      competition_state: { status: "missing" },
+      sport_state: { status: "missing" },
+      venue_state: { status: "missing" },
+      organization_name: "",
+      assigned_officials_data: [],
+      home_players: [],
+      away_players: [],
+    },
+    ...overrides,
+  } as MatchReportPageDataState;
+}
+
 describe("matchReportPageState", () => {
   it("splits lineup players into starters and substitutes", () => {
     const result = build_match_report_lineup_groups([
@@ -89,24 +119,41 @@ describe("matchReportPageState", () => {
 
   it("builds derived match report view state from the fixture and lineups", () => {
     const result = build_match_report_view_state({
-      fixture: create_fixture({
-        game_events: [
-          create_game_event({
-            id: "late_event",
-            minute: 30,
-            recorded_at: "2026-04-07T10:30:00Z",
+      page_data_state: create_match_report_page_data_state({
+        page_data: {
+          fixture: create_fixture({
+            game_events: [
+              create_game_event({
+                id: "late_event",
+                minute: 30,
+                recorded_at: "2026-04-07T10:30:00Z",
+              }),
+              create_game_event({
+                id: "early_event",
+                minute: 10,
+                recorded_at: "2026-04-07T10:10:00Z",
+              }),
+            ],
           }),
-          create_game_event({
-            id: "early_event",
-            minute: 10,
-            recorded_at: "2026-04-07T10:10:00Z",
-          }),
-        ],
+          home_team_state: {
+            status: "present",
+            team: { id: "team_1", name: "Lions" } as never,
+          },
+          away_team_state: {
+            status: "present",
+            team: { id: "team_2", name: "Tigers" } as never,
+          },
+          competition_state: { status: "missing" },
+          sport_state: { status: "missing" },
+          venue_state: { status: "missing" },
+          organization_name: "",
+          assigned_officials_data: [],
+          home_players: [create_lineup_player({ id: "home_starter" })],
+          away_players: [
+            create_lineup_player({ id: "away_sub", is_substitute: true }),
+          ],
+        },
       }),
-      home_players: [create_lineup_player({ id: "home_starter" })],
-      away_players: [
-        create_lineup_player({ id: "away_sub", is_substitute: true }),
-      ],
     });
 
     expect(result.home_score).toBe(2);
@@ -135,26 +182,69 @@ describe("matchReportPageState", () => {
 
   it("builds a stable page title from the loaded teams", () => {
     expect(
-      build_match_report_page_title(create_fixture(), "Lions", "Tigers"),
+      build_match_report_page_title(create_match_report_page_data_state()),
     ).toBe("Lions vs Tigers - Match Viewer");
-    expect(build_match_report_page_title(null, null, null)).toBe(
+    expect(build_match_report_page_title({ status: "missing" })).toBe(
       "Match Viewer",
     );
   });
 
   it("polls only while the match has not reached a terminal state", () => {
     expect(
-      should_poll_match_report_fixture(create_fixture({ status: "scheduled" })),
-    ).toBe(true);
-    expect(
       should_poll_match_report_fixture(
-        create_fixture({ status: "in_progress" }),
+        create_match_report_page_data_state({
+          page_data: {
+            fixture: create_fixture({ status: "scheduled" }),
+            home_team_state: { status: "missing" },
+            away_team_state: { status: "missing" },
+            competition_state: { status: "missing" },
+            sport_state: { status: "missing" },
+            venue_state: { status: "missing" },
+            organization_name: "",
+            assigned_officials_data: [],
+            home_players: [],
+            away_players: [],
+          },
+        }),
       ),
     ).toBe(true);
     expect(
-      should_poll_match_report_fixture(create_fixture({ status: "completed" })),
+      should_poll_match_report_fixture(
+        create_match_report_page_data_state({
+          page_data: {
+            fixture: create_fixture({ status: "in_progress" }),
+            home_team_state: { status: "missing" },
+            away_team_state: { status: "missing" },
+            competition_state: { status: "missing" },
+            sport_state: { status: "missing" },
+            venue_state: { status: "missing" },
+            organization_name: "",
+            assigned_officials_data: [],
+            home_players: [],
+            away_players: [],
+          },
+        }),
+      ),
+    ).toBe(true);
+    expect(
+      should_poll_match_report_fixture(
+        create_match_report_page_data_state({
+          page_data: {
+            fixture: create_fixture({ status: "completed" }),
+            home_team_state: { status: "missing" },
+            away_team_state: { status: "missing" },
+            competition_state: { status: "missing" },
+            sport_state: { status: "missing" },
+            venue_state: { status: "missing" },
+            organization_name: "",
+            assigned_officials_data: [],
+            home_players: [],
+            away_players: [],
+          },
+        }),
+      ),
     ).toBe(false);
-    expect(should_poll_match_report_fixture(null)).toBe(false);
+    expect(should_poll_match_report_fixture({ status: "missing" })).toBe(false);
   });
 
   it("returns the expected timeline and status classes", () => {

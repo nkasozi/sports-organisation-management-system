@@ -79,31 +79,15 @@ describe("CompetitionHelpers", () => {
         },
         {
           game_duration_minutes: 70,
-          periods: undefined,
-          additional_card_types: undefined,
-          additional_foul_categories: undefined,
-          official_requirements: undefined,
-          overtime_rules: undefined,
-          scoring_rules: undefined,
-          substitution_rules: undefined,
-          max_players_on_field: undefined,
-          min_players_on_field: undefined,
-          max_squad_size: undefined,
+
           custom_rules: { substitutions: "limited" },
         },
       ),
     ).toEqual({
       game_duration_minutes: 70,
-      periods: undefined,
-      additional_card_types: undefined,
-      additional_foul_categories: undefined,
-      official_requirements: undefined,
-      overtime_rules: undefined,
-      scoring_rules: undefined,
-      substitution_rules: undefined,
+
       max_players_on_field: 11,
-      min_players_on_field: undefined,
-      max_squad_size: undefined,
+
       custom_rules: { cards: "standard", substitutions: "limited" },
     });
   });

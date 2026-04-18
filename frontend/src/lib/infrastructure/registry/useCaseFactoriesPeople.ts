@@ -40,7 +40,19 @@ export function get_official_associated_team_use_cases(): OfficialAssociatedTeam
 export function get_official_performance_rating_use_cases(): OfficialPerformanceRatingUseCases {
   return create_official_performance_rating_use_cases(
     get_repository_container().official_performance_rating_repository,
-    () => get(auth_store).current_profile,
+    () => {
+      const current_profile_state = get(auth_store).current_profile;
+
+      if (current_profile_state.status !== "present") {
+        return { status: "anonymous" };
+      }
+
+      return {
+        status: "available",
+        id: current_profile_state.profile.id,
+        role: current_profile_state.profile.role,
+      };
+    },
   );
 }
 

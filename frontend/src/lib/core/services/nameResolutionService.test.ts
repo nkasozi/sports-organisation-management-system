@@ -12,6 +12,7 @@ import {
   looks_like_entity_id,
   looks_like_entity_name,
   type NameResolutionInput,
+  type NameResolutionResult,
   resolve_entity_name_to_id,
   resolve_multiple_names_to_ids,
 } from "./nameResolutionService";
@@ -40,6 +41,33 @@ function create_mock_entity(id: string, name: string): BaseEntity {
   } as unknown as BaseEntity;
 }
 
+function expect_successful_resolution(
+  result: NameResolutionResult,
+  expected_resolved_id: string,
+): void {
+  expect(result.success).toBe(true);
+  expect(result).not.toHaveProperty("error_message");
+
+  if (!result.success) {
+    expect(result.success).toBe(true);
+    return;
+  }
+
+  expect(result.resolved_id).toBe(expected_resolved_id);
+}
+
+function expect_failed_resolution(result: NameResolutionResult): string {
+  expect(result.success).toBe(false);
+  expect(result).not.toHaveProperty("resolved_id");
+
+  if (result.success) {
+    expect(result.success).toBe(false);
+    return "";
+  }
+
+  return result.error_message;
+}
+
 describe("resolve_entity_name_to_id", () => {
   describe("successful resolution", () => {
     it("should return resolved ID when exact match found", async () => {
@@ -49,7 +77,7 @@ describe("resolve_entity_name_to_id", () => {
         data: [mock_entity],
       });
 
-      const input =  {
+      const input = {
         entity_name: "Acme Sports Club",
         entity_type: "organization",
         use_cases,
@@ -57,9 +85,7 @@ describe("resolve_entity_name_to_id", () => {
 
       const result = await resolve_entity_name_to_id(input);
 
-      expect(result.success).toBe(true);
-      expect(result.resolved_id).toBe("org_123");
-      expect(result.error_message).toBeNull();
+      expect_successful_resolution(result, "org_123");
     });
 
     it("should match names case-insensitively", async () => {
@@ -69,7 +95,7 @@ describe("resolve_entity_name_to_id", () => {
         data: [mock_entity],
       });
 
-      const input =  {
+      const input = {
         entity_name: "manchester united",
         entity_type: "organization",
         use_cases,
@@ -77,8 +103,7 @@ describe("resolve_entity_name_to_id", () => {
 
       const result = await resolve_entity_name_to_id(input);
 
-      expect(result.success).toBe(true);
-      expect(result.resolved_id).toBe("org_456");
+      expect_successful_resolution(result, "org_456");
     });
 
     it("should trim whitespace from name before matching", async () => {
@@ -88,7 +113,7 @@ describe("resolve_entity_name_to_id", () => {
         data: [mock_entity],
       });
 
-      const input =  {
+      const input = {
         entity_name: "  FC Barcelona  ",
         entity_type: "team",
         use_cases,
@@ -96,8 +121,7 @@ describe("resolve_entity_name_to_id", () => {
 
       const result = await resolve_entity_name_to_id(input);
 
-      expect(result.success).toBe(true);
-      expect(result.resolved_id).toBe("team_789");
+      expect_successful_resolution(result, "team_789");
     });
 
     it("should filter to exact match when partial matches exist", async () => {
@@ -108,7 +132,7 @@ describe("resolve_entity_name_to_id", () => {
         data: [exact_match, partial_match],
       });
 
-      const input =  {
+      const input = {
         entity_name: "Eagles",
         entity_type: "team",
         use_cases,
@@ -116,8 +140,7 @@ describe("resolve_entity_name_to_id", () => {
 
       const result = await resolve_entity_name_to_id(input);
 
-      expect(result.success).toBe(true);
-      expect(result.resolved_id).toBe("team_1");
+      expect_successful_resolution(result, "team_1");
     });
   });
 
@@ -128,7 +151,7 @@ describe("resolve_entity_name_to_id", () => {
         data: [],
       });
 
-      const input =  {
+      const input = {
         entity_name: "Nonexistent Team",
         entity_type: "team",
         use_cases,
@@ -136,15 +159,13 @@ describe("resolve_entity_name_to_id", () => {
 
       const result = await resolve_entity_name_to_id(input);
 
-      expect(result.success).toBe(false);
-      expect(result.resolved_id).toBeNull();
-      expect(result.error_message).toContain(
+      const error_message = expect_failed_resolution(result);
+
+      expect(error_message).toContain(
         'Error: No team found with name "Nonexistent Team"',
       );
-      expect(result.error_message).toContain(
-        "Solution: Verify the name spelling",
-      );
-      expect(result.error_message).toContain("team_id");
+      expect(error_message).toContain("Solution: Verify the name spelling");
+      expect(error_message).toContain("team_id");
     });
 
     it("should return no match when only partial matches exist", async () => {
@@ -154,7 +175,7 @@ describe("resolve_entity_name_to_id", () => {
         data: [partial_match],
       });
 
-      const input =  {
+      const input = {
         entity_name: "Eagles",
         entity_type: "team",
         use_cases,
@@ -162,10 +183,9 @@ describe("resolve_entity_name_to_id", () => {
 
       const result = await resolve_entity_name_to_id(input);
 
-      expect(result.success).toBe(false);
-      expect(result.error_message).toContain(
-        'No team found with name "Eagles"',
-      );
+      const error_message = expect_failed_resolution(result);
+
+      expect(error_message).toContain('No team found with name "Eagles"');
     });
   });
 
@@ -178,7 +198,7 @@ describe("resolve_entity_name_to_id", () => {
         data: [match_1, match_2],
       });
 
-      const input =  {
+      const input = {
         entity_name: "United FC",
         entity_type: "team",
         use_cases,
@@ -186,17 +206,15 @@ describe("resolve_entity_name_to_id", () => {
 
       const result = await resolve_entity_name_to_id(input);
 
-      expect(result.success).toBe(false);
-      expect(result.resolved_id).toBeNull();
-      expect(result.error_message).toContain(
+      const error_message = expect_failed_resolution(result);
+
+      expect(error_message).toContain(
         'Multiple teams found with name "United FC"',
       );
-      expect(result.error_message).toContain("2 matches");
-      expect(result.error_message).toContain("team_1");
-      expect(result.error_message).toContain("team_2");
-      expect(result.error_message).toContain(
-        "Solution: Use the ID column (team_id)",
-      );
+      expect(error_message).toContain("2 matches");
+      expect(error_message).toContain("team_1");
+      expect(error_message).toContain("team_2");
+      expect(error_message).toContain("Solution: Use the ID column (team_id)");
     });
 
     it("should truncate ID list when more than 3 matches", async () => {
@@ -211,7 +229,7 @@ describe("resolve_entity_name_to_id", () => {
         data: matches,
       });
 
-      const input =  {
+      const input = {
         entity_name: "Sports Club",
         entity_type: "organization",
         use_cases,
@@ -219,10 +237,11 @@ describe("resolve_entity_name_to_id", () => {
 
       const result = await resolve_entity_name_to_id(input);
 
-      expect(result.success).toBe(false);
-      expect(result.error_message).toContain("4 matches");
-      expect(result.error_message).toContain("org_1, org_2, org_3...");
-      expect(result.error_message).not.toContain("org_4");
+      const error_message = expect_failed_resolution(result);
+
+      expect(error_message).toContain("4 matches");
+      expect(error_message).toContain("org_1, org_2, org_3...");
+      expect(error_message).not.toContain("org_4");
     });
   });
 
@@ -230,7 +249,7 @@ describe("resolve_entity_name_to_id", () => {
     it("should return error for empty name", async () => {
       const use_cases = create_mock_use_cases({ success: true, data: [] });
 
-      const input =  {
+      const input = {
         entity_name: "",
         entity_type: "organization",
         use_cases,
@@ -238,17 +257,18 @@ describe("resolve_entity_name_to_id", () => {
 
       const result = await resolve_entity_name_to_id(input);
 
-      expect(result.success).toBe(false);
-      expect(result.error_message).toContain(
+      const error_message = expect_failed_resolution(result);
+
+      expect(error_message).toContain(
         "Error: Empty name provided for organization",
       );
-      expect(result.error_message).toContain("organization_id");
+      expect(error_message).toContain("organization_id");
     });
 
     it("should return error for whitespace-only name", async () => {
       const use_cases = create_mock_use_cases({ success: true, data: [] });
 
-      const input =  {
+      const input = {
         entity_name: "   ",
         entity_type: "team",
         use_cases,
@@ -256,8 +276,9 @@ describe("resolve_entity_name_to_id", () => {
 
       const result = await resolve_entity_name_to_id(input);
 
-      expect(result.success).toBe(false);
-      expect(result.error_message).toContain("Empty name provided for team");
+      const error_message = expect_failed_resolution(result);
+
+      expect(error_message).toContain("Empty name provided for team");
     });
   });
 
@@ -268,7 +289,7 @@ describe("resolve_entity_name_to_id", () => {
         error_message: "Database connection failed",
       });
 
-      const input =  {
+      const input = {
         entity_name: "Test Team",
         entity_type: "team",
         use_cases,
@@ -276,9 +297,10 @@ describe("resolve_entity_name_to_id", () => {
 
       const result = await resolve_entity_name_to_id(input);
 
-      expect(result.success).toBe(false);
-      expect(result.error_message).toContain("Failed to search for team");
-      expect(result.error_message).toContain("Database connection failed");
+      const error_message = expect_failed_resolution(result);
+
+      expect(error_message).toContain("Failed to search for team");
+      expect(error_message).toContain("Database connection failed");
     });
   });
 });
@@ -297,7 +319,7 @@ describe("resolve_multiple_names_to_ids", () => {
       data: [team_entity],
     });
 
-    const requests =  [
+    const requests = [
       {
         entity_name: "Main Organization",
         entity_type: "organization",
@@ -311,14 +333,21 @@ describe("resolve_multiple_names_to_ids", () => {
     ] as NameResolutionInput[];
 
     const results = await resolve_multiple_names_to_ids(requests);
+    const organization_result = results.get("organization:Main Organization");
+    const team_result = results.get("team:First Team");
 
     expect(results.size).toBe(2);
-    expect(results.get("organization:Main Organization")?.success).toBe(true);
-    expect(results.get("organization:Main Organization")?.resolved_id).toBe(
-      "org_1",
-    );
-    expect(results.get("team:First Team")?.success).toBe(true);
-    expect(results.get("team:First Team")?.resolved_id).toBe("team_1");
+    expect(organization_result).toBeDefined();
+    expect(team_result).toBeDefined();
+
+    if (!organization_result || !team_result) {
+      expect(organization_result).toBeDefined();
+      expect(team_result).toBeDefined();
+      return;
+    }
+
+    expect_successful_resolution(organization_result, "org_1");
+    expect_successful_resolution(team_result, "team_1");
   });
 
   it("should include failures in batch results", async () => {
@@ -332,7 +361,7 @@ describe("resolve_multiple_names_to_ids", () => {
       data: [],
     });
 
-    const requests =  [
+    const requests = [
       {
         entity_name: "Found Org",
         entity_type: "organization",

@@ -27,7 +27,7 @@ describe("competitionResultsWorkspaceDisplay", () => {
 
     expect(
       get_competition_results_stage_name(
-        null,
+        "",
         competition_stages as never,
         competition_stage_map as never,
       ),

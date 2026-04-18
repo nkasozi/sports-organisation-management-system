@@ -7,6 +7,7 @@ import {
   compute_audit_log_total_pages,
   format_audit_log_changes,
   get_audit_log_action_badge_class,
+  get_audit_log_organization_filter,
 } from "./auditLogPageState";
 
 function create_audit_log(overrides: Partial<AuditLog> = {}): AuditLog {
@@ -35,12 +36,31 @@ function create_audit_log(overrides: Partial<AuditLog> = {}): AuditLog {
 }
 
 describe("auditLogPageState", () => {
+  it("builds explicit organization filter state from the current profile", () => {
+    expect(get_audit_log_organization_filter({ status: "missing" })).toEqual({
+      status: "unfiltered",
+    });
+
+    expect(
+      get_audit_log_organization_filter({
+        status: "present",
+        profile: { organization_id: "org_1" } as never,
+      }),
+    ).toEqual({
+      status: "filtered",
+      organization_id: "org_1",
+    });
+  });
+
   it("builds the combined audit log filter from page inputs", () => {
     const result = build_audit_log_filter({
       filter_entity_type: "fixture",
       filter_action: "create",
       filter_user: "user_2",
-      organization_id: "org_1",
+      organization_filter_state: {
+        status: "filtered",
+        organization_id: "org_1",
+      },
     });
 
     expect(result).toEqual({
@@ -48,6 +68,21 @@ describe("auditLogPageState", () => {
       action: "create",
       user_id: "user_2",
       organization_id: "org_1",
+    });
+  });
+
+  it("omits organization_id when the organization filter state is unfiltered", () => {
+    const result = build_audit_log_filter({
+      filter_entity_type: "fixture",
+      filter_action: "create",
+      filter_user: "user_2",
+      organization_filter_state: { status: "unfiltered" },
+    });
+
+    expect(result).toEqual({
+      entity_type: "fixture",
+      action: "create",
+      user_id: "user_2",
     });
   });
 

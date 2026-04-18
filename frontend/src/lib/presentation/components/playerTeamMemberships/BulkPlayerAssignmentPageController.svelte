@@ -12,8 +12,11 @@
         get_player_use_cases,
         get_team_use_cases,
     } from "$lib/infrastructure/registry/useCaseFactories";
+    import type { BulkPlayerAssignmentRawTokenState } from "$lib/presentation/logic/bulkPlayerAssignmentPageControllerRuntime";
     import { create_bulk_player_assignment_page_controller_runtime } from "$lib/presentation/logic/bulkPlayerAssignmentPageControllerRuntime";
+    import type { BulkPlayerAssignmentProfileState } from "$lib/presentation/logic/bulkPlayerAssignmentPageData";
     import {
+        type BulkPlayerAssignmentSelectedTeamState,
         count_selected_players,
         filter_player_assignments_by_name,
         filter_player_assignments_by_team_gender,
@@ -54,19 +57,56 @@
         toast_message = "",
         toast_type: "success" | "error" | "info" = "info";
 
-    $: selected_team =
-        teams.find((team: Team) => team.id === selected_team_id) ?? null;
+    function build_bulk_player_assignment_profile_state(): BulkPlayerAssignmentProfileState {
+        const current_profile = get(auth_store).current_profile;
+
+        if (current_profile.status !== "present") {
+            return { status: "missing" };
+        }
+
+        return {
+            status: "present",
+            profile: current_profile.profile as unknown as UserScopeProfile,
+        };
+    }
+
+    function build_bulk_player_assignment_raw_token_state(): BulkPlayerAssignmentRawTokenState {
+        const current_token = get(auth_store).current_token;
+
+        if (current_token.status !== "present") {
+            return { status: "missing" };
+        }
+
+        return {
+            status: "present",
+            raw_token: current_token.token.raw_token,
+        };
+    }
+
+    let selected_team_state: BulkPlayerAssignmentSelectedTeamState = {
+        status: "missing",
+    };
+
+    $: {
+        const selected_team = teams.find(
+            (team: Team) => team.id === selected_team_id,
+        );
+        selected_team_state = selected_team
+            ? { status: "present", team: selected_team }
+            : { status: "missing" };
+    }
     $: gender_filtered_assignments = filter_player_assignments_by_team_gender(
         all_player_assignments,
-        selected_team,
+        selected_team_state,
     );
     $: unassigned_players = gender_filtered_assignments.filter(
-        (assignment: PlayerAssignment) => assignment.current_team_id === null,
+        (assignment: PlayerAssignment) =>
+            assignment.current_team_state.status === "unassigned",
     );
     $: assigned_players_on_other_teams = gender_filtered_assignments.filter(
         (assignment: PlayerAssignment) =>
-            assignment.current_team_id !== null &&
-            assignment.current_team_id !== selected_team_id,
+            assignment.current_team_state.status === "assigned" &&
+            assignment.current_team_state.team_id !== selected_team_id,
     );
     $: filtered_unassigned_players = filter_player_assignments_by_name(
         unassigned_players,
@@ -80,9 +120,11 @@
         unassigned_players,
         assigned_players_on_other_teams,
     );
-    $: gender_filter_active = Boolean(selected_team?.gender_id);
+    $: gender_filter_active =
+        selected_team_state.status === "present" &&
+        Boolean(selected_team_state.team.gender_id);
     $: target_gender_label = get_target_gender_label(
-        selected_team,
+        selected_team_state,
         gender_name_map,
     );
     $: can_save = selected_count > 0 && selected_team_id !== "";
@@ -103,11 +145,11 @@
         get_assigned_players_on_other_teams: () =>
             assigned_players_on_other_teams,
         get_auth_state: () => ({
-            current_profile: get(auth_store)
-                .current_profile as UserScopeProfile | null,
-            current_token: get(auth_store).current_token,
+            current_profile_state:
+                build_bulk_player_assignment_profile_state(),
+            current_token_state: build_bulk_player_assignment_raw_token_state(),
         }),
-        get_selected_team: () => selected_team,
+        get_selected_team_state: () => selected_team_state,
         get_selected_team_id: () => selected_team_id,
         get_unassigned_players: () => unassigned_players,
         goto,

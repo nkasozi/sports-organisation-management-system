@@ -5,6 +5,8 @@ import type {
   PlayerPosition,
 } from "../entities/PlayerPosition";
 import type { PlayerPositionRepository } from "../interfaces/ports";
+import { build_player_position_not_found_by_code_error } from "../interfaces/ports";
+import { create_failure_result } from "../types/Result";
 import { create_player_position_use_cases } from "./PlayerPositionUseCases";
 
 function create_mock_repository(): PlayerPositionRepository {
@@ -111,10 +113,11 @@ describe("PlayerPositionUseCases", () => {
 
   describe("create", () => {
     it("should create with valid input", async () => {
-      vi.mocked(mock_repository.find_by_code).mockResolvedValue({
-        success: true,
-        data: null,
-      });
+      vi.mocked(mock_repository.find_by_code).mockResolvedValue(
+        create_failure_result(
+          build_player_position_not_found_by_code_error("ST"),
+        ),
+      );
       vi.mocked(mock_repository.create).mockResolvedValue({
         success: true,
         data: create_test_position(),
@@ -138,10 +141,11 @@ describe("PlayerPositionUseCases", () => {
         success: true,
         data: create_test_position(),
       });
-      vi.mocked(mock_repository.find_by_code).mockResolvedValue({
-        success: true,
-        data: null,
-      });
+      vi.mocked(mock_repository.find_by_code).mockResolvedValue(
+        create_failure_result(
+          build_player_position_not_found_by_code_error("GK"),
+        ),
+      );
       vi.mocked(mock_repository.update).mockResolvedValue({
         success: true,
         data: create_test_position(),

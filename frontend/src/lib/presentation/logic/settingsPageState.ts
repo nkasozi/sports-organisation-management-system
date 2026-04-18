@@ -1,6 +1,11 @@
 import type { Organization } from "$lib/core/entities/Organization";
 import { ALLOWED_SYNC_INTERVALS_MS } from "$lib/core/entities/OrganizationSettings";
+import {
+  type SettingsActionResult,
+  SOCIAL_MEDIA_OPTIONS,
+} from "$lib/presentation/logic/settingsPageConstants";
 import type { SocialMediaLink } from "$lib/presentation/stores/branding";
+
 export {
   apply_organization_settings_form_values,
   COLOR_OPTIONS,
@@ -12,14 +17,10 @@ export {
   SOCIAL_MEDIA_OPTIONS,
   SYNC_INTERVAL_OPTIONS,
 } from "$lib/presentation/logic/settingsPageConstants";
-import {
-  type SettingsActionResult,
-  SOCIAL_MEDIA_OPTIONS,
-} from "$lib/presentation/logic/settingsPageConstants";
 
 export function get_default_selected_organization_id(
   organizations: Organization[],
-  profile_organization_id: string | undefined,
+  profile_organization_id: string,
 ): string {
   if (organizations.length === 0) {
     return "";

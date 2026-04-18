@@ -26,6 +26,11 @@ export interface SystemUserRecord {
   status?: string;
 }
 
+interface ConvexIdentityRecord {
+  subject: string;
+  email?: string;
+}
+
 interface ConvexContext {
   db: {
     query(table: string): {
@@ -36,7 +41,7 @@ interface ConvexContext {
     };
   };
   auth: {
-    getUserIdentity(): Promise<{ subject: string; email?: string } | null>;
+    getUserIdentity(): Promise<unknown>;
   };
 }
 
@@ -45,12 +50,35 @@ export type ConvexResult<TData, TError = string> =
   | { success: false; error: TError };
 
 export const AUTH_DENIED_MESSAGE = "Access denied";
+const EMPTY_SCOPE_VALUE = "";
+const GLOBAL_ORGANIZATION_ID = "*";
+
+function is_record_value(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+function is_identity_record(value: unknown): value is ConvexIdentityRecord {
+  return is_record_value(value) && typeof value.subject === "string";
+}
+
+function is_system_user_record(value: unknown): value is SystemUserRecord {
+  return (
+    is_record_value(value) &&
+    typeof value.email === "string" &&
+    typeof value.role === "string" &&
+    "_id" in value
+  );
+}
+
+function get_scope_filter_value(value: unknown): string {
+  return typeof value === "string" ? value : EMPTY_SCOPE_VALUE;
+}
 
 export async function require_auth(
   ctx: ConvexContext,
 ): Promise<ConvexResult<SystemUserRecord>> {
-  const identity = await ctx.auth.getUserIdentity();
-  if (!identity) {
+  const identity_result = await ctx.auth.getUserIdentity();
+  if (!is_identity_record(identity_result)) {
     console.warn("[Auth] Authentication failed", {
       event: "auth_failed",
       reason: "no_identity",
@@ -58,7 +86,7 @@ export async function require_auth(
     return { success: false, error: AUTH_DENIED_MESSAGE };
   }
 
-  const email = identity.email;
+  const email = identity_result.email;
   if (!email) {
     console.warn("[Auth] Authentication failed", {
       event: "auth_failed",
@@ -67,18 +95,20 @@ export async function require_auth(
     return { success: false, error: AUTH_DENIED_MESSAGE };
   }
 
-  const system_user = (await ctx.db
+  const system_user_result = await ctx.db
     .query("system_users")
     .withIndex("by_email", (q: any) => q.eq("email", email.toLowerCase()))
-    .first()) as SystemUserRecord | null;
+    .first();
 
-  if (!system_user) {
+  if (!is_system_user_record(system_user_result)) {
     console.warn("[Auth] Authentication failed", {
       event: "auth_failed",
       reason: "user_not_found",
     });
     return { success: false, error: AUTH_DENIED_MESSAGE };
   }
+
+  const system_user = system_user_result;
 
   if (system_user.status === "inactive") {
     console.warn("[Auth] Authentication failed", {
@@ -154,20 +184,20 @@ export async function require_permission(
 export function build_scope_filter(
   user: SystemUserRecord,
   entity_type: string,
-): Record<string, string | undefined> {
+): Record<string, string> {
   const role = user.role as UserRole;
   const normalized_entity = entity_type.toLowerCase().replace(/[\s_-]/g, "");
 
-  if (user.organization_id === "*") return {};
+  if (user.organization_id === GLOBAL_ORGANIZATION_ID) return {};
 
   if (role === "org_admin" || role === "officials_manager") {
-    return { organization_id: user.organization_id };
+    return { organization_id: get_scope_filter_value(user.organization_id) };
   }
 
   if (role === "team_manager") {
     return {
-      organization_id: user.organization_id,
-      team_id: user.team_id,
+      organization_id: get_scope_filter_value(user.organization_id),
+      team_id: get_scope_filter_value(user.team_id),
     };
   }
 
@@ -176,9 +206,9 @@ export function build_scope_filter(
       normalized_entity === "official" ||
       normalized_entity === "officialprofile"
     ) {
-      return { id: user.official_id };
+      return { id: get_scope_filter_value(user.official_id) };
     }
-    return { organization_id: user.organization_id };
+    return { organization_id: get_scope_filter_value(user.organization_id) };
   }
 
   if (role === "player") {
@@ -186,10 +216,10 @@ export function build_scope_filter(
       normalized_entity === "player" ||
       normalized_entity === "playerprofile"
     ) {
-      return { id: user.player_id };
+      return { id: get_scope_filter_value(user.player_id) };
     }
-    return { organization_id: user.organization_id };
+    return { organization_id: get_scope_filter_value(user.organization_id) };
   }
 
-  return { organization_id: user.organization_id };
+  return { organization_id: get_scope_filter_value(user.organization_id) };
 }

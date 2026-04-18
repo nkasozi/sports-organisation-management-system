@@ -1,8 +1,31 @@
 import type { Table } from "dexie";
 
+import {
+  type AsyncResult,
+  create_failure_result,
+  create_success_result,
+} from "$lib/core/types/Result";
+
 import { set_pulling_from_remote } from "./syncState";
 import type { ConvexClient, ConvexRecord, TableName } from "./syncTypes";
 import { EPOCH_TIMESTAMP } from "./syncTypes";
+
+type SyncPullQueryResult =
+  | ConvexRecord[]
+  | { success: true; data: ConvexRecord[] }
+  | { success: false; data: ConvexRecord[]; error: string };
+
+function is_sync_pull_query_result_object(
+  sync_result: unknown,
+): sync_result is Exclude<SyncPullQueryResult, ConvexRecord[]> {
+  return (
+    typeof sync_result === "object" &&
+    sync_result != void 0 &&
+    !Array.isArray(sync_result) &&
+    "success" in sync_result &&
+    "data" in sync_result
+  );
+}
 
 export async function pull_table_from_convex(
   convex_client: ConvexClient,
@@ -12,7 +35,7 @@ export async function pull_table_from_convex(
   >,
   table_name: TableName,
   local_latest_modified_at: string,
-): Promise<{ success: boolean; records_pulled: number; error: string | null }> {
+): AsyncResult<{ records_pulled: number }> {
   try {
     console.log(
       `[Sync:Pull] ${table_name} — querying Convex for changes since local latest: ${local_latest_modified_at}`,
@@ -21,16 +44,13 @@ export async function pull_table_from_convex(
     const sync_result = (await convex_client.query("sync:get_changes_since", {
       table_name,
       since_timestamp: local_latest_modified_at,
-    })) as
-      | { success: boolean; data: ConvexRecord[]; error: string | null }
-      | ConvexRecord[];
+    })) as SyncPullQueryResult | unknown;
 
-    const is_result_type =
-      sync_result !== null &&
-      typeof sync_result === "object" &&
-      !Array.isArray(sync_result) &&
-      "success" in sync_result;
+    if (sync_result == void 0) {
+      return create_failure_result("Invalid sync response");
+    }
 
+    const is_result_type = is_sync_pull_query_result_object(sync_result);
     const remote_changes: ConvexRecord[] = is_result_type
       ? sync_result.data
       : (sync_result as ConvexRecord[]);
@@ -39,12 +59,12 @@ export async function pull_table_from_convex(
       console.warn(
         `[Sync:Pull] ${table_name} — server returned error: ${sync_result.error}`,
       );
-      return { success: false, records_pulled: 0, error: sync_result.error };
+      return create_failure_result(sync_result.error);
     }
 
-    if (!remote_changes || remote_changes.length === 0) {
+    if (remote_changes.length === 0) {
       console.log(`[Sync:Pull] ${table_name} — no remote changes found`);
-      return { success: true, records_pulled: 0, error: null };
+      return create_success_result({ records_pulled: 0 });
     }
 
     console.log(
@@ -98,7 +118,7 @@ export async function pull_table_from_convex(
     console.log(
       `[Sync:Pull] ${table_name} — completed: pulled ${records_pulled}, skipped ${records_skipped} (local was newer)`,
     );
-    return { success: true, records_pulled, error: null };
+    return create_success_result({ records_pulled });
   } catch (error) {
     const error_message =
       error instanceof Error ? error.message : String(error);
@@ -107,6 +127,7 @@ export async function pull_table_from_convex(
       context: String(table_name),
       error: String(error_message),
     });
-    return { success: false, records_pulled: 0, error: error_message };
+
+    return create_failure_result(error_message);
   }
 }

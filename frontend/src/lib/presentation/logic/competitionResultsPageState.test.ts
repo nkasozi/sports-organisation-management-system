@@ -1,5 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import {
+  create_empty_competition_results_bundle,
+  derive_competition_results_can_change_organizations,
+  find_competition_results_competition,
+  find_competition_results_organization,
+  load_competition_results_bundle,
+  load_competitions_for_results_organization,
+  select_preferred_results_organization,
+} from "./competitionResultsPageState";
+
 const competition_results_page_state_mocks = vi.hoisted(() => ({
   check_data_permission: vi.fn(),
   load_competitions_by_organization: vi.fn(),
@@ -18,16 +28,6 @@ vi.mock("$lib/presentation/logic/competitionResultsPageData", () => ({
     competition_results_page_state_mocks.load_selected_competition_bundle,
 }));
 
-import {
-  create_empty_competition_results_bundle,
-  derive_competition_results_can_change_organizations,
-  find_competition_results_competition,
-  find_competition_results_organization,
-  load_competition_results_bundle,
-  load_competitions_for_results_organization,
-  select_preferred_results_organization,
-} from "./competitionResultsPageState";
-
 describe("competitionResultsPageState", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -38,8 +38,8 @@ describe("competitionResultsPageState", () => {
 
   it("creates an empty bundle and resolves organizations or competitions by id", () => {
     expect(create_empty_competition_results_bundle()).toEqual({
-      selected_competition: null,
-      competition_format: null,
+      selected_competition_state: { status: "missing" },
+      competition_format_state: { status: "missing" },
       competition_stages: [],
       fixtures: [],
       teams: [],
@@ -50,25 +50,40 @@ describe("competitionResultsPageState", () => {
         [{ id: "organization-1", name: "Premier League" }] as never,
         "organization-1",
       ),
-    ).toEqual({ id: "organization-1", name: "Premier League" });
+    ).toEqual({
+      status: "present",
+      organization: { id: "organization-1", name: "Premier League" },
+    });
     expect(
       find_competition_results_competition(
         [{ id: "competition-1", name: "League" }] as never,
         "competition-1",
       ),
-    ).toEqual({ id: "competition-1", name: "League" });
+    ).toEqual({
+      status: "present",
+      competition: { id: "competition-1", name: "League" },
+    });
   });
 
   it("derives organization switching rules and preferred organization selection", () => {
     expect(
       derive_competition_results_can_change_organizations(
-        { organization_id: "*", role: "super_admin" } as never,
+        {
+          status: "present",
+          profile: { organization_id: "*", role: "super_admin" } as never,
+        },
         "",
       ),
     ).toBe(true);
     expect(
       derive_competition_results_can_change_organizations(
-        { organization_id: "organization-1", role: "org_admin" } as never,
+        {
+          status: "present",
+          profile: {
+            organization_id: "organization-1",
+            role: "org_admin",
+          } as never,
+        },
         "",
       ),
     ).toBe(true);
@@ -78,7 +93,13 @@ describe("competitionResultsPageState", () => {
     );
     expect(
       derive_competition_results_can_change_organizations(
-        { organization_id: "organization-1", role: "org_admin" } as never,
+        {
+          status: "present",
+          profile: {
+            organization_id: "organization-1",
+            role: "org_admin",
+          } as never,
+        },
         "organization-1",
       ),
     ).toBe(false);
@@ -91,13 +112,19 @@ describe("competitionResultsPageState", () => {
         ] as never,
         "organization-2",
       ),
-    ).toEqual({ id: "organization-2", name: "Cup" });
+    ).toEqual({
+      status: "present",
+      organization: { id: "organization-2", name: "Cup" },
+    });
   });
 
   it("loads competitions for the selected organization and delegates bundle loading", async () => {
     const expected_bundle = {
-      selected_competition: { id: "competition-1" },
-      competition_format: null,
+      selected_competition_state: {
+        status: "present",
+        competition: { id: "competition-1" },
+      },
+      competition_format_state: { status: "missing" },
       competition_stages: [],
       fixtures: [],
       teams: [],

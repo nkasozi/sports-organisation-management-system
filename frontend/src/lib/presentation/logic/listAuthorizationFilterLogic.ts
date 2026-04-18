@@ -9,22 +9,44 @@ import {
   type UserScopeProfile,
 } from "../../core/interfaces/ports";
 
-type EntityAuthFilterResult = {
-  filter: Record<string, string> | null;
-  profile_missing: boolean;
-};
+export type ListAuthorizationProfileState =
+  | { status: "missing" }
+  | { status: "present"; profile: UserScopeProfile };
+
+export type ListAuthorizationMetadataState =
+  | { status: "missing" }
+  | { status: "present"; entity_metadata: EntityMetadata };
+
+type EntityAuthorizationFilterState =
+  | { status: "missing" }
+  | { status: "present"; filter: Record<string, string> };
+
+type EntityAuthFilterResult =
+  | { status: "profile_missing" }
+  | { status: "ready"; filter_state: EntityAuthorizationFilterState };
 
 function normalize_entity_type_for_filter(type: string): string {
   return type.toLowerCase().replace(/[\s_-]/g, "");
 }
 
 export function build_entity_authorization_filter(
-  auth_profile: UserScopeProfile | null,
-  entity_metadata: EntityMetadata | null,
+  profile_state: ListAuthorizationProfileState,
+  metadata_state: ListAuthorizationMetadataState,
   entity_type: string,
 ): EntityAuthFilterResult {
-  if (!auth_profile) return { filter: null, profile_missing: true };
-  if (!entity_metadata) return { filter: {}, profile_missing: false };
+  if (profile_state.status === "missing") {
+    return { status: "profile_missing" };
+  }
+
+  if (metadata_state.status === "missing") {
+    return {
+      status: "ready",
+      filter_state: { status: "present", filter: {} },
+    };
+  }
+
+  const auth_profile = profile_state.profile;
+  const entity_metadata = metadata_state.entity_metadata;
 
   const entity_fields = entity_metadata.fields.map(
     (f: FieldMetadata) => f.field_name,
@@ -55,7 +77,10 @@ export function build_entity_authorization_filter(
   if (normalized_type === "official" && has_valid_official_id)
     filter["id"] = official_id;
 
-  return { filter, profile_missing: false };
+  return {
+    status: "ready",
+    filter_state: { status: "present", filter },
+  };
 }
 
 export function apply_id_filter_to_entities(
@@ -68,11 +93,13 @@ export function apply_id_filter_to_entities(
 
 export function merge_entity_list_filters(
   sub_filter: Record<string, string> | undefined,
-  auth_filter: Record<string, string> | null,
+  auth_filter_state: EntityAuthorizationFilterState,
 ): Record<string, string> | undefined {
-  if (auth_filter === null) return undefined;
+  if (auth_filter_state.status === "missing") return;
+
+  const auth_filter = auth_filter_state.filter;
   const has_sub = sub_filter && Object.keys(sub_filter).length > 0;
   const has_auth = Object.keys(auth_filter).length > 0;
-  if (!has_sub && !has_auth) return undefined;
+  if (!has_sub && !has_auth) return;
   return { ...(sub_filter || {}), ...auth_filter };
 }

@@ -1,5 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import {
+  handle_fixture_lineup_create_fixture_change,
+  handle_fixture_lineup_create_organization_change,
+  handle_fixture_lineup_create_team_change,
+  reset_fixture_lineup_create_team_state,
+} from "./fixtureLineupCreatePageFlowHandlers";
+
 const {
   load_fixture_lineup_create_fixture_data_mock,
   load_fixture_lineup_create_team_data_mock,
@@ -15,13 +22,6 @@ vi.mock("$lib/presentation/logic/fixtureLineupCreateData", () => ({
     load_fixture_lineup_create_team_data_mock,
 }));
 
-import {
-  handle_fixture_lineup_create_fixture_change,
-  handle_fixture_lineup_create_organization_change,
-  handle_fixture_lineup_create_team_change,
-  reset_fixture_lineup_create_team_state,
-} from "./fixtureLineupCreatePageFlowHandlers";
-
 describe("fixtureLineupCreatePageFlowHandlers", () => {
   beforeEach(() => {
     load_fixture_lineup_create_fixture_data_mock.mockReset();
@@ -31,7 +31,7 @@ describe("fixtureLineupCreatePageFlowHandlers", () => {
   it("clears the team-specific state when the flow is reset", () => {
     expect(reset_fixture_lineup_create_team_state()).toEqual({
       form_data: { team_id: "", selected_players: [] },
-      selected_team: null,
+      selected_team_state: { status: "missing" },
       team_players: [],
       available_teams: [],
     });
@@ -54,8 +54,11 @@ describe("fixtureLineupCreatePageFlowHandlers", () => {
       },
       error_message: "",
       validation_errors: {},
-      selected_organization: { id: "organization-1", name: "Premier League" },
-      selected_fixture: null,
+      selected_organization_state: {
+        status: "present",
+        organization: { id: "organization-1", name: "Premier League" },
+      },
+      selected_fixture_state: { status: "missing" },
       current_step_index: 0,
     });
   });
@@ -64,7 +67,7 @@ describe("fixtureLineupCreatePageFlowHandlers", () => {
     await expect(
       handle_fixture_lineup_create_fixture_change({
         fixture_id: "",
-        current_auth_profile: null,
+        current_auth_profile_state: { status: "missing" },
         organizations: [],
         dependencies: {} as never,
         fixtures_with_complete_lineups: new Set(["fixture-9"]),
@@ -74,8 +77,8 @@ describe("fixtureLineupCreatePageFlowHandlers", () => {
       success: true,
       error_message: "",
       form_data: { fixture_id: "", team_id: "", selected_players: [] },
-      selected_fixture: null,
-      selected_organization: null,
+      selected_fixture_state: { status: "missing" },
+      selected_organization_state: { status: "missing" },
       min_players: 2,
       max_players: 18,
       starters_count: 11,
@@ -98,7 +101,7 @@ describe("fixtureLineupCreatePageFlowHandlers", () => {
 
     const result = await handle_fixture_lineup_create_fixture_change({
       fixture_id: "fixture-1",
-      current_auth_profile: null,
+      current_auth_profile_state: { status: "missing" },
       organizations: [],
       dependencies: {} as never,
       fixtures_with_complete_lineups: new Set(["fixture-9"]),
@@ -129,7 +132,10 @@ describe("fixtureLineupCreatePageFlowHandlers", () => {
 
     const result = await handle_fixture_lineup_create_fixture_change({
       fixture_id: "fixture-1",
-      current_auth_profile: { team_id: "team-1" } as never,
+      current_auth_profile_state: {
+        status: "present",
+        profile: { organization_id: "", team_id: "team-1" },
+      } as never,
       organizations: [
         { id: "organization-1", name: "Premier League" },
       ] as never,
@@ -140,8 +146,14 @@ describe("fixtureLineupCreatePageFlowHandlers", () => {
 
     expect(result).toEqual(
       expect.objectContaining({
-        selected_fixture: { id: "fixture-1" },
-        selected_organization: { id: "organization-1", name: "Premier League" },
+        selected_fixture_state: {
+          status: "present",
+          fixture: { id: "fixture-1" },
+        },
+        selected_organization_state: {
+          status: "present",
+          organization: { id: "organization-1", name: "Premier League" },
+        },
         current_step_index: 3,
         auto_selected_team_id: "team-1",
       }),
@@ -150,7 +162,10 @@ describe("fixtureLineupCreatePageFlowHandlers", () => {
 
   it("delegates team loading and returns the loaded squad state", async () => {
     load_fixture_lineup_create_team_data_mock.mockResolvedValue({
-      selected_team: { id: "team-1" },
+      selected_team_state: {
+        status: "present",
+        team: { id: "team-1" },
+      },
       team_players: [{ id: "player-1" }],
       selected_players: [{ id: "player-1" }],
       validation_error: "",
@@ -159,13 +174,19 @@ describe("fixtureLineupCreatePageFlowHandlers", () => {
     await expect(
       handle_fixture_lineup_create_team_change({
         team_id: "team-1",
-        selected_fixture: { id: "fixture-1" } as never,
-        current_auth_profile: null,
+        selected_fixture_state: {
+          status: "present",
+          fixture: { id: "fixture-1" } as never,
+        },
+        current_auth_profile_state: { status: "missing" },
         max_players: 18,
         dependencies: {} as never,
       }),
     ).resolves.toEqual({
-      selected_team: { id: "team-1" },
+      selected_team_state: {
+        status: "present",
+        team: { id: "team-1" },
+      },
       team_players: [{ id: "player-1" }],
       selected_players: [{ id: "player-1" }],
       validation_error: "",

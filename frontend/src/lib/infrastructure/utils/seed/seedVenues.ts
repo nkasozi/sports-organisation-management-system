@@ -1,6 +1,6 @@
 import type { Venue } from "../../../core/entities/Venue";
-import type { ScalarValueInput } from "../../../core/types/DomainScalars";
 import { DEFAULT_VENUE_IMAGE } from "../../../core/entities/Venue";
+import type { ScalarValueInput } from "../../../core/types/DomainScalars";
 import { generate_current_timestamp, SEED_VENUE_IDS } from "./seedIds";
 
 export function create_seed_venues(

@@ -16,7 +16,7 @@ type ManagedGameFixtureUseCases = Pick<
 >;
 
 export function create_managed_game_action_handlers(command: {
-  before_start: (fixture: Fixture | null) => Promise<ManagedGameStartCheck>;
+  before_start: (fixture: Fixture) => Promise<ManagedGameStartCheck>;
   fixture_use_cases: ManagedGameFixtureUseCases;
   get_state: () => ManagedGamePageState;
   goto: (path: string) => Promise<unknown>;

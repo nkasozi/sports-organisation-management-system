@@ -20,20 +20,18 @@
 
     import ManagedGamePageView from "./ManagedGamePageView.svelte";
 
-    export let back_path: string;
-    export let back_button_label: string;
-    export let error_title: string;
-    export let event_modal_component: any;
-    export let fixture_use_cases: Pick<
+    export let back_path!: string;
+    export let back_button_label!: string;
+    export let error_title!: string;
+    export let event_modal_component!: any;
+    export let fixture_use_cases!: Pick<
         FixtureUseCasesPort,
         "start_fixture" | "end_fixture" | "record_game_event" | "update_period"
     >;
-    export let load_bundle: (
+    export let load_bundle!: (
         fixture_id: string,
     ) => Promise<ManagedGameLoadResult>;
-    export let before_start: (
-        fixture: Fixture | null,
-    ) => Promise<ManagedGameStartCheck>;
+    export let before_start!: (fixture: Fixture) => Promise<ManagedGameStartCheck>;
 
     let state = create_managed_game_page_state();
 
@@ -60,7 +58,7 @@
 </svelte:head>
 
 <ManagedGamePageView
-    fixture={state.fixture}
+    fixture_state={state.fixture}
     home_team_name={view_state.home_team_name}
     away_team_name={view_state.away_team_name}
     home_score={view_state.home_score}
@@ -78,7 +76,7 @@
     show_start_modal={state.show_start_modal}
     show_end_modal={state.show_end_modal}
     show_event_modal={state.show_event_modal}
-    selected_event_type={state.selected_event_type}
+    selected_event_type_state={state.selected_event_type}
     selected_team_side={state.selected_team_side}
     bind:event_minute={state.event_minute}
     bind:event_player_name={state.event_player_name}

@@ -18,9 +18,11 @@
 
   import {
     build_live_games_start_flow_dependencies,
-    get_live_games_current_profile,
+    get_live_games_current_profile_state,
     get_live_games_current_role,
+    get_live_games_current_token_state,
     initialize_live_games_page,
+    type LiveGamesPendingStartFixtureState,
     refresh_live_games_page_fixture_state,
     update_live_games_checks,
     update_live_games_starting_state,
@@ -42,7 +44,9 @@
     team_logo_urls: Record<string, string> = {},
     competition_names: Record<string, string> = {},
     sport_names: Record<string, string> = {};
-  let pending_start_fixture: Fixture | null = null;
+  let pending_start_fixture_state: LiveGamesPendingStartFixtureState = {
+    status: "idle",
+  };
 
   async function refresh_fixture_state(): Promise<void> {
     if (!selected_organization_id) return;
@@ -106,37 +110,38 @@
   });
 
   async function handle_organization_change(): Promise<void> {
-    pending_start_fixture = null;
+    pending_start_fixture_state = { status: "idle" };
     await refresh_fixture_state();
   }
 
   async function handle_start_click(fixture: Fixture): Promise<void> {
     const auth_state = get(auth_store);
-    if (!auth_state.current_token) {
+    const token_state = get_live_games_current_token_state(auth_state);
+    if (token_state.status === "missing") {
       error_message = "No user profile found";
       return;
     }
 
     const start_permission_error = await validate_live_games_start_permission(
-      auth_state.current_token.raw_token,
+      token_state.raw_token,
       live_games_page_dependencies.authorization_adapter,
     );
     if (start_permission_error) {
       error_message = start_permission_error;
       return;
     }
-    pending_start_fixture = fixture;
+    pending_start_fixture_state = { status: "confirming", fixture };
   }
 
   function cancel_start_fixture(): void {
-    pending_start_fixture = null;
+    pending_start_fixture_state = { status: "idle" };
   }
 
   function confirm_start_fixture(): void {
-    if (!pending_start_fixture) return;
+    if (pending_start_fixture_state.status === "idle") return;
 
-    const fixture = pending_start_fixture;
-    pending_start_fixture = null;
+    const fixture = pending_start_fixture_state.fixture;
+    pending_start_fixture_state = { status: "idle" };
     void start_live_game_fixture(
       fixture,
       build_live_games_start_flow_dependencies({
@@ -168,7 +173,7 @@
   {organizations}
   bind:selected_organization_id
   can_change_organizations={can_user_change_live_games_organization(
-    get_live_games_current_profile(get(auth_store)),
+    get_live_games_current_profile_state(get(auth_store)),
   )}
   {is_loading_fixtures}
   on_organization_change={handle_organization_change}
@@ -184,7 +189,7 @@
   {current_checks}
   {is_starting}
   on_start_click={handle_start_click}
-  {pending_start_fixture}
+  {pending_start_fixture_state}
   on_cancel_start={cancel_start_fixture}
   on_confirm_start={confirm_start_fixture}
 />

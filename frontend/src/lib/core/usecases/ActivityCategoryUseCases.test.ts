@@ -13,9 +13,9 @@ function make_mock_repository(): ActivityCategoryRepository {
     find_all: vi
       .fn()
       .mockResolvedValue({ success: true, data: { items: [], total: 0 } }),
-    find_by_id: vi.fn().mockResolvedValue({ success: true, data: null }),
-    create: vi.fn().mockResolvedValue({ success: true, data: null }),
-    update: vi.fn().mockResolvedValue({ success: true, data: null }),
+    find_by_id: vi.fn().mockResolvedValue({ success: true, data: undefined }),
+    create: vi.fn().mockResolvedValue({ success: true, data: undefined }),
+    update: vi.fn().mockResolvedValue({ success: true, data: undefined }),
     delete_by_id: vi.fn().mockResolvedValue({ success: true, data: true }),
     find_by_organization: vi
       .fn()
@@ -65,7 +65,7 @@ describe("list", () => {
 
     expect(repo.find_all).toHaveBeenCalledWith(
       { organization_id: "org-1" },
-      undefined,
+      {},
     );
   });
 });
@@ -299,7 +299,7 @@ describe("list_by_organization", () => {
 
     await use_cases.list_by_organization("org-1");
 
-    expect(repo.find_by_organization).toHaveBeenCalledWith("org-1", undefined);
+    expect(repo.find_by_organization).toHaveBeenCalledWith("org-1", {});
   });
 });
 
@@ -348,7 +348,7 @@ describe("ensure_default_categories_exist", () => {
 
   it("skips categories that already exist as system-generated", async () => {
     const repo = make_mock_repository();
-    const existing_categories =  [
+    const existing_categories = [
       make_category({
         category_type: "competition",
         is_system_generated: true,
@@ -431,7 +431,7 @@ describe("ensure_default_categories_exist", () => {
 
   it("does not count user-created (non-system) categories as already existing", async () => {
     const repo = make_mock_repository();
-    const user_created =  [
+    const user_created = [
       make_category({
         category_type: "competition",
         is_system_generated: false,

@@ -12,7 +12,6 @@
   import {
     build_grouped_options,
     filter_select_options,
-    find_select_option_by_value,
     focus_input_cursor_to_end,
     get_display_input_value,
     get_highlighted_index_for_selected_value,
@@ -34,8 +33,8 @@
   export let error: string = "";
   export let is_loading: boolean = false;
 
-  let container_element: HTMLDivElement | null = null;
-  let input_element: HTMLInputElement | null = null;
+  let container_element: HTMLDivElement | undefined = undefined;
+  let input_element: HTMLInputElement | undefined = undefined;
   let is_open: boolean = false;
   let query: string = "";
   let highlighted_index: number = 0;
@@ -44,7 +43,9 @@
   $: list_id = `${select_id}-list`;
   $: filtered_options = filter_select_options(options, query);
   $: grouped_filtered_options = build_grouped_options(filtered_options);
-  $: selected_option = find_select_option_by_value(options, value);
+  $: selected_option = options.find(
+    (option: SelectOptionType) => option.value === value,
+  );
   $: should_show_label = label.trim().length > 0;
 
   $: if (input_element && !is_open) {
@@ -72,7 +73,9 @@
     value = selected_value;
     dispatch("change", { value: selected_value });
     close_dropdown();
-    const chosen_option = find_select_option_by_value(options, selected_value);
+    const chosen_option = options.find(
+      (option: SelectOptionType) => option.value === selected_value,
+    );
     if (input_element) {
       input_element.value = chosen_option ? chosen_option.label : "";
     }
@@ -92,7 +95,7 @@
     void tick().then(() => focus_input_cursor_to_end(input_element));
   }
   function handle_input(event: Event): void {
-    const target = event.currentTarget as HTMLInputElement | null;
+    const target = event.currentTarget as HTMLInputElement | undefined;
     if (!target) return;
     query = target.value;
     is_open = true;
@@ -154,7 +157,7 @@
     if (
       should_close_dropdown_from_pointer(
         container_element,
-        event.target as Node | null,
+        event.target as Node | undefined,
         is_open,
       )
     )

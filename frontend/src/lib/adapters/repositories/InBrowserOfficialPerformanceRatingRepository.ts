@@ -11,6 +11,7 @@ import type {
   OfficialPerformanceRatingRepository,
 } from "../../core/interfaces/ports";
 import type { QueryOptions } from "../../core/interfaces/ports";
+import { build_official_performance_rating_not_found_error } from "../../core/interfaces/ports";
 import type {
   AsyncResult,
   PaginatedAsyncResult,
@@ -124,19 +125,26 @@ class InBrowserOfficialPerformanceRatingRepository
     official_id: OfficialPerformanceRating["official_id"],
     fixture_id: OfficialPerformanceRating["fixture_id"],
     rater_user_id: OfficialPerformanceRating["rater_user_id"],
-  ): AsyncResult<OfficialPerformanceRating | null> {
+  ): AsyncResult<OfficialPerformanceRating> {
     try {
       const all_result = await this.find_all(
         { official_id, fixture_id, rater_user_id },
         { page_number: 1, page_size: 1 },
       );
       if (!all_result.success) {
-        return create_failure_result(all_result.error ?? "Lookup failed");
+        return create_failure_result(all_result.error);
       }
       const match =
-        all_result.data && all_result.data.items.length > 0
-          ? all_result.data.items[0]
-          : null;
+        all_result.data.items.length > 0 ? all_result.data.items[0] : void 0;
+      if (!match) {
+        return create_failure_result(
+          build_official_performance_rating_not_found_error(
+            official_id,
+            fixture_id,
+            rater_user_id,
+          ),
+        );
+      }
       return create_success_result(match);
     } catch (error) {
       console.warn(
@@ -153,12 +161,28 @@ class InBrowserOfficialPerformanceRatingRepository
   }
 }
 
-let singleton_instance: InBrowserOfficialPerformanceRatingRepository | null =
-  null;
+type OfficialPerformanceRatingRepositoryState =
+  | { status: "uninitialized" }
+  | {
+      status: "ready";
+      repository: InBrowserOfficialPerformanceRatingRepository;
+    };
+
+let official_performance_rating_repository_state: OfficialPerformanceRatingRepositoryState =
+  {
+    status: "uninitialized",
+  };
 
 export function get_official_performance_rating_repository(): OfficialPerformanceRatingRepository {
-  if (!singleton_instance) {
-    singleton_instance = new InBrowserOfficialPerformanceRatingRepository();
+  if (official_performance_rating_repository_state.status === "ready") {
+    return official_performance_rating_repository_state.repository;
   }
-  return singleton_instance;
+
+  const repository = new InBrowserOfficialPerformanceRatingRepository();
+  official_performance_rating_repository_state = {
+    status: "ready",
+    repository,
+  };
+
+  return repository;
 }

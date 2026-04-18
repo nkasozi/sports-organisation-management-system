@@ -13,14 +13,15 @@ import type {
   RemoteTableState,
   TableName,
 } from "./syncTypes";
+import { EPOCH_TIMESTAMP } from "./syncTypes";
 
 const PUSH_REMEDIATION_FAILED_MESSAGE = "Push remediation failed";
 
 interface TableSyncResult {
   records_pushed: number;
   records_pulled: number;
-  error: { table_name: string; error: string } | null;
-  conflicts: { table_name: string; conflicts: ConflictFromServer[] } | null;
+  errors: Array<{ table_name: string; error: string }>;
+  conflicts: Array<{ table_name: string; conflicts: ConflictFromServer[] }>;
   auth_failed: boolean;
   success: boolean;
 }
@@ -46,11 +47,10 @@ export async function sync_table_when_local_ahead(
   let records_pushed = 0;
   let records_pulled = 0;
   let auth_failed = false;
-  let table_error: { table_name: string; error: string } | null = null;
-  let table_conflicts: {
+  const table_conflicts: Array<{
     table_name: string;
     conflicts: ConflictFromServer[];
-  } | null = null;
+  }> = [];
 
   if (direction !== "pull" && !push_excluded_tables.has(table_name)) {
     const remediation_result = await remediate_oversized_inline_file_records({
@@ -63,22 +63,24 @@ export async function sync_table_when_local_ahead(
           created_at?: string;
         }
       >,
-      remote_latest_modified_at: remote_state.latest_modified_at,
+      remote_latest_modified_at:
+        remote_state.latest_modified_at || EPOCH_TIMESTAMP,
       detect_conflicts,
       get_is_remote_sync_in_progress: get_pulling_from_remote,
       set_remote_sync_in_progress: set_pulling_from_remote,
     });
 
     if (!remediation_result.success) {
-      table_error = {
-        table_name,
-        error: remediation_result.error || PUSH_REMEDIATION_FAILED_MESSAGE,
-      };
       return {
         records_pushed,
         records_pulled,
-        error: table_error,
-        conflicts: null,
+        errors: [
+          {
+            table_name,
+            error: remediation_result.error || PUSH_REMEDIATION_FAILED_MESSAGE,
+          },
+        ],
+        conflicts: [],
         auth_failed,
         success: false,
       };
@@ -87,26 +89,28 @@ export async function sync_table_when_local_ahead(
     const push_result = await push_table_to_convex(
       convex_client,
       table_name as TableName,
-      remediation_result.records,
-      remote_state.latest_modified_at,
+      remediation_result.data.records,
+      remote_state.latest_modified_at || EPOCH_TIMESTAMP,
       detect_conflicts,
     );
 
     if (!push_result.success) {
-      table_error = { table_name, error: push_result.error || "Push failed" };
       auth_failed = is_auth_error(push_result.error);
       return {
         records_pushed,
         records_pulled,
-        error: table_error,
-        conflicts: null,
+        errors: [{ table_name, error: push_result.error }],
+        conflicts: [],
         auth_failed,
         success: false,
       };
     }
-    records_pushed += push_result.records_pushed;
-    if (push_result.conflicts.length > 0) {
-      table_conflicts = { table_name, conflicts: push_result.conflicts };
+    records_pushed += push_result.data.records_pushed;
+    if (push_result.data.conflicts.length > 0) {
+      table_conflicts.push({
+        table_name,
+        conflicts: push_result.data.conflicts,
+      });
     }
   }
 
@@ -119,23 +123,22 @@ export async function sync_table_when_local_ahead(
     );
 
     if (!pull_result.success) {
-      table_error = { table_name, error: pull_result.error || "Pull failed" };
       return {
         records_pushed,
         records_pulled,
-        error: table_error,
+        errors: [{ table_name, error: pull_result.error }],
         conflicts: table_conflicts,
         auth_failed,
         success: false,
       };
     }
-    records_pulled += pull_result.records_pulled;
+    records_pulled += pull_result.data.records_pulled;
   }
 
   return {
     records_pushed,
     records_pulled,
-    error: null,
+    errors: [],
     conflicts: table_conflicts,
     auth_failed: false,
     success: true,
@@ -159,11 +162,10 @@ export async function sync_table_when_remote_ahead(
   let records_pushed = 0;
   let records_pulled = 0;
   let auth_failed = false;
-  let table_error: { table_name: string; error: string } | null = null;
-  let table_conflicts: {
+  const table_conflicts: Array<{
     table_name: string;
     conflicts: ConflictFromServer[];
-  } | null = null;
+  }> = [];
 
   if (remote_is_ahead || direction === "pull") {
     const pull_result = await pull_table_from_convex(
@@ -174,17 +176,16 @@ export async function sync_table_when_remote_ahead(
     );
 
     if (!pull_result.success) {
-      table_error = { table_name, error: pull_result.error || "Pull failed" };
       return {
         records_pushed,
         records_pulled,
-        error: table_error,
-        conflicts: null,
+        errors: [{ table_name, error: pull_result.error }],
+        conflicts: [],
         auth_failed,
         success: false,
       };
     }
-    records_pulled += pull_result.records_pulled;
+    records_pulled += pull_result.data.records_pulled;
   }
 
   if (direction !== "pull" && !push_excluded_tables.has(table_name)) {
@@ -199,21 +200,23 @@ export async function sync_table_when_remote_ahead(
           created_at?: string;
         }
       >,
-      remote_latest_modified_at: remote_state.latest_modified_at,
+      remote_latest_modified_at:
+        remote_state.latest_modified_at || EPOCH_TIMESTAMP,
       detect_conflicts,
       get_is_remote_sync_in_progress: get_pulling_from_remote,
       set_remote_sync_in_progress: set_pulling_from_remote,
     });
 
     if (!remediation_result.success) {
-      table_error = {
-        table_name,
-        error: remediation_result.error || PUSH_REMEDIATION_FAILED_MESSAGE,
-      };
       return {
         records_pushed,
         records_pulled,
-        error: table_error,
+        errors: [
+          {
+            table_name,
+            error: remediation_result.error || PUSH_REMEDIATION_FAILED_MESSAGE,
+          },
+        ],
         conflicts: table_conflicts,
         auth_failed,
         success: false,
@@ -223,33 +226,35 @@ export async function sync_table_when_remote_ahead(
     const push_result = await push_table_to_convex(
       convex_client,
       table_name as TableName,
-      remediation_result.records,
-      remote_state.latest_modified_at,
+      remediation_result.data.records,
+      remote_state.latest_modified_at || EPOCH_TIMESTAMP,
       detect_conflicts,
     );
 
     if (!push_result.success) {
-      table_error = { table_name, error: push_result.error || "Push failed" };
       auth_failed = is_auth_error(push_result.error);
       return {
         records_pushed,
         records_pulled,
-        error: table_error,
+        errors: [{ table_name, error: push_result.error }],
         conflicts: table_conflicts,
         auth_failed,
         success: false,
       };
     }
-    records_pushed += push_result.records_pushed;
-    if (push_result.conflicts.length > 0) {
-      table_conflicts = { table_name, conflicts: push_result.conflicts };
+    records_pushed += push_result.data.records_pushed;
+    if (push_result.data.conflicts.length > 0) {
+      table_conflicts.push({
+        table_name,
+        conflicts: push_result.data.conflicts,
+      });
     }
   }
 
   return {
     records_pushed,
     records_pulled,
-    error: null,
+    errors: [],
     conflicts: table_conflicts,
     auth_failed: false,
     success: true,

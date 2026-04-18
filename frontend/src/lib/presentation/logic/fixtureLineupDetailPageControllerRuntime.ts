@@ -2,9 +2,6 @@ import {
   get_fixture_lineup_by_id,
   submit_lineup,
 } from "$lib/adapters/persistence/fixtureLineupService";
-import type { Fixture } from "$lib/core/entities/Fixture";
-import type { FixtureLineup } from "$lib/core/entities/FixtureLineup";
-import type { Team } from "$lib/core/entities/Team";
 import type { DataAction } from "$lib/core/interfaces/ports";
 import type { TeamPlayer } from "$lib/core/services/teamPlayers";
 import { get_authorization_adapter } from "$lib/infrastructure/AuthorizationProvider";
@@ -15,15 +12,19 @@ import {
   save_fixture_lineup_changes,
   submit_fixture_lineup_changes,
 } from "./fixtureLineupDetailPageActions";
+import type {
+  FixtureLineupDetailFixtureState,
+  FixtureLineupDetailLineupState,
+  FixtureLineupDetailProfileState,
+  FixtureLineupDetailTeamState,
+  FixtureLineupDetailTokenState,
+} from "./fixtureLineupDetailPageContracts";
 import { load_fixture_lineup_detail_view_data } from "./fixtureLineupDetailPageData";
 import { toggle_fixture_lineup_player_selection } from "./fixtureLineupDetailPageState";
 
 type FixtureLineupDetailViewDependencies = Parameters<
   typeof load_fixture_lineup_detail_view_data
 >[2];
-type FixtureLineupDetailCurrentProfile = Parameters<
-  typeof load_fixture_lineup_detail_view_data
->[1];
 type UpdateFixtureLineup = Parameters<typeof save_fixture_lineup_changes>[2];
 
 export function create_fixture_lineup_detail_page_controller_runtime(command: {
@@ -32,10 +33,10 @@ export function create_fixture_lineup_detail_page_controller_runtime(command: {
   access_check_failed_message: string;
   entity_type: string;
   get_auth_state: () => {
-    current_profile: FixtureLineupDetailCurrentProfile;
-    current_token?: { raw_token: string } | null;
+    current_profile_state: FixtureLineupDetailProfileState;
+    current_token_state: FixtureLineupDetailTokenState;
   };
-  get_lineup: () => FixtureLineup | null;
+  get_lineup_state: () => FixtureLineupDetailLineupState;
   get_team_players: () => TeamPlayer[];
   goto: (path: string) => Promise<unknown>;
   is_browser: boolean;
@@ -43,16 +44,16 @@ export function create_fixture_lineup_detail_page_controller_runtime(command: {
   lineup_list_path: string;
   read_action: DataAction;
   set_access_denial: (path: string, message: string) => void;
-  set_away_team: (value: Team | null) => void;
+  set_away_team_state: (value: FixtureLineupDetailTeamState) => void;
   set_can_modify_lineup: (value: boolean) => void;
   set_error_message: (value: string) => void;
-  set_fixture: (value: Fixture | null) => void;
-  set_home_team: (value: Team | null) => void;
-  set_lineup: (value: FixtureLineup | null) => void;
+  set_fixture_state: (value: FixtureLineupDetailFixtureState) => void;
+  set_home_team_state: (value: FixtureLineupDetailTeamState) => void;
+  set_lineup_state: (value: FixtureLineupDetailLineupState) => void;
   set_loading: (value: boolean) => void;
   set_permission_info_message: (value: string) => void;
   set_saving: (value: boolean) => void;
-  set_team: (value: Team | null) => void;
+  set_team_state: (value: FixtureLineupDetailTeamState) => void;
   set_team_players: (value: TeamPlayer[]) => void;
   submit_confirmation: string;
   submit_failed_message: string;
@@ -92,10 +93,10 @@ export function create_fixture_lineup_detail_page_controller_runtime(command: {
         return;
       }
       const auth_state = command.get_auth_state();
-      if (auth_state.current_token) {
+      if (auth_state.current_token_state.status === "present") {
         const authorization_result = await authorize_fixture_lineup_detail_page(
           get_authorization_adapter(),
-          auth_state.current_token.raw_token,
+          auth_state.current_token_state.raw_token,
           command.entity_type,
           command.read_action,
           command.update_action,
@@ -123,7 +124,7 @@ export function create_fixture_lineup_detail_page_controller_runtime(command: {
       command.set_error_message("");
       const result = await load_fixture_lineup_detail_view_data(
         command.lineup_id,
-        command.get_auth_state().current_profile,
+        auth_state.current_profile_state,
         {
           get_fixture_lineup_by_id,
           get_fixture_by_id: command.use_cases.fixture_use_cases.get_by_id,
@@ -140,33 +141,37 @@ export function create_fixture_lineup_detail_page_controller_runtime(command: {
         command.set_loading(false);
         return;
       }
-      command.set_lineup(result.data.lineup);
-      command.set_fixture(result.data.fixture);
-      command.set_team(result.data.team);
+      command.set_lineup_state({
+        status: "present",
+        lineup: result.data.lineup,
+      });
+      command.set_fixture_state(result.data.fixture_state);
+      command.set_team_state(result.data.team_state);
       command.set_team_players(result.data.team_players);
-      command.set_home_team(result.data.home_team);
-      command.set_away_team(result.data.away_team);
+      command.set_home_team_state(result.data.home_team_state);
+      command.set_away_team_state(result.data.away_team_state);
       command.set_loading(false);
     },
     handle_toggle_player_selection: (player_id: string): void => {
-      const lineup = command.get_lineup();
-      if (!lineup) return;
-      command.set_lineup(
-        toggle_fixture_lineup_player_selection(
-          lineup,
+      const lineup_state = command.get_lineup_state();
+      if (lineup_state.status === "missing") return;
+      command.set_lineup_state({
+        status: "present",
+        lineup: toggle_fixture_lineup_player_selection(
+          lineup_state.lineup,
           command.get_team_players(),
           player_id,
         ),
-      );
+      });
     },
     handle_save: async (): Promise<void> => {
-      const lineup = command.get_lineup();
-      if (!lineup) return;
+      const lineup_state = command.get_lineup_state();
+      if (lineup_state.status === "missing") return;
       command.set_saving(true);
       command.set_error_message("");
       const result = await save_fixture_lineup_changes(
         command.lineup_id,
-        lineup,
+        lineup_state.lineup,
         command.use_cases.fixture_lineup_use_cases.update,
         command.update_failed_message,
       );
@@ -178,7 +183,10 @@ export function create_fixture_lineup_detail_page_controller_runtime(command: {
       await command.goto(command.lineup_list_path);
     },
     handle_submit: async (): Promise<void> => {
-      if (!command.get_lineup() || !confirm(command.submit_confirmation))
+      if (
+        command.get_lineup_state().status === "missing" ||
+        !confirm(command.submit_confirmation)
+      )
         return;
       command.set_saving(true);
       const result = await submit_fixture_lineup_changes(

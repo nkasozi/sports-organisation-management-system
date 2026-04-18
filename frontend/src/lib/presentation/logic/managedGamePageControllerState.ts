@@ -4,17 +4,26 @@ import {
   get_quick_event_buttons,
   type QuickEventButton,
 } from "$lib/core/entities/Fixture";
-import type { Team } from "$lib/core/entities/Team";
 import {
   build_game_clock_state,
   sort_game_events,
 } from "$lib/presentation/logic/gameManageState";
-import type { ManagedGameBundle } from "$lib/presentation/logic/managedGamePageTypes";
+import {
+  create_missing_managed_game_fixture_state,
+  create_missing_managed_game_selected_event_type_state,
+  create_missing_managed_game_team_state,
+  create_present_managed_game_fixture_state,
+  create_present_managed_game_selected_event_type_state,
+  type ManagedGameBundle,
+  type ManagedGameFixtureState,
+  type ManagedGameSelectedEventTypeState,
+  type ManagedGameTeamState,
+} from "$lib/presentation/logic/managedGamePageTypes";
 
 export interface ManagedGamePageState {
-  fixture: Fixture | null;
-  home_team: Team | null;
-  away_team: Team | null;
+  fixture: ManagedGameFixtureState;
+  home_team: ManagedGameTeamState;
+  away_team: ManagedGameTeamState;
   home_players: unknown[];
   away_players: unknown[];
   is_loading: boolean;
@@ -25,7 +34,7 @@ export interface ManagedGamePageState {
   show_start_modal: boolean;
   show_end_modal: boolean;
   show_event_modal: boolean;
-  selected_event_type: QuickEventButton | null;
+  selected_event_type: ManagedGameSelectedEventTypeState;
   selected_team_side: "home" | "away";
   event_player_name: string;
   event_description: string;
@@ -54,9 +63,9 @@ export const managed_game_secondary_events = managed_game_events.slice(8);
 
 export function create_managed_game_page_state(): ManagedGamePageState {
   return {
-    fixture: null,
-    home_team: null,
-    away_team: null,
+    fixture: create_missing_managed_game_fixture_state(),
+    home_team: create_missing_managed_game_team_state(),
+    away_team: create_missing_managed_game_team_state(),
     home_players: [],
     away_players: [],
     is_loading: true,
@@ -67,7 +76,8 @@ export function create_managed_game_page_state(): ManagedGamePageState {
     show_start_modal: false,
     show_end_modal: false,
     show_event_modal: false,
-    selected_event_type: null,
+    selected_event_type:
+      create_missing_managed_game_selected_event_type_state(),
     selected_team_side: "home",
     event_player_name: "",
     event_description: "",
@@ -84,7 +94,7 @@ export function apply_managed_game_bundle(
 ): ManagedGamePageState {
   return {
     ...state,
-    fixture: bundle.fixture,
+    fixture: create_present_managed_game_fixture_state(bundle.fixture),
     home_team: bundle.home_team,
     away_team: bundle.away_team,
     home_players: bundle.home_players,
@@ -126,7 +136,8 @@ export function open_managed_game_event_modal(
   return {
     ...state,
     show_event_modal: true,
-    selected_event_type: event_button,
+    selected_event_type:
+      create_present_managed_game_selected_event_type_state(event_button),
     selected_team_side: team_side,
     event_player_name: "",
     event_description: "",
@@ -140,7 +151,8 @@ export function close_managed_game_event_modal(
   return {
     ...state,
     show_event_modal: false,
-    selected_event_type: null,
+    selected_event_type:
+      create_missing_managed_game_selected_event_type_state(),
     event_player_name: "",
     event_description: "",
     event_minute: 0,
@@ -150,32 +162,62 @@ export function close_managed_game_event_modal(
 export function derive_managed_game_view_state(
   state: ManagedGamePageState,
 ): ManagedGamePageViewState {
+  const current_period =
+    state.fixture.status === "present"
+      ? state.fixture.fixture.current_period
+      : "first_half";
+  const away_score =
+    state.fixture.status === "present"
+      ? state.fixture.fixture.away_team_score
+      : 0;
+  const home_score =
+    state.fixture.status === "present"
+      ? state.fixture.fixture.home_team_score
+      : 0;
+  const is_game_active =
+    state.fixture.status === "present"
+      ? state.fixture.fixture.status === "in_progress"
+      : false;
+  const sorted_events =
+    state.fixture.status === "present"
+      ? sort_game_events(state.fixture.fixture.game_events)
+      : sort_game_events([]);
+  const home_team_name =
+    state.home_team.status === "present" ? state.home_team.team.name : "Home";
+  const away_team_name =
+    state.away_team.status === "present" ? state.away_team.team.name : "Away";
+
   const clock_state = build_game_clock_state(
     state.game_clock_seconds,
-    state.fixture?.current_period ?? "first_half",
+    current_period,
   );
   return {
     available_players:
       state.selected_team_side === "home"
         ? state.home_players
         : state.away_players,
-    away_score: state.fixture?.away_team_score ?? 0,
-    away_team_name: state.away_team?.name ?? "Away",
+    away_score,
+    away_team_name,
     clock_state,
-    current_period_label: get_period_display_name(
-      state.fixture?.current_period ?? "first_half",
-    ),
-    home_score: state.fixture?.home_team_score ?? 0,
-    home_team_name: state.home_team?.name ?? "Home",
-    is_game_active: state.fixture?.status === "in_progress",
-    sorted_events: sort_game_events(state.fixture?.game_events ?? []),
+    current_period_label: get_period_display_name(current_period),
+    home_score,
+    home_team_name,
+    is_game_active,
+    sorted_events,
   };
 }
 
 export function build_managed_game_page_title(
   state: ManagedGamePageState,
 ): string {
-  return state.fixture
-    ? `${state.home_team?.name ?? "Home"} vs ${state.away_team?.name ?? "Away"}`
-    : "Game Management";
+  if (state.fixture.status !== "present") {
+    return "Game Management";
+  }
+
+  const home_team_name =
+    state.home_team.status === "present" ? state.home_team.team.name : "Home";
+  const away_team_name =
+    state.away_team.status === "present" ? state.away_team.team.name : "Away";
+
+  return `${home_team_name} vs ${away_team_name}`;
 }

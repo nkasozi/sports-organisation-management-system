@@ -1,5 +1,8 @@
 import type { UpdateCompetitionInput } from "$lib/core/entities/Competition";
-import type { CompetitionTeam } from "$lib/core/entities/CompetitionTeam";
+import type {
+  CompetitionTeam,
+  CreateCompetitionTeamInput,
+} from "$lib/core/entities/CompetitionTeam";
 import type { Team } from "$lib/core/entities/Team";
 import {
   type AsyncResult,
@@ -18,15 +21,9 @@ interface CompetitionEditWorkspaceCollections {
 }
 
 interface AddTeamToCompetitionDependency {
-  add_team_to_competition(command: {
-    competition_id: string;
-    team_id: string;
-    registration_date: string;
-    seed_number: number | null;
-    group_name: string | null;
-    notes: string;
-    status: string;
-  }): Promise<{ success: boolean; data?: CompetitionTeam; error?: string }>;
+  add_team_to_competition(
+    command: CreateCompetitionTeamInput,
+  ): Promise<{ success: boolean; data?: CompetitionTeam; error?: string }>;
 }
 
 interface RemoveTeamFromCompetitionDependency {
@@ -70,8 +67,8 @@ export async function add_team_to_competition_workspace(command: {
       competition_id: command.competition_id,
       team_id: command.team.id,
       registration_date: new Date().toISOString().split("T")[0],
-      seed_number: null,
-      group_name: null,
+      seed_number: "",
+      group_name: "",
       notes: "",
       status: "registered",
     });

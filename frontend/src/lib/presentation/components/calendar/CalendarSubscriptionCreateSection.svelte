@@ -3,7 +3,7 @@
 
   export let show_create_form: boolean = false;
   export let selected_feed_type: CalendarFeedType = "all";
-  export let selected_entity_id: string | null = null;
+  export let selected_entity_id: string = "";
   export let reminder_minutes: number = 60;
   export let reminder_options: Array<{ value: number; label: string }> = [];
   export let is_creating: boolean = false;
@@ -73,7 +73,7 @@
               bind:value={selected_entity_id}
               class="select-styled w-full"
             >
-              <option value={null}>-- Select --</option>
+              <option value="">-- Select --</option>
               {#each get_entity_options() as option}
                 <option value={option.id}>{option.name}</option>
               {/each}

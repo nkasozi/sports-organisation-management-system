@@ -34,9 +34,7 @@ function make_rating(
   } as unknown as OfficialPerformanceRating;
 }
 
-function make_fixture(
-  overrides: Partial<ScalarInput<Fixture>> = {},
-): Fixture {
+function make_fixture(overrides: Partial<ScalarInput<Fixture>> = {}): Fixture {
   return {
     id: "fix_1",
     organization_id: "org_1",
@@ -48,7 +46,6 @@ function make_fixture(
     scheduled_time: "15:00",
     status: "completed",
     match_day: 1,
-    manual_importance_override: null,
     created_at: "2026-01-01T00:00:00Z",
     updated_at: "2026-01-01T00:00:00Z",
     ...overrides,

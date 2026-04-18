@@ -12,6 +12,7 @@ import type {
   GameEventTypeRepository,
   QueryOptions,
 } from "../../core/interfaces/ports";
+import { build_game_event_type_not_found_by_code_error } from "../../core/interfaces/ports";
 import type { ScalarValueInput } from "../../core/types/DomainScalars";
 import type { PaginatedAsyncResult, Result } from "../../core/types/Result";
 import {
@@ -24,6 +25,8 @@ import {
   sort_game_event_types,
 } from "./InBrowserGameEventTypeRepositoryHelpers";
 export { create_default_game_event_types_for_organization } from "./InBrowserGameEventTypeRepositoryDefaults";
+
+const GLOBAL_GAME_EVENT_TYPE_SPORT_ID = "" as GameEventType["sport_id"];
 
 const ENTITY_PREFIX = "game_event_type";
 
@@ -72,7 +75,7 @@ export class InBrowserGameEventTypeRepository
   ): PaginatedAsyncResult<GameEventType> {
     try {
       let filtered_entities = await this.database.game_event_types.toArray();
-      if (filter) {
+      if (filter && Object.keys(filter).length > 0) {
         filtered_entities = this.apply_entity_filter(filtered_entities, filter);
       }
       filtered_entities = sort_game_event_types(filtered_entities);
@@ -104,7 +107,11 @@ export class InBrowserGameEventTypeRepository
       const all = await this.database.game_event_types.toArray();
       return create_success_result(
         sort_game_event_types(
-          all.filter((e) => e.sport_id === sport_id || e.sport_id === null),
+          all.filter(
+            (event_type) =>
+              event_type.sport_id === sport_id ||
+              event_type.sport_id === GLOBAL_GAME_EVENT_TYPE_SPORT_ID,
+          ),
         ),
       );
     } catch (error) {
@@ -143,10 +150,18 @@ export class InBrowserGameEventTypeRepository
     }
   }
 
-  async find_by_code(code: string): Promise<Result<GameEventType | null>> {
+  async find_by_code(code: string): Promise<Result<GameEventType>> {
     try {
       const all = await this.database.game_event_types.toArray();
-      return create_success_result(all.find((e) => e.code === code) ?? null);
+      const found_event_type = all.find(
+        (event_type) => event_type.code === code,
+      );
+      if (!found_event_type) {
+        return create_failure_result(
+          build_game_event_type_not_found_by_code_error(code),
+        );
+      }
+      return create_success_result(found_event_type);
     } catch (error) {
       console.warn(
         "[GameEventTypeRepository] Failed to find event type by code",
@@ -183,13 +198,23 @@ export class InBrowserGameEventTypeRepository
   }
 }
 
-let singleton_instance: InBrowserGameEventTypeRepository | null = null;
+type GameEventTypeRepositoryState =
+  | { status: "uninitialized" }
+  | { status: "ready"; repository: InBrowserGameEventTypeRepository };
+
+let game_event_type_repository_state: GameEventTypeRepositoryState = {
+  status: "uninitialized",
+};
 
 export function get_game_event_type_repository(): GameEventTypeRepository {
-  if (!singleton_instance) {
-    singleton_instance = new InBrowserGameEventTypeRepository();
+  if (game_event_type_repository_state.status === "ready") {
+    return game_event_type_repository_state.repository;
   }
-  return singleton_instance;
+
+  const repository = new InBrowserGameEventTypeRepository();
+  game_event_type_repository_state = { status: "ready", repository };
+
+  return repository;
 }
 
 export async function reset_game_event_type_repository(): Promise<void> {

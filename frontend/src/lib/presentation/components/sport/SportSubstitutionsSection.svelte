@@ -21,7 +21,7 @@
             name="max_substitution_windows"
             type="number"
             bind:value={form_data.substitution_rules.max_substitution_windows}
-            placeholder="Leave empty for unlimited windows"
+            placeholder="Use -1 for unlimited windows"
         />
         <label class="flex items-center gap-3">
             <input

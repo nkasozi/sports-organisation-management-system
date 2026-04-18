@@ -4,7 +4,7 @@
   import EntityCrudWrapper from "$lib/presentation/components/EntityCrudWrapper.svelte";
   import TeamProfilePreview from "$lib/presentation/components/TeamProfilePreview.svelte";
 
-  let selected_team_id = writable<string | null>(null);
+  let selected_team_id = writable("");
   let entity_wrapper: EntityCrudWrapper;
 
   function handle_selection_changed(event: CustomEvent) {
@@ -12,7 +12,7 @@
     if (selection && selection.length === 1) {
       selected_team_id.set(selection[0].id);
     } else {
-      selected_team_id.set(null);
+      selected_team_id.set("");
     }
   }
 </script>

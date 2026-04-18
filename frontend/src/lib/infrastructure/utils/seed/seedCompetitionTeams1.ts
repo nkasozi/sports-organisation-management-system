@@ -136,7 +136,7 @@ export function create_seed_competition_teams_part1(): import("$lib/core/types/D
       team_id: SEED_TEAM_IDS.WEATHERHEAD_HC,
       registration_date,
       seed_number: 1,
-      group_name: null,
+      group_name: "",
       points: 0,
       goals_for: 0,
       goals_against: 0,

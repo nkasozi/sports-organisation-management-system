@@ -37,8 +37,11 @@ describe("fixtureStartChecks", () => {
       if (!is_success(result)) return;
       expect(result.data.can_start).toBe(true);
       expect(result.data.officials_check.status).toBe("passed");
+      expect(result.data.officials_check.fix_suggestion).toBe("");
       expect(result.data.home_lineup_check.status).toBe("passed");
+      expect(result.data.home_lineup_check.fix_suggestion).toBe("");
       expect(result.data.away_lineup_check.status).toBe("passed");
+      expect(result.data.away_lineup_check.fix_suggestion).toBe("");
     });
 
     it("should fail when no officials assigned", async () => {
@@ -471,8 +474,8 @@ function create_test_fixture(overrides: any = {}) {
     status: "scheduled",
     scheduled_date_time: "2024-01-01T10:00:00Z",
     venue: "",
-    home_team_score: null,
-    away_team_score: null,
+    home_team_score: 0,
+    away_team_score: 0,
     notes: "",
     created_at: "2024-01-01T00:00:00Z",
     updated_at: "2024-01-01T00:00:00Z",
@@ -549,7 +552,7 @@ function create_test_player_membership(
     position_id: "pos-1",
     jersey_number: parseInt(player_id.replace("player-", "")) || 0,
     start_date: "2024-01-01",
-    end_date: null,
+
     created_at: "2024-01-01T00:00:00Z",
     updated_at: "2024-01-01T00:00:00Z",
   };
@@ -621,7 +624,7 @@ function create_mock_player_use_cases(memberships: any[]) {
       const player = player_by_id.get(id);
       return {
         success: !!player,
-        data: player || null,
+        data: player || undefined,
       };
     },
     list: async () => ({

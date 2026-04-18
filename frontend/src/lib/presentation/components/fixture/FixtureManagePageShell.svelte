@@ -32,10 +32,7 @@
             player_position_use_cases,
         });
 
-    async function before_start(
-        fixture: Fixture | null,
-    ): Promise<ManagedGameStartCheck> {
-        if (!fixture) return { allowed: false };
+    async function before_start(fixture: Fixture): Promise<ManagedGameStartCheck> {
         const result = await fixture_lineup_use_cases.get_lineups_for_fixture(
             fixture.id,
         );

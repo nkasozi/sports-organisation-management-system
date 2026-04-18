@@ -81,8 +81,8 @@ function build_auth_state(
   overrides: Partial<Record<string, unknown>> = {},
 ): Record<string, unknown> {
   return {
-    current_token: null,
-    current_profile: null,
+    current_token: { status: "missing" },
+    current_profile: { status: "missing" },
     available_profiles: [],
     sidebar_menu_items: [],
     is_initialized: false,
@@ -94,8 +94,8 @@ function build_auth_state(
 describe("authInitialize", () => {
   beforeEach(() => {
     vi.resetModules();
-    vi.spyOn(console, "error").mockImplementation(() => undefined);
-    vi.spyOn(console, "log").mockImplementation(() => undefined);
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.spyOn(console, "log").mockImplementation(() => {});
     auth_initialize_mocks.set_signed_in(false);
     auth_initialize_mocks.sync_branding_with_profile.mockReset();
     auth_initialize_mocks.generate_token_for_profile.mockReset();
@@ -110,9 +110,11 @@ describe("authInitialize", () => {
     auth_initialize_mocks.try_restore_anonymous_session.mockReset();
     auth_initialize_mocks.try_restore_signed_in_session.mockReset();
     auth_initialize_mocks.wait_for_clerk.mockReset();
-    auth_initialize_mocks.wait_for_clerk.mockResolvedValue(undefined);
+    auth_initialize_mocks.wait_for_clerk.mockImplementation(async () => {});
     auth_initialize_mocks.load_available_profiles.mockResolvedValue([]);
-    auth_initialize_mocks.load_saved_token.mockResolvedValue(null);
+    auth_initialize_mocks.load_saved_token.mockResolvedValue({
+      status: "missing",
+    });
     auth_initialize_mocks.load_sidebar_menu_for_role.mockResolvedValue([]);
   });
 
@@ -134,7 +136,10 @@ describe("authInitialize", () => {
 
   it("restores an anonymous session when a saved token can be reused", async () => {
     const restored_state = build_auth_state({
-      current_token: { raw_token: "saved-token" },
+      current_token: {
+        status: "present",
+        token: { raw_token: "saved-token" },
+      },
       available_profiles: [build_profile()],
       is_initialized: true,
       is_demo_session: true,
@@ -144,10 +149,14 @@ describe("authInitialize", () => {
     auth_initialize_mocks.load_available_profiles.mockResolvedValue([
       build_profile(),
     ]);
-    auth_initialize_mocks.load_saved_token.mockResolvedValue("saved-token");
-    auth_initialize_mocks.try_restore_anonymous_session.mockResolvedValue(
-      restored_state,
-    );
+    auth_initialize_mocks.load_saved_token.mockResolvedValue({
+      status: "present",
+      raw_token: "saved-token",
+    });
+    auth_initialize_mocks.try_restore_anonymous_session.mockResolvedValue({
+      status: "restored",
+      auth_state: restored_state,
+    });
 
     const { execute_auth_initialization } = await import("./authInitialize");
 
@@ -174,8 +183,13 @@ describe("authInitialize", () => {
     auth_initialize_mocks.load_available_profiles.mockResolvedValue([
       build_profile(),
     ]);
-    auth_initialize_mocks.load_saved_token.mockResolvedValue("saved-token");
-    auth_initialize_mocks.try_restore_anonymous_session.mockResolvedValue(null);
+    auth_initialize_mocks.load_saved_token.mockResolvedValue({
+      status: "present",
+      raw_token: "saved-token",
+    });
+    auth_initialize_mocks.try_restore_anonymous_session.mockResolvedValue({
+      status: "not_restored",
+    });
     auth_initialize_mocks.create_default_anonymous_state.mockResolvedValue(
       anonymous_state,
     );
@@ -199,9 +213,16 @@ describe("authInitialize", () => {
 
     auth_initialize_mocks.set_signed_in(true);
     auth_initialize_mocks.load_available_profiles.mockResolvedValue([profile]);
-    auth_initialize_mocks.load_saved_token.mockResolvedValue("restored-token");
-    auth_initialize_mocks.get_clerk_email.mockReturnValue("jane@example.test");
+    auth_initialize_mocks.load_saved_token.mockResolvedValue({
+      status: "present",
+      raw_token: "restored-token",
+    });
+    auth_initialize_mocks.get_clerk_email.mockReturnValue({
+      status: "present",
+      email: "jane@example.test",
+    });
     auth_initialize_mocks.try_restore_signed_in_session.mockResolvedValue({
+      status: "restored",
       profile,
       token,
     });
@@ -218,8 +239,8 @@ describe("authInitialize", () => {
 
     expect(result.success).toBe(true);
     expect(state_setter).toHaveBeenCalledWith({
-      current_token: token,
-      current_profile: profile,
+      current_token: { status: "present", token },
+      current_profile: { status: "present", profile },
       available_profiles: [profile],
       sidebar_menu_items: sidebar_groups,
       is_initialized: true,
@@ -227,10 +248,16 @@ describe("authInitialize", () => {
     });
     expect(
       auth_initialize_mocks.sync_user_context_with_event_bus,
-    ).toHaveBeenCalledWith(profile);
+    ).toHaveBeenCalledWith({
+      status: "present",
+      profile,
+    });
     expect(
       auth_initialize_mocks.sync_branding_with_profile,
-    ).toHaveBeenCalledWith(profile);
+    ).toHaveBeenCalledWith({
+      status: "present",
+      profile,
+    });
   });
 
   it("generates and saves a token when Clerk email matches a local profile", async () => {
@@ -240,10 +267,16 @@ describe("authInitialize", () => {
 
     auth_initialize_mocks.set_signed_in(true);
     auth_initialize_mocks.load_available_profiles.mockResolvedValue([profile]);
-    auth_initialize_mocks.get_clerk_email.mockReturnValue(
-      "PLAYER@EXAMPLE.TEST",
-    );
-    auth_initialize_mocks.try_restore_signed_in_session.mockResolvedValue(null);
+    auth_initialize_mocks.get_clerk_email.mockReturnValue({
+      status: "present",
+      email: "PLAYER@EXAMPLE.TEST",
+    });
+    auth_initialize_mocks.load_saved_token.mockResolvedValue({
+      status: "missing",
+    });
+    auth_initialize_mocks.try_restore_signed_in_session.mockResolvedValue({
+      status: "not_restored",
+    });
     auth_initialize_mocks.generate_token_for_profile.mockResolvedValue({
       success: true,
       data: generated_token,
@@ -268,8 +301,8 @@ describe("authInitialize", () => {
     );
     expect(state_setter).toHaveBeenCalledWith(
       expect.objectContaining({
-        current_token: generated_token,
-        current_profile: profile,
+        current_token: { status: "present", token: generated_token },
+        current_profile: { status: "present", profile },
       }),
     );
   });
@@ -281,10 +314,16 @@ describe("authInitialize", () => {
     auth_initialize_mocks.load_available_profiles.mockResolvedValue([
       build_profile({ email: "someone@example.test" }),
     ]);
-    auth_initialize_mocks.get_clerk_email.mockReturnValue(
-      "missing@example.test",
-    );
-    auth_initialize_mocks.try_restore_signed_in_session.mockResolvedValue(null);
+    auth_initialize_mocks.get_clerk_email.mockReturnValue({
+      status: "present",
+      email: "missing@example.test",
+    });
+    auth_initialize_mocks.load_saved_token.mockResolvedValue({
+      status: "missing",
+    });
+    auth_initialize_mocks.try_restore_signed_in_session.mockResolvedValue({
+      status: "not_restored",
+    });
 
     const { execute_auth_initialization } = await import("./authInitialize");
 

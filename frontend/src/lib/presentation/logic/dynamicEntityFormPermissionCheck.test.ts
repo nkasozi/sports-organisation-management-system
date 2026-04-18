@@ -1,5 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { create_present_auth_token_state } from "$lib/presentation/stores/authTypes";
+
+import { run_dynamic_entity_form_permission_check } from "./dynamicEntityFormPermissionCheck";
+
 const {
   check_entity_authorized_mock,
   ensure_auth_profile_mock,
@@ -27,8 +31,6 @@ vi.mock("../stores/auth", () => ({
 vi.mock("./authGuard", () => ({
   ensure_auth_profile: ensure_auth_profile_mock,
 }));
-
-import { run_dynamic_entity_form_permission_check } from "./dynamicEntityFormPermissionCheck";
 
 describe("dynamicEntityFormPermissionCheck", () => {
   beforeEach(() => {
@@ -59,7 +61,9 @@ describe("dynamicEntityFormPermissionCheck", () => {
 
   it("allows access when the auth store has no token", async () => {
     ensure_auth_profile_mock.mockResolvedValueOnce({ success: true });
-    get_store_value_mock.mockReturnValueOnce({ current_token: null });
+    get_store_value_mock.mockReturnValueOnce({
+      current_token: { status: "missing" },
+    });
 
     await expect(
       run_dynamic_entity_form_permission_check(
@@ -78,7 +82,9 @@ describe("dynamicEntityFormPermissionCheck", () => {
   it("builds a denial message when the current role cannot create or update the entity", async () => {
     ensure_auth_profile_mock.mockResolvedValueOnce({ success: true });
     get_store_value_mock.mockReturnValueOnce({
-      current_token: { raw_token: "token-1" },
+      current_token: create_present_auth_token_state({
+        raw_token: "token-1",
+      } as never),
     });
     check_entity_authorized_mock.mockResolvedValueOnce({
       success: true,

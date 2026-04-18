@@ -1,3 +1,9 @@
+import {
+  type AsyncResult,
+  create_failure_result,
+  create_success_result,
+} from "$lib/core/types/Result";
+
 import { get_database, get_table_from_database } from "./syncDataAccess";
 import type {
   ConflictResolutionRequest,
@@ -8,18 +14,22 @@ import type {
 export async function resolve_conflict(
   convex_client: ConvexClient,
   request: ConflictResolutionRequest,
-): Promise<{ success: boolean; error: string | null }> {
+): AsyncResult<boolean> {
   try {
     const new_version = Date.now();
-
-    await convex_client.mutation("sync:force_resolve_conflict", {
+    const mutation_args: Record<string, unknown> = {
       table_name: request.table_name,
       local_id: request.local_id,
       resolved_data: request.resolved_data,
       new_version,
       resolution_action: request.resolution_action,
-      resolved_by: request.resolved_by || null,
-    });
+    };
+
+    if (request.resolved_by) {
+      mutation_args["resolved_by"] = request.resolved_by;
+    }
+
+    await convex_client.mutation("sync:force_resolve_conflict", mutation_args);
 
     const database = get_database();
     const table = get_table_from_database(
@@ -27,16 +37,14 @@ export async function resolve_conflict(
       request.table_name as TableName,
     );
 
-    if (table) {
-      const updated_record = {
-        ...request.resolved_data,
-        id: request.local_id,
-        updated_at: new Date().toISOString(),
-      } as { id: string };
-      await table.put(updated_record);
-    }
+    const updated_record = {
+      ...request.resolved_data,
+      id: request.local_id,
+      updated_at: new Date().toISOString(),
+    } as { id: string };
+    await table.put(updated_record);
 
-    return { success: true, error: null };
+    return create_success_result(true);
   } catch (error) {
     const error_message =
       error instanceof Error ? error.message : String(error);
@@ -44,7 +52,8 @@ export async function resolve_conflict(
       event: "sync_conflict_resolution_failed",
       error: String(error_message),
     });
-    return { success: false, error: error_message };
+
+    return create_failure_result(error_message);
   }
 }
 

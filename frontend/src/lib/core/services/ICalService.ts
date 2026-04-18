@@ -9,7 +9,7 @@ export interface ICalEvent {
   start_datetime: string;
   end_datetime: string;
   is_all_day: boolean;
-  reminder_minutes_before: number | null;
+  reminder_minutes_before: number;
 }
 
 export interface ICalFeedConfig {
@@ -81,10 +81,7 @@ function generate_event_block(event: ICalEvent, sequence: number): string {
     lines.push(`LOCATION:${escape_ical_text(event.location)}`);
   }
 
-  if (
-    event.reminder_minutes_before !== null &&
-    event.reminder_minutes_before > 0
-  ) {
+  if (event.reminder_minutes_before > 0) {
     lines.push("BEGIN:VALARM");
     lines.push("ACTION:DISPLAY");
     lines.push(`DESCRIPTION:Reminder: ${escape_ical_text(event.title)}`);
@@ -117,7 +114,9 @@ export function generate_ical_feed(
     const event_with_reminder: ICalEvent = {
       ...events[i],
       reminder_minutes_before:
-        events[i].reminder_minutes_before ?? config.reminder_minutes_before,
+        events[i].reminder_minutes_before > 0
+          ? events[i].reminder_minutes_before
+          : config.reminder_minutes_before,
     };
     lines.push(generate_event_block(event_with_reminder, i + 1));
   }
@@ -143,9 +142,9 @@ export function convert_activity_to_ical_event(
   };
 }
 
-function get_activity_reminder_minutes(activity: Activity): number | null {
+function get_activity_reminder_minutes(activity: Activity): number {
   const enabled_reminder = activity.reminders.find((r) => r.is_enabled);
-  return enabled_reminder?.minutes_before ?? null;
+  return enabled_reminder?.minutes_before ?? 0;
 }
 
 export function convert_fixture_to_ical_event(

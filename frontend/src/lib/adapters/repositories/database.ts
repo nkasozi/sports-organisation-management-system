@@ -158,22 +158,32 @@ class SportSyncDatabase extends Dexie {
   }
 }
 
-let database_instance: SportSyncDatabase | null = null;
+type DatabaseState =
+  | { status: "uninitialized" }
+  | { status: "ready"; database: SportSyncDatabase };
+
+let database_state: DatabaseState = { status: "uninitialized" };
 
 export function get_database(): SportSyncDatabase {
-  if (!database_instance) {
-    database_instance = new SportSyncDatabase();
+  if (database_state.status === "ready") {
+    return database_state.database;
   }
-  return database_instance;
+
+  const database = new SportSyncDatabase();
+  database_state = { status: "ready", database };
+
+  return database;
 }
 
-export function reset_database(): Promise<void> {
-  if (database_instance) {
-    return database_instance.delete().then(() => {
-      database_instance = new SportSyncDatabase();
-    });
+export async function reset_database(): Promise<void> {
+  if (database_state.status === "ready") {
+    database_state.database.close();
   }
-  return Promise.resolve();
+
+  database_state = { status: "uninitialized" };
+  await Dexie.delete(DATABASE_NAME);
+  const database = new SportSyncDatabase();
+  database_state = { status: "ready", database };
 }
 
 export type { SportSyncDatabase };

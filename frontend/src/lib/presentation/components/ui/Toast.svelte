@@ -14,7 +14,7 @@
 
   const dispatch = createEventDispatcher<{ dismiss: void }>();
 
-  let timeout_id: ReturnType<typeof setTimeout> | null = null;
+  let timeout_id: ReturnType<typeof setTimeout> | undefined = undefined;
 
   $: if (is_visible && auto_dismiss) {
     clear_existing_timeout();
@@ -27,7 +27,7 @@
   function clear_existing_timeout(): void {
     if (timeout_id) {
       clearTimeout(timeout_id);
-      timeout_id = null;
+      timeout_id = void 0;
     }
   }
 

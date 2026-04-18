@@ -109,11 +109,28 @@ function create_default_official_associated_teams(): import("$lib/core/types/Dom
   return [];
 }
 
-let singleton_instance: InBrowserOfficialAssociatedTeamRepository | null = null;
+type OfficialAssociatedTeamRepositoryState =
+  | { status: "uninitialized" }
+  | {
+      status: "ready";
+      repository: InBrowserOfficialAssociatedTeamRepository;
+    };
+
+let official_associated_team_repository_state: OfficialAssociatedTeamRepositoryState =
+  {
+    status: "uninitialized",
+  };
 
 export function get_official_associated_team_repository(): OfficialAssociatedTeamRepository {
-  if (!singleton_instance) {
-    singleton_instance = new InBrowserOfficialAssociatedTeamRepository();
+  if (official_associated_team_repository_state.status === "ready") {
+    return official_associated_team_repository_state.repository;
   }
-  return singleton_instance;
+
+  const repository = new InBrowserOfficialAssociatedTeamRepository();
+  official_associated_team_repository_state = {
+    status: "ready",
+    repository,
+  };
+
+  return repository;
 }

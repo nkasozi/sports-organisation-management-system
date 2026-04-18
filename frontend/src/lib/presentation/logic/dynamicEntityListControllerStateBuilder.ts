@@ -19,10 +19,13 @@ export function build_dynamic_entity_list_view_state(
   options: DynamicEntityListControllerOptions,
   current_state: Partial<DynamicEntityListViewState>,
 ): DynamicEntityListViewState {
-  const entity_metadata = get_dynamic_entity_list_metadata(options.entity_type);
-  const display_name =
-    entity_metadata?.display_name ||
-    format_entity_display_name(options.entity_type);
+  const entity_metadata_result = get_dynamic_entity_list_metadata(
+    options.entity_type,
+  );
+  const entity_metadata = entity_metadata_result || undefined;
+  const display_name = entity_metadata
+    ? entity_metadata.display_name
+    : format_entity_display_name(options.entity_type);
   const entities = current_state.entities ?? [];
   const filter_values = current_state.filter_values ?? {};
   const foreign_key_options = current_state.foreign_key_options ?? {};
@@ -72,9 +75,9 @@ export function build_dynamic_entity_list_view_state(
     filtered_entities,
     filter_values,
     foreign_key_options,
-    has_bulk_create_handler: options.bulk_create_handler !== null,
+    has_bulk_create_handler: options.bulk_create_handler != void 0,
     info_message: options.info_message,
-    inline_form_entity: current_state.inline_form_entity ?? null,
+    inline_form_entity: current_state.inline_form_entity,
     is_create_disabled: is_functionality_disabled(
       "create",
       options.disabled_functionalities,
@@ -91,7 +94,7 @@ export function build_dynamic_entity_list_view_state(
     is_inline_form_visible: current_state.is_inline_form_visible ?? false,
     is_loading: current_state.is_loading ?? false,
     is_mobile_view: options.is_mobile_view,
-    is_sub_entity_mode: options.sub_entity_filter !== null,
+    is_sub_entity_mode: options.sub_entity_filter != void 0,
     items_per_page,
     page_size_options: PAGE_SIZE_OPTIONS,
     paginated_entities: filtered_entities.slice(

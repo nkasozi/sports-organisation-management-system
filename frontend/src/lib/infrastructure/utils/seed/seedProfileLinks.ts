@@ -9,7 +9,9 @@ const SEED_PROFILE_LINK_IDS = {
   BRIAN_VIDEO: "profile-link-006",
 };
 
-export function create_seed_profile_links(): import("$lib/core/types/DomainScalars").ScalarInput<import("../../../core/entities/ProfileLink").ProfileLink>[] {
+export function create_seed_profile_links(): import("$lib/core/types/DomainScalars").ScalarInput<
+  import("../../../core/entities/ProfileLink").ProfileLink
+>[] {
   const now = generate_current_timestamp();
 
   return [

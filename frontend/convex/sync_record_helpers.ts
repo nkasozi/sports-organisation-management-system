@@ -19,20 +19,32 @@ export function has_meaningful_changes(
   return false;
 }
 
+const NULL_VALUE_TAG = "[object Null]";
+const UNDEFINED_VALUE_TAG = "[object Undefined]";
+const OBJECT_VALUE_TAG = "[object Object]";
+
+function get_value_tag(value: unknown): string {
+  return Object.prototype.toString.call(value);
+}
+
+function is_absent_value(value: unknown): boolean {
+  const value_tag = get_value_tag(value);
+  return value_tag === NULL_VALUE_TAG || value_tag === UNDEFINED_VALUE_TAG;
+}
+
+function is_plain_object(value: unknown): value is Record<string, unknown> {
+  return get_value_tag(value) === OBJECT_VALUE_TAG;
+}
+
 function values_equal(a: unknown, b: unknown): boolean {
-  if (
-    a === b ||
-    (a === null && b === undefined) ||
-    (a === undefined && b === null)
-  )
-    return true;
+  if (a === b || (is_absent_value(a) && is_absent_value(b))) return true;
   if (typeof a !== typeof b) return false;
   if (Array.isArray(a) && Array.isArray(b))
     return (
       a.length === b.length &&
       a.every((value, index) => values_equal(value, b[index]))
     );
-  if (typeof a === "object" && a !== null && b !== null) {
+  if (is_plain_object(a) && is_plain_object(b)) {
     const a_object = a as Record<string, unknown>;
     const b_object = b as Record<string, unknown>;
     const a_keys = Object.keys(a_object);

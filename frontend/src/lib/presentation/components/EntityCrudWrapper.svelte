@@ -21,15 +21,15 @@
 
   export let entity_type: string;
   export let initial_view: "list" | "create" | "edit" = "list";
-  export let initial_create_data: Record<string, unknown> | null = null;
-  export let locked_filter: Record<string, unknown> | null = null;
+  export let initial_create_data: Record<string, unknown> | undefined = undefined;
+  export let locked_filter: Record<string, unknown> = {};
   export let is_mobile_view: boolean = true;
   export let show_list_actions: boolean = true;
-  export let bulk_create_handler: (() => void) | null = null;
+  export let bulk_create_handler: (() => void) | undefined = undefined;
   export let enable_bulk_import: boolean = false;
   export let button_color_class: string = "btn-primary-action";
-  export let after_save_redirect_url: string | null = null;
-  export let info_message: string | null = null;
+  export let after_save_redirect_url: string = "";
+  export let info_message: string = "";
   export let disabled_functionalities: CrudFunctionality[] = [];
   export let skip_authorization_check: boolean = false;
 
@@ -43,7 +43,7 @@
   }>();
 
   let current_view: "list" | "create" | "edit" = initial_view;
-  let current_entity_for_editing: BaseEntity | null = null;
+  let current_entity_for_editing: BaseEntity | undefined = undefined;
   let total_entity_count: number = 0;
   let crud_content_component: EntityCrudWrapperContent | undefined = undefined;
 
@@ -75,7 +75,7 @@
     get_current_view: () => current_view,
     goto,
     normalized_entity_type,
-    set_current_entity_for_editing: (entity: BaseEntity | null) =>
+    set_current_entity_for_editing: (entity: BaseEntity | undefined) =>
       (current_entity_for_editing = entity),
     set_current_view: (view: "list" | "create" | "edit") =>
       (current_view = view),
@@ -103,7 +103,7 @@
   export function get_current_view_info(): {
     view: string;
     entity_count: number;
-    editing_entity: BaseEntity | null;
+    editing_entity: BaseEntity | undefined;
   } {
     return {
       view: current_view,

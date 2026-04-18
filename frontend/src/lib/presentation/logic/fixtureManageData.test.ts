@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
+import { create_present_managed_game_team_state } from "$lib/presentation/logic/managedGamePageTypes";
+
 import { load_fixture_manage_bundle } from "./fixtureManageData";
 
 describe("fixtureManageData", () => {
@@ -29,7 +31,6 @@ describe("fixtureManageData", () => {
     const dependencies = create_dependencies();
     dependencies.fixture_use_cases.get_by_id.mockResolvedValue({
       success: true,
-      data: null,
     });
 
     await expect(
@@ -130,8 +131,14 @@ describe("fixtureManageData", () => {
       success: true,
       data: {
         fixture: expect.objectContaining({ id: "fixture-1" }),
-        home_team: { id: "team-home", name: "Lions" },
-        away_team: { id: "team-away", name: "Tigers" },
+        home_team: create_present_managed_game_team_state({
+          id: "team-home",
+          name: "Lions",
+        } as never),
+        away_team: create_present_managed_game_team_state({
+          id: "team-away",
+          name: "Tigers",
+        } as never),
         home_players: [
           {
             id: "player-1",
@@ -146,5 +153,43 @@ describe("fixtureManageData", () => {
         game_clock_seconds: 1380,
       },
     });
+  });
+
+  it("requests positions with an empty filter when the fixture has no organization", async () => {
+    const dependencies = create_dependencies();
+    dependencies.fixture_use_cases.get_by_id.mockResolvedValue({
+      success: true,
+      data: {
+        id: "fixture-2",
+        home_team_id: "team-home",
+        away_team_id: "team-away",
+        status: "scheduled",
+      },
+    });
+    dependencies.team_use_cases.get_by_id.mockResolvedValue({
+      success: false,
+      error: "missing",
+    });
+    dependencies.player_use_cases.list_players_by_team.mockResolvedValue({
+      success: false,
+      error: "missing",
+    });
+    dependencies.player_team_membership_use_cases.list_memberships_by_team.mockResolvedValue(
+      {
+        success: false,
+        error: "missing",
+      },
+    );
+    dependencies.player_position_use_cases.list.mockResolvedValue({
+      success: true,
+      data: { items: [] },
+    });
+
+    await load_fixture_manage_bundle("fixture-2", dependencies as never);
+
+    expect(dependencies.player_position_use_cases.list).toHaveBeenCalledWith(
+      {},
+      { page_number: 1, page_size: 1000 },
+    );
   });
 });

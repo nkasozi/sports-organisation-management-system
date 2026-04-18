@@ -4,7 +4,7 @@ const SUPER_ADMIN_ROLE = "super_admin";
 
 type RoleHierarchyLevel = number;
 
-const ROLE_HIERARCHY =  {
+const ROLE_HIERARCHY = {
   super_admin: 100,
   org_admin: 80,
   officials_manager: 60,
@@ -20,7 +20,7 @@ function can_caller_assign_role(
 ): boolean {
   const caller_level = ROLE_HIERARCHY[caller_role];
   const target_level = ROLE_HIERARCHY[target_role];
-  if (caller_level === undefined || target_level === undefined) {
+  if (caller_level === void 0 || target_level === void 0) {
     return false;
   }
   return caller_level > target_level;
@@ -31,7 +31,7 @@ function is_bootstrap_mode(existing_super_admin_count: number): boolean {
 }
 
 function can_seed_super_admin(
-  caller_role: string | null,
+  caller_role: string | undefined,
   existing_super_admin_count: number,
 ): boolean {
   if (is_bootstrap_mode(existing_super_admin_count)) {
@@ -84,7 +84,7 @@ describe("can_caller_assign_role", () => {
 
 describe("can_seed_super_admin", () => {
   it("allows seed in bootstrap mode with no existing super admins", () => {
-    expect(can_seed_super_admin(null, 0)).toBe(true);
+    expect(can_seed_super_admin(void 0, 0)).toBe(true);
   });
 
   it("allows existing super_admin to seed another", () => {
@@ -96,7 +96,7 @@ describe("can_seed_super_admin", () => {
   });
 
   it("rejects unauthenticated user when super admins exist", () => {
-    expect(can_seed_super_admin(null, 1)).toBe(false);
+    expect(can_seed_super_admin(void 0, 1)).toBe(false);
   });
 
   it("rejects player from seeding when super admins exist", () => {

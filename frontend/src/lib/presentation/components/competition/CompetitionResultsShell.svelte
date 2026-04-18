@@ -1,8 +1,8 @@
 <script lang="ts">
     import type { Competition } from "$lib/core/entities/Competition";
-    import type { CompetitionFormat } from "$lib/core/entities/CompetitionFormat";
     import type { Fixture } from "$lib/core/entities/Fixture";
     import type { Organization } from "$lib/core/entities/Organization";
+    import type { CompetitionResultsCompetitionFormatState } from "$lib/presentation/logic/competitionResultsPageContracts";
     import type {
         CardSortMode,
         PlayerStats,
@@ -24,14 +24,16 @@
     export let selected_organization_id: string;
     export let competitions: Competition[];
     export let selected_competition_id: string;
-    export let competition_format: CompetitionFormat | null;
+    export let competition_format_state: CompetitionResultsCompetitionFormatState = {
+        status: "missing",
+    };
     export let can_change_organizations: boolean;
     export let share_link_copied: boolean;
     export let active_tab: "standings" | "fixtures" | "results" | "stats";
     export let fixtures_loading: boolean;
     export let standings: TeamStanding[];
     export let stage_results_sections: CompetitionStageResultsSection[];
-    export let selected_team_id: string | null;
+    export let selected_team_id: string;
     export let live_team_ids: Set<string>;
     export let upcoming_fixtures: Fixture[];
     export let paginated_upcoming: Fixture[];
@@ -45,7 +47,7 @@
     export let results_per_page: number;
     export let page_size_options: number[];
     export let downloading_all_reports: boolean;
-    export let downloading_fixture_id: string | null;
+    export let downloading_fixture_id: string;
     export let stats_team_filter: string;
     export let stats_available_teams: string[];
     export let stats_card_sort: CardSortMode;
@@ -61,8 +63,8 @@
     export let team_fixtures_total_pages: number;
     export let team_fixtures_per_page: number;
     export let format_date: (date_string: string) => string;
-    export let get_fixture_stage_name: (stage_id?: string | null) => string;
-    export let get_fixture_stage_type: (stage_id?: string | null) => string;
+    export let get_fixture_stage_name: (stage_id: string) => string;
+    export let get_fixture_stage_type: (stage_id: string) => string;
     export let get_team_name: (team_id: string) => string;
     export let get_team_name_extended: (team_id: string) => string;
     export let get_competition_name_extended: (
@@ -92,7 +94,9 @@
         bind:selected_organization_id
         bind:selected_competition_id
         {competitions}
-        selected_competition_format_name={competition_format?.name ?? null}
+        selected_competition_format_name={competition_format_state.status === "present"
+            ? competition_format_state.competition_format.name
+            : ""}
         {can_change_organizations}
         {share_link_copied}
         {on_organization_change}

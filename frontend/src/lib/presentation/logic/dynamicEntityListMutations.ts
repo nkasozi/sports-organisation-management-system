@@ -21,7 +21,7 @@ function get_dynamic_entity_delete_error(
 }
 
 export function build_dynamic_entity_list_sub_entity_defaults(
-  sub_entity_filter: SubEntityFilter | null,
+  sub_entity_filter: SubEntityFilter | undefined,
 ): Partial<BaseEntity> {
   const next_entity: Record<string, string> = { id: "" };
   if (!sub_entity_filter) {
@@ -97,7 +97,7 @@ async function delete_with_default_use_cases(command: {
 }
 
 export async function delete_dynamic_entity_list_entities(command: {
-  crud_handlers: EntityCrudHandlers | null;
+  crud_handlers?: EntityCrudHandlers;
   entities: BaseEntity[];
   entities_to_delete: BaseEntity[];
   entity_type: string;

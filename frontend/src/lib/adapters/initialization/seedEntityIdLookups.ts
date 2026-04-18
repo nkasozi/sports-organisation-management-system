@@ -52,7 +52,7 @@ export async function load_seed_entity_id_lookups(
   console.log("[Seeding] Loading entity ID lookups from seeded data");
 
   const positions_result = await player_position_repository.find_all(
-    undefined,
+    {},
     { page_size: 100 },
   );
   if (!positions_result.success)
@@ -61,25 +61,31 @@ export async function load_seed_entity_id_lookups(
     );
 
   const staff_roles_result =
-    await team_staff_role_repository.find_all_with_filter(undefined, {
-      page_size: 100,
-    });
+    await team_staff_role_repository.find_all_with_filter(
+      {},
+      {
+        page_size: 100,
+      },
+    );
   if (!staff_roles_result.success)
     return create_failure_result(
       `Failed to load staff roles: ${staff_roles_result.error}`,
     );
 
   const official_roles_result =
-    await official_role_repository.find_all_with_filter(undefined, {
-      page_size: 100,
-    });
+    await official_role_repository.find_all_with_filter(
+      {},
+      {
+        page_size: 100,
+      },
+    );
   if (!official_roles_result.success)
     return create_failure_result(
       `Failed to load official roles: ${official_roles_result.error}`,
     );
 
   const formats_result = await competition_format_repository.find_all(
-    undefined,
+    {},
     { page_size: 100 },
   );
   if (!formats_result.success)

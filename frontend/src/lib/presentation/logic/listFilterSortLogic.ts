@@ -7,9 +7,9 @@ import type { SubEntityFilter } from "../../core/types/SubEntityFilter";
 import { get_display_value_for_entity_field } from "./listDisplayValueLogic";
 
 export function build_filter_from_sub_entity_config(
-  filter_config: SubEntityFilter | null | undefined,
+  filter_config?: SubEntityFilter,
 ): Record<string, string> | undefined {
-  if (!filter_config) return undefined;
+  if (!filter_config) return;
   const filter: Record<string, string> = {};
   filter[filter_config.foreign_key_field] = filter_config.foreign_key_value;
   if (filter_config.holder_type_field && filter_config.holder_type_value) {
@@ -21,7 +21,7 @@ export function build_filter_from_sub_entity_config(
 export function apply_filters_to_entities(
   entity_list: BaseEntity[],
   filters: Record<string, string>,
-  entity_metadata: EntityMetadata | null | undefined,
+  entity_metadata: EntityMetadata | undefined,
   foreign_key_options: Record<string, BaseEntity[]>,
 ): BaseEntity[] {
   if (!entity_list || entity_list.length === 0) return [];
@@ -75,7 +75,7 @@ export function sort_entities(
       sort_column,
       foreign_key_options,
     );
-    const comparison = a_value.localeCompare(b_value, undefined, {
+    const comparison = a_value.localeCompare(b_value, "en", {
       numeric: true,
     });
     return sort_direction === "asc" ? comparison : -comparison;
@@ -88,7 +88,7 @@ export function apply_filters_and_sorting(
   filters: Record<string, string>,
   sort_column: string,
   sort_direction: "asc" | "desc",
-  entity_metadata: EntityMetadata | null | undefined,
+  entity_metadata: EntityMetadata | undefined,
   foreign_key_options: Record<string, BaseEntity[]>,
 ): BaseEntity[] {
   const filtered = apply_filters_to_entities(

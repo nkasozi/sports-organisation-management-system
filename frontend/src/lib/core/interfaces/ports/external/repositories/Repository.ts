@@ -16,25 +16,21 @@ export interface Repository<
   TEntity extends BaseEntity,
   TCreateInput,
   TUpdateInput,
-  TFilter = undefined,
+  TFilter extends object = Record<string, never>,
 > {
   find_all(
     filter?: TFilter,
     options?: QueryOptions,
   ): PaginatedAsyncResult<TEntity>;
   find_by_id(id: ScalarValueInput<TEntity["id"]>): AsyncResult<TEntity>;
-  find_by_ids(
-    ids: ScalarValueInput<TEntity["id"]>[],
-  ): AsyncResult<TEntity[]>;
+  find_by_ids(ids: ScalarValueInput<TEntity["id"]>[]): AsyncResult<TEntity[]>;
   create(input: TCreateInput): AsyncResult<TEntity>;
   update(
     id: ScalarValueInput<TEntity["id"]>,
     input: TUpdateInput,
   ): AsyncResult<TEntity>;
   delete_by_id(id: ScalarValueInput<TEntity["id"]>): AsyncResult<boolean>;
-  delete_by_ids(
-    ids: ScalarValueInput<TEntity["id"]>[],
-  ): AsyncResult<number>;
+  delete_by_ids(ids: ScalarValueInput<TEntity["id"]>[]): AsyncResult<number>;
   count(): AsyncResult<number>;
 }
 
@@ -42,7 +38,7 @@ export type FilterableRepository<
   TEntity extends BaseEntity,
   TCreateInput,
   TUpdateInput,
-  TFilter,
+  TFilter extends object,
 > = Repository<TEntity, TCreateInput, TUpdateInput, TFilter>;
 
 export type { PaginatedAsyncResult } from "../../../../types/Result";

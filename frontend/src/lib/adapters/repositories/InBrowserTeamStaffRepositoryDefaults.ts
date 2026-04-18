@@ -7,7 +7,7 @@ export function create_default_team_staff(): import("$lib/core/types/DomainScala
     organization_id: "org_default_1",
     nationality: "Ugandan",
     profile_image_url: DEFAULT_STAFF_AVATAR,
-    employment_end_date: null,
+    employment_end_date: "",
     notes: "",
     status: "active" as const,
     created_at: now,

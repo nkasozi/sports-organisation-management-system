@@ -8,25 +8,45 @@ const CREATE_ACTION = "create";
 const UPDATE_ACTION = "update";
 const DELETE_ACTION = "delete";
 
+type AuditLogProfileState =
+  | { status: "missing" }
+  | { status: "present"; profile: UserScopeProfile };
+
+export type AuditLogOrganizationFilterState =
+  | { status: "unfiltered" }
+  | { status: "filtered"; organization_id: string };
+
 export function get_audit_log_organization_filter(
-  profile: UserScopeProfile | null,
-): string | null {
-  if (!profile) return null;
-  return get_scope_value(profile, "organization_id");
+  profile_state: AuditLogProfileState,
+): AuditLogOrganizationFilterState {
+  if (profile_state.status === "missing") {
+    return { status: "unfiltered" };
+  }
+
+  const organization_id = get_scope_value(
+    profile_state.profile,
+    "organization_id",
+  );
+
+  return organization_id
+    ? { status: "filtered", organization_id }
+    : { status: "unfiltered" };
 }
 
 export function build_audit_log_filter(command: {
   filter_entity_type: string;
   filter_action: string;
   filter_user: string;
-  organization_id: string | null;
+  organization_filter_state: AuditLogOrganizationFilterState;
 }): Record<string, string> {
   const filter: Record<string, string> = {};
   if (command.filter_entity_type)
     filter.entity_type = command.filter_entity_type;
   if (command.filter_action) filter.action = command.filter_action;
   if (command.filter_user) filter.user_id = command.filter_user;
-  if (command.organization_id) filter.organization_id = command.organization_id;
+  if (command.organization_filter_state.status === "filtered") {
+    filter.organization_id = command.organization_filter_state.organization_id;
+  }
   return filter;
 }
 

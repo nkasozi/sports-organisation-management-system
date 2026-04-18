@@ -1,6 +1,21 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { UserProfile } from "./authTypes";
+import type { AuthToken } from "$lib/core/interfaces/ports";
+
+import {
+  create_default_anonymous_state,
+  get_clerk_email,
+  load_available_profiles,
+  try_restore_anonymous_session,
+  try_restore_signed_in_session,
+  wait_for_clerk,
+} from "./authInitializationHelpers";
+import {
+  create_missing_auth_token_state,
+  create_present_auth_profile_state,
+  create_present_auth_token_state,
+  type UserProfile,
+} from "./authTypes";
 
 type TestStore<TValue> = {
   set: (value: TValue) => void;
@@ -8,7 +23,9 @@ type TestStore<TValue> = {
 };
 
 type ClerkSessionValue = {
-  user: { email_address?: string } | null;
+  user_state:
+    | { status: "present"; user: { email_address?: string } }
+    | { status: "missing" };
 };
 
 function create_profile(overrides: Partial<UserProfile> = {}): UserProfile {
@@ -22,6 +39,26 @@ function create_profile(overrides: Partial<UserProfile> = {}): UserProfile {
     team_id: "",
     ...overrides,
   } as UserProfile;
+}
+
+function create_auth_token(
+  user_id: string = "profile_1",
+  raw_token: string = "a.b.signature",
+): AuthToken {
+  return {
+    payload: {
+      user_id,
+      email: "admin@example.com",
+      display_name: "Admin User",
+      role: "org_admin",
+      organization_id: "organization-1",
+      team_id: "",
+      issued_at: 1,
+      expires_at: 2,
+    },
+    signature: "signature",
+    raw_token,
+  } as AuthToken;
 }
 
 const {
@@ -56,7 +93,9 @@ const {
   return {
     build_profiles_with_public_viewer_mock: vi.fn(),
     clear_auth_storage_mock: vi.fn(),
-    clerk_session_store: create_store<ClerkSessionValue>({ user: null }),
+    clerk_session_store: create_store<ClerkSessionValue>({
+      user_state: { status: "missing" },
+    }),
     get_authentication_adapter_mock: vi.fn(),
     get_team_repository_mock: vi.fn(),
     is_clerk_loaded_store: create_store(false),
@@ -104,19 +143,10 @@ vi.mock("./profileLoader", () => ({
   load_profiles_from_repository: load_profiles_from_repository_mock,
 }));
 
-import {
-  create_default_anonymous_state,
-  get_clerk_email,
-  load_available_profiles,
-  try_restore_anonymous_session,
-  try_restore_signed_in_session,
-  wait_for_clerk,
-} from "./authInitializationHelpers";
-
 describe("authInitializationHelpers", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    clerk_session_store.set({ user: null });
+    clerk_session_store.set({ user_state: { status: "missing" } });
     is_clerk_loaded_store.set(false);
     get_authentication_adapter_mock.mockReturnValue({
       verify_token: verify_token_mock,
@@ -156,7 +186,7 @@ describe("authInitializationHelpers", () => {
     );
   });
 
-  it("returns null and clears storage when anonymous restore fails token validation", async () => {
+  it("returns a missing restore state and clears storage when anonymous restore fails token validation", async () => {
     verify_token_mock.mockResolvedValueOnce({
       success: false,
       error: "invalid token",
@@ -164,43 +194,48 @@ describe("authInitializationHelpers", () => {
 
     await expect(
       try_restore_anonymous_session([create_profile()], "a.b.signature"),
-    ).resolves.toBeNull();
+    ).resolves.toEqual({ status: "not_restored" });
     expect(clear_auth_storage_mock).toHaveBeenCalled();
   });
 
   it("restores anonymous sessions when the saved token matches an available profile", async () => {
+    const restored_token = create_auth_token();
+
     verify_token_mock.mockResolvedValueOnce({
       success: true,
       data: {
         is_valid: true,
-        payload: { user_id: "profile_1" },
+        payload: restored_token.payload,
       },
     });
     load_sidebar_menu_for_role_mock.mockResolvedValueOnce([
       { group_name: "General", items: [] },
     ]);
-    const available_profiles =  [create_profile()] as UserProfile[];
+    const available_profiles = [create_profile()] as UserProfile[];
 
     await expect(
       try_restore_anonymous_session(available_profiles, "a.b.signature"),
     ).resolves.toEqual({
-      current_token: {
-        payload: { user_id: "profile_1" },
-        signature: "signature",
-        raw_token: "a.b.signature",
+      status: "restored",
+      auth_state: {
+        current_token: create_present_auth_token_state(restored_token),
+        current_profile: create_present_auth_profile_state(
+          available_profiles[0],
+        ),
+        available_profiles,
+        sidebar_menu_items: [{ group_name: "General", items: [] }],
+        is_initialized: true,
+        is_demo_session: true,
       },
-      current_profile: available_profiles[0],
-      available_profiles,
-      sidebar_menu_items: [{ group_name: "General", items: [] }],
-      is_initialized: true,
-      is_demo_session: true,
     });
-    expect(sync_user_context_with_event_bus_mock).toHaveBeenCalledWith(
-      available_profiles[0],
-    );
-    expect(sync_branding_with_profile_mock).toHaveBeenCalledWith(
-      available_profiles[0],
-    );
+    expect(sync_user_context_with_event_bus_mock).toHaveBeenCalledWith({
+      status: "present",
+      profile: available_profiles[0],
+    });
+    expect(sync_branding_with_profile_mock).toHaveBeenCalledWith({
+      status: "present",
+      profile: available_profiles[0],
+    });
   });
 
   it("creates the default anonymous state from the public viewer profile", async () => {
@@ -218,8 +253,8 @@ describe("authInitializationHelpers", () => {
     await expect(
       create_default_anonymous_state([public_viewer_profile]),
     ).resolves.toEqual({
-      current_token: null,
-      current_profile: public_viewer_profile,
+      current_token: create_missing_auth_token_state(),
+      current_profile: create_present_auth_profile_state(public_viewer_profile),
       available_profiles: [public_viewer_profile],
       sidebar_menu_items: [{ group_name: "General", items: [] }],
       is_initialized: true,
@@ -227,22 +262,21 @@ describe("authInitializationHelpers", () => {
     });
   });
 
-  it("rejects signed-in restoration when the saved token belongs to a different clerk user", async () => {
+  it("returns a missing restore state when the saved token belongs to a different clerk user", async () => {
     verify_token_mock.mockResolvedValueOnce({
       success: true,
       data: {
         is_valid: true,
-        payload: { user_id: "profile_1" },
+        payload: create_auth_token().payload,
       },
     });
 
     await expect(
-      try_restore_signed_in_session(
-        [create_profile()],
-        "a.b.signature",
-        "other@example.com",
-      ),
-    ).resolves.toBeNull();
+      try_restore_signed_in_session([create_profile()], "a.b.signature", {
+        status: "present",
+        email: "other@example.com",
+      }),
+    ).resolves.toEqual({ status: "not_restored" });
     expect(clear_auth_storage_mock).toHaveBeenCalled();
   });
 
@@ -254,15 +288,15 @@ describe("authInitializationHelpers", () => {
         payload: { user_id: "profile_1" },
       },
     });
-    const available_profiles =  [create_profile()] as UserProfile[];
+    const available_profiles = [create_profile()] as UserProfile[];
 
     await expect(
-      try_restore_signed_in_session(
-        available_profiles,
-        "a.b.signature",
-        "admin@example.com",
-      ),
+      try_restore_signed_in_session(available_profiles, "a.b.signature", {
+        status: "present",
+        email: "admin@example.com",
+      }),
     ).resolves.toEqual({
+      status: "restored",
       profile: available_profiles[0],
       token: {
         payload: { user_id: "profile_1" },
@@ -273,8 +307,24 @@ describe("authInitializationHelpers", () => {
   });
 
   it("reads the lowercase clerk email from the clerk session store", () => {
-    clerk_session_store.set({ user: { email_address: "Admin@Example.COM" } });
+    clerk_session_store.set({
+      user_state: {
+        status: "present",
+        user: { email_address: "Admin@Example.COM" },
+      },
+    });
 
-    expect(get_clerk_email()).toBe("admin@example.com");
+    expect(get_clerk_email()).toEqual({
+      status: "present",
+      email: "admin@example.com",
+    });
+  });
+
+  it("returns a missing clerk email state when the clerk session has no user email", () => {
+    clerk_session_store.set({
+      user_state: { status: "present", user: {} },
+    });
+
+    expect(get_clerk_email()).toEqual({ status: "missing" });
   });
 });

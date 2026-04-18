@@ -126,13 +126,27 @@ function create_default_fixture_details_setups(): import("$lib/core/types/Domain
   return [];
 }
 
-let singleton_instance: InBrowserFixtureDetailsSetupRepository | null = null;
+type FixtureDetailsSetupRepositoryState =
+  | { status: "uninitialized" }
+  | {
+      status: "ready";
+      repository: InBrowserFixtureDetailsSetupRepository;
+    };
+
+let fixture_details_setup_repository_state: FixtureDetailsSetupRepositoryState =
+  {
+    status: "uninitialized",
+  };
 
 export function get_fixture_details_setup_repository(): FixtureDetailsSetupRepository {
-  if (!singleton_instance) {
-    singleton_instance = new InBrowserFixtureDetailsSetupRepository();
+  if (fixture_details_setup_repository_state.status === "ready") {
+    return fixture_details_setup_repository_state.repository;
   }
-  return singleton_instance;
+
+  const repository = new InBrowserFixtureDetailsSetupRepository();
+  fixture_details_setup_repository_state = { status: "ready", repository };
+
+  return repository;
 }
 
 export async function reset_fixture_details_setup_repository(): Promise<void> {

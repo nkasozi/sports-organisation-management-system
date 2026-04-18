@@ -11,7 +11,7 @@
 
   type EditableSportGamePeriod = ScalarInput<SportGamePeriod>;
 
-  export let sport: Sport | null = null;
+  export let sport: Sport | undefined;
   export let rule_overrides: CompetitionRuleOverrides = {};
 
   let is_customizing_periods: boolean = false;
@@ -154,26 +154,34 @@
     get_overtime_rules().is_enabled = value;
   }
 
+  function has_rule_override(field_name: keyof CompetitionRuleOverrides): boolean {
+    return Object.prototype.hasOwnProperty.call(rule_overrides, field_name);
+  }
+
+  function clear_rule_override(field_name: keyof CompetitionRuleOverrides): void {
+    delete rule_overrides[field_name];
+  }
+
   function reset_game_periods(): void {
-    rule_overrides.periods = undefined;
-    rule_overrides.game_duration_minutes = undefined;
+    clear_rule_override("periods");
+    clear_rule_override("game_duration_minutes");
     is_customizing_periods = false;
   }
 
   function reset_squad_limits(): void {
-    rule_overrides.max_players_on_field = undefined;
-    rule_overrides.min_players_on_field = undefined;
-    rule_overrides.max_squad_size = undefined;
+    clear_rule_override("max_players_on_field");
+    clear_rule_override("min_players_on_field");
+    clear_rule_override("max_squad_size");
     is_customizing_squad_limits = false;
   }
 
   function reset_substitutions(): void {
-    rule_overrides.substitution_rules = undefined;
+    clear_rule_override("substitution_rules");
     is_customizing_substitutions = false;
   }
 
   function reset_overtime(): void {
-    rule_overrides.overtime_rules = undefined;
+    clear_rule_override("overtime_rules");
     is_customizing_overtime = false;
   }
 </script>
@@ -193,7 +201,7 @@
           periods={rule_overrides.periods ?? [...(sport.periods ?? [])]}
           current_summary={format_periods_summary(get_effective_periods())}
           default_summary={format_periods_summary(sport.periods ?? [])}
-          has_custom_periods={rule_overrides.periods !== undefined}
+          has_custom_periods={has_rule_override("periods")}
           {is_customizing_periods}
           on_customize={() => (is_customizing_periods = true)}
           on_periods_change={(periods) =>
@@ -205,10 +213,9 @@
           current_max_players={get_max_players_on_field()}
           current_min_players={get_min_players_on_field()}
           current_max_squad={get_max_squad_size()}
-          has_custom_limits={rule_overrides.max_players_on_field !==
-            undefined ||
-            rule_overrides.min_players_on_field !== undefined ||
-            rule_overrides.max_squad_size !== undefined}
+          has_custom_limits={has_rule_override("max_players_on_field") ||
+            has_rule_override("min_players_on_field") ||
+            has_rule_override("max_squad_size")}
           {is_customizing_squad_limits}
           on_customize={() => (is_customizing_squad_limits = true)}
           on_reset={reset_squad_limits}

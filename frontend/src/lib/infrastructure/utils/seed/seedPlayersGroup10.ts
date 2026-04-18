@@ -5,9 +5,13 @@ import { SEED_PLAYER_IDS } from "./seedPlayerIds";
 
 export function create_seed_players_group10(
   positions: PositionIds,
-  organization_id: ScalarValueInput<Omit<Player, "gender_id">["organization_id"]>,
+  organization_id: ScalarValueInput<
+    Omit<Player, "gender_id">["organization_id"]
+  >,
   now: Omit<Player, "gender_id">["created_at"],
-): import("$lib/core/types/DomainScalars").ScalarInput<Omit<Player, "gender_id">>[] {
+): import("$lib/core/types/DomainScalars").ScalarInput<
+  Omit<Player, "gender_id">
+>[] {
   return [
     {
       id: SEED_PLAYER_IDS.SIMBA_P4,

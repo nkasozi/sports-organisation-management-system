@@ -73,7 +73,7 @@ export function create_fixture_use_cases(
       filter?: FixtureFilter,
       options?: QueryOptions,
     ): PaginatedAsyncResult<Fixture> {
-      const result = await repository.find_all(filter, options);
+      const result = await repository.find_all(filter ?? {}, options ?? {});
       if (!result.success) return result;
       const enriched_fixtures = await enrich_fixtures_with_team_names(
         result.data.items,

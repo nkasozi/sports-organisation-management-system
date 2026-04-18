@@ -18,6 +18,7 @@ describe("GameEventLogHelpers", () => {
       live_game_log_id: "live_1",
       fixture_id: "fixture_1",
       event_type: "goal",
+      stoppage_time_minute: 0,
       team_side: "home",
     });
   });

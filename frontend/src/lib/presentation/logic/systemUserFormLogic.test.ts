@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 
 import type { UserRole } from "../../core/interfaces/ports";
 import {
+  build_user_role_state,
+  filter_enum_values_by_creator_role,
   get_allowed_roles_for_creator,
   get_visible_fields_for_role,
   is_system_user_field_visible_for_role,
@@ -112,7 +114,7 @@ describe("is_system_user_field_visible_for_role", () => {
   });
 
   it("returns true for non-conditional fields regardless of role", () => {
-    const roles =  [
+    const roles = [
       "super_admin",
       "org_admin",
       "officials_manager",
@@ -134,24 +136,53 @@ describe("is_system_user_field_visible_for_role", () => {
   });
 
   it("returns false for any field when no role is selected", () => {
-    expect(is_system_user_field_visible_for_role("organization_id", null)).toBe(
-      false,
-    );
-    expect(is_system_user_field_visible_for_role("player_id", null)).toBe(
-      false,
-    );
-    expect(is_system_user_field_visible_for_role("official_id", null)).toBe(
-      false,
-    );
-    expect(is_system_user_field_visible_for_role("team_id", null)).toBe(false);
+    const missing_role_state = build_user_role_state();
+
+    expect(
+      is_system_user_field_visible_for_role(
+        "organization_id",
+        missing_role_state,
+      ),
+    ).toBe(false);
+    expect(
+      is_system_user_field_visible_for_role("player_id", missing_role_state),
+    ).toBe(false);
+    expect(
+      is_system_user_field_visible_for_role("official_id", missing_role_state),
+    ).toBe(false);
+    expect(
+      is_system_user_field_visible_for_role("team_id", missing_role_state),
+    ).toBe(false);
   });
 
   it("returns true for always-visible fields even when no role is selected", () => {
-    expect(is_system_user_field_visible_for_role("email", null)).toBe(true);
-    expect(is_system_user_field_visible_for_role("first_name", null)).toBe(
-      true,
-    );
-    expect(is_system_user_field_visible_for_role("role", null)).toBe(true);
+    const missing_role_state = build_user_role_state();
+
+    expect(
+      is_system_user_field_visible_for_role("email", missing_role_state),
+    ).toBe(true);
+    expect(
+      is_system_user_field_visible_for_role("first_name", missing_role_state),
+    ).toBe(true);
+    expect(
+      is_system_user_field_visible_for_role("role", missing_role_state),
+    ).toBe(true);
+  });
+});
+
+describe("build_user_role_state", () => {
+  it("builds an explicit missing state for absent and invalid roles", () => {
+    expect(build_user_role_state()).toEqual({ status: "missing" });
+    expect(build_user_role_state("not-a-role")).toEqual({
+      status: "missing",
+    });
+  });
+
+  it("builds a present state for known user roles", () => {
+    expect(build_user_role_state("org_admin")).toEqual({
+      status: "present",
+      role: "org_admin",
+    });
   });
 });
 
@@ -188,5 +219,24 @@ describe("should_field_be_required_for_role", () => {
     expect(should_field_be_required_for_role("official_id", "player")).toBe(
       false,
     );
+  });
+});
+
+describe("filter_enum_values_by_creator_role", () => {
+  it("returns only assignable roles for the current creator role state", () => {
+    expect(
+      filter_enum_values_by_creator_role(
+        "role",
+        ["super_admin", "org_admin", "player"],
+        build_user_role_state(),
+      ),
+    ).toEqual([]);
+    expect(
+      filter_enum_values_by_creator_role(
+        "role",
+        ["super_admin", "org_admin", "player"],
+        build_user_role_state("org_admin"),
+      ),
+    ).toEqual(["org_admin", "player"]);
   });
 });

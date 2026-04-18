@@ -3,11 +3,11 @@ import type {
   OfficialAssociatedTeam,
   UpdateOfficialAssociatedTeamInput,
 } from "../../../../entities/OfficialAssociatedTeam";
+import type { ScalarValueInput } from "../../../../types/DomainScalars";
 import type {
   AsyncResult,
   PaginatedAsyncResult,
 } from "../../../../types/Result";
-import type { ScalarValueInput } from "../../../../types/DomainScalars";
 import type { OfficialAssociatedTeamFilter } from "../../external/repositories/OfficialAssociatedTeamRepository";
 import type { QueryOptions } from "../../external/repositories/Repository";
 
@@ -19,7 +19,9 @@ export interface OfficialAssociatedTeamUseCasesPort {
     id: ScalarValueInput<OfficialAssociatedTeam["id"]>,
     input: UpdateOfficialAssociatedTeamInput,
   ): AsyncResult<OfficialAssociatedTeam>;
-  delete(id: ScalarValueInput<OfficialAssociatedTeam["id"]>): AsyncResult<boolean>;
+  delete(
+    id: ScalarValueInput<OfficialAssociatedTeam["id"]>,
+  ): AsyncResult<boolean>;
   get_by_id(
     id: ScalarValueInput<OfficialAssociatedTeam["id"]>,
   ): AsyncResult<OfficialAssociatedTeam>;

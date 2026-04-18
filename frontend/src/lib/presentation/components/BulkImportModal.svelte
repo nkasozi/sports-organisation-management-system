@@ -34,14 +34,16 @@
   let current_step: BulkImportStep = "download";
   let failure_count = 0;
   let import_results: BulkImportResult[] = [];
-  let selected_file: File | null = null;
+  let selected_file: File | undefined = undefined;
   let success_count = 0;
 
   $: entity_metadata = entityMetadataRegistry.get_entity_metadata(
     entity_type.toLowerCase(),
   );
-  $: display_name = entity_metadata?.display_name || entity_type;
-  $: importable_fields = get_bulk_import_fields(entity_metadata?.fields || []);
+  $: display_name = entity_metadata ? entity_metadata.display_name : entity_type;
+  $: importable_fields = get_bulk_import_fields(
+    entity_metadata ? entity_metadata.fields : [],
+  );
   $: foreign_key_fields = get_bulk_import_foreign_key_fields(importable_fields);
   $: enum_fields = get_bulk_import_enum_fields(importable_fields);
 
@@ -49,7 +51,7 @@
     current_step = next_step;
     failure_count = 0;
     import_results = [];
-    selected_file = null;
+    selected_file = void 0;
     success_count = 0;
   }
 
@@ -66,7 +68,7 @@
     selected_file =
       file_input.files && file_input.files.length > 0
         ? file_input.files[0]
-        : null;
+        : void 0;
   }
 
   async function handle_start_import(): Promise<void> {

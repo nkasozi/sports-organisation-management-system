@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { derive_competition_results_workspace_state } from "./competitionResultsWorkspaceState";
+
 const competition_results_workspace_state_mocks = vi.hoisted(() => ({
   build_competition_stage_results_sections: vi.fn(),
   calculate_player_stats: vi.fn(),
@@ -41,8 +43,6 @@ vi.mock("$lib/presentation/logic/competitionStageResults", () => ({
   calculate_team_standings:
     competition_results_workspace_state_mocks.calculate_team_standings,
 }));
-
-import { derive_competition_results_workspace_state } from "./competitionResultsWorkspaceState";
 
 describe("competitionResultsWorkspaceState", () => {
   beforeEach(() => {
@@ -99,8 +99,11 @@ describe("competitionResultsWorkspaceState", () => {
 
     expect(
       derive_competition_results_workspace_state({
-        competition_format: null,
-        selected_competition: { id: "competition-1" },
+        competition_format_state: { status: "missing" },
+        selected_competition_state: {
+          status: "present",
+          competition: { id: "competition-1" },
+        },
         competition_stages: [{ id: "stage-1" }],
         fixtures: [scheduled_fixture, live_fixture, completed_fixture],
         teams: [{ id: "team-1" }],

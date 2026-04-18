@@ -20,7 +20,7 @@ export function create_sport_use_cases(
       filter?: SportFilter,
       options?: QueryOptions,
     ): PaginatedAsyncResult<Sport> {
-      return repository.find_all(filter, options);
+      return repository.find_all(filter ?? {}, options ?? {});
     },
 
     async get_by_id(id: ScalarValueInput<Sport["id"]>): AsyncResult<Sport> {

@@ -2,6 +2,15 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { BaseEntity } from "$lib/core/entities/BaseEntity";
 
+import {
+  compute_teams_after_exclusion,
+  fetch_stages_from_competition,
+  fetch_teams_excluding_player_memberships,
+  fetch_teams_from_competition,
+  fetch_teams_from_player_memberships,
+  fetch_venue_name_for_team,
+} from "./competitionTeamDataFetcher";
+
 const {
   fetch_entities_for_type_mock,
   get_competition_team_use_cases_mock,
@@ -23,15 +32,6 @@ vi.mock("../../infrastructure/registry/entityUseCasesRegistry", () => ({
 vi.mock("./dynamicFormDataLoader", () => ({
   fetch_entities_for_type: fetch_entities_for_type_mock,
 }));
-
-import {
-  compute_teams_after_exclusion,
-  fetch_stages_from_competition,
-  fetch_teams_excluding_player_memberships,
-  fetch_teams_from_competition,
-  fetch_teams_from_player_memberships,
-  fetch_venue_name_for_team,
-} from "./competitionTeamDataFetcher";
 
 function create_entity<TExtra extends Record<string, unknown>>(
   id: string,
@@ -164,5 +164,13 @@ describe("competitionTeamDataFetcher", () => {
     await expect(
       fetch_venue_name_for_team("team-1", [venue_team]),
     ).resolves.toBe("National Stadium");
+  });
+
+  it("returns an empty venue name when the selected team has no home venue", async () => {
+    const venue_team = create_entity("team-1", {});
+
+    await expect(
+      fetch_venue_name_for_team("team-1", [venue_team]),
+    ).resolves.toBe("");
   });
 });

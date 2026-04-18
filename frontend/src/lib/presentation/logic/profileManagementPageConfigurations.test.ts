@@ -1,5 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import {
+  player_profile_management_configuration,
+  team_profile_management_configuration,
+} from "./profileManagementPageConfigurations";
+
 const profile_management_use_case_mocks = vi.hoisted(() => ({
   get_player_profile_use_cases: vi.fn(),
   get_player_use_cases: vi.fn(),
@@ -15,11 +20,6 @@ vi.mock("$lib/infrastructure/registry/useCaseFactories", () => ({
     profile_management_use_case_mocks.get_team_profile_use_cases,
   get_team_use_cases: profile_management_use_case_mocks.get_team_use_cases,
 }));
-
-import {
-  player_profile_management_configuration,
-  team_profile_management_configuration,
-} from "./profileManagementPageConfigurations";
 
 describe("profileManagementPageConfigurations", () => {
   beforeEach(() => {

@@ -8,7 +8,7 @@ import type { ScalarValueInput } from "$lib/core/types/DomainScalars";
 export interface OfficialRatingState {
   official: Official;
   rating: RatingDimensions & { notes: string };
-  existing_id: string | null;
+  existing_id: string;
   is_saving: boolean;
   validation_errors: string[];
 }
@@ -77,17 +77,19 @@ export async function load_official_rating_states(
   const rater_ratings = existing_ratings.filter(
     (rating) => rating.rater_user_id === rater_user_id,
   );
-  const rating_states: Array<OfficialRatingState | null> =
-    assigned_official_ids.map(
-      (
-        official_id: ScalarValueInput<Official["id"]>,
-      ): OfficialRatingState | null => {
-        const official = officials_map.get(official_id);
-        if (!official) return null;
-        const found_rating = rater_ratings.find(
-          (rating) => rating.official_id === official_id,
-        );
-        return {
+  return assigned_official_ids.flatMap(
+    (official_id: ScalarValueInput<Official["id"]>): OfficialRatingState[] => {
+      const official = officials_map.get(official_id);
+      if (!official) {
+        return [];
+      }
+
+      const found_rating = rater_ratings.find(
+        (rating) => rating.official_id === official_id,
+      );
+
+      return [
+        {
           official,
           rating: found_rating
             ? {
@@ -99,14 +101,11 @@ export async function load_official_rating_states(
                 notes: found_rating.notes,
               }
             : build_default_official_rating_dimensions(),
-          existing_id: found_rating?.id ?? null,
+          existing_id: found_rating ? found_rating.id : "",
           is_saving: false,
           validation_errors: [],
-        };
-      },
-    );
-  return rating_states.filter(
-    (state: OfficialRatingState | null): state is OfficialRatingState =>
-      state !== null,
+        },
+      ];
+    },
   );
 }

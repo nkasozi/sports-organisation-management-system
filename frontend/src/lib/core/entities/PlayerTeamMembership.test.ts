@@ -12,12 +12,13 @@ describe("PlayerTeamMembership", () => {
       player_id: "",
       team_id: "",
       start_date: "2025-01-01",
-      jersey_number: null,
+      jersey_number: 0,
       status: "active",
     });
 
     expect(errors).toContain("Player is required");
     expect(errors).toContain("Team is required");
+    expect(errors).not.toContain("Jersey number must be between 1 and 99");
   });
 
   it("validates jersey_number range when provided", () => {
@@ -26,7 +27,7 @@ describe("PlayerTeamMembership", () => {
       player_id: "player_1",
       team_id: "team_1",
       start_date: "2025-01-01",
-      jersey_number: 0,
+      jersey_number: -1,
       status: "active",
     });
 

@@ -42,10 +42,24 @@
         selected_organization_id = "",
         selected_sync_interval_ms = 3_600_000;
 
-    $: current_profile = $auth_store.current_profile;
-    $: is_super_admin = current_profile?.organization_id === ANY_VALUE;
+    $: current_profile_state = (() => {
+        const current_profile = $auth_store.current_profile;
+
+        if (current_profile.status !== "present") {
+            return { status: "missing" } as const;
+        }
+
+        return {
+            status: "present",
+            profile: current_profile.profile,
+        } as const;
+    })();
+    $: is_super_admin =
+        current_profile_state.status === "present" &&
+        current_profile_state.profile.organization_id === ANY_VALUE;
     $: is_platform_branding =
-        !current_profile || current_profile.organization_id === ANY_VALUE;
+        current_profile_state.status !== "present" ||
+        current_profile_state.profile.organization_id === ANY_VALUE;
     $: organization_badge_label =
         organization_name || $branding_store.organization_name;
 
@@ -88,7 +102,9 @@
         get_branding_state: () => $branding_store,
         get_current_form_values,
         get_current_profile_organization_id: () =>
-            current_profile?.organization_id,
+            current_profile_state.status === "present"
+                ? current_profile_state.profile.organization_id
+                : "",
         get_organizations: () => organizations,
         get_pathname: () => $page.url.pathname,
         get_selected_organization_id: () => selected_organization_id,
@@ -140,7 +156,11 @@
     {is_super_admin}
     {is_platform_branding}
     {organization_badge_label}
-    caller_role={current_profile?.role ?? ""}
+    caller_role={
+        current_profile_state.status === "present"
+            ? current_profile_state.profile.role
+            : ""
+    }
     default_logo_svg={DEFAULT_LOGO_SVG}
     {show_toast}
     handle_selected_organization_switch={runtime.handle_selected_organization_switch}

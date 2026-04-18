@@ -62,9 +62,7 @@ export function create_gender_use_cases(
       return repository.delete_by_id(id);
     },
 
-    async get_by_id(
-      id: ScalarValueInput<Gender["id"]>,
-    ): AsyncResult<Gender> {
+    async get_by_id(id: ScalarValueInput<Gender["id"]>): AsyncResult<Gender> {
       if (!id || id.trim() === "") {
         return create_failure_result("Gender ID is required");
       }
@@ -78,7 +76,7 @@ export function create_gender_use_cases(
       const query_options = options || { page_number: 1, page_size: 100 };
 
       if (!filter) {
-        return repository.find_all(undefined, query_options);
+        return repository.find_all({}, query_options);
       }
 
       const gender_filter: GenderFilter = {
@@ -89,10 +87,13 @@ export function create_gender_use_cases(
     },
 
     async list_all(): PaginatedAsyncResult<Gender> {
-      return repository.find_all(undefined, {
-        page_number: 1,
-        page_size: 1000,
-      });
+      return repository.find_all(
+        {},
+        {
+          page_number: 1,
+          page_size: 1000,
+        },
+      );
     },
   };
 }

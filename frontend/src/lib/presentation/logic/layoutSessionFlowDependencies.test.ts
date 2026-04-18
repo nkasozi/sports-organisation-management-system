@@ -8,7 +8,7 @@ describe("layoutSessionFlowDependencies", () => {
     const initial_sync_store = {
       start_sync: vi.fn(),
       update_progress: vi.fn(),
-      complete_sync: vi.fn(async () => undefined),
+      complete_sync: vi.fn(async () => {}),
       reset: vi.fn(),
     };
     const command = {

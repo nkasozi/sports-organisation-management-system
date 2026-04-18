@@ -3,9 +3,9 @@ import type { AppSettingsPort } from "$lib/core/interfaces/ports";
 import { get_database } from "../repositories/database";
 
 export class DexieAppSettingsAdapter implements AppSettingsPort {
-  async get_setting(key: string): Promise<string | null> {
+  async get_setting(key: string): Promise<string> {
     const row = await get_database().app_settings.get(key);
-    return row?.value ?? null;
+    return row?.value ?? "";
   }
 
   async set_setting(key: string, value: string): Promise<void> {

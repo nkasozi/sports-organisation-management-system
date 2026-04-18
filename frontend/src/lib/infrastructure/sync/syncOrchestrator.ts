@@ -23,6 +23,7 @@ import type { ConvexClient, SyncProgress, SyncResult } from "./syncTypes";
 import {
   EPOCH_TIMESTAMP,
   get_push_excluded_tables,
+  get_push_excluded_tables_for_unsigned_user,
   TABLE_NAMES,
   type TableName,
 } from "./syncTypes";
@@ -52,7 +53,9 @@ export async function sync_all_tables(
   const total_tables = valid_tables.length;
   let tables_completed = 0;
   const role = get(current_user_role);
-  const push_excluded_tables = get_push_excluded_tables(role);
+  const push_excluded_tables = role
+    ? get_push_excluded_tables(role)
+    : get_push_excluded_tables_for_unsigned_user();
   console.log(
     `[Sync] ===== Starting sync: direction=${direction}, tables=${total_tables}, role=${role} =====`,
   );
@@ -61,7 +64,7 @@ export async function sync_all_tables(
     direction,
     start_time,
   );
-  if (auth_failure) return auth_failure;
+  if (auth_failure.status === "stop") return auth_failure.result;
   for (const table_name of valid_tables) {
     if (auth_failed) {
       console.warn(
@@ -78,14 +81,6 @@ export async function sync_all_tables(
     );
     if (on_progress) on_progress(progress);
     const table = get_table_from_database(database, table_name as TableName);
-    if (!table) {
-      console.warn(
-        `[Sync] ${table_name} — table not found in database, skipping`,
-      );
-      errors.push({ table_name, error: `Table ${table_name} not found` });
-      tables_completed++;
-      continue;
-    }
     const all_local_records = await table.toArray();
     const local_latest = get_local_latest_modified_at(all_local_records);
     const remote_state_result = await load_remote_table_state(
@@ -93,16 +88,16 @@ export async function sync_all_tables(
       table_name,
       hints,
     );
-    if (!remote_state_result.state) {
+    if (!remote_state_result.success) {
       errors.push({
         table_name,
-        error: remote_state_result.error_message ?? "Unknown error",
+        error: remote_state_result.error,
       });
       tables_completed++;
       continue;
     }
-    const remote_state = remote_state_result.state;
-    const remote_latest = remote_state.latest_modified_at || EPOCH_TIMESTAMP;
+    const remote_state = remote_state_result.data;
+    const remote_latest = remote_state.latest_modified_at;
     const local_is_ahead = local_latest > remote_latest;
     const remote_is_ahead = remote_latest > local_latest;
     const are_in_sync =
@@ -123,7 +118,7 @@ export async function sync_all_tables(
           total_records: all_local_records.length,
           synced_records: 0,
           status: "success",
-          error_message: null,
+          errors: [],
           tables_completed,
           total_tables,
           percentage: Math.round((tables_completed / total_tables) * 100),
@@ -157,11 +152,12 @@ export async function sync_all_tables(
           );
     total_pushed += table_result.records_pushed;
     total_pulled += table_result.records_pulled;
-    if (table_result.error) errors.push(table_result.error);
-    if (table_result.conflicts) all_conflicts.push(table_result.conflicts);
+    errors.push(...table_result.errors);
+    all_conflicts.push(...table_result.conflicts);
     if (table_result.auth_failed) auth_failed = true;
     tables_completed++;
-    if (table_result.success && !table_result.conflicts) tables_synced++;
+    if (table_result.success && table_result.conflicts.length === 0)
+      tables_synced++;
     if (on_progress)
       on_progress(
         update_table_sync_progress(progress, table_result, tables_completed),

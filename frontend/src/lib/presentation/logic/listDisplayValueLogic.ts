@@ -19,8 +19,8 @@ function is_enum_style_string(value: string): boolean {
 function find_enum_option_label(
   field_metadata: FieldMetadata | undefined,
   raw_value: string,
-): string | null {
-  if (!field_metadata) return null;
+): string {
+  if (!field_metadata) return "";
   if (field_metadata.enum_options) {
     const option = field_metadata.enum_options.find(
       (opt) => opt.value === raw_value,
@@ -35,7 +35,7 @@ function find_enum_option_label(
       if (option) return option.label;
     }
   }
-  return null;
+  return "";
 }
 
 export function get_display_value_for_entity_field(
@@ -46,7 +46,7 @@ export function get_display_value_for_entity_field(
 ): string {
   if (!entity || !field_name) return "";
   const raw_value = (entity as unknown as Record<string, unknown>)[field_name];
-  if (raw_value === null || raw_value === undefined) return "";
+  if (raw_value == void 0) return "";
 
   const is_entity_id_field = field_name === "id";
   const is_foreign_key_field = field_metadata?.field_type === "foreign_key";

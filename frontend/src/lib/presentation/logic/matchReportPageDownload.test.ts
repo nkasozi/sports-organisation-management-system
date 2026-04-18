@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { download_match_report_for_fixture } from "./matchReportPageDownload";
+
 const {
   build_match_report_data_mock,
   download_match_report_mock,
@@ -18,8 +20,6 @@ vi.mock("$lib/infrastructure/utils/MatchReportBuilder", () => ({
 vi.mock("$lib/infrastructure/utils/MatchReportPdfGenerator", () => ({
   download_match_report: download_match_report_mock,
 }));
-
-import { download_match_report_for_fixture } from "./matchReportPageDownload";
 
 describe("matchReportPageDownload", () => {
   function create_dependencies() {
@@ -74,11 +74,20 @@ describe("matchReportPageDownload", () => {
         },
         home_team: { name: "Lions" },
         away_team: { name: "Tigers" },
-        competition: { organization_id: "organization-1" },
-        sport: {
-          card_types: [{ id: "yellow", name: "Yellow", color: "yellow" }],
+        competition_state: {
+          status: "present",
+          competition: { organization_id: "organization-1" },
         },
-        venue: { name: "National Stadium" },
+        sport_state: {
+          status: "present",
+          sport: {
+            card_types: [{ id: "yellow", name: "Yellow", color: "yellow" }],
+          },
+        },
+        venue_state: {
+          status: "present",
+          venue: { name: "National Stadium" },
+        },
         assigned_officials_data: [],
         home_players: [],
         away_players: [],
@@ -125,9 +134,9 @@ describe("matchReportPageDownload", () => {
         },
         home_team: { name: "Lions" },
         away_team: { name: "Tigers" },
-        competition: null,
-        sport: null,
-        venue: null,
+        competition_state: { status: "missing" },
+        sport_state: { status: "missing" },
+        venue_state: { status: "missing" },
         assigned_officials_data: [],
         home_players: [],
         away_players: [],

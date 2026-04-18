@@ -23,7 +23,7 @@ type DynamicFormDependencyChangeResult = DynamicFormDependencyState & {
 
 type DynamicFormDependencyChangeParams = DynamicFormDependencyState & {
   entity_type: string;
-  entity_metadata: EntityMetadata | null;
+  entity_metadata: EntityMetadata | undefined;
   changed_field_name: string;
   new_value: string;
 };
@@ -178,7 +178,11 @@ function update_team_exclusion_options(
       continue;
     }
 
-    const exclude_value = form_data[changed_field_name] ?? null;
+    const exclude_value_candidate = form_data[changed_field_name];
+    const exclude_value =
+      typeof exclude_value_candidate === "string"
+        ? exclude_value_candidate
+        : "";
     updated_options[field.field_name] = compute_teams_after_exclusion(
       all_competition_teams_cache,
       exclude_value,

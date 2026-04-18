@@ -1,40 +1,43 @@
 <script lang="ts">
     import type { CreateCompetitionInput } from "$lib/core/entities/Competition";
-    import type { Sport } from "$lib/core/entities/Sport";
     import type { SelectOption } from "$lib/presentation/components/ui/SelectField.svelte";
     import Toast from "$lib/presentation/components/ui/Toast.svelte";
+    import type { CompetitionCreateSelectedSportState } from "$lib/presentation/logic/competitionCreatePageFlow";
 
     import CompetitionCreateEditor from "./CompetitionCreateEditor.svelte";
 
-    export let competition_format_options: SelectOption[];
-    export let error_message: string;
-    export let errors: Record<string, string>;
-    export let format_team_requirements: string;
-    export let form_data: CreateCompetitionInput;
-    export let is_loading_formats: boolean;
-    export let is_loading_organizations: boolean;
-    export let is_loading_teams: boolean;
-    export let is_organization_restricted: boolean;
-    export let is_saving: boolean;
-    export let is_team_count_valid: boolean;
-    export let organization_options: SelectOption[];
-    export let selected_sport: Sport | null;
-    export let selected_team_ids: Set<string>;
-    export let status_options: SelectOption[];
-    export let team_options: SelectOption[];
-    export let toast_message: string;
-    export let toast_type: "success" | "error" | "info";
-    export let toast_visible: boolean;
-    export let on_cancel: () => void;
+    export let competition_format_options: SelectOption[] = [];
+    export let error_message = "";
+    export let errors: Record<string, string> = {};
+    export let format_team_requirements = "";
+    export let form_data: CreateCompetitionInput = {} as CreateCompetitionInput;
+    export let is_loading_formats = false;
+    export let is_loading_organizations = false;
+    export let is_loading_teams = false;
+    export let is_organization_restricted = false;
+    export let is_saving = false;
+    export let is_team_count_valid = true;
+    export let organization_options: SelectOption[] = [];
+    export let selected_sport_state: CompetitionCreateSelectedSportState = {
+        status: "missing",
+    };
+    export let selected_team_ids: Set<string> = new Set();
+    export let status_options: SelectOption[] = [];
+    export let team_options: SelectOption[] = [];
+    export let toast_message = "";
+    export let toast_type: "success" | "error" | "info" = "info";
+    export let toast_visible = false;
+    export let on_cancel: () => void = () => {};
     export let on_format_change: (
         event: CustomEvent<{ value: string }>,
-    ) => void;
+    ) => void = () => {};
     export let on_organization_change: (
         event: CustomEvent<{ value: string }>,
-    ) => Promise<void>;
-    export let on_submit: () => Promise<void>;
-    export let on_toggle_auto_squad_submission: (enabled: boolean) => void;
-    export let on_toggle_team: (team_id: string) => boolean;
+    ) => Promise<void> = async () => {};
+    export let on_submit: () => Promise<void> = async () => {};
+    export let on_toggle_auto_squad_submission: (enabled: boolean) => void =
+        () => {};
+    export let on_toggle_team: (team_id: string) => boolean = () => false;
 </script>
 
 <div class="max-w-2xl mx-auto space-y-6">
@@ -51,7 +54,7 @@
         {competition_format_options}
         {team_options}
         {selected_team_ids}
-        {selected_sport}
+        {selected_sport_state}
         {is_loading_organizations}
         {is_loading_formats}
         {is_loading_teams}

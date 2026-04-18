@@ -65,7 +65,7 @@
                             class="input w-36"
                             bind:value={current_foul.results_in_card}
                         >
-                            <option value={null}>No Card</option>
+                            <option value="">No Card</option>
                             {#each form_data.card_types as current_card}
                                 <option value={current_card.id}
                                     >{current_card.name}</option

@@ -1,10 +1,10 @@
 <script lang="ts">
     import type { Fixture } from "$lib/core/entities/Fixture";
-    import type { Venue } from "$lib/core/entities/Venue";
+    import type { MatchReportVenueState } from "$lib/presentation/logic/matchReportPageLoadTypes";
     import { format_match_report_kickoff_display } from "$lib/presentation/logic/matchReportPageState";
 
-    export let fixture: Fixture;
-    export let venue: Venue | null;
+    export let fixture: Fixture = {} as Fixture;
+    export let venue_state: MatchReportVenueState = { status: "missing" };
 </script>
 
 <div
@@ -24,10 +24,12 @@
             fixture.scheduled_time,
         )}
     </p>
-    {#if venue}
+    {#if venue_state.status === "present"}
         <p class="text-sm text-gray-500 dark:text-gray-400">
-            📍 {venue.name}{venue.city ? `, ${venue.city}` : ""}{venue.country
-                ? `, ${venue.country}`
+            📍 {venue_state.venue.name}{venue_state.venue.city
+                ? `, ${venue_state.venue.city}`
+                : ""}{venue_state.venue.country
+                ? `, ${venue_state.venue.country}`
                 : ""}
         </p>
     {/if}

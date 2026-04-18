@@ -13,17 +13,18 @@ type BrandedNumber<TBrand extends string> = number & {
   readonly __brand: TBrand;
 };
 
-type ScalarInputValue<TValue> = TValue extends BrandedString<string>
-  ? string
-  : TValue extends BrandedNumber<string>
-    ? number
-    : TValue extends Array<infer TElement>
-      ? Array<ScalarInputValue<TElement>>
-      : TValue extends ReadonlyArray<infer TElement>
-        ? ReadonlyArray<ScalarInputValue<TElement>>
-        : TValue extends object
-          ? { [TKey in keyof TValue]: ScalarInputValue<TValue[TKey]> }
-          : TValue;
+type ScalarInputValue<TValue> =
+  TValue extends BrandedString<string>
+    ? string
+    : TValue extends BrandedNumber<string>
+      ? number
+      : TValue extends Array<infer TElement>
+        ? Array<ScalarInputValue<TElement>>
+        : TValue extends ReadonlyArray<infer TElement>
+          ? ReadonlyArray<ScalarInputValue<TElement>>
+          : TValue extends object
+            ? { [TKey in keyof TValue]: ScalarInputValue<TValue[TKey]> }
+            : TValue;
 
 export type CalendarTokenValue = BrandedString<"CalendarTokenValue">;
 export type EmailAddress = BrandedString<"EmailAddress">;

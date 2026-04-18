@@ -7,9 +7,32 @@ import {
 } from "../../core/entities/StatusConstants";
 import { get_use_cases_for_entity_type } from "../../infrastructure/registry/entityUseCasesRegistry";
 import { auth_store } from "../stores/auth";
+import { normalize_auth_profile_state } from "../stores/authTypes";
 import { fetch_entities_for_type } from "./dynamicFormDataLoader";
 
 type JerseyOptionsResult = { jerseys: BaseEntity[] };
+
+type TeamScopeState =
+  | { status: "all_teams" }
+  | { status: "single_team"; team_id: string };
+
+function create_all_teams_scope_state(): TeamScopeState {
+  return { status: "all_teams" };
+}
+
+function create_single_team_scope_state(team_id: string): TeamScopeState {
+  return { status: "single_team", team_id };
+}
+
+function create_team_scope_state(
+  raw_team_id: string | undefined,
+): TeamScopeState {
+  if (!raw_team_id || raw_team_id === WILDCARD_SCOPE) {
+    return create_all_teams_scope_state();
+  }
+
+  return create_single_team_scope_state(raw_team_id);
+}
 
 export async function fetch_fixtures_without_setup(
   organization_id: string,
@@ -40,9 +63,14 @@ export async function fetch_fixtures_without_setup(
 export async function fetch_fixtures_for_rating(
   organization_id: string,
 ): Promise<BaseEntity[]> {
-  const raw_team_id = get(auth_store).current_profile?.team_id;
-  const team_id =
-    raw_team_id && raw_team_id !== WILDCARD_SCOPE ? raw_team_id : null;
+  const current_profile_state = normalize_auth_profile_state(
+    get(auth_store).current_profile,
+  );
+  const team_scope = create_team_scope_state(
+    current_profile_state.status === "present"
+      ? current_profile_state.profile.team_id
+      : void 0,
+  );
   const all_fixtures = await fetch_entities_for_type("fixture", {
     organization_id,
   });
@@ -55,16 +83,16 @@ export async function fetch_fixtures_for_rating(
     };
     const is_completed = fixture.status === FIXTURE_STATUS.COMPLETED;
     const matches_team =
-      !team_id ||
-      fixture.home_team_id === team_id ||
-      fixture.away_team_id === team_id;
+      team_scope.status === "all_teams" ||
+      fixture.home_team_id === team_scope.team_id ||
+      fixture.away_team_id === team_scope.team_id;
     return is_completed && matches_team;
   });
 
   console.debug("[DataLoader] Loaded fixtures for rating", {
     event: "fixtures_loaded_for_rating",
     organization_id,
-    team_id,
+    team_scope,
     total_fixtures: all_fixtures.length,
     available_count: filtered.length,
   });

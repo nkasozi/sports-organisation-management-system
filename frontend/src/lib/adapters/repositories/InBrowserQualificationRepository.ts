@@ -92,7 +92,7 @@ class InBrowserQualificationRepository
       filtered = filtered.filter((qual) => qual.status === filter.status);
     }
 
-    if (filter.is_expired !== undefined) {
+    if ("is_expired" in filter) {
       const today = new Date();
       filtered = filtered.filter((qual) => {
         if (!qual.expiry_date) return !filter.is_expired;
@@ -161,13 +161,26 @@ function create_default_qualifications(): import("$lib/core/types/DomainScalars"
   ];
 }
 
-let singleton_instance: InBrowserQualificationRepository | null = null;
+type QualificationRepositoryState =
+  | { status: "uninitialized" }
+  | {
+      status: "ready";
+      repository: InBrowserQualificationRepository;
+    };
+
+let qualification_repository_state: QualificationRepositoryState = {
+  status: "uninitialized",
+};
 
 export function get_qualification_repository(): QualificationRepository {
-  if (!singleton_instance) {
-    singleton_instance = new InBrowserQualificationRepository();
+  if (qualification_repository_state.status === "ready") {
+    return qualification_repository_state.repository;
   }
-  return singleton_instance;
+
+  const repository = new InBrowserQualificationRepository();
+  qualification_repository_state = { status: "ready", repository };
+
+  return repository;
 }
 
 export async function reset_qualification_repository(): Promise<void> {

@@ -3,11 +3,11 @@ import type {
   Team,
   UpdateTeamInput,
 } from "../../../../entities/Team";
+import type { ScalarValueInput } from "../../../../types/DomainScalars";
 import type {
   AsyncResult,
   PaginatedAsyncResult,
 } from "../../../../types/Result";
-import type { ScalarValueInput } from "../../../../types/DomainScalars";
 import type { QueryOptions } from "../../external/repositories/Repository";
 import type { TeamFilter } from "../../external/repositories/TeamRepository";
 import type { BaseUseCasesPort } from "./BaseUseCasesPort";

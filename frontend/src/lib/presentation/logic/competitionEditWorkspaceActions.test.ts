@@ -1,5 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import {
+  add_team_to_competition_workspace,
+  remove_team_from_competition_workspace,
+  submit_competition_edit_workspace,
+} from "./competitionEditWorkspaceActions";
+
 const {
   get_competition_team_collections_after_add_mock,
   get_competition_team_collections_after_remove_mock,
@@ -14,12 +20,6 @@ vi.mock("$lib/presentation/logic/competitionEditPageState", () => ({
   get_competition_team_collections_after_remove:
     get_competition_team_collections_after_remove_mock,
 }));
-
-import {
-  add_team_to_competition_workspace,
-  remove_team_from_competition_workspace,
-  submit_competition_edit_workspace,
-} from "./competitionEditWorkspaceActions";
 
 describe("competitionEditWorkspaceActions", () => {
   beforeEach(() => {
@@ -85,8 +85,8 @@ describe("competitionEditWorkspaceActions", () => {
       competition_id: "competition-1",
       team_id: "team-2",
       registration_date: "2024-06-01",
-      seed_number: null,
-      group_name: null,
+      seed_number: "",
+      group_name: "",
       notes: "",
       status: "registered",
     });

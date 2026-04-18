@@ -1,11 +1,3 @@
-export type {
-  AccessDeniedPayload,
-  EntityCreatedPayload,
-  EntityDeletedPayload,
-  EntityUpdatedPayload,
-  PageViewedPayload,
-  UserContext,
-} from "./EventBusTypes";
 import type {
   IsoDateTimeString,
   ScalarInput,
@@ -19,6 +11,15 @@ import type {
   EventHandler,
   EventSubscription,
   EventType,
+  PageViewedPayload,
+  UserContext,
+} from "./EventBusTypes";
+
+export type {
+  AccessDeniedPayload,
+  EntityCreatedPayload,
+  EntityDeletedPayload,
+  EntityUpdatedPayload,
   PageViewedPayload,
   UserContext,
 } from "./EventBusTypes";
@@ -76,13 +77,16 @@ class EventBusImpl {
     entity_display_name: EntityCreatedPayload["entity_display_name"],
     entity_data: EntityCreatedPayload["entity_data"],
   ): void {
+    const user_context_state = get_current_user_context_state();
     const payload: EntityCreatedPayload = {
       entity_type,
       entity_id: entity_id as EntityCreatedPayload["entity_id"],
       entity_display_name,
       entity_data,
       timestamp: create_event_timestamp(),
-      user_context: get_current_user_context(),
+      ...(user_context_state.status === "present"
+        ? { user_context: user_context_state.context }
+        : {}),
     };
     this.emit("entity_created", payload);
   }
@@ -95,6 +99,7 @@ class EventBusImpl {
     new_entity_data: EntityUpdatedPayload["entity_data"],
     changed_fields: EntityUpdatedPayload["changed_fields"],
   ): void {
+    const user_context_state = get_current_user_context_state();
     const payload: EntityUpdatedPayload = {
       entity_type,
       entity_id: entity_id as EntityUpdatedPayload["entity_id"],
@@ -103,7 +108,9 @@ class EventBusImpl {
       old_entity_data,
       changed_fields,
       timestamp: create_event_timestamp(),
-      user_context: get_current_user_context(),
+      ...(user_context_state.status === "present"
+        ? { user_context: user_context_state.context }
+        : {}),
     };
     this.emit("entity_updated", payload);
   }
@@ -114,13 +121,16 @@ class EventBusImpl {
     entity_display_name: EntityDeletedPayload["entity_display_name"],
     entity_data: EntityDeletedPayload["entity_data"],
   ): void {
+    const user_context_state = get_current_user_context_state();
     const payload: EntityDeletedPayload = {
       entity_type,
       entity_id: entity_id as EntityDeletedPayload["entity_id"],
       entity_display_name,
       entity_data,
       timestamp: create_event_timestamp(),
-      user_context: get_current_user_context(),
+      ...(user_context_state.status === "present"
+        ? { user_context: user_context_state.context }
+        : {}),
     };
     this.emit("entity_deleted", payload);
   }
@@ -134,7 +144,7 @@ class EventBusImpl {
     role: NonNullable<AccessDeniedPayload["user_context"]>["role"],
     context?: string,
   ): void {
-    const base_context = get_current_user_context();
+    const user_context_state = get_current_user_context_state();
     const payload: AccessDeniedPayload = {
       entity_type,
       entity_id,
@@ -143,17 +153,22 @@ class EventBusImpl {
       denial_reason,
       context,
       timestamp: create_event_timestamp(),
-      user_context: base_context ? { ...base_context, role } : undefined,
+      ...(user_context_state.status === "present"
+        ? { user_context: { ...user_context_state.context, role } }
+        : {}),
     };
     this.emit("access_denied", payload);
   }
 
   emit_page_viewed(page_path: string, page_title: string): void {
+    const user_context_state = get_current_user_context_state();
     const payload: PageViewedPayload = {
       page_path,
       page_title,
       timestamp: create_event_timestamp(),
-      user_context: get_current_user_context(),
+      ...(user_context_state.status === "present"
+        ? { user_context: user_context_state.context }
+        : {}),
     };
     this.emit("page_viewed", payload);
   }
@@ -171,7 +186,11 @@ class EventBusImpl {
   }
 }
 
-let current_user_context: UserContext | undefined;
+type UserContextState =
+  | { status: "missing" }
+  | { status: "present"; context: UserContext };
+
+let current_user_context_state: UserContextState = { status: "missing" };
 
 function create_event_timestamp(): IsoDateTimeString {
   return new Date().toISOString() as IsoDateTimeString;
@@ -180,15 +199,23 @@ function create_event_timestamp(): IsoDateTimeString {
 export function set_user_context(
   context: UserContext | ScalarInput<UserContext> | undefined,
 ): void {
-  current_user_context = context as UserContext | undefined;
+  if (!context) {
+    current_user_context_state = { status: "missing" };
+    return;
+  }
+
+  current_user_context_state = {
+    status: "present",
+    context: context as UserContext,
+  };
 }
 
-function get_current_user_context(): UserContext | undefined {
-  return current_user_context;
+function get_current_user_context_state(): UserContextState {
+  return current_user_context_state;
 }
 
 export function clear_user_context(): void {
-  current_user_context = undefined;
+  current_user_context_state = { status: "missing" };
 }
 
 export const EventBus = new EventBusImpl();

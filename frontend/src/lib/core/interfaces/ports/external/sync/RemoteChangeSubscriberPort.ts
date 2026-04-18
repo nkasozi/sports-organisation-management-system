@@ -2,12 +2,12 @@ import type { Result } from "$lib/core/types/Result";
 
 interface RemoteTableTimestamp {
   table_name: string;
-  latest_modified_at: string | null;
+  latest_modified_at: string;
 }
 
 export interface RemoteChangeSubscriberPort {
   start(): Result<boolean>;
   stop(): Result<boolean>;
   is_running(): boolean;
-  get_cached_table_timestamps(): Record<string, string | null>;
+  get_cached_table_timestamps(): Record<string, string>;
 }

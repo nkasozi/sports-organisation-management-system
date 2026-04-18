@@ -18,6 +18,7 @@ import {
   check_if_some_entities_selected,
   clear_filter_state,
   create_new_entity_with_defaults,
+  create_present_csv_metadata_state,
   determine_if_bulk_actions_available,
   extract_error_message_from_result,
   extract_items_from_result_data,
@@ -78,13 +79,13 @@ function create_test_entity_metadata(
 }
 
 describe("extract_items_from_result_data", () => {
-  it("should return empty array for null data", () => {
-    const result = extract_items_from_result_data(null);
+  it("should return empty array for missing data", () => {
+    const result = extract_items_from_result_data();
     expect(result).toEqual([]);
   });
 
   it("should return empty array for undefined data", () => {
-    const result = extract_items_from_result_data(undefined);
+    const result = extract_items_from_result_data();
     expect(result).toEqual([]);
   });
 
@@ -120,13 +121,13 @@ describe("extract_items_from_result_data", () => {
 });
 
 describe("extract_total_count_from_result_data", () => {
-  it("should return 0 for null data", () => {
-    const result = extract_total_count_from_result_data(null);
+  it("should return 0 for missing data", () => {
+    const result = extract_total_count_from_result_data();
     expect(result).toBe(0);
   });
 
   it("should return 0 for undefined data", () => {
-    const result = extract_total_count_from_result_data(undefined);
+    const result = extract_total_count_from_result_data();
     expect(result).toBe(0);
   });
 
@@ -156,13 +157,13 @@ describe("extract_total_count_from_result_data", () => {
 });
 
 describe("extract_error_message_from_result", () => {
-  it("should return 'Unknown error' for null result", () => {
-    const result = extract_error_message_from_result(null);
+  it("should return 'Unknown error' for missing result", () => {
+    const result = extract_error_message_from_result();
     expect(result).toBe("Unknown error");
   });
 
   it("should return 'Unknown error' for undefined result", () => {
-    const result = extract_error_message_from_result(undefined);
+    const result = extract_error_message_from_result();
     expect(result).toBe("Unknown error");
   });
 
@@ -201,11 +202,8 @@ describe("build_default_visible_column_names", () => {
     expect(result).toEqual([]);
   });
 
-  it("should return empty array for null fields", () => {
-    const result = build_default_visible_column_names(
-      null as unknown as FieldMetadata[],
-      5,
-    );
+  it("should return empty array for missing fields", () => {
+    const result = build_default_visible_column_names([], 5);
     expect(result).toEqual([]);
   });
 
@@ -261,7 +259,7 @@ describe("build_default_visible_column_names", () => {
 
   it("should use all displayable fields when none have show_in_list explicitly set to true", () => {
     const fields = [
-      create_test_field_metadata("name", "text", { show_in_list: undefined }),
+      create_test_field_metadata("name", "text", { show_in_list: false }),
       create_test_field_metadata("status", "text", { show_in_list: false }),
     ];
     const result = build_default_visible_column_names(fields, 5);
@@ -284,10 +282,7 @@ describe("check_if_all_entities_selected", () => {
 
   it("should return false for null selected ids", () => {
     const entities = [create_test_entity("1", "A")];
-    const result = check_if_all_entities_selected(
-      entities,
-      null as unknown as Set<string>,
-    );
+    const result = check_if_all_entities_selected(entities, new Set());
     expect(result).toBe(false);
   });
 
@@ -326,13 +321,13 @@ describe("check_if_some_entities_selected", () => {
     expect(result).toBe(false);
   });
 
-  it("should return false for null set", () => {
-    const result = check_if_some_entities_selected(null);
+  it("should return false for an empty set", () => {
+    const result = check_if_some_entities_selected(new Set());
     expect(result).toBe(false);
   });
 
-  it("should return false for undefined set", () => {
-    const result = check_if_some_entities_selected(undefined);
+  it("should remain false for repeated empty-set checks", () => {
+    const result = check_if_some_entities_selected(new Set());
     expect(result).toBe(false);
   });
 
@@ -370,18 +365,18 @@ describe("determine_if_bulk_actions_available", () => {
 });
 
 describe("build_filter_from_sub_entity_config", () => {
-  it("should return undefined for null config", () => {
-    const result = build_filter_from_sub_entity_config(null);
+  it("should return undefined for missing config", () => {
+    const result = build_filter_from_sub_entity_config();
     expect(result).toBeUndefined();
   });
 
   it("should return undefined for undefined config", () => {
-    const result = build_filter_from_sub_entity_config(undefined);
+    const result = build_filter_from_sub_entity_config();
     expect(result).toBeUndefined();
   });
 
   it("should build filter with foreign key field", () => {
-    const config =  {
+    const config = {
       foreign_key_field: "team_id",
       foreign_key_value: "team-123",
     } as SubEntityFilter;
@@ -390,7 +385,7 @@ describe("build_filter_from_sub_entity_config", () => {
   });
 
   it("should include holder type fields when present", () => {
-    const config =  {
+    const config = {
       foreign_key_field: "holder_id",
       foreign_key_value: "holder-456",
       holder_type_field: "holder_type",
@@ -404,7 +399,7 @@ describe("build_filter_from_sub_entity_config", () => {
   });
 
   it("should not include holder type when holder_type_field is missing", () => {
-    const config =  {
+    const config = {
       foreign_key_field: "team_id",
       foreign_key_value: "team-123",
       holder_type_value: "competition",
@@ -415,9 +410,9 @@ describe("build_filter_from_sub_entity_config", () => {
 });
 
 describe("get_display_value_for_entity_field", () => {
-  it("should return empty string for null entity", () => {
+  it("should return empty string for missing entity", () => {
     const result = get_display_value_for_entity_field(
-      null as unknown as BaseEntity,
+      {} as unknown as BaseEntity,
       "name",
       {},
     );
@@ -430,8 +425,10 @@ describe("get_display_value_for_entity_field", () => {
     expect(result).toBe("");
   });
 
-  it("should return empty string for null field value", () => {
-    const entity = { id: "1", nullable_field: null } as unknown as BaseEntity;
+  it("should return empty string for missing field value", () => {
+    const entity = {
+      id: "1",
+    } as unknown as BaseEntity;
     const result = get_display_value_for_entity_field(
       entity,
       "nullable_field",
@@ -782,13 +779,23 @@ describe("build_csv_content", () => {
   ]);
 
   it("should return empty string for empty entities", () => {
-    const result = build_csv_content([], ["name"], metadata, {});
+    const result = build_csv_content(
+      [],
+      ["name"],
+      create_present_csv_metadata_state(metadata),
+      {},
+    );
     expect(result).toBe("");
   });
 
   it("should return empty string for empty column list", () => {
     const entities = [create_test_entity("1", "Test")];
-    const result = build_csv_content(entities, [], metadata, {});
+    const result = build_csv_content(
+      entities,
+      [],
+      create_present_csv_metadata_state(metadata),
+      {},
+    );
     expect(result).toBe("");
   });
 
@@ -797,7 +804,7 @@ describe("build_csv_content", () => {
     const result = build_csv_content(
       entities,
       ["name", "status"],
-      metadata,
+      create_present_csv_metadata_state(metadata),
       {},
     );
     const lines = result.split("\n");
@@ -815,7 +822,7 @@ describe("build_csv_content", () => {
     const result = build_csv_content(
       entities,
       ["name", "status"],
-      metadata,
+      create_present_csv_metadata_state(metadata),
       {},
     );
     const lines = result.split("\n");
@@ -830,7 +837,7 @@ describe("build_csv_content", () => {
     const result = build_csv_content(
       entities,
       ["name", "status"],
-      metadata,
+      create_present_csv_metadata_state(metadata),
       {},
     );
     const lines = result.split("\n");
@@ -853,33 +860,32 @@ describe("build_csv_filename", () => {
 });
 
 describe("create_new_entity_with_defaults", () => {
-  it("should create entity with empty id for null filter", () => {
-    const result = create_new_entity_with_defaults(null);
+  it("should create entity with empty id for a missing filter state", () => {
+    const result = create_new_entity_with_defaults({ status: "missing" });
     expect(result).toEqual({ id: "" });
   });
 
-  it("should create entity with empty id for undefined filter", () => {
-    const result = create_new_entity_with_defaults(undefined);
-    expect(result).toEqual({ id: "" });
-  });
-
-  it("should include foreign key from filter config", () => {
-    const filter =  {
-      foreign_key_field: "team_id",
-      foreign_key_value: "team-123",
-    } as SubEntityFilter;
-    const result = create_new_entity_with_defaults(filter);
+  it("should create entity defaults from a present filter state", () => {
+    const result = create_new_entity_with_defaults({
+      status: "present",
+      filter: {
+        foreign_key_field: "team_id",
+        foreign_key_value: "team-123",
+      } as SubEntityFilter,
+    });
     expect(result).toEqual({ id: "", team_id: "team-123" });
   });
 
-  it("should include holder type from filter config", () => {
-    const filter =  {
-      foreign_key_field: "holder_id",
-      foreign_key_value: "holder-456",
-      holder_type_field: "holder_type",
-      holder_type_value: "competition",
-    } as SubEntityFilter;
-    const result = create_new_entity_with_defaults(filter);
+  it("should include holder type from a present filter state", () => {
+    const result = create_new_entity_with_defaults({
+      status: "present",
+      filter: {
+        foreign_key_field: "holder_id",
+        foreign_key_value: "holder-456",
+        holder_type_field: "holder_type",
+        holder_type_value: "competition",
+      } as SubEntityFilter,
+    });
     expect(result).toEqual({
       id: "",
       holder_id: "holder-456",
@@ -961,23 +967,32 @@ describe("remove_entities_by_ids", () => {
 describe("build_display_name_from_metadata", () => {
   it("should use metadata display_name when valid", () => {
     const metadata = create_test_entity_metadata([], "Team");
-    const result = build_display_name_from_metadata(metadata, "teams");
+    const result = build_display_name_from_metadata(
+      { status: "present", entity_metadata: metadata },
+      "teams",
+    );
     expect(result).toBe("Team");
   });
 
-  it("should fall back to entity_type when metadata is null", () => {
-    const result = build_display_name_from_metadata(null, "players");
+  it("should fall back to entity_type when metadata is missing", () => {
+    const result = build_display_name_from_metadata(
+      { status: "missing" },
+      "players",
+    );
     expect(result).toBe("players");
   });
 
   it("should fall back to entity_type when display_name is empty", () => {
     const metadata = create_test_entity_metadata([], "");
-    const result = build_display_name_from_metadata(metadata, "competitions");
+    const result = build_display_name_from_metadata(
+      { status: "present", entity_metadata: metadata },
+      "competitions",
+    );
     expect(result).toBe("competitions");
   });
 
   it("should return 'Entity' when both are empty", () => {
-    const result = build_display_name_from_metadata(null, "");
+    const result = build_display_name_from_metadata({ status: "missing" }, "");
     expect(result).toBe("Entity");
   });
 });

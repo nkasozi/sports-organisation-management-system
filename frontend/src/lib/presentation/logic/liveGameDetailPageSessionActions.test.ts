@@ -1,5 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import {
+  end_live_game_detail_action,
+  start_live_game_detail_action,
+} from "./liveGameDetailPageSessionActions";
+
 const {
   end_game_session_mock,
   ensure_live_game_lineups_before_start_mock,
@@ -19,11 +24,6 @@ vi.mock("$lib/presentation/logic/liveGameDetailActions", () => ({
   ensure_live_game_lineups_before_start:
     ensure_live_game_lineups_before_start_mock,
 }));
-
-import {
-  end_live_game_detail_action,
-  start_live_game_detail_action,
-} from "./liveGameDetailPageSessionActions";
 
 describe("liveGameDetailPageSessionActions", () => {
   beforeEach(() => {

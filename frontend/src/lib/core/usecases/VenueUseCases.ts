@@ -21,7 +21,7 @@ export function create_venue_use_cases(
       filter?: VenueFilter,
       options?: QueryOptions,
     ): PaginatedAsyncResult<Venue> {
-      return repository.find_all(filter, options);
+      return repository.find_all(filter ?? {}, options ?? {});
     },
 
     async get_by_id(id: ScalarValueInput<Venue["id"]>): AsyncResult<Venue> {

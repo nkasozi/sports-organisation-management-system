@@ -1,64 +1,72 @@
 import { render } from "svelte/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import type {
+  LastSyncTimeState,
+  SyncErrorState,
+  SyncProgressState,
+} from "$lib/presentation/stores/syncStoreTypes";
+
+import SyncStatusIndicator from "./SyncStatusIndicator.svelte";
+
 const sync_indicator_store_state = vi.hoisted(() => {
   let is_syncing_value = false;
-  let last_sync_time_value: string | null = null;
-  let sync_error_value: string | null = null;
+  let last_sync_time_state: LastSyncTimeState = { status: "never" };
+  let sync_error_state: SyncErrorState = { status: "clear" };
   let sync_percentage_value = 0;
-  let sync_progress_value: { table_name?: string } | null = null;
+  let sync_progress_value: SyncProgressState = { status: "idle" };
 
   return {
     reset(): void {
       is_syncing_value = false;
-      last_sync_time_value = null;
-      sync_error_value = null;
+      last_sync_time_state = { status: "never" };
+      sync_error_state = { status: "clear" };
       sync_percentage_value = 0;
-      sync_progress_value = null;
+      sync_progress_value = { status: "idle" };
     },
     set_state(command: {
       is_syncing?: boolean;
-      last_sync_time?: string | null;
-      sync_error?: string | null;
+      last_sync_time?: LastSyncTimeState;
+      sync_error?: SyncErrorState;
       sync_percentage?: number;
-      sync_progress?: { table_name?: string } | null;
+      sync_progress?: SyncProgressState;
     }): void {
-      if (command.is_syncing !== undefined)
-        is_syncing_value = command.is_syncing;
-      if (command.last_sync_time !== undefined)
-        last_sync_time_value = command.last_sync_time;
-      if (command.sync_error !== undefined)
-        sync_error_value = command.sync_error;
-      if (command.sync_percentage !== undefined)
-        sync_percentage_value = command.sync_percentage;
-      if (command.sync_progress !== undefined)
-        sync_progress_value = command.sync_progress;
+      if (Object.prototype.hasOwnProperty.call(command, "is_syncing"))
+        is_syncing_value = command.is_syncing as boolean;
+      if (Object.prototype.hasOwnProperty.call(command, "last_sync_time"))
+        last_sync_time_state = command.last_sync_time as LastSyncTimeState;
+      if (Object.prototype.hasOwnProperty.call(command, "sync_error"))
+        sync_error_state = command.sync_error as SyncErrorState;
+      if (Object.prototype.hasOwnProperty.call(command, "sync_percentage"))
+        sync_percentage_value = command.sync_percentage as number;
+      if (Object.prototype.hasOwnProperty.call(command, "sync_progress"))
+        sync_progress_value = command.sync_progress as SyncProgressState;
     },
     subscribe_is_syncing(subscriber: (value: boolean) => void): () => void {
       subscriber(is_syncing_value);
-      return () => undefined;
+      return () => {};
     },
     subscribe_last_sync_time(
-      subscriber: (value: string | null) => void,
+      subscriber: (value: LastSyncTimeState) => void,
     ): () => void {
-      subscriber(last_sync_time_value);
-      return () => undefined;
+      subscriber(last_sync_time_state);
+      return () => {};
     },
     subscribe_sync_error(
-      subscriber: (value: string | null) => void,
+      subscriber: (value: SyncErrorState) => void,
     ): () => void {
-      subscriber(sync_error_value);
-      return () => undefined;
+      subscriber(sync_error_state);
+      return () => {};
     },
     subscribe_sync_percentage(subscriber: (value: number) => void): () => void {
       subscriber(sync_percentage_value);
-      return () => undefined;
+      return () => {};
     },
     subscribe_sync_progress(
-      subscriber: (value: { table_name?: string } | null) => void,
+      subscriber: (value: SyncProgressState) => void,
     ): () => void {
       subscriber(sync_progress_value);
-      return () => undefined;
+      return () => {};
     },
   };
 });
@@ -83,8 +91,6 @@ vi.mock("$lib/presentation/stores/syncStoreDerived", () => ({
   },
 }));
 
-import SyncStatusIndicator from "./SyncStatusIndicator.svelte";
-
 describe("SyncStatusIndicator", () => {
   beforeEach(() => {
     sync_indicator_store_state.reset();
@@ -97,8 +103,11 @@ describe("SyncStatusIndicator", () => {
 
   it("renders an error-state icon color override for header usage", () => {
     sync_indicator_store_state.set_state({
-      last_sync_time: "2024-05-01T10:00:00.000Z",
-      sync_error: "Sync failed",
+      last_sync_time: {
+        status: "recorded",
+        value: "2024-05-01T10:00:00.000Z",
+      },
+      sync_error: { status: "present", message: "Sync failed" },
     });
 
     const rendered_markup = render(SyncStatusIndicator).body;

@@ -1,6 +1,15 @@
 import { get } from "svelte/store";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import {
+  get_theme_classes,
+  initialize_theme,
+  reset_theme_to_default,
+  theme_store,
+  toggle_theme_mode,
+  update_theme_colors,
+} from "./theme";
+
 const theme_mocks = vi.hoisted(() => ({
   get_setting: vi.fn(),
   set_setting: vi.fn(),
@@ -16,15 +25,6 @@ vi.mock("$lib/infrastructure/container", () => ({
     set_setting: theme_mocks.set_setting,
   }),
 }));
-
-import {
-  get_theme_classes,
-  initialize_theme,
-  reset_theme_to_default,
-  theme_store,
-  toggle_theme_mode,
-  update_theme_colors,
-} from "./theme";
 
 afterEach((): void => {
   theme_mocks.get_setting.mockReset();

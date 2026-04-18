@@ -11,10 +11,26 @@ import type {
 } from "../../../../types/Result";
 import type { QueryOptions, Repository } from "./Repository";
 
+const GAME_EVENT_TYPE_NOT_FOUND_BY_CODE_ERROR_PREFIX =
+  "Game event type not found by code";
+
+export function build_game_event_type_not_found_by_code_error(
+  code: string,
+): string {
+  return `${GAME_EVENT_TYPE_NOT_FOUND_BY_CODE_ERROR_PREFIX}: ${code}`;
+}
+
+export function is_game_event_type_not_found_by_code_error(
+  error: string,
+  code: string,
+): boolean {
+  return error === build_game_event_type_not_found_by_code_error(code);
+}
+
 export interface GameEventTypeFilter {
   name_contains?: string;
   code?: string;
-  sport_id?: ScalarValueInput<NonNullable<GameEventType["sport_id"]>> | null;
+  sport_id?: ScalarValueInput<GameEventType["sport_id"]>;
   category?: EventCategory;
   affects_score?: boolean;
   requires_player?: boolean;
@@ -32,7 +48,7 @@ export interface GameEventTypeRepository extends Repository<
     sport_id: ScalarValueInput<NonNullable<GameEventType["sport_id"]>>,
   ): AsyncResult<GameEventType[]>;
   find_by_category(category: EventCategory): AsyncResult<GameEventType[]>;
-  find_by_code(code: string): AsyncResult<GameEventType | null>;
+  find_by_code(code: string): AsyncResult<GameEventType>;
   find_scoring_events(): AsyncResult<GameEventType[]>;
   find_by_organization(
     organization_id: ScalarValueInput<GameEventType["organization_id"]>,

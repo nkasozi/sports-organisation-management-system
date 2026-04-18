@@ -73,12 +73,26 @@ export function create_jersey_color_use_cases(
       filter?: JerseyColorFilter | Record<string, string>,
       options?: QueryOptions,
     ): PaginatedAsyncResult<JerseyColor> {
+      if (!filter) {
+        return repository.find_all({}, options);
+      }
+
       const typed_filter: JerseyColorFilter = {
-        holder_type: filter?.holder_type as JerseyColorHolderType | undefined,
-        holder_id: filter?.holder_id as JerseyColorFilter["holder_id"],
-        nickname: filter?.nickname as JerseyColorFilter["nickname"],
-        main_color: filter?.main_color as JerseyColorFilter["main_color"],
-        status: filter?.status as JerseyColorFilter["status"],
+        ...(filter.holder_type
+          ? { holder_type: filter.holder_type as JerseyColorHolderType }
+          : {}),
+        ...(filter.holder_id
+          ? { holder_id: filter.holder_id as JerseyColorFilter["holder_id"] }
+          : {}),
+        ...(filter.nickname
+          ? { nickname: filter.nickname as JerseyColorFilter["nickname"] }
+          : {}),
+        ...(filter.main_color
+          ? { main_color: filter.main_color as JerseyColorFilter["main_color"] }
+          : {}),
+        ...(filter.status
+          ? { status: filter.status as JerseyColorFilter["status"] }
+          : {}),
       };
 
       return repository.find_all(typed_filter, options);
@@ -92,7 +106,7 @@ export function create_jersey_color_use_cases(
     },
 
     async list_all(): PaginatedAsyncResult<JerseyColor> {
-      return repository.find_all(undefined, { page_size: 1000 });
+      return repository.find_all({}, { page_size: 1000 });
     },
 
     async list_jerseys_by_entity(

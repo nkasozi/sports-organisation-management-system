@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { create_managed_game_controller_runtime } from "./managedGamePageControllerRuntime";
+
 const {
   create_managed_game_action_handlers_mock,
   create_managed_game_clock_handlers_mock,
@@ -15,8 +17,6 @@ vi.mock("./managedGamePageControllerActions", () => ({
 vi.mock("./managedGamePageControllerClock", () => ({
   create_managed_game_clock_handlers: create_managed_game_clock_handlers_mock,
 }));
-
-import { create_managed_game_controller_runtime } from "./managedGamePageControllerRuntime";
 
 describe("managedGamePageControllerRuntime", () => {
   beforeEach(() => {

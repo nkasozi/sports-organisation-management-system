@@ -1,25 +1,31 @@
 <script lang="ts">
-    import type { Fixture } from "$lib/core/entities/Fixture";
+    import type { LiveGamesPendingStartFixtureState } from "$lib/presentation/logic/liveGamesPageState";
     import {
         format_fixture_scheduled_date_label,
         is_fixture_scheduled_for_different_date,
     } from "$lib/presentation/logic/liveGameStartConfirmation";
     import { get_live_game_matchup_label } from "$lib/presentation/logic/liveGamesViewLogic";
 
-    export let fixture: Fixture | null = null;
+    export let pending_start_fixture_state: LiveGamesPendingStartFixtureState = {
+        status: "idle",
+    };
     export let team_names: Record<string, string> = {};
     export let on_cancel: () => void;
     export let on_confirm: () => void;
 
-    function should_show_date_warning(current_fixture: Fixture): boolean {
+    function should_show_date_warning(current_fixture: LiveGamesPendingStartFixtureState): boolean {
+        if (current_fixture.status === "idle") {
+            return false;
+        }
+
         return is_fixture_scheduled_for_different_date(
-            current_fixture.scheduled_date,
+            current_fixture.fixture.scheduled_date,
             new Date(),
         );
     }
 </script>
 
-{#if fixture}
+{#if pending_start_fixture_state.status === "confirming"}
     <div
         class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 py-6"
         role="dialog"
@@ -38,13 +44,13 @@
                 </h2>
                 <p class="text-sm text-accent-600 dark:text-accent-300">
                     You are about to start {get_live_game_matchup_label(
-                        fixture,
+                        pending_start_fixture_state.fixture,
                         team_names,
                     )}.
                 </p>
             </div>
 
-            {#if should_show_date_warning(fixture)}
+            {#if should_show_date_warning(pending_start_fixture_state)}
                 <div
                     class="mt-4 rounded-lg border border-purple-300 bg-purple-50 px-4 py-3 dark:border-purple-700 dark:bg-purple-950/40"
                 >
@@ -72,7 +78,8 @@
                                 class="text-sm text-purple-700 dark:text-purple-400"
                             >
                                 This fixture is scheduled for {format_fixture_scheduled_date_label(
-                                    fixture.scheduled_date,
+                                    pending_start_fixture_state.fixture
+                                        .scheduled_date,
                                 )}, which is different from today.
                             </p>
                         </div>

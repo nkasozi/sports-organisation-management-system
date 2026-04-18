@@ -18,16 +18,24 @@ export function can_caller_assign_role(
   caller_role: string,
   target_role: string,
 ): ConvexResult<true> {
-  const caller_level = ROLE_HIERARCHY[caller_role];
-  const target_level = ROLE_HIERARCHY[target_role];
-
-  if (caller_level === undefined) {
+  const caller_role_exists = Object.prototype.hasOwnProperty.call(
+    ROLE_HIERARCHY,
+    caller_role,
+  );
+  if (!caller_role_exists) {
     return { success: false, error: "Unknown caller role" };
   }
 
-  if (target_level === undefined) {
+  const target_role_exists = Object.prototype.hasOwnProperty.call(
+    ROLE_HIERARCHY,
+    target_role,
+  );
+  if (!target_role_exists) {
     return { success: false, error: "Unknown target role" };
   }
+
+  const caller_level = ROLE_HIERARCHY[caller_role];
+  const target_level = ROLE_HIERARCHY[target_role];
 
   if (caller_level <= target_level) {
     return {
@@ -40,7 +48,7 @@ export function can_caller_assign_role(
 }
 
 export function is_seed_super_admin_allowed(
-  caller_role: string | null,
+  caller_role: string,
   existing_super_admin_count: number,
 ): ConvexResult<true> {
   if (existing_super_admin_count === 0) {

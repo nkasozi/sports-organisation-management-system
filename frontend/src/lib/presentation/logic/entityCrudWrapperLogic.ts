@@ -13,18 +13,20 @@ import type {
 } from "../../core/types/EntityHandlers";
 import { is_functionality_disabled } from "../../core/types/EntityHandlers";
 import { get_use_cases_for_entity_type } from "../../infrastructure/registry/entityUseCasesRegistry";
-import type { UserProfile } from "../../presentation/stores/auth";
+import type { AuthProfileState } from "../stores/authTypes";
 
 export function get_disabled_crud_actions_for_profile(
   entity_type: string,
-  profile: UserProfile | null,
+  profile_state: AuthProfileState,
 ): CrudFunctionality[] {
-  if (!profile) {
+  if (profile_state.status !== "present") {
     console.log(
       `[EntityCrudWrapper] No profile - disabling all crud for "${entity_type}"`,
     );
     return ["create", "edit", "delete"];
   }
+
+  const profile = profile_state.profile;
   const disabled_actions: CrudFunctionality[] = [];
   const normalized = normalize_to_entity_type(entity_type);
   const category = get_entity_data_category(normalized);
@@ -82,7 +84,7 @@ function format_entity_display_name(raw_name: string): string {
 
 export function build_page_title_for_current_view(
   view: string,
-  type: string | undefined,
+  type?: string,
 ): string {
   const type_display = format_entity_display_name(type || "");
   if (view === "create") return `Create New ${type_display}`;
@@ -92,36 +94,47 @@ export function build_page_title_for_current_view(
 
 export function build_crud_handlers_for_entity_type(
   normalized_type: string,
-  filter_override: Record<string, unknown> | null,
-): EntityCrudHandlers | null {
+  filter_override: Record<string, unknown>,
+): EntityCrudHandlers {
   const use_cases_result = get_use_cases_for_entity_type(normalized_type);
   if (!use_cases_result.success) {
     console.warn(
       `[EntityCrudWrapper] No use cases found for entity type: ${normalized_type}`,
     );
-    return null;
+    return {};
   }
   const use_cases = use_cases_result.data;
   return {
-    create: use_cases.create
-      ? async (input: Record<string, unknown>) => use_cases.create(input)
-      : undefined,
-    update: use_cases.update
-      ? async (id: string, input: Record<string, unknown>) =>
-          use_cases.update(id, input)
-      : undefined,
-    delete: use_cases.delete
-      ? async (id: string) => use_cases.delete(id)
-      : undefined,
-    list: use_cases.list
-      ? async (
-          filter?: Record<string, string>,
-          options?: { page_number?: number; page_size?: number },
-        ) => use_cases.list({ ...filter_override, ...filter }, options)
-      : undefined,
-    get_by_id: use_cases.get_by_id
-      ? async (id: string) => use_cases.get_by_id(id)
-      : undefined,
+    ...(use_cases.create
+      ? {
+          create: async (input: Record<string, unknown>) =>
+            use_cases.create(input),
+        }
+      : {}),
+    ...(use_cases.update
+      ? {
+          update: async (id: string, input: Record<string, unknown>) =>
+            use_cases.update(id, input),
+        }
+      : {}),
+    ...(use_cases.delete
+      ? {
+          delete: async (id: string) => use_cases.delete(id),
+        }
+      : {}),
+    ...(use_cases.list
+      ? {
+          list: async (
+            filter?: Record<string, string>,
+            options?: { page_number?: number; page_size?: number },
+          ) => use_cases.list({ ...filter_override, ...filter }, options),
+        }
+      : {}),
+    ...(use_cases.get_by_id
+      ? {
+          get_by_id: async (id: string) => use_cases.get_by_id(id),
+        }
+      : {}),
   };
 }
 
@@ -139,24 +152,15 @@ export function build_list_view_callbacks(
     disabled_functionalities,
   );
   return {
-    on_create_requested: is_functionality_disabled(
-      "create",
-      disabled_functionalities,
-    )
-      ? undefined
-      : handlers.handle_create_requested,
-    on_edit_requested: is_functionality_disabled(
-      "edit",
-      disabled_functionalities,
-    )
-      ? undefined
-      : handlers.handle_edit_requested,
-    on_delete_completed: is_functionality_disabled(
-      "delete",
-      disabled_functionalities,
-    )
-      ? undefined
-      : handlers.handle_entity_deleted,
+    ...(!is_functionality_disabled("create", disabled_functionalities)
+      ? { on_create_requested: handlers.handle_create_requested }
+      : {}),
+    ...(!is_functionality_disabled("edit", disabled_functionalities)
+      ? { on_edit_requested: handlers.handle_edit_requested }
+      : {}),
+    ...(!is_functionality_disabled("delete", disabled_functionalities)
+      ? { on_delete_completed: handlers.handle_entity_deleted }
+      : {}),
   };
 }
 

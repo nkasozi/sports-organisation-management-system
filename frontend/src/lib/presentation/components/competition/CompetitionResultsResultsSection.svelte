@@ -10,10 +10,10 @@
     export let results_per_page: number;
     export let page_size_options: number[];
     export let downloading_all_reports: boolean;
-    export let downloading_fixture_id: string | null;
+    export let downloading_fixture_id: string;
     export let format_date: (date_string: string) => string;
-    export let get_fixture_stage_name: (stage_id?: string | null) => string;
-    export let get_fixture_stage_type: (stage_id?: string | null) => string;
+    export let get_fixture_stage_name: (stage_id: string) => string;
+    export let get_fixture_stage_type: (stage_id: string) => string;
     export let get_team_name: (team_id: string) => string;
     export let get_team_logo_url: (team_id: string) => string;
     export let on_open_match_report: (fixture_id: string) => void;

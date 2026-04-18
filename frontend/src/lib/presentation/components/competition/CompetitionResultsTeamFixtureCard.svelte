@@ -3,7 +3,7 @@
     import TeamLogoThumbnail from "$lib/presentation/components/ui/TeamLogoThumbnail.svelte";
 
     export let fixture: Fixture;
-    export let selected_team_id: string | null;
+    export let selected_team_id: string;
     export let format_date: (date_string: string) => string;
     export let get_team_name_extended: (team_id: string) => string;
     export let get_competition_name_extended: (

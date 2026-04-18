@@ -10,24 +10,24 @@ import {
 } from "$lib/presentation/logic/dynamicEntityListMutations";
 
 interface DynamicEntityListCreateResult {
-  inline_form_entity: Partial<BaseEntity> | null;
+  inline_form_entity?: Partial<BaseEntity>;
   show_inline_form: boolean;
 }
 
 interface DynamicEntityListDeleteCommand {
-  crud_handlers: EntityCrudHandlers | null;
+  crud_handlers?: EntityCrudHandlers;
   entities: BaseEntity[];
   entities_to_delete: BaseEntity[];
   entity_type: string;
 }
 
 export function get_dynamic_entity_list_create_state(
-  sub_entity_filter: SubEntityFilter | null,
-  view_callbacks: EntityViewCallbacks | null,
+  sub_entity_filter: SubEntityFilter | undefined,
+  view_callbacks: EntityViewCallbacks | undefined,
 ): DynamicEntityListCreateResult {
   if (!sub_entity_filter) {
     view_callbacks?.on_create_requested?.();
-    return { inline_form_entity: null, show_inline_form: false };
+    return { show_inline_form: false };
   }
   return {
     inline_form_entity:
@@ -38,18 +38,18 @@ export function get_dynamic_entity_list_create_state(
 
 export function get_dynamic_entity_list_edit_state(
   entity: BaseEntity,
-  sub_entity_filter: SubEntityFilter | null,
-  view_callbacks: EntityViewCallbacks | null,
+  sub_entity_filter: SubEntityFilter | undefined,
+  view_callbacks: EntityViewCallbacks | undefined,
 ): DynamicEntityListCreateResult {
   if (!sub_entity_filter) {
     view_callbacks?.on_edit_requested?.(entity);
-    return { inline_form_entity: null, show_inline_form: false };
+    return { show_inline_form: false };
   }
   return { inline_form_entity: { ...entity }, show_inline_form: true };
 }
 
 export function get_dynamic_entity_list_inline_cancel_state(): DynamicEntityListCreateResult {
-  return { inline_form_entity: null, show_inline_form: false };
+  return { show_inline_form: false };
 }
 
 export function get_dynamic_entity_list_single_delete_state(

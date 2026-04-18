@@ -18,7 +18,7 @@ export interface GameEventType extends BaseEntity {
   affects_score: boolean;
   requires_player: boolean;
   display_order: number;
-  sport_id: EntityId | null;
+  sport_id: EntityId | "";
   status: EntityStatus;
   organization_id: EntityId;
 }
@@ -30,7 +30,7 @@ export type CreateGameEventTypeInput = Omit<
 export type UpdateGameEventTypeInput = Partial<CreateGameEventTypeInput>;
 
 function create_empty_game_event_type_input(
-  sport_id: CreateGameEventTypeInput["sport_id"] = null,
+  sport_id: CreateGameEventTypeInput["sport_id"] = "",
 ): CreateGameEventTypeInput {
   return {
     name: "",

@@ -7,13 +7,14 @@ import {
   get_use_cases_container,
 } from "$lib/infrastructure/container";
 import { auth_store } from "$lib/presentation/stores/auth";
+import { normalize_auth_profile_state } from "$lib/presentation/stores/authTypes";
 import { update_theme_colors } from "$lib/presentation/stores/theme";
-export type {
+
+import type {
   BrandingConfig,
-  HeaderFooterStyle,
+  BrandingOrganizationContext,
   SocialMediaLink,
 } from "./brandingTypes";
-import type { BrandingConfig, SocialMediaLink } from "./brandingTypes";
 import {
   CURRENT_ORG_ID_KEY,
   DEFAULT_PLATFORM_BRANDING,
@@ -22,12 +23,26 @@ import {
   PLATFORM_STORAGE_KEY,
 } from "./brandingTypes";
 
+export type {
+  BrandingConfig,
+  HeaderFooterStyle,
+  SocialMediaLink,
+} from "./brandingTypes";
+
 function get_caller_role(): string {
-  return get(auth_store).current_profile?.role ?? "public_viewer";
+  const current_profile_state = normalize_auth_profile_state(
+    get(auth_store).current_profile,
+  );
+
+  return current_profile_state.status === "present"
+    ? current_profile_state.profile.role
+    : "public_viewer";
 }
 
 function create_branding_store() {
-  let current_org_id: string | null = null;
+  let organization_context_state: BrandingOrganizationContext = {
+    status: "platform",
+  };
   const { subscribe, set } = writable<BrandingConfig>(
     DEFAULT_PLATFORM_BRANDING,
   );
@@ -74,17 +89,18 @@ function create_branding_store() {
   }
 
   async function persist_branding(config: BrandingConfig): Promise<void> {
-    if (!current_org_id) {
+    if (organization_context_state.status !== "scoped") {
       await get_app_settings_storage().set_setting(
         PLATFORM_STORAGE_KEY,
         JSON.stringify(config),
       );
       return;
     }
+
     const use_cases = get_use_cases_container().organization_settings_use_cases;
     await use_cases.save_or_update(
       get_caller_role(),
-      current_org_id,
+      organization_context_state.organization_id,
       map_branding_to_settings_input(config),
     );
   }
@@ -95,11 +111,17 @@ function create_branding_store() {
     initialize: async (): Promise<void> => {
       if (!browser) return;
       const app_settings = get_app_settings_storage();
-      current_org_id = await app_settings.get_setting(CURRENT_ORG_ID_KEY);
+      const current_org_id = await app_settings.get_setting(CURRENT_ORG_ID_KEY);
       if (current_org_id) {
+        organization_context_state = {
+          status: "scoped",
+          organization_id: current_org_id,
+        };
         await load_from_org_settings(current_org_id);
         return;
       }
+
+      organization_context_state = { status: "platform" };
       const stored = await app_settings.get_setting(PLATFORM_STORAGE_KEY);
       set(
         stored
@@ -109,19 +131,25 @@ function create_branding_store() {
     },
 
     set_organization_context: async (
-      org_id: string | null,
-      org_name?: string,
-      org_email?: string,
-      org_address?: string,
+      context: BrandingOrganizationContext,
     ): Promise<void> => {
       const app_settings = get_app_settings_storage();
-      current_org_id = org_id;
+      organization_context_state =
+        context.status === "scoped"
+          ? {
+              status: "scoped",
+              organization_id: context.organization_id,
+            }
+          : { status: "platform" };
       if (browser) {
-        org_id
-          ? await app_settings.set_setting(CURRENT_ORG_ID_KEY, org_id)
+        context.status === "scoped"
+          ? await app_settings.set_setting(
+              CURRENT_ORG_ID_KEY,
+              context.organization_id,
+            )
           : await app_settings.remove_setting(CURRENT_ORG_ID_KEY);
       }
-      if (!org_id) {
+      if (context.status !== "scoped") {
         const stored = await app_settings.get_setting(PLATFORM_STORAGE_KEY);
         set(
           stored
@@ -130,7 +158,12 @@ function create_branding_store() {
         );
         return;
       }
-      await load_from_org_settings(org_id, org_name, org_email, org_address);
+      await load_from_org_settings(
+        context.organization_id,
+        context.organization_name,
+        context.organization_email,
+        context.organization_address,
+      );
     },
 
     refresh_from_organization_settings: (
@@ -147,7 +180,13 @@ function create_branding_store() {
       });
     },
 
-    get_current_org_id: (): string | null => current_org_id,
+    get_current_org_id_state: (): BrandingOrganizationContext =>
+      organization_context_state.status === "scoped"
+        ? {
+            status: "scoped",
+            organization_id: organization_context_state.organization_id,
+          }
+        : { status: "platform" },
 
     set: async (config: BrandingConfig): Promise<void> => {
       await persist_branding(config);

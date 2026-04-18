@@ -129,7 +129,7 @@ describe("FixtureUseCases", () => {
 
       const result = await use_cases.list(filter);
 
-      expect(mock_repository.find_all).toHaveBeenCalledWith(filter, undefined);
+      expect(mock_repository.find_all).toHaveBeenCalledWith(filter, {});
     });
   });
 
@@ -213,7 +213,7 @@ describe("FixtureUseCases", () => {
       expect(result.success).toBe(true);
       expect(mock_repository.find_by_competition).toHaveBeenCalledWith(
         "comp-123",
-        undefined,
+        void 0,
       );
     });
 
@@ -431,11 +431,11 @@ describe("FixtureUseCases", () => {
         data: create_test_fixture({ home_team_score: 1 }),
       });
 
-      const event =  {
+      const event = {
         id: "event-1",
         event_type: "goal",
         minute: 25,
-        stoppage_time_minute: null,
+        stoppage_time_minute: 0,
         team_side: "home",
         player_name: "Player 1",
         secondary_player_name: "",
@@ -468,11 +468,11 @@ describe("FixtureUseCases", () => {
         data: create_test_fixture({ away_team_score: 1 }),
       });
 
-      const event =  {
+      const event = {
         id: "event-2",
         event_type: "own_goal",
         minute: 30,
-        stoppage_time_minute: null,
+        stoppage_time_minute: 0,
         team_side: "home",
         player_name: "Player 1",
         secondary_player_name: "",
@@ -492,11 +492,11 @@ describe("FixtureUseCases", () => {
     });
 
     it("should fail for empty id", async () => {
-      const event =  {
+      const event = {
         id: "event-3",
         event_type: "goal",
         minute: 10,
-        stoppage_time_minute: null,
+        stoppage_time_minute: 0,
         team_side: "home",
         player_name: "Player 1",
         secondary_player_name: "",

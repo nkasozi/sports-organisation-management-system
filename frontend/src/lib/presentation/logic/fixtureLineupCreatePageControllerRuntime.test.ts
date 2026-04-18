@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { create_fixture_lineup_create_page_controller_runtime } from "./fixtureLineupCreatePageControllerRuntime";
+
 const {
   build_fixture_lineup_create_fixture_change_state_mock,
   build_fixture_lineup_create_reference_state_mock,
@@ -66,8 +68,6 @@ vi.mock("./fixtureLineupCreatePageFlow", () => ({
   toggle_fixture_lineup_create_player: toggle_fixture_lineup_create_player_mock,
 }));
 
-import { create_fixture_lineup_create_page_controller_runtime } from "./fixtureLineupCreatePageControllerRuntime";
-
 describe("fixtureLineupCreatePageControllerRuntime", () => {
   function create_command() {
     const state = {
@@ -87,9 +87,9 @@ describe("fixtureLineupCreatePageControllerRuntime", () => {
       organizations: [{ id: "organization-1", name: "Premier League" }],
       player_search_text: "keeper",
       saving: false,
-      selected_fixture: null as unknown,
-      selected_organization: null as unknown,
-      selected_team: null as unknown,
+      selected_fixture_state: { status: "missing" } as unknown,
+      selected_organization_state: { status: "missing" } as unknown,
+      selected_team_state: { status: "missing" } as unknown,
       team_players: [] as unknown[],
       validation_errors: { players: "old" } as Record<string, string>,
     };
@@ -97,7 +97,7 @@ describe("fixtureLineupCreatePageControllerRuntime", () => {
     const command = {
       dependencies: {} as never,
       get_confirm_lock_understood: () => state.confirm_lock_understood,
-      get_current_auth_profile: () => null,
+      get_current_auth_profile_state: () => ({ status: "missing" as const }),
       get_fixtures_with_complete_lineups: () =>
         state.fixtures_with_complete_lineups,
       get_form_data: () => state.form_data as never,
@@ -105,11 +105,12 @@ describe("fixtureLineupCreatePageControllerRuntime", () => {
       get_min_players: () => state.min_players,
       get_organization_is_restricted: () => false,
       get_organizations: () => state.organizations as never,
-      get_selected_fixture: () => state.selected_fixture as never,
-      get_selected_organization: () => state.selected_organization as never,
-      get_selected_team: () => state.selected_team as never,
+      get_selected_fixture_state: () => state.selected_fixture_state as never,
+      get_selected_organization_state: () =>
+        state.selected_organization_state as never,
+      get_selected_team_state: () => state.selected_team_state as never,
       get_team_players: () => state.team_players as never,
-      goto: vi.fn(async () => undefined),
+      goto: vi.fn(async () => {}),
       is_browser: true,
       set_all_competitions: vi.fn(),
       set_all_teams: vi.fn(),
@@ -147,14 +148,14 @@ describe("fixtureLineupCreatePageControllerRuntime", () => {
       set_saving: vi.fn((value: boolean) => {
         state.saving = value;
       }),
-      set_selected_fixture: vi.fn((value: unknown) => {
-        state.selected_fixture = value;
+      set_selected_fixture_state: vi.fn((value: unknown) => {
+        state.selected_fixture_state = value;
       }),
-      set_selected_organization: vi.fn((value: unknown) => {
-        state.selected_organization = value;
+      set_selected_organization_state: vi.fn((value: unknown) => {
+        state.selected_organization_state = value;
       }),
-      set_selected_team: vi.fn((value: unknown) => {
-        state.selected_team = value;
+      set_selected_team_state: vi.fn((value: unknown) => {
+        state.selected_team_state = value;
       }),
       set_starters_count: vi.fn(),
       set_team_players: vi.fn((value: unknown[]) => {
@@ -198,7 +199,10 @@ describe("fixtureLineupCreatePageControllerRuntime", () => {
       all_teams: [{ id: "team-1" }],
       all_competitions: [{ id: "competition-1" }],
       organizations: [{ id: "organization-1" }],
-      selected_organization: { id: "organization-1" },
+      selected_organization_state: {
+        status: "present",
+        organization: { id: "organization-1" },
+      },
       error_message: "",
     });
 
@@ -207,8 +211,11 @@ describe("fixtureLineupCreatePageControllerRuntime", () => {
     ).initialize_page();
 
     expect(command.set_fixtures).toHaveBeenCalledWith([{ id: "fixture-1" }]);
-    expect(command.set_selected_organization).toHaveBeenCalledWith({
-      id: "organization-1",
+    expect(command.set_selected_organization_state).toHaveBeenCalledWith({
+      status: "present",
+      organization: {
+        id: "organization-1",
+      },
     });
     expect(state.loading).toBe(false);
     expect(state.current_step_index).toBe(1);
@@ -228,21 +235,30 @@ describe("fixtureLineupCreatePageControllerRuntime", () => {
         team_id: "",
         selected_players: [],
       },
-      selected_fixture: { id: "fixture-1" },
-      selected_organization: { id: "organization-1" },
+      selected_fixture_state: {
+        status: "present",
+        fixture: { id: "fixture-1" },
+      },
+      selected_organization_state: {
+        status: "present",
+        organization: { id: "organization-1" },
+      },
       min_players: 7,
       max_players: 18,
       starters_count: 11,
       available_teams: [{ id: "team-1" }],
       fixture_team_label_by_team_id: new Map(),
       teams_with_existing_lineups: new Map(),
-      selected_team: null,
+      selected_team_state: { status: "missing" },
       team_players: [],
       fixtures_with_complete_lineups: new Set(),
     });
     handle_fixture_lineup_create_team_change_mock.mockResolvedValue({});
     build_fixture_lineup_create_team_change_state_mock.mockReturnValue({
-      selected_team: { id: "team-1" },
+      selected_team_state: {
+        status: "present",
+        team: { id: "team-1" },
+      },
       team_players: [{ id: "player-1" }],
       form_data: {
         organization_id: "organization-1",
@@ -261,8 +277,14 @@ describe("fixtureLineupCreatePageControllerRuntime", () => {
     expect(command.set_validation_errors).toHaveBeenCalledWith({});
     expect(command.set_confirm_lock_understood).toHaveBeenCalledWith(false);
     expect(command.set_player_search_text).toHaveBeenCalledWith("");
-    expect(state.selected_fixture).toEqual({ id: "fixture-1" });
-    expect(state.selected_team).toEqual({ id: "team-1" });
+    expect(state.selected_fixture_state).toEqual({
+      status: "present",
+      fixture: { id: "fixture-1" },
+    });
+    expect(state.selected_team_state).toEqual({
+      status: "present",
+      team: { id: "team-1" },
+    });
     expect(state.form_data.team_id).toBe("team-1");
     expect(state.current_step_index).toBe(3);
   });

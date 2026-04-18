@@ -1,13 +1,15 @@
 import type { ValidationRule } from "../../core/entities/BaseEntity";
 import type { EntityMetadata } from "../../core/entities/BaseEntity";
-import type { UserRole } from "../../core/interfaces/ports";
 import type { Result } from "../../core/types/Result";
 import {
   create_failure_result,
   create_success_result,
 } from "../../core/types/Result";
 import { is_field_visible_by_visible_when_condition } from "./dynamicFormLogic";
-import { should_field_be_required_for_role } from "./systemUserFormLogic";
+import {
+  build_user_role_state,
+  should_field_be_required_for_role,
+} from "./systemUserFormLogic";
 
 interface FieldValidationResult {
   is_valid: boolean;
@@ -73,8 +75,8 @@ export function validate_form_data_against_metadata(
   const is_system_user_entity =
     entity_type.toLowerCase().replace(/[\s_-]/g, "") === "systemuser";
   const selected_role = is_system_user_entity
-    ? (data["role"] as UserRole | null)
-    : null;
+    ? build_user_role_state(data["role"])
+    : build_user_role_state();
 
   for (const field of metadata.fields) {
     if (!is_field_visible_by_visible_when_condition(field, data)) continue;
@@ -87,8 +89,7 @@ export function validate_form_data_against_metadata(
       should_field_be_required_for_role(field.field_name, selected_role);
     const is_required = field.is_required || is_dynamically_required;
 
-    const is_empty_scalar =
-      field_value === "" || field_value === null || field_value === undefined;
+    const is_empty_scalar = field_value === "" || field_value == void 0;
     const is_empty_star_rating =
       field.field_type === "star_rating" &&
       (typeof field_value !== "number" || field_value <= 0);
@@ -105,12 +106,7 @@ export function validate_form_data_against_metadata(
       continue;
     }
 
-    if (
-      field.validation_rules &&
-      field_value !== "" &&
-      field_value !== null &&
-      field_value !== undefined
-    ) {
+    if (field.validation_rules && field_value !== "" && field_value != void 0) {
       const rule_validation_result = validate_field_against_rules(
         field_value,
         field.validation_rules,

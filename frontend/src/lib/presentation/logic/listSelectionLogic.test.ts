@@ -23,7 +23,7 @@ describe("listSelectionLogic", () => {
       check_if_all_entities_selected(entities, new Set(["entity_1"])),
     ).toBe(false);
     expect(check_if_some_entities_selected(new Set(["entity_1"]))).toBe(true);
-    expect(check_if_some_entities_selected(null)).toBe(false);
+    expect(check_if_some_entities_selected(new Set())).toBe(false);
   });
 
   it("toggles selections and derives selected entities", () => {

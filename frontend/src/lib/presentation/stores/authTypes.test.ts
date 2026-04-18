@@ -16,9 +16,9 @@ describe("authTypes", () => {
     expect(AUTH_STORAGE_KEY).not.toBe(PROFILE_STORAGE_KEY);
   });
 
-  it("declares auth state around a nullable current profile", () => {
-    expectTypeOf<
-      AuthState["current_profile"]
-    >().toEqualTypeOf<UserProfile | null>();
+  it("declares auth state around an explicit current profile state", () => {
+    expectTypeOf<AuthState["current_profile"]>().toEqualTypeOf<
+      { status: "missing" } | { status: "present"; profile: UserProfile }
+    >();
   });
 });

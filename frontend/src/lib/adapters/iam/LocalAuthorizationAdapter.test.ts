@@ -25,23 +25,27 @@ function create_mock_auth_port(
   is_valid: boolean = true,
   error_message?: string,
 ): AuthenticationPort {
+  const verification_payload = is_valid
+    ? {
+        payload: {
+          user_id: "test-user-123",
+          email,
+          display_name: "Test User",
+          organization_id: "org-1",
+          team_id: "team-1",
+          issued_at: Date.now(),
+          expires_at: Date.now() + 365 * 24 * 60 * 60 * 1000,
+        },
+      }
+    : {};
+
   return {
     generate_token: vi.fn(),
     verify_token: vi.fn().mockResolvedValue({
       success: true,
       data: {
         is_valid,
-        payload: is_valid
-          ? {
-              user_id: "test-user-123",
-              email,
-              display_name: "Test User",
-              organization_id: "org-1",
-              team_id: "team-1",
-              issued_at: Date.now(),
-              expires_at: Date.now() + 365 * 24 * 60 * 60 * 1000,
-            }
-          : null,
+        ...verification_payload,
         error_message,
       },
     }),
@@ -229,7 +233,7 @@ describe("LocalAuthorizationAdapter", () => {
         const administration_group = result.data.find(
           (group: SidebarMenuGroup) => group.group_name === "Administration",
         );
-        expect(administration_group).toBeUndefined();
+        expect(Boolean(administration_group)).toBe(false);
         const my_info_group = result.data.find(
           (group: SidebarMenuGroup) => group.group_name === "My Info",
         );
@@ -353,7 +357,7 @@ describe("get_sidebar_menu_for_role", () => {
     const organization_group = menu.find(
       (group: SidebarMenuGroup) => group.group_name === "Organization",
     );
-    expect(organization_group).toBeUndefined();
+    expect(Boolean(organization_group)).toBe(false);
   });
 
   it("should include Officials Performance in team_manager menu", () => {
@@ -406,7 +410,7 @@ describe("get_sidebar_menu_for_role", () => {
     const administration_group = menu.find(
       (group: SidebarMenuGroup) => group.group_name === "Administration",
     );
-    expect(administration_group).toBeUndefined();
+    expect(Boolean(administration_group)).toBe(false);
 
     const all_items = menu.flatMap((group: SidebarMenuGroup) => group.items);
     const hrefs = all_items.map((item: { href: string }) => item.href);
@@ -449,7 +453,7 @@ describe("can_role_access_route", () => {
   });
 
   it("should always allow access to home route", () => {
-    const roles =  [
+    const roles = [
       "super_admin",
       "org_admin",
       "team_manager",

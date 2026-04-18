@@ -3,7 +3,10 @@ import type {
   IdentificationType,
   UpdateIdentificationTypeInput,
 } from "../../../../entities/IdentificationType";
-import type { EntityId, ScalarValueInput } from "../../../../types/DomainScalars";
+import type {
+  EntityId,
+  ScalarValueInput,
+} from "../../../../types/DomainScalars";
 import type {
   AsyncResult,
   PaginatedAsyncResult,
@@ -17,9 +20,7 @@ export interface IdentificationTypeUseCasesPort {
     id: ScalarValueInput<IdentificationType["id"]>,
     input: UpdateIdentificationTypeInput,
   ): AsyncResult<IdentificationType>;
-  delete(
-    id: ScalarValueInput<IdentificationType["id"]>,
-  ): AsyncResult<boolean>;
+  delete(id: ScalarValueInput<IdentificationType["id"]>): AsyncResult<boolean>;
   get_by_id(
     id: ScalarValueInput<IdentificationType["id"]>,
   ): AsyncResult<IdentificationType>;

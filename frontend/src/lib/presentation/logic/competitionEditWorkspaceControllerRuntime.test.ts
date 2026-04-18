@@ -1,5 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import type {
+  CompetitionEditSelectedFormatState,
+  CompetitionEditSelectedSportState,
+} from "./competitionEditPageContracts";
+import { create_competition_edit_workspace_controller_runtime } from "./competitionEditWorkspaceControllerRuntime";
+
 const {
   add_team_to_competition_workspace_mock,
   load_competition_edit_sport_mock,
@@ -45,8 +51,6 @@ vi.mock(
   }),
 );
 
-import { create_competition_edit_workspace_controller_runtime } from "./competitionEditWorkspaceControllerRuntime";
-
 describe("competitionEditWorkspaceControllerRuntime", () => {
   function create_command() {
     const state = {
@@ -57,10 +61,13 @@ describe("competitionEditWorkspaceControllerRuntime", () => {
         allow_auto_squad_submission: true,
         lineup_submission_deadline_hours: 24,
       },
-      selected_format: {
-        id: "format-1",
-        tie_breakers: ["goal_difference", "goals_scored"],
-      },
+      selected_format_state: {
+        status: "present",
+        competition_format: {
+          id: "format-1",
+          tie_breakers: ["goal_difference", "goals_scored"],
+        },
+      } as CompetitionEditSelectedFormatState,
       teams_in_competition: [{ id: "team-1", name: "Lions" }],
     };
 
@@ -74,9 +81,9 @@ describe("competitionEditWorkspaceControllerRuntime", () => {
       competition_team_entries: [{ id: "entry-1", team_id: "team-1" }],
       get_available_teams: () => state.available_teams as never,
       get_form_data: () => state.form_data as never,
-      get_selected_format: () => state.selected_format as never,
+      get_selected_format_state: () => state.selected_format_state,
       get_teams_in_competition: () => state.teams_in_competition as never,
-      goto: vi.fn(async () => undefined),
+      goto: vi.fn(async () => {}),
       organizations: [{ id: "organization-1", sport_id: "sport-1" }] as never,
       set_available_teams: vi.fn((value: unknown[]) => {
         state.available_teams = value as never;
@@ -87,10 +94,14 @@ describe("competitionEditWorkspaceControllerRuntime", () => {
       }),
       set_is_customizing_scoring: vi.fn(),
       set_is_saving: vi.fn(),
-      set_selected_format: vi.fn((value: unknown) => {
-        state.selected_format = value as never;
-      }),
-      set_selected_sport: vi.fn(),
+      set_selected_format_state: vi.fn(
+        (value: CompetitionEditSelectedFormatState) => {
+          state.selected_format_state = value;
+        },
+      ),
+      set_selected_sport_state: vi.fn(
+        (_value: CompetitionEditSelectedSportState) => {},
+      ),
       set_teams_in_competition: vi.fn((value: unknown[]) => {
         state.teams_in_competition = value as never;
       }),
@@ -114,8 +125,11 @@ describe("competitionEditWorkspaceControllerRuntime", () => {
   it("updates the format and organization selections", async () => {
     const { command } = create_command();
     load_competition_edit_sport_mock.mockResolvedValueOnce({
-      id: "sport-1",
-      name: "Football",
+      success: true,
+      data: {
+        id: "sport-1",
+        name: "Football",
+      },
     });
     const runtime = create_competition_edit_workspace_controller_runtime(
       command as never,
@@ -126,13 +140,19 @@ describe("competitionEditWorkspaceControllerRuntime", () => {
       detail: { value: "organization-1" },
     } as never);
 
-    expect(command.set_selected_format).toHaveBeenCalledWith({
-      id: "format-2",
-      tie_breakers: ["head_to_head"],
+    expect(command.set_selected_format_state).toHaveBeenCalledWith({
+      status: "present",
+      competition_format: {
+        id: "format-2",
+        tie_breakers: ["head_to_head"],
+      },
     });
-    expect(command.set_selected_sport).toHaveBeenCalledWith({
-      id: "sport-1",
-      name: "Football",
+    expect(command.set_selected_sport_state).toHaveBeenCalledWith({
+      status: "present",
+      sport: {
+        id: "sport-1",
+        name: "Football",
+      },
     });
   });
 

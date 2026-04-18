@@ -3,6 +3,13 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { BaseEntity } from "$lib/core/entities/BaseEntity";
 
+import { create_dynamic_entity_list_controller_view_actions } from "./dynamicEntityListControllerRuntimeView";
+import type {
+  DynamicEntityListControllerOptions,
+  DynamicEntityListViewState,
+} from "./dynamicEntityListControllerTypes";
+import { create_present_csv_metadata_state } from "./listCsvExportLogic";
+
 const {
   export_dynamic_entity_list_to_csv_mock,
   get_dynamic_entity_list_cleared_filter_state_mock,
@@ -46,12 +53,6 @@ vi.mock(
   }),
 );
 
-import { create_dynamic_entity_list_controller_view_actions } from "./dynamicEntityListControllerRuntimeView";
-import type {
-  DynamicEntityListControllerOptions,
-  DynamicEntityListViewState,
-} from "./dynamicEntityListControllerTypes";
-
 describe("dynamicEntityListControllerRuntimeView", () => {
   function create_entity(id: string): BaseEntity {
     return {
@@ -65,20 +66,16 @@ describe("dynamicEntityListControllerRuntimeView", () => {
     overrides: Partial<DynamicEntityListControllerOptions> = {},
   ): DynamicEntityListControllerOptions {
     return {
-      bulk_create_handler: null,
       button_color_class: "",
-      crud_handlers: null,
+
       disabled_functionalities: [],
       enable_bulk_import: false,
       entity_type: "team",
-      info_message: null,
+      info_message: "",
       is_mobile_view: false,
-      on_entities_batch_deleted: null,
-      on_selection_changed: null,
-      on_total_count_changed: null,
+
       show_actions: true,
-      sub_entity_filter: null,
-      view_callbacks: null,
+
       ...overrides,
     } as DynamicEntityListControllerOptions;
   }
@@ -90,27 +87,28 @@ describe("dynamicEntityListControllerRuntimeView", () => {
     const filtered_entities = overrides.filtered_entities ?? entities;
     const paginated_entities =
       overrides.paginated_entities ?? filtered_entities;
+
     return {
       all_selected: false,
       available_fields: [],
       button_color_class: "",
       can_show_bulk_actions: false,
       columns_restored_from_cache: false,
-      crud_handlers: null,
+
       current_page: 1,
       display_name: "Team",
       enable_bulk_import: false,
       entities,
       entities_to_delete: [],
-      entity_metadata: null,
+
       entity_type: "team",
       error_message: "",
       filtered_entities,
       filter_values: {},
       foreign_key_options: {},
       has_bulk_create_handler: false,
-      info_message: null,
-      inline_form_entity: null,
+      info_message: "",
+
       is_create_disabled: false,
       is_delete_disabled: false,
       is_deleting: false,
@@ -131,7 +129,7 @@ describe("dynamicEntityListControllerRuntimeView", () => {
       show_export_modal: false,
       sort_column: "",
       sort_direction: "asc",
-      sub_entity_filter: null,
+
       total_pages: 1,
       visible_column_list: [],
       visible_columns: new Set<string>(),
@@ -294,6 +292,7 @@ describe("dynamicEntityListControllerRuntimeView", () => {
         },
       ],
     } as NonNullable<DynamicEntityListViewState["entity_metadata"]>;
+    const metadata_state = create_present_csv_metadata_state(entity_metadata);
     const filtered_entities = [create_entity("entity-1")];
     const foreign_key_options = { team_id: [create_entity("team-1")] };
     const state_store = writable(
@@ -335,7 +334,7 @@ describe("dynamicEntityListControllerRuntimeView", () => {
     expect(export_dynamic_entity_list_to_csv_mock).toHaveBeenCalledWith(
       filtered_entities,
       ["name"],
-      entity_metadata,
+      metadata_state,
       "team",
       foreign_key_options,
     );

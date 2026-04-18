@@ -17,6 +17,11 @@ import {
   get_team_use_cases,
 } from "$lib/infrastructure/registry/useCaseFactories";
 
+import type {
+  FixtureLineupCreateOrganizationState,
+  FixtureLineupCreateTeamState,
+} from "./fixtureLineupCreatePageContracts";
+
 type FixtureLineupUseCases = ReturnType<typeof get_fixture_lineup_use_cases>;
 type FixtureUseCases = ReturnType<typeof get_fixture_use_cases>;
 type TeamUseCases = ReturnType<typeof get_team_use_cases>;
@@ -49,7 +54,7 @@ export interface FixtureLineupCreateReferenceData {
   all_teams: Team[];
   all_competitions: Competition[];
   organizations: Organization[];
-  selected_organization: Organization | null;
+  selected_organization_state: FixtureLineupCreateOrganizationState;
   error_message: string;
 }
 
@@ -68,7 +73,7 @@ export interface FixtureLineupCreateFixtureData {
 }
 
 export interface FixtureLineupCreateTeamData {
-  selected_team: Team | null;
+  selected_team_state: FixtureLineupCreateTeamState;
   team_players: TeamPlayer[];
   selected_players: CreateFixtureLineupInput["selected_players"];
   validation_error: string;

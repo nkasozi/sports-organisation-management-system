@@ -33,8 +33,8 @@
     field.field_name.includes("number") ||
     field.field_name.includes("order")
       ? 0
-      : undefined}
-    max={field.field_name.includes("age") ? 120 : undefined}
+      : void 0}
+    max={field.field_name.includes("age") ? 120 : void 0}
     step={field.field_name.includes("price") ||
     field.field_name.includes("amount") ||
     field.field_name.includes("cost")

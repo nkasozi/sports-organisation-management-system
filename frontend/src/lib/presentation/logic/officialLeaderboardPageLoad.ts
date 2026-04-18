@@ -3,12 +3,10 @@ import type { Fixture } from "$lib/core/entities/Fixture";
 import type { Official } from "$lib/core/entities/Official";
 import type { OfficialPerformanceRating } from "$lib/core/entities/OfficialPerformanceRating";
 import type { Organization } from "$lib/core/entities/Organization";
-import {
-  get_scope_value,
-  type UserScopeProfile,
-} from "$lib/core/interfaces/ports";
+import { get_scope_value } from "$lib/core/interfaces/ports";
 
 import {
+  type OfficialLeaderboardProfileState,
   type OfficialLeaderboardViewState,
   rebuild_official_leaderboard_view,
   resolve_official_leaderboard_organizations,
@@ -51,7 +49,7 @@ interface OfficialLeaderboardPageDependencies {
 export interface OfficialLeaderboardPageData extends OfficialLeaderboardViewState {
   organizations: Organization[];
   selected_organization_id: string;
-  user_official_id: string | null;
+  user_official_id: string;
   all_ratings: OfficialPerformanceRating[];
   all_officials: Official[];
   all_fixtures: Fixture[];
@@ -63,7 +61,7 @@ type OfficialLeaderboardPageStateResult =
   | { success: true; data: OfficialLeaderboardPageData };
 
 export async function load_official_leaderboard_page_state(command: {
-  profile: UserScopeProfile | null;
+  profile_state: OfficialLeaderboardProfileState;
   dependencies: OfficialLeaderboardPageDependencies;
 }): Promise<OfficialLeaderboardPageStateResult> {
   const [
@@ -74,18 +72,30 @@ export async function load_official_leaderboard_page_state(command: {
     stages_result,
   ] = await Promise.all([
     command.dependencies.organization_use_cases.list(),
-    command.dependencies.official_performance_rating_use_cases.list(undefined, {
-      page_size: LEADERBOARD_PAGE_SIZE,
-    }),
-    command.dependencies.official_use_cases.list(undefined, {
-      page_size: LEADERBOARD_PAGE_SIZE,
-    }),
-    command.dependencies.fixture_use_cases.list(undefined, {
-      page_size: LEADERBOARD_PAGE_SIZE,
-    }),
-    command.dependencies.competition_stage_use_cases.list(undefined, {
-      page_size: LEADERBOARD_PAGE_SIZE,
-    }),
+    command.dependencies.official_performance_rating_use_cases.list(
+      {},
+      {
+        page_size: LEADERBOARD_PAGE_SIZE,
+      },
+    ),
+    command.dependencies.official_use_cases.list(
+      {},
+      {
+        page_size: LEADERBOARD_PAGE_SIZE,
+      },
+    ),
+    command.dependencies.fixture_use_cases.list(
+      {},
+      {
+        page_size: LEADERBOARD_PAGE_SIZE,
+      },
+    ),
+    command.dependencies.competition_stage_use_cases.list(
+      {},
+      {
+        page_size: LEADERBOARD_PAGE_SIZE,
+      },
+    ),
   ]);
 
   if (
@@ -106,14 +116,17 @@ export async function load_official_leaderboard_page_state(command: {
 
   const organizations = resolve_official_leaderboard_organizations(
     organization_result.success ? (organization_result.data?.items ?? []) : [],
-    command.profile,
+    command.profile_state,
   );
   const selected_organization_id = organizations[0]?.id ?? "";
   const all_ratings = ratings_result.data?.items ?? [];
   const all_officials = officials_result.data?.items ?? [];
   const all_fixtures = fixtures_result.data?.items ?? [];
   const all_stages = stages_result.data?.items ?? [];
-  const user_official_id = get_scope_value(command.profile, "official_id");
+  const user_official_id =
+    command.profile_state.status === "present"
+      ? (get_scope_value(command.profile_state.profile, "official_id") ?? "")
+      : "";
   const rebuilt_view = rebuild_official_leaderboard_view({
     all_ratings,
     all_officials,

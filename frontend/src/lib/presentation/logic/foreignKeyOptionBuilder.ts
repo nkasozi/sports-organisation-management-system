@@ -36,9 +36,9 @@ function build_single_option(
   is_jersey_field: boolean,
   is_fixture: boolean,
   competition_entities: BaseEntity[],
-): ForeignKeySelectOption | null {
+): ForeignKeySelectOption[] {
   const entity_id = String((entity as BaseEntity).id ?? "").trim();
-  if (entity_id.length === 0) return null;
+  if (entity_id.length === 0) return [];
 
   let competition_name = "";
   if (is_fixture) {
@@ -66,7 +66,7 @@ function build_single_option(
     option.group = competition_name;
   }
 
-  return option;
+  return [option];
 }
 
 export function build_foreign_key_select_options(
@@ -79,14 +79,12 @@ export function build_foreign_key_select_options(
   const competition_entities = is_fixture
     ? options_map["competition_id"] || []
     : [];
-  return entities
-    .map((entity) =>
-      build_single_option(
-        entity,
-        is_jersey_field,
-        is_fixture,
-        competition_entities,
-      ),
-    )
-    .filter((opt): opt is ForeignKeySelectOption => Boolean(opt));
+  return entities.flatMap((entity) =>
+    build_single_option(
+      entity,
+      is_jersey_field,
+      is_fixture,
+      competition_entities,
+    ),
+  );
 }

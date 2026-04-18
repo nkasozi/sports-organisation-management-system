@@ -1,5 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import {
+  build_dynamic_form_fake_data_state,
+  navigate_to_dynamic_form_foreign_entity,
+} from "./dynamicEntityFormLocalActions";
+
 const {
   build_foreign_entity_route_mock,
   generate_fake_data_for_entity_fields_mock,
@@ -25,11 +30,6 @@ vi.mock("./dynamicFormLogic", () => ({
   build_foreign_entity_route: build_foreign_entity_route_mock,
 }));
 
-import {
-  build_dynamic_form_fake_data_state,
-  navigate_to_dynamic_form_foreign_entity,
-} from "./dynamicEntityFormLocalActions";
-
 describe("dynamicEntityFormLocalActions", () => {
   beforeEach(() => {
     build_foreign_entity_route_mock.mockReset();
@@ -47,7 +47,11 @@ describe("dynamicEntityFormLocalActions", () => {
     });
 
     expect(
-      build_dynamic_form_fake_data_state(null, false, form_state as never),
+      build_dynamic_form_fake_data_state(
+        {} as never,
+        false,
+        form_state as never,
+      ),
     ).toEqual(form_state);
     expect(
       build_dynamic_form_fake_data_state(
@@ -88,10 +92,10 @@ describe("dynamicEntityFormLocalActions", () => {
 
   it("navigates to a foreign entity route only when a route can be resolved", () => {
     build_foreign_entity_route_mock
-      .mockReturnValueOnce(undefined)
+      .mockImplementationOnce(() => {})
       .mockReturnValueOnce("/teams");
 
-    expect(navigate_to_dynamic_form_foreign_entity(undefined)).toBe(false);
+    expect(navigate_to_dynamic_form_foreign_entity()).toBe(false);
     expect(navigate_to_dynamic_form_foreign_entity("team")).toBe(true);
     expect(goto_mock).toHaveBeenCalledWith("/teams");
   });

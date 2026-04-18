@@ -92,17 +92,17 @@ describe("OrganizationSettingsUseCases", () => {
       expect(result.data?.organization_id).toBe("org-abc");
     });
 
-    it("returns null when no settings exist for org", async () => {
+    it("returns a failure result when no settings exist for the organization", async () => {
       vi.mocked(mock_repository.find_by_organization_id).mockResolvedValue({
-        success: true,
-        data: null,
+        success: false,
+        error: "Organization settings not found: organization_id=org-abc",
       });
 
       const result = await use_cases.get_by_organization_id("org-abc");
 
-      expect(result.success).toBe(true);
-      if (!result.success) return;
-      expect(result.data).toBeNull();
+      expect(result.success).toBe(false);
+      if (result.success) return;
+      expect(result.error).toContain("organization_id=org-abc");
     });
 
     it("fails for empty organization_id", async () => {
@@ -249,8 +249,8 @@ describe("OrganizationSettingsUseCases", () => {
   describe("save_or_update", () => {
     it("creates new settings when none exist for the org", async () => {
       vi.mocked(mock_repository.find_by_organization_id).mockResolvedValue({
-        success: true,
-        data: null,
+        success: false,
+        error: "Organization settings not found: organization_id=org-abc",
       });
       vi.mocked(mock_repository.create).mockResolvedValue({
         success: true,
@@ -323,8 +323,8 @@ describe("OrganizationSettingsUseCases", () => {
 
     it("uses sensible defaults when creating from a partial input", async () => {
       vi.mocked(mock_repository.find_by_organization_id).mockResolvedValue({
-        success: true,
-        data: null,
+        success: false,
+        error: "Organization settings not found: organization_id=org-abc",
       });
       vi.mocked(mock_repository.create).mockResolvedValue({
         success: true,

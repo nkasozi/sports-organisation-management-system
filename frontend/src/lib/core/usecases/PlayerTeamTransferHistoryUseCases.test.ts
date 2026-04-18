@@ -301,7 +301,7 @@ describe("PlayerTeamTransferHistoryUseCases", () => {
         player_id: "player-123",
         team_id: "team-B",
         start_date: "2024-06-01",
-        jersey_number: null,
+        jersey_number: 0,
         status: "active",
       });
     });

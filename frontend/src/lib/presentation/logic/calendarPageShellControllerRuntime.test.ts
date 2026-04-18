@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { create_calendar_page_shell_controller_runtime } from "./calendarPageShellControllerRuntime";
+
 const {
   create_calendar_page_shell_controller_activity_actions_mock,
   get_store_value_mock,
@@ -54,8 +56,6 @@ vi.mock("$lib/presentation/stores/publicOrganization", () => ({
   }),
 }));
 
-import { create_calendar_page_shell_controller_runtime } from "./calendarPageShellControllerRuntime";
-
 describe("calendarPageShellControllerRuntime", () => {
   function create_command() {
     const state = {
@@ -67,9 +67,12 @@ describe("calendarPageShellControllerRuntime", () => {
       get_activity_form_values: () => ({ title: "Training" }) as never,
       get_calendar_events: () => [{ id: "event-1" }] as never,
       get_categories: () => [{ id: "category-1" }] as never,
-      get_current_auth_profile: () =>
-        ({ organization_id: "organization-1" }) as never,
-      get_editing_activity: () => null,
+      get_current_auth_profile_state: () =>
+        ({
+          status: "present",
+          profile: { organization_id: "organization-1" },
+        }) as never,
+      get_editing_activity: () => {},
       get_filter_category_id: () => "category-1",
       get_filter_competition_id: () => "competition-1",
       get_filter_team_id: () => "team-1",
@@ -121,7 +124,7 @@ describe("calendarPageShellControllerRuntime", () => {
       if (store === is_public_viewer_store) return false;
       if (store === public_organization_store_mock)
         return { organization_id: "organization-2" };
-      return undefined;
+      return;
     });
   });
 
@@ -203,7 +206,7 @@ describe("calendarPageShellControllerRuntime", () => {
       if (store === is_public_viewer_store) return true;
       if (store === public_organization_store_mock)
         return { organization_id: "organization-2" };
-      return undefined;
+      return;
     });
     load_calendar_shell_bundle_mock.mockResolvedValueOnce({
       teams: [],

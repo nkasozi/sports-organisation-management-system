@@ -1,3 +1,4 @@
+import { create_default_penalties_config } from "./SportDefaults";
 import type { CreateSportInput } from "./SportTypes";
 
 export function create_basketball_sport_preset(): CreateSportInput {
@@ -89,7 +90,7 @@ export function create_basketball_sport_preset(): CreateSportInput {
         severity: "minor",
         description: "Illegal physical contact",
         typical_penalty: "Free throws if in bonus or shooting",
-        results_in_card: null,
+        results_in_card: "",
       },
       {
         id: "offensive_foul",
@@ -97,7 +98,7 @@ export function create_basketball_sport_preset(): CreateSportInput {
         severity: "minor",
         description: "Illegal contact by offensive player",
         typical_penalty: "Loss of possession",
-        results_in_card: null,
+        results_in_card: "",
       },
     ],
     official_requirements: [
@@ -147,7 +148,7 @@ export function create_basketball_sport_preset(): CreateSportInput {
           order: 1,
         },
       ],
-      penalties_config: null,
+      penalties_config: create_default_penalties_config(),
     },
     scoring_rules: [
       {
@@ -168,7 +169,7 @@ export function create_basketball_sport_preset(): CreateSportInput {
     ],
     substitution_rules: {
       max_substitutions_per_game: -1,
-      max_substitution_windows: null,
+      max_substitution_windows: -1,
       rolling_substitutions_allowed: true,
       return_after_substitution_allowed: true,
     },

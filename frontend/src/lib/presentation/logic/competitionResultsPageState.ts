@@ -1,13 +1,9 @@
 import type { Competition } from "$lib/core/entities/Competition";
-import type { CompetitionFormat } from "$lib/core/entities/CompetitionFormat";
 import type { CompetitionStage } from "$lib/core/entities/CompetitionStage";
 import type { Fixture } from "$lib/core/entities/Fixture";
 import type { Organization } from "$lib/core/entities/Organization";
 import type { Team } from "$lib/core/entities/Team";
-import {
-  check_data_permission,
-  type UserRole,
-} from "$lib/core/interfaces/ports";
+import { check_data_permission } from "$lib/core/interfaces/ports";
 import type { CompetitionFormatUseCasesPort } from "$lib/core/interfaces/ports/internal/usecases/CompetitionFormatUseCasesPort";
 import type { CompetitionStageUseCasesPort } from "$lib/core/interfaces/ports/internal/usecases/CompetitionStageUseCasesPort";
 import type { CompetitionTeamUseCasesPort } from "$lib/core/interfaces/ports/internal/usecases/CompetitionTeamUseCasesPort";
@@ -15,15 +11,21 @@ import type { CompetitionUseCasesPort } from "$lib/core/interfaces/ports/interna
 import type { FixtureUseCasesPort } from "$lib/core/interfaces/ports/internal/usecases/FixtureUseCasesPort";
 import type { OrganizationUseCasesPort } from "$lib/core/interfaces/ports/internal/usecases/OrganizationUseCasesPort";
 import type { TeamUseCasesPort } from "$lib/core/interfaces/ports/internal/usecases/TeamUseCasesPort";
-import type { UserProfile } from "$lib/presentation/stores/auth";
 import {
   load_competitions_by_organization,
   load_selected_competition_bundle,
 } from "$lib/presentation/logic/competitionResultsPageData";
 
+import type {
+  CompetitionResultsCompetitionFormatState,
+  CompetitionResultsOrganizationState,
+  CompetitionResultsProfileState,
+  CompetitionResultsSelectedCompetitionState,
+} from "./competitionResultsPageContracts";
+
 export interface CompetitionResultsSelectedBundle {
-  selected_competition: Competition | null;
-  competition_format: CompetitionFormat | null;
+  selected_competition_state: CompetitionResultsSelectedCompetitionState;
+  competition_format_state: CompetitionResultsCompetitionFormatState;
   competition_stages: CompetitionStage[];
   fixtures: Fixture[];
   teams: Team[];
@@ -42,8 +44,8 @@ export interface CompetitionResultsPageStateDependencies {
 
 export function create_empty_competition_results_bundle(): CompetitionResultsSelectedBundle {
   return {
-    selected_competition: null,
-    competition_format: null,
+    selected_competition_state: { status: "missing" },
+    competition_format_state: { status: "missing" },
     competition_stages: [],
     fixtures: [],
     teams: [],
@@ -52,12 +54,18 @@ export function create_empty_competition_results_bundle(): CompetitionResultsSel
 }
 
 export function derive_competition_results_can_change_organizations(
-  profile: (UserProfile & { role?: UserRole }) | null | undefined,
+  profile_state: CompetitionResultsProfileState,
   url_organization_id: string,
 ): boolean {
-  const organization_id = profile?.organization_id || "";
+  const organization_id =
+    profile_state.status === "present"
+      ? profile_state.profile.organization_id || ""
+      : "";
   if (organization_id === "*") return true;
-  const role = profile?.role || "player";
+  const role =
+    profile_state.status === "present"
+      ? profile_state.profile.role || "player"
+      : "player";
   return (
     !check_data_permission(role, "public_level", "create") &&
     url_organization_id.length === 0
@@ -106,35 +114,52 @@ export async function load_competitions_for_results_organization(
 export function find_competition_results_organization(
   organizations: Organization[],
   organization_id: string,
-): Organization | null {
-  return (
-    organizations.find(
-      (organization: Organization) => organization.id === organization_id,
-    ) || null
+): CompetitionResultsOrganizationState {
+  const organization = organizations.find(
+    (current_organization: Organization) =>
+      current_organization.id === organization_id,
   );
+
+  if (!organization) {
+    return { status: "missing" };
+  }
+
+  return { status: "present", organization };
 }
 
 export function find_competition_results_competition(
   competitions: Competition[],
   competition_id: string,
-): Competition | null {
-  return (
-    competitions.find(
-      (competition: Competition) => competition.id === competition_id,
-    ) || null
+): CompetitionResultsSelectedCompetitionState {
+  const competition = competitions.find(
+    (current_competition: Competition) =>
+      current_competition.id === competition_id,
   );
+
+  if (!competition) {
+    return { status: "missing" };
+  }
+
+  return { status: "present", competition };
 }
 
 export function select_preferred_results_organization(
   organizations: Organization[],
   saved_organization_id: string,
-): Organization | null {
+): CompetitionResultsOrganizationState {
   if (saved_organization_id.length > 0) {
     const matching_organization = find_competition_results_organization(
       organizations,
       saved_organization_id,
     );
-    if (matching_organization) return matching_organization;
+    if (matching_organization.status === "present") {
+      return matching_organization;
+    }
   }
-  return organizations[0] || null;
+
+  if (organizations.length === 0) {
+    return { status: "missing" };
+  }
+
+  return { status: "present", organization: organizations[0] };
 }

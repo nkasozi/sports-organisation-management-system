@@ -1,11 +1,16 @@
 <script lang="ts">
+  import type {
+    LastSyncTimeState,
+    SyncErrorState,
+  } from "$lib/presentation/stores/syncStoreTypes";
+
   interface $$Props {
     sync_in_progress: boolean;
     current_percentage: number;
     current_table: string;
-    last_sync: string | null;
+    last_sync: LastSyncTimeState;
     relative_time_tick: number;
-    error_message: string | null;
+    sync_error_state: SyncErrorState;
     trigger_manual_sync: () => Promise<void>;
     on_close: () => void;
   }
@@ -13,18 +18,18 @@
   export let sync_in_progress: boolean;
   export let current_percentage: number;
   export let current_table: string;
-  export let last_sync: string | null;
+  export let last_sync: LastSyncTimeState;
   export let relative_time_tick: number;
-  export let error_message: string | null;
+  export let sync_error_state: SyncErrorState;
   export let trigger_manual_sync: () => Promise<void>;
   export let on_close: () => void;
 
   function format_relative_time(
-    timestamp: string | null,
+    timestamp: LastSyncTimeState,
     _tick: number,
   ): string {
-    if (!timestamp) return "Never";
-    const date = new Date(timestamp);
+    if (timestamp.status === "never") return "Never";
+    const date = new Date(timestamp.value);
     const now = new Date();
     const diff_ms = now.getTime() - date.getTime();
     const diff_seconds = Math.floor(diff_ms / 1000);
@@ -73,13 +78,13 @@
       <span
         class="px-2 py-0.5 rounded-full text-xs font-medium {sync_in_progress
           ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300'
-          : error_message
+          : sync_error_state.status === 'present'
             ? 'bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300'
             : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300'}"
       >
         {sync_in_progress
           ? `Syncing ${current_percentage}%`
-          : error_message
+          : sync_error_state.status === 'present'
             ? "Error"
             : "Synced"}
       </span>
@@ -108,9 +113,9 @@
       >
     </div>
 
-    {#if error_message}
+    {#if sync_error_state.status === 'present'}
       <div class="p-2 bg-red-50 dark:bg-red-900/20 rounded-lg">
-        <p class="text-xs text-red-700 dark:text-red-300">{error_message}</p>
+        <p class="text-xs text-red-700 dark:text-red-300">{sync_error_state.message}</p>
       </div>
     {/if}
 

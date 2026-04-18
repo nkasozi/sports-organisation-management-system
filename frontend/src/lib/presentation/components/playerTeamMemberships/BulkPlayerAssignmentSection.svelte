@@ -18,7 +18,7 @@
     function get_status_text(assignment: PlayerAssignment): string {
         return status_variant === "available"
             ? "Available"
-            : `Currently on: ${assignment.current_team_name}`;
+            : `Currently on: ${assignment.current_team_state.status === "assigned" ? assignment.current_team_state.team_name : ""}`;
     }
 
     function get_status_class(): string {

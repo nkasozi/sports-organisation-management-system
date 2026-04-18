@@ -5,8 +5,11 @@ import type {
 } from "$lib/core/entities/CompetitionFormat";
 import type { CompetitionTeam } from "$lib/core/entities/CompetitionTeam";
 import type { Organization } from "$lib/core/entities/Organization";
-import type { Sport } from "$lib/core/entities/Sport";
 import type { Team } from "$lib/core/entities/Team";
+import type {
+  CompetitionEditSelectedFormatState,
+  CompetitionEditSelectedSportState,
+} from "$lib/presentation/logic/competitionEditPageContracts";
 import { load_competition_edit_sport } from "$lib/presentation/logic/competitionEditPageData";
 import {
   reset_competition_scoring_overrides,
@@ -27,7 +30,7 @@ export function create_competition_edit_workspace_controller_runtime(command: {
   competition_team_entries: CompetitionTeam[];
   get_available_teams: () => Team[];
   get_form_data: () => UpdateCompetitionInput;
-  get_selected_format: () => CompetitionFormat | null;
+  get_selected_format_state: () => CompetitionEditSelectedFormatState;
   get_teams_in_competition: () => Team[];
   goto: (path: string) => Promise<unknown>;
   organizations: Organization[];
@@ -36,8 +39,10 @@ export function create_competition_edit_workspace_controller_runtime(command: {
   set_form_data: (value: UpdateCompetitionInput) => void;
   set_is_customizing_scoring: (value: boolean) => void;
   set_is_saving: (value: boolean) => void;
-  set_selected_format: (value: CompetitionFormat | null) => void;
-  set_selected_sport: (value: Sport | null) => void;
+  set_selected_format_state: (
+    value: CompetitionEditSelectedFormatState,
+  ) => void;
+  set_selected_sport_state: (value: CompetitionEditSelectedSportState) => void;
   set_teams_in_competition: (value: Team[]) => void;
   show_toast: (message: string, type: "success" | "error" | "info") => void;
 }): {
@@ -91,11 +96,15 @@ export function create_competition_edit_workspace_controller_runtime(command: {
         ...command.get_form_data(),
         competition_format_id: event.detail.value,
       });
-      command.set_selected_format(
-        command.competition_formats.find(
-          (competition_format: CompetitionFormat) =>
-            competition_format.id === event.detail.value,
-        ) || null,
+      const selected_format = command.competition_formats.find(
+        (competition_format: CompetitionFormat) =>
+          competition_format.id === event.detail.value,
+      );
+
+      command.set_selected_format_state(
+        selected_format
+          ? { status: "present", competition_format: selected_format }
+          : { status: "missing" },
       );
     },
     handle_organization_change: async (
@@ -106,11 +115,15 @@ export function create_competition_edit_workspace_controller_runtime(command: {
         organization_id: event.detail.value,
         rule_overrides: {},
       });
-      command.set_selected_sport(
-        await load_competition_edit_sport(
-          command.organizations,
-          event.detail.value,
-        ),
+      const selected_sport_result = await load_competition_edit_sport(
+        command.organizations,
+        event.detail.value,
+      );
+
+      command.set_selected_sport_state(
+        selected_sport_result.success
+          ? { status: "present", sport: selected_sport_result.data }
+          : { status: "missing" },
       );
     },
     handle_remove_team_from_competition: async (team: Team): Promise<void> => {
@@ -179,8 +192,12 @@ export function create_competition_edit_workspace_controller_runtime(command: {
       tie_breaker: TieBreaker,
       enabled: boolean,
     ): void => {
-      const format_default_tie_breakers = (command.get_selected_format()
-        ?.tie_breakers ?? ["goal_difference", "goals_scored"]) as TieBreaker[];
+      const selected_format_state = command.get_selected_format_state();
+      const format_default_tie_breakers = (
+        selected_format_state.status === "present"
+          ? selected_format_state.competition_format.tie_breakers
+          : ["goal_difference", "goals_scored"]
+      ) as TieBreaker[];
       command.set_form_data(
         toggle_competition_tie_breaker(
           command.get_form_data(),

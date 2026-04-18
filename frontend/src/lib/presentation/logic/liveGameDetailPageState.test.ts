@@ -36,12 +36,6 @@ describe("liveGameDetailPageState", () => {
 
   it("creates default page, modal, event, and toast state", () => {
     expect(create_live_game_detail_page_state()).toEqual({
-      fixture: null,
-      home_team: null,
-      away_team: null,
-      competition: null,
-      sport: null,
-      venue: null,
       organization_name: "",
       assigned_officials_data: [],
       home_players: [],
@@ -70,7 +64,7 @@ describe("liveGameDetailPageState", () => {
     });
     expect(create_live_game_detail_event_state()).toEqual({
       show_event_modal: false,
-      selected_event_type: null,
+
       selected_team_side: "home",
       selected_player_id: "",
       secondary_player_id: "",

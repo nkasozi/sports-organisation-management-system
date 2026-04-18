@@ -11,6 +11,7 @@ import type {
   ActivityRepository,
   QueryOptions,
 } from "../../core/interfaces/ports";
+import { build_activity_not_found_by_source_error } from "../../core/interfaces/ports/external/repositories/ActivityRepository";
 import type { ScalarValueInput } from "../../core/types/DomainScalars";
 import type {
   AsyncResult,
@@ -105,7 +106,7 @@ class InBrowserActivityRepository
       const before = new Date(filter.start_date_before);
       filtered = filtered.filter((a) => new Date(a.start_datetime) <= before);
     }
-    if (filter.is_all_day !== undefined) {
+    if ("is_all_day" in filter) {
       filtered = filtered.filter((a) => a.is_all_day === filter.is_all_day);
     }
     return filtered;
@@ -160,14 +161,22 @@ class InBrowserActivityRepository
   async find_by_source(
     source_type: Activity["source_type"],
     source_id: ScalarValueInput<Activity["source_id"]>,
-  ): AsyncResult<Activity | null> {
+  ): AsyncResult<Activity> {
     try {
       const all = await this.database.activities.toArray();
-      return create_success_result(
-        all.find(
-          (a) => a.source_type === source_type && a.source_id === source_id,
-        ) ?? null,
+      const matched_activity = all.find(
+        (activity) =>
+          activity.source_type === source_type &&
+          activity.source_id === source_id,
       );
+
+      if (!matched_activity) {
+        return create_failure_result(
+          build_activity_not_found_by_source_error(source_type, source_id),
+        );
+      }
+
+      return create_success_result(matched_activity);
     } catch (error) {
       console.warn("[ActivityRepository] Failed to find activity by source", {
         event: "repository_find_activity_by_source_failed",
@@ -180,11 +189,24 @@ class InBrowserActivityRepository
   }
 }
 
-let singleton_instance: InBrowserActivityRepository | null = null;
+type ActivityRepositoryState =
+  | { status: "uninitialized" }
+  | {
+      status: "ready";
+      repository: InBrowserActivityRepository;
+    };
+
+let activity_repository_state: ActivityRepositoryState = {
+  status: "uninitialized",
+};
 
 export function get_activity_repository(): ActivityRepository {
-  if (!singleton_instance) {
-    singleton_instance = new InBrowserActivityRepository();
+  if (activity_repository_state.status === "ready") {
+    return activity_repository_state.repository;
   }
-  return singleton_instance;
+
+  const repository = new InBrowserActivityRepository();
+  activity_repository_state = { status: "ready", repository };
+
+  return repository;
 }

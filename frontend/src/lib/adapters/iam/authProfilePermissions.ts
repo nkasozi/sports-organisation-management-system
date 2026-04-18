@@ -8,7 +8,10 @@ import type {
   UserRole,
 } from "$lib/core/interfaces/ports";
 import { get_role_permissions } from "$lib/core/interfaces/ports";
-import type { EmailAddress, ScalarValueInput } from "$lib/core/types/DomainScalars";
+import type {
+  EmailAddress,
+  ScalarValueInput,
+} from "$lib/core/types/DomainScalars";
 import type { Result } from "$lib/core/types/Result";
 import {
   create_failure_result,

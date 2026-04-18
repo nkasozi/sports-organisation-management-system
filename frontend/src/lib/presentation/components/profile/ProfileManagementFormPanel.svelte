@@ -6,11 +6,11 @@
 
     export let title: string;
     export let entity_type: string;
-    export let entity_data: Partial<BaseEntity> | null;
+    export let entity_data: Partial<BaseEntity> | undefined;
     export let back_button_label: string;
     export let preview_panel_label: string;
     export let preview_panel_action_label: string;
-    export let preview_path: string | null;
+    export let preview_path: string;
     export let show_preview_panel: boolean;
     export let on_back_requested: () => void;
     export let view_callbacks: EntityViewCallbacks;
@@ -62,7 +62,8 @@
             {entity_type}
             {entity_data}
             is_mobile_view={false}
-            crud_handlers={null}
+            crud_handlers={void 0}
+            sub_entity_filter={void 0}
             {view_callbacks}
         />
     </div>

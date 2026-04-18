@@ -5,6 +5,11 @@ import { DEFAULT_PLAYER_AVATAR } from "$lib/core/entities/Player";
 import { DEFAULT_TEAM_LOGO } from "$lib/core/entities/Team";
 import { DEFAULT_STAFF_AVATAR } from "$lib/core/entities/TeamStaff";
 import { DEFAULT_VENUE_IMAGE } from "$lib/core/entities/Venue";
+import {
+  type AsyncResult,
+  create_failure_result,
+  create_success_result,
+} from "$lib/core/types/Result";
 
 import {
   build_sync_push_batches,
@@ -44,7 +49,7 @@ export type SyncRemediableRecord = Record<string, unknown> & {
 interface BuildRemediatedSyncRecordsCommand {
   table_name: TableName;
   all_local_records: SyncRemediableRecord[];
-  remote_latest_modified_at: string | null;
+  remote_latest_modified_at: string;
   detect_conflicts: boolean;
   max_payload_bytes?: number;
 }
@@ -59,11 +64,6 @@ interface RemediateOversizedInlineFileRecordsCommand extends BuildRemediatedSync
   table: Table<SyncRemediableRecord, string>;
   get_is_remote_sync_in_progress: () => boolean;
   set_remote_sync_in_progress: (value: boolean) => void;
-}
-
-interface RemediateOversizedInlineFileRecordsResult extends BuildRemediatedSyncRecordsResult {
-  success: boolean;
-  error: string | null;
 }
 
 function get_record_modified_at(record: SyncRemediableRecord): string {
@@ -101,11 +101,11 @@ function record_fits_sync_payload(command: {
 
 function get_push_eligible_record_ids(command: {
   all_local_records: SyncRemediableRecord[];
-  remote_latest_modified_at: string | null;
+  remote_latest_modified_at: string;
 }): Set<string> {
-  const remote_cutoff = command.remote_latest_modified_at || EPOCH_TIMESTAMP;
+  const remote_cutoff = command.remote_latest_modified_at;
 
-  if (!command.remote_latest_modified_at) {
+  if (remote_cutoff === EPOCH_TIMESTAMP) {
     return new Set(command.all_local_records.map((record) => record.id));
   }
 
@@ -209,14 +209,10 @@ export function build_remediated_sync_records(
 
 export async function remediate_oversized_inline_file_records(
   command: RemediateOversizedInlineFileRecordsCommand,
-): Promise<RemediateOversizedInlineFileRecordsResult> {
+): AsyncResult<BuildRemediatedSyncRecordsResult> {
   const result = build_remediated_sync_records(command);
   if (result.remediated_records.length === 0) {
-    return {
-      ...result,
-      success: true,
-      error: null,
-    };
+    return create_success_result(result);
   }
 
   const was_remote_sync_in_progress = command.get_is_remote_sync_in_progress();
@@ -233,11 +229,8 @@ export async function remediate_oversized_inline_file_records(
       record_ids: result.remediated_record_ids,
       error: error_message,
     });
-    return {
-      ...result,
-      success: false,
-      error: error_message,
-    };
+
+    return create_failure_result(error_message);
   } finally {
     command.set_remote_sync_in_progress(was_remote_sync_in_progress);
   }
@@ -248,9 +241,5 @@ export async function remediate_oversized_inline_file_records(
     record_ids: result.remediated_record_ids,
   });
 
-  return {
-    ...result,
-    success: true,
-    error: null,
-  };
+  return create_success_result(result);
 }

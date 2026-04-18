@@ -42,6 +42,10 @@ export interface ProfileManagementPermissions {
   can_delete: boolean;
 }
 
+export type ProfileManagementAuthorizationProfileState =
+  | { status: "missing" }
+  | { status: "present"; profile: UserScopeProfile };
+
 export interface ProfileManagementProfileUseCases {
   list(filter?: Record<string, string>): Promise<{
     success: boolean;
@@ -86,15 +90,19 @@ export interface ProfileManagementConfiguration {
   related_entity_use_cases: ProfileManagementRelatedEntityUseCases;
   get_related_entity_label: (entity: BaseEntity) => string;
   get_profile_related_entity_id: (profile: ProfileManagementEntity) => string;
-  get_profile_preview_path: (profile: ProfileManagementEntity) => string | null;
+  get_profile_preview_path: (profile: ProfileManagementEntity) => string;
 }
 
 export function build_profile_management_authorization_filter(
-  current_profile: UserScopeProfile | null,
+  profile_state: ProfileManagementAuthorizationProfileState,
   authorization_filter_fields: string[],
 ): Record<string, string> {
+  if (profile_state.status !== "present") {
+    return {};
+  }
+
   return build_authorization_list_filter(
-    current_profile,
+    profile_state.profile,
     authorization_filter_fields,
   );
 }
@@ -191,7 +199,7 @@ export function get_profile_management_status_badge_class(
 export function build_profile_management_preview_path(
   path_prefix: string,
   profile_slug: string,
-): string | null {
-  if (!profile_slug.trim()) return null;
+): string {
+  if (!profile_slug.trim()) return "";
   return `${path_prefix}${PROFILE_MANAGEMENT_PREVIEW_PATH_SEPARATOR}${profile_slug}`;
 }

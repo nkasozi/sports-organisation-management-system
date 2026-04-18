@@ -1,24 +1,26 @@
 <script lang="ts">
     import type { Fixture } from "$lib/core/entities/Fixture";
     import { get_official_full_name } from "$lib/core/entities/Official";
-    import type { Team } from "$lib/core/entities/Team";
-    import type { Venue } from "$lib/core/entities/Venue";
-    import type { MatchReportAssignedOfficialData } from "$lib/presentation/logic/matchReportPageLoadTypes";
+    import type {
+        MatchReportAssignedOfficialData,
+        MatchReportTeamState,
+        MatchReportVenueState,
+    } from "$lib/presentation/logic/matchReportPageLoadTypes";
 
-    export let fixture: Fixture;
-    export let home_team: Team | null;
-    export let away_team: Team | null;
-    export let venue: Venue | null;
-    export let assigned_officials_data: MatchReportAssignedOfficialData[];
+    export let fixture: Fixture = {} as Fixture;
+    export let home_team_state: MatchReportTeamState = { status: "missing" };
+    export let away_team_state: MatchReportTeamState = { status: "missing" };
+    export let venue_state: MatchReportVenueState = { status: "missing" };
+    export let assigned_officials_data: MatchReportAssignedOfficialData[] = [];
 
     function build_team_abbreviation(
-        team_name: string | null,
+        team_state: MatchReportTeamState,
         fallback_value: string,
     ): string {
-        if (!team_name) {
+        if (team_state.status === "missing") {
             return fallback_value;
         }
-        return team_name.slice(0, 3).toUpperCase();
+        return team_state.team.name.slice(0, 3).toUpperCase();
     }
 </script>
 
@@ -33,11 +35,15 @@
                 📍 Venue
             </div>
             <div class="text-sm font-medium text-gray-900 dark:text-white">
-                {venue?.name ?? fixture.venue ?? "TBD"}
+                {venue_state.status === "present"
+                    ? venue_state.venue.name
+                    : fixture.venue ?? "TBD"}
             </div>
-            {#if venue?.city}
+            {#if venue_state.status === "present" && venue_state.venue.city}
                 <div class="text-xs text-gray-500 dark:text-gray-400">
-                    {venue.city}{venue.country ? `, ${venue.country}` : ""}
+                    {venue_state.venue.city}{venue_state.venue.country
+                        ? `, ${venue_state.venue.country}`
+                        : ""}
                 </div>
             {/if}
         </div>
@@ -52,7 +58,7 @@
                 <div class="flex items-center gap-2">
                     <span class="text-xs text-gray-600 dark:text-gray-300">
                         {build_team_abbreviation(
-                            home_team?.name ?? null,
+                            home_team_state,
                             "HOM",
                         )}
                     </span>
@@ -63,7 +69,7 @@
                             : 'bg-blue-500'}"
                         style={fixture.home_team_jersey?.main_color
                             ? `background-color: ${fixture.home_team_jersey.main_color}`
-                            : undefined}
+                            : void 0}
                         title={fixture.home_team_jersey?.nickname || "Home Kit"}
                     ></div>
                 </div>
@@ -76,12 +82,12 @@
                             : 'bg-red-500'}"
                         style={fixture.away_team_jersey?.main_color
                             ? `background-color: ${fixture.away_team_jersey.main_color}`
-                            : undefined}
+                            : void 0}
                         title={fixture.away_team_jersey?.nickname || "Away Kit"}
                     ></div>
                     <span class="text-xs text-gray-600 dark:text-gray-300">
                         {build_team_abbreviation(
-                            away_team?.name ?? null,
+                            away_team_state,
                             "AWY",
                         )}
                     </span>

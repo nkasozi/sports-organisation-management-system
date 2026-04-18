@@ -1,5 +1,10 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import type { EntityId, Name } from "$lib/core/types/DomainScalars";
+import { create_unknown_conflict_field_value } from "$lib/infrastructure/sync/conflictTypes";
+
+import { execute_conflict_resolution } from "./syncStoreResolveConflict";
+
 const sync_conflict_resolution_mocks = vi.hoisted(() => ({
   resolve_conflict: vi.fn(),
 }));
@@ -7,8 +12,6 @@ const sync_conflict_resolution_mocks = vi.hoisted(() => ({
 vi.mock("$lib/infrastructure/sync/convexSyncService", () => ({
   resolve_conflict: sync_conflict_resolution_mocks.resolve_conflict,
 }));
-
-import { execute_conflict_resolution } from "./syncStoreResolveConflict";
 
 describe("syncStoreResolveConflict", () => {
   afterEach(() => {
@@ -19,7 +22,7 @@ describe("syncStoreResolveConflict", () => {
   it("fails fast when the Convex client is not configured", async () => {
     expect(
       await execute_conflict_resolution(
-        null,
+        { success: false, error: "Convex client not configured" },
         {
           id: "conflict-1",
           table_name: "teams",
@@ -29,8 +32,8 @@ describe("syncStoreResolveConflict", () => {
           remote_data: { name: "Remote Team" },
           local_updated_at: "2024-01-01T00:00:00.000Z",
           remote_updated_at: "2024-01-02T00:00:00.000Z",
-          remote_updated_by: null,
-          remote_updated_by_name: null,
+          remote_updated_by: create_unknown_conflict_field_value<EntityId>(),
+          remote_updated_by_name: create_unknown_conflict_field_value<Name>(),
           field_differences: [],
           detected_at: "2024-01-03T00:00:00.000Z",
         },
@@ -47,7 +50,7 @@ describe("syncStoreResolveConflict", () => {
     vi.setSystemTime(new Date("2024-05-01T10:00:00.000Z"));
     sync_conflict_resolution_mocks.resolve_conflict.mockResolvedValue({
       success: true,
-      error: null,
+      data: true,
     });
     const convex_client = {
       mutation: vi.fn(),
@@ -55,7 +58,7 @@ describe("syncStoreResolveConflict", () => {
     };
 
     await execute_conflict_resolution(
-      convex_client,
+      { success: true, data: convex_client },
       {
         id: "conflict-1",
         table_name: "teams",
@@ -65,8 +68,8 @@ describe("syncStoreResolveConflict", () => {
         remote_data: { name: "Remote Team" },
         local_updated_at: "2024-01-01T00:00:00.000Z",
         remote_updated_at: "2024-01-02T00:00:00.000Z",
-        remote_updated_by: null,
-        remote_updated_by_name: null,
+        remote_updated_by: create_unknown_conflict_field_value<EntityId>(),
+        remote_updated_by_name: create_unknown_conflict_field_value<Name>(),
         field_differences: [],
         detected_at: "2024-01-03T00:00:00.000Z",
       },
@@ -89,7 +92,7 @@ describe("syncStoreResolveConflict", () => {
   it("uses remote data or merged data depending on the chosen action", async () => {
     sync_conflict_resolution_mocks.resolve_conflict.mockResolvedValue({
       success: true,
-      error: null,
+      data: true,
     });
     const convex_client = {
       mutation: vi.fn(),
@@ -104,13 +107,17 @@ describe("syncStoreResolveConflict", () => {
       remote_data: { name: "Remote Team" },
       local_updated_at: "2024-01-01T00:00:00.000Z",
       remote_updated_at: "2024-01-02T00:00:00.000Z",
-      remote_updated_by: null,
-      remote_updated_by_name: null,
+      remote_updated_by: create_unknown_conflict_field_value<EntityId>(),
+      remote_updated_by_name: create_unknown_conflict_field_value<Name>(),
       field_differences: [],
       detected_at: "2024-01-03T00:00:00.000Z",
     };
 
-    await execute_conflict_resolution(convex_client, conflict, "keep_remote");
+    await execute_conflict_resolution(
+      { success: true, data: convex_client },
+      conflict,
+      "keep_remote",
+    );
     expect(
       sync_conflict_resolution_mocks.resolve_conflict,
     ).toHaveBeenNthCalledWith(1, convex_client, {
@@ -120,10 +127,15 @@ describe("syncStoreResolveConflict", () => {
       resolution_action: "keep_remote",
     });
 
-    await execute_conflict_resolution(convex_client, conflict, "merge", {
-      name: "Merged Team",
-      captain: "A. Example",
-    });
+    await execute_conflict_resolution(
+      { success: true, data: convex_client },
+      conflict,
+      "merge",
+      {
+        name: "Merged Team",
+        captain: "A. Example",
+      },
+    );
     expect(
       sync_conflict_resolution_mocks.resolve_conflict,
     ).toHaveBeenNthCalledWith(2, convex_client, {

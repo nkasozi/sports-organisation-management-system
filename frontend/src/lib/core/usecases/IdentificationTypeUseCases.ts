@@ -83,21 +83,26 @@ export function create_identification_type_use_cases(
       const query_options = options || { page_number: 1, page_size: 100 };
 
       if (!filter) {
-        return repository.find_all(undefined, query_options);
+        return repository.find_all({}, query_options);
       }
 
       const type_filter: IdentificationTypeFilter = {
-        status: filter.status as IdentificationType["status"] | undefined,
+        ...(filter.status
+          ? { status: filter.status as IdentificationType["status"] }
+          : {}),
       };
 
       return repository.find_all(type_filter, query_options);
     },
 
     async list_all(): PaginatedAsyncResult<IdentificationType> {
-      return repository.find_all(undefined, {
-        page_number: 1,
-        page_size: 1000,
-      });
+      return repository.find_all(
+        {},
+        {
+          page_number: 1,
+          page_size: 1000,
+        },
+      );
     },
 
     async list_types_by_sport(
@@ -106,10 +111,13 @@ export function create_identification_type_use_cases(
       if (!sport_id || sport_id.trim() === "") {
         return create_failure_result("Sport ID is required");
       }
-      return repository.find_all(undefined, {
-        page_number: 1,
-        page_size: 1000,
-      });
+      return repository.find_all(
+        {},
+        {
+          page_number: 1,
+          page_size: 1000,
+        },
+      );
     },
   };
 }

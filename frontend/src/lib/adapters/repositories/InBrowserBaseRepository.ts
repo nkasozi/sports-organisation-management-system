@@ -36,7 +36,7 @@ export abstract class InBrowserBaseRepository<
   TEntity extends BaseEntity,
   TCreateInput,
   TUpdateInput,
-  TFilter = undefined,
+  TFilter extends object = Record<string, never>,
 > implements Repository<TEntity, TCreateInput, TUpdateInput, TFilter> {
   protected entity_prefix: string;
 
@@ -86,14 +86,14 @@ export abstract class InBrowserBaseRepository<
   }
 
   find_all(
-    filter?: TFilter,
+    filter: TFilter = {} as TFilter,
     options?: QueryOptions,
   ): PaginatedAsyncResult<TEntity> {
     return find_all_entities(
       this.get_table(),
       filter,
-      options,
       this.apply_entity_filter.bind(this),
+      options,
     );
   }
 
@@ -101,7 +101,9 @@ export abstract class InBrowserBaseRepository<
     return find_entity_by_id(this.get_table(), id);
   }
 
-  find_by_ids(ids: Array<ScalarValueInput<TEntity["id"]>>): AsyncResult<TEntity[]> {
+  find_by_ids(
+    ids: Array<ScalarValueInput<TEntity["id"]>>,
+  ): AsyncResult<TEntity[]> {
     return find_entities_by_ids(this.get_table(), ids);
   }
 
@@ -114,7 +116,10 @@ export abstract class InBrowserBaseRepository<
     );
   }
 
-  update(id: ScalarValueInput<TEntity["id"]>, updates: TUpdateInput): AsyncResult<TEntity> {
+  update(
+    id: ScalarValueInput<TEntity["id"]>,
+    updates: TUpdateInput,
+  ): AsyncResult<TEntity> {
     return update_entity(
       this.get_table(),
       id,
@@ -127,7 +132,9 @@ export abstract class InBrowserBaseRepository<
     return delete_entity_by_id(this.get_table(), id);
   }
 
-  delete_by_ids(ids: Array<ScalarValueInput<TEntity["id"]>>): AsyncResult<number> {
+  delete_by_ids(
+    ids: Array<ScalarValueInput<TEntity["id"]>>,
+  ): AsyncResult<number> {
     return delete_entities_by_ids(this.get_table(), ids);
   }
 

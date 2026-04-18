@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { BaseEntity } from "../../core/entities/BaseEntity";
+import { handle_dynamic_form_dependency_change } from "./dynamicEntityFormDependencyHandling";
 
 const {
   compute_teams_after_exclusion_mock,
@@ -17,8 +18,6 @@ vi.mock("./dynamicFormDataLoader", () => ({
   fetch_filtered_entities_for_field: fetch_filtered_entities_for_field_mock,
   fetch_venue_name_for_team: fetch_venue_name_for_team_mock,
 }));
-
-import { handle_dynamic_form_dependency_change } from "./dynamicEntityFormDependencyHandling";
 
 function create_entity<TExtra extends Record<string, unknown>>(
   id: string,
@@ -43,7 +42,8 @@ describe("dynamicEntityFormDependencyHandling", () => {
     await expect(
       handle_dynamic_form_dependency_change({
         entity_type: "FixtureDetailsSetup",
-        entity_metadata: null,
+        entity_metadata: void 0,
+
         changed_field_name: "home_team_jersey_id",
         new_value: "jersey-1",
         form_data: { home_team_jersey_id: "jersey-1" },
@@ -52,7 +52,7 @@ describe("dynamicEntityFormDependencyHandling", () => {
       }),
     ).resolves.toEqual({
       entity_type: "FixtureDetailsSetup",
-      entity_metadata: null,
+
       changed_field_name: "home_team_jersey_id",
       new_value: "jersey-1",
       form_data: { home_team_jersey_id: "jersey-1" },

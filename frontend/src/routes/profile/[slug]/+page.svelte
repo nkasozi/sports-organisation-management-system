@@ -37,7 +37,13 @@
         profile_link_use_cases: get_profile_link_use_cases(),
     };
 
-    let page_data: PlayerPublicProfilePageData | null = null;
+    type PlayerPublicProfilePageDataState =
+        | { status: "empty" }
+        | { status: "present"; page_data: PlayerPublicProfilePageData };
+
+    let page_data_state: PlayerPublicProfilePageDataState = {
+        status: "empty",
+    };
     let loading = true;
     let not_found = false;
     let error_title = PLAYER_PROFILE_ERROR_TITLE_RESTRICTED;
@@ -67,7 +73,7 @@
         loading = true;
         not_found = false;
         error_message = "";
-        page_data = null;
+        page_data_state = { status: "empty" };
 
         const result = await load_player_public_profile_page_data({
             slug,
@@ -83,7 +89,7 @@
             return;
         }
 
-        page_data = result.data;
+        page_data_state = { status: "present", page_data: result.data };
     }
 
     $: current_slug = $page.params.slug;
@@ -92,7 +98,7 @@
         loading = false;
         not_found = true;
         error_message = "";
-        page_data = null;
+        page_data_state = { status: "empty" };
     }
 
     $: if (browser && current_slug && current_slug !== last_requested_slug) {
@@ -102,8 +108,8 @@
 
 <svelte:head>
     <title>
-        {page_data
-            ? `${get_player_full_name(page_data.player)} - ${PLAYER_PROFILE_TITLE}`
+        {page_data_state.status === "present"
+            ? `${get_player_full_name(page_data_state.page_data.player)} - ${PLAYER_PROFILE_TITLE}`
             : PLAYER_PROFILE_TITLE}
     </title>
 </svelte:head>
@@ -117,9 +123,9 @@
     not_found_message={PLAYER_PROFILE_NOT_FOUND_MESSAGE}
     home_href="/"
 >
-    {#if page_data}
+    {#if page_data_state.status === "present"}
         <div class="max-w-4xl mx-auto px-4 py-8 sm:py-12">
-            <PlayerPublicProfilePage {...page_data} />
+            <PlayerPublicProfilePage {...page_data_state.page_data} />
         </div>
     {/if}
 </PublicProfilePageShell>

@@ -1,45 +1,53 @@
 import { describe, expect, it } from "vitest";
 
+import type { EntityMetadata } from "../../core/entities/BaseEntity";
 import { entityMetadataRegistry } from "./EntityMetadataRegistry";
+
+function get_present_metadata(entity_type: string): EntityMetadata {
+  const metadata = entityMetadataRegistry.get_entity_metadata(entity_type);
+
+  expect(metadata).not.toBe(false);
+
+  if (!metadata) {
+    throw new Error(`Expected metadata for ${entity_type}`);
+  }
+
+  return metadata;
+}
 
 describe("EntityMetadataRegistry", () => {
   describe("get_entity_metadata", () => {
     it("returns metadata for organization entity", () => {
-      const metadata =
-        entityMetadataRegistry.get_entity_metadata("organization");
+      const metadata = get_present_metadata("organization");
 
-      expect(metadata).not.toBeNull();
-      expect(metadata?.entity_name).toBe("organization");
-      expect(metadata?.display_name).toBe("Organization");
-      expect(metadata?.fields.length).toBeGreaterThan(0);
+      expect(metadata.entity_name).toBe("organization");
+      expect(metadata.display_name).toBe("Organization");
+      expect(metadata.fields.length).toBeGreaterThan(0);
     });
 
     it("returns metadata for player entity", () => {
-      const metadata = entityMetadataRegistry.get_entity_metadata("player");
+      const metadata = get_present_metadata("player");
 
-      expect(metadata).not.toBeNull();
-      expect(metadata?.entity_name).toBe("player");
-      expect(metadata?.display_name).toBe("Player");
+      expect(metadata.entity_name).toBe("player");
+      expect(metadata.display_name).toBe("Player");
     });
 
     it("returns metadata for team entity", () => {
-      const metadata = entityMetadataRegistry.get_entity_metadata("team");
+      const metadata = get_present_metadata("team");
 
-      expect(metadata).not.toBeNull();
-      expect(metadata?.entity_name).toBe("team");
-      expect(metadata?.display_name).toBe("Team");
+      expect(metadata.entity_name).toBe("team");
+      expect(metadata.display_name).toBe("Team");
     });
 
     it("returns metadata for fixture entity", () => {
-      const metadata = entityMetadataRegistry.get_entity_metadata("fixture");
+      const metadata = get_present_metadata("fixture");
 
-      expect(metadata).not.toBeNull();
-      expect(metadata?.entity_name).toBe("fixture");
+      expect(metadata.entity_name).toBe("fixture");
     });
 
     it("fixture metadata includes a required stage field filtered by competition", () => {
-      const metadata = entityMetadataRegistry.get_entity_metadata("fixture");
-      const stage_field = metadata?.fields.find(
+      const metadata = get_present_metadata("fixture");
+      const stage_field = metadata.fields.find(
         (f) => f.field_name === "stage_id",
       );
 
@@ -54,24 +62,22 @@ describe("EntityMetadataRegistry", () => {
     });
 
     it("returns metadata for competition entity", () => {
-      const metadata =
-        entityMetadataRegistry.get_entity_metadata("competition");
+      const metadata = get_present_metadata("competition");
 
-      expect(metadata).not.toBeNull();
-      expect(metadata?.entity_name).toBe("competition");
+      expect(metadata.entity_name).toBe("competition");
     });
 
-    it("returns null for non-existent entity type", () => {
+    it("returns false for non-existent entity type", () => {
       const metadata =
         entityMetadataRegistry.get_entity_metadata("nonexistent_entity");
 
-      expect(metadata).toBeNull();
+      expect(metadata).toBe(false);
     });
 
-    it("returns null for empty string entity type", () => {
+    it("returns false for empty string entity type", () => {
       const metadata = entityMetadataRegistry.get_entity_metadata("");
 
-      expect(metadata).toBeNull();
+      expect(metadata).toBe(false);
     });
   });
 
@@ -138,9 +144,8 @@ describe("EntityMetadataRegistry", () => {
 
   describe("field metadata structure", () => {
     it("organization has required name field", () => {
-      const metadata =
-        entityMetadataRegistry.get_entity_metadata("organization");
-      const name_field = metadata?.fields.find((f) => f.field_name === "name");
+      const metadata = get_present_metadata("organization");
+      const name_field = metadata.fields.find((f) => f.field_name === "name");
 
       expect(name_field).toBeDefined();
       expect(name_field?.is_required).toBe(true);
@@ -148,9 +153,8 @@ describe("EntityMetadataRegistry", () => {
     });
 
     it("organization has foreign key to sport", () => {
-      const metadata =
-        entityMetadataRegistry.get_entity_metadata("organization");
-      const sport_field = metadata?.fields.find(
+      const metadata = get_present_metadata("organization");
+      const sport_field = metadata.fields.find(
         (f) => f.field_name === "sport_id",
       );
 
@@ -160,8 +164,8 @@ describe("EntityMetadataRegistry", () => {
     });
 
     it("player has enum status field", () => {
-      const metadata = entityMetadataRegistry.get_entity_metadata("player");
-      const status_field = metadata?.fields.find(
+      const metadata = get_present_metadata("player");
+      const status_field = metadata.fields.find(
         (f) => f.field_name === "status",
       );
 
@@ -172,8 +176,8 @@ describe("EntityMetadataRegistry", () => {
     });
 
     it("player has date field for date_of_birth", () => {
-      const metadata = entityMetadataRegistry.get_entity_metadata("player");
-      const dob_field = metadata?.fields.find(
+      const metadata = get_present_metadata("player");
+      const dob_field = metadata.fields.find(
         (f) => f.field_name === "date_of_birth",
       );
 
@@ -182,8 +186,8 @@ describe("EntityMetadataRegistry", () => {
     });
 
     it("team has number field for founded_year", () => {
-      const metadata = entityMetadataRegistry.get_entity_metadata("team");
-      const founded_field = metadata?.fields.find(
+      const metadata = get_present_metadata("team");
+      const founded_field = metadata.fields.find(
         (f) => f.field_name === "founded_year",
       );
 
@@ -192,9 +196,8 @@ describe("EntityMetadataRegistry", () => {
     });
 
     it("fields marked show_in_list appear correctly", () => {
-      const metadata =
-        entityMetadataRegistry.get_entity_metadata("organization");
-      const list_fields = metadata?.fields.filter(
+      const metadata = get_present_metadata("organization");
+      const list_fields = metadata.fields.filter(
         (f) => f.show_in_list === true,
       );
 
@@ -207,9 +210,8 @@ describe("EntityMetadataRegistry", () => {
 
   describe("validation rules", () => {
     it("organization name has min_length validation rule", () => {
-      const metadata =
-        entityMetadataRegistry.get_entity_metadata("organization");
-      const name_field = metadata?.fields.find((f) => f.field_name === "name");
+      const metadata = get_present_metadata("organization");
+      const name_field = metadata.fields.find((f) => f.field_name === "name");
 
       expect(name_field?.validation_rules).toBeDefined();
       const min_length_rule = name_field?.validation_rules?.find(
@@ -221,8 +223,8 @@ describe("EntityMetadataRegistry", () => {
     });
 
     it("venue name has validation rules", () => {
-      const metadata = entityMetadataRegistry.get_entity_metadata("venue");
-      const name_field = metadata?.fields.find((f) => f.field_name === "name");
+      const metadata = get_present_metadata("venue");
+      const name_field = metadata.fields.find((f) => f.field_name === "name");
 
       expect(name_field?.validation_rules).toBeDefined();
     });
@@ -230,8 +232,8 @@ describe("EntityMetadataRegistry", () => {
 
   describe("sub_entity fields", () => {
     it("player has identifications sub_entity field", () => {
-      const metadata = entityMetadataRegistry.get_entity_metadata("player");
-      const identifications_field = metadata?.fields.find(
+      const metadata = get_present_metadata("player");
+      const identifications_field = metadata.fields.find(
         (f) => f.field_name === "identifications",
       );
 
@@ -244,8 +246,8 @@ describe("EntityMetadataRegistry", () => {
     });
 
     it("official has identifications sub_entity field", () => {
-      const metadata = entityMetadataRegistry.get_entity_metadata("official");
-      const identifications_field = metadata?.fields.find(
+      const metadata = get_present_metadata("official");
+      const identifications_field = metadata.fields.find(
         (f) => f.field_name === "identifications",
       );
 
@@ -257,8 +259,8 @@ describe("EntityMetadataRegistry", () => {
     });
 
     it("sub_entity config has required properties", () => {
-      const metadata = entityMetadataRegistry.get_entity_metadata("player");
-      const identifications_field = metadata?.fields.find(
+      const metadata = get_present_metadata("player");
+      const identifications_field = metadata.fields.find(
         (f) => f.field_name === "identifications",
       );
 
@@ -273,9 +275,8 @@ describe("EntityMetadataRegistry", () => {
       const entity_types = entityMetadataRegistry.get_all_entity_types();
 
       for (const entity_type of entity_types) {
-        const metadata =
-          entityMetadataRegistry.get_entity_metadata(entity_type);
-        expect(metadata?.fields.length).toBeGreaterThan(0);
+        const metadata = get_present_metadata(entity_type);
+        expect(metadata.fields.length).toBeGreaterThan(0);
       }
     });
 
@@ -283,9 +284,8 @@ describe("EntityMetadataRegistry", () => {
       const entity_types = entityMetadataRegistry.get_all_entity_types();
 
       for (const entity_type of entity_types) {
-        const metadata =
-          entityMetadataRegistry.get_entity_metadata(entity_type);
-        const foreign_key_fields = metadata?.fields.filter(
+        const metadata = get_present_metadata(entity_type);
+        const foreign_key_fields = metadata.fields.filter(
           (f) => f.field_type === "foreign_key",
         );
 
@@ -300,9 +300,8 @@ describe("EntityMetadataRegistry", () => {
       const entity_types = entityMetadataRegistry.get_all_entity_types();
 
       for (const entity_type of entity_types) {
-        const metadata =
-          entityMetadataRegistry.get_entity_metadata(entity_type);
-        const enum_fields = metadata?.fields.filter(
+        const metadata = get_present_metadata(entity_type);
+        const enum_fields = metadata.fields.filter(
           (f) => f.field_type === "enum",
         );
 
@@ -311,7 +310,7 @@ describe("EntityMetadataRegistry", () => {
             field.enum_values && field.enum_values.length > 0;
           const has_enum_options =
             field.enum_options && field.enum_options.length > 0;
-          const has_enum_dependency = field.enum_dependency !== undefined;
+          const has_enum_dependency = field.enum_dependency != void 0;
 
           expect(
             has_enum_values || has_enum_options || has_enum_dependency,
@@ -324,9 +323,8 @@ describe("EntityMetadataRegistry", () => {
       const entity_types = entityMetadataRegistry.get_all_entity_types();
 
       for (const entity_type of entity_types) {
-        const metadata =
-          entityMetadataRegistry.get_entity_metadata(entity_type);
-        const sub_entity_fields = metadata?.fields.filter(
+        const metadata = get_present_metadata(entity_type);
+        const sub_entity_fields = metadata.fields.filter(
           (f) => f.field_type === "sub_entity",
         );
 
@@ -342,9 +340,8 @@ describe("EntityMetadataRegistry", () => {
       const entity_types = entityMetadataRegistry.get_all_entity_types();
 
       for (const entity_type of entity_types) {
-        const metadata =
-          entityMetadataRegistry.get_entity_metadata(entity_type);
-        expect(metadata?.entity_name).toBe(entity_type);
+        const metadata = get_present_metadata(entity_type);
+        expect(metadata.entity_name).toBe(entity_type);
       }
     });
 
@@ -352,9 +349,8 @@ describe("EntityMetadataRegistry", () => {
       const entity_types = entityMetadataRegistry.get_all_entity_types();
 
       for (const entity_type of entity_types) {
-        const metadata =
-          entityMetadataRegistry.get_entity_metadata(entity_type);
-        const required_fields = metadata?.fields.filter((f) => f.is_required);
+        const metadata = get_present_metadata(entity_type);
+        const required_fields = metadata.fields.filter((f) => f.is_required);
 
         for (const field of required_fields || []) {
           expect(field.is_required).toBe(true);

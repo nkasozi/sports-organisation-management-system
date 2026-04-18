@@ -17,7 +17,7 @@ export function create_team_use_cases(
       filter?: TeamFilter,
       options?: QueryOptions,
     ): PaginatedAsyncResult<Team> {
-      return repository.find_all(filter, options);
+      return repository.find_all(filter ?? {}, options ?? {});
     },
 
     async get_by_id(id: ScalarValueInput<Team["id"]>): AsyncResult<Team> {
@@ -68,7 +68,7 @@ export function create_team_use_cases(
       if (!organization_id || organization_id.trim().length === 0) {
         return create_failure_result("Organization ID is required");
       }
-      return repository.find_by_organization(organization_id, options);
+      return repository.find_by_organization(organization_id, options ?? {});
     },
   };
 }

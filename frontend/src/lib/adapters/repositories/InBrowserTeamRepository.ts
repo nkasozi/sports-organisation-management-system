@@ -108,13 +108,24 @@ export class InBrowserTeamRepository
   }
 }
 
-let singleton_instance: InBrowserTeamRepository | null = null;
+type TeamRepositoryState =
+  | { status: "uninitialized" }
+  | { status: "ready"; repository: InBrowserTeamRepository };
+
+let team_repository_state: TeamRepositoryState = {
+  status: "uninitialized",
+};
 
 export function get_team_repository(): TeamRepository {
-  if (!singleton_instance) {
-    singleton_instance = new InBrowserTeamRepository();
+  if (team_repository_state.status === "ready") {
+    return team_repository_state.repository;
   }
-  return singleton_instance;
+
+  const repository = new InBrowserTeamRepository();
+
+  team_repository_state = { status: "ready", repository };
+
+  return repository;
 }
 
 export async function reset_team_repository(): Promise<void> {

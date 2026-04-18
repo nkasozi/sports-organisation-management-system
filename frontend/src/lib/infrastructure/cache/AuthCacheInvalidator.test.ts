@@ -31,9 +31,9 @@ function create_mock_convex_client(): SubscribableConvexClient & {
       if (callback) callback(new_data);
     },
   } as SubscribableConvexClient & {
-  trigger_subscription: (query_name: string, new_data: unknown) => void;
-  registered_subscriptions: Map<string, (result: unknown) => void>;
-};
+    trigger_subscription: (query_name: string, new_data: unknown) => void;
+    registered_subscriptions: Map<string, (result: unknown) => void>;
+  };
 }
 
 function create_test_cache(): AuthCache<string> {

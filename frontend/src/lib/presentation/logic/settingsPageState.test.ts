@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 
-import type { ScalarInput } from "$lib/core/types/DomainScalars";
 import type { Organization } from "$lib/core/entities/Organization";
 import type { OrganizationSettings } from "$lib/core/entities/OrganizationSettings";
+import type { ScalarInput } from "$lib/core/types/DomainScalars";
 import type { BrandingConfig } from "$lib/presentation/stores/branding";
 import type { ThemeConfig } from "$lib/presentation/stores/theme";
 
@@ -56,7 +56,7 @@ function create_test_organization(
     name: overrides.name ?? "Premier League",
     description: overrides.description ?? "",
     sport_id: overrides.sport_id ?? "sport_1",
-    founded_date: overrides.founded_date ?? null,
+    founded_date: overrides.founded_date ?? "",
     contact_email: overrides.contact_email ?? "info@example.com",
     contact_phone: overrides.contact_phone ?? "",
     address: overrides.address ?? "Arena Road",
@@ -124,8 +124,14 @@ describe("settings form values", () => {
     expect(
       apply_organization_settings_form_values(
         current_values,
-        create_test_organization({ name: "Premier League" }),
-        create_test_organization_settings({}),
+        {
+          status: "present",
+          organization: create_test_organization({ name: "Premier League" }),
+        },
+        {
+          status: "present",
+          organization_settings: create_test_organization_settings({}),
+        },
       ),
     ).toMatchObject({
       organization_name: "League Office",
@@ -134,6 +140,24 @@ describe("settings form values", () => {
       selected_sync_interval_ms: 900_000,
       show_panel_borders: true,
     });
+  });
+
+  it("falls back to the selected organization name when settings are missing", () => {
+    const current_values = create_settings_form_values(
+      create_test_branding_config({ organization_name: "Platform Name" }),
+      create_test_theme_config({}),
+    );
+
+    expect(
+      apply_organization_settings_form_values(
+        current_values,
+        {
+          status: "present",
+          organization: create_test_organization({ name: "Premier League" }),
+        },
+        { status: "missing" },
+      ).organization_name,
+    ).toBe("Premier League");
   });
 });
 

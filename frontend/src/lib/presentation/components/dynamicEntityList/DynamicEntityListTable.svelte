@@ -9,7 +9,7 @@
 
   export let all_selected: boolean;
   export let current_page: number;
-  export let entity_metadata: EntityMetadata | null;
+  export let entity_metadata: EntityMetadata | undefined;
   export let filtered_count: number;
   export let foreign_key_options: Record<string, BaseEntity[]>;
   export let get_field_metadata_by_name: (

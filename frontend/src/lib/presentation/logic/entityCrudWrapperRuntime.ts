@@ -1,13 +1,13 @@
 import type { BaseEntity } from "$lib/core/entities/BaseEntity";
 
 export function create_entity_crud_wrapper_runtime(command: {
-  after_save_redirect_url: string | null;
+  after_save_redirect_url: string;
   dispatch: (event_name: string, detail: Record<string, unknown>) => void;
   entity_type: string;
   get_current_view: () => "list" | "create" | "edit";
   goto: (path: string) => Promise<unknown>;
   normalized_entity_type: string;
-  set_current_entity_for_editing: (entity: BaseEntity | null) => void;
+  set_current_entity_for_editing: (entity: BaseEntity | undefined) => void;
   set_current_view: (view: "list" | "create" | "edit") => void;
   set_total_entity_count: (count: number) => void;
 }): {
@@ -36,7 +36,7 @@ export function create_entity_crud_wrapper_runtime(command: {
     });
     command.set_current_view(new_view);
     command.set_current_entity_for_editing(
-      new_view === "edit" && entity ? entity : null,
+      new_view === "edit" && entity ? entity : void 0,
     );
     command.dispatch("view_changed", { current_view: new_view, entity });
   };

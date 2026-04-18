@@ -26,7 +26,7 @@ export async function run_dynamic_entity_form_permission_check(
   }
 
   const auth_state = get(auth_store);
-  if (!auth_state.current_token) {
+  if (auth_state.current_token.status !== "present") {
     return {
       auth_profile_missing: false,
       auth_error_message: "",
@@ -38,7 +38,7 @@ export async function run_dynamic_entity_form_permission_check(
   const required_action = is_edit_mode ? "update" : "create";
   const authorization_check =
     await get_authorization_adapter().check_entity_authorized(
-      auth_state.current_token.raw_token,
+      auth_state.current_token.token.raw_token,
       entity_type.toLowerCase().replace(/[\s_-]/g, ""),
       required_action,
     );

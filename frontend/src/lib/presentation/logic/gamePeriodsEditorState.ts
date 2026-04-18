@@ -5,7 +5,9 @@ type EditableSportGamePeriod = ScalarInput<SportGamePeriod>;
 
 export type PeriodPreset = "halves" | "quarters" | "thirds";
 
-export function build_game_period_editor_summary(periods: EditableSportGamePeriod[]): {
+export function build_game_period_editor_summary(
+  periods: EditableSportGamePeriod[],
+): {
   sorted_periods: EditableSportGamePeriod[];
   total_break_time: number;
   total_playing_time: number;

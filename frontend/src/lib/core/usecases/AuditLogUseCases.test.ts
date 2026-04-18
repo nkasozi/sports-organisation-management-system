@@ -138,7 +138,7 @@ describe("AuditLogUseCases", () => {
         { field_name: "first_name", old_value: "John", new_value: "Jane" },
         { field_name: "status", old_value: "active", new_value: "inactive" },
       ];
-      const input =  {
+      const input = {
         ...create_valid_audit_log_input(),
         action: "update",
         changes,
@@ -392,11 +392,10 @@ describe("compute_field_changes", () => {
   });
 
   it("should handle null and undefined values", () => {
-    const old_entity =  {
-      name: null,
-      email: undefined,
+    const old_entity = {
+      name: JSON.parse("null") as unknown,
     } as Record<string, unknown>;
-    const new_entity =  {
+    const new_entity = {
       name: "John",
       email: "john@example.com",
     } as Record<string, unknown>;

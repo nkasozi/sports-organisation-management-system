@@ -3,7 +3,6 @@ import type {
   PlayerTeamMembership,
   UpdatePlayerTeamMembershipInput,
 } from "../entities/PlayerTeamMembership";
-import type { ScalarValueInput } from "../types/DomainScalars";
 import { validate_player_team_membership_input } from "../entities/PlayerTeamMembership";
 import type {
   PlayerTeamMembershipFilter,
@@ -11,6 +10,7 @@ import type {
 } from "../interfaces/ports";
 import type { QueryOptions } from "../interfaces/ports";
 import type { PlayerTeamMembershipUseCasesPort } from "../interfaces/ports";
+import type { ScalarValueInput } from "../types/DomainScalars";
 import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
 import { create_failure_result } from "../types/Result";
 
@@ -24,7 +24,7 @@ export function create_player_team_membership_use_cases(
       filter?: PlayerTeamMembershipFilter,
       options?: QueryOptions,
     ): PaginatedAsyncResult<PlayerTeamMembership> {
-      return repository.find_all(filter, options);
+      return repository.find_all(filter ?? {}, options ?? {});
     },
 
     async get_by_id(

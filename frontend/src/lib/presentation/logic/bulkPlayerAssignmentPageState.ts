@@ -5,13 +5,20 @@ import type {
 } from "$lib/core/entities/PlayerTeamMembership";
 import type { Team } from "$lib/core/entities/Team";
 
+export type PlayerAssignmentCurrentTeamState =
+  | { status: "unassigned" }
+  | { status: "assigned"; team_id: string; team_name: string };
+
+export type BulkPlayerAssignmentSelectedTeamState =
+  | { status: "missing" }
+  | { status: "present"; team: Team };
+
 export interface PlayerAssignment {
   player: Player;
   selected: boolean;
   jersey_number: number;
   start_date: string;
-  current_team_name: string | null;
-  current_team_id: string | null;
+  current_team_state: PlayerAssignmentCurrentTeamState;
 }
 
 export function build_player_assignments(
@@ -44,10 +51,15 @@ export function build_player_assignments(
         selected: false,
         jersey_number: current_index + 1,
         start_date: today_date,
-        current_team_name: active_membership
-          ? (team_name_by_id.get(active_membership.team_id) ?? "Unknown Team")
-          : null,
-        current_team_id: active_membership?.team_id ?? null,
+        current_team_state: active_membership
+          ? {
+              status: "assigned",
+              team_id: active_membership.team_id,
+              team_name:
+                team_name_by_id.get(active_membership.team_id) ??
+                "Unknown Team",
+            }
+          : { status: "unassigned" },
       };
     },
   );
@@ -55,13 +67,16 @@ export function build_player_assignments(
 
 export function filter_player_assignments_by_team_gender(
   assignments: PlayerAssignment[],
-  selected_team: Team | null,
+  selected_team_state: BulkPlayerAssignmentSelectedTeamState,
 ): PlayerAssignment[] {
-  if (!selected_team?.gender_id) return assignments;
+  if (selected_team_state.status === "missing") return assignments;
+  if (!selected_team_state.team.gender_id) return assignments;
+
   return assignments.filter(
     (current_assignment: PlayerAssignment) =>
       !current_assignment.player.gender_id ||
-      current_assignment.player.gender_id === selected_team.gender_id,
+      current_assignment.player.gender_id ===
+        selected_team_state.team.gender_id,
   );
 }
 
@@ -96,11 +111,15 @@ export function get_today_date(): string {
 }
 
 export function get_target_gender_label(
-  selected_team: Team | null,
+  selected_team_state: BulkPlayerAssignmentSelectedTeamState,
   gender_name_map: Map<string, string>,
 ): string {
-  if (!selected_team?.gender_id) return "";
-  const gender_name = gender_name_map.get(selected_team.gender_id) ?? "Unknown";
+  if (selected_team_state.status === "missing") return "";
+  if (!selected_team_state.team.gender_id) return "";
+
+  const gender_name =
+    gender_name_map.get(selected_team_state.team.gender_id) ?? "Unknown";
+
   return `${gender_name} only`;
 }
 
@@ -119,11 +138,14 @@ export function get_selected_player_assignments(
 
 export function create_membership_input(
   assignment: PlayerAssignment,
-  selected_team: Team | null,
+  selected_team_state: BulkPlayerAssignmentSelectedTeamState,
   selected_team_id: string,
 ): CreatePlayerTeamMembershipInput {
   return {
-    organization_id: selected_team?.organization_id ?? "",
+    organization_id:
+      selected_team_state.status === "present"
+        ? selected_team_state.team.organization_id
+        : "",
     player_id: assignment.player.id,
     team_id: selected_team_id,
     start_date: assignment.start_date,

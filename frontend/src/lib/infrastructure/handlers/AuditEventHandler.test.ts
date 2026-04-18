@@ -379,8 +379,8 @@ describe("handle_entity_updated — additional coverage", () => {
       "Player",
       "player-2",
       "Anon",
-      { nickname: null },
-      { nickname: undefined },
+      { nickname: JSON.parse("null") },
+      { nickname: void 0 },
       ["nickname"],
     );
     await Promise.resolve();

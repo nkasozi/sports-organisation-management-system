@@ -33,7 +33,7 @@ export interface CalendarTokenUseCasesPort extends BaseUseCasesPort<
     user_id: EntityId,
     organization_id: EntityId,
     feed_type: CalendarFeedType,
-    entity_id: CalendarFeedEntityId | null,
+    entity_id: CalendarFeedEntityId | "",
     entity_name: CalendarToken["entity_name"],
     reminder_minutes_before?: number,
   ): AsyncResult<CalendarFeedInfo>;
@@ -43,9 +43,7 @@ export interface CalendarTokenUseCasesPort extends BaseUseCasesPort<
     options?: QueryOptions,
   ): PaginatedAsyncResult<CalendarToken>;
 
-  get_feed_by_token(
-    token: CalendarTokenValue,
-  ): AsyncResult<CalendarToken | null>;
+  get_feed_by_token(token: CalendarTokenValue): AsyncResult<CalendarToken>;
 
   revoke_feed(token: CalendarTokenValue): AsyncResult<CalendarToken>;
 

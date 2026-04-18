@@ -1,19 +1,26 @@
 <script lang="ts">
   import { goto } from "$app/navigation";
   import { page } from "$app/stores";
-  import { destroy_clerk,sign_out } from "$lib/adapters/iam/clerkAuthService";
+  import { destroy_clerk, sign_out } from "$lib/adapters/iam/clerkAuthService";
   import { clear_session_sync_flag } from "$lib/presentation/stores/initialSyncStore";
+
+  import { execute_logout_flow } from "../../lib/presentation/logic/logoutFlow";
 
   $: error_message =
     $page.url.searchParams.get("message") ||
     "You don't have access to this system.";
 
   async function handle_sign_out(): Promise<boolean> {
-    clear_session_sync_flag();
-    await sign_out();
-    destroy_clerk();
-    window.location.href = "/";
-    return true;
+    const logout_result = await execute_logout_flow({
+      clear_session_sync_flag,
+      sign_out,
+      after_sign_out: async (): Promise<void> => {
+        destroy_clerk();
+        window.location.href = "/";
+      },
+    });
+
+    return logout_result.success;
   }
 
   function handle_go_home(): void {

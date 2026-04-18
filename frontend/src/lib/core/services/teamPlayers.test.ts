@@ -27,8 +27,8 @@ describe("teamPlayers", () => {
       date_of_birth: "2000-01-01",
       position_id: "",
       organization_id: "",
-      height_cm: null,
-      weight_kg: null,
+      height_cm: 0,
+      weight_kg: 0,
       nationality: "Uganda",
       profile_image_url: "",
       emergency_contact_name: "",
@@ -66,7 +66,8 @@ describe("teamPlayers", () => {
     ] as PlayerTeamMembership[];
 
     const best = pick_best_membership_for_player(memberships, "p1");
-    expect(best?.id).toBe("m2");
+    expect(best.status).toBe("found");
+    expect(best.status === "found" ? best.membership.id : "").toBe("m2");
   });
 
   it("falls back to most recent start_date when no active membership", () => {
@@ -96,7 +97,8 @@ describe("teamPlayers", () => {
     ] as PlayerTeamMembership[];
 
     const best = pick_best_membership_for_player(memberships, "p1");
-    expect(best?.id).toBe("m2");
+    expect(best.status).toBe("found");
+    expect(best.status === "found" ? best.membership.id : "").toBe("m2");
   });
 
   it("builds team players with jersey + position name", () => {

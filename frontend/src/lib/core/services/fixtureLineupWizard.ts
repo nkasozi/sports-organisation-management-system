@@ -90,14 +90,14 @@ export function convert_team_players_to_lineup_players(
     .map((player) => convert_team_player_to_lineup_player(player));
 }
 
-function compare_nullable_numbers(a: number | null, b: number | null): number {
-  const a_value = a ?? Number.POSITIVE_INFINITY;
-  const b_value = b ?? Number.POSITIVE_INFINITY;
+function compare_jersey_numbers(a: number, b: number): number {
+  const a_value = a > 0 ? a : Number.POSITIVE_INFINITY;
+  const b_value = b > 0 ? b : Number.POSITIVE_INFINITY;
   return a_value - b_value;
 }
 
 function compare_strings_case_insensitive(a: string, b: string): number {
-  return a.localeCompare(b, undefined, { sensitivity: "base" });
+  return a.localeCompare(b, [], { sensitivity: "base" });
 }
 
 export function summarize_selected_team_players(
@@ -109,7 +109,7 @@ export function summarize_selected_team_players(
   return team_players
     .filter((player) => selected_set.has(player.id))
     .sort((a, b) => {
-      const jersey_comparison = compare_nullable_numbers(
+      const jersey_comparison = compare_jersey_numbers(
         a.jersey_number,
         b.jersey_number,
       );
@@ -122,17 +122,17 @@ export function summarize_selected_team_players(
 }
 
 type SortableLineupPlayer = {
-  jersey_number: number | null;
+  jersey_number: number;
   first_name: string;
   last_name: string;
-  position?: string | null;
+  position?: string;
 };
 
 export function sort_lineup_players<TPlayer extends SortableLineupPlayer>(
   players: TPlayer[],
 ): TPlayer[] {
   return [...players].sort((a, b) => {
-    const jersey_comparison = compare_nullable_numbers(
+    const jersey_comparison = compare_jersey_numbers(
       a.jersey_number,
       b.jersey_number,
     );

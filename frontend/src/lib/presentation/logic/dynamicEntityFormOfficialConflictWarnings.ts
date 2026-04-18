@@ -18,7 +18,7 @@ type ListByOfficialUseCases = {
 export type DynamicEntityFormConflictDependencies = {
   fixture_use_cases: ReadByIdUseCases;
   team_use_cases: ReadByIdUseCases;
-  official_use_cases: ReadByIdUseCases | null;
+  official_use_cases?: ReadByIdUseCases;
   official_associated_team_use_cases: ListByOfficialUseCases;
 };
 
@@ -97,7 +97,7 @@ async function build_official_with_associations(
     [];
   const associations_data = associations_result.success
     ? (associations_result.data as any)
-    : null;
+    : void 0;
   const associations_list = Array.isArray(associations_data)
     ? associations_data
     : associations_data?.items || [];
@@ -123,7 +123,7 @@ async function build_official_with_associations(
 
 async function load_official_name(
   official_id: string,
-  official_use_cases: ReadByIdUseCases | null,
+  official_use_cases?: ReadByIdUseCases,
 ): Promise<string> {
   if (!official_use_cases) return "Unknown Official";
   const official_result = await official_use_cases.get_by_id(official_id);

@@ -3,6 +3,12 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { BaseEntity } from "$lib/core/entities/BaseEntity";
 
+import { create_dynamic_entity_list_controller_crud_actions } from "./dynamicEntityListControllerRuntimeCrud";
+import type {
+  DynamicEntityListControllerOptions,
+  DynamicEntityListViewState,
+} from "./dynamicEntityListControllerTypes";
+
 const {
   confirm_dynamic_entity_list_deletion_mock,
   get_dynamic_entity_list_bulk_delete_state_mock,
@@ -33,12 +39,6 @@ vi.mock("$lib/presentation/logic/dynamicEntityListControllerCrud", () => ({
     get_dynamic_entity_list_single_delete_state_mock,
 }));
 
-import { create_dynamic_entity_list_controller_crud_actions } from "./dynamicEntityListControllerRuntimeCrud";
-import type {
-  DynamicEntityListControllerOptions,
-  DynamicEntityListViewState,
-} from "./dynamicEntityListControllerTypes";
-
 describe("dynamicEntityListControllerRuntimeCrud", () => {
   function create_entity(id: string): BaseEntity {
     return {
@@ -52,20 +52,16 @@ describe("dynamicEntityListControllerRuntimeCrud", () => {
     overrides: Partial<DynamicEntityListControllerOptions> = {},
   ): DynamicEntityListControllerOptions {
     return {
-      bulk_create_handler: null,
       button_color_class: "",
-      crud_handlers: null,
+
       disabled_functionalities: [],
       enable_bulk_import: false,
       entity_type: "team",
-      info_message: null,
+      info_message: "",
       is_mobile_view: false,
-      on_entities_batch_deleted: null,
-      on_selection_changed: null,
-      on_total_count_changed: null,
+
       show_actions: true,
-      sub_entity_filter: null,
-      view_callbacks: null,
+
       ...overrides,
     } as DynamicEntityListControllerOptions;
   }
@@ -83,21 +79,21 @@ describe("dynamicEntityListControllerRuntimeCrud", () => {
       button_color_class: "",
       can_show_bulk_actions: false,
       columns_restored_from_cache: false,
-      crud_handlers: null,
+
       current_page: 1,
       display_name: "Team",
       enable_bulk_import: false,
       entities,
       entities_to_delete: [],
-      entity_metadata: null,
+
       entity_type: "team",
       error_message: "",
       filtered_entities,
       filter_values: {},
       foreign_key_options: {},
       has_bulk_create_handler: false,
-      info_message: null,
-      inline_form_entity: null,
+      info_message: "",
+
       is_create_disabled: false,
       is_delete_disabled: false,
       is_deleting: false,
@@ -118,7 +114,7 @@ describe("dynamicEntityListControllerRuntimeCrud", () => {
       show_export_modal: false,
       sort_column: "",
       sort_direction: "asc",
-      sub_entity_filter: null,
+
       total_pages: 1,
       visible_column_list: [],
       visible_columns: new Set<string>(),
@@ -141,14 +137,16 @@ describe("dynamicEntityListControllerRuntimeCrud", () => {
       create_state({
         entities: [entity],
         entities_to_delete: [],
-        inline_form_entity: null,
+
         is_inline_form_visible: false,
         selected_entity_ids: new Set<string>(),
         show_bulk_import_modal: false,
         show_delete_confirmation: false,
       }),
     );
-    const load_all_entities_for_display = vi.fn().mockResolvedValue(undefined);
+    const load_all_entities_for_display = vi
+      .fn()
+      .mockImplementation(async () => {});
     const set_state = (updates: Partial<DynamicEntityListViewState>): void =>
       state_store.update((state) => ({ ...state, ...updates }));
     const options = create_options();
@@ -169,11 +167,9 @@ describe("dynamicEntityListControllerRuntimeCrud", () => {
     });
     get_dynamic_entity_list_inline_cancel_state_mock
       .mockReturnValueOnce({
-        inline_form_entity: null,
         show_inline_form: false,
       })
       .mockReturnValueOnce({
-        inline_form_entity: null,
         show_inline_form: false,
       });
 
@@ -298,7 +294,9 @@ describe("dynamicEntityListControllerRuntimeCrud", () => {
     const state_store = writable(
       create_state({ show_bulk_import_modal: false }),
     );
-    const load_all_entities_for_display = vi.fn().mockResolvedValue(undefined);
+    const load_all_entities_for_display = vi
+      .fn()
+      .mockImplementation(async () => {});
     const set_state = (updates: Partial<DynamicEntityListViewState>): void =>
       state_store.update((state) => ({ ...state, ...updates }));
     const options = create_options();

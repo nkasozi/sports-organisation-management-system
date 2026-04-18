@@ -12,7 +12,7 @@
   let authorization_checked = false;
   let is_checking = true;
   let is_auth_page = false;
-  let unsubscribe_page: (() => void) | null = null;
+  let unsubscribe_page: (() => void) | undefined = undefined;
 
   function check_if_auth_page(pathname: string): boolean {
     return pathname.startsWith("/sign-in") || pathname === "/unauthorized";
@@ -24,18 +24,20 @@
       return;
     }
 
-    const clerk = get_clerk();
-    if (!clerk) {
+    const clerk_result = get_clerk();
+    if (!clerk_result.success) {
       console.log("[AuthChecker] Clerk not initialized");
       is_checking = false;
       return;
     }
+    const clerk = clerk_result.data;
 
     const session = clerk.session;
     const user = clerk.user;
 
     const is_signed_in = !!session;
-    const user_email = user?.emailAddresses?.[0]?.emailAddress ?? null;
+    const primary_email_address = user?.emailAddresses?.[0];
+    const user_email = primary_email_address?.emailAddress ?? "";
 
     if (!is_signed_in || authorization_checked || is_auth_page) {
       is_checking = false;

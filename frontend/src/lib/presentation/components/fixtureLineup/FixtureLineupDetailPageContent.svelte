@@ -1,18 +1,20 @@
 <script lang="ts">
-    import type { Fixture } from "$lib/core/entities/Fixture";
-    import type { FixtureLineup } from "$lib/core/entities/FixtureLineup";
-    import type { Team } from "$lib/core/entities/Team";
     import type { TeamPlayer } from "$lib/core/services/teamPlayers";
     import FixtureLineupDetailContent from "$lib/presentation/components/fixtureLineup/FixtureLineupDetailContent.svelte";
+    import type {
+        FixtureLineupDetailFixtureState,
+        FixtureLineupDetailLineupState,
+        FixtureLineupDetailTeamState,
+    } from "$lib/presentation/logic/fixtureLineupDetailPageContracts";
 
     export let loading: boolean;
     export let error_message: string;
-    export let lineup: FixtureLineup | null;
-    export let fixture: Fixture | null;
-    export let team: Team | null;
+    export let lineup_state: FixtureLineupDetailLineupState;
+    export let fixture_state: FixtureLineupDetailFixtureState;
+    export let team_state: FixtureLineupDetailTeamState;
     export let team_players: TeamPlayer[];
-    export let home_team: Team | null;
-    export let away_team: Team | null;
+    export let home_team_state: FixtureLineupDetailTeamState;
+    export let away_team_state: FixtureLineupDetailTeamState;
     export let can_modify_lineup: boolean;
     export let permission_info_message: string;
     export let selected_player_ids: string[];
@@ -34,14 +36,14 @@
         >
             <p class="text-red-600 dark:text-red-400">{error_message}</p>
         </div>
-    {:else if lineup}
+    {:else if lineup_state.status === "present"}
         <FixtureLineupDetailContent
-            {lineup}
-            {fixture}
-            {team}
+            lineup={lineup_state.lineup}
+            {fixture_state}
+            {team_state}
             {team_players}
-            {home_team}
-            {away_team}
+            {home_team_state}
+            {away_team_state}
             {can_modify_lineup}
             {permission_info_message}
             selected_player_ids={new Set(selected_player_ids)}

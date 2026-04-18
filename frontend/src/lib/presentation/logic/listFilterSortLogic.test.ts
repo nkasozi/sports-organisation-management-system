@@ -3,13 +3,6 @@ import { describe, expect, it, vi } from "vitest";
 import type { BaseEntity } from "$lib/core/entities/BaseEntity";
 import type { ScalarInput } from "$lib/core/types/DomainScalars";
 
-vi.mock("./listDisplayValueLogic", () => ({
-  get_display_value_for_entity_field: vi.fn(
-    (entity: Record<string, unknown>, field_name: string) =>
-      String(entity[field_name] ?? ""),
-  ),
-}));
-
 import {
   apply_filters_and_sorting,
   apply_filters_to_entities,
@@ -17,6 +10,13 @@ import {
   clear_filter_state,
   sort_entities,
 } from "./listFilterSortLogic";
+
+vi.mock("./listDisplayValueLogic", () => ({
+  get_display_value_for_entity_field: vi.fn(
+    (entity: Record<string, unknown>, field_name: string) =>
+      String(entity[field_name] ?? ""),
+  ),
+}));
 
 type TestEntity = BaseEntity & {
   name: string;
@@ -51,7 +51,7 @@ describe("listFilterSortLogic", () => {
       competition_id: "competition_1",
       holder_type: "team",
     });
-    expect(build_filter_from_sub_entity_config(null)).toBeUndefined();
+    expect(build_filter_from_sub_entity_config()).toBeUndefined();
   });
 
   it("filters entities by foreign keys and text values", () => {
@@ -93,7 +93,7 @@ describe("listFilterSortLogic", () => {
         { status: "active" },
         "name",
         "desc",
-        null,
+        void 0,
         {},
       ).map((entity) => entity.id),
     ).toEqual(["entity_1", "entity_2"]);

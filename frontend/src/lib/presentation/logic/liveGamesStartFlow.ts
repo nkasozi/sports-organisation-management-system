@@ -33,7 +33,7 @@ export async function start_live_game_fixture(
       check_name: "officials",
       status: "checking",
       message: "Checking fixture details & officials...",
-      fix_suggestion: null,
+      fix_suggestion: "",
     },
   ];
   await publish_checks(fixture.id, checks, dependencies_with_restart);
@@ -48,7 +48,7 @@ export async function start_live_game_fixture(
       check_name: "officials",
       status: "failed",
       message: fixture_check_result.error,
-      fix_suggestion: null,
+      fix_suggestion: "",
     });
     dependencies_with_restart.update_checks(fixture.id, checks);
     dependencies_with_restart.set_is_starting(fixture.id, false);
@@ -102,7 +102,7 @@ export async function start_live_game_fixture(
     check_name: "all_checks",
     status: "passed",
     message: "All pre-flight checks passed! Starting game...",
-    fix_suggestion: null,
+    fix_suggestion: "",
   });
   await publish_checks(fixture.id, checks, dependencies_with_restart);
   dependencies_with_restart.set_is_starting(fixture.id, false);

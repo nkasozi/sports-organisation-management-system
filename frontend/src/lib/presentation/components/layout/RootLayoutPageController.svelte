@@ -3,7 +3,7 @@
 
     import { inject } from "@vercel/analytics";
     import { onDestroy, onMount } from "svelte";
-    import { get } from "svelte/store";
+    import { derived, get } from "svelte/store";
 
     import { afterNavigate, goto } from "$app/navigation";
     import { navigating, page } from "$app/stores";
@@ -63,6 +63,9 @@
     import { initialize_theme } from "$lib/presentation/stores/theme";
 
     const VERCEL_ANALYTICS_FRAMEWORK = "sveltekit";
+    const navigating_state_store = derived(navigating, ($navigating) =>
+        Boolean($navigating),
+    );
 
     inject({ framework: VERCEL_ANALYTICS_FRAMEWORK });
 
@@ -75,7 +78,7 @@
         setup_progress_percentage = 0,
         sync_status_message = "",
         sync_progress_percentage = 0;
-    let cleanup_layout_subscriptions: (() => void) | null = null;
+    let cleanup_layout_subscriptions: (() => void) | undefined = undefined;
     let previous_signed_in_state = false;
 
     const delay = (milliseconds: number): Promise<void> =>
@@ -115,7 +118,7 @@
         await public_organization_store.initialize();
         await current_user_store.initialize();
         cleanup_layout_subscriptions = subscribe_root_layout_state({
-            navigating_store: navigating,
+            navigating_store: navigating_state_store,
             page_store: page,
             first_time_setup_store,
             clerk_loaded_store: is_clerk_loaded,

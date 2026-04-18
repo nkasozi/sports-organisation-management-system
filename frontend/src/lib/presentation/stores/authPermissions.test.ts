@@ -1,6 +1,19 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { AuthState, UserProfile } from "./authTypes";
+import {
+  compute_authorization_level,
+  compute_disabled_functionalities,
+  compute_feature_access,
+  compute_is_authorized_to_execute,
+  compute_is_functionality_disabled,
+} from "./authPermissions";
+import {
+  type AuthState,
+  create_missing_auth_profile_state,
+  create_missing_auth_token_state,
+  create_present_auth_profile_state,
+  type UserProfile,
+} from "./authTypes";
 
 function create_profile(overrides: Partial<UserProfile> = {}): UserProfile {
   return {
@@ -16,13 +29,14 @@ function create_profile(overrides: Partial<UserProfile> = {}): UserProfile {
 }
 
 function create_auth_state(
-  current_profile: UserProfile | null,
+  current_profile: AuthState["current_profile"],
   overrides: Partial<AuthState> = {},
 ): AuthState {
   return {
-    current_token: null,
+    current_token: create_missing_auth_token_state(),
     current_profile,
-    available_profiles: current_profile ? [current_profile] : [],
+    available_profiles:
+      current_profile.status === "present" ? [current_profile.profile] : [],
     sidebar_menu_items: [],
     is_initialized: false,
     is_demo_session: false,
@@ -63,14 +77,6 @@ vi.mock("$lib/presentation/stores/authPermissionCore", () => ({
     map_authorizable_action_to_data_action_mock,
 }));
 
-import {
-  compute_authorization_level,
-  compute_disabled_functionalities,
-  compute_feature_access,
-  compute_is_authorized_to_execute,
-  compute_is_functionality_disabled,
-} from "./authPermissions";
-
 describe("authPermissions", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -101,13 +107,20 @@ describe("authPermissions", () => {
 
   it("returns empty authorization metadata when no profile is available", () => {
     expect(
-      compute_authorization_level(create_auth_state(null), "team"),
+      compute_authorization_level(
+        create_auth_state(create_missing_auth_profile_state()),
+        "team",
+      ),
     ).toEqual({
       entity_type: "team",
       authorizations: new Map(),
     });
     expect(
-      compute_is_authorized_to_execute(create_auth_state(null), "view", "team"),
+      compute_is_authorized_to_execute(
+        create_auth_state(create_missing_auth_profile_state()),
+        "view",
+        "team",
+      ),
     ).toEqual({
       is_authorized: false,
       authorization_level: "none",
@@ -117,7 +130,7 @@ describe("authPermissions", () => {
 
   it("maps role permissions into authorization levels", () => {
     const result = compute_authorization_level(
-      create_auth_state(create_profile()),
+      create_auth_state(create_present_auth_profile_state(create_profile())),
       "team",
     );
 
@@ -128,12 +141,12 @@ describe("authPermissions", () => {
     expect(result.authorizations.get("delete")).toBe("none");
   });
 
-  it("delegates execution checks and allows unmapped actions", () => {
+  it("delegates execution checks through explicit action mappings", () => {
     check_entity_permission_mock.mockReturnValueOnce(false);
 
     expect(
       compute_is_authorized_to_execute(
-        create_auth_state(create_profile()),
+        create_auth_state(create_present_auth_profile_state(create_profile())),
         "edit",
         "team",
       ),
@@ -144,10 +157,10 @@ describe("authPermissions", () => {
         'Role "org_admin" does not have "edit" permission for "team"',
     });
 
-    map_authorizable_action_to_data_action_mock.mockReturnValueOnce(undefined);
+    check_entity_permission_mock.mockReturnValueOnce(true);
     expect(
       compute_is_authorized_to_execute(
-        create_auth_state(create_profile()),
+        create_auth_state(create_present_auth_profile_state(create_profile())),
         "view",
         "team",
       ),
@@ -167,9 +180,14 @@ describe("authPermissions", () => {
 
     expect(
       compute_feature_access(
-        create_auth_state(create_profile({ organization_id: "*" }), {
-          is_demo_session: true,
-        }),
+        create_auth_state(
+          create_present_auth_profile_state(
+            create_profile({ organization_id: "*" }),
+          ),
+          {
+            is_demo_session: true,
+          },
+        ),
       ),
     ).toEqual({
       can_reset_demo: false,
@@ -188,21 +206,21 @@ describe("authPermissions", () => {
 
     expect(
       compute_is_functionality_disabled(
-        create_auth_state(create_profile()),
+        create_auth_state(create_present_auth_profile_state(create_profile())),
         "edit",
         "team",
       ),
     ).toBe(false);
     expect(
       compute_is_functionality_disabled(
-        create_auth_state(create_profile()),
+        create_auth_state(create_present_auth_profile_state(create_profile())),
         "delete",
         "team",
       ),
     ).toBe(true);
     expect(
       compute_disabled_functionalities(
-        create_auth_state(create_profile()),
+        create_auth_state(create_present_auth_profile_state(create_profile())),
         "team",
       ),
     ).toEqual(["create", "delete", "list", "view"]);

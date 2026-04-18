@@ -6,6 +6,7 @@ import {
   type UserScopeProfile,
 } from "$lib/core/interfaces/ports";
 import type { CalendarEvent } from "$lib/core/interfaces/ports/internal/usecases/ActivityUseCasesPort";
+import type { CalendarProfileState } from "$lib/presentation/logic/calendarPageData";
 
 import {
   type ActivityFormValues,
@@ -20,9 +21,10 @@ export function extract_url_org_id(search_params: URLSearchParams): string {
 }
 
 export function can_user_add_activities(
-  profile: UserScopeProfile | null,
+  profile_state: CalendarProfileState,
 ): boolean {
-  if (!profile) return false;
+  if (profile_state.status !== "present") return false;
+  const profile: UserScopeProfile = profile_state.profile;
   if (profile.organization_id === ANY_VALUE) return true;
   return (
     !!get_scope_value(profile, "organization_id") &&
@@ -31,10 +33,11 @@ export function can_user_add_activities(
 }
 
 export function can_user_change_organizations(
-  profile: UserScopeProfile | null,
+  profile_state: CalendarProfileState,
   url_org_id: string,
 ): boolean {
-  if (!profile) return url_org_id.length === 0;
+  if (profile_state.status !== "present") return url_org_id.length === 0;
+  const profile: UserScopeProfile = profile_state.profile;
   if (profile.organization_id === ANY_VALUE) return true;
   return !profile.organization_id && url_org_id.length === 0;
 }
@@ -79,9 +82,9 @@ export function resolve_calendar_event_click(command: {
   calendar_events: CalendarEvent[];
   event_id: string;
 }): {
-  editing_activity: Activity | null;
-  selected_event_details: CalendarEvent | null;
-  activity_form_values: ActivityFormValues | null;
+  editing_activity?: Activity;
+  selected_event_details?: CalendarEvent;
+  activity_form_values?: ActivityFormValues;
   show_create_modal: boolean;
 } {
   const selected_event = command.calendar_events.find(
@@ -89,23 +92,18 @@ export function resolve_calendar_event_click(command: {
   );
   if (!selected_event) {
     return {
-      editing_activity: null,
-      selected_event_details: null,
-      activity_form_values: null,
       show_create_modal: false,
     };
   }
   if (!selected_event.is_editable) {
     return {
-      editing_activity: null,
       selected_event_details: selected_event,
-      activity_form_values: null,
       show_create_modal: false,
     };
   }
   return {
     editing_activity: selected_event.activity,
-    selected_event_details: null,
+    selected_event_details: void 0,
     activity_form_values: create_activity_form_values_from_activity(
       selected_event.activity,
     ),

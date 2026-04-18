@@ -86,7 +86,7 @@ class InBrowserActivityCategoryRepository
       );
     }
 
-    if (filter.is_system_generated !== undefined) {
+    if ("is_system_generated" in filter) {
       filtered = filtered.filter(
         (category) =>
           category.is_system_generated === filter.is_system_generated,
@@ -112,11 +112,24 @@ class InBrowserActivityCategoryRepository
   }
 }
 
-let singleton_instance: InBrowserActivityCategoryRepository | null = null;
+type ActivityCategoryRepositoryState =
+  | { status: "uninitialized" }
+  | {
+      status: "ready";
+      repository: InBrowserActivityCategoryRepository;
+    };
+
+let activity_category_repository_state: ActivityCategoryRepositoryState = {
+  status: "uninitialized",
+};
 
 export function get_activity_category_repository(): ActivityCategoryRepository {
-  if (!singleton_instance) {
-    singleton_instance = new InBrowserActivityCategoryRepository();
+  if (activity_category_repository_state.status === "ready") {
+    return activity_category_repository_state.repository;
   }
-  return singleton_instance;
+
+  const repository = new InBrowserActivityCategoryRepository();
+  activity_category_repository_state = { status: "ready", repository };
+
+  return repository;
 }

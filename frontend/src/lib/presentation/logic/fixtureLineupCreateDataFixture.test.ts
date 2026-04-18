@@ -1,5 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
 
+import { load_fixture_lineup_create_fixture_data } from "./fixtureLineupCreateDataFixture";
+import type { FixtureLineupCreateDependencies } from "./fixtureLineupCreateDataTypes";
+import type { FixtureLineupCreateAuthProfileState } from "./fixtureLineupCreatePageContracts";
+
 const { get_sport_by_id_mock } = vi.hoisted(() => ({
   get_sport_by_id_mock: vi.fn(),
 }));
@@ -8,19 +12,12 @@ vi.mock("$lib/adapters/persistence/sportService", () => ({
   get_sport_by_id: get_sport_by_id_mock,
 }));
 
-import { load_fixture_lineup_create_fixture_data } from "./fixtureLineupCreateDataFixture";
-import type { FixtureLineupCreateDependencies } from "./fixtureLineupCreateDataTypes";
-
 describe("fixtureLineupCreateDataFixture", () => {
   type MockDependencies = {
     [Key in keyof FixtureLineupCreateDependencies]?: Partial<
       FixtureLineupCreateDependencies[Key]
     >;
   };
-  type CurrentAuthProfile = Parameters<
-    typeof load_fixture_lineup_create_fixture_data
-  >[1];
-
   function create_dependencies() {
     return {
       fixture_use_cases: { get_by_id: vi.fn() },
@@ -41,7 +38,7 @@ describe("fixtureLineupCreateDataFixture", () => {
     await expect(
       load_fixture_lineup_create_fixture_data(
         "fixture-1",
-        null,
+        { status: "missing" },
         dependencies as unknown as FixtureLineupCreateDependencies,
       ),
     ).resolves.toEqual({
@@ -117,7 +114,10 @@ describe("fixtureLineupCreateDataFixture", () => {
 
     const result = await load_fixture_lineup_create_fixture_data(
       "fixture-1",
-      { team_id: "team-home" } as CurrentAuthProfile,
+      {
+        status: "present",
+        profile: { organization_id: "", team_id: "team-home" },
+      } as FixtureLineupCreateAuthProfileState,
       dependencies as unknown as FixtureLineupCreateDependencies,
     );
 
@@ -193,7 +193,10 @@ describe("fixtureLineupCreateDataFixture", () => {
     await expect(
       load_fixture_lineup_create_fixture_data(
         "fixture-1",
-        { team_id: "team-home" } as CurrentAuthProfile,
+        {
+          status: "present",
+          profile: { organization_id: "", team_id: "team-home" },
+        } as FixtureLineupCreateAuthProfileState,
         dependencies as unknown as FixtureLineupCreateDependencies,
       ),
     ).resolves.toEqual({

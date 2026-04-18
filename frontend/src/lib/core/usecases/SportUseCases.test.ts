@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { CreateSportInput, Sport } from "../entities/Sport";
+import { create_default_penalties_config } from "../entities/SportDefaults";
 import type { SportRepository } from "../interfaces/ports";
 import type { ScalarInput } from "../types/DomainScalars";
 import { create_sport_use_cases } from "./SportUseCases";
@@ -18,9 +19,7 @@ function create_mock_repository(): SportRepository {
   } as SportRepository;
 }
 
-function create_test_sport(
-  overrides: Partial<ScalarInput<Sport>> = {},
-): Sport {
+function create_test_sport(overrides: Partial<ScalarInput<Sport>> = {}): Sport {
   return {
     id: "sport-123",
     name: "Football",
@@ -37,12 +36,12 @@ function create_test_sport(
       trigger_condition: "never",
       overtime_type: "extra_time",
       extra_time_periods: [],
-      penalties_config: null,
+      penalties_config: create_default_penalties_config(),
     },
     scoring_rules: [],
     substitution_rules: {
       max_substitutions_per_game: 3,
-      max_substitution_windows: null,
+      max_substitution_windows: -1,
       rolling_substitutions_allowed: false,
       return_after_substitution_allowed: false,
     },
@@ -77,12 +76,12 @@ function create_valid_input(
       trigger_condition: "never",
       overtime_type: "extra_time",
       extra_time_periods: [],
-      penalties_config: null,
+      penalties_config: create_default_penalties_config(),
     },
     scoring_rules: [],
     substitution_rules: {
       max_substitutions_per_game: 12,
-      max_substitution_windows: null,
+      max_substitution_windows: -1,
       rolling_substitutions_allowed: true,
       return_after_substitution_allowed: true,
     },
@@ -145,7 +144,7 @@ describe("SportUseCases", () => {
 
       const result = await use_cases.list(filter);
 
-      expect(mock_repository.find_all).toHaveBeenCalledWith(filter, undefined);
+      expect(mock_repository.find_all).toHaveBeenCalledWith(filter, {});
     });
   });
 

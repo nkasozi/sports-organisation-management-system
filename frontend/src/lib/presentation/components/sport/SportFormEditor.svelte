@@ -25,7 +25,7 @@
     export let on_submit: () => Promise<void>;
     export let on_apply_preset:
         | ((preset_type: SportPresetType) => void)
-        | null = null;
+        | undefined = undefined;
 
     let active_section: string = "basic";
 </script>

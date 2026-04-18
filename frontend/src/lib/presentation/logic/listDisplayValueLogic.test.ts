@@ -1,12 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
 
+import { get_display_value_for_entity_field } from "./listDisplayValueLogic";
+
 vi.mock("./dynamicFormLogic", () => ({
   build_entity_display_label: vi.fn(
     (entity: { id: string }) => `Display ${entity.id}`,
   ),
 }));
-
-import { get_display_value_for_entity_field } from "./listDisplayValueLogic";
 
 describe("listDisplayValueLogic", () => {
   it("returns empty strings for missing values and raw ids for id fields", () => {

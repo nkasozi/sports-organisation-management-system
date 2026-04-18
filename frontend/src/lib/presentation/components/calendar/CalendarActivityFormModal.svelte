@@ -6,7 +6,7 @@
     import CalendarActivityFormFields from "./CalendarActivityFormFields.svelte";
 
     export let is_visible: boolean;
-    export let editing_activity: Activity | null;
+    export let editing_activity: Activity | undefined;
     export let activity_form_values: ActivityFormValues;
     export let categories: ActivityCategory[];
     export let on_close: () => void;

@@ -97,7 +97,7 @@ describe("ActivityCategory Entity", () => {
       const categories =
         create_default_categories_for_organization(organization_id);
 
-      const expected_types =  [
+      const expected_types = [
         "competition",
         "fixture",
         "training",

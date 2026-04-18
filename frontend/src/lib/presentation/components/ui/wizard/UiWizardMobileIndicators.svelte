@@ -3,10 +3,10 @@
 
   export let can_go_to_next_step: boolean;
   export let can_go_to_previous_step: boolean;
-  export let current_step: WizardStep | null;
+  export let current_step: WizardStep;
   export let current_step_index: number;
   export let get_step_status_class: (
-    step: WizardStep | null,
+    step: WizardStep,
     step_index: number,
   ) => string;
   export let on_next: () => void;

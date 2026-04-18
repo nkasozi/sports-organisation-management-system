@@ -72,9 +72,9 @@ export interface CompetitionFormat extends BaseEntity {
   format_type: FormatType;
   points_config: PointsConfig;
   tie_breakers: TieBreaker[];
-  group_stage_config: GroupStageConfig | null;
-  knockout_stage_config: KnockoutStageConfig | null;
-  league_config: LeagueConfig | null;
+  group_stage_config: GroupStageConfig;
+  knockout_stage_config: KnockoutStageConfig;
+  league_config: LeagueConfig;
   stage_templates: CompetitionFormatStageTemplate[];
   min_teams_required: number;
   max_teams_allowed: number;

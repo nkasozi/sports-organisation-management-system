@@ -24,7 +24,7 @@ export function create_live_game_detail_controller_runtime(command: {
   get_page_state: () => LiveGameDetailPageState;
   get_view_state: () => LiveGameDetailDerivedState;
   goto: (path: string) => Promise<unknown>;
-  raw_token: () => string | null;
+  raw_token: () => string;
   set_event_state: (state: LiveGameDetailEventState) => void;
   set_modal_state: (state: LiveGameDetailModalState) => void;
   set_page_state: (state: LiveGameDetailPageState) => void;

@@ -34,9 +34,9 @@ export async function search_audit_logs_from_convex(
   options: AuditLogSearchOptions = {},
 ): Promise<AuditLogSearchResult> {
   const manager = get_sync_manager();
-  const client = manager.get_convex_client();
+  const client_result = manager.get_convex_client();
 
-  if (!client) {
+  if (!client_result.success) {
     return {
       success: false,
       data: [],
@@ -47,6 +47,8 @@ export async function search_audit_logs_from_convex(
       error_message: "Convex client not configured",
     };
   }
+
+  const client = client_result.data;
 
   const { page_number = 1, page_size = AUDIT_LOG_PAGE_SIZE } = options;
 
@@ -111,11 +113,13 @@ async function get_recent_audit_logs_from_convex(
   days: number = 2,
 ): Promise<AuditLog[]> {
   const manager = get_sync_manager();
-  const client = manager.get_convex_client();
+  const client_result = manager.get_convex_client();
 
-  if (!client) {
+  if (!client_result.success) {
     return [];
   }
+
+  const client = client_result.data;
 
   const result = (await client.query(
     "audit_logs:get_recent_audit_logs" as never,

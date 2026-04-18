@@ -120,7 +120,7 @@ export const schema_support_tables = {
     organization_id: v.string(),
     name: v.string(),
     code: v.optional(v.string()),
-    sport_id: v.optional(v.union(v.string(), v.null())),
+    sport_id: v.optional(v.string()),
     category: v.optional(v.string()),
     description: v.optional(v.string()),
     icon: v.optional(v.string()),

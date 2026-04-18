@@ -11,7 +11,7 @@ export interface Organization extends BaseEntity {
   name: Name;
   description: string;
   sport_id: EntityId;
-  founded_date: IsoDateString | null;
+  founded_date: IsoDateString | "";
   contact_email: EmailAddress;
   contact_phone: string;
   address: string;
@@ -30,7 +30,7 @@ function create_empty_organization_input(): CreateOrganizationInput {
     name: "",
     description: "",
     sport_id: "",
-    founded_date: null,
+    founded_date: "",
     contact_email: "",
     contact_phone: "",
     address: "",

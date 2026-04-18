@@ -130,7 +130,7 @@ class InBrowserLiveGameLogRepository
   }) {
     return pagination
       ? { page_number: pagination.page, page_size: pagination.page_size }
-      : undefined;
+      : void 0;
   }
 
   async get_live_game_log_for_fixture(
@@ -192,11 +192,24 @@ class InBrowserLiveGameLogRepository
   }
 }
 
-let singleton_instance: InBrowserLiveGameLogRepository | null = null;
+type LiveGameLogRepositoryState =
+  | { status: "uninitialized" }
+  | {
+      status: "ready";
+      repository: InBrowserLiveGameLogRepository;
+    };
+
+let live_game_log_repository_state: LiveGameLogRepositoryState = {
+  status: "uninitialized",
+};
 
 export function get_live_game_log_repository(): LiveGameLogRepository {
-  if (!singleton_instance) {
-    singleton_instance = new InBrowserLiveGameLogRepository();
+  if (live_game_log_repository_state.status === "ready") {
+    return live_game_log_repository_state.repository;
   }
-  return singleton_instance;
+
+  const repository = new InBrowserLiveGameLogRepository();
+  live_game_log_repository_state = { status: "ready", repository };
+
+  return repository;
 }

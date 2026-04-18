@@ -9,7 +9,7 @@ import type { AsyncResult } from "../../../../types/Result";
 export interface OrganizationSettingsUseCasesPort {
   get_by_organization_id(
     organization_id: ScalarValueInput<OrganizationSettings["organization_id"]>,
-  ): AsyncResult<OrganizationSettings | null>;
+  ): AsyncResult<OrganizationSettings>;
 
   save_settings(
     caller_role: string,

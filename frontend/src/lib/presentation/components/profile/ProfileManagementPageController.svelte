@@ -14,6 +14,7 @@
         build_profile_management_authorization_filter,
         build_profile_management_permissions,
         build_profile_management_rows,
+        type ProfileManagementAuthorizationProfileState,
         type ProfileManagementConfiguration,
         type ProfileManagementEntity,
         type ProfileManagementOption,
@@ -35,15 +36,20 @@
 
     export let configuration: ProfileManagementConfiguration;
 
+    type SelectedProfileState =
+        | { status: "empty" }
+        | { status: "selected"; profile: ProfileManagementEntity };
+
     let current_view: ProfileManagementViewMode = "list",
         profiles: ProfileManagementEntity[] = [],
-        selected_profile: ProfileManagementEntity | null = null,
+        selected_profile_state: SelectedProfileState = { status: "empty" },
+        preview_path = "",
         is_loading = true,
         error_message = "",
         related_entity_options: ProfileManagementOption[] = [],
         permissions: ProfileManagementPermissions =
             build_profile_management_permissions(
-                undefined,
+                void 0,
                 configuration.normalized_entity_type,
             );
 
@@ -56,18 +62,30 @@
         current_view === "create"
             ? configuration.create_title
             : configuration.edit_title;
-    $: preview_path = selected_profile
-        ? configuration.get_profile_preview_path(selected_profile)
-        : null;
-
+    $: preview_path =
+        selected_profile_state.status === "selected"
+            ? configuration.get_profile_preview_path(
+                  selected_profile_state.profile,
+              )
+            : "";
     const form_view_callbacks: EntityViewCallbacks = {
         on_save_completed: handle_form_save,
         on_cancel: handle_form_cancel,
     };
 
     function build_authorization_filter(): Record<string, string> {
+        const current_profile_state = get(auth_store).current_profile;
+        const profile_state: ProfileManagementAuthorizationProfileState =
+            current_profile_state.status === "present"
+                ? {
+                      status: "present",
+                      profile:
+                          current_profile_state.profile as unknown as UserScopeProfile,
+                  }
+                : { status: "missing" };
+
         return build_profile_management_authorization_filter(
-            get(auth_store).current_profile as UserScopeProfile | null,
+            profile_state,
             configuration.authorization_filter_fields,
         );
     }
@@ -96,7 +114,7 @@
             error_message = configuration.create_denied_message;
             return;
         }
-        selected_profile = null;
+        selected_profile_state = { status: "empty" };
         current_view = "create";
     }
 
@@ -105,7 +123,7 @@
             error_message = configuration.edit_denied_message;
             return;
         }
-        selected_profile = entity;
+        selected_profile_state = { status: "selected", profile: entity };
         current_view = "edit";
     }
 
@@ -135,7 +153,7 @@
 
     function handle_form_save(entity: BaseEntity, is_new: boolean): void {
         current_view = "list";
-        selected_profile = null;
+        selected_profile_state = { status: "empty" };
         void entity;
         void is_new;
         void load_profiles();
@@ -143,7 +161,7 @@
 
     function handle_form_cancel(): void {
         current_view = "list";
-        selected_profile = null;
+        selected_profile_state = { status: "empty" };
     }
 
     onMount(async () => {
@@ -155,18 +173,21 @@
             return;
         }
         const auth_state = get(auth_store);
-        if (!auth_state.current_token || !auth_state.current_profile) {
+        if (
+            auth_state.current_token.status !== "present" ||
+            auth_state.current_profile.status !== "present"
+        ) {
             error_message = PROFILE_MANAGEMENT_PAGE_MESSAGES.NO_USER_PROFILE;
             is_loading = false;
             return;
         }
         permissions = build_profile_management_permissions(
-            auth_state.current_profile.role,
+            auth_state.current_profile.profile.role,
             configuration.normalized_entity_type,
         );
         if (!permissions.can_read) {
             await get_authorization_adapter().check_entity_authorized(
-                auth_state.current_token.raw_token,
+                auth_state.current_token.token.raw_token,
                 configuration.normalized_entity_type,
                 PROFILE_MANAGEMENT_PAGE_MESSAGES.READ_ACTION,
             );
@@ -190,7 +211,9 @@
     {current_view}
     {form_title}
     {preview_path}
-    {selected_profile}
+    selected_profile={selected_profile_state.status === "selected"
+        ? selected_profile_state.profile
+        : (void 0 as unknown as ProfileManagementEntity)}
     {rows}
     {is_loading}
     {error_message}

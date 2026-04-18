@@ -19,25 +19,25 @@ describe("layoutRouteSubscriptions", () => {
     const on_setup_change = vi.fn();
     const on_clerk_ready_change = vi.fn();
     const on_sync_change = vi.fn();
-    const on_signed_in_change = vi.fn(async () => undefined);
-    const setup_state =  {
+    const on_signed_in_change = vi.fn(async () => {});
+    const setup_state = {
       is_first_time: true,
       is_setting_up: false,
       status_message: "Loading...",
       progress_percentage: 0,
       setup_complete: false,
     } as FirstTimeSetupState;
-    const sync_state =  {
+    const sync_state = {
       is_syncing: true,
       status_message: "Syncing",
       progress_percentage: 50,
       sync_complete: false,
     } as InitialSyncState;
 
-    const command =  {
+    const command = {
       navigating_store: {
-        subscribe: (callback: (value: unknown | null) => void) => {
-          callback({});
+        subscribe: (callback: (value: boolean) => void) => {
+          callback(true);
           return navigating_unsubscribe;
         },
       },

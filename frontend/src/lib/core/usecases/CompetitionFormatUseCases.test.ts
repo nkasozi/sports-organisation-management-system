@@ -4,8 +4,15 @@ import type {
   CompetitionFormat,
   CreateCompetitionFormatInput,
 } from "../entities/CompetitionFormat";
+import {
+  create_default_group_stage_config,
+  create_default_knockout_stage_config,
+  create_default_league_config,
+} from "../entities/CompetitionFormatFactories";
 import type { CompetitionFormatRepository } from "../interfaces/ports";
+import { build_competition_format_not_found_by_code_error } from "../interfaces/ports";
 import type { ScalarInput } from "../types/DomainScalars";
+import { create_failure_result } from "../types/Result";
 import { create_competition_format_use_cases } from "./CompetitionFormatUseCases";
 
 function create_mock_repository(): CompetitionFormatRepository {
@@ -35,17 +42,9 @@ function create_test_format(
     description: "Each team plays every other team",
     format_type: "round_robin",
     tie_breakers: ["goal_difference"],
-    group_stage_config: null,
-    knockout_stage_config: null,
-    league_config: {
-      number_of_rounds: 1,
-      points_for_win: 3,
-      points_for_draw: 1,
-      points_for_loss: 0,
-      promotion_spots: 0,
-      relegation_spots: 0,
-      playoff_spots: 0,
-    },
+    group_stage_config: create_default_group_stage_config(),
+    knockout_stage_config: create_default_knockout_stage_config(),
+    league_config: { ...create_default_league_config(), number_of_rounds: 1 },
     points_config: {
       points_for_win: 3,
       points_for_draw: 1,
@@ -71,16 +70,12 @@ function create_valid_input(
     description: "Single elimination tournament",
     format_type: "straight_knockout",
     tie_breakers: ["goal_difference"],
-    group_stage_config: null,
+    group_stage_config: create_default_group_stage_config(),
     knockout_stage_config: {
-      number_of_rounds: 4,
+      ...create_default_knockout_stage_config(),
       third_place_match: false,
-      two_legged_ties: false,
-      away_goals_rule: false,
-      extra_time_enabled: true,
-      penalty_shootout_enabled: true,
     },
-    league_config: null,
+    league_config: create_default_league_config(),
     points_config: {
       points_for_win: 3,
       points_for_draw: 1,
@@ -144,10 +139,11 @@ describe("CompetitionFormatUseCases", () => {
 
   describe("create", () => {
     it("should create with valid input", async () => {
-      vi.mocked(mock_repository.find_by_code).mockResolvedValue({
-        success: true,
-        data: null,
-      });
+      vi.mocked(mock_repository.find_by_code).mockResolvedValue(
+        create_failure_result(
+          build_competition_format_not_found_by_code_error("KO"),
+        ),
+      );
       vi.mocked(mock_repository.create).mockResolvedValue({
         success: true,
         data: create_test_format(),
@@ -191,10 +187,11 @@ describe("CompetitionFormatUseCases", () => {
     });
 
     it("should preserve explicitly provided stage templates on create", async () => {
-      vi.mocked(mock_repository.find_by_code).mockResolvedValue({
-        success: true,
-        data: null,
-      });
+      vi.mocked(mock_repository.find_by_code).mockResolvedValue(
+        create_failure_result(
+          build_competition_format_not_found_by_code_error("KO"),
+        ),
+      );
       vi.mocked(mock_repository.create).mockResolvedValue({
         success: true,
         data: create_test_format(),
@@ -243,10 +240,11 @@ describe("CompetitionFormatUseCases", () => {
         success: true,
         data: create_test_format(),
       });
-      vi.mocked(mock_repository.find_by_code).mockResolvedValue({
-        success: true,
-        data: null,
-      });
+      vi.mocked(mock_repository.find_by_code).mockResolvedValue(
+        create_failure_result(
+          build_competition_format_not_found_by_code_error("RR"),
+        ),
+      );
       vi.mocked(mock_repository.update).mockResolvedValue({
         success: true,
         data: create_test_format(),
@@ -274,10 +272,11 @@ describe("CompetitionFormatUseCases", () => {
         success: true,
         data: create_test_format(),
       });
-      vi.mocked(mock_repository.find_by_code).mockResolvedValue({
-        success: true,
-        data: null,
-      });
+      vi.mocked(mock_repository.find_by_code).mockResolvedValue(
+        create_failure_result(
+          build_competition_format_not_found_by_code_error("RR"),
+        ),
+      );
       vi.mocked(mock_repository.update).mockResolvedValue({
         success: true,
         data: create_test_format({ format_type: "straight_knockout" }),
@@ -285,8 +284,6 @@ describe("CompetitionFormatUseCases", () => {
 
       const result = await use_cases.update("format-123", {
         format_type: "straight_knockout",
-        knockout_stage_config: null,
-        league_config: null,
       });
 
       expect(result.success).toBe(true);
@@ -338,10 +335,11 @@ describe("CompetitionFormatUseCases", () => {
           ],
         }),
       });
-      vi.mocked(mock_repository.find_by_code).mockResolvedValue({
-        success: true,
-        data: null,
-      });
+      vi.mocked(mock_repository.find_by_code).mockResolvedValue(
+        create_failure_result(
+          build_competition_format_not_found_by_code_error("RR"),
+        ),
+      );
       vi.mocked(mock_repository.update).mockResolvedValue({
         success: true,
         data: create_test_format(),

@@ -82,7 +82,6 @@ describe("liveGameDetailData", () => {
                     last_name: "Stone",
                     jersey_number: 9,
                     is_substitute: false,
-                    time_on: null,
                   },
                 ],
               }
@@ -172,7 +171,6 @@ describe("liveGameDetailData", () => {
     });
     dependencies.team_use_cases.get_by_id.mockResolvedValue({
       success: true,
-      data: null,
     });
     dependencies.fixture_lineup_use_cases.get_lineup_for_team_in_fixture.mockResolvedValue(
       {
@@ -190,9 +188,6 @@ describe("liveGameDetailData", () => {
       expect.objectContaining({
         success: true,
         data: expect.objectContaining({
-          competition: null,
-          sport: null,
-          venue: null,
           organization_name: "",
           home_players: [],
           away_players: [],

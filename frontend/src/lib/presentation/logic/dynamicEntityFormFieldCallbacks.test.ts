@@ -5,6 +5,8 @@ import {
   MAX_SYNCABLE_IMAGE_FILE_BYTES,
 } from "$lib/core/services/syncableImageFileValidation";
 
+import { create_dynamic_form_field_callbacks } from "./dynamicEntityFormFieldCallbacks";
+
 const {
   build_dynamic_form_jersey_color_warnings_mock,
   convert_file_to_base64_mock,
@@ -52,8 +54,6 @@ vi.mock("./dynamicEntityFormOfficialConflictWarnings", () => ({
 vi.mock("./dynamicFormLogic", () => ({
   convert_file_to_base64: convert_file_to_base64_mock,
 }));
-
-import { create_dynamic_form_field_callbacks } from "./dynamicEntityFormFieldCallbacks";
 
 describe("dynamicEntityFormFieldCallbacks", () => {
   function create_dependencies() {

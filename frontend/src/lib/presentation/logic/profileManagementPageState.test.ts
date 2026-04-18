@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import type { BaseEntity } from "$lib/core/entities/BaseEntity";
-import type { ScalarInput } from "$lib/core/types/DomainScalars";
 import { ANY_VALUE, type UserScopeProfile } from "$lib/core/interfaces/ports";
+import type { ScalarInput } from "$lib/core/types/DomainScalars";
 
 import {
   build_profile_management_authorization_filter,
@@ -54,7 +54,10 @@ function create_profile_entity(
 describe("profileManagementPageState", () => {
   it("builds an authorization filter from the restricted profile scope", () => {
     const result = build_profile_management_authorization_filter(
-      create_scope_profile({ player_id: undefined }),
+      {
+        status: "present",
+        profile: create_scope_profile({ player_id: ANY_VALUE }),
+      },
       ["organization_id", "team_id", "player_id"],
     );
 
@@ -66,7 +69,22 @@ describe("profileManagementPageState", () => {
 
   it("skips unrestricted scope values when building authorization filters", () => {
     const result = build_profile_management_authorization_filter(
-      create_scope_profile({ organization_id: ANY_VALUE, team_id: ANY_VALUE }),
+      {
+        status: "present",
+        profile: create_scope_profile({
+          organization_id: ANY_VALUE,
+          team_id: ANY_VALUE,
+        }),
+      },
+      ["organization_id", "team_id"],
+    );
+
+    expect(result).toEqual({});
+  });
+
+  it("returns an empty filter when the authorization profile is missing", () => {
+    const result = build_profile_management_authorization_filter(
+      { status: "missing" },
       ["organization_id", "team_id"],
     );
 
@@ -111,10 +129,7 @@ describe("profileManagementPageState", () => {
   });
 
   it("returns disabled permissions when no role is available", () => {
-    const result = build_profile_management_permissions(
-      undefined,
-      "teamprofile",
-    );
+    const result = build_profile_management_permissions(void 0, "teamprofile");
 
     expect(result).toEqual({
       can_read: false,
@@ -140,6 +155,6 @@ describe("profileManagementPageState", () => {
     expect(
       build_profile_management_preview_path("/profile", "sam-player"),
     ).toBe("/profile/sam-player");
-    expect(build_profile_management_preview_path("/profile", "")).toBeNull();
+    expect(build_profile_management_preview_path("/profile", "")).toBe("");
   });
 });

@@ -4,17 +4,23 @@
         UpdateCompetitionInput,
     } from "$lib/core/entities/Competition";
     import type {
-        CompetitionFormat,
         TieBreaker,
     } from "$lib/core/entities/CompetitionFormat";
-    import type { Sport } from "$lib/core/entities/Sport";
+    import type {
+        CompetitionEditSelectedFormatState,
+        CompetitionEditSelectedSportState,
+    } from "$lib/presentation/logic/competitionEditPageContracts";
 
     import CompetitionCreateRulesTab from "./CompetitionCreateRulesTab.svelte";
     import CompetitionScoringOverrides from "./CompetitionScoringOverrides.svelte";
 
     export let form_data: UpdateCompetitionInput;
-    export let selected_format: CompetitionFormat | null;
-    export let selected_sport: Sport | null;
+    export let selected_format_state: CompetitionEditSelectedFormatState = {
+        status: "missing",
+    };
+    export let selected_sport_state: CompetitionEditSelectedSportState = {
+        status: "missing",
+    };
     export let is_customizing_scoring: boolean;
     export let can_edit_competition: boolean;
     export let is_saving: boolean;
@@ -47,7 +53,7 @@
         </p>
     </div>
     <CompetitionScoringOverrides
-        {selected_format}
+        {selected_format_state}
         bind:form_data
         bind:is_customizing_scoring
         {on_update_points}
@@ -56,7 +62,14 @@
     />
     <CompetitionCreateRulesTab
         organization_id={form_data.organization_id ?? ""}
-        {selected_sport}
+        selected_sport_state={
+            selected_sport_state.status === "present"
+                ? {
+                      status: "present",
+                      sport: selected_sport_state.sport,
+                  }
+                : { status: "missing" }
+        }
         bind:rule_overrides={competition_rule_overrides}
     />
 

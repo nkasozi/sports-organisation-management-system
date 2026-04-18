@@ -7,19 +7,23 @@ describe("build_dashboard_filters", () => {
     it("returns no organization filter for super_admin", () => {
       const filters = build_dashboard_filters("super_admin", "*");
 
-      expect(filters.organization_filter).toBeUndefined();
+      expect(filters.organization_scope_state).toEqual({
+        status: "unscoped",
+      });
     });
 
     it("returns fixture filter without organization_id for super_admin", () => {
       const filters = build_dashboard_filters("super_admin", "*");
 
-      expect(filters.fixture_filter).toEqual({ status: "scheduled" });
+      expect(filters.fixture_status).toBe("scheduled");
     });
 
     it("returns null organization count override for super_admin", () => {
       const filters = build_dashboard_filters("super_admin", "*");
 
-      expect(filters.organization_count_override).toBeNull();
+      expect(filters.organization_count_state).toEqual({
+        status: "calculated",
+      });
     });
   });
 
@@ -27,7 +31,8 @@ describe("build_dashboard_filters", () => {
     it("returns organization filter with user org_id", () => {
       const filters = build_dashboard_filters("org_admin", "org_456");
 
-      expect(filters.organization_filter).toEqual({
+      expect(filters.organization_scope_state).toEqual({
+        status: "scoped",
         organization_id: "org_456",
       });
     });
@@ -35,16 +40,16 @@ describe("build_dashboard_filters", () => {
     it("returns fixture filter scoped to user organization", () => {
       const filters = build_dashboard_filters("org_admin", "org_456");
 
-      expect(filters.fixture_filter).toEqual({
-        status: "scheduled",
-        organization_id: "org_456",
-      });
+      expect(filters.fixture_status).toBe("scheduled");
     });
 
     it("returns 1 as organization count override", () => {
       const filters = build_dashboard_filters("org_admin", "org_456");
 
-      expect(filters.organization_count_override).toBe(1);
+      expect(filters.organization_count_state).toEqual({
+        status: "fixed",
+        value: 1,
+      });
     });
   });
 
@@ -52,7 +57,8 @@ describe("build_dashboard_filters", () => {
     it("returns organization filter scoped to user org", () => {
       const filters = build_dashboard_filters("team_manager", "org_789");
 
-      expect(filters.organization_filter).toEqual({
+      expect(filters.organization_scope_state).toEqual({
+        status: "scoped",
         organization_id: "org_789",
       });
     });
@@ -60,16 +66,16 @@ describe("build_dashboard_filters", () => {
     it("returns fixture filter scoped to user organization", () => {
       const filters = build_dashboard_filters("team_manager", "org_789");
 
-      expect(filters.fixture_filter).toEqual({
-        status: "scheduled",
-        organization_id: "org_789",
-      });
+      expect(filters.fixture_status).toBe("scheduled");
     });
 
     it("returns 1 as organization count override", () => {
       const filters = build_dashboard_filters("team_manager", "org_789");
 
-      expect(filters.organization_count_override).toBe(1);
+      expect(filters.organization_count_state).toEqual({
+        status: "fixed",
+        value: 1,
+      });
     });
   });
 
@@ -77,11 +83,15 @@ describe("build_dashboard_filters", () => {
     it("scopes data to user organization", () => {
       const filters = build_dashboard_filters("officials_manager", "org_abc");
 
-      expect(filters.organization_filter).toEqual({
+      expect(filters.organization_scope_state).toEqual({
+        status: "scoped",
         organization_id: "org_abc",
       });
-      expect(filters.fixture_filter.organization_id).toBe("org_abc");
-      expect(filters.organization_count_override).toBe(1);
+      expect(filters.fixture_status).toBe("scheduled");
+      expect(filters.organization_count_state).toEqual({
+        status: "fixed",
+        value: 1,
+      });
     });
   });
 
@@ -89,11 +99,15 @@ describe("build_dashboard_filters", () => {
     it("scopes data to user organization", () => {
       const filters = build_dashboard_filters("player", "org_def");
 
-      expect(filters.organization_filter).toEqual({
+      expect(filters.organization_scope_state).toEqual({
+        status: "scoped",
         organization_id: "org_def",
       });
-      expect(filters.fixture_filter.organization_id).toBe("org_def");
-      expect(filters.organization_count_override).toBe(1);
+      expect(filters.fixture_status).toBe("scheduled");
+      expect(filters.organization_count_state).toEqual({
+        status: "fixed",
+        value: 1,
+      });
     });
   });
 
@@ -101,11 +115,15 @@ describe("build_dashboard_filters", () => {
     it("scopes data to user organization", () => {
       const filters = build_dashboard_filters("official", "org_ghi");
 
-      expect(filters.organization_filter).toEqual({
+      expect(filters.organization_scope_state).toEqual({
+        status: "scoped",
         organization_id: "org_ghi",
       });
-      expect(filters.fixture_filter.organization_id).toBe("org_ghi");
-      expect(filters.organization_count_override).toBe(1);
+      expect(filters.fixture_status).toBe("scheduled");
+      expect(filters.organization_count_state).toEqual({
+        status: "fixed",
+        value: 1,
+      });
     });
   });
 });

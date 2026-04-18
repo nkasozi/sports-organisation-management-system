@@ -141,9 +141,12 @@ describe("fixtureLineupCreatePageFlowUtilities", () => {
     expect(
       apply_fixture_lineup_authorization_defaults({
         form_data: { organization_id: "", team_id: "", selected_players: [] },
-        current_auth_profile: {
-          organization_id: "organization-1",
-          team_id: "team-1",
+        current_auth_profile_state: {
+          status: "present",
+          profile: {
+            organization_id: "organization-1",
+            team_id: "team-1",
+          },
         },
       } as never),
     ).toEqual({
@@ -158,9 +161,12 @@ describe("fixtureLineupCreatePageFlowUtilities", () => {
           team_id: "team-2",
           selected_players: [],
         },
-        current_auth_profile: {
-          organization_id: "organization-1",
-          team_id: "team-1",
+        current_auth_profile_state: {
+          status: "present",
+          profile: {
+            organization_id: "organization-1",
+            team_id: "team-1",
+          },
         },
       } as never),
     ).toEqual({

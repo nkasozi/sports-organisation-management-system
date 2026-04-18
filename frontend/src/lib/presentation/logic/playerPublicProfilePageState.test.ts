@@ -18,7 +18,7 @@ function create_game_event(
     id: "event_1",
     event_type: "goal",
     minute: 12,
-    stoppage_time_minute: null,
+    stoppage_time_minute: 0,
     team_side: "home",
     player_name: "Jordan Miles",
     secondary_player_name: "Alex Doe",

@@ -15,9 +15,9 @@
     import LiveGameQuickActions from "$lib/presentation/components/game/LiveGameQuickActions.svelte";
     import type { PeriodButtonConfig } from "$lib/presentation/logic/liveGameDetailState";
 
-    export let fixture: Fixture | null;
-    export let home_team: Team | null;
-    export let away_team: Team | null;
+    export let fixture: Fixture | undefined;
+    export let home_team: Team | undefined;
+    export let away_team: Team | undefined;
     export let organization_name: string;
     export let competition_name: string;
     export let home_score: number;
@@ -30,7 +30,7 @@
     export let is_game_completed: boolean;
     export let show_extra_time_button: boolean;
     export let downloading_report: boolean;
-    export let period_button_config: PeriodButtonConfig | null;
+    export let period_button_config: PeriodButtonConfig | undefined;
     export let permission_info_message: string;
     export let all_event_buttons: QuickEventButton[];
     export let home_players: LineupPlayer[];

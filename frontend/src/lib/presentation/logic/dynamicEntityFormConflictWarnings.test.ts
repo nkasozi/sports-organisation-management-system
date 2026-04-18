@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { build_dynamic_form_jersey_color_warnings } from "./dynamicEntityFormConflictWarnings";
+
 const { detect_jersey_color_clashes_mock } = vi.hoisted(() => ({
   detect_jersey_color_clashes_mock: vi.fn(),
 }));
@@ -8,9 +10,13 @@ vi.mock("../../core/entities/Fixture", () => ({
   detect_jersey_color_clashes: detect_jersey_color_clashes_mock,
 }));
 
-import { build_dynamic_form_jersey_color_warnings } from "./dynamicEntityFormConflictWarnings";
-
 describe("dynamicEntityFormConflictWarnings", () => {
+  const EMPTY_JERSEY_ASSIGNMENT = {
+    jersey_color_id: "",
+    nickname: "",
+    main_color: "",
+  };
+
   beforeEach(() => {
     detect_jersey_color_clashes_mock.mockReset();
   });
@@ -51,5 +57,35 @@ describe("dynamicEntityFormConflictWarnings", () => {
       "Home and away jerseys clash",
       "Official jersey clashes with home team",
     ]);
+  });
+
+  it("passes empty jersey assignments to clash detection when selections are missing", () => {
+    detect_jersey_color_clashes_mock.mockReturnValueOnce([]);
+
+    expect(
+      build_dynamic_form_jersey_color_warnings(
+        "FixtureDetailsSetup",
+        {
+          home_team_jersey_id: "jersey-1",
+          away_team_jersey_id: "",
+          official_jersey_id: "",
+        },
+        {
+          home_team_jersey_id: [
+            { id: "jersey-1", nickname: "Red", main_color: "#f00" },
+          ],
+          away_team_jersey_id: [],
+          official_jersey_id: [],
+        } as never,
+      ),
+    ).toEqual([]);
+
+    expect(detect_jersey_color_clashes_mock).toHaveBeenCalledWith(
+      { jersey_color_id: "jersey-1", nickname: "Red", main_color: "#f00" },
+      EMPTY_JERSEY_ASSIGNMENT,
+      EMPTY_JERSEY_ASSIGNMENT,
+      "Home Team",
+      "Away Team",
+    );
   });
 });

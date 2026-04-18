@@ -1,6 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { BaseEntity } from "../../core/entities/BaseEntity";
+import {
+  load_dynamic_form_initial_state,
+  load_dynamic_form_initialized_filtered_options,
+} from "./dynamicEntityFormInitialLoad";
 
 const {
   build_dynamic_form_jersey_color_warnings_mock,
@@ -32,11 +36,6 @@ vi.mock("./dynamicFormDataLoader", () => ({
   fetch_unfiltered_foreign_key_options:
     fetch_unfiltered_foreign_key_options_mock,
 }));
-
-import {
-  load_dynamic_form_initial_state,
-  load_dynamic_form_initialized_filtered_options,
-} from "./dynamicEntityFormInitialLoad";
 
 function create_entity<TExtra extends Record<string, unknown>>(
   id: string,

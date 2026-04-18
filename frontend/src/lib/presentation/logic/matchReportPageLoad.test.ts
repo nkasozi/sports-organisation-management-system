@@ -18,7 +18,9 @@ import {
   refresh_match_report_fixture_data,
 } from "./matchReportPageLoad";
 
-function create_fixture(overrides: Partial<ScalarInput<Fixture>> = {}): Fixture {
+function create_fixture(
+  overrides: Partial<ScalarInput<Fixture>> = {},
+): Fixture {
   return {
     id: "fixture_1",
     organization_id: "org_1",
@@ -60,8 +62,8 @@ function create_team(overrides: Partial<ScalarInput<Team>> = {}): Team {
     description: "",
     organization_id: "org_1",
     gender_id: "gender_1",
-    captain_player_id: null,
-    vice_captain_player_id: null,
+    captain_player_id: "",
+    vice_captain_player_id: "",
     max_squad_size: 25,
     home_venue_id: "venue_1",
     primary_color: "#000000",
@@ -286,12 +288,27 @@ describe("matchReportPageLoad", () => {
       return;
     }
 
-    expect(result.data.home_team?.name).toBe("Lions");
-    expect(result.data.away_team?.name).toBe("Tigers");
-    expect(result.data.competition?.name).toBe("National League");
+    expect(result.data.home_team_state).toEqual({
+      status: "present",
+      team: expect.objectContaining({ name: "Lions" }),
+    });
+    expect(result.data.away_team_state).toEqual({
+      status: "present",
+      team: expect.objectContaining({ name: "Tigers" }),
+    });
+    expect(result.data.competition_state).toEqual({
+      status: "present",
+      competition: expect.objectContaining({ name: "National League" }),
+    });
     expect(result.data.organization_name).toBe("Org 1");
-    expect(result.data.sport?.name).toBe("Football");
-    expect(result.data.venue?.name).toBe("Main Stadium");
+    expect(result.data.sport_state).toEqual({
+      status: "present",
+      sport: expect.objectContaining({ name: "Football" }),
+    });
+    expect(result.data.venue_state).toEqual({
+      status: "present",
+      venue: expect.objectContaining({ name: "Main Stadium" }),
+    });
     expect(result.data.assigned_officials_data).toHaveLength(1);
     expect(result.data.home_players).toHaveLength(1);
     expect(result.data.away_players).toHaveLength(1);

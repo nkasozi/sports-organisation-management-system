@@ -16,8 +16,8 @@ export interface PeriodButtonConfig {
 }
 
 export function get_effective_periods_for(
-  sport: Sport | null,
-  competition: Competition | null,
+  sport: Sport | undefined,
+  competition: Competition | undefined,
 ): SportGamePeriod[] {
   return (competition?.rule_overrides?.periods ??
     sport?.periods ??
@@ -67,21 +67,21 @@ export function get_sport_period_display_name(
 }
 
 export function build_period_button_config(
-  current_period: Fixture["current_period"] | null | undefined,
+  current_period: Fixture["current_period"] | undefined,
   game_active: boolean,
   all_periods: SportGamePeriod[],
-): PeriodButtonConfig | null {
-  if (!current_period || !game_active || all_periods.length === 0) return null;
+): PeriodButtonConfig | undefined {
+  if (!current_period || !game_active || all_periods.length === 0) return;
   const current_index = all_periods.findIndex(
     (period) => period.id === current_period,
   );
-  if (current_index === -1) return null;
+  if (current_index === -1) return;
   const current_period_definition = all_periods[current_index];
   if (!current_period_definition.is_break) {
     const next_period =
       current_index + 1 < all_periods.length
         ? all_periods[current_index + 1]
-        : null;
+        : void 0;
     return {
       label: `End ${current_period_definition.name}`,
       icon: "⏹️",
@@ -94,7 +94,7 @@ export function build_period_button_config(
   const next_playing_period = all_periods
     .slice(current_index + 1)
     .find((period) => !period.is_break);
-  if (!next_playing_period) return null;
+  if (!next_playing_period) return;
   return {
     label: `Start ${next_playing_period.name}`,
     icon: "▶️",
@@ -106,7 +106,7 @@ export function build_period_button_config(
 }
 
 export function check_is_playing_period(
-  period: Fixture["current_period"] | null | undefined,
+  period: Fixture["current_period"] | undefined,
   all_periods: SportGamePeriod[],
 ): boolean {
   if (!period) return false;

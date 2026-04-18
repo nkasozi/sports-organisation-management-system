@@ -85,17 +85,18 @@ export const GET: RequestHandler = async ({ params }) => {
     activities_result.success && activities_result.data?.items
       ? activities_result.data.items
       : [];
+  const calendar_entity_id = calendar_token.entity_id;
 
-  if (calendar_token.feed_type === "team" && calendar_token.entity_id) {
+  if (calendar_token.feed_type === "team" && calendar_entity_id !== "") {
     activities = activities.filter((activity) =>
-      activity.team_ids.includes(calendar_token.entity_id!),
+      activity.team_ids.includes(calendar_entity_id),
     );
   } else if (
     calendar_token.feed_type === "competition" &&
-    calendar_token.entity_id
+    calendar_entity_id !== ""
   ) {
     activities = activities.filter(
-      (activity) => activity.competition_id === calendar_token.entity_id,
+      (activity) => activity.competition_id === calendar_entity_id,
     );
   }
 

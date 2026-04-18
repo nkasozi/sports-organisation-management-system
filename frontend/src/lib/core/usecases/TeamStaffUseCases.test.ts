@@ -52,7 +52,7 @@ function create_test_staff(
     nationality: "",
     profile_image_url: "",
     employment_start_date: "",
-    employment_end_date: null,
+    employment_end_date: "",
     emergency_contact_name: "",
     emergency_contact_phone: "",
     notes: "",
@@ -78,7 +78,7 @@ function create_valid_input(
     nationality: "",
     profile_image_url: "",
     employment_start_date: "",
-    employment_end_date: null,
+    employment_end_date: "",
     emergency_contact_name: "",
     emergency_contact_phone: "",
     notes: "",
@@ -115,10 +115,7 @@ describe("TeamStaffUseCases", () => {
       const result = await use_cases.list();
 
       expect(result.success).toBe(true);
-      expect(mock_repository.find_all).toHaveBeenCalledWith(
-        undefined,
-        undefined,
-      );
+      expect(mock_repository.find_all).toHaveBeenCalledWith({}, {});
     });
 
     it("should pass team_id filter to repository when provided", async () => {
@@ -142,7 +139,7 @@ describe("TeamStaffUseCases", () => {
 
       expect(result.success).toBe(true);
       if (!result.success) return;
-      expect(mock_repository.find_all).toHaveBeenCalledWith(filter, undefined);
+      expect(mock_repository.find_all).toHaveBeenCalledWith(filter, {});
       expect(result.data.items).toHaveLength(1);
     });
 
@@ -162,7 +159,7 @@ describe("TeamStaffUseCases", () => {
       const result = await use_cases.list(filter);
 
       expect(result.success).toBe(true);
-      expect(mock_repository.find_all).toHaveBeenCalledWith(filter, undefined);
+      expect(mock_repository.find_all).toHaveBeenCalledWith(filter, {});
     });
 
     it("should pass combined team_id and organization_id filter to repository", async () => {
@@ -181,7 +178,7 @@ describe("TeamStaffUseCases", () => {
       const result = await use_cases.list(filter);
 
       expect(result.success).toBe(true);
-      expect(mock_repository.find_all).toHaveBeenCalledWith(filter, undefined);
+      expect(mock_repository.find_all).toHaveBeenCalledWith(filter, {});
     });
   });
 

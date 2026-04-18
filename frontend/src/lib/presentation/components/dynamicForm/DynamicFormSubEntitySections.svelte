@@ -11,7 +11,7 @@
 
   export let sub_entity_fields: FieldMetadata[] = [];
   export let is_edit_mode: boolean = false;
-  export let entity_data: Partial<BaseEntity> | null = null;
+  export let entity_data: Partial<BaseEntity> | undefined = undefined;
   export let build_sub_entity_handlers: (
     child_entity_type: string,
     sub_filter: SubEntityFilter,
@@ -27,7 +27,7 @@
             sub_entity_field.sub_entity_config.child_entity_type,
             sub_filter,
           )
-        : null}
+        : void 0}
     <div class="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
       <h3 class="text-lg font-medium text-accent-900 dark:text-accent-100 mb-4">
         {sub_entity_field.display_name}
@@ -37,7 +37,11 @@
           entity_type={sub_entity_field.sub_entity_config.child_entity_type}
           sub_entity_filter={sub_filter}
           crud_handlers={sub_entity_handlers}
+          on_entities_batch_deleted={void 0}
+          on_selection_changed={void 0}
+          on_total_count_changed={void 0}
           show_actions={true}
+          view_callbacks={void 0}
         />
       {/if}
     </div>

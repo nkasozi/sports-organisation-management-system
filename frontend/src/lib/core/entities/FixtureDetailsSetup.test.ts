@@ -146,7 +146,7 @@ describe("FixtureDetailsSetup", () => {
 
   describe("OfficialAssignment type", () => {
     it("has correct structure", () => {
-      const assignment =  {
+      const assignment = {
         official_id: "official_123",
         role_id: "role_456",
       } as OfficialAssignment;

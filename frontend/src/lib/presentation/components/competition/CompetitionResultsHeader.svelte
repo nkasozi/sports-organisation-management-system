@@ -6,7 +6,7 @@
     export let selected_organization_id: string;
     export let competitions: Competition[];
     export let selected_competition_id: string;
-    export let selected_competition_format_name: string | null;
+    export let selected_competition_format_name = "";
     export let can_change_organizations: boolean;
     export let share_link_copied: boolean;
     export let on_organization_change: () => Promise<void>;

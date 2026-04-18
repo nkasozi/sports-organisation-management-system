@@ -1,6 +1,8 @@
 import { get } from "svelte/store";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { create_dynamic_entity_list_controller_runtime } from "./dynamicEntityListControllerRuntime";
+
 const {
   auth_store_mock,
   build_dynamic_entity_list_view_state_mock,
@@ -34,8 +36,14 @@ const {
   };
   return {
     auth_store_mock: create_store({
-      current_profile: { organization_id: "org-1" },
-      current_token: { raw_token: "token-1" },
+      current_profile: {
+        status: "present",
+        profile: { organization_id: "org-1" },
+      },
+      current_token: {
+        status: "present",
+        token: { raw_token: "token-1" },
+      },
     }),
     build_dynamic_entity_list_view_state_mock: vi.fn(),
     create_dynamic_entity_list_controller_crud_actions_mock: vi.fn(),
@@ -86,13 +94,17 @@ vi.mock("$lib/presentation/stores/auth", () => ({
   auth_store: auth_store_mock,
 }));
 
-import { create_dynamic_entity_list_controller_runtime } from "./dynamicEntityListControllerRuntime";
-
 describe("dynamicEntityListControllerRuntime", () => {
   beforeEach(() => {
     auth_store_mock.set({
-      current_profile: { organization_id: "org-1" },
-      current_token: { raw_token: "token-1" },
+      current_profile: {
+        status: "present",
+        profile: { organization_id: "org-1" },
+      },
+      current_token: {
+        status: "present",
+        token: { raw_token: "token-1" },
+      },
     });
     build_dynamic_entity_list_view_state_mock.mockReset();
     create_dynamic_entity_list_controller_crud_actions_mock.mockReset();
@@ -157,23 +169,22 @@ describe("dynamicEntityListControllerRuntime", () => {
       button_color_class: "primary",
       entity_type: "team",
       on_total_count_changed,
-      sub_entity_filter: null,
     } as never);
 
     await runtime.initialize();
     expect(load_dynamic_entity_list_columns_mock).toHaveBeenCalledWith({
       entity_metadata: { fields: [{ field_name: "name" }] },
       entity_type: "team",
-      sub_entity_filter: null,
     });
     expect(load_dynamic_entity_list_entities_mock).toHaveBeenCalledWith({
-      crud_handlers: undefined,
-      current_profile: { organization_id: "org-1" },
+      current_profile_state: {
+        status: "present",
+        profile: { organization_id: "org-1" },
+      },
       display_name: "Teams",
       entity_metadata: { fields: [{ field_name: "name" }] },
       entity_type: "team",
       raw_token: "token-1",
-      sub_entity_filter: null,
     });
     expect(load_dynamic_entity_list_filter_options_mock).toHaveBeenCalledWith([
       { field_name: "name" },
@@ -200,7 +211,6 @@ describe("dynamicEntityListControllerRuntime", () => {
     const runtime = create_dynamic_entity_list_controller_runtime({
       button_color_class: "primary",
       entity_type: "team",
-      sub_entity_filter: null,
     } as never);
 
     await runtime.initialize();
@@ -219,24 +229,23 @@ describe("dynamicEntityListControllerRuntime", () => {
     const runtime = create_dynamic_entity_list_controller_runtime({
       button_color_class: "primary",
       entity_type: "team",
-      sub_entity_filter: null,
     } as never);
 
     runtime.update_options({
       button_color_class: "secondary",
       entity_type: "player",
-      sub_entity_filter: null,
     } as never);
     expect(get(runtime.state_store).button_color_class).toBe("secondary");
     await runtime.load_all_entities_for_display();
     expect(load_dynamic_entity_list_entities_mock).toHaveBeenCalledWith({
-      crud_handlers: undefined,
-      current_profile: { organization_id: "org-1" },
+      current_profile_state: {
+        status: "present",
+        profile: { organization_id: "org-1" },
+      },
       display_name: "Teams",
       entity_metadata: { fields: [{ field_name: "name" }] },
       entity_type: "player",
       raw_token: "token-1",
-      sub_entity_filter: null,
     });
   });
 });

@@ -31,8 +31,9 @@ function build_conflict_changes(
 }
 
 function format_value_for_audit(value: unknown): string {
-  if (value === null) return "null";
-  if (value === undefined) return "undefined";
+  if (value == void 0) {
+    return value === void 0 ? "undefined" : "null";
+  }
   if (typeof value === "object") return JSON.stringify(value);
   return String(value);
 }

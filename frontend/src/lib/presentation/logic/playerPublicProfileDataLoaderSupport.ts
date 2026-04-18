@@ -1,7 +1,6 @@
 import type { Fixture } from "$lib/core/entities/Fixture";
 import type { Player } from "$lib/core/entities/Player";
 import { get_player_full_name } from "$lib/core/entities/Player";
-import type { PlayerPosition } from "$lib/core/entities/PlayerPosition";
 import type { PlayerProfile } from "$lib/core/entities/PlayerProfile";
 import type { PlayerTeamMembership } from "$lib/core/entities/PlayerTeamMembership";
 import type { Team } from "$lib/core/entities/Team";
@@ -17,6 +16,7 @@ import {
   PLAYER_PUBLIC_PROFILE_MESSAGE,
   PLAYER_PUBLIC_PROFILE_STATUS_COMPLETED,
   PLAYER_PUBLIC_PROFILE_VISIBILITY_PRIVATE,
+  type PlayerPublicPositionState,
   type PlayerPublicProfileLoadError,
   type PlayerPublicProfileStatsBundle,
 } from "./playerPublicProfileDataLoaderContracts";
@@ -46,6 +46,10 @@ function create_empty_player_public_profile_stats_bundle(): PlayerPublicProfileS
     team_stats: [],
   };
 }
+
+type PlayerPublicTeamStatsBuildState =
+  | { status: "missing" }
+  | { status: "present"; team_stats: PlayerPublicTeamStats };
 
 export async function load_public_player_profile(
   command: LoadPlayerPublicProfilePageDataCommand,
@@ -94,16 +98,16 @@ export async function load_public_player(
 export async function load_public_player_position(
   command: LoadPlayerPublicProfilePageDataCommand,
   player: Player,
-): Promise<PlayerPosition | null> {
+): Promise<PlayerPublicPositionState> {
   if (!player.position_id) {
-    return null;
+    return { status: "missing" };
   }
   const position_result =
     await command.dependencies.position_use_cases.get_by_id(player.position_id);
   if (!position_result.success || !position_result.data) {
-    return null;
+    return { status: "missing" };
   }
-  return position_result.data;
+  return { status: "present", position: position_result.data };
 }
 
 export async function load_public_player_link_sections(
@@ -125,10 +129,10 @@ function build_player_public_team_stats(
   teams_by_id: Map<string, Team>,
   fixtures: Fixture[],
   player_full_name: string,
-): PlayerPublicTeamStats | null {
+): PlayerPublicTeamStatsBuildState {
   const team = teams_by_id.get(membership.team_id);
   if (!team) {
-    return null;
+    return { status: "missing" };
   }
   const relevant_fixtures = fixtures.filter(
     (fixture: Fixture) =>
@@ -146,7 +150,10 @@ function build_player_public_team_stats(
     );
   }
   team_stats.total_matches = relevant_fixtures.length;
-  return { membership, team, stats: team_stats };
+  return {
+    status: "present",
+    team_stats: { membership, team, stats: team_stats },
+  };
 }
 
 function build_player_public_overall_stats(
@@ -195,10 +202,17 @@ export async function build_public_player_stats_bundle(
       ),
     )
     .filter(
-      (team_stat): team_stat is PlayerPublicTeamStats => team_stat !== null,
+      (
+        team_stat,
+      ): team_stat is {
+        status: "present";
+        team_stats: PlayerPublicTeamStats;
+      } => team_stat.status === "present",
     );
   return {
-    overall_stats: build_player_public_overall_stats(team_stats),
-    team_stats,
+    overall_stats: build_player_public_overall_stats(
+      team_stats.map((team_stat) => team_stat.team_stats),
+    ),
+    team_stats: team_stats.map((team_stat) => team_stat.team_stats),
   };
 }

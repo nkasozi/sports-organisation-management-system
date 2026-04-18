@@ -4,31 +4,48 @@
   import { goto } from "$app/navigation";
   import { page } from "$app/stores";
   import type { Fixture } from "$lib/core/entities/Fixture";
-import { get_fixture_use_cases } from "$lib/infrastructure/registry/useCaseFactories";
+  import { get_fixture_use_cases } from "$lib/infrastructure/registry/useCaseFactories";
   import OfficialRatingPanel from "$lib/presentation/components/OfficialRatingPanel.svelte";
   import { ensure_auth_profile } from "$lib/presentation/logic/authGuard";
   import { auth_store } from "$lib/presentation/stores/auth";
 
   const fixture_use_cases = get_fixture_use_cases();
 
-  let fixture: Fixture | null = null;
+  type FixtureState =
+    | { status: "missing" }
+    | { status: "present"; fixture: Fixture };
+
+  let fixture_state: FixtureState = { status: "missing" };
   let is_loading = true;
   let error_message = "";
 
   $: fixture_id = $page.params.id;
-  $: current_profile = $auth_store.current_profile;
+  $: current_profile_state = $auth_store.current_profile;
+  $: current_profile_id =
+    current_profile_state.status === "present"
+      ? current_profile_state.profile.id
+      : "";
+  $: current_profile_role =
+    current_profile_state.status === "present"
+      ? current_profile_state.profile.role
+      : "";
   $: can_rate_officials =
-    current_profile?.role === "officials_manager" ||
-    current_profile?.role === "team_manager";
-  $: is_completed_fixture = fixture?.status === "completed";
+    current_profile_role === "officials_manager" ||
+    current_profile_role === "team_manager";
+  $: fixture =
+    fixture_state.status === "present" ? fixture_state.fixture : false;
+  $: is_completed_fixture = fixture ? fixture.status === "completed" : false;
   $: show_rating_section = can_rate_officials && is_completed_fixture;
-  $: assigned_official_ids = (fixture?.assigned_officials ?? []).map(
-    (a) => a.official_id,
-  );
+  $: assigned_official_ids = fixture
+    ? fixture.assigned_officials.map((assignment) => assignment.official_id)
+    : [];
 
   async function load_fixture(): Promise<void> {
     const auth_result = await ensure_auth_profile();
-    if (!auth_result.success || !auth_result.profile) {
+    if (
+      !auth_result.success ||
+      auth_result.profile_state.status !== "present"
+    ) {
       goto("/sign-in");
       return;
     }
@@ -40,13 +57,13 @@ import { get_fixture_use_cases } from "$lib/infrastructure/registry/useCaseFacto
       return;
     }
 
-    fixture = result.data;
+    fixture_state = { status: "present", fixture: result.data };
     is_loading = false;
   }
 
   function format_date(date_string: string): string {
     if (!date_string) return "—";
-    return new Date(date_string).toLocaleDateString(undefined, {
+    return new Date(date_string).toLocaleDateString([], {
       weekday: "short",
       year: "numeric",
       month: "short",
@@ -137,14 +154,14 @@ import { get_fixture_use_cases } from "$lib/infrastructure/registry/useCaseFacto
       {/if}
     </div>
 
-    {#if show_rating_section && current_profile}
+    {#if show_rating_section && current_profile_state.status === "present"}
       <div class="mb-6">
         <h2 class="text-lg font-semibold text-gray-900 mb-4">Rate Officials</h2>
         <OfficialRatingPanel
           {fixture_id}
           organization_id={fixture.organization_id}
-          rater_user_id={current_profile.id}
-          rater_role={current_profile.role}
+          rater_user_id={current_profile_id}
+          rater_role={current_profile_role}
           {assigned_official_ids}
         />
       </div>
@@ -158,7 +175,7 @@ import { get_fixture_use_cases } from "$lib/infrastructure/registry/useCaseFacto
       <a href="/fixtures" class="text-sm text-blue-600 underline"
         >← Back to Fixtures</a
       >
-      {#if current_profile?.role === "officials_manager" || current_profile?.role === "org_admin" || current_profile?.role === "super_admin"}
+      {#if current_profile_role === "officials_manager" || current_profile_role === "org_admin" || current_profile_role === "super_admin"}
         <a
           href="/fixtures/{fixture_id}/manage"
           class="text-sm text-blue-600 underline">Manage Game →</a

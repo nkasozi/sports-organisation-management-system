@@ -30,7 +30,14 @@ export async function load_and_set_current_user(): Promise<Result<SystemUser>> {
   const system_user_repository = container.system_user_repository;
 
   const clerk_state = get(clerk_session);
-  const clerk_email = clerk_state.user?.email_address?.toLowerCase() ?? null;
+  if (clerk_state.user_state.status !== "present") {
+    console.log(
+      "[Seeding] No Clerk session active — skipping current user resolution",
+    );
+    return create_failure_result("No Clerk session active");
+  }
+
+  const clerk_email = clerk_state.user_state.user.email_address.toLowerCase();
 
   if (!clerk_email) {
     console.log(

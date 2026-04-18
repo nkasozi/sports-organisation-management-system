@@ -1,7 +1,7 @@
 <script lang="ts">
   export let sidebar_open: boolean = false;
   export let has_profile_picture: boolean = false;
-  export let profile_picture_base64: string | null | undefined = undefined;
+  export let profile_picture_base64: string | undefined = undefined;
   export let profile_initials: string = "";
   export let profile_display_name: string = "";
   export let user_role_display: string = "";

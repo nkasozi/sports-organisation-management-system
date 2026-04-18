@@ -6,7 +6,7 @@
   export let should_show_label: boolean = false;
   export let select_id: string;
   export let name: string;
-  export let selected_option: SelectOption | null = null;
+  export let selected_option: SelectOption | undefined = undefined;
   export let placeholder: string = "";
   export let has_error: boolean = false;
   export let is_open: boolean = false;
@@ -14,7 +14,7 @@
   export let is_loading: boolean = false;
   export let list_id: string;
   export let input_value: string = "";
-  export let input_element: HTMLInputElement | null = null;
+  export let input_element: HTMLInputElement | undefined = undefined;
   export let on_input_mousedown: (event: MouseEvent) => void;
   export let on_input_focus: () => void;
   export let on_input: (event: Event) => void;

@@ -30,11 +30,11 @@ interface LiveGameDetailReportDependencies {
 
 export async function build_live_game_detail_report(
   fixture: Fixture,
-  competition: Competition | null,
-  sport: Sport | null,
+  competition: Competition | undefined,
+  sport: Sport | undefined,
   home_team: Team,
   away_team: Team,
-  venue: Venue | null,
+  venue: Venue | undefined,
   home_players: LineupPlayer[],
   away_players: LineupPlayer[],
   assigned_officials_data: Array<{ official: Official; role_name: string }>,

@@ -1,8 +1,8 @@
 <script lang="ts">
     import type { Competition } from "$lib/core/entities/Competition";
-    import type { CompetitionFormat } from "$lib/core/entities/CompetitionFormat";
     import type { Fixture } from "$lib/core/entities/Fixture";
     import type { Organization } from "$lib/core/entities/Organization";
+    import type { CompetitionResultsCompetitionFormatState } from "$lib/presentation/logic/competitionResultsPageContracts";
     import type {
         CardSortMode,
         PlayerStats,
@@ -15,7 +15,9 @@
     export let selected_organization_id: string;
     export let competitions: Competition[];
     export let selected_competition_id: string;
-    export let competition_format: CompetitionFormat | null;
+    export let competition_format_state: CompetitionResultsCompetitionFormatState = {
+        status: "missing",
+    };
     export let can_change_organizations: boolean;
     export let share_link_copied: boolean;
     export let active_tab: "standings" | "fixtures" | "results" | "stats";
@@ -23,9 +25,9 @@
     export let workspace_state: ReturnType<
         typeof derive_competition_results_workspace_state
     >;
-    export let selected_team_id: string | null;
+    export let selected_team_id: string;
     export let downloading_all_reports: boolean;
-    export let downloading_fixture_id: string | null;
+    export let downloading_fixture_id: string;
     export let stats_team_filter: string;
     export let stats_card_sort: CardSortMode;
     export let selected_team_name: string;
@@ -52,8 +54,8 @@
     ) => Promise<boolean>;
     export let on_close_team_fixtures_panel: () => void;
     export let format_date: (date_string: string) => string;
-    export let get_fixture_stage_name: (stage_id?: string | null) => string;
-    export let get_fixture_stage_type: (stage_id?: string | null) => string;
+    export let get_fixture_stage_name: (stage_id: string) => string;
+    export let get_fixture_stage_type: (stage_id: string) => string;
     export let get_team_name: (team_id: string) => string;
     export let get_team_name_extended: (team_id: string) => string;
     export let get_competition_name_extended: (
@@ -67,7 +69,7 @@
     bind:selected_organization_id
     {competitions}
     bind:selected_competition_id
-    {competition_format}
+    {competition_format_state}
     {can_change_organizations}
     {share_link_copied}
     bind:active_tab

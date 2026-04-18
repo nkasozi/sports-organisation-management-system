@@ -77,7 +77,26 @@ describe("playerPublicProfileDataLoaderSupport", () => {
         } as never,
         player as never,
       ),
-    ).toEqual({ id: "position-1", name: "Forward" });
+    ).toEqual({
+      status: "present",
+      position: { id: "position-1", name: "Forward" },
+    });
+
+    expect(
+      await load_public_player_position(
+        {
+          dependencies: {
+            position_use_cases: {
+              get_by_id: async () => ({
+                success: true,
+                data: { id: "position-1", name: "Forward" },
+              }),
+            },
+          },
+        } as never,
+        { ...player, position_id: "" } as never,
+      ),
+    ).toEqual({ status: "missing" });
 
     expect(
       await load_public_player_link_sections(

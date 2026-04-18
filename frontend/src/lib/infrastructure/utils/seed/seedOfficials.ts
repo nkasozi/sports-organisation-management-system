@@ -1,6 +1,6 @@
 import type { Official } from "../../../core/entities/Official";
-import type { ScalarValueInput } from "../../../core/types/DomainScalars";
 import { DEFAULT_OFFICIAL_AVATAR } from "../../../core/entities/Official";
+import type { ScalarValueInput } from "../../../core/types/DomainScalars";
 import { generate_current_timestamp, SEED_OFFICIAL_IDS } from "./seedIds";
 import { resolve_seed_gender_id_for_first_name } from "./seedPlayerIds";
 
@@ -9,7 +9,9 @@ export function create_seed_officials(
 ): import("$lib/core/types/DomainScalars").ScalarInput<Official>[] {
   const now = generate_current_timestamp();
 
-  const officials_without_gender: import("$lib/core/types/DomainScalars").ScalarInput<Omit<Official, "gender_id">>[] = [
+  const officials_without_gender: import("$lib/core/types/DomainScalars").ScalarInput<
+    Omit<Official, "gender_id">
+  >[] = [
     {
       id: SEED_OFFICIAL_IDS.MICHAEL_ANDERSON,
       first_name: "Charles",

@@ -3,7 +3,10 @@ import { describe, expect, it } from "vitest";
 import type { Fixture } from "$lib/core/entities/Fixture";
 import type { Organization } from "$lib/core/entities/Organization";
 import { ANY_VALUE } from "$lib/core/interfaces/ports";
-import type { ScalarInput } from "$lib/core/types/DomainScalars";
+import {
+  parse_entity_scope,
+  type ScalarInput,
+} from "$lib/core/types/DomainScalars";
 
 import {
   can_user_change_live_games_organization,
@@ -11,21 +14,36 @@ import {
   load_live_games_organizations,
 } from "./liveGamesDataLoader";
 
-type LiveGamesProfile = NonNullable<
-  Parameters<typeof load_live_games_fixture_state>[1]
->;
+type LiveGamesProfileState = Parameters<
+  typeof load_live_games_fixture_state
+>[1];
 
-function create_profile(
-  overrides: Partial<LiveGamesProfile> = {},
-): LiveGamesProfile {
+function create_entity_scope(value: string) {
+  const entity_scope_result = parse_entity_scope(value);
+
+  if (!entity_scope_result.success) {
+    throw new Error(entity_scope_result.error);
+  }
+
+  return entity_scope_result.data;
+}
+
+function create_profile_state(
+  overrides: Partial<LiveGamesProfileState> = {},
+): LiveGamesProfileState {
   return {
-    organization_id: "org_1",
-    team_id: "*",
+    status: "present",
+    profile: {
+      organization_id: create_entity_scope("org_1"),
+      team_id: create_entity_scope("*"),
+    },
     ...overrides,
   };
 }
 
-function create_fixture(overrides: Partial<ScalarInput<Fixture>> = {}): Fixture {
+function create_fixture(
+  overrides: Partial<ScalarInput<Fixture>> = {},
+): Fixture {
   return {
     id: "fixture_1",
     organization_id: "org_1",
@@ -58,10 +76,19 @@ describe("liveGamesDataLoader", () => {
   it("allows organization switching only for wildcard organization scope", () => {
     expect(
       can_user_change_live_games_organization(
-        create_profile({ organization_id: ANY_VALUE }),
+        create_profile_state({
+          status: "present",
+          profile: {
+            organization_id: create_entity_scope(ANY_VALUE),
+            team_id: create_entity_scope(ANY_VALUE),
+          },
+        }),
       ),
     ).toBe(true);
-    expect(can_user_change_live_games_organization(create_profile())).toBe(
+    expect(
+      can_user_change_live_games_organization(create_profile_state()),
+    ).toBe(false);
+    expect(can_user_change_live_games_organization({ status: "missing" })).toBe(
       false,
     );
   });
@@ -80,10 +107,13 @@ describe("liveGamesDataLoader", () => {
       },
     };
 
-    const result = await load_live_games_organizations(
-      dependencies as never,
-      create_profile({ organization_id: "org_2" }),
-    );
+    const result = await load_live_games_organizations(dependencies as never, {
+      status: "present",
+      profile: {
+        organization_id: create_entity_scope("org_2"),
+        team_id: create_entity_scope(ANY_VALUE),
+      },
+    });
 
     expect(result.map((organization) => organization.id)).toEqual(["org_2"]);
   });
@@ -133,7 +163,7 @@ describe("liveGamesDataLoader", () => {
 
     const result = await load_live_games_fixture_state(
       dependencies as never,
-      create_profile(),
+      create_profile_state(),
       "org_1",
     );
 

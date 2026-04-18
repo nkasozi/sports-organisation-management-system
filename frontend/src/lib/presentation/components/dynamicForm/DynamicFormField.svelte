@@ -1,9 +1,9 @@
 <script lang="ts">
   import type { FieldMetadata } from "$lib/core/entities/BaseEntity";
-  import type { UserRole } from "$lib/core/interfaces/ports";
   import { build_dynamic_form_enum_select_options } from "$lib/presentation/logic/dynamicEntityFormFieldState";
   import type { DynamicFormFieldCallbacks } from "$lib/presentation/logic/dynamicFormComponentTypes";
   import { build_foreign_key_select_options } from "$lib/presentation/logic/dynamicFormLogic";
+  import type { UserRoleState } from "$lib/presentation/logic/systemUserFormLogic";
 
   import DynamicFormComplexField from "./DynamicFormComplexField.svelte";
   import DynamicFormEnumField from "./DynamicFormEnumField.svelte";
@@ -23,7 +23,7 @@
   export let foreign_key_options: Record<string, any[]> = {};
   export let is_loading: boolean = false;
   export let is_filtered_loading: boolean = false;
-  export let current_auth_role: UserRole | null = null;
+  export let current_auth_role_state: UserRoleState = { status: "missing" };
   export let callbacks: DynamicFormFieldCallbacks;
 
   $: is_full_width =
@@ -37,7 +37,7 @@
     field,
     form_data,
     entity_type,
-    current_auth_role,
+    current_auth_role_state,
   );
 </script>
 

@@ -27,8 +27,8 @@ function create_test_player(
     date_of_birth: overrides.date_of_birth ?? "1990-01-01",
     position_id: overrides.position_id ?? "position_1",
     organization_id: overrides.organization_id ?? "org_1",
-    height_cm: overrides.height_cm ?? null,
-    weight_kg: overrides.weight_kg ?? null,
+    height_cm: overrides.height_cm ?? 0,
+    weight_kg: overrides.weight_kg ?? 0,
     nationality: overrides.nationality ?? "UG",
     profile_image_url: overrides.profile_image_url ?? "",
     emergency_contact_name: overrides.emergency_contact_name ?? "",
@@ -48,8 +48,8 @@ function create_test_team(overrides: Partial<ScalarInput<Team>> = {}): Team {
     description: overrides.description ?? "",
     organization_id: overrides.organization_id ?? "org_1",
     gender_id: overrides.gender_id ?? "gender_women",
-    captain_player_id: overrides.captain_player_id ?? null,
-    vice_captain_player_id: overrides.vice_captain_player_id ?? null,
+    captain_player_id: overrides.captain_player_id ?? "",
+    vice_captain_player_id: overrides.vice_captain_player_id ?? "",
     max_squad_size: overrides.max_squad_size ?? 25,
     home_venue_id: overrides.home_venue_id ?? "venue_1",
     primary_color: overrides.primary_color ?? "#0000FF",
@@ -115,12 +115,16 @@ describe("build_player_assignments", () => {
     );
 
     expect(assignments).toHaveLength(2);
-    expect(assignments[0].current_team_id).toBe("team_1");
-    expect(assignments[0].current_team_name).toBe("Blue Stars");
+    expect(assignments[0].current_team_state).toEqual({
+      status: "assigned",
+      team_id: "team_1",
+      team_name: "Blue Stars",
+    });
     expect(assignments[0].jersey_number).toBe(1);
     expect(assignments[0].start_date).toBe("2024-04-05");
-    expect(assignments[1].current_team_id).toBeNull();
-    expect(assignments[1].current_team_name).toBeNull();
+    expect(assignments[1].current_team_state).toEqual({
+      status: "unassigned",
+    });
     expect(assignments[1].jersey_number).toBe(2);
   });
 });
@@ -140,7 +144,10 @@ describe("filter_player_assignments_by_team_gender", () => {
 
     const filtered_assignments = filter_player_assignments_by_team_gender(
       assignments,
-      create_test_team({ gender_id: "gender_women" }),
+      {
+        status: "present",
+        team: create_test_team({ gender_id: "gender_women" }),
+      },
     );
 
     expect(
@@ -162,10 +169,10 @@ describe("filter_player_assignments_by_team_gender", () => {
     );
 
     expect(
-      filter_player_assignments_by_team_gender(
-        assignments,
-        create_test_team({ gender_id: "" }),
-      ),
+      filter_player_assignments_by_team_gender(assignments, {
+        status: "present",
+        team: create_test_team({ gender_id: "" }),
+      }),
     ).toHaveLength(2);
   });
 });

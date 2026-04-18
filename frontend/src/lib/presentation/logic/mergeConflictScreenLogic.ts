@@ -1,8 +1,8 @@
+import type { ScalarInput } from "$lib/core/types/DomainScalars";
 import type {
   ConflictRecord,
   FieldDifference,
 } from "$lib/infrastructure/sync/conflictTypes";
-import type { ScalarInput } from "$lib/core/types/DomainScalars";
 
 export function build_merge_conflict_resolved_data(
   conflict: ScalarInput<ConflictRecord>,
@@ -16,9 +16,16 @@ export function build_merge_conflict_resolved_data(
 }
 
 export function format_merge_conflict_value(value: unknown): string {
-  if (value === null) return "null";
-  if (value === undefined) return "undefined";
-  if (typeof value === "object") return JSON.stringify(value, null, 2);
+  if (typeof value === "undefined") return "undefined";
+  if (typeof value === "object") {
+    return value
+      ? JSON.stringify(
+          value,
+          (_key: string, current_value: unknown) => current_value,
+          2,
+        )
+      : "null";
+  }
   return String(value);
 }
 

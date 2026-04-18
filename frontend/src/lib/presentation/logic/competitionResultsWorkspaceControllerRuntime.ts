@@ -5,6 +5,7 @@ import {
   download_all_fixture_reports,
   download_fixture_report,
 } from "$lib/presentation/logic/competitionResultsMatchReports";
+import type { CompetitionResultsSelectedCompetitionState } from "$lib/presentation/logic/competitionResultsPageContracts";
 import { build_shareable_competition_results_url } from "$lib/presentation/logic/competitionResultsPageData";
 import { load_team_fixtures_bundle } from "$lib/presentation/logic/competitionResultsTeamFixturesData";
 import {
@@ -17,15 +18,15 @@ export function create_competition_results_workspace_controller_runtime(command:
   fixtures: Fixture[];
   get_branding_logo_url: () => string;
   get_completed_fixtures: () => Fixture[];
-  get_selected_competition: () => Competition | null;
-  get_selected_team_id: () => string | null;
+  get_selected_competition_state: () => CompetitionResultsSelectedCompetitionState;
+  get_selected_team_id: () => string;
   selected_competition_id: string;
   selected_organization_id: string;
   set_downloading_all_reports: (value: boolean) => void;
-  set_downloading_fixture_id: (value: string | null) => void;
+  set_downloading_fixture_id: (value: string) => void;
   set_extended_competition_map: (value: Map<string, Competition>) => void;
   set_extended_team_map: (value: Map<string, Team>) => void;
-  set_selected_team_id: (value: string | null) => void;
+  set_selected_team_id: (value: string) => void;
   set_selected_team_name: (value: string) => void;
   set_share_link_copied: (value: boolean) => void;
   set_show_all_competitions_fixtures: (value: boolean) => void;
@@ -46,7 +47,7 @@ export function create_competition_results_workspace_controller_runtime(command:
   ) => Promise<void>;
 } {
   const close_team_fixtures_panel = (): void => {
-    command.set_selected_team_id(null);
+    command.set_selected_team_id("");
     command.set_selected_team_name("");
     command.set_team_fixtures_in_competition([]);
     command.set_team_fixtures_all_competitions([]);
@@ -79,7 +80,7 @@ export function create_competition_results_workspace_controller_runtime(command:
       command.set_downloading_all_reports(true);
       const result = await download_all_fixture_reports({
         completed_fixtures: command.get_completed_fixtures(),
-        selected_competition: command.get_selected_competition(),
+        selected_competition_state: command.get_selected_competition_state(),
         team_map: command.team_map,
         organization_logo_url: command.get_branding_logo_url(),
         dependencies: competition_results_match_report_dependencies,
@@ -95,12 +96,12 @@ export function create_competition_results_workspace_controller_runtime(command:
       command.set_downloading_fixture_id(fixture.id);
       const result = await download_fixture_report({
         fixture,
-        selected_competition: command.get_selected_competition(),
+        selected_competition_state: command.get_selected_competition_state(),
         team_map: command.team_map,
         organization_logo_url: command.get_branding_logo_url(),
         dependencies: competition_results_match_report_dependencies,
       });
-      command.set_downloading_fixture_id(null);
+      command.set_downloading_fixture_id("");
       return result;
     },
     handle_team_click: async (

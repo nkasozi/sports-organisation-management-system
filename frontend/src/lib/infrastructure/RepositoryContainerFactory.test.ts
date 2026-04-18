@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
+import { create_in_browser_repository_container } from "./RepositoryContainerFactory";
+
 const sentinels = vi.hoisted(() => {
   const player_team_transfer_history_repository = {
     name: "player_team_transfer_history_repository",
@@ -241,8 +243,6 @@ vi.mock("../adapters/repositories/InBrowserTeamStaffRoleRepository", () => ({
 vi.mock("../adapters/repositories/InBrowserVenueRepository", () => ({
   get_venue_repository: vi.fn(() => sentinels.venue_repository),
 }));
-
-import { create_in_browser_repository_container } from "./RepositoryContainerFactory";
 
 describe("RepositoryContainerFactory", () => {
   it("builds the in-browser repository container from all registered repositories", () => {

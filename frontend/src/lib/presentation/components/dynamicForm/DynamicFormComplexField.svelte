@@ -35,10 +35,16 @@
     stage_templates={Array.isArray(value) ? value : []}
     format_type={(form_data["format_type"] as FormatType | undefined) ??
       "league"}
-    league_config={(form_data["league_config"] as
-      | LeagueConfig
-      | null
-      | undefined) ?? null}
+    league_config={(form_data["league_config"] as LeagueConfig | undefined) ??
+      {
+        number_of_rounds: 2,
+        points_for_win: 3,
+        points_for_draw: 1,
+        points_for_loss: 0,
+        promotion_spots: 0,
+        relegation_spots: 0,
+        playoff_spots: 0,
+      }}
     disabled={is_read_only}
     error={validation_error}
     on:change={(event) =>

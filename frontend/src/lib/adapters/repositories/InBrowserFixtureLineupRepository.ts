@@ -76,7 +76,7 @@ export class InBrowserFixtureLineupRepository
 
     const submitted_at_value = status_changed_to_submitted
       ? now
-      : updates.submitted_at !== undefined
+      : "submitted_at" in updates
         ? updates.submitted_at
         : entity.submitted_at;
 
@@ -128,7 +128,7 @@ export class InBrowserFixtureLineupRepository
   }) {
     return pagination
       ? { page_number: pagination.page, page_size: pagination.page_size }
-      : undefined;
+      : void 0;
   }
 
   async get_lineups_for_fixture(
@@ -180,13 +180,23 @@ function create_default_fixture_lineups(): import("$lib/core/types/DomainScalars
   return [];
 }
 
-let singleton_instance: InBrowserFixtureLineupRepository | null = null;
+type FixtureLineupRepositoryState =
+  | { status: "uninitialized" }
+  | { status: "ready"; repository: InBrowserFixtureLineupRepository };
+
+let fixture_lineup_repository_state: FixtureLineupRepositoryState = {
+  status: "uninitialized",
+};
 
 export function get_fixture_lineup_repository(): InBrowserFixtureLineupRepository {
-  if (!singleton_instance) {
-    singleton_instance = new InBrowserFixtureLineupRepository();
+  if (fixture_lineup_repository_state.status === "ready") {
+    return fixture_lineup_repository_state.repository;
   }
-  return singleton_instance;
+
+  const repository = new InBrowserFixtureLineupRepository();
+  fixture_lineup_repository_state = { status: "ready", repository };
+
+  return repository;
 }
 
 export async function reset_fixture_lineup_repository(): Promise<boolean> {

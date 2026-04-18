@@ -22,7 +22,7 @@ describe("syncableImageFileValidation", () => {
       type: "image/png",
     });
 
-    expect(result).toEqual({ is_valid: true, error_message: null });
+    expect(result).toEqual({ is_valid: true });
   });
 
   it("rejects oversized image files with sync guidance", () => {
@@ -36,8 +36,12 @@ describe("syncableImageFileValidation", () => {
       error_message:
         "Image exceeds the sync limit of 700KB. Upload a smaller image and try again.",
     });
-    expect(result.error_message).toBe(
-      build_syncable_image_file_size_error(MAX_SYNCABLE_IMAGE_FILE_BYTES),
-    );
+    expect(result.is_valid).toBe(false);
+
+    if (!result.is_valid) {
+      expect(result.error_message).toBe(
+        build_syncable_image_file_size_error(MAX_SYNCABLE_IMAGE_FILE_BYTES),
+      );
+    }
   });
 });

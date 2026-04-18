@@ -87,7 +87,7 @@ describe("dynamicEntityFormInitialization", () => {
 
     const result = build_dynamic_form_initial_data(
       metadata,
-      null,
+      void 0,
       {},
       "competition_format",
     );

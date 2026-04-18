@@ -14,8 +14,8 @@ export interface LineupPlayer {
   id: EntityId;
   first_name: Name;
   last_name: Name;
-  jersey_number: number | null;
-  position: Name | null;
+  jersey_number: number;
+  position: Name;
   is_captain: boolean;
   is_substitute: boolean;
   time_on?: PlayerTimeOnStatus;
@@ -66,8 +66,8 @@ function create_lineup_player(
   id: LineupPlayer["id"],
   first_name: LineupPlayer["first_name"],
   last_name: LineupPlayer["last_name"],
-  jersey_number: number | null = null,
-  position: LineupPlayer["position"] = null,
+  jersey_number: number = 0,
+  position: LineupPlayer["position"] = "" as LineupPlayer["position"],
   is_captain: boolean = false,
   is_substitute: boolean = false,
   time_on: PlayerTimeOnStatus = "didnt_play",
@@ -85,7 +85,7 @@ function create_lineup_player(
 }
 
 function get_lineup_player_display_name(player: LineupPlayer): string {
-  const jersey = player.jersey_number ?? "?";
+  const jersey = player.jersey_number > 0 ? player.jersey_number : "?";
   const name = `${player.first_name} ${player.last_name}`.trim();
   const position_suffix = player.position ? `• ${player.position}` : "";
   const captain_badge = player.is_captain ? "(C) " : "";

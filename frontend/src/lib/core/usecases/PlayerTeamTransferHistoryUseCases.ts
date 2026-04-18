@@ -30,7 +30,7 @@ export function create_player_team_transfer_history_use_cases(
       filter?: PlayerTeamTransferHistoryFilter,
       options?: QueryOptions,
     ): PaginatedAsyncResult<PlayerTeamTransferHistory> {
-      return repository.find_all(filter, options);
+      return repository.find_all(filter ?? {}, options ?? {});
     },
 
     async get_by_id(

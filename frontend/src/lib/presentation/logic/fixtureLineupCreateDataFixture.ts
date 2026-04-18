@@ -1,9 +1,6 @@
 import { get_sport_by_id } from "$lib/adapters/persistence/sportService";
 import type { Team } from "$lib/core/entities/Team";
-import {
-  get_authorization_preselect_values,
-  type UserScopeProfile,
-} from "$lib/core/interfaces/ports";
+import { get_authorization_preselect_values } from "$lib/core/interfaces/ports";
 import { build_error_message } from "$lib/core/services/fixtureLineupWizard";
 import { build_fixture_team_label_map } from "$lib/presentation/logic/fixtureLineupCreateState";
 
@@ -11,10 +8,11 @@ import type {
   FixtureLineupCreateDependencies,
   FixtureLineupCreateFixtureData,
 } from "./fixtureLineupCreateDataTypes";
+import type { FixtureLineupCreateAuthProfileState } from "./fixtureLineupCreatePageContracts";
 
 export async function load_fixture_lineup_create_fixture_data(
   fixture_id: string,
-  current_auth_profile: UserScopeProfile | null,
+  current_auth_profile_state: FixtureLineupCreateAuthProfileState,
   dependencies: FixtureLineupCreateDependencies,
 ): Promise<
   | { success: true; data: FixtureLineupCreateFixtureData }
@@ -90,12 +88,27 @@ export async function load_fixture_lineup_create_fixture_data(
     }
   }
   if (competition.rule_overrides) {
-    if (competition.rule_overrides.min_players_on_field !== undefined)
-      min_players = competition.rule_overrides.min_players_on_field;
-    if (competition.rule_overrides.max_squad_size !== undefined)
-      max_players = competition.rule_overrides.max_squad_size;
-    if (competition.rule_overrides.max_players_on_field !== undefined)
-      starters_count = competition.rule_overrides.max_players_on_field;
+    if (
+      Object.prototype.hasOwnProperty.call(
+        competition.rule_overrides,
+        "min_players_on_field",
+      )
+    )
+      min_players = competition.rule_overrides.min_players_on_field!;
+    if (
+      Object.prototype.hasOwnProperty.call(
+        competition.rule_overrides,
+        "max_squad_size",
+      )
+    )
+      max_players = competition.rule_overrides.max_squad_size!;
+    if (
+      Object.prototype.hasOwnProperty.call(
+        competition.rule_overrides,
+        "max_players_on_field",
+      )
+    )
+      starters_count = competition.rule_overrides.max_players_on_field!;
   }
   const teams: Team[] = [];
   if (home_team_result.success && home_team_result.data)
@@ -139,7 +152,9 @@ export async function load_fixture_lineup_create_fixture_data(
       should_clear_fixture: true,
     };
   const preselect_values =
-    get_authorization_preselect_values(current_auth_profile);
+    current_auth_profile_state.status === "present"
+      ? get_authorization_preselect_values(current_auth_profile_state.profile)
+      : {};
   if (
     preselect_values.team_id &&
     teams_with_existing_lineups.has(preselect_values.team_id)

@@ -91,7 +91,7 @@ export const FIELD_HOCKEY_FOUL_CATEGORIES: CreateSportInput["foul_categories"] =
       severity: "minor",
       description: "Blocking opponent's path or stick",
       typical_penalty: "Free hit to opposing team",
-      results_in_card: null,
+      results_in_card: "",
     },
     {
       id: "stick_check_foul",
@@ -188,7 +188,7 @@ export const FIELD_HOCKEY_SCORING_RULES: CreateSportInput["scoring_rules"] = [
 export const FIELD_HOCKEY_SUBSTITUTION_RULES: CreateSportInput["substitution_rules"] =
   {
     max_substitutions_per_game: -1,
-    max_substitution_windows: null,
+    max_substitution_windows: -1,
     rolling_substitutions_allowed: true,
     return_after_substitution_allowed: true,
   };

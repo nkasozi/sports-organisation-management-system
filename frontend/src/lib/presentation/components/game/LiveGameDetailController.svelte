@@ -67,7 +67,13 @@
         get_page_state: () => page_state,
         get_view_state: () => view_state,
         goto,
-        raw_token: () => get(auth_store).current_token?.raw_token ?? null,
+        raw_token: () => {
+            const current_token_state = get(auth_store).current_token;
+
+            return current_token_state.status === "present"
+                ? current_token_state.token.raw_token
+                : "";
+        },
         set_event_state: (state: LiveGameDetailEventState) =>
             (event_state = state),
         set_modal_state: (state: LiveGameDetailModalState) =>

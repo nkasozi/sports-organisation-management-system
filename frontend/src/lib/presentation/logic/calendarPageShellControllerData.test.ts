@@ -1,5 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import {
+  create_calendar_shell_category,
+  delete_calendar_shell_activity,
+  load_calendar_shell_bundle,
+  load_calendar_shell_events,
+  save_calendar_shell_activity,
+} from "./calendarPageShellControllerData";
+
 const {
   build_calendar_shell_load_command_mock,
   create_calendar_category_action_mock,
@@ -30,14 +38,6 @@ vi.mock("./calendarPageData", () => ({
 vi.mock("./calendarPageShellControllerTypes", () => ({
   build_calendar_shell_load_command: build_calendar_shell_load_command_mock,
 }));
-
-import {
-  create_calendar_shell_category,
-  delete_calendar_shell_activity,
-  load_calendar_shell_bundle,
-  load_calendar_shell_events,
-  save_calendar_shell_activity,
-} from "./calendarPageShellControllerData";
 
 describe("calendarPageShellControllerData", () => {
   function create_command() {

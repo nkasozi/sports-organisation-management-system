@@ -97,7 +97,7 @@ describe("officialRatingPanelState", () => {
       {
         official: { id: "official-2", name: "Ref Two" },
         rating: build_default_official_rating_dimensions(),
-        existing_id: null,
+        existing_id: "",
         is_saving: false,
         validation_errors: [],
       },

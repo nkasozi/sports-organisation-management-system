@@ -12,15 +12,15 @@
   export let entity_type: string;
   export let show_list_actions: boolean = true;
   export let is_mobile_view: boolean = true;
-  export let crud_handlers: EntityCrudHandlers | null = null;
+  export let crud_handlers: EntityCrudHandlers | undefined = undefined;
   export let list_view_callbacks: EntityViewCallbacks;
   export let form_view_callbacks: EntityViewCallbacks;
-  export let bulk_create_handler: (() => void) | null = null;
+  export let bulk_create_handler: (() => void) | undefined = undefined;
   export let enable_bulk_import: boolean = false;
   export let button_color_class: string = "btn-primary-action";
   export let disabled_functionalities: CrudFunctionality[] = [];
-  export let initial_create_data: Record<string, unknown> | null = null;
-  export let current_entity_for_editing: BaseEntity | null = null;
+  export let initial_create_data: Record<string, unknown> | undefined = undefined;
+  export let current_entity_for_editing: BaseEntity | undefined = undefined;
   export let on_total_count_changed: (count: number) => void = () => {};
   export let on_selection_changed: (selected: BaseEntity[]) => void = () => {};
   export let on_entities_batch_deleted: (
@@ -67,6 +67,7 @@
         entity_data={initial_create_data}
         {is_mobile_view}
         {crud_handlers}
+        sub_entity_filter={void 0}
         view_callbacks={form_view_callbacks}
         {button_color_class}
       />
@@ -76,6 +77,7 @@
         entity_data={current_entity_for_editing}
         {is_mobile_view}
         {crud_handlers}
+        sub_entity_filter={void 0}
         view_callbacks={form_view_callbacks}
         {button_color_class}
       />

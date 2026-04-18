@@ -1,18 +1,24 @@
-import type { OfficialAssignment } from "$lib/core/entities/FixtureDetailsSetup";
-import type { ScalarInput } from "$lib/core/types/DomainScalars";
+import {
+  build_official_options_from_records,
+  build_organization_official_filter,
+  type OfficialRecord,
+  type OrganizationOfficialFilter,
+} from "./officialAssignmentLogic";
+
+export { compute_available_officials } from "./officialAssignmentLogic";
 
 export type SelectOption = { value: string; label: string };
 
 type OfficialUseCases = {
   list: (
-    filter: { organization_id: string } | undefined,
+    filter: OrganizationOfficialFilter,
     options: { page_number: number; page_size: number },
   ) => Promise<{ success: boolean; data?: unknown }>;
 };
 
 type RoleUseCases = {
   list: (
-    filter: { organization_id: string } | undefined,
+    filter: OrganizationOfficialFilter,
     options: { page_number: number; page_size: number },
   ) => Promise<{ success: boolean; data?: unknown }>;
 };
@@ -28,21 +34,22 @@ function normalize_items(data: unknown): Array<Record<string, string>> {
   return [];
 }
 
+function normalize_official_records(data: unknown): OfficialRecord[] {
+  return normalize_items(data) as unknown as OfficialRecord[];
+}
+
 export async function reload_official_options(command: {
   organization_id: string;
   official_use_cases: OfficialUseCases;
 }): Promise<SelectOption[]> {
   const officials_result = await command.official_use_cases.list(
-    command.organization_id
-      ? { organization_id: command.organization_id }
-      : undefined,
+    build_organization_official_filter(command.organization_id),
     { page_number: 1, page_size: 500 },
   );
   if (!officials_result.success || !officials_result.data) return [];
-  return normalize_items(officials_result.data).map((official) => ({
-    value: official.id,
-    label: `${official.first_name} ${official.last_name}`,
-  }));
+  return build_official_options_from_records(
+    normalize_official_records(officials_result.data),
+  );
 }
 
 export async function load_assignment_options(command: {
@@ -53,9 +60,7 @@ export async function load_assignment_options(command: {
   official_options: SelectOption[];
   role_options: SelectOption[];
 }> {
-  const filter = command.organization_id
-    ? { organization_id: command.organization_id }
-    : undefined;
+  const filter = build_organization_official_filter(command.organization_id);
   const [officials_result, roles_result] = await Promise.all([
     command.official_use_cases.list(filter, { page_number: 1, page_size: 500 }),
     command.role_use_cases.list(filter, { page_number: 1, page_size: 100 }),
@@ -63,10 +68,9 @@ export async function load_assignment_options(command: {
   return {
     official_options:
       officials_result.success && officials_result.data
-        ? normalize_items(officials_result.data).map((official) => ({
-            value: official.id,
-            label: `${official.first_name} ${official.last_name}`,
-          }))
+        ? build_official_options_from_records(
+            normalize_official_records(officials_result.data),
+          )
         : [],
     role_options:
       roles_result.success && roles_result.data
@@ -76,24 +80,4 @@ export async function load_assignment_options(command: {
           }))
         : [],
   };
-}
-
-export function compute_available_officials(
-  all_officials: SelectOption[],
-  current_assignments: ScalarInput<OfficialAssignment>[],
-  current_index: number,
-): SelectOption[] {
-  const assigned_official_ids = new Set(
-    current_assignments
-      .map((assignment, index) =>
-        index !== current_index ? assignment.official_id : null,
-      )
-      .filter(
-        (official_id): official_id is string =>
-          official_id !== null && official_id !== "",
-      ),
-  );
-  return all_officials.filter(
-    (option) => !assigned_official_ids.has(option.value),
-  );
 }

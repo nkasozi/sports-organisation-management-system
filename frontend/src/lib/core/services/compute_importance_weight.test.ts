@@ -12,7 +12,7 @@ function make_input(
     stage_type: "league_stage",
     match_day: 1,
     total_match_days: 10,
-    manual_override: null,
+    manual_override: { status: "automatic" },
     ...overrides,
   } as ImportanceWeightInput;
 }
@@ -21,14 +21,20 @@ describe("compute_importance_weight", () => {
   describe("manual_override", () => {
     it("returns manual_override when set, regardless of stage_type", () => {
       const result = compute_importance_weight(
-        make_input({ stage_type: "one_off_stage", manual_override: 1.5 }),
+        make_input({
+          stage_type: "one_off_stage",
+          manual_override: { status: "manual", value: 1.5 },
+        }),
       );
       expect(result).toBe(1.5);
     });
 
-    it("ignores manual_override when null", () => {
+    it("uses computed weight when manual_override is automatic", () => {
       const result = compute_importance_weight(
-        make_input({ stage_type: "one_off_stage", manual_override: null }),
+        make_input({
+          stage_type: "one_off_stage",
+          manual_override: { status: "automatic" },
+        }),
       );
       expect(result).toBe(3.0);
     });

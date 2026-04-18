@@ -1,6 +1,8 @@
 import type { GameEventType } from "../../core/entities/GameEventType";
 import type { GameEventTypeFilter } from "../../core/interfaces/ports";
 
+const GLOBAL_GAME_EVENT_TYPE_SPORT_ID = "" as GameEventType["sport_id"];
+
 export function apply_game_event_type_filter(
   entities: GameEventType[],
   filter: GameEventTypeFilter,
@@ -17,10 +19,11 @@ export function apply_game_event_type_filter(
       (entity: GameEventType) => entity.code === filter.code,
     );
   }
-  if (filter.sport_id !== undefined) {
+  if ("sport_id" in filter) {
     filtered = filtered.filter(
       (entity: GameEventType) =>
-        entity.sport_id === filter.sport_id || entity.sport_id === null,
+        entity.sport_id === filter.sport_id ||
+        entity.sport_id === GLOBAL_GAME_EVENT_TYPE_SPORT_ID,
     );
   }
   if (filter.category) {
@@ -28,12 +31,12 @@ export function apply_game_event_type_filter(
       (entity: GameEventType) => entity.category === filter.category,
     );
   }
-  if (filter.affects_score !== undefined) {
+  if ("affects_score" in filter) {
     filtered = filtered.filter(
       (entity: GameEventType) => entity.affects_score === filter.affects_score,
     );
   }
-  if (filter.requires_player !== undefined) {
+  if ("requires_player" in filter) {
     filtered = filtered.filter(
       (entity: GameEventType) =>
         entity.requires_player === filter.requires_player,

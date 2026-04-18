@@ -4,6 +4,8 @@ import {
   create_success_result,
 } from "$lib/core/types/Result";
 import type { SyncResult } from "$lib/infrastructure/sync/syncTypes";
+import type { ConvexUserProfile } from "$lib/presentation/stores/authTypes";
+import type { SyncProgressState } from "$lib/presentation/stores/syncStoreTypes";
 
 import {
   build_sync_progress_message,
@@ -20,9 +22,18 @@ interface InitialSyncStateSnapshot {
   is_syncing: boolean;
 }
 
-export interface ConvexProfileData {
-  organization_id?: string | null;
-  team_id?: string | null;
+type ProfileIdentifierState =
+  | { status: "absent" }
+  | { status: "present"; value: string };
+
+type SyncProgressSubscriptionState =
+  | { status: "inactive" }
+  | { status: "active"; unsubscribe: () => void };
+
+interface LoginSyncProfile {
+  profile: ConvexUserProfile;
+  organization_id: ProfileIdentifierState;
+  team_id: ProfileIdentifierState;
 }
 
 export interface InitialSyncStorePort {
@@ -47,7 +58,7 @@ interface SyncStoreProgress {
 
 export interface SyncStorePort {
   subscribe(
-    handler: (state: { current_progress: SyncStoreProgress | null }) => void,
+    handler: (state: { current_progress: SyncProgressState }) => void,
   ): () => void;
   sync_now(direction: "pull"): Promise<SyncResult>;
 }
@@ -60,14 +71,10 @@ export interface LayoutLoginSyncDependencies {
   start_background_sync(): void;
   reset_database(): Promise<unknown>;
   reset_sync_metadata(): Promise<unknown>;
-  fetch_current_user_profile_from_convex(): Promise<{
-    success: boolean;
-    data?: ConvexProfileData | null;
-    error?: string;
-  }>;
+  fetch_current_user_profile_from_convex(): Promise<Result<ConvexUserProfile>>;
   set_pulling_from_remote(value: boolean): void;
   write_convex_user_to_local_dexie(
-    profile: ConvexProfileData,
+    profile: ConvexUserProfile,
   ): Promise<unknown>;
   pull_user_scoped_record_from_convex(
     table_name: string,
@@ -79,16 +86,66 @@ export interface LayoutLoginSyncDependencies {
   delay(milliseconds: number): Promise<void>;
 }
 
+function create_absent_profile_identifier_state(): ProfileIdentifierState {
+  return { status: "absent" };
+}
+
+function create_present_profile_identifier_state(
+  value: string,
+): ProfileIdentifierState {
+  return { status: "present", value };
+}
+
+function create_profile_identifier_state(
+  value: string | undefined,
+): ProfileIdentifierState {
+  if (!value) {
+    return create_absent_profile_identifier_state();
+  }
+
+  return create_present_profile_identifier_state(value);
+}
+
+function normalize_login_sync_profile(
+  profile: ConvexUserProfile,
+): LoginSyncProfile {
+  return {
+    profile,
+    organization_id: create_profile_identifier_state(profile.organization_id),
+    team_id: create_profile_identifier_state(profile.team_id),
+  };
+}
+
+function create_inactive_sync_progress_subscription_state(): SyncProgressSubscriptionState {
+  return { status: "inactive" };
+}
+
+function create_active_sync_progress_subscription_state(
+  unsubscribe: () => void,
+): SyncProgressSubscriptionState {
+  return { status: "active", unsubscribe };
+}
+
+function clear_sync_progress_subscription(
+  sync_progress_subscription: SyncProgressSubscriptionState,
+): void {
+  if (sync_progress_subscription.status !== "active") {
+    return;
+  }
+
+  sync_progress_subscription.unsubscribe();
+}
+
 async function cleanup_failed_login_sync(
   dependencies: LayoutLoginSyncDependencies,
   error_message: string,
-  unsubscribe_sync_progress: (() => void) | null,
+  sync_progress_subscription: SyncProgressSubscriptionState,
 ): Promise<Result<boolean>> {
   console.error("[Layout] Login sync failed", {
     event: LOGIN_SYNC_FAILED_EVENT,
     error: error_message,
   });
-  unsubscribe_sync_progress?.();
+  clear_sync_progress_subscription(sync_progress_subscription);
   dependencies.initial_sync_store.reset();
   await dependencies.clear_session_sync_flag();
   await dependencies.sign_out();
@@ -109,7 +166,8 @@ export async function sync_verified_user_login_session(
     return create_success_result(false);
   }
   dependencies.initial_sync_store.start_sync();
-  let unsubscribe_sync_progress: (() => void) | null = null;
+  let sync_progress_subscription =
+    create_inactive_sync_progress_subscription_state();
   dependencies.initial_sync_store.update_progress(
     "Stopping background processes...",
     5,
@@ -121,10 +179,10 @@ export async function sync_verified_user_login_session(
   );
   const profile_result =
     await dependencies.fetch_current_user_profile_from_convex();
-  if (!profile_result.success || !profile_result.data) {
+  if (!profile_result.success) {
     console.warn("[Layout] No Convex profile found for signed-in user", {
       event: "login_profile_not_found",
-      error: !profile_result.success ? profile_result.error : "no_profile_data",
+      error: profile_result.error,
     });
     dependencies.initial_sync_store.reset();
     await dependencies.clear_session_sync_flag();
@@ -132,6 +190,7 @@ export async function sync_verified_user_login_session(
     await dependencies.goto(UNAUTHORIZED_REDIRECT);
     return create_failure_result(NO_PROFILE_FOUND_ERROR);
   }
+  const login_sync_profile = normalize_login_sync_profile(profile_result.data);
   dependencies.initial_sync_store.update_progress(
     "Profile found. Preparing your workspace...",
     9,
@@ -144,46 +203,53 @@ export async function sync_verified_user_login_session(
     "Setting up your account...",
     17,
   );
-  await dependencies.write_convex_user_to_local_dexie(profile_result.data);
-  if (should_pull_org_from_server(profile_result.data.organization_id)) {
+  await dependencies.write_convex_user_to_local_dexie(
+    login_sync_profile.profile,
+  );
+  if (
+    login_sync_profile.organization_id.status === "present" &&
+    should_pull_org_from_server(login_sync_profile.organization_id.value)
+  ) {
     dependencies.initial_sync_store.update_progress(
       "Loading your organisation...",
       18,
     );
     await dependencies.pull_user_scoped_record_from_convex(
       "organizations",
-      profile_result.data.organization_id!,
+      login_sync_profile.organization_id.value,
     );
   }
-  if (profile_result.data.team_id) {
+  if (login_sync_profile.team_id.status === "present") {
     dependencies.initial_sync_store.update_progress("Loading your team...", 19);
     await dependencies.pull_user_scoped_record_from_convex(
       "teams",
-      profile_result.data.team_id,
+      login_sync_profile.team_id.value,
     );
   }
   dependencies.initial_sync_store.update_progress("Starting data sync...", 20);
   dependencies.set_pulling_from_remote(false);
-  unsubscribe_sync_progress = dependencies.sync_store.subscribe((state) => {
-    if (!state.current_progress) return;
-    dependencies.initial_sync_store.update_progress(
-      build_sync_progress_message(
-        state.current_progress.table_name,
-        state.current_progress.tables_completed,
-        state.current_progress.total_tables,
-      ),
-      scale_sync_percentage(state.current_progress.percentage),
-    );
-  });
+  sync_progress_subscription = create_active_sync_progress_subscription_state(
+    dependencies.sync_store.subscribe((state) => {
+      if (state.current_progress.status !== "active") return;
+      dependencies.initial_sync_store.update_progress(
+        build_sync_progress_message(
+          state.current_progress.progress.table_name,
+          state.current_progress.progress.tables_completed,
+          state.current_progress.progress.total_tables,
+        ),
+        scale_sync_percentage(state.current_progress.progress.percentage),
+      );
+    }),
+  );
   const first_sync_result = await dependencies.sync_store.sync_now("pull");
   if (!first_sync_result.success && first_sync_result.errors.length > 0) {
     return cleanup_failed_login_sync(
       dependencies,
       `Sync failed: ${first_sync_result.errors[0]?.error || "Unknown sync error"}`,
-      unsubscribe_sync_progress,
+      sync_progress_subscription,
     );
   }
-  unsubscribe_sync_progress?.();
+  clear_sync_progress_subscription(sync_progress_subscription);
   dependencies.initial_sync_store.update_progress(
     "Resolving references...",
     88,

@@ -4,6 +4,7 @@ import type {
   LineupPlayer,
 } from "$lib/core/entities/FixtureLineup";
 import type { Official } from "$lib/core/entities/Official";
+import type { Organization } from "$lib/core/entities/Organization";
 import type { Sport } from "$lib/core/entities/Sport";
 import type { Team } from "$lib/core/entities/Team";
 import type { Venue } from "$lib/core/entities/Venue";
@@ -42,6 +43,17 @@ export interface LiveGameDetailDataDependencies {
   official_use_cases: OfficialUseCases;
 }
 
+function extract_success_data<EntityType>(result: {
+  success: boolean;
+  data?: unknown;
+}): EntityType | false {
+  if (!result.success || !result.data) {
+    return false;
+  }
+
+  return result.data as EntityType;
+}
+
 export async function load_live_game_detail_bundle(
   fixture_id: string,
   dependencies: LiveGameDetailDataDependencies,
@@ -74,28 +86,25 @@ export async function load_live_game_detail_bundle(
     ]);
   const competition_result = fixture.competition_id
     ? await dependencies.competition_use_cases.get_by_id(fixture.competition_id)
-    : { success: false, data: null };
-  const competition = competition_result.success
-    ? competition_result.data
-    : null;
+    : { success: false };
+  const competition_result_data =
+    extract_success_data<Competition>(competition_result);
+  const competition = competition_result_data || undefined;
   const organization_result = competition?.organization_id
     ? await dependencies.organization_use_cases.get_by_id(
         competition.organization_id,
       )
-    : { success: false, data: null };
-  const organization_name =
-    organization_result.success && organization_result.data
-      ? organization_result.data.name
-      : "";
-  const sport_result =
-    organization_result.success && organization_result.data?.sport_id
-      ? await dependencies.sport_use_cases.get_by_id(
-          organization_result.data.sport_id,
-        )
-      : { success: false, data: null };
+    : { success: false };
+  const organization_result_data =
+    extract_success_data<Organization>(organization_result);
+  const organization = organization_result_data || undefined;
+  const organization_name = organization?.name ?? "";
+  const sport_result = organization?.sport_id
+    ? await dependencies.sport_use_cases.get_by_id(organization.sport_id)
+    : { success: false };
   const venue_result = fixture.venue
     ? await dependencies.venue_use_cases.get_by_id(fixture.venue)
-    : { success: false, data: null };
+    : { success: false };
   const assigned_officials_data = fixture.assigned_officials?.length
     ? (
         await Promise.all(
@@ -109,30 +118,38 @@ export async function load_live_game_detail_bundle(
                   official: official_result.data as Official,
                   role_name: String(assignment.role_name),
                 }
-              : null;
+              : false;
           }),
         )
       ).filter(
         (assignment): assignment is { official: Official; role_name: string } =>
-          assignment !== null,
+          Boolean(assignment),
       )
     : [];
-  const home_lineup = home_lineup_result.success
-    ? (home_lineup_result.data as FixtureLineup | null)
-    : null;
-  const away_lineup = away_lineup_result.success
-    ? (away_lineup_result.data as FixtureLineup | null)
-    : null;
+  const home_lineup_result_data =
+    extract_success_data<FixtureLineup>(home_lineup_result);
+  const away_lineup_result_data =
+    extract_success_data<FixtureLineup>(away_lineup_result);
+  const home_team_result_data = extract_success_data<Team>(home_result);
+  const away_team_result_data = extract_success_data<Team>(away_result);
+  const sport_result_data = extract_success_data<Sport>(sport_result);
+  const venue_result_data = extract_success_data<Venue>(venue_result);
+  const home_lineup = home_lineup_result_data || undefined;
+  const away_lineup = away_lineup_result_data || undefined;
+  const home_team = home_team_result_data || undefined;
+  const away_team = away_team_result_data || undefined;
+  const sport = sport_result_data || undefined;
+  const venue = venue_result_data || undefined;
   return {
     success: true,
     data: {
       fixture,
-      home_team: home_result.success ? (home_result.data as Team | null) : null,
-      away_team: away_result.success ? (away_result.data as Team | null) : null,
-      competition: competition as Competition | null,
-      sport: sport_result.success ? (sport_result.data as Sport | null) : null,
+      home_team: home_team ?? void 0,
+      away_team: away_team ?? void 0,
+      competition: competition ?? void 0,
+      sport: sport ?? void 0,
       organization_name,
-      venue: venue_result.success ? (venue_result.data as Venue | null) : null,
+      venue: venue ?? void 0,
       assigned_officials_data,
       home_players: home_lineup
         ? normalize_lineup_players(
@@ -150,6 +167,6 @@ export async function load_live_game_detail_bundle(
         fixture.status === "in_progress"
           ? (fixture.current_minute || 0) * 60
           : 0,
-    },
+    } as LiveGameDetailBundle,
   };
 }

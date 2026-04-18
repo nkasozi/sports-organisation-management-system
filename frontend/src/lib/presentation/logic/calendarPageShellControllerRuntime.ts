@@ -5,9 +5,9 @@ import type { ActivityCategory } from "$lib/core/entities/ActivityCategory";
 import type { Competition } from "$lib/core/entities/Competition";
 import type { Organization } from "$lib/core/entities/Organization";
 import type { Team } from "$lib/core/entities/Team";
-import type { UserScopeProfile } from "$lib/core/interfaces/ports";
 import type { CalendarEvent } from "$lib/core/interfaces/ports/internal/usecases/ActivityUseCasesPort";
 import type { UseCasesContainer } from "$lib/infrastructure/container";
+import type { CalendarProfileState } from "$lib/presentation/logic/calendarPageData";
 import {
   load_calendar_shell_bundle,
   load_calendar_shell_events,
@@ -24,8 +24,8 @@ export function create_calendar_page_shell_controller_runtime(command: {
   get_activity_form_values: () => ActivityFormValues;
   get_calendar_events: () => CalendarEvent[];
   get_categories: () => ActivityCategory[];
-  get_current_auth_profile: () => UserScopeProfile | null;
-  get_editing_activity: () => Activity | null;
+  get_current_auth_profile_state: () => CalendarProfileState;
+  get_editing_activity: () => Activity | undefined;
   get_filter_category_id: () => string;
   get_filter_competition_id: () => string;
   get_filter_team_id: () => string;
@@ -37,7 +37,7 @@ export function create_calendar_page_shell_controller_runtime(command: {
   set_calendar_events: (value: CalendarEvent[]) => void;
   set_categories: (value: ActivityCategory[]) => void;
   set_competitions: (value: Competition[]) => void;
-  set_editing_activity: (value: Activity | null) => void;
+  set_editing_activity: (value?: Activity) => void;
   set_error_message: (value: string) => void;
   set_filter_category_id: (value: string) => void;
   set_filter_competition_id: (value: string) => void;
@@ -46,7 +46,7 @@ export function create_calendar_page_shell_controller_runtime(command: {
   set_is_using_cached_data: (value: boolean) => void;
   set_loading_state: (value: LoadingState) => void;
   set_organizations: (value: Organization[]) => void;
-  set_selected_event_details: (value: CalendarEvent | null) => void;
+  set_selected_event_details: (value?: CalendarEvent) => void;
   set_selected_organization_id: (value: string) => void;
   set_show_category_modal: (value: boolean) => void;
   set_show_create_modal: (value: boolean) => void;
@@ -119,7 +119,7 @@ export function create_calendar_page_shell_controller_runtime(command: {
     initialize: async (): Promise<void> => {
       const initial_data = await load_calendar_shell_initial_data({
         is_public: get(is_public_viewer),
-        current_profile: command.get_current_auth_profile(),
+        current_profile_state: command.get_current_auth_profile_state(),
         preferred_organization_id:
           command.get_url_org_id() ||
           get(public_organization_store).organization_id,

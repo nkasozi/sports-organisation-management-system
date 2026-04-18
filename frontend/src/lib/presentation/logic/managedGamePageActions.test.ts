@@ -1,5 +1,20 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import {
+  create_missing_managed_game_fixture_state,
+  create_missing_managed_game_selected_event_type_state,
+  create_present_managed_game_fixture_state,
+  create_present_managed_game_selected_event_type_state,
+} from "$lib/presentation/logic/managedGamePageTypes";
+
+import {
+  change_managed_game_period,
+  end_managed_game,
+  end_managed_game_period,
+  record_managed_game_event,
+  start_managed_game,
+} from "./managedGamePageActions";
+
 const {
   change_game_period_mock,
   end_game_period_mock,
@@ -22,14 +37,6 @@ vi.mock("./gameManageActions", () => ({
   start_game_session: start_game_session_mock,
 }));
 
-import {
-  change_managed_game_period,
-  end_managed_game,
-  end_managed_game_period,
-  record_managed_game_event,
-  start_managed_game,
-} from "./managedGamePageActions";
-
 describe("managedGamePageActions", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -38,14 +45,15 @@ describe("managedGamePageActions", () => {
   it("fails fast when the fixture or event selection is missing", async () => {
     expect(
       await start_managed_game({
-        fixture: null,
+        fixture: create_missing_managed_game_fixture_state(),
         fixture_use_cases: {} as never,
       }),
     ).toEqual({ success: false, error: "No fixture loaded" });
     expect(
       await record_managed_game_event({
-        fixture: null,
-        selected_event_type: null,
+        fixture: create_missing_managed_game_fixture_state(),
+        selected_event_type:
+          create_missing_managed_game_selected_event_type_state(),
         event_minute: 0,
         selected_team_side: "home",
         event_player_name: "",
@@ -55,7 +63,7 @@ describe("managedGamePageActions", () => {
     ).toEqual({ success: false, error: "No fixture event selected" });
     expect(
       await change_managed_game_period({
-        fixture: null,
+        fixture: create_missing_managed_game_fixture_state(),
         new_period: "second_half",
         minute: 45,
         fixture_use_cases: {} as never,
@@ -74,11 +82,15 @@ describe("managedGamePageActions", () => {
     });
 
     await start_managed_game({
-      fixture: { id: "fixture-1" } as never,
+      fixture: create_present_managed_game_fixture_state({
+        id: "fixture-1",
+      } as never),
       fixture_use_cases: { start_fixture: vi.fn() } as never,
     });
     await end_managed_game({
-      fixture: { id: "fixture-1" } as never,
+      fixture: create_present_managed_game_fixture_state({
+        id: "fixture-1",
+      } as never),
       fixture_use_cases: { end_fixture: vi.fn() } as never,
     });
 
@@ -108,8 +120,14 @@ describe("managedGamePageActions", () => {
     });
 
     await record_managed_game_event({
-      fixture: { id: "fixture-1" } as never,
-      selected_event_type: { id: "goal", label: "Goal" } as never,
+      fixture: create_present_managed_game_fixture_state({
+        id: "fixture-1",
+      } as never),
+      selected_event_type:
+        create_present_managed_game_selected_event_type_state({
+          id: "goal",
+          label: "Goal",
+        } as never),
       event_minute: 12,
       selected_team_side: "away",
       event_player_name: "Ada Stone",
@@ -117,7 +135,9 @@ describe("managedGamePageActions", () => {
       fixture_use_cases: { record_game_event: vi.fn() } as never,
     });
     await change_managed_game_period({
-      fixture: { id: "fixture-1" } as never,
+      fixture: create_present_managed_game_fixture_state({
+        id: "fixture-1",
+      } as never),
       new_period: "second_half",
       minute: 45,
       fixture_use_cases: {
@@ -126,7 +146,9 @@ describe("managedGamePageActions", () => {
       } as never,
     });
     await end_managed_game_period({
-      fixture: { id: "fixture-1" } as never,
+      fixture: create_present_managed_game_fixture_state({
+        id: "fixture-1",
+      } as never),
       minute: 90,
       fixture_use_cases: {
         record_game_event: vi.fn(),

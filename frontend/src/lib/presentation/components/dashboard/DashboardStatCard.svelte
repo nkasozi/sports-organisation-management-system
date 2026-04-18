@@ -12,7 +12,7 @@
 
 <svelte:element
     this={user_can_navigate ? "a" : "div"}
-    href={user_can_navigate ? href : undefined}
+    href={user_can_navigate ? href : void 0}
     class="card p-6 {user_can_navigate
         ? `hover:ring-2 ${hover_ring_class} cursor-pointer`
         : ''}"

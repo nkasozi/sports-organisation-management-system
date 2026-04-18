@@ -13,6 +13,10 @@ export interface OfficialRecord {
   organization_id: string;
 }
 
+export type OrganizationOfficialFilter =
+  | { organization_id: string }
+  | Record<string, never>;
+
 export function build_official_options_from_records(
   officials: OfficialRecord[],
 ): SelectOption[] {
@@ -34,8 +38,8 @@ export function filter_officials_by_organization(
 
 export function build_organization_official_filter(
   organization_id: string,
-): { organization_id: string } | undefined {
-  if (!organization_id) return undefined;
+): OrganizationOfficialFilter {
+  if (!organization_id) return {};
   return { organization_id };
 }
 
@@ -46,8 +50,10 @@ export function compute_available_officials(
 ): SelectOption[] {
   const assigned_official_ids = new Set(
     current_assignments
-      .map((a, i) => (i !== current_index ? a.official_id : null))
-      .filter((id): id is string => id !== null && id !== ""),
+      .map((assignment, index) =>
+        index !== current_index ? assignment.official_id : "",
+      )
+      .filter((official_id): official_id is string => official_id !== ""),
   );
 
   return all_officials.filter(

@@ -31,19 +31,24 @@ function invalidate_all_caches(caches: AuthCache<unknown>[]): number {
 function create_change_handler(
   caches: AuthCache<unknown>[],
 ): (result: unknown) => void {
-  let previous_snapshot: string | null = null;
+  let previous_snapshot_state:
+    | { status: "empty" }
+    | { status: "ready"; snapshot: string } = { status: "empty" };
 
   return (result: unknown): void => {
     const current_snapshot = JSON.stringify(result);
 
-    if (previous_snapshot === null) {
-      previous_snapshot = current_snapshot;
+    if (previous_snapshot_state.status === "empty") {
+      previous_snapshot_state = {
+        status: "ready",
+        snapshot: current_snapshot,
+      };
       return;
     }
 
-    if (current_snapshot === previous_snapshot) return;
+    if (current_snapshot === previous_snapshot_state.snapshot) return;
 
-    previous_snapshot = current_snapshot;
+    previous_snapshot_state = { status: "ready", snapshot: current_snapshot };
     const invalidated_count = invalidate_all_caches(caches);
 
     console.log(

@@ -10,7 +10,10 @@ import {
   end_managed_game_period,
   start_managed_game,
 } from "$lib/presentation/logic/managedGamePageActions";
-import type { ManagedGameStartCheck } from "$lib/presentation/logic/managedGamePageTypes";
+import {
+  create_present_managed_game_fixture_state,
+  type ManagedGameStartCheck,
+} from "$lib/presentation/logic/managedGamePageTypes";
 
 import {
   derive_managed_game_view_state,
@@ -23,7 +26,7 @@ type ManagedGameFixtureUseCases = Pick<
 >;
 
 export function create_managed_game_game_action_handlers(command: {
-  before_start: (fixture: Fixture | null) => Promise<ManagedGameStartCheck>;
+  before_start: (fixture: Fixture) => Promise<ManagedGameStartCheck>;
   fixture_use_cases: ManagedGameFixtureUseCases;
   get_state: () => ManagedGamePageState;
   goto: (path: string) => Promise<unknown>;
@@ -46,9 +49,15 @@ export function create_managed_game_game_action_handlers(command: {
   };
   return {
     handle_start_click: async (): Promise<void> => {
-      const start_check = await command.before_start(
-        command.get_state().fixture,
-      );
+      const fixture_state = command.get_state().fixture;
+      if (fixture_state.status !== "present") {
+        update_state((state) =>
+          set_managed_game_toast(state, "No fixture loaded", "error"),
+        );
+        return;
+      }
+
+      const start_check = await command.before_start(fixture_state.fixture);
       if (!start_check.allowed) {
         const start_message = start_check.message;
         if (start_message) {
@@ -92,7 +101,7 @@ export function create_managed_game_game_action_handlers(command: {
           {
             ...state,
             is_updating: false,
-            fixture: result.data,
+            fixture: create_present_managed_game_fixture_state(result.data),
             game_clock_seconds: 0,
           },
           "Game started! Clock is running.",
@@ -124,7 +133,11 @@ export function create_managed_game_game_action_handlers(command: {
       }
       update_state((state) =>
         set_managed_game_toast(
-          { ...state, is_updating: false, fixture: result.data },
+          {
+            ...state,
+            is_updating: false,
+            fixture: create_present_managed_game_fixture_state(result.data),
+          },
           "Game completed!",
           "success",
         ),
@@ -163,7 +176,11 @@ export function create_managed_game_game_action_handlers(command: {
       }
       update_state((state) =>
         set_managed_game_toast(
-          { ...state, is_updating: false, fixture: result.data },
+          {
+            ...state,
+            is_updating: false,
+            fixture: create_present_managed_game_fixture_state(result.data),
+          },
           `${get_period_display_name(new_period)} started!`,
           "info",
         ),
@@ -193,7 +210,13 @@ export function create_managed_game_game_action_handlers(command: {
       }
       update_state((state) =>
         set_managed_game_toast(
-          { ...state, is_updating: false, fixture: result.data.fixture },
+          {
+            ...state,
+            is_updating: false,
+            fixture: create_present_managed_game_fixture_state(
+              result.data.fixture,
+            ),
+          },
           `${result.data.completed_period_label} ended`,
           "info",
         ),

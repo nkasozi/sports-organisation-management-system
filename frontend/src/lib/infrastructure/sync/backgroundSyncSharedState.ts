@@ -8,6 +8,14 @@ export const DEBOUNCE_DELAY_MS = 3000;
 export const OFFLINE_RETRY_INTERVAL_MS = 60000;
 const DEFAULT_SCHEDULED_SYNC_INTERVAL_MS = 3_600_000;
 
+type ScheduledTimerState<TTimerId> =
+  | { status: "idle" }
+  | { status: "scheduled"; timer_id: TTimerId };
+
+type ConfiguredDependencyState<TDependency> =
+  | { status: "unconfigured" }
+  | { status: "configured"; value: TDependency };
+
 export const SYNCED_TABLE_NAMES = [
   "organizations",
   "competitions",
@@ -52,12 +60,22 @@ interface BackgroundSyncState {
   is_running: boolean;
   has_pending_changes: boolean;
   is_online: boolean;
-  debounce_timer_id: ReturnType<typeof setTimeout> | null;
-  offline_retry_timer_id: ReturnType<typeof setInterval> | null;
-  scheduled_sync_timer_id: ReturnType<typeof setInterval> | null;
+  debounce_timer: ScheduledTimerState<ReturnType<typeof setTimeout>>;
+  offline_retry_timer: ScheduledTimerState<ReturnType<typeof setInterval>>;
+  scheduled_sync_timer: ScheduledTimerState<ReturnType<typeof setInterval>>;
   hooks_installed: boolean;
   is_restoration_sync_in_progress: boolean;
   active_interval_ms: number;
+}
+
+function create_idle_timer_state<TTimerId>(): ScheduledTimerState<TTimerId> {
+  return { status: "idle" };
+}
+
+function create_unconfigured_dependency_state<
+  TDependency,
+>(): ConfiguredDependencyState<TDependency> {
+  return { status: "unconfigured" };
 }
 
 function create_initial_state(): BackgroundSyncState {
@@ -65,9 +83,9 @@ function create_initial_state(): BackgroundSyncState {
     is_running: false,
     has_pending_changes: false,
     is_online: typeof navigator !== "undefined" ? navigator.onLine : true,
-    debounce_timer_id: null,
-    offline_retry_timer_id: null,
-    scheduled_sync_timer_id: null,
+    debounce_timer: create_idle_timer_state(),
+    offline_retry_timer: create_idle_timer_state(),
+    scheduled_sync_timer: create_idle_timer_state(),
     hooks_installed: false,
     is_restoration_sync_in_progress: false,
     active_interval_ms: DEFAULT_SCHEDULED_SYNC_INTERVAL_MS,
@@ -77,14 +95,19 @@ function create_initial_state(): BackgroundSyncState {
 export const sync_state: BackgroundSyncState = create_initial_state();
 
 export const sync_deps = {
-  orchestrator: null as SyncOrchestratorPort | null,
-  restoration_handlers: null as SyncRestorationHandlers | null,
-  remote_subscriber: null as RemoteChangeSubscriberPort | null,
+  orchestrator: create_unconfigured_dependency_state<SyncOrchestratorPort>(),
+  restoration_handlers:
+    create_unconfigured_dependency_state<SyncRestorationHandlers>(),
+  remote_subscriber:
+    create_unconfigured_dependency_state<RemoteChangeSubscriberPort>(),
 };
 
 export function reset_sync_state(): void {
   Object.assign(sync_state, create_initial_state());
-  sync_deps.orchestrator = null;
-  sync_deps.restoration_handlers = null;
-  sync_deps.remote_subscriber = null;
+  sync_deps.orchestrator =
+    create_unconfigured_dependency_state<SyncOrchestratorPort>();
+  sync_deps.restoration_handlers =
+    create_unconfigured_dependency_state<SyncRestorationHandlers>();
+  sync_deps.remote_subscriber =
+    create_unconfigured_dependency_state<RemoteChangeSubscriberPort>();
 }

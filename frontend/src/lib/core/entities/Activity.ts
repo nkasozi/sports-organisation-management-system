@@ -11,5 +11,6 @@ export {
   type ActivityStatus,
   type CreateActivityInput,
   DEFAULT_REMINDERS,
+  NO_ACTIVITY_RECURRENCE,
   type UpdateActivityInput,
 } from "./ActivityTypes";

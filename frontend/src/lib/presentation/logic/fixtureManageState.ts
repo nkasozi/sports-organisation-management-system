@@ -3,9 +3,13 @@ import type { Player } from "$lib/core/entities/Player";
 import type { PlayerTeamMembership } from "$lib/core/entities/PlayerTeamMembership";
 
 export type TeamPlayer = Player & {
-  jersey_number: number | null;
-  position: string | null;
+  jersey_number: number;
+  position: string;
 };
+
+type MembershipSelectionResult =
+  | { status: "missing" }
+  | { status: "found"; membership: PlayerTeamMembership };
 
 export function build_position_name_by_id_map(
   positions: Array<{ id: string; name: string }>,
@@ -16,7 +20,7 @@ export function build_position_name_by_id_map(
 export function pick_best_membership_for_player(
   memberships: PlayerTeamMembership[],
   player_id: string,
-): PlayerTeamMembership | null {
+): MembershipSelectionResult {
   const candidates = memberships
     .filter((membership) => membership.player_id === player_id)
     .sort((left_membership, right_membership) =>
@@ -26,7 +30,13 @@ export function pick_best_membership_for_player(
   const active_membership = candidates.find(
     (membership) => membership.status === "active",
   );
-  return active_membership || candidates[0] || null;
+  const best_membership = active_membership || candidates[0];
+
+  if (!best_membership) {
+    return { status: "missing" };
+  }
+
+  return { status: "found", membership: best_membership };
 }
 
 export function build_team_players(
@@ -35,14 +45,20 @@ export function build_team_players(
   position_name_by_id: Map<string, string>,
 ): TeamPlayer[] {
   return players.map((player) => {
-    const membership = pick_best_membership_for_player(memberships, player.id);
+    const membership_result = pick_best_membership_for_player(
+      memberships,
+      player.id,
+    );
     const position = player.position_id
-      ? position_name_by_id.get(player.position_id) || null
-      : null;
+      ? position_name_by_id.get(player.position_id) || ""
+      : "";
 
     return {
       ...player,
-      jersey_number: membership?.jersey_number ?? null,
+      jersey_number:
+        membership_result.status === "found"
+          ? membership_result.membership.jersey_number
+          : 0,
       position,
     };
   });
@@ -63,7 +79,7 @@ export function has_team_submitted_lineup(
 }
 
 export function format_team_player_option(player: TeamPlayer): string {
-  const jersey_number = player.jersey_number ?? "?";
+  const jersey_number = player.jersey_number > 0 ? player.jersey_number : "?";
   const full_name = `${player.first_name} ${player.last_name}`;
   const position_suffix = player.position ? `• ${player.position}` : "";
   return `#${jersey_number} ${full_name} ${position_suffix}`.trim();
@@ -79,9 +95,10 @@ export function filter_team_players(
   }
 
   return players.filter((player) => {
-    const jersey_text = (player.jersey_number ?? "").toString();
+    const jersey_text =
+      player.jersey_number > 0 ? player.jersey_number.toString() : "";
     const full_name = `${player.first_name} ${player.last_name}`.toLowerCase();
-    const position = (player.position ?? "").toLowerCase();
+    const position = player.position.toLowerCase();
     return (
       jersey_text.includes(search) ||
       full_name.includes(search) ||

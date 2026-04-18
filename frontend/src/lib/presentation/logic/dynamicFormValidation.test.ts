@@ -1,5 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import {
+  validate_field_against_rules,
+  validate_form_data_against_metadata,
+} from "./dynamicFormValidation";
+
 const dynamic_form_validation_mocks = vi.hoisted(() => ({
   is_field_visible_by_visible_when_condition: vi.fn(),
   should_field_be_required_for_role: vi.fn(),
@@ -11,14 +16,14 @@ vi.mock("./dynamicFormLogic", () => ({
 }));
 
 vi.mock("./systemUserFormLogic", () => ({
+  build_user_role_state: vi.fn((role: unknown) =>
+    typeof role === "string"
+      ? { status: "present", role }
+      : { status: "missing" },
+  ),
   should_field_be_required_for_role:
     dynamic_form_validation_mocks.should_field_be_required_for_role,
 }));
-
-import {
-  validate_field_against_rules,
-  validate_form_data_against_metadata,
-} from "./dynamicFormValidation";
 
 describe("dynamicFormValidation", () => {
   beforeEach(() => {

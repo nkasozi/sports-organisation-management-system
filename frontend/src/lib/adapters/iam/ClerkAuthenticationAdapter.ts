@@ -1,3 +1,5 @@
+import { get } from "svelte/store";
+
 import type {
   AuthenticationPort,
   AuthToken,
@@ -17,6 +19,11 @@ import {
 } from "$lib/infrastructure/cache/AuthCache";
 
 import { WILDCARD_SCOPE } from "../../core/entities/StatusConstants";
+import {
+  clerk_session,
+  type ClerkUser as ClerkServiceUser,
+  get_session_token,
+} from "./clerkAuthService";
 
 const CLERK_VERIFICATION_CACHE_MAX_ENTRIES = 50;
 const CLERK_VERIFICATION_CACHE_TTL_MS = 30 * 60 * 1000;
@@ -32,8 +39,8 @@ export interface ClerkUserInfo {
 }
 
 export interface ClerkSessionProvider {
-  get_session_token(): Promise<string | null>;
-  get_current_user(): ClerkUserInfo | null;
+  get_session_token(): Promise<Result<string>>;
+  get_current_user(): Result<ClerkUserInfo>;
   is_signed_in(): boolean;
 }
 
@@ -111,11 +118,10 @@ export class ClerkAuthenticationAdapter implements AuthenticationPort {
   async generate_token(
     payload_input: AuthTokenPayloadCore,
   ): Promise<Result<AuthToken>> {
-    const session_token = await this.session_provider.get_session_token();
-    if (!session_token) {
-      return create_failure_result(
-        "No active Clerk session - cannot generate token",
-      );
+    const session_token_result =
+      await this.session_provider.get_session_token();
+    if (!session_token_result.success) {
+      return create_failure_result(session_token_result.error);
     }
     const payload = build_auth_token_payload(payload_input);
     console.log("[ClerkAuthenticationAdapter] Generated token", {
@@ -126,7 +132,7 @@ export class ClerkAuthenticationAdapter implements AuthenticationPort {
     return create_success_result({
       payload,
       signature: "clerk-managed",
-      raw_token: session_token,
+      raw_token: session_token_result.data,
     });
   }
 
@@ -156,8 +162,8 @@ export class ClerkAuthenticationAdapter implements AuthenticationPort {
         "No active Clerk session - user is not signed in",
       );
     }
-    const clerk_user = this.session_provider.get_current_user();
-    if (!clerk_user) {
+    const clerk_user_result = this.session_provider.get_current_user();
+    if (!clerk_user_result.success) {
       console.log(
         "[ClerkAuthenticationAdapter] Clerk session active but no user data available",
       );
@@ -165,6 +171,7 @@ export class ClerkAuthenticationAdapter implements AuthenticationPort {
         "Clerk session exists but user data is unavailable",
       );
     }
+    const clerk_user = clerk_user_result.data;
     console.log("[ClerkAuthenticationAdapter] Verified token", {
       event: "clerk_token_verified",
       user_id: clerk_user.id,
@@ -172,14 +179,6 @@ export class ClerkAuthenticationAdapter implements AuthenticationPort {
     return build_valid_verification_result(clerk_user);
   }
 }
-
-import { get } from "svelte/store";
-
-import {
-  clerk_session,
-  type ClerkUser as ClerkServiceUser,
-  get_session_token,
-} from "./clerkAuthService";
 
 function map_clerk_service_user_to_clerk_user_info(
   clerk_user: ClerkServiceUser,
@@ -197,10 +196,17 @@ function map_clerk_service_user_to_clerk_user_info(
 function create_clerk_session_provider(): ClerkSessionProvider {
   return {
     get_session_token,
-    get_current_user(): ClerkUserInfo | null {
+    get_current_user(): Result<ClerkUserInfo> {
       const session_state = get(clerk_session);
-      if (!session_state.user) return null;
-      return map_clerk_service_user_to_clerk_user_info(session_state.user);
+      if (session_state.user_state.status !== "present") {
+        return create_failure_result("Clerk user is unavailable");
+      }
+
+      return create_success_result(
+        map_clerk_service_user_to_clerk_user_info(
+          session_state.user_state.user,
+        ),
+      );
     },
     is_signed_in(): boolean {
       return get(clerk_session).is_signed_in;
@@ -208,13 +214,23 @@ function create_clerk_session_provider(): ClerkSessionProvider {
   };
 }
 
-let clerk_authentication_adapter_instance: ClerkAuthenticationAdapter | null =
-  null;
+type ClerkAuthenticationAdapterState =
+  | { status: "uninitialized" }
+  | { status: "ready"; adapter: ClerkAuthenticationAdapter };
+
+let clerk_authentication_adapter_state: ClerkAuthenticationAdapterState = {
+  status: "uninitialized",
+};
 
 export function get_clerk_authentication_adapter(): ClerkAuthenticationAdapter {
-  if (!clerk_authentication_adapter_instance)
-    clerk_authentication_adapter_instance = new ClerkAuthenticationAdapter(
-      create_clerk_session_provider(),
-    );
-  return clerk_authentication_adapter_instance;
+  if (clerk_authentication_adapter_state.status === "ready") {
+    return clerk_authentication_adapter_state.adapter;
+  }
+
+  const adapter = new ClerkAuthenticationAdapter(
+    create_clerk_session_provider(),
+  );
+  clerk_authentication_adapter_state = { status: "ready", adapter };
+
+  return adapter;
 }

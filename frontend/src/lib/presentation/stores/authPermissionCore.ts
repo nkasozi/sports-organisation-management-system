@@ -71,7 +71,7 @@ export function get_role_permissions_sync(
 
 export function map_authorizable_action_to_data_action(
   action: AuthorizableAction,
-): DataAction | null {
+): DataAction {
   switch (action) {
     case "create":
       return "create";
@@ -82,7 +82,9 @@ export function map_authorizable_action_to_data_action(
     case "list":
     case "view":
       return "read";
-    default:
-      return null;
   }
+
+  const exhaustive_action: never = action;
+
+  return exhaustive_action;
 }

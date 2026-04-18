@@ -69,8 +69,8 @@ class EntityMetadataRegistry {
     this.initialize_all_entity_metadata();
   }
 
-  get_entity_metadata(entity_type: string): EntityMetadata | null {
-    return this.metadata_map.get(entity_type) || null;
+  get_entity_metadata(entity_type: string): EntityMetadata | false {
+    return this.metadata_map.get(entity_type) || false;
   }
 
   get_all_entity_types(): string[] {

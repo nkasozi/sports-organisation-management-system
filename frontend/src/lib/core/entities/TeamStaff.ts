@@ -22,7 +22,7 @@ export interface TeamStaff extends BaseEntity {
   nationality: string;
   profile_image_url: string;
   employment_start_date: IsoDateString;
-  employment_end_date: IsoDateString | null;
+  employment_end_date: IsoDateString | "";
   emergency_contact_name: Name;
   emergency_contact_phone: string;
   notes: string;
@@ -72,7 +72,7 @@ function create_empty_team_staff_input(
     nationality: "",
     profile_image_url: "",
     employment_start_date: new Date().toISOString().split("T")[0],
-    employment_end_date: null,
+    employment_end_date: "",
     emergency_contact_name: "",
     emergency_contact_phone: "",
     notes: "",

@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { create_competition_results_page_controller_runtime } from "./competitionResultsPageControllerRuntime";
+
 const {
   create_empty_competition_results_bundle_mock,
   derive_competition_results_can_change_organizations_mock,
@@ -55,8 +57,6 @@ vi.mock("./competitionResultsPageState", () => ({
     load_competitions_for_results_organization_mock,
 }));
 
-import { create_competition_results_page_controller_runtime } from "./competitionResultsPageControllerRuntime";
-
 describe("competitionResultsPageControllerRuntime", () => {
   function create_command() {
     const state = {
@@ -68,7 +68,10 @@ describe("competitionResultsPageControllerRuntime", () => {
     const command = {
       apply_bundle: vi.fn(),
       get_auth_state: () => ({
-        current_profile: { organization_id: "organization-1" },
+        current_profile_state: {
+          status: "present",
+          profile: { organization_id: "organization-1" },
+        },
       }),
       get_is_public: () => true,
       get_organizations: () => state.organizations as never,
@@ -92,8 +95,8 @@ describe("competitionResultsPageControllerRuntime", () => {
       set_selected_organization_id: vi.fn((value: string) => {
         state.selected_organization_id = value;
       }),
-      sync_branding_for_org: vi.fn().mockResolvedValue(undefined),
-      sync_public_organization: vi.fn().mockResolvedValue(undefined),
+      sync_branding_for_org: vi.fn().mockImplementation(async () => {}),
+      sync_public_organization: vi.fn().mockImplementation(async () => {}),
     };
 
     return { command, state };
@@ -130,8 +133,11 @@ describe("competitionResultsPageControllerRuntime", () => {
       competition_id: "",
     });
     find_competition_results_organization_mock.mockReturnValueOnce({
-      id: "organization-1",
-      name: "Org One",
+      status: "present",
+      organization: {
+        id: "organization-1",
+        name: "Org One",
+      },
     });
     load_competitions_for_results_organization_mock.mockResolvedValueOnce({
       competitions: [{ id: "competition-2" }],
@@ -202,6 +208,15 @@ describe("competitionResultsPageControllerRuntime", () => {
       command as never,
     ).initialize_page();
 
+    expect(
+      derive_competition_results_can_change_organizations_mock,
+    ).toHaveBeenCalledWith(
+      {
+        status: "present",
+        profile: { organization_id: "organization-1" },
+      },
+      "organization-1",
+    );
     expect(command.set_can_change_organizations).toHaveBeenCalledWith(true);
     expect(command.set_is_using_cached_data).toHaveBeenCalledWith(false);
     expect(command.set_organizations).toHaveBeenCalledWith([

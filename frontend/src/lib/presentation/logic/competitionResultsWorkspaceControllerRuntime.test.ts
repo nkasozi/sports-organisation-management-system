@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { create_competition_results_workspace_controller_runtime } from "./competitionResultsWorkspaceControllerRuntime";
+
 const {
   build_shareable_competition_results_url_mock,
   download_all_fixture_reports_mock,
@@ -34,12 +36,10 @@ vi.mock(
   }),
 );
 
-import { create_competition_results_workspace_controller_runtime } from "./competitionResultsWorkspaceControllerRuntime";
-
 describe("competitionResultsWorkspaceControllerRuntime", () => {
   function create_command() {
     const state = {
-      selected_team_id: null as string | null,
+      selected_team_id: "",
     };
 
     const command = {
@@ -49,8 +49,11 @@ describe("competitionResultsWorkspaceControllerRuntime", () => {
       ],
       get_branding_logo_url: () => "/logo.svg",
       get_completed_fixtures: () => [{ id: "fixture-1" }] as never,
-      get_selected_competition: () =>
-        ({ id: "competition-1", name: "Summer Cup" }) as never,
+      get_selected_competition_state: () =>
+        ({
+          status: "present",
+          competition: { id: "competition-1", name: "Summer Cup" },
+        }) as never,
       get_selected_team_id: () => state.selected_team_id,
       selected_competition_id: "competition-1",
       selected_organization_id: "organization-1",
@@ -58,7 +61,7 @@ describe("competitionResultsWorkspaceControllerRuntime", () => {
       set_downloading_fixture_id: vi.fn(),
       set_extended_competition_map: vi.fn(),
       set_extended_team_map: vi.fn(),
-      set_selected_team_id: vi.fn((value: string | null) => {
+      set_selected_team_id: vi.fn((value: string) => {
         state.selected_team_id = value;
       }),
       set_selected_team_name: vi.fn(),
@@ -142,7 +145,7 @@ describe("competitionResultsWorkspaceControllerRuntime", () => {
     expect(command.set_downloading_fixture_id).toHaveBeenCalledWith(
       "fixture-1",
     );
-    expect(command.set_downloading_fixture_id).toHaveBeenCalledWith(null);
+    expect(command.set_downloading_fixture_id).toHaveBeenCalledWith("");
   });
 
   it("closes the team fixtures panel when the selected team is clicked again", async () => {
@@ -156,7 +159,7 @@ describe("competitionResultsWorkspaceControllerRuntime", () => {
       detail: { team_id: "team-1", team_name: "Lions" },
     } as never);
 
-    expect(command.set_selected_team_id).toHaveBeenCalledWith(null);
+    expect(command.set_selected_team_id).toHaveBeenCalledWith("");
     expect(command.set_selected_team_name).toHaveBeenCalledWith("");
     expect(command.set_team_fixtures_in_competition).toHaveBeenCalledWith([]);
     expect(command.set_team_fixtures_all_competitions).toHaveBeenCalledWith([]);

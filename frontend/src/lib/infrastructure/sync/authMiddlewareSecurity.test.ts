@@ -3,8 +3,8 @@ import { describe, expect, it } from "vitest";
 import { require_auth } from "../../../../convex/lib/auth_middleware";
 
 function create_mock_context(
-  identity: { subject: string; email?: string } | null,
-  system_user: Record<string, unknown> | null = null,
+  identity: { subject: string; email?: string } | undefined,
+  system_user: Record<string, unknown> | undefined = undefined,
 ): any {
   return {
     auth: {
@@ -24,7 +24,7 @@ const AUTH_DENIED_MESSAGE = "Access denied";
 
 describe("require_auth uniform failure responses (R38)", () => {
   it("returns generic access denied when identity is missing", async () => {
-    const context = create_mock_context(null);
+    const context = create_mock_context(void 0);
     const result = await require_auth(context);
     expect(result.success).toBe(false);
     if (!result.success) {
@@ -44,7 +44,7 @@ describe("require_auth uniform failure responses (R38)", () => {
   it("returns generic access denied when user not found in system", async () => {
     const context = create_mock_context(
       { subject: "user_123", email: "test@example.com" },
-      null,
+      void 0,
     );
     const result = await require_auth(context);
     expect(result.success).toBe(false);

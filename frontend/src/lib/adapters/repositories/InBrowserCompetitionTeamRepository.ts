@@ -58,10 +58,7 @@ export class InBrowserCompetitionTeamRepository
       ...entity,
       ...updates,
     } as CompetitionTeam;
-    if (
-      updates.goals_for !== undefined ||
-      updates.goals_against !== undefined
-    ) {
+    if ("goals_for" in updates || "goals_against" in updates) {
       updated_entity.goal_difference =
         updated_entity.goals_for - updated_entity.goals_against;
     }
@@ -165,13 +162,26 @@ export class InBrowserCompetitionTeamRepository
   }
 }
 
-let singleton_instance: InBrowserCompetitionTeamRepository | null = null;
+type CompetitionTeamRepositoryState =
+  | { status: "uninitialized" }
+  | {
+      status: "ready";
+      repository: InBrowserCompetitionTeamRepository;
+    };
+
+let competition_team_repository_state: CompetitionTeamRepositoryState = {
+  status: "uninitialized",
+};
 
 export function get_competition_team_repository(): CompetitionTeamRepository {
-  if (!singleton_instance) {
-    singleton_instance = new InBrowserCompetitionTeamRepository();
+  if (competition_team_repository_state.status === "ready") {
+    return competition_team_repository_state.repository;
   }
-  return singleton_instance;
+
+  const repository = new InBrowserCompetitionTeamRepository();
+  competition_team_repository_state = { status: "ready", repository };
+
+  return repository;
 }
 
 export async function reset_competition_team_repository(): Promise<void> {

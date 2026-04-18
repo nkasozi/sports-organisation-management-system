@@ -4,10 +4,10 @@
     EntityMetadata,
     FieldMetadata,
   } from "$lib/core/entities/BaseEntity";
-  import type { UserRole } from "$lib/core/interfaces/ports";
   import type { EntityCrudHandlers } from "$lib/core/types/EntityHandlers";
   import type { SubEntityFilter } from "$lib/core/types/SubEntityFilter";
   import type { DynamicFormFieldCallbacks } from "$lib/presentation/logic/dynamicFormComponentTypes";
+  import type { UserRoleState } from "$lib/presentation/logic/systemUserFormLogic";
 
   import DynamicFormActions from "./DynamicFormActions.svelte";
   import DynamicFormFieldGrid from "./DynamicFormFieldGrid.svelte";
@@ -22,20 +22,20 @@
   export let permission_denied: boolean = false;
   export let permission_denied_message: string = "";
   export let save_error_message: string = "";
-  export let info_message: string | null = null;
+  export let info_message: string = "";
   export let sorted_fields: FieldMetadata[] = [];
   export let entity_type: string;
   export let form_data: Record<string, any> = {};
   export let validation_errors: Record<string, string> = {};
   export let authorization_restricted_fields: Set<string> = new Set();
   export let is_edit_mode: boolean = false;
-  export let sub_entity_filter: SubEntityFilter | null = null;
+  export let sub_entity_filter: SubEntityFilter | undefined = undefined;
   export let foreign_key_options: Record<string, any[]> = {};
   export let filtered_fields_loading: Record<string, boolean> = {};
-  export let current_auth_role: UserRole | null = null;
+  export let current_auth_role_state: UserRoleState = { status: "missing" };
   export let callbacks: DynamicFormFieldCallbacks;
   export let sub_entity_fields: FieldMetadata[] = [];
-  export let entity_data: Partial<BaseEntity> | null = null;
+  export let entity_data: Partial<BaseEntity> | undefined = undefined;
   export let build_sub_entity_handlers: (
     child_entity_type: string,
     sub_filter: SubEntityFilter,
@@ -81,7 +81,7 @@
       {foreign_key_options}
       {filtered_fields_loading}
       {is_loading}
-      {current_auth_role}
+      {current_auth_role_state}
       {callbacks}
     />
     <DynamicFormSubEntitySections

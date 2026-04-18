@@ -21,7 +21,7 @@ export function create_live_game_detail_clock_handlers(command: {
   get_event_state: () => LiveGameDetailEventState;
   get_page_state: () => LiveGameDetailPageState;
   goto: (path: string) => Promise<unknown>;
-  raw_token: () => string | null;
+  raw_token: () => string;
   set_page_state: (state: LiveGameDetailPageState) => void;
 }): {
   cleanup: () => void;
@@ -32,7 +32,11 @@ export function create_live_game_detail_clock_handlers(command: {
   stop_clock: () => void;
   toggle_clock: () => void;
 } {
-  let clock_interval: ReturnType<typeof setInterval> | null = null;
+  let clock_interval_state:
+    | { status: "stopped" }
+    | { status: "running"; interval_id: ReturnType<typeof setInterval> } = {
+    status: "stopped",
+  };
 
   const set_page_state = (
     updater: (state: LiveGameDetailPageState) => LiveGameDetailPageState,
@@ -44,8 +48,10 @@ export function create_live_game_detail_clock_handlers(command: {
     });
 
   const stop_clock = (): void => {
-    if (clock_interval) clearInterval(clock_interval);
-    clock_interval = null;
+    if (clock_interval_state.status === "running") {
+      clearInterval(clock_interval_state.interval_id);
+    }
+    clock_interval_state = { status: "stopped" };
     set_page_state((page_state) => ({
       ...page_state,
       is_clock_running: false,
@@ -54,13 +60,13 @@ export function create_live_game_detail_clock_handlers(command: {
 
   const start_clock = (): void => {
     if (
-      clock_interval ||
+      clock_interval_state.status === "running" ||
       (command.get_page_state().fixture?.status === "completed" &&
         command.get_page_state().extra_time_added_seconds <= 0)
     )
       return;
     set_page_state((page_state) => ({ ...page_state, is_clock_running: true }));
-    clock_interval = setInterval(() => {
+    const interval_id = setInterval(() => {
       const page_state = command.get_page_state();
       const view_state = derive_live_game_detail_view_state({
         page_state,
@@ -80,6 +86,7 @@ export function create_live_game_detail_clock_handlers(command: {
             },
       );
     }, 1000);
+    clock_interval_state = { status: "running", interval_id };
   };
 
   const reload_fixture_bundle = async (): Promise<
@@ -94,7 +101,7 @@ export function create_live_game_detail_clock_handlers(command: {
         ...page_state,
         error_message: result.error_message,
       }));
-      return null;
+      return;
     }
     set_page_state((page_state) =>
       result.data.fixture.status === "completed"

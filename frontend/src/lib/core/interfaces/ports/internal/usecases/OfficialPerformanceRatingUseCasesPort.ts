@@ -3,11 +3,11 @@ import type {
   OfficialPerformanceRating,
   UpdateOfficialPerformanceRatingInput,
 } from "../../../../entities/OfficialPerformanceRating";
+import type { ScalarValueInput } from "../../../../types/DomainScalars";
 import type {
   AsyncResult,
   PaginatedAsyncResult,
 } from "../../../../types/Result";
-import type { ScalarValueInput } from "../../../../types/DomainScalars";
 import type { OfficialPerformanceRatingFilter } from "../../external/repositories/OfficialPerformanceRatingRepository";
 import type { QueryOptions } from "../../external/repositories/Repository";
 

@@ -3,8 +3,9 @@ import type {
   FormatType,
   LeagueConfig,
 } from "$lib/core/entities/CompetitionFormat";
-import type { EntityCrudHandlers } from "$lib/core/types/EntityHandlers";
+import { create_default_league_config } from "$lib/core/entities/CompetitionFormatFactories";
 import type { ScalarInput } from "$lib/core/types/DomainScalars";
+import type { EntityCrudHandlers } from "$lib/core/types/EntityHandlers";
 import type { SubEntityFilter } from "$lib/core/types/SubEntityFilter";
 import { build_stage_template_defaults } from "$lib/presentation/logic/competitionFormatStageTemplateLogic";
 
@@ -21,7 +22,7 @@ const COMPETITION_FORMAT_ENTITY_TYPE = "competitionformat";
 
 export function get_dynamic_entity_metadata_for_type(
   entity_type: string,
-): EntityMetadata | null {
+): EntityMetadata | false {
   const normalized_type = entity_type.toLowerCase();
   const metadata = entityMetadataRegistry.get_entity_metadata(normalized_type);
   if (!metadata) {
@@ -47,14 +48,14 @@ export function build_dynamic_form_stage_template_defaults(
   const format_type =
     (current_form_data["format_type"] as FormatType | undefined) ?? "league";
   const league_config =
-    (current_form_data["league_config"] as LeagueConfig | null | undefined) ??
-    null;
+    (current_form_data["league_config"] as LeagueConfig | undefined) ??
+    create_default_league_config();
   return build_stage_template_defaults(format_type, league_config);
 }
 
 export function build_dynamic_form_initial_data(
   metadata: EntityMetadata,
-  existing_data: Partial<BaseEntity> | null,
+  existing_data: Partial<BaseEntity> | undefined,
   authorization_preselect: Record<string, string>,
   entity_type: string,
 ): Record<string, any> {
@@ -63,7 +64,7 @@ export function build_dynamic_form_initial_data(
   for (const field of metadata.fields) {
     if (
       existing_data &&
-      existing_data[field.field_name as keyof BaseEntity] !== undefined
+      existing_data[field.field_name as keyof BaseEntity] != void 0
     ) {
       new_form_data[field.field_name] =
         existing_data[field.field_name as keyof BaseEntity];
@@ -90,7 +91,9 @@ export function build_dynamic_form_initial_data(
   const current_stage_templates = Array.isArray(
     new_form_data["stage_templates"],
   )
-    ? (new_form_data["stage_templates"] as ScalarInput<CompetitionFormatStageTemplate>[])
+    ? (new_form_data[
+        "stage_templates"
+      ] as ScalarInput<CompetitionFormatStageTemplate>[])
     : [];
 
   if (current_stage_templates.length > 0) {
@@ -106,7 +109,7 @@ export function build_dynamic_form_initial_data(
 export function create_dynamic_form_initialization_key(command: {
   entity_type: string;
   metadata: EntityMetadata;
-  existing_data: Partial<BaseEntity> | null;
+  existing_data: Partial<BaseEntity> | undefined;
   authorization_preselect: Record<string, string>;
 }): string {
   return JSON.stringify({

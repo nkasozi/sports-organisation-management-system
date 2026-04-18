@@ -4,7 +4,10 @@ import type {
   UpdateOrganizationSettingsInput,
 } from "../entities/OrganizationSettings";
 import { validate_organization_settings_input } from "../entities/OrganizationSettings";
-import type { OrganizationSettingsRepository } from "../interfaces/ports/external/repositories/OrganizationSettingsRepository";
+import {
+  is_organization_settings_not_found_error,
+  type OrganizationSettingsRepository,
+} from "../interfaces/ports/external/repositories/OrganizationSettingsRepository";
 import type { OrganizationSettingsUseCasesPort } from "../interfaces/ports/internal/usecases/OrganizationSettingsUseCasesPort";
 import type { AsyncResult } from "../types/Result";
 import { create_failure_result } from "../types/Result";
@@ -28,7 +31,7 @@ export function create_organization_settings_use_cases(
 ): OrganizationSettingsUseCasesPort {
   async function get_by_organization_id(
     organization_id: OrganizationSettings["organization_id"],
-  ): AsyncResult<OrganizationSettings | null> {
+  ): AsyncResult<OrganizationSettings> {
     if (!organization_id || organization_id.trim().length === 0) {
       return create_failure_result("Organization ID is required");
     }
@@ -88,10 +91,16 @@ export function create_organization_settings_use_cases(
 
     const existing_result = await get_by_organization_id(organization_id);
 
-    if (!existing_result.success)
+    if (
+      !existing_result.success &&
+      !is_organization_settings_not_found_error(
+        existing_result.error,
+        organization_id,
+      )
+    )
       return create_failure_result(existing_result.error);
 
-    if (existing_result.data) {
+    if (existing_result.success) {
       return update_settings(caller_role, existing_result.data.id, input);
     }
 

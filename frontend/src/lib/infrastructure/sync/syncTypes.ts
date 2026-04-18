@@ -6,8 +6,14 @@ import type {
   IsoDateTimeString,
   ScalarInput,
 } from "$lib/core/types/DomainScalars";
+import { parse_entity_id } from "$lib/core/types/DomainScalars";
 
-import type { ConflictRecord, ConflictResolution } from "./conflictTypes";
+import {
+  type ConflictFieldValue,
+  type ConflictRecord,
+  create_known_conflict_field_value,
+  create_unknown_conflict_field_value,
+} from "./conflictTypes";
 
 export type { SyncDirection };
 export type SyncStatus = "idle" | "syncing" | "success" | "error" | "conflict";
@@ -17,7 +23,7 @@ export interface SyncProgress {
   total_records: number;
   synced_records: number;
   status: SyncStatus;
-  error_message: string | null;
+  errors: string[];
   tables_completed: number;
   total_tables: number;
   percentage: number;
@@ -30,7 +36,17 @@ export interface ConflictFromServer {
   remote_data: Record<string, unknown>;
   remote_version: number;
   remote_updated_at: ScalarInput<ConflictRecord>["remote_updated_at"];
-  remote_updated_by: ScalarInput<ConflictRecord>["remote_updated_by"];
+  remote_updated_by: ConflictFieldValue<EntityId>;
+}
+
+export interface RawConflictFromServer {
+  local_id: ScalarInput<ConflictRecord>["local_id"];
+  local_data: Record<string, unknown>;
+  local_version: number;
+  remote_data: Record<string, unknown>;
+  remote_version: number;
+  remote_updated_at: ScalarInput<ConflictRecord>["remote_updated_at"];
+  remote_updated_by: unknown;
 }
 
 export interface SyncResult {
@@ -65,7 +81,7 @@ export interface ConvexClient {
 
 export interface RemoteTableState {
   record_count: number;
-  latest_modified_at: ConvexRecord["synced_at"] | null;
+  latest_modified_at: ConvexRecord["synced_at"];
 }
 
 export interface ConflictResolutionRequest {
@@ -73,7 +89,7 @@ export interface ConflictResolutionRequest {
   local_id: ScalarInput<ConflictRecord>["local_id"];
   resolved_data: Record<string, unknown>;
   resolution_action: "keep_local" | "keep_remote" | "merge";
-  resolved_by?: ScalarInput<ConflictResolution>["resolved_by"];
+  resolved_by?: EntityId;
 }
 
 export const TABLE_NAMES = [
@@ -156,6 +172,29 @@ const TABLE_NAME_TO_ENTITY_TYPE: Partial<Record<TableName, SharedEntityType>> =
   };
 
 export const EPOCH_TIMESTAMP = "1970-01-01T00:00:00.000Z" as IsoDateTimeString;
+const INVALID_CONFLICT_ACTOR_ID_ERROR = "Conflict actor id is invalid";
+
+export function normalize_conflict_from_server(
+  raw_conflict: RawConflictFromServer,
+): ConflictFromServer {
+  const remote_updated_by =
+    typeof raw_conflict.remote_updated_by === "string"
+      ? (() => {
+          const remote_updated_by_result = parse_entity_id(
+            raw_conflict.remote_updated_by,
+            INVALID_CONFLICT_ACTOR_ID_ERROR,
+          );
+          return remote_updated_by_result.success
+            ? create_known_conflict_field_value(remote_updated_by_result.data)
+            : create_unknown_conflict_field_value<EntityId>();
+        })()
+      : create_unknown_conflict_field_value<EntityId>();
+
+  return {
+    ...raw_conflict,
+    remote_updated_by,
+  };
+}
 
 function role_can_push_table(role: UserRole, table_name: TableName): boolean {
   const entity_type = TABLE_NAME_TO_ENTITY_TYPE[table_name];
@@ -166,9 +205,12 @@ function role_can_push_table(role: UserRole, table_name: TableName): boolean {
   );
 }
 
-export function get_push_excluded_tables(role: UserRole | null): Set<string> {
-  if (!role) return new Set(TABLE_NAMES);
+export function get_push_excluded_tables(role: UserRole): Set<string> {
   return new Set(
     TABLE_NAMES.filter((table_name) => !role_can_push_table(role, table_name)),
   );
+}
+
+export function get_push_excluded_tables_for_unsigned_user(): Set<string> {
+  return new Set(TABLE_NAMES);
 }

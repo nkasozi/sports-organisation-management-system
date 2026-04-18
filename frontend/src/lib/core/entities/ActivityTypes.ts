@@ -34,9 +34,16 @@ export interface ActivityReminder {
 export interface ActivityRecurrence {
   pattern: ActivityRecurrencePattern;
   interval: number;
-  end_date: IsoDateString | null;
+  end_date: IsoDateString | "";
   days_of_week: number[];
 }
+
+export const NO_ACTIVITY_RECURRENCE: ActivityRecurrence = {
+  pattern: "none",
+  interval: 1,
+  end_date: "",
+  days_of_week: [],
+};
 
 export interface Activity extends BaseEntity {
   title: Name;
@@ -48,16 +55,16 @@ export interface Activity extends BaseEntity {
   end_datetime: IsoDateTimeString;
   is_all_day: boolean;
   location: string;
-  venue_id: EntityId | null;
+  venue_id: EntityId;
   team_ids: EntityId[];
-  competition_id: EntityId | null;
-  fixture_id: EntityId | null;
+  competition_id: EntityId;
+  fixture_id: EntityId;
   source_type: ActivitySourceType;
-  source_id: EntityId | null;
+  source_id: EntityId;
   status: ActivityStatus;
-  recurrence: ActivityRecurrence | null;
+  recurrence: ActivityRecurrence;
   reminders: ActivityReminder[];
-  color_override: string | null;
+  color_override: string;
   notes: string;
 }
 

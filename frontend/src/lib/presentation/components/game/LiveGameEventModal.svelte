@@ -3,7 +3,7 @@
     import SearchableSelectField from "$lib/presentation/components/ui/SearchableSelectField.svelte";
 
     export let is_visible: boolean;
-    export let selected_event_type: QuickEventButton | null;
+    export let selected_event_type: QuickEventButton | undefined;
     export let selected_team_side: "home" | "away";
     export let home_team_name: string;
     export let away_team_name: string;

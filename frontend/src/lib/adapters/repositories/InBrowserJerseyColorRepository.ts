@@ -181,13 +181,23 @@ function create_default_jersey_colors(): import("$lib/core/types/DomainScalars")
   ];
 }
 
-let singleton_instance: InBrowserJerseyColorRepository | null = null;
+type JerseyColorRepositoryState =
+  | { status: "uninitialized" }
+  | { status: "ready"; repository: InBrowserJerseyColorRepository };
+
+let jersey_color_repository_state: JerseyColorRepositoryState = {
+  status: "uninitialized",
+};
 
 export function get_jersey_color_repository(): JerseyColorRepository {
-  if (!singleton_instance) {
-    singleton_instance = new InBrowserJerseyColorRepository();
+  if (jersey_color_repository_state.status === "ready") {
+    return jersey_color_repository_state.repository;
   }
-  return singleton_instance;
+
+  const repository = new InBrowserJerseyColorRepository();
+  jersey_color_repository_state = { status: "ready", repository };
+
+  return repository;
 }
 export async function reset_jersey_color_repository(): Promise<void> {
   const repository =

@@ -4,7 +4,7 @@
 
     export let standing: TeamStanding;
     export let index: number;
-    export let selected_team_id: string | null;
+    export let selected_team_id: string;
     export let highlight_top_count: number;
     export let live_team_ids: Set<string>;
     export let on_team_click: (team_id: string, team_name: string) => void;

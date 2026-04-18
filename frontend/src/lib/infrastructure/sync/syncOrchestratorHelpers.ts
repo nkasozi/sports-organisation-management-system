@@ -1,4 +1,9 @@
 import type { SyncDirection, SyncHints } from "$lib/core/interfaces/ports";
+import {
+  type AsyncResult,
+  create_failure_result,
+  create_success_result,
+} from "$lib/core/types/Result";
 
 import { verify_sync_auth } from "./syncAuthUtils";
 import { get_remote_state_for_table } from "./syncDataAccess";
@@ -16,36 +21,41 @@ type TableConflict = {
 };
 
 type TableResultLike = {
-  error?: { table_name: string; error: string } | null;
-  conflicts?: TableConflict | null;
+  errors: Array<{ table_name: string; error: string }>;
+  conflicts: TableConflict[];
   records_pushed: number;
   records_pulled: number;
 };
+
+type PushSyncAuthorizationState =
+  | { status: "continue" }
+  | { status: "stop"; result: SyncResult };
 
 export async function verify_push_sync_auth_or_fail(
   convex_client: ConvexClient,
   direction: SyncDirection,
   start_time: number,
-): Promise<SyncResult | null> {
-  if (direction === "pull") return null;
+): Promise<PushSyncAuthorizationState> {
+  if (direction === "pull") return { status: "continue" };
   const auth_check = await verify_sync_auth(convex_client);
-  if (auth_check.authenticated) {
+  if (auth_check.status === "authenticated") {
     console.log("[Sync] Auth verified — Convex client is authenticated");
-    return null;
+    return { status: "continue" };
   }
 
-  const auth_error = auth_check.error
-    ? `Auth verification failed: ${auth_check.error}`
-    : "Convex client is NOT authenticated — cannot push data. Check Clerk session and JWT template.";
+  const auth_error = `Auth verification failed: ${auth_check.error}`;
   console.error(`[Sync] ${auth_error}`);
   return {
-    success: false,
-    tables_synced: 0,
-    records_pushed: 0,
-    records_pulled: 0,
-    errors: [{ table_name: "auth_check", error: auth_error }],
-    duration_ms: Date.now() - start_time,
-    conflicts: [],
+    status: "stop",
+    result: {
+      success: false,
+      tables_synced: 0,
+      records_pushed: 0,
+      records_pulled: 0,
+      errors: [{ table_name: "auth_check", error: auth_error }],
+      duration_ms: Date.now() - start_time,
+      conflicts: [],
+    },
   };
 }
 
@@ -59,7 +69,7 @@ export function create_table_sync_progress(
     total_records: 0,
     synced_records: 0,
     status: "syncing",
-    error_message: null,
+    errors: [],
     tables_completed,
     total_tables,
     percentage: Math.round((tables_completed / total_tables) * 100),
@@ -70,12 +80,11 @@ export async function load_remote_table_state(
   convex_client: ConvexClient,
   table_name: string,
   hints?: SyncHints,
-): Promise<{ state: RemoteTableState | null; error_message: string | null }> {
+): AsyncResult<RemoteTableState> {
   try {
-    return {
-      state: await get_remote_state_for_table(convex_client, table_name, hints),
-      error_message: null,
-    };
+    return create_success_result(
+      await get_remote_state_for_table(convex_client, table_name, hints),
+    );
   } catch (error) {
     const error_message =
       error instanceof Error ? error.message : String(error);
@@ -84,7 +93,8 @@ export async function load_remote_table_state(
       table_name,
       error: String(error_message),
     });
-    return { state: null, error_message };
+
+    return create_failure_result(error_message);
   }
 }
 
@@ -93,15 +103,17 @@ export function update_table_sync_progress(
   table_result: TableResultLike,
   tables_completed: number,
 ): SyncProgress {
+  const first_error = table_result.errors[0];
+
   return {
     ...progress,
-    status: table_result.error
+    status: first_error
       ? "error"
-      : table_result.conflicts
+      : table_result.conflicts.length > 0
         ? "conflict"
         : "success",
     synced_records: table_result.records_pushed + table_result.records_pulled,
-    error_message: table_result.error?.error ?? null,
+    errors: first_error ? [first_error.error] : [],
     tables_completed,
     percentage: Math.round((tables_completed / progress.total_tables) * 100),
   };

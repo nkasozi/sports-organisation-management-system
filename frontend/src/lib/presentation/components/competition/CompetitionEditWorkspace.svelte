@@ -6,8 +6,11 @@
     import type { CompetitionFormat } from "$lib/core/entities/CompetitionFormat";
     import type { CompetitionTeam } from "$lib/core/entities/CompetitionTeam";
     import type { Organization } from "$lib/core/entities/Organization";
-    import type { Sport } from "$lib/core/entities/Sport";
     import type { Team } from "$lib/core/entities/Team";
+    import type {
+        CompetitionEditSelectedFormatState,
+        CompetitionEditSelectedSportState,
+    } from "$lib/presentation/logic/competitionEditPageContracts";
 
     import CompetitionEditWorkspaceController from "./CompetitionEditWorkspaceController.svelte";
 
@@ -18,8 +21,12 @@
     export let all_teams: Team[];
     export let competition_team_entries: CompetitionTeam[];
     export let form_data: UpdateCompetitionInput;
-    export let selected_format: CompetitionFormat | null;
-    export let selected_sport: Sport | null;
+    export let selected_format_state: CompetitionEditSelectedFormatState = {
+        status: "missing",
+    };
+    export let selected_sport_state: CompetitionEditSelectedSportState = {
+        status: "missing",
+    };
     export let is_customizing_scoring: boolean;
     export let can_edit_competition: boolean;
     export let permission_info_message: string;
@@ -33,8 +40,8 @@
     {all_teams}
     {competition_team_entries}
     bind:form_data
-    bind:selected_format
-    bind:selected_sport
+    bind:selected_format_state
+    bind:selected_sport_state
     bind:is_customizing_scoring
     {can_edit_competition}
     {permission_info_message}

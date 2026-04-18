@@ -31,9 +31,9 @@
         organizations: Organization[] = [],
         selected_organization_id = "",
         leaderboard_entries: OfficialLeaderboardEntry[] = [],
-        selected_entry: OfficialLeaderboardEntry | null = null,
+        selected_entry: OfficialLeaderboardEntry | undefined = undefined,
         selected_breakdown: PerFixtureRating[] = [],
-        user_official_id: string | null = null,
+        user_official_id = "",
         all_ratings: OfficialPerformanceRating[] = [],
         all_officials: Official[] = [],
         all_fixtures: Fixture[] = [],
@@ -42,10 +42,16 @@
     async function load_all_data(): Promise<void> {
         is_loading = true;
         error_message = "";
-        const profile = get(auth_store)
-            .current_profile as UserScopeProfile | null;
+        const current_profile_state = get(auth_store).current_profile;
         const load_result = await load_official_leaderboard_page_state({
-            profile,
+            profile_state:
+                current_profile_state.status === "present"
+                    ? {
+                          status: "present",
+                          profile:
+                              current_profile_state.profile as unknown as UserScopeProfile,
+                      }
+                    : { status: "missing" },
             dependencies: official_leaderboard_page_dependencies,
         });
         if (!load_result.success) {
@@ -93,7 +99,7 @@
     }
 
     function close_breakdown(): void {
-        selected_entry = null;
+        selected_entry = void 0;
         selected_breakdown = [];
     }
 

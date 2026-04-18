@@ -3,7 +3,6 @@ import { describe, expect, it } from "vitest";
 import type { Competition } from "$lib/core/entities/Competition";
 import type { CompetitionTeam } from "$lib/core/entities/CompetitionTeam";
 import type { Fixture } from "$lib/core/entities/Fixture";
-import type { Organization } from "$lib/core/entities/Organization";
 import type { Team } from "$lib/core/entities/Team";
 import {
   build_fixture_lineup_create_wizard_steps,
@@ -28,9 +27,9 @@ function build_fixture(): Fixture {
 describe("fixture lineup create wizard steps", () => {
   it("marks steps complete from the selected state", () => {
     const steps = build_fixture_lineup_create_wizard_steps(
-      { id: "organization-1" } as Organization,
-      build_fixture(),
-      { id: "team-1" } as Team,
+      true,
+      true,
+      true,
       12,
       2,
       18,
@@ -47,9 +46,9 @@ describe("fixture lineup create wizard steps", () => {
 
   it("requires player bounds before confirm completes", () => {
     const steps = build_fixture_lineup_create_wizard_steps(
-      { id: "organization-1" } as Organization,
-      build_fixture(),
-      { id: "team-1" } as Team,
+      true,
+      true,
+      true,
       1,
       2,
       18,
@@ -84,7 +83,7 @@ describe("fixture lineup create labels", () => {
         team_id: "team-1",
         registration_date: "2026-05-01",
         seed_number: 3,
-        group_name: null,
+        group_name: "",
         points: 0,
         goals_for: 0,
         goals_against: 0,

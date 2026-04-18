@@ -141,7 +141,7 @@ describe("liveGameDetailPageDerivedState", () => {
           fixture: {
             status: "completed",
             scheduled_time: "21:00",
-            current_period: null,
+
             game_events: [],
           } as never,
         },

@@ -36,7 +36,9 @@ function create_lineup(
   } as unknown as FixtureLineup;
 }
 
-function create_fixture(overrides: Partial<ScalarInput<Fixture>> = {}): Fixture {
+function create_fixture(
+  overrides: Partial<ScalarInput<Fixture>> = {},
+): Fixture {
   return {
     id: "fixture_1",
     organization_id: "org_1",
@@ -50,7 +52,6 @@ function create_fixture(overrides: Partial<ScalarInput<Fixture>> = {}): Fixture 
     scheduled_time: "10:00",
     status: "scheduled",
     match_day: 1,
-    manual_importance_override: null,
     created_at: "2026-01-01T00:00:00Z",
     updated_at: "2026-01-01T00:00:00Z",
     ...overrides,
@@ -65,8 +66,8 @@ function create_team(overrides: Partial<ScalarInput<Team>> = {}): Team {
     description: "",
     organization_id: "org_1",
     gender_id: "gender_1",
-    captain_player_id: null,
-    vice_captain_player_id: null,
+    captain_player_id: "",
+    vice_captain_player_id: "",
     max_squad_size: 25,
     home_venue_id: "venue_1",
     primary_color: "#000000",
@@ -92,8 +93,8 @@ function create_player(overrides: Partial<ScalarInput<Player>> = {}): Player {
     date_of_birth: "2000-01-01",
     position_id: "position_1",
     organization_id: "org_1",
-    height_cm: null,
-    weight_kg: null,
+    height_cm: 0,
+    weight_kg: 0,
     nationality: "UG",
     profile_image_url: "",
     emergency_contact_name: "Coach",
@@ -185,7 +186,7 @@ describe("load_fixture_lineup_detail_page_data", () => {
   it("returns a failure result when the lineup cannot be found", async () => {
     const result = await load_fixture_lineup_detail_page_data({
       lineup_id: "missing",
-      organization_id: "org_1",
+      organization_scope_state: { status: "scoped", organization_id: "org_1" },
       dependencies: create_dependencies({
         get_fixture_lineup_by_id: async () =>
           create_failure_result("Lineup not found"),
@@ -203,7 +204,7 @@ describe("load_fixture_lineup_detail_page_data", () => {
 
     const result = await load_fixture_lineup_detail_page_data({
       lineup_id: "lineup_1",
-      organization_id: "org_1",
+      organization_scope_state: { status: "scoped", organization_id: "org_1" },
       dependencies: create_dependencies({ list_positions }),
     });
 
@@ -217,8 +218,14 @@ describe("load_fixture_lineup_detail_page_data", () => {
     }
     expect(result.data.team_players).toHaveLength(1);
     expect(result.data.team_players[0].position).toBe("Forward");
-    expect(result.data.home_team?.name).toBe("Lions");
-    expect(result.data.away_team?.name).toBe("Tigers");
+    expect(result.data.home_team_state).toEqual({
+      status: "present",
+      team: expect.objectContaining({ name: "Lions" }),
+    });
+    expect(result.data.away_team_state).toEqual({
+      status: "present",
+      team: expect.objectContaining({ name: "Tigers" }),
+    });
   });
 
   it("keeps loading without fixture or team lookup success and omits the position filter when unscoped", async () => {
@@ -228,7 +235,7 @@ describe("load_fixture_lineup_detail_page_data", () => {
 
     const result = await load_fixture_lineup_detail_page_data({
       lineup_id: "lineup_1",
-      organization_id: undefined,
+      organization_scope_state: { status: "unscoped" },
       dependencies: create_dependencies({
         get_fixture_by_id: async () => create_failure_result("missing fixture"),
         get_team_by_id: async () => create_failure_result("missing team"),
@@ -236,7 +243,7 @@ describe("load_fixture_lineup_detail_page_data", () => {
       }),
     });
 
-    expect(list_positions).toHaveBeenCalledWith(undefined, {
+    expect(list_positions).toHaveBeenCalledWith(void 0, {
       page_number: 1,
       page_size: 500,
     });
@@ -244,9 +251,9 @@ describe("load_fixture_lineup_detail_page_data", () => {
     if (!result.success) {
       return;
     }
-    expect(result.data.fixture).toBeNull();
-    expect(result.data.team).toBeNull();
-    expect(result.data.home_team).toBeNull();
-    expect(result.data.away_team).toBeNull();
+    expect(result.data.fixture_state).toEqual({ status: "missing" });
+    expect(result.data.team_state).toEqual({ status: "missing" });
+    expect(result.data.home_team_state).toEqual({ status: "missing" });
+    expect(result.data.away_team_state).toEqual({ status: "missing" });
   });
 });

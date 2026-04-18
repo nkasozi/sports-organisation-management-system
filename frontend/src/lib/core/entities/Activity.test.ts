@@ -9,6 +9,7 @@ import {
   create_activity_from_fixture,
   type CreateActivityInput,
   DEFAULT_REMINDERS,
+  NO_ACTIVITY_RECURRENCE,
   validate_activity_input,
 } from "./Activity";
 
@@ -26,16 +27,16 @@ describe("Activity Entity", () => {
       end_datetime: "2025-01-15T12:00:00Z",
       is_all_day: false,
       location: "Main Field",
-      venue_id: null,
+      venue_id: "",
       team_ids: ["team-1"],
-      competition_id: null,
-      fixture_id: null,
+      competition_id: "",
+      fixture_id: "",
       source_type: "manual",
-      source_id: null,
+      source_id: "",
       status: "scheduled",
-      recurrence: null,
+      recurrence: NO_ACTIVITY_RECURRENCE,
       reminders: DEFAULT_REMINDERS,
-      color_override: null,
+      color_override: "",
       notes: "",
       ...overrides,
     });
@@ -144,16 +145,16 @@ describe("Activity Entity", () => {
         end_datetime: "2025-01-15T12:00:00Z",
         is_all_day: false,
         location: "Main Field",
-        venue_id: null,
+        venue_id: "",
         team_ids: [],
-        competition_id: null,
-        fixture_id: null,
+        competition_id: "",
+        fixture_id: "",
         source_type,
-        source_id: null,
+        source_id: "",
         status: "scheduled",
-        recurrence: null,
+        recurrence: NO_ACTIVITY_RECURRENCE,
         reminders: [],
-        color_override: null,
+        color_override: "",
         notes: "",
         created_at: "2025-01-01T00:00:00Z",
         updated_at: "2025-01-01T00:00:00Z",
@@ -188,16 +189,16 @@ describe("Activity Entity", () => {
         end_datetime: "2025-01-15T12:00:00Z",
         is_all_day: false,
         location: "Main Field",
-        venue_id: null,
+        venue_id: "",
         team_ids: [],
-        competition_id: null,
-        fixture_id: null,
+        competition_id: "",
+        fixture_id: "",
         source_type,
-        source_id: null,
+        source_id: "",
         status: "scheduled",
-        recurrence: null,
+        recurrence: NO_ACTIVITY_RECURRENCE,
         reminders: [],
-        color_override: null,
+        color_override: "",
         notes: "",
         created_at: "2025-01-01T00:00:00Z",
         updated_at: "2025-01-01T00:00:00Z",
@@ -236,11 +237,14 @@ describe("Activity Entity", () => {
       expect(result.source_type).toBe("fixture");
       expect(result.source_id).toBe("fixture-123");
       expect(result.fixture_id).toBe("fixture-123");
+      expect(result.venue_id).toBe("");
       expect(result.title).toBe("Match Day");
       expect(result.category_type).toBe("fixture");
       expect(result.team_ids).toContain("team-1");
       expect(result.team_ids).toContain("team-2");
       expect(result.competition_id).toBe("comp-123");
+      expect(result.recurrence).toEqual(NO_ACTIVITY_RECURRENCE);
+      expect(result.color_override).toBe("");
     });
 
     it("sets is_all_day to false by default", () => {
@@ -297,8 +301,12 @@ describe("Activity Entity", () => {
       expect(result.source_type).toBe("competition");
       expect(result.source_id).toBe("comp-123");
       expect(result.competition_id).toBe("comp-123");
+      expect(result.fixture_id).toBe("");
+      expect(result.venue_id).toBe("");
       expect(result.title).toBe("Premier League 2025");
       expect(result.category_type).toBe("competition");
+      expect(result.recurrence).toEqual(NO_ACTIVITY_RECURRENCE);
+      expect(result.color_override).toBe("");
     });
 
     it("sets is_all_day to true for competition activities", () => {

@@ -11,12 +11,18 @@ interface ConvexRecord {
   [key: string]: unknown;
 }
 
-interface PublicDataFetchResult {
-  success: boolean;
-  tables_fetched: number;
-  total_records: number;
-  error: string | null;
-}
+type PublicDataFetchResult =
+  | {
+      success: true;
+      tables_fetched: number;
+      total_records: number;
+    }
+  | {
+      success: false;
+      tables_fetched: number;
+      total_records: number;
+      error: string;
+    };
 
 const COMPETITION_RESULTS_TABLES: TableName[] = [
   "organizations",
@@ -138,9 +144,9 @@ export async function fetch_public_data_from_convex(
   }
 
   const manager = get_sync_manager();
-  const convex_client = manager.get_convex_client();
+  const convex_client_result = manager.get_convex_client();
 
-  if (!convex_client) {
+  if (!convex_client_result.success) {
     console.warn(
       "[PublicData] Convex client not available, using local data only",
     );
@@ -151,6 +157,8 @@ export async function fetch_public_data_from_convex(
       error: "convex_not_available",
     };
   }
+
+  const convex_client = convex_client_result.data;
 
   const tables = get_tables_for_page(page_type);
   let tables_fetched = 0;
@@ -190,10 +198,18 @@ export async function fetch_public_data_from_convex(
         : ""),
   );
 
+  if (all_succeeded) {
+    return {
+      success: true,
+      tables_fetched,
+      total_records,
+    };
+  }
+
   return {
-    success: all_succeeded,
+    success: false,
     tables_fetched,
     total_records,
-    error: all_succeeded ? null : `Failed tables: ${failed_tables.join(", ")}`,
+    error: `Failed tables: ${failed_tables.join(", ")}`,
   };
 }

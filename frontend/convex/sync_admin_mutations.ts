@@ -63,7 +63,6 @@ export const clear_table = mutation({
         {
           event_type: SecurityEventType.ACCESS_DENIED,
           entity_type,
-          user_email: undefined,
           details: `Unauthorized clear_table attempt on ${args.table_name}`,
         },
       );

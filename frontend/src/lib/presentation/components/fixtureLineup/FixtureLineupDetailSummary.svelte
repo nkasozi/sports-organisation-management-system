@@ -1,7 +1,9 @@
 <script lang="ts">
-    import type { Fixture } from "$lib/core/entities/Fixture";
     import type { FixtureLineup } from "$lib/core/entities/FixtureLineup";
-    import type { Team } from "$lib/core/entities/Team";
+    import type {
+        FixtureLineupDetailFixtureState,
+        FixtureLineupDetailTeamState,
+    } from "$lib/presentation/logic/fixtureLineupDetailPageContracts";
     import {
         format_fixture_lineup_submission_date,
         get_fixture_lineup_name,
@@ -9,10 +11,10 @@
     } from "$lib/presentation/logic/fixtureLineupDetailPageState";
 
     export let lineup: FixtureLineup;
-    export let fixture: Fixture | null;
-    export let team: Team | null;
-    export let home_team: Team | null;
-    export let away_team: Team | null;
+    export let fixture_state: FixtureLineupDetailFixtureState;
+    export let team_state: FixtureLineupDetailTeamState;
+    export let home_team_state: FixtureLineupDetailTeamState;
+    export let away_team_state: FixtureLineupDetailTeamState;
     export let permission_info_message: string;
 </script>
 
@@ -49,10 +51,16 @@
             <h1
                 class="text-2xl font-bold text-accent-900 dark:text-accent-100 mb-2"
             >
-                {team?.name || "Unknown Team"} Lineup
+                {team_state.status === "present"
+                    ? team_state.team.name
+                    : "Unknown Team"} Lineup
             </h1>
             <p class="text-accent-600 dark:text-accent-300">
-                {get_fixture_lineup_name(fixture, home_team, away_team)}
+                {get_fixture_lineup_name(
+                    fixture_state,
+                    home_team_state,
+                    away_team_state,
+                )}
             </p>
         </div>
         <span

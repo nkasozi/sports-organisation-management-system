@@ -1,5 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { create_live_game_detail_event_handlers } from "./liveGameDetailControllerEventActions";
+import type {
+  LiveGameDetailEventState,
+  LiveGameDetailPageState,
+  LiveGameDetailToastState,
+} from "./liveGameDetailPageState";
+import {
+  create_live_game_detail_event_state,
+  create_live_game_detail_page_state,
+} from "./liveGameDetailPageStateFactories";
+
 const {
   record_live_game_detail_page_event_action_mock,
   update_live_game_detail_player_time_on_action_mock,
@@ -14,17 +25,6 @@ vi.mock("$lib/presentation/logic/liveGameDetailPageActions", () => ({
   update_live_game_detail_player_time_on_action:
     update_live_game_detail_player_time_on_action_mock,
 }));
-
-import { create_live_game_detail_event_handlers } from "./liveGameDetailControllerEventActions";
-import type {
-  LiveGameDetailEventState,
-  LiveGameDetailPageState,
-  LiveGameDetailToastState,
-} from "./liveGameDetailPageState";
-import {
-  create_live_game_detail_event_state,
-  create_live_game_detail_page_state,
-} from "./liveGameDetailPageStateFactories";
 
 describe("liveGameDetailControllerEventActions", () => {
   type HandlerCommand = Parameters<
@@ -45,8 +45,8 @@ describe("liveGameDetailControllerEventActions", () => {
       id,
       first_name,
       last_name,
-      jersey_number: null,
-      position: null,
+      jersey_number: 0,
+      position: "",
       is_captain: false,
       is_substitute: false,
       time_on: "present_at_start",
@@ -58,7 +58,7 @@ describe("liveGameDetailControllerEventActions", () => {
   });
 
   function create_state_store() {
-    let page_state =  {
+    let page_state = {
       ...create_live_game_detail_page_state(),
       fixture: {
         id: "fixture-1",
@@ -71,13 +71,18 @@ describe("liveGameDetailControllerEventActions", () => {
     } as LiveGameDetailPageState;
     let event_state: LiveGameDetailEventState =
       create_live_game_detail_event_state();
-    let toast_state: LiveGameDetailToastState | null = null;
+    let toast_state:
+      | { status: "hidden" }
+      | { status: "visible"; toast: LiveGameDetailToastState } = {
+      status: "hidden",
+    };
     return {
       get_event_state: () => event_state,
       get_page_state: () => page_state,
       read_event_state: () => event_state,
       read_page_state: () => page_state,
-      read_toast_state: () => toast_state,
+      read_toast_state: () =>
+        toast_state.status === "visible" ? toast_state.toast : void 0,
       set_event_state: (next_state: typeof event_state) => {
         event_state = next_state;
       },
@@ -85,7 +90,7 @@ describe("liveGameDetailControllerEventActions", () => {
         page_state = next_state;
       },
       set_toast_state: (next_state: LiveGameDetailToastState) => {
-        toast_state = next_state;
+        toast_state = { status: "visible", toast: next_state };
       },
     };
   }

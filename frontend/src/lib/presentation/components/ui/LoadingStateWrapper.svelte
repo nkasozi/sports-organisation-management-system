@@ -10,7 +10,7 @@
   export let error_title: string = "Something went wrong";
   export let loading_text: string = "Loading...";
   export let show_content_while_loading: boolean = false;
-  export let on_retry: (() => void) | null = null;
+  export let on_retry: (() => void) | undefined = undefined;
 
   $: is_loading = state === "loading";
   $: is_error = state === "error";

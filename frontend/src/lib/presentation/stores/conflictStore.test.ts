@@ -5,9 +5,10 @@ import {
   parse_iso_date_time_string,
   parse_name,
 } from "$lib/core/types/DomainScalars";
-import type {
-  ConflictRecord,
-  ConflictResolutionAction,
+import {
+  type ConflictRecord,
+  type ConflictResolutionAction,
+  create_known_conflict_field_value,
 } from "$lib/infrastructure/sync/conflictTypes";
 
 vi.mock("$lib/infrastructure/sync/conflictAuditService", () => ({
@@ -38,9 +39,7 @@ function create_timestamp(raw_value: string): ConflictRecord["detected_at"] {
   return timestamp_result.data;
 }
 
-function create_display_name(
-  raw_value: string,
-): NonNullable<ConflictRecord["remote_updated_by_name"]> {
+function create_display_name(raw_value: string): string {
   const display_name_result = parse_name(raw_value, "Invalid test name");
 
   if (!display_name_result.success) {
@@ -62,8 +61,12 @@ function create_mock_conflict(
     remote_data: { name: "Remote Team Name", city: "Kampala" },
     local_updated_at: create_timestamp("2024-01-01T10:00:00.000Z"),
     remote_updated_at: create_timestamp("2024-01-01T12:00:00.000Z"),
-    remote_updated_by: create_entity_id("user_123"),
-    remote_updated_by_name: create_display_name("John Doe"),
+    remote_updated_by: create_known_conflict_field_value(
+      create_entity_id("user_123"),
+    ),
+    remote_updated_by_name: create_known_conflict_field_value(
+      create_display_name("John Doe"),
+    ),
     field_differences: [
       {
         field_name: "name",
@@ -84,7 +87,10 @@ function get_resolved_data_for_action(
 ): Record<string, unknown> {
   switch (action) {
     case "keep_local":
-      return { ...conflict.local_data, updated_at: new Date().toISOString() } as Record<string, unknown>;
+      return {
+        ...conflict.local_data,
+        updated_at: new Date().toISOString(),
+      } as Record<string, unknown>;
     case "keep_remote":
       return conflict.remote_data;
     case "merge":
@@ -285,8 +291,8 @@ describe("Edge cases", () => {
 
   it("handles conflict with null values in data", () => {
     const conflict = create_mock_conflict({
-      local_data: { name: null, city: "Kampala" },
-      remote_data: { name: "Remote Name", city: null },
+      local_data: { name: JSON.parse("null"), city: "Kampala" },
+      remote_data: { name: "Remote Name", city: JSON.parse("null") },
     });
 
     const result_local = get_resolved_data_for_action(conflict, "keep_local");

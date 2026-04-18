@@ -38,14 +38,18 @@ function is_user_role(value: unknown): value is UserRole {
   return typeof value === "string" && value in USER_ROLE_DISPLAY_NAMES;
 }
 
+function is_record_value(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
 function parse_decoded_token_payload(
   decoded_payload: unknown,
 ): Result<AuthTokenPayload> {
-  if (typeof decoded_payload !== "object" || decoded_payload === null) {
+  if (!is_record_value(decoded_payload)) {
     return create_failure_result("Token payload is invalid");
   }
 
-  const payload_record = decoded_payload as Record<string, unknown>;
+  const payload_record = decoded_payload;
 
   if (typeof payload_record.user_id !== "string") {
     return create_failure_result("Token payload is invalid");
@@ -253,15 +257,23 @@ export class LocalAuthenticationAdapter implements AuthenticationPort {
   }
 }
 
-let authentication_adapter_instance: LocalAuthenticationAdapter | null = null;
+type AuthenticationAdapterState =
+  | { status: "uninitialized" }
+  | { status: "ready"; adapter: LocalAuthenticationAdapter };
+
+let authentication_adapter_state: AuthenticationAdapterState = {
+  status: "uninitialized",
+};
 
 export function get_authentication_adapter(
   system_user_repository: InBrowserSystemUserRepository,
 ): LocalAuthenticationAdapter {
-  if (!authentication_adapter_instance) {
-    authentication_adapter_instance = new LocalAuthenticationAdapter(
-      system_user_repository,
-    );
+  if (authentication_adapter_state.status === "ready") {
+    return authentication_adapter_state.adapter;
   }
-  return authentication_adapter_instance;
+
+  const adapter = new LocalAuthenticationAdapter(system_user_repository);
+  authentication_adapter_state = { status: "ready", adapter };
+
+  return adapter;
 }

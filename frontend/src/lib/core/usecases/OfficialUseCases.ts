@@ -25,10 +25,12 @@ export function create_official_use_cases(
       filter?: OfficialFilter,
       options?: QueryOptions,
     ): PaginatedAsyncResult<Official> {
-      return repository.find_all(filter, options);
+      return repository.find_all(filter ?? {}, options ?? {});
     },
 
-    async get_by_id(id: ScalarValueInput<Official["id"]>): AsyncResult<Official> {
+    async get_by_id(
+      id: ScalarValueInput<Official["id"]>,
+    ): AsyncResult<Official> {
       if (!id || id.trim().length === 0) {
         return create_failure_result("Official ID is required");
       }
@@ -76,7 +78,7 @@ export function create_official_use_cases(
       if (!organization_id || organization_id.trim().length === 0) {
         return create_failure_result("Organization ID is required");
       }
-      return repository.find_by_organization(organization_id, options);
+      return repository.find_by_organization(organization_id, options ?? {});
     },
 
     async list_officials_by_role_id(

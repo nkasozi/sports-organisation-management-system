@@ -3,24 +3,29 @@ import type { Fixture } from "$lib/core/entities/Fixture";
 import type { CreateFixtureLineupInput } from "$lib/core/entities/FixtureLineup";
 import type { Organization } from "$lib/core/entities/Organization";
 import type { Team } from "$lib/core/entities/Team";
-import type { UserScopeProfile } from "$lib/core/interfaces/ports/external/iam/AuthorizationPort";
 import type { TeamPlayer } from "$lib/core/services/teamPlayers";
 
 import { create_fixture_lineup_create_dependencies } from "./fixtureLineupCreateData";
+import type {
+  FixtureLineupCreateAuthProfileState,
+  FixtureLineupCreateFixtureState,
+  FixtureLineupCreateOrganizationState,
+  FixtureLineupCreateTeamState,
+} from "./fixtureLineupCreatePageContracts";
 
 export interface FixtureLineupCreatePageControllerRuntimeCommand {
   dependencies: ReturnType<typeof create_fixture_lineup_create_dependencies>;
   get_confirm_lock_understood: () => boolean;
-  get_current_auth_profile: () => UserScopeProfile | null;
+  get_current_auth_profile_state: () => FixtureLineupCreateAuthProfileState;
   get_form_data: () => CreateFixtureLineupInput;
   get_fixtures_with_complete_lineups: () => Set<string>;
   get_max_players: () => number;
   get_min_players: () => number;
   get_organization_is_restricted: () => boolean;
   get_organizations: () => Organization[];
-  get_selected_fixture: () => Fixture | null;
-  get_selected_organization: () => Organization | null;
-  get_selected_team: () => Team | null;
+  get_selected_fixture_state: () => FixtureLineupCreateFixtureState;
+  get_selected_organization_state: () => FixtureLineupCreateOrganizationState;
+  get_selected_team_state: () => FixtureLineupCreateTeamState;
   get_team_players: () => TeamPlayer[];
   goto: (path: string) => Promise<unknown>;
   is_browser: boolean;
@@ -40,9 +45,11 @@ export interface FixtureLineupCreatePageControllerRuntimeCommand {
   set_organizations: (value: Organization[]) => void;
   set_player_search_text: (value: string) => void;
   set_saving: (value: boolean) => void;
-  set_selected_fixture: (value: Fixture | null) => void;
-  set_selected_organization: (value: Organization | null) => void;
-  set_selected_team: (value: Team | null) => void;
+  set_selected_fixture_state: (value: FixtureLineupCreateFixtureState) => void;
+  set_selected_organization_state: (
+    value: FixtureLineupCreateOrganizationState,
+  ) => void;
+  set_selected_team_state: (value: FixtureLineupCreateTeamState) => void;
   set_starters_count: (value: number) => void;
   set_team_players: (value: TeamPlayer[]) => void;
   set_teams_with_existing_lineups: (value: Map<string, string>) => void;

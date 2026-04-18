@@ -165,11 +165,24 @@ class InBrowserAuditLogRepository
   }
 }
 
-let singleton_instance: InBrowserAuditLogRepository | null = null;
+type AuditLogRepositoryState =
+  | { status: "uninitialized" }
+  | {
+      status: "ready";
+      repository: InBrowserAuditLogRepository;
+    };
+
+let audit_log_repository_state: AuditLogRepositoryState = {
+  status: "uninitialized",
+};
 
 export function get_audit_log_repository(): InBrowserAuditLogRepository {
-  if (!singleton_instance) {
-    singleton_instance = new InBrowserAuditLogRepository();
+  if (audit_log_repository_state.status === "ready") {
+    return audit_log_repository_state.repository;
   }
-  return singleton_instance;
+
+  const repository = new InBrowserAuditLogRepository();
+  audit_log_repository_state = { status: "ready", repository };
+
+  return repository;
 }

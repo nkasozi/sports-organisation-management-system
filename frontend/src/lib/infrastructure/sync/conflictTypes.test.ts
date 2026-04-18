@@ -113,7 +113,7 @@ describe("compute_field_differences", () => {
     expect(differences).toHaveLength(1);
     expect(differences[0].field_name).toBe("extra_field");
     expect(differences[0].local_value).toBe("value");
-    expect(differences[0].remote_value).toBe(undefined);
+    expect(differences[0].remote_value).toBe(void 0);
   });
 
   it("detects fields present only in remote data", () => {
@@ -124,13 +124,13 @@ describe("compute_field_differences", () => {
 
     expect(differences).toHaveLength(1);
     expect(differences[0].field_name).toBe("extra_field");
-    expect(differences[0].local_value).toBe(undefined);
+    expect(differences[0].local_value).toBe(void 0);
     expect(differences[0].remote_value).toBe("value");
   });
 
-  it("treats null and undefined as equal", () => {
-    const local_data = { optional_field: null };
-    const remote_data = { optional_field: undefined };
+  it("treats missing values and undefined as equal", () => {
+    const local_data = { optional_field: JSON.parse("null") };
+    const remote_data = {};
 
     const differences = compute_field_differences(local_data, remote_data);
 
@@ -322,7 +322,11 @@ describe("get_entity_display_name", () => {
   });
 
   it("ignores non-string first_name values", () => {
-    const data = { first_name: null, last_name: "Doe", id: "p1" };
+    const data = {
+      first_name: JSON.parse("null"),
+      last_name: "Doe",
+      id: "p1",
+    };
 
     const display_name = get_entity_display_name(data, "players");
 

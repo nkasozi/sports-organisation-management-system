@@ -41,7 +41,7 @@ export async function load_player_public_profile_page_data(
   return create_success_result({
     profile: profile_result.data,
     player: player_result.data,
-    position,
+    position_state: position,
     overall_stats: stats_bundle.overall_stats,
     team_stats: stats_bundle.team_stats,
     link_sections,

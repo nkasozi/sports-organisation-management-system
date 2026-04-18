@@ -5,7 +5,7 @@ export interface GameOfficialRole extends BaseEntity {
   name: Name;
   code: string;
   description: string;
-  sport_id: EntityId | null;
+  sport_id: EntityId | "";
   is_on_field: boolean;
   is_head_official: boolean;
   display_order: number;
@@ -20,7 +20,7 @@ export type CreateGameOfficialRoleInput = Omit<
 export type UpdateGameOfficialRoleInput = Partial<CreateGameOfficialRoleInput>;
 
 function create_empty_game_official_role_input(
-  sport_id: CreateGameOfficialRoleInput["sport_id"] = null,
+  sport_id: CreateGameOfficialRoleInput["sport_id"] = "",
 ): CreateGameOfficialRoleInput {
   return {
     name: "",
@@ -45,7 +45,7 @@ function get_default_football_official_roles(): Omit<
       code: "REF",
       description:
         "Main match official responsible for enforcing the laws of the game",
-      sport_id: null,
+      sport_id: "",
       is_on_field: true,
       is_head_official: true,
       display_order: 1,
@@ -56,7 +56,7 @@ function get_default_football_official_roles(): Omit<
       code: "AR",
       description:
         "Assists the referee, primarily with offside decisions and throw-in directions",
-      sport_id: null,
+      sport_id: "",
       is_on_field: true,
       is_head_official: false,
       display_order: 2,
@@ -67,7 +67,7 @@ function get_default_football_official_roles(): Omit<
       code: "4TH",
       description:
         "Assists with administrative duties and substitution procedures",
-      sport_id: null,
+      sport_id: "",
       is_on_field: false,
       is_head_official: false,
       display_order: 3,
@@ -78,7 +78,7 @@ function get_default_football_official_roles(): Omit<
       code: "VAR",
       description:
         "Video Assistant Referee who reviews decisions using video footage",
-      sport_id: null,
+      sport_id: "",
       is_on_field: false,
       is_head_official: false,
       display_order: 4,
@@ -88,7 +88,7 @@ function get_default_football_official_roles(): Omit<
       name: "AVAR Official",
       code: "AVAR",
       description: "Assistant Video Assistant Referee",
-      sport_id: null,
+      sport_id: "",
       is_on_field: false,
       is_head_official: false,
       display_order: 5,
@@ -98,7 +98,7 @@ function get_default_football_official_roles(): Omit<
       name: "Goal Line Official",
       code: "GLO",
       description: "Additional assistant referee positioned near the goal line",
-      sport_id: null,
+      sport_id: "",
       is_on_field: true,
       is_head_official: false,
       display_order: 6,

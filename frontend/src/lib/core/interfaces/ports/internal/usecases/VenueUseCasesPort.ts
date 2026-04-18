@@ -14,7 +14,5 @@ export interface VenueUseCasesPort extends BaseUseCasesPort<
   UpdateVenueInput,
   VenueFilter
 > {
-  delete_venues(
-    ids: Array<ScalarValueInput<Venue["id"]>>,
-  ): AsyncResult<number>;
+  delete_venues(ids: Array<ScalarValueInput<Venue["id"]>>): AsyncResult<number>;
 }

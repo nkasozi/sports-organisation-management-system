@@ -1,7 +1,7 @@
 <script lang="ts">
   export let label: string;
   export let name: string;
-  export let value: string | number | null | undefined = "";
+  export let value: string | number | undefined = "";
   export let type:
     | "text"
     | "email"

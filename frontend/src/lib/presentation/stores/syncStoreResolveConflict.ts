@@ -1,9 +1,10 @@
+import type { ScalarInput } from "$lib/core/types/DomainScalars";
+import type { Result } from "$lib/core/types/Result";
 import type {
   ConflictRecord,
   ConflictResolutionAction,
 } from "$lib/infrastructure/sync/conflictTypes";
 import type { ConflictResolutionRequest } from "$lib/infrastructure/sync/convexSyncService";
-import type { ScalarInput } from "$lib/core/types/DomainScalars";
 import { resolve_conflict } from "$lib/infrastructure/sync/convexSyncService";
 
 type ConvexClient = {
@@ -12,6 +13,9 @@ type ConvexClient = {
 };
 
 type EditableConflictRecord = ScalarInput<ConflictRecord>;
+type ConflictResolutionExecutionResult =
+  | { success: true }
+  | { success: false; error: string };
 
 function build_resolved_data(
   conflict: EditableConflictRecord,
@@ -31,13 +35,13 @@ function build_resolved_data(
 }
 
 export async function execute_conflict_resolution(
-  convex_client: ConvexClient | null,
+  convex_client_result: Result<ConvexClient>,
   conflict: EditableConflictRecord,
   action: ConflictResolutionAction,
   merged_data?: Record<string, unknown>,
-): Promise<{ success: boolean; error: string | null }> {
-  if (!convex_client) {
-    return { success: false, error: "Convex client not configured" };
+): Promise<ConflictResolutionExecutionResult> {
+  if (!convex_client_result.success) {
+    return { success: false, error: convex_client_result.error };
   }
 
   const resolved_data = build_resolved_data(conflict, action, merged_data);
@@ -49,5 +53,9 @@ export async function execute_conflict_resolution(
     resolution_action: action,
   };
 
-  return resolve_conflict(convex_client, request);
+  const result = await resolve_conflict(convex_client_result.data, request);
+
+  return result.success
+    ? { success: true }
+    : { success: false, error: result.error };
 }

@@ -49,6 +49,14 @@ export interface SettingsFormValues {
   selected_sync_interval_ms: number;
 }
 
+type SelectedOrganizationState =
+  | { status: "missing" }
+  | { status: "present"; organization: Organization };
+
+type OrganizationSettingsState =
+  | { status: "missing" }
+  | { status: "present"; organization_settings: OrganizationSettings };
+
 export type SettingsActionResult<T> =
   | { success: true; data: T }
   | { success: false; error_message: string };
@@ -158,19 +166,28 @@ export function create_settings_form_values(
 
 export function apply_organization_settings_form_values(
   current_values: SettingsFormValues,
-  selected_organization: Organization | undefined,
-  organization_settings: OrganizationSettings | null,
+  selected_organization_state: SelectedOrganizationState,
+  organization_settings_state: OrganizationSettingsState,
 ): SettingsFormValues {
-  if (!organization_settings) {
+  const selected_organization_name =
+    selected_organization_state.status === "present"
+      ? selected_organization_state.organization.name
+      : "";
+
+  if (organization_settings_state.status === "missing") {
     return {
       ...current_values,
-      organization_name: selected_organization?.name ?? "",
+      organization_name: selected_organization_name,
     };
   }
+
+  const organization_settings =
+    organization_settings_state.organization_settings;
+
   return {
     ...current_values,
     organization_name:
-      organization_settings.display_name || selected_organization?.name || "",
+      organization_settings.display_name || selected_organization_name,
     organization_logo_url: organization_settings.logo_url ?? "",
     organization_tagline: organization_settings.tagline ?? "",
     organization_email: organization_settings.contact_email ?? "",

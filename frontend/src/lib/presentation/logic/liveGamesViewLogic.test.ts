@@ -11,7 +11,9 @@ import {
   get_live_game_status_badge_class,
 } from "./liveGamesViewLogic";
 
-function create_fixture(overrides: Partial<ScalarInput<Fixture>> = {}): Fixture {
+function create_fixture(
+  overrides: Partial<ScalarInput<Fixture>> = {},
+): Fixture {
   return {
     id: "fixture_1",
     organization_id: "org_1",

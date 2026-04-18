@@ -11,6 +11,7 @@ import type {
   OrganizationSettingsFilter,
   OrganizationSettingsRepository,
 } from "../../core/interfaces/ports/external/repositories/OrganizationSettingsRepository";
+import { build_organization_settings_not_found_error } from "../../core/interfaces/ports/external/repositories/OrganizationSettingsRepository";
 import type { AsyncResult } from "../../core/types/Result";
 import {
   create_failure_result,
@@ -87,7 +88,7 @@ class InBrowserOrganizationSettingsRepository
   async find_by_organization_id(
     organization_id: OrganizationSettings["organization_id"],
     _options?: QueryOptions,
-  ): AsyncResult<OrganizationSettings | null> {
+  ): AsyncResult<OrganizationSettings> {
     try {
       const all_settings = await this.get_table().toArray();
       const match = all_settings.find(
@@ -100,7 +101,13 @@ class InBrowserOrganizationSettingsRepository
         found: !!match,
       });
 
-      return create_success_result(match ?? null);
+      if (!match) {
+        return create_failure_result(
+          build_organization_settings_not_found_error(organization_id),
+        );
+      }
+
+      return create_success_result(match);
     } catch (error) {
       console.warn("[OrgSettingsRepository] Failed to find settings for org", {
         event: "repository_find_settings_for_org_failed",
@@ -115,11 +122,28 @@ class InBrowserOrganizationSettingsRepository
   }
 }
 
-let repository_instance: InBrowserOrganizationSettingsRepository | null = null;
+type OrganizationSettingsRepositoryState =
+  | { status: "uninitialized" }
+  | {
+      status: "ready";
+      repository: InBrowserOrganizationSettingsRepository;
+    };
+
+let organization_settings_repository_state: OrganizationSettingsRepositoryState =
+  {
+    status: "uninitialized",
+  };
 
 export function get_organization_settings_repository(): OrganizationSettingsRepository {
-  if (!repository_instance) {
-    repository_instance = new InBrowserOrganizationSettingsRepository();
+  if (organization_settings_repository_state.status === "ready") {
+    return organization_settings_repository_state.repository;
   }
-  return repository_instance;
+
+  const repository = new InBrowserOrganizationSettingsRepository();
+  organization_settings_repository_state = {
+    status: "ready",
+    repository,
+  };
+
+  return repository;
 }

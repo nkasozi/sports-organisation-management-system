@@ -1,12 +1,9 @@
-import type { Competition } from "$lib/core/entities/Competition";
 import type { Fixture } from "$lib/core/entities/Fixture";
 import type { LineupPlayer } from "$lib/core/entities/FixtureLineup";
-import type { Sport } from "$lib/core/entities/Sport";
 import type { Team } from "$lib/core/entities/Team";
 import type { TeamStaff } from "$lib/core/entities/TeamStaff";
 import { get_team_staff_full_name } from "$lib/core/entities/TeamStaff";
 import type { TeamStaffRole } from "$lib/core/entities/TeamStaffRole";
-import type { Venue } from "$lib/core/entities/Venue";
 import type {
   CardTypeConfig,
   MatchStaffEntry,
@@ -24,7 +21,12 @@ import {
 } from "$lib/infrastructure/utils/MatchReportBuilder";
 import { download_match_report } from "$lib/infrastructure/utils/MatchReportPdfGenerator";
 
-import type { MatchReportAssignedOfficialData } from "./matchReportPageLoadTypes";
+import type {
+  MatchReportAssignedOfficialData,
+  MatchReportCompetitionState,
+  MatchReportSportState,
+  MatchReportVenueState,
+} from "./matchReportPageLoadTypes";
 
 const MATCH_REPORT_DOWNLOAD_TEXT = {
   default_organization_name: "SPORT-SYNC",
@@ -64,9 +66,15 @@ async function load_match_report_staff_entries(
   }));
 }
 
-function build_match_report_card_types(sport: Sport | null): CardTypeConfig[] {
+function build_match_report_card_types(
+  sport_state: MatchReportSportState,
+): CardTypeConfig[] {
+  if (sport_state.status === "missing") {
+    return [];
+  }
+
   return (
-    sport?.card_types?.map((current_card_type) => ({
+    sport_state.sport.card_types?.map((current_card_type) => ({
       id: current_card_type.id,
       name: current_card_type.name,
       color: current_card_type.color,
@@ -76,16 +84,19 @@ function build_match_report_card_types(sport: Sport | null): CardTypeConfig[] {
 }
 
 async function load_match_report_organization_name(
-  competition: Competition | null,
+  competition_state: MatchReportCompetitionState,
   dependencies: MatchReportPageDownloadDependencies,
 ): Promise<string> {
-  if (!competition?.organization_id) {
+  if (
+    competition_state.status === "missing" ||
+    !competition_state.competition.organization_id
+  ) {
     return MATCH_REPORT_DOWNLOAD_TEXT.default_organization_name;
   }
 
   const organization_result =
     await dependencies.organization_use_cases.get_by_id(
-      competition.organization_id,
+      competition_state.competition.organization_id,
     );
   if (!organization_result.success || !organization_result.data) {
     return MATCH_REPORT_DOWNLOAD_TEXT.default_organization_name;
@@ -109,9 +120,9 @@ export async function download_match_report_for_fixture(command: {
   fixture: Fixture;
   home_team: Team;
   away_team: Team;
-  competition: Competition | null;
-  sport: Sport | null;
-  venue: Venue | null;
+  competition_state: MatchReportCompetitionState;
+  sport_state: MatchReportSportState;
+  venue_state: MatchReportVenueState;
   assigned_officials_data: MatchReportAssignedOfficialData[];
   home_players: LineupPlayer[];
   away_players: LineupPlayer[];
@@ -120,7 +131,7 @@ export async function download_match_report_for_fixture(command: {
 }): AsyncResult<string> {
   try {
     const organization_name = await load_match_report_organization_name(
-      command.competition,
+      command.competition_state,
       command.dependencies,
     );
     const staff_roles_result =
@@ -147,15 +158,21 @@ export async function download_match_report_for_fixture(command: {
       fixture: command.fixture,
       home_team: command.home_team,
       away_team: command.away_team,
-      competition: command.competition,
+      competition:
+        command.competition_state.status === "present"
+          ? command.competition_state.competition
+          : void 0,
       home_lineup: command.home_players,
       away_lineup: command.away_players,
       assigned_officials: command.assigned_officials_data,
       home_staff,
       away_staff,
-      card_types: build_match_report_card_types(command.sport),
+      card_types: build_match_report_card_types(command.sport_state),
       organization_name,
-      venue_name: command.venue?.name,
+      venue_name:
+        command.venue_state.status === "present"
+          ? command.venue_state.venue.name
+          : void 0,
       organization_logo_url: command.organization_logo_url,
     };
     const report_data = build_match_report_data(report_context);

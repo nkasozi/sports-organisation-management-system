@@ -8,7 +8,7 @@
   export let entities_count: number;
   export let filtered_count: number;
   export let has_bulk_create_handler: boolean;
-  export let info_message: string | null;
+  export let info_message: string;
   export let is_create_disabled: boolean;
   export let is_delete_disabled: boolean;
   export let is_deleting: boolean;

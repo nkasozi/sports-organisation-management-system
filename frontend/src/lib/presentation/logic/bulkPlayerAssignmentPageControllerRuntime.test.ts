@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { create_bulk_player_assignment_page_controller_runtime } from "./bulkPlayerAssignmentPageControllerRuntime";
+
 const {
   check_entity_authorized_mock,
   ensure_auth_profile_mock,
@@ -28,8 +30,6 @@ vi.mock("./bulkPlayerAssignmentPageData", () => ({
   save_bulk_player_assignments: save_bulk_player_assignments_mock,
 }));
 
-import { create_bulk_player_assignment_page_controller_runtime } from "./bulkPlayerAssignmentPageControllerRuntime";
-
 describe("bulkPlayerAssignmentPageControllerRuntime", () => {
   function create_command() {
     const state = {
@@ -57,13 +57,19 @@ describe("bulkPlayerAssignmentPageControllerRuntime", () => {
       get_assigned_players_on_other_teams: () =>
         state.assigned_players_on_other_teams as never,
       get_auth_state: () => ({
-        current_profile: null,
-        current_token: { raw_token: "token-1" },
+        current_profile_state: { status: "missing" },
+        current_token_state: {
+          status: "present",
+          raw_token: "token-1",
+        },
       }),
-      get_selected_team: () => state.selected_team as never,
+      get_selected_team_state: () => ({
+        status: "present",
+        team: state.selected_team as never,
+      }),
       get_selected_team_id: () => state.selected_team_id,
       get_unassigned_players: () => state.unassigned_players as never,
-      goto: vi.fn(async () => undefined),
+      goto: vi.fn(async () => {}),
       is_browser: true,
       set_access_denial: vi.fn(),
       set_all_player_assignments: vi.fn(

@@ -20,11 +20,10 @@ describe("liveGameDetailPageGameActions", () => {
       id,
       first_name: "Ada",
       last_name: "Stone",
-      jersey_number: null,
-      position: null,
+      jersey_number: 0,
+      position: "",
       is_captain: false,
       is_substitute: false,
-      time_on: undefined,
     } as StartCommand["home_players"][number];
   }
 
@@ -66,7 +65,7 @@ describe("liveGameDetailPageGameActions", () => {
   });
 
   it("records the final whistle and ends the game through the shell export", async () => {
-    const fixture_use_cases =  {
+    const fixture_use_cases = {
       end_fixture: vi.fn().mockResolvedValue({
         success: true,
         data: { id: "fixture-1", status: "completed" },

@@ -12,9 +12,9 @@
 
     export let activity_form_values: ActivityFormValues;
     export let show_create_modal: boolean;
-    export let editing_activity: Activity | null;
+    export let editing_activity: Activity | undefined;
     export let categories: ActivityCategory[];
-    export let selected_event_details: CalendarEvent | null;
+    export let selected_event_details: CalendarEvent | undefined;
     export let show_category_modal: boolean;
     export let show_subscribe_modal: boolean;
     export let selected_organization_id: string;

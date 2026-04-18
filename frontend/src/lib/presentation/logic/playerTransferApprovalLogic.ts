@@ -126,7 +126,7 @@ export async function create_new_team_membership(
     player_id: transfer.player_id,
     team_id: transfer.to_team_id,
     start_date,
-    jersey_number: null,
+    jersey_number: 0,
     status: "active",
   });
 

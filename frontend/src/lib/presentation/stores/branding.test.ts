@@ -119,7 +119,7 @@ describe("branding", () => {
       organization_logo_url: "/local.svg",
     });
     branding_mocks.get_setting
-      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce("")
       .mockResolvedValueOnce(JSON.stringify(stored_branding));
 
     const { branding_store } = await import("./branding");
@@ -139,7 +139,10 @@ describe("branding", () => {
 
     const { branding_store } = await import("./branding");
 
-    await branding_store.set_organization_context("organization-1");
+    await branding_store.set_organization_context({
+      status: "scoped",
+      organization_id: "organization-1",
+    });
 
     expect(get(branding_store)).toEqual(
       expect.objectContaining({
@@ -148,7 +151,10 @@ describe("branding", () => {
         organization_email: "info@hawks.test",
       }),
     );
-    expect(branding_store.get_current_org_id()).toBe("organization-1");
+    expect(branding_store.get_current_org_id_state()).toEqual({
+      status: "scoped",
+      organization_id: "organization-1",
+    });
     expect(branding_mocks.set_setting).toHaveBeenCalledWith(
       "sports-org-branding-current-org-id",
       "organization-1",
@@ -182,12 +188,13 @@ describe("branding", () => {
     );
     branding_mocks.set_setting.mockReset();
 
-    await branding_store.set_organization_context(
-      "organization-2",
-      "Fallback Club",
-      "fallback@example.test",
-      "1 Field Road",
-    );
+    await branding_store.set_organization_context({
+      status: "scoped",
+      organization_id: "organization-2",
+      organization_name: "Fallback Club",
+      organization_email: "fallback@example.test",
+      organization_address: "1 Field Road",
+    });
 
     expect(branding_mocks.save_or_update).toHaveBeenCalledWith(
       "org_admin",

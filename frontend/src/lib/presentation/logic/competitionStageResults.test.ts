@@ -20,8 +20,8 @@ function create_team(id: string, name: string): Team {
     description: `${name} description`,
     organization_id: "org-123",
     gender_id: "gender-123",
-    captain_player_id: null,
-    vice_captain_player_id: null,
+    captain_player_id: "",
+    vice_captain_player_id: "",
     max_squad_size: 25,
     home_venue_id: "venue-123",
     founded_year: 2020,
@@ -115,8 +115,6 @@ describe("competitionStageResults", () => {
           status: "completed",
         }),
         create_fixture("team-b", "team-a", {
-          home_team_score: null,
-          away_team_score: null,
           status: "scheduled",
         }),
       ],
@@ -156,7 +154,7 @@ describe("competitionStageResults", () => {
   });
 
   it("awards configured points_for_win instead of hardcoded 3", () => {
-    const custom_points =  {
+    const custom_points = {
       points_for_win: 2,
       points_for_draw: 1,
       points_for_loss: 0,
@@ -180,7 +178,7 @@ describe("competitionStageResults", () => {
   });
 
   it("awards configured points_for_draw instead of hardcoded 1", () => {
-    const custom_points =  {
+    const custom_points = {
       points_for_win: 3,
       points_for_draw: 0,
       points_for_loss: 0,
@@ -203,7 +201,7 @@ describe("competitionStageResults", () => {
   });
 
   it("uses head_to_head tie-breaker when points and goal_difference are equal", () => {
-    const tie_breakers =  [
+    const tie_breakers = [
       "goal_difference",
       "head_to_head",
       "goals_scored",
@@ -232,7 +230,7 @@ describe("competitionStageResults", () => {
         create_team("team-b", "Team B"),
         create_team("team-c", "Team C"),
       ],
-      undefined,
+      void 0,
       tie_breakers,
     );
 
@@ -244,7 +242,7 @@ describe("competitionStageResults", () => {
   });
 
   it("uses goals_scored tie-breaker when points and goal_difference are equal between tied teams", () => {
-    const tie_breakers =  ["goal_difference", "goals_scored"] as TieBreaker[];
+    const tie_breakers = ["goal_difference", "goals_scored"] as TieBreaker[];
 
     const standings = calculate_team_standings(
       [
@@ -265,7 +263,7 @@ describe("competitionStageResults", () => {
         create_team("team-c", "Team C"),
         create_team("team-d", "Team D"),
       ],
-      undefined,
+      void 0,
       tie_breakers,
     );
 

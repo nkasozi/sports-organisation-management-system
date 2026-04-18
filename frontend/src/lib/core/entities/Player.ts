@@ -21,8 +21,8 @@ export interface Player extends BaseEntity {
   date_of_birth: IsoDateString;
   position_id: EntityId;
   organization_id: EntityId;
-  height_cm: number | null;
-  weight_kg: number | null;
+  height_cm: number;
+  weight_kg: number;
   nationality: string;
   profile_image_url: string;
   emergency_contact_name: Name;
@@ -69,8 +69,8 @@ export function create_empty_player_input(
     date_of_birth: "",
     position_id: "",
     organization_id,
-    height_cm: null,
-    weight_kg: null,
+    height_cm: 0,
+    weight_kg: 0,
     nationality: "",
     profile_image_url: "",
     emergency_contact_name: "",

@@ -12,9 +12,17 @@ export type {
   CalendarTokenFilter,
   CalendarTokenRepository,
 } from "./CalendarTokenRepository";
+export {
+  build_calendar_token_not_found_error,
+  is_calendar_token_not_found_error,
+} from "./CalendarTokenRepository";
 export type {
   CompetitionFormatFilter,
   CompetitionFormatRepository,
+} from "./CompetitionFormatRepository";
+export {
+  build_competition_format_not_found_by_code_error,
+  is_competition_format_not_found_by_code_error,
 } from "./CompetitionFormatRepository";
 export type {
   CompetitionFilter,
@@ -45,6 +53,10 @@ export type {
   GameEventTypeFilter,
   GameEventTypeRepository,
 } from "./GameEventTypeRepository";
+export {
+  build_game_event_type_not_found_by_code_error,
+  is_game_event_type_not_found_by_code_error,
+} from "./GameEventTypeRepository";
 export type {
   GameOfficialRoleFilter,
   GameOfficialRoleRepository,
@@ -74,6 +86,10 @@ export type {
   OfficialPerformanceRatingFilter,
   OfficialPerformanceRatingRepository,
 } from "./OfficialPerformanceRatingRepository";
+export {
+  build_official_performance_rating_not_found_error,
+  is_official_performance_rating_not_found_error,
+} from "./OfficialPerformanceRatingRepository";
 export type { OfficialFilter, OfficialRepository } from "./OfficialRepository";
 export type {
   OrganizationFilter,
@@ -81,6 +97,10 @@ export type {
 } from "./OrganizationRepository";
 export type { OrganizationSettingsRepository } from "./OrganizationSettingsRepository";
 export type { PlayerPositionRepository } from "./PlayerPositionRepository";
+export {
+  build_player_position_not_found_by_code_error,
+  is_player_position_not_found_by_code_error,
+} from "./PlayerPositionRepository";
 export type {
   PlayerProfileFilter,
   PlayerProfileRepository,

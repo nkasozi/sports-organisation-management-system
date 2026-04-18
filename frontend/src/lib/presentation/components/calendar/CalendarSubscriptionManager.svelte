@@ -38,10 +38,10 @@
   let show_create_form = false;
 
   let selected_feed_type: CalendarFeedType = "all";
-  let selected_entity_id: string | null = null;
+  let selected_entity_id = "";
   let reminder_minutes = 60;
 
-  let copy_success_token: string | null = null;
+  let copy_success_token: string | undefined = undefined;
   const reminder_options = [...CALENDAR_SUBSCRIPTION_REMINDER_OPTIONS];
 
   onMount(async () => {
@@ -79,7 +79,7 @@
       existing_feeds = [...existing_feeds, result.token];
       show_create_form = false;
       selected_feed_type = "all";
-      selected_entity_id = null;
+      selected_entity_id = "";
       dispatch("feed_created", { token: result.token });
       return true;
     }
@@ -122,7 +122,7 @@
     }
     copy_success_token = token;
     setTimeout(() => {
-      copy_success_token = null;
+      copy_success_token = void 0;
     }, 2000);
     return true;
   }
@@ -141,10 +141,10 @@
   }
 
   function handle_feed_type_change(): void {
-    selected_entity_id = null;
+    selected_entity_id = "";
   }
 
-  function format_date(iso_string: string | null): string {
+  function format_date(iso_string: CalendarToken["last_accessed_at"]): string {
     return format_calendar_subscription_date(iso_string);
   }
 </script>

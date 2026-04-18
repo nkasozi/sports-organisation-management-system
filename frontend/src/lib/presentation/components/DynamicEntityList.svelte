@@ -9,25 +9,27 @@
 
   import DynamicEntityListController from "./DynamicEntityListController.svelte";
 
-  export let bulk_create_handler: (() => void) | null = null;
+  export let bulk_create_handler: (() => void) | undefined = void 0;
   export let button_color_class = "btn-primary-action";
-  export let crud_handlers: EntityCrudHandlers | null = null;
+  export let crud_handlers: EntityCrudHandlers | undefined = void 0;
   export let disabled_functionalities: CrudFunctionality[] = [];
   export let enable_bulk_import = false;
   export let entity_type: string;
-  export let info_message: string | null = null;
+  export let info_message = "";
   export let is_mobile_view = true;
   export let on_entities_batch_deleted:
     | ((entities: BaseEntity[]) => void)
-    | null = null;
-  export let on_selection_changed: ((selected: BaseEntity[]) => void) | null =
-    null;
-  export let on_total_count_changed: ((count: number) => void) | null = null;
+    | undefined = void 0;
+  export let on_selection_changed:
+    | ((selected: BaseEntity[]) => void)
+    | undefined = void 0;
+  export let on_total_count_changed: ((count: number) => void) | undefined =
+    void 0;
   export let show_actions = true;
-  export let sub_entity_filter: SubEntityFilter | null = null;
-  export let view_callbacks: EntityViewCallbacks | null = null;
+  export let sub_entity_filter: SubEntityFilter | undefined = void 0;
+  export let view_callbacks: EntityViewCallbacks | undefined = void 0;
 
-  let controller_component: DynamicEntityListController | null = null;
+  let controller_component: DynamicEntityListController | undefined = undefined;
 
   export function get_current_selected_entities(): BaseEntity[] {
     return controller_component?.get_current_selected_entities() ?? [];

@@ -5,9 +5,10 @@
   } from "$lib/core/entities/CalendarToken";
 
   export let feed: CalendarToken;
-  export let copy_success_token: string | null = null;
+  export let copy_success_token: string | undefined = undefined;
   export let get_https_url: (token: string) => string = () => "";
-  export let format_date: (iso_string: string | null) => string = () => "Never";
+  export let format_date: (iso_string: CalendarToken["last_accessed_at"]) => string =
+    () => "Never";
   export let on_revoke: (token: string) => void = () => {};
   export let on_open_webcal: (token: string) => void = () => {};
   export let on_copy: (text: string, token: string) => void = () => {};
@@ -19,7 +20,7 @@
   <div class="flex items-start justify-between">
     <div class="feed-info">
       <h4 class="font-medium text-accent-900 dark:text-accent-100">
-        {feed.entity_name ?? get_feed_type_display_name(feed.feed_type)}
+        {feed.entity_name || get_feed_type_display_name(feed.feed_type)}
       </h4>
       <p class="text-sm text-accent-500 dark:text-accent-400 mt-1">
         {get_feed_type_display_name(
