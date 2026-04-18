@@ -1,28 +1,28 @@
 <script lang="ts">
+  import { sidebar_menu_items } from "$lib/presentation/stores/authDerivedStores";
   import { branding_store } from "$lib/presentation/stores/branding";
 
   import FooterBottomBar from "./FooterBottomBar.svelte";
   import FooterBrandPanel from "./FooterBrandPanel.svelte";
   import FooterLinkPanel from "./FooterLinkPanel.svelte";
-  import type { FooterLink } from "./footerLinks";
+  import {
+    create_footer_links_from_sidebar_menu,
+    type FooterLink,
+  } from "./footerLinks";
 
   const current_year = new Date().getFullYear();
-  const quick_links: FooterLink[] = [
-    { href: "/organizations", label: "Organizations" },
-    { href: "/competitions", label: "Competitions" },
-    { href: "/teams", label: "Teams" },
-    { href: "/fixtures", label: "Fixtures" },
-  ];
   const support_links: FooterLink[] = [
     { href: "/help", label: "Help Center" },
     { href: "/contact", label: "Contact Us" },
     { href: "/privacy", label: "Privacy Policy" },
     { href: "/terms", label: "Terms of Service" },
   ];
+  let quick_links: FooterLink[] = [];
 
   $: has_custom_logo =
     !!$branding_store.organization_logo_url &&
     $branding_store.organization_logo_url.length > 0;
+  $: quick_links = create_footer_links_from_sidebar_menu($sidebar_menu_items);
 </script>
 
 <footer
