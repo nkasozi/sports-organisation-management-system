@@ -297,6 +297,20 @@ describe("ProfileLinkUseCases", () => {
       expect(mock_repository.create).not.toHaveBeenCalled();
     });
 
+    it("rejects disallowed url protocols", async () => {
+      const input = create_valid_profile_link_input({
+        url: "javascript:alert(1)",
+      });
+
+      const result = await use_cases.create(input);
+
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error).toContain("valid URL");
+      }
+      expect(mock_repository.create).not.toHaveBeenCalled();
+    });
+
     it("handles repository failure", async () => {
       const input = create_valid_profile_link_input();
       vi.mocked(mock_repository.create).mockResolvedValue(

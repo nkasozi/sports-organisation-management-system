@@ -228,6 +228,18 @@ describe("TeamStaffUseCases", () => {
 
       expect(result.success).toBe(false);
     });
+
+    it("should fail for invalid profile image url", async () => {
+      const result = await use_cases.create(
+        create_valid_input({
+          profile_image_url: "javascript:alert(1)",
+        }),
+      );
+
+      expect(result.success).toBe(false);
+      if (result.success) return;
+      expect(result.error).toContain("Profile image URL is invalid");
+    });
   });
 
   describe("update", () => {

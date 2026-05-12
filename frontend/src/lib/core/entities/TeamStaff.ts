@@ -1,9 +1,16 @@
 import type {
+  DescriptionText,
   EmailAddress,
   EntityId,
   IsoDateString,
   Name,
+  OptionalMediaUrlValue,
   ScalarInput,
+} from "../types/DomainScalars";
+import {
+  parse_description_text,
+  parse_email_address,
+  parse_optional_media_url_value,
 } from "../types/DomainScalars";
 import type { BaseEntity, EntityStatus } from "./BaseEntity";
 
@@ -20,12 +27,12 @@ export interface TeamStaff extends BaseEntity {
   team_id: EntityId;
   role_id: EntityId;
   nationality: string;
-  profile_image_url: string;
+  profile_image_url: OptionalMediaUrlValue;
   employment_start_date: IsoDateString;
   employment_end_date: IsoDateString | "";
   emergency_contact_name: Name;
   emergency_contact_phone: string;
-  notes: string;
+  notes: DescriptionText;
   status: EntityStatus;
 }
 
@@ -101,14 +108,28 @@ export function validate_team_staff_input(
     validation_errors.push("Role is required");
   }
 
-  if (input.email && !is_valid_email(input.email)) {
-    validation_errors.push("Invalid email format");
+  if (input.email.length > 0) {
+    const email_result = parse_email_address(
+      input.email,
+      "Invalid email format",
+    );
+    if (!email_result.success) {
+      validation_errors.push(email_result.error);
+    }
+  }
+
+  const profile_image_result = parse_optional_media_url_value(
+    input.profile_image_url,
+    "Profile image URL is invalid",
+  );
+  if (!profile_image_result.success) {
+    validation_errors.push(profile_image_result.error);
+  }
+
+  const notes_result = parse_description_text(input.notes, "Notes are invalid");
+  if (!notes_result.success) {
+    validation_errors.push(notes_result.error);
   }
 
   return validation_errors;
-}
-
-function is_valid_email(email: string): boolean {
-  const email_regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return email_regex.test(email);
 }

@@ -1,4 +1,20 @@
-import type { EntityId, Name, ScalarInput } from "../types/DomainScalars";
+import {
+  type DescriptionText,
+  type EntityId,
+  type HexColorValue,
+  type Name,
+  type OptionalHttpUrlValue,
+  type OptionalMediaUrlValue,
+  parse_description_text,
+  parse_hex_color_value,
+  parse_optional_http_url_value,
+  parse_optional_media_url_value,
+  parse_positive_integer_value,
+  parse_year_value,
+  type PositiveIntegerValue,
+  type ScalarInput,
+  type YearValue,
+} from "../types/DomainScalars";
 import type { BaseEntity, EntityStatus } from "./BaseEntity";
 
 type SportType =
@@ -17,18 +33,18 @@ export const DEFAULT_TEAM_LOGO =
 export interface Team extends BaseEntity {
   name: Name;
   short_name: Name;
-  description: string;
+  description: DescriptionText;
   organization_id: EntityId;
   gender_id: EntityId;
   captain_player_id: EntityId;
   vice_captain_player_id: EntityId;
-  max_squad_size: number;
+  max_squad_size: PositiveIntegerValue;
   home_venue_id: EntityId;
-  primary_color: string;
-  secondary_color: string;
-  logo_url: string;
-  website: string;
-  founded_year: number;
+  primary_color: HexColorValue;
+  secondary_color: HexColorValue;
+  logo_url: OptionalMediaUrlValue;
+  website: OptionalHttpUrlValue;
+  founded_year: YearValue;
   status: EntityStatus;
 }
 
@@ -88,8 +104,60 @@ export function validate_team_input(input: CreateTeamInput): string[] {
     validation_errors.push("Organization is required");
   }
 
-  if (input.max_squad_size < 1) {
-    validation_errors.push("Maximum squad size must be at least 1");
+  const description_result = parse_description_text(
+    input.description,
+    "Team description is invalid",
+  );
+  if (!description_result.success) {
+    validation_errors.push(description_result.error);
+  }
+
+  const max_squad_size_result = parse_positive_integer_value(
+    input.max_squad_size,
+    "Maximum squad size must be at least 1",
+  );
+  if (!max_squad_size_result.success) {
+    validation_errors.push(max_squad_size_result.error);
+  }
+
+  const primary_color_result = parse_hex_color_value(
+    input.primary_color,
+    "Primary color must be a valid hex color",
+  );
+  if (!primary_color_result.success) {
+    validation_errors.push(primary_color_result.error);
+  }
+
+  const secondary_color_result = parse_hex_color_value(
+    input.secondary_color,
+    "Secondary color must be a valid hex color",
+  );
+  if (!secondary_color_result.success) {
+    validation_errors.push(secondary_color_result.error);
+  }
+
+  const logo_url_result = parse_optional_media_url_value(
+    input.logo_url,
+    "Logo URL is invalid",
+  );
+  if (!logo_url_result.success) {
+    validation_errors.push(logo_url_result.error);
+  }
+
+  const website_result = parse_optional_http_url_value(
+    input.website,
+    "Website URL is invalid",
+  );
+  if (!website_result.success) {
+    validation_errors.push(website_result.error);
+  }
+
+  const founded_year_result = parse_year_value(
+    input.founded_year,
+    "Founded year is invalid",
+  );
+  if (!founded_year_result.success) {
+    validation_errors.push(founded_year_result.error);
   }
 
   return validation_errors;

@@ -161,6 +161,20 @@ describe("VenueUseCases", () => {
 
       expect(result.success).toBe(false);
     });
+
+    it("should fail for invalid website and image urls", async () => {
+      const input = create_valid_input({
+        website: "javascript:alert(1)",
+        image_url: "data:text/html;base64,PGgxPkJhZDwvaDE+",
+      });
+
+      const result = await use_cases.create(input);
+
+      expect(result.success).toBe(false);
+      if (result.success) return;
+      expect(result.error).toContain("Website URL is invalid");
+      expect(result.error).toContain("Image URL is invalid");
+    });
   });
 
   describe("update", () => {

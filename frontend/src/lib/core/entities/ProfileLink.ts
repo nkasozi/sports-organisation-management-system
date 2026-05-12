@@ -1,11 +1,18 @@
-import type { EntityId, ScalarInput } from "../types/DomainScalars";
+import {
+  type DescriptionText,
+  type EntityId,
+  type HttpUrlValue,
+  parse_description_text,
+  parse_http_url_value,
+  type ScalarInput,
+} from "../types/DomainScalars";
 import type { BaseEntity, EntityStatus } from "./BaseEntity";
 
 export interface ProfileLink extends BaseEntity {
   profile_id: EntityId;
   platform: string;
-  title: string;
-  url: string;
+  title: DescriptionText;
+  url: HttpUrlValue;
   display_order: number;
   status: EntityStatus;
 }
@@ -65,24 +72,22 @@ export function validate_profile_link_input(
 
   if (!input.url || input.url.trim().length === 0) {
     validation_errors.push("URL is required");
-  } else if (!is_valid_url(input.url)) {
-    validation_errors.push("Please enter a valid URL");
+  } else {
+    const url_result = parse_http_url_value(
+      input.url,
+      "Please enter a valid URL",
+    );
+    if (!url_result.success) {
+      validation_errors.push(url_result.error);
+    }
+  }
+
+  const title_result = parse_description_text(input.title, "Title is invalid");
+  if (!title_result.success) {
+    validation_errors.push(title_result.error);
   }
 
   return validation_errors;
-}
-
-function is_valid_url(url: string): boolean {
-  try {
-    new URL(url);
-    return true;
-  } catch (error) {
-    console.warn("[ProfileLink] URL validation failed", {
-      event: "url_validation_failed",
-      error: String(error),
-    });
-    return false;
-  }
 }
 
 export function get_platform_icon(platform: string): string {

@@ -171,6 +171,22 @@ describe("OfficialUseCases", () => {
 
       expect(result.success).toBe(false);
     });
+
+    it("should fail for invalid experience and profile image scalars", async () => {
+      const input = create_valid_input({
+        years_of_experience: -1,
+        profile_image_url: "javascript:alert(1)",
+      });
+
+      const result = await use_cases.create(input);
+
+      expect(result.success).toBe(false);
+      if (result.success) return;
+      expect(result.error).toContain(
+        "Years of experience must be zero or greater",
+      );
+      expect(result.error).toContain("Profile image URL is invalid");
+    });
   });
 
   describe("update", () => {

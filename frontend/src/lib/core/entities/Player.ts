@@ -1,9 +1,17 @@
 import type {
+  DescriptionText,
   EmailAddress,
   EntityId,
   IsoDateString,
   Name,
+  NonNegativeIntegerValue,
+  OptionalMediaUrlValue,
   ScalarInput,
+} from "../types/DomainScalars";
+import {
+  parse_description_text,
+  parse_non_negative_integer_value,
+  parse_optional_media_url_value,
 } from "../types/DomainScalars";
 import type { BaseEntity } from "./BaseEntity";
 
@@ -21,13 +29,13 @@ export interface Player extends BaseEntity {
   date_of_birth: IsoDateString;
   position_id: EntityId;
   organization_id: EntityId;
-  height_cm: number;
-  weight_kg: number;
+  height_cm: NonNegativeIntegerValue;
+  weight_kg: NonNegativeIntegerValue;
   nationality: string;
-  profile_image_url: string;
+  profile_image_url: OptionalMediaUrlValue;
   emergency_contact_name: Name;
   emergency_contact_phone: string;
-  medical_notes: string;
+  medical_notes: DescriptionText;
   status: PlayerStatus;
 }
 
@@ -109,6 +117,38 @@ export function validate_player_input(input: CreatePlayerInput): string[] {
 
   if (!input.organization_id || input.organization_id.trim().length === 0) {
     validation_errors.push("Organization is required");
+  }
+
+  const height_result = parse_non_negative_integer_value(
+    input.height_cm,
+    "Height must be zero or greater",
+  );
+  if (!height_result.success) {
+    validation_errors.push(height_result.error);
+  }
+
+  const weight_result = parse_non_negative_integer_value(
+    input.weight_kg,
+    "Weight must be zero or greater",
+  );
+  if (!weight_result.success) {
+    validation_errors.push(weight_result.error);
+  }
+
+  const profile_image_result = parse_optional_media_url_value(
+    input.profile_image_url,
+    "Profile image URL is invalid",
+  );
+  if (!profile_image_result.success) {
+    validation_errors.push(profile_image_result.error);
+  }
+
+  const medical_notes_result = parse_description_text(
+    input.medical_notes,
+    "Medical notes are invalid",
+  );
+  if (!medical_notes_result.success) {
+    validation_errors.push(medical_notes_result.error);
   }
 
   return validation_errors;

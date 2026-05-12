@@ -203,6 +203,16 @@ describe("OrganizationUseCases", () => {
       expect(result.success).toBe(false);
     });
 
+    it("should fail validation for invalid website url", async () => {
+      const input = create_valid_input({ website: "javascript:alert(1)" });
+
+      const result = await use_cases.create(input);
+
+      expect(result.success).toBe(false);
+      if (result.success) return;
+      expect(result.error).toContain("Website URL is invalid");
+    });
+
     it("should return failure when repository fails", async () => {
       const input = create_valid_input();
       vi.mocked(mock_repository.create).mockResolvedValue({
