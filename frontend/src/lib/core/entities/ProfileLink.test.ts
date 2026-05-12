@@ -94,6 +94,17 @@ describe("ProfileLink", () => {
       expect(errors).toContain("Please enter a valid URL");
     });
 
+    it("rejects non-http protocols", () => {
+      const input = {
+        ...create_empty_profile_link_input("profile_123"),
+        platform: "website",
+        url: "javascript:alert(1)",
+      };
+      const errors = validate_profile_link_input(input);
+
+      expect(errors).toContain("Please enter a valid URL");
+    });
+
     it("accepts valid http url", () => {
       const input = {
         ...create_empty_profile_link_input("profile_123"),

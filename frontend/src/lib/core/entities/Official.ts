@@ -1,9 +1,18 @@
 import type {
+  DescriptionText,
   EmailAddress,
   EntityId,
   IsoDateString,
   Name,
+  NonNegativeIntegerValue,
+  OptionalMediaUrlValue,
   ScalarInput,
+} from "../types/DomainScalars";
+import {
+  parse_description_text,
+  parse_email_address,
+  parse_non_negative_integer_value,
+  parse_optional_media_url_value,
 } from "../types/DomainScalars";
 import type { BaseEntity, EntityStatus } from "./BaseEntity";
 
@@ -20,12 +29,12 @@ export interface Official extends BaseEntity {
   phone: string;
   date_of_birth: IsoDateString;
   organization_id: EntityId;
-  years_of_experience: number;
+  years_of_experience: NonNegativeIntegerValue;
   nationality: string;
-  profile_image_url: string;
+  profile_image_url: OptionalMediaUrlValue;
   emergency_contact_name: Name;
   emergency_contact_phone: string;
-  notes: string;
+  notes: DescriptionText;
   status: OfficialStatus;
 }
 
@@ -95,14 +104,36 @@ export function validate_official_input(input: CreateOfficialInput): string[] {
     validation_errors.push("Gender is required");
   }
 
-  if (input.email && !is_valid_email(input.email)) {
-    validation_errors.push("Invalid email format");
+  if (input.email.length > 0) {
+    const email_result = parse_email_address(
+      input.email,
+      "Invalid email format",
+    );
+    if (!email_result.success) {
+      validation_errors.push(email_result.error);
+    }
+  }
+
+  const years_of_experience_result = parse_non_negative_integer_value(
+    input.years_of_experience,
+    "Years of experience must be zero or greater",
+  );
+  if (!years_of_experience_result.success) {
+    validation_errors.push(years_of_experience_result.error);
+  }
+
+  const profile_image_result = parse_optional_media_url_value(
+    input.profile_image_url,
+    "Profile image URL is invalid",
+  );
+  if (!profile_image_result.success) {
+    validation_errors.push(profile_image_result.error);
+  }
+
+  const notes_result = parse_description_text(input.notes, "Notes are invalid");
+  if (!notes_result.success) {
+    validation_errors.push(notes_result.error);
   }
 
   return validation_errors;
-}
-
-function is_valid_email(email: string): boolean {
-  const email_regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return email_regex.test(email);
 }

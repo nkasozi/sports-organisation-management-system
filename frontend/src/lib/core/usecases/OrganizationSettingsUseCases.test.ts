@@ -179,6 +179,27 @@ describe("OrganizationSettingsUseCases", () => {
       expect(mock_repository.create).not.toHaveBeenCalled();
     });
 
+    it("rejects invalid branding asset and social media urls", async () => {
+      const result = await use_cases.save_settings(
+        "super_admin",
+        create_valid_create_input({
+          logo_url: "javascript:alert(1)",
+          social_media_links: [
+            {
+              platform: "twitter",
+              url: "javascript:alert(1)",
+            },
+          ],
+        }),
+      );
+
+      expect(result.success).toBe(false);
+      if (result.success) return;
+      expect(result.error).toContain("Logo URL is invalid");
+      expect(result.error).toContain("Social media link URL is invalid");
+      expect(mock_repository.create).not.toHaveBeenCalled();
+    });
+
     it("rejects missing organization_id", async () => {
       const result = await use_cases.save_settings(
         "super_admin",

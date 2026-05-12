@@ -236,6 +236,22 @@ describe("TeamUseCases", () => {
       expect(result.error).toContain("Maximum squad size must be at least 1");
     });
 
+    it("returns validation error when constrained scalar fields are invalid", async () => {
+      const input = create_valid_team_input({
+        primary_color: "blue",
+        website: "javascript:alert(1)",
+        founded_year: 999,
+      });
+
+      const result = await use_cases.create(input);
+
+      expect(result.success).toBe(false);
+      if (result.success) return;
+      expect(result.error).toContain("Primary color must be a valid hex color");
+      expect(result.error).toContain("Website URL is invalid");
+      expect(result.error).toContain("Founded year is invalid");
+    });
+
     it("returns multiple validation errors when multiple fields are invalid", async () => {
       const input = create_valid_team_input({
         name: "",

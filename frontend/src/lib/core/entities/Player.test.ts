@@ -35,4 +35,21 @@ describe("Player", () => {
 
     expect(errors.length).toBe(0);
   });
+
+  it("rejects invalid measurement and profile image scalar values", () => {
+    const errors = validate_player_input({
+      ...create_empty_player_input("org_1"),
+      first_name: "Ada",
+      last_name: "Lovelace",
+      date_of_birth: "1995-01-01",
+      nationality: "Uganda",
+      position_id: "playerposition_default_1",
+      gender_id: "gender_seed_female",
+      height_cm: -1,
+      profile_image_url: "javascript:alert(1)",
+    });
+
+    expect(errors).toContain("Height must be zero or greater");
+    expect(errors).toContain("Profile image URL is invalid");
+  });
 });

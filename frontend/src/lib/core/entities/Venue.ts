@@ -2,7 +2,16 @@ import type {
   EmailAddress,
   EntityId,
   Name,
+  NonNegativeIntegerValue,
+  OptionalHttpUrlValue,
+  OptionalMediaUrlValue,
   ScalarInput,
+} from "../types/DomainScalars";
+import {
+  parse_email_address,
+  parse_non_negative_integer_value,
+  parse_optional_http_url_value,
+  parse_optional_media_url_value,
 } from "../types/DomainScalars";
 import type { BaseEntity, EntityStatus } from "./BaseEntity";
 
@@ -13,14 +22,14 @@ export interface Venue extends BaseEntity {
   address: string;
   city: string;
   country: string;
-  capacity: number;
+  capacity: NonNegativeIntegerValue;
   surface_type: string;
   has_lighting: boolean;
   has_parking: boolean;
   contact_email: EmailAddress;
   contact_phone: string;
-  website: string;
-  image_url: string;
+  website: OptionalHttpUrlValue;
+  image_url: OptionalMediaUrlValue;
   status: EntityStatus;
 }
 
@@ -60,20 +69,41 @@ export function validate_venue_input(input: CreateVenueInput): string[] {
     validation_errors.push("Venue name must be at least 2 characters");
   }
 
-  if (input.capacity < 0) {
-    validation_errors.push("Capacity cannot be negative");
+  const capacity_result = parse_non_negative_integer_value(
+    input.capacity,
+    "Capacity cannot be negative",
+  );
+  if (!capacity_result.success) {
+    validation_errors.push(capacity_result.error);
   }
 
-  if (input.contact_email && !is_valid_email(input.contact_email)) {
-    validation_errors.push("Invalid email format");
+  if (input.contact_email.length > 0) {
+    const contact_email_result = parse_email_address(
+      input.contact_email,
+      "Invalid email format",
+    );
+    if (!contact_email_result.success) {
+      validation_errors.push(contact_email_result.error);
+    }
+  }
+
+  const website_result = parse_optional_http_url_value(
+    input.website,
+    "Website URL is invalid",
+  );
+  if (!website_result.success) {
+    validation_errors.push(website_result.error);
+  }
+
+  const image_url_result = parse_optional_media_url_value(
+    input.image_url,
+    "Image URL is invalid",
+  );
+  if (!image_url_result.success) {
+    validation_errors.push(image_url_result.error);
   }
 
   return validation_errors;
-}
-
-function is_valid_email(email: string): boolean {
-  const email_regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return email_regex.test(email);
 }
 
 function get_venue_image(venue: Venue): string {

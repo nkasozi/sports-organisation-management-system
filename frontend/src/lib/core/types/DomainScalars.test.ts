@@ -7,13 +7,21 @@ import {
   type IsoDateTimeString,
   type Name,
   parse_calendar_token_value,
+  parse_description_text,
   parse_email_address,
   parse_entity_id,
   parse_entity_scope,
   parse_game_minute,
+  parse_hex_color_value,
+  parse_http_url_value,
   parse_iso_date_string,
   parse_iso_date_time_string,
   parse_name,
+  parse_non_negative_integer_value,
+  parse_optional_http_url_value,
+  parse_optional_media_url_value,
+  parse_positive_integer_value,
+  parse_year_value,
   type ScalarInput,
 } from "./DomainScalars";
 
@@ -111,5 +119,55 @@ describe("DomainScalars", () => {
 
     expect(input.entity_id).toBe("team_123");
     expect(input.minute).toBe(45);
+  });
+
+  it("parses constrained text, color, numeric, and year scalars", () => {
+    const description_result = parse_description_text("  Elite match squad  ");
+    const hex_color_result = parse_hex_color_value("#3B82F6");
+    const positive_integer_result = parse_positive_integer_value(25);
+    const non_negative_integer_result = parse_non_negative_integer_value(0);
+    const year_result = parse_year_value(2026);
+
+    expect(description_result.success).toBe(true);
+    expect(hex_color_result.success).toBe(true);
+    expect(positive_integer_result.success).toBe(true);
+    expect(non_negative_integer_result.success).toBe(true);
+    expect(year_result.success).toBe(true);
+
+    if (description_result.success) {
+      expect(description_result.data).toBe("Elite match squad");
+    }
+  });
+
+  it("parses optional http and media url scalars", () => {
+    const http_url_result = parse_http_url_value("https://example.com/team");
+    const empty_http_url_result = parse_optional_http_url_value("   ");
+    const image_data_url_result = parse_optional_media_url_value(
+      "data:image/png;base64,abc123",
+    );
+    const relative_asset_result = parse_optional_media_url_value(
+      "/branding/pattern.svg",
+    );
+
+    expect(http_url_result.success).toBe(true);
+    expect(empty_http_url_result.success).toBe(true);
+    expect(image_data_url_result.success).toBe(true);
+    expect(relative_asset_result.success).toBe(true);
+  });
+
+  it("rejects disallowed url protocols and invalid scalar values", () => {
+    const javascript_url_result = parse_http_url_value("javascript:alert(1)");
+    const non_image_data_result = parse_optional_media_url_value(
+      "data:text/html;base64,PGgxPkJhZDwvaDE+",
+    );
+    const invalid_hex_color_result = parse_hex_color_value("red");
+    const invalid_positive_integer_result = parse_positive_integer_value(0);
+    const invalid_year_result = parse_year_value(999);
+
+    expect(javascript_url_result.success).toBe(false);
+    expect(non_image_data_result.success).toBe(false);
+    expect(invalid_hex_color_result.success).toBe(false);
+    expect(invalid_positive_integer_result.success).toBe(false);
+    expect(invalid_year_result.success).toBe(false);
   });
 });
