@@ -24,10 +24,37 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: npm
-          cache-dependency-path: frontend/package-lock.json
+          # Intentionally no 'cache:' here — caching is managed explicitly below
+          # to prevent PR workflows from ever writing to the shared cache.
 
-      - run: npm ci
+      # Read-only restore: safe for both PRs and main branch pushes.
+      # actions/cache/restore never writes back, preventing cache poisoning
+      # from untrusted pull request branches.
+      - name: Restore npm cache (read-only)
+        id: npm-cache-restore
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-npm-${{ hashFiles('frontend/package-lock.yaml', 'frontend/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-npm-
+
+      # --ignore-scripts blocks postinstall/preinstall lifecycle scripts.
+      # A poisoned cache entry cannot execute arbitrary code during restoration.
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      # Cache writes are gated to main-branch pushes only.
+      # Pull request workflows can never overwrite the trusted cache.
+      - name: Save npm cache (main branch only)
+        if: >
+          github.event_name == 'push' &&
+          github.ref == 'refs/heads/main' &&
+          steps.npm-cache-restore.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-npm-${{ hashFiles('frontend/package-lock.yaml', 'frontend/package-lock.json') }}
 
       - name: Security audit
         run: npm audit --audit-level=high
