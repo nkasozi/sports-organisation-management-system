@@ -41,7 +41,7 @@
   },
   "dependencies": {
     "@clerk/clerk-js": "^6.0.0",
-    "@faker-js/faker": "^9.9.0",
+    "@faker-js/faker": "^10.4.0",
     "@fontsource-variable/inter": "^5.2.8",
     "@schedule-x/calendar": "^3.7.3",
     "@schedule-x/drag-and-drop": "^3.7.3",
