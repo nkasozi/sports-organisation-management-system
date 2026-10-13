@@ -42,6 +42,14 @@ type ConfirmPeriodResult =
 
 const SECONDS_PER_MINUTE = 60;
 
+function should_run_break_clock(
+  fixture: Fixture,
+  effective_periods: SportGamePeriod[],
+): boolean {
+  if (fixture.current_period === GAME_PERIOD.FINISHED) return false;
+  return !check_is_playing_period(fixture.current_period, effective_periods);
+}
+
 async function end_current_live_game_period(
   command: ConfirmPeriodCommand,
 ): Promise<ConfirmPeriodResult> {
@@ -68,8 +76,8 @@ async function end_current_live_game_period(
     success: true,
     fixture: end_result.data.fixture,
     game_clock_seconds: command.game_clock_seconds,
-    should_start_clock: !check_is_playing_period(
-      end_result.data.fixture.current_period,
+    should_start_clock: should_run_break_clock(
+      end_result.data.fixture,
       command.effective_periods,
     ),
     toast_message: `${end_result.data.completed_period_label} ended`,

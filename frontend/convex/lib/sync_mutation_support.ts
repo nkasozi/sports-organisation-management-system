@@ -53,6 +53,9 @@ function error_code_for_rejection(
   switch (rejection) {
     case SyncWriteRejection.PRIVILEGE_CHANGE:
     case SyncWriteRejection.WRONG_ORGANIZATION:
+    case SyncWriteRejection.PERMISSION_DENIED:
+    case SyncWriteRejection.OUTSIDE_CALLER_SCOPE:
+    case SyncWriteRejection.VERIFICATION_CHANGE:
       return ConvexErrorCode.ACCESS_DENIED;
     case SyncWriteRejection.INVALID_URL:
     case SyncWriteRejection.MISSING_EMAIL:

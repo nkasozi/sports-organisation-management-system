@@ -1,4 +1,9 @@
 import {
+  resolve_shared_entity_permission_scope,
+  SharedPermissionScope,
+  type SharedPermissionScopeValue,
+} from "../shared_own_record_permissions";
+import {
   SHARED_ENTITY_CATEGORY_MAP,
   SHARED_ROLE_PERMISSIONS,
   type SharedCrudPermissions,
@@ -23,7 +28,6 @@ export type DataAction = (typeof DataAction)[keyof typeof DataAction];
 
 export const ALL_DATA_ACTIONS: DataAction[] = Object.values(DataAction);
 
-const DEFAULT_DATA_CATEGORY: SharedDataCategory = "organisation_level";
 const ENTITY_TYPE_SEPARATOR_PATTERN = /[\s_-]/g;
 const EMPTY_SEPARATOR = "";
 
@@ -49,13 +53,13 @@ export function parse_user_role(value: string): Option<SharedUserRole> {
 
 export function get_entity_data_category(
   entity_type: string,
-): SharedDataCategory {
+): Option<SharedDataCategory> {
   const normalized_entity_type = entity_type
     .toLowerCase()
     .replace(ENTITY_TYPE_SEPARATOR_PATTERN, EMPTY_SEPARATOR);
   return has_own_key(SHARED_ENTITY_CATEGORY_MAP, normalized_entity_type)
-    ? SHARED_ENTITY_CATEGORY_MAP[normalized_entity_type]
-    : DEFAULT_DATA_CATEGORY;
+    ? create_some_option(SHARED_ENTITY_CATEGORY_MAP[normalized_entity_type])
+    : create_none_option();
 }
 
 function is_action_permitted(
@@ -96,5 +100,38 @@ export function list_permitted_actions(
 ): DataAction[] {
   return ALL_DATA_ACTIONS.filter((action) =>
     is_action_permitted(permissions, action),
+  );
+}
+
+export function check_entity_permission(
+  role: string,
+  entity_type: string,
+  action: DataAction,
+): boolean {
+  const data_category = get_entity_data_category(entity_type);
+  switch (data_category.status) {
+    case OptionStatus.NONE:
+      return false;
+    case OptionStatus.SOME:
+      return check_permission(role, data_category.value, action);
+  }
+}
+
+export function resolve_entity_permission_scope(
+  role: string,
+  entity_type: string,
+  action: DataAction,
+): SharedPermissionScopeValue {
+  return resolve_shared_entity_permission_scope(role, entity_type, action);
+}
+
+export function check_entity_permission_in_any_scope(
+  role: string,
+  entity_type: string,
+  action: DataAction,
+): boolean {
+  return (
+    resolve_entity_permission_scope(role, entity_type, action) !==
+    SharedPermissionScope.NONE
   );
 }

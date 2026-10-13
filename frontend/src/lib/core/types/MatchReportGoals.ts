@@ -1,12 +1,22 @@
 import type { GameEvent } from "$lib/core/entities/Fixture";
 import type { LineupPlayer } from "$lib/core/entities/FixtureLineup";
 import {
+  read_event_player_id,
+  resolve_event_score_award,
+} from "$lib/core/entities/GameEventStoredFacts";
+import {
   humanize_event_code,
   SCORE_AWARD_KIND,
   SCORE_CREDITED_SIDE,
   type ScoreAwardResolver,
 } from "$lib/core/entities/SportEventCatalog";
 import type { ScoreCreditedSide } from "$lib/core/entities/SportEventCatalogConstants";
+import {
+  create_none_option,
+  create_some_option,
+  type Option,
+  OptionStatus,
+} from "$lib/core/types/Option";
 
 import {
   MATCH_REPORT_GOAL_ACTION_LABELS,
@@ -38,7 +48,7 @@ function to_credited_score(
   event: GameEvent,
   resolve_score: ScoreAwardResolver,
 ): CreditedScore[] {
-  const award = resolve_score(event.event_type);
+  const award = resolve_event_score_award(event, resolve_score);
   switch (award.kind) {
     case SCORE_AWARD_KIND.NONE:
       return [];
@@ -96,10 +106,10 @@ function build_goal_entry(
       : context.away_initials,
     minute: event.minute,
     jersey_number: find_player_jersey_number(
-      event.player_name,
-      event.team_side,
-      context.home_players,
-      context.away_players,
+      event,
+      event.team_side === MATCH_REPORT_TEAM_SIDE.HOME
+        ? context.home_players
+        : context.away_players,
     ),
     action: get_goal_action_label(event.event_type),
     score: `${score.home}-${score.away}`,
@@ -117,24 +127,46 @@ function is_matching_player_name(
   );
 }
 
-function find_player_jersey_number(
+function find_player_by_name(
   player_name: string,
-  team_side: GameEvent["team_side"],
-  home_players: LineupPlayer[],
-  away_players: LineupPlayer[],
-): number | string {
+  players: LineupPlayer[],
+): Option<LineupPlayer> {
   const name_upper = player_name.toUpperCase().trim();
-  if (name_upper.length === 0) return MATCH_REPORT_UNKNOWN_JERSEY;
-  const players =
-    team_side === MATCH_REPORT_TEAM_SIDE.HOME ? home_players : away_players;
+  if (name_upper.length === 0) return create_none_option();
   const matching_player = players.find((player) =>
     is_matching_player_name(
       `${player.first_name} ${player.last_name}`.toUpperCase().trim(),
       name_upper,
     ),
   );
-  if (!matching_player) return MATCH_REPORT_UNKNOWN_JERSEY;
-  return matching_player.jersey_number ?? MATCH_REPORT_UNKNOWN_JERSEY;
+  return matching_player
+    ? create_some_option(matching_player)
+    : create_none_option();
+}
+
+function find_event_player(
+  event: GameEvent,
+  players: LineupPlayer[],
+): Option<LineupPlayer> {
+  const player_id = read_event_player_id(event);
+  if (player_id.status === OptionStatus.NONE)
+    return find_player_by_name(event.player_name, players);
+  const matching_player = players.find(
+    (player) => player.id === player_id.value,
+  );
+  return matching_player
+    ? create_some_option(matching_player)
+    : find_player_by_name(event.player_name, players);
+}
+
+function find_player_jersey_number(
+  event: GameEvent,
+  players: LineupPlayer[],
+): number | string {
+  const matching_player = find_event_player(event, players);
+  if (matching_player.status === OptionStatus.NONE)
+    return MATCH_REPORT_UNKNOWN_JERSEY;
+  return matching_player.value.jersey_number ?? MATCH_REPORT_UNKNOWN_JERSEY;
 }
 
 function abbreviate_event_code(event_type: string): string {

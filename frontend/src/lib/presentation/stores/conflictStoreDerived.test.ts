@@ -56,6 +56,7 @@ function build_conflict_record(
     entity_display_name: `Team ${conflict_id}`,
     local_data: {},
     remote_data: {},
+    remote_version: 2,
     local_updated_at: "2024-01-01T00:00:00.000Z",
     remote_updated_at: "2024-01-02T00:00:00.000Z",
     remote_updated_by: create_unknown_conflict_field_value(),

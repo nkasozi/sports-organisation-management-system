@@ -16,53 +16,16 @@ import {
   PLAYER_TEAM_TRANSFER_LOG_SCOPE,
   PlayerTeamTransferEvent,
 } from "./PlayerTeamTransferUseCasesConstants";
+import {
+  fail_from_team_mismatch,
+  MembershipMoveKind,
+  plan_membership_move,
+  report_already_on_destination,
+} from "./TransferMembershipMovePlan";
 import { forward_dependency_result } from "./UseCaseResultGuards";
-
-const MembershipMoveKind = {
-  MOVE_EXISTING: "move_existing",
-  CREATE_NEW: "create_new",
-} as const;
-
-type MembershipMovePlan =
-  | {
-      kind: typeof MembershipMoveKind.MOVE_EXISTING;
-      membership: PlayerTeamMembership;
-    }
-  | { kind: typeof MembershipMoveKind.CREATE_NEW };
 
 function as_record(value: object): Record<string, unknown> {
   return { ...value };
-}
-
-async function plan_membership_move(
-  membership_repository: PlayerTeamMembershipRepository,
-  transfer: PlayerTeamTransferHistory,
-): AsyncResult<MembershipMovePlan> {
-  const memberships_result = forward_dependency_result(
-    await membership_repository.find_all({
-      player_id: transfer.player_id,
-      team_id: transfer.from_team_id,
-      status: MEMBERSHIP_STATUS.ACTIVE,
-    }),
-    {
-      log_scope: PLAYER_TEAM_TRANSFER_LOG_SCOPE,
-      event: PlayerTeamTransferEvent.MEMBERSHIP_LOOKUP_FAILED,
-      code: UseCaseErrorCode.DEPENDENCY_FAILED,
-      context: { transfer_id: transfer.id, player_id: transfer.player_id },
-    },
-  );
-  if (!memberships_result.success) {
-    return memberships_result;
-  }
-  const [active_membership] = memberships_result.data.items;
-  return create_success_result<MembershipMovePlan>(
-    active_membership === undefined
-      ? { kind: MembershipMoveKind.CREATE_NEW }
-      : {
-          kind: MembershipMoveKind.MOVE_EXISTING,
-          membership: active_membership,
-        },
-  );
 }
 
 async function move_existing_membership(
@@ -173,5 +136,9 @@ export async function move_membership_for_transfer(
       );
     case MembershipMoveKind.CREATE_NEW:
       return create_destination_membership(membership_repository, transfer);
+    case MembershipMoveKind.ALREADY_ON_DESTINATION:
+      return report_already_on_destination(transfer);
+    case MembershipMoveKind.FROM_TEAM_MISMATCH:
+      return fail_from_team_mismatch(transfer);
   }
 }

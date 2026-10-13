@@ -2,6 +2,13 @@ import type { Table } from "dexie";
 
 import { build_sync_outbox_key } from "$lib/adapters/repositories/syncOutbox/syncOutboxTypes";
 
+import {
+  IncomingVersionRule,
+  type IncomingVersionRuleValue,
+  is_incoming_version_stale,
+  read_known_record_version,
+} from "./syncRecordVersionRows";
+
 type GenericTable = Table<Record<string, unknown>, unknown>;
 
 interface VersionedRemoteChange {
@@ -26,19 +33,20 @@ export async function find_stale_local_ids(
   versions: GenericTable,
   table_name: string,
   changes: VersionedRemoteChange[],
+  rule: IncomingVersionRuleValue = IncomingVersionRule.CHANGE_FEED,
 ): Promise<Set<string>> {
   const known_versions = await versions.bulkGet(
     changes.map((change) => build_sync_outbox_key(table_name, change.local_id)),
   );
   return new Set(
     changes
-      .filter((change, index) => {
-        const known_version = known_versions[index];
-        return (
-          known_version !== void 0 &&
-          Number(known_version.server_version) > change.server_version
-        );
-      })
+      .filter((change, index) =>
+        is_incoming_version_stale(
+          read_known_record_version(known_versions[index]),
+          change.server_version,
+          rule,
+        ),
+      )
       .map((change) => change.local_id),
   );
 }

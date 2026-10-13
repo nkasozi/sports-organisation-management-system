@@ -31,7 +31,7 @@ function escape_ical_text(text: string): string {
     .replace(/\\/g, "\\\\")
     .replace(/;/g, "\\;")
     .replace(/,/g, "\\,")
-    .replace(/\n/g, "\\n");
+    .replace(/\r\n|\r|\n/g, "\\n");
 }
 
 function format_ical_datetime(iso_string: string, is_all_day: boolean): string {

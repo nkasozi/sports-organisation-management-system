@@ -1,10 +1,9 @@
 import type { UserScopeProfile } from "$lib/core/interfaces/ports";
-import type { PlayerTeamMembershipUseCasesPort } from "$lib/core/interfaces/ports/internal/usecases/PlayerTeamMembershipUseCasesPort";
 import {
   get_fixture_use_cases,
   get_official_associated_team_use_cases,
   get_official_use_cases,
-  get_player_team_membership_use_cases,
+  get_player_team_transfer_history_use_cases,
   get_team_use_cases,
 } from "$lib/infrastructure/registry/useCaseFactories";
 
@@ -17,6 +16,7 @@ import type {
   DynamicEntityFormUiState,
   DynamicEntityFormWarningState,
 } from "./dynamicEntityFormState";
+import type { TransferResolutionUseCases } from "./dynamicEntityFormTransferResolution";
 import { PRESENCE_STATUS } from "./presenceStatus";
 
 type DynamicEntityFormAuthProfileState =
@@ -24,7 +24,7 @@ type DynamicEntityFormAuthProfileState =
   | { status: typeof PRESENCE_STATUS.PRESENT; profile: UserScopeProfile };
 
 type DynamicEntityFormExternalDependencies = {
-  player_team_membership_use_cases: PlayerTeamMembershipUseCasesPort;
+  player_team_transfer_use_cases: TransferResolutionUseCases;
   conflict_dependencies: DynamicEntityFormConflictDependencies;
   gender_dependencies: DynamicEntityFormGenderDependencies;
 };
@@ -79,7 +79,8 @@ export function build_dynamic_entity_form_external_dependencies(): DynamicEntity
   const player_use_cases_result = get_use_cases_for_entity_type("player");
   const gender_use_cases_result = get_use_cases_for_entity_type("gender");
   return {
-    player_team_membership_use_cases: get_player_team_membership_use_cases(),
+    player_team_transfer_use_cases:
+      get_player_team_transfer_history_use_cases(),
     conflict_dependencies: {
       fixture_use_cases,
       team_use_cases,

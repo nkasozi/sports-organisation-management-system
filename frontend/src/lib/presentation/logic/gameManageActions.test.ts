@@ -19,7 +19,11 @@ describe("gameManageActions", () => {
     };
 
     await expect(
-      start_game_session("fixture-1", fixture_use_cases as never),
+      start_game_session(
+        "fixture-1",
+        fixture_use_cases as never,
+        "first_quarter",
+      ),
     ).resolves.toEqual({
       success: true,
       data: { id: "fixture-1" },
@@ -30,6 +34,10 @@ describe("gameManageActions", () => {
       success: true,
       data: { id: "fixture-1" },
     });
+    expect(fixture_use_cases.start_fixture).toHaveBeenCalledWith(
+      "fixture-1",
+      "first_quarter",
+    );
   });
 
   it("fails fast when the period-start event cannot be recorded", async () => {

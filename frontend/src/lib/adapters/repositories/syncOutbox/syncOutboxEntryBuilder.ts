@@ -13,7 +13,8 @@ import {
   type SyncOutboxEntry,
   SyncOutboxEntryStatus,
   type SyncOutboxOperationValue,
-  type SyncRecordVersion,
+  SyncRecordState,
+  type SyncRecordVersionRow,
 } from "./syncOutboxTypes";
 
 interface BuildPendingOutboxEntryCommand {
@@ -53,13 +54,17 @@ export function build_pending_outbox_entry(
   };
 }
 
+function is_tombstone_row(row: SyncRecordVersionRow): boolean {
+  return row.record_state === SyncRecordState.DELETED;
+}
+
 export function read_known_server_version(row: unknown): Option<number> {
   const version_row = option_from_document(row);
-  return version_row.status === OptionStatus.SOME
-    ? create_some_option(
-        (version_row.value as unknown as SyncRecordVersion).server_version,
-      )
-    : create_none_option();
+  if (version_row.status === OptionStatus.NONE) return create_none_option();
+  const known = version_row.value as unknown as SyncRecordVersionRow;
+  return is_tombstone_row(known)
+    ? create_none_option()
+    : create_some_option(known.server_version);
 }
 
 export function read_existing_entry(row: unknown): Option<SyncOutboxEntry> {

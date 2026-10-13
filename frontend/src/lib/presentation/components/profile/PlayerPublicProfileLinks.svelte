@@ -1,13 +1,19 @@
 <script lang="ts">
     import type { ProfileLink } from "$lib/core/entities/ProfileLink";
     import { get_platform_icon } from "$lib/core/entities/ProfileLink";
+    import { filter_links_with_safe_urls } from "$lib/presentation/logic/safeUrl";
 
     export let social_media_links: ProfileLink[];
     export let website_links: ProfileLink[];
     export let video_links: ProfileLink[];
+
+    $: safe_social_media_links =
+        filter_links_with_safe_urls(social_media_links);
+    $: safe_website_links = filter_links_with_safe_urls(website_links);
+    $: safe_video_links = filter_links_with_safe_urls(video_links);
 </script>
 
-{#if social_media_links.length > 0 || website_links.length > 0 || video_links.length > 0}
+{#if safe_social_media_links.length > 0 || safe_website_links.length > 0 || safe_video_links.length > 0}
     <section
         class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg overflow-hidden p-6"
     >
@@ -15,7 +21,7 @@
             Links & Media
         </h2>
 
-        {#if social_media_links.length > 0}
+        {#if safe_social_media_links.length > 0}
             <div class="mb-6">
                 <h3
                     class="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-3"
@@ -23,7 +29,7 @@
                     Social Media
                 </h3>
                 <div class="flex flex-wrap gap-3">
-                    {#each social_media_links as link}
+                    {#each safe_social_media_links as link}
                         <a
                             href={link.url}
                             target="_blank"
@@ -52,7 +58,7 @@
             </div>
         {/if}
 
-        {#if website_links.length > 0}
+        {#if safe_website_links.length > 0}
             <div class="mb-6">
                 <h3
                     class="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-3"
@@ -60,7 +66,7 @@
                     Websites
                 </h3>
                 <div class="space-y-2">
-                    {#each website_links as link}
+                    {#each safe_website_links as link}
                         <a
                             href={link.url}
                             target="_blank"
@@ -89,7 +95,7 @@
             </div>
         {/if}
 
-        {#if video_links.length > 0}
+        {#if safe_video_links.length > 0}
             <div>
                 <h3
                     class="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-3"
@@ -97,7 +103,7 @@
                     Videos
                 </h3>
                 <div class="space-y-2">
-                    {#each video_links as link}
+                    {#each safe_video_links as link}
                         <a
                             href={link.url}
                             target="_blank"

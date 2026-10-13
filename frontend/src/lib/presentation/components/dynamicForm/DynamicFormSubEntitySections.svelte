@@ -6,6 +6,8 @@
     import type { EntityCrudHandlers } from "$lib/core/types/EntityHandlers";
     import type { SubEntityFilter } from "$lib/core/types/SubEntityFilter";
     import { build_sub_entity_filter } from "$lib/presentation/logic/dynamicFormLogic";
+    import { compute_sub_entity_disabled_functionalities } from "$lib/presentation/logic/subEntityPermissionLogic";
+    import { auth_store } from "$lib/presentation/stores/auth";
 
     import DynamicEntityList from "../DynamicEntityList.svelte";
 
@@ -43,6 +45,11 @@
                         .child_entity_type}
                     sub_entity_filter={sub_filter}
                     crud_handlers={sub_entity_handlers}
+                    disabled_functionalities={compute_sub_entity_disabled_functionalities(
+                        $auth_store.current_profile,
+                        sub_entity_field.sub_entity_config.child_entity_type,
+                        sub_filter,
+                    )}
                     on_entities_batch_deleted={void 0}
                     on_selection_changed={void 0}
                     on_total_count_changed={void 0}

@@ -1,6 +1,7 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { seed_admin_user } from "./admin_seed";
+import { BOOTSTRAP_ALLOWLIST_ENVIRONMENT_VARIABLE } from "./lib/bootstrap_allowlist";
 import {
   ANONYMOUS_IDENTITY,
   authenticated_identity,
@@ -61,6 +62,14 @@ function find_user(
 }
 
 describe("seed_admin_user", () => {
+  beforeEach(() => {
+    vi.stubEnv(BOOTSTRAP_ALLOWLIST_ENVIRONMENT_VARIABLE, STRANGER_EMAIL);
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
   it("rejects anonymous callers", async () => {
     const { context, result } = await seed_as(
       ANONYMOUS_IDENTITY,

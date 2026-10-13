@@ -15,7 +15,6 @@ export const HEADER_LOGOUT_START = {
   GO_TO_SIGN_IN: "go_to_sign_in",
 } as const;
 
-const SIGN_IN_PATH = "/sign-in";
 const HOME_PATH = "/";
 const PROFILE_SWITCH_COMPLETED_EVENT = "profile_switch_completed";
 const HEADER_LOGOUT_FAILED_EVENT = "header_logout_failed";
@@ -56,7 +55,7 @@ export async function run_header_logout(
   command: HeaderLogoutCommand,
 ): Promise<Result<boolean>> {
   const teardown_result =
-    await command.sign_out_and_tear_down_device(SIGN_IN_PATH);
+    await command.sign_out_and_tear_down_device(HOME_PATH);
   if (teardown_result.success) return create_success_result(true);
   console.error("[Header] Logout could not finish", {
     event: HEADER_LOGOUT_FAILED_EVENT,

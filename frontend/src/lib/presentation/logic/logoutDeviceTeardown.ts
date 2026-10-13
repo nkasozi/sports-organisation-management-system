@@ -1,6 +1,10 @@
-import type { AsyncResult } from "$lib/core/types/Result";
 import type { DeviceBackupDeleteState } from "$lib/infrastructure/backup/storageBackupContracts";
 import { DEVICE_BACKUP_DELETE_STATUS } from "$lib/infrastructure/backup/storageBackupStatus";
+
+import {
+  land_in_signed_out_demo,
+  type SignedOutLandingCommand,
+} from "./logoutSignedOutLanding";
 
 export const LOGOUT_DEVICE_TEARDOWN_STATUS = {
   COMPLETED: "completed",
@@ -12,7 +16,6 @@ const LOGOUT_DEVICE_TEARDOWN_STEP = {
   RESET_LOCAL_DATABASE: "reset_local_database",
   CLEAR_SESSION_SYNC_MARKER: "clear_session_sync_marker",
   CLEAR_AUTH_STORE: "clear_auth_store",
-  CLERK_SIGN_OUT: "clerk_sign_out",
 } as const;
 
 const LOGOUT_DEVICE_TEARDOWN_COMPLETED_EVENT =
@@ -30,14 +33,13 @@ type LogoutDeviceTeardownState =
       error: string;
     };
 
-export interface LogoutDeviceTeardownCommand {
-  stop_background_sync(): boolean;
+export interface LogoutDeviceTeardownCommand extends SignedOutLandingCommand {
+  stop_background_sync(): Promise<unknown>;
   cancel_automatic_device_backup_write(): boolean;
   delete_device_backup(): Promise<DeviceBackupDeleteState>;
   reset_local_database(): Promise<boolean>;
   clear_session_sync_flag(): Promise<unknown>;
   logout_auth_store(): Promise<unknown>;
-  sign_out(): AsyncResult<true>;
   reload_into(landing_path: string): boolean;
 }
 
@@ -85,18 +87,6 @@ async function delete_device_backup_step(
     : COMPLETED_STATE;
 }
 
-async function clerk_sign_out_step(
-  command: LogoutDeviceTeardownCommand,
-): Promise<LogoutDeviceTeardownState> {
-  const sign_out_result = await command.sign_out();
-  return sign_out_result.success
-    ? COMPLETED_STATE
-    : fail_teardown(
-        LOGOUT_DEVICE_TEARDOWN_STEP.CLERK_SIGN_OUT,
-        sign_out_result.error,
-      );
-}
-
 function build_ordered_teardown_steps(
   command: LogoutDeviceTeardownCommand,
 ): Array<() => Promise<LogoutDeviceTeardownState>> {
@@ -115,7 +105,6 @@ function build_ordered_teardown_steps(
       run_teardown_step(STEP.CLEAR_AUTH_STORE, () =>
         command.logout_auth_store(),
       ),
-    () => clerk_sign_out_step(command),
   ];
 }
 
@@ -123,13 +112,14 @@ export async function execute_logout_device_teardown(
   command: LogoutDeviceTeardownCommand,
   request: LogoutDeviceTeardownRequest,
 ): Promise<LogoutDeviceTeardownState> {
-  command.stop_background_sync();
+  await command.stop_background_sync();
   command.cancel_automatic_device_backup_write();
   for (const run_step of build_ordered_teardown_steps(command)) {
     const step_state = await run_step();
     if (step_state.status === LOGOUT_DEVICE_TEARDOWN_STATUS.FAILED)
       return step_state;
   }
+  await land_in_signed_out_demo(command);
   console.log("[Logout] Device teardown completed", {
     event: LOGOUT_DEVICE_TEARDOWN_COMPLETED_EVENT,
     landing_path: request.landing_path,

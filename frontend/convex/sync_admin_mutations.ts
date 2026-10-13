@@ -8,6 +8,10 @@ import {
   require_permission,
   type SystemUserRecord,
 } from "./lib/auth_middleware";
+import {
+  OwnershipRoleKind,
+  resolve_ownership_role_kind,
+} from "./lib/caller_ownership";
 import { CallerScopeKind, resolve_caller_scope } from "./lib/caller_scope";
 import {
   ConvexErrorCode,
@@ -30,6 +34,8 @@ const ORGANIZATION_ENTITY_TYPE = "organization";
 const NO_JOB_ID = "";
 const NOT_STARTED_STATUS = "not_started";
 const UNSCOPED_CLEAR_DENIED_EVENT = "clear_requester_unscoped";
+const NON_ADMINISTRATOR_CLEAR_DENIED_EVENT =
+  "clear_requester_not_administrator";
 const SyncMetadataAction = {
   UPDATED: "updated",
   CREATED: "created",
@@ -92,6 +98,16 @@ async function authorize_clear_requester(
     );
     return permission;
   }
+  if (
+    resolve_ownership_role_kind(permission.data.role) !==
+    OwnershipRoleKind.ADMINISTRATOR
+  )
+    return log_convex_failure(ConvexErrorCode.ACCESS_DENIED, {
+      event: NON_ADMINISTRATOR_CLEAR_DENIED_EVENT,
+      user_id: permission.data._id,
+      role: permission.data.role,
+      entity_type,
+    });
   return resolve_caller_scope(permission.data).kind === CallerScopeKind.NONE
     ? log_convex_failure(ConvexErrorCode.ACCESS_DENIED, {
         event: UNSCOPED_CLEAR_DENIED_EVENT,

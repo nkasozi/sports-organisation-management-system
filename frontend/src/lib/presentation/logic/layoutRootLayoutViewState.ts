@@ -17,6 +17,10 @@ interface SignedInTransitionTracker {
   should_trigger_login_sync(signed_in: boolean, app_ready: boolean): boolean;
 }
 
+interface SignedOutTransitionTracker {
+  has_user_just_signed_out(signed_in: boolean): boolean;
+}
+
 export function create_initial_root_layout_view_state(
   current_path: string,
 ): RootLayoutViewState {
@@ -107,6 +111,18 @@ export function create_signed_in_transition_tracker(): SignedInTransitionTracker
         signed_in && !tracker_state.previous_signed_in;
       tracker_state.previous_signed_in = signed_in;
       return user_just_signed_in && app_ready;
+    },
+  };
+}
+
+export function create_signed_out_transition_tracker(): SignedOutTransitionTracker {
+  const tracker_state = { previous_signed_in: false };
+  return {
+    has_user_just_signed_out: (signed_in: boolean): boolean => {
+      const user_just_signed_out =
+        !signed_in && tracker_state.previous_signed_in;
+      tracker_state.previous_signed_in = signed_in;
+      return user_just_signed_out;
     },
   };
 }

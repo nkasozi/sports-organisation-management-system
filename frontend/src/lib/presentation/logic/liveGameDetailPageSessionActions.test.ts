@@ -60,7 +60,7 @@ describe("liveGameDetailPageSessionActions", () => {
     expect(start_game_session_mock).not.toHaveBeenCalled();
   });
 
-  it("reloads the fixture, starts the session, and advances to the first configured period", async () => {
+  it("reloads the fixture and starts the session directly in the first configured period", async () => {
     const reload_fixture = vi.fn().mockResolvedValue({ id: "fixture-2" });
     const update_period = vi.fn().mockResolvedValue({ success: true });
     ensure_live_game_lineups_before_start_mock.mockResolvedValue({
@@ -69,7 +69,11 @@ describe("liveGameDetailPageSessionActions", () => {
     });
     start_game_session_mock.mockResolvedValue({
       success: true,
-      data: { id: "fixture-2", status: "in_progress" },
+      data: {
+        id: "fixture-2",
+        status: "in_progress",
+        current_period: "second_half",
+      },
     });
 
     const result = await start_live_game_detail_action({
@@ -88,7 +92,12 @@ describe("liveGameDetailPageSessionActions", () => {
     } as never);
 
     expect(reload_fixture).toHaveBeenCalled();
-    expect(update_period).toHaveBeenCalledWith("fixture-2", "second_half", 0);
+    expect(start_game_session_mock).toHaveBeenCalledWith(
+      "fixture-2",
+      expect.anything(),
+      "second_half",
+    );
+    expect(update_period).not.toHaveBeenCalled();
     expect(result).toEqual({
       success: true,
       fixture: {

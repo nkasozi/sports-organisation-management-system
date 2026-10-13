@@ -7,12 +7,16 @@ import { competition_results_page_dependencies } from "./competitionResultsPageC
 import { extract_competition_results_url_params } from "./competitionResultsPageData";
 import { initialize_competition_results_page } from "./competitionResultsPageInitialization";
 import {
+  type CompetitionResultsSelectedBundle,
   create_empty_competition_results_bundle,
   derive_competition_results_can_change_organizations,
   find_competition_results_organization,
   load_competition_results_bundle,
   load_competitions_for_results_organization,
 } from "./competitionResultsPageState";
+import { COMPETITION_RESULTS_BUNDLE_LOAD_STATUS } from "./competitionResultsPageTypes";
+
+const LOADING_STATE_ERROR = "error";
 
 type CompetitionResultsUrlParams = ReturnType<
   typeof extract_competition_results_url_params
@@ -22,10 +26,26 @@ type CompetitionResultsInitializedPage = Awaited<
   ReturnType<typeof initialize_competition_results_page>
 >;
 
+export function apply_competition_results_bundle_with_load_state(
+  command: CompetitionResultsPageControllerCommand,
+  bundle: CompetitionResultsSelectedBundle,
+): boolean {
+  command.apply_bundle(bundle);
+  switch (bundle.load_state.status) {
+    case COMPETITION_RESULTS_BUNDLE_LOAD_STATUS.LOADED:
+      return true;
+    case COMPETITION_RESULTS_BUNDLE_LOAD_STATUS.FAILED:
+      command.set_error_message(bundle.load_state.error_message);
+      command.set_loading_state(LOADING_STATE_ERROR);
+      return false;
+  }
+}
+
 export async function load_competition_results_controller_data(
   command: CompetitionResultsPageControllerCommand,
 ): Promise<void> {
-  command.apply_bundle(
+  apply_competition_results_bundle_with_load_state(
+    command,
     await load_competition_results_bundle(
       competition_results_page_dependencies,
       command.get_selected_competition_id(),
@@ -65,8 +85,8 @@ export async function handle_competition_results_organization_change(
   );
   command.set_competitions(result.competitions);
   command.set_selected_competition_id(result.selected_competition_id);
-  command.apply_bundle(result.bundle);
   command.set_fixtures_loading(false);
+  apply_competition_results_bundle_with_load_state(command, result.bundle);
 }
 
 function apply_initialized_competition_results_page(
@@ -80,8 +100,11 @@ function apply_initialized_competition_results_page(
   );
   command.set_competitions(initialized_page.competitions);
   command.set_selected_competition_id(initialized_page.selected_competition_id);
-  command.apply_bundle(initialized_page.bundle);
   command.set_loading_state("success");
+  apply_competition_results_bundle_with_load_state(
+    command,
+    initialized_page.bundle,
+  );
 }
 
 function apply_competition_results_initialization_failure(

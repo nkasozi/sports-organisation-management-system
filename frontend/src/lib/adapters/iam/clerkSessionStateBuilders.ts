@@ -7,6 +7,14 @@ import {
   type ClerkUserState,
 } from "./clerkAuthTypes";
 
+const MISSING_EMAIL_ADDRESS = "";
+
+export function read_primary_email_address(
+  clerk_user: NonNullable<Clerk["user"]>,
+): string {
+  return clerk_user.primaryEmailAddress?.emailAddress ?? MISSING_EMAIL_ADDRESS;
+}
+
 function build_clerk_user_state(clerk_user: Clerk["user"]): ClerkUserState {
   if (!clerk_user) {
     return { status: CLERK_PRESENCE_STATUS.MISSING };
@@ -16,7 +24,7 @@ function build_clerk_user_state(clerk_user: Clerk["user"]): ClerkUserState {
     status: CLERK_PRESENCE_STATUS.PRESENT,
     user: {
       id: clerk_user.id,
-      email_address: clerk_user.emailAddresses?.[0]?.emailAddress ?? "",
+      email_address: read_primary_email_address(clerk_user),
       full_name: clerk_user.fullName ?? "",
       first_name: clerk_user.firstName ?? "",
       last_name: clerk_user.lastName ?? "",

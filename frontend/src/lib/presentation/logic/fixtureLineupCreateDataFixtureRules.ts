@@ -1,19 +1,18 @@
 import type { CompetitionRuleOverrides } from "$lib/core/entities/CompetitionTypes";
-import type { Sport } from "$lib/core/entities/Sport";
 import type { Team } from "$lib/core/entities/Team";
+import {
+  apply_competition_fixture_player_limit_overrides,
+  build_sport_fixture_player_limits,
+  DEFAULT_FIXTURE_PLAYER_LIMITS,
+  type FixturePlayerLimits,
+  type SportPlayerLimitSource,
+} from "$lib/core/services/fixturePlayerLimits";
 import { type Option, OptionStatus } from "$lib/core/types/Option";
 
-export interface FixtureLineupPlayerLimits {
-  min_players: number;
-  max_players: number;
-  starters_count: number;
-}
+export type FixtureLineupPlayerLimits = FixturePlayerLimits;
 
-export const DEFAULT_FIXTURE_LINEUP_PLAYER_LIMITS: FixtureLineupPlayerLimits = {
-  min_players: 2,
-  max_players: 18,
-  starters_count: 11,
-};
+export const DEFAULT_FIXTURE_LINEUP_PLAYER_LIMITS: FixtureLineupPlayerLimits =
+  DEFAULT_FIXTURE_PLAYER_LIMITS;
 
 interface FixtureLineupTeamLookupResult {
   success: boolean;
@@ -25,30 +24,19 @@ interface FixtureLineupExistingLineupEntry {
 }
 
 export function build_sport_player_limits(
-  sport: Pick<
-    Sport,
-    | "min_players_per_fixture"
-    | "max_players_per_fixture"
-    | "max_players_on_field"
-  >,
+  sport: SportPlayerLimitSource,
 ): FixtureLineupPlayerLimits {
-  return {
-    min_players: sport.min_players_per_fixture || 2,
-    max_players: sport.max_players_per_fixture || 18,
-    starters_count: sport.max_players_on_field || 11,
-  };
+  return build_sport_fixture_player_limits(sport);
 }
 
 export function apply_competition_player_limit_overrides(
   limits: FixtureLineupPlayerLimits,
   rule_overrides: CompetitionRuleOverrides,
 ): FixtureLineupPlayerLimits {
-  return {
-    min_players: rule_overrides.min_players_on_field ?? limits.min_players,
-    max_players: rule_overrides.max_squad_size ?? limits.max_players,
-    starters_count:
-      rule_overrides.max_players_on_field ?? limits.starters_count,
-  };
+  return apply_competition_fixture_player_limit_overrides(
+    limits,
+    rule_overrides,
+  );
 }
 
 export function collect_fixture_teams(

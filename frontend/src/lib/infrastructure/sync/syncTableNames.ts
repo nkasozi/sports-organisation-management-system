@@ -81,12 +81,35 @@ const TABLE_NAME_TO_ENTITY_TYPE: Partial<Record<TableName, SharedEntityType>> =
     official_performance_ratings: "officialperformancerating",
   };
 
-function role_can_push_table(role: UserRole, table_name: TableName): boolean {
-  const entity_type = TABLE_NAME_TO_ENTITY_TYPE[table_name];
+const PushOperation = {
+  UPSERT: "upsert",
+  DELETE: "delete",
+} as const;
+
+type PushOperationValue = (typeof PushOperation)[keyof typeof PushOperation];
+
+export function role_can_push_operation(
+  role: UserRole,
+  table_name: string,
+  operation: PushOperationValue,
+): boolean {
+  const entity_type = TABLE_NAME_TO_ENTITY_TYPE[table_name as TableName];
   if (!entity_type) return true;
+  switch (operation) {
+    case PushOperation.UPSERT:
+      return (
+        check_entity_permission(role, entity_type, "create") ||
+        check_entity_permission(role, entity_type, "update")
+      );
+    case PushOperation.DELETE:
+      return check_entity_permission(role, entity_type, "delete");
+  }
+}
+
+function role_can_push_table(role: UserRole, table_name: TableName): boolean {
   return (
-    check_entity_permission(role, entity_type, "create") ||
-    check_entity_permission(role, entity_type, "update")
+    role_can_push_operation(role, table_name, PushOperation.UPSERT) ||
+    role_can_push_operation(role, table_name, PushOperation.DELETE)
   );
 }
 

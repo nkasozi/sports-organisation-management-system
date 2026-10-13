@@ -13,6 +13,7 @@ import {
   fail_validation,
   relay_repository_result,
 } from "./FailureRelay";
+import { create_fixture_clock_use_cases } from "./FixtureClockUseCases";
 import { create_fixture_game_events } from "./FixtureGameEventsUseCases";
 import { generate_fixtures } from "./FixtureGenerationUseCase";
 import { create_fixture_queries } from "./FixtureQueries";
@@ -73,5 +74,6 @@ export function create_fixture_use_cases(
     create: (input) => create_fixture(repository, input),
     generate_fixtures: (config) => generate_fixtures(repository, config),
     ...create_fixture_game_events(repository),
+    ...create_fixture_clock_use_cases(repository),
   };
 }

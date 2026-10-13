@@ -2,8 +2,11 @@ import type { QueryCtx } from "../_generated/server";
 import { strip_convex_fields } from "../sync_record_helpers";
 import type { SystemUserRecord } from "./auth_middleware";
 import { type ConvexFailure, NO_ERROR_MESSAGE } from "./convex_errors";
-import { filter_records_for_caller } from "./scoped_record_reader";
 import { merge_change_feed_page } from "./sync_change_feed";
+import {
+  authorize_records_for_reader,
+  can_caller_read_table,
+} from "./sync_read_authorization";
 import type { AllowedSyncTable } from "./sync_table_catalog";
 import { filter_visible_tombstones } from "./sync_tombstone_visibility";
 import {
@@ -11,7 +14,6 @@ import {
   type StoredSyncTombstoneDocument,
   type SyncTombstone,
 } from "./sync_tombstones";
-import { is_global_table } from "./sync_validation";
 
 const SYNC_SEQUENCE_INDEX = "by_sync_sequence";
 const TOMBSTONE_TABLE_NAME = "sync_tombstones";
@@ -88,9 +90,10 @@ async function load_raw_changes(
 async function project_visible_tombstones(
   ctx: QueryCtx,
   caller: SystemUserRecord,
-  table_name: string,
+  table_name: AllowedSyncTable,
   tombstones: SyncTombstone[],
 ): Promise<PulledTombstone[]> {
+  if (!can_caller_read_table(caller, table_name)) return [];
   const visible_tombstones = await filter_visible_tombstones(ctx, {
     caller,
     table_name,
@@ -106,12 +109,14 @@ async function project_visible_tombstones(
 async function filter_visible_records(
   ctx: QueryCtx,
   caller: SystemUserRecord,
-  table_name: string,
+  table_name: AllowedSyncTable,
   records: Array<Record<string, unknown>>,
 ): Promise<Array<Record<string, unknown>>> {
-  const visible = is_global_table(table_name)
-    ? records
-    : await filter_records_for_caller(ctx, { records, caller, table_name });
+  const visible = await authorize_records_for_reader(ctx, {
+    records,
+    caller,
+    table_name,
+  });
   return visible.map(strip_convex_fields);
 }
 

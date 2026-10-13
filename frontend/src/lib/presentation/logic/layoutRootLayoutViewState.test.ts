@@ -6,6 +6,7 @@ import {
   apply_root_layout_sync_change,
   create_initial_root_layout_view_state,
   create_signed_in_transition_tracker,
+  create_signed_out_transition_tracker,
   hide_root_layout_restore_progress,
   mark_root_layout_ready,
   mark_root_layout_redirected,
@@ -113,5 +114,16 @@ describe("create_signed_in_transition_tracker", () => {
     expect(tracker.should_trigger_login_sync(false, true)).toBe(false);
     expect(tracker.should_trigger_login_sync(true, true)).toBe(true);
     expect(tracker.should_trigger_login_sync(true, true)).toBe(false);
+  });
+});
+
+describe("create_signed_out_transition_tracker", () => {
+  it("reports only the transition from signed in to signed out", () => {
+    const tracker = create_signed_out_transition_tracker();
+
+    expect(tracker.has_user_just_signed_out(false)).toBe(false);
+    expect(tracker.has_user_just_signed_out(true)).toBe(false);
+    expect(tracker.has_user_just_signed_out(false)).toBe(true);
+    expect(tracker.has_user_just_signed_out(false)).toBe(false);
   });
 });

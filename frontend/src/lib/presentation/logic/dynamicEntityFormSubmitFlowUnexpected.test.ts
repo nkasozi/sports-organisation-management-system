@@ -16,9 +16,6 @@ const {
 }));
 
 vi.mock("./dynamicEntityFormSubmission", () => ({
-  check_if_player_transfer_is_being_approved: vi.fn(() => false),
-  execute_dynamic_form_transfer_membership_change: vi.fn(),
-  is_transfer_entity_and_status_just_changed_to_declined: vi.fn(() => false),
   resolve_dynamic_form_create_result: resolve_dynamic_form_create_result_mock,
   resolve_dynamic_form_update_result: vi.fn(),
 }));
@@ -50,7 +47,7 @@ describe("submitting a form when saving throws unexpectedly", () => {
       form_data: {},
       is_edit_mode: false,
       permission_denied: false,
-      player_team_membership_use_cases: {} as never,
+      player_team_transfer_use_cases: {} as never,
     });
 
     expect(result).toEqual({
@@ -66,7 +63,7 @@ describe("submitting a form when saving throws unexpectedly", () => {
       form_data: {},
       is_edit_mode: false,
       permission_denied: false,
-      player_team_membership_use_cases: {} as never,
+      player_team_transfer_use_cases: {} as never,
     });
 
     expect(console.error).toHaveBeenCalledWith(

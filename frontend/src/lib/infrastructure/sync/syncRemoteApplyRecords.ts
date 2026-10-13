@@ -1,19 +1,27 @@
 import {
   build_sync_outbox_key,
   create_known_base_version,
-  INITIAL_SYNC_CURSOR_SEQUENCE,
   SyncOutboxEntryStatus,
 } from "$lib/adapters/repositories/syncOutbox/syncOutboxTypes";
-import { is_number_value } from "$lib/infrastructure/utils/runtimeTypeGuards";
+import { is_record_value } from "$lib/infrastructure/utils/runtimeTypeGuards";
 
 import {
-  apply_remote_change_page,
+  build_live_version_row,
+  IncomingVersionRule,
+  type IncomingVersionRuleValue,
+} from "./syncRecordVersionRows";
+import {
   convert_server_record_to_remote_change,
+  type GenericTable,
   type RemoteApplyDependencies,
   type RemoteApplySummary,
   type RemoteRecordChange,
   run_remote_apply_transaction,
 } from "./syncRemoteApply";
+import {
+  select_applicable_changes,
+  write_applicable_changes,
+} from "./syncRemoteApplyChanges";
 
 export const ResolvedRecordGuardKind = {
   CHANGE_TOKEN: "change_token",
@@ -56,11 +64,13 @@ export async function apply_resolved_remote_record(
     async (tables) => {
       const key = build_sync_outbox_key(table_name, change.local_id);
       const current = await tables.outbox.get(key);
-      await tables.versions.put({
-        table_name,
-        local_id: change.local_id,
-        server_version: change.server_version,
-      });
+      await tables.versions.put(
+        build_live_version_row(
+          table_name,
+          change.local_id,
+          change.server_version,
+        ),
+      );
       if (current !== void 0 && is_superseded_by_local_edit(current, guard)) {
         await tables.outbox.put({
           ...current,
@@ -75,41 +85,68 @@ export async function apply_resolved_remote_record(
   );
 }
 
-export const SnapshotCursorPolicy = {
-  KEEP_CURSOR: "keep_cursor",
-  ADVANCE_TO_SNAPSHOT: "advance_to_snapshot",
+export const SnapshotRecordScope = {
+  FULL_RECORDS: "full_records",
+  PUBLIC_PROJECTION: "public_projection",
 } as const;
 
-type SnapshotCursorPolicyValue =
-  (typeof SnapshotCursorPolicy)[keyof typeof SnapshotCursorPolicy];
+type SnapshotRecordScopeValue =
+  (typeof SnapshotRecordScope)[keyof typeof SnapshotRecordScope];
 
-const SYNC_SEQUENCE_FIELD_NAME = "sync_sequence";
+function select_version_rule(
+  scope: SnapshotRecordScopeValue,
+): IncomingVersionRuleValue {
+  switch (scope) {
+    case SnapshotRecordScope.FULL_RECORDS:
+      return IncomingVersionRule.CHANGE_FEED;
+    case SnapshotRecordScope.PUBLIC_PROJECTION:
+      return IncomingVersionRule.SNAPSHOT_PROJECTION;
+  }
+}
 
-function resolve_snapshot_cursor(
-  server_records: Array<Record<string, unknown>>,
-  policy: SnapshotCursorPolicyValue,
-): number {
-  if (policy === SnapshotCursorPolicy.KEEP_CURSOR)
-    return INITIAL_SYNC_CURSOR_SEQUENCE;
-  const sequences = server_records.map(
-    (record) => record[SYNC_SEQUENCE_FIELD_NAME],
-  );
-  const numeric_sequences = sequences.filter(is_number_value);
-  return numeric_sequences.length === sequences.length
-    ? Math.max(INITIAL_SYNC_CURSOR_SEQUENCE, ...numeric_sequences)
-    : INITIAL_SYNC_CURSOR_SEQUENCE;
+async function merge_onto_local_records(
+  data: GenericTable,
+  records: RemoteRecordChange[],
+  scope: SnapshotRecordScopeValue,
+): Promise<RemoteRecordChange[]> {
+  if (scope === SnapshotRecordScope.FULL_RECORDS) return records;
+  const existing = await data.bulkGet(records.map((record) => record.local_id));
+  return records.map((record, index) => {
+    const local_row = existing[index];
+    return is_record_value(local_row)
+      ? { ...record, local_data: { ...local_row, ...record.local_data } }
+      : record;
+  });
 }
 
 export async function apply_remote_snapshot_records(
   dependencies: RemoteApplyDependencies,
   table_name: string,
   server_records: Array<Record<string, unknown>>,
-  policy: SnapshotCursorPolicyValue,
+  scope: SnapshotRecordScopeValue,
 ): Promise<RemoteApplySummary> {
-  return apply_remote_change_page(dependencies, {
+  return run_remote_apply_transaction(
+    dependencies,
     table_name,
-    records: server_records.map(convert_server_record_to_remote_change),
-    deletions: [],
-    next_cursor: resolve_snapshot_cursor(server_records, policy),
-  });
+    async (tables) => {
+      const applicable = await select_applicable_changes(
+        tables,
+        {
+          table_name,
+          records: server_records.map(convert_server_record_to_remote_change),
+          deletions: [],
+        },
+        select_version_rule(scope),
+      );
+      const applied_count = await write_applicable_changes(tables, table_name, {
+        records: await merge_onto_local_records(
+          tables.data,
+          applicable.records,
+          scope,
+        ),
+        deletions: [],
+      });
+      return { applied_count, deferred_local_ids: [...applicable.dirty] };
+    },
+  );
 }

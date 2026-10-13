@@ -68,7 +68,7 @@ export function compute_calendar_token_expiry(): CalendarToken["expires_at"] {
   return expiry_date.toISOString() as CalendarToken["expires_at"];
 }
 
-export function is_calendar_token_expired(
+function is_calendar_token_expired(
   expires_at: CalendarToken["expires_at"],
 ): boolean {
   return new Date(expires_at).getTime() < Date.now();

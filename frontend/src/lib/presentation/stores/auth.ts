@@ -7,6 +7,7 @@ export {
   current_profile_team_id,
   current_user_role,
   current_user_role_display,
+  has_verified_account_session,
   is_public_viewer,
   other_available_profiles,
   sidebar_menu_items,

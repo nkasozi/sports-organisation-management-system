@@ -56,7 +56,45 @@ describe("sync_scope", () => {
     ).toBe(false);
   });
 
-  it("keeps matching and global records within organization scope", () => {
+  it("excludes unscoped and wildcard records from tenant tables", () => {
+    const caller = create_system_user_record({ role: "org_admin" });
+    const wildcard_user = { local_id: "user_root", organization_id: "*" };
+    const blank_player = { local_id: "player_blank", organization_id: "" };
+    expect(
+      filter_records_by_organization_scope(
+        [wildcard_user],
+        caller,
+        "system_users",
+        { organization_id: ORGANIZATION_ID },
+      ),
+    ).toEqual([]);
+    expect(
+      filter_records_by_organization_scope([blank_player], caller, "players", {
+        organization_id: ORGANIZATION_ID,
+      }),
+    ).toEqual([]);
+  });
+
+  it("applies the team scope only to records that carry a team", () => {
+    const caller = create_system_user_record({ team_id: "team_1" });
+    const own_team = { local_id: "team_1", organization_id: ORGANIZATION_ID };
+    const own_staff = {
+      local_id: "staff_1",
+      organization_id: ORGANIZATION_ID,
+      team_id: "team_1",
+    };
+    const other_staff = { ...own_staff, local_id: "staff_2", team_id: "x" };
+    expect(
+      filter_records_by_organization_scope(
+        [own_team, own_staff, other_staff],
+        caller,
+        TEAMS_TABLE_NAME,
+        build_scope_filter(caller, TEAM_ENTITY_TYPE),
+      ),
+    ).toEqual([own_team, own_staff]);
+  });
+
+  it("keeps only matching records within organization scope", () => {
     const caller = create_system_user_record();
     const matching_record = {
       local_id: "record_1",
@@ -75,7 +113,7 @@ describe("sync_scope", () => {
         TEAMS_TABLE_NAME,
         { organization_id: ORGANIZATION_ID, team_id: "" },
       ),
-    ).toEqual([matching_record, global_record]);
+    ).toEqual([matching_record]);
   });
 
   it("scopes id-filtered roles to their organization instead of every tenant", () => {

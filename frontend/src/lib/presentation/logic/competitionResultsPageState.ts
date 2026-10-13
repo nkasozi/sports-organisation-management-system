@@ -26,6 +26,10 @@ import type {
   CompetitionResultsSelectedCompetitionState,
 } from "./competitionResultsPageContracts";
 import {
+  COMPETITION_RESULTS_BUNDLE_LOAD_STATUS,
+  type CompetitionResultsBundleLoadState,
+} from "./competitionResultsPageTypes";
+import {
   build_match_report_sport_rules,
   type MatchReportSportRules,
 } from "./matchReportSportRules";
@@ -38,6 +42,7 @@ export interface CompetitionResultsSelectedBundle {
   teams: Team[];
   team_map: Map<string, Team>;
   sport_rules: MatchReportSportRules;
+  load_state: CompetitionResultsBundleLoadState;
 }
 
 export interface CompetitionResultsPageStateDependencies {
@@ -60,6 +65,7 @@ export function create_empty_competition_results_bundle(): CompetitionResultsSel
     teams: [],
     team_map: new Map<string, Team>(),
     sport_rules: build_match_report_sport_rules(void 0, void 0),
+    load_state: { status: COMPETITION_RESULTS_BUNDLE_LOAD_STATUS.LOADED },
   };
 }
 

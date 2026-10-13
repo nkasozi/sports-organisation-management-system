@@ -51,7 +51,7 @@ describe("upsert_record characterization", () => {
     expect(find_table_rows(context, "teams")).toHaveLength(1);
   });
 
-  it("updates an owned record when the incoming version is newer", async () => {
+  it("updates an owned record when the client edited the current version", async () => {
     const context = create_context_for(ORGANIZATION_A_ADMIN_EMAIL, [
       build_team_record("team_a", ORGANIZATION_A_ID, 1),
     ]);
@@ -61,11 +61,18 @@ describe("upsert_record characterization", () => {
       {
         table_name: "teams",
         local_id: "team_a",
-        data: { ...build_team_record("team_a", ORGANIZATION_A_ID, 2) },
-        version: 2,
+        data: {
+          ...build_team_record("team_a", ORGANIZATION_A_ID, 1),
+          name: "Renamed",
+        },
+        version: 1,
       },
     );
-    expect(result).toMatchObject({ success: true, action: "updated" });
+    expect(result).toMatchObject({
+      success: true,
+      action: "updated",
+      server_version: 2,
+    });
   });
 
   it("rejects anonymous callers", async () => {

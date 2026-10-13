@@ -2,10 +2,9 @@ import type { GenericId } from "convex/values";
 
 import type { MutationCtx, QueryCtx } from "../_generated/server";
 import {
-  check_permission,
+  check_entity_permission,
   type ConvexResult,
   DataAction,
-  get_entity_data_category,
   type SystemUserRecord,
 } from "./auth_middleware";
 import { ConvexErrorCode, log_convex_failure } from "./convex_errors";
@@ -62,9 +61,9 @@ export async function authorize_clear_job_requester(
     state.requester_email,
   );
   if (!requester.success) return requester;
-  const still_permitted = check_permission(
+  const still_permitted = check_entity_permission(
     requester.data.role,
-    get_entity_data_category(state.permission_entity_type),
+    state.permission_entity_type,
     DataAction.DELETE,
   );
   return still_permitted

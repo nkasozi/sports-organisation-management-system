@@ -13,6 +13,10 @@ import type {
   LiveGameDetailDerivedState,
   LiveGameDetailPageState,
 } from "./liveGameDetailPageState";
+import {
+  derive_optional_fixture_match_phase,
+  LIVE_MATCH_PHASE,
+} from "./liveGameMatchPhase";
 
 type LiveGameDetailClockState = Pick<
   LiveGameDetailDerivedState,
@@ -119,7 +123,8 @@ export function derive_live_game_detail_clock_state(
 ): LiveGameDetailClockState {
   const context = build_period_context(page_state);
   const is_in_progress =
-    page_state.fixture?.status === FIXTURE_STATUS.IN_PROGRESS;
+    derive_optional_fixture_match_phase(page_state.fixture) ===
+    LIVE_MATCH_PHASE.IN_PLAY;
   const remaining_seconds_in_period = Math.max(
     0,
     compute_current_period_duration(context) +

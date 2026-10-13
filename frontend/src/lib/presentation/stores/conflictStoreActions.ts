@@ -52,6 +52,7 @@ function build_conflict_record_from_server(
     ),
     local_data: conflict.local_data,
     remote_data: conflict.remote_data,
+    remote_version: conflict.remote_version,
     local_updated_at:
       (conflict.local_data.updated_at as ConflictRecord["local_updated_at"]) ||
       create_conflict_timestamp(),

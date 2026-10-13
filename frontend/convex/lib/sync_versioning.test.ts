@@ -131,7 +131,7 @@ describe("decide_versioned_upsert", () => {
     ).toBe(VersionedUpsertKind.CONFLICT);
   });
 
-  it("keeps the legacy newer-version rule for clients without a base version", () => {
+  it("treats a legacy client version as the base version it edited", () => {
     const legacy_command = {
       existing_record: create_some_option(EXISTING_RECORD),
       remote_deletion: create_none_option<RemoteDeletion>(),
@@ -143,12 +143,18 @@ describe("decide_versioned_upsert", () => {
         ...legacy_command,
         legacy_incoming_version: 7,
       }),
-    ).toEqual({ kind: VersionedUpsertKind.LEGACY_STALE, current_version: 7 });
+    ).toEqual({ kind: VersionedUpsertKind.UPDATE, next_version: 8 });
     expect(
       decide_versioned_upsert({
         ...legacy_command,
         legacy_incoming_version: 8,
       }),
-    ).toEqual({ kind: VersionedUpsertKind.UPDATE, next_version: 8 });
+    ).toEqual({ kind: VersionedUpsertKind.CONFLICT, current_version: 7 });
+    expect(
+      decide_versioned_upsert({
+        ...legacy_command,
+        legacy_incoming_version: 1_000_000_000,
+      }),
+    ).toEqual({ kind: VersionedUpsertKind.CONFLICT, current_version: 7 });
   });
 });

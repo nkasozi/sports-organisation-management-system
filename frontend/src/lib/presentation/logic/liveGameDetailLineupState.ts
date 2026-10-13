@@ -1,9 +1,8 @@
 import type { Competition } from "$lib/core/entities/Competition";
-import type { Fixture } from "$lib/core/entities/Fixture";
+import type { Fixture, GameEvent } from "$lib/core/entities/Fixture";
 import {
   get_default_time_on_for_player,
   type LineupPlayer,
-  type PlayerTimeOnStatus,
 } from "$lib/core/entities/FixtureLineup";
 import type { Official } from "$lib/core/entities/Official";
 import type { Sport } from "$lib/core/entities/Sport";
@@ -11,6 +10,7 @@ import type { Team } from "$lib/core/entities/Team";
 import type { Venue } from "$lib/core/entities/Venue";
 
 import { TEAM_SIDE } from "./gameEventConstants";
+import { derive_on_field_players } from "./liveGameOnFieldPlayers";
 
 export interface LiveGameDetailBundle {
   fixture: Fixture;
@@ -80,10 +80,13 @@ export function build_players_on_field_options(
   team_side: "home" | "away",
   home_players: LineupPlayer[],
   away_players: LineupPlayer[],
+  game_events: GameEvent[],
 ): Array<{ value: string; label: string }> {
-  const players = (
-    team_side === TEAM_SIDE.HOME ? home_players : away_players
-  ).filter((player) => player.time_on !== ("didnt_play" as PlayerTimeOnStatus));
+  const players = derive_on_field_players(
+    team_side === TEAM_SIDE.HOME ? home_players : away_players,
+    game_events,
+    team_side,
+  );
   return players.map((player) => ({
     value: player.id,
     label: `#${player.jersey_number ?? "?"} ${player.first_name} ${player.last_name}`,

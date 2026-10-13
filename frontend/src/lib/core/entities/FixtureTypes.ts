@@ -1,3 +1,5 @@
+import type { FixtureClockStatus } from "$convex/shared_fixture_clock";
+
 import type {
   EntityId,
   GameMinute,
@@ -26,6 +28,10 @@ export interface GameEvent {
   secondary_player_name: Name;
   description: string;
   recorded_at: IsoDateTimeString;
+  points_awarded?: number;
+  period_id?: GamePeriod;
+  player_id?: EntityId;
+  secondary_player_id?: EntityId;
 }
 
 export interface AssignedOfficial {
@@ -56,6 +62,9 @@ export interface Fixture extends BaseEntity {
   game_events: GameEvent[];
   current_period: GamePeriod;
   current_minute: GameMinute;
+  clock_status?: FixtureClockStatus;
+  clock_elapsed_seconds?: number;
+  clock_started_at?: IsoDateTimeString;
   match_day: number;
   notes: string;
   stage_id: EntityId;

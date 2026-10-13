@@ -1,15 +1,15 @@
 import { get } from "svelte/store";
 
 import { goto } from "$app/navigation";
-import { sign_out } from "$lib/adapters/iam/clerkAuthService";
+import { clerk_session, sign_out } from "$lib/adapters/iam/clerkAuthService";
 import { reset_all_data } from "$lib/adapters/initialization/dataResetService";
 import { reset_database } from "$lib/adapters/repositories/database";
 import { get_storage_backup_coordinator } from "$lib/infrastructure/backup/storageBackupRuntime";
 import {
+  flush_pending_changes,
   get_unsynced_local_change_count,
   set_pulling_from_remote,
   start_background_sync,
-  stop_background_sync,
   trigger_full_sync_on_page_reload,
 } from "$lib/infrastructure/sync/backgroundSyncService";
 import {
@@ -18,6 +18,11 @@ import {
   write_convex_user_to_local_dexie,
 } from "$lib/infrastructure/sync/convexSyncService";
 import {
+  start_background_sync_and_resume,
+  stop_background_sync_and_wait_for_idle,
+} from "$lib/infrastructure/sync/syncSessionQuiesce";
+import { build_active_clerk_identity_state } from "$lib/presentation/stores/activeClerkIdentity";
+import {
   auth_store,
   fetch_current_user_profile_from_convex,
 } from "$lib/presentation/stores/auth";
@@ -25,6 +30,7 @@ import { branding_store } from "$lib/presentation/stores/branding";
 import { current_user_store } from "$lib/presentation/stores/currentUser";
 import { initial_sync_store } from "$lib/presentation/stores/initialSyncStore";
 import { public_organization_store } from "$lib/presentation/stores/publicOrganization";
+import { read_session_sync_state_from_storage } from "$lib/presentation/stores/sessionSyncMarker";
 import { session_sync_notice_store } from "$lib/presentation/stores/sessionSyncNotice";
 import { sync_store } from "$lib/presentation/stores/syncStore";
 import { initialize_theme } from "$lib/presentation/stores/theme";
@@ -40,6 +46,7 @@ import {
   handle_returning_anonymous_user_session,
   handle_verified_user_page_reload_session,
 } from "./layoutSessionFlows";
+import { handle_root_layout_session_ended } from "./layoutSessionTransitionRuntime";
 import type { StartupStorageRecoveryFlowDependencies } from "./layoutStartupStorageRecoveryFlow";
 import { sign_out_and_tear_down_device } from "./logoutDeviceTeardownRuntime";
 
@@ -60,8 +67,8 @@ export function create_root_layout_login_sync_dependencies(
     get_initial_sync_state: () => get(initial_sync_store),
     auth_store,
     sync_store,
-    stop_background_sync,
-    start_background_sync,
+    stop_background_sync: stop_background_sync_and_wait_for_idle,
+    start_background_sync: start_background_sync_and_resume,
     reset_database,
     reset_sync_metadata,
     fetch_current_user_profile_from_convex,
@@ -75,6 +82,10 @@ export function create_root_layout_login_sync_dependencies(
     delay,
     get_unsynced_local_change_count,
     confirm_discard_unsynced_local_changes,
+    read_session_sync_state: read_session_sync_state_from_storage,
+    get_active_clerk_identity: () =>
+      build_active_clerk_identity_state(get(clerk_session)),
+    flush_pending_changes,
   });
 }
 
@@ -116,6 +127,7 @@ export function create_root_layout_session_handlers(
         auth_store,
         start_background_sync,
       }),
+    session_ended: handle_root_layout_session_ended,
   };
 }
 

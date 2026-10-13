@@ -5,3 +5,5 @@ export const SCORING_TEAM_SIDE = {
   AWAY: "away",
   MATCH: "match",
 } as const satisfies Record<string, GameEvent["team_side"]>;
+
+export const EXTRA_TIME_PERIOD_NAME = "Extra Time";

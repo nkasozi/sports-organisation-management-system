@@ -1,4 +1,7 @@
+import { get } from "svelte/store";
+
 import type { Organization } from "../../core/entities/Organization";
+import { build_record_owners_for_player } from "../../core/interfaces/ports";
 import type { OrganizationSettingsUseCasesPort } from "../../core/interfaces/ports/internal/usecases/OrganizationSettingsUseCasesPort";
 import type { GameEventLogUseCases } from "../../core/usecases/GameEventLogUseCases";
 import { create_game_event_log_use_cases } from "../../core/usecases/GameEventLogUseCases";
@@ -12,6 +15,10 @@ import type { IdentificationTypeUseCases } from "../../core/usecases/Identificat
 import { create_identification_type_use_cases } from "../../core/usecases/IdentificationTypeUseCases";
 import type { IdentificationUseCases } from "../../core/usecases/IdentificationUseCases";
 import { create_identification_use_cases } from "../../core/usecases/IdentificationUseCases";
+import {
+  type IdentificationActor,
+  IdentificationActorStatus,
+} from "../../core/usecases/IdentificationUseCasesAccess";
 import type { JerseyColorUseCases } from "../../core/usecases/JerseyColorUseCases";
 import { create_jersey_color_use_cases } from "../../core/usecases/JerseyColorUseCases";
 import type { LiveGameLogUseCases } from "../../core/usecases/LiveGameLogUseCases";
@@ -28,9 +35,13 @@ import type { SportUseCases } from "../../core/usecases/SportUseCases";
 import { create_sport_use_cases } from "../../core/usecases/SportUseCases";
 import type { VenueUseCases } from "../../core/usecases/VenueUseCases";
 import { create_venue_use_cases } from "../../core/usecases/VenueUseCases";
+import { auth_store } from "../../presentation/stores/auth";
 import { get_repository_container } from "../container";
 import { find_organization_seed_sport } from "./organizationSeedSport";
-import { REGISTRY_LOG_EVENT } from "./registryConstants";
+import {
+  CURRENT_PROFILE_PRESENT_STATUS,
+  REGISTRY_LOG_EVENT,
+} from "./registryConstants";
 
 export function get_game_event_log_use_cases(): GameEventLogUseCases {
   return create_game_event_log_use_cases(
@@ -60,9 +71,26 @@ export function get_identification_type_use_cases(): IdentificationTypeUseCases 
   );
 }
 
+const NO_LINKED_PLAYER_ID = "";
+
+function read_identification_actor(): IdentificationActor {
+  const current_profile_state = get(auth_store).current_profile;
+  if (current_profile_state.status !== CURRENT_PROFILE_PRESENT_STATUS)
+    return { status: IdentificationActorStatus.ANONYMOUS };
+  const profile = current_profile_state.profile;
+  return {
+    status: IdentificationActorStatus.AVAILABLE,
+    role: profile.role,
+    owners: build_record_owners_for_player(
+      profile.player_id ?? NO_LINKED_PLAYER_ID,
+    ),
+  };
+}
+
 export function get_identification_use_cases(): IdentificationUseCases {
   return create_identification_use_cases(
     get_repository_container().identification_repository,
+    read_identification_actor,
   );
 }
 

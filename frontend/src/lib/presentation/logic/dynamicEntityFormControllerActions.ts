@@ -1,4 +1,3 @@
-import type { PlayerTeamMembershipUseCasesPort } from "$lib/core/interfaces/ports/internal/usecases/PlayerTeamMembershipUseCasesPort";
 import type { EntityCrudHandlers } from "$lib/core/types/EntityHandlers";
 
 import type {
@@ -19,6 +18,7 @@ import {
   type DynamicEntityFormSubmitResult,
   submit_dynamic_entity_form,
 } from "./dynamicEntityFormSubmitFlow";
+import type { TransferResolutionUseCases } from "./dynamicEntityFormTransferResolution";
 import type { DynamicFormData } from "./dynamicFormConstants";
 
 const NO_SAVE_ERROR_MESSAGE = "";
@@ -27,7 +27,7 @@ export type DynamicEntityFormControllerDependencies = {
   entity_type: string;
   crud_handlers?: EntityCrudHandlers;
   is_inline_mode: boolean;
-  player_team_membership_use_cases: PlayerTeamMembershipUseCasesPort;
+  player_team_transfer_use_cases: TransferResolutionUseCases;
   get_entity_metadata: () => EntityMetadata | undefined;
   get_locked_field_names: () => ReadonlySet<string>;
   get_is_edit_mode: () => boolean;
@@ -97,8 +97,7 @@ export async function submit_dynamic_entity_form_controller(
     entity_data: dependencies.get_entity_data(),
     crud_handlers: dependencies.crud_handlers,
     permission_denied: ui_state.permission_denied,
-    player_team_membership_use_cases:
-      dependencies.player_team_membership_use_cases,
+    player_team_transfer_use_cases: dependencies.player_team_transfer_use_cases,
   });
   apply_submit_result(dependencies, submit_result);
 }

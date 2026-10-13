@@ -1,6 +1,8 @@
 <script lang="ts">
     import type { FieldMetadata } from "$lib/core/entities/BaseEntity";
+    import { OptionStatus } from "$lib/core/types/Option";
     import { get_input_type_for_field } from "$lib/presentation/logic/dynamicFormFieldDefaults";
+    import { to_safe_image_source } from "$lib/presentation/logic/safeUrl";
 
     import {
         is_multiline_string_field_name,
@@ -16,6 +18,7 @@
     ) => boolean;
 
     $: string_value = to_form_string_value(value);
+    $: safe_string_image_source = to_safe_image_source(string_value);
     $: is_multiline_field = is_multiline_string_field_name(field.field_name);
     $: is_color_field = field.field_name.toLowerCase().includes("color");
     $: shows_image_preview =
@@ -93,9 +96,9 @@
                     (event.currentTarget as HTMLInputElement).value,
                 )}
         />
-        {#if string_value}
+        {#if safe_string_image_source.status === OptionStatus.SOME}
             <img
-                src={string_value}
+                src={safe_string_image_source.value}
                 alt={field.display_name}
                 class="w-12 h-12 rounded-full object-cover border border-gray-300 dark:border-gray-600 shadow-sm bg-accent-50 dark:bg-accent-900"
                 on:error={hide_broken_image}

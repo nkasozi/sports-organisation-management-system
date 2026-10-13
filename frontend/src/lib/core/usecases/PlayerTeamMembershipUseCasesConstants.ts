@@ -17,6 +17,8 @@ export const PlayerTeamMembershipUseCaseEvent = {
   LIST_BY_PLAYER_FAILED: "player_team_membership_list_by_player_failed",
   BULK_DELETE_IDS_MISSING: "player_team_membership_bulk_delete_ids_missing",
   BULK_DELETE_FAILED: "player_team_membership_bulk_delete_failed",
+  ACTIVE_LOOKUP_FAILED: "player_team_membership_active_lookup_failed",
+  ALREADY_ACTIVE_ELSEWHERE: "player_team_membership_already_active_elsewhere",
 } as const;
 
 export const PlayerTeamMembershipUseCaseMessage = {
@@ -24,4 +26,6 @@ export const PlayerTeamMembershipUseCaseMessage = {
   IDS_REQUIRED: "At least one membership ID is required",
   TEAM_ID_REQUIRED: "Team ID is required",
   PLAYER_ID_REQUIRED: "Player ID is required",
+  ALREADY_ACTIVE_ELSEWHERE:
+    "This player is already active on a team. Record a transfer or end the current membership before adding a new active one.",
 } as const;

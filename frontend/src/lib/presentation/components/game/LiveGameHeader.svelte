@@ -26,6 +26,7 @@
     export let can_modify_game: boolean;
     export let is_game_active: boolean;
     export let is_game_completed: boolean;
+    export let is_awaiting_full_time: boolean;
     export let show_extra_time_button: boolean;
     export let downloading_report: boolean;
     export let period_button_config: Option<PeriodButtonConfig>;
@@ -157,6 +158,9 @@
                                 class="px-3 py-2 rounded-[0.175rem] text-sm font-medium bg-green-600 hover:bg-green-700 text-white"
                                 on:click={on_extra_time}>⏱️ Add Time</button
                             >{/if}<button
+                            class="px-3 py-2 bg-red-600 hover:bg-red-700 rounded-[0.175rem] text-sm font-medium"
+                            on:click={on_end}>🏁 End Game</button
+                        >{:else if is_awaiting_full_time}<button
                             class="px-3 py-2 bg-red-600 hover:bg-red-700 rounded-[0.175rem] text-sm font-medium"
                             on:click={on_end}>🏁 End Game</button
                         >{/if}{/if}{#if is_game_completed}<button

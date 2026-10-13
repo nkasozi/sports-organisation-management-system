@@ -1,12 +1,14 @@
 import type { Fixture } from "$lib/core/entities/Fixture";
 import type { LineupPlayer } from "$lib/core/entities/FixtureLineup";
-import { FIXTURE_STATUS } from "$lib/core/entities/StatusConstants";
 import { type Option, OptionStatus } from "$lib/core/types/Option";
 import {
+  get_effective_periods_for,
+  get_playing_periods,
   type LiveGameDetailBundle,
   normalize_lineup_players,
 } from "$lib/presentation/logic/liveGameDetailState";
 
+import { restore_live_game_clock_seconds } from "./liveGameDetailClockRestore";
 import {
   type LiveGameDetailAssignedOfficial,
   type LiveGameDetailCompetitionContext,
@@ -24,7 +26,6 @@ const FAILED_TO_LOAD_FIXTURE_MESSAGE =
   "We couldn't load this game. Please refresh the page to try again.";
 const LIVE_GAME_DETAIL_FIXTURE_LOAD_FAILED_EVENT =
   "live_game_detail_fixture_load_failed";
-const SECONDS_PER_MINUTE = 60;
 
 type LiveGameDetailBundleSources = {
   fixture: Fixture;
@@ -32,6 +33,7 @@ type LiveGameDetailBundleSources = {
   competition_context: LiveGameDetailCompetitionContext;
   venue: Awaited<ReturnType<typeof load_live_game_detail_venue>>;
   assigned_officials_data: LiveGameDetailAssignedOfficial[];
+  now: Date;
 };
 
 function build_lineup_players(
@@ -56,6 +58,26 @@ function to_bundle_entry<FieldName extends string, EntityType>(
   return { [field_name]: option.value } as Record<FieldName, EntityType>;
 }
 
+function read_option_value<EntityType>(
+  option: Option<EntityType>,
+): EntityType | undefined {
+  return option.status === OptionStatus.SOME ? option.value : void 0;
+}
+
+function restore_bundle_clock_seconds(
+  sources: LiveGameDetailBundleSources,
+): number {
+  const effective_periods = get_effective_periods_for(
+    read_option_value(sources.competition_context.sport),
+    read_option_value(sources.competition_context.competition),
+  );
+  return restore_live_game_clock_seconds({
+    fixture: sources.fixture,
+    playing_periods: get_playing_periods(effective_periods),
+    now: sources.now,
+  });
+}
+
 function build_live_game_detail_bundle(
   sources: LiveGameDetailBundleSources,
 ): LiveGameDetailBundle {
@@ -76,10 +98,7 @@ function build_live_game_detail_bundle(
     away_players: build_lineup_players(away_lineup),
     home_lineup_id: read_lineup_id(home_lineup),
     away_lineup_id: read_lineup_id(away_lineup),
-    game_clock_seconds:
-      fixture.status === FIXTURE_STATUS.IN_PROGRESS
-        ? (fixture.current_minute || 0) * SECONDS_PER_MINUTE
-        : 0,
+    game_clock_seconds: restore_bundle_clock_seconds(sources),
   } as LiveGameDetailBundle;
 }
 
@@ -107,6 +126,7 @@ async function load_live_game_detail_fixture(
 export async function load_live_game_detail_bundle(
   fixture_id: string,
   dependencies: LiveGameDetailDataDependencies,
+  now: Date = new Date(),
 ): Promise<
   | { success: true; data: LiveGameDetailBundle }
   | { success: false; error_message: string }
@@ -137,6 +157,7 @@ export async function load_live_game_detail_bundle(
       competition_context,
       venue,
       assigned_officials_data,
+      now,
     }),
   };
 }

@@ -17,6 +17,7 @@ export {
   ANONYMOUS_IDENTITY,
   authenticated_identity,
   type FakeIdentity,
+  unverified_identity,
 } from "./fake_identity.test_support";
 
 interface ScheduledCall {
@@ -133,7 +134,11 @@ export function create_fake_convex_context(command: {
     auth: {
       getUserIdentity: async (): Promise<unknown> =>
         identity.status === FakeIdentityStatus.AUTHENTICATED
-          ? { subject: identity.subject, email: identity.email }
+          ? {
+              subject: identity.subject,
+              email: identity.email,
+              emailVerified: identity.email_verified,
+            }
           : CONVEX_EMPTY_LOOKUP_RESULT,
     },
     scheduler: {
@@ -171,7 +176,11 @@ export function with_identity(
     auth: {
       getUserIdentity: async (): Promise<unknown> =>
         identity.status === FakeIdentityStatus.AUTHENTICATED
-          ? { subject: identity.subject, email: identity.email }
+          ? {
+              subject: identity.subject,
+              email: identity.email,
+              emailVerified: identity.email_verified,
+            }
           : CONVEX_EMPTY_LOOKUP_RESULT,
     },
   };

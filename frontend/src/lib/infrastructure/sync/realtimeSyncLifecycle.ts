@@ -14,6 +14,7 @@ import {
   type PullTableFunction,
 } from "./convexRealtimeSync";
 import { TABLE_NAMES, type TableName } from "./convexSyncService";
+import { sync_in_flight_work } from "./syncInFlightWork";
 import { pull_table_changes_from_convex } from "./syncPullService";
 
 interface ConvexClientWithQueryMutation {
@@ -39,6 +40,7 @@ const REALTIME_LIFECYCLE_EVENT = {
   START_SKIPPED_ALREADY_RUNNING: "realtime_sync_start_skipped_already_running",
   STARTED: "realtime_sync_started",
   STOPPED: "realtime_sync_stopped",
+  PULL_SKIPPED_PAUSED: "realtime_sync_pull_skipped_paused",
 } as const;
 
 function is_running(state: RealtimeSyncState): boolean {
@@ -50,23 +52,40 @@ function is_running(state: RealtimeSyncState): boolean {
   }
 }
 
+const UNSUCCESSFUL_PULL = { success: false, records_pulled: 0 };
+
+function skip_pull_while_paused(table_name: string): {
+  success: boolean;
+  records_pulled: number;
+} {
+  console.log("[RealtimeSync] Pull skipped while sync is paused", {
+    event: REALTIME_LIFECYCLE_EVENT.PULL_SKIPPED_PAUSED,
+    table_name,
+  });
+  return UNSUCCESSFUL_PULL;
+}
+
 function create_pull_table_adapter(
   convex_client: ConvexClientWithQueryMutation,
 ): PullTableFunction {
   return async (
     table_name: Parameters<PullTableFunction>[0],
-  ): Promise<{ success: boolean; records_pulled: number }> => {
-    const result = await pull_table_changes_from_convex({
-      convex_client,
-      database: get_database(),
-      gate: sync_change_tracking_gate,
-      table_name: table_name as TableName,
-      correlation_id: crypto.randomUUID(),
-    });
-    return result.success
-      ? { success: true, records_pulled: result.data.records_pulled }
-      : { success: false, records_pulled: 0 };
-  };
+  ): Promise<{ success: boolean; records_pulled: number }> =>
+    sync_in_flight_work.run_if_accepting(
+      async () => {
+        const result = await pull_table_changes_from_convex({
+          convex_client,
+          database: get_database(),
+          gate: sync_change_tracking_gate,
+          table_name: table_name as TableName,
+          correlation_id: crypto.randomUUID(),
+        });
+        return result.success
+          ? { success: true, records_pulled: result.data.records_pulled }
+          : UNSUCCESSFUL_PULL;
+      },
+      () => skip_pull_while_paused(table_name),
+    );
 }
 
 let realtime_sync_state: RealtimeSyncState = {

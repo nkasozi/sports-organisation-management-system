@@ -22,6 +22,7 @@ export {
 
 const EMPTY_SCOPE_VALUE = "";
 const ORGANIZATIONS_TABLE_NAME = "organizations";
+const TEAM_FIELD_NAME = "team_id";
 
 function get_record_field_value(
   record: Record<string, unknown>,
@@ -51,6 +52,18 @@ function filter_caller_own_records(
     : [];
 }
 
+function is_within_team_scope(
+  record: Record<string, unknown>,
+  scoped_team_id: string,
+): boolean {
+  const record_team_id = get_record_field_value(record, TEAM_FIELD_NAME);
+  return (
+    !scoped_team_id ||
+    record_team_id === EMPTY_SCOPE_VALUE ||
+    record_team_id === scoped_team_id
+  );
+}
+
 function filter_records_for_organization(
   records: Array<Record<string, unknown>>,
   table_name: string,
@@ -65,10 +78,8 @@ function filter_records_for_organization(
     );
   return records.filter(
     (record) =>
-      is_global_record(record) ||
-      (get_record_field_value(record, "organization_id") === organization_id &&
-        (!scoped_team_id ||
-          get_record_field_value(record, "team_id") === scoped_team_id)),
+      get_record_field_value(record, "organization_id") === organization_id &&
+      is_within_team_scope(record, scoped_team_id),
   );
 }
 

@@ -26,7 +26,6 @@ export const VersionedUpsertKind = {
   UPDATE: "update",
   UNCHANGED: "unchanged",
   CONFLICT: "conflict",
-  LEGACY_STALE: "legacy_stale",
   DELETED_REMOTELY: "deleted_remotely",
 } as const;
 
@@ -35,7 +34,6 @@ export type VersionedUpsertDecision =
   | { kind: typeof VersionedUpsertKind.UPDATE; next_version: number }
   | { kind: typeof VersionedUpsertKind.UNCHANGED; current_version: number }
   | { kind: typeof VersionedUpsertKind.CONFLICT; current_version: number }
-  | { kind: typeof VersionedUpsertKind.LEGACY_STALE; current_version: number }
   | {
       kind: typeof VersionedUpsertKind.DELETED_REMOTELY;
       remote_deletion: RemoteDeletion;
@@ -84,18 +82,6 @@ function decide_absent_record_upsert(
       };
 }
 
-function decide_legacy_upsert(
-  current_version: number,
-  legacy_incoming_version: number,
-): VersionedUpsertDecision {
-  return current_version >= legacy_incoming_version
-    ? { kind: VersionedUpsertKind.LEGACY_STALE, current_version }
-    : {
-        kind: VersionedUpsertKind.UPDATE,
-        next_version: current_version + VERSION_INCREMENT,
-      };
-}
-
 function decide_based_upsert(
   existing_record: Record<string, unknown>,
   base_version: BaseVersion,
@@ -115,6 +101,14 @@ function decide_based_upsert(
     : { kind: VersionedUpsertKind.CONFLICT, current_version };
 }
 
+function resolve_effective_base_version(
+  command: VersionedUpsertCommand,
+): BaseVersion {
+  return command.base_version.status === OptionStatus.SOME
+    ? command.base_version.value
+    : { kind: BaseVersionKind.KNOWN, version: command.legacy_incoming_version };
+}
+
 export function decide_versioned_upsert(
   command: VersionedUpsertCommand,
 ): VersionedUpsertDecision {
@@ -123,14 +117,9 @@ export function decide_versioned_upsert(
       command.remote_deletion,
       command.base_version,
     );
-  if (command.base_version.status === OptionStatus.NONE)
-    return decide_legacy_upsert(
-      read_record_version(command.existing_record.value),
-      command.legacy_incoming_version,
-    );
   return decide_based_upsert(
     command.existing_record.value,
-    command.base_version.value,
+    resolve_effective_base_version(command),
     command.incoming_data,
   );
 }

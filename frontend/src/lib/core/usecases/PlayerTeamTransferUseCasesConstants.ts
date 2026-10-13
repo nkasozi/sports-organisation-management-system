@@ -37,6 +37,9 @@ export const PlayerTeamTransferEvent = {
   MEMBERSHIP_NOT_FOUND: "transfer_membership_not_found",
   MEMBERSHIP_CREATE_FAILED: "transfer_membership_create_failed",
   MEMBERSHIP_CREATED: "transfer_membership_created",
+  MEMBERSHIP_ALREADY_ON_DESTINATION:
+    "transfer_membership_already_on_destination",
+  MEMBERSHIP_FROM_TEAM_MISMATCH: "transfer_membership_from_team_mismatch",
 } as const;
 
 export const PlayerTeamTransferMessage = {
@@ -47,6 +50,8 @@ export const PlayerTeamTransferMessage = {
   PLAYER_ID_REQUIRED: "Player ID is required",
   TEAM_ID_REQUIRED: "Team ID is required",
   BULK_IDS_REQUIRED: "At least one transfer ID is required",
+  FROM_TEAM_MISMATCH:
+    "This player is currently active on a different team than the transfer's 'from' team. Please update the transfer's 'from' team and try again.",
 } as const;
 
 export function build_cannot_confirm_message(

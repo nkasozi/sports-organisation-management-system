@@ -20,6 +20,7 @@ import type { ConflictResolutionRequest, ConvexClient } from "./syncTypes";
 
 const FORCE_RESOLVE_MUTATION_NAME = "sync:force_resolve_conflict";
 const SERVER_ASSIGNED_VERSION_PLACEHOLDER = 0;
+const KNOWN_BASE_VERSION_KIND = "known";
 const RESOLUTION_REJECTED_MESSAGE = "Conflict resolution rejected by server";
 const MISSING_SERVER_VERSION_MESSAGE =
   "Server accepted the resolution but did not return the new record version";
@@ -47,6 +48,10 @@ function build_force_resolve_arguments(
     local_id: request.local_id,
     resolved_data: request.resolved_data,
     new_version: SERVER_ASSIGNED_VERSION_PLACEHOLDER,
+    base_version: {
+      kind: KNOWN_BASE_VERSION_KIND,
+      version: request.base_version,
+    },
     resolution_action: request.resolution_action,
     ...(request.resolved_by ? { resolved_by: request.resolved_by } : {}),
   };

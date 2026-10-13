@@ -1,9 +1,8 @@
 import type { MutationCtx } from "../_generated/server";
 import {
-  check_permission,
+  check_entity_permission_in_any_scope,
   type ConvexResult,
   DataAction,
-  get_entity_data_category,
   require_auth,
   type SystemUserRecord,
 } from "./auth_middleware";
@@ -63,11 +62,10 @@ export async function authorize_batch_caller(
     return auth_result;
   }
   const user_role = auth_result.data.role;
-  const data_category = get_entity_data_category(entity_type);
   const required_actions = list_required_actions(command.operation);
   if (
     required_actions.some((action) =>
-      check_permission(user_role, data_category, action),
+      check_entity_permission_in_any_scope(user_role, entity_type, action),
     )
   )
     return auth_result;

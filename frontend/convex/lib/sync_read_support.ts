@@ -1,8 +1,13 @@
 import type { QueryCtx } from "../_generated/server";
 import type { SystemUserRecord } from "./auth_middleware";
 import { option_from_document, OptionStatus } from "./option";
-import { filter_records_for_caller } from "./scoped_record_reader";
-import { type AllowedSyncTable, is_global_table } from "./sync_validation";
+import {
+  NOT_VISIBLE_ABSENCE,
+  type RecordAbsence,
+  resolve_missing_record_absence,
+} from "./record_absence";
+import { authorize_records_for_reader } from "./sync_read_authorization";
+import type { AllowedSyncTable } from "./sync_validation";
 import { is_string, read_string_or } from "./value_guards";
 
 export const RecordLookupStatus = {
@@ -13,7 +18,7 @@ export const RecordLookupStatus = {
 
 type VisibleRecordLookup =
   | { status: typeof RecordLookupStatus.FOUND; record: Record<string, unknown> }
-  | { status: typeof RecordLookupStatus.NOT_FOUND };
+  | ({ status: typeof RecordLookupStatus.NOT_FOUND } & RecordAbsence);
 
 interface VisibleRecordLookupCommand {
   caller: SystemUserRecord;
@@ -28,8 +33,9 @@ const CHANGE_TIMESTAMP_FIELD_NAMES = [
   "created_at",
 ] as const;
 const MISSING_CHANGE_TIMESTAMP = "";
-const NOT_FOUND_LOOKUP: VisibleRecordLookup = {
+const NOT_VISIBLE_LOOKUP: VisibleRecordLookup = {
   status: RecordLookupStatus.NOT_FOUND,
+  ...NOT_VISIBLE_ABSENCE,
 };
 
 export function read_first_string_field(
@@ -56,8 +62,7 @@ export async function load_records_for_caller(
   const all_records: Array<Record<string, unknown>> = await ctx.db
     .query(table_name)
     .collect();
-  if (is_global_table(table_name)) return all_records;
-  return filter_records_for_caller(ctx, {
+  return authorize_records_for_reader(ctx, {
     records: all_records,
     caller,
     table_name,
@@ -76,16 +81,18 @@ export async function load_visible_record(
       )
       .first(),
   );
-  if (lookup.status === OptionStatus.NONE) return NOT_FOUND_LOOKUP;
+  if (lookup.status === OptionStatus.NONE)
+    return {
+      status: RecordLookupStatus.NOT_FOUND,
+      ...(await resolve_missing_record_absence(ctx, command)),
+    };
   const record = lookup.value;
-  if (is_global_table(command.table_name))
-    return { status: RecordLookupStatus.FOUND, record };
-  const visible_records = await filter_records_for_caller(ctx, {
+  const visible_records = await authorize_records_for_reader(ctx, {
     records: [record],
     caller: command.caller,
     table_name: command.table_name,
   });
   return visible_records.length === 0
-    ? NOT_FOUND_LOOKUP
+    ? NOT_VISIBLE_LOOKUP
     : { status: RecordLookupStatus.FOUND, record: visible_records[0] };
 }

@@ -52,6 +52,7 @@ export interface ConflictRecord {
   entity_display_name: string;
   local_data: Record<string, unknown>;
   remote_data: Record<string, unknown>;
+  remote_version: number;
   local_updated_at: IsoDateTimeString;
   remote_updated_at: IsoDateTimeString;
   remote_updated_by: ConflictFieldValue<EntityId>;

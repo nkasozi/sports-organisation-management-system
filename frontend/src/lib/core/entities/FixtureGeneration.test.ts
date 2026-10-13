@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  count_generated_rounds,
   type FixtureGenerationConfig,
   generate_round_robin_fixtures,
 } from "./FixtureGeneration";
@@ -85,5 +86,60 @@ describe("generate_round_robin_fixtures", () => {
       } as Partial<FixtureGenerationConfig>),
     );
     expect(fixtures[0].venue).toBe("Main Stadium");
+  });
+
+  it("alternates home and away on every leg instead of repeating the return leg", () => {
+    expect(pairings(build_config(["a", "b"], { rounds: 3 }))).toEqual([
+      "1:a-b",
+      "2:b-a",
+      "3:a-b",
+    ]);
+  });
+
+  it("schedules rounds on the chosen match days of the week", () => {
+    const fixtures = generate_round_robin_fixtures(
+      build_config(["a", "b", "c", "d"], {
+        start_date: "2024-01-03",
+        match_days_per_week: [3, 6],
+      }),
+    );
+    expect([
+      ...new Set(fixtures.map((fixture) => fixture.scheduled_date)),
+    ]).toEqual(["2024-01-03", "2024-01-06", "2024-01-10"]);
+  });
+
+  it("moves the first round to the next chosen match day after the start date", () => {
+    const fixtures = generate_round_robin_fixtures(
+      build_config(["a", "b"], {
+        start_date: "2024-01-01",
+        match_days_per_week: [6],
+      }),
+    );
+    expect(fixtures[0].scheduled_date).toBe("2024-01-06");
+  });
+
+  it("keeps weekly dates stable across daylight saving changes", () => {
+    const fixtures = generate_round_robin_fixtures(
+      build_config(["a", "b"], {
+        rounds: 4,
+        start_date: "2024-03-23",
+        match_days_per_week: [],
+      }),
+    );
+    expect(fixtures.map((fixture) => fixture.scheduled_date)).toEqual([
+      "2024-03-23",
+      "2024-03-30",
+      "2024-04-06",
+      "2024-04-13",
+    ]);
+  });
+
+  it("counts every generated round across all legs", () => {
+    expect(
+      count_generated_rounds(build_config(["a", "b", "c", "d"], { rounds: 2 })),
+    ).toBe(6);
+    expect(
+      count_generated_rounds(build_config(["a", "b", "c"], { rounds: 1 })),
+    ).toBe(3);
   });
 });

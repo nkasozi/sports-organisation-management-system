@@ -13,6 +13,8 @@ export const DYNAMIC_ENTITY_FORM_EVENT = {
     "dynamic_entity_form_gender_check_records_unavailable",
   TRANSFER_MEMBERSHIP_UPDATE_FAILED:
     "dynamic_entity_form_transfer_membership_update_failed",
+  TRANSFER_STATUS_CHANGE_BLOCKED:
+    "dynamic_entity_form_transfer_status_change_blocked",
 } as const;
 
 export const DYNAMIC_ENTITY_FORM_MESSAGE = {

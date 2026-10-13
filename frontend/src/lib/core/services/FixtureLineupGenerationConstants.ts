@@ -44,8 +44,3 @@ export const FIXTURE_LINEUP_GENERATION_MESSAGES = {
   first_available_used: (team_name: string, player_count: number): string =>
     `Selected first ${player_count} available players for ${team_name}`,
 } as const;
-
-export const DEFAULT_MIN_PLAYERS = 0;
-export const DEFAULT_MAX_PLAYERS = 99;
-export const DEFAULT_STARTERS_COUNT = 11;
-export const NUMBER_TYPE_NAME = "number";

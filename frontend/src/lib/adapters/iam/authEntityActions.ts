@@ -1,13 +1,11 @@
 import type {
   AuthenticationPort,
-  CategoryPermissions,
   DataAction,
   SystemUserRepository,
   UserRole,
 } from "$lib/core/interfaces/ports";
 import {
-  get_entity_data_category,
-  get_role_permissions,
+  check_entity_permission,
   normalize_to_entity_type,
 } from "$lib/core/interfaces/ports";
 import { OptionStatus } from "$lib/core/types/Option";
@@ -47,25 +45,17 @@ interface EntityActionsQuery {
   selection: ActionSelection;
 }
 
-function select_actions(
-  permissions: CategoryPermissions,
-  selection: ActionSelection,
-): DataAction[] {
-  const wants_permitted = selection === ACTION_SELECTION.ALLOWED;
-  return ALL_DATA_ACTIONS.filter(
-    (action: DataAction) => permissions[action] === wants_permitted,
-  );
-}
-
-function select_actions_for_role(
+export function select_actions_for_role(
   role: UserRole,
   entity_type: string,
   selection: ActionSelection,
 ): DataAction[] {
-  const category = get_entity_data_category(
-    normalize_to_entity_type(entity_type),
+  const normalized = normalize_to_entity_type(entity_type);
+  const wants_permitted = selection === ACTION_SELECTION.ALLOWED;
+  return ALL_DATA_ACTIONS.filter(
+    (action: DataAction) =>
+      check_entity_permission(role, normalized, action) === wants_permitted,
   );
-  return select_actions(get_role_permissions(role)[category], selection);
 }
 
 function select_actions_for_unauthenticated(

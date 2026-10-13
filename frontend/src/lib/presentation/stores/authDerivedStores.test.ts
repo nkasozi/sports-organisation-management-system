@@ -12,6 +12,7 @@ import {
   current_profile_team_id,
   current_user_role,
   current_user_role_display,
+  has_verified_account_session,
   is_auth_initialized,
   is_public_viewer,
   other_available_profiles,
@@ -27,6 +28,7 @@ import {
   create_missing_auth_profile_state,
   create_missing_auth_token_state,
   create_present_auth_profile_state,
+  create_present_auth_token_state,
 } from "./authTypes";
 
 vi.mock("$lib/core/interfaces/ports", async () => ({
@@ -143,5 +145,29 @@ describe("authDerivedStores", () => {
     expect(get(current_profile_email)).toBe("");
     expect(get(current_profile_initials)).toBe("?");
     expect(get(is_public_viewer)).toBe(false);
+  });
+
+  it("reports a verified account session only for a real signed-in user, even offline", () => {
+    const verified_state = {
+      current_token: create_present_auth_token_state({
+        raw_token: "a.b.c",
+      } as never),
+      current_profile: create_present_auth_profile_state(create_profile()),
+      available_profiles: [create_profile()],
+      sidebar_menu_items: [],
+      is_initialized: true,
+      is_demo_session: false,
+    };
+    auth_store_mock.set_state(verified_state);
+    expect(get(has_verified_account_session)).toBe(true);
+
+    auth_store_mock.set_state({ ...verified_state, is_demo_session: true });
+    expect(get(has_verified_account_session)).toBe(false);
+
+    auth_store_mock.set_state({
+      ...verified_state,
+      current_token: create_missing_auth_token_state(),
+    });
+    expect(get(has_verified_account_session)).toBe(false);
   });
 });

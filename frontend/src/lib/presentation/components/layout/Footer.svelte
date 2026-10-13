@@ -1,5 +1,7 @@
 <script lang="ts">
+    import { OptionStatus } from "$lib/core/types/Option";
     import { HEADER_FOOTER_STYLE } from "$lib/presentation/components/theme/themeConstants";
+    import { to_safe_css_url } from "$lib/presentation/logic/safeUrl";
     import { sidebar_menu_items } from "$lib/presentation/stores/authDerivedStores";
     import { branding_store } from "$lib/presentation/stores/branding";
 
@@ -24,15 +26,19 @@
         !!$branding_store.organization_logo_url &&
         $branding_store.organization_logo_url.length > 0;
     $: quick_links = create_footer_links_from_sidebar_menu($sidebar_menu_items);
+
+    $: safe_background_pattern = to_safe_css_url(
+        $branding_store.background_pattern_url,
+    );
 </script>
 
 <footer
     class="border-t border-theme-primary-600 dark:border-theme-primary-700 mt-auto relative overflow-hidden"
 >
-    {#if $branding_store.footer_pattern === HEADER_FOOTER_STYLE.PATTERN && $branding_store.background_pattern_url}
+    {#if $branding_store.footer_pattern === HEADER_FOOTER_STYLE.PATTERN && safe_background_pattern.status === OptionStatus.SOME}
         <div
             class="absolute inset-0"
-            style="background-image: url('{$branding_store.background_pattern_url}'); background-size: 200px; background-repeat: repeat;"
+            style="background-image: {safe_background_pattern.value}; background-size: 200px; background-repeat: repeat;"
         ></div>
         <div class="absolute inset-0 bg-gray-900/30 dark:bg-gray-900/45"></div>
     {:else}

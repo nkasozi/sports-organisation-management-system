@@ -27,6 +27,9 @@ export function create_layout_login_sync_dependencies(command: {
   delay: LayoutLoginSyncDependencies["delay"];
   get_unsynced_local_change_count: LayoutLoginSyncDependencies["get_unsynced_local_change_count"];
   confirm_discard_unsynced_local_changes: LayoutLoginSyncDependencies["confirm_discard_unsynced_local_changes"];
+  read_session_sync_state: LayoutLoginSyncDependencies["read_session_sync_state"];
+  get_active_clerk_identity: LayoutLoginSyncDependencies["get_active_clerk_identity"];
+  flush_pending_changes: LayoutLoginSyncDependencies["flush_pending_changes"];
 }): LayoutLoginSyncDependencies {
   return {
     ...command,

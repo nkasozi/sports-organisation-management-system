@@ -89,6 +89,28 @@ describe("liveGameDetailPagePeriodActions", () => {
     });
   });
 
+  it("does not restart the clock after the final playing period ends", async () => {
+    end_game_period_mock.mockResolvedValue({
+      success: true,
+      data: {
+        fixture: { id: "fixture-1", current_period: "finished" },
+        completed_period_label: "Second Half",
+      },
+    });
+
+    const result = await confirm_live_game_period_action({
+      effective_periods,
+      elapsed_minutes: 90,
+      fixture: { id: "fixture-1", current_period: "second_half" },
+      fixture_use_cases: {},
+      game_clock_seconds: 5400,
+      period_button_config: { is_end_action: true, next_period: "finished" },
+      playing_periods: [effective_periods[0], effective_periods[2]],
+    } as never);
+
+    expect(result).toMatchObject({ success: true, should_start_clock: false });
+  });
+
   it("starts the next playing period and advances the game clock to its start", async () => {
     change_game_period_mock.mockResolvedValue({
       success: true,

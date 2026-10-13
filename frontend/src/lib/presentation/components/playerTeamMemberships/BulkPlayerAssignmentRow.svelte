@@ -1,14 +1,25 @@
 <script lang="ts">
     import {
+        DEFAULT_PLAYER_AVATAR,
         get_player_avatar,
         get_player_full_name,
     } from "$lib/core/entities/Player";
+    import { OptionStatus } from "$lib/core/types/Option";
     import type { PlayerAssignment } from "$lib/presentation/logic/bulkPlayerAssignmentPageState";
+    import { to_safe_image_source } from "$lib/presentation/logic/safeUrl";
 
     export let assignment: PlayerAssignment;
     export let status_text: string;
     export let status_class: string;
     export let on_toggle_selection: (assignment: PlayerAssignment) => void;
+
+    $: safe_avatar_source = to_safe_image_source(
+        get_player_avatar(assignment.player),
+    );
+    $: player_avatar_source =
+        safe_avatar_source.status === OptionStatus.SOME
+            ? safe_avatar_source.value
+            : DEFAULT_PLAYER_AVATAR;
 </script>
 
 <div
@@ -21,7 +32,7 @@
         class="w-5 h-5 text-primary-600 rounded border-accent-300"
     />
     <img
-        src={get_player_avatar(assignment.player)}
+        src={player_avatar_source}
         alt={get_player_full_name(assignment.player)}
         class="w-10 h-10 rounded-full object-cover border-2 border-accent-200 dark:border-accent-600"
     />

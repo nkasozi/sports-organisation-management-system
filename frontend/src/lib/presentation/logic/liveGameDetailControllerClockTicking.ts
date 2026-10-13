@@ -13,7 +13,16 @@ import {
   type GameClockIntervalState,
   is_game_clock_interval_running,
 } from "./gameClockIntervalState";
+import {
+  CLOCK_CHECKPOINT_OUTCOME,
+  type ClockCheckpointOutcome,
+  persist_live_game_clock_checkpoint,
+} from "./liveGameDetailClockCheckpoint";
 import { update_live_game_detail_state } from "./liveGameDetailControllerUtils";
+import {
+  derive_optional_fixture_match_phase,
+  LIVE_MATCH_PHASE,
+} from "./liveGameMatchPhase";
 
 export type LiveGameDetailClockCommand = {
   data_dependencies: LiveGameDetailDataDependencies;
@@ -30,16 +39,19 @@ export type LiveGameDetailClockIntervalState = GameClockIntervalState;
 export type LiveGameDetailClockContext = {
   command: LiveGameDetailClockCommand;
   interval_holder: { state: LiveGameDetailClockIntervalState };
+  now: () => Date;
 };
 
 const CLOCK_TICK_INTERVAL_MILLISECONDS = 1000;
 
 export function create_live_game_detail_clock_context(
   command: LiveGameDetailClockCommand,
+  now: () => Date,
 ): LiveGameDetailClockContext {
   return {
     command,
     interval_holder: { state: create_stopped_game_clock_interval_state() },
+    now,
   };
 }
 
@@ -70,6 +82,8 @@ function is_clock_start_blocked(context: LiveGameDetailClockContext): boolean {
   const page_state = context.command.get_page_state();
   return (
     is_game_clock_interval_running(context.interval_holder.state) ||
+    derive_optional_fixture_match_phase(page_state.fixture) ===
+      LIVE_MATCH_PHASE.AWAITING_FULL_TIME ||
     (page_state.fixture?.status === FIXTURE_STATUS.COMPLETED &&
       page_state.extra_time_added_seconds <= 0)
   );
@@ -114,11 +128,44 @@ export function start_live_game_detail_clock(
   };
 }
 
+function apply_clock_checkpoint(
+  context: LiveGameDetailClockContext,
+  outcome: ClockCheckpointOutcome,
+): boolean {
+  if (outcome.status !== CLOCK_CHECKPOINT_OUTCOME.SAVED) return false;
+  update_live_game_detail_clock_page_state(context, (page_state) =>
+    page_state.fixture
+      ? {
+          ...page_state,
+          fixture: {
+            ...page_state.fixture,
+            current_minute: outcome.current_minute,
+          },
+        }
+      : page_state,
+  );
+  return true;
+}
+
+async function checkpoint_paused_clock(
+  context: LiveGameDetailClockContext,
+): Promise<boolean> {
+  const page_state = context.command.get_page_state();
+  if (!page_state.fixture) return false;
+  const outcome = await persist_live_game_clock_checkpoint({
+    fixture_use_cases: context.command.data_dependencies.fixture_use_cases,
+    fixture: page_state.fixture,
+    game_clock_seconds: page_state.game_clock_seconds,
+  });
+  return apply_clock_checkpoint(context, outcome);
+}
+
 export function toggle_live_game_detail_clock(
   context: LiveGameDetailClockContext,
 ): void {
   if (context.command.get_page_state().is_clock_running) {
     stop_live_game_detail_clock(context);
+    void checkpoint_paused_clock(context);
     return;
   }
   start_live_game_detail_clock(context);

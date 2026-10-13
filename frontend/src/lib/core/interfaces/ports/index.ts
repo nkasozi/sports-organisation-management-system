@@ -23,8 +23,10 @@ export type {
   DataCategory,
   EntityAuthorizationMap,
   EntityAuthorizationResult,
+  EntityPermissionScope,
   FeatureAccess,
   ProfilePermissions,
+  RecordOwners,
   RouteAccessDenied,
   RouteAccessGranted,
   SidebarMenuGroup,
@@ -32,17 +34,22 @@ export type {
 } from "./external/iam/AuthorizationPort";
 export {
   build_authorization_list_filter,
+  build_record_owners_for_player,
   check_data_permission,
   check_entity_permission,
+  check_entity_permission_in_any_scope,
+  ENTITY_PERMISSION_SCOPE,
   get_authorization_preselect_values,
   get_authorization_restricted_fields,
   get_entity_data_category,
   get_entity_level_disabled_operations,
   get_role_permissions,
   get_scope_value,
+  is_entity_action_permitted_for_record,
   is_field_restricted_by_authorization,
   is_scope_restricted,
   normalize_to_entity_type,
+  resolve_entity_permission_scope,
 } from "./external/iam/AuthorizationPort";
 export type {
   ActivityCategoryFilter,

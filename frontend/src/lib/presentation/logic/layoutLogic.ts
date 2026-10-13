@@ -1,7 +1,6 @@
 import { WILDCARD_SCOPE } from "../../core/entities/StatusConstants";
 import {
   APP_ROUTE_PATH,
-  IN_APP_NAVIGATION_TYPES,
   ROUTE_GUARD_EXEMPT_EXACT_PATHS,
 } from "./layoutRouteConstants";
 
@@ -57,10 +56,6 @@ export function determine_session_action(
   if (!user_is_signed_in && !session_already_synced)
     return SESSION_ACTION.FIRST_TIME_ANONYMOUS;
   return SESSION_ACTION.RETURNING_ANONYMOUS;
-}
-
-export function is_in_app_navigation(navigation_type: string): boolean {
-  return IN_APP_NAVIGATION_TYPES.has(navigation_type);
 }
 
 const SYNC_PROGRESS_BASE_PERCENT = 20;

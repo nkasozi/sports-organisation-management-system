@@ -26,6 +26,7 @@ function create_request(
     local_id: "team-1" as ConflictResolutionRequest["local_id"],
     resolved_data: { name: "Updated Team" },
     resolution_action: "keep_local",
+    base_version: 5,
     ...overrides,
   };
 }
@@ -52,6 +53,20 @@ describe("syncConflictResolution", () => {
     expect(mock_convex_client.mutation).toHaveBeenCalledWith(
       "sync:force_resolve_conflict",
       expect.not.objectContaining({ resolved_by: void 0 }),
+    );
+  });
+
+  it("resolves against the server version the conflict was detected at", async () => {
+    (mock_convex_client.mutation as ReturnType<typeof vi.fn>).mockResolvedValue(
+      { success: true, server_version: 6 },
+    );
+
+    const result = await resolve_conflict(mock_convex_client, create_request());
+
+    expect(result.success).toBe(true);
+    expect(mock_convex_client.mutation).toHaveBeenCalledWith(
+      "sync:force_resolve_conflict",
+      expect.objectContaining({ base_version: { kind: "known", version: 5 } }),
     );
   });
 

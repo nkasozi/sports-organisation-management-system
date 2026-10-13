@@ -56,7 +56,7 @@ describe("FixtureUseCases", () => {
         data: create_test_fixture({ status: "in_progress" }),
       });
 
-      const result = await use_cases.start_fixture("fixture-123");
+      const result = await use_cases.start_fixture("fixture-123", "first_half");
 
       expect(result.success).toBe(true);
       expect(mock_repository.update).toHaveBeenCalledWith(
@@ -69,7 +69,7 @@ describe("FixtureUseCases", () => {
     });
 
     it("should fail for empty id", async () => {
-      const result = await use_cases.start_fixture("");
+      const result = await use_cases.start_fixture("", "first_half");
 
       expect(result.success).toBe(false);
     });

@@ -1,10 +1,14 @@
 <script lang="ts">
+    import { OptionStatus } from "$lib/core/types/Option";
     import { split_organization_name } from "$lib/presentation/logic/dashboardPageDisplayLogic";
+    import { to_safe_image_source } from "$lib/presentation/logic/safeUrl";
 
     export let sidebar_open: boolean = false;
     export let has_custom_logo: boolean = false;
     export let organization_logo_url: string = "";
     export let organization_name: string = "";
+
+    $: safe_logo_source = to_safe_image_source(organization_logo_url);
     export let on_close_sidebar: () => void;
 </script>
 
@@ -20,9 +24,9 @@
                     ? ''
                     : 'bg-theme-secondary-600'}"
             >
-                {#if has_custom_logo}
+                {#if has_custom_logo && safe_logo_source.status === OptionStatus.SOME}
                     <img
-                        src={organization_logo_url}
+                        src={safe_logo_source.value}
                         alt="Organization Logo"
                         class="h-full w-full object-contain"
                     />

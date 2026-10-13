@@ -19,8 +19,9 @@ interface EndGamePeriodResult {
 export async function start_game_session(
   fixture_id: string,
   fixture_use_cases: Pick<FixtureUseCasesPort, "start_fixture">,
+  first_period: GamePeriod,
 ): Promise<Result<Fixture>> {
-  return fixture_use_cases.start_fixture(fixture_id);
+  return fixture_use_cases.start_fixture(fixture_id, first_period);
 }
 
 export async function end_game_session(

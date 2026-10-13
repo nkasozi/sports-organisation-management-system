@@ -30,6 +30,7 @@ export interface LineupPlayer {
   is_captain: boolean;
   is_substitute: boolean;
   time_on?: PlayerTimeOnStatus;
+  time_off?: string;
 }
 
 export interface FixtureLineup extends BaseEntity {

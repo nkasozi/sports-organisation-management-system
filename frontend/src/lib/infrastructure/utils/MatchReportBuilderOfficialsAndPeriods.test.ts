@@ -81,9 +81,24 @@ describe("build_match_report_data", () => {
   it("score_by_period follows the periods the sport defines", () => {
     const ctx = make_basic_context({
       periods: [
-        { name: "1st Quarter", duration_minutes: 15, is_break: false },
-        { name: "2nd Quarter", duration_minutes: 15, is_break: false },
-        { name: "3rd Quarter", duration_minutes: 15, is_break: false },
+        {
+          id: "q1",
+          name: "1st Quarter",
+          duration_minutes: 15,
+          is_break: false,
+        },
+        {
+          id: "q2",
+          name: "2nd Quarter",
+          duration_minutes: 15,
+          is_break: false,
+        },
+        {
+          id: "q3",
+          name: "3rd Quarter",
+          duration_minutes: 15,
+          is_break: false,
+        },
       ],
     });
     const report = build_match_report_data(ctx);
@@ -93,7 +108,7 @@ describe("build_match_report_data", () => {
     ]);
   });
 
-  it("score_by_period adds the end of regulation when extra time goals exist", () => {
+  it("score_by_period adds the end of regulation and an extra time row when extra time goals exist", () => {
     const fixture = make_fixture({
       game_events: [
         make_game_event({
@@ -107,6 +122,10 @@ describe("build_match_report_data", () => {
     const ctx = make_basic_context({ fixture });
     const report = build_match_report_data(ctx);
     const period_names = report.score_by_period.map((p) => p.period_name);
-    expect(period_names).toEqual(["Second Half", "First Half"]);
+    expect(period_names).toEqual(["Extra Time", "Second Half", "First Half"]);
+    expect(report.score_by_period[0]).toMatchObject({
+      home_score: 1,
+      away_score: 0,
+    });
   });
 });

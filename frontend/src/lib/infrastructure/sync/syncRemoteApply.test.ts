@@ -83,7 +83,18 @@ describe("apply_remote_change_page", () => {
     expect(summary).toEqual({ applied_count: 2, deferred_local_ids: [] });
     expect(fake.rows("teams")).toEqual([{ id: "team_a", name: "Lions" }]);
     expect(fake.rows("sync_record_versions")).toEqual([
-      { table_name: "teams", local_id: "team_a", server_version: 2 },
+      {
+        table_name: "teams",
+        local_id: "team_a",
+        server_version: 2,
+        record_state: "live",
+      },
+      {
+        table_name: "teams",
+        local_id: "team_gone",
+        server_version: 3,
+        record_state: "deleted",
+      },
     ]);
     expect(fake.rows("sync_cursors")).toEqual([
       { table_name: "teams", after_sequence: 12 },

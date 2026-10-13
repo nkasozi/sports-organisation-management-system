@@ -81,7 +81,7 @@ describe("liveGameDetailPageSessionActions failures", () => {
     });
   });
 
-  it("keeps the started fixture and logs when the first period update fails", async () => {
+  it("starts in the default first half when the sport has no playing periods", async () => {
     ensure_live_game_lineups_before_start_mock.mockResolvedValue({
       success: true,
       reloaded_required: false,
@@ -90,23 +90,18 @@ describe("liveGameDetailPageSessionActions failures", () => {
       success: true,
       data: { id: "fixture-1", status: "in_progress" },
     });
-    const update_period = vi
-      .fn()
-      .mockResolvedValue({ success: false, error: "update failed" });
 
     const result = await start_live_game_detail_action({
       fixture: { id: "fixture-1" },
-      fixture_use_cases: { update_period },
-      playing_periods: [{ id: "first_quarter" }],
+      fixture_use_cases: {},
+      playing_periods: [],
     } as never);
 
-    expect(result).toMatchObject({
-      success: true,
-      fixture: { id: "fixture-1", status: "in_progress" },
-    });
-    expect(console.error).toHaveBeenCalledWith(
-      "[LiveGameDetail] First period update failed",
-      expect.objectContaining({ event: "game_first_period_update_failed" }),
+    expect(result.success).toBe(true);
+    expect(start_game_session_mock).toHaveBeenCalledWith(
+      "fixture-1",
+      expect.anything(),
+      "first_half",
     );
   });
 });

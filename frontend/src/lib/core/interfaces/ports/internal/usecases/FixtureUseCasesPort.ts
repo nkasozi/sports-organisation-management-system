@@ -6,6 +6,7 @@ import type {
   GamePeriod,
   UpdateFixtureInput,
 } from "../../../../entities/Fixture";
+import type { FixtureClockState } from "../../../../entities/FixtureClock";
 import type { ScoreAward } from "../../../../entities/SportEventCatalogConstants";
 import type { ScalarValueInput } from "../../../../types/DomainScalars";
 import type {
@@ -47,7 +48,10 @@ export interface FixtureUseCasesPort extends BaseUseCasesPort<
     home_score: number,
     away_score: number,
   ): AsyncResult<Fixture>;
-  start_fixture(id: ScalarValueInput<Fixture["id"]>): AsyncResult<Fixture>;
+  start_fixture(
+    id: ScalarValueInput<Fixture["id"]>,
+    first_period: GamePeriod,
+  ): AsyncResult<Fixture>;
   record_game_event(
     id: ScalarValueInput<Fixture["id"]>,
     event: GameEvent,
@@ -59,4 +63,8 @@ export interface FixtureUseCasesPort extends BaseUseCasesPort<
     minute: ScalarValueInput<Fixture["current_minute"]>,
   ): AsyncResult<Fixture>;
   end_fixture(id: ScalarValueInput<Fixture["id"]>): AsyncResult<Fixture>;
+  save_clock_state(
+    id: ScalarValueInput<Fixture["id"]>,
+    clock_state: FixtureClockState,
+  ): AsyncResult<Fixture>;
 }

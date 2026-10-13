@@ -8,6 +8,10 @@ import {
   settle_upsert_result,
 } from "./syncPushOutcomes";
 import type { LoadedOutboxRecord } from "./syncPushRecordLoading";
+import {
+  request_table_repull,
+  skipped_upsert_hides_server_changes,
+} from "./syncPushSkippedUpserts";
 import type {
   DeletedRemotelyRecord,
   PushTableOutboxCommand,
@@ -105,6 +109,11 @@ export async function settle_upsert_batch_response(
     const loaded = loaded_by_id.get(result.local_id);
     if (!loaded) continue;
     const outcome = await settle_upsert_result(command, loaded.entry, result);
+    if (
+      outcome === PushOutcomeKind.CONFIRMED &&
+      skipped_upsert_hides_server_changes(loaded.entry, result)
+    )
+      await request_table_repull(command, loaded.entry);
     if (outcome === PushOutcomeKind.DELETED_REMOTELY)
       log_deleted_remotely(command, loaded.entry);
     next_summary = add_upsert_outcome(

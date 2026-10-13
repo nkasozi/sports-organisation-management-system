@@ -80,4 +80,17 @@ describe("try_restore_signed_in_session logging", () => {
     );
     expect(JSON.stringify(log_spy.mock.calls)).not.toContain("Jane Doe");
   });
+
+  it("refuses to restore the saved token when the Clerk user has no email address", async () => {
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    const restored = await try_restore_signed_in_session(
+      [TOKEN_OWNER],
+      "a.b.c",
+      { status: "missing" },
+    );
+
+    expect(restored).toEqual({ status: "not_restored" });
+    expect(restore_mocks.clear_auth_storage).toHaveBeenCalledTimes(1);
+  });
 });

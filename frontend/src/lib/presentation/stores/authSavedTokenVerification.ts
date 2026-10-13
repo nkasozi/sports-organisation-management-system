@@ -8,7 +8,7 @@ import {
   SAVED_TOKEN_VERIFICATION_STATUS,
 } from "./authStoreConstants";
 
-type SavedTokenVerificationState =
+export type SavedTokenVerificationState =
   | {
       status: typeof SAVED_TOKEN_VERIFICATION_STATUS.VERIFIED;
       payload: AuthToken["payload"];

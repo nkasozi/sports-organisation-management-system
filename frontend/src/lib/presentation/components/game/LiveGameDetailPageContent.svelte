@@ -33,6 +33,7 @@
     export let can_modify_game: boolean;
     export let is_game_active: boolean;
     export let is_game_completed: boolean;
+    export let is_awaiting_full_time: boolean;
     export let show_extra_time_button: boolean;
     export let downloading_report: boolean;
     export let period_button_config: Option<PeriodButtonConfig>;
@@ -135,6 +136,7 @@
                 {can_modify_game}
                 {is_game_active}
                 {is_game_completed}
+                {is_awaiting_full_time}
                 {show_extra_time_button}
                 {downloading_report}
                 {period_button_config}

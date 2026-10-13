@@ -8,7 +8,7 @@ import {
 } from "./convexSyncService";
 import {
   apply_remote_snapshot_records,
-  SnapshotCursorPolicy,
+  SnapshotRecordScope,
 } from "./syncRemoteApplyRecords";
 
 type DataSource = "convex" | "local" | "none";
@@ -52,7 +52,7 @@ async function fetch_and_store_single_table(
     { database, gate: sync_change_tracking_gate },
     table_name,
     remote_records,
-    SnapshotCursorPolicy.ADVANCE_TO_SNAPSHOT,
+    SnapshotRecordScope.PUBLIC_PROJECTION,
   );
 
   return remote_records.length;

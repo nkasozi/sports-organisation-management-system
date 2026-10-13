@@ -57,7 +57,6 @@ export interface BatchRecordCommand {
   table_name: AllowedSyncTable;
   caller: SystemUserRecord;
   record: BatchRecordInput;
-  detect_conflicts: boolean;
 }
 
 export const BatchFollowUpKind = {

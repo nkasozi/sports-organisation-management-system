@@ -94,10 +94,30 @@ describe("FixtureUseCases", () => {
         default_time: "15:00",
         venue_rotation: "home_away",
         rounds: 1,
-        stage_id_per_round: { 1: "stage-1" },
+        stage_id_per_round: { 1: "stage-1", 2: "stage-1", 3: "stage-1" },
       });
 
       expect(result.success).toBe(true);
+    });
+
+    it("should fail when later rounds have no stage mapping", async () => {
+      const result = await use_cases.generate_fixtures({
+        organization_id: "org-123",
+        competition_id: "comp-123",
+        team_ids: ["team-1", "team-2", "team-3", "team-4"],
+        start_date: "2024-06-01",
+        match_days_per_week: [6],
+        default_time: "15:00",
+        venue_rotation: "home_away",
+        rounds: 1,
+        stage_id_per_round: { 1: "stage-1" },
+      });
+
+      expect(result).toEqual({
+        success: false,
+        error: expect.stringContaining("2, 3"),
+      });
+      expect(mock_repository.create_many).not.toHaveBeenCalled();
     });
 
     it("should fail for missing competition_id", async () => {

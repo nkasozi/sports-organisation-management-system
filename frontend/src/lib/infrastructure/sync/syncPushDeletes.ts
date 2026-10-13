@@ -1,10 +1,18 @@
 import type { SyncOutboxEntry } from "$lib/adapters/repositories/syncOutbox/syncOutboxTypes";
-import { create_none_option, create_some_option } from "$lib/core/types/Option";
+import {
+  create_none_option,
+  create_some_option,
+  type Option,
+} from "$lib/core/types/Option";
 import {
   type AsyncResult,
   create_success_result,
 } from "$lib/core/types/Result";
 
+import {
+  is_delete_conflict_without_known_base,
+  park_delete_for_review,
+} from "./syncPushDeleteReview";
 import {
   build_rejected_record,
   PushOutcomeKind,
@@ -60,6 +68,37 @@ function add_delete_outcome(
   };
 }
 
+async function settle_one_delete(
+  command: PushTableOutboxCommand,
+  entry: SyncOutboxEntry,
+  result: ServerRecordResult,
+  remote_copy: Option<Record<string, unknown>>,
+): AsyncResult<PushTableOutboxSummary> {
+  const summary = create_empty_push_summary();
+  if (is_delete_conflict_without_known_base(entry, result))
+    return create_success_result({
+      ...summary,
+      rejected: [await park_delete_for_review(command, entry, result)],
+    });
+  const outcome = await settle_delete_result(
+    command,
+    entry,
+    result,
+    remote_copy,
+  );
+  if (!outcome.success) return log_delete_failure(command, entry, outcome);
+  if (outcome.data === PushOutcomeKind.SUPERSEDED_BY_REMOTE)
+    console.warn("[Sync:Push] Local delete lost to a newer remote update", {
+      event: "sync_delete_superseded_by_remote_update",
+      correlation_id: command.correlation_id,
+      table_name: command.table_name,
+      local_id: entry.local_id,
+    });
+  return create_success_result(
+    add_delete_outcome(summary, entry, result, outcome.data),
+  );
+}
+
 async function settle_delete_batch(
   command: PushTableOutboxCommand,
   chunk: SyncOutboxEntry[],
@@ -77,21 +116,14 @@ async function settle_delete_batch(
     const entry = entries_by_id.get(result.local_id);
     if (!entry) continue;
     const remote_copy = remote_copies.get(result.local_id);
-    const outcome = await settle_delete_result(
+    const settled = await settle_one_delete(
       command,
       entry,
       result,
       remote_copy ? create_some_option(remote_copy) : create_none_option(),
     );
-    if (!outcome.success) return log_delete_failure(command, entry, outcome);
-    if (outcome.data === PushOutcomeKind.SUPERSEDED_BY_REMOTE)
-      console.warn("[Sync:Push] Local delete lost to a newer remote update", {
-        event: "sync_delete_superseded_by_remote_update",
-        correlation_id: command.correlation_id,
-        table_name: command.table_name,
-        local_id: entry.local_id,
-      });
-    summary = add_delete_outcome(summary, entry, result, outcome.data);
+    if (!settled.success) return settled;
+    summary = merge_push_summaries(summary, settled.data);
   }
   return create_success_result(summary);
 }

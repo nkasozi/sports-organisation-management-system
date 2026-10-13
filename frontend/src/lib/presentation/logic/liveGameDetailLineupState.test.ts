@@ -60,13 +60,34 @@ describe("liveGameDetailLineupState", () => {
         "home",
         normalize_lineup_players(lineup_players),
         [] as never,
+        [],
       ),
     ).toEqual([{ value: "player-1", label: "#9 Ada Stone" }]);
   });
 
   it("treats players with omitted time-on values as on-field options", () => {
     expect(
-      build_players_on_field_options("home", lineup_players, [] as never),
+      build_players_on_field_options("home", lineup_players, [] as never, []),
     ).toEqual([{ value: "player-1", label: "#9 Ada Stone" }]);
+  });
+
+  it("offers only players still on the field after substitutions and red cards", () => {
+    expect(
+      build_players_on_field_options(
+        "home",
+        lineup_players,
+        [] as never,
+        [
+          {
+            event_type: "substitution",
+            minute: 50,
+            team_side: "home",
+            player_name: "Ben Flint",
+            secondary_player_name: "Ada Stone",
+            recorded_at: "2024-01-01T00:50:00.000Z",
+          },
+        ] as never,
+      ),
+    ).toEqual([{ value: "player-2", label: "#14 Ben Flint" }]);
   });
 });

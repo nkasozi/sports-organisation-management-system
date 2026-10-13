@@ -56,6 +56,7 @@ export function create_mock_conflict(
     entity_display_name: "Test Team",
     local_data: { name: "Local Team Name", city: "Kampala" },
     remote_data: { name: "Remote Team Name", city: "Kampala" },
+    remote_version: 2,
     local_updated_at: create_timestamp("2024-01-01T10:00:00.000Z"),
     remote_updated_at: create_timestamp("2024-01-01T12:00:00.000Z"),
     remote_updated_by: create_known_conflict_field_value(

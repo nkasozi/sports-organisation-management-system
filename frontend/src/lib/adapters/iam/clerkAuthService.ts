@@ -23,6 +23,7 @@ import {
 } from "./clerkAuthTypes";
 import {
   type ClerkLoadOutcome,
+  log_initialization_skipped,
   wait_for_loaded_clerk,
 } from "./clerkInstanceLoader";
 import {
@@ -33,6 +34,11 @@ import {
   INITIAL_CLERK_LIFECYCLE_STATE,
   transition_clerk_lifecycle,
 } from "./clerkLifecycleState";
+import {
+  type ClerkReachability,
+  read_browser_network_online,
+  resolve_clerk_reachability,
+} from "./clerkReachability";
 import { build_clerk_session_state } from "./clerkSessionStateBuilders";
 import { request_clerk_session_token } from "./clerkSessionToken";
 import { sign_out_of_clerk } from "./clerkSignOut";
@@ -127,14 +133,6 @@ async function load_and_activate_clerk(): Promise<boolean> {
   }
 }
 
-function log_initialization_skipped(error_code: ClerkErrorCode): false {
-  console.log("[Clerk] Initialization skipped", {
-    event: CLERK_LOG_EVENT.INITIALIZATION_SKIPPED,
-    error_code,
-  });
-  return false;
-}
-
 export async function initialize_clerk(): Promise<boolean> {
   if (!browser)
     return log_initialization_skipped(CLERK_ERROR_CODE.NOT_IN_BROWSER);
@@ -158,6 +156,13 @@ export function get_clerk(): Result<Clerk> {
   if (clerk_lifecycle_state.status !== CLERK_LIFECYCLE_STATUS.READY)
     return create_failure_result(CLERK_MESSAGE.NOT_INITIALIZED);
   return create_success_result(clerk_lifecycle_state.clerk);
+}
+
+export function get_clerk_reachability(): ClerkReachability {
+  return resolve_clerk_reachability(
+    clerk_lifecycle_state,
+    read_browser_network_online(),
+  );
 }
 
 export async function get_session_token(): Promise<Result<string>> {

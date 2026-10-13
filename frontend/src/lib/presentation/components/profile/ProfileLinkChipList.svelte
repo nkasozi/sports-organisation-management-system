@@ -1,12 +1,15 @@
 <script lang="ts">
     import type { ProfileLink } from "$lib/core/entities/ProfileLink";
     import { get_platform_icon } from "$lib/core/entities/ProfileLink";
+    import { filter_links_with_safe_urls } from "$lib/presentation/logic/safeUrl";
 
     export let links: ProfileLink[];
+
+    $: safe_links = filter_links_with_safe_urls(links);
 </script>
 
 <div class="mt-6 flex flex-wrap gap-3">
-    {#each links as link (link.id)}
+    {#each safe_links as link (link.id)}
         <a
             href={link.url}
             target="_blank"

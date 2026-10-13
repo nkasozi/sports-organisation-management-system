@@ -107,7 +107,7 @@ describe("competitionResultsPageControllerRuntime", () => {
       selected_organization_id: "organization-1",
       competitions: [{ id: "competition-1" }],
       selected_competition_id: "competition-1",
-      bundle: { fixture_count: 5 },
+      bundle: { fixture_count: 5, load_state: { status: "loaded" } },
     });
 
     await create_competition_results_page_controller_runtime(
@@ -128,7 +128,10 @@ describe("competitionResultsPageControllerRuntime", () => {
     expect(command.set_organizations).toHaveBeenCalledWith([
       { id: "organization-1" },
     ]);
-    expect(command.apply_bundle).toHaveBeenCalledWith({ fixture_count: 5 });
+    expect(command.apply_bundle).toHaveBeenCalledWith({
+      fixture_count: 5,
+      load_state: { status: "loaded" },
+    });
     expect(command.set_loading_state).toHaveBeenLastCalledWith("success");
   });
 

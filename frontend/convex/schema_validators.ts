@@ -1,5 +1,7 @@
 import { v } from "convex/values";
 
+import { FIXTURE_CLOCK_STATUS } from "./shared_fixture_clock";
+
 export const ORGANIZATION_LOCAL_ID_INDEX_NAME = "by_organization_local_id";
 export const ORGANIZATION_LOCAL_ID_INDEX_FIELDS = [
   "organization_id",
@@ -80,6 +82,11 @@ export const substitution_rule_validator = v.object({
   return_after_substitution_allowed: v.boolean(),
 });
 
+export const fixture_clock_status_validator = v.union(
+  v.literal(FIXTURE_CLOCK_STATUS.STOPPED),
+  v.literal(FIXTURE_CLOCK_STATUS.RUNNING),
+);
+
 export const game_event_validator = v.object({
   id: v.string(),
   event_type: v.string(),
@@ -90,6 +97,10 @@ export const game_event_validator = v.object({
   secondary_player_name: v.string(),
   description: v.string(),
   recorded_at: v.string(),
+  points_awarded: v.optional(v.number()),
+  period_id: v.optional(v.string()),
+  player_id: v.optional(v.string()),
+  secondary_player_id: v.optional(v.string()),
 });
 
 export const assigned_official_validator = v.object({
@@ -118,4 +129,5 @@ export const lineup_player_validator = v.object({
   is_captain: v.boolean(),
   is_substitute: v.boolean(),
   time_on: v.optional(v.string()),
+  time_off: v.optional(v.string()),
 });

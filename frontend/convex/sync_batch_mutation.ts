@@ -113,7 +113,7 @@ export const batch_upsert = mutation({
     detect_conflicts: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
-    const { table_name, records, detect_conflicts = false } = args;
+    const { table_name, records } = args;
     if (records.length > MAX_BATCH_SIZE)
       return build_batch_failure(
         reject_oversized_batch(BatchOperation.UPSERT, records.length),
@@ -141,7 +141,6 @@ export const batch_upsert = mutation({
           version: record.version,
           base: to_batch_base_version(record.base_version),
         },
-        detect_conflicts,
       });
       collection = collect_outcome(collection, outcome);
     }

@@ -1,5 +1,14 @@
 import adapter from "@sveltejs/adapter-vercel";
 import { vitePreprocess } from "@sveltejs/vite-plugin-svelte";
+import { loadEnv } from "vite";
+
+import { build_content_security_policy_directives } from "./src/lib/infrastructure/security/contentSecurityPolicy.js";
+
+const content_security_policy_environment = loadEnv(
+  process.env.NODE_ENV === "production" ? "production" : "development",
+  process.cwd(),
+  "PUBLIC_",
+);
 
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
@@ -12,44 +21,9 @@ const config = {
 
     csp: {
       mode: "auto",
-      directives: {
-        "default-src": ["self"],
-        "script-src": [
-          "self",
-          "https://clerk.com",
-          "https://*.clerk.accounts.dev",
-          "https://va.vercel-scripts.com",
-        ],
-        "style-src": ["self", "unsafe-inline"],
-        "font-src": ["self"],
-        "img-src": [
-          "self",
-          "data:",
-          "blob:",
-          "https://*.clerk.com",
-          "https://img.clerk.com",
-        ],
-        "connect-src": [
-          "self",
-          "https://*.convex.cloud",
-          "wss://*.convex.cloud",
-          "https://*.clerk.com",
-          "https://clerk.com",
-          "https://*.clerk.accounts.dev",
-          "https://clerk-telemetry.com",
-          "https://va.vercel-scripts.com",
-        ],
-        "frame-src": [
-          "self",
-          "https://*.clerk.com",
-          "https://*.clerk.accounts.dev",
-        ],
-        "worker-src": ["self", "blob:"],
-        "object-src": ["none"],
-        "base-uri": ["self"],
-        "form-action": ["self"],
-        "frame-ancestors": ["none"],
-      },
+      directives: build_content_security_policy_directives(
+        content_security_policy_environment,
+      ),
     },
 
     // API proxy for development
