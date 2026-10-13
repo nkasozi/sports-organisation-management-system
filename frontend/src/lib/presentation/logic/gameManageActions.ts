@@ -57,15 +57,17 @@ export async function record_game_manage_event(
   );
 }
 
-export async function change_game_period(
-  fixture: Fixture,
-  new_period: GamePeriod,
-  minute: number,
+export async function change_game_period(command: {
+  fixture: Fixture;
+  new_period: GamePeriod;
+  new_period_label: string;
+  minute: number;
   fixture_use_cases: Pick<
     FixtureUseCasesPort,
     "record_game_event" | "update_period"
-  >,
-): Promise<Result<Fixture>> {
+  >;
+}): Promise<Result<Fixture>> {
+  const { fixture, new_period, minute, fixture_use_cases } = command;
   const period_event_result = await fixture_use_cases.record_game_event(
     fixture.id,
     create_game_event(
@@ -73,7 +75,7 @@ export async function change_game_period(
       minute,
       "match",
       "",
-      `${get_period_display_name(new_period)} started`,
+      `${command.new_period_label} started`,
     ),
   );
 
@@ -84,17 +86,30 @@ export async function change_game_period(
   return fixture_use_cases.update_period(fixture.id, new_period, minute);
 }
 
-export async function end_game_period(
+type GamePeriodTransition = {
+  next_period: GamePeriod;
+  completed_period_label: string;
+};
+
+export function build_default_period_transition(
   fixture: Fixture,
-  minute: number,
+): GamePeriodTransition {
+  return {
+    next_period: get_next_period(fixture.current_period),
+    completed_period_label: get_period_display_name(fixture.current_period),
+  };
+}
+
+export async function end_game_period(command: {
+  fixture: Fixture;
+  minute: number;
+  transition: GamePeriodTransition;
   fixture_use_cases: Pick<
     FixtureUseCasesPort,
     "record_game_event" | "update_period"
-  >,
-): Promise<Result<EndGamePeriodResult>> {
-  const completed_period_label = get_period_display_name(
-    fixture.current_period,
-  );
+  >;
+}): Promise<Result<EndGamePeriodResult>> {
+  const { fixture, minute, transition, fixture_use_cases } = command;
   const period_event_result = await fixture_use_cases.record_game_event(
     fixture.id,
     create_game_event(
@@ -102,26 +117,22 @@ export async function end_game_period(
       minute,
       "match",
       "",
-      `${completed_period_label} ended`,
+      `${transition.completed_period_label} ended`,
     ),
   );
-
   if (!period_event_result.success) {
     return create_failure_result(period_event_result.error);
   }
-
   const update_result = await fixture_use_cases.update_period(
     fixture.id,
-    get_next_period(fixture.current_period),
+    transition.next_period,
     minute,
   );
-
   if (!update_result.success) {
     return create_failure_result(update_result.error);
   }
-
   return create_success_result({
     fixture: update_result.data,
-    completed_period_label,
+    completed_period_label: transition.completed_period_label,
   });
 }

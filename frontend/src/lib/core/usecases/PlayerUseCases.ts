@@ -4,6 +4,7 @@ import type {
   UpdatePlayerInput,
 } from "../entities/Player";
 import { validate_player_input } from "../entities/Player";
+import { apply_player_input_defaults } from "../entities/PlayerInputDefaults";
 import type {
   PlayerFilter,
   PlayerRepository,
@@ -78,8 +79,9 @@ async function get_player_by_id(
 
 async function create_player(
   repository: PlayerRepository,
-  input: CreatePlayerInput,
+  submitted_input: CreatePlayerInput,
 ): AsyncResult<Player> {
+  const input = apply_player_input_defaults(submitted_input);
   const validation_errors = validate_player_input(input);
   if (validation_errors.length > 0) {
     return fail_validation(

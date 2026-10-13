@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
 import {
+  build_default_period_transition,
   change_game_period,
   end_game_period,
   end_game_session,
@@ -74,12 +75,13 @@ describe("gameManageActions", () => {
     };
 
     await expect(
-      change_game_period(
-        { id: "fixture-1" } as never,
-        "second_half",
-        46,
-        fixture_use_cases as never,
-      ),
+      change_game_period({
+        fixture: { id: "fixture-1" } as never,
+        new_period: "second_half",
+        new_period_label: "2nd Half",
+        minute: 46,
+        fixture_use_cases: fixture_use_cases as never,
+      }),
     ).resolves.toEqual({ success: false, error: "Event write failed" });
     expect(fixture_use_cases.update_period).not.toHaveBeenCalled();
   });
@@ -96,11 +98,15 @@ describe("gameManageActions", () => {
     };
 
     await expect(
-      end_game_period(
-        { id: "fixture-1", current_period: "first_half" } as never,
-        45,
-        fixture_use_cases as never,
-      ),
+      end_game_period({
+        fixture: { id: "fixture-1", current_period: "first_half" } as never,
+        minute: 45,
+        transition: build_default_period_transition({
+          id: "fixture-1",
+          current_period: "first_half",
+        } as never),
+        fixture_use_cases: fixture_use_cases as never,
+      }),
     ).resolves.toEqual({
       success: true,
       data: {

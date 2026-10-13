@@ -11,6 +11,7 @@ export type PublicDataPageType =
 
 const COMPETITION_RESULTS_TABLES: TableName[] = [
   "organizations",
+  "sports",
   "competitions",
   "competition_formats",
   "competition_stages",
@@ -27,6 +28,7 @@ const COMPETITION_RESULTS_TABLES: TableName[] = [
 
 const CALENDAR_TABLES: TableName[] = [
   "organizations",
+  "sports",
   "competitions",
   "teams",
   "fixtures",
@@ -36,6 +38,7 @@ const CALENDAR_TABLES: TableName[] = [
 
 const MATCH_REPORT_TABLES: TableName[] = [
   "organizations",
+  "sports",
   "competitions",
   "competition_formats",
   "competition_stages",

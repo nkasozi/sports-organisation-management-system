@@ -1,11 +1,14 @@
 import type { Fixture } from "$lib/core/entities/Fixture";
 import type { LineupPlayer } from "$lib/core/entities/FixtureLineup";
+import type { Venue } from "$lib/core/entities/Venue";
+import { type Option, OptionStatus } from "$lib/core/types/Option";
 import type {
   MatchReportAssignedOfficialData,
   MatchReportPageDependencies,
   MatchReportVenueState,
 } from "$lib/presentation/logic/matchReportPageLoadTypes";
 
+import { find_fixture_venue } from "./fixtureVenueLookup";
 import { PRESENCE_STATUS } from "./presenceStatus";
 
 export { load_match_report_competition_bundle } from "./matchReportPageLoadCompetition";
@@ -44,15 +47,14 @@ type MatchReportAssignedOfficialLoadState =
     };
 
 function build_match_report_venue_state(
-  venue_result: Awaited<
-    ReturnType<MatchReportPageDependencies["venue_use_cases"]["get_by_id"]>
-  >,
+  venue: Option<Venue>,
 ): MatchReportVenueState {
-  if (!venue_result.success || !venue_result.data) {
-    return { status: PRESENCE_STATUS.MISSING };
+  switch (venue.status) {
+    case OptionStatus.NONE:
+      return { status: PRESENCE_STATUS.MISSING };
+    case OptionStatus.SOME:
+      return { status: PRESENCE_STATUS.PRESENT, venue: venue.value };
   }
-
-  return { status: PRESENCE_STATUS.PRESENT, venue: venue_result.data };
 }
 
 function build_match_report_assigned_official_load_state(
@@ -97,11 +99,9 @@ export async function load_match_report_assigned_officials(
   assigned_officials_data: MatchReportAssignedOfficialData[];
   venue_state: MatchReportVenueState;
 }> {
-  const venue_state: MatchReportVenueState = fixture.venue
-    ? build_match_report_venue_state(
-        await dependencies.venue_use_cases.get_by_id(fixture.venue),
-      )
-    : { status: PRESENCE_STATUS.MISSING };
+  const venue_state = build_match_report_venue_state(
+    await find_fixture_venue(fixture.venue ?? "", dependencies.venue_use_cases),
+  );
   if (!fixture.assigned_officials || fixture.assigned_officials.length === 0) {
     return { assigned_officials_data: [], venue_state };
   }

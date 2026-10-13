@@ -100,9 +100,16 @@ describe("matchReportPageLoadHelpers", () => {
               .mockResolvedValueOnce({ success: false, error: "missing" }),
           },
           venue_use_cases: {
-            get_by_id: vi
-              .fn()
-              .mockResolvedValue({ success: true, data: { id: "venue_1" } }),
+            list: vi.fn().mockResolvedValue({
+              success: true,
+              data: {
+                items: [{ id: "venue_1", name: "venue_1" }],
+                total_count: 1,
+                page_number: 1,
+                page_size: 10,
+                total_pages: 1,
+              },
+            }),
           },
         } as never,
       ),
@@ -110,7 +117,10 @@ describe("matchReportPageLoadHelpers", () => {
       assigned_officials_data: [
         { official: { id: "official_1" }, role_name: "Umpire" },
       ],
-      venue_state: { status: "present", venue: { id: "venue_1" } },
+      venue_state: {
+        status: "present",
+        venue: { id: "venue_1", name: "venue_1" },
+      },
     });
   });
 });

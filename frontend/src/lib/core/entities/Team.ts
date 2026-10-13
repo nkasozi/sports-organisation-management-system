@@ -16,6 +16,7 @@ import {
   type YearValue,
 } from "../types/DomainScalars";
 import type { BaseEntity, EntityStatus } from "./BaseEntity";
+import { check_optional_numeric_value } from "./EntityValidation";
 import {
   check_condition,
   check_minimum_text_length,
@@ -122,8 +123,9 @@ function collect_team_branding_checks(input: CreateTeamInput): FieldCheck[] {
       input.website,
       TEAM_VALIDATION_MESSAGES.INVALID_WEBSITE,
     ),
-    parse_year_value(
+    check_optional_numeric_value(
       input.founded_year,
+      parse_year_value,
       TEAM_VALIDATION_MESSAGES.INVALID_FOUNDED_YEAR,
     ),
   ];

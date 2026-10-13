@@ -4,6 +4,7 @@ import type {
   UpdateOfficialInput,
 } from "../entities/Official";
 import { validate_official_input } from "../entities/Official";
+import { apply_official_input_defaults } from "../entities/OfficialInputDefaults";
 import type {
   OfficialRepository,
   OfficialUseCasesPort,
@@ -34,8 +35,9 @@ export type OfficialUseCases = OfficialUseCasesPort;
 
 async function create_official(
   repository: OfficialRepository,
-  input: CreateOfficialInput,
+  submitted_input: CreateOfficialInput,
 ): AsyncResult<Official> {
+  const input = apply_official_input_defaults(submitted_input);
   const context = { organization_id: input.organization_id };
   const validation_errors = validate_official_input(input);
   if (validation_errors.length > 0) {

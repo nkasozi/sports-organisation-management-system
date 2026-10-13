@@ -51,6 +51,7 @@ describe("dynamicEntityFormLocalActions", () => {
         {} as never,
         false,
         form_state as never,
+        new Set<string>(),
       ),
     ).toEqual(form_state);
     expect(
@@ -58,6 +59,7 @@ describe("dynamicEntityFormLocalActions", () => {
         { fields: [] } as never,
         true,
         form_state as never,
+        new Set<string>(),
       ),
     ).toEqual(form_state);
     expect(
@@ -65,6 +67,7 @@ describe("dynamicEntityFormLocalActions", () => {
         { fields: [] } as never,
         false,
         form_state as never,
+        new Set<string>(),
       ),
     ).toEqual(form_state);
   });
@@ -83,6 +86,7 @@ describe("dynamicEntityFormLocalActions", () => {
           form_data: { code: "ABC" },
           validation_errors: { code: "invalid" },
         } as never,
+        new Set<string>(),
       ),
     ).toEqual({
       form_data: { code: "ABC", name: "Generated", city: "Kampala" },

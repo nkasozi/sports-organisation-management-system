@@ -1,5 +1,6 @@
 <script lang="ts">
     import type { Fixture } from "$lib/core/entities/Fixture";
+    import { build_fixture_kickoff_date_time } from "$lib/core/entities/FixtureKickoff";
     import { FIXTURE_STATUS } from "$lib/core/entities/StatusConstants";
     import TeamLogoThumbnail from "$lib/presentation/components/ui/TeamLogoThumbnail.svelte";
 
@@ -39,7 +40,7 @@
 <div class={`p-3 rounded-lg border transition-colors ${status_classes}`}>
     <div class="flex items-center justify-between mb-1">
         <div class="text-xs text-gray-500 dark:text-gray-400">
-            {format_date(fixture.scheduled_date)}
+            {format_date(build_fixture_kickoff_date_time(fixture))}
         </div>
         <div class="flex items-center gap-2">
             {#if fixture.status === FIXTURE_STATUS.IN_PROGRESS}

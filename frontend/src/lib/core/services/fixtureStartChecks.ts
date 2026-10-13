@@ -86,6 +86,21 @@ export async function check_fixture_can_start(
   );
 }
 
+function count_assigned_officials(
+  setups: ReadonlyArray<{
+    assigned_officials?: ReadonlyArray<{ official_id: string }>;
+  }>,
+): number {
+  return setups.reduce(
+    (total: number, setup) =>
+      total +
+      (setup.assigned_officials ?? []).filter(
+        (assignment) => assignment.official_id.length > 0,
+      ).length,
+    0,
+  );
+}
+
 async function load_start_check_inputs(
   fixture_id: Fixture["id"],
   official_use_cases: FixtureDetailsSetupUseCases,
@@ -116,7 +131,7 @@ async function load_start_check_inputs(
     );
   }
   return create_success_result({
-    officials_count: officials_result.data.items.length,
+    officials_count: count_assigned_officials(officials_result.data.items),
     lineups: lineups_result.data.items,
   });
 }

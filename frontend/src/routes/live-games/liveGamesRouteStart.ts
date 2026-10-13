@@ -1,3 +1,4 @@
+import { goto } from "$app/navigation";
 import { can_role_access_route } from "$lib/adapters/iam/LocalAuthorizationAdapter";
 import type { Fixture } from "$lib/core/entities/Fixture";
 import type { PreFlightCheck } from "$lib/core/services/fixtureStartChecks";
@@ -16,8 +17,11 @@ import {
   LIVE_GAMES_PENDING_START_STATUS,
   type LiveGamesPendingStartFixtureState,
 } from "$lib/presentation/logic/liveGamesPageState";
+import { resume_start_if_requested } from "$lib/presentation/logic/liveGamesStartResume";
 import { PRESENCE_STATUS } from "$lib/presentation/logic/presenceStatus";
 import type { AuthState } from "$lib/presentation/stores/authTypes";
+
+import { LIVE_GAMES_ROUTE_PATHS } from "./liveGamesRouteView";
 
 export const IDLE_PENDING_START: LiveGamesPendingStartFixtureState = {
   status: LIVE_GAMES_PENDING_START_STATUS.IDLE,
@@ -65,5 +69,18 @@ export async function request_live_games_start_confirmation(
   return create_success_result({
     status: LIVE_GAMES_PENDING_START_STATUS.CONFIRMING,
     fixture,
+  });
+}
+
+export function resume_route_start(
+  fixtures: Fixture[],
+  request_start: (fixture: Fixture) => unknown,
+): boolean {
+  return resume_start_if_requested({
+    search_parameters: new URL(window.location.href).searchParams,
+    fixtures,
+    request_start,
+    clear_request: () =>
+      goto(LIVE_GAMES_ROUTE_PATHS.LIVE_GAMES, { replaceState: true }),
   });
 }

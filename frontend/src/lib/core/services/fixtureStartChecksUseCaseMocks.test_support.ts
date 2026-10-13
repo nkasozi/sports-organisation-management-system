@@ -41,8 +41,21 @@ function create_test_page<TItem>(items: TItem[]): TestPage<TItem> {
 export function create_mock_official_use_cases(
   officials: TestOfficialAssignment[],
 ): FixtureDetailsSetupUseCases {
+  const setups =
+    officials.length === 0
+      ? []
+      : [
+          {
+            id: `setup-${officials[0].fixture_id}`,
+            fixture_id: officials[0].fixture_id,
+            assigned_officials: officials.map((assignment) => ({
+              official_id: assignment.official_id,
+              role_id: assignment.role_id,
+            })),
+          },
+        ];
   return {
-    list_by_fixture: async () => create_test_page(officials),
+    list_by_fixture: async () => create_test_page(setups),
   } as unknown as FixtureDetailsSetupUseCases;
 }
 

@@ -1,5 +1,6 @@
 <script lang="ts">
     import type { Fixture } from "$lib/core/entities/Fixture";
+    import { build_fixture_kickoff_date_time } from "$lib/core/entities/FixtureKickoff";
     import TeamLogoThumbnail from "$lib/presentation/components/ui/TeamLogoThumbnail.svelte";
 
     export let fixture: Fixture;
@@ -25,7 +26,7 @@
     class="w-full p-3 sm:p-4 bg-gray-50 dark:bg-gray-800 rounded-lg transition-colors"
 >
     <div class="text-xs text-center text-gray-500 dark:text-gray-400 mb-2">
-        {format_date(fixture.scheduled_date)}
+        {format_date(build_fixture_kickoff_date_time(fixture))}
     </div>
     {#if fixture_stage_name}
         <div class="mb-3 text-center">

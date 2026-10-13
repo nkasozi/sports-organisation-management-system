@@ -50,7 +50,12 @@ describe("FixtureDetailsSetupUseCases", () => {
   beforeEach(() => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     repository = create_repository();
-    use_cases = create_fixture_details_setup_use_cases(repository as never);
+    use_cases = create_fixture_details_setup_use_cases(repository as never, {
+      sync_setup_officials: vi.fn().mockResolvedValue({
+        success: true,
+        data: true,
+      }),
+    });
   });
 
   afterEach(() => {

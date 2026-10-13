@@ -1,5 +1,6 @@
 <script lang="ts">
     import type { Fixture } from "$lib/core/entities/Fixture";
+    import { build_fixture_kickoff_date_time } from "$lib/core/entities/FixtureKickoff";
     import { FIXTURE_STATUS } from "$lib/core/entities/StatusConstants";
     import type { PreFlightCheck } from "$lib/core/services/fixtureStartChecks";
     import TeamLogoThumbnail from "$lib/presentation/components/ui/TeamLogoThumbnail.svelte";
@@ -149,7 +150,9 @@
                             ></path>
                         </svg>
                         <span class="text-accent-600 dark:text-accent-400">
-                            {format_live_game_date_time(fixture.scheduled_date)}
+                            {format_live_game_date_time(
+                                build_fixture_kickoff_date_time(fixture),
+                            )}
                         </span>
                     </div>
 

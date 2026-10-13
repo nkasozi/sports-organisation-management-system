@@ -7,6 +7,8 @@ export const BRANDING_LOG_EVENTS = {
   REFRESHED_REALTIME: "branding_refreshed_realtime",
   AUTO_MIGRATED: "branding_auto_migrated",
   AUTO_MIGRATION_FAILED: "branding_auto_migration_failed",
+  AUTO_MIGRATION_SKIPPED_NOT_PERMITTED:
+    "branding_auto_migration_skipped_not_permitted",
   LOADED_FROM_SETTINGS: "branding_loaded_from_settings",
   SETTINGS_LOAD_FAILED: "branding_settings_load_failed",
   SETTINGS_SAVE_FAILED: "branding_settings_save_failed",

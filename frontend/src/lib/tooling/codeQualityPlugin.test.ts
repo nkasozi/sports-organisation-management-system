@@ -11,6 +11,7 @@ const IGNORED_RESULT_FIXTURE =
   "src/lib/tooling/fixtures/ignoredResultCases.fixture.ts";
 const NO_CODE_COMMENTS_RULE = "code-quality/no-code-comments";
 const NO_IGNORED_RESULT_RULE = "code-quality/no-ignored-result";
+const NO_STALE_SPREAD_RULE = "code-quality/no-stale-spread-across-await";
 
 function lint_for_comments(source: string): string[] {
   const linter = new Linter({ configType: "flat" });
@@ -29,6 +30,27 @@ function lint_for_comments(source: string): string[] {
     )
     .filter(
       (message: Linter.LintMessage) => message.ruleId === NO_CODE_COMMENTS_RULE,
+    )
+    .map((message: Linter.LintMessage) => message.message);
+}
+
+function lint_for_stale_spread(source: string): string[] {
+  const linter = new Linter({ configType: "flat" });
+  return linter
+    .verify(
+      source,
+      [
+        {
+          files: ["**/*.ts"],
+          languageOptions: { parser: tsParser },
+          plugins: { "code-quality": code_quality_plugin },
+          rules: { [NO_STALE_SPREAD_RULE]: "error" },
+        },
+      ],
+      "example.ts",
+    )
+    .filter(
+      (message: Linter.LintMessage) => message.ruleId === NO_STALE_SPREAD_RULE,
     )
     .map((message: Linter.LintMessage) => message.message);
 }
@@ -85,4 +107,40 @@ describe("code-quality/no-ignored-result", () => {
   it("reports Result and AsyncResult values that are discarded without checking success", async () => {
     expect(await lint_ignored_result_fixture()).toEqual([20, 21, 22]);
   }, 60000);
+});
+
+describe("code-quality/no-stale-spread-across-await", () => {
+  it("reports spreading a variable into its own reassignment before an await", () => {
+    const source = [
+      "let state = { loading: true };",
+      "async function load(): Promise<void> {",
+      "  state = { ...state, ...(await fetch_flags()) };",
+      "}",
+    ].join("\n");
+
+    expect(lint_for_stale_spread(source)).toHaveLength(1);
+  });
+
+  it("allows awaiting first and spreading the current value afterwards", () => {
+    const source = [
+      "let state = { loading: true };",
+      "async function load(): Promise<void> {",
+      "  const flags = await fetch_flags();",
+      "  state = { ...state, ...flags };",
+      "}",
+    ].join("\n");
+
+    expect(lint_for_stale_spread(source)).toEqual([]);
+  });
+
+  it("allows awaits that come before the spread in the same object", () => {
+    const source = [
+      "let state = { loading: true };",
+      "async function load(): Promise<void> {",
+      "  state = { flags: await fetch_flags(), ...other };",
+      "}",
+    ].join("\n");
+
+    expect(lint_for_stale_spread(source)).toEqual([]);
+  });
 });

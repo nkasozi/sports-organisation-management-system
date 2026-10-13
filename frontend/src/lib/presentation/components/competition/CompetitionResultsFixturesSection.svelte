@@ -1,5 +1,6 @@
 <script lang="ts">
     import type { Fixture } from "$lib/core/entities/Fixture";
+    import { build_fixture_kickoff_date_time } from "$lib/core/entities/FixtureKickoff";
     import { FIXTURE_STATUS } from "$lib/core/entities/StatusConstants";
     import Pagination from "$lib/presentation/components/ui/Pagination.svelte";
     import TeamLogoThumbnail from "$lib/presentation/components/ui/TeamLogoThumbnail.svelte";
@@ -37,7 +38,9 @@
                 <div class="flex items-center justify-between mb-2">
                     <div>
                         <div class="text-xs text-gray-500 dark:text-gray-400">
-                            {format_date(fixture.scheduled_date)}
+                            {format_date(
+                                build_fixture_kickoff_date_time(fixture),
+                            )}
                         </div>
                         {#if fixture_stage_name}
                             <div class="mt-1">

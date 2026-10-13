@@ -7,6 +7,8 @@ export const DEFAULT_SETUP_PAGE_SIZE = 50;
 export const EXISTING_SETUP_PROBE_PAGE_SIZE = 1;
 
 export const FIXTURE_DETAILS_SETUP_EVENT = {
+  FIXTURE_OFFICIALS_SYNC_FAILED:
+    "fixture_details_setup_fixture_officials_sync_failed",
   ID_MISSING: "fixture_details_setup_id_missing",
   FIXTURE_ID_MISSING: "fixture_details_setup_fixture_id_missing",
   OFFICIAL_ID_MISSING: "fixture_details_setup_official_id_missing",
@@ -22,6 +24,8 @@ export const FIXTURE_DETAILS_SETUP_EVENT = {
 } as const;
 
 export const FIXTURE_DETAILS_SETUP_MESSAGE = {
+  FIXTURE_OFFICIALS_SYNC_FAILED:
+    "The officials were saved but could not be attached to the game. Please save again.",
   ID_REQUIRED: "Fixture Details Setup ID is required",
   FIXTURE_ID_REQUIRED: "Fixture ID is required",
   OFFICIAL_ID_REQUIRED: "Official ID is required",

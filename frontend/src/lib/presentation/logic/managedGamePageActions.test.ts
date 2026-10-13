@@ -32,6 +32,10 @@ const {
 vi.mock("./gameManageActions", () => ({
   change_game_period: change_game_period_mock,
   end_game_period: end_game_period_mock,
+  build_default_period_transition: () => ({
+    next_period: "finished",
+    completed_period_label: "2nd Half",
+  }),
   end_game_session: end_game_session_mock,
   record_game_manage_event: record_game_manage_event_mock,
   start_game_session: start_game_session_mock,
@@ -168,18 +172,27 @@ describe("managedGamePageActions", () => {
       }),
       { record_game_event: expect.any(Function) },
     );
-    expect(change_game_period_mock).toHaveBeenCalledWith(
-      { id: "fixture-1" },
-      "second_half",
-      45,
-      {
+    expect(change_game_period_mock).toHaveBeenCalledWith({
+      fixture: { id: "fixture-1" },
+      new_period: "second_half",
+      new_period_label: "2nd Half",
+      minute: 45,
+      fixture_use_cases: {
         record_game_event: expect.any(Function),
         update_period: expect.any(Function),
       },
-    );
-    expect(end_game_period_mock).toHaveBeenCalledWith({ id: "fixture-1" }, 90, {
-      record_game_event: expect.any(Function),
-      update_period: expect.any(Function),
+    });
+    expect(end_game_period_mock).toHaveBeenCalledWith({
+      fixture: { id: "fixture-1" },
+      minute: 90,
+      transition: {
+        next_period: "finished",
+        completed_period_label: "2nd Half",
+      },
+      fixture_use_cases: {
+        record_game_event: expect.any(Function),
+        update_period: expect.any(Function),
+      },
     });
   });
 });

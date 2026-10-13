@@ -47,4 +47,5 @@ export const FIXTURE_LINEUP_GENERATION_MESSAGES = {
 
 export const DEFAULT_MIN_PLAYERS = 0;
 export const DEFAULT_MAX_PLAYERS = 99;
+export const DEFAULT_STARTERS_COUNT = 11;
 export const NUMBER_TYPE_NAME = "number";

@@ -4,6 +4,7 @@ import type {
   Venue,
 } from "../entities/Venue";
 import { validate_venue_input } from "../entities/Venue";
+import { apply_venue_input_defaults } from "../entities/VenueInputDefaults";
 import type {
   QueryOptions,
   VenueFilter,
@@ -76,8 +77,9 @@ async function get_venue_by_id(
 
 async function create_venue(
   repository: VenueRepository,
-  input: CreateVenueInput,
+  submitted_input: CreateVenueInput,
 ): AsyncResult<Venue> {
+  const input = apply_venue_input_defaults(submitted_input);
   const context = { organization_id: input.organization_id };
   const validation_errors = validate_venue_input(input);
   if (validation_errors.length > 0) {

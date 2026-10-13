@@ -49,6 +49,7 @@ const ALLOWED_TABLE_SET = new Set<string>(ALLOWED_SYNC_TABLES);
 
 export const PUBLIC_TABLE_NAMES = [
   "organizations",
+  "sports",
   "competitions",
   "competition_formats",
   "competition_stages",

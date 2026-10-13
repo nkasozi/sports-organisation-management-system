@@ -20,6 +20,7 @@ import { find_previous_lineup_for_team } from "./fixtureLineupLookup";
 interface LineupRules {
   min_players: number;
   max_players: number;
+  starters_count: number;
   squad_generation_strategy: SquadGenerationStrategy;
 }
 
@@ -115,6 +116,15 @@ function fail_insufficient_players(
   );
 }
 
+function mark_substitutes_beyond_starters<
+  TPlayer extends { is_substitute: boolean },
+>(players: TPlayer[], starters_count: number): TPlayer[] {
+  return players.map((player, index) => ({
+    ...player,
+    is_substitute: index >= starters_count,
+  }));
+}
+
 export async function generate_first_available_lineup(
   context: LineupGenerationContext,
   rules: LineupRules,
@@ -131,9 +141,13 @@ export async function generate_first_available_lineup(
       rules.min_players,
     );
   }
-  const selected_players = (
-    await load_sorted_lineup_players(context, active_memberships)
-  ).slice(0, Math.min(active_memberships.length, rules.max_players));
+  const selected_players = mark_substitutes_beyond_starters(
+    (await load_sorted_lineup_players(context, active_memberships)).slice(
+      0,
+      Math.min(active_memberships.length, rules.max_players),
+    ),
+    rules.starters_count,
+  );
   return save_generated_lineup(
     context,
     build_auto_generated_lineup(

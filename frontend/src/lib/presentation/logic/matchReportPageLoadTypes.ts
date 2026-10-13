@@ -6,6 +6,7 @@ import type { Sport } from "$lib/core/entities/Sport";
 import type { Team } from "$lib/core/entities/Team";
 import type { Venue } from "$lib/core/entities/Venue";
 import type { AsyncResult } from "$lib/core/types/Result";
+import type { VenueUseCases } from "$lib/core/usecases/VenueUseCases";
 
 import type { PRESENCE_STATUS } from "./presenceStatus";
 
@@ -84,9 +85,7 @@ export interface MatchReportPageDependencies {
   sport_use_cases: {
     get_by_id(id: string): AsyncResult<Sport>;
   };
-  venue_use_cases: {
-    get_by_id(id: string): AsyncResult<Venue>;
-  };
+  venue_use_cases: Pick<VenueUseCases, "list">;
   official_use_cases: {
     get_by_id(id: string): AsyncResult<Official>;
   };

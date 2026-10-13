@@ -18,6 +18,7 @@ import type { SportUseCases } from "../usecases/SportUseCases";
 import {
   DEFAULT_MAX_PLAYERS,
   DEFAULT_MIN_PLAYERS,
+  DEFAULT_STARTERS_COUNT,
   FIXTURE_LINEUP_GENERATION_EVENT,
   FIXTURE_LINEUP_GENERATION_LOG_SCOPE,
   FIXTURE_LINEUP_GENERATION_MESSAGES,
@@ -27,6 +28,7 @@ import {
 interface PlayerLimits {
   min_players: number;
   max_players: number;
+  starters_count: number;
 }
 
 export type PlayerRulesResult =
@@ -97,6 +99,8 @@ async function load_sport_player_limits(
       sport_result.data.min_players_per_fixture || DEFAULT_MIN_PLAYERS,
     max_players:
       sport_result.data.max_players_per_fixture || DEFAULT_MAX_PLAYERS,
+    starters_count:
+      sport_result.data.max_players_on_field || DEFAULT_STARTERS_COUNT,
   });
 }
 
@@ -114,6 +118,7 @@ async function resolve_player_limits(
     return create_success_result({
       min_players: min_players.value,
       max_players: max_players.value,
+      starters_count: Math.min(max_players.value, DEFAULT_STARTERS_COUNT),
     });
   }
   const sport_limits = await load_sport_player_limits(
@@ -125,6 +130,7 @@ async function resolve_player_limits(
   return create_success_result({
     min_players: option_value_or(min_players, sport_limits.data.min_players),
     max_players: option_value_or(max_players, sport_limits.data.max_players),
+    starters_count: sport_limits.data.starters_count,
   });
 }
 

@@ -1,5 +1,6 @@
 import type { CreateFixtureInput, Fixture } from "../entities/Fixture";
 import { validate_fixture_input } from "../entities/Fixture";
+import { apply_fixture_input_defaults } from "../entities/FixtureInputDefaults";
 import type {
   FixtureRepository,
   FixtureUseCasesPort,
@@ -27,8 +28,9 @@ const log_target = create_log_target_builder(FIXTURE_LOG_SCOPE);
 
 async function create_fixture(
   repository: FixtureRepository,
-  input: CreateFixtureInput,
+  submitted_input: CreateFixtureInput,
 ): AsyncResult<Fixture> {
+  const input = apply_fixture_input_defaults(submitted_input);
   const validation_errors = validate_fixture_input(input);
   if (validation_errors.length > 0)
     return fail_validation(

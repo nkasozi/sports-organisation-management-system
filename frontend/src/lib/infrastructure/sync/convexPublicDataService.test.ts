@@ -54,6 +54,7 @@ vi.mock("./convexSyncService", () => ({
 
 const CALENDAR_TABLES = [
   "organizations",
+  "sports",
   "competitions",
   "teams",
   "fixtures",
@@ -116,8 +117,8 @@ describe("fetch_public_data_from_convex", () => {
     );
     expect(result).toEqual({
       success: true,
-      tables_fetched: 6,
-      total_records: 5,
+      tables_fetched: 7,
+      total_records: 6,
     });
   });
 
@@ -126,13 +127,13 @@ describe("fetch_public_data_from_convex", () => {
       "competition_results",
     );
     expect(results_fetch.success).toBe(true);
-    expect(queried_tables).toHaveLength(13);
+    expect(queried_tables).toHaveLength(14);
     expect(queried_tables).toContain("competition_teams");
 
     queried_tables.length = 0;
     const report_fetch = await fetch_public_data_from_convex("match_report");
     expect(report_fetch.success).toBe(true);
-    expect(queried_tables).toHaveLength(15);
+    expect(queried_tables).toHaveLength(16);
     expect(queried_tables).toContain("player_team_memberships");
   });
 
@@ -144,8 +145,8 @@ describe("fetch_public_data_from_convex", () => {
     expect(queried_tables).toEqual(CALENDAR_TABLES);
     expect(result).toEqual({
       success: false,
-      tables_fetched: 4,
-      total_records: 4,
+      tables_fetched: 5,
+      total_records: 5,
       error: "Failed tables: teams, activities",
     });
     expect(console.warn).toHaveBeenCalledWith(
@@ -160,9 +161,9 @@ describe("fetch_public_data_from_convex", () => {
       "[PublicData] Fetch complete",
       {
         event: "public_data_fetch_completed",
-        tables_fetched: 4,
-        table_count: 6,
-        total_records: 4,
+        tables_fetched: 5,
+        table_count: 7,
+        total_records: 5,
         failed_tables: ["teams", "activities"],
       },
     );

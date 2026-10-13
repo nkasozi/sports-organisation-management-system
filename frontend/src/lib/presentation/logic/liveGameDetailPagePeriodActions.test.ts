@@ -70,7 +70,16 @@ describe("liveGameDetailPagePeriodActions", () => {
       playing_periods: [effective_periods[0], effective_periods[2]],
     } as never);
 
-    expect(update_period).toHaveBeenCalledWith("fixture-1", "half_time", 45);
+    expect(end_game_period_mock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        minute: 45,
+        transition: {
+          next_period: "half_time",
+          completed_period_label: "First Half",
+        },
+      }),
+    );
+    expect(update_period).not.toHaveBeenCalled();
     expect(result).toEqual({
       success: true,
       fixture: { id: "fixture-1", current_period: "half_time" },
@@ -99,12 +108,13 @@ describe("liveGameDetailPagePeriodActions", () => {
       playing_periods: [effective_periods[0], effective_periods[2]],
     } as never);
 
-    expect(change_game_period_mock).toHaveBeenCalledWith(
-      { id: "fixture-1", current_period: "half_time" },
-      "second_half",
-      45,
-      {},
-    );
+    expect(change_game_period_mock).toHaveBeenCalledWith({
+      fixture: { id: "fixture-1", current_period: "half_time" },
+      new_period: "second_half",
+      new_period_label: "Second Half",
+      minute: 45,
+      fixture_use_cases: {},
+    });
     expect(result).toEqual({
       success: true,
       fixture: { id: "fixture-1", current_period: "second_half" },

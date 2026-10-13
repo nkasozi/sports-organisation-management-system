@@ -130,14 +130,12 @@
     }
 
     onMount(async () => {
-        ui_state = {
-            ...ui_state,
-            ...(await run_dynamic_entity_form_permission_check(
-                entity_type,
-                is_edit_mode,
-                entity_metadata?.display_name || entity_type,
-            )),
-        };
+        const permission_state = await run_dynamic_entity_form_permission_check(
+            entity_type,
+            is_edit_mode,
+            entity_metadata?.display_name || entity_type,
+        );
+        ui_state = { ...ui_state, ...permission_state };
     });
 
     const controller = create_dynamic_entity_form_controller({
@@ -146,6 +144,7 @@
         is_inline_mode,
         ...external_dependencies,
         get_entity_metadata: () => entity_metadata,
+        get_locked_field_names: () => auth_derivations.restricted_fields,
         get_is_edit_mode: () => is_edit_mode,
         get_entity_data: () => entity_data,
         get_form_state: () => form_state,

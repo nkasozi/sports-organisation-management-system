@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { build_fixture_kickoff_date_time } from "$lib/core/entities/FixtureKickoff";
     import {
         FIXTURE_STATUS,
         STAGE_TYPE,
@@ -79,7 +80,9 @@
                         <div
                             class="text-xs text-center text-gray-500 dark:text-gray-400 mb-2"
                         >
-                            {format_date(fixture.scheduled_date)}
+                            {format_date(
+                                build_fixture_kickoff_date_time(fixture),
+                            )}
                         </div>
                         <div class="flex items-center justify-between gap-2">
                             <div

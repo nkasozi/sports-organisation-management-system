@@ -2,6 +2,7 @@ import { assert, describe, expect, it, vi } from "vitest";
 
 import type { LiveGameDetailDataDependencies } from "./liveGameDetailData";
 import { load_live_game_detail_bundle } from "./liveGameDetailData";
+import { SINGLE_VENUE_PAGE } from "./liveGameDetailVenue.test_support";
 import type { MockUseCases } from "./testMockTypes.test_support";
 
 describe("liveGameDetailData", () => {
@@ -20,7 +21,7 @@ describe("liveGameDetailData", () => {
       organization_use_cases: { get_by_id: vi.fn() },
       sport_use_cases: { get_by_id: vi.fn() },
       team_use_cases: { get_by_id: vi.fn() },
-      venue_use_cases: { get_by_id: vi.fn() },
+      venue_use_cases: { list: vi.fn() },
     } satisfies MockDependencies;
   }
 
@@ -115,10 +116,7 @@ describe("liveGameDetailData", () => {
       success: true,
       data: { id: "sport-1" },
     });
-    dependencies.venue_use_cases.get_by_id.mockResolvedValue({
-      success: true,
-      data: { id: "venue-1", name: "National Stadium" },
-    });
+    dependencies.venue_use_cases.list.mockResolvedValue(SINGLE_VENUE_PAGE);
     dependencies.official_use_cases.get_by_id.mockImplementation(
       async (official_id: string) =>
         official_id === "official-1"
