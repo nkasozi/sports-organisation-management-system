@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { sync_verified_user_login_session } from "./layoutLoginSync";
+import { create_login_sync_test_dependencies } from "./layoutLoginSync.test_support";
 
 const {
   build_sync_progress_message_mock,
@@ -19,46 +20,6 @@ vi.mock("./layoutLogic", () => ({
 }));
 
 describe("layoutLoginSync", () => {
-  function create_dependencies() {
-    const unsubscribe = vi.fn();
-    const sync_now = vi.fn();
-    const dependencies = {
-      auth_store: {
-        initialize: vi.fn().mockImplementation(async () => {}),
-        reset_initialized_state: vi.fn(),
-      },
-      clear_session_sync_flag: vi.fn().mockImplementation(async () => {}),
-      delay: vi.fn().mockImplementation(async () => {}),
-      fetch_current_user_profile_from_convex: vi.fn(),
-      goto: vi.fn().mockImplementation(async () => {}),
-      initial_sync_store: {
-        complete_sync: vi.fn().mockImplementation(async () => {}),
-        get_state: vi.fn(() => ({ is_syncing: false })),
-        reset: vi.fn(),
-        start_sync: vi.fn(),
-        update_progress: vi.fn(),
-      },
-      pull_user_scoped_record_from_convex: vi
-        .fn()
-        .mockImplementation(async () => {}),
-      reset_database: vi.fn().mockImplementation(async () => {}),
-      reset_sync_metadata: vi.fn().mockImplementation(async () => {}),
-      set_pulling_from_remote: vi.fn(),
-      sign_out: vi.fn().mockImplementation(async () => {}),
-      start_background_sync: vi.fn(),
-      stop_background_sync: vi.fn(),
-      sync_store: {
-        subscribe: vi.fn(() => unsubscribe),
-        sync_now,
-      },
-      write_convex_user_to_local_dexie: vi
-        .fn()
-        .mockImplementation(async () => {}),
-    };
-
-    return { dependencies, sync_now, unsubscribe };
-  }
-
   beforeEach(() => {
     build_sync_progress_message_mock.mockReset();
     scale_sync_percentage_mock.mockReset();
@@ -69,7 +30,7 @@ describe("layoutLoginSync", () => {
   });
 
   it("skips duplicate sync requests when an initial sync is already in progress", async () => {
-    const { dependencies } = create_dependencies();
+    const { dependencies } = create_login_sync_test_dependencies();
     dependencies.initial_sync_store.get_state.mockReturnValueOnce({
       is_syncing: true,
     });
@@ -84,7 +45,7 @@ describe("layoutLoginSync", () => {
   });
 
   it("signs the user out and redirects to unauthorized when no profile is returned", async () => {
-    const { dependencies } = create_dependencies();
+    const { dependencies } = create_login_sync_test_dependencies();
     dependencies.fetch_current_user_profile_from_convex.mockResolvedValueOnce({
       success: false,
       error: "Profile not found in Convex",
@@ -97,13 +58,38 @@ describe("layoutLoginSync", () => {
       error: "No profile found for this account.",
     });
     expect(dependencies.initial_sync_store.reset).toHaveBeenCalled();
-    expect(dependencies.clear_session_sync_flag).toHaveBeenCalled();
-    expect(dependencies.sign_out).toHaveBeenCalled();
-    expect(dependencies.goto).toHaveBeenCalledWith("/unauthorized");
+    expect(dependencies.sign_out_and_tear_down_device).toHaveBeenCalledWith(
+      "/unauthorized",
+    );
+    expect(dependencies.sign_out).not.toHaveBeenCalled();
+    expect(dependencies.show_session_notice).not.toHaveBeenCalled();
+  });
+
+  it("surfaces a notice and stays signed in when the profile-not-found teardown fails", async () => {
+    const { dependencies } = create_login_sync_test_dependencies();
+    dependencies.fetch_current_user_profile_from_convex.mockResolvedValueOnce({
+      success: false,
+      error: "Profile not found in Convex",
+    });
+    dependencies.sign_out_and_tear_down_device.mockResolvedValueOnce({
+      success: false,
+      error: "reset failed",
+    });
+
+    const result = await sync_verified_user_login_session(
+      dependencies as never,
+    );
+
+    expect(result.success).toBe(false);
+    expect(dependencies.show_session_notice).toHaveBeenCalledWith(
+      "sign_out_cleanup_failed",
+    );
+    expect(dependencies.goto).not.toHaveBeenCalled();
   });
 
   it("cleans up failed sync attempts and redirects back to sign-in", async () => {
-    const { dependencies, sync_now, unsubscribe } = create_dependencies();
+    const { dependencies, sync_now, unsubscribe } =
+      create_login_sync_test_dependencies();
     dependencies.fetch_current_user_profile_from_convex.mockResolvedValueOnce({
       success: true,
       data: { organization_id: "organization-1", team_id: "team-1" },
@@ -121,13 +107,14 @@ describe("layoutLoginSync", () => {
     });
     expect(unsubscribe).toHaveBeenCalled();
     expect(dependencies.initial_sync_store.reset).toHaveBeenCalled();
-    expect(dependencies.goto).toHaveBeenCalledWith(
+    expect(dependencies.sign_out_and_tear_down_device).toHaveBeenCalledWith(
       "/sign-in?error=sync_failed",
     );
+    expect(dependencies.sign_out).not.toHaveBeenCalled();
   });
 
   it("completes the verified-user sync flow and initializes the local auth state", async () => {
-    const { dependencies, sync_now } = create_dependencies();
+    const { dependencies, sync_now } = create_login_sync_test_dependencies();
     dependencies.fetch_current_user_profile_from_convex.mockResolvedValueOnce({
       success: true,
       data: { organization_id: "organization-1", team_id: "team-1" },

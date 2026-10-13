@@ -1,3 +1,4 @@
+import { PRESENCE_STATUS } from "$lib/presentation/logic/presenceStatus";
 interface HeaderUserMenuDetailRow {
   label: string;
   value: string;
@@ -95,7 +96,7 @@ export function build_header_user_menu_details(
 
   return header_user_menu_detail_row_states.flatMap(
     (header_user_menu_detail_row_state: HeaderUserMenuDetailRowState) =>
-      header_user_menu_detail_row_state.status === "present"
+      header_user_menu_detail_row_state.status === PRESENCE_STATUS.PRESENT
         ? [header_user_menu_detail_row_state.row]
         : [],
   );

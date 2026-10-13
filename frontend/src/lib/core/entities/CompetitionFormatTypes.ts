@@ -1,25 +1,21 @@
 import type { EntityId, Name, ScalarInput } from "../types/DomainScalars";
 import type { BaseEntity, EntityStatus } from "./BaseEntity";
 import type { StageType } from "./CompetitionStage";
+import type { FormatTypeValue } from "./StatusConstants";
 
-export type FormatType =
-  | "league"
-  | "round_robin"
-  | "groups_knockout"
-  | "straight_knockout"
-  | "groups_playoffs"
-  | "double_elimination"
-  | "swiss"
-  | "custom";
+export type FormatType = FormatTypeValue;
 
-export type TieBreaker =
-  | "goal_difference"
-  | "head_to_head"
-  | "goals_scored"
-  | "away_goals"
-  | "fair_play"
-  | "draw"
-  | "playoff";
+export const TIE_BREAKER = {
+  GOAL_DIFFERENCE: "goal_difference",
+  HEAD_TO_HEAD: "head_to_head",
+  GOALS_SCORED: "goals_scored",
+  AWAY_GOALS: "away_goals",
+  FAIR_PLAY: "fair_play",
+  DRAW: "draw",
+  PLAYOFF: "playoff",
+} as const;
+
+export type TieBreaker = (typeof TIE_BREAKER)[keyof typeof TIE_BREAKER];
 
 export interface GroupStageConfig {
   number_of_groups: number;

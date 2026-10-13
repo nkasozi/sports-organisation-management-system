@@ -8,8 +8,6 @@ import {
   DEFAULT_FOOTER_PATTERN,
   DEFAULT_HEADER_PATTERN,
   DEFAULT_LOGO_SVG,
-  DEFAULT_PRIMARY_COLOR_OPTION,
-  DEFAULT_SECONDARY_COLOR_OPTION,
   map_theme_color_to_option,
   SOCIAL_MEDIA_OPTIONS,
   SYNC_INTERVAL_OPTIONS,
@@ -22,8 +20,6 @@ describe("settingsPageConstants", () => {
     expect(map_theme_color_to_option("sky")).toBe("sky");
     expect(DEFAULT_HEADER_PATTERN).toBe("pattern");
     expect(DEFAULT_FOOTER_PATTERN).toBe("solid_color");
-    expect(DEFAULT_PRIMARY_COLOR_OPTION).toBe("red");
-    expect(DEFAULT_SECONDARY_COLOR_OPTION).toBe("blue");
     expect(DEFAULT_BACKGROUND_PATTERN_URL).toBe("/african-mosaic-bg.svg");
     expect(DEFAULT_LOGO_SVG.startsWith("data:image/svg+xml")).toBe(true);
     expect(SYNC_INTERVAL_OPTIONS).toHaveLength(4);

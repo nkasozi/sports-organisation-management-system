@@ -6,6 +6,12 @@ import {
   load_public_team_profile,
   load_public_team_profile_links,
 } from "./teamPublicProfileDataLoaderSupport";
+import {
+  build_completed_public_team_fixture,
+  build_scheduled_public_team_fixture,
+  EMPTY_PUBLIC_TEAM_STATS,
+  SINGLE_WIN_PUBLIC_TEAM_STATS,
+} from "./teamPublicProfileDataLoaderSupport.test_support";
 
 describe("teamPublicProfileDataLoaderSupport", () => {
   it("returns not found and restricted errors for missing or private team profiles", async () => {
@@ -107,16 +113,7 @@ describe("teamPublicProfileDataLoaderSupport", () => {
         { id: "team-1", name: "City Hawks" } as never,
       ),
     ).toEqual({
-      overall_stats: {
-        total_matches: 0,
-        wins: 0,
-        draws: 0,
-        losses: 0,
-        goals_for: 0,
-        goals_against: 0,
-        yellow_cards: 0,
-        red_cards: 0,
-      },
+      overall_stats: EMPTY_PUBLIC_TEAM_STATS,
       competition_stats: [],
       teams_by_id: new Map([["team-1", { id: "team-1", name: "City Hawks" }]]),
     });
@@ -141,31 +138,8 @@ describe("teamPublicProfileDataLoaderSupport", () => {
                 success: true,
                 data: {
                   items: [
-                    {
-                      id: "fixture-1",
-                      competition_id: "competition-1",
-                      home_team_id: "team-1",
-                      away_team_id: "team-2",
-                      status: "completed",
-                      home_team_score: 2,
-                      away_team_score: 1,
-                      scheduled_date: "2024-05-01T10:00:00.000Z",
-                      game_events: [
-                        { team_side: "home", event_type: "yellow_card" },
-                        { team_side: "home", event_type: "red_card" },
-                      ],
-                    },
-                    {
-                      id: "fixture-2",
-                      competition_id: "competition-1",
-                      home_team_id: "team-2",
-                      away_team_id: "team-1",
-                      status: "scheduled",
-                      home_team_score: 0,
-                      away_team_score: 0,
-                      scheduled_date: "2024-06-01T10:00:00.000Z",
-                      game_events: [],
-                    },
+                    build_completed_public_team_fixture(),
+                    build_scheduled_public_team_fixture(),
                   ],
                 },
               }),
@@ -183,42 +157,12 @@ describe("teamPublicProfileDataLoaderSupport", () => {
         { id: "team-1", name: "City Hawks" } as never,
       ),
     ).toEqual({
-      overall_stats: {
-        total_matches: 1,
-        wins: 1,
-        draws: 0,
-        losses: 0,
-        goals_for: 2,
-        goals_against: 1,
-        yellow_cards: 1,
-        red_cards: 1,
-      },
+      overall_stats: SINGLE_WIN_PUBLIC_TEAM_STATS,
       competition_stats: [
         {
           competition: { id: "competition-1", name: "Premier League" },
-          stats: {
-            total_matches: 1,
-            wins: 1,
-            draws: 0,
-            losses: 0,
-            goals_for: 2,
-            goals_against: 1,
-            yellow_cards: 1,
-            red_cards: 1,
-          },
-          upcoming_fixtures: [
-            {
-              id: "fixture-2",
-              competition_id: "competition-1",
-              home_team_id: "team-2",
-              away_team_id: "team-1",
-              status: "scheduled",
-              home_team_score: 0,
-              away_team_score: 0,
-              scheduled_date: "2024-06-01T10:00:00.000Z",
-              game_events: [],
-            },
-          ],
+          stats: SINGLE_WIN_PUBLIC_TEAM_STATS,
+          upcoming_fixtures: [build_scheduled_public_team_fixture()],
         },
       ],
       teams_by_id: new Map([

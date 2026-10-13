@@ -12,8 +12,13 @@ import type {
 } from "../../core/interfaces/ports";
 import type { QueryOptions } from "../../core/interfaces/ports";
 import type { ScalarValueInput } from "../../core/types/DomainScalars";
-import type { PaginatedAsyncResult } from "../../core/types/Result";
+import type {
+  AsyncResult,
+  PaginatedAsyncResult,
+} from "../../core/types/Result";
 import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
+import { create_lazy_repository_accessor } from "./InBrowserRepositorySingleton";
+import type { RepositoryWriteOrigin } from "./InBrowserRepositoryWriteOrigin";
 
 const ENTITY_PREFIX = "player_team_membership";
 
@@ -103,79 +108,17 @@ export class InBrowserPlayerTeamMembershipRepository
   }
 }
 
-function create_default_player_team_memberships(): import("$lib/core/types/DomainScalars").ScalarInput<PlayerTeamMembership>[] {
-  const now = new Date().toISOString();
-
-  return [
-    {
-      id: "player_team_membership_default_1",
-      organization_id: "org_default_1",
-      player_id: "player_default_1",
-      team_id: "team_default_1",
-      start_date: "2024-01-01",
-      jersey_number: 9,
-      status: "active",
-      created_at: now,
-      updated_at: now,
-    },
-    {
-      id: "player_team_membership_default_2",
-      organization_id: "org_default_1",
-      player_id: "player_default_2",
-      team_id: "team_default_1",
-      start_date: "2024-01-01",
-      jersey_number: 10,
-      status: "active",
-      created_at: now,
-      updated_at: now,
-    },
-    {
-      id: "player_team_membership_default_3",
-      organization_id: "org_default_1",
-      player_id: "player_default_3",
-      team_id: "team_default_2",
-      start_date: "2024-01-01",
-      jersey_number: 1,
-      status: "active",
-      created_at: now,
-      updated_at: now,
-    },
-    {
-      id: "player_team_membership_default_4",
-      organization_id: "org_default_1",
-      player_id: "player_default_4",
-      team_id: "team_default_4",
-      start_date: "2024-01-01",
-      jersey_number: 23,
-      status: "active",
-      created_at: now,
-      updated_at: now,
-    },
-  ] as PlayerTeamMembership[];
-}
-
-type PlayerTeamMembershipRepositoryState =
-  | { status: "uninitialized" }
-  | { status: "ready"; repository: InBrowserPlayerTeamMembershipRepository };
-
-let player_team_membership_repository_state: PlayerTeamMembershipRepositoryState =
-  {
-    status: "uninitialized",
-  };
+const get_concrete_repository: () => InBrowserPlayerTeamMembershipRepository =
+  create_lazy_repository_accessor(
+    () => new InBrowserPlayerTeamMembershipRepository(),
+  );
 
 export function get_player_team_membership_repository(): PlayerTeamMembershipRepository {
-  if (player_team_membership_repository_state.status === "ready") {
-    return player_team_membership_repository_state.repository;
-  }
-
-  const repository = new InBrowserPlayerTeamMembershipRepository();
-  player_team_membership_repository_state = { status: "ready", repository };
-
-  return repository;
+  return get_concrete_repository();
 }
 
-export async function reset_player_team_membership_repository(): Promise<void> {
-  const repository =
-    get_player_team_membership_repository() as InBrowserPlayerTeamMembershipRepository;
-  await repository.clear_all_data();
+export function reset_player_team_membership_repository(
+  origin: RepositoryWriteOrigin,
+): AsyncResult<boolean> {
+  return get_concrete_repository().with_write_origin(origin).clear_all_data();
 }

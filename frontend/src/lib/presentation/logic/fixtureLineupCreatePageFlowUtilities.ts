@@ -5,6 +5,7 @@ import {
   convert_team_player_to_lineup_player,
 } from "$lib/core/services/fixtureLineupWizard";
 import type { TeamPlayer } from "$lib/core/services/teamPlayers";
+import { PRESENCE_STATUS } from "$lib/presentation/logic/presenceStatus";
 
 import type { FixtureLineupCreateAuthProfileState } from "./fixtureLineupCreatePageContracts";
 
@@ -35,38 +36,57 @@ export function validate_fixture_lineup_create_players(command: {
   return {};
 }
 
+type StepChangeResult = {
+  is_allowed: boolean;
+  validation_errors: Record<string, string>;
+};
+
+const ALLOWED_STEP_CHANGE: StepChangeResult = {
+  is_allowed: true,
+  validation_errors: {},
+};
+
+function find_missing_selection_errors(
+  from_step_index: number,
+  form_data: CreateFixtureLineupInput,
+): Record<string, string> {
+  switch (from_step_index) {
+    case 0:
+      return form_data.organization_id
+        ? {}
+        : { organization_id: "Please select an organization first." };
+    case 1:
+      return form_data.fixture_id
+        ? {}
+        : { fixture_id: "Please select a fixture first." };
+    case 2:
+      return form_data.team_id
+        ? {}
+        : { team_id: "Please select a team first." };
+    default:
+      return {};
+  }
+}
+
 export function handle_fixture_lineup_create_step_change_attempt(command: {
   from_step_index: number;
   to_step_index: number;
   form_data: CreateFixtureLineupInput;
   min_players: number;
   max_players: number;
-}): { is_allowed: boolean; validation_errors: Record<string, string> } {
+}): StepChangeResult {
   if (command.to_step_index <= command.from_step_index) {
-    return { is_allowed: true, validation_errors: {} };
+    return { ...ALLOWED_STEP_CHANGE, validation_errors: {} };
   }
-  if (command.from_step_index === 0 && !command.form_data.organization_id) {
-    return {
-      is_allowed: false,
-      validation_errors: {
-        organization_id: "Please select an organization first.",
-      },
-    };
-  }
-  if (command.from_step_index === 1 && !command.form_data.fixture_id) {
-    return {
-      is_allowed: false,
-      validation_errors: { fixture_id: "Please select a fixture first." },
-    };
-  }
-  if (command.from_step_index === 2 && !command.form_data.team_id) {
-    return {
-      is_allowed: false,
-      validation_errors: { team_id: "Please select a team first." },
-    };
+  const missing_selection_errors = find_missing_selection_errors(
+    command.from_step_index,
+    command.form_data,
+  );
+  if (Object.keys(missing_selection_errors).length > 0) {
+    return { is_allowed: false, validation_errors: missing_selection_errors };
   }
   if (command.from_step_index !== 3) {
-    return { is_allowed: true, validation_errors: {} };
+    return { ...ALLOWED_STEP_CHANGE, validation_errors: {} };
   }
   const validation_errors = validate_fixture_lineup_create_players({
     selected_players: command.form_data.selected_players,
@@ -133,7 +153,7 @@ export function apply_fixture_lineup_authorization_defaults(command: {
   current_auth_profile_state: FixtureLineupCreateAuthProfileState;
 }): CreateFixtureLineupInput {
   const preselect_values =
-    command.current_auth_profile_state.status === "present"
+    command.current_auth_profile_state.status === PRESENCE_STATUS.PRESENT
       ? get_authorization_preselect_values(
           command.current_auth_profile_state.profile,
         )

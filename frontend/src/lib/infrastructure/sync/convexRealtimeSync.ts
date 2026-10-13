@@ -1,5 +1,9 @@
 import type { SubscribableConvexClient } from "../cache/AuthCacheInvalidator";
-import type { ConvexRecord, RemoteTableState } from "./syncTypes";
+import {
+  create_initial_tracking_state,
+  create_table_change_handler,
+  type TableTrackingState,
+} from "./realtimeTableTracking";
 
 export {
   get_realtime_sync_adapter,
@@ -7,16 +11,12 @@ export {
   stop_realtime_sync,
 } from "./realtimeSyncLifecycle";
 
-export interface TableChangeInfo {
-  table_name: string;
-  record_count: number;
-  latest_modified_at: NonNullable<RemoteTableState["latest_modified_at"]>;
-}
+export const DEFAULT_CHANGE_MARKER_QUERY = "sync:get_table_change_marker";
 
 interface TableWatchStatus {
   table_name: string;
-  remote_record_count: number;
-  remote_latest_timestamp: RemoteTableState["latest_modified_at"] | "";
+  remote_latest_sequence: number;
+  pulled_through_sequence: number;
   pull_count: number;
 }
 
@@ -26,15 +26,14 @@ export type TableStatusLookupResult =
 
 export type PullTableFunction = (
   table_name: string,
-  since_timestamp: ConvexRecord["synced_at"],
 ) => Promise<{ success: boolean; records_pulled: number }>;
 
 export interface RealtimeSyncDependencies {
   subscribable_client: SubscribableConvexClient;
   pull_table: PullTableFunction;
   table_names: string[];
-  query_reference?: unknown;
-  on_table_pulled?: (table_name: string) => void;
+  query_reference: unknown;
+  on_table_pulled: (table_name: string) => unknown;
 }
 
 export interface ConvexRealtimeSync {
@@ -43,166 +42,86 @@ export interface ConvexRealtimeSync {
   is_running(): boolean;
   get_watched_tables(): string[];
   get_table_status(table_name: string): TableStatusLookupResult;
-  get_all_table_statuses(): Record<
-    string,
-    TableWatchStatus["remote_latest_timestamp"]
-  >;
+  get_all_table_statuses(): Record<string, string>;
 }
 
-interface TableTrackingState {
-  latest_timestamp: TableWatchStatus["remote_latest_timestamp"];
-  remote_record_count: number;
-  pull_count: number;
+interface RealtimeWatcherContext {
+  deps: RealtimeSyncDependencies;
+  subscriptions: Array<{ unsubscribe: () => void }>;
+  running: boolean;
+  tracking: Map<string, TableTrackingState>;
 }
 
-function create_table_change_handler(
-  table_name: string,
-  tracking: Map<string, TableTrackingState>,
-  pull_table: PullTableFunction,
-  on_table_pulled?: (table_name: string) => void,
-): (result: unknown) => void {
-  return (result: unknown): void => {
-    const change_info = result as TableChangeInfo;
-    const current_state = tracking.get(table_name);
-
-    if (!current_state) return;
-
-    const new_timestamp = change_info.latest_modified_at;
-    const previous_timestamp = current_state.latest_timestamp;
-
-    current_state.remote_record_count = change_info.record_count;
-
-    if (previous_timestamp === "") {
-      current_state.latest_timestamp = new_timestamp;
-      return;
-    }
-
-    if (new_timestamp === previous_timestamp) return;
-
-    current_state.latest_timestamp = new_timestamp;
-    current_state.pull_count++;
-
-    console.log(
-      `[RealtimeSync] ${table_name} changed remotely (${previous_timestamp} → ${new_timestamp}), triggering pull`,
+function start_watching(context: RealtimeWatcherContext): boolean {
+  if (context.running) return false;
+  for (const table_name of context.deps.table_names) {
+    context.tracking.set(table_name, create_initial_tracking_state());
+    context.subscriptions.push(
+      context.deps.subscribable_client.onUpdate(
+        context.deps.query_reference,
+        { table_name },
+        create_table_change_handler(table_name, context.tracking, context.deps),
+      ),
     );
+  }
+  context.running = true;
+  console.log("[RealtimeSync] Started watching tables for remote changes", {
+    event: "realtime_sync_started",
+    table_count: context.deps.table_names.length,
+  });
+  return true;
+}
 
-    pull_table(table_name, previous_timestamp)
-      .then(() => {
-        on_table_pulled?.(table_name);
-      })
-      .catch((error) => {
-        console.error("[RealtimeSync] Table pull failed", {
-          event: "realtime_sync_pull_failed",
-          table_name,
-          error: error instanceof Error ? error.message : String(error),
-        });
-      });
+function stop_watching(context: RealtimeWatcherContext): boolean {
+  if (!context.running) return false;
+  context.subscriptions.forEach((subscription) => subscription.unsubscribe());
+  context.subscriptions = [];
+  context.tracking.clear();
+  context.running = false;
+  console.log("[RealtimeSync] Stopped watching tables", {
+    event: "realtime_sync_stopped",
+  });
+  return true;
+}
+
+function read_table_status(
+  context: RealtimeWatcherContext,
+  table_name: string,
+): TableStatusLookupResult {
+  const state = context.tracking.get(table_name);
+  if (!state) return { status: "missing" };
+  return {
+    status: "found",
+    table_status: {
+      table_name,
+      remote_latest_sequence: state.remote_latest_sequence,
+      pulled_through_sequence: state.pulled_through_sequence,
+      pull_count: state.pull_count,
+    },
   };
 }
 
 export function create_convex_realtime_sync(
   deps: RealtimeSyncDependencies,
 ): ConvexRealtimeSync {
-  let active_subscriptions: Array<{ unsubscribe: () => void }> = [];
-  let running = false;
-  const table_tracking = new Map<string, TableTrackingState>();
-
-  function start(): boolean {
-    if (running) return false;
-
-    for (const table_name of deps.table_names) {
-      table_tracking.set(table_name, {
-        latest_timestamp: "",
-        remote_record_count: 0,
-        pull_count: 0,
-      });
-
-      const handler = create_table_change_handler(
-        table_name,
-        table_tracking,
-        deps.pull_table,
-        deps.on_table_pulled,
-      );
-
-      const query_ref = deps.query_reference ?? "sync:get_latest_modified_at";
-
-      const subscription = deps.subscribable_client.onUpdate(
-        query_ref,
-        { table_name },
-        handler,
-      );
-
-      active_subscriptions.push(subscription);
-    }
-
-    running = true;
-
-    console.log(
-      `[RealtimeSync] Started watching ${deps.table_names.length} tables for remote changes`,
-    );
-
-    return true;
-  }
-
-  function stop(): boolean {
-    if (!running) return false;
-
-    for (const subscription of active_subscriptions) {
-      subscription.unsubscribe();
-    }
-
-    active_subscriptions = [];
-    table_tracking.clear();
-    running = false;
-
-    console.log("[RealtimeSync] Stopped watching tables");
-
-    return true;
-  }
-
-  function is_running_check(): boolean {
-    return running;
-  }
-
-  function get_watched_tables(): string[] {
-    return [...deps.table_names];
-  }
-
-  function get_table_status(table_name: string): TableStatusLookupResult {
-    const state = table_tracking.get(table_name);
-    if (!state) {
-      return { status: "missing" };
-    }
-
-    return {
-      status: "found",
-      table_status: {
-        table_name,
-        remote_record_count: state.remote_record_count,
-        remote_latest_timestamp: state.latest_timestamp ?? "",
-        pull_count: state.pull_count,
-      },
-    };
-  }
-
-  function get_all_table_statuses_map(): Record<
-    string,
-    TableWatchStatus["remote_latest_timestamp"]
-  > {
-    const result: Record<string, TableWatchStatus["remote_latest_timestamp"]> =
-      {};
-    for (const [table_name, state] of table_tracking.entries()) {
-      result[table_name] = state.latest_timestamp;
-    }
-    return result;
-  }
-
+  const context: RealtimeWatcherContext = {
+    deps,
+    subscriptions: [],
+    running: false,
+    tracking: new Map(),
+  };
   return {
-    start,
-    stop,
-    is_running: is_running_check,
-    get_watched_tables,
-    get_table_status,
-    get_all_table_statuses: get_all_table_statuses_map,
+    start: () => start_watching(context),
+    stop: () => stop_watching(context),
+    is_running: () => context.running,
+    get_watched_tables: () => [...deps.table_names],
+    get_table_status: (table_name) => read_table_status(context, table_name),
+    get_all_table_statuses: () =>
+      Object.fromEntries(
+        [...context.tracking.entries()].map(([table_name, state]) => [
+          table_name,
+          String(state.remote_latest_sequence),
+        ]),
+      ),
   };
 }

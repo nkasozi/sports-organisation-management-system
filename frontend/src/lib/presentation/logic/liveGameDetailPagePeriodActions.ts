@@ -1,5 +1,6 @@
 import type { Fixture } from "$lib/core/entities/Fixture";
 import type { SportGamePeriod } from "$lib/core/entities/Sport";
+import { GAME_PERIOD } from "$lib/core/entities/StatusConstants";
 import {
   change_game_period,
   end_game_period,
@@ -12,9 +13,14 @@ import {
   type PeriodButtonConfig,
 } from "$lib/presentation/logic/liveGameDetailState";
 
+import {
+  build_game_action_failure,
+  GAME_ACTION_EVENT,
+  GAME_ACTION_USER_MESSAGE,
+} from "./gameActionMessages";
 import type { FixtureUseCases } from "./liveGameDetailPageActionTypes";
 
-export async function confirm_live_game_period_action(command: {
+type ConfirmPeriodCommand = {
   effective_periods: SportGamePeriod[];
   elapsed_minutes: number;
   fixture: Fixture;
@@ -22,7 +28,9 @@ export async function confirm_live_game_period_action(command: {
   game_clock_seconds: number;
   period_button_config: PeriodButtonConfig;
   playing_periods: SportGamePeriod[];
-}): Promise<
+};
+
+type ConfirmPeriodResult =
   | {
       fixture: Fixture;
       game_clock_seconds: number;
@@ -30,43 +38,61 @@ export async function confirm_live_game_period_action(command: {
       success: true;
       toast_message: string;
     }
-  | { error_message: string; success: false }
-> {
-  if (command.period_button_config.is_end_action) {
-    const end_result = await end_game_period(
-      command.fixture,
-      command.elapsed_minutes,
-      command.fixture_use_cases,
-    );
-    if (!end_result.success)
-      return {
-        success: false,
-        error_message: "Failed to end period: failed to record event",
-      };
-    await command.fixture_use_cases.update_period(
-      end_result.data.fixture.id,
+  | { error_message: string; success: false };
+
+const SECONDS_PER_MINUTE = 60;
+
+async function end_current_live_game_period(
+  command: ConfirmPeriodCommand,
+): Promise<ConfirmPeriodResult> {
+  const end_result = await end_game_period(
+    command.fixture,
+    command.elapsed_minutes,
+    command.fixture_use_cases,
+  );
+  if (!end_result.success)
+    return build_game_action_failure({
+      event: GAME_ACTION_EVENT.END_PERIOD_FAILED,
+      fixture_id: command.fixture.id,
+      technical_error: end_result.error,
+      user_message: GAME_ACTION_USER_MESSAGE.END_PERIOD_FAILED,
+    });
+  const update_result = await command.fixture_use_cases.update_period(
+    end_result.data.fixture.id,
+    end_result.data.fixture.current_period,
+    command.elapsed_minutes,
+  );
+  if (!update_result.success)
+    return build_game_action_failure({
+      event: GAME_ACTION_EVENT.END_PERIOD_UPDATE_FAILED,
+      fixture_id: command.fixture.id,
+      technical_error: update_result.error,
+      user_message: GAME_ACTION_USER_MESSAGE.END_PERIOD_FAILED,
+    });
+  return {
+    success: true,
+    fixture: end_result.data.fixture,
+    game_clock_seconds: command.game_clock_seconds,
+    should_start_clock: !check_is_playing_period(
       end_result.data.fixture.current_period,
-      command.elapsed_minutes,
-    );
-    return {
-      success: true,
-      fixture: end_result.data.fixture,
-      game_clock_seconds: command.game_clock_seconds,
-      should_start_clock: !check_is_playing_period(
-        end_result.data.fixture.current_period,
-        command.effective_periods,
-      ),
-      toast_message: `${end_result.data.completed_period_label} ended`,
-    };
-  }
+      command.effective_periods,
+    ),
+    toast_message: `${end_result.data.completed_period_label} ended`,
+  };
+}
+
+async function start_next_live_game_period(
+  command: ConfirmPeriodCommand,
+): Promise<ConfirmPeriodResult> {
+  const next_period = command.period_button_config.next_period;
   const next_game_clock_seconds = get_period_start_seconds(
-    command.period_button_config.next_period,
+    next_period,
     command.playing_periods,
   );
   const change_result = await change_game_period(
     command.fixture,
-    command.period_button_config.next_period,
-    Math.floor(next_game_clock_seconds / 60),
+    next_period,
+    Math.floor(next_game_clock_seconds / SECONDS_PER_MINUTE),
     command.fixture_use_cases,
   );
   return change_result.success
@@ -75,12 +101,22 @@ export async function confirm_live_game_period_action(command: {
         fixture: change_result.data,
         game_clock_seconds: next_game_clock_seconds,
         should_start_clock: true,
-        toast_message: `${get_sport_period_display_name(command.period_button_config.next_period, command.effective_periods)} started!`,
+        toast_message: `${get_sport_period_display_name(next_period, command.effective_periods)} started!`,
       }
-    : {
-        success: false,
-        error_message: `Failed to change period: ${change_result.error}`,
-      };
+    : build_game_action_failure({
+        event: GAME_ACTION_EVENT.CHANGE_PERIOD_FAILED,
+        fixture_id: command.fixture.id,
+        technical_error: change_result.error,
+        user_message: GAME_ACTION_USER_MESSAGE.CHANGE_PERIOD_FAILED,
+      });
+}
+
+export async function confirm_live_game_period_action(
+  command: ConfirmPeriodCommand,
+): Promise<ConfirmPeriodResult> {
+  if (command.period_button_config.is_end_action)
+    return end_current_live_game_period(command);
+  return start_next_live_game_period(command);
 }
 
 export async function confirm_live_game_extra_time_action(command: {
@@ -103,7 +139,7 @@ export async function confirm_live_game_extra_time_action(command: {
     command.elapsed_minutes,
     command.extra_minutes_to_add,
     get_sport_period_display_name(
-      command.fixture.current_period ?? "first_half",
+      command.fixture.current_period ?? GAME_PERIOD.FIRST_HALF,
       command.effective_periods,
     ),
     command.fixture_use_cases,
@@ -113,7 +149,12 @@ export async function confirm_live_game_extra_time_action(command: {
         success: true,
         fixture: result.data,
         seconds_added: command.extra_minutes_to_add * 60,
-        toast_message: `${command.extra_minutes_to_add} min added time - ${get_sport_period_display_name(result.data.current_period ?? "first_half", command.effective_periods)}`,
+        toast_message: `${command.extra_minutes_to_add} min added time - ${get_sport_period_display_name(result.data.current_period ?? GAME_PERIOD.FIRST_HALF, command.effective_periods)}`,
       }
-    : { success: false, error_message: "Failed to record extra time event" };
+    : build_game_action_failure({
+        event: GAME_ACTION_EVENT.EXTRA_TIME_FAILED,
+        fixture_id: command.fixture.id,
+        technical_error: result.error,
+        user_message: GAME_ACTION_USER_MESSAGE.EXTRA_TIME_FAILED,
+      });
 }

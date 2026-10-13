@@ -1,10 +1,13 @@
 <script lang="ts">
     import type { PreFlightCheck } from "$lib/core/services/fixtureStartChecks";
+    import { CHECK_STATUS } from "$lib/core/services/FixtureStartChecksConstants";
     import {
         get_live_game_check_class,
         get_live_game_check_container_class,
         get_live_game_check_icon,
     } from "$lib/presentation/logic/liveGamesViewLogic";
+
+    import { LIVE_GAMES_PREFLIGHT_TEXT } from "./liveGamesConstants";
 
     export let checks: PreFlightCheck[] = [];
 </script>
@@ -15,7 +18,7 @@
             <h4
                 class="text-xs font-semibold uppercase tracking-wider text-accent-500 dark:text-accent-400 mb-3"
             >
-                Pre-flight Checks
+                {LIVE_GAMES_PREFLIGHT_TEXT.TITLE}
             </h4>
             <div class="space-y-2">
                 {#each checks as check}
@@ -33,7 +36,8 @@
                         </span>
                         <div class="flex-1 min-w-0">
                             <p
-                                class="text-sm {check.status === 'failed'
+                                class="text-sm {check.status ===
+                                CHECK_STATUS.FAILED
                                     ? 'text-red-700 dark:text-red-300 font-medium'
                                     : 'text-accent-700 dark:text-accent-300'}"
                             >
@@ -42,7 +46,7 @@
                             {#if check.fix_suggestion}
                                 <p
                                     class="text-xs mt-1 {check.status ===
-                                    'failed'
+                                    CHECK_STATUS.FAILED
                                         ? 'text-red-600 dark:text-red-400'
                                         : 'text-accent-600 dark:text-accent-400'}"
                                 >

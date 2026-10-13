@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { handle_missing_fixture_details } from "./liveGamesAutoSetupFlow";
+import type { AutoSetupDependenciesMock } from "./liveGamesAutoSetupFlow.test_support";
 
 const { auto_create_fixture_details_setup_mock, publish_checks_mock } =
   vi.hoisted(() => ({
@@ -23,7 +24,7 @@ vi.mock("./liveGamesStartFlowShared", async () => {
 });
 
 describe("liveGamesAutoSetupFlow", () => {
-  function create_dependencies() {
+  function create_dependencies(): AutoSetupDependenciesMock {
     return {
       competition_use_cases: { get_by_id: vi.fn() },
       get_current_role: vi.fn(() => "player"),

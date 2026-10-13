@@ -7,9 +7,6 @@
         reset_initialization,
     } from "$lib/adapters/initialization/appInitializer";
     import { reset_all_data } from "$lib/adapters/initialization/dataResetService";
-    import type { Competition } from "$lib/core/entities/Competition";
-    import type { Fixture } from "$lib/core/entities/Fixture";
-    import type { Team } from "$lib/core/entities/Team";
     import {
         ANY_VALUE,
         check_data_permission,
@@ -26,14 +23,29 @@
     import DashboardHomePage from "$lib/presentation/components/dashboard/DashboardHomePage.svelte";
     import { ErrorDisplay } from "$lib/presentation/components/ui";
     import FullScreenOverlay from "$lib/presentation/components/ui/FullScreenOverlay.svelte";
+    import Toast from "$lib/presentation/components/ui/Toast.svelte";
+    import { TOAST_TYPE } from "$lib/presentation/components/ui/toastTypes";
     import { ensure_auth_profile } from "$lib/presentation/logic/authGuard";
     import type { DashboardDependencies } from "$lib/presentation/logic/dashboardPageLogic";
     import { load_dashboard_data } from "$lib/presentation/logic/dashboardPageLogic";
     import { build_dashboard_filters } from "$lib/presentation/logic/dashboardStatsLogic";
+    import { PRESENCE_STATUS } from "$lib/presentation/logic/presenceStatus";
     import { access_denial_store } from "$lib/presentation/stores/accessDenial";
     import { auth_store } from "$lib/presentation/stores/auth";
     import { branding_store } from "$lib/presentation/stores/branding";
     import { first_time_setup_store } from "$lib/presentation/stores/firstTimeSetup";
+
+    import {
+        begin_dashboard_load,
+        dashboard_data_of,
+        DASHBOARD_FALLBACK_ROLE,
+        DASHBOARD_HOME_ROUTE_PATH,
+        DASHBOARD_ROUTE_MESSAGES,
+        DASHBOARD_ROUTE_STATUS,
+        type DashboardRouteState,
+        fail_dashboard,
+        settle_dashboard_load,
+    } from "./dashboardRouteState";
 
     const dashboard_dependencies: DashboardDependencies = {
         organization_use_cases: get_organization_use_cases(),
@@ -44,29 +56,25 @@
         sport_use_cases: get_sport_use_cases(),
     };
 
-    let loading: boolean = true;
+    let dashboard_state: DashboardRouteState = begin_dashboard_load(
+        fail_dashboard(""),
+    );
     let is_resetting: boolean = false;
-    let reset_status_message: string = "Clearing demo data...";
+    let reset_status_message: string = DASHBOARD_ROUTE_MESSAGES.RESET_STARTED;
     let reset_progress: number = 0;
-    let error_message: string = "";
     let access_denial_message: string = "";
-    let stats = { organizations: 0, competitions: 0, teams: 0, players: 0 };
-    let recent_competitions: Competition[] = [];
-    let upcoming_fixtures: Fixture[] = [];
-    let teams_map: Map<string, Team> = new Map();
-    let competition_names: Record<string, string> = {};
-    let sport_names: Record<string, string> = {};
-    let competition_sport_names: Record<string, string> = {};
+    let is_reset_failure_visible = false;
 
+    $: dashboard_data = dashboard_data_of(dashboard_state);
     $: current_profile_state = $auth_store.current_profile;
     $: current_user_organization_id =
-        current_profile_state.status === "present"
+        current_profile_state.status === PRESENCE_STATUS.PRESENT
             ? current_profile_state.profile.organization_id
             : "";
     $: current_user_role =
-        current_profile_state.status === "present"
+        current_profile_state.status === PRESENCE_STATUS.PRESENT
             ? current_profile_state.profile.role
-            : "player";
+            : DASHBOARD_FALLBACK_ROLE;
     $: user_is_super_admin = current_user_organization_id === ANY_VALUE;
     $: user_has_org_admin_access = check_data_permission(
         current_user_role,
@@ -79,32 +87,21 @@
     }
 
     async function refresh_dashboard_data(): Promise<void> {
-        loading = true;
-        const dashboard_filters = build_dashboard_filters(
-            current_user_role,
-            current_user_organization_id,
+        dashboard_state = begin_dashboard_load(dashboard_state);
+        dashboard_state = settle_dashboard_load(
+            await load_dashboard_data(
+                dashboard_dependencies,
+                build_dashboard_filters(
+                    current_user_role,
+                    current_user_organization_id,
+                ),
+            ),
         );
-        const result = await load_dashboard_data(
-            dashboard_dependencies,
-            dashboard_filters,
-        );
-        if (!result.success) {
-            loading = false;
-            return;
-        }
-        stats = result.data.stats;
-        recent_competitions = result.data.recent_competitions;
-        upcoming_fixtures = result.data.upcoming_fixtures;
-        teams_map = result.data.teams_map;
-        competition_names = result.data.competition_names;
-        sport_names = result.data.sport_names;
-        competition_sport_names = result.data.competition_sport_names;
-        loading = false;
     }
 
     async function handle_reset_data(): Promise<boolean> {
         if (is_resetting) return false;
-        reset_status_message = "Clearing demo data...";
+        reset_status_message = DASHBOARD_ROUTE_MESSAGES.RESET_STARTED;
         reset_progress = 0;
         is_resetting = true;
         await tick();
@@ -116,6 +113,7 @@
         );
         if (!reset_result) {
             is_resetting = false;
+            is_reset_failure_visible = true;
             return false;
         }
         first_time_setup_store.reset();
@@ -136,8 +134,7 @@
         }
         const auth_result = await ensure_auth_profile();
         if (!auth_result.success) {
-            error_message = auth_result.error_message;
-            loading = false;
+            dashboard_state = fail_dashboard(auth_result.error_message);
             return;
         }
         const user_role = current_user_role;
@@ -145,7 +142,10 @@
             await get_authorization_adapter().get_default_route_for_role(
                 user_role,
             );
-        if (default_route_result.success && default_route_result.data !== "/") {
+        if (
+            default_route_result.success &&
+            default_route_result.data !== DASHBOARD_HOME_ROUTE_PATH
+        ) {
             await goto(default_route_result.data, { replaceState: true });
             return;
         }
@@ -163,35 +163,35 @@
 
 {#if is_resetting}
     <FullScreenOverlay
-        title="Resetting Demo Data"
+        title={DASHBOARD_ROUTE_MESSAGES.RESET_TITLE}
         status_message={reset_status_message}
         progress_percentage={reset_progress}
     />
 {/if}
 
-{#if error_message}
+{#if dashboard_state.status === DASHBOARD_ROUTE_STATUS.FAILED}
     <ErrorDisplay
         variant="page"
-        title="Unable to Load Dashboard"
-        message={error_message}
+        title={DASHBOARD_ROUTE_MESSAGES.LOAD_FAILED_TITLE}
+        message={dashboard_state.message}
+        on_retry={() => void refresh_dashboard_data()}
     />
 {:else}
     <DashboardHomePage
-        {loading}
+        loading={dashboard_state.status === DASHBOARD_ROUTE_STATUS.LOADING}
         {access_denial_message}
         organization_name={$branding_store.organization_name}
         organization_tagline={$branding_store.organization_tagline}
         {user_is_super_admin}
         {user_has_org_admin_access}
         {is_resetting}
-        {stats}
-        {recent_competitions}
-        {upcoming_fixtures}
-        {teams_map}
-        {competition_names}
-        {sport_names}
-        {competition_sport_names}
+        {...dashboard_data}
         on_reset={handle_reset_data}
         on_dismiss_access_denial={dismiss_access_denial}
     />
 {/if}
+<Toast
+    message={DASHBOARD_ROUTE_MESSAGES.RESET_FAILED}
+    type={TOAST_TYPE.ERROR}
+    bind:is_visible={is_reset_failure_visible}
+/>

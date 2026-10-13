@@ -1,32 +1,144 @@
 import { get } from "svelte/store";
 
-import type { SyncDirection, SyncHints } from "$lib/core/interfaces/ports";
+import { sync_change_tracking_gate } from "$lib/adapters/repositories/syncOutbox/syncChangeTrackingGate";
+import type { SyncDirection } from "$lib/core/interfaces/ports";
 
 import { current_user_role } from "../../presentation/stores/auth";
-import {
-  get_database,
-  get_local_latest_modified_at,
-  get_table_from_database,
-} from "./syncDataAccess";
+import { get_database } from "./syncDataAccess";
 import {
   create_table_sync_progress,
-  load_remote_table_state,
-  log_sync_summary,
+  PushSyncAuthorizationDecision,
   update_table_sync_progress,
   verify_push_sync_auth_or_fail,
 } from "./syncOrchestratorHelpers";
+import { load_tables_with_pending_changes } from "./syncOrchestratorPendingTables";
 import {
-  sync_table_when_local_ahead,
-  sync_table_when_remote_ahead,
-} from "./syncTableSync";
+  accumulate_table_result,
+  build_sync_result,
+  create_empty_totals,
+  type SyncRunTotals,
+} from "./syncOrchestratorTotals";
+import {
+  sync_backfill_deferrals,
+  sync_run_cancellation,
+  SYNC_RUN_CANCELLED_ERROR,
+} from "./syncRunSignals";
+import { sync_table_changes } from "./syncTableSync";
 import type { ConvexClient, SyncProgress, SyncResult } from "./syncTypes";
 import {
-  EPOCH_TIMESTAMP,
   get_push_excluded_tables,
   get_push_excluded_tables_for_unsigned_user,
   TABLE_NAMES,
   type TableName,
 } from "./syncTypes";
+
+const PULL_DIRECTION = "pull";
+const OUTBOX_ERROR_SCOPE = "sync_outbox";
+const CANCELLED_ERROR_SCOPE = "all";
+
+function build_outbox_failure_result(
+  error: string,
+  start_time: number,
+  total_tables: number,
+): SyncResult {
+  return build_sync_result(
+    {
+      ...create_empty_totals(),
+      errors: [{ table_name: OUTBOX_ERROR_SCOPE, error }],
+    },
+    start_time,
+    total_tables,
+  );
+}
+
+function resolve_push_excluded_tables(): Set<string> {
+  const role = get(current_user_role);
+  return role
+    ? get_push_excluded_tables(role)
+    : get_push_excluded_tables_for_unsigned_user();
+}
+
+interface TableRunContext {
+  convex_client: ConvexClient;
+  database: ReturnType<typeof get_database>;
+  direction: SyncDirection;
+  detect_conflicts: boolean;
+  correlation_id: string;
+  pending_tables: Set<string>;
+  push_excluded_tables: Set<string>;
+  on_progress: (progress: SyncProgress) => unknown;
+  started_epoch: number;
+}
+
+function stop_cancelled_run(
+  context: TableRunContext,
+  totals: SyncRunTotals,
+): SyncRunTotals {
+  console.warn("[Sync] Run cancelled because sync was stopped", {
+    event: "sync_run_cancelled",
+    correlation_id: context.correlation_id,
+  });
+  return {
+    ...totals,
+    errors: [
+      ...totals.errors,
+      { table_name: CANCELLED_ERROR_SCOPE, error: SYNC_RUN_CANCELLED_ERROR },
+    ],
+  };
+}
+
+const IGNORE_PROGRESS = (): boolean => false;
+
+async function run_table_syncs(
+  context: TableRunContext,
+  valid_tables: TableName[],
+): Promise<SyncRunTotals> {
+  let totals = create_empty_totals();
+  for (const [table_index, table_name] of valid_tables.entries()) {
+    if (totals.auth_failed) break;
+    if (sync_run_cancellation.is_cancelled(context.started_epoch))
+      return stop_cancelled_run(context, totals);
+    const progress = create_table_sync_progress(
+      table_name,
+      table_index,
+      valid_tables.length,
+    );
+    context.on_progress(progress);
+    const table_result = await sync_table_changes({
+      ...context,
+      gate: sync_change_tracking_gate,
+      backfill_deferrals: sync_backfill_deferrals,
+      table_name,
+      should_push:
+        context.pending_tables.has(table_name) &&
+        !context.push_excluded_tables.has(table_name),
+    });
+    totals = accumulate_table_result(totals, table_result);
+    context.on_progress(
+      update_table_sync_progress(progress, table_result, table_index + 1),
+    );
+  }
+  return totals;
+}
+
+function select_valid_tables(enabled_tables: string[]): TableName[] {
+  return enabled_tables.filter((table_name) =>
+    TABLE_NAMES.includes(table_name as TableName),
+  ) as TableName[];
+}
+
+function create_run_scope(
+  on_progress: ((progress: SyncProgress) => void) | undefined,
+): Pick<
+  TableRunContext,
+  "push_excluded_tables" | "on_progress" | "started_epoch"
+> {
+  return {
+    push_excluded_tables: resolve_push_excluded_tables(),
+    on_progress: on_progress ?? IGNORE_PROGRESS,
+    started_epoch: sync_run_cancellation.current_epoch(),
+  };
+}
 
 export async function sync_all_tables(
   convex_client: ConvexClient,
@@ -34,163 +146,37 @@ export async function sync_all_tables(
   enabled_tables: string[] = [...TABLE_NAMES],
   on_progress?: (progress: SyncProgress) => void,
   detect_conflicts: boolean = true,
-  hints?: SyncHints,
 ): Promise<SyncResult> {
   const start_time = Date.now();
-  const database = get_database();
-  const errors: Array<{ table_name: string; error: string }> = [];
-  const all_conflicts: Array<{
-    table_name: string;
-    conflicts: import("./syncTypes").ConflictFromServer[];
-  }> = [];
-  let total_pushed = 0;
-  let total_pulled = 0;
-  let tables_synced = 0;
-  let auth_failed = false;
-  const valid_tables = enabled_tables.filter((t) =>
-    TABLE_NAMES.includes(t as TableName),
-  );
-  const total_tables = valid_tables.length;
-  let tables_completed = 0;
-  const role = get(current_user_role);
-  const push_excluded_tables = role
-    ? get_push_excluded_tables(role)
-    : get_push_excluded_tables_for_unsigned_user();
-  console.log(
-    `[Sync] ===== Starting sync: direction=${direction}, tables=${total_tables}, role=${role} =====`,
-  );
+  const correlation_id = crypto.randomUUID();
+  const valid_tables = select_valid_tables(enabled_tables);
   const auth_failure = await verify_push_sync_auth_or_fail(
     convex_client,
     direction,
     start_time,
   );
-  if (auth_failure.status === "stop") return auth_failure.result;
-  for (const table_name of valid_tables) {
-    if (auth_failed) {
-      console.warn(
-        `[Sync] ${table_name} — SKIPPED (auth failed on earlier table)`,
-      );
-      tables_completed++;
-      continue;
-    }
-
-    const progress: SyncProgress = create_table_sync_progress(
-      table_name,
-      tables_completed,
-      total_tables,
+  if (auth_failure.status === PushSyncAuthorizationDecision.STOP)
+    return auth_failure.result;
+  const pending_tables = await load_tables_with_pending_changes(
+    get_database(),
+    direction === PULL_DIRECTION,
+    correlation_id,
+  );
+  if (!pending_tables.success)
+    return build_outbox_failure_result(
+      pending_tables.error,
+      start_time,
+      valid_tables.length,
     );
-    if (on_progress) on_progress(progress);
-    const table = get_table_from_database(database, table_name as TableName);
-    const all_local_records = await table.toArray();
-    const local_latest = get_local_latest_modified_at(all_local_records);
-    const remote_state_result = await load_remote_table_state(
-      convex_client,
-      table_name,
-      hints,
-    );
-    if (!remote_state_result.success) {
-      errors.push({
-        table_name,
-        error: remote_state_result.error,
-      });
-      tables_completed++;
-      continue;
-    }
-    const remote_state = remote_state_result.data;
-    const remote_latest = remote_state.latest_modified_at;
-    const local_is_ahead = local_latest > remote_latest;
-    const remote_is_ahead = remote_latest > local_latest;
-    const are_in_sync =
-      !local_is_ahead && !remote_is_ahead && remote_latest !== EPOCH_TIMESTAMP;
-    console.log(
-      `[Sync] ${table_name} — local: ${all_local_records.length} records (latest: ${local_latest}), ` +
-        `remote: ${remote_state.record_count} records (latest: ${remote_latest}), ` +
-        `${local_is_ahead ? "LOCAL ahead" : remote_is_ahead ? "REMOTE ahead" : "IN SYNC"}`,
-    );
-
-    if (are_in_sync && direction === "bidirectional") {
-      console.log(`[Sync] ${table_name} — already in sync, skipping`);
-      tables_synced++;
-      tables_completed++;
-      if (on_progress) {
-        on_progress({
-          table_name,
-          total_records: all_local_records.length,
-          synced_records: 0,
-          status: "success",
-          errors: [],
-          tables_completed,
-          total_tables,
-          percentage: Math.round((tables_completed / total_tables) * 100),
-        });
-      }
-      continue;
-    }
-    const table_result =
-      local_is_ahead || direction === "push"
-        ? await sync_table_when_local_ahead(
-            convex_client,
-            table_name,
-            table,
-            all_local_records,
-            local_latest,
-            remote_state,
-            direction,
-            push_excluded_tables,
-            detect_conflicts,
-          )
-        : await sync_table_when_remote_ahead(
-            convex_client,
-            table_name,
-            table,
-            local_latest,
-            remote_state,
-            remote_is_ahead,
-            direction,
-            push_excluded_tables,
-            detect_conflicts,
-          );
-    total_pushed += table_result.records_pushed;
-    total_pulled += table_result.records_pulled;
-    errors.push(...table_result.errors);
-    all_conflicts.push(...table_result.conflicts);
-    if (table_result.auth_failed) auth_failed = true;
-    tables_completed++;
-    if (table_result.success && table_result.conflicts.length === 0)
-      tables_synced++;
-    if (on_progress)
-      on_progress(
-        update_table_sync_progress(progress, table_result, tables_completed),
-      );
-  }
-  const has_conflicts = all_conflicts.length > 0;
-  const sync_succeeded = errors.length === 0 && !has_conflicts;
-  const duration_ms = Date.now() - start_time;
-  log_sync_summary({
-    sync_succeeded,
-    duration_ms,
-    total_pushed,
-    total_pulled,
-    tables_synced,
-    total_tables,
-    errors,
-    all_conflicts,
-  });
-  return {
-    success: sync_succeeded,
-    tables_synced,
-    records_pushed: total_pushed,
-    records_pulled: total_pulled,
-    errors,
-    duration_ms,
-    conflicts: all_conflicts,
+  const context: TableRunContext = {
+    convex_client,
+    database: get_database(),
+    direction,
+    detect_conflicts,
+    correlation_id,
+    pending_tables: pending_tables.data,
+    ...create_run_scope(on_progress),
   };
-}
-
-async function sync_single_table(
-  convex_client: ConvexClient,
-  table_name: string,
-  direction: SyncDirection = "bidirectional",
-): Promise<SyncResult> {
-  return sync_all_tables(convex_client, direction, [table_name]);
+  const totals = await run_table_syncs(context, valid_tables);
+  return build_sync_result(totals, start_time, valid_tables.length);
 }

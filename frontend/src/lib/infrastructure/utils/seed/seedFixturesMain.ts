@@ -12,6 +12,21 @@ import { create_seed_fixtures_part10 } from "./seedFixtures10";
 import { create_seed_fixtures_part11 } from "./seedFixtures11";
 import { create_seed_fixtures_part12 } from "./seedFixtures12";
 
+const SEED_FIXTURE_PART_BUILDERS = [
+  create_seed_fixtures_part1,
+  create_seed_fixtures_part2,
+  create_seed_fixtures_part3,
+  create_seed_fixtures_part4,
+  create_seed_fixtures_part5,
+  create_seed_fixtures_part6,
+  create_seed_fixtures_part7,
+  create_seed_fixtures_part8,
+  create_seed_fixtures_part9,
+  create_seed_fixtures_part10,
+  create_seed_fixtures_part11,
+  create_seed_fixtures_part12,
+];
+
 export function create_seed_fixtures(
   referee_role_id: string,
   assistant_referee_role_id: string,
@@ -23,90 +38,13 @@ export function create_seed_fixtures(
   const three_weeks = new Date();
   three_weeks.setDate(three_weeks.getDate() + 21);
 
-  return [
-    ...create_seed_fixtures_part1(
+  return SEED_FIXTURE_PART_BUILDERS.flatMap((build_part) =>
+    build_part(
       referee_role_id,
       assistant_referee_role_id,
       next_week,
       two_weeks,
       three_weeks,
     ),
-    ...create_seed_fixtures_part2(
-      referee_role_id,
-      assistant_referee_role_id,
-      next_week,
-      two_weeks,
-      three_weeks,
-    ),
-    ...create_seed_fixtures_part3(
-      referee_role_id,
-      assistant_referee_role_id,
-      next_week,
-      two_weeks,
-      three_weeks,
-    ),
-    ...create_seed_fixtures_part4(
-      referee_role_id,
-      assistant_referee_role_id,
-      next_week,
-      two_weeks,
-      three_weeks,
-    ),
-    ...create_seed_fixtures_part5(
-      referee_role_id,
-      assistant_referee_role_id,
-      next_week,
-      two_weeks,
-      three_weeks,
-    ),
-    ...create_seed_fixtures_part6(
-      referee_role_id,
-      assistant_referee_role_id,
-      next_week,
-      two_weeks,
-      three_weeks,
-    ),
-    ...create_seed_fixtures_part7(
-      referee_role_id,
-      assistant_referee_role_id,
-      next_week,
-      two_weeks,
-      three_weeks,
-    ),
-    ...create_seed_fixtures_part8(
-      referee_role_id,
-      assistant_referee_role_id,
-      next_week,
-      two_weeks,
-      three_weeks,
-    ),
-    ...create_seed_fixtures_part9(
-      referee_role_id,
-      assistant_referee_role_id,
-      next_week,
-      two_weeks,
-      three_weeks,
-    ),
-    ...create_seed_fixtures_part10(
-      referee_role_id,
-      assistant_referee_role_id,
-      next_week,
-      two_weeks,
-      three_weeks,
-    ),
-    ...create_seed_fixtures_part11(
-      referee_role_id,
-      assistant_referee_role_id,
-      next_week,
-      two_weeks,
-      three_weeks,
-    ),
-    ...create_seed_fixtures_part12(
-      referee_role_id,
-      assistant_referee_role_id,
-      next_week,
-      two_weeks,
-      three_weeks,
-    ),
-  ];
+  );
 }

@@ -1,37 +1,47 @@
 import { WILDCARD_SCOPE } from "../../core/entities/StatusConstants";
-type SessionAction =
-  | "login_sync"
-  | "verified_page_reload"
-  | "first_time_anonymous"
-  | "returning_anonymous";
+import {
+  APP_ROUTE_PATH,
+  IN_APP_NAVIGATION_TYPES,
+  ROUTE_GUARD_EXEMPT_EXACT_PATHS,
+} from "./layoutRouteConstants";
 
-type NavigationType = "link" | "goto" | "popstate" | "enter" | string;
+export const SESSION_ACTION = {
+  LOGIN_SYNC: "login_sync",
+  VERIFIED_PAGE_RELOAD: "verified_page_reload",
+  FIRST_TIME_ANONYMOUS: "first_time_anonymous",
+  RETURNING_ANONYMOUS: "returning_anonymous",
+} as const;
+
+export type SessionAction =
+  (typeof SESSION_ACTION)[keyof typeof SESSION_ACTION];
 
 export function get_is_public_profile_page(path: string): boolean {
-  return path.startsWith("/profile/") || path.startsWith("/team-profile/");
+  return (
+    path.startsWith(APP_ROUTE_PATH.PLAYER_PROFILE_PREFIX) ||
+    path.startsWith(APP_ROUTE_PATH.TEAM_PROFILE_PREFIX)
+  );
 }
 
 export function get_is_public_content_page(path: string): boolean {
   return (
-    path.startsWith("/competition-results") ||
-    path.startsWith("/calendar") ||
-    path.startsWith("/match-report")
+    path.startsWith(APP_ROUTE_PATH.COMPETITION_RESULTS) ||
+    path.startsWith(APP_ROUTE_PATH.CALENDAR) ||
+    path.startsWith(APP_ROUTE_PATH.MATCH_REPORT)
   );
 }
 
 export function get_is_auth_page(path: string): boolean {
-  return path.startsWith("/sign-in") || path === "/unauthorized";
+  return (
+    path.startsWith(APP_ROUTE_PATH.SIGN_IN) ||
+    path === APP_ROUTE_PATH.UNAUTHORIZED
+  );
 }
 
 export function is_route_guard_exempt(path: string): boolean {
   return (
-    path === "/" ||
-    path.startsWith("/sign-in") ||
-    path === "/unauthorized" ||
-    path.startsWith("/api/") ||
-    path === "/privacy" ||
-    path === "/terms" ||
-    path === "/contact" ||
+    ROUTE_GUARD_EXEMPT_EXACT_PATHS.has(path) ||
+    path.startsWith(APP_ROUTE_PATH.SIGN_IN) ||
+    path.startsWith(APP_ROUTE_PATH.API_PREFIX) ||
     get_is_public_content_page(path)
   );
 }
@@ -40,21 +50,21 @@ export function determine_session_action(
   user_is_signed_in: boolean,
   session_already_synced: boolean,
 ): SessionAction {
-  if (user_is_signed_in && !session_already_synced) return "login_sync";
+  if (user_is_signed_in && !session_already_synced)
+    return SESSION_ACTION.LOGIN_SYNC;
   if (user_is_signed_in && session_already_synced)
-    return "verified_page_reload";
+    return SESSION_ACTION.VERIFIED_PAGE_RELOAD;
   if (!user_is_signed_in && !session_already_synced)
-    return "first_time_anonymous";
-  return "returning_anonymous";
+    return SESSION_ACTION.FIRST_TIME_ANONYMOUS;
+  return SESSION_ACTION.RETURNING_ANONYMOUS;
 }
 
-export function is_in_app_navigation(navigation_type: NavigationType): boolean {
-  return (
-    navigation_type === "link" ||
-    navigation_type === "goto" ||
-    navigation_type === "popstate"
-  );
+export function is_in_app_navigation(navigation_type: string): boolean {
+  return IN_APP_NAVIGATION_TYPES.has(navigation_type);
 }
+
+const SYNC_PROGRESS_BASE_PERCENT = 20;
+const SYNC_PROGRESS_SPAN_PERCENT = 68;
 
 export function format_table_name(table_name: string): string {
   return table_name
@@ -63,7 +73,10 @@ export function format_table_name(table_name: string): string {
 }
 
 export function scale_sync_percentage(raw_percentage: number): number {
-  return 20 + Math.round((raw_percentage / 100) * 68);
+  return (
+    SYNC_PROGRESS_BASE_PERCENT +
+    Math.round((raw_percentage / 100) * SYNC_PROGRESS_SPAN_PERCENT)
+  );
 }
 
 export function build_sync_progress_message(

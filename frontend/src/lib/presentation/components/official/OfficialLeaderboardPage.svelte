@@ -8,6 +8,11 @@
     import type { OfficialPerformanceRating } from "$lib/core/entities/OfficialPerformanceRating";
     import type { Organization } from "$lib/core/entities/Organization";
     import type { UserScopeProfile } from "$lib/core/interfaces/ports";
+    import {
+        create_none_option,
+        create_some_option,
+        type Option,
+    } from "$lib/core/types/Option";
     import { ensure_auth_profile } from "$lib/presentation/logic/authGuard";
     import type {
         OfficialLeaderboardEntry,
@@ -22,12 +27,20 @@
         rebuild_official_leaderboard_view,
         select_official_leaderboard_entry,
     } from "$lib/presentation/logic/officialLeaderboardPageState";
+    import { PRESENCE_STATUS } from "$lib/presentation/logic/presenceStatus";
     import { auth_store } from "$lib/presentation/stores/auth";
 
+    import { OFFICIAL_LEADERBOARD_MESSAGES } from "./officialLeaderboardMessages";
     import OfficialLeaderboardPageShell from "./OfficialLeaderboardPageShell.svelte";
+    import {
+        create_official_leaderboard_failed_state,
+        create_official_leaderboard_loading_state,
+        create_official_leaderboard_ready_state,
+        type OfficialLeaderboardPageStatusState,
+    } from "./officialLeaderboardPageStatus";
 
-    let is_loading = true,
-        error_message = "",
+    let page_status_state: OfficialLeaderboardPageStatusState =
+            create_official_leaderboard_loading_state(),
         organizations: Organization[] = [],
         selected_organization_id = "",
         leaderboard_entries: OfficialLeaderboardEntry[] = [],
@@ -40,27 +53,27 @@
         all_stages: CompetitionStage[] = [];
 
     async function load_all_data(): Promise<void> {
-        is_loading = true;
-        error_message = "";
+        page_status_state = create_official_leaderboard_loading_state();
         const current_profile_state = get(auth_store).current_profile;
         const load_result = await load_official_leaderboard_page_state({
             profile_state:
-                current_profile_state.status === "present"
+                current_profile_state.status === PRESENCE_STATUS.PRESENT
                     ? {
-                          status: "present",
+                          status: PRESENCE_STATUS.PRESENT,
                           profile:
                               current_profile_state.profile as unknown as UserScopeProfile,
                       }
-                    : { status: "missing" },
+                    : { status: PRESENCE_STATUS.MISSING },
             dependencies: official_leaderboard_page_dependencies,
         });
         if (!load_result.success) {
-            error_message = load_result.error_message;
-            is_loading = false;
+            page_status_state = create_official_leaderboard_failed_state(
+                load_result.error_message,
+            );
             return;
         }
         apply_page_state(load_result.data);
-        is_loading = false;
+        page_status_state = create_official_leaderboard_ready_state();
     }
 
     function apply_page_state(page_state: OfficialLeaderboardPageData): void {
@@ -74,6 +87,14 @@
         all_officials = page_state.all_officials;
         all_fixtures = page_state.all_fixtures;
         all_stages = page_state.all_stages;
+    }
+
+    $: selected_entry_option = to_selected_entry_option(selected_entry);
+
+    function to_selected_entry_option(
+        entry: OfficialLeaderboardEntry | undefined,
+    ): Option<OfficialLeaderboardEntry> {
+        return entry ? create_some_option(entry) : create_none_option();
     }
 
     function rebuild_entries(): void {
@@ -111,8 +132,12 @@
     onMount(async () => {
         const auth_result = await ensure_auth_profile();
         if (!auth_result.success) {
-            error_message = auth_result.error_message;
-            is_loading = false;
+            console.warn("[OfficialLeaderboard] Auth profile unavailable", {
+                event: "official_leaderboard_auth_profile_missing",
+            });
+            page_status_state = create_official_leaderboard_failed_state(
+                auth_result.error_message,
+            );
             return;
         }
         await load_all_data();
@@ -120,19 +145,17 @@
 </script>
 
 <svelte:head
-    ><title>Official Performance Leaderboard - Sports Management</title
-    ></svelte:head
+    ><title>{OFFICIAL_LEADERBOARD_MESSAGES.PAGE_TITLE}</title></svelte:head
 >
 
 <OfficialLeaderboardPageShell
     {organizations}
     bind:selected_organization_id
     {leaderboard_entries}
-    {selected_entry}
+    {selected_entry_option}
     {selected_breakdown}
     {user_official_id}
-    {is_loading}
-    {error_message}
+    {page_status_state}
     on_close_breakdown={close_breakdown}
     on_organization_change={handle_organization_change}
     on_select_official={select_official}

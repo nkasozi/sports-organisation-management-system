@@ -1,7 +1,12 @@
 import { defineTable } from "convex/server";
 import { v } from "convex/values";
 
-import { sync_metadata_fields, timestamp_fields } from "./schema_validators";
+import {
+  ORGANIZATION_LOCAL_ID_INDEX_FIELDS,
+  ORGANIZATION_LOCAL_ID_INDEX_NAME,
+  sync_metadata_fields,
+  timestamp_fields,
+} from "./schema_validators";
 
 export const schema_staff_and_location_tables = {
   team_staff: defineTable({
@@ -26,6 +31,10 @@ export const schema_staff_and_location_tables = {
     ...timestamp_fields,
   })
     .index("by_local_id", ["local_id"])
+    .index("by_sync_sequence", ["sync_sequence"])
+    .index(ORGANIZATION_LOCAL_ID_INDEX_NAME, [
+      ...ORGANIZATION_LOCAL_ID_INDEX_FIELDS,
+    ])
     .index("by_team", ["team_id"]),
   team_staff_roles: defineTable({
     ...sync_metadata_fields,
@@ -39,7 +48,9 @@ export const schema_staff_and_location_tables = {
     display_order: v.optional(v.number()),
     status: v.optional(v.string()),
     ...timestamp_fields,
-  }).index("by_local_id", ["local_id"]),
+  })
+    .index("by_local_id", ["local_id"])
+    .index("by_sync_sequence", ["sync_sequence"]),
   game_official_roles: defineTable({
     ...sync_metadata_fields,
     organization_id: v.string(),
@@ -54,7 +65,9 @@ export const schema_staff_and_location_tables = {
     display_order: v.optional(v.number()),
     status: v.optional(v.string()),
     ...timestamp_fields,
-  }).index("by_local_id", ["local_id"]),
+  })
+    .index("by_local_id", ["local_id"])
+    .index("by_sync_sequence", ["sync_sequence"]),
   venues: defineTable({
     ...sync_metadata_fields,
     organization_id: v.optional(v.string()),
@@ -76,7 +89,12 @@ export const schema_staff_and_location_tables = {
     photo_url: v.optional(v.string()),
     status: v.optional(v.string()),
     ...timestamp_fields,
-  }).index("by_local_id", ["local_id"]),
+  })
+    .index("by_local_id", ["local_id"])
+    .index("by_sync_sequence", ["sync_sequence"])
+    .index(ORGANIZATION_LOCAL_ID_INDEX_NAME, [
+      ...ORGANIZATION_LOCAL_ID_INDEX_FIELDS,
+    ]),
   jersey_colors: defineTable({
     ...sync_metadata_fields,
     holder_type: v.optional(v.string()),
@@ -89,7 +107,9 @@ export const schema_staff_and_location_tables = {
     hex_code: v.optional(v.string()),
     status: v.optional(v.string()),
     ...timestamp_fields,
-  }).index("by_local_id", ["local_id"]),
+  })
+    .index("by_local_id", ["local_id"])
+    .index("by_sync_sequence", ["sync_sequence"]),
   player_positions: defineTable({
     ...sync_metadata_fields,
     organization_id: v.string(),
@@ -104,5 +124,7 @@ export const schema_staff_and_location_tables = {
     is_available: v.optional(v.boolean()),
     status: v.optional(v.string()),
     ...timestamp_fields,
-  }).index("by_local_id", ["local_id"]),
+  })
+    .index("by_local_id", ["local_id"])
+    .index("by_sync_sequence", ["sync_sequence"]),
 };

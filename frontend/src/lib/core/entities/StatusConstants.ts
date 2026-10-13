@@ -1,15 +1,4 @@
-import type { EntityStatus } from "./BaseEntity";
-import type { FormatType } from "./CompetitionFormatTypes";
-import type { StageType } from "./CompetitionStage";
-import type { FixtureDetailsSetupConfirmationStatus } from "./FixtureDetailsSetup";
-import type { LineupStatus } from "./FixtureLineup";
-import type { FixtureStatus } from "./FixtureTypes";
-import type { GamePeriod } from "./FixtureTypes";
-import type { LiveGameStatus } from "./LiveGameLog";
-import type { PlayerTeamMembershipStatus } from "./PlayerTeamMembership";
-import type { PlayerTeamTransferStatus } from "./PlayerTeamTransferHistory";
-
-export const FIXTURE_STATUS: Record<string, FixtureStatus> = {
+export const FIXTURE_STATUS = {
   SCHEDULED: "scheduled",
   IN_PROGRESS: "in_progress",
   COMPLETED: "completed",
@@ -17,7 +6,7 @@ export const FIXTURE_STATUS: Record<string, FixtureStatus> = {
   CANCELLED: "cancelled",
 } as const;
 
-export const ENTITY_STATUS: Record<string, EntityStatus> = {
+export const ENTITY_STATUS = {
   ACTIVE: "active",
   INACTIVE: "inactive",
   ARCHIVED: "archived",
@@ -25,7 +14,7 @@ export const ENTITY_STATUS: Record<string, EntityStatus> = {
   DELETED: "deleted",
 } as const;
 
-export const STAGE_TYPE: Record<string, StageType> = {
+export const STAGE_TYPE = {
   GROUP_STAGE: "group_stage",
   KNOCKOUT_STAGE: "knockout_stage",
   LEAGUE_STAGE: "league_stage",
@@ -33,7 +22,7 @@ export const STAGE_TYPE: Record<string, StageType> = {
   CUSTOM: "custom",
 } as const;
 
-export const GAME_STATUS: Record<string, LiveGameStatus> = {
+export const GAME_STATUS = {
   PRE_GAME: "pre_game",
   IN_PROGRESS: "in_progress",
   PAUSED: "paused",
@@ -43,9 +32,11 @@ export const GAME_STATUS: Record<string, LiveGameStatus> = {
 
 export const ACTIVITY_SOURCE_TYPE = {
   MANUAL: "manual",
+  COMPETITION: "competition",
+  FIXTURE: "fixture",
 } as const;
 
-export const MEMBERSHIP_STATUS: Record<string, PlayerTeamMembershipStatus> = {
+export const MEMBERSHIP_STATUS = {
   ACTIVE: "active",
   INACTIVE: "inactive",
   ENDED: "ended",
@@ -53,7 +44,7 @@ export const MEMBERSHIP_STATUS: Record<string, PlayerTeamMembershipStatus> = {
 
 export const WILDCARD_SCOPE = "*" as const;
 
-export const GAME_PERIOD: Record<string, GamePeriod> = {
+export const GAME_PERIOD = {
   PRE_GAME: "pre_game",
   FIRST_HALF: "first_half",
   HALF_TIME: "half_time",
@@ -64,29 +55,26 @@ export const GAME_PERIOD: Record<string, GamePeriod> = {
   FINISHED: "finished",
 } as const;
 
-export const LINEUP_STATUS: Record<string, LineupStatus> = {
+export const LINEUP_STATUS = {
   DRAFT: "draft",
   SUBMITTED: "submitted",
   LOCKED: "locked",
 } as const;
 
-export const TRANSFER_STATUS: Record<string, PlayerTeamTransferStatus> = {
+export const TRANSFER_STATUS = {
   PENDING: "pending",
   APPROVED: "approved",
   DECLINED: "declined",
 } as const;
 
-export const CONFIRMATION_STATUS: Record<
-  string,
-  FixtureDetailsSetupConfirmationStatus
-> = {
+export const CONFIRMATION_STATUS = {
   PENDING: "pending",
   CONFIRMED: "confirmed",
   DECLINED: "declined",
   REPLACED: "replaced",
 } as const;
 
-export const FORMAT_TYPE: Record<string, FormatType> = {
+export const FORMAT_TYPE = {
   LEAGUE: "league",
   ROUND_ROBIN: "round_robin",
   GROUPS_KNOCKOUT: "groups_knockout",
@@ -96,3 +84,16 @@ export const FORMAT_TYPE: Record<string, FormatType> = {
   SWISS: "swiss",
   CUSTOM: "custom",
 } as const;
+
+type ValueOf<T> = T[keyof T];
+
+export type FixtureStatusValue = ValueOf<typeof FIXTURE_STATUS>;
+export type EntityStatusValue = ValueOf<typeof ENTITY_STATUS>;
+export type StageTypeValue = ValueOf<typeof STAGE_TYPE>;
+export type GameStatusValue = ValueOf<typeof GAME_STATUS>;
+export type MembershipStatusValue = ValueOf<typeof MEMBERSHIP_STATUS>;
+export type GamePeriodValue = ValueOf<typeof GAME_PERIOD>;
+export type LineupStatusValue = ValueOf<typeof LINEUP_STATUS>;
+export type TransferStatusValue = ValueOf<typeof TRANSFER_STATUS>;
+export type ConfirmationStatusValue = ValueOf<typeof CONFIRMATION_STATUS>;
+export type FormatTypeValue = ValueOf<typeof FORMAT_TYPE>;

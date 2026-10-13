@@ -2,6 +2,7 @@
     import type { Team } from "$lib/core/entities/Team";
 
     import CompetitionEditTeamCard from "./CompetitionEditTeamCard.svelte";
+    import { COMPETITION_TEAM_CARD_ACTION } from "./competitionTabConstants";
 
     export let teams_in_competition: Team[];
     export let available_teams: Team[];
@@ -46,7 +47,7 @@
                     <CompetitionEditTeamCard
                         {team}
                         action_label="Remove"
-                        action_icon="remove"
+                        action_icon={COMPETITION_TEAM_CARD_ACTION.REMOVE}
                         action_button_classes="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 p-1"
                         container_classes="flex items-center justify-between p-3 bg-accent-50 dark:bg-accent-700/50 rounded-lg"
                         on_action={on_remove_team}
@@ -72,7 +73,7 @@
                     <CompetitionEditTeamCard
                         {team}
                         action_label="Add"
-                        action_icon="add"
+                        action_icon={COMPETITION_TEAM_CARD_ACTION.ADD}
                         action_button_classes="text-primary-600 hover:text-primary-800 dark:text-primary-400 dark:hover:text-primary-300 p-1"
                         container_classes="flex items-center justify-between p-3 border border-accent-200 dark:border-accent-600 rounded-lg hover:bg-accent-50 dark:hover:bg-accent-700/30"
                         disabled={teams_in_competition.length >= max_teams}

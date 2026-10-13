@@ -11,6 +11,12 @@ import {
   update_live_game_player_time_on,
 } from "$lib/presentation/logic/liveGameDetailActions";
 
+import {
+  build_game_action_failure,
+  GAME_ACTION_EVENT,
+  GAME_ACTION_USER_MESSAGE,
+} from "./gameActionMessages";
+import { TEAM_SIDE } from "./gameEventConstants";
 import type {
   FixtureLineupUseCases,
   FixtureUseCases,
@@ -31,7 +37,7 @@ export async function update_live_game_detail_player_time_on_action(command: {
   updated_away_players: LineupPlayer[];
   updated_home_players: LineupPlayer[];
 }> {
-  const is_home = command.team_side === "home";
+  const is_home = command.team_side === TEAM_SIDE.HOME;
   const result = await update_live_game_player_time_on(
     is_home ? command.home_lineup_id : command.away_lineup_id,
     is_home ? command.home_players : command.away_players,
@@ -51,7 +57,7 @@ export async function update_live_game_detail_player_time_on_action(command: {
   };
 }
 
-export async function record_live_game_detail_page_event_action(command: {
+type RecordPageEventCommand = {
   away_lineup_id: string;
   away_players: LineupPlayer[];
   event_description: string;
@@ -67,41 +73,21 @@ export async function record_live_game_detail_page_event_action(command: {
   selected_event_type: QuickEventButton;
   selected_player_id: string;
   selected_team_side: "home" | "away";
-}): Promise<
-  | {
-      fixture: Fixture;
-      success: true;
-      toast_message: string;
-      updated_away_players: LineupPlayer[];
-      updated_home_players: LineupPlayer[];
-      warning_message: string;
-    }
-  | { error_message: string; success: false }
-> {
-  const event_result = await record_live_game_detail_event(
-    command.fixture_id,
-    command.selected_event_type,
-    command.event_minute,
-    command.selected_team_side,
-    command.event_player_name,
-    command.event_description,
-    command.secondary_player_name,
-    command.fixture_use_cases,
-  );
-  if (!event_result.success)
-    return {
-      success: false,
-      error_message: `Failed to record event: ${event_result.error}`,
-    };
-  if (!command.is_substitution_event || !command.selected_player_id)
-    return {
-      success: true,
-      fixture: event_result.data,
-      updated_home_players: command.home_players,
-      updated_away_players: command.away_players,
-      warning_message: "",
-      toast_message: `${command.selected_event_type.label} recorded!`,
-    };
+};
+
+type RecordPageEventSuccess = {
+  fixture: Fixture;
+  success: true;
+  toast_message: string;
+  updated_away_players: LineupPlayer[];
+  updated_home_players: LineupPlayer[];
+  warning_message: string;
+};
+
+async function apply_substitution_time_on(
+  command: RecordPageEventCommand,
+  fixture: Fixture,
+): Promise<RecordPageEventSuccess> {
   const player_update_result =
     await update_live_game_detail_player_time_on_action({
       away_lineup_id: command.away_lineup_id,
@@ -115,10 +101,42 @@ export async function record_live_game_detail_page_event_action(command: {
     });
   return {
     success: true,
-    fixture: event_result.data,
+    fixture,
     updated_home_players: player_update_result.updated_home_players,
     updated_away_players: player_update_result.updated_away_players,
     warning_message: player_update_result.error_message,
     toast_message: `${command.selected_event_type.label} recorded!`,
   };
+}
+
+export async function record_live_game_detail_page_event_action(
+  command: RecordPageEventCommand,
+): Promise<RecordPageEventSuccess | { error_message: string; success: false }> {
+  const event_result = await record_live_game_detail_event(
+    command.fixture_id,
+    command.selected_event_type,
+    command.event_minute,
+    command.selected_team_side,
+    command.event_player_name,
+    command.event_description,
+    command.secondary_player_name,
+    command.fixture_use_cases,
+  );
+  if (!event_result.success)
+    return build_game_action_failure({
+      event: GAME_ACTION_EVENT.RECORD_EVENT_FAILED,
+      fixture_id: command.fixture_id,
+      technical_error: event_result.error,
+      user_message: GAME_ACTION_USER_MESSAGE.RECORD_EVENT_FAILED,
+    });
+  if (!command.is_substitution_event || !command.selected_player_id)
+    return {
+      success: true,
+      fixture: event_result.data,
+      updated_home_players: command.home_players,
+      updated_away_players: command.away_players,
+      warning_message: "",
+      toast_message: `${command.selected_event_type.label} recorded!`,
+    };
+  return apply_substitution_time_on(command, event_result.data);
 }

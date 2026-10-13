@@ -1,139 +1,151 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+    import { KEYBOARD_KEY } from "../ui/keyboardKeys";
 
-  import type { ScalarInput } from "$lib/core/types/DomainScalars";
-  import type {
-    ConflictRecord,
-    ConflictResolutionAction,
-  } from "$lib/infrastructure/sync/conflictTypes";
-  import Footer from "$lib/presentation/components/layout/Footer.svelte";
-  import Header from "$lib/presentation/components/layout/Header.svelte";
-  import LayoutStatusBanner from "$lib/presentation/components/layout/LayoutStatusBanner.svelte";
-  import Sidebar from "$lib/presentation/components/layout/Sidebar.svelte";
-  import MergeConflictScreen from "$lib/presentation/components/MergeConflictScreen.svelte";
-  import ThemeProvider from "$lib/presentation/components/theme/ThemeProvider.svelte";
-  import { sync_store } from "$lib/presentation/stores/syncStore";
-  import {
-    get_theme_classes,
-    theme_store,
-  } from "$lib/presentation/stores/theme";
+    const LAYOUT_CONFLICT_DISMISSED_EVENT =
+        "layout_conflict_resolution_dismissed";
+    import { onMount } from "svelte";
 
-  let sidebar_open = false;
-  let is_mobile = true;
-  let theme_config: any = {
-    mode: "light",
-    primaryColor: "yellow",
-    secondaryColor: "red",
-    accentColor: "black",
-  };
-  let theme_classes: any = {};
+    import type { ScalarInput } from "$lib/core/types/DomainScalars";
+    import type {
+        ConflictRecord,
+        ConflictResolutionAction,
+    } from "$lib/infrastructure/sync/conflictTypes";
+    import Footer from "$lib/presentation/components/layout/Footer.svelte";
+    import Header from "$lib/presentation/components/layout/Header.svelte";
+    import LayoutStatusBanner from "$lib/presentation/components/layout/LayoutStatusBanner.svelte";
+    import Sidebar from "$lib/presentation/components/layout/Sidebar.svelte";
+    import MergeConflictScreen from "$lib/presentation/components/MergeConflictScreen.svelte";
+    import ThemeProvider from "$lib/presentation/components/theme/ThemeProvider.svelte";
+    import { sync_store } from "$lib/presentation/stores/syncStore";
+    import {
+        get_theme_classes,
+        theme_store,
+    } from "$lib/presentation/stores/theme";
 
-  $: theme_classes = get_theme_classes(theme_config);
+    let sidebar_open = false;
+    let is_mobile = true;
+    let theme_config: any = {
+        mode: "light",
+        primaryColor: "yellow",
+        secondaryColor: "red",
+        accentColor: "black",
+    };
+    let theme_classes: any = {};
 
-  function handle_resize(): void {
-    is_mobile = window.innerWidth < 1024;
-    if (!is_mobile) {
-      sidebar_open = true;
-    } else {
-      sidebar_open = false;
+    $: theme_classes = get_theme_classes(theme_config);
+
+    function handle_resize(): void {
+        is_mobile = window.innerWidth < 1024;
+        if (!is_mobile) {
+            sidebar_open = true;
+        } else {
+            sidebar_open = false;
+        }
     }
-  }
 
-  onMount(() => {
-    const unsubscribe = theme_store.subscribe((config) => {
-      theme_config = config;
+    onMount(() => {
+        const unsubscribe = theme_store.subscribe((config) => {
+            theme_config = config;
+        });
+
+        handle_resize();
+        window.addEventListener("resize", handle_resize);
+
+        return () => {
+            unsubscribe();
+            window.removeEventListener("resize", handle_resize);
+        };
     });
 
-    handle_resize();
-    window.addEventListener("resize", handle_resize);
+    function toggle_sidebar(): void {
+        sidebar_open = !sidebar_open;
+    }
 
-    return () => {
-      unsubscribe();
-      window.removeEventListener("resize", handle_resize);
-    };
-  });
+    function close_sidebar(): void {
+        sidebar_open = false;
+    }
 
-  function toggle_sidebar(): void {
-    sidebar_open = !sidebar_open;
-  }
+    async function handle_conflict_resolve(
+        event: CustomEvent<{
+            conflict: ScalarInput<ConflictRecord>;
+            action: ConflictResolutionAction;
+            merged_data?: Record<string, unknown>;
+        }>,
+    ): Promise<void> {
+        const { conflict, action, merged_data } = event.detail;
+        await sync_store.resolve_conflict_and_sync(
+            conflict,
+            action,
+            merged_data,
+        );
+    }
 
-  function close_sidebar(): void {
-    sidebar_open = false;
-  }
-
-  async function handle_conflict_resolve(
-    event: CustomEvent<{
-      conflict: ScalarInput<ConflictRecord>;
-      action: ConflictResolutionAction;
-      merged_data?: Record<string, unknown>;
-    }>,
-  ): Promise<void> {
-    const { conflict, action, merged_data } = event.detail;
-    await sync_store.resolve_conflict_and_sync(conflict, action, merged_data);
-  }
-
-  function handle_conflict_dismiss(): void {
-    console.log("[Layout] Conflict resolution dismissed");
-  }
+    function handle_conflict_dismiss(): void {
+        console.info("[Layout] Conflict resolution dismissed", {
+            event: LAYOUT_CONFLICT_DISMISSED_EVENT,
+        });
+    }
 </script>
 
 <ThemeProvider>
-  <div
-    class="min-h-screen flex flex-col {theme_classes.textPrimary} bg-gray-50 dark:bg-accent-900 transition-colors duration-300"
-  >
-    <Header {sidebar_open} on:toggle-sidebar={toggle_sidebar} />
-    <LayoutStatusBanner />
+    <div
+        class="min-h-screen flex flex-col {theme_classes.textPrimary} bg-gray-50 dark:bg-accent-900 transition-colors duration-300"
+    >
+        <Header {sidebar_open} on:toggle-sidebar={toggle_sidebar} />
+        <LayoutStatusBanner />
 
-    <div class="flex flex-1 min-w-0">
-      <Sidebar {sidebar_open} on:close-sidebar={close_sidebar} />
-      <main
-        class="flex-1 min-w-0 transition-all duration-300 ease-in-out lg:ml-4 overflow-x-auto"
-      >
-        <div class="w-full max-w-7xl mx-auto p-4 lg:p-6">
-          <slot />
+        <div class="flex flex-1 min-w-0">
+            <Sidebar {sidebar_open} on:close-sidebar={close_sidebar} />
+            <main
+                class="flex-1 min-w-0 transition-all duration-300 ease-in-out lg:ml-4 overflow-x-auto"
+            >
+                <div class="w-full max-w-7xl mx-auto p-4 lg:p-6">
+                    <slot />
+                </div>
+            </main>
         </div>
-      </main>
+
+        <Footer />
+
+        {#if sidebar_open}
+            <div
+                class="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+                on:click={close_sidebar}
+                on:keydown={(event) =>
+                    event.key === KEYBOARD_KEY.ESCAPE && close_sidebar()}
+                role="button"
+                tabindex="0"
+                aria-label="Close sidebar"
+            ></div>
+        {/if}
+
+        <MergeConflictScreen
+            on:resolve={handle_conflict_resolve}
+            on:dismiss={handle_conflict_dismiss}
+        />
     </div>
-
-    <Footer />
-
-    {#if sidebar_open}
-      <div
-        class="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
-        on:click={close_sidebar}
-        on:keydown={(e) => e.key === "Escape" && close_sidebar()}
-        role="button"
-        tabindex="0"
-        aria-label="Close sidebar"
-      ></div>
-    {/if}
-
-    <MergeConflictScreen
-      on:resolve={handle_conflict_resolve}
-      on:dismiss={handle_conflict_dismiss}
-    />
-  </div>
 </ThemeProvider>
 
 <style>
-  :global(body) {
-    font-family: "Inter", system-ui, sans-serif;
-  }
-
-  :global(*) {
-    transition-property: background-color, border-color, color, fill, stroke;
-    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-    transition-duration: 200ms;
-  }
-
-  @media (max-width: 768px) {
-    :global(.mobile-optimized) {
-      font-size: 0.875rem;
-      line-height: 1.25rem;
+    :global(body) {
+        font-family: "Inter", system-ui, sans-serif;
     }
-  }
 
-  :global(.text-responsive) {
-    font-size: clamp(0.875rem, 2.5vw, 1rem);
-  }
+    :global(*) {
+        transition-property:
+            background-color, border-color, color, fill, stroke;
+        transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+        transition-duration: 200ms;
+    }
+
+    @media (max-width: 768px) {
+        :global(.mobile-optimized) {
+            font-size: 0.875rem;
+            line-height: 1.25rem;
+        }
+    }
+
+    :global(.text-responsive) {
+        font-size: clamp(0.875rem, 2.5vw, 1rem);
+    }
 </style>

@@ -16,9 +16,9 @@ import {
   managed_game_primary_events,
   managed_game_secondary_events,
   open_managed_game_event_modal,
-  set_managed_game_loading_error,
   set_managed_game_toast,
 } from "./managedGamePageControllerState";
+import { fail_managed_game_page_load } from "./managedGamePageStateMachine";
 
 describe("managedGamePageControllerState", () => {
   it("creates the default managed-game state and exposes quick-event groupings", () => {
@@ -98,7 +98,7 @@ describe("managedGamePageControllerState", () => {
   });
 
   it("opens and closes the event modal while surfacing loading and toast feedback", () => {
-    const with_error = set_managed_game_loading_error(
+    const with_error = fail_managed_game_page_load(
       create_managed_game_page_state(),
       "Failed to load game",
     );

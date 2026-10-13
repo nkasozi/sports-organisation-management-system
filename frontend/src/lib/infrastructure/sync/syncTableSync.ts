@@ -1,262 +1,114 @@
-import type { Table } from "dexie";
-
 import type { SyncDirection } from "$lib/core/interfaces/ports";
 
 import { is_auth_error } from "./syncAuthUtils";
-import { remediate_oversized_inline_file_records } from "./syncInlineFileRemediation";
-import { pull_table_from_convex } from "./syncPullService";
-import { push_table_to_convex } from "./syncPushService";
-import { get_pulling_from_remote, set_pulling_from_remote } from "./syncState";
-import type {
-  ConflictFromServer,
-  ConvexClient,
-  RemoteTableState,
-  TableName,
-} from "./syncTypes";
-import { EPOCH_TIMESTAMP } from "./syncTypes";
+import { pull_table_changes_from_convex } from "./syncPullService";
+import { BackfillPullStatus } from "./syncPullTypes";
+import type { RejectedOutboxRecord } from "./syncPushOutcomes";
+import { push_table_outbox_to_convex } from "./syncPushService";
+import type { DeletedRemotelyRecord } from "./syncPushTransport";
+import type { RemoteApplyDependencies } from "./syncRemoteApply";
+import type { SyncBackfillDeferrals } from "./syncRunSignals";
+import type { ConflictFromServer, ConvexClient, TableName } from "./syncTypes";
 
-const PUSH_REMEDIATION_FAILED_MESSAGE = "Push remediation failed";
+const SyncDirectionValue = {
+  PUSH: "push",
+  PULL: "pull",
+} as const;
 
-interface TableSyncResult {
+export interface TableSyncResult {
   records_pushed: number;
   records_pulled: number;
   errors: Array<{ table_name: string; error: string }>;
   conflicts: Array<{ table_name: string; conflicts: ConflictFromServer[] }>;
+  rejected_records: RejectedOutboxRecord[];
+  deleted_remotely: DeletedRemotelyRecord[];
   auth_failed: boolean;
   success: boolean;
 }
 
-export async function sync_table_when_local_ahead(
-  convex_client: ConvexClient,
-  table_name: string,
-  table: Table<
-    { id: string; updated_at?: string; created_at?: string },
-    string
-  >,
-  all_local_records: Array<{
-    id: string;
-    updated_at?: string;
-    created_at?: string;
-  }>,
-  local_latest: string,
-  remote_state: RemoteTableState,
-  direction: SyncDirection,
-  push_excluded_tables: Set<string>,
-  detect_conflicts: boolean,
-): Promise<TableSyncResult> {
-  let records_pushed = 0;
-  let records_pulled = 0;
-  let auth_failed = false;
-  const table_conflicts: Array<{
-    table_name: string;
-    conflicts: ConflictFromServer[];
-  }> = [];
+interface TableSyncCommand extends RemoteApplyDependencies {
+  convex_client: ConvexClient;
+  table_name: TableName;
+  direction: SyncDirection;
+  should_push: boolean;
+  detect_conflicts: boolean;
+  correlation_id: string;
+  backfill_deferrals: SyncBackfillDeferrals;
+}
 
-  if (direction !== "pull" && !push_excluded_tables.has(table_name)) {
-    const remediation_result = await remediate_oversized_inline_file_records({
-      table,
-      table_name: table_name as TableName,
-      all_local_records: all_local_records as Array<
-        Record<string, unknown> & {
-          id: string;
-          updated_at?: string;
-          created_at?: string;
-        }
-      >,
-      remote_latest_modified_at:
-        remote_state.latest_modified_at || EPOCH_TIMESTAMP,
-      detect_conflicts,
-      get_is_remote_sync_in_progress: get_pulling_from_remote,
-      set_remote_sync_in_progress: set_pulling_from_remote,
-    });
-
-    if (!remediation_result.success) {
-      return {
-        records_pushed,
-        records_pulled,
-        errors: [
-          {
-            table_name,
-            error: remediation_result.error || PUSH_REMEDIATION_FAILED_MESSAGE,
-          },
-        ],
-        conflicts: [],
-        auth_failed,
-        success: false,
-      };
-    }
-
-    const push_result = await push_table_to_convex(
-      convex_client,
-      table_name as TableName,
-      remediation_result.data.records,
-      remote_state.latest_modified_at || EPOCH_TIMESTAMP,
-      detect_conflicts,
-    );
-
-    if (!push_result.success) {
-      auth_failed = is_auth_error(push_result.error);
-      return {
-        records_pushed,
-        records_pulled,
-        errors: [{ table_name, error: push_result.error }],
-        conflicts: [],
-        auth_failed,
-        success: false,
-      };
-    }
-    records_pushed += push_result.data.records_pushed;
-    if (push_result.data.conflicts.length > 0) {
-      table_conflicts.push({
-        table_name,
-        conflicts: push_result.data.conflicts,
-      });
-    }
-  }
-
-  if (direction !== "push") {
-    const pull_result = await pull_table_from_convex(
-      convex_client,
-      table,
-      table_name as TableName,
-      local_latest,
-    );
-
-    if (!pull_result.success) {
-      return {
-        records_pushed,
-        records_pulled,
-        errors: [{ table_name, error: pull_result.error }],
-        conflicts: table_conflicts,
-        auth_failed,
-        success: false,
-      };
-    }
-    records_pulled += pull_result.data.records_pulled;
-  }
-
+function create_table_result(): TableSyncResult {
   return {
-    records_pushed,
-    records_pulled,
+    records_pushed: 0,
+    records_pulled: 0,
     errors: [],
-    conflicts: table_conflicts,
+    conflicts: [],
+    rejected_records: [],
+    deleted_remotely: [],
     auth_failed: false,
     success: true,
   };
 }
 
-export async function sync_table_when_remote_ahead(
-  convex_client: ConvexClient,
+function fail_table_result(
+  result: TableSyncResult,
   table_name: string,
-  table: Table<
-    { id: string; updated_at?: string; created_at?: string },
-    string
-  >,
-  local_latest: string,
-  remote_state: RemoteTableState,
-  remote_is_ahead: boolean,
-  direction: SyncDirection,
-  push_excluded_tables: Set<string>,
-  detect_conflicts: boolean,
-): Promise<TableSyncResult> {
-  let records_pushed = 0;
-  let records_pulled = 0;
-  let auth_failed = false;
-  const table_conflicts: Array<{
-    table_name: string;
-    conflicts: ConflictFromServer[];
-  }> = [];
-
-  if (remote_is_ahead || direction === "pull") {
-    const pull_result = await pull_table_from_convex(
-      convex_client,
-      table,
-      table_name as TableName,
-      local_latest,
-    );
-
-    if (!pull_result.success) {
-      return {
-        records_pushed,
-        records_pulled,
-        errors: [{ table_name, error: pull_result.error }],
-        conflicts: [],
-        auth_failed,
-        success: false,
-      };
-    }
-    records_pulled += pull_result.data.records_pulled;
-  }
-
-  if (direction !== "pull" && !push_excluded_tables.has(table_name)) {
-    const refreshed_records = await table.toArray();
-    const remediation_result = await remediate_oversized_inline_file_records({
-      table,
-      table_name: table_name as TableName,
-      all_local_records: refreshed_records as Array<
-        Record<string, unknown> & {
-          id: string;
-          updated_at?: string;
-          created_at?: string;
-        }
-      >,
-      remote_latest_modified_at:
-        remote_state.latest_modified_at || EPOCH_TIMESTAMP,
-      detect_conflicts,
-      get_is_remote_sync_in_progress: get_pulling_from_remote,
-      set_remote_sync_in_progress: set_pulling_from_remote,
-    });
-
-    if (!remediation_result.success) {
-      return {
-        records_pushed,
-        records_pulled,
-        errors: [
-          {
-            table_name,
-            error: remediation_result.error || PUSH_REMEDIATION_FAILED_MESSAGE,
-          },
-        ],
-        conflicts: table_conflicts,
-        auth_failed,
-        success: false,
-      };
-    }
-
-    const push_result = await push_table_to_convex(
-      convex_client,
-      table_name as TableName,
-      remediation_result.data.records,
-      remote_state.latest_modified_at || EPOCH_TIMESTAMP,
-      detect_conflicts,
-    );
-
-    if (!push_result.success) {
-      auth_failed = is_auth_error(push_result.error);
-      return {
-        records_pushed,
-        records_pulled,
-        errors: [{ table_name, error: push_result.error }],
-        conflicts: table_conflicts,
-        auth_failed,
-        success: false,
-      };
-    }
-    records_pushed += push_result.data.records_pushed;
-    if (push_result.data.conflicts.length > 0) {
-      table_conflicts.push({
-        table_name,
-        conflicts: push_result.data.conflicts,
-      });
-    }
-  }
-
+  error: string,
+): TableSyncResult {
   return {
-    records_pushed,
-    records_pulled,
-    errors: [],
-    conflicts: table_conflicts,
-    auth_failed: false,
-    success: true,
+    ...result,
+    errors: [{ table_name, error }],
+    auth_failed: is_auth_error(error),
+    success: false,
   };
+}
+
+async function pull_into_result(
+  command: TableSyncCommand,
+  result: TableSyncResult,
+): Promise<TableSyncResult> {
+  if (command.direction === SyncDirectionValue.PUSH) return result;
+  const pull_result = await pull_table_changes_from_convex(command);
+  if (!pull_result.success)
+    return fail_table_result(result, command.table_name, pull_result.error);
+  const backfill = pull_result.data.backfill;
+  if (backfill.status === BackfillPullStatus.IN_PROGRESS)
+    command.backfill_deferrals.record(
+      command.table_name,
+      backfill.retry_after_milliseconds,
+    );
+  return { ...result, records_pulled: pull_result.data.records_pulled };
+}
+
+async function push_into_result(
+  command: TableSyncCommand,
+  result: TableSyncResult,
+): Promise<TableSyncResult> {
+  if (command.direction === SyncDirectionValue.PULL || !command.should_push)
+    return result;
+  const push_result = await push_table_outbox_to_convex(command);
+  if (!push_result.success)
+    return fail_table_result(result, command.table_name, push_result.error);
+  return {
+    ...result,
+    records_pushed: push_result.data.records_pushed,
+    rejected_records: push_result.data.rejected,
+    deleted_remotely: push_result.data.deleted_remotely,
+    conflicts:
+      push_result.data.conflicts.length > 0
+        ? [
+            {
+              table_name: command.table_name,
+              conflicts: push_result.data.conflicts,
+            },
+          ]
+        : [],
+  };
+}
+
+export async function sync_table_changes(
+  command: TableSyncCommand,
+): Promise<TableSyncResult> {
+  const pulled = await pull_into_result(command, create_table_result());
+  if (!pulled.success) return pulled;
+  return push_into_result(command, pulled);
 }

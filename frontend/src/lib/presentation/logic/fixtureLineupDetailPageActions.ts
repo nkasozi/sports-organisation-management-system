@@ -16,6 +16,30 @@ type SubmitLineup = (
   lineup_id: string,
 ) => Promise<{ success: boolean; error?: string }>;
 
+type FixtureLineupDetailAuthorizationResult =
+  | {
+      success: true;
+      can_modify_lineup: boolean;
+      permission_info_message: string;
+      is_read_authorized: boolean;
+    }
+  | { success: false; error_message: string };
+
+type UpdateAuthorizationResult = Awaited<
+  ReturnType<AuthorizationPort["check_entity_authorized"]>
+>;
+
+function build_update_permission_info_message(
+  update_authorization_result: UpdateAuthorizationResult,
+): string {
+  return update_authorization_result.success &&
+    !update_authorization_result.data.is_authorized
+    ? build_fixture_lineup_permission_info_message(
+        update_authorization_result.data.role,
+      )
+    : "";
+}
+
 export async function authorize_fixture_lineup_detail_page(
   authorization_adapter: AuthorizationPort,
   raw_token: string,
@@ -23,15 +47,7 @@ export async function authorize_fixture_lineup_detail_page(
   read_action: DataAction,
   update_action: DataAction,
   access_check_failed_message: string,
-): Promise<
-  | {
-      success: true;
-      can_modify_lineup: boolean;
-      permission_info_message: string;
-      is_read_authorized: boolean;
-    }
-  | { success: false; error_message: string }
-> {
+): Promise<FixtureLineupDetailAuthorizationResult> {
   const read_authorization_result =
     await authorization_adapter.check_entity_authorized(
       raw_token,
@@ -51,13 +67,9 @@ export async function authorize_fixture_lineup_detail_page(
     can_modify_lineup:
       update_authorization_result.success &&
       update_authorization_result.data.is_authorized,
-    permission_info_message:
-      update_authorization_result.success &&
-      !update_authorization_result.data.is_authorized
-        ? build_fixture_lineup_permission_info_message(
-            update_authorization_result.data.role,
-          )
-        : "",
+    permission_info_message: build_update_permission_info_message(
+      update_authorization_result,
+    ),
     is_read_authorized: read_authorization_result.data.is_authorized,
   };
 }

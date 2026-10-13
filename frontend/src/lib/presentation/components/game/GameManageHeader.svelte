@@ -1,5 +1,6 @@
 <script lang="ts">
     import type { Fixture } from "$lib/core/entities/Fixture";
+    import { FIXTURE_STATUS } from "$lib/core/entities/StatusConstants";
 
     export let status: Fixture["status"];
     export let scheduled_time: string;
@@ -47,16 +48,16 @@
 
             <div class="text-center min-w-32">
                 <div class="text-xs text-gray-400 mb-1">
-                    {#if status === "in_progress"}
+                    {#if status === FIXTURE_STATUS.IN_PROGRESS}
                         {current_period_label}
-                    {:else if status === "completed"}
+                    {:else if status === FIXTURE_STATUS.COMPLETED}
                         Full Time
                     {:else}
                         {scheduled_time}
                     {/if}
                 </div>
 
-                {#if status === "in_progress"}
+                {#if status === FIXTURE_STATUS.IN_PROGRESS}
                     <div class="text-2xl font-mono font-bold text-primary-400">
                         {clock_display}
                     </div>
@@ -77,7 +78,7 @@
         </div>
 
         <div class="flex gap-2">
-            {#if status === "scheduled"}
+            {#if status === FIXTURE_STATUS.SCHEDULED}
                 <button
                     class="px-4 py-2 bg-green-600 hover:bg-green-700 rounded-[0.175rem] text-sm font-medium"
                     on:click={on_start}

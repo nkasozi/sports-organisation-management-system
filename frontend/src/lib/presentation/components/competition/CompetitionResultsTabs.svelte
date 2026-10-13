@@ -1,5 +1,9 @@
 <script lang="ts">
-    export let active_tab: "standings" | "fixtures" | "results" | "stats";
+    import {
+        COMPETITION_RESULTS_TAB,
+        type CompetitionResultsTab,
+    } from "./competitionTabConstants";
+    export let active_tab: CompetitionResultsTab;
     export let upcoming_count: number;
     export let results_count: number;
 
@@ -18,15 +22,15 @@
     <nav class="flex overflow-x-auto -mb-px scrollbar-hide" aria-label="Tabs">
         <button
             type="button"
-            class={get_tab_classes("standings")}
-            on:click={() => (active_tab = "standings")}
+            class={get_tab_classes(COMPETITION_RESULTS_TAB.STANDINGS)}
+            on:click={() => (active_tab = COMPETITION_RESULTS_TAB.STANDINGS)}
         >
             <span class="hidden sm:inline">📊 </span> Standings
         </button>
         <button
             type="button"
-            class={get_tab_classes("fixtures")}
-            on:click={() => (active_tab = "fixtures")}
+            class={get_tab_classes(COMPETITION_RESULTS_TAB.FIXTURES)}
+            on:click={() => (active_tab = COMPETITION_RESULTS_TAB.FIXTURES)}
         >
             <span class="hidden sm:inline">📅 </span> Upcoming<span
                 class="ml-1 text-xs bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded-full"
@@ -35,8 +39,8 @@
         </button>
         <button
             type="button"
-            class={get_tab_classes("results")}
-            on:click={() => (active_tab = "results")}
+            class={get_tab_classes(COMPETITION_RESULTS_TAB.RESULTS)}
+            on:click={() => (active_tab = COMPETITION_RESULTS_TAB.RESULTS)}
         >
             <span class="hidden sm:inline">✅ </span> Results<span
                 class="ml-1 text-xs bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded-full"
@@ -45,8 +49,8 @@
         </button>
         <button
             type="button"
-            class={get_tab_classes("stats")}
-            on:click={() => (active_tab = "stats")}
+            class={get_tab_classes(COMPETITION_RESULTS_TAB.STATS)}
+            on:click={() => (active_tab = COMPETITION_RESULTS_TAB.STATS)}
         >
             <span class="hidden sm:inline">⚽ </span> Stats
         </button>

@@ -6,6 +6,8 @@
         type OfficialLeaderboardEntry,
     } from "$lib/presentation/logic/officialLeaderboardLogic";
 
+    import { KEYBOARD_KEY } from "./ui/keyboardKeys";
+
     export let entries: OfficialLeaderboardEntry[] = [];
     export let selected_official_id: string = "";
     export let on_select: (entry: OfficialLeaderboardEntry) => void;
@@ -69,7 +71,8 @@
                     onclick={() => on_select(entry)}
                     role="button"
                     tabindex="0"
-                    onkeydown={(e) => e.key === "Enter" && on_select(entry)}
+                    onkeydown={(event) =>
+                        event.key === KEYBOARD_KEY.ENTER && on_select(entry)}
                 >
                     <td
                         class="px-3 py-4 text-sm font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap"

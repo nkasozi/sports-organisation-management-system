@@ -1,5 +1,11 @@
 import { v } from "convex/values";
 
+export const ORGANIZATION_LOCAL_ID_INDEX_NAME = "by_organization_local_id";
+export const ORGANIZATION_LOCAL_ID_INDEX_FIELDS = [
+  "organization_id",
+  "local_id",
+] as const;
+
 export const timestamp_fields = {
   created_at: v.optional(v.string()),
   updated_at: v.optional(v.string()),
@@ -10,6 +16,7 @@ export const sync_metadata_fields = {
   local_id: v.string(),
   synced_at: v.string(),
   version: v.number(),
+  sync_sequence: v.optional(v.number()),
 };
 
 export const sport_game_period_validator = v.object({

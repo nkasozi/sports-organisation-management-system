@@ -93,7 +93,7 @@ describe("dynamicEntityFormInitialization", () => {
     );
 
     expect(Array.isArray(result["stage_templates"])).toBe(true);
-    expect(result["stage_templates"].length).toBeGreaterThan(0);
+    expect(result["stage_templates"]).not.toHaveLength(0);
   });
 
   it("builds the same initialization key for equal initialization inputs", () => {

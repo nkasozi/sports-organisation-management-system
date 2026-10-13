@@ -13,6 +13,7 @@ import type {
 import type { QueryOptions } from "../../core/interfaces/ports";
 import type { PaginatedAsyncResult } from "../../core/types/Result";
 import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
+import { create_lazy_repository_accessor } from "./InBrowserRepositorySingleton";
 
 const ENTITY_PREFIX = "gender";
 
@@ -93,24 +94,9 @@ export class InBrowserGenderRepository
   }
 }
 
-type GenderRepositoryState =
-  | { status: "uninitialized" }
-  | {
-      status: "ready";
-      repository: InBrowserGenderRepository;
-    };
-
-let gender_repository_state: GenderRepositoryState = {
-  status: "uninitialized",
-};
+const get_concrete_repository: () => InBrowserGenderRepository =
+  create_lazy_repository_accessor(() => new InBrowserGenderRepository());
 
 export function get_gender_repository(): GenderRepository {
-  if (gender_repository_state.status === "ready") {
-    return gender_repository_state.repository;
-  }
-
-  const repository = new InBrowserGenderRepository();
-  gender_repository_state = { status: "ready", repository };
-
-  return repository;
+  return get_concrete_repository();
 }

@@ -12,7 +12,14 @@ const missing_fixture_lineup_detail_entity_state = {
   status: "missing",
 } as const;
 
-function create_fixture_lineup_detail_view_data() {
+function create_fixture_lineup_detail_view_data(): {
+  lineup: { id: string };
+  fixture_state: { readonly status: "missing" };
+  team_state: { readonly status: "missing" };
+  team_players: never[];
+  home_team_state: { readonly status: "missing" };
+  away_team_state: { readonly status: "missing" };
+} {
   return {
     lineup: { id: "lineup_1" },
     fixture_state: missing_fixture_lineup_detail_entity_state,
@@ -89,7 +96,7 @@ describe("load_fixture_lineup_detail_view_data", () => {
       data: create_fixture_lineup_detail_view_data(),
     });
 
-    await load_fixture_lineup_detail_view_data(
+    const wildcard_result = await load_fixture_lineup_detail_view_data(
       "lineup_1",
       build_fixture_lineup_detail_profile_state({
         status: "present",
@@ -97,11 +104,14 @@ describe("load_fixture_lineup_detail_view_data", () => {
       }),
       {} as never,
     );
-    await load_fixture_lineup_detail_view_data(
+    const missing_result = await load_fixture_lineup_detail_view_data(
       "lineup_1",
       build_fixture_lineup_detail_profile_state({ status: "missing" }),
       {} as never,
     );
+
+    expect(wildcard_result.success).toBe(true);
+    expect(missing_result.success).toBe(true);
 
     expect(load_fixture_lineup_detail_page_data).toHaveBeenNthCalledWith(1, {
       lineup_id: "lineup_1",

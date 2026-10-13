@@ -3,6 +3,8 @@ import type {
   UpdateOrganizationSettingsInput,
 } from "$lib/core/entities/OrganizationSettings";
 
+import { BRANDING_CONTEXT_STATUS } from "./brandingConstants";
+
 export interface SocialMediaLink {
   platform: string;
   url: string;
@@ -25,9 +27,9 @@ export interface BrandingConfig {
 }
 
 export type BrandingOrganizationContext =
-  | { status: "platform" }
+  | { status: typeof BRANDING_CONTEXT_STATUS.PLATFORM }
   | {
-      status: "scoped";
+      status: typeof BRANDING_CONTEXT_STATUS.SCOPED;
       organization_id: string;
       organization_name?: string;
       organization_email?: string;

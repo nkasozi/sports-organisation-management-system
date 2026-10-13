@@ -13,25 +13,35 @@
         managed_game_primary_events,
         managed_game_secondary_events,
     } from "$lib/presentation/logic/managedGamePageControllerState";
+    import {
+        close_managed_game_confirmation_modals,
+        derive_managed_game_open_modal,
+        MANAGED_GAME_MODAL,
+        open_managed_game_confirmation_modal,
+    } from "$lib/presentation/logic/managedGamePageStateMachine";
     import type {
         ManagedGameLoadResult,
         ManagedGameStartCheck,
     } from "$lib/presentation/logic/managedGamePageTypes";
 
+    import { MANAGED_GAME_TEXT } from "./managedGameMessages";
     import ManagedGamePageView from "./ManagedGamePageView.svelte";
+    import { build_managed_game_view_status } from "./managedGameViewStatus";
 
-    export let back_path!: string;
-    export let back_button_label!: string;
-    export let error_title!: string;
-    export let event_modal_component!: any;
-    export let fixture_use_cases!: Pick<
+    export let back_path: string;
+    export let back_button_label: string;
+    export let error_title: string;
+    export let event_modal_component: any;
+    export let fixture_use_cases: Pick<
         FixtureUseCasesPort,
         "start_fixture" | "end_fixture" | "record_game_event" | "update_period"
     >;
-    export let load_bundle!: (
+    export let load_bundle: (
         fixture_id: string,
     ) => Promise<ManagedGameLoadResult>;
-    export let before_start!: (fixture: Fixture) => Promise<ManagedGameStartCheck>;
+    export let before_start: (
+        fixture: Fixture,
+    ) => Promise<ManagedGameStartCheck>;
 
     let state = create_managed_game_page_state();
 
@@ -54,11 +64,11 @@
 </script>
 
 <svelte:head>
-    <title>{page_title} - Sports Management</title>
+    <title>{page_title} - {MANAGED_GAME_TEXT.PAGE_TITLE_SUFFIX}</title>
 </svelte:head>
 
 <ManagedGamePageView
-    fixture_state={state.fixture}
+    view_status_state={build_managed_game_view_status(state)}
     home_team_name={view_state.home_team_name}
     away_team_name={view_state.away_team_name}
     home_score={view_state.home_score}
@@ -67,15 +77,11 @@
     clock_display={view_state.clock_state.clock_display}
     is_clock_running={state.is_clock_running}
     is_game_active={view_state.is_game_active}
-    is_loading={state.is_loading}
-    error_message={state.error_message}
     is_updating={state.is_updating}
     primary_events={managed_game_primary_events}
     secondary_events={managed_game_secondary_events}
     sorted_events={view_state.sorted_events}
-    show_start_modal={state.show_start_modal}
-    show_end_modal={state.show_end_modal}
-    show_event_modal={state.show_event_modal}
+    open_modal={derive_managed_game_open_modal(state)}
     selected_event_type_state={state.selected_event_type}
     selected_team_side={state.selected_team_side}
     bind:event_minute={state.event_minute}
@@ -92,14 +98,20 @@
     on_back={() => void goto(back_path)}
     on_start={runtime.handle_start_click}
     on_toggle_clock={runtime.toggle_clock}
-    on_end={() => (state = { ...state, show_end_modal: true })}
+    on_end={() =>
+        (state = open_managed_game_confirmation_modal(
+            state,
+            MANAGED_GAME_MODAL.END,
+        ))}
     on_end_current_period={runtime.end_current_period}
     on_change_period={runtime.change_period}
     on_open_event_modal={runtime.open_event_modal}
     on_confirm_start={runtime.start_game}
-    on_cancel_start={() => (state = { ...state, show_start_modal: false })}
+    on_cancel_start={() =>
+        (state = close_managed_game_confirmation_modals(state))}
     on_confirm_end={runtime.end_game}
-    on_cancel_end={() => (state = { ...state, show_end_modal: false })}
+    on_cancel_end={() =>
+        (state = close_managed_game_confirmation_modals(state))}
     on_cancel_event={runtime.cancel_event}
     on_record_event={runtime.record_event}
 />

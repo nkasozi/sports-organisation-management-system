@@ -1,51 +1,86 @@
-import type {
-  Activity,
-  ActivityStatus,
-  CreateActivityInput,
+import { create_failure_result, create_success_result } from "../types/Result";
+import { ACTIVITY_CATEGORY_TYPE } from "./ActivityCategory";
+import {
+  ACTIVITY_TITLE_MAXIMUM_LENGTH,
+  ACTIVITY_VALIDATION_MESSAGES,
+  COMPETITION_ACTIVITY_DESCRIPTION_PREFIX,
+  FIXTURE_ACTIVITY_DESCRIPTION,
+  FIXTURE_ACTIVITY_DURATION_MS,
+} from "./ActivityConstants";
+import type { Activity, CreateActivityInput } from "./ActivityTypes";
+import {
+  ACTIVITY_STATUS,
+  DEFAULT_REMINDERS,
+  NO_ACTIVITY_RECURRENCE,
 } from "./ActivityTypes";
-import { DEFAULT_REMINDERS, NO_ACTIVITY_RECURRENCE } from "./ActivityTypes";
+import {
+  check_condition,
+  check_required_entity_id,
+  type FieldCheck,
+  is_blank_text,
+} from "./EntityValidation";
 import { ACTIVITY_SOURCE_TYPE } from "./StatusConstants";
+
+type ActivityFieldCheck = readonly [keyof CreateActivityInput, FieldCheck];
 
 export function validate_activity_input(input: CreateActivityInput): {
   is_valid: boolean;
   errors: Record<string, string>;
 } {
-  const errors: Record<string, string> = {};
+  const checks: ReadonlyArray<ActivityFieldCheck> = [
+    ["title", check_activity_title(input.title)],
+    [
+      "organization_id",
+      check_required_entity_id(
+        input.organization_id,
+        ACTIVITY_VALIDATION_MESSAGES.ORGANIZATION_REQUIRED,
+      ),
+    ],
+    [
+      "category_id",
+      check_required_entity_id(
+        input.category_id,
+        ACTIVITY_VALIDATION_MESSAGES.CATEGORY_REQUIRED,
+      ),
+    ],
+    [
+      "start_datetime",
+      check_condition(
+        Boolean(input.start_datetime),
+        ACTIVITY_VALIDATION_MESSAGES.START_REQUIRED,
+      ),
+    ],
+    ["end_datetime", check_activity_end(input)],
+  ];
+  const errors: Record<string, string> = Object.fromEntries(
+    checks.flatMap(([field, check]) =>
+      check.success ? [] : [[field, check.error]],
+    ),
+  );
+  return { is_valid: Object.keys(errors).length === 0, errors };
+}
 
-  if (!input.title || input.title.trim().length === 0) {
-    errors.title = "Activity title is required";
+function check_activity_title(title: string | undefined): FieldCheck {
+  if (is_blank_text(title)) {
+    return create_failure_result(ACTIVITY_VALIDATION_MESSAGES.TITLE_REQUIRED);
   }
+  return check_condition(
+    (title ?? "").trim().length <= ACTIVITY_TITLE_MAXIMUM_LENGTH,
+    ACTIVITY_VALIDATION_MESSAGES.TITLE_TOO_LONG,
+  );
+}
 
-  if (input.title && input.title.trim().length > 200) {
-    errors.title = "Activity title must be 200 characters or less";
-  }
-
-  if (!input.organization_id || input.organization_id.trim().length === 0) {
-    errors.organization_id = "Organization is required";
-  }
-
-  if (!input.category_id || input.category_id.trim().length === 0) {
-    errors.category_id = "Category is required";
-  }
-
-  if (!input.start_datetime) {
-    errors.start_datetime = "Start date and time is required";
-  }
-
+function check_activity_end(input: CreateActivityInput): FieldCheck {
   if (!input.end_datetime) {
-    errors.end_datetime = "End date and time is required";
+    return create_failure_result(ACTIVITY_VALIDATION_MESSAGES.END_REQUIRED);
   }
-
-  if (input.start_datetime && input.end_datetime) {
-    const start_date = new Date(input.start_datetime);
-    const end_date = new Date(input.end_datetime);
-    if (end_date < start_date) {
-      errors.end_datetime = "End date must be after start date";
-    }
+  if (!input.start_datetime) {
+    return create_success_result(true);
   }
-
-  const is_valid = Object.keys(errors).length === 0;
-  return { is_valid, errors };
+  return check_condition(
+    new Date(input.end_datetime) >= new Date(input.start_datetime),
+    ACTIVITY_VALIDATION_MESSAGES.END_BEFORE_START,
+  );
 }
 
 export function create_activity_from_fixture(
@@ -60,14 +95,16 @@ export function create_activity_from_fixture(
   venue_location: CreateActivityInput["location"],
 ): CreateActivityInput {
   const start_datetime = new Date(fixture_datetime);
-  const end_datetime = new Date(start_datetime.getTime() + 2 * 60 * 60 * 1000);
+  const end_datetime = new Date(
+    start_datetime.getTime() + FIXTURE_ACTIVITY_DURATION_MS,
+  );
 
   return {
     title: fixture_title,
-    description: `Match fixture`,
+    description: FIXTURE_ACTIVITY_DESCRIPTION,
     organization_id,
     category_id,
-    category_type: "fixture",
+    category_type: ACTIVITY_CATEGORY_TYPE.FIXTURE,
     start_datetime: start_datetime.toISOString(),
     end_datetime: end_datetime.toISOString(),
     is_all_day: false,
@@ -76,9 +113,9 @@ export function create_activity_from_fixture(
     team_ids: [home_team_id, away_team_id],
     competition_id,
     fixture_id,
-    source_type: "fixture",
+    source_type: ACTIVITY_SOURCE_TYPE.FIXTURE,
     source_id: fixture_id,
-    status: "scheduled",
+    status: ACTIVITY_STATUS.SCHEDULED,
     recurrence: NO_ACTIVITY_RECURRENCE,
     reminders: [...DEFAULT_REMINDERS],
     color_override: "",
@@ -97,10 +134,10 @@ export function create_activity_from_competition(
 ): CreateActivityInput {
   return {
     title: competition_name,
-    description: `Competition: ${competition_name}`,
+    description: `${COMPETITION_ACTIVITY_DESCRIPTION_PREFIX}${competition_name}`,
     organization_id,
     category_id,
-    category_type: "competition",
+    category_type: ACTIVITY_CATEGORY_TYPE.COMPETITION,
     start_datetime: start_date,
     end_datetime: end_date,
     is_all_day: true,
@@ -109,62 +146,14 @@ export function create_activity_from_competition(
     team_ids: [],
     competition_id,
     fixture_id: "",
-    source_type: "competition",
+    source_type: ACTIVITY_SOURCE_TYPE.COMPETITION,
     source_id: competition_id,
-    status: "scheduled",
+    status: ACTIVITY_STATUS.SCHEDULED,
     recurrence: NO_ACTIVITY_RECURRENCE,
     reminders: [...DEFAULT_REMINDERS],
     color_override: "",
     notes: "",
   };
-}
-
-function get_activity_status_display(status: ActivityStatus): {
-  label: string;
-  color: string;
-} {
-  const status_map: Record<ActivityStatus, { label: string; color: string }> = {
-    scheduled: {
-      label: "Scheduled",
-      color: "bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300",
-    },
-    in_progress: {
-      label: "In Progress",
-      color:
-        "bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300",
-    },
-    completed: {
-      label: "Completed",
-      color: "bg-gray-100 text-gray-800 dark:bg-gray-900/50 dark:text-gray-300",
-    },
-    cancelled: {
-      label: "Cancelled",
-      color: "bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300",
-    },
-    postponed: {
-      label: "Postponed",
-      color:
-        "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300",
-    },
-  };
-  return status_map[status];
-}
-
-function calculate_activity_duration_minutes(
-  start_datetime: Activity["start_datetime"],
-  end_datetime: Activity["end_datetime"],
-): number {
-  const start_date = new Date(start_datetime);
-  const end_date = new Date(end_datetime);
-  return Math.round((end_date.getTime() - start_date.getTime()) / (1000 * 60));
-}
-
-function is_activity_recurring(activity: Activity): boolean {
-  return activity.recurrence.pattern !== "none";
-}
-
-function is_activity_from_external_source(activity: Activity): boolean {
-  return activity.source_type !== ACTIVITY_SOURCE_TYPE.MANUAL;
 }
 
 export function can_edit_activity(activity: Activity): boolean {

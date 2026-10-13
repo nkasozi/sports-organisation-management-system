@@ -6,6 +6,8 @@ import {
 } from "$lib/core/services/syncableImageFileValidation";
 
 import { create_dynamic_form_field_callbacks } from "./dynamicEntityFormFieldCallbacks";
+import { create_dependencies } from "./dynamicEntityFormFieldCallbacks.test_support";
+import { DYNAMIC_FORM_MESSAGE } from "./dynamicFormMessages";
 
 const {
   build_dynamic_form_jersey_color_warnings_mock,
@@ -56,41 +58,6 @@ vi.mock("./dynamicFormLogic", () => ({
 }));
 
 describe("dynamicEntityFormFieldCallbacks", () => {
-  function create_dependencies() {
-    const state = {
-      form_state: {
-        form_data: { player_id: "player-1" },
-        foreign_key_options: {},
-        all_competition_teams_cache: [],
-        validation_errors: {},
-      },
-      warning_state: {
-        color_clash_warnings: [],
-        official_team_conflict_warnings: [],
-        gender_mismatch_warnings: [],
-        fixture_team_gender_mismatch_warnings: [],
-      },
-    };
-
-    const dependencies = {
-      entity_type: "FixtureDetailsSetup",
-      get_entity_metadata: () => ({ fields: [] }) as never,
-      get_form_state: () => state.form_state as never,
-      set_form_state: vi.fn((next_state: unknown) => {
-        state.form_state = next_state as never;
-      }),
-      get_warning_state: () => state.warning_state as never,
-      set_warning_state: vi.fn((next_state: unknown) => {
-        state.warning_state = next_state as never;
-      }),
-      navigate_to_foreign_entity: vi.fn(() => true),
-      conflict_dependencies: {} as never,
-      gender_dependencies: {} as never,
-    };
-
-    return { dependencies, state };
-  }
-
   beforeEach(() => {
     build_dynamic_form_jersey_color_warnings_mock.mockReset();
     convert_file_to_base64_mock.mockReset();
@@ -127,7 +94,10 @@ describe("dynamicEntityFormFieldCallbacks", () => {
     const image_event = {
       target: { files: [{ type: "image/png" }] },
     };
-    convert_file_to_base64_mock.mockResolvedValueOnce("base64-image");
+    convert_file_to_base64_mock.mockResolvedValueOnce({
+      success: true,
+      data: "base64-image",
+    });
 
     await callbacks.handle_file_change(non_image_event as never, "logo_url");
     await callbacks.handle_file_change(image_event as never, "logo_url");
@@ -164,67 +134,25 @@ describe("dynamicEntityFormFieldCallbacks", () => {
     ).toBe(build_syncable_image_file_size_error(MAX_SYNCABLE_IMAGE_FILE_BYTES));
   });
 
-  it("updates dependent options and warning state after foreign-key changes", async () => {
-    const { dependencies } = create_dependencies();
-    update_dynamic_form_field_value_mock.mockReturnValueOnce({
-      player_id: "player-2",
-    });
-    handle_dynamic_form_dependency_change_mock.mockResolvedValueOnce({
-      form_data: { player_id: "player-2" },
-      foreign_key_options: { team_id: [{ id: "team-1" }] },
-      all_competition_teams_cache: [],
-      should_check_jersey_color_clashes: true,
-      should_run_gender_mismatch_check: true,
-      should_run_fixture_team_gender_mismatch_check: true,
-    });
-    build_dynamic_form_jersey_color_warnings_mock.mockReturnValueOnce([
-      "Jersey clash",
-    ]);
-    load_dynamic_form_official_conflict_warnings_mock.mockResolvedValueOnce([
-      "Official conflict",
-    ]);
-    load_dynamic_form_player_gender_warnings_mock.mockResolvedValueOnce([
-      "Gender mismatch",
-    ]);
-    load_dynamic_form_fixture_gender_warnings_mock.mockResolvedValueOnce([
-      "Fixture mismatch",
-    ]);
+  it("shows a friendly error when an image cannot be processed", async () => {
+    const { dependencies, state } = create_dependencies();
     const callbacks = create_dynamic_form_field_callbacks(
       dependencies as never,
     );
-
-    await callbacks.handle_foreign_key_change("player_id", "player-2");
-
-    expect(dependencies.set_form_state).toHaveBeenCalled();
-    expect(dependencies.set_warning_state).toHaveBeenCalledWith({
-      color_clash_warnings: ["Jersey clash"],
-      official_team_conflict_warnings: ["Official conflict"],
-      gender_mismatch_warnings: ["Gender mismatch"],
-      fixture_team_gender_mismatch_warnings: ["Fixture mismatch"],
+    convert_file_to_base64_mock.mockResolvedValueOnce({
+      success: false,
+      error: DYNAMIC_FORM_MESSAGE.FILE_PROCESSING_FAILED,
     });
-  });
 
-  it("reloads official conflict warnings when official assignments change", async () => {
-    const { dependencies } = create_dependencies();
-    update_dynamic_form_field_value_mock.mockReturnValueOnce({
-      assigned_officials: [{ official_id: "official-1", role_id: "referee" }],
-    });
-    load_dynamic_form_official_conflict_warnings_mock.mockResolvedValueOnce([
-      "Official conflict",
-    ]);
-    const callbacks = create_dynamic_form_field_callbacks(
-      dependencies as never,
+    await callbacks.handle_file_change(
+      { target: { files: [{ size: 10, type: "image/png" }] } } as never,
+      "logo_url",
     );
 
-    await callbacks.handle_official_assignments_change("assigned_officials", [
-      { official_id: "official-1", role_id: "referee" },
-    ]);
-
-    expect(dependencies.set_warning_state).toHaveBeenCalledWith({
-      color_clash_warnings: [],
-      official_team_conflict_warnings: ["Official conflict"],
-      gender_mismatch_warnings: [],
-      fixture_team_gender_mismatch_warnings: [],
-    });
+    expect(
+      (state.form_state.validation_errors as Record<string, string>)[
+        "logo_url"
+      ],
+    ).toBe(DYNAMIC_FORM_MESSAGE.FILE_PROCESSING_FAILED);
   });
 });

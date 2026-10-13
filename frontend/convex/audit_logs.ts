@@ -1,12 +1,36 @@
 import { v } from "convex/values";
 
+import type { Doc } from "./_generated/dataModel";
 import { internalMutation, query } from "./_generated/server";
-import { build_scope_filter, require_auth } from "./lib/auth_middleware";
+import { load_scoped_audit_logs } from "./lib/audit_log_access";
+import {
+  build_empty_audit_search_page,
+  filter_audit_logs,
+  paginate_audit_logs,
+  resolve_audit_page_request,
+  sort_audit_logs_newest_first,
+} from "./lib/audit_log_search";
 
 export const AUDIT_LOG_RETENTION_DAYS = 60;
 export const AUDIT_LOG_SYNC_DAYS = 2;
 export const AUDIT_LOG_PAGE_SIZE = 50;
 export const CLEANUP_BATCH_SIZE = 100;
+
+const AUDIT_LOGS_TABLE_NAME = "audit_logs";
+const AUDIT_LOG_CLEANUP_EVENT = "audit_log_cleanup";
+const MISSING_LOG_DATE = "";
+
+type AuditLogDocument = Doc<"audit_logs">;
+
+function read_audit_log_date(log: AuditLogDocument): string {
+  return log.timestamp || log.created_at || log.synced_at || MISSING_LOG_DATE;
+}
+
+function build_cutoff_timestamp(days_ago: number): string {
+  const cutoff_date = new Date();
+  cutoff_date.setDate(cutoff_date.getDate() - days_ago);
+  return cutoff_date.toISOString();
+}
 
 export const search_audit_logs = query({
   args: {
@@ -21,136 +45,31 @@ export const search_audit_logs = query({
     page_size: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    const {
-      entity_type,
-      entity_id,
-      user_id,
-      action,
-      organization_id,
-      from_date,
-      to_date,
-      page_number = 1,
-      page_size = AUDIT_LOG_PAGE_SIZE,
-    } = args;
-
-    const auth_result = await require_auth(ctx);
-    if (!auth_result.success) {
-      return {
-        success: false,
-        data: [],
-        total_count: 0,
-        page_number: 1,
-        page_size: AUDIT_LOG_PAGE_SIZE,
-        total_pages: 0,
-      };
-    }
-
-    let all_logs = await ctx.db.query("audit_logs").collect();
-
-    const scope_filter = build_scope_filter(auth_result.data, "auditlog");
-    if (scope_filter.organization_id) {
-      all_logs = all_logs.filter(
-        (log) => log.organization_id === scope_filter.organization_id,
-      );
-    }
-
-    let filtered_logs = all_logs;
-
-    if (entity_type) {
-      filtered_logs = filtered_logs.filter(
-        (log) => log.entity_type === entity_type,
-      );
-    }
-
-    if (entity_id) {
-      filtered_logs = filtered_logs.filter(
-        (log) => log.entity_id === entity_id,
-      );
-    }
-
-    if (user_id) {
-      filtered_logs = filtered_logs.filter((log) => log.user_id === user_id);
-    }
-
-    if (action) {
-      filtered_logs = filtered_logs.filter((log) => log.action === action);
-    }
-
-    if (organization_id) {
-      filtered_logs = filtered_logs.filter(
-        (log) => log.organization_id === organization_id,
-      );
-    }
-
-    if (from_date) {
-      filtered_logs = filtered_logs.filter((log) => {
-        const log_date = log.timestamp || log.created_at;
-        return log_date && log_date >= from_date;
-      });
-    }
-
-    if (to_date) {
-      filtered_logs = filtered_logs.filter((log) => {
-        const log_date = log.timestamp || log.created_at;
-        return log_date && log_date <= to_date;
-      });
-    }
-
-    filtered_logs.sort((a, b) => {
-      const date_a = a.timestamp || a.created_at || "";
-      const date_b = b.timestamp || b.created_at || "";
-      return date_b.localeCompare(date_a);
-    });
-
-    const total_count = filtered_logs.length;
-    const effective_page_size = Math.min(page_size, AUDIT_LOG_PAGE_SIZE);
-    const start_index = (page_number - 1) * effective_page_size;
-    const paginated_logs = filtered_logs.slice(
-      start_index,
-      start_index + effective_page_size,
+    const page_request = resolve_audit_page_request(args, AUDIT_LOG_PAGE_SIZE);
+    if (!page_request.success)
+      return build_empty_audit_search_page(page_request, AUDIT_LOG_PAGE_SIZE);
+    const scoped_logs = await load_scoped_audit_logs(ctx);
+    if (!scoped_logs.success)
+      return build_empty_audit_search_page(scoped_logs, AUDIT_LOG_PAGE_SIZE);
+    return paginate_audit_logs(
+      sort_audit_logs_newest_first(filter_audit_logs(scoped_logs.data, args)),
+      page_request.data,
     );
-
-    return {
-      success: true,
-      data: paginated_logs,
-      total_count,
-      page_number,
-      page_size: effective_page_size,
-      total_pages: Math.ceil(total_count / effective_page_size),
-    };
   },
 });
 
 export const get_recent_audit_logs = query({
-  args: {
-    days: v.optional(v.number()),
-  },
+  args: { days: v.optional(v.number()) },
   handler: async (ctx, args) => {
-    const days = args.days || AUDIT_LOG_SYNC_DAYS;
-    const cutoff_date = new Date();
-    cutoff_date.setDate(cutoff_date.getDate() - days);
-    const cutoff_timestamp = cutoff_date.toISOString();
-
-    const auth_result = await require_auth(ctx);
-    if (!auth_result.success) {
-      return [];
-    }
-
-    let all_logs = await ctx.db.query("audit_logs").collect();
-
-    const scope_filter = build_scope_filter(auth_result.data, "auditlog");
-    if (scope_filter.organization_id) {
-      all_logs = all_logs.filter(
-        (log) => log.organization_id === scope_filter.organization_id,
-      );
-    }
-
-    const recent_logs = all_logs.filter((log) => {
-      const log_date = log.timestamp || log.created_at || log.synced_at;
-      return log_date && log_date >= cutoff_timestamp;
+    const cutoff_timestamp = build_cutoff_timestamp(
+      args.days || AUDIT_LOG_SYNC_DAYS,
+    );
+    const scoped_logs = await load_scoped_audit_logs(ctx);
+    if (!scoped_logs.success) return [];
+    return scoped_logs.data.filter((log) => {
+      const log_date = read_audit_log_date(log);
+      return Boolean(log_date) && log_date >= cutoff_timestamp;
     });
-
-    return recent_logs;
   },
 });
 
@@ -162,39 +81,22 @@ export const delete_old_audit_logs_batch = internalMutation({
   handler: async (ctx, args) => {
     const retention_days = args.retention_days || AUDIT_LOG_RETENTION_DAYS;
     const batch_size = args.batch_size || CLEANUP_BATCH_SIZE;
-
-    const cutoff_date = new Date();
-    cutoff_date.setDate(cutoff_date.getDate() - retention_days);
-    const cutoff_timestamp = cutoff_date.toISOString();
-
-    const all_logs = await ctx.db.query("audit_logs").collect();
-
+    const cutoff_timestamp = build_cutoff_timestamp(retention_days);
+    const all_logs = await ctx.db.query(AUDIT_LOGS_TABLE_NAME).collect();
     const old_logs = all_logs.filter((log) => {
-      const log_date = log.timestamp || log.created_at || log.synced_at;
-      return log_date && log_date < cutoff_timestamp;
+      const log_date = read_audit_log_date(log);
+      return Boolean(log_date) && log_date < cutoff_timestamp;
     });
-
     const logs_to_delete = old_logs.slice(0, batch_size);
-    let deleted_count = 0;
-
-    for (const log of logs_to_delete) {
-      await ctx.db.delete(log._id);
-      deleted_count++;
-    }
-
+    for (const log of logs_to_delete) await ctx.db.delete(log._id);
+    const deleted_count = logs_to_delete.length;
     const remaining_count = old_logs.length - deleted_count;
-
     console.log("[AuditLogCleanup] Batch complete", {
-      event: "audit_log_cleanup",
+      event: AUDIT_LOG_CLEANUP_EVENT,
       deleted_count,
       retention_days,
       remaining_count,
     });
-
-    return {
-      deleted_count,
-      remaining_count,
-      has_more: remaining_count > 0,
-    };
+    return { deleted_count, remaining_count, has_more: remaining_count > 0 };
   },
 });

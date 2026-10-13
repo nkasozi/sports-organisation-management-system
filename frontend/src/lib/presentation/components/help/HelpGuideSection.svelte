@@ -7,14 +7,15 @@
         HELP_GUIDE_SECTION_TITLE,
     } from "../../logic/helpPageContent";
     import { HELP_GUIDE_STEPS } from "../../logic/helpPageGuideSteps";
+    import { is_help_section_item_expanded } from "./helpSectionConstants";
 
     export let expanded_guide_state: HelpSectionExpansionState;
     export let on_toggle: (selected_index: number) => void;
 
     function is_guide_step_expanded(selected_index: number): boolean {
-        return (
-            expanded_guide_state.status === "expanded" &&
-            expanded_guide_state.index === selected_index
+        return is_help_section_item_expanded(
+            expanded_guide_state,
+            selected_index,
         );
     }
 </script>

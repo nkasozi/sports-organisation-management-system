@@ -41,6 +41,10 @@ describe("liveGameDetailControllerReportActions", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    download_match_report_mock.mockReturnValue({
+      success: true,
+      data: "lions-vs-tigers.pdf",
+    });
   });
 
   it("returns false when the minimum page data needed for a report is missing", async () => {

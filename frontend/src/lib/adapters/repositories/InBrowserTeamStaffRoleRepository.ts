@@ -11,15 +11,32 @@ import type {
   TeamStaffRoleFilter,
   TeamStaffRoleRepository,
 } from "../../core/interfaces/ports";
-import type { PaginatedAsyncResult, Result } from "../../core/types/Result";
-import {
-  create_failure_result,
-  create_success_result,
+import type {
+  AsyncResult,
+  PaginatedAsyncResult,
 } from "../../core/types/Result";
+import { create_success_result } from "../../core/types/Result";
 import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
+import { find_rows_by_index } from "./InBrowserRepositoryIndexLookup";
+import { find_all_entities_in_custom_order } from "./InBrowserRepositoryPagedQueries";
+import {
+  create_error_failure_details,
+  create_warning_failure_details,
+  with_failure_context,
+} from "./InBrowserRepositoryQueryRunner";
+import { create_lazy_repository_accessor } from "./InBrowserRepositorySingleton";
+import type { RepositoryWriteOrigin } from "./InBrowserRepositoryWriteOrigin";
 export { create_default_team_staff_roles_for_organization } from "./InBrowserTeamStaffRoleRepositoryDefaults";
 
 const ENTITY_PREFIX = "team_staff_role";
+
+enum TEAM_STAFF_ROLE_INDEX {
+  CATEGORY = "category",
+}
+
+function sort_roles_by_display_order(roles: TeamStaffRole[]): TeamStaffRole[] {
+  return [...roles].sort((a, b) => a.display_order - b.display_order);
+}
 
 export class InBrowserTeamStaffRoleRepository
   extends InBrowserBaseRepository<
@@ -92,57 +109,44 @@ export class InBrowserTeamStaffRoleRepository
     return filtered;
   }
 
-  async find_all_with_filter(
+  find_all_with_filter(
     filter?: TeamStaffRoleFilter,
     options?: QueryOptions,
   ): PaginatedAsyncResult<TeamStaffRole> {
-    try {
-      let filtered_entities = await this.database.team_staff_roles.toArray();
-      if (filter && Object.keys(filter).length > 0) {
-        filtered_entities = this.apply_entity_filter(filtered_entities, filter);
-      }
-      filtered_entities.sort((a, b) => a.display_order - b.display_order);
-      const total_count = filtered_entities.length;
-      const paginated = this.apply_pagination(filtered_entities, options);
-      return create_success_result(
-        this.create_paginated_result(paginated, total_count, options),
-      );
-    } catch (error) {
-      console.warn(
+    return find_all_entities_in_custom_order({
+      table: this.database.team_staff_roles,
+      filter: filter ?? {},
+      apply_filter: this.apply_entity_filter.bind(this),
+      order: sort_roles_by_display_order,
+      options: options ?? {},
+      failure: create_warning_failure_details(
         "[TeamStaffRoleRepository] Failed to filter team staff roles",
-        {
-          event: "repository_filter_team_staff_roles_failed",
-          error: String(error),
-        },
-      );
-      const error_message =
-        error instanceof Error ? error.message : "Unknown error occurred";
-      return create_failure_result(
-        `Failed to filter team staff roles: ${error_message}`,
-      );
-    }
+        "repository_filter_team_staff_roles_failed",
+        "filter team staff roles",
+      ),
+    });
   }
 
   async find_by_category(
     category: TeamStaffRole["category"],
-  ): Promise<Result<TeamStaffRole[]>> {
-    try {
-      const roles = await this.database.team_staff_roles
-        .where("category")
-        .equals(category)
-        .toArray();
-      return create_success_result(
-        roles.sort((a, b) => a.display_order - b.display_order),
-      );
-    } catch (error) {
-      console.error("[TeamStaffRoleRepository] find_by_category failed", {
-        event: "repository_find_by_category_failed",
-        error: String(error),
-      });
-      return create_failure_result(
-        `Failed to find roles by category: ${error}`,
-      );
-    }
+  ): AsyncResult<TeamStaffRole[]> {
+    const roles_result = await find_rows_by_index({
+      table: this.database.team_staff_roles,
+      index_name: TEAM_STAFF_ROLE_INDEX.CATEGORY,
+      value: category,
+      failure: with_failure_context(
+        create_error_failure_details(
+          "[TeamStaffRoleRepository] Failed to find roles by category",
+          "repository_find_by_category_failed",
+          "find roles by category",
+        ),
+        { category },
+      ),
+    });
+    if (!roles_result.success) return roles_result;
+    return create_success_result(
+      sort_roles_by_display_order(roles_result.data),
+    );
   }
 
   async find_by_organization(
@@ -153,27 +157,15 @@ export class InBrowserTeamStaffRoleRepository
   }
 }
 
-type TeamStaffRoleRepositoryState =
-  | { status: "uninitialized" }
-  | { status: "ready"; repository: InBrowserTeamStaffRoleRepository };
-
-let team_staff_role_repository_state: TeamStaffRoleRepositoryState = {
-  status: "uninitialized",
-};
+const get_concrete_repository: () => InBrowserTeamStaffRoleRepository =
+  create_lazy_repository_accessor(() => new InBrowserTeamStaffRoleRepository());
 
 export function get_team_staff_role_repository(): TeamStaffRoleRepository {
-  if (team_staff_role_repository_state.status === "ready") {
-    return team_staff_role_repository_state.repository;
-  }
-
-  const repository = new InBrowserTeamStaffRoleRepository();
-  team_staff_role_repository_state = { status: "ready", repository };
-
-  return repository;
+  return get_concrete_repository();
 }
 
-export async function reset_team_staff_role_repository(): Promise<void> {
-  const repository =
-    get_team_staff_role_repository() as InBrowserTeamStaffRoleRepository;
-  await repository.clear_all_data();
+export function reset_team_staff_role_repository(
+  origin: RepositoryWriteOrigin,
+): AsyncResult<boolean> {
+  return get_concrete_repository().with_write_origin(origin).clear_all_data();
 }

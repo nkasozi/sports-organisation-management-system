@@ -13,15 +13,48 @@ import type {
   QueryOptions,
 } from "../../core/interfaces/ports";
 import type { ScalarValueInput } from "../../core/types/DomainScalars";
-import type { PaginatedAsyncResult, Result } from "../../core/types/Result";
-import {
-  create_failure_result,
-  create_success_result,
+import type {
+  AsyncResult,
+  PaginatedAsyncResult,
+  Result,
 } from "../../core/types/Result";
 import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
+import {
+  apply_entity_filter_rules,
+  type EntityFilterRule,
+  equals_rule,
+  FILTER_RULE_ACTIVATION,
+  text_contains_rule,
+} from "./InBrowserRepositoryFilterRules";
+import { find_all_entities_in_custom_order } from "./InBrowserRepositoryPagedQueries";
+import {
+  create_warning_failure_details,
+  execute_repository_operation,
+  REPOSITORY_LOG_LEVEL,
+} from "./InBrowserRepositoryQueryRunner";
+import { create_lazy_repository_accessor } from "./InBrowserRepositorySingleton";
+import type { RepositoryWriteOrigin } from "./InBrowserRepositoryWriteOrigin";
 
 const ENTITY_PREFIX = "game_official_role";
 const GLOBAL_GAME_OFFICIAL_ROLE_SPORT_ID = "" as GameOfficialRole["sport_id"];
+
+const ROLE_FILTER_RULES: EntityFilterRule<
+  GameOfficialRole,
+  GameOfficialRoleFilter
+>[] = [
+  text_contains_rule("name_contains", (role) => role.name),
+  equals_rule("sport_id", FILTER_RULE_ACTIVATION.WHEN_KEY_PRESENT),
+  equals_rule("is_on_field", FILTER_RULE_ACTIVATION.WHEN_KEY_PRESENT),
+  equals_rule("is_head_official", FILTER_RULE_ACTIVATION.WHEN_KEY_PRESENT),
+  equals_rule("status"),
+  equals_rule("organization_id"),
+];
+
+function sort_roles_by_display_order(
+  roles: GameOfficialRole[],
+): GameOfficialRole[] {
+  return roles.sort((a, b) => a.display_order - b.display_order);
+}
 
 export class InBrowserGameOfficialRoleRepository
   extends InBrowserBaseRepository<
@@ -63,102 +96,65 @@ export class InBrowserGameOfficialRoleRepository
     entities: GameOfficialRole[],
     filter: GameOfficialRoleFilter,
   ): GameOfficialRole[] {
-    let filtered = entities;
-    if (filter.name_contains) {
-      const term = filter.name_contains.toLowerCase();
-      filtered = filtered.filter((r) => r.name.toLowerCase().includes(term));
-    }
-    if ("sport_id" in filter) {
-      filtered = filtered.filter((r) => r.sport_id === filter.sport_id);
-    }
-    if ("is_on_field" in filter) {
-      filtered = filtered.filter((r) => r.is_on_field === filter.is_on_field);
-    }
-    if ("is_head_official" in filter) {
-      filtered = filtered.filter(
-        (r) => r.is_head_official === filter.is_head_official,
-      );
-    }
-    if (filter.status) {
-      filtered = filtered.filter((r) => r.status === filter.status);
-    }
-    if (filter.organization_id) {
-      filtered = filtered.filter(
-        (r) => r.organization_id === filter.organization_id,
-      );
-    }
-    return filtered;
+    return apply_entity_filter_rules(entities, filter, ROLE_FILTER_RULES);
   }
 
   async find_all_with_filter(
     filter?: GameOfficialRoleFilter,
     options?: QueryOptions,
   ): PaginatedAsyncResult<GameOfficialRole> {
-    try {
-      let filtered_entities = await this.database.game_official_roles.toArray();
-      if (filter && Object.keys(filter).length > 0) {
-        filtered_entities = this.apply_entity_filter(filtered_entities, filter);
-      }
-      filtered_entities.sort((a, b) => a.display_order - b.display_order);
-      const total_count = filtered_entities.length;
-      const paginated = this.apply_pagination(filtered_entities, options);
-      return create_success_result(
-        this.create_paginated_result(paginated, total_count, options),
-      );
-    } catch (error) {
-      console.warn(
+    return find_all_entities_in_custom_order({
+      table: this.database.game_official_roles,
+      filter: filter ?? {},
+      apply_filter: this.apply_entity_filter.bind(this),
+      order: sort_roles_by_display_order,
+      options: options ?? {},
+      failure: create_warning_failure_details(
         "[GameOfficialRoleRepository] Failed to filter game official roles",
-        {
-          event: "repository_filter_game_official_roles_failed",
-          error: String(error),
-        },
-      );
-      const error_message =
-        error instanceof Error ? error.message : "Unknown error occurred";
-      return create_failure_result(
-        `Failed to filter game official roles: ${error_message}`,
-      );
-    }
+        "repository_filter_game_official_roles_failed",
+        "filter game official roles",
+      ),
+    });
   }
 
   async find_by_sport(
     sport_id: GameOfficialRole["sport_id"],
   ): Promise<Result<GameOfficialRole[]>> {
-    try {
-      const all = await this.database.game_official_roles.toArray();
-      return create_success_result(
-        all
-          .filter(
-            (role) =>
-              role.sport_id === sport_id ||
-              role.sport_id === GLOBAL_GAME_OFFICIAL_ROLE_SPORT_ID,
-          )
-          .sort((a, b) => a.display_order - b.display_order),
-      );
-    } catch (error) {
-      console.error("[GameOfficialRoleRepository] find_by_sport failed", {
-        event: "repository_find_by_sport_failed",
-        error: String(error),
-      });
-      return create_failure_result(`Failed to find roles by sport: ${error}`);
-    }
+    return this.list_sorted_roles(
+      "find_by_sport",
+      "roles by sport",
+      (role) =>
+        role.sport_id === sport_id ||
+        role.sport_id === GLOBAL_GAME_OFFICIAL_ROLE_SPORT_ID,
+    );
   }
 
   async find_head_officials(): Promise<Result<GameOfficialRole[]>> {
-    try {
-      const all = await this.database.game_official_roles.toArray();
-      return create_success_result(
-        all
-          .filter((r) => r.is_head_official)
-          .sort((a, b) => a.display_order - b.display_order),
-      );
-    } catch (error) {
-      console.error("[GameOfficialRoleRepository] find_head_officials failed", {
-        event: "repository_find_head_officials_failed",
-        error: String(error),
-      });
-      return create_failure_result(`Failed to find head officials: ${error}`);
-    }
+    return this.list_sorted_roles(
+      "find_head_officials",
+      "head officials",
+      (role) => role.is_head_official,
+    );
+  }
+
+  private list_sorted_roles(
+    method_name: string,
+    subject: string,
+    matches: (role: GameOfficialRole) => boolean,
+  ): Promise<Result<GameOfficialRole[]>> {
+    return execute_repository_operation(
+      {
+        log_message: `[GameOfficialRoleRepository] ${method_name} failed`,
+        event: `repository_${method_name}_failed`,
+        operation: `find ${subject}`,
+        log_level: REPOSITORY_LOG_LEVEL.ERROR,
+        context_ids: {},
+      },
+      async () =>
+        sort_roles_by_display_order(
+          (await this.database.game_official_roles.toArray()).filter(matches),
+        ),
+    );
   }
 
   async find_by_organization(
@@ -175,30 +171,17 @@ export function create_default_game_official_roles_for_organization(
   return get_default_football_official_roles_with_ids(organization_id);
 }
 
-type GameOfficialRoleRepositoryState =
-  | { status: "uninitialized" }
-  | {
-      status: "ready";
-      repository: InBrowserGameOfficialRoleRepository;
-    };
+export const get_game_official_role_repository: () => GameOfficialRoleRepository =
+  create_lazy_repository_accessor(
+    () => new InBrowserGameOfficialRoleRepository(),
+  );
 
-let game_official_role_repository_state: GameOfficialRoleRepositoryState = {
-  status: "uninitialized",
-};
-
-export function get_game_official_role_repository(): GameOfficialRoleRepository {
-  if (game_official_role_repository_state.status === "ready") {
-    return game_official_role_repository_state.repository;
-  }
-
-  const repository = new InBrowserGameOfficialRoleRepository();
-  game_official_role_repository_state = { status: "ready", repository };
-
-  return repository;
-}
-
-export async function reset_game_official_role_repository(): Promise<void> {
-  const repository =
-    get_game_official_role_repository() as InBrowserGameOfficialRoleRepository;
-  await repository.clear_all_data();
+export function reset_game_official_role_repository(
+  origin: RepositoryWriteOrigin,
+): AsyncResult<boolean> {
+  return (
+    get_game_official_role_repository() as InBrowserGameOfficialRoleRepository
+  )
+    .with_write_origin(origin)
+    .clear_all_data();
 }

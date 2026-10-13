@@ -9,6 +9,7 @@
         get_fixture_lineup_name,
         get_fixture_lineup_status_class,
     } from "$lib/presentation/logic/fixtureLineupDetailPageState";
+    import { PRESENCE_STATUS } from "$lib/presentation/logic/presenceStatus";
 
     export let lineup: FixtureLineup;
     export let fixture_state: FixtureLineupDetailFixtureState;
@@ -51,7 +52,7 @@
             <h1
                 class="text-2xl font-bold text-accent-900 dark:text-accent-100 mb-2"
             >
-                {team_state.status === "present"
+                {team_state.status === PRESENCE_STATUS.PRESENT
                     ? team_state.team.name
                     : "Unknown Team"} Lineup
             </h1>

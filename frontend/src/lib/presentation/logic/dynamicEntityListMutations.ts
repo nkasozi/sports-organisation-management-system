@@ -2,6 +2,10 @@ import type { BaseEntity } from "$lib/core/entities/BaseEntity";
 import type { EntityCrudHandlers } from "$lib/core/types/EntityHandlers";
 import type { SubEntityFilter } from "$lib/core/types/SubEntityFilter";
 import { get_use_cases_for_entity_type } from "$lib/infrastructure/registry/entityUseCasesRegistry";
+import {
+  DYNAMIC_ENTITY_LIST_EVENT,
+  DYNAMIC_ENTITY_LIST_MESSAGE,
+} from "$lib/presentation/logic/dynamicEntityListMessages";
 
 interface DynamicEntityDeleteResult {
   success: boolean;
@@ -17,7 +21,11 @@ interface DynamicEntityDeleteMultipleResult {
 function get_dynamic_entity_delete_error(
   result: DynamicEntityDeleteResult,
 ): string {
-  return result.error || result.error_message || "Failed to delete entity";
+  return (
+    result.error ||
+    result.error_message ||
+    DYNAMIC_ENTITY_LIST_MESSAGE.DELETE_FAILED
+  );
 }
 
 export function build_dynamic_entity_list_sub_entity_defaults(
@@ -64,9 +72,14 @@ async function delete_with_default_use_cases(command: {
 }): Promise<{ error_message: string; success: boolean }> {
   const use_cases_result = get_use_cases_for_entity_type(command.entity_type);
   if (!use_cases_result.success) {
+    console.error("[DynamicEntityList] No use cases for entity type", {
+      event: DYNAMIC_ENTITY_LIST_EVENT.USE_CASES_MISSING,
+      entity_type: command.entity_type,
+      error: use_cases_result.error,
+    });
     return {
       success: false,
-      error_message: `No use cases found for entity type: ${command.entity_type}`,
+      error_message: DYNAMIC_ENTITY_LIST_MESSAGE.LIST_UNAVAILABLE,
     };
   }
   const use_cases = use_cases_result.data as typeof use_cases_result.data & {
@@ -76,24 +89,72 @@ async function delete_with_default_use_cases(command: {
   };
   if (command.ids_to_delete.length > 1 && use_cases.delete_multiple) {
     const result = await use_cases.delete_multiple(command.ids_to_delete);
-    return {
-      success: result.success,
-      error_message: result.error_message || "Failed to delete entities",
-    };
+    return result.success
+      ? { success: true, error_message: "" }
+      : {
+          success: false,
+          error_message:
+            result.error_message || DYNAMIC_ENTITY_LIST_MESSAGE.DELETE_FAILED,
+        };
   }
-  for (const entity_id of command.ids_to_delete) {
+  return delete_each_with_use_cases(use_cases, command.ids_to_delete);
+}
+
+async function delete_each_with_use_cases(
+  use_cases: { delete: (id: string) => Promise<DynamicEntityDeleteResult> },
+  ids_to_delete: string[],
+): Promise<{ error_message: string; success: boolean }> {
+  for (const entity_id of ids_to_delete) {
     const result = await use_cases.delete(entity_id);
     if (result.success) {
       continue;
     }
     return {
       success: false,
-      error_message: get_dynamic_entity_delete_error(
-        result as DynamicEntityDeleteResult,
-      ),
+      error_message: get_dynamic_entity_delete_error(result),
     };
   }
   return { success: true, error_message: "" };
+}
+
+type DynamicEntityListDeletionOutcome = {
+  deleted_entities: BaseEntity[];
+  entities: BaseEntity[];
+  error_message: string;
+  success: boolean;
+};
+
+function build_deletion_outcome(
+  command: {
+    entities: BaseEntity[];
+    entities_to_delete: BaseEntity[];
+    entity_type: string;
+  },
+  ids_to_delete: string[],
+  deletion_result: { error_message: string; success: boolean },
+): DynamicEntityListDeletionOutcome {
+  if (!deletion_result.success) {
+    console.error("[DynamicEntityList] Delete failed", {
+      event: DYNAMIC_ENTITY_LIST_EVENT.DELETE_FAILED,
+      entity_type: command.entity_type,
+      entity_count: ids_to_delete.length,
+      error: deletion_result.error_message,
+    });
+    return {
+      success: false,
+      error_message: deletion_result.error_message,
+      deleted_entities: [],
+      entities: command.entities,
+    };
+  }
+  return {
+    success: true,
+    error_message: "",
+    deleted_entities: command.entities_to_delete,
+    entities: command.entities.filter(
+      (entity) => !ids_to_delete.includes(entity.id),
+    ),
+  };
 }
 
 export async function delete_dynamic_entity_list_entities(command: {
@@ -101,12 +162,7 @@ export async function delete_dynamic_entity_list_entities(command: {
   entities: BaseEntity[];
   entities_to_delete: BaseEntity[];
   entity_type: string;
-}): Promise<{
-  deleted_entities: BaseEntity[];
-  entities: BaseEntity[];
-  error_message: string;
-  success: boolean;
-}> {
+}): Promise<DynamicEntityListDeletionOutcome> {
   const ids_to_delete = command.entities_to_delete.map((entity) => entity.id);
   const deletion_result = command.crud_handlers?.delete
     ? await delete_with_custom_handler({
@@ -117,19 +173,5 @@ export async function delete_dynamic_entity_list_entities(command: {
         entity_type: command.entity_type,
         ids_to_delete,
       });
-  return deletion_result.success
-    ? {
-        success: true,
-        error_message: "",
-        deleted_entities: command.entities_to_delete,
-        entities: command.entities.filter(
-          (entity) => !ids_to_delete.includes(entity.id),
-        ),
-      }
-    : {
-        success: false,
-        error_message: deletion_result.error_message,
-        deleted_entities: [],
-        entities: command.entities,
-      };
+  return build_deletion_outcome(command, ids_to_delete, deletion_result);
 }

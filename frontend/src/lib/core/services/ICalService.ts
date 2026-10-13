@@ -19,6 +19,13 @@ export interface ICalFeedConfig {
   reminder_minutes_before: number;
 }
 
+const ICAL_LINE_BREAK = "\r\n";
+const FIXTURE_DEFAULT_DURATION_MS = 2 * 60 * 60 * 1000;
+
+function build_uid_domain(organization_name: string): string {
+  return organization_name.toLowerCase().replace(/\s+/g, "-");
+}
+
 function escape_ical_text(text: string): string {
   return text
     .replace(/\\/g, "\\\\")
@@ -91,7 +98,7 @@ function generate_event_block(event: ICalEvent, sequence: number): string {
 
   lines.push("END:VEVENT");
 
-  return lines.join("\r\n");
+  return lines.join(ICAL_LINE_BREAK);
 }
 
 export function generate_ical_feed(
@@ -123,7 +130,7 @@ export function generate_ical_feed(
 
   lines.push("END:VCALENDAR");
 
-  return lines.join("\r\n") + "\r\n";
+  return lines.join(ICAL_LINE_BREAK) + ICAL_LINE_BREAK;
 }
 
 export function convert_activity_to_ical_event(
@@ -131,7 +138,7 @@ export function convert_activity_to_ical_event(
   organization_name: string,
 ): ICalEvent {
   return {
-    uid: `activity-${activity.id}@${organization_name.toLowerCase().replace(/\s+/g, "-")}`,
+    uid: `activity-${activity.id}@${build_uid_domain(organization_name)}`,
     title: activity.title,
     description: activity.description || activity.notes || "",
     location: activity.location || "",
@@ -158,7 +165,7 @@ export function convert_fixture_to_ical_event(
   const title = `${home_team_name} vs ${away_team_name}`;
   const scheduled_datetime = `${fixture.scheduled_date}T${fixture.scheduled_time}:00`;
   const start = new Date(scheduled_datetime);
-  const end = new Date(start.getTime() + 2 * 60 * 60 * 1000);
+  const end = new Date(start.getTime() + FIXTURE_DEFAULT_DURATION_MS);
 
   const description_parts: string[] = [];
   description_parts.push(`Competition: ${competition_name}`);
@@ -171,7 +178,7 @@ export function convert_fixture_to_ical_event(
   }
 
   return {
-    uid: `fixture-${fixture.id}@${organization_name.toLowerCase().replace(/\s+/g, "-")}`,
+    uid: `fixture-${fixture.id}@${build_uid_domain(organization_name)}`,
     title,
     description: description_parts.join("\n"),
     location: fixture.venue || "",

@@ -1,98 +1,17 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import type {
-  CreatePlayerInput,
-  Player,
-  UpdatePlayerInput,
-} from "../entities/Player";
-import type { PlayerFilter, PlayerRepository } from "../interfaces/ports";
-import type { QueryOptions } from "../interfaces/ports";
-import type { ScalarInput } from "../types/DomainScalars";
-import type { PaginatedResult, Result } from "../types/Result";
+import type { PlayerFilter, QueryOptions } from "../interfaces/ports";
+import type { PlayerRepository } from "../interfaces/ports";
+import {
+  USE_CASE_ERROR_MESSAGES,
+  UseCaseErrorCode,
+} from "../types/UseCaseFailure";
 import { create_player_use_cases } from "./PlayerUseCases";
-
-function create_mock_player(
-  overrides: Partial<ScalarInput<Player>> = {},
-): Player {
-  return {
-    id: "player_1",
-    created_at: "2024-01-01T00:00:00Z",
-    updated_at: "2024-01-01T00:00:00Z",
-    first_name: "John",
-    last_name: "Doe",
-    gender_id: "gender_default_male",
-    email: "john.doe@example.com",
-    phone: "+1234567890",
-    date_of_birth: "1990-01-01",
-    position_id: "position_1",
-    organization_id: "org_1",
-    height_cm: 180,
-    weight_kg: 75,
-    nationality: "Uganda",
-    profile_image_url: "",
-    emergency_contact_name: "Jane Doe",
-    emergency_contact_phone: "+0987654321",
-    medical_notes: "",
-    status: "active",
-    ...overrides,
-  } as unknown as Player;
-}
-
-function create_valid_player_input(
-  overrides: Partial<CreatePlayerInput> = {},
-): CreatePlayerInput {
-  return {
-    first_name: "John",
-    last_name: "Doe",
-    gender_id: "gender_default_male",
-    email: "john.doe@example.com",
-    phone: "+1234567890",
-    date_of_birth: "1990-01-01",
-    position_id: "position_1",
-    organization_id: "org_1",
-    height_cm: 180,
-    weight_kg: 75,
-    nationality: "Uganda",
-    profile_image_url: "",
-    emergency_contact_name: "Jane Doe",
-    emergency_contact_phone: "+0987654321",
-    medical_notes: "",
-    status: "active",
-    ...overrides,
-  } as CreatePlayerInput;
-}
-
-function create_paginated_result<T>(
-  items: T[],
-  total_count?: number,
-): Result<PaginatedResult<T>, string> {
-  return {
-    success: true,
-    data: {
-      items,
-      total_count: total_count ?? items.length,
-      page_number: 1,
-      page_size: 10,
-      total_pages: Math.ceil((total_count ?? items.length) / 10),
-    },
-  } as Result<PaginatedResult<T>, string>;
-}
-
-function create_mock_repository(): PlayerRepository {
-  return {
-    find_all: vi.fn(),
-    find_by_id: vi.fn(),
-    find_by_ids: vi.fn(),
-    create: vi.fn(),
-    update: vi.fn(),
-    delete_by_id: vi.fn(),
-    delete_by_ids: vi.fn(),
-    count: vi.fn(),
-    find_by_team: vi.fn(),
-    find_active_players: vi.fn(),
-    find_by_jersey_number: vi.fn(),
-  } as PlayerRepository;
-}
+import {
+  create_mock_player,
+  create_mock_repository,
+  create_paginated_result,
+} from "./PlayerUseCases.test_support";
 
 describe("PlayerUseCases", () => {
   let mock_repository: PlayerRepository;
@@ -147,7 +66,9 @@ describe("PlayerUseCases", () => {
 
       expect(result.success).toBe(false);
       if (result.success) return;
-      expect(result.error).toBe("Database connection failed");
+      expect(result.error).toBe(
+        USE_CASE_ERROR_MESSAGES[UseCaseErrorCode.DEPENDENCY_FAILED],
+      );
     });
 
     it("passes query options to repository", async () => {
@@ -156,7 +77,9 @@ describe("PlayerUseCases", () => {
         create_paginated_result([]),
       );
 
-      await use_cases.list({}, options);
+      const result = await use_cases.list({}, options);
+
+      expect(result.success).toBe(true);
 
       expect(mock_repository.find_all).toHaveBeenCalledWith({}, options);
     });
@@ -241,297 +164,8 @@ describe("PlayerUseCases", () => {
 
       expect(result.success).toBe(false);
       if (result.success) return;
-      expect(result.error).toBe("Player not found");
-    });
-  });
-
-  describe("create", () => {
-    it("creates player with valid input", async () => {
-      const input = create_valid_player_input();
-      const created_player = create_mock_player({ ...input, id: "new_player" });
-      vi.mocked(mock_repository.create).mockResolvedValue({
-        success: true,
-        data: created_player,
-      });
-
-      const result = await use_cases.create(input);
-
-      expect(result.success).toBe(true);
-      if (!result.success) return;
-      expect(result.data?.id).toBe("new_player");
-      expect(mock_repository.create).toHaveBeenCalledWith(input);
-    });
-
-    it("returns validation error when first name is missing", async () => {
-      const input = create_valid_player_input({ first_name: "" });
-
-      const result = await use_cases.create(input);
-
-      expect(result.success).toBe(false);
-      if (result.success) return;
-      expect(result.error).toContain("First name is required");
-      expect(mock_repository.create).not.toHaveBeenCalled();
-    });
-
-    it("returns validation error when last name is missing", async () => {
-      const input = create_valid_player_input({ last_name: "" });
-
-      const result = await use_cases.create(input);
-
-      expect(result.success).toBe(false);
-      if (result.success) return;
-      expect(result.error).toContain("Last name is required");
-    });
-
-    it("returns validation error when date of birth is missing", async () => {
-      const input = create_valid_player_input({ date_of_birth: "" });
-
-      const result = await use_cases.create(input);
-
-      expect(result.success).toBe(false);
-      if (result.success) return;
-      expect(result.error).toContain("Date of birth is required");
-    });
-
-    it("returns validation error when nationality is missing", async () => {
-      const input = create_valid_player_input({ nationality: "" });
-
-      const result = await use_cases.create(input);
-
-      expect(result.success).toBe(false);
-      if (result.success) return;
-      expect(result.error).toContain("Nationality is required");
-    });
-
-    it("returns validation error when position is missing", async () => {
-      const input = create_valid_player_input({ position_id: "" });
-
-      const result = await use_cases.create(input);
-
-      expect(result.success).toBe(false);
-      if (result.success) return;
-      expect(result.error).toContain("Position is required");
-    });
-
-    it("returns multiple validation errors when multiple fields are invalid", async () => {
-      const input = create_valid_player_input({
-        first_name: "",
-        last_name: "",
-        date_of_birth: "",
-      });
-
-      const result = await use_cases.create(input);
-
-      expect(result.success).toBe(false);
-      if (result.success) return;
-      expect(result.error).toContain("First name is required");
-      expect(result.error).toContain("Last name is required");
-      expect(result.error).toContain("Date of birth is required");
-    });
-
-    it("returns error when repository fails", async () => {
-      const input = create_valid_player_input();
-      vi.mocked(mock_repository.create).mockResolvedValue({
-        success: false,
-        error: "Database error",
-      });
-
-      const result = await use_cases.create(input);
-
-      expect(result.success).toBe(false);
-      if (result.success) return;
-      expect(result.error).toBe("Database error");
-    });
-  });
-
-  describe("update", () => {
-    it("updates player with valid input", async () => {
-      const update_input = { first_name: "Jane" } as UpdatePlayerInput;
-      const updated_player = create_mock_player({
-        id: "p1",
-        first_name: "Jane",
-      });
-      vi.mocked(mock_repository.update).mockResolvedValue({
-        success: true,
-        data: updated_player,
-      });
-
-      const result = await use_cases.update("p1", update_input);
-
-      expect(result.success).toBe(true);
-      if (!result.success) return;
-      expect(result.data?.first_name).toBe("Jane");
-      expect(mock_repository.update).toHaveBeenCalledWith("p1", update_input);
-    });
-
-    it("returns error when id is empty", async () => {
-      const result = await use_cases.update("", { first_name: "Jane" });
-
-      expect(result.success).toBe(false);
-      if (result.success) return;
-      expect(result.error).toBe("Player ID is required");
-      expect(mock_repository.update).not.toHaveBeenCalled();
-    });
-
-    it("returns error when id is whitespace only", async () => {
-      const result = await use_cases.update("   ", { first_name: "Jane" });
-
-      expect(result.success).toBe(false);
-      if (result.success) return;
-      expect(result.error).toBe("Player ID is required");
-    });
-
-    it("returns error when repository fails", async () => {
-      vi.mocked(mock_repository.update).mockResolvedValue({
-        success: false,
-        error: "Player not found",
-      });
-
-      const result = await use_cases.update("nonexistent", {
-        first_name: "Jane",
-      });
-
-      expect(result.success).toBe(false);
-      if (result.success) return;
-      expect(result.error).toBe("Player not found");
-    });
-  });
-
-  describe("delete", () => {
-    it("deletes player successfully", async () => {
-      vi.mocked(mock_repository.delete_by_id).mockResolvedValue({
-        success: true,
-        data: true,
-      });
-
-      const result = await use_cases.delete("p1");
-
-      expect(result.success).toBe(true);
-      if (!result.success) return;
-      expect(result.data).toBe(true);
-      expect(mock_repository.delete_by_id).toHaveBeenCalledWith("p1");
-    });
-
-    it("returns error when id is empty", async () => {
-      const result = await use_cases.delete("");
-
-      expect(result.success).toBe(false);
-      if (result.success) return;
-      expect(result.error).toBe("Player ID is required");
-      expect(mock_repository.delete_by_id).not.toHaveBeenCalled();
-    });
-
-    it("returns error when id is whitespace only", async () => {
-      const result = await use_cases.delete("   ");
-
-      expect(result.success).toBe(false);
-      if (result.success) return;
-      expect(result.error).toBe("Player ID is required");
-    });
-
-    it("returns error when repository fails", async () => {
-      vi.mocked(mock_repository.delete_by_id).mockResolvedValue({
-        success: false,
-        error: "Cannot delete player with active memberships",
-      });
-
-      const result = await use_cases.delete("p1");
-
-      expect(result.success).toBe(false);
-      if (result.success) return;
-      expect(result.error).toBe("Cannot delete player with active memberships");
-    });
-  });
-
-  describe("delete_players", () => {
-    it("deletes multiple players successfully", async () => {
-      vi.mocked(mock_repository.delete_by_ids).mockResolvedValue({
-        success: true,
-        data: 3,
-      });
-
-      const result = await use_cases.delete_players(["p1", "p2", "p3"]);
-
-      expect(result.success).toBe(true);
-      if (result.success) {
-        expect(result.data).toBe(3);
-      }
-      expect(mock_repository.delete_by_ids).toHaveBeenCalledWith([
-        "p1",
-        "p2",
-        "p3",
-      ]);
-    });
-
-    it("returns error when ids array is empty", async () => {
-      const result = await use_cases.delete_players([]);
-
-      expect(result.success).toBe(false);
-      if (!result.success) {
-        expect(result.error).toBe("At least one player ID is required");
-      }
-      expect(mock_repository.delete_by_ids).not.toHaveBeenCalled();
-    });
-
-    it("returns error when ids array is missing", async () => {
-      const result = await use_cases.delete_players([] as unknown as string[]);
-
-      expect(result.success).toBe(false);
-      if (!result.success) {
-        expect(result.error).toBe("At least one player ID is required");
-      }
-    });
-  });
-
-  describe("list_players_by_team", () => {
-    it("returns players for a team", async () => {
-      const mock_players = [
-        create_mock_player({ id: "p1" }),
-        create_mock_player({ id: "p2" }),
-      ];
-      vi.mocked(mock_repository.find_by_team).mockResolvedValue(
-        create_paginated_result(mock_players),
-      );
-
-      const result = await use_cases.list_players_by_team("team_1");
-
-      expect(result.success).toBe(true);
-      if (result.success) {
-        expect(result.data?.items).toHaveLength(2);
-      }
-      expect(mock_repository.find_by_team).toHaveBeenCalledWith("team_1", {});
-    });
-
-    it("returns error when team id is empty", async () => {
-      const result = await use_cases.list_players_by_team("");
-
-      expect(result.success).toBe(false);
-      if (!result.success) {
-        expect(result.error).toBe("Team ID is required");
-      }
-      expect(mock_repository.find_by_team).not.toHaveBeenCalled();
-    });
-
-    it("returns error when team id is whitespace only", async () => {
-      const result = await use_cases.list_players_by_team("   ");
-
-      expect(result.success).toBe(false);
-      if (!result.success) {
-        expect(result.error).toBe("Team ID is required");
-      }
-    });
-
-    it("passes query options to repository", async () => {
-      const options = { page_number: 1, page_size: 50 } as QueryOptions;
-      vi.mocked(mock_repository.find_by_team).mockResolvedValue(
-        create_paginated_result([]),
-      );
-
-      await use_cases.list_players_by_team("team_1", options);
-
-      expect(mock_repository.find_by_team).toHaveBeenCalledWith(
-        "team_1",
-        options,
+      expect(result.error).toBe(
+        USE_CASE_ERROR_MESSAGES[UseCaseErrorCode.NOT_FOUND],
       );
     });
   });

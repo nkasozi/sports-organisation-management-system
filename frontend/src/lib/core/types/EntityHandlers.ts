@@ -3,12 +3,6 @@ import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
 
 export type CrudFunctionality = "create" | "edit" | "delete";
 
-const CRUD_FUNCTIONALITIES = {
-  CREATE: "create" as CrudFunctionality,
-  EDIT: "edit" as CrudFunctionality,
-  DELETE: "delete" as CrudFunctionality,
-};
-
 export function is_functionality_disabled(
   functionality: CrudFunctionality,
   disabled_functionalities: CrudFunctionality[],

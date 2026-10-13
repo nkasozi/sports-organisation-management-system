@@ -1,5 +1,6 @@
 <script lang="ts">
     import type { FixtureLineup } from "$lib/core/entities/FixtureLineup";
+    import { LINEUP_STATUS } from "$lib/core/entities/StatusConstants";
     import type { TeamPlayer } from "$lib/core/services/teamPlayers";
 
     export let lineup: FixtureLineup;
@@ -12,7 +13,8 @@
     export let on_save: () => void | Promise<void>;
     export let on_submit: () => void | Promise<void>;
 
-    $: can_manage_players = lineup.status !== "locked" && can_modify_lineup;
+    $: can_manage_players =
+        lineup.status !== LINEUP_STATUS.LOCKED && can_modify_lineup;
 </script>
 
 <div
@@ -111,7 +113,7 @@
         <button type="button" class="btn btn-outline" on:click={on_back}>
             Back to List
         </button>
-        {#if lineup.status === "draft" && can_modify_lineup}
+        {#if lineup.status === LINEUP_STATUS.DRAFT && can_modify_lineup}
             <button
                 type="button"
                 class="btn btn-outline"

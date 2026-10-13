@@ -68,7 +68,13 @@ export type SubstitutionRule = {
   return_after_substitution_allowed: boolean;
 };
 
-export type SportStatus = "active" | "inactive" | "archived";
+export const SPORT_STATUS = {
+  ACTIVE: "active",
+  INACTIVE: "inactive",
+  ARCHIVED: "archived",
+} as const;
+
+export type SportStatus = (typeof SPORT_STATUS)[keyof typeof SPORT_STATUS];
 
 export interface Sport extends BaseEntity {
   name: Name;

@@ -1,6 +1,11 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-async function import_local_auth_secret_key_module(browser: boolean) {
+type LocalAuthSessionKeyModule =
+  typeof import("./localAuthenticationSessionKey");
+
+async function import_local_auth_secret_key_module(
+  browser: boolean,
+): Promise<LocalAuthSessionKeyModule> {
   vi.resetModules();
   vi.doMock("$app/environment", () => ({ browser }));
   vi.doMock("$lib/core/types/Result", () => ({

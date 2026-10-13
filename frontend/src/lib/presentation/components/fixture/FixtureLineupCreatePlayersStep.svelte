@@ -111,7 +111,7 @@
                                         "No position"}
                                 </p>
                                 {#if is_selected}<span
-                                        class={`inline-block mt-1 px-2 py-0.5 text-xs font-medium rounded ${player_role === "Starter" ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300" : "bg-violet-100 text-violet-800 dark:bg-violet-900/30 dark:text-violet-300"}`}
+                                        class={`inline-block mt-1 px-2 py-0.5 text-xs font-medium rounded ${player_selection_index < starters_count ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300" : "bg-violet-100 text-violet-800 dark:bg-violet-900/30 dark:text-violet-300"}`}
                                         >{player_role}</span
                                     >{/if}
                             </div>

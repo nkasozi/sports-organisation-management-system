@@ -1,11 +1,9 @@
 <script lang="ts">
-    export let active_tab:
-        | "details"
-        | "teams"
-        | "stages"
-        | "rules"
-        | "settings"
-        | "official_jerseys";
+    import {
+        COMPETITION_EDIT_TAB,
+        type CompetitionEditTab,
+    } from "./competitionTabConstants";
+    export let active_tab: CompetitionEditTab;
     export let team_count: number;
     export let max_teams: number;
 
@@ -19,7 +17,7 @@
     } as const;
 
     function get_tab_label(tab_key: keyof typeof tab_labels): string {
-        if (tab_key !== "teams") return tab_labels[tab_key];
+        if (tab_key !== COMPETITION_EDIT_TAB.TEAMS) return tab_labels[tab_key];
         return `${tab_labels.teams} (${team_count}/${max_teams})`;
     }
 

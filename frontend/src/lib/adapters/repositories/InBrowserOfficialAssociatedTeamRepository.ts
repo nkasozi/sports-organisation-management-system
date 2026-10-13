@@ -13,6 +13,7 @@ import type {
 import type { QueryOptions } from "../../core/interfaces/ports";
 import type { PaginatedAsyncResult } from "../../core/types/Result";
 import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
+import { create_lazy_repository_accessor } from "./InBrowserRepositorySingleton";
 
 const ENTITY_PREFIX = "oat";
 
@@ -109,28 +110,11 @@ function create_default_official_associated_teams(): import("$lib/core/types/Dom
   return [];
 }
 
-type OfficialAssociatedTeamRepositoryState =
-  | { status: "uninitialized" }
-  | {
-      status: "ready";
-      repository: InBrowserOfficialAssociatedTeamRepository;
-    };
-
-let official_associated_team_repository_state: OfficialAssociatedTeamRepositoryState =
-  {
-    status: "uninitialized",
-  };
+const get_concrete_repository: () => InBrowserOfficialAssociatedTeamRepository =
+  create_lazy_repository_accessor(
+    () => new InBrowserOfficialAssociatedTeamRepository(),
+  );
 
 export function get_official_associated_team_repository(): OfficialAssociatedTeamRepository {
-  if (official_associated_team_repository_state.status === "ready") {
-    return official_associated_team_repository_state.repository;
-  }
-
-  const repository = new InBrowserOfficialAssociatedTeamRepository();
-  official_associated_team_repository_state = {
-    status: "ready",
-    repository,
-  };
-
-  return repository;
+  return get_concrete_repository();
 }

@@ -30,10 +30,18 @@
         type LiveGameDetailPageState,
         type LiveGameDetailToastState,
     } from "$lib/presentation/logic/liveGameDetailPageState";
+    import {
+        build_live_game_detail_modal_state,
+        LIVE_GAME_DETAIL_MODAL,
+        type LiveGameDetailModal,
+    } from "$lib/presentation/logic/liveGameDetailPageStateMachine";
+    import { PRESENCE_STATUS } from "$lib/presentation/logic/presenceStatus";
     import { auth_store } from "$lib/presentation/stores/auth";
     import { branding_store } from "$lib/presentation/stores/branding";
 
     import { create_live_game_detail_controller_runtime } from "../../logic/liveGameDetailControllerRuntime";
+    import { GAME_EVENT_TEAM_SIDE } from "./gameDisplayConstants";
+    import { LIVE_GAME_DETAIL_TEXT } from "./liveGameDetailMessages";
     import LiveGameDetailPageOverlays from "./LiveGameDetailPageOverlays.svelte";
     import LiveGameDetailPageView from "./LiveGameDetailPageView.svelte";
 
@@ -70,7 +78,7 @@
         raw_token: () => {
             const current_token_state = get(auth_store).current_token;
 
-            return current_token_state.status === "present"
+            return current_token_state.status === PRESENCE_STATUS.PRESENT
                 ? current_token_state.token.raw_token
                 : "";
         },
@@ -95,27 +103,36 @@
     )
         runtime.stop_clock();
 
+    function open_modal(modal: LiveGameDetailModal): void {
+        modal_state = build_live_game_detail_modal_state(modal);
+    }
+
+    function close_modal(): void {
+        open_modal(LIVE_GAME_DETAIL_MODAL.NONE);
+    }
+
     function navigate_back(): void {
-        void goto("/live-games");
+        void goto(LIVE_GAME_DETAIL_TEXT.LIVE_GAMES_PATH);
     }
     onMount(runtime.initialize);
 
     onDestroy(runtime.cleanup);
 </script>
 
-<svelte:head><title>{page_title} - Sports Management</title></svelte:head>
+<svelte:head
+    ><title>{page_title} - {LIVE_GAME_DETAIL_TEXT.PAGE_TITLE_SUFFIX}</title
+    ></svelte:head
+>
 
 <LiveGameDetailPageView
     {page_state}
     {view_state}
     on_back={navigate_back}
-    on_start={() => (modal_state = { ...modal_state, show_start_modal: true })}
+    on_start={() => open_modal(LIVE_GAME_DETAIL_MODAL.START)}
     on_toggle_clock={runtime.toggle_clock}
-    on_period_action={() =>
-        (modal_state = { ...modal_state, show_period_modal: true })}
-    on_extra_time={() =>
-        (modal_state = { ...modal_state, show_extra_time_modal: true })}
-    on_end={() => (modal_state = { ...modal_state, show_end_modal: true })}
+    on_period_action={() => open_modal(LIVE_GAME_DETAIL_MODAL.PERIOD)}
+    on_extra_time={() => open_modal(LIVE_GAME_DETAIL_MODAL.EXTRA_TIME)}
+    on_end={() => open_modal(LIVE_GAME_DETAIL_MODAL.END)}
     on_download_match_report={runtime.download_report}
     on_open_event_modal={runtime.open_event_modal}
     on_toggle_home_lineup={() =>
@@ -129,9 +146,17 @@
             away_lineup_expanded: !page_state.away_lineup_expanded,
         })}
     on_home_time_on_change={(player_id, new_time_on) =>
-        runtime.update_player_time_on("home", player_id, new_time_on)}
+        runtime.update_player_time_on(
+            GAME_EVENT_TEAM_SIDE.HOME,
+            player_id,
+            new_time_on,
+        )}
     on_away_time_on_change={(player_id, new_time_on) =>
-        runtime.update_player_time_on("away", player_id, new_time_on)}
+        runtime.update_player_time_on(
+            GAME_EVENT_TEAM_SIDE.AWAY,
+            player_id,
+            new_time_on,
+        )}
 />
 <LiveGameDetailPageOverlays
     {page_state}
@@ -139,17 +164,13 @@
     {event_state}
     {toast_state}
     {view_state}
-    on_close_start={() =>
-        (modal_state = { ...modal_state, show_start_modal: false })}
+    on_close_start={close_modal}
     on_start_confirm={runtime.start_game}
     on_end={runtime.end_game}
-    on_close_end={() =>
-        (modal_state = { ...modal_state, show_end_modal: false })}
+    on_close_end={close_modal}
     on_confirm_period={runtime.confirm_period_action}
-    on_close_period={() =>
-        (modal_state = { ...modal_state, show_period_modal: false })}
-    on_close_extra_time={() =>
-        (modal_state = { ...modal_state, show_extra_time_modal: false })}
+    on_close_period={close_modal}
+    on_close_extra_time={close_modal}
     on_confirm_extra_time={runtime.confirm_extra_time}
     on_extra_minutes_change={(minutes) =>
         (page_state = { ...page_state, extra_minutes_to_add: minutes })}

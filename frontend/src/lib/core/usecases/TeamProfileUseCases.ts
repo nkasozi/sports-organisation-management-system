@@ -2,16 +2,27 @@ import type {
   CreateTeamProfileInput,
   TeamProfile,
   UpdateTeamProfileInput,
-} from "../entities/TeamProfile";
-import { validate_team_profile_input } from "../entities/TeamProfile";
+} from "$lib/core/entities/TeamProfile";
 import type {
+  QueryOptions,
   TeamProfileFilter,
   TeamProfileRepository,
-} from "../interfaces/ports";
-import type { QueryOptions } from "../interfaces/ports";
-import type { ScalarValueInput } from "../types/DomainScalars";
-import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
-import { create_failure_result } from "../types/Result";
+} from "$lib/core/interfaces/ports";
+import type { ScalarValueInput } from "$lib/core/types/DomainScalars";
+import type { AsyncResult, PaginatedAsyncResult } from "$lib/core/types/Result";
+
+import {
+  create_team_profile,
+  delete_team_profile,
+  update_team_profile,
+} from "./TeamProfileUseCasesMutations";
+import {
+  get_team_profile_by_id,
+  get_team_profile_by_slug,
+  get_team_profile_by_team_id,
+  list_public_team_profiles,
+  list_team_profiles,
+} from "./TeamProfileUseCasesQueries";
 
 export interface TeamProfileUseCases {
   list(
@@ -38,94 +49,15 @@ export function create_team_profile_use_cases(
   repository: TeamProfileRepository,
 ): TeamProfileUseCases {
   return {
-    async list(
-      filter?: TeamProfileFilter | Record<string, string>,
-      options?: QueryOptions,
-    ): PaginatedAsyncResult<TeamProfile> {
-      if (!filter) {
-        return repository.find_all({}, options);
-      }
-
-      const typed_filter: TeamProfileFilter = {
-        ...(filter.team_id
-          ? { team_id: filter.team_id as TeamProfile["team_id"] }
-          : {}),
-        ...(filter.visibility
-          ? { visibility: filter.visibility as TeamProfileFilter["visibility"] }
-          : {}),
-        ...(filter.status
-          ? { status: filter.status as TeamProfileFilter["status"] }
-          : {}),
-      };
-
-      return repository.find_all(typed_filter, options ?? {});
-    },
-
-    async get_by_id(
-      id: ScalarValueInput<TeamProfile["id"]>,
-    ): AsyncResult<TeamProfile> {
-      if (!id || id.trim().length === 0) {
-        return create_failure_result("Profile ID is required");
-      }
-      return repository.find_by_id(id);
-    },
-
-    async get_by_team_id(
-      team_id: ScalarValueInput<TeamProfile["team_id"]>,
-    ): AsyncResult<TeamProfile> {
-      if (!team_id || team_id.trim().length === 0) {
-        return create_failure_result("Team ID is required");
-      }
-      return repository.find_by_team_id(team_id);
-    },
-
-    async get_by_slug(slug: string): AsyncResult<TeamProfile> {
-      if (!slug || slug.trim().length === 0) {
-        return create_failure_result("Profile slug is required");
-      }
-      return repository.find_by_slug(slug);
-    },
-
-    async create(input: CreateTeamProfileInput): AsyncResult<TeamProfile> {
-      const validation = validate_team_profile_input(input);
-      if (!validation.is_valid) {
-        const error_messages = Object.values(validation.errors).join(", ");
-        return create_failure_result(error_messages);
-      }
-
-      return repository.create(input);
-    },
-
-    async update(
-      id: ScalarValueInput<TeamProfile["id"]>,
-      input: UpdateTeamProfileInput,
-    ): AsyncResult<TeamProfile> {
-      if (!id || id.trim().length === 0) {
-        return create_failure_result("Profile ID is required");
-      }
-
-      const validation = validate_team_profile_input(input);
-      if (!validation.is_valid) {
-        const error_messages = Object.values(validation.errors).join(", ");
-        return create_failure_result(error_messages);
-      }
-
-      return repository.update(id, input);
-    },
-
-    async delete(
-      id: ScalarValueInput<TeamProfile["id"]>,
-    ): AsyncResult<boolean> {
-      if (!id || id.trim().length === 0) {
-        return create_failure_result("Profile ID is required");
-      }
-      return repository.delete_by_id(id);
-    },
-
-    async list_public_profiles(
-      options?: QueryOptions,
-    ): PaginatedAsyncResult<TeamProfile> {
-      return repository.find_public_profiles(options);
-    },
+    list: (filter, options) => list_team_profiles(repository, filter, options),
+    get_by_id: (id) => get_team_profile_by_id(repository, id),
+    get_by_team_id: (team_id) =>
+      get_team_profile_by_team_id(repository, team_id),
+    get_by_slug: (slug) => get_team_profile_by_slug(repository, slug),
+    create: (input) => create_team_profile(repository, input),
+    update: (id, input) => update_team_profile(repository, id, input),
+    delete: (id) => delete_team_profile(repository, id),
+    list_public_profiles: (options) =>
+      list_public_team_profiles(repository, options),
   };
 }

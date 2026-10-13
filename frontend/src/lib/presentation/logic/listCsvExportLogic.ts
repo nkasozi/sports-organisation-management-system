@@ -4,19 +4,20 @@ import type {
   FieldMetadata,
 } from "../../core/entities/BaseEntity";
 import { get_display_value_for_entity_field } from "./listDisplayValueLogic";
+import { PRESENCE_STATUS } from "./presenceStatus";
 
 type CsvMetadataState =
-  | { status: "missing" }
-  | { status: "present"; metadata: EntityMetadata };
+  | { status: typeof PRESENCE_STATUS.MISSING }
+  | { status: typeof PRESENCE_STATUS.PRESENT; metadata: EntityMetadata };
 
 export function create_missing_csv_metadata_state(): CsvMetadataState {
-  return { status: "missing" };
+  return { status: PRESENCE_STATUS.MISSING };
 }
 
 export function create_present_csv_metadata_state(
   metadata: EntityMetadata,
 ): CsvMetadataState {
-  return { status: "present", metadata };
+  return { status: PRESENCE_STATUS.PRESENT, metadata };
 }
 
 export function build_csv_content(
@@ -30,7 +31,7 @@ export function build_csv_content(
 
   const headers = visible_column_list.map((field_name) => {
     const field =
-      metadata_state.status === "present"
+      metadata_state.status === PRESENCE_STATUS.PRESENT
         ? metadata_state.metadata.fields.find(
             (f: FieldMetadata) => f.field_name === field_name,
           )

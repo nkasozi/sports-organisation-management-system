@@ -8,185 +8,149 @@ import {
   ENTITY_STATUS,
 } from "../entities/StatusConstants";
 import type { Result } from "../types/Result";
-import type { FixtureDetailsSetupUseCases } from "../usecases/FixtureDetailsSetupUseCases";
-import type { GameOfficialRoleUseCases } from "../usecases/GameOfficialRoleUseCases";
-import type { JerseyColorUseCases } from "../usecases/JerseyColorUseCases";
-import type { OfficialUseCases } from "../usecases/OfficialUseCases";
+import { create_failure_result, create_success_result } from "../types/Result";
+import { fail_use_case, UseCaseErrorCode } from "../types/UseCaseFailure";
+import {
+  FIXTURE_DETAILS_AUTO_SETUP_EVENT,
+  FIXTURE_DETAILS_AUTO_SETUP_LOG_SCOPE,
+  FIXTURE_DETAILS_AUTO_SETUP_MESSAGES,
+} from "./FixtureDetailsAutoSetupConstants";
+import {
+  type AutoSetupDependencies,
+  type AutoSetupLookups,
+  load_auto_setup_lookups,
+} from "./fixtureDetailsAutoSetupLookups";
 
-export interface AutoSetupDependencies {
-  fixture_details_setup_use_cases: FixtureDetailsSetupUseCases;
-  jersey_color_use_cases: JerseyColorUseCases;
-  official_use_cases: OfficialUseCases;
-  game_official_role_use_cases: GameOfficialRoleUseCases;
+export type { AutoSetupDependencies } from "./fixtureDetailsAutoSetupLookups";
+
+interface JerseySelection {
+  home_team_jersey_id: string;
+  away_team_jersey_id: string;
+  official_jersey_id: string;
 }
 
 export async function auto_create_fixture_details_setup(
   fixture: Fixture,
   dependencies: AutoSetupDependencies,
 ): Promise<Result<FixtureDetailsSetup>> {
-  console.log(
-    "[DEBUG fixtureDetailsAutoSetup] Starting auto-create for fixture:",
-    fixture.id,
-  );
-
-  const populated_data_result = await build_auto_populated_input(
-    fixture,
-    dependencies,
-  );
-
-  if (!populated_data_result.success) {
-    return { success: false, error: populated_data_result.error };
-  }
-
-  console.log(
-    "[DEBUG fixtureDetailsAutoSetup] Auto-populated data built, creating fixture details setup",
-  );
-
+  console.debug(FIXTURE_DETAILS_AUTO_SETUP_LOG_SCOPE, {
+    event: FIXTURE_DETAILS_AUTO_SETUP_EVENT.STARTED,
+    fixture_id: fixture.id,
+  });
+  const lookups_result = await load_auto_setup_lookups(fixture, dependencies);
+  if (!lookups_result.success) return lookups_result;
+  const input_result = build_auto_populated_input(fixture, lookups_result.data);
+  if (!input_result.success) return input_result;
   const create_result =
     await dependencies.fixture_details_setup_use_cases.create(
-      populated_data_result.data,
+      input_result.data,
     );
-
   if (!create_result.success) {
-    console.log(
-      "[DEBUG fixtureDetailsAutoSetup] Failed to create fixture details setup:",
-      create_result.error,
-    );
-    return create_result;
+    return fail_use_case({
+      code: UseCaseErrorCode.DEPENDENCY_FAILED,
+      event: FIXTURE_DETAILS_AUTO_SETUP_EVENT.CREATE_FAILED,
+      log_scope: FIXTURE_DETAILS_AUTO_SETUP_LOG_SCOPE,
+      context: { fixture_id: fixture.id },
+      user_message: create_result.error,
+      technical_detail: create_result.error,
+    });
   }
-
-  console.log(
-    "[DEBUG fixtureDetailsAutoSetup] Successfully created fixture details setup:",
-    create_result.data.id,
-  );
-
+  console.debug(FIXTURE_DETAILS_AUTO_SETUP_LOG_SCOPE, {
+    event: FIXTURE_DETAILS_AUTO_SETUP_EVENT.CREATED,
+    fixture_id: fixture.id,
+    fixture_details_setup_id: create_result.data.id,
+  });
   return create_result;
 }
 
-async function build_auto_populated_input(
+function select_jerseys(
   fixture: Fixture,
-  dependencies: AutoSetupDependencies,
-): Promise<Result<CreateFixtureDetailsSetupInput>> {
-  const {
-    jersey_color_use_cases,
-    official_use_cases,
-    game_official_role_use_cases,
-  } = dependencies;
-
-  const [
-    home_jerseys_result,
-    away_jerseys_result,
-    official_jerseys_result,
-    officials_result,
-    roles_result,
-  ] = await Promise.all([
-    jersey_color_use_cases.list_jerseys_by_entity("team", fixture.home_team_id),
-    jersey_color_use_cases.list_jerseys_by_entity("team", fixture.away_team_id),
-    jersey_color_use_cases.list_jerseys_by_entity(
-      "competition_official",
-      fixture.competition_id,
-    ),
-    official_use_cases.list(
-      { organization_id: fixture.organization_id },
-      { page_number: 1, page_size: 100 },
-    ),
-    game_official_role_use_cases.list({}, { page_number: 1, page_size: 100 }),
+  lookups: AutoSetupLookups,
+): Result<JerseySelection, string[]> {
+  const [home] = lookups.home_jerseys;
+  const [away] = lookups.away_jerseys;
+  const [official] = lookups.official_jerseys;
+  if (home && away && official) {
+    return create_success_result({
+      home_team_jersey_id: home.id,
+      away_team_jersey_id: away.id,
+      official_jersey_id: official.id,
+    });
+  }
+  const messages = FIXTURE_DETAILS_AUTO_SETUP_MESSAGES;
+  return create_failure_result([
+    ...(home ? [] : [messages.missing_home_jersey(fixture.home_team_id)]),
+    ...(away ? [] : [messages.missing_away_jersey(fixture.away_team_id)]),
+    ...(official
+      ? []
+      : [messages.missing_official_jersey(fixture.competition_id)]),
   ]);
-
-  const errors: string[] = [];
-  const home_team_jersey_id = extract_first_jersey_id(home_jerseys_result);
-  if (!home_team_jersey_id) {
-    errors.push(`No Jerseys found for Home Team (${fixture.home_team_id})`);
-  }
-  const away_team_jersey_id = extract_first_jersey_id(away_jerseys_result);
-  if (!away_team_jersey_id) {
-    errors.push(`No Jerseys found for Away Team (${fixture.away_team_id})`);
-  }
-  const official_jersey_id = extract_first_jersey_id(official_jerseys_result);
-  if (!official_jersey_id) {
-    errors.push(
-      `No Jerseys found for Officials (competition ${fixture.competition_id})`,
-    );
-  }
-
-  const assigned_officials = build_official_assignments(
-    officials_result,
-    roles_result,
-  );
-  if (
-    roles_result.success &&
-    (roles_result.data?.items?.length ?? 0) > 0 &&
-    (!officials_result.success || !officials_result.data?.items?.length)
-  ) {
-    errors.push(
-      `No Officials found for Organization (${fixture.organization_id})`,
-    );
-  }
-  if (
-    officials_result.success &&
-    (officials_result.data?.items?.length ?? 0) > 0 &&
-    (!roles_result.success || !roles_result.data?.items?.length)
-  ) {
-    errors.push(
-      `No Official Roles found for Competition (${fixture.competition_id})`,
-    );
-  }
-  if (errors.length > 0) {
-    return { success: false, error: errors.join(", ") };
-  }
-
-  return {
-    success: true,
-    data: {
-      organization_id: fixture.organization_id,
-      fixture_id: fixture.id,
-      home_team_jersey_id: home_team_jersey_id!,
-      away_team_jersey_id: away_team_jersey_id!,
-      official_jersey_id: official_jersey_id!,
-      assigned_officials,
-      assignment_notes: "",
-      confirmation_status: CONFIRMATION_STATUS.CONFIRMED,
-      status: ENTITY_STATUS.ACTIVE,
-    },
-  };
 }
 
-function extract_first_jersey_id(result: {
-  success: boolean;
-  data?: { items?: { id: string }[] };
-}): string | undefined {
-  if (!result.success) return;
-  if (!result.data?.items?.length) return;
-  return result.data.items[0].id;
+function collect_official_errors(
+  fixture: Fixture,
+  lookups: AutoSetupLookups,
+): string[] {
+  const has_officials = lookups.officials.length > 0;
+  const has_roles = lookups.official_roles.length > 0;
+  const messages = FIXTURE_DETAILS_AUTO_SETUP_MESSAGES;
+  return [
+    ...(has_roles && !has_officials
+      ? [messages.missing_officials(fixture.organization_id)]
+      : []),
+    ...(has_officials && !has_roles
+      ? [messages.missing_official_roles(fixture.competition_id)]
+      : []),
+  ];
+}
+
+function fail_missing_data(
+  fixture: Fixture,
+  errors: string[],
+): Result<never, string> {
+  return fail_use_case({
+    code: UseCaseErrorCode.NOT_FOUND,
+    event: FIXTURE_DETAILS_AUTO_SETUP_EVENT.MISSING_DATA,
+    log_scope: FIXTURE_DETAILS_AUTO_SETUP_LOG_SCOPE,
+    context: { fixture_id: fixture.id, missing_count: errors.length },
+    user_message: errors.join(", "),
+  });
+}
+
+function build_auto_populated_input(
+  fixture: Fixture,
+  lookups: AutoSetupLookups,
+): Result<CreateFixtureDetailsSetupInput> {
+  const jersey_result = select_jerseys(fixture, lookups);
+  const official_errors = collect_official_errors(fixture, lookups);
+  if (!jersey_result.success) {
+    return fail_missing_data(fixture, [
+      ...jersey_result.error,
+      ...official_errors,
+    ]);
+  }
+  if (official_errors.length > 0) {
+    return fail_missing_data(fixture, official_errors);
+  }
+  return create_success_result({
+    organization_id: fixture.organization_id,
+    fixture_id: fixture.id,
+    ...jersey_result.data,
+    assigned_officials: build_official_assignments(lookups),
+    assignment_notes: "",
+    confirmation_status: CONFIRMATION_STATUS.CONFIRMED,
+    status: ENTITY_STATUS.ACTIVE,
+  });
 }
 
 function build_official_assignments(
-  officials_result: { success: boolean; data?: { items?: { id: string }[] } },
-  roles_result: { success: boolean; data?: { items?: { id: string }[] } },
+  lookups: AutoSetupLookups,
 ): CreateFixtureDetailsSetupInput["assigned_officials"] {
-  const officials = officials_result.success
-    ? officials_result.data?.items || []
-    : [];
-  const roles = roles_result.success ? roles_result.data?.items || [] : [];
-
-  if (officials.length === 0 || roles.length === 0) return [];
-
-  const assigned_officials: CreateFixtureDetailsSetupInput["assigned_officials"] =
-    [];
-  const used_official_ids = new Set<string>();
-
-  for (const role of roles) {
-    const available_official = officials.find(
-      (o) => !used_official_ids.has(o.id),
-    );
-    if (!available_official) break;
-
-    assigned_officials.push({
-      official_id: available_official.id,
+  const officials = lookups.officials;
+  return lookups.official_roles
+    .slice(0, officials.length)
+    .map((role, index) => ({
+      official_id: officials[index].id,
       role_id: role.id,
-    });
-    used_official_ids.add(available_official.id);
-  }
-
-  return assigned_officials;
+    }));
 }

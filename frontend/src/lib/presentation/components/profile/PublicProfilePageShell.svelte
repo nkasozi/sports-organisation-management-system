@@ -1,17 +1,22 @@
 <script lang="ts">
+    import { PUBLIC_PROFILE_SHELL_DEFAULTS } from "./profileManagementMessages";
+
     export let loading: boolean;
     export let not_found: boolean;
     export let error_message: string;
     export let error_title: string;
     export let background_class = "min-h-screen bg-gray-50 dark:bg-gray-900";
-    export let loading_message = "Loading profile...";
-    export let not_found_icon = "🔍";
-    export let not_found_title = "Profile Not Found";
-    export let not_found_message =
-        "The profile you're looking for doesn't exist or has been removed.";
-    export let error_icon = "🔒";
+    export let loading_message: string =
+        PUBLIC_PROFILE_SHELL_DEFAULTS.LOADING_MESSAGE;
+    export let not_found_icon: string =
+        PUBLIC_PROFILE_SHELL_DEFAULTS.NOT_FOUND_ICON;
+    export let not_found_title: string =
+        PUBLIC_PROFILE_SHELL_DEFAULTS.NOT_FOUND_TITLE;
+    export let not_found_message: string =
+        PUBLIC_PROFILE_SHELL_DEFAULTS.NOT_FOUND_MESSAGE;
+    export let error_icon: string = PUBLIC_PROFILE_SHELL_DEFAULTS.ERROR_ICON;
     export let home_href: string | undefined = undefined;
-    export let home_label = "Go Home";
+    export let home_label: string = PUBLIC_PROFILE_SHELL_DEFAULTS.HOME_LABEL;
 </script>
 
 <div class={background_class}>

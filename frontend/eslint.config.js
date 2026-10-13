@@ -5,6 +5,10 @@ import simpleImportSortPlugin from "eslint-plugin-simple-import-sort";
 import sveltePlugin from "eslint-plugin-svelte";
 import unusedImportsPlugin from "eslint-plugin-unused-imports";
 
+import {
+  code_quality_shared_config,
+  code_quality_typed_config,
+} from "./eslint/codeQualityRules.js";
 import svelteUnusedImportsPlugin from "./eslint/svelteUnusedImportsPlugin.js";
 
 export default [
@@ -18,6 +22,7 @@ export default [
       "node_modules/**",
       "src/lib/generated/**",
       "convex/_generated/**",
+      "src/lib/tooling/fixtures/**",
     ],
   },
   ...sveltePlugin.configs["flat/recommended"],
@@ -83,5 +88,16 @@ export default [
       "svelte-unused-imports/no-unused-imports": "error",
     },
   },
+  ...code_quality_shared_config,
+  ...code_quality_typed_config.map((entry) => ({
+    ...entry,
+    languageOptions: {
+      ...entry.languageOptions,
+      parserOptions: {
+        ...entry.languageOptions.parserOptions,
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
+  })),
   eslintConfigPrettier,
 ];

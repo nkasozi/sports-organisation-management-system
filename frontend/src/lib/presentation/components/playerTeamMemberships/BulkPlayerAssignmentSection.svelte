@@ -1,6 +1,12 @@
 <script lang="ts">
     import type { PlayerAssignment } from "$lib/presentation/logic/bulkPlayerAssignmentPageState";
 
+    import {
+        BULK_PLAYER_ASSIGNMENT_PAGE_TEXT,
+        BULK_PLAYER_ASSIGNMENT_SECTION_VARIANT,
+        type BulkPlayerAssignmentSectionVariant,
+        PLAYER_ASSIGNMENT_TEAM_STATUS,
+    } from "./bulkPlayerAssignmentMessages";
     import BulkPlayerAssignmentRow from "./BulkPlayerAssignmentRow.svelte";
 
     export let title: string;
@@ -12,19 +18,34 @@
     export let empty_default_message: string;
     export let gender_filter_active: boolean;
     export let target_gender_label: string;
-    export let status_variant: "available" | "assigned";
+    export let status_variant: BulkPlayerAssignmentSectionVariant;
     export let on_toggle_selection: (assignment: PlayerAssignment) => void;
 
+    function get_current_team_name(assignment: PlayerAssignment): string {
+        switch (assignment.current_team_state.status) {
+            case PLAYER_ASSIGNMENT_TEAM_STATUS.ASSIGNED:
+                return assignment.current_team_state.team_name;
+            case PLAYER_ASSIGNMENT_TEAM_STATUS.UNASSIGNED:
+                return "";
+        }
+    }
+
     function get_status_text(assignment: PlayerAssignment): string {
-        return status_variant === "available"
-            ? "Available"
-            : `Currently on: ${assignment.current_team_state.status === "assigned" ? assignment.current_team_state.team_name : ""}`;
+        switch (status_variant) {
+            case BULK_PLAYER_ASSIGNMENT_SECTION_VARIANT.AVAILABLE:
+                return BULK_PLAYER_ASSIGNMENT_PAGE_TEXT.available_status;
+            case BULK_PLAYER_ASSIGNMENT_SECTION_VARIANT.ASSIGNED:
+                return `${BULK_PLAYER_ASSIGNMENT_PAGE_TEXT.currently_on_prefix}${get_current_team_name(assignment)}`;
+        }
     }
 
     function get_status_class(): string {
-        return status_variant === "available"
-            ? "text-green-600 dark:text-green-400"
-            : "text-violet-600 dark:text-violet-400";
+        switch (status_variant) {
+            case BULK_PLAYER_ASSIGNMENT_SECTION_VARIANT.AVAILABLE:
+                return "text-green-600 dark:text-green-400";
+            case BULK_PLAYER_ASSIGNMENT_SECTION_VARIANT.ASSIGNED:
+                return "text-violet-600 dark:text-violet-400";
+        }
     }
 </script>
 

@@ -53,6 +53,7 @@ import {
   register_gender_metadata,
   register_identification_type_metadata,
 } from "./referenceEntityMetadata";
+import { FOREIGN_KEY_FIELD_TYPE } from "./registryConstants";
 import {
   register_game_event_type_metadata,
   register_sport_metadata,
@@ -83,7 +84,7 @@ class EntityMetadataRegistry {
     for (const [entity_type, metadata] of this.metadata_map) {
       const has_foreign_key = metadata.fields.some(
         (field) =>
-          field.field_type === "foreign_key" &&
+          field.field_type === FOREIGN_KEY_FIELD_TYPE &&
           field.foreign_key_entity === target_entity_type,
       );
 

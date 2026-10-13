@@ -7,7 +7,6 @@
         LeagueConfig,
     } from "$lib/core/entities/CompetitionFormat";
     import { create_default_league_config } from "$lib/core/entities/CompetitionFormatFactories";
-    import { STAGE_TYPE_OPTIONS } from "$lib/core/entities/CompetitionStage";
     import type { ScalarInput } from "$lib/core/types/DomainScalars";
     import {
         add_stage_template,
@@ -17,7 +16,10 @@
         update_stage_template_at_index,
     } from "$lib/presentation/logic/competitionFormatStageTemplateLogic";
 
-    type EditableCompetitionFormatStageTemplate = ScalarInput<CompetitionFormatStageTemplate>;
+    import CompetitionFormatStageTemplateCard from "./CompetitionFormatStageTemplateCard.svelte";
+
+    type EditableCompetitionFormatStageTemplate =
+        ScalarInput<CompetitionFormatStageTemplate>;
 
     export let stage_templates: EditableCompetitionFormatStageTemplate[] = [];
     export let format_type: FormatType = "league";
@@ -122,91 +124,15 @@
 
     <div class="space-y-3">
         {#each displayed_stage_templates as stage_template, template_index (template_index)}
-            <div
-                class="p-4 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50"
-            >
-                <div class="flex items-start justify-between mb-3">
-                    <span
-                        class="text-sm font-medium text-gray-600 dark:text-gray-400"
-                    >
-                        Stage {template_index + 1}
-                    </span>
-                    <button
-                        type="button"
-                        class="rounded p-1 text-red-500 transition-colors hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-900/20 dark:hover:text-red-300"
-                        on:click={() =>
-                            handle_remove_stage_template(template_index)}
-                        disabled={disabled ||
-                            displayed_stage_templates.length <= 1}
-                        title="Remove this stage"
-                    >
-                        <svg
-                            class="h-5 w-5"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                            ><path
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                stroke-width="2"
-                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                            /></svg
-                        >
-                    </button>
-                </div>
-
-                <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
-                    <div class="space-y-2">
-                        <label
-                            class="label"
-                            for={`stage_template_name_${template_index}`}
-                        >
-                            Stage Name
-                        </label>
-                        <input
-                            id={`stage_template_name_${template_index}`}
-                            type="text"
-                            class="input"
-                            value={stage_template.name}
-                            on:input={(event) =>
-                                handle_stage_name_change(
-                                    template_index,
-                                    (event.currentTarget as HTMLInputElement)
-                                        .value,
-                                )}
-                            readonly={disabled}
-                            placeholder="Stage name"
-                        />
-                    </div>
-
-                    <div class="space-y-2">
-                        <label
-                            class="label"
-                            for={`stage_template_type_${template_index}`}
-                        >
-                            Stage Type
-                        </label>
-                        <select
-                            id={`stage_template_type_${template_index}`}
-                            class="input"
-                            value={stage_template.stage_type}
-                            on:change={(event) =>
-                                handle_stage_type_change(
-                                    template_index,
-                                    (event.currentTarget as HTMLSelectElement)
-                                        .value,
-                                )}
-                            {disabled}
-                        >
-                            {#each STAGE_TYPE_OPTIONS as stage_type_option}
-                                <option value={stage_type_option.value}>
-                                    {stage_type_option.label}
-                                </option>
-                            {/each}
-                        </select>
-                    </div>
-                </div>
-            </div>
+            <CompetitionFormatStageTemplateCard
+                {stage_template}
+                {template_index}
+                {disabled}
+                is_only_template={displayed_stage_templates.length <= 1}
+                on_remove={handle_remove_stage_template}
+                on_name_change={handle_stage_name_change}
+                on_type_change={handle_stage_type_change}
+            />
         {/each}
     </div>
 </div>

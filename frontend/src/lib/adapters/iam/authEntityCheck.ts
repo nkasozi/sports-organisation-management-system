@@ -3,26 +3,93 @@ import type {
   DataAction,
   EntityAuthorizationResult,
   SystemUserRepository,
+  UserRole,
 } from "$lib/core/interfaces/ports";
 import {
   check_data_permission,
   get_entity_data_category,
   normalize_to_entity_type,
 } from "$lib/core/interfaces/ports";
-import type { AsyncResult } from "$lib/core/types/Result";
-import { create_success_result } from "$lib/core/types/Result";
+import { OptionStatus } from "$lib/core/types/Option";
+import type { AsyncResult, Result } from "$lib/core/types/Result";
+import {
+  create_failure_result,
+  create_success_result,
+} from "$lib/core/types/Result";
 import type { AuthCache } from "$lib/infrastructure/cache/AuthCache";
 import { EventBus } from "$lib/infrastructure/events/EventBus";
 
-import { get_role_for_email } from "./authProfilePermissions";
+import {
+  build_authorization_cache_key,
+  read_authorization_cache,
+} from "./authorizationCacheAccess";
+import {
+  resolve_token_role,
+  TOKEN_ROLE_STATUS,
+  type TokenRoleResolution,
+} from "./authTokenRoleResolution";
+import {
+  AUTHORIZATION_CACHE_KEY_PREFIX,
+  AUTHORIZATION_FAILURE_TYPE,
+  IAM_SCOPE,
+} from "./iamConstants";
 
-function cache_entity_authorization_result(
-  authorization_cache: AuthCache<unknown>,
-  cache_key: string,
-  result: EntityAuthorizationResult,
+interface EntityPermissionCheck {
+  role: UserRole;
+  entity_type: string;
+  action: DataAction;
+}
+
+function evaluate_entity_permission(
+  check: EntityPermissionCheck,
 ): EntityAuthorizationResult {
-  authorization_cache.set(cache_key, result);
-  return result;
+  const category = get_entity_data_category(
+    normalize_to_entity_type(check.entity_type),
+  );
+  const { role, action, entity_type } = check;
+  if (check_data_permission(role, category, action))
+    return { is_authorized: true, data_category: category, role };
+  const denial_reason = `Role "${role}" does not have "${action}" permission for ${entity_type} (${category} data)`;
+  EventBus.emit_access_denied(
+    entity_type,
+    IAM_SCOPE.ALL_ENTITIES,
+    action,
+    category,
+    denial_reason,
+    role,
+  );
+  return {
+    is_authorized: false,
+    failure_reason: AUTHORIZATION_FAILURE_TYPE.PERMISSION_DENIED,
+    data_category: category,
+    role,
+    reason: denial_reason,
+  };
+}
+
+function describe_unresolved_entity_authorization(
+  resolution: Exclude<
+    TokenRoleResolution,
+    { status: typeof TOKEN_ROLE_STATUS.RESOLVED }
+  >,
+): Result<EntityAuthorizationResult> {
+  switch (resolution.status) {
+    case TOKEN_ROLE_STATUS.LOOKUP_FAILED:
+      return create_failure_result(resolution.message);
+    case TOKEN_ROLE_STATUS.TOKEN_EXPIRED:
+      return create_success_result({
+        is_authorized: false,
+        failure_reason: AUTHORIZATION_FAILURE_TYPE.TOKEN_EXPIRED,
+        reason: resolution.message,
+      });
+    case TOKEN_ROLE_STATUS.TOKEN_INVALID:
+    case TOKEN_ROLE_STATUS.USER_REJECTED:
+      return create_success_result({
+        is_authorized: false,
+        failure_reason: AUTHORIZATION_FAILURE_TYPE.TOKEN_INVALID,
+        reason: resolution.message,
+      });
+  }
 }
 
 export async function check_entity_authorized_impl(
@@ -33,81 +100,28 @@ export async function check_entity_authorized_impl(
   entity_type: string,
   action: DataAction,
 ): AsyncResult<EntityAuthorizationResult> {
-  const cache_key = `entity_auth:${raw_token}:${entity_type}:${action}`;
-  const cached = authorization_cache.get_or_miss(cache_key);
-  if (cached.is_hit && cached.value) {
-    return create_success_result(cached.value as EntityAuthorizationResult);
-  }
-
-  const verification_result = await auth_port.verify_token(raw_token);
-
-  if (!verification_result.success) {
-    return create_success_result({
-      is_authorized: false,
-      failure_reason: "token_invalid" as const,
-      reason: verification_result.error,
-    });
-  }
-
-  const verification = verification_result.data;
-
-  if (!verification.is_valid || !verification.payload) {
-    const is_expired = verification.error_message?.includes("expired");
-    return create_success_result({
-      is_authorized: false,
-      failure_reason: is_expired
-        ? ("token_expired" as const)
-        : ("token_invalid" as const),
-      reason: verification.error_message || "Token verification failed",
-    });
-  }
-
-  const role_result = await get_role_for_email(
+  const prefix = AUTHORIZATION_CACHE_KEY_PREFIX.ENTITY_AUTHORIZATION;
+  const key_parts = [raw_token, entity_type, action];
+  const cache_key = build_authorization_cache_key(prefix, key_parts);
+  const cached = read_authorization_cache<EntityAuthorizationResult>(
+    authorization_cache,
+    cache_key,
+    prefix,
+  );
+  if (cached.status === OptionStatus.SOME)
+    return create_success_result(cached.value);
+  const resolution = await resolve_token_role({
+    auth_port,
     system_user_repository,
-    verification.payload.email,
-  );
-
-  if (!role_result.success) {
-    return create_success_result({
-      is_authorized: false,
-      failure_reason: "token_invalid" as const,
-      reason: role_result.error,
-    });
-  }
-
-  const role = role_result.data;
-  const normalized = normalize_to_entity_type(entity_type);
-  const category = get_entity_data_category(normalized);
-  const is_authorized = check_data_permission(role, category, action);
-
-  if (!is_authorized) {
-    const denial_reason = `Role "${role}" does not have "${action}" permission for ${entity_type} (${category} data)`;
-
-    EventBus.emit_access_denied(
-      entity_type,
-      "*",
-      action,
-      category,
-      denial_reason,
-      role,
-    );
-
-    return create_success_result(
-      cache_entity_authorization_result(authorization_cache, cache_key, {
-        is_authorized: false,
-        failure_reason: "permission_denied",
-        data_category: category,
-        role,
-        reason: denial_reason,
-      }),
-    );
-  }
-
-  return create_success_result(
-    cache_entity_authorization_result(authorization_cache, cache_key, {
-      is_authorized: true,
-      data_category: category,
-      role,
-    }),
-  );
+    raw_token,
+  });
+  if (resolution.status !== TOKEN_ROLE_STATUS.RESOLVED)
+    return describe_unresolved_entity_authorization(resolution);
+  const result = evaluate_entity_permission({
+    role: resolution.role,
+    entity_type,
+    action,
+  });
+  authorization_cache.set(cache_key, result);
+  return create_success_result(result);
 }

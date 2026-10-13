@@ -1,11 +1,13 @@
 <script lang="ts">
+    import { USER_ROLE } from "$lib/presentation/components/auth/userRoleConstants";
     import EntityCrudWrapper from "$lib/presentation/components/EntityCrudWrapper.svelte";
+    import { PRESENCE_STATUS } from "$lib/presentation/logic/presenceStatus";
     import { auth_store } from "$lib/presentation/stores/auth";
 
     $: current_profile_state = $auth_store.current_profile;
     $: rater_filter =
-        current_profile_state.status === "present" &&
-        current_profile_state.profile.role === "team_manager"
+        current_profile_state.status === PRESENCE_STATUS.PRESENT &&
+        current_profile_state.profile.role === USER_ROLE.TEAM_MANAGER
             ? { rater_user_id: current_profile_state.profile.id }
             : {};
 </script>

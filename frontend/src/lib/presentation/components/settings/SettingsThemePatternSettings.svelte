@@ -7,6 +7,7 @@
         save_panel_borders_enabled,
         upload_custom_pattern,
     } from "$lib/presentation/components/settings/settingsThemePatternSettingsLogic";
+    import { HEADER_FOOTER_STYLE } from "$lib/presentation/components/theme/themeConstants";
     import { type HeaderFooterStyle } from "$lib/presentation/stores/branding";
 
     export let header_pattern: HeaderFooterStyle;
@@ -77,7 +78,7 @@
         />
     </div>
 
-    {#if header_pattern === "pattern" || footer_pattern === "pattern"}
+    {#if header_pattern === HEADER_FOOTER_STYLE.PATTERN || footer_pattern === HEADER_FOOTER_STYLE.PATTERN}
         <div
             class="mt-4 p-4 rounded-lg bg-accent-50 dark:bg-accent-700/50 space-y-4"
         >

@@ -14,8 +14,35 @@ import {
   parse_optional_media_url_value,
 } from "../types/DomainScalars";
 import type { BaseEntity } from "./BaseEntity";
+import {
+  check_condition,
+  collect_validation_errors,
+  type FieldCheck,
+  is_blank_text,
+} from "./EntityValidation";
 
-export type PlayerStatus = "active" | "injured" | "suspended" | "inactive";
+const PLAYER_VALIDATION_MESSAGES = {
+  FIRST_NAME_REQUIRED: "First name is required",
+  LAST_NAME_REQUIRED: "Last name is required",
+  GENDER_REQUIRED: "Gender is required",
+  DATE_OF_BIRTH_REQUIRED: "Date of birth is required",
+  NATIONALITY_REQUIRED: "Nationality is required",
+  POSITION_REQUIRED: "Position is required",
+  ORGANIZATION_REQUIRED: "Organization is required",
+  INVALID_HEIGHT: "Height must be zero or greater",
+  INVALID_WEIGHT: "Weight must be zero or greater",
+  INVALID_PROFILE_IMAGE: "Profile image URL is invalid",
+  INVALID_MEDICAL_NOTES: "Medical notes are invalid",
+} as const;
+
+const PLAYER_STATUS = {
+  ACTIVE: "active",
+  INJURED: "injured",
+  SUSPENDED: "suspended",
+  INACTIVE: "inactive",
+} as const;
+
+export type PlayerStatus = (typeof PLAYER_STATUS)[keyof typeof PLAYER_STATUS];
 
 export const DEFAULT_PLAYER_AVATAR =
   "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='50' fill='%236366f1'/%3E%3Ccircle cx='50' cy='35' r='18' fill='white'/%3E%3Cpath d='M50 55c-22 0-35 12-35 30h70c0-18-13-30-35-30z' fill='white'/%3E%3C/svg%3E";
@@ -84,72 +111,46 @@ export function create_empty_player_input(
     emergency_contact_name: "",
     emergency_contact_phone: "",
     medical_notes: "",
-    status: "active",
+    status: PLAYER_STATUS.ACTIVE,
   };
 }
 
 export function validate_player_input(input: CreatePlayerInput): string[] {
-  const validation_errors: string[] = [];
+  return collect_validation_errors([
+    ...collect_required_player_field_checks(input),
+    parse_non_negative_integer_value(
+      input.height_cm,
+      PLAYER_VALIDATION_MESSAGES.INVALID_HEIGHT,
+    ),
+    parse_non_negative_integer_value(
+      input.weight_kg,
+      PLAYER_VALIDATION_MESSAGES.INVALID_WEIGHT,
+    ),
+    parse_optional_media_url_value(
+      input.profile_image_url,
+      PLAYER_VALIDATION_MESSAGES.INVALID_PROFILE_IMAGE,
+    ),
+    parse_description_text(
+      input.medical_notes,
+      PLAYER_VALIDATION_MESSAGES.INVALID_MEDICAL_NOTES,
+    ),
+  ]);
+}
 
-  if (!input.first_name || input.first_name.trim().length < 1) {
-    validation_errors.push("First name is required");
-  }
-
-  if (!input.last_name || input.last_name.trim().length < 1) {
-    validation_errors.push("Last name is required");
-  }
-
-  if (!input.gender_id || input.gender_id.trim().length === 0) {
-    validation_errors.push("Gender is required");
-  }
-
-  if (!input.date_of_birth) {
-    validation_errors.push("Date of birth is required");
-  }
-
-  if (!input.nationality || input.nationality.trim().length === 0) {
-    validation_errors.push("Nationality is required");
-  }
-
-  if (!input.position_id || input.position_id.trim().length === 0) {
-    validation_errors.push("Position is required");
-  }
-
-  if (!input.organization_id || input.organization_id.trim().length === 0) {
-    validation_errors.push("Organization is required");
-  }
-
-  const height_result = parse_non_negative_integer_value(
-    input.height_cm,
-    "Height must be zero or greater",
+function collect_required_player_field_checks(
+  input: CreatePlayerInput,
+): FieldCheck[] {
+  const required_fields: ReadonlyArray<readonly [string | undefined, string]> =
+    [
+      [input.first_name, PLAYER_VALIDATION_MESSAGES.FIRST_NAME_REQUIRED],
+      [input.last_name, PLAYER_VALIDATION_MESSAGES.LAST_NAME_REQUIRED],
+      [input.gender_id, PLAYER_VALIDATION_MESSAGES.GENDER_REQUIRED],
+      [input.date_of_birth, PLAYER_VALIDATION_MESSAGES.DATE_OF_BIRTH_REQUIRED],
+      [input.nationality, PLAYER_VALIDATION_MESSAGES.NATIONALITY_REQUIRED],
+      [input.position_id, PLAYER_VALIDATION_MESSAGES.POSITION_REQUIRED],
+      [input.organization_id, PLAYER_VALIDATION_MESSAGES.ORGANIZATION_REQUIRED],
+    ];
+  return required_fields.map(([value, message]) =>
+    check_condition(!is_blank_text(value), message),
   );
-  if (!height_result.success) {
-    validation_errors.push(height_result.error);
-  }
-
-  const weight_result = parse_non_negative_integer_value(
-    input.weight_kg,
-    "Weight must be zero or greater",
-  );
-  if (!weight_result.success) {
-    validation_errors.push(weight_result.error);
-  }
-
-  const profile_image_result = parse_optional_media_url_value(
-    input.profile_image_url,
-    "Profile image URL is invalid",
-  );
-  if (!profile_image_result.success) {
-    validation_errors.push(profile_image_result.error);
-  }
-
-  const medical_notes_result = parse_description_text(
-    input.medical_notes,
-    "Medical notes are invalid",
-  );
-  if (!medical_notes_result.success) {
-    validation_errors.push(medical_notes_result.error);
-  }
-
-  return validation_errors;
 }

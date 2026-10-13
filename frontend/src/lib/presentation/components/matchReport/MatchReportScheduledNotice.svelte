@@ -2,9 +2,12 @@
     import type { Fixture } from "$lib/core/entities/Fixture";
     import type { MatchReportVenueState } from "$lib/presentation/logic/matchReportPageLoadTypes";
     import { format_match_report_kickoff_display } from "$lib/presentation/logic/matchReportPageState";
+    import { PRESENCE_STATUS } from "$lib/presentation/logic/presenceStatus";
 
     export let fixture: Fixture = {} as Fixture;
-    export let venue_state: MatchReportVenueState = { status: "missing" };
+    export let venue_state: MatchReportVenueState = {
+        status: PRESENCE_STATUS.MISSING,
+    };
 </script>
 
 <div
@@ -24,7 +27,7 @@
             fixture.scheduled_time,
         )}
     </p>
-    {#if venue_state.status === "present"}
+    {#if venue_state.status === PRESENCE_STATUS.PRESENT}
         <p class="text-sm text-gray-500 dark:text-gray-400">
             📍 {venue_state.venue.name}{venue_state.venue.city
                 ? `, ${venue_state.venue.city}`

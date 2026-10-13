@@ -5,7 +5,14 @@ import type {
 } from "../types/DomainScalars";
 import type { BaseEntity, EntityStatus } from "./BaseEntity";
 
-export type IdentificationHolderType = "player" | "team_staff" | "official";
+export const IDENTIFICATION_HOLDER_TYPE = {
+  PLAYER: "player",
+  TEAM_STAFF: "team_staff",
+  OFFICIAL: "official",
+} as const;
+
+export type IdentificationHolderType =
+  (typeof IDENTIFICATION_HOLDER_TYPE)[keyof typeof IDENTIFICATION_HOLDER_TYPE];
 
 export interface Identification extends BaseEntity {
   holder_type: IdentificationHolderType;
@@ -25,29 +32,6 @@ export type CreateIdentificationInput = Omit<
 >;
 
 export type UpdateIdentificationInput = Partial<CreateIdentificationInput>;
-
-const IDENTIFICATION_HOLDER_TYPE_OPTIONS = [
-  { value: "player", label: "Player" },
-  { value: "team_staff", label: "Team Staff" },
-  { value: "official", label: "Official" },
-];
-
-function create_empty_identification_input(
-  holder_type?: IdentificationHolderType,
-  holder_id?: string,
-): CreateIdentificationInput {
-  return {
-    holder_type: holder_type || "player",
-    holder_id: holder_id || "",
-    identification_type_id: "",
-    identifier_value: "",
-    document_image_url: "",
-    issue_date: "",
-    expiry_date: "",
-    notes: "",
-    status: "active",
-  };
-}
 
 export function validate_identification_input(
   input: CreateIdentificationInput,

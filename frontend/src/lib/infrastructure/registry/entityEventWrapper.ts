@@ -4,86 +4,140 @@ import { EventBus } from "$lib/infrastructure/events/EventBus";
 
 import { get_entity_display_name } from "./entityDisplayNames";
 import type { GenericEntityUseCases } from "./entityUseCasesRegistry";
+import {
+  ENTITY_EVENT_OPERATION,
+  ENTITY_TYPES_SKIPPING_AUDIT_EVENTS,
+  REGISTRY_LOG_EVENT,
+} from "./registryConstants";
 
-const ENTITIES_TO_SKIP_AUDIT = ["auditlog"];
+type EntityRecord = Record<string, unknown>;
+
+function as_entity_record(entity: BaseEntity): EntityRecord {
+  return entity as unknown as EntityRecord;
+}
+
+function log_previous_entity_unavailable(
+  entity_type: string,
+  entity_id: string,
+  operation: string,
+): void {
+  console.warn("[EntityEventWrapper] Previous entity unavailable, no event", {
+    event: REGISTRY_LOG_EVENT.PREVIOUS_ENTITY_UNAVAILABLE,
+    entity_type,
+    entity_id,
+    operation,
+  });
+}
+
+function find_changed_fields(
+  input: EntityRecord,
+  old_data: EntityRecord,
+  new_data: EntityRecord,
+): string[] {
+  return Object.keys(input).filter(
+    (field) => old_data[field] !== new_data[field],
+  );
+}
+
+function wrap_create(
+  entity_type: string,
+  use_cases: GenericEntityUseCases,
+): GenericEntityUseCases["create"] {
+  return async (input: EntityRecord): AsyncResult<BaseEntity> => {
+    const result = await use_cases.create(input);
+    if (!result.success) return result;
+    EventBus.emit_entity_created(
+      entity_type,
+      result.data.id,
+      get_entity_display_name(entity_type, result.data),
+      as_entity_record(result.data),
+    );
+    return result;
+  };
+}
+
+function emit_update_if_changed(
+  entity_type: string,
+  input: EntityRecord,
+  old_entity: BaseEntity,
+  new_entity: BaseEntity,
+): void {
+  const old_data = as_entity_record(old_entity);
+  const new_data = as_entity_record(new_entity);
+  const changed_fields = find_changed_fields(input, old_data, new_data);
+  if (changed_fields.length === 0) return;
+  EventBus.emit_entity_updated(
+    entity_type,
+    new_entity.id,
+    get_entity_display_name(entity_type, new_entity),
+    old_data,
+    new_data,
+    changed_fields,
+  );
+}
+
+function wrap_update(
+  entity_type: string,
+  use_cases: GenericEntityUseCases,
+): GenericEntityUseCases["update"] {
+  return async (id, input): AsyncResult<BaseEntity> => {
+    const old_entity_result = await use_cases.get_by_id(id);
+    const result = await use_cases.update(id, input);
+    if (!old_entity_result.success) {
+      log_previous_entity_unavailable(
+        entity_type,
+        id,
+        ENTITY_EVENT_OPERATION.UPDATE,
+      );
+      return result;
+    }
+    if (!result.success) return result;
+    emit_update_if_changed(
+      entity_type,
+      input,
+      old_entity_result.data,
+      result.data,
+    );
+    return result;
+  };
+}
+
+function wrap_delete(
+  entity_type: string,
+  use_cases: GenericEntityUseCases,
+): GenericEntityUseCases["delete"] {
+  return async (id): AsyncResult<boolean> => {
+    const entity_result = await use_cases.get_by_id(id);
+    const result = await use_cases.delete(id);
+    if (!entity_result.success) {
+      log_previous_entity_unavailable(
+        entity_type,
+        id,
+        ENTITY_EVENT_OPERATION.DELETE,
+      );
+      return result;
+    }
+    if (!result.success || !result.data) return result;
+    EventBus.emit_entity_deleted(
+      entity_type,
+      id,
+      get_entity_display_name(entity_type, entity_result.data),
+      as_entity_record(entity_result.data),
+    );
+    return result;
+  };
+}
 
 export function wrap_use_cases_with_events(
   entity_type: string,
   use_cases: GenericEntityUseCases,
 ): GenericEntityUseCases {
-  if (ENTITIES_TO_SKIP_AUDIT.includes(entity_type)) return use_cases;
-
-  const original_create = use_cases.create.bind(use_cases);
-  const original_update = use_cases.update.bind(use_cases);
-  const original_delete = use_cases.delete.bind(use_cases);
-  const original_get_by_id = use_cases.get_by_id.bind(use_cases);
-
+  if (ENTITY_TYPES_SKIPPING_AUDIT_EVENTS.includes(entity_type))
+    return use_cases;
   return {
     ...use_cases,
-
-    async create(input: Record<string, unknown>): AsyncResult<BaseEntity> {
-      const result = await original_create(input);
-      if (result.success && result.data) {
-        EventBus.emit_entity_created(
-          entity_type,
-          result.data.id,
-          get_entity_display_name(entity_type, result.data),
-          result.data as unknown as Record<string, unknown>,
-        );
-      }
-      return result;
-    },
-
-    async update(
-      id: BaseEntity["id"],
-      input: Record<string, unknown>,
-    ): AsyncResult<BaseEntity> {
-      const old_entity_result = await original_get_by_id(id);
-      if (!old_entity_result.success || !old_entity_result.data) {
-        return original_update(id, input);
-      }
-      const result = await original_update(id, input);
-
-      if (result.success && result.data) {
-        const old_data = old_entity_result.data as unknown as Record<
-          string,
-          unknown
-        >;
-        const new_data = result.data as unknown as Record<string, unknown>;
-        const changed_fields = Object.keys(input).filter(
-          (field) => old_data[field] !== new_data[field],
-        );
-
-        if (changed_fields.length > 0) {
-          EventBus.emit_entity_updated(
-            entity_type,
-            result.data.id,
-            get_entity_display_name(entity_type, result.data),
-            old_data,
-            new_data,
-            changed_fields,
-          );
-        }
-      }
-      return result;
-    },
-
-    async delete(id: BaseEntity["id"]): AsyncResult<boolean> {
-      const entity_result = await original_get_by_id(id);
-      if (!entity_result.success || !entity_result.data) {
-        return original_delete(id);
-      }
-      const result = await original_delete(id);
-
-      if (result.success && result.data) {
-        EventBus.emit_entity_deleted(
-          entity_type,
-          id,
-          get_entity_display_name(entity_type, entity_result.data),
-          entity_result.data as unknown as Record<string, unknown>,
-        );
-      }
-      return result;
-    },
+    create: wrap_create(entity_type, use_cases),
+    update: wrap_update(entity_type, use_cases),
+    delete: wrap_delete(entity_type, use_cases),
   };
 }

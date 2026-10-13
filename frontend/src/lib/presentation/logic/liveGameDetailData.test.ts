@@ -1,7 +1,8 @@
-import { describe, expect, it, vi } from "vitest";
+import { assert, describe, expect, it, vi } from "vitest";
 
 import type { LiveGameDetailDataDependencies } from "./liveGameDetailData";
 import { load_live_game_detail_bundle } from "./liveGameDetailData";
+import type { MockUseCases } from "./testMockTypes.test_support";
 
 describe("liveGameDetailData", () => {
   type MockDependencies = {
@@ -10,7 +11,7 @@ describe("liveGameDetailData", () => {
     >;
   };
 
-  function create_dependencies() {
+  function create_dependencies(): MockUseCases {
     return {
       competition_use_cases: { get_by_id: vi.fn() },
       fixture_lineup_use_cases: { get_lineup_for_team_in_fixture: vi.fn() },
@@ -23,7 +24,8 @@ describe("liveGameDetailData", () => {
     } satisfies MockDependencies;
   }
 
-  it("returns an error when the fixture cannot be loaded", async () => {
+  it("returns a friendly error when the fixture cannot be loaded", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
     const dependencies = create_dependencies();
     dependencies.fixture_use_cases.get_by_id.mockResolvedValue({
       success: false,
@@ -37,7 +39,8 @@ describe("liveGameDetailData", () => {
       ),
     ).resolves.toEqual({
       success: false,
-      error_message: "Fixture missing",
+      error_message:
+        "We couldn't load this game. Please refresh the page to try again.",
     });
   });
 
@@ -152,9 +155,7 @@ describe("liveGameDetailData", () => {
         }),
       }),
     );
-    if (!result.success) {
-      throw new Error("Expected bundle to load");
-    }
+    assert(result.success, "Expected bundle to load");
     expect(result.data.home_players[0].time_on).toBe("present_at_start");
   });
 

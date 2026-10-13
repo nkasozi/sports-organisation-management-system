@@ -1,150 +1,169 @@
 import type {
   CreatePlayerPositionInput,
   PlayerPosition,
-  PlayerPositionFilter,
   UpdatePlayerPositionInput,
 } from "../entities/PlayerPosition";
 import { validate_player_position_input } from "../entities/PlayerPosition";
-import type { PlayerPositionRepository } from "../interfaces/ports";
-import type { QueryOptions } from "../interfaces/ports";
-import type { PlayerPositionUseCasesPort } from "../interfaces/ports";
-import { is_player_position_not_found_by_code_error } from "../interfaces/ports";
-import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
-import { create_failure_result, create_success_result } from "../types/Result";
+import type {
+  PlayerPositionRepository,
+  PlayerPositionUseCasesPort,
+} from "../interfaces/ports";
+import { create_none_option, create_some_option } from "../types/Option";
+import type { AsyncResult } from "../types/Result";
+import { create_success_result } from "../types/Result";
+import { UseCaseErrorCode } from "../types/UseCaseFailure";
+import {
+  build_player_position_target,
+  ensure_position_code_available,
+} from "./PlayerPositionUseCasesCodeAvailability";
+import {
+  PlayerPositionUseCaseEvent,
+  PlayerPositionUseCaseMessage,
+} from "./PlayerPositionUseCasesConstants";
+import {
+  fail_missing_position_input,
+  find_available_player_positions,
+  find_player_position_by_code,
+  find_player_positions_by_category,
+  find_player_positions_by_sport_type,
+  get_player_position_by_id,
+  list_player_positions,
+  list_player_positions_by_sport,
+} from "./PlayerPositionUseCasesQueries";
+import {
+  fail_validation,
+  forward_dependency_result,
+  is_blank_identifier,
+} from "./UseCaseResultGuards";
 
 export type PlayerPositionUseCases = PlayerPositionUseCasesPort;
+
+async function create_player_position(
+  repository: PlayerPositionRepository,
+  input: CreatePlayerPositionInput,
+): AsyncResult<PlayerPosition> {
+  const validation = validate_player_position_input(input);
+  if (!validation.is_valid) {
+    return fail_validation(
+      build_player_position_target(
+        PlayerPositionUseCaseEvent.CREATE_VALIDATION_FAILED,
+        {},
+      ),
+      validation.errors,
+    );
+  }
+  const code_result = await ensure_position_code_available(repository, {
+    code: input.code,
+    owner: create_none_option(),
+    lookup_failed_event: PlayerPositionUseCaseEvent.CREATE_CODE_LOOKUP_FAILED,
+    conflict_event: PlayerPositionUseCaseEvent.CREATE_CODE_CONFLICT,
+  });
+  if (!code_result.success) {
+    return code_result;
+  }
+  return forward_dependency_result(await repository.create(input), {
+    ...build_player_position_target(
+      PlayerPositionUseCaseEvent.CREATE_FAILED,
+      {},
+    ),
+    code: UseCaseErrorCode.DEPENDENCY_FAILED,
+  });
+}
+
+async function ensure_updated_code_available(
+  repository: PlayerPositionRepository,
+  id: PlayerPosition["id"],
+  input: UpdatePlayerPositionInput,
+): AsyncResult<true> {
+  if (!input.code) {
+    return create_success_result(true);
+  }
+  return ensure_position_code_available(repository, {
+    code: input.code,
+    owner: create_some_option(id),
+    lookup_failed_event: PlayerPositionUseCaseEvent.UPDATE_CODE_LOOKUP_FAILED,
+    conflict_event: PlayerPositionUseCaseEvent.UPDATE_CODE_CONFLICT,
+  });
+}
+
+async function update_player_position(
+  repository: PlayerPositionRepository,
+  id: PlayerPosition["id"],
+  input: UpdatePlayerPositionInput,
+): AsyncResult<PlayerPosition> {
+  if (is_blank_identifier(id)) {
+    return fail_missing_position_input(
+      PlayerPositionUseCaseEvent.UPDATE_ID_MISSING,
+      PlayerPositionUseCaseMessage.ID_REQUIRED,
+    );
+  }
+  const context = { position_id: id };
+  const existing_result = await repository.find_by_id(id);
+  if (!existing_result.success) {
+    return forward_dependency_result(existing_result, {
+      ...build_player_position_target(
+        PlayerPositionUseCaseEvent.UPDATE_TARGET_NOT_FOUND,
+        context,
+      ),
+      code: UseCaseErrorCode.NOT_FOUND,
+      user_message: PlayerPositionUseCaseMessage.NOT_FOUND,
+    });
+  }
+  const code_result = await ensure_updated_code_available(
+    repository,
+    id,
+    input,
+  );
+  if (!code_result.success) {
+    return code_result;
+  }
+  return forward_dependency_result(await repository.update(id, input), {
+    ...build_player_position_target(
+      PlayerPositionUseCaseEvent.UPDATE_FAILED,
+      context,
+    ),
+    code: UseCaseErrorCode.DEPENDENCY_FAILED,
+  });
+}
+
+async function delete_player_position(
+  repository: PlayerPositionRepository,
+  id: PlayerPosition["id"],
+): AsyncResult<boolean> {
+  if (is_blank_identifier(id)) {
+    return fail_missing_position_input(
+      PlayerPositionUseCaseEvent.DELETE_ID_MISSING,
+      PlayerPositionUseCaseMessage.ID_REQUIRED,
+    );
+  }
+  return forward_dependency_result(await repository.delete_by_id(id), {
+    ...build_player_position_target(PlayerPositionUseCaseEvent.DELETE_FAILED, {
+      position_id: id,
+    }),
+    code: UseCaseErrorCode.DEPENDENCY_FAILED,
+  });
+}
 
 export function create_player_position_use_cases(
   repository: PlayerPositionRepository,
 ): PlayerPositionUseCases {
   return {
-    async list(
-      filter?: PlayerPositionFilter,
-      pagination?: QueryOptions,
-    ): PaginatedAsyncResult<PlayerPosition> {
-      return repository.find_all(filter, pagination);
-    },
-
-    async get_by_id(id: PlayerPosition["id"]): AsyncResult<PlayerPosition> {
-      if (!id || id.trim().length === 0) {
-        return create_failure_result("Position ID is required");
-      }
-
-      const result = await repository.find_by_id(id);
-      if (!result.success) {
-        return create_failure_result(result.error);
-      }
-      return create_success_result(result.data);
-    },
-
-    async create(
-      input: CreatePlayerPositionInput,
-    ): AsyncResult<PlayerPosition> {
-      const validation = validate_player_position_input(input);
-      if (!validation.is_valid) {
-        return create_failure_result(validation.errors.join(", "));
-      }
-
-      const existing_result = await repository.find_by_code(input.code);
-      if (
-        !existing_result.success &&
-        !is_player_position_not_found_by_code_error(
-          existing_result.error,
-          input.code,
-        )
-      ) {
-        return create_failure_result(existing_result.error);
-      }
-      if (existing_result.success) {
-        return create_failure_result(
-          `Position with code '${input.code}' already exists`,
-        );
-      }
-
-      const result = await repository.create(input);
-      if (!result.success) {
-        return create_failure_result(result.error);
-      }
-      return create_success_result(result.data);
-    },
-
-    async update(
-      id: PlayerPosition["id"],
-      input: UpdatePlayerPositionInput,
-    ): AsyncResult<PlayerPosition> {
-      if (!id || id.trim().length === 0) {
-        return create_failure_result("Position ID is required");
-      }
-
-      const existing_result = await repository.find_by_id(id);
-      if (!existing_result.success) {
-        return create_failure_result("Position not found");
-      }
-
-      if (input.code) {
-        const code_check_result = await repository.find_by_code(input.code);
-        if (
-          !code_check_result.success &&
-          !is_player_position_not_found_by_code_error(
-            code_check_result.error,
-            input.code,
-          )
-        ) {
-          return create_failure_result(code_check_result.error);
-        }
-        if (code_check_result.success && code_check_result.data.id !== id) {
-          return create_failure_result(
-            `Position with code '${input.code}' already exists`,
-          );
-        }
-      }
-
-      const result = await repository.update(id, input);
-      if (!result.success) {
-        return create_failure_result(result.error);
-      }
-      return create_success_result(result.data);
-    },
-
-    async delete(id: PlayerPosition["id"]): AsyncResult<boolean> {
-      if (!id || id.trim().length === 0) {
-        return create_failure_result("Position ID is required");
-      }
-
-      const result = await repository.delete_by_id(id);
-      if (!result.success) {
-        return create_failure_result(result.error);
-      }
-      return create_success_result(result.data);
-    },
-
-    async find_by_code(code: string): AsyncResult<PlayerPosition> {
-      return await repository.find_by_code(code);
-    },
-
-    async find_by_sport_type(
-      sport_type: string,
-    ): AsyncResult<PlayerPosition[]> {
-      return await repository.find_by_sport_type(sport_type);
-    },
-
-    async find_by_category(
-      category: PlayerPosition["category"],
-    ): AsyncResult<PlayerPosition[]> {
-      return await repository.find_by_category(category);
-    },
-
-    async find_available_positions(): AsyncResult<PlayerPosition[]> {
-      return await repository.find_available_positions();
-    },
-
-    async list_positions_by_sport(
-      sport_type: string,
-    ): AsyncResult<PlayerPosition[]> {
-      if (!sport_type || sport_type.trim() === "") {
-        return { success: false, error: "Sport type is required" };
-      }
-      return repository.find_by_sport_type(sport_type);
-    },
+    list: (filter, pagination) =>
+      list_player_positions(repository, filter, pagination),
+    get_by_id: (id: PlayerPosition["id"]) =>
+      get_player_position_by_id(repository, id),
+    create: (input) => create_player_position(repository, input),
+    update: (id: PlayerPosition["id"], input) =>
+      update_player_position(repository, id, input),
+    delete: (id: PlayerPosition["id"]) =>
+      delete_player_position(repository, id),
+    find_by_code: (code) => find_player_position_by_code(repository, code),
+    find_by_sport_type: (sport_type) =>
+      find_player_positions_by_sport_type(repository, sport_type),
+    find_by_category: (category) =>
+      find_player_positions_by_category(repository, category),
+    find_available_positions: () => find_available_player_positions(repository),
+    list_positions_by_sport: (sport_type) =>
+      list_player_positions_by_sport(repository, sport_type),
   };
 }

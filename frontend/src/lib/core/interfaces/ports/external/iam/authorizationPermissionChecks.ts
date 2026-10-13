@@ -11,10 +11,22 @@ import type { UserRole } from "./AuthenticationPort";
 import type {
   CategoryPermissions,
   DataAction,
-  DataAuthorizationResult,
   DataCategory,
   RolePermissionMap,
 } from "./AuthorizationPort";
+
+const UNKNOWN_ROLE_DENIED_EVENT = "authorization_unknown_role_denied";
+const UNKNOWN_ENTITY_DENIED_EVENT = "authorization_unknown_entity_denied";
+const UNKNOWN_ROLE_DENIED_MESSAGE =
+  "[AuthorizationPermissionChecks] Unknown role denied all permissions";
+const UNKNOWN_ENTITY_DENIED_MESSAGE =
+  "[AuthorizationPermissionChecks] Unknown entity type denied";
+const DENIED_CATEGORY_PERMISSIONS: CategoryPermissions = {
+  create: false,
+  read: false,
+  update: false,
+  delete: false,
+};
 
 const ENTITY_LEVEL_DISABLED_OPERATIONS: Partial<
   Record<SharedEntityType, ("create" | "edit" | "delete")[]>
@@ -50,11 +62,36 @@ function shared_to_category_permissions(
   };
 }
 
-export function get_role_permissions(role: UserRole): RolePermissionMap {
-  const shared =
-    SHARED_ROLE_PERMISSIONS[role] ?? SHARED_ROLE_PERMISSIONS.player;
+function is_known_role(role: UserRole): boolean {
+  return Object.prototype.hasOwnProperty.call(SHARED_ROLE_PERMISSIONS, role);
+}
+
+function is_known_entity_type(entity_type: SharedEntityType): boolean {
+  return Object.prototype.hasOwnProperty.call(
+    SHARED_ENTITY_CATEGORY_MAP,
+    entity_type,
+  );
+}
+
+function build_denied_role_permissions(): RolePermissionMap {
   return Object.fromEntries(
-    Object.entries(shared).map(([category, perms]) => [
+    Object.keys(SHARED_ROLE_PERMISSIONS.super_admin).map((category) => [
+      category,
+      { ...DENIED_CATEGORY_PERMISSIONS },
+    ]),
+  ) as RolePermissionMap;
+}
+
+export function get_role_permissions(role: UserRole): RolePermissionMap {
+  if (!is_known_role(role)) {
+    console.warn(UNKNOWN_ROLE_DENIED_MESSAGE, {
+      event: UNKNOWN_ROLE_DENIED_EVENT,
+      role,
+    });
+    return build_denied_role_permissions();
+  }
+  return Object.fromEntries(
+    Object.entries(SHARED_ROLE_PERMISSIONS[role]).map(([category, perms]) => [
       category,
       shared_to_category_permissions(perms),
     ]),
@@ -76,51 +113,13 @@ export function check_entity_permission(
   entity_type: SharedEntityType,
   action: DataAction,
 ): boolean {
+  if (!is_known_entity_type(entity_type)) {
+    console.warn(UNKNOWN_ENTITY_DENIED_MESSAGE, {
+      event: UNKNOWN_ENTITY_DENIED_EVENT,
+      entity_type,
+    });
+    return false;
+  }
   const category = get_entity_data_category(entity_type);
   return check_data_permission(role, category, action);
-}
-
-function authorize_entity_action(
-  role: UserRole,
-  entity_type: SharedEntityType,
-  action: DataAction,
-): DataAuthorizationResult {
-  const category = get_entity_data_category(entity_type);
-  const is_authorized = check_data_permission(role, category, action);
-  return {
-    is_authorized,
-    data_category: category,
-    action,
-    reason: is_authorized
-      ? void 0
-      : `Role "${role}" does not have "${action}" permission for "${category}" data`,
-  };
-}
-
-function get_allowed_actions_for_entity(
-  role: UserRole,
-  entity_type: SharedEntityType,
-): DataAction[] {
-  const category = get_entity_data_category(entity_type);
-  const permissions = get_role_permissions(role)[category];
-  const allowed_actions: DataAction[] = [];
-  if (permissions.create) allowed_actions.push("create");
-  if (permissions.read) allowed_actions.push("read");
-  if (permissions.update) allowed_actions.push("update");
-  if (permissions.delete) allowed_actions.push("delete");
-  return allowed_actions;
-}
-
-function get_disabled_crud_for_entity(
-  role: UserRole,
-  entity_type: SharedEntityType,
-): ("create" | "read" | "update" | "delete")[] {
-  const category = get_entity_data_category(entity_type);
-  const permissions = get_role_permissions(role)[category];
-  const disabled: ("create" | "read" | "update" | "delete")[] = [];
-  if (!permissions.create) disabled.push("create");
-  if (!permissions.read) disabled.push("read");
-  if (!permissions.update) disabled.push("update");
-  if (!permissions.delete) disabled.push("delete");
-  return disabled;
 }

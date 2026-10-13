@@ -14,6 +14,10 @@
     import type { ManagedGameStartCheck } from "$lib/presentation/logic/managedGamePageTypes";
 
     import FixtureManageEventModal from "./FixtureManageEventModal.svelte";
+    import {
+        FIXTURE_MANAGE_LOG_EVENTS,
+        FIXTURE_MANAGE_TEXT,
+    } from "./fixtureManageMessages";
 
     const fixture_use_cases = get_fixture_use_cases();
     const fixture_lineup_use_cases = get_fixture_lineup_use_cases();
@@ -32,16 +36,24 @@
             player_position_use_cases,
         });
 
-    async function before_start(fixture: Fixture): Promise<ManagedGameStartCheck> {
+    async function before_start(
+        fixture: Fixture,
+    ): Promise<ManagedGameStartCheck> {
         const result = await fixture_lineup_use_cases.get_lineups_for_fixture(
             fixture.id,
         );
-        if (!result.success)
+        if (!result.success) {
+            console.error("[FixtureManage] Lineup check failed", {
+                event: FIXTURE_MANAGE_LOG_EVENTS.LINEUP_CHECK_FAILED,
+                fixture_id: fixture.id,
+                error: result.error,
+            });
             return {
                 allowed: false,
-                message: `Unable to verify fixture lineups: ${result.error}`,
+                message: FIXTURE_MANAGE_TEXT.LINEUP_CHECK_FAILED,
                 message_type: "error",
             };
+        }
         const home_lineup_ready = has_team_submitted_lineup(
             result.data ?? [],
             fixture.home_team_id,
@@ -53,17 +65,17 @@
         if (home_lineup_ready && away_lineup_ready) return { allowed: true };
         return {
             allowed: false,
-            message: "Submit both team lineups before starting the game.",
+            message: FIXTURE_MANAGE_TEXT.LINEUPS_REQUIRED,
             message_type: "info",
-            redirect_path: `/fixture-lineups?fixture_id=${fixture.id}`,
+            redirect_path: `${FIXTURE_MANAGE_TEXT.LINEUPS_PATH}?${FIXTURE_MANAGE_TEXT.FIXTURE_ID_QUERY_PARAM}=${encodeURIComponent(fixture.id)}`,
         };
     }
 </script>
 
 <ManagedGamePage
-    back_path="/fixtures"
-    back_button_label="Back to Fixtures"
-    error_title="Error Loading Game"
+    back_path={FIXTURE_MANAGE_TEXT.BACK_PATH}
+    back_button_label={FIXTURE_MANAGE_TEXT.BACK_BUTTON_LABEL}
+    error_title={FIXTURE_MANAGE_TEXT.ERROR_TITLE}
     {event_modal_component}
     {fixture_use_cases}
     {load_bundle}

@@ -1,4 +1,5 @@
 import type { EntityId, IsoDateTimeString } from "../types/DomainScalars";
+import type { EntityStatusValue } from "./StatusConstants";
 
 export interface BaseEntity<TEntityId extends EntityId = EntityId> {
   id: TEntityId;
@@ -6,14 +7,9 @@ export interface BaseEntity<TEntityId extends EntityId = EntityId> {
   updated_at: IsoDateTimeString;
 }
 
-export type EntityStatus =
-  | "active"
-  | "inactive"
-  | "archived"
-  | "pending"
-  | "deleted";
+export type EntityStatus = EntityStatusValue;
 
-export interface EntityMetadata<T extends BaseEntity = any> {
+export interface EntityMetadata<T extends BaseEntity = BaseEntity> {
   entity_name: string;
   display_name: string;
   fields: FieldMetadata<T>[];
@@ -29,7 +25,7 @@ export interface FieldVisibilityCondition {
   visible_when_values: string[];
 }
 
-export interface FieldMetadata<T extends BaseEntity = any> {
+export interface FieldMetadata<T extends BaseEntity = BaseEntity> {
   field_name: Extract<keyof T, string> | string;
   display_name: string;
   field_type:
@@ -109,41 +105,29 @@ export interface ValidationRule {
   error_message: string;
 }
 
-interface EntityListResult<T = any> {
-  success: boolean;
-  data: T[];
-  total_count: number;
-  error_message?: string;
-  debug_info?: string;
-}
+const ENTITY_ID_RANDOM_RADIX = 36;
+const ENTITY_ID_RANDOM_START = 2;
+const ENTITY_ID_RANDOM_END = 15;
 
-// Helper function to generate UUID with entity prefix
-function generate_entity_id(entity_prefix: string): EntityId {
+export function generate_unique_id(entity_prefix: string): EntityId {
   const timestamp = Date.now();
-  const random_part = Math.random().toString(36).substring(2, 15);
+  const random_part = Math.random()
+    .toString(ENTITY_ID_RANDOM_RADIX)
+    .substring(ENTITY_ID_RANDOM_START, ENTITY_ID_RANDOM_END);
   return `${entity_prefix}-${timestamp}-${random_part}` as EntityId;
 }
 
-// Helper function to create base entity fields
-function create_base_entity_timestamp_fields(): Pick<
+export function create_timestamp_fields(): Pick<
   BaseEntity,
   "created_at" | "updated_at"
 > {
-  const now = new Date().toISOString();
-  return {
-    created_at: now as IsoDateTimeString,
-    updated_at: now as IsoDateTimeString,
-  };
+  const now = new Date().toISOString() as IsoDateTimeString;
+  return { created_at: now, updated_at: now };
 }
 
-// Helper function to update timestamp on entity modification
-function update_entity_timestamp<T extends BaseEntity>(entity: T): T {
+export function update_timestamp<T extends BaseEntity>(entity: T): T {
   return {
     ...entity,
     updated_at: new Date().toISOString() as IsoDateTimeString,
   };
 }
-
-export const generate_unique_id = generate_entity_id;
-export const create_timestamp_fields = create_base_entity_timestamp_fields;
-export const update_timestamp = update_entity_timestamp;

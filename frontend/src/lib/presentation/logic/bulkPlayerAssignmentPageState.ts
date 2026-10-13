@@ -3,7 +3,9 @@ import type {
   CreatePlayerTeamMembershipInput,
   PlayerTeamMembership,
 } from "$lib/core/entities/PlayerTeamMembership";
+import { MEMBERSHIP_STATUS } from "$lib/core/entities/StatusConstants";
 import type { Team } from "$lib/core/entities/Team";
+import { PRESENCE_STATUS } from "$lib/presentation/logic/presenceStatus";
 
 export type PlayerAssignmentCurrentTeamState =
   | { status: "unassigned" }
@@ -33,7 +35,7 @@ export function build_player_assignments(
   const active_membership_by_player = new Map<string, PlayerTeamMembership>();
 
   for (const current_membership of memberships) {
-    if (current_membership.status !== "active") continue;
+    if (current_membership.status !== MEMBERSHIP_STATUS.ACTIVE) continue;
     active_membership_by_player.set(
       current_membership.player_id,
       current_membership,
@@ -69,7 +71,8 @@ export function filter_player_assignments_by_team_gender(
   assignments: PlayerAssignment[],
   selected_team_state: BulkPlayerAssignmentSelectedTeamState,
 ): PlayerAssignment[] {
-  if (selected_team_state.status === "missing") return assignments;
+  if (selected_team_state.status === PRESENCE_STATUS.MISSING)
+    return assignments;
   if (!selected_team_state.team.gender_id) return assignments;
 
   return assignments.filter(
@@ -114,7 +117,7 @@ export function get_target_gender_label(
   selected_team_state: BulkPlayerAssignmentSelectedTeamState,
   gender_name_map: Map<string, string>,
 ): string {
-  if (selected_team_state.status === "missing") return "";
+  if (selected_team_state.status === PRESENCE_STATUS.MISSING) return "";
   if (!selected_team_state.team.gender_id) return "";
 
   const gender_name =
@@ -143,7 +146,7 @@ export function create_membership_input(
 ): CreatePlayerTeamMembershipInput {
   return {
     organization_id:
-      selected_team_state.status === "present"
+      selected_team_state.status === PRESENCE_STATUS.PRESENT
         ? selected_team_state.team.organization_id
         : "",
     player_id: assignment.player.id,

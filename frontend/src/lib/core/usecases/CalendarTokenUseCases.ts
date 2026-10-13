@@ -1,192 +1,62 @@
 import type {
-  CalendarFeedType,
   CalendarToken,
   CreateCalendarTokenInput,
-  UpdateCalendarTokenInput,
 } from "../entities/CalendarToken";
-import {
-  build_ical_feed_url,
-  build_webcal_feed_url,
-  generate_calendar_token,
-} from "../entities/CalendarToken";
-import type {
-  CalendarTokenFilter,
-  CalendarTokenRepository,
-} from "../interfaces/ports";
-import type { QueryOptions } from "../interfaces/ports";
-import type {
-  CalendarFeedInfo,
-  CalendarTokenUseCasesPort,
-} from "../interfaces/ports";
-import { is_calendar_token_not_found_error } from "../interfaces/ports";
-import type {
-  CalendarFeedEntityId,
-  CalendarTokenValue,
-  EntityId,
-} from "../types/DomainScalars";
-import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
-import { create_failure_result, create_success_result } from "../types/Result";
+import type { CalendarTokenRepository } from "../interfaces/ports";
+import type { CalendarTokenUseCasesPort } from "../interfaces/ports";
+import { CALENDAR_TOKEN_EVENT } from "./CalendarTokenConstants";
+import { create_calendar_feed_methods } from "./CalendarTokenFeeds";
+import { calendar_token_log_target } from "./CalendarTokenLogging";
+import { relay_repository_result } from "./FailureRelay";
 
 type CalendarTokenUseCases = CalendarTokenUseCasesPort;
-
-const DEFAULT_REMINDER_MINUTES = 60;
 
 interface CalendarTokenUseCasesDependencies {
   calendar_token_repository: CalendarTokenRepository;
   get_base_url: () => string;
 }
 
+function create_calendar_token_crud(
+  repository: CalendarTokenRepository,
+): Pick<
+  CalendarTokenUseCases,
+  "list" | "get_by_id" | "create" | "update" | "delete"
+> {
+  const log_target = calendar_token_log_target;
+  return {
+    list: async (filter, options) =>
+      relay_repository_result(
+        repository.find_all(filter ?? {}, options),
+        log_target(CALENDAR_TOKEN_EVENT.LIST_FAILED),
+      ),
+    get_by_id: async (id: CalendarToken["id"]) =>
+      relay_repository_result(
+        repository.find_by_id(id),
+        log_target(CALENDAR_TOKEN_EVENT.LOOKUP_FAILED, { token_id: id }),
+      ),
+    create: async (input: CreateCalendarTokenInput) =>
+      relay_repository_result(
+        repository.create(input),
+        log_target(CALENDAR_TOKEN_EVENT.CREATE_FAILED),
+      ),
+    update: async (id, updates) =>
+      relay_repository_result(
+        repository.update(id, updates),
+        log_target(CALENDAR_TOKEN_EVENT.UPDATE_FAILED, { token_id: id }),
+      ),
+    delete: async (id) =>
+      relay_repository_result(
+        repository.delete_by_id(id),
+        log_target(CALENDAR_TOKEN_EVENT.DELETE_FAILED, { token_id: id }),
+      ),
+  };
+}
+
 export function create_calendar_token_use_cases(
   dependencies: CalendarTokenUseCasesDependencies,
 ): CalendarTokenUseCases {
-  const { calendar_token_repository, get_base_url } = dependencies;
-
   return {
-    async list(
-      filter?: CalendarTokenFilter,
-      options?: QueryOptions,
-    ): PaginatedAsyncResult<CalendarToken> {
-      return calendar_token_repository.find_all(filter ?? {}, options);
-    },
-
-    async get_by_id(id: CalendarToken["id"]): AsyncResult<CalendarToken> {
-      const result = await calendar_token_repository.find_by_id(id);
-
-      if (!result.success) {
-        return create_failure_result(
-          "error" in result ? result.error : "Failed to get token",
-        );
-      }
-
-      if (!result.data) {
-        return create_failure_result("Calendar token not found");
-      }
-
-      return create_success_result(result.data);
-    },
-
-    async create(input: CreateCalendarTokenInput): AsyncResult<CalendarToken> {
-      const result = await calendar_token_repository.create(input);
-
-      if (!result.success) {
-        return create_failure_result(
-          "error" in result ? result.error : "Failed to create token",
-        );
-      }
-
-      return create_success_result(result.data!);
-    },
-
-    async update(
-      id: CalendarToken["id"],
-      updates: UpdateCalendarTokenInput,
-    ): AsyncResult<CalendarToken> {
-      const result = await calendar_token_repository.update(id, updates);
-
-      if (!result.success) {
-        return create_failure_result(
-          "error" in result ? result.error : "Failed to update token",
-        );
-      }
-
-      return create_success_result(result.data!);
-    },
-
-    async delete(id: CalendarToken["id"]): AsyncResult<boolean> {
-      const result = await calendar_token_repository.delete_by_id(id);
-
-      if (!result.success) {
-        return create_failure_result(
-          "error" in result ? result.error : "Failed to delete token",
-        );
-      }
-
-      return create_success_result(true);
-    },
-
-    async create_feed(
-      user_id: EntityId,
-      organization_id: EntityId,
-      feed_type: CalendarFeedType,
-      entity_id: CalendarFeedEntityId | "",
-      entity_name: CalendarToken["entity_name"],
-      reminder_minutes_before: number = DEFAULT_REMINDER_MINUTES,
-    ): AsyncResult<CalendarFeedInfo> {
-      const token = generate_calendar_token();
-
-      const input: CreateCalendarTokenInput = {
-        token,
-        user_id,
-        organization_id,
-        feed_type,
-        entity_id,
-        entity_name,
-        reminder_minutes_before,
-        is_active: true,
-      };
-
-      const create_result = await calendar_token_repository.create(input);
-
-      if (!create_result.success || !create_result.data) {
-        return create_failure_result(
-          "error" in create_result
-            ? create_result.error
-            : "Failed to create calendar token",
-        );
-      }
-
-      const base_url = get_base_url();
-
-      return create_success_result({
-        token: create_result.data,
-        https_url: build_ical_feed_url(base_url, token),
-        webcal_url: build_webcal_feed_url(base_url, token),
-      });
-    },
-
-    async list_user_feeds(
-      user_id: EntityId,
-      options?: QueryOptions,
-    ): PaginatedAsyncResult<CalendarToken> {
-      return calendar_token_repository.find_by_user(user_id, options);
-    },
-
-    async get_feed_by_token(
-      token: CalendarTokenValue,
-    ): AsyncResult<CalendarToken> {
-      return calendar_token_repository.find_by_token(token);
-    },
-
-    async revoke_feed(token: CalendarTokenValue): AsyncResult<CalendarToken> {
-      return calendar_token_repository.deactivate_token(token);
-    },
-
-    async update_feed_settings(
-      token: CalendarTokenValue,
-      reminder_minutes_before: number,
-    ): AsyncResult<CalendarToken> {
-      const find_result = await calendar_token_repository.find_by_token(token);
-
-      if (
-        !find_result.success &&
-        !is_calendar_token_not_found_error(find_result.error, token)
-      ) {
-        return create_failure_result(find_result.error);
-      }
-
-      if (!find_result.success) {
-        return create_failure_result("Token not found");
-      }
-
-      return calendar_token_repository.update(find_result.data.id, {
-        reminder_minutes_before,
-      });
-    },
-
-    async record_feed_access(
-      token: CalendarTokenValue,
-    ): AsyncResult<CalendarToken> {
-      return calendar_token_repository.record_access(token);
-    },
+    ...create_calendar_token_crud(dependencies.calendar_token_repository),
+    ...create_calendar_feed_methods(dependencies),
   };
 }

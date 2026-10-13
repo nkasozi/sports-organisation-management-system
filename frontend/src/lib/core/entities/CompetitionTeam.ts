@@ -5,13 +5,30 @@ import type {
   ScalarInput,
 } from "../types/DomainScalars";
 import type { BaseEntity } from "./BaseEntity";
+import {
+  check_condition,
+  check_required_entity_id,
+  collect_validation_errors,
+} from "./EntityValidation";
+
+const ISO_DATE_TIME_SEPARATOR = "T";
+
+const COMPETITION_TEAM_MESSAGES = {
+  COMPETITION_REQUIRED: "Competition is required",
+  TEAM_REQUIRED: "Team is required",
+  REGISTRATION_DATE_REQUIRED: "Registration date is required",
+} as const;
+
+export const COMPETITION_TEAM_STATUS = {
+  REGISTERED: "registered",
+  CONFIRMED: "confirmed",
+  WITHDRAWN: "withdrawn",
+  DISQUALIFIED: "disqualified",
+  ELIMINATED: "eliminated",
+} as const;
 
 export type CompetitionTeamStatus =
-  | "registered"
-  | "confirmed"
-  | "withdrawn"
-  | "disqualified"
-  | "eliminated";
+  (typeof COMPETITION_TEAM_STATUS)[keyof typeof COMPETITION_TEAM_STATUS];
 
 export interface CompetitionTeam extends BaseEntity {
   competition_id: EntityId;
@@ -58,11 +75,13 @@ export function create_empty_competition_team_input(
     team_id,
     registration_date: new Date()
       .toISOString()
-      .split("T")[0] as CreateCompetitionTeamInput["registration_date"],
+      .split(
+        ISO_DATE_TIME_SEPARATOR,
+      )[0] as CreateCompetitionTeamInput["registration_date"],
     seed_number: "",
     group_name: "",
     notes: "",
-    status: "registered",
+    status: COMPETITION_TEAM_STATUS.REGISTERED,
   };
 }
 
@@ -89,78 +108,21 @@ export function create_competition_team_with_stats(
   } as CompetitionTeam;
 }
 
-function calculate_goal_difference(team: CompetitionTeam): number {
-  return team.goals_for - team.goals_against;
-}
-
-function calculate_points(
-  wins: number,
-  draws: number,
-  points_per_win: number = 3,
-  points_per_draw: number = 1,
-): number {
-  return wins * points_per_win + draws * points_per_draw;
-}
-
-function update_competition_team_after_match(
-  team: CompetitionTeam,
-  goals_scored: number,
-  goals_conceded: number,
-  result: "win" | "draw" | "loss",
-  points_per_win: number = 3,
-  points_per_draw: number = 1,
-): CompetitionTeam {
-  const updated_team = { ...team };
-
-  updated_team.matches_played += 1;
-  updated_team.goals_for += goals_scored;
-  updated_team.goals_against += goals_conceded;
-  updated_team.goal_difference =
-    updated_team.goals_for - updated_team.goals_against;
-
-  switch (result) {
-    case "win":
-      updated_team.matches_won += 1;
-      updated_team.points += points_per_win;
-      break;
-    case "draw":
-      updated_team.matches_drawn += 1;
-      updated_team.points += points_per_draw;
-      break;
-    case "loss":
-      updated_team.matches_lost += 1;
-      break;
-  }
-
-  return updated_team;
-}
-
 export function validate_competition_team_input(
   input: CreateCompetitionTeamInput,
 ): string[] {
-  const validation_errors: string[] = [];
-
-  if (!input.competition_id) {
-    validation_errors.push("Competition is required");
-  }
-
-  if (!input.team_id) {
-    validation_errors.push("Team is required");
-  }
-
-  if (!input.registration_date) {
-    validation_errors.push("Registration date is required");
-  }
-
-  return validation_errors;
-}
-
-function sort_teams_by_standings(teams: CompetitionTeam[]): CompetitionTeam[] {
-  return [...teams].sort((a, b) => {
-    if (b.points !== a.points) return b.points - a.points;
-    if (b.goal_difference !== a.goal_difference)
-      return b.goal_difference - a.goal_difference;
-    if (b.goals_for !== a.goals_for) return b.goals_for - a.goals_for;
-    return a.matches_played - b.matches_played;
-  });
+  return collect_validation_errors([
+    check_required_entity_id(
+      input.competition_id,
+      COMPETITION_TEAM_MESSAGES.COMPETITION_REQUIRED,
+    ),
+    check_required_entity_id(
+      input.team_id,
+      COMPETITION_TEAM_MESSAGES.TEAM_REQUIRED,
+    ),
+    check_condition(
+      Boolean(input.registration_date),
+      COMPETITION_TEAM_MESSAGES.REGISTRATION_DATE_REQUIRED,
+    ),
+  ]);
 }

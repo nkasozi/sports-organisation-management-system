@@ -3,49 +3,46 @@
     import { get } from "svelte/store";
 
     import { browser } from "$app/environment";
-    import { goto } from "$app/navigation";
-    import type { BaseEntity } from "$lib/core/entities/BaseEntity";
-    import type { UserScopeProfile } from "$lib/core/interfaces/ports";
     import type { EntityViewCallbacks } from "$lib/core/types/EntityHandlers";
-    import { get_authorization_adapter } from "$lib/infrastructure/AuthorizationProvider";
-    import { ensure_auth_profile } from "$lib/presentation/logic/authGuard";
+    import { PROFILE_MANAGEMENT_ACCESS_STATUS } from "$lib/presentation/logic/profileManagementPageConstants";
+    import { create_profile_management_access_dependencies } from "$lib/presentation/logic/profileManagementPageControllerDependencies";
+    import {
+        build_profile_management_controller_authorization_filter,
+        PROFILE_MANAGEMENT_PAGE_MESSAGES,
+        resolve_profile_management_access,
+    } from "$lib/presentation/logic/profileManagementPageControllerLogic";
     import { load_profile_management_page_data } from "$lib/presentation/logic/profileManagementPageData";
     import {
-        build_profile_management_authorization_filter,
         build_profile_management_permissions,
         build_profile_management_rows,
-        type ProfileManagementAuthorizationProfileState,
         type ProfileManagementConfiguration,
         type ProfileManagementEntity,
         type ProfileManagementOption,
         type ProfileManagementPermissions,
-        type ProfileManagementViewMode,
     } from "$lib/presentation/logic/profileManagementPageState";
-    import { access_denial_store } from "$lib/presentation/stores/accessDenial";
     import { auth_store } from "$lib/presentation/stores/auth";
 
+    import { PROFILE_MANAGEMENT_LOG_EVENTS } from "./profileManagementMessages";
     import ProfileManagementPageContent from "./ProfileManagementPageContent.svelte";
-
-    const PROFILE_MANAGEMENT_PAGE_MESSAGES = {
-        NO_USER_PROFILE: "No user profile found",
-        LOAD_FAILED: "Failed to load profiles",
-        DELETE_FAILED: "Failed to delete profile",
-        HOME_ROUTE: "/",
-        READ_ACTION: "read",
-    } as const;
+    import {
+        create_profile_management_create_state,
+        create_profile_management_edit_state,
+        create_profile_management_list_state,
+        get_profile_management_list_notice,
+        PROFILE_MANAGEMENT_LOAD_STATUS,
+        type ProfileManagementEditorState,
+        type ProfileManagementLoadState,
+    } from "./profileManagementPageStatus";
 
     export let configuration: ProfileManagementConfiguration;
 
-    type SelectedProfileState =
-        | { status: "empty" }
-        | { status: "selected"; profile: ProfileManagementEntity };
-
-    let current_view: ProfileManagementViewMode = "list",
+    let editor_state: ProfileManagementEditorState =
+            create_profile_management_list_state(),
+        load_state: ProfileManagementLoadState = {
+            status: PROFILE_MANAGEMENT_LOAD_STATUS.LOADING,
+        },
+        action_notice = "",
         profiles: ProfileManagementEntity[] = [],
-        selected_profile_state: SelectedProfileState = { status: "empty" },
-        preview_path = "",
-        is_loading = true,
-        error_message = "",
         related_entity_options: ProfileManagementOption[] = [],
         permissions: ProfileManagementPermissions =
             build_profile_management_permissions(
@@ -58,73 +55,56 @@
         related_entity_options,
         configuration.get_profile_related_entity_id,
     );
-    $: form_title =
-        current_view === "create"
-            ? configuration.create_title
-            : configuration.edit_title;
-    $: preview_path =
-        selected_profile_state.status === "selected"
-            ? configuration.get_profile_preview_path(
-                  selected_profile_state.profile,
-              )
-            : "";
+    $: list_notice = get_profile_management_list_notice(
+        load_state,
+        action_notice,
+    );
     const form_view_callbacks: EntityViewCallbacks = {
         on_save_completed: handle_form_save,
         on_cancel: handle_form_cancel,
     };
 
     function build_authorization_filter(): Record<string, string> {
-        const current_profile_state = get(auth_store).current_profile;
-        const profile_state: ProfileManagementAuthorizationProfileState =
-            current_profile_state.status === "present"
-                ? {
-                      status: "present",
-                      profile:
-                          current_profile_state.profile as unknown as UserScopeProfile,
-                  }
-                : { status: "missing" };
-
-        return build_profile_management_authorization_filter(
-            profile_state,
-            configuration.authorization_filter_fields,
+        return build_profile_management_controller_authorization_filter(
+            get(auth_store),
+            configuration,
         );
     }
 
-    async function load_profiles(): Promise<boolean> {
-        is_loading = true;
-        error_message = "";
+    async function load_profiles(): Promise<void> {
+        load_state = { status: PROFILE_MANAGEMENT_LOAD_STATUS.LOADING };
+        action_notice = "";
         const result = await load_profile_management_page_data(
             configuration,
             build_authorization_filter(),
             PROFILE_MANAGEMENT_PAGE_MESSAGES.LOAD_FAILED,
         );
         if (!result.success) {
-            error_message = result.error_message;
-            is_loading = false;
-            return false;
+            load_state = {
+                status: PROFILE_MANAGEMENT_LOAD_STATUS.FAILED,
+                message: result.error_message,
+            };
+            return;
         }
         profiles = result.profiles;
         related_entity_options = result.related_entity_options;
-        is_loading = false;
-        return true;
+        load_state = { status: PROFILE_MANAGEMENT_LOAD_STATUS.READY };
     }
 
     function handle_create_click(): void {
         if (!permissions.can_create) {
-            error_message = configuration.create_denied_message;
+            action_notice = configuration.create_denied_message;
             return;
         }
-        selected_profile_state = { status: "empty" };
-        current_view = "create";
+        editor_state = create_profile_management_create_state();
     }
 
     function handle_edit_click(entity: ProfileManagementEntity): void {
         if (!permissions.can_edit) {
-            error_message = configuration.edit_denied_message;
+            action_notice = configuration.edit_denied_message;
             return;
         }
-        selected_profile_state = { status: "selected", profile: entity };
-        current_view = "edit";
+        editor_state = create_profile_management_edit_state(entity);
     }
 
     function handle_preview_click(entity: ProfileManagementEntity): void {
@@ -138,67 +118,52 @@
         entity: ProfileManagementEntity,
     ): Promise<void> {
         if (!permissions.can_delete) {
-            error_message = configuration.delete_denied_message;
+            action_notice = configuration.delete_denied_message;
             return;
         }
         if (!confirm(configuration.delete_confirmation_message)) return;
         const result = await configuration.profile_use_cases.delete(entity.id);
         if (!result.success) {
-            error_message =
-                result.error || PROFILE_MANAGEMENT_PAGE_MESSAGES.DELETE_FAILED;
+            console.error("[ProfileManagement] Profile delete failed", {
+                event: PROFILE_MANAGEMENT_LOG_EVENTS.DELETE_FAILED,
+                entity_type: configuration.normalized_entity_type,
+                profile_id: entity.id,
+                error: result.error,
+            });
+            action_notice = PROFILE_MANAGEMENT_PAGE_MESSAGES.DELETE_FAILED;
             return;
         }
         await load_profiles();
     }
 
-    function handle_form_save(entity: BaseEntity, is_new: boolean): void {
-        current_view = "list";
-        selected_profile_state = { status: "empty" };
-        void entity;
-        void is_new;
+    function handle_form_save(): void {
+        editor_state = create_profile_management_list_state();
         void load_profiles();
     }
 
     function handle_form_cancel(): void {
-        current_view = "list";
-        selected_profile_state = { status: "empty" };
+        editor_state = create_profile_management_list_state();
     }
 
     onMount(async () => {
         if (!browser) return;
-        const ensure_result = await ensure_auth_profile();
-        if (!ensure_result.success) {
-            error_message = ensure_result.error_message;
-            is_loading = false;
-            return;
-        }
-        const auth_state = get(auth_store);
-        if (
-            auth_state.current_token.status !== "present" ||
-            auth_state.current_profile.status !== "present"
-        ) {
-            error_message = PROFILE_MANAGEMENT_PAGE_MESSAGES.NO_USER_PROFILE;
-            is_loading = false;
-            return;
-        }
-        permissions = build_profile_management_permissions(
-            auth_state.current_profile.profile.role,
-            configuration.normalized_entity_type,
+        const access_outcome = await resolve_profile_management_access(
+            configuration,
+            create_profile_management_access_dependencies(),
         );
-        if (!permissions.can_read) {
-            await get_authorization_adapter().check_entity_authorized(
-                auth_state.current_token.token.raw_token,
-                configuration.normalized_entity_type,
-                PROFILE_MANAGEMENT_PAGE_MESSAGES.READ_ACTION,
-            );
-            access_denial_store.set_denial(
-                configuration.access_denial_path,
-                configuration.access_denial_message,
-            );
-            void goto(PROFILE_MANAGEMENT_PAGE_MESSAGES.HOME_ROUTE);
-            return;
+        switch (access_outcome.status) {
+            case PROFILE_MANAGEMENT_ACCESS_STATUS.FAILED:
+                load_state = {
+                    status: PROFILE_MANAGEMENT_LOAD_STATUS.FAILED,
+                    message: access_outcome.error_message,
+                };
+                return;
+            case PROFILE_MANAGEMENT_ACCESS_STATUS.DENIED:
+                return;
+            case PROFILE_MANAGEMENT_ACCESS_STATUS.GRANTED:
+                permissions = access_outcome.permissions;
+                await load_profiles();
         }
-        await load_profiles();
     });
 </script>
 
@@ -208,15 +173,10 @@
 
 <ProfileManagementPageContent
     {configuration}
-    {current_view}
-    {form_title}
-    {preview_path}
-    selected_profile={selected_profile_state.status === "selected"
-        ? selected_profile_state.profile
-        : (void 0 as unknown as ProfileManagementEntity)}
+    {editor_state}
     {rows}
-    {is_loading}
-    {error_message}
+    is_loading={load_state.status === PROFILE_MANAGEMENT_LOAD_STATUS.LOADING}
+    {list_notice}
     {form_view_callbacks}
     on_create_requested={handle_create_click}
     on_preview_requested={handle_preview_click}

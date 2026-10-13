@@ -1,22 +1,31 @@
 import type { AuthToken } from "$lib/core/interfaces/ports";
+import { PRESENCE_STATUS } from "$lib/presentation/logic/presenceStatus";
 
+import {
+  PROFILE_MATCH_STATUS,
+  SESSION_RESTORE_STATUS,
+} from "./authStoreConstants";
 import type { AuthState, UserProfile } from "./authTypes";
 
 type MatchedUserProfileState =
-  | { status: "found"; profile: UserProfile }
-  | { status: "missing" };
+  | { status: typeof PROFILE_MATCH_STATUS.FOUND; profile: UserProfile }
+  | { status: typeof PROFILE_MATCH_STATUS.MISSING };
 
 export type RestoredAnonymousSessionState =
-  | { status: "restored"; auth_state: AuthState }
-  | { status: "not_restored" };
+  | { status: typeof SESSION_RESTORE_STATUS.RESTORED; auth_state: AuthState }
+  | { status: typeof SESSION_RESTORE_STATUS.NOT_RESTORED };
 
 export type RestoredSignedInSessionState =
-  | { status: "restored"; profile: UserProfile; token: AuthToken }
-  | { status: "not_restored" };
+  | {
+      status: typeof SESSION_RESTORE_STATUS.RESTORED;
+      profile: UserProfile;
+      token: AuthToken;
+    }
+  | { status: typeof SESSION_RESTORE_STATUS.NOT_RESTORED };
 
 export type ClerkEmailState =
-  | { status: "present"; email: string }
-  | { status: "missing" };
+  | { status: typeof PRESENCE_STATUS.PRESENT; email: string }
+  | { status: typeof PRESENCE_STATUS.MISSING };
 
 export function find_profile_by_id(
   available_profiles: UserProfile[],
@@ -27,11 +36,11 @@ export function find_profile_by_id(
   );
 
   if (!matched_profile) {
-    return { status: "missing" };
+    return { status: PROFILE_MATCH_STATUS.MISSING };
   }
 
   return {
-    status: "found",
+    status: PROFILE_MATCH_STATUS.FOUND,
     profile: matched_profile,
   };
 }
@@ -45,11 +54,11 @@ export function find_profile_by_email(
   );
 
   if (!matched_profile) {
-    return { status: "missing" };
+    return { status: PROFILE_MATCH_STATUS.MISSING };
   }
 
   return {
-    status: "found",
+    status: PROFILE_MATCH_STATUS.FOUND,
     profile: matched_profile,
   };
 }

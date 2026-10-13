@@ -11,6 +11,7 @@
         CompetitionStageResultsSection,
         TeamStanding,
     } from "$lib/presentation/logic/competitionStageResults";
+    import { PRESENCE_STATUS } from "$lib/presentation/logic/presenceStatus";
 
     import CompetitionResultsFixturesSection from "./CompetitionResultsFixturesSection.svelte";
     import CompetitionResultsHeader from "./CompetitionResultsHeader.svelte";
@@ -19,17 +20,20 @@
     import CompetitionResultsStatsSection from "./CompetitionResultsStatsSection.svelte";
     import CompetitionResultsTabs from "./CompetitionResultsTabs.svelte";
     import CompetitionResultsTeamFixturesPanel from "./CompetitionResultsTeamFixturesPanel.svelte";
+    import {
+        COMPETITION_RESULTS_TAB,
+        type CompetitionResultsTab,
+    } from "./competitionTabConstants";
 
     export let organizations: Organization[];
     export let selected_organization_id: string;
     export let competitions: Competition[];
     export let selected_competition_id: string;
-    export let competition_format_state: CompetitionResultsCompetitionFormatState = {
-        status: "missing",
-    };
+    export let competition_format_state: CompetitionResultsCompetitionFormatState =
+        { status: PRESENCE_STATUS.MISSING };
     export let can_change_organizations: boolean;
     export let share_link_copied: boolean;
-    export let active_tab: "standings" | "fixtures" | "results" | "stats";
+    export let active_tab: CompetitionResultsTab;
     export let fixtures_loading: boolean;
     export let standings: TeamStanding[];
     export let stage_results_sections: CompetitionStageResultsSection[];
@@ -94,7 +98,8 @@
         bind:selected_organization_id
         bind:selected_competition_id
         {competitions}
-        selected_competition_format_name={competition_format_state.status === "present"
+        selected_competition_format_name={competition_format_state.status ===
+        PRESENCE_STATUS.PRESENT
             ? competition_format_state.competition_format.name
             : ""}
         {can_change_organizations}
@@ -116,7 +121,7 @@
                     class="animate-spin rounded-full h-8 w-8 border-4 border-primary-500 border-t-transparent"
                 ></div>
             </div>
-        {:else if active_tab === "standings"}
+        {:else if active_tab === COMPETITION_RESULTS_TAB.STANDINGS}
             <CompetitionResultsStandingsSection
                 {standings}
                 {stage_results_sections}
@@ -147,7 +152,7 @@
                 on_close={on_close_team_fixtures_panel}
                 {on_open_match_report}
             />
-        {:else if active_tab === "fixtures"}
+        {:else if active_tab === COMPETITION_RESULTS_TAB.FIXTURES}
             <CompetitionResultsFixturesSection
                 {upcoming_fixtures}
                 {paginated_upcoming}
@@ -162,7 +167,7 @@
                 {get_team_logo_url}
                 {on_open_match_report}
             />
-        {:else if active_tab === "results"}
+        {:else if active_tab === COMPETITION_RESULTS_TAB.RESULTS}
             <CompetitionResultsResultsSection
                 {completed_fixtures}
                 {paginated_completed}

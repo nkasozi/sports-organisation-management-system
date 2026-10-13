@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { assert, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
   build_crud_handlers_for_entity_type,
@@ -108,13 +108,15 @@ describe("entityCrudWrapperLogic", () => {
     });
 
     expect(handlers).not.toBeNull();
-    if (!handlers?.list) {
-      throw new Error("Expected list handler");
-    }
+    assert(handlers?.list, "Expected list handler");
 
-    await handlers.list(
+    const list_result = await handlers.list(
       { status: "active" },
       { page_number: 2, page_size: 10 },
+    );
+    expect(list_result).toBe(
+      await get_use_cases_for_entity_type_mock().data.list.mock.results[0]
+        ?.value,
     );
     expect(get_use_cases_for_entity_type_mock().data.list).toHaveBeenCalledWith(
       { organization_id: "org_1", status: "active" },

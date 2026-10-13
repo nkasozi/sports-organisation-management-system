@@ -8,10 +8,30 @@ import type {
 } from "../../core/entities/Venue";
 import type { VenueFilter, VenueRepository } from "../../core/interfaces/ports";
 import type { QueryOptions } from "../../core/interfaces/ports";
-import type { PaginatedAsyncResult } from "../../core/types/Result";
+import type {
+  AsyncResult,
+  PaginatedAsyncResult,
+} from "../../core/types/Result";
 import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
+import {
+  apply_entity_filter_rules,
+  type EntityFilterRule,
+  equals_rule,
+  text_contains_rule,
+} from "./InBrowserRepositoryFilterRules";
+import { reset_repository_data } from "./InBrowserRepositoryReset";
+import { create_lazy_repository_accessor } from "./InBrowserRepositorySingleton";
+import type { RepositoryWriteOrigin } from "./InBrowserRepositoryWriteOrigin";
+import { create_default_venues } from "./InBrowserVenueRepositoryDefaults";
 
 const ENTITY_PREFIX = "venue";
+
+const VENUE_FILTER_RULES: EntityFilterRule<Venue, VenueFilter>[] = [
+  text_contains_rule("name_contains", (venue) => venue.name),
+  equals_rule("city"),
+  equals_rule("country"),
+  equals_rule("status"),
+];
 
 export class InBrowserVenueRepository
   extends InBrowserBaseRepository<
@@ -70,34 +90,7 @@ export class InBrowserVenueRepository
     entities: Venue[],
     filter: VenueFilter,
   ): Venue[] {
-    let filtered_entities = entities;
-
-    if (filter.name_contains) {
-      const search_term = filter.name_contains.toLowerCase();
-      filtered_entities = filtered_entities.filter((venue) =>
-        venue.name.toLowerCase().includes(search_term),
-      );
-    }
-
-    if (filter.city) {
-      filtered_entities = filtered_entities.filter(
-        (venue) => venue.city === filter.city,
-      );
-    }
-
-    if (filter.country) {
-      filtered_entities = filtered_entities.filter(
-        (venue) => venue.country === filter.country,
-      );
-    }
-
-    if (filter.status) {
-      filtered_entities = filtered_entities.filter(
-        (venue) => venue.status === filter.status,
-      );
-    }
-
-    return filtered_entities;
+    return apply_entity_filter_rules(entities, filter, VENUE_FILTER_RULES);
   }
 
   async find_active_venues(
@@ -107,97 +100,16 @@ export class InBrowserVenueRepository
   }
 }
 
-function create_default_venues(): import("$lib/core/types/DomainScalars").ScalarInput<Venue>[] {
-  const now = new Date().toISOString();
+export const get_venue_repository: () => VenueRepository =
+  create_lazy_repository_accessor(() => new InBrowserVenueRepository());
 
-  return [
-    {
-      id: "venue_default_1",
-      organization_id: "org_default_1",
-      name: "Lugogo Hockey Stadium",
-      short_name: "Lugogo",
-      address: "Plot 2-12 Lugogo Bypass",
-      city: "Kampala",
-      country: "Uganda",
-      capacity: 5000,
-      surface_type: "astroturf",
-      has_lighting: true,
-      has_parking: true,
-      contact_email: "info@lugogostadium.ug",
-      contact_phone: "+256-700-111-222",
-      website: "https://lugogostadium.ug",
-      image_url: "",
-      status: "active",
-      created_at: now,
-      updated_at: now,
-    },
-    {
-      id: "venue_default_2",
-      organization_id: "org_default_1",
-      name: "Makerere University Hockey Pitch",
-      short_name: "Makerere",
-      address: "University Road, Makerere Hill",
-      city: "Kampala",
-      country: "Uganda",
-      capacity: 2000,
-      surface_type: "grass",
-      has_lighting: false,
-      has_parking: true,
-      contact_email: "sports@mak.ac.ug",
-      contact_phone: "+256-700-333-444",
-      website: "https://mak.ac.ug/sports",
-      image_url: "",
-      status: "active",
-      created_at: now,
-      updated_at: now,
-    },
-    {
-      id: "venue_default_3",
-      organization_id: "org_default_1",
-      name: "Kyadondo Rugby Club",
-      short_name: "Kyadondo",
-      address: "Kira Road, Kamwokya",
-      city: "Kampala",
-      country: "Uganda",
-      capacity: 3000,
-      surface_type: "grass",
-      has_lighting: true,
-      has_parking: true,
-      contact_email: "info@kyadondoclub.ug",
-      contact_phone: "+256-700-555-666",
-      website: "https://kyadondoclub.ug",
-      image_url: "",
-      status: "active",
-      created_at: now,
-      updated_at: now,
-    },
-  ];
-}
-
-type VenueRepositoryState =
-  | { status: "uninitialized" }
-  | {
-      status: "ready";
-      repository: InBrowserVenueRepository;
-    };
-
-let venue_repository_state: VenueRepositoryState = {
-  status: "uninitialized",
-};
-
-export function get_venue_repository(): VenueRepository {
-  if (venue_repository_state.status === "ready") {
-    return venue_repository_state.repository;
-  }
-
-  const repository = new InBrowserVenueRepository();
-  venue_repository_state = { status: "ready", repository };
-
-  return repository;
-}
-
-export async function reset_venue_repository(): Promise<void> {
-  const repository = get_venue_repository() as InBrowserVenueRepository;
-  await repository.clear_all_data();
-  await repository.seed_with_data(create_default_venues());
+export function reset_venue_repository(
+  origin: RepositoryWriteOrigin,
+): AsyncResult<number> {
+  return reset_repository_data(
+    (get_venue_repository() as InBrowserVenueRepository).with_write_origin(
+      origin,
+    ),
+    create_default_venues(),
+  );
 }

@@ -8,6 +8,7 @@ import {
 } from "$lib/presentation/logic/managedGamePageTypes";
 
 import { create_managed_game_event_action_handlers } from "./managedGamePageControllerEventActions";
+import type { ManagedGamePageState } from "./managedGamePageControllerState";
 import {
   apply_managed_game_bundle,
   create_managed_game_page_state,
@@ -26,7 +27,11 @@ describe("managedGamePageControllerEventActions", () => {
     vi.clearAllMocks();
   });
 
-  function create_state_store() {
+  function create_state_store(): {
+    get_state: () => ManagedGamePageState;
+    read_state: () => ManagedGamePageState;
+    set_state: (next_state: ManagedGamePageState) => void;
+  } {
     let current_state = apply_managed_game_bundle(
       create_managed_game_page_state(),
       {
@@ -111,7 +116,7 @@ describe("managedGamePageControllerEventActions", () => {
     expect(state_store.read_state()).toEqual(
       expect.objectContaining({
         toast_visible: true,
-        toast_message: "Failed to record event: network",
+        toast_message: "We couldn't save that event. Please try again.",
         toast_type: "error",
       }),
     );

@@ -1,4 +1,10 @@
+import {
+  is_blank_string_value,
+  is_string_value,
+} from "$lib/presentation/logic/runtimeTypeGuards";
+
 import type { BaseEntity } from "../../core/entities/BaseEntity";
+import { DEFAULT_ENTITY_DISPLAY_NAME } from "./entityCrudWrapperConstants";
 
 const MONTH_NAMES = [
   "Jan",
@@ -19,12 +25,12 @@ function format_fixture_date_time(
   scheduled_date: unknown,
   scheduled_time: unknown,
 ): string {
-  if (typeof scheduled_date !== "string" || scheduled_date.trim() === "")
+  if (!is_string_value(scheduled_date) || scheduled_date.trim() === "")
     return "";
   const date = new Date(scheduled_date);
   if (isNaN(date.getTime())) return "";
   const formatted_date = `${date.getDate()} ${MONTH_NAMES[date.getMonth()]} ${date.getFullYear()}`;
-  if (typeof scheduled_time === "string" && scheduled_time.trim() !== "") {
+  if (is_string_value(scheduled_time) && scheduled_time.trim() !== "") {
     return `${formatted_date} - ${scheduled_time}`;
   }
   return formatted_date;
@@ -36,29 +42,29 @@ export function build_entity_display_label(entity: BaseEntity): string {
   const nickname = record["nickname"];
   const main_color = record["main_color"];
   if (
-    typeof nickname === "string" &&
+    is_string_value(nickname) &&
     nickname.trim() !== "" &&
-    typeof main_color === "string" &&
+    is_string_value(main_color) &&
     main_color.trim() !== ""
   ) {
     return `${nickname} - ${main_color}`;
   }
 
   const name = record["name"];
-  if (typeof name === "string" && name.trim() !== "") return name;
+  if (is_string_value(name) && name.trim() !== "") return name;
 
   const first_name = record["first_name"];
   const last_name = record["last_name"];
   if (
-    typeof first_name === "string" &&
-    typeof last_name === "string" &&
+    is_string_value(first_name) &&
+    is_string_value(last_name) &&
     (first_name.trim() !== "" || last_name.trim() !== "")
   ) {
     return `${first_name} ${last_name}`.trim();
   }
 
   const title = record["title"];
-  if (typeof title === "string" && title.trim() !== "") return title;
+  if (is_string_value(title) && title.trim() !== "") return title;
 
   return build_fixture_display_label(record, entity.id);
 }
@@ -69,7 +75,7 @@ function build_fixture_display_label(
 ): string {
   const home_team_id = record["home_team_id"];
   const away_team_id = record["away_team_id"];
-  if (typeof home_team_id !== "string" || typeof away_team_id !== "string")
+  if (!is_string_value(home_team_id) || !is_string_value(away_team_id))
     return entity_id;
 
   const date_time_suffix = format_fixture_date_time(
@@ -80,28 +86,19 @@ function build_fixture_display_label(
   const away_team_name = record["away_team_name"];
   const competition_name = record["competition_name"];
 
-  if (
-    typeof home_team_name === "string" &&
-    typeof away_team_name === "string"
-  ) {
-    const teams_label = `${home_team_name} vs ${away_team_name}`;
-    const parts: string[] = [];
-    if (
-      typeof competition_name === "string" &&
-      competition_name.trim() !== ""
-    ) {
-      parts.push(competition_name);
-    }
-    parts.push(teams_label);
-    if (date_time_suffix) {
-      parts.push(date_time_suffix);
-    }
-    return parts.join(" - ");
+  if (is_string_value(home_team_name) && is_string_value(away_team_name)) {
+    return [
+      is_blank_string_value(competition_name) ? "" : String(competition_name),
+      `${home_team_name} vs ${away_team_name}`,
+      date_time_suffix,
+    ]
+      .filter((part: string) => part.length > 0)
+      .join(" - ");
   }
 
   const round_name = record["round_name"];
   if (date_time_suffix) return `Fixture [${date_time_suffix}]`;
-  if (typeof round_name === "string" && round_name.trim() !== "")
+  if (is_string_value(round_name) && round_name.trim() !== "")
     return `Fixture (${round_name})`;
   return `Fixture: ${entity_id.slice(0, 8)}`;
 }
@@ -120,7 +117,8 @@ export function get_display_value_for_foreign_key(
 }
 
 export function format_entity_display_name(raw_name: string): string {
-  if (typeof raw_name !== "string" || raw_name.length === 0) return "Entity";
+  if (!is_string_value(raw_name) || raw_name.length === 0)
+    return DEFAULT_ENTITY_DISPLAY_NAME;
   const with_spaces = raw_name
     .replace(/([a-z])([A-Z])/g, "$1 $2")
     .replace(/_/g, " ");
@@ -137,28 +135,40 @@ export function format_enum_label(value: string): string {
     .join(" ");
 }
 
+const FOREIGN_ENTITY_LINKS: ReadonlyMap<
+  string,
+  { route: string; cta_label: string }
+> = new Map([
+  ["player", { route: "/players", cta_label: "Create Players" }],
+  ["team", { route: "/teams", cta_label: "Create Teams" }],
+  [
+    "organization",
+    { route: "/organizations", cta_label: "Create Organizations" },
+  ],
+  ["competition", { route: "/competitions", cta_label: "Create Competitions" }],
+  ["fixture", { route: "/fixtures", cta_label: "Create Fixtures" }],
+  [
+    "playerposition",
+    { route: "/player-positions", cta_label: "Create Player Positions" },
+  ],
+  ["venue", { route: "/venues", cta_label: "Create Venues" }],
+]);
+const DEFAULT_FOREIGN_ENTITY_CTA_LABEL = "Create";
+
+function normalize_foreign_entity_type(entity_type?: string): string {
+  return is_string_value(entity_type) ? entity_type.toLowerCase() : "";
+}
+
 export function build_foreign_entity_route(entity_type?: string): string {
-  const normalized =
-    typeof entity_type === "string" ? entity_type.toLowerCase() : "";
-  if (normalized === "player") return "/players";
-  if (normalized === "team") return "/teams";
-  if (normalized === "organization") return "/organizations";
-  if (normalized === "competition") return "/competitions";
-  if (normalized === "fixture") return "/fixtures";
-  if (normalized === "playerposition") return "/player-positions";
-  if (normalized === "venue") return "/venues";
-  return "";
+  return (
+    FOREIGN_ENTITY_LINKS.get(normalize_foreign_entity_type(entity_type))
+      ?.route ?? ""
+  );
 }
 
 export function build_foreign_entity_cta_label(entity_type?: string): string {
-  const normalized =
-    typeof entity_type === "string" ? entity_type.toLowerCase() : "";
-  if (normalized === "player") return "Create Players";
-  if (normalized === "team") return "Create Teams";
-  if (normalized === "organization") return "Create Organizations";
-  if (normalized === "competition") return "Create Competitions";
-  if (normalized === "fixture") return "Create Fixtures";
-  if (normalized === "playerposition") return "Create Player Positions";
-  if (normalized === "venue") return "Create Venues";
-  return "Create";
+  return (
+    FOREIGN_ENTITY_LINKS.get(normalize_foreign_entity_type(entity_type))
+      ?.cta_label ?? DEFAULT_FOREIGN_ENTITY_CTA_LABEL
+  );
 }

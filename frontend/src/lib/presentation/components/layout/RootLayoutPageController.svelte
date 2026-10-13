@@ -11,112 +11,102 @@
         is_clerk_loaded,
         is_signed_in,
         set_navigating,
-        sign_out,
     } from "$lib/adapters/iam/clerkAuthService";
     import {
         initialize_app_data,
         reset_initialization,
     } from "$lib/adapters/initialization/appInitializer";
-    import { reset_all_data } from "$lib/adapters/initialization/dataResetService";
-    import { reset_database } from "$lib/adapters/repositories/database";
     import { EventBus } from "$lib/infrastructure/events/EventBus";
-    import {
-        set_pulling_from_remote,
-        start_background_sync,
-        stop_background_sync,
-        trigger_full_sync_on_page_reload,
-    } from "$lib/infrastructure/sync/backgroundSyncService";
-    import {
-        pull_user_scoped_record_from_convex,
-        reset_sync_metadata,
-        write_convex_user_to_local_dexie,
-    } from "$lib/infrastructure/sync/convexSyncService";
     import RootLayoutShell from "$lib/presentation/components/layout/RootLayoutShell.svelte";
     import { ensure_route_access } from "$lib/presentation/logic/authGuard";
     import {
-        determine_session_action,
         is_in_app_navigation,
         is_route_guard_exempt,
     } from "$lib/presentation/logic/layoutLogic";
+    import {
+        create_hidden_login_local_change_prompt_state,
+        LOGIN_LOCAL_CHANGE_PROMPT_CHOICE,
+        type LoginLocalChangePromptState,
+    } from "$lib/presentation/logic/layoutLoginLocalChangePrompt";
+    import { create_login_local_change_prompt_gate } from "$lib/presentation/logic/layoutLoginLocalChangePromptGate";
     import { sync_verified_user_login_session } from "$lib/presentation/logic/layoutLoginSync";
+    import {
+        create_root_layout_restore_progress_callbacks,
+        create_root_layout_subscription_callbacks,
+    } from "$lib/presentation/logic/layoutRootLayoutCallbacks";
+    import {
+        create_root_layout_login_sync_dependencies,
+        create_root_layout_session_handlers,
+        create_root_layout_startup_storage_recovery_dependencies,
+        initialize_root_layout_stores,
+    } from "$lib/presentation/logic/layoutRootLayoutRuntime";
+    import {
+        ROOT_LAYOUT_STARTUP_OUTCOME,
+        run_root_layout_startup,
+    } from "$lib/presentation/logic/layoutRootLayoutStartup";
+    import {
+        create_initial_root_layout_view_state,
+        mark_root_layout_ready,
+        mark_root_layout_redirected,
+        type RootLayoutViewState,
+    } from "$lib/presentation/logic/layoutRootLayoutViewState";
     import { subscribe_root_layout_state } from "$lib/presentation/logic/layoutRouteSubscriptions";
-    import { create_layout_login_sync_dependencies } from "$lib/presentation/logic/layoutSessionFlowDependencies";
+    import { run_startup_storage_recovery } from "$lib/presentation/logic/layoutStartupStorageRecoveryFlow";
+    import { create_startup_storage_recovery_choice_gate } from "$lib/presentation/logic/layoutStartupStorageRecoveryGate";
     import {
-        handle_first_time_anonymous_user_session,
-        handle_returning_anonymous_user_session,
-        handle_verified_user_page_reload_session,
-    } from "$lib/presentation/logic/layoutSessionFlows";
+        create_hidden_startup_storage_recovery_prompt_state,
+        STARTUP_STORAGE_RECOVERY_CHOICE,
+        type StartupStorageRecoveryPromptState,
+    } from "$lib/presentation/logic/layoutStorageRecovery";
     import {
-        auth_store,
-        fetch_current_user_profile_from_convex,
-    } from "$lib/presentation/stores/auth";
-    import { branding_store } from "$lib/presentation/stores/branding";
-    import { current_user_store } from "$lib/presentation/stores/currentUser";
+        build_sign_in_error_path,
+        SIGN_IN_ERROR_CODE,
+    } from "$lib/presentation/logic/signInPageState";
     import { first_time_setup_store } from "$lib/presentation/stores/firstTimeSetup";
     import {
-        clear_session_sync_flag,
         has_session_been_synced,
         initial_sync_store,
     } from "$lib/presentation/stores/initialSyncStore";
-    import { public_organization_store } from "$lib/presentation/stores/publicOrganization";
-    import { sync_store } from "$lib/presentation/stores/syncStore";
-    import { initialize_theme } from "$lib/presentation/stores/theme";
 
     const VERCEL_ANALYTICS_FRAMEWORK = "sveltekit";
+    const RECOVERY_CHOICE = STARTUP_STORAGE_RECOVERY_CHOICE;
+    const LOCAL_CHANGE_CHOICE = LOGIN_LOCAL_CHANGE_PROMPT_CHOICE;
     const navigating_state_store = derived(navigating, ($navigating) =>
         Boolean($navigating),
     );
 
     inject({ framework: VERCEL_ANALYTICS_FRAMEWORK });
 
-    let show_first_time_setup = false,
-        show_initial_sync = false,
-        app_ready = false,
-        clerk_ready = false;
-    let current_path = "",
-        setup_status_message = "",
-        setup_progress_percentage = 0,
-        sync_status_message = "",
-        sync_progress_percentage = 0;
-    let cleanup_layout_subscriptions: (() => void) | undefined = undefined;
-    let previous_signed_in_state = false;
+    let view_state: RootLayoutViewState =
+        create_initial_root_layout_view_state("");
+    let storage_recovery_prompt_state: StartupStorageRecoveryPromptState =
+        create_hidden_startup_storage_recovery_prompt_state();
+    let login_local_change_prompt_state: LoginLocalChangePromptState =
+        create_hidden_login_local_change_prompt_state();
+    let cleanup_layout_subscriptions: () => void = () => {};
 
-    const delay = (milliseconds: number): Promise<void> =>
-        new Promise((resolve) => setTimeout(resolve, milliseconds));
-    const login_sync_dependencies = create_layout_login_sync_dependencies({
-        initial_sync_store,
-        get_initial_sync_state: () => get(initial_sync_store),
-        auth_store,
-        sync_store,
-        stop_background_sync,
-        start_background_sync,
-        reset_database,
-        reset_sync_metadata,
-        fetch_current_user_profile_from_convex,
-        set_pulling_from_remote,
-        write_convex_user_to_local_dexie,
-        pull_user_scoped_record_from_convex,
-        clear_session_sync_flag,
-        sign_out,
-        goto,
-        delay,
-    });
+    const storage_recovery_choice_gate =
+        create_startup_storage_recovery_choice_gate((prompt_state) => {
+            storage_recovery_prompt_state = prompt_state;
+            return true;
+        });
+    const login_local_change_prompt_gate =
+        create_login_local_change_prompt_gate((prompt_state) => {
+            login_local_change_prompt_state = prompt_state;
+            return true;
+        });
+    const login_sync_dependencies = create_root_layout_login_sync_dependencies(
+        login_local_change_prompt_gate.request_discard_confirmation,
+    );
 
-    afterNavigate(async ({ to, type }) => {
-        if (!app_ready || !to?.url?.pathname) return;
-        const pathname = to.url.pathname;
-        if (is_route_guard_exempt(pathname)) return;
-        if (!is_in_app_navigation(type)) await ensure_route_access(pathname);
-        if (!get(is_signed_in)) return;
-        EventBus.emit_page_viewed(pathname, document.title || pathname);
-    });
+    function update_view_state(
+        transform: (state: RootLayoutViewState) => RootLayoutViewState,
+    ): boolean {
+        view_state = transform(view_state);
+        return true;
+    }
 
-    onMount(async () => {
-        current_path = get(page).url.pathname;
-        await initialize_theme();
-        await branding_store.initialize();
-        await public_organization_store.initialize();
-        await current_user_store.initialize();
+    function subscribe_layout_state(): boolean {
         cleanup_layout_subscriptions = subscribe_root_layout_state({
             navigating_store: navigating_state_store,
             page_store: page,
@@ -125,89 +115,86 @@
             initial_sync_store,
             signed_in_store: is_signed_in,
             set_navigating,
-            on_path_change: (pathname: string) => {
-                current_path = pathname;
-            },
-            on_setup_change: (state) => {
-                setup_status_message = state.status_message;
-                setup_progress_percentage = state.progress_percentage;
-                show_first_time_setup =
-                    state.is_first_time && state.is_setting_up;
-                if (state.setup_complete) show_first_time_setup = false;
-            },
-            on_clerk_ready_change: (loaded: boolean) => {
-                clerk_ready = loaded;
-            },
-            on_sync_change: (state) => {
-                sync_status_message = state.status_message;
-                sync_progress_percentage = state.progress_percentage;
-                show_initial_sync = state.is_syncing;
-            },
-            on_signed_in_change: async (signed_in: boolean) => {
-                const user_just_signed_in =
-                    signed_in && !previous_signed_in_state;
-                previous_signed_in_state = signed_in;
-                if (!user_just_signed_in || !app_ready) return;
-                console.log(
-                    "[Layout] User signed in detected, triggering login sync...",
-                    { event: "user_sign_in_detected" },
-                );
-                await sync_verified_user_login_session(login_sync_dependencies);
-            },
+            ...create_root_layout_subscription_callbacks({
+                update_view_state,
+                is_app_ready: () => view_state.app_ready,
+                on_user_signed_in: () =>
+                    sync_verified_user_login_session(login_sync_dependencies),
+            }),
         });
-        const session_already_synced = await has_session_been_synced();
-        const init_result = await initialize_app_data({
-            current_path,
-            session_already_synced,
+        return true;
+    }
+
+    function run_storage_recovery(): Promise<unknown> {
+        return run_startup_storage_recovery(
+            create_root_layout_startup_storage_recovery_dependencies({
+                wait_for_choice: storage_recovery_choice_gate.wait_for_choice,
+                ...create_root_layout_restore_progress_callbacks(
+                    update_view_state,
+                ),
+            }),
+        );
+    }
+
+    afterNavigate(async ({ to, type }) => {
+        if (!view_state.app_ready || !to?.url?.pathname) return;
+        const pathname = to.url.pathname;
+        if (is_route_guard_exempt(pathname)) return;
+        if (!is_in_app_navigation(type)) await ensure_route_access(pathname);
+        if (!get(is_signed_in)) return;
+        EventBus.emit_page_viewed(pathname, document.title || pathname);
+    });
+
+    onMount(async () => {
+        view_state = { ...view_state, current_path: get(page).url.pathname };
+        const startup_outcome = await run_root_layout_startup({
+            current_path: view_state.current_path,
+            run_startup_storage_recovery: run_storage_recovery,
+            initialize_stores: initialize_root_layout_stores,
+            subscribe_layout_state,
+            has_session_been_synced,
+            initialize_app_data,
+            is_signed_in: () => get(is_signed_in),
+            session_handlers: create_root_layout_session_handlers(
+                login_sync_dependencies,
+            ),
         });
-        if (init_result === "redirect_to_login") {
-            app_ready = true;
-            clerk_ready = true;
-            await goto("/sign-in?error=server_unavailable");
+        if (
+            startup_outcome === ROOT_LAYOUT_STARTUP_OUTCOME.SERVER_UNAVAILABLE
+        ) {
+            view_state = mark_root_layout_redirected(view_state);
+            await goto(
+                build_sign_in_error_path(SIGN_IN_ERROR_CODE.SERVER_UNAVAILABLE),
+            );
             return;
         }
-        const session_action = determine_session_action(
-            get(is_signed_in),
-            session_already_synced,
-        );
-        if (session_action === "login_sync") {
-            await sync_verified_user_login_session(login_sync_dependencies);
-        } else if (session_action === "verified_page_reload") {
-            await handle_verified_user_page_reload_session({
-                auth_store,
-                start_background_sync,
-                trigger_full_sync_on_page_reload,
-            });
-        } else if (session_action === "first_time_anonymous") {
-            await handle_first_time_anonymous_user_session({
-                initial_sync_store,
-                reset_all_data,
-                auth_store,
-            });
-        } else {
-            await handle_returning_anonymous_user_session({ auth_store });
-        }
-        app_ready = true;
+        view_state = mark_root_layout_ready(view_state);
         const initial_path = get(page).url.pathname;
         if (!is_route_guard_exempt(initial_path))
             await ensure_route_access(initial_path);
     });
     onDestroy(() => {
-        cleanup_layout_subscriptions?.();
+        cleanup_layout_subscriptions();
         reset_initialization();
     });
 </script>
 
 <RootLayoutShell
-    {show_initial_sync}
-    {sync_status_message}
-    {sync_progress_percentage}
-    {app_ready}
-    {clerk_ready}
-    {show_first_time_setup}
-    {setup_status_message}
-    {setup_progress_percentage}
-    {current_path}
+    {...view_state}
+    {storage_recovery_prompt_state}
+    {login_local_change_prompt_state}
+    on_restore_storage_backup={() =>
+        storage_recovery_choice_gate.resolve_choice(RECOVERY_CHOICE.RESTORE)}
+    on_continue_without_storage_backup={() =>
+        storage_recovery_choice_gate.resolve_choice(RECOVERY_CHOICE.CONTINUE)}
+    on_discard_local_changes={() =>
+        login_local_change_prompt_gate.resolve_choice(
+            LOCAL_CHANGE_CHOICE.DISCARD_AND_CONTINUE,
+        )}
+    on_keep_local_changes={() =>
+        login_local_change_prompt_gate.resolve_choice(
+            LOCAL_CHANGE_CHOICE.KEEP_AND_SIGN_OUT,
+        )}
 >
     <slot />
 </RootLayoutShell>

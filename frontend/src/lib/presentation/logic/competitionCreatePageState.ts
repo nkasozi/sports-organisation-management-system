@@ -3,6 +3,7 @@ import { type CreateCompetitionInput } from "$lib/core/entities/Competition";
 import type { CompetitionFormat } from "$lib/core/entities/CompetitionFormat";
 import type { CreateCompetitionTeamInput } from "$lib/core/entities/CompetitionTeam";
 import { create_empty_competition_team_input } from "$lib/core/entities/CompetitionTeam";
+import { PRESENCE_STATUS } from "$lib/presentation/logic/presenceStatus";
 
 export type CompetitionCreateSelectedFormatState =
   | { status: "missing" }
@@ -27,7 +28,7 @@ export function get_next_selected_team_ids(
 export function get_competition_format_team_requirements(
   selected_format_state: CompetitionCreateSelectedFormatState,
 ): string {
-  if (selected_format_state.status === "missing") return "";
+  if (selected_format_state.status === PRESENCE_STATUS.MISSING) return "";
 
   return `Requires ${selected_format_state.competition_format.min_teams_required} to ${selected_format_state.competition_format.max_teams_allowed} teams`;
 }
@@ -36,7 +37,7 @@ export function is_competition_team_count_valid(
   selected_format_state: CompetitionCreateSelectedFormatState,
   selected_team_count: number,
 ): boolean {
-  if (selected_format_state.status === "missing") return true;
+  if (selected_format_state.status === PRESENCE_STATUS.MISSING) return true;
 
   return (
     selected_team_count >=

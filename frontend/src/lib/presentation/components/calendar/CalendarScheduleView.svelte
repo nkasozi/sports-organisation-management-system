@@ -17,6 +17,14 @@
     import type { CalendarEvent } from "$lib/core/interfaces/ports/internal/usecases/ActivityUseCasesPort";
     import { build_calendar_colors } from "$lib/presentation/logic/calendarPageState";
     import { theme_store } from "$lib/presentation/stores/theme";
+    import { THEME_MODE } from "$lib/presentation/stores/themeConstants";
+
+    import {
+        build_calendar_category_signature,
+        build_calendar_event_signature,
+        convert_to_schedule_x_events,
+        format_schedule_clock_time,
+    } from "./calendarScheduleViewLogic";
 
     export let calendar_events: CalendarEvent[];
     export let categories: ActivityCategory[];
@@ -29,59 +37,14 @@
     ) => void;
 
     let calendar_container_element: HTMLDivElement | undefined = undefined;
-    let calendar_instance: ReturnType<typeof createCalendar> | undefined = undefined;
+    let calendar_instance: ReturnType<typeof createCalendar> | undefined =
+        undefined;
     let previous_event_signature: string = "";
     let previous_category_signature: string = "";
     let is_dark_mode: boolean = false;
 
     function get_current_dark_mode(): boolean {
         return document.documentElement.classList.contains("dark");
-    }
-
-    function convert_iso_to_zoned_datetime(
-        iso_string: string,
-    ): Temporal.ZonedDateTime {
-        const date = new Date(iso_string);
-        const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, "0");
-        const day = String(date.getDate()).padStart(2, "0");
-        const hours = String(date.getHours()).padStart(2, "0");
-        const minutes = String(date.getMinutes()).padStart(2, "0");
-        const seconds = String(date.getSeconds()).padStart(2, "0");
-        const offset_minutes = -date.getTimezoneOffset();
-        const offset_hours = Math.floor(Math.abs(offset_minutes) / 60);
-        const offset_mins = Math.abs(offset_minutes) % 60;
-        const offset_sign = offset_minutes >= 0 ? "+" : "-";
-        return Temporal.ZonedDateTime.from(
-            `${year}-${month}-${day}T${hours}:${minutes}:${seconds}${offset_sign}${String(offset_hours).padStart(2, "0")}:${String(offset_mins).padStart(2, "0")}[${timezone}]`,
-        );
-    }
-
-    function convert_iso_to_plain_date(iso_string: string): Temporal.PlainDate {
-        return Temporal.PlainDate.from(iso_string.split("T")[0]);
-    }
-
-    function convert_to_schedule_x_events(events: CalendarEvent[]): Array<{
-        id: string;
-        title: string;
-        start: Temporal.ZonedDateTime | Temporal.PlainDate;
-        end: Temporal.ZonedDateTime | Temporal.PlainDate;
-        description?: string;
-        calendarId?: string;
-    }> {
-        return events.map((event) => ({
-            id: event.id,
-            title: event.title,
-            start: event.all_day
-                ? convert_iso_to_plain_date(event.start)
-                : convert_iso_to_zoned_datetime(event.start),
-            end: event.all_day
-                ? convert_iso_to_plain_date(event.end)
-                : convert_iso_to_zoned_datetime(event.end),
-            description: `${event.category_name} - ${event.activity.description || ""}`,
-            calendarId: event.category_type,
-        }));
     }
 
     function initialize_calendar(): void {
@@ -111,14 +74,16 @@
 
                     on_date_time_click(
                         date_time.toPlainDate().toString(),
-                        `${String(date_time.hour).padStart(2, "0")}:${String(date_time.minute).padStart(2, "0")}`,
+                        format_schedule_clock_time(date_time),
                     );
                 },
             },
         });
         calendar_instance.render(calendar_container_element);
-        previous_event_signature = get_event_signature();
-        previous_category_signature = get_category_signature();
+        previous_event_signature =
+            build_calendar_event_signature(calendar_events);
+        previous_category_signature =
+            build_calendar_category_signature(categories);
     }
 
     function destroy_calendar(): void {
@@ -126,26 +91,8 @@
         calendar_instance = void 0;
     }
 
-    function get_event_signature(): string {
-        return calendar_events
-            .map(
-                (event) =>
-                    `${event.id}:${event.start}:${event.end}:${event.category_type}`,
-            )
-            .join("|");
-    }
-
-    function get_category_signature(): string {
-        return categories
-            .map(
-                (category) =>
-                    `${category.id}:${category.color}:${category.category_type}`,
-            )
-            .join("|");
-    }
-
-    theme_store.subscribe((theme_config) => {
-        const next_dark_mode = theme_config.mode === "dark";
+    const unsubscribe_theme = theme_store.subscribe((theme_config) => {
+        const next_dark_mode = theme_config.mode === THEME_MODE.DARK;
         if (calendar_instance && is_dark_mode !== next_dark_mode) {
             is_dark_mode = next_dark_mode;
             destroy_calendar();
@@ -159,22 +106,28 @@
         initialize_calendar();
     $: if (
         calendar_instance &&
-        get_category_signature() !== previous_category_signature
+        build_calendar_category_signature(categories) !==
+            previous_category_signature
     ) {
         destroy_calendar();
         initialize_calendar();
     }
     $: if (
         calendar_instance &&
-        get_event_signature() !== previous_event_signature
+        build_calendar_event_signature(calendar_events) !==
+            previous_event_signature
     ) {
-        previous_event_signature = get_event_signature();
+        previous_event_signature =
+            build_calendar_event_signature(calendar_events);
         calendar_instance.events.set(
             convert_to_schedule_x_events(calendar_events),
         );
     }
 
-    onDestroy(destroy_calendar);
+    onDestroy(() => {
+        unsubscribe_theme();
+        destroy_calendar();
+    });
 </script>
 
 <div

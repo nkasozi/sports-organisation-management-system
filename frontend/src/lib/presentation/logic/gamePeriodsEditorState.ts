@@ -1,9 +1,12 @@
 import type { SportGamePeriod } from "$lib/core/entities/Sport";
 import type { ScalarInput } from "$lib/core/types/DomainScalars";
 
-type EditableSportGamePeriod = ScalarInput<SportGamePeriod>;
+export {
+  build_game_period_preset,
+  type PeriodPreset,
+} from "./gamePeriodsEditorPresets";
 
-export type PeriodPreset = "halves" | "quarters" | "thirds";
+type EditableSportGamePeriod = ScalarInput<SportGamePeriod>;
 
 export function build_game_period_editor_summary(
   periods: EditableSportGamePeriod[],
@@ -113,37 +116,6 @@ export function set_game_period_duration(
   );
 }
 
-export function build_game_period_preset(
-  preset: PeriodPreset,
-): EditableSportGamePeriod[] {
-  switch (preset) {
-    case "halves":
-      return [
-        create_preset_period("first_half", "First Half", 45, false, 1),
-        create_preset_period("half_time", "Half Time", 15, true, 2),
-        create_preset_period("second_half", "Second Half", 45, false, 3),
-      ];
-    case "quarters":
-      return [
-        create_preset_period("first_quarter", "1st Quarter", 12, false, 1),
-        create_preset_period("break_1", "Break", 2, true, 2),
-        create_preset_period("second_quarter", "2nd Quarter", 12, false, 3),
-        create_preset_period("half_time", "Half Time", 15, true, 4),
-        create_preset_period("third_quarter", "3rd Quarter", 12, false, 5),
-        create_preset_period("break_2", "Break", 2, true, 6),
-        create_preset_period("fourth_quarter", "4th Quarter", 12, false, 7),
-      ];
-    case "thirds":
-      return [
-        create_preset_period("first_period", "1st Period", 20, false, 1),
-        create_preset_period("break_1", "Intermission", 15, true, 2),
-        create_preset_period("second_period", "2nd Period", 20, false, 3),
-        create_preset_period("break_2", "Intermission", 15, true, 4),
-        create_preset_period("third_period", "3rd Period", 20, false, 5),
-      ];
-  }
-}
-
 function sort_game_periods(
   periods: EditableSportGamePeriod[],
 ): EditableSportGamePeriod[] {
@@ -191,14 +163,4 @@ function build_custom_period_id(
       : current_maximum;
   }, 0);
   return `${prefix}_${next_sequence + 1}`;
-}
-
-function create_preset_period(
-  id: string,
-  name: string,
-  duration_minutes: number,
-  is_break: boolean,
-  order: number,
-): EditableSportGamePeriod {
-  return { id, name, duration_minutes, is_break, order };
 }

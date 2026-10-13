@@ -7,7 +7,7 @@ describe("entityCrudWrapperRuntime", () => {
     overrides?: Partial<
       Parameters<typeof create_entity_crud_wrapper_runtime>[0]
     >,
-  ) {
+  ): Parameters<typeof create_entity_crud_wrapper_runtime>[0] {
     return {
       after_save_redirect_url: "",
       dispatch: vi.fn(),

@@ -1,4 +1,10 @@
 import type { GameEvent, GamePeriod } from "$lib/core/entities/Fixture";
+import {
+  GAME_PERIOD,
+  type GamePeriodValue,
+} from "$lib/core/entities/StatusConstants";
+
+import { GAME_EVENT_BACKGROUND_CLASS_BY_TYPE } from "./gameEventDisplayConstants";
 
 const PERIOD_DURATION_MINUTES = 45;
 export const PERIOD_DURATION_SECONDS = PERIOD_DURATION_MINUTES * 60;
@@ -14,32 +20,62 @@ interface GameClockState {
   clock_display: string;
 }
 
+const EXTRA_TIME_PERIOD_DURATION_SECONDS = 15 * 60;
+
+const PERIOD_START_SECONDS_BY_PERIOD: Readonly<
+  Record<GamePeriodValue, number>
+> = {
+  [GAME_PERIOD.PRE_GAME]: 0,
+  [GAME_PERIOD.FIRST_HALF]: 0,
+  [GAME_PERIOD.HALF_TIME]: 0,
+  [GAME_PERIOD.SECOND_HALF]: PERIOD_DURATION_SECONDS,
+  [GAME_PERIOD.EXTRA_TIME_FIRST]: PERIOD_DURATION_SECONDS * 2,
+  [GAME_PERIOD.EXTRA_TIME_SECOND]:
+    PERIOD_DURATION_SECONDS * 2 + EXTRA_TIME_PERIOD_DURATION_SECONDS,
+  [GAME_PERIOD.PENALTY_SHOOTOUT]: 0,
+  [GAME_PERIOD.FINISHED]: 0,
+};
+
+const PERIOD_DURATION_SECONDS_BY_PERIOD: Readonly<
+  Record<GamePeriodValue, number>
+> = {
+  [GAME_PERIOD.PRE_GAME]: PERIOD_DURATION_SECONDS,
+  [GAME_PERIOD.FIRST_HALF]: PERIOD_DURATION_SECONDS,
+  [GAME_PERIOD.HALF_TIME]: PERIOD_DURATION_SECONDS,
+  [GAME_PERIOD.SECOND_HALF]: PERIOD_DURATION_SECONDS,
+  [GAME_PERIOD.EXTRA_TIME_FIRST]: EXTRA_TIME_PERIOD_DURATION_SECONDS,
+  [GAME_PERIOD.EXTRA_TIME_SECOND]: EXTRA_TIME_PERIOD_DURATION_SECONDS,
+  [GAME_PERIOD.PENALTY_SHOOTOUT]: PERIOD_DURATION_SECONDS,
+  [GAME_PERIOD.FINISHED]: PERIOD_DURATION_SECONDS,
+};
+
+const NEXT_PERIOD_BY_PERIOD: Readonly<Record<GamePeriodValue, GamePeriod>> = {
+  [GAME_PERIOD.PRE_GAME]: GAME_PERIOD.FIRST_HALF,
+  [GAME_PERIOD.FIRST_HALF]: GAME_PERIOD.HALF_TIME,
+  [GAME_PERIOD.HALF_TIME]: GAME_PERIOD.SECOND_HALF,
+  [GAME_PERIOD.SECOND_HALF]: GAME_PERIOD.FINISHED,
+  [GAME_PERIOD.EXTRA_TIME_FIRST]: GAME_PERIOD.EXTRA_TIME_SECOND,
+  [GAME_PERIOD.EXTRA_TIME_SECOND]: GAME_PERIOD.FINISHED,
+  [GAME_PERIOD.PENALTY_SHOOTOUT]: GAME_PERIOD.FINISHED,
+  [GAME_PERIOD.FINISHED]: GAME_PERIOD.FINISHED,
+};
+
+function is_standard_game_period(
+  period: GamePeriod,
+): period is GamePeriodValue {
+  return Object.values<string>(GAME_PERIOD).includes(period);
+}
+
 export function get_period_start_seconds(period: GamePeriod): number {
-  switch (period) {
-    case "first_half":
-      return 0;
-    case "second_half":
-      return PERIOD_DURATION_SECONDS;
-    case "extra_time_first":
-      return PERIOD_DURATION_SECONDS * 2;
-    case "extra_time_second":
-      return PERIOD_DURATION_SECONDS * 2 + 15 * 60;
-    default:
-      return 0;
-  }
+  return is_standard_game_period(period)
+    ? PERIOD_START_SECONDS_BY_PERIOD[period]
+    : 0;
 }
 
 function get_current_period_duration_seconds(period: GamePeriod): number {
-  switch (period) {
-    case "first_half":
-    case "second_half":
-      return PERIOD_DURATION_SECONDS;
-    case "extra_time_first":
-    case "extra_time_second":
-      return 15 * 60;
-    default:
-      return PERIOD_DURATION_SECONDS;
-  }
+  return is_standard_game_period(period)
+    ? PERIOD_DURATION_SECONDS_BY_PERIOD[period]
+    : PERIOD_DURATION_SECONDS;
 }
 
 export function build_game_clock_state(
@@ -83,38 +119,11 @@ export function sort_game_events(game_events: GameEvent[]): GameEvent[] {
 }
 
 export function get_next_period(current_period: GamePeriod): GamePeriod {
-  const next_period_map: Record<string, GamePeriod> = {
-    pre_game: "first_half",
-    first_half: "half_time",
-    half_time: "second_half",
-    second_half: "finished",
-    extra_time_first: "extra_time_second",
-    extra_time_second: "finished",
-    penalty_shootout: "finished",
-    finished: "finished",
-  };
-
-  return next_period_map[current_period] ?? "finished";
+  return is_standard_game_period(current_period)
+    ? NEXT_PERIOD_BY_PERIOD[current_period]
+    : GAME_PERIOD.FINISHED;
 }
 
 export function get_event_bg_class(event: GameEvent): string {
-  switch (event.event_type) {
-    case "goal":
-    case "penalty_scored":
-      return "border-l-green-500 bg-green-50 dark:bg-green-900/20";
-    case "own_goal":
-      return "border-l-blue-500 bg-blue-50 dark:bg-blue-900/20";
-    case "yellow_card":
-      return "border-l-yellow-400 bg-yellow-50 dark:bg-yellow-900/20";
-    case "red_card":
-    case "second_yellow":
-      return "border-l-red-500 bg-red-50 dark:bg-red-900/20";
-    case "substitution":
-      return "border-l-blue-500 bg-blue-50 dark:bg-blue-900/20";
-    case "period_start":
-    case "period_end":
-      return "border-l-purple-500 bg-purple-50 dark:bg-purple-900/20";
-    default:
-      return "border-l-gray-300 bg-gray-50 dark:bg-accent-800";
-  }
+  return GAME_EVENT_BACKGROUND_CLASS_BY_TYPE[event.event_type];
 }

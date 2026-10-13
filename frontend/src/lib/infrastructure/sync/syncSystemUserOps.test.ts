@@ -1,6 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { pull_user_scoped_record_from_convex } from "./syncSystemUserOps";
+import {
+  sync_change_tracking_gate,
+  UntrackedWriteReason,
+} from "$lib/adapters/repositories/syncOutbox/syncChangeTrackingGate";
+import { create_some_option } from "$lib/core/types/Option";
+
+import { create_fake_sync_database } from "./syncFakeDatabase.test_support";
+import {
+  pull_user_scoped_record_from_convex,
+  write_convex_user_to_local_dexie,
+} from "./syncSystemUserOps";
 import type { ConvexClient } from "./syncTypes";
 
 const mock_sync_data_access = vi.hoisted(() => ({
@@ -20,9 +30,12 @@ describe("syncSystemUserOps", () => {
     mutation: vi.fn(),
   } as unknown as ConvexClient;
 
+  let fake = create_fake_sync_database();
+
   beforeEach(() => {
     vi.clearAllMocks();
-    mock_sync_data_access.get_database.mockReturnValue({});
+    fake = create_fake_sync_database();
+    mock_sync_data_access.get_database.mockReturnValue(fake.database);
     mock_sync_data_access.get_table_from_database.mockReturnValue({
       put: mock_table_put,
     });
@@ -84,7 +97,7 @@ describe("syncSystemUserOps", () => {
     expect(mock_table_put).not.toHaveBeenCalled();
   });
 
-  it("writes the record when the scoped lookup succeeds", async () => {
+  it("applies the found record as a remote change that is never re-queued for push", async () => {
     mock_convex_client.query = vi.fn().mockResolvedValue({
       status: "found",
       record: {
@@ -108,10 +121,36 @@ describe("syncSystemUserOps", () => {
     );
 
     expect(result).toEqual({ success: true, data: true });
-    expect(mock_table_put).toHaveBeenCalledWith({
-      id: "team-1",
-      name: "Team A",
-      created_at: "2024-01-01T00:00:00.000Z",
+    expect(fake.rows("teams")).toEqual([
+      { id: "team-1", name: "Team A", created_at: "2024-01-01T00:00:00.000Z" },
+    ]);
+    expect(fake.rows("sync_record_versions")).toEqual([
+      { table_name: "teams", local_id: "team-1", server_version: 4 },
+    ]);
+    expect(
+      sync_change_tracking_gate.describe_untracked_reason(
+        fake.transaction_markers[0],
+      ),
+    ).toEqual(create_some_option(UntrackedWriteReason.REMOTE_APPLY));
+  });
+
+  it("writes the signed-in Convex user locally as a remote change", async () => {
+    const user_id = await write_convex_user_to_local_dexie({
+      local_id: "usr_1",
+      email: "Admin@Example.com",
+      role: "org_admin",
+      organization_id: "org_1",
     });
+    expect(user_id).toBe("usr_1");
+    expect(fake.rows("system_users")[0]).toMatchObject({
+      id: "usr_1",
+      email: "admin@example.com",
+      organization_id: "org_1",
+    });
+    expect(
+      sync_change_tracking_gate.describe_untracked_reason(
+        fake.transaction_markers[0],
+      ),
+    ).toEqual(create_some_option(UntrackedWriteReason.REMOTE_APPLY));
   });
 });

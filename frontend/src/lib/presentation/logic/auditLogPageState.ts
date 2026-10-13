@@ -3,24 +3,33 @@ import {
   get_scope_value,
   type UserScopeProfile,
 } from "$lib/core/interfaces/ports";
+import { PRESENCE_STATUS } from "$lib/presentation/logic/presenceStatus";
 
 const CREATE_ACTION = "create";
 const UPDATE_ACTION = "update";
 const DELETE_ACTION = "delete";
+
+const AUDIT_LOG_ORGANIZATION_FILTER_STATUS = {
+  UNFILTERED: "unfiltered",
+  FILTERED: "filtered",
+} as const;
 
 type AuditLogProfileState =
   | { status: "missing" }
   | { status: "present"; profile: UserScopeProfile };
 
 export type AuditLogOrganizationFilterState =
-  | { status: "unfiltered" }
-  | { status: "filtered"; organization_id: string };
+  | { status: typeof AUDIT_LOG_ORGANIZATION_FILTER_STATUS.UNFILTERED }
+  | {
+      status: typeof AUDIT_LOG_ORGANIZATION_FILTER_STATUS.FILTERED;
+      organization_id: string;
+    };
 
 export function get_audit_log_organization_filter(
   profile_state: AuditLogProfileState,
 ): AuditLogOrganizationFilterState {
-  if (profile_state.status === "missing") {
-    return { status: "unfiltered" };
+  if (profile_state.status === PRESENCE_STATUS.MISSING) {
+    return { status: AUDIT_LOG_ORGANIZATION_FILTER_STATUS.UNFILTERED };
   }
 
   const organization_id = get_scope_value(
@@ -29,8 +38,8 @@ export function get_audit_log_organization_filter(
   );
 
   return organization_id
-    ? { status: "filtered", organization_id }
-    : { status: "unfiltered" };
+    ? { status: AUDIT_LOG_ORGANIZATION_FILTER_STATUS.FILTERED, organization_id }
+    : { status: AUDIT_LOG_ORGANIZATION_FILTER_STATUS.UNFILTERED };
 }
 
 export function build_audit_log_filter(command: {
@@ -44,7 +53,10 @@ export function build_audit_log_filter(command: {
     filter.entity_type = command.filter_entity_type;
   if (command.filter_action) filter.action = command.filter_action;
   if (command.filter_user) filter.user_id = command.filter_user;
-  if (command.organization_filter_state.status === "filtered") {
+  if (
+    command.organization_filter_state.status ===
+    AUDIT_LOG_ORGANIZATION_FILTER_STATUS.FILTERED
+  ) {
     filter.organization_id = command.organization_filter_state.organization_id;
   }
   return filter;

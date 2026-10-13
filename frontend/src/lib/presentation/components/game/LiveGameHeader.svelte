@@ -1,16 +1,23 @@
 <script lang="ts">
     import type { Fixture } from "$lib/core/entities/Fixture";
+    import { FIXTURE_STATUS } from "$lib/core/entities/StatusConstants";
     import type { Team } from "$lib/core/entities/Team";
-    import { get_team_logo } from "$lib/core/entities/Team";
+    import { type Option, OptionStatus } from "$lib/core/types/Option";
     import TeamLogoThumbnail from "$lib/presentation/components/ui/TeamLogoThumbnail.svelte";
     import type { PeriodButtonConfig } from "$lib/presentation/logic/liveGameDetailState";
+
+    import {
+        get_team_option_logo,
+        get_team_option_name,
+    } from "./liveGameDetailContentState";
+    import { LIVE_GAME_DETAIL_TEXT } from "./liveGameDetailMessages";
 
     export let organization_name: string;
     export let competition_name: string;
     export let fixture_status: Fixture["status"];
     export let scheduled_time: string;
-    export let home_team: Team | undefined;
-    export let away_team: Team | undefined;
+    export let home_team: Option<Team>;
+    export let away_team: Option<Team>;
     export let home_score: number;
     export let away_score: number;
     export let current_period_label: string;
@@ -21,7 +28,7 @@
     export let is_game_completed: boolean;
     export let show_extra_time_button: boolean;
     export let downloading_report: boolean;
-    export let period_button_config: PeriodButtonConfig | undefined;
+    export let period_button_config: Option<PeriodButtonConfig>;
     export let on_back: () => void;
     export let on_start: () => void;
     export let on_toggle_clock: () => void;
@@ -69,15 +76,21 @@
                 <div class="text-center">
                     <div class="flex justify-center mb-1">
                         <TeamLogoThumbnail
-                            logo_url={home_team ? get_team_logo(home_team) : ""}
-                            team_name={home_team?.name ?? "HOME"}
+                            logo_url={get_team_option_logo(home_team)}
+                            team_name={get_team_option_name(
+                                home_team,
+                                LIVE_GAME_DETAIL_TEXT.HEADER_HOME_FALLBACK,
+                            )}
                             size="md"
                         />
                     </div>
                     <div
                         class="text-xs text-gray-400 mb-1 truncate max-w-20 sm:max-w-none"
                     >
-                        {home_team?.name ?? "HOME"}
+                        {get_team_option_name(
+                            home_team,
+                            LIVE_GAME_DETAIL_TEXT.HEADER_HOME_FALLBACK,
+                        )}
                     </div>
                     <div class="text-3xl sm:text-4xl font-bold tabular-nums">
                         {home_score}
@@ -85,10 +98,10 @@
                 </div>
                 <div class="text-center min-w-24 sm:min-w-32">
                     <div class="text-xs text-gray-400 mb-1">
-                        {#if fixture_status === "in_progress"}{current_period_label}{:else if fixture_status === "completed"}Full
+                        {#if fixture_status === FIXTURE_STATUS.IN_PROGRESS}{current_period_label}{:else if fixture_status === FIXTURE_STATUS.COMPLETED}Full
                             Time{:else}{scheduled_time}{/if}
                     </div>
-                    {#if fixture_status === "in_progress"}<div
+                    {#if fixture_status === FIXTURE_STATUS.IN_PROGRESS}<div
                             class="text-xl sm:text-2xl font-mono font-bold text-primary-400"
                         >
                             {clock_display}
@@ -104,15 +117,21 @@
                 <div class="text-center">
                     <div class="flex justify-center mb-1">
                         <TeamLogoThumbnail
-                            logo_url={away_team ? get_team_logo(away_team) : ""}
-                            team_name={away_team?.name ?? "AWAY"}
+                            logo_url={get_team_option_logo(away_team)}
+                            team_name={get_team_option_name(
+                                away_team,
+                                LIVE_GAME_DETAIL_TEXT.HEADER_AWAY_FALLBACK,
+                            )}
                             size="md"
                         />
                     </div>
                     <div
                         class="text-xs text-gray-400 mb-1 truncate max-w-20 sm:max-w-none"
                     >
-                        {away_team?.name ?? "AWAY"}
+                        {get_team_option_name(
+                            away_team,
+                            LIVE_GAME_DETAIL_TEXT.HEADER_AWAY_FALLBACK,
+                        )}
                     </div>
                     <div class="text-3xl sm:text-4xl font-bold tabular-nums">
                         {away_score}
@@ -120,7 +139,7 @@
                 </div>
             </div>
             <div class="flex gap-2 mt-3 flex-wrap justify-center">
-                {#if can_modify_game}{#if fixture_status === "scheduled"}<button
+                {#if can_modify_game}{#if fixture_status === FIXTURE_STATUS.SCHEDULED}<button
                             class="px-4 py-2 bg-green-600 hover:bg-green-700 rounded-[0.175rem] text-sm font-medium"
                             on:click={on_start}>▶️ Start</button
                         >{:else if is_game_active}<button
@@ -129,11 +148,11 @@
                             >{is_clock_running
                                 ? "⏸️ Pause Time"
                                 : "▶️ Resume"}</button
-                        >{#if period_button_config}<button
+                        >{#if period_button_config.status === OptionStatus.SOME}<button
                                 class="px-3 py-2 bg-purple-600 hover:bg-purple-700 rounded-[0.175rem] text-sm font-medium"
                                 on:click={on_period_action}
-                                >{period_button_config.icon}
-                                {period_button_config.label}</button
+                                >{period_button_config.value.icon}
+                                {period_button_config.value.label}</button
                             >{/if}{#if show_extra_time_button}<button
                                 class="px-3 py-2 rounded-[0.175rem] text-sm font-medium bg-green-600 hover:bg-green-700 text-white"
                                 on:click={on_extra_time}>⏱️ Add Time</button

@@ -54,13 +54,13 @@ describe("ActivitySyncUseCases", () => {
       data: { id: "activity-1" },
     });
 
-    const use_cases = create_activity_sync(
-      activity_repository as never,
-      activity_category_repository as never,
-      competition_repository as never,
-      fixture_repository as never,
-      team_repository as never,
-    );
+    const use_cases = create_activity_sync({
+      activity_repository: activity_repository as never,
+      activity_category_repository: activity_category_repository as never,
+      competition_repository: competition_repository as never,
+      fixture_repository: fixture_repository as never,
+      team_repository: team_repository as never,
+    });
 
     const result = await use_cases.sync_competitions_to_activities(
       "organization-1" as never,

@@ -1,12 +1,8 @@
+import { SQUAD_GENERATION_STRATEGY } from "../entities/CompetitionTypes";
 import type { Fixture } from "../entities/Fixture";
-import type { CreateFixtureLineupInput } from "../entities/FixtureLineup";
-import type { Player } from "../entities/Player";
-import type { PlayerPosition } from "../entities/PlayerPosition";
-import type { PlayerTeamMembership } from "../entities/PlayerTeamMembership";
-import { LINEUP_STATUS, MEMBERSHIP_STATUS } from "../entities/StatusConstants";
 import type { Team } from "../entities/Team";
 import type { ScalarValueInput } from "../types/DomainScalars";
-import type { Result } from "../types/Result";
+import { UseCaseErrorCode } from "../types/UseCaseFailure";
 import type { CompetitionUseCases } from "../usecases/CompetitionUseCases";
 import type { FixtureLineupUseCases } from "../usecases/FixtureLineupUseCases";
 import type { FixtureUseCases } from "../usecases/FixtureUseCases";
@@ -16,22 +12,42 @@ import type { PlayerTeamMembershipUseCases } from "../usecases/PlayerTeamMembers
 import type { PlayerUseCases } from "../usecases/PlayerUseCases";
 import type { SportUseCases } from "../usecases/SportUseCases";
 import {
-  build_lineup_players_from_memberships,
-  find_previous_lineup_for_team,
-} from "./fixtureLineupLookup";
+  create_lineup_generation_failure,
+  type LineupGenerationContext,
+  type LineupGenerationResult,
+} from "./fixtureLineupCandidates";
+import {
+  FIXTURE_LINEUP_GENERATION_EVENT,
+  FIXTURE_LINEUP_GENERATION_LOG_SCOPE,
+  FIXTURE_LINEUP_GENERATION_MESSAGES,
+} from "./FixtureLineupGenerationConstants";
+import {
+  generate_first_available_lineup,
+  generate_previous_match_lineup,
+} from "./fixtureLineupStrategies";
 import { get_player_rules_from_competition } from "./fixturePlayerRules";
+import { log_service_failure } from "./serviceFailure";
 
-interface LineupGenerationResult {
-  success: boolean;
-  lineup?: CreateFixtureLineupInput;
-  error_message?: string;
-  fix_suggestion?: string;
-  generation_message?: string;
+interface RuleSources {
+  fixture_use_cases: FixtureUseCases;
+  competition_use_cases: CompetitionUseCases;
+  organization_use_cases: OrganizationUseCases;
+  sport_use_cases: SportUseCases;
 }
 
-type PreviousMatchStrategyResult =
-  | { status: "unavailable" }
-  | { status: "available"; result: LineupGenerationResult };
+function fail_missing_fixture_id(
+  team_id: ScalarValueInput<Fixture["home_team_id"]>,
+): LineupGenerationResult {
+  return create_lineup_generation_failure(
+    log_service_failure({
+      code: UseCaseErrorCode.MISSING_IDENTIFIER,
+      event: FIXTURE_LINEUP_GENERATION_EVENT.MISSING_FIXTURE_ID,
+      log_scope: FIXTURE_LINEUP_GENERATION_LOG_SCOPE,
+      context: { team_id },
+      user_message: FIXTURE_LINEUP_GENERATION_MESSAGES.MISSING_FIXTURE_ID,
+    }),
+  );
+}
 
 export async function auto_generate_lineups_if_possible(
   fixture: Fixture,
@@ -46,192 +62,59 @@ export async function auto_generate_lineups_if_possible(
   organization_use_cases: OrganizationUseCases,
   sport_use_cases: SportUseCases,
 ): Promise<LineupGenerationResult> {
-  console.log(
-    "[fixtureStartChecks] auto_generate called for team:",
+  if (!fixture.id) return fail_missing_fixture_id(team_id);
+  console.debug(FIXTURE_LINEUP_GENERATION_LOG_SCOPE, {
+    event: FIXTURE_LINEUP_GENERATION_EVENT.STARTED,
+    fixture_id: fixture.id,
     team_id,
-    "fixture:",
-    fixture.id,
-  );
-  if (!fixture.id)
-    return { success: false, error_message: "Fixture must have an ID" };
-  const rules_result = await get_player_rules_from_competition(
-    fixture.competition_id,
-    competition_use_cases,
-    organization_use_cases,
-    sport_use_cases,
-  );
-  if (!rules_result.success)
-    return { success: false, error_message: rules_result.error_message };
-  const { min_players, max_players, squad_generation_strategy } = rules_result;
-  console.log(
-    "[fixtureStartChecks] Rules - min:",
-    min_players,
-    "max:",
-    max_players,
-    "strategy:",
-    squad_generation_strategy,
-  );
-  if (squad_generation_strategy === "previous_match") {
-    const previous_result = await try_previous_match_strategy(
+  });
+  return generate_lineup_with_rules(
+    {
       fixture,
       team_id,
       team_name,
-      fixture_use_cases,
+      membership_use_cases,
+      player_use_cases,
+      player_position_use_cases,
       lineup_use_cases,
-    );
-    if (previous_result.status === "available") return previous_result.result;
-    console.log(
-      "[fixtureStartChecks] No previous lineup — falling back to first_available",
-    );
-  }
-  return generate_first_available_lineup(
-    fixture,
-    team_id,
-    team_name,
-    min_players,
-    max_players,
-    membership_use_cases,
-    player_use_cases,
-    player_position_use_cases,
-    lineup_use_cases,
-  );
-}
-
-async function try_previous_match_strategy(
-  fixture: Fixture,
-  team_id: ScalarValueInput<Fixture["home_team_id"]>,
-  team_name: ScalarValueInput<Team["name"]>,
-  fixture_use_cases: FixtureUseCases,
-  lineup_use_cases: FixtureLineupUseCases,
-): Promise<PreviousMatchStrategyResult> {
-  const previous_lineup_result = await find_previous_lineup_for_team(
-    fixture,
-    team_id,
-    fixture_use_cases,
-    lineup_use_cases,
-  );
-  if (!previous_lineup_result.success || !previous_lineup_result.lineup)
-    return { status: "unavailable" };
-  const previous_players = previous_lineup_result.lineup.selected_players;
-  console.log(
-    "[fixtureStartChecks] Found previous lineup with",
-    previous_players.length,
-    "players for:",
-    team_name,
-  );
-  const lineup: CreateFixtureLineupInput = {
-    organization_id: fixture.organization_id,
-    fixture_id: fixture.id,
-    team_id,
-    selected_players: previous_players,
-    status: LINEUP_STATUS.SUBMITTED,
-    submitted_by: "auto-generated",
-    submitted_at: new Date().toISOString(),
-    notes: "Auto-generated from previous match squad",
-  };
-  const create_result = await lineup_use_cases.create(lineup);
-  if (!create_result.success)
-    return {
-      status: "available",
-      result: {
-        success: false,
-        error_message: create_result.error || "Failed to create lineup",
-      },
-    };
-  return {
-    status: "available",
-    result: {
-      success: true,
-      lineup,
-      generation_message: `Used previous match squad for ${team_name} (${previous_players.length} players)`,
     },
-  };
-}
-
-async function generate_first_available_lineup(
-  fixture: Fixture,
-  team_id: ScalarValueInput<Fixture["home_team_id"]>,
-  team_name: ScalarValueInput<Team["name"]>,
-  min_players: number,
-  max_players: number,
-  membership_use_cases: PlayerTeamMembershipUseCases,
-  player_use_cases: PlayerUseCases,
-  player_position_use_cases: PlayerPositionUseCases,
-  lineup_use_cases: FixtureLineupUseCases,
-): Promise<LineupGenerationResult> {
-  const memberships_result = await membership_use_cases.list({
-    team_id,
-    status: MEMBERSHIP_STATUS.ACTIVE,
-  });
-  const active_memberships = (
-    memberships_result.success ? memberships_result.data.items : []
-  ).filter((m: PlayerTeamMembership) => m.status === MEMBERSHIP_STATUS.ACTIVE);
-  if (active_memberships.length < min_players) {
-    return {
-      success: false,
-      error_message: `${team_name} has only ${active_memberships.length} active player(s), but minimum is ${min_players}`,
-      fix_suggestion: `Go to the Player Team Memberships page and add more players to ${team_name} (need at least ${min_players - active_memberships.length} more)`,
-    };
-  }
-  const players_to_select = Math.min(active_memberships.length, max_players);
-  const player_ids = active_memberships.map(
-    (m: PlayerTeamMembership) => m.player_id,
-  );
-  const player_results: Result<Player, string>[] = await Promise.all(
-    player_ids.map((player_id: Player["id"]) =>
-      player_use_cases.get_by_id(player_id),
-    ),
-  );
-  const players: Player[] = player_results
-    .filter((r): r is { success: true; data: Player } => r.success)
-    .map((r) => r.data);
-  const positions_result = await player_position_use_cases.list(
-    {},
     {
-      page_number: 1,
-      page_size: 100,
+      fixture_use_cases,
+      competition_use_cases,
+      organization_use_cases,
+      sport_use_cases,
     },
   );
-  const positions = positions_result.success ? positions_result.data.items : [];
-  const position_name_by_id = new Map<
-    PlayerPosition["id"],
-    PlayerPosition["name"]
-  >(positions.map((position: PlayerPosition) => [position.id, position.name]));
-  const all_lineup_players = build_lineup_players_from_memberships(
-    active_memberships,
-    players,
-    position_name_by_id,
+}
+
+async function generate_lineup_with_rules(
+  context: LineupGenerationContext,
+  rule_sources: RuleSources,
+): Promise<LineupGenerationResult> {
+  const rules = await get_player_rules_from_competition(
+    context.fixture.competition_id,
+    rule_sources.competition_use_cases,
+    rule_sources.organization_use_cases,
+    rule_sources.sport_use_cases,
   );
-  all_lineup_players.sort((a, b) =>
-    `${a.last_name} ${a.first_name}`
-      .toLowerCase()
-      .localeCompare(`${b.last_name} ${b.first_name}`.toLowerCase()),
-  );
-  const selected_players = all_lineup_players.slice(0, players_to_select);
-  const lineup: CreateFixtureLineupInput = {
-    organization_id: fixture.organization_id,
-    fixture_id: fixture.id,
-    team_id,
-    selected_players,
-    status: LINEUP_STATUS.SUBMITTED,
-    submitted_by: "auto-generated",
-    submitted_at: new Date().toISOString(),
-    notes: "Auto-generated lineup (first available players)",
-  };
-  const create_result = await lineup_use_cases.create(lineup);
-  if (!create_result.success)
-    return {
-      success: false,
-      error_message: create_result.error || "Failed to create lineup",
-    };
-  console.log(
-    "[fixtureStartChecks] Lineup created for:",
-    team_name,
-    "using first_available",
-  );
-  return {
-    success: true,
-    lineup,
-    generation_message: `Selected first ${selected_players.length} available players for ${team_name}`,
-  };
+  if (!rules.success)
+    return create_lineup_generation_failure(rules.error_message);
+  console.debug(FIXTURE_LINEUP_GENERATION_LOG_SCOPE, {
+    event: FIXTURE_LINEUP_GENERATION_EVENT.RULES_RESOLVED,
+    fixture_id: context.fixture.id,
+    team_id: context.team_id,
+    min_players: rules.min_players,
+    max_players: rules.max_players,
+    squad_generation_strategy: rules.squad_generation_strategy,
+  });
+  switch (rules.squad_generation_strategy) {
+    case SQUAD_GENERATION_STRATEGY.PREVIOUS_MATCH:
+      return generate_previous_match_lineup(
+        context,
+        rule_sources.fixture_use_cases,
+        rules,
+      );
+    case SQUAD_GENERATION_STRATEGY.FIRST_AVAILABLE:
+      return generate_first_available_lineup(context, rules);
+  }
 }

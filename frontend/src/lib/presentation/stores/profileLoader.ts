@@ -7,31 +7,22 @@ import type {
 
 import { WILDCARD_SCOPE } from "../../core/entities/StatusConstants";
 import type { UserProfile } from "./auth";
-
-const PROFILE_LOADER_CORRELATION_ID = "profile_loader";
-const ALL_TEAMS_SCOPE_NAME = "All Teams";
-const PROFILE_LOADER_ORGANIZATION_NAME_RESOLUTION_FAILED_MESSAGE =
-  "[ProfileLoader] Failed to resolve organization names";
-const PROFILE_LOADER_ORGANIZATION_NAME_RESOLUTION_FAILED_EVENT =
-  "profile_organization_name_resolution_failed";
-const PROFILE_LOADER_TEAM_NAME_RESOLUTION_FAILED_MESSAGE =
-  "[ProfileLoader] Failed to resolve team names";
-const PROFILE_LOADER_TEAM_NAME_RESOLUTION_FAILED_EVENT =
-  "profile_team_name_resolution_failed";
-const PROFILE_LOADER_LOAD_FAILED_MESSAGE =
-  "[ProfileLoader] Failed to load system users";
-const PROFILE_LOADER_LOAD_FAILED_EVENT = "profile_load_failed";
-const PROFILE_LOADER_FOUND_SYSTEM_USERS_MESSAGE =
-  "[ProfileLoader] Found system users";
-const PROFILE_LOADER_FOUND_SYSTEM_USERS_EVENT =
-  "profile_load_found_system_users";
-const PROFILE_LOADER_NO_SYSTEM_USERS_MESSAGE =
-  "[ProfileLoader] No system users found in repository";
-const PROFILE_LOADER_NO_SYSTEM_USERS_EVENT = "profile_load_no_system_users";
-const PROFILE_LOADER_CONVERTED_PROFILES_MESSAGE =
-  "[ProfileLoader] Converted profiles";
-const PROFILE_LOADER_CONVERTED_PROFILES_EVENT =
-  "profile_load_converted_profiles";
+import {
+  ALL_TEAMS_SCOPE_NAME,
+  PROFILE_LOADER_CONVERTED_PROFILES_EVENT,
+  PROFILE_LOADER_CONVERTED_PROFILES_MESSAGE,
+  PROFILE_LOADER_CORRELATION_ID,
+  PROFILE_LOADER_FOUND_SYSTEM_USERS_EVENT,
+  PROFILE_LOADER_FOUND_SYSTEM_USERS_MESSAGE,
+  PROFILE_LOADER_LOAD_FAILED_EVENT,
+  PROFILE_LOADER_LOAD_FAILED_MESSAGE,
+  PROFILE_LOADER_NO_SYSTEM_USERS_EVENT,
+  PROFILE_LOADER_NO_SYSTEM_USERS_MESSAGE,
+  PROFILE_LOADER_ORGANIZATION_NAME_RESOLUTION_FAILED_EVENT,
+  PROFILE_LOADER_ORGANIZATION_NAME_RESOLUTION_FAILED_MESSAGE,
+  PROFILE_LOADER_TEAM_NAME_RESOLUTION_FAILED_EVENT,
+  PROFILE_LOADER_TEAM_NAME_RESOLUTION_FAILED_MESSAGE,
+} from "./profileLoaderLogMessages";
 
 export function convert_system_user_to_profile(
   system_user: SystemUser,
@@ -133,6 +124,34 @@ async function resolve_team_names(
   return name_map;
 }
 
+async function build_profiles_with_resolved_names(
+  system_users: SystemUser[],
+  organization_repository: OrganizationRepository,
+  team_repository: TeamRepository,
+): Promise<UserProfile[]> {
+  const organization_ids = system_users.map((u) => u.organization_id);
+  const team_ids = system_users.map((user) => user.team_id ?? "");
+  const [organization_name_map, team_name_map] = await Promise.all([
+    resolve_organization_names(organization_ids, organization_repository),
+    resolve_team_names(team_ids, team_repository),
+  ]);
+
+  const profiles = convert_system_users_to_profiles(
+    system_users,
+    organization_name_map,
+    team_name_map,
+  );
+
+  console.debug(PROFILE_LOADER_CONVERTED_PROFILES_MESSAGE, {
+    event: PROFILE_LOADER_CONVERTED_PROFILES_EVENT,
+    correlation_id: PROFILE_LOADER_CORRELATION_ID,
+    profile_count: profiles.length,
+    profile_ids: profiles.map((profile) => profile.id),
+  });
+
+  return profiles;
+}
+
 export async function load_profiles_from_repository(
   repository: SystemUserRepository,
   organization_repository: OrganizationRepository,
@@ -166,25 +185,9 @@ export async function load_profiles_from_repository(
     return [];
   }
 
-  const organization_ids = system_users.map((u) => u.organization_id);
-  const team_ids = system_users.map((user) => user.team_id ?? "");
-  const [organization_name_map, team_name_map] = await Promise.all([
-    resolve_organization_names(organization_ids, organization_repository),
-    resolve_team_names(team_ids, team_repository),
-  ]);
-
-  const profiles = convert_system_users_to_profiles(
+  return build_profiles_with_resolved_names(
     system_users,
-    organization_name_map,
-    team_name_map,
+    organization_repository,
+    team_repository,
   );
-
-  console.debug(PROFILE_LOADER_CONVERTED_PROFILES_MESSAGE, {
-    event: PROFILE_LOADER_CONVERTED_PROFILES_EVENT,
-    correlation_id: PROFILE_LOADER_CORRELATION_ID,
-    profile_count: profiles.length,
-    profile_ids: profiles.map((profile) => profile.id),
-  });
-
-  return profiles;
 }

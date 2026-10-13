@@ -1,60 +1,26 @@
-import type { PlayerTeamMembershipUseCasesPort } from "$lib/core/interfaces/ports/internal/usecases/PlayerTeamMembershipUseCasesPort";
-import type { EntityCrudHandlers } from "$lib/core/types/EntityHandlers";
-
-import type {
-  BaseEntity,
-  EntityMetadata,
-} from "../../core/entities/BaseEntity";
+import {
+  cancel_dynamic_entity_form,
+  type DynamicEntityFormControllerDependencies,
+  generate_dynamic_entity_form_fake_data,
+  initialize_dynamic_entity_form_options,
+  submit_dynamic_entity_form_controller,
+} from "./dynamicEntityFormControllerActions";
 import { create_dynamic_form_field_callbacks } from "./dynamicEntityFormFieldCallbacks";
-import type { DynamicEntityFormGenderDependencies } from "./dynamicEntityFormGenderWarnings";
-import { load_dynamic_form_initial_state } from "./dynamicEntityFormInitialLoad";
-import {
-  build_dynamic_form_fake_data_state,
-  navigate_to_dynamic_form_foreign_entity,
-} from "./dynamicEntityFormLocalActions";
-import type { DynamicEntityFormConflictDependencies } from "./dynamicEntityFormOfficialConflictWarnings";
-import type {
-  DynamicEntityFormState,
-  DynamicEntityFormUiState,
-  DynamicEntityFormWarningState,
-} from "./dynamicEntityFormState";
-import {
-  type DynamicEntityFormSubmitResult,
-  submit_dynamic_entity_form,
-} from "./dynamicEntityFormSubmitFlow";
+import { navigate_to_dynamic_form_foreign_entity } from "./dynamicEntityFormLocalActions";
 import type { DynamicFormFieldCallbacks } from "./dynamicFormComponentTypes";
+import type { DynamicFormData } from "./dynamicFormConstants";
 
-type ControllerDependencies = {
-  entity_type: string;
-  crud_handlers?: EntityCrudHandlers;
-  is_inline_mode: boolean;
-  player_team_membership_use_cases: PlayerTeamMembershipUseCasesPort;
-  get_entity_metadata: () => EntityMetadata | undefined;
-  get_is_edit_mode: () => boolean;
-  get_entity_data: () => Partial<BaseEntity> | undefined;
-  get_form_state: () => DynamicEntityFormState;
-  set_form_state: (next_state: DynamicEntityFormState) => void;
-  get_ui_state: () => DynamicEntityFormUiState;
-  set_ui_state: (next_state: DynamicEntityFormUiState) => void;
-  get_warning_state: () => DynamicEntityFormWarningState;
-  set_warning_state: (next_state: DynamicEntityFormWarningState) => void;
-  on_inline_save_success: (entity: BaseEntity) => void;
-  on_save_completed: (entity: BaseEntity, was_new_entity: boolean) => void;
-  on_inline_cancel: () => void;
-  on_cancel: () => void;
-  conflict_dependencies: DynamicEntityFormConflictDependencies;
-  gender_dependencies: DynamicEntityFormGenderDependencies;
-};
-
-export function create_dynamic_entity_form_controller(
-  dependencies: ControllerDependencies,
-): {
+type DynamicEntityFormController = {
   callbacks: DynamicFormFieldCallbacks;
-  initialize_options: (form_data: Record<string, any>) => Promise<void>;
+  initialize_options: (form_data: DynamicFormData) => Promise<void>;
   handle_submit: () => Promise<void>;
   handle_cancel: () => void;
   handle_generate_fake_data: () => void;
-} {
+};
+
+export function create_dynamic_entity_form_controller(
+  dependencies: DynamicEntityFormControllerDependencies,
+): DynamicEntityFormController {
   const callbacks = create_dynamic_form_field_callbacks({
     entity_type: dependencies.entity_type,
     get_entity_metadata: dependencies.get_entity_metadata,
@@ -66,111 +32,14 @@ export function create_dynamic_entity_form_controller(
     conflict_dependencies: dependencies.conflict_dependencies,
     gender_dependencies: dependencies.gender_dependencies,
   });
-
-  async function initialize_options(
-    form_data: Record<string, any>,
-  ): Promise<void> {
-    const entity_metadata = dependencies.get_entity_metadata();
-    if (!entity_metadata) return;
-    dependencies.set_ui_state({
-      ...dependencies.get_ui_state(),
-      is_loading: true,
-    });
-    const initial_state = await load_dynamic_form_initial_state(
-      entity_metadata,
-      form_data,
-      dependencies.entity_type,
-      dependencies.conflict_dependencies,
-    );
-    dependencies.set_form_state({
-      ...dependencies.get_form_state(),
-      ...initial_state.form_state,
-      validation_errors: {},
-      filtered_fields_loading: {},
-    });
-    dependencies.set_warning_state({
-      ...dependencies.get_warning_state(),
-      ...initial_state.warning_state,
-    });
-    dependencies.set_ui_state({
-      ...dependencies.get_ui_state(),
-      is_loading: false,
-    });
-  }
-
-  async function handle_submit(): Promise<void> {
-    const ui_state = dependencies.get_ui_state();
-    const form_state = dependencies.get_form_state();
-    dependencies.set_ui_state({
-      ...ui_state,
-      is_save_in_progress: true,
-      save_error_message: "",
-    });
-    dependencies.set_form_state({ ...form_state, validation_errors: {} });
-    const submit_result = await submit_dynamic_entity_form({
-      entity_type: dependencies.entity_type,
-      entity_metadata: dependencies.get_entity_metadata(),
-      form_data: dependencies.get_form_state().form_data,
-      is_edit_mode: dependencies.get_is_edit_mode(),
-      entity_data: dependencies.get_entity_data(),
-      crud_handlers: dependencies.crud_handlers,
-      permission_denied: ui_state.permission_denied,
-      player_team_membership_use_cases:
-        dependencies.player_team_membership_use_cases,
-    });
-    apply_submit_result(dependencies, submit_result);
-  }
-
-  function handle_cancel(): void {
-    if (dependencies.is_inline_mode) {
-      dependencies.on_inline_cancel();
-      return;
-    }
-    dependencies.on_cancel();
-  }
-
-  function handle_generate_fake_data(): void {
-    dependencies.set_form_state(
-      build_dynamic_form_fake_data_state(
-        dependencies.get_entity_metadata(),
-        dependencies.get_is_edit_mode(),
-        dependencies.get_form_state(),
-      ),
-    );
-  }
-
   return {
     callbacks,
-    initialize_options,
-    handle_submit,
-    handle_cancel,
-    handle_generate_fake_data,
+    initialize_options: (form_data: DynamicFormData): Promise<void> =>
+      initialize_dynamic_entity_form_options(dependencies, form_data),
+    handle_submit: (): Promise<void> =>
+      submit_dynamic_entity_form_controller(dependencies),
+    handle_cancel: (): void => cancel_dynamic_entity_form(dependencies),
+    handle_generate_fake_data: (): void =>
+      generate_dynamic_entity_form_fake_data(dependencies),
   };
-}
-
-function apply_submit_result(
-  dependencies: ControllerDependencies,
-  submit_result: DynamicEntityFormSubmitResult,
-): void {
-  dependencies.set_ui_state({
-    ...dependencies.get_ui_state(),
-    is_save_in_progress: false,
-    save_error_message: submit_result.save_error_message,
-  });
-  if (Object.keys(submit_result.validation_errors).length > 0) {
-    dependencies.set_form_state({
-      ...dependencies.get_form_state(),
-      validation_errors: submit_result.validation_errors,
-    });
-    return;
-  }
-  if (!submit_result.saved_entity) return;
-  if (dependencies.is_inline_mode) {
-    dependencies.on_inline_save_success(submit_result.saved_entity);
-    return;
-  }
-  dependencies.on_save_completed(
-    submit_result.saved_entity,
-    !dependencies.get_is_edit_mode(),
-  );
 }

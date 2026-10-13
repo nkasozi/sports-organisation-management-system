@@ -1,97 +1,112 @@
 <script lang="ts">
-  import { createEventDispatcher } from "svelte";
+    import { createEventDispatcher } from "svelte";
 
-  export let is_visible: boolean = false;
-  export let title: string = "Confirm Action";
-  export let message: string = "Are you sure you want to proceed?";
-  export let confirm_text: string = "Confirm";
-  export let cancel_text: string = "Cancel";
-  export let is_destructive: boolean = false;
-  export let is_processing: boolean = false;
+    import {
+        CONFIRMATION_MODAL_DEFAULT_TEXT,
+        CONFIRMATION_MODAL_DISMISS_TRIGGER,
+        should_dismiss_confirmation_modal,
+    } from "./confirmationModalLogic";
 
-  const dispatch = createEventDispatcher<{
-    confirm: void;
-    cancel: void;
-  }>();
+    export let is_visible: boolean = false;
+    export let title: string = CONFIRMATION_MODAL_DEFAULT_TEXT.TITLE;
+    export let message: string = CONFIRMATION_MODAL_DEFAULT_TEXT.MESSAGE;
+    export let confirm_text: string = CONFIRMATION_MODAL_DEFAULT_TEXT.CONFIRM;
+    export let cancel_text: string = CONFIRMATION_MODAL_DEFAULT_TEXT.CANCEL;
+    export let is_destructive: boolean = false;
+    export let is_processing: boolean = false;
 
-  function handle_confirm(): void {
-    dispatch("confirm");
-  }
+    const dispatch = createEventDispatcher<{
+        confirm: void;
+        cancel: void;
+    }>();
 
-  function handle_cancel(): void {
-    dispatch("cancel");
-  }
-
-  function handle_backdrop_click(): void {
-    if (!is_processing) {
-      handle_cancel();
+    function handle_confirm(): boolean {
+        return dispatch("confirm");
     }
-  }
 
-  function handle_key_down(event: KeyboardEvent): void {
-    if (event.key === "Escape" && !is_processing) {
-      handle_cancel();
+    function handle_cancel(): boolean {
+        return dispatch("cancel");
     }
-  }
+
+    function handle_backdrop_click(event: MouseEvent): boolean {
+        const should_dismiss = should_dismiss_confirmation_modal({
+            trigger: {
+                kind: CONFIRMATION_MODAL_DISMISS_TRIGGER.BACKDROP_CLICK,
+                target_is_backdrop: event.target === event.currentTarget,
+            },
+            is_processing,
+        });
+        return should_dismiss && handle_cancel();
+    }
+
+    function handle_key_down(event: KeyboardEvent): boolean {
+        const should_dismiss = should_dismiss_confirmation_modal({
+            trigger: {
+                kind: CONFIRMATION_MODAL_DISMISS_TRIGGER.KEY_PRESS,
+                key: event.key,
+            },
+            is_processing,
+        });
+        return is_visible && should_dismiss && handle_cancel();
+    }
 </script>
 
 <svelte:window on:keydown={handle_key_down} />
 
 {#if is_visible}
-  <div
-    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
-    on:click={handle_backdrop_click}
-    on:keydown={handle_backdrop_click}
-    role="dialog"
-    aria-modal="true"
-    aria-labelledby="modal-title"
-    tabindex="-1"
-  >
     <div
-      class="bg-white dark:bg-accent-800 rounded-lg shadow-xl max-w-md w-full p-6"
-      role="none"
+        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
+        on:click={handle_backdrop_click}
+        role="presentation"
     >
-      <h3
-        id="modal-title"
-        class="text-lg font-semibold text-accent-900 dark:text-accent-100 mb-2"
-      >
-        {title}
-      </h3>
-
-      <p class="text-accent-600 dark:text-accent-400 mb-6">
-        {message}
-      </p>
-
-      <div class="flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
-        <button
-          type="button"
-          class="btn btn-outline w-full sm:w-auto"
-          disabled={is_processing}
-          on:click={handle_cancel}
+        <div
+            class="bg-white dark:bg-accent-800 rounded-lg shadow-xl max-w-md w-full p-6"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="modal-title"
+            tabindex="-1"
         >
-          {cancel_text}
-        </button>
+            <h3
+                id="modal-title"
+                class="text-lg font-semibold text-accent-900 dark:text-accent-100 mb-2"
+            >
+                {title}
+            </h3>
 
-        <button
-          type="button"
-          class="btn w-full sm:w-auto {is_destructive
-            ? 'bg-red-600 hover:bg-red-700 text-white'
-            : 'btn-primary'}"
-          disabled={is_processing}
-          on:click={handle_confirm}
-        >
-          {#if is_processing}
-            <span class="flex items-center justify-center">
-              <span
-                class="animate-spin rounded-full h-4 w-4 border-2 border-white/20 border-t-white mr-2"
-              ></span>
-              Processing...
-            </span>
-          {:else}
-            {confirm_text}
-          {/if}
-        </button>
-      </div>
+            <p class="text-accent-600 dark:text-accent-400 mb-6">
+                {message}
+            </p>
+
+            <div class="flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
+                <button
+                    type="button"
+                    class="btn btn-outline w-full sm:w-auto"
+                    disabled={is_processing}
+                    on:click={handle_cancel}
+                >
+                    {cancel_text}
+                </button>
+
+                <button
+                    type="button"
+                    class="btn w-full sm:w-auto {is_destructive
+                        ? 'bg-red-600 hover:bg-red-700 text-white'
+                        : 'btn-primary'}"
+                    disabled={is_processing}
+                    on:click={handle_confirm}
+                >
+                    {#if is_processing}
+                        <span class="flex items-center justify-center">
+                            <span
+                                class="animate-spin rounded-full h-4 w-4 border-2 border-white/20 border-t-white mr-2"
+                            ></span>
+                            {CONFIRMATION_MODAL_DEFAULT_TEXT.PROCESSING}
+                        </span>
+                    {:else}
+                        {confirm_text}
+                    {/if}
+                </button>
+            </div>
+        </div>
     </div>
-  </div>
 {/if}

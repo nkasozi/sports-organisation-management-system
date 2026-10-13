@@ -6,11 +6,27 @@ import {
   type Name,
   type OptionalHttpUrlValue,
   parse_description_text,
-  parse_email_address,
   parse_optional_http_url_value,
   type ScalarInput,
 } from "../types/DomainScalars";
 import type { BaseEntity, EntityStatus } from "./BaseEntity";
+import {
+  check_condition,
+  check_minimum_text_length,
+  check_optional_email_address,
+  collect_validation_errors,
+  is_blank_text,
+} from "./EntityValidation";
+
+const MINIMUM_NAME_LENGTH = 2;
+
+const ORGANIZATION_VALIDATION_MESSAGES = {
+  NAME_TOO_SHORT: "Organization name must be at least 2 characters",
+  SPORT_REQUIRED: "Sport is required",
+  INVALID_DESCRIPTION: "Description is invalid",
+  INVALID_EMAIL: "Invalid email format",
+  INVALID_WEBSITE: "Website URL is invalid",
+} as const;
 
 export interface Organization extends BaseEntity {
   name: Name;
@@ -30,58 +46,30 @@ export type CreateOrganizationInput = Omit<
 >;
 export type UpdateOrganizationInput = Partial<CreateOrganizationInput>;
 
-function create_empty_organization_input(): CreateOrganizationInput {
-  return {
-    name: "",
-    description: "",
-    sport_id: "",
-    founded_date: "",
-    contact_email: "",
-    contact_phone: "",
-    address: "",
-    website: "",
-    status: "active",
-  };
-}
-
 export function validate_organization_input(
   input: CreateOrganizationInput,
 ): string[] {
-  const validation_errors: string[] = [];
-
-  if (!input.name || input.name.trim().length < 2) {
-    validation_errors.push("Organization name must be at least 2 characters");
-  }
-
-  if (!input.sport_id || input.sport_id.trim().length === 0) {
-    validation_errors.push("Sport is required");
-  }
-
-  const description_result = parse_description_text(
-    input.description,
-    "Description is invalid",
-  );
-  if (!description_result.success) {
-    validation_errors.push(description_result.error);
-  }
-
-  if (input.contact_email.length > 0) {
-    const contact_email_result = parse_email_address(
+  return collect_validation_errors([
+    check_minimum_text_length(
+      input.name,
+      MINIMUM_NAME_LENGTH,
+      ORGANIZATION_VALIDATION_MESSAGES.NAME_TOO_SHORT,
+    ),
+    check_condition(
+      !is_blank_text(input.sport_id),
+      ORGANIZATION_VALIDATION_MESSAGES.SPORT_REQUIRED,
+    ),
+    parse_description_text(
+      input.description,
+      ORGANIZATION_VALIDATION_MESSAGES.INVALID_DESCRIPTION,
+    ),
+    check_optional_email_address(
       input.contact_email,
-      "Invalid email format",
-    );
-    if (!contact_email_result.success) {
-      validation_errors.push(contact_email_result.error);
-    }
-  }
-
-  const website_result = parse_optional_http_url_value(
-    input.website,
-    "Website URL is invalid",
-  );
-  if (!website_result.success) {
-    validation_errors.push(website_result.error);
-  }
-
-  return validation_errors;
+      ORGANIZATION_VALIDATION_MESSAGES.INVALID_EMAIL,
+    ),
+    parse_optional_http_url_value(
+      input.website,
+      ORGANIZATION_VALIDATION_MESSAGES.INVALID_WEBSITE,
+    ),
+  ]);
 }

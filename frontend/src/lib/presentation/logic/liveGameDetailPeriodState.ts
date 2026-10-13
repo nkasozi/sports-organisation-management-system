@@ -5,6 +5,7 @@ import {
   get_period_display_name,
 } from "$lib/core/entities/Fixture";
 import type { Sport, SportGamePeriod } from "$lib/core/entities/Sport";
+import { GAME_PERIOD } from "$lib/core/entities/StatusConstants";
 
 export interface PeriodButtonConfig {
   label: string;
@@ -105,19 +106,20 @@ export function build_period_button_config(
   };
 }
 
+const DEFAULT_PLAYING_PERIODS: ReadonlySet<string> = new Set([
+  GAME_PERIOD.FIRST_HALF,
+  GAME_PERIOD.SECOND_HALF,
+  GAME_PERIOD.EXTRA_TIME_FIRST,
+  GAME_PERIOD.EXTRA_TIME_SECOND,
+]);
+
 export function check_is_playing_period(
   period: Fixture["current_period"] | undefined,
   all_periods: SportGamePeriod[],
 ): boolean {
   if (!period) return false;
-  if (period === "penalty_shootout") return true;
-  if (all_periods.length === 0)
-    return [
-      "first_half",
-      "second_half",
-      "extra_time_first",
-      "extra_time_second",
-    ].includes(period);
+  if (period === GAME_PERIOD.PENALTY_SHOOTOUT) return true;
+  if (all_periods.length === 0) return DEFAULT_PLAYING_PERIODS.has(period);
   const found_period = all_periods.find(
     (current_period) => current_period.id === period,
   );

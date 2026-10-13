@@ -1,7 +1,14 @@
 <script lang="ts">
+    import {
+        FIXTURE_STATUS,
+        STAGE_TYPE,
+    } from "$lib/core/entities/StatusConstants";
     import CompetitionStandingsTable from "$lib/presentation/components/competition/CompetitionStandingsTable.svelte";
     import TeamLogoThumbnail from "$lib/presentation/components/ui/TeamLogoThumbnail.svelte";
     import type { CompetitionStageResultsSection as CompetitionStageSection } from "$lib/presentation/logic/competitionStageResults";
+
+    import { is_bracket_stage_type } from "./competitionResultsDisplayConstants";
+    import CompetitionStageResultsHeader from "./CompetitionStageResultsHeader.svelte";
 
     export let stage_section: CompetitionStageSection;
     export let selected_team_id: string;
@@ -18,29 +25,9 @@
 <section
     class="rounded-xl border border-accent-200 dark:border-accent-700 p-4 sm:p-5"
 >
-    <div
-        class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-4"
-    >
-        <div>
-            <h3
-                class="text-lg font-semibold text-accent-900 dark:text-accent-100"
-            >
-                {stage_section.stage.name}
-            </h3>
-            <p class="text-sm text-accent-600 dark:text-accent-400">
-                {stage_section.fixtures.length} fixture{stage_section.fixtures
-                    .length === 1
-                    ? ""
-                    : "s"} attached to this stage
-            </p>
-        </div>
-        <span
-            class="inline-flex items-center rounded-full bg-accent-100 px-3 py-1 text-xs font-medium uppercase tracking-wide text-accent-700 dark:bg-accent-800 dark:text-accent-300"
-            >{stage_section.stage.stage_type.replaceAll("_", " ")}</span
-        >
-    </div>
+    <CompetitionStageResultsHeader {stage_section} />
 
-    {#if stage_section.stage.stage_type === "group_stage"}
+    {#if stage_section.stage.stage_type === STAGE_TYPE.GROUP_STAGE}
         {#if stage_section.inferred_groups.length === 0}
             <div class="text-center py-8 text-accent-500">
                 No groups can be inferred for this stage yet.
@@ -76,7 +63,7 @@
                 {/each}
             </div>
         {/if}
-    {:else if stage_section.stage.stage_type === "knockout_stage" || stage_section.stage.stage_type === "one_off_stage"}
+    {:else if is_bracket_stage_type(stage_section.stage.stage_type)}
         {#if stage_section.fixtures.length === 0}
             <div class="text-center py-8 text-accent-500 dark:text-accent-400">
                 No fixtures assigned to this stage yet.
@@ -99,7 +86,7 @@
                                 class="flex-1 flex items-center justify-end gap-1.5"
                             >
                                 <span
-                                    class={`text-sm sm:text-base font-medium line-clamp-1 ${home_score > away_score && fixture.status === "completed" ? "text-green-600 dark:text-green-400" : "text-accent-900 dark:text-accent-100"}`}
+                                    class={`text-sm sm:text-base font-medium line-clamp-1 ${home_score > away_score && fixture.status === FIXTURE_STATUS.COMPLETED ? "text-green-600 dark:text-green-400" : "text-accent-900 dark:text-accent-100"}`}
                                     >{get_team_name(fixture.home_team_id)}</span
                                 ><TeamLogoThumbnail
                                     logo_url={get_team_logo_url(
@@ -112,7 +99,7 @@
                                 />
                             </div>
                             <div class="flex-shrink-0 px-2 sm:px-4">
-                                {#if fixture.status === "completed" || fixture.status === "in_progress"}
+                                {#if fixture.status === FIXTURE_STATUS.COMPLETED || fixture.status === FIXTURE_STATUS.IN_PROGRESS}
                                     <div
                                         class="flex items-center gap-1 sm:gap-2 text-xl sm:text-2xl font-bold"
                                     >
@@ -148,7 +135,7 @@
                                     )}
                                     size="sm"
                                 /><span
-                                    class={`text-sm sm:text-base font-medium line-clamp-1 ${away_score > home_score && fixture.status === "completed" ? "text-green-600 dark:text-green-400" : "text-accent-900 dark:text-accent-100"}`}
+                                    class={`text-sm sm:text-base font-medium line-clamp-1 ${away_score > home_score && fixture.status === FIXTURE_STATUS.COMPLETED ? "text-green-600 dark:text-green-400" : "text-accent-900 dark:text-accent-100"}`}
                                     >{get_team_name(fixture.away_team_id)}</span
                                 >
                             </div>

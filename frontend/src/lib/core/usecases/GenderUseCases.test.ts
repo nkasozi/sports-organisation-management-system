@@ -2,6 +2,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { CreateGenderInput, Gender } from "../entities/Gender";
 import type { GenderRepository } from "../interfaces/ports";
+import {
+  USE_CASE_ERROR_MESSAGES,
+  UseCaseErrorCode,
+} from "../types/UseCaseFailure";
 import { create_gender_use_cases } from "./GenderUseCases";
 
 function create_mock_repository(): GenderRepository {
@@ -151,6 +155,38 @@ describe("GenderUseCases", () => {
       const result = await use_cases.delete("");
 
       expect(result.success).toBe(false);
+    });
+  });
+  describe("failure logging", () => {
+    it("returns a user-safe message and logs the repository error", async () => {
+      const error_spy = vi.spyOn(console, "error").mockImplementation(() => {});
+      vi.mocked(mock_repository.delete_by_id).mockResolvedValue({
+        success: false,
+        error: "IndexedDB transaction aborted",
+      });
+      const result = await use_cases.delete("gender-123");
+      expect(result).toEqual({
+        success: false,
+        error: USE_CASE_ERROR_MESSAGES[UseCaseErrorCode.DEPENDENCY_FAILED],
+      });
+      expect(error_spy).toHaveBeenCalledWith("[GenderUseCases]", {
+        event: "gender_delete_failed",
+        error_code: UseCaseErrorCode.DEPENDENCY_FAILED,
+        technical_detail: "IndexedDB transaction aborted",
+        gender_id: "gender-123",
+      });
+      error_spy.mockRestore();
+    });
+
+    it("keeps the specific message when the update target is missing", async () => {
+      vi.spyOn(console, "error").mockImplementation(() => {});
+      vi.mocked(mock_repository.find_by_id).mockResolvedValue({
+        success: false,
+        error: "Entity with id 'gender-404' not found",
+      });
+      const result = await use_cases.update("gender-404", { name: "Female" });
+      expect(result).toEqual({ success: false, error: "Gender not found" });
+      vi.restoreAllMocks();
     });
   });
 });

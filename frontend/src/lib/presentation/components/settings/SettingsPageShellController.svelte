@@ -6,6 +6,7 @@
     import type { Organization } from "$lib/core/entities/Organization";
     import { ANY_VALUE } from "$lib/core/interfaces/ports";
     import Toast from "$lib/presentation/components/ui/Toast.svelte";
+    import { PRESENCE_STATUS } from "$lib/presentation/logic/presenceStatus";
     import { create_settings_page_shell_controller_runtime } from "$lib/presentation/logic/settingsPageShellControllerRuntime";
     import {
         DEFAULT_LOGO_SVG,
@@ -45,7 +46,7 @@
     $: current_profile_state = (() => {
         const current_profile = $auth_store.current_profile;
 
-        if (current_profile.status !== "present") {
+        if (current_profile.status !== PRESENCE_STATUS.PRESENT) {
             return { status: "missing" } as const;
         }
 
@@ -55,10 +56,10 @@
         } as const;
     })();
     $: is_super_admin =
-        current_profile_state.status === "present" &&
+        current_profile_state.status === PRESENCE_STATUS.PRESENT &&
         current_profile_state.profile.organization_id === ANY_VALUE;
     $: is_platform_branding =
-        current_profile_state.status !== "present" ||
+        current_profile_state.status !== PRESENCE_STATUS.PRESENT ||
         current_profile_state.profile.organization_id === ANY_VALUE;
     $: organization_badge_label =
         organization_name || $branding_store.organization_name;
@@ -102,7 +103,7 @@
         get_branding_state: () => $branding_store,
         get_current_form_values,
         get_current_profile_organization_id: () =>
-            current_profile_state.status === "present"
+            current_profile_state.status === PRESENCE_STATUS.PRESENT
                 ? current_profile_state.profile.organization_id
                 : "",
         get_organizations: () => organizations,
@@ -156,11 +157,9 @@
     {is_super_admin}
     {is_platform_branding}
     {organization_badge_label}
-    caller_role={
-        current_profile_state.status === "present"
-            ? current_profile_state.profile.role
-            : ""
-    }
+    caller_role={current_profile_state.status === PRESENCE_STATUS.PRESENT
+        ? current_profile_state.profile.role
+        : ""}
     default_logo_svg={DEFAULT_LOGO_SVG}
     {show_toast}
     handle_selected_organization_switch={runtime.handle_selected_organization_switch}

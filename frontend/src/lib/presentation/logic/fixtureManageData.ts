@@ -1,3 +1,4 @@
+import { FIXTURE_STATUS } from "$lib/core/entities/StatusConstants";
 import type { FixtureUseCasesPort } from "$lib/core/interfaces/ports/internal/usecases/FixtureUseCasesPort";
 import type { PlayerPositionUseCasesPort } from "$lib/core/interfaces/ports/internal/usecases/PlayerPositionUseCasesPort";
 import type { PlayerTeamMembershipUseCasesPort } from "$lib/core/interfaces/ports/internal/usecases/PlayerTeamMembershipUseCasesPort";
@@ -11,6 +12,7 @@ import {
   create_missing_managed_game_team_state,
   create_present_managed_game_team_state,
   type ManagedGameLoadResult,
+  type ManagedGameTeamState,
 } from "$lib/presentation/logic/managedGamePageTypes";
 
 interface FixtureManageDataDependencies {
@@ -22,6 +24,72 @@ interface FixtureManageDataDependencies {
     "list_memberships_by_team"
   >;
   player_position_use_cases: Pick<PlayerPositionUseCasesPort, "list">;
+}
+
+interface ManagedTeamSideRecords {
+  team_result: Awaited<
+    ReturnType<FixtureManageDataDependencies["team_use_cases"]["get_by_id"]>
+  >;
+  players_result: Awaited<
+    ReturnType<
+      FixtureManageDataDependencies["player_use_cases"]["list_players_by_team"]
+    >
+  >;
+  memberships_result: Awaited<
+    ReturnType<
+      FixtureManageDataDependencies["player_team_membership_use_cases"]["list_memberships_by_team"]
+    >
+  >;
+}
+
+async function load_managed_team_side(
+  team_id: string,
+  dependencies: FixtureManageDataDependencies,
+): Promise<ManagedTeamSideRecords> {
+  const [team_result, players_result, memberships_result] = await Promise.all([
+    dependencies.team_use_cases.get_by_id(team_id),
+    dependencies.player_use_cases.list_players_by_team(team_id),
+    dependencies.player_team_membership_use_cases.list_memberships_by_team(
+      team_id,
+      { page_number: 1, page_size: 10000 },
+    ),
+  ]);
+  return { team_result, players_result, memberships_result };
+}
+
+async function load_position_name_by_id(
+  organization_id: string,
+  dependencies: FixtureManageDataDependencies,
+): Promise<Map<string, string>> {
+  const positions_result = await dependencies.player_position_use_cases.list(
+    organization_id ? { organization_id } : {},
+    { page_number: 1, page_size: 1000 },
+  );
+  return build_position_name_by_id_map(
+    positions_result.success ? positions_result.data.items : [],
+  );
+}
+
+function build_managed_team_state(
+  side_records: ManagedTeamSideRecords,
+): ManagedGameTeamState {
+  return side_records.team_result.success
+    ? create_present_managed_game_team_state(side_records.team_result.data)
+    : create_missing_managed_game_team_state();
+}
+
+function build_managed_team_players(
+  side_records: ManagedTeamSideRecords,
+  position_name_by_id: Map<string, string>,
+): ReturnType<typeof build_team_players> {
+  const { players_result, memberships_result } = side_records;
+  return players_result.success && memberships_result.success
+    ? build_team_players(
+        players_result.data.items,
+        memberships_result.data.items,
+        position_name_by_id,
+      )
+    : [];
 }
 
 export async function load_fixture_manage_bundle(
@@ -38,68 +106,22 @@ export async function load_fixture_manage_bundle(
   }
 
   const fixture = fixture_result.data;
-  const position_filter = fixture.organization_id
-    ? { organization_id: fixture.organization_id }
-    : {};
-  const [
-    home_result,
-    away_result,
-    home_players_result,
-    away_players_result,
-    home_memberships_result,
-    away_memberships_result,
-    positions_result,
-  ] = await Promise.all([
-    dependencies.team_use_cases.get_by_id(fixture.home_team_id),
-    dependencies.team_use_cases.get_by_id(fixture.away_team_id),
-    dependencies.player_use_cases.list_players_by_team(fixture.home_team_id),
-    dependencies.player_use_cases.list_players_by_team(fixture.away_team_id),
-    dependencies.player_team_membership_use_cases.list_memberships_by_team(
-      fixture.home_team_id,
-      { page_number: 1, page_size: 10000 },
-    ),
-    dependencies.player_team_membership_use_cases.list_memberships_by_team(
-      fixture.away_team_id,
-      { page_number: 1, page_size: 10000 },
-    ),
-    dependencies.player_position_use_cases.list(position_filter, {
-      page_number: 1,
-      page_size: 1000,
-    }),
+  const [home_side, away_side, position_name_by_id] = await Promise.all([
+    load_managed_team_side(fixture.home_team_id, dependencies),
+    load_managed_team_side(fixture.away_team_id, dependencies),
+    load_position_name_by_id(fixture.organization_id, dependencies),
   ]);
-
-  const position_name_by_id = build_position_name_by_id_map(
-    positions_result.success ? positions_result.data.items : [],
-  );
 
   return {
     success: true,
     data: {
       fixture,
-      home_team: home_result.success
-        ? create_present_managed_game_team_state(home_result.data)
-        : create_missing_managed_game_team_state(),
-      away_team: away_result.success
-        ? create_present_managed_game_team_state(away_result.data)
-        : create_missing_managed_game_team_state(),
-      home_players:
-        home_players_result.success && home_memberships_result.success
-          ? build_team_players(
-              home_players_result.data.items,
-              home_memberships_result.data.items,
-              position_name_by_id,
-            )
-          : [],
-      away_players:
-        away_players_result.success && away_memberships_result.success
-          ? build_team_players(
-              away_players_result.data.items,
-              away_memberships_result.data.items,
-              position_name_by_id,
-            )
-          : [],
+      home_team: build_managed_team_state(home_side),
+      away_team: build_managed_team_state(away_side),
+      home_players: build_managed_team_players(home_side, position_name_by_id),
+      away_players: build_managed_team_players(away_side, position_name_by_id),
       game_clock_seconds:
-        fixture.status === "in_progress"
+        fixture.status === FIXTURE_STATUS.IN_PROGRESS
           ? (fixture.current_minute || 0) * 60
           : 0,
     },

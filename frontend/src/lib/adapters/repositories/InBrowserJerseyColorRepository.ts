@@ -12,10 +12,39 @@ import type {
   JerseyColorRepository,
 } from "../../core/interfaces/ports";
 import type { QueryOptions } from "../../core/interfaces/ports";
-import type { PaginatedAsyncResult } from "../../core/types/Result";
+import type {
+  AsyncResult,
+  PaginatedAsyncResult,
+} from "../../core/types/Result";
 import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
+import { create_default_jersey_colors } from "./InBrowserJerseyColorRepositoryDefaults";
+import {
+  apply_entity_filter_rules,
+  type EntityFilterRule,
+  equals_rule,
+  predicate_rule,
+  text_contains_rule,
+} from "./InBrowserRepositoryFilterRules";
+import { reset_repository_data } from "./InBrowserRepositoryReset";
+import { create_lazy_repository_accessor } from "./InBrowserRepositorySingleton";
+import type { RepositoryWriteOrigin } from "./InBrowserRepositoryWriteOrigin";
 
 const ENTITY_PREFIX = "jersey";
+
+const JERSEY_FILTER_RULES: EntityFilterRule<JerseyColor, JerseyColorFilter>[] =
+  [
+    equals_rule("holder_type"),
+    equals_rule("holder_id"),
+    text_contains_rule("nickname", (jersey) => jersey.nickname),
+    predicate_rule(
+      "main_color",
+      (jersey, filter) =>
+        jersey.main_color.toLowerCase() ===
+        String(filter.main_color).toLowerCase(),
+    ),
+    equals_rule("status"),
+  ];
+
 export class InBrowserJerseyColorRepository
   extends InBrowserBaseRepository<
     JerseyColor,
@@ -64,34 +93,7 @@ export class InBrowserJerseyColorRepository
     entities: JerseyColor[],
     filter: JerseyColorFilter,
   ): JerseyColor[] {
-    let filtered = entities;
-    if (filter.holder_type) {
-      filtered = filtered.filter(
-        (jersey) => jersey.holder_type === filter.holder_type,
-      );
-    }
-    if (filter.holder_id) {
-      filtered = filtered.filter(
-        (jersey) => jersey.holder_id === filter.holder_id,
-      );
-    }
-    if (filter.nickname) {
-      const nickname_lower = filter.nickname.toLowerCase();
-      filtered = filtered.filter((jersey) =>
-        jersey.nickname.toLowerCase().includes(nickname_lower),
-      );
-    }
-    if (filter.main_color) {
-      const color_lower = filter.main_color.toLowerCase();
-      filtered = filtered.filter(
-        (jersey) => jersey.main_color.toLowerCase() === color_lower,
-      );
-    }
-    if (filter.status) {
-      filtered = filtered.filter((jersey) => jersey.status === filter.status);
-    }
-
-    return filtered;
+    return apply_entity_filter_rules(entities, filter, JERSEY_FILTER_RULES);
   }
 
   async find_by_holder(
@@ -103,105 +105,16 @@ export class InBrowserJerseyColorRepository
   }
 }
 
-function create_default_jersey_colors(): import("$lib/core/types/DomainScalars").ScalarInput<JerseyColor>[] {
-  const now = new Date().toISOString();
-  return [
-    {
-      id: "jersey_default_home",
-      holder_type: "team",
-      holder_id: "team_default_1",
-      nickname: "Home Kit",
-      main_color: "#1E40AF",
-      secondary_color: "#FFFFFF",
-      tertiary_color: "#F59E0B",
-      status: "active",
-      created_at: now,
-      updated_at: now,
-    },
-    {
-      id: "jersey_default_away",
-      holder_type: "team",
-      holder_id: "team_default_1",
-      nickname: "Away Kit",
-      main_color: "#FFFFFF",
-      secondary_color: "#1E40AF",
-      tertiary_color: "#F59E0B",
-      status: "active",
-      created_at: now,
-      updated_at: now,
-    },
-    {
-      id: "jersey_default_official_1",
-      holder_type: "competition_official",
-      holder_id: "comp_default_1",
-      nickname: "Official Uniform",
-      main_color: "#000000",
-      secondary_color: "#FFFFFF",
-      tertiary_color: "",
-      status: "active",
-      created_at: now,
-      updated_at: now,
-    },
-    {
-      id: "jersey_default_official_2",
-      holder_type: "competition_official",
-      holder_id: "comp_default_2",
-      nickname: "Official Uniform",
-      main_color: "#1F2937",
-      secondary_color: "#FFFFFF",
-      tertiary_color: "",
-      status: "active",
-      created_at: now,
-      updated_at: now,
-    },
-    {
-      id: "jersey_default_official_3",
-      holder_type: "competition_official",
-      holder_id: "comp_default_3",
-      nickname: "Official Uniform",
-      main_color: "#6B7280",
-      secondary_color: "#1F2937",
-      tertiary_color: "",
-      status: "active",
-      created_at: now,
-      updated_at: now,
-    },
-    {
-      id: "jersey_default_official_4",
-      holder_type: "competition_official",
-      holder_id: "comp_default_4",
-      nickname: "Official Uniform",
-      main_color: "#FFFFFF",
-      secondary_color: "#1F2937",
-      tertiary_color: "",
-      status: "active",
-      created_at: now,
-      updated_at: now,
-    },
-  ];
-}
+export const get_jersey_color_repository: () => JerseyColorRepository =
+  create_lazy_repository_accessor(() => new InBrowserJerseyColorRepository());
 
-type JerseyColorRepositoryState =
-  | { status: "uninitialized" }
-  | { status: "ready"; repository: InBrowserJerseyColorRepository };
-
-let jersey_color_repository_state: JerseyColorRepositoryState = {
-  status: "uninitialized",
-};
-
-export function get_jersey_color_repository(): JerseyColorRepository {
-  if (jersey_color_repository_state.status === "ready") {
-    return jersey_color_repository_state.repository;
-  }
-
-  const repository = new InBrowserJerseyColorRepository();
-  jersey_color_repository_state = { status: "ready", repository };
-
-  return repository;
-}
-export async function reset_jersey_color_repository(): Promise<void> {
-  const repository =
-    get_jersey_color_repository() as InBrowserJerseyColorRepository;
-  await repository.clear_all_data();
-  await repository.seed_with_data(create_default_jersey_colors());
+export function reset_jersey_color_repository(
+  origin: RepositoryWriteOrigin,
+): AsyncResult<number> {
+  return reset_repository_data(
+    (
+      get_jersey_color_repository() as InBrowserJerseyColorRepository
+    ).with_write_origin(origin),
+    create_default_jersey_colors(),
+  );
 }

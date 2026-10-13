@@ -1,204 +1,142 @@
-import { EventBus } from "$lib/infrastructure/events/EventBus";
-
 import type {
-  CreateFixtureLineupInput,
-  FixtureLineup,
-  UpdateFixtureLineupInput,
-} from "../entities/FixtureLineup";
-import { LINEUP_STATUS } from "../entities/StatusConstants";
-import type {
-  FixtureLineupFilter,
   FixtureLineupRepository,
   FixtureLineupUseCasesPort,
 } from "../interfaces/ports";
-import type { ScalarValueInput } from "../types/DomainScalars";
-import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
-import { create_failure_result } from "../types/Result";
+import type { Result } from "../types/Result";
+import {
+  create_log_target_builder,
+  fail_missing_identifier,
+  is_blank_identifier,
+  relay_repository_result,
+} from "./FailureRelay";
+import {
+  FIXTURE_LINEUP_EVENT,
+  FIXTURE_LINEUP_LOG_SCOPE,
+  FIXTURE_LINEUP_MESSAGE,
+  LINEUP_ACTION,
+} from "./FixtureLineupConstants";
+import {
+  create_unique_lineup,
+  fail_missing_lineup_id,
+  find_unlocked_lineup,
+  transition_lineup,
+} from "./FixtureLineupTransitions";
 
 export type FixtureLineupUseCases = FixtureLineupUseCasesPort;
+
+const log_target = create_log_target_builder(FIXTURE_LINEUP_LOG_SCOPE);
+
+function fail_missing_fixture_id(): Result<never> {
+  return fail_missing_identifier(
+    log_target(FIXTURE_LINEUP_EVENT.FIXTURE_ID_MISSING),
+    FIXTURE_LINEUP_MESSAGE.FIXTURE_ID_REQUIRED,
+  );
+}
+
+async function list_lineups_by_fixture_and_team(
+  repository: FixtureLineupRepository,
+  ...[fixture_id, team_id, options]: Parameters<
+    FixtureLineupUseCases["list_lineups_by_fixture_and_team"]
+  >
+): ReturnType<FixtureLineupUseCases["list_lineups_by_fixture_and_team"]> {
+  if (is_blank_identifier(fixture_id)) return fail_missing_fixture_id();
+  if (is_blank_identifier(team_id))
+    return fail_missing_identifier(
+      log_target(FIXTURE_LINEUP_EVENT.TEAM_ID_MISSING),
+      FIXTURE_LINEUP_MESSAGE.TEAM_ID_REQUIRED,
+    );
+  return relay_repository_result(
+    repository.find_by_fixture_and_team(fixture_id, team_id, options),
+    log_target(FIXTURE_LINEUP_EVENT.LIST_FAILED, { fixture_id, team_id }),
+  );
+}
+
+type FixtureScopedQueryName =
+  | "get_lineups_for_fixture"
+  | "get_lineup_for_team_in_fixture"
+  | "list_lineups_by_fixture"
+  | "list_lineups_by_fixture_and_team";
+
+function create_fixture_scoped_lineup_queries(
+  repository: FixtureLineupRepository,
+): Pick<FixtureLineupUseCases, FixtureScopedQueryName> {
+  return {
+    get_lineups_for_fixture: async (fixture_id) =>
+      relay_repository_result(
+        repository.get_lineups_for_fixture(fixture_id),
+        log_target(FIXTURE_LINEUP_EVENT.LIST_FAILED, { fixture_id }),
+      ),
+    get_lineup_for_team_in_fixture: async (fixture_id, team_id) =>
+      repository.get_lineup_for_team_in_fixture(fixture_id, team_id),
+    list_lineups_by_fixture: async (fixture_id, options) =>
+      is_blank_identifier(fixture_id)
+        ? fail_missing_fixture_id()
+        : relay_repository_result(
+            repository.find_by_fixture(fixture_id, options),
+            log_target(FIXTURE_LINEUP_EVENT.LIST_FAILED, { fixture_id }),
+          ),
+    list_lineups_by_fixture_and_team: (fixture_id, team_id, options) =>
+      list_lineups_by_fixture_and_team(
+        repository,
+        fixture_id,
+        team_id,
+        options,
+      ),
+  };
+}
+
+function create_lineup_queries(
+  repository: FixtureLineupRepository,
+): Pick<FixtureLineupUseCases, "get_by_id" | "list" | FixtureScopedQueryName> {
+  return {
+    ...create_fixture_scoped_lineup_queries(repository),
+    get_by_id: async (id) =>
+      is_blank_identifier(id)
+        ? fail_missing_lineup_id()
+        : relay_repository_result(
+            repository.find_by_id(id),
+            log_target(FIXTURE_LINEUP_EVENT.LOOKUP_FAILED, { lineup_id: id }),
+          ),
+    list: async (filter, pagination) =>
+      relay_repository_result(
+        repository.find_all(filter ?? {}, pagination ?? {}),
+        log_target(FIXTURE_LINEUP_EVENT.LIST_FAILED),
+      ),
+  };
+}
 
 export function create_fixture_lineup_use_cases(
   repository: FixtureLineupRepository,
 ): FixtureLineupUseCases {
   return {
-    async create(input: CreateFixtureLineupInput): AsyncResult<FixtureLineup> {
-      if (!input.fixture_id?.trim()) {
-        return create_failure_result("Fixture ID is required");
-      }
-
-      if (!input.team_id?.trim()) {
-        return create_failure_result("Team ID is required");
-      }
-
-      const existing_lineup_result =
-        await repository.get_lineup_for_team_in_fixture(
-          input.fixture_id,
-          input.team_id,
-        );
-
-      if (existing_lineup_result.success) {
-        return create_failure_result(
-          "A lineup already exists for this team in this fixture",
-        );
-      }
-
-      return repository.create(input);
+    ...create_lineup_queries(repository),
+    create: (input) => create_unique_lineup(repository, input),
+    async update(id, input) {
+      const lineup_result = await find_unlocked_lineup(
+        repository,
+        id,
+        LINEUP_ACTION.UPDATE,
+      );
+      if (!lineup_result.success) return lineup_result;
+      return relay_repository_result(
+        repository.update(id, input),
+        log_target(FIXTURE_LINEUP_EVENT.UPDATE_FAILED, { lineup_id: id }),
+      );
     },
-
-    async get_by_id(
-      id: ScalarValueInput<FixtureLineup["id"]>,
-    ): AsyncResult<FixtureLineup> {
-      if (!id || id.trim().length === 0) {
-        return create_failure_result("FixtureLineup ID is required");
-      }
-      return repository.find_by_id(id);
+    async delete(id) {
+      const lineup_result = await find_unlocked_lineup(
+        repository,
+        id,
+        LINEUP_ACTION.DELETE,
+      );
+      if (!lineup_result.success) return lineup_result;
+      return relay_repository_result(
+        repository.delete_by_id(id),
+        log_target(FIXTURE_LINEUP_EVENT.DELETE_FAILED, { lineup_id: id }),
+      );
     },
-
-    async update(
-      id: ScalarValueInput<FixtureLineup["id"]>,
-      input: UpdateFixtureLineupInput,
-    ): AsyncResult<FixtureLineup> {
-      if (!id || id.trim().length === 0)
-        return create_failure_result("FixtureLineup ID is required");
-      const existing_result = await repository.find_by_id(id);
-      if (!existing_result.success || !existing_result.data)
-        return create_failure_result("Lineup not found");
-      if (existing_result.data.status === LINEUP_STATUS.LOCKED)
-        return create_failure_result("Cannot update a locked lineup");
-      return repository.update(id, input);
-    },
-
-    async delete(
-      id: ScalarValueInput<FixtureLineup["id"]>,
-    ): AsyncResult<boolean> {
-      if (!id || id.trim().length === 0)
-        return create_failure_result("FixtureLineup ID is required");
-      const existing_result = await repository.find_by_id(id);
-      if (!existing_result.success || !existing_result.data)
-        return create_failure_result("Lineup not found");
-      if (existing_result.data.status === LINEUP_STATUS.LOCKED)
-        return create_failure_result("Cannot delete a locked lineup");
-      return repository.delete_by_id(id);
-    },
-
-    async list(
-      filter?: FixtureLineupFilter,
-      pagination?: { page: number; page_size: number },
-    ): PaginatedAsyncResult<FixtureLineup> {
-      return repository.find_all(filter ?? {}, pagination ?? {});
-    },
-
-    async get_lineups_for_fixture(
-      fixture_id: ScalarValueInput<FixtureLineup["fixture_id"]>,
-    ): AsyncResult<FixtureLineup[]> {
-      return repository.get_lineups_for_fixture(fixture_id);
-    },
-
-    async get_lineup_for_team_in_fixture(
-      fixture_id: ScalarValueInput<FixtureLineup["fixture_id"]>,
-      team_id: ScalarValueInput<FixtureLineup["team_id"]>,
-    ): AsyncResult<FixtureLineup> {
-      return repository.get_lineup_for_team_in_fixture(fixture_id, team_id);
-    },
-
-    async list_lineups_by_fixture(
-      fixture_id: ScalarValueInput<FixtureLineup["fixture_id"]>,
-      options?: { page: number; page_size: number },
-    ): PaginatedAsyncResult<FixtureLineup> {
-      if (!fixture_id || fixture_id.trim().length === 0)
-        return create_failure_result("Fixture ID is required");
-      return repository.find_by_fixture(fixture_id, options);
-    },
-
-    async list_lineups_by_fixture_and_team(
-      fixture_id: ScalarValueInput<FixtureLineup["fixture_id"]>,
-      team_id: ScalarValueInput<FixtureLineup["team_id"]>,
-      options?: { page: number; page_size: number },
-    ): PaginatedAsyncResult<FixtureLineup> {
-      if (!fixture_id || fixture_id.trim().length === 0)
-        return create_failure_result("Fixture ID is required");
-      if (!team_id || team_id.trim().length === 0)
-        return create_failure_result("Team ID is required");
-      return repository.find_by_fixture_and_team(fixture_id, team_id, options);
-    },
-
-    async submit_lineup(
-      id: ScalarValueInput<FixtureLineup["id"]>,
-    ): AsyncResult<FixtureLineup> {
-      const existing_result = await repository.find_by_id(id);
-      if (!existing_result.success || !existing_result.data) {
-        return create_failure_result("Lineup not found");
-      }
-
-      if (existing_result.data.status === LINEUP_STATUS.LOCKED) {
-        return create_failure_result("Cannot submit a locked lineup");
-      }
-
-      if (existing_result.data.status === LINEUP_STATUS.SUBMITTED) {
-        return create_failure_result("Lineup is already submitted");
-      }
-
-      const player_count = existing_result.data.selected_players.length;
-      if (player_count === 0) {
-        return create_failure_result("Cannot submit an empty lineup");
-      }
-
-      const old_lineup = existing_result.data;
-
-      const result = await repository.update(id, {
-        status: "submitted",
-        submitted_at: new Date().toISOString() as FixtureLineup["submitted_at"],
-      });
-
-      if (result.success && result.data) {
-        EventBus.emit_entity_updated(
-          "fixturelineup",
-          result.data.id,
-          result.data.id,
-          old_lineup as unknown as Record<string, unknown>,
-          result.data as unknown as Record<string, unknown>,
-          ["status", "submitted_at"],
-        );
-      }
-
-      return result;
-    },
-
-    async lock_lineup(
-      id: ScalarValueInput<FixtureLineup["id"]>,
-    ): AsyncResult<FixtureLineup> {
-      const existing_result = await repository.find_by_id(id);
-      if (!existing_result.success || !existing_result.data) {
-        return create_failure_result("Lineup not found");
-      }
-
-      if (existing_result.data.status === LINEUP_STATUS.LOCKED) {
-        return create_failure_result("Lineup is already locked");
-      }
-
-      const player_count = existing_result.data.selected_players.length;
-      if (player_count === 0) {
-        return create_failure_result("Cannot lock an empty lineup");
-      }
-
-      const old_lineup = existing_result.data;
-
-      const result = await repository.update(id, {
-        status: "locked",
-      });
-
-      if (result.success && result.data) {
-        EventBus.emit_entity_updated(
-          "fixturelineup",
-          result.data.id,
-          result.data.id,
-          old_lineup as unknown as Record<string, unknown>,
-          result.data as unknown as Record<string, unknown>,
-          ["status"],
-        );
-      }
-
-      return result;
-    },
+    submit_lineup: (id) =>
+      transition_lineup(repository, id, LINEUP_ACTION.SUBMIT),
+    lock_lineup: (id) => transition_lineup(repository, id, LINEUP_ACTION.LOCK),
   };
 }

@@ -2,6 +2,8 @@ import {
   USER_ROLE_DISPLAY_NAMES,
   type UserRole,
 } from "../../core/interfaces/ports";
+import { PRESENCE_STATUS } from "./presenceStatus";
+import { is_string_value } from "./runtimeTypeGuards";
 
 const ROLE_CREATION_HIERARCHY: Record<UserRole, UserRole[]> = {
   super_admin: [
@@ -26,30 +28,6 @@ const ROLE_CREATION_HIERARCHY: Record<UserRole, UserRole[]> = {
   public_viewer: [],
 };
 
-type ConditionalField =
-  | "organization_id"
-  | "team_id"
-  | "player_id"
-  | "official_id";
-
-const FIELD_VISIBILITY_BY_ROLE: Record<UserRole, ConditionalField[]> = {
-  super_admin: [],
-  org_admin: ["organization_id"],
-  officials_manager: ["organization_id"],
-  team_manager: ["organization_id", "team_id"],
-  official: ["organization_id", "official_id"],
-  player: ["organization_id", "player_id"],
-  public_viewer: [],
-};
-
-const ALWAYS_VISIBLE_FIELDS: Set<string> = new Set([
-  "email",
-  "first_name",
-  "last_name",
-  "role",
-  "status",
-]);
-
 const REQUIRED_FIELDS_BY_ROLE: Record<UserRole, Set<string>> = {
   super_admin: new Set(),
   org_admin: new Set(["organization_id"]),
@@ -61,8 +39,10 @@ const REQUIRED_FIELDS_BY_ROLE: Record<UserRole, Set<string>> = {
 };
 
 export type UserRoleState =
-  | { status: "missing" }
-  | { status: "present"; role: UserRole };
+  | { status: typeof PRESENCE_STATUS.MISSING }
+  | { status: typeof PRESENCE_STATUS.PRESENT; role: UserRole };
+
+const ROLE_FIELD_NAME = "role";
 
 type UserRoleInput = UserRoleState | UserRole;
 
@@ -71,19 +51,19 @@ const USER_ROLE_VALUES: Set<UserRole> = new Set(
 );
 
 function resolve_user_role_state(role: UserRoleInput): UserRoleState {
-  return typeof role === "string" ? { status: "present", role } : role;
+  return is_string_value(role)
+    ? { status: PRESENCE_STATUS.PRESENT, role }
+    : role;
 }
 
 export function build_user_role_state(role?: unknown): UserRoleState {
-  if (typeof role !== "string") {
-    return { status: "missing" };
-  }
+  if (!is_string_value(role)) return { status: PRESENCE_STATUS.MISSING };
 
   if (!USER_ROLE_VALUES.has(role as UserRole)) {
-    return { status: "missing" };
+    return { status: PRESENCE_STATUS.MISSING };
   }
 
-  return { status: "present", role: role as UserRole };
+  return { status: PRESENCE_STATUS.PRESENT, role: role as UserRole };
 }
 
 export function get_allowed_roles_for_creator(
@@ -92,36 +72,13 @@ export function get_allowed_roles_for_creator(
   return ROLE_CREATION_HIERARCHY[creator_role] ?? [];
 }
 
-export function get_visible_fields_for_role(
-  selected_role: UserRole,
-): ConditionalField[] {
-  return FIELD_VISIBILITY_BY_ROLE[selected_role] ?? [];
-}
-
-export function is_system_user_field_visible_for_role(
-  field_name: string,
-  selected_role: UserRoleInput,
-): boolean {
-  if (ALWAYS_VISIBLE_FIELDS.has(field_name)) return true;
-
-  const selected_role_state = resolve_user_role_state(selected_role);
-
-  if (selected_role_state.status !== "present") return false;
-
-  const visible_conditional_fields =
-    FIELD_VISIBILITY_BY_ROLE[selected_role_state.role];
-  if (!visible_conditional_fields) return false;
-
-  return visible_conditional_fields.includes(field_name as ConditionalField);
-}
-
 export function should_field_be_required_for_role(
   field_name: string,
   selected_role: UserRoleInput,
 ): boolean {
   const selected_role_state = resolve_user_role_state(selected_role);
 
-  if (selected_role_state.status !== "present") return false;
+  if (selected_role_state.status !== PRESENCE_STATUS.PRESENT) return false;
 
   const required = REQUIRED_FIELDS_BY_ROLE[selected_role_state.role];
   if (!required) return false;
@@ -134,11 +91,11 @@ export function filter_enum_values_by_creator_role(
   all_enum_values: string[],
   creator_role: UserRoleInput,
 ): string[] {
-  if (field_name !== "role") return all_enum_values;
+  if (field_name !== ROLE_FIELD_NAME) return all_enum_values;
 
   const creator_role_state = resolve_user_role_state(creator_role);
 
-  if (creator_role_state.status !== "present") return [];
+  if (creator_role_state.status !== PRESENCE_STATUS.PRESENT) return [];
 
   const allowed_roles = get_allowed_roles_for_creator(creator_role_state.role);
   return all_enum_values.filter((value) =>

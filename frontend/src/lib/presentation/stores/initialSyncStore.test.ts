@@ -1,152 +1,36 @@
 import { get } from "svelte/store";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { ClerkSessionState } from "$lib/adapters/iam/clerkAuthTypes";
-
 import {
   clear_session_sync_flag,
   has_session_been_synced,
   initial_sync_store,
 } from "./initialSyncStore";
+import {
+  ANONYMOUS_SESSION_SYNC_MARKER,
+  build_legacy_verified_session_sync_marker,
+  build_verified_user_session_sync_marker,
+  mock_app_settings_store,
+  reset_session_sync_test_state,
+  SESSION_SYNC_KEY,
+  set_signed_in_clerk_session_state,
+  set_signed_in_without_loaded_user,
+} from "./sessionSyncMarkerTestSupport";
 
-const SESSION_SYNC_KEY = "sports_org_session_synced";
-const ANONYMOUS_SESSION_SYNC_MARKER = JSON.stringify({ mode: "anonymous" });
-
-function build_verified_session_sync_marker(session_id: string): string {
-  return JSON.stringify({ mode: "verified", session_id });
-}
-
-const { mock_clerk_session_store, mock_initialize_clerk } = vi.hoisted(() => {
-  const mock_clerk_session_store = {
-    current: {
-      is_loaded: false,
-      is_signed_in: false,
-      user_state: { status: "missing" as const },
-      session_id_state: { status: "missing" as const },
-    } as ClerkSessionState,
-    subscribe(callback: (value: unknown) => void): () => void {
-      callback(mock_clerk_session_store.current);
-      return (): void => {};
-    },
-  };
-  const mock_initialize_clerk = vi.fn(async () => true);
-
-  return {
-    mock_clerk_session_store,
-    mock_initialize_clerk,
-  };
-});
-
-function set_signed_out_clerk_session_state(): void {
-  mock_clerk_session_store.current = {
-    is_loaded: true,
-    is_signed_in: false,
-    user_state: { status: "missing" },
-    session_id_state: { status: "missing" },
-  };
-}
-
-function set_signed_in_clerk_session_state(session_id: string): void {
-  mock_clerk_session_store.current = {
-    is_loaded: true,
-    is_signed_in: true,
-    user_state: { status: "missing" },
-    session_id_state: { status: "present", session_id },
-  };
-}
-
-const mock_app_settings_store = {} as Record<string, string>;
-
-vi.mock("$lib/adapters/iam/clerkAuthService", () => ({
-  clerk_session: {
-    subscribe: (callback: (value: unknown) => void) =>
-      mock_clerk_session_store.subscribe(callback),
-  },
-  initialize_clerk: mock_initialize_clerk,
-}));
-
-vi.mock("$lib/infrastructure/container", () => ({
-  get_app_settings_storage: () => ({
-    get_setting: (key: string) =>
-      Promise.resolve(mock_app_settings_store[key] ?? ""),
-    set_setting: (key: string, value: string) => {
-      mock_app_settings_store[key] = value;
-      return Promise.resolve();
-    },
-    remove_setting: (key: string) => {
-      delete mock_app_settings_store[key];
-      return Promise.resolve();
-    },
-    clear_all_settings: () => {
-      Object.keys(mock_app_settings_store).forEach(
-        (k) => delete mock_app_settings_store[k],
-      );
-      return Promise.resolve();
-    },
-  }),
-}));
-
-describe("has_session_been_synced", () => {
-  beforeEach(() => {
-    Object.keys(mock_app_settings_store).forEach(
-      (k) => delete mock_app_settings_store[k],
-    );
-    mock_initialize_clerk.mockClear();
-    set_signed_out_clerk_session_state();
-  });
-
-  it("returns false when session flag is not set", async () => {
-    expect(await has_session_been_synced()).toBe(false);
-  });
-
-  it("returns false when session flag is set to a non-true value", async () => {
-    mock_app_settings_store[SESSION_SYNC_KEY] = "false";
-    expect(await has_session_been_synced()).toBe(false);
-  });
-
-  it("returns true when a legacy session flag is present without an active clerk session", async () => {
-    mock_app_settings_store[SESSION_SYNC_KEY] = "true";
-    expect(await has_session_been_synced()).toBe(true);
-  });
-
-  it("returns false when a legacy session flag is present for an active clerk session", async () => {
-    set_signed_in_clerk_session_state("session-1");
-    mock_app_settings_store[SESSION_SYNC_KEY] = "true";
-
-    expect(await has_session_been_synced()).toBe(false);
-  });
-
-  it("returns false when an anonymous marker is present for an active clerk session", async () => {
-    set_signed_in_clerk_session_state("session-1");
-    mock_app_settings_store[SESSION_SYNC_KEY] = ANONYMOUS_SESSION_SYNC_MARKER;
-
-    expect(await has_session_been_synced()).toBe(false);
-  });
-
-  it("returns true when a verified marker matches the active clerk session", async () => {
-    set_signed_in_clerk_session_state("session-1");
-    mock_app_settings_store[SESSION_SYNC_KEY] =
-      build_verified_session_sync_marker("session-1");
-
-    expect(await has_session_been_synced()).toBe(true);
-  });
-
-  it("returns false when a verified marker does not match the active clerk session", async () => {
-    set_signed_in_clerk_session_state("session-2");
-    mock_app_settings_store[SESSION_SYNC_KEY] =
-      build_verified_session_sync_marker("session-1");
-
-    expect(await has_session_been_synced()).toBe(false);
-  });
-});
+vi.mock("$lib/adapters/iam/clerkAuthService", async () =>
+  (
+    await import("./sessionSyncMarkerTestSupport")
+  ).create_clerk_auth_service_mock(),
+);
+vi.mock("$lib/infrastructure/container", async () =>
+  (
+    await import("./sessionSyncMarkerTestSupport")
+  ).create_app_settings_container_mock(),
+);
 
 describe("clear_session_sync_flag", () => {
   beforeEach(() => {
-    Object.keys(mock_app_settings_store).forEach(
-      (k) => delete mock_app_settings_store[k],
-    );
-    mock_initialize_clerk.mockClear();
-    set_signed_out_clerk_session_state();
+    reset_session_sync_test_state();
   });
 
   it("removes the session sync flag", async () => {
@@ -174,9 +58,7 @@ describe("clear_session_sync_flag", () => {
 
 describe("initial_sync_store", () => {
   beforeEach(() => {
-    Object.keys(mock_app_settings_store).forEach(
-      (k) => delete mock_app_settings_store[k],
-    );
+    reset_session_sync_test_state();
     initial_sync_store.reset();
   });
 
@@ -223,13 +105,23 @@ describe("initial_sync_store", () => {
     );
   });
 
-  it("complete_sync marks verified sync for the active clerk session", async () => {
-    set_signed_in_clerk_session_state("session-1");
+  it("complete_sync marks the session as synced for the stable user identity", async () => {
+    set_signed_in_clerk_session_state("session-1", "user-1");
 
     await initial_sync_store.complete_sync();
 
     expect(mock_app_settings_store[SESSION_SYNC_KEY]).toBe(
-      build_verified_session_sync_marker("session-1"),
+      build_verified_user_session_sync_marker("session-1", "user-1"),
+    );
+  });
+
+  it("complete_sync writes a session-only marker when the user is not loaded", async () => {
+    set_signed_in_without_loaded_user("session-1");
+
+    await initial_sync_store.complete_sync();
+
+    expect(mock_app_settings_store[SESSION_SYNC_KEY]).toBe(
+      build_legacy_verified_session_sync_marker("session-1"),
     );
   });
 
@@ -246,7 +138,7 @@ describe("initial_sync_store", () => {
   });
 
   it("full login sync cycle: start → progress updates → complete sets a matching verified marker", async () => {
-    set_signed_in_clerk_session_state("session-1");
+    set_signed_in_clerk_session_state("session-1", "user-1");
 
     expect(await has_session_been_synced()).toBe(false);
 

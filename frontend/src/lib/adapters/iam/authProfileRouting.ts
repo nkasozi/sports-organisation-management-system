@@ -6,6 +6,7 @@ import type {
   SidebarMenuGroup,
   SystemUserRepository,
 } from "$lib/core/interfaces/ports";
+import { OptionStatus } from "$lib/core/types/Option";
 import type { Result } from "$lib/core/types/Result";
 import {
   create_failure_result,
@@ -13,69 +14,77 @@ import {
 } from "$lib/core/types/Result";
 import type { AuthCache } from "$lib/infrastructure/cache/AuthCache";
 
-import { get_role_for_email } from "./authProfilePermissions";
+import {
+  build_authorization_cache_key,
+  read_authorization_cache,
+} from "./authorizationCacheAccess";
+import { map_unresolved_role_to_authorization_failure } from "./authProfilePermissions";
+import {
+  resolve_token_role,
+  TOKEN_ROLE_STATUS,
+  type TokenRoleResolution,
+} from "./authTokenRoleResolution";
+import {
+  AUTHORIZATION_CACHE_KEY_PREFIX,
+  IAM_LOG_EVENT,
+  IAM_MESSAGE,
+} from "./iamConstants";
 import {
   can_role_access_route,
   get_sidebar_menu_for_role,
 } from "./roleMenuRegistry";
+
+type SidebarMenuResult = Result<SidebarMenuGroup[], AuthorizationFailure>;
+type RouteAccessResult = Result<RouteAccessGranted, RouteAccessDenied>;
 
 export async function get_sidebar_menu_for_profile_impl(
   auth_port: AuthenticationPort,
   system_user_repository: SystemUserRepository,
   authorization_cache: AuthCache<unknown>,
   raw_token: string,
-): Promise<Result<SidebarMenuGroup[], AuthorizationFailure>> {
-  const cache_key = `sidebar_menu:${raw_token}`;
-  const cached = authorization_cache.get_or_miss(cache_key);
-  if (cached.is_hit && cached.value) {
-    console.log("[LocalAuthorizationAdapter] Cache HIT for sidebar menu");
-    return cached.value as Result<SidebarMenuGroup[], AuthorizationFailure>;
-  }
-
-  const verification_result = await auth_port.verify_token(raw_token);
-
-  if (!verification_result.success) {
-    console.warn(
-      "[LocalAuthorizationAdapter] Token verification failed for sidebar menu",
-    );
-    return create_failure_result({
-      failure_type: "token_invalid",
-      message: verification_result.error,
-    });
-  }
-
-  const verification = verification_result.data;
-
-  if (!verification.is_valid || !verification.payload) {
-    const is_expired = verification.error_message?.includes("expired");
-    console.warn("[LocalAuthorizationAdapter] Invalid token for sidebar menu");
-    return create_failure_result({
-      failure_type: is_expired ? "token_expired" : "token_invalid",
-      message: verification.error_message || "Token verification failed",
-    });
-  }
-
-  const role_result = await get_role_for_email(
+): Promise<SidebarMenuResult> {
+  const prefix = AUTHORIZATION_CACHE_KEY_PREFIX.SIDEBAR_MENU;
+  const cache_key = build_authorization_cache_key(prefix, [raw_token]);
+  const cached = read_authorization_cache<SidebarMenuResult>(
+    authorization_cache,
+    cache_key,
+    prefix,
+  );
+  if (cached.status === OptionStatus.SOME) return cached.value;
+  const resolution = await resolve_token_role({
+    auth_port,
     system_user_repository,
-    verification.payload.email,
-  );
-  if (!role_result.success) {
-    return create_failure_result({
-      failure_type: "token_invalid",
-      message: role_result.error,
-    });
-  }
-
-  const role = role_result.data;
-  const menu_items = get_sidebar_menu_for_role(role);
-
-  console.log(
-    `[LocalAuthorizationAdapter] Getting sidebar menu for role: ${role}, returned ${menu_items.length} groups`,
-  );
-
+    raw_token,
+  });
+  if (resolution.status !== TOKEN_ROLE_STATUS.RESOLVED)
+    return create_failure_result(
+      map_unresolved_role_to_authorization_failure(resolution),
+    );
+  const menu_items = get_sidebar_menu_for_role(resolution.role);
+  console.log("[LocalAuthorizationAdapter] Resolved sidebar menu", {
+    event: IAM_LOG_EVENT.SIDEBAR_MENU_RESOLVED,
+    role: resolution.role,
+    group_count: menu_items.length,
+  });
   const result = create_success_result(menu_items);
   authorization_cache.set(cache_key, result);
   return result;
+}
+
+function describe_route_resolution_failure(
+  resolution: Exclude<
+    TokenRoleResolution,
+    { status: typeof TOKEN_ROLE_STATUS.RESOLVED }
+  >,
+): string {
+  switch (resolution.status) {
+    case TOKEN_ROLE_STATUS.TOKEN_INVALID:
+    case TOKEN_ROLE_STATUS.TOKEN_EXPIRED:
+      return IAM_MESSAGE.INVALID_OR_EXPIRED_TOKEN;
+    case TOKEN_ROLE_STATUS.USER_REJECTED:
+    case TOKEN_ROLE_STATUS.LOOKUP_FAILED:
+      return resolution.message;
+  }
 }
 
 export async function can_profile_access_route_impl(
@@ -84,44 +93,29 @@ export async function can_profile_access_route_impl(
   authorization_cache: AuthCache<unknown>,
   raw_token: string,
   route: string,
-): Promise<Result<RouteAccessGranted, RouteAccessDenied>> {
-  const cache_key = `route_access:${raw_token}:${route}`;
-  const cached = authorization_cache.get_or_miss(cache_key);
-  if (cached.is_hit && cached.value) {
-    return cached.value as Result<RouteAccessGranted, RouteAccessDenied>;
-  }
-
-  const verification_result = await auth_port.verify_token(raw_token);
-
-  if (!verification_result.success) {
-    return create_failure_result({ route, message: verification_result.error });
-  }
-
-  const verification = verification_result.data;
-
-  if (!verification.is_valid || !verification.payload) {
+): Promise<RouteAccessResult> {
+  const prefix = AUTHORIZATION_CACHE_KEY_PREFIX.ROUTE_ACCESS;
+  const cache_key = build_authorization_cache_key(prefix, [raw_token, route]);
+  const cached = read_authorization_cache<RouteAccessResult>(
+    authorization_cache,
+    cache_key,
+    prefix,
+  );
+  if (cached.status === OptionStatus.SOME) return cached.value;
+  const resolution = await resolve_token_role({
+    auth_port,
+    system_user_repository,
+    raw_token,
+  });
+  if (resolution.status !== TOKEN_ROLE_STATUS.RESOLVED)
     return create_failure_result({
       route,
-      message: "Invalid or expired authentication token",
+      message: describe_route_resolution_failure(resolution),
     });
-  }
-
-  const role_result = await get_role_for_email(
-    system_user_repository,
-    verification.payload.email,
-  );
-  if (!role_result.success) {
-    return create_failure_result({ route, message: role_result.error });
-  }
-
-  const role = role_result.data;
-  const access_check = can_role_access_route(role, route);
-
-  if (!access_check.allowed) {
+  const access_check = can_role_access_route(resolution.role, route);
+  if (!access_check.allowed)
     return create_failure_result({ route, message: access_check.reason });
-  }
-
-  const all_accessible_routes = get_sidebar_menu_for_role(role);
+  const all_accessible_routes = get_sidebar_menu_for_role(resolution.role);
   const result = create_success_result({ route, all_accessible_routes });
   authorization_cache.set(cache_key, result);
   return result;

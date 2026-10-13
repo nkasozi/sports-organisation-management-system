@@ -5,9 +5,21 @@ import type {
 } from "../../core/entities/BaseEntity";
 import type { ScalarInput } from "../../core/types/DomainScalars";
 import type { SubEntityFilter } from "../../core/types/SubEntityFilter";
+import {
+  DYNAMIC_FORM_FIELD_TYPE,
+  DYNAMIC_FORM_TITLE_PREFIX,
+  type DynamicFormData,
+} from "./dynamicFormConstants";
+import { get_default_value_for_field_type } from "./dynamicFormFieldDefaults";
+import { is_string_value } from "./runtimeTypeGuards";
 
 type BaseEntityInput = Partial<BaseEntity> | Partial<ScalarInput<BaseEntity>>;
 
+export {
+  get_default_value_for_field_type,
+  get_input_type_for_field,
+} from "./dynamicFormFieldDefaults";
+export { convert_file_to_base64 } from "./dynamicFormFileEncoding";
 export {
   validate_field_against_rules,
   validate_form_data_against_metadata,
@@ -24,21 +36,23 @@ export { build_foreign_key_select_options } from "./foreignKeyOptionBuilder";
 export { is_jersey_color_field } from "./foreignKeyOptionBuilder";
 
 export function determine_if_edit_mode(data?: BaseEntityInput): boolean {
-  return typeof data?.id === "string" && data.id.length > 0;
+  return is_string_value(data?.id) && data.id.length > 0;
 }
 
 export function build_form_title(
   display_name: string,
   edit_mode: boolean,
 ): string {
-  return `${edit_mode ? "Edit" : "Create"} ${display_name}`;
+  return `${edit_mode ? DYNAMIC_FORM_TITLE_PREFIX.EDIT : DYNAMIC_FORM_TITLE_PREFIX.CREATE} ${display_name}`;
 }
 
 export function get_sub_entity_fields(
   metadata?: EntityMetadata,
 ): FieldMetadata[] {
   if (!metadata) return [];
-  return metadata.fields.filter((field) => field.field_type === "sub_entity");
+  return metadata.fields.filter(
+    (field) => field.field_type === DYNAMIC_FORM_FIELD_TYPE.SUB_ENTITY,
+  );
 }
 
 export function build_sub_entity_filter(
@@ -55,80 +69,50 @@ export function build_sub_entity_filter(
   };
 }
 
-export function get_default_value_for_field_type(field: FieldMetadata): any {
-  if (field.field_type === "string") return "";
-  if (field.field_type === "number") return 0;
-  if (field.field_type === "star_rating") return 0;
-  if (field.field_type === "boolean") return false;
-  if (field.field_type === "date") return "";
-  if (field.field_type === "file") return "";
-  if (field.field_type === "enum") {
-    if (!field.enum_values || field.enum_values.length === 0) return "";
-    if (!field.is_required) return "";
-    return field.enum_values[0];
-  }
-  if (field.field_type === "foreign_key") return "";
-  if (field.field_type === "stage_template_array") return [];
-  return "";
-}
-
 export function get_sorted_fields_for_display(
   fields: FieldMetadata[],
   in_edit_mode: boolean,
 ): FieldMetadata[] {
-  const renderable_fields = fields.filter((f) => f.field_type !== "sub_entity");
+  const renderable_fields = fields.filter(
+    (f) => f.field_type !== DYNAMIC_FORM_FIELD_TYPE.SUB_ENTITY,
+  );
   const visible_fields = renderable_fields.filter(
     (f) => !(!in_edit_mode && f.hide_on_create),
   );
-  const file_fields = visible_fields.filter((f) => f.field_type === "file");
-  const other_fields = visible_fields.filter((f) => f.field_type !== "file");
+  const file_fields = visible_fields.filter(
+    (f) => f.field_type === DYNAMIC_FORM_FIELD_TYPE.FILE,
+  );
+  const other_fields = visible_fields.filter(
+    (f) => f.field_type !== DYNAMIC_FORM_FIELD_TYPE.FILE,
+  );
   return [...file_fields, ...other_fields];
-}
-
-export function get_input_type_for_field(field: FieldMetadata): string {
-  if (field.field_type === "number") return "number";
-  if (field.field_type === "date") return "date";
-  if (field.field_type === "file") return "file";
-  if (field.field_name.includes("email")) return "email";
-  if (field.field_name.includes("phone") || field.field_name.includes("tel"))
-    return "tel";
-  if (field.field_name.includes("icon")) return "text";
-  if (
-    field.field_name.includes("url") ||
-    field.field_name.includes("website") ||
-    field.field_name.includes("link")
-  )
-    return "url";
-  return "text";
 }
 
 export function initialize_form_data_from_metadata(
   metadata: EntityMetadata,
   existing_data?: Partial<BaseEntity>,
-): Record<string, any> {
-  const new_form_data: Record<string, any> = {};
+): DynamicFormData {
+  const existing_values: DynamicFormData = { ...existing_data };
+  const new_form_data: DynamicFormData = {};
   for (const field of metadata.fields) {
-    if (
-      existing_data &&
-      Object.prototype.hasOwnProperty.call(existing_data, field.field_name)
-    ) {
-      new_form_data[field.field_name] =
-        existing_data[field.field_name as keyof BaseEntity];
-    } else {
-      new_form_data[field.field_name] = get_default_value_for_field_type(field);
-    }
+    new_form_data[field.field_name] = Object.prototype.hasOwnProperty.call(
+      existing_values,
+      field.field_name,
+    )
+      ? existing_values[field.field_name]
+      : get_default_value_for_field_type(field);
   }
   return new_form_data;
 }
 
 export function is_field_visible_by_visible_when_condition(
   field: FieldMetadata,
-  current_form_data: Record<string, any>,
+  current_form_data: DynamicFormData,
 ): boolean {
   if (!field.visible_when) return true;
   const dependency_value =
     current_form_data[field.visible_when.depends_on_field];
-  if (!dependency_value) return false;
+  if (!is_string_value(dependency_value) || !dependency_value) return false;
   return field.visible_when.visible_when_values.includes(dependency_value);
 }
 
@@ -157,15 +141,6 @@ export function should_field_be_read_only(
     field.field_name,
     sub_entity_filter,
   );
-}
-
-export function convert_file_to_base64(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = (error) => reject(error);
-    reader.readAsDataURL(file);
-  });
 }
 
 export function has_enum_options(field: FieldMetadata): boolean {

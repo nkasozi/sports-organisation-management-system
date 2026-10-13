@@ -5,192 +5,191 @@ import type {
 } from "$lib/core/entities/OfficialPerformanceRating";
 import { validate_rating_input } from "$lib/core/entities/OfficialPerformanceRating";
 import type {
-  OfficialPerformanceRatingFilter,
   OfficialPerformanceRatingRepository,
+  OfficialPerformanceRatingUseCasesPort,
 } from "$lib/core/interfaces/ports";
-import type { QueryOptions } from "$lib/core/interfaces/ports";
-import type { OfficialPerformanceRatingUseCasesPort } from "$lib/core/interfaces/ports";
-import { is_official_performance_rating_not_found_error } from "$lib/core/interfaces/ports";
 import type { ScalarValueInput } from "$lib/core/types/DomainScalars";
-import type { AsyncResult, PaginatedAsyncResult } from "$lib/core/types/Result";
-import { create_failure_result } from "$lib/core/types/Result";
+import type { AsyncResult } from "$lib/core/types/Result";
+import { UseCaseErrorCode } from "$lib/core/types/UseCaseFailure";
+
+import {
+  CurrentUserStatus,
+  OFFICIAL_PERFORMANCE_RATING_DEFAULT_QUERY_OPTIONS,
+  OFFICIAL_PERFORMANCE_RATING_WIDE_QUERY_OPTIONS,
+  OfficialPerformanceRatingUseCaseEvent,
+  OfficialPerformanceRatingUseCaseMessage,
+} from "./OfficialPerformanceRatingUseCasesConstants";
+import type { RatingId } from "./OfficialPerformanceRatingUseCasesQueries";
+import {
+  build_rating_filter,
+  build_rating_target,
+  get_rating_by_id,
+  list_ratings,
+  list_ratings_by_fixture,
+  list_ratings_by_official,
+} from "./OfficialPerformanceRatingUseCasesQueries";
+import { submit_or_update_rating } from "./OfficialPerformanceRatingUseCasesSubmit";
+import {
+  fail_validation,
+  forward_dependency_result,
+} from "./UseCaseResultGuards";
 
 export type OfficialPerformanceRatingUseCases =
   OfficialPerformanceRatingUseCasesPort;
 
-type CurrentUserProvider = () =>
+type CurrentUser =
   | {
-      status: "available";
+      status: typeof CurrentUserStatus.AVAILABLE;
       id: ScalarValueInput<OfficialPerformanceRating["rater_user_id"]>;
       role: string;
     }
-  | {
-      status: "anonymous";
-    };
+  | { status: typeof CurrentUserStatus.ANONYMOUS };
 
-const ANONYMOUS_CURRENT_USER: ReturnType<CurrentUserProvider> = {
-  status: "anonymous",
+type CurrentUserProvider = () => CurrentUser;
+
+type RaterIdentity = Pick<
+  CreateOfficialPerformanceRatingInput,
+  "rater_user_id" | "rater_role"
+>;
+
+const ANONYMOUS_CURRENT_USER: CurrentUser = {
+  status: CurrentUserStatus.ANONYMOUS,
 };
+
+function resolve_rater_identity(
+  current_user: CurrentUser,
+  input: CreateOfficialPerformanceRatingInput,
+): RaterIdentity {
+  switch (current_user.status) {
+    case CurrentUserStatus.AVAILABLE:
+      return {
+        rater_user_id: current_user.id || input.rater_user_id || "",
+        rater_role: current_user.role || input.rater_role || "",
+      };
+    case CurrentUserStatus.ANONYMOUS:
+      return {
+        rater_user_id: input.rater_user_id || "",
+        rater_role: input.rater_role || "",
+      };
+  }
+}
+
+async function create_rating(
+  repository: OfficialPerformanceRatingRepository,
+  current_user: CurrentUser,
+  input: CreateOfficialPerformanceRatingInput,
+): AsyncResult<OfficialPerformanceRating> {
+  const enriched_input: CreateOfficialPerformanceRatingInput = {
+    ...input,
+    ...resolve_rater_identity(current_user, input),
+  };
+  const context = {
+    official_id: enriched_input.official_id,
+    fixture_id: enriched_input.fixture_id,
+  };
+  const validation_errors = validate_rating_input(enriched_input);
+  if (validation_errors.length > 0) {
+    return fail_validation(
+      build_rating_target(
+        OfficialPerformanceRatingUseCaseEvent.CREATE_VALIDATION_FAILED,
+        context,
+      ),
+      validation_errors,
+    );
+  }
+  return forward_dependency_result(await repository.create(enriched_input), {
+    ...build_rating_target(
+      OfficialPerformanceRatingUseCaseEvent.CREATE_FAILED,
+      context,
+    ),
+    code: UseCaseErrorCode.DEPENDENCY_FAILED,
+  });
+}
+
+async function update_rating(
+  repository: OfficialPerformanceRatingRepository,
+  id: RatingId,
+  input: UpdateOfficialPerformanceRatingInput,
+): AsyncResult<OfficialPerformanceRating> {
+  const context = { rating_id: id };
+  const existing_result = await repository.find_by_id(id);
+  if (!existing_result.success) {
+    return forward_dependency_result(existing_result, {
+      ...build_rating_target(
+        OfficialPerformanceRatingUseCaseEvent.UPDATE_TARGET_NOT_FOUND,
+        context,
+      ),
+      code: UseCaseErrorCode.NOT_FOUND,
+      user_message: OfficialPerformanceRatingUseCaseMessage.NOT_FOUND,
+    });
+  }
+  const merged_input: CreateOfficialPerformanceRatingInput = {
+    ...existing_result.data,
+    ...input,
+  };
+  const validation_errors = validate_rating_input(merged_input);
+  if (validation_errors.length > 0) {
+    return fail_validation(
+      build_rating_target(
+        OfficialPerformanceRatingUseCaseEvent.UPDATE_VALIDATION_FAILED,
+        context,
+      ),
+      validation_errors,
+    );
+  }
+  return forward_dependency_result(await repository.update(id, input), {
+    ...build_rating_target(
+      OfficialPerformanceRatingUseCaseEvent.UPDATE_FAILED,
+      context,
+    ),
+    code: UseCaseErrorCode.DEPENDENCY_FAILED,
+  });
+}
+
+async function delete_rating(
+  repository: OfficialPerformanceRatingRepository,
+  id: RatingId,
+): AsyncResult<boolean> {
+  return forward_dependency_result(await repository.delete_by_id(id), {
+    ...build_rating_target(
+      OfficialPerformanceRatingUseCaseEvent.DELETE_FAILED,
+      {
+        rating_id: id,
+      },
+    ),
+    code: UseCaseErrorCode.DEPENDENCY_FAILED,
+  });
+}
 
 function create_official_performance_rating_use_cases(
   repository: OfficialPerformanceRatingRepository,
   get_current_user: CurrentUserProvider = () => ANONYMOUS_CURRENT_USER,
 ): OfficialPerformanceRatingUseCases {
   return {
-    async create(
-      input: CreateOfficialPerformanceRatingInput,
-    ): AsyncResult<OfficialPerformanceRating> {
-      const current_user = get_current_user();
-      const current_user_id =
-        current_user.status === "available" ? current_user.id : "";
-      const current_user_role =
-        current_user.status === "available" ? current_user.role : "";
-      const enriched_input: CreateOfficialPerformanceRatingInput = {
-        ...input,
-        rater_user_id: current_user_id || input.rater_user_id || "",
-        rater_role: current_user_role || input.rater_role || "",
-      };
-      const validation_errors = validate_rating_input(enriched_input);
-      if (validation_errors.length > 0) {
-        return create_failure_result(validation_errors.join(", "));
-      }
-      return repository.create(enriched_input);
-    },
-
-    async update(
-      id: OfficialPerformanceRating["id"],
-      input: UpdateOfficialPerformanceRatingInput,
-    ): AsyncResult<OfficialPerformanceRating> {
-      const existing_result = await repository.find_by_id(id);
-      if (!existing_result.success || !existing_result.data) {
-        return create_failure_result("Rating not found");
-      }
-
-      const merged_input: CreateOfficialPerformanceRatingInput = {
-        ...existing_result.data,
-        ...input,
-      };
-
-      const validation_errors = validate_rating_input(merged_input);
-      if (validation_errors.length > 0) {
-        return create_failure_result(validation_errors.join(", "));
-      }
-
-      return repository.update(id, input);
-    },
-
-    async delete(id: OfficialPerformanceRating["id"]): AsyncResult<boolean> {
-      return repository.delete_by_id(id);
-    },
-
-    async get_by_id(
-      id: OfficialPerformanceRating["id"],
-    ): AsyncResult<OfficialPerformanceRating> {
-      return repository.find_by_id(id);
-    },
-
-    async list(
-      filter?: OfficialPerformanceRatingFilter | Record<string, string>,
-      options?: QueryOptions,
-    ): PaginatedAsyncResult<OfficialPerformanceRating> {
-      const query_options = options || { page_number: 1, page_size: 100 };
-      if (!filter) {
-        return repository.find_all({}, query_options);
-      }
-
-      const typed_filter: OfficialPerformanceRatingFilter = {
-        ...(filter.organization_id
-          ? {
-              organization_id:
-                filter.organization_id as OfficialPerformanceRating["organization_id"],
-            }
-          : {}),
-        ...(filter.official_id
-          ? {
-              official_id:
-                filter.official_id as OfficialPerformanceRating["official_id"],
-            }
-          : {}),
-        ...(filter.fixture_id
-          ? {
-              fixture_id:
-                filter.fixture_id as OfficialPerformanceRating["fixture_id"],
-            }
-          : {}),
-        ...(filter.rater_user_id
-          ? {
-              rater_user_id:
-                filter.rater_user_id as OfficialPerformanceRating["rater_user_id"],
-            }
-          : {}),
-        ...(filter.rater_role ? { rater_role: filter.rater_role } : {}),
-      };
-
-      return repository.find_all(typed_filter, query_options);
-    },
-
-    async list_by_official(
-      official_id: OfficialPerformanceRating["official_id"],
-    ): PaginatedAsyncResult<OfficialPerformanceRating> {
-      return repository.find_by_official(official_id, {
-        page_number: 1,
-        page_size: 200,
-      });
-    },
-
-    async list_by_fixture(
-      fixture_id: OfficialPerformanceRating["fixture_id"],
-    ): PaginatedAsyncResult<OfficialPerformanceRating> {
-      return repository.find_by_fixture(fixture_id, {
-        page_number: 1,
-        page_size: 200,
-      });
-    },
-
-    async list_all(): PaginatedAsyncResult<OfficialPerformanceRating> {
-      return repository.find_all({}, { page_number: 1, page_size: 200 });
-    },
-
-    async submit_or_update_rating(
-      input: CreateOfficialPerformanceRatingInput,
-    ): AsyncResult<OfficialPerformanceRating> {
-      const validation_errors = validate_rating_input(input);
-      if (validation_errors.length > 0) {
-        return create_failure_result(validation_errors.join(", "));
-      }
-
-      const existing_result = await repository.find_existing_rating(
-        input.official_id,
-        input.fixture_id,
-        input.rater_user_id,
-      );
-
-      if (
-        !existing_result.success &&
-        !is_official_performance_rating_not_found_error(
-          existing_result.error,
-          input.official_id,
-          input.fixture_id,
-          input.rater_user_id,
-        )
-      ) {
-        return create_failure_result(existing_result.error);
-      }
-
-      if (existing_result.success) {
-        const update_input: UpdateOfficialPerformanceRatingInput = {
-          overall: input.overall,
-          decision_accuracy: input.decision_accuracy,
-          game_control: input.game_control,
-          communication: input.communication,
-          fitness: input.fitness,
-          notes: input.notes,
-        };
-        return repository.update(existing_result.data.id, update_input);
-      }
-
-      return repository.create(input);
-    },
+    create: (input) => create_rating(repository, get_current_user(), input),
+    update: (id, input) => update_rating(repository, id, input),
+    delete: (id) => delete_rating(repository, id),
+    get_by_id: (id) => get_rating_by_id(repository, id),
+    list: (filter, options) =>
+      list_ratings(
+        repository,
+        build_rating_filter(filter),
+        options || { ...OFFICIAL_PERFORMANCE_RATING_DEFAULT_QUERY_OPTIONS },
+      ),
+    list_by_official: (official_id) =>
+      list_ratings_by_official(repository, official_id),
+    list_by_fixture: (fixture_id) =>
+      list_ratings_by_fixture(repository, fixture_id),
+    list_all: () =>
+      list_ratings(
+        repository,
+        {},
+        {
+          ...OFFICIAL_PERFORMANCE_RATING_WIDE_QUERY_OPTIONS,
+        },
+      ),
+    submit_or_update_rating: (input) =>
+      submit_or_update_rating(repository, input),
   };
 }
 

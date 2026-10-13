@@ -5,6 +5,8 @@
         SPORT_OVERTIME_TYPE_OPTIONS,
     } from "$lib/presentation/logic/sportFormEditorState";
 
+    import { is_penalty_based_overtime } from "./sportFormSectionConstants";
+
     export let form_data: CreateSportInput;
 </script>
 
@@ -65,7 +67,7 @@
                 </div>
             </div>
 
-            {#if form_data.overtime_rules.overtime_type === "penalties" || form_data.overtime_rules.overtime_type === "shootout"}
+            {#if is_penalty_based_overtime(form_data.overtime_rules.overtime_type)}
                 <div
                     class="p-4 bg-accent-50 dark:bg-accent-700/50 rounded-lg space-y-4"
                 >
@@ -101,8 +103,7 @@
                                 }
                                 class="rounded"
                             />
-                            <span
-                                class="text-accent-700 dark:text-accent-300"
+                            <span class="text-accent-700 dark:text-accent-300"
                                 >Sudden death after initial rounds</span
                             >
                         </label>

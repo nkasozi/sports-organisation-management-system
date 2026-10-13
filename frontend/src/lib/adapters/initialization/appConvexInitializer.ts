@@ -19,51 +19,69 @@ import {
 } from "$lib/infrastructure/cache/AuthCacheInvalidator";
 import { sync_store } from "$lib/presentation/stores/syncStore";
 
+import {
+  INITIALIZATION_ERROR_CODE,
+  INITIALIZATION_EVENT,
+} from "./initializationEvents";
+import { INITIALIZATION_ERROR_MESSAGE } from "./initializationMessages";
+
+const AUTH_CACHE_INVALIDATOR_STATUS = {
+  STOPPED: "stopped",
+  READY: "ready",
+} as const;
+
 type AuthCacheInvalidatorState =
-  | { status: "stopped" }
-  | { status: "ready"; invalidator: AuthCacheInvalidator };
+  | { status: typeof AUTH_CACHE_INVALIDATOR_STATUS.STOPPED }
+  | {
+      status: typeof AUTH_CACHE_INVALIDATOR_STATUS.READY;
+      invalidator: AuthCacheInvalidator;
+    };
 
 let auth_cache_invalidator_state: AuthCacheInvalidatorState = {
-  status: "stopped",
+  status: AUTH_CACHE_INVALIDATOR_STATUS.STOPPED,
 };
+
+function create_convex_client(convex_url: string): ConvexClient {
+  const client = new ConvexClient(convex_url);
+  client.setAuth(async () => {
+    const token_result = await get_session_token();
+    if (!token_result.success) return;
+    return token_result.data;
+  });
+  sync_store.set_convex_client({
+    mutation: (name: string, args: Record<string, unknown>) =>
+      client.mutation(name as never, args as never),
+    query: (name: string, args: Record<string, unknown>) =>
+      client.query(name as never, args as never),
+  });
+  return client;
+}
 
 export function initialize_convex_client(): Result<ConvexClient> {
   const convex_url = PUBLIC_CONVEX_URL;
   if (!convex_url) {
-    console.log(
-      "[Convex] No PUBLIC_CONVEX_URL configured, skipping Convex initialization",
+    console.warn("[Convex] Convex URL not configured, skipping client setup", {
+      event: INITIALIZATION_EVENT.CONVEX_URL_NOT_CONFIGURED,
+      error_code: INITIALIZATION_ERROR_CODE.CONVEX_URL_MISSING,
+    });
+    return create_failure_result(
+      INITIALIZATION_ERROR_MESSAGE.CONVEX_URL_MISSING,
     );
-    return create_failure_result("No PUBLIC_CONVEX_URL configured");
   }
   try {
-    const client = new ConvexClient(convex_url);
-    client.setAuth(async () => {
-      const token_result = await get_session_token();
-
-      if (!token_result.success) {
-        return;
-      }
-
-      return token_result.data;
+    const client = create_convex_client(convex_url);
+    console.log("[Convex] Client initialized", {
+      event: INITIALIZATION_EVENT.CONVEX_CLIENT_INITIALIZED,
     });
-    sync_store.set_convex_client({
-      mutation: (name: string, args: Record<string, unknown>) =>
-        client.mutation(name as never, args as never),
-      query: (name: string, args: Record<string, unknown>) =>
-        client.query(name as never, args as never),
-    });
-    console.log(
-      "[Convex] Client initialized successfully with URL:",
-      convex_url,
-    );
     return create_success_result(client);
   } catch (error) {
     console.error("[Convex] Failed to initialize client", {
-      event: "failed_to_initialize_client_failed",
+      event: INITIALIZATION_EVENT.CONVEX_CLIENT_INITIALIZATION_FAILED,
+      error_code: INITIALIZATION_ERROR_CODE.CONVEX_CLIENT_CONSTRUCTION_FAILED,
       error: String(error),
     });
     return create_failure_result(
-      `Failed to initialize Convex client: ${error instanceof Error ? error.message : String(error)}`,
+      INITIALIZATION_ERROR_MESSAGE.CONVEX_CLIENT_FAILED,
     );
   }
 }
@@ -72,7 +90,8 @@ export function start_auth_cache_invalidation(
   convex_client: ConvexClient,
 ): boolean {
   if (
-    auth_cache_invalidator_state.status === "ready" &&
+    auth_cache_invalidator_state.status ===
+      AUTH_CACHE_INVALIDATOR_STATUS.READY &&
     auth_cache_invalidator_state.invalidator.is_running()
   ) {
     return false;
@@ -93,19 +112,24 @@ export function start_auth_cache_invalidation(
     ],
     queries_to_watch: [api.authorization.get_current_user_profile],
   });
-  auth_cache_invalidator_state = { status: "ready", invalidator };
+  auth_cache_invalidator_state = {
+    status: AUTH_CACHE_INVALIDATOR_STATUS.READY,
+    invalidator,
+  };
 
   const started = invalidator.start();
   if (started) {
-    console.log(
-      "[AppInitializer] Auth cache invalidation started via Convex subscriptions",
-    );
+    console.log("[AppInitializer] Auth cache invalidation started", {
+      event: INITIALIZATION_EVENT.AUTH_CACHE_INVALIDATION_STARTED,
+    });
   }
   return started;
 }
 
 export function stop_auth_cache_invalidation(): boolean {
-  if (auth_cache_invalidator_state.status !== "ready") {
+  if (
+    auth_cache_invalidator_state.status !== AUTH_CACHE_INVALIDATOR_STATUS.READY
+  ) {
     return false;
   }
 
@@ -114,7 +138,9 @@ export function stop_auth_cache_invalidation(): boolean {
   }
 
   auth_cache_invalidator_state.invalidator.stop();
-  auth_cache_invalidator_state = { status: "stopped" };
+  auth_cache_invalidator_state = {
+    status: AUTH_CACHE_INVALIDATOR_STATUS.STOPPED,
+  };
 
   return true;
 }

@@ -1,3 +1,4 @@
+import type { Fixture } from "$lib/core/entities/Fixture";
 import type { Team } from "$lib/core/entities/Team";
 import {
   type AsyncResult,
@@ -18,35 +19,48 @@ import type {
   MatchReportTeamState,
 } from "$lib/presentation/logic/matchReportPageLoadTypes";
 
-const MATCH_REPORT_PAGE_LOAD_MESSAGE = {
-  fixture_not_found: "Failed to load match",
-} as const;
+import {
+  MATCH_REPORT_EVENT,
+  MATCH_REPORT_MESSAGE,
+} from "./matchReportPageMessages";
+import { PRESENCE_STATUS } from "./presenceStatus";
 
 function build_match_report_team_state(
   team_result: Result<Team>,
 ): MatchReportTeamState {
   if (!team_result.success || !team_result.data) {
-    return { status: "missing" };
+    return { status: PRESENCE_STATUS.MISSING };
   }
 
-  return { status: "present", team: team_result.data };
+  return { status: PRESENCE_STATUS.PRESENT, team: team_result.data };
+}
+
+async function load_match_report_fixture(
+  fixture_id: string,
+  dependencies: Pick<MatchReportPageDependencies, "fixture_use_cases">,
+): AsyncResult<Fixture> {
+  const fixture_result =
+    await dependencies.fixture_use_cases.get_by_id(fixture_id);
+  if (!fixture_result.success || !fixture_result.data) {
+    console.error("[MatchReport] Fixture load failed", {
+      event: MATCH_REPORT_EVENT.FIXTURE_LOAD_FAILED,
+      fixture_id,
+      error: fixture_result.success ? "" : fixture_result.error,
+    });
+    return create_failure_result(MATCH_REPORT_MESSAGE.FIXTURE_LOAD_FAILED);
+  }
+  return create_success_result(fixture_result.data);
 }
 
 export async function load_match_report_page_data(command: {
   fixture_id: string;
   dependencies: MatchReportPageDependencies;
 }): AsyncResult<MatchReportPageData> {
-  const fixture_result = await command.dependencies.fixture_use_cases.get_by_id(
+  const fixture_result = await load_match_report_fixture(
     command.fixture_id,
+    command.dependencies,
   );
-  if (!fixture_result.success || !fixture_result.data) {
-    return create_failure_result(
-      fixture_result.success
-        ? MATCH_REPORT_PAGE_LOAD_MESSAGE.fixture_not_found
-        : fixture_result.error ||
-            MATCH_REPORT_PAGE_LOAD_MESSAGE.fixture_not_found,
-    );
-  }
+  if (!fixture_result.success) return fixture_result;
 
   const fixture = fixture_result.data;
   const [
@@ -81,17 +95,11 @@ export async function refresh_match_report_fixture_data(command: {
   fixture_id: string;
   dependencies: MatchReportRefreshDependencies;
 }): AsyncResult<MatchReportRefreshData> {
-  const fixture_result = await command.dependencies.fixture_use_cases.get_by_id(
+  const fixture_result = await load_match_report_fixture(
     command.fixture_id,
+    command.dependencies,
   );
-  if (!fixture_result.success || !fixture_result.data) {
-    return create_failure_result(
-      fixture_result.success
-        ? MATCH_REPORT_PAGE_LOAD_MESSAGE.fixture_not_found
-        : fixture_result.error ||
-            MATCH_REPORT_PAGE_LOAD_MESSAGE.fixture_not_found,
-    );
-  }
+  if (!fixture_result.success) return fixture_result;
 
   const lineups = await load_match_report_lineups(
     fixture_result.data,

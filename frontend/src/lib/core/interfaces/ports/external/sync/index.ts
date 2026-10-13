@@ -1,5 +1,4 @@
 export type {
-  LocalChangePublisherPort,
   LocalSyncStatus,
   SyncRestorationHandlers,
 } from "./LocalChangePublisherPort";

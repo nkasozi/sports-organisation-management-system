@@ -4,6 +4,8 @@ import {
   get_entity_level_disabled_operations,
   normalize_to_entity_type,
 } from "$lib/core/interfaces/ports";
+import { PRESENCE_STATUS } from "$lib/presentation/logic/presenceStatus";
+import { is_string_value } from "$lib/presentation/logic/runtimeTypeGuards";
 
 import type { BaseEntity } from "../../core/entities/BaseEntity";
 import type {
@@ -12,20 +14,23 @@ import type {
   EntityViewCallbacks,
 } from "../../core/types/EntityHandlers";
 import { is_functionality_disabled } from "../../core/types/EntityHandlers";
-import { get_use_cases_for_entity_type } from "../../infrastructure/registry/entityUseCasesRegistry";
+import {
+  type GenericEntityUseCases,
+  get_use_cases_for_entity_type,
+} from "../../infrastructure/registry/entityUseCasesRegistry";
 import type { AuthProfileState } from "../stores/authTypes";
 
 export function get_disabled_crud_actions_for_profile(
   entity_type: string,
   profile_state: AuthProfileState,
 ): CrudFunctionality[] {
-  if (profile_state.status !== "present") {
-    console.log(
-      `[EntityCrudWrapper] No profile - disabling all crud for "${entity_type}"`,
-    );
+  if (profile_state.status !== PRESENCE_STATUS.PRESENT) {
+    console.info("[EntityCrudWrapper] No profile - disabling all crud", {
+      event: "entity_crud_wrapper_crud_disabled_without_profile",
+      entity_type,
+    });
     return ["create", "edit", "delete"];
   }
-
   const profile = profile_state.profile;
   const disabled_actions: CrudFunctionality[] = [];
   const normalized = normalize_to_entity_type(entity_type);
@@ -42,9 +47,13 @@ export function get_disabled_crud_actions_for_profile(
     if (!disabled_actions.includes(restricted_operation))
       disabled_actions.push(restricted_operation);
   }
-  console.log(
-    `[EntityCrudWrapper] Permission check for "${entity_type}" (category: ${category}) with role "${profile.role}": disabled = [${disabled_actions.join(", ")}]`,
-  );
+  console.debug("[EntityCrudWrapper] Permission check completed", {
+    event: "entity_crud_wrapper_permission_checked",
+    entity_type,
+    category,
+    role: profile.role,
+    disabled_actions,
+  });
   return disabled_actions;
 }
 
@@ -54,56 +63,25 @@ export function compute_effective_disabled_functionalities(
   normalized_entity_type: string,
 ): CrudFunctionality[] {
   const result = Array.from(new Set([...explicit_disabled, ...auth_disabled]));
-  if (auth_disabled.length > 0) {
-    console.log(
-      `[EntityCrudWrapper] Authorization disabled actions for ${normalized_entity_type}:`,
-      auth_disabled,
-    );
-  }
+  if (auth_disabled.length > 0)
+    console.debug("[EntityCrudWrapper] Authorization disabled actions", {
+      event: "entity_crud_wrapper_authorization_disabled_actions",
+      entity_type: normalized_entity_type,
+      disabled_actions: auth_disabled,
+    });
   return result;
 }
 
 export function normalize_entity_type(type: string): string {
-  if (typeof type !== "string") return "";
+  if (!is_string_value(type)) return "";
   return type.toLowerCase().replace(/\s+/g, "").trim();
 }
 
-function format_entity_display_name(raw_name: string): string {
-  if (typeof raw_name !== "string" || raw_name.length === 0) return "Entity";
-  const with_spaces = raw_name
-    .replace(/([a-z])([A-Z])/g, "$1 $2")
-    .replace(/_/g, " ");
-  return with_spaces
-    .split(" ")
-    .map(
-      (word: string) =>
-        word.charAt(0).toUpperCase() + word.slice(1).toLowerCase(),
-    )
-    .join(" ");
-}
+export { build_page_title_for_current_view } from "./entityCrudWrapperDisplay";
 
-export function build_page_title_for_current_view(
-  view: string,
-  type?: string,
-): string {
-  const type_display = format_entity_display_name(type || "");
-  if (view === "create") return `Create New ${type_display}`;
-  if (view === "edit") return `Edit ${type_display}`;
-  return `${type_display} Management`;
-}
-
-export function build_crud_handlers_for_entity_type(
-  normalized_type: string,
-  filter_override: Record<string, unknown>,
+function build_write_crud_handlers(
+  use_cases: GenericEntityUseCases,
 ): EntityCrudHandlers {
-  const use_cases_result = get_use_cases_for_entity_type(normalized_type);
-  if (!use_cases_result.success) {
-    console.warn(
-      `[EntityCrudWrapper] No use cases found for entity type: ${normalized_type}`,
-    );
-    return {};
-  }
-  const use_cases = use_cases_result.data;
   return {
     ...(use_cases.create
       ? {
@@ -122,6 +100,14 @@ export function build_crud_handlers_for_entity_type(
           delete: async (id: string) => use_cases.delete(id),
         }
       : {}),
+  };
+}
+
+function build_read_crud_handlers(
+  use_cases: GenericEntityUseCases,
+  filter_override: Record<string, unknown>,
+): EntityCrudHandlers {
+  return {
     ...(use_cases.list
       ? {
           list: async (
@@ -138,6 +124,24 @@ export function build_crud_handlers_for_entity_type(
   };
 }
 
+export function build_crud_handlers_for_entity_type(
+  normalized_type: string,
+  filter_override: Record<string, unknown>,
+): EntityCrudHandlers {
+  const use_cases_result = get_use_cases_for_entity_type(normalized_type);
+  if (!use_cases_result.success) {
+    console.warn("[EntityCrudWrapper] No use cases found for entity type", {
+      event: "entity_crud_wrapper_use_cases_missing",
+      entity_type: normalized_type,
+    });
+    return {};
+  }
+  return {
+    ...build_write_crud_handlers(use_cases_result.data),
+    ...build_read_crud_handlers(use_cases_result.data, filter_override),
+  };
+}
+
 export function build_list_view_callbacks(
   disabled_functionalities: CrudFunctionality[],
   entity_type: string,
@@ -147,10 +151,11 @@ export function build_list_view_callbacks(
     handle_entity_deleted: (entity: BaseEntity) => void;
   },
 ): EntityViewCallbacks {
-  console.debug(
-    `[EntityCrudWrapper] Building list view callbacks for ${entity_type}, disabled:`,
+  console.debug("[EntityCrudWrapper] Building list view callbacks", {
+    event: "entity_crud_wrapper_list_callbacks_built",
+    entity_type,
     disabled_functionalities,
-  );
+  });
   return {
     ...(!is_functionality_disabled("create", disabled_functionalities)
       ? { on_create_requested: handlers.handle_create_requested }

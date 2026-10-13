@@ -1,4 +1,11 @@
 import {
+  COMPETITION_FORMAT_VALIDATION_MESSAGES,
+  GROUP_STAGE_FORMAT_TYPES,
+  KNOCKOUT_STAGE_FORMAT_TYPES,
+  LEAGUE_FORMAT_TYPES,
+  MINIMUM_TEAMS_REQUIRED,
+} from "./CompetitionFormatConstants";
+import {
   create_default_group_stage_config,
   create_default_knockout_stage_config,
   create_default_league_config,
@@ -11,59 +18,86 @@ import type {
 } from "./CompetitionFormatTypes";
 import { DEFAULT_POINTS_CONFIG } from "./CompetitionFormatTypes";
 import { create_default_stage_templates } from "./CompetitionStage";
-import { FORMAT_TYPE } from "./StatusConstants";
+
+type CompetitionFormatValidation = { is_valid: boolean; errors: string[] };
 
 export function validate_competition_format_input(
   input: CreateCompetitionFormatInput,
-): { is_valid: boolean; errors: string[] } {
-  const errors: string[] = [];
+): CompetitionFormatValidation {
+  const errors: string[] = [
+    ...collect_identity_and_team_count_errors(input),
+    ...collect_stage_config_errors(input),
+    ...collect_stage_template_errors(input.stage_templates),
+  ];
+  return { is_valid: errors.length === 0, errors };
+}
 
-  if (!input.name || input.name.trim().length === 0) {
-    errors.push("Name is required");
+function is_blank(value: string | undefined): boolean {
+  return !value || value.trim().length === 0;
+}
+
+function collect_identity_and_team_count_errors(
+  input: CreateCompetitionFormatInput,
+): string[] {
+  const errors: string[] = [];
+  if (is_blank(input.name)) {
+    errors.push(COMPETITION_FORMAT_VALIDATION_MESSAGES.NAME_REQUIRED);
   }
-  if (!input.code || input.code.trim().length === 0) {
-    errors.push("Code is required");
+  if (is_blank(input.code)) {
+    errors.push(COMPETITION_FORMAT_VALIDATION_MESSAGES.CODE_REQUIRED);
   }
-  if (input.min_teams_required < 2) {
-    errors.push("Minimum teams required must be at least 2");
+  if (input.min_teams_required < MINIMUM_TEAMS_REQUIRED) {
+    errors.push(COMPETITION_FORMAT_VALIDATION_MESSAGES.MIN_TEAMS_TOO_LOW);
   }
   if (input.max_teams_allowed < input.min_teams_required) {
-    errors.push("Maximum teams must be greater than or equal to minimum teams");
+    errors.push(COMPETITION_FORMAT_VALIDATION_MESSAGES.MAX_BELOW_MIN_TEAMS);
   }
+  return errors;
+}
 
+function collect_stage_config_errors(
+  input: CreateCompetitionFormatInput,
+): string[] {
+  const errors: string[] = [];
   if (
-    requires_group_stage_config(input.format_type) &&
+    GROUP_STAGE_FORMAT_TYPES.has(input.format_type) &&
     !input.group_stage_config
   ) {
-    errors.push("Group stage configuration is required for this format type");
+    errors.push(COMPETITION_FORMAT_VALIDATION_MESSAGES.GROUP_CONFIG_REQUIRED);
   }
   if (
-    requires_knockout_stage_config(input.format_type) &&
+    KNOCKOUT_STAGE_FORMAT_TYPES.has(input.format_type) &&
     !input.knockout_stage_config
   ) {
     errors.push(
-      "Knockout stage configuration is required for this format type",
+      COMPETITION_FORMAT_VALIDATION_MESSAGES.KNOCKOUT_CONFIG_REQUIRED,
     );
   }
-  if (requires_league_config(input.format_type) && !input.league_config) {
-    errors.push("League configuration is required for this format type");
+  if (LEAGUE_FORMAT_TYPES.has(input.format_type) && !input.league_config) {
+    errors.push(COMPETITION_FORMAT_VALIDATION_MESSAGES.LEAGUE_CONFIG_REQUIRED);
   }
-  if (input.stage_templates.length === 0) {
-    errors.push("At least one stage template is required");
-  }
+  return errors;
+}
 
-  for (const stage_template of input.stage_templates) {
-    if (!stage_template.name || stage_template.name.trim().length === 0) {
-      errors.push("Each stage template must have a name");
-      break;
+function collect_stage_template_errors(
+  stage_templates: CreateCompetitionFormatInput["stage_templates"],
+): string[] {
+  if (stage_templates.length === 0) {
+    return [COMPETITION_FORMAT_VALIDATION_MESSAGES.STAGE_TEMPLATE_REQUIRED];
+  }
+  for (const stage_template of stage_templates) {
+    if (is_blank(stage_template.name)) {
+      return [
+        COMPETITION_FORMAT_VALIDATION_MESSAGES.STAGE_TEMPLATE_NAME_REQUIRED,
+      ];
     }
     if (stage_template.stage_order < 1) {
-      errors.push("Stage template order must be at least 1");
-      break;
+      return [
+        COMPETITION_FORMAT_VALIDATION_MESSAGES.STAGE_TEMPLATE_ORDER_INVALID,
+      ];
     }
   }
-
-  return { is_valid: errors.length === 0, errors };
+  return [];
 }
 
 export function hydrate_competition_format_input(
@@ -91,22 +125,6 @@ export function hydrate_competition_format_input(
       league_config,
     ),
   };
-}
-
-function requires_group_stage_config(format_type: FormatType): boolean {
-  return ["groups_knockout", "groups_playoffs"].includes(format_type);
-}
-
-function requires_knockout_stage_config(format_type: FormatType): boolean {
-  return [
-    "groups_knockout",
-    "straight_knockout",
-    "double_elimination",
-  ].includes(format_type);
-}
-
-function requires_league_config(format_type: FormatType): boolean {
-  return [FORMAT_TYPE.LEAGUE, FORMAT_TYPE.ROUND_ROBIN].includes(format_type);
 }
 
 function normalize_stage_templates(

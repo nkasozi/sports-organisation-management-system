@@ -4,92 +4,25 @@ import {
   type Result,
 } from "$lib/core/types/Result";
 
+import {
+  build_oversized_record_error,
+  calculate_sync_mutation_payload_bytes,
+  ONE_KIBIBYTE,
+  type SyncBatchRecord,
+} from "./syncPushBatchPayload";
 import type { TableName } from "./syncTypes";
 
-const ONE_KIBIBYTE = 1024;
-const DATA_URL_PREFIX = "data:";
-const INLINE_DATA_SUFFIX_MESSAGE =
-  "contains inline file data that exceeds the sync payload limit";
-const OVERSIZED_RECORD_SUFFIX_MESSAGE =
-  "is too large to sync because its payload exceeds the sync payload limit";
-const SMALLER_IMAGE_RETRY_MESSAGE = "Choose a smaller image and try again.";
+export type { SyncBatchRecord };
 
 const MAX_SYNC_BATCH_RECORD_COUNT = 25;
 export const MAX_SYNC_MUTATION_PAYLOAD_BYTES = 900 * ONE_KIBIBYTE;
 
-const text_encoder = new TextEncoder();
-
-export interface SyncBatchRecord {
-  local_id: string;
-  data: Record<string, unknown>;
-  version: number;
-}
-
-interface BuildSyncPushBatchesCommand {
+interface BuildSyncPushBatchesCommand<TRecord extends SyncBatchRecord> {
   table_name: TableName;
-  records: SyncBatchRecord[];
+  records: TRecord[];
   detect_conflicts: boolean;
   max_batch_record_count?: number;
   max_payload_bytes?: number;
-}
-
-const INLINE_DATA_FIELD_FOUND_STATUS = "found";
-const INLINE_DATA_FIELD_NOT_FOUND_STATUS = "not_found";
-
-type InlineDataFieldLookupResult =
-  | {
-      status: typeof INLINE_DATA_FIELD_FOUND_STATUS;
-      field_name: string;
-    }
-  | { status: typeof INLINE_DATA_FIELD_NOT_FOUND_STATUS };
-
-function calculate_sync_mutation_payload_bytes(command: {
-  table_name: string;
-  records: SyncBatchRecord[];
-  detect_conflicts: boolean;
-}): number {
-  return text_encoder.encode(
-    JSON.stringify({
-      table_name: command.table_name,
-      records: command.records,
-      detect_conflicts: command.detect_conflicts,
-    }),
-  ).length;
-}
-
-function find_inline_data_field_name(
-  record_data: Record<string, unknown>,
-): InlineDataFieldLookupResult {
-  for (const [field_name, field_value] of Object.entries(record_data)) {
-    if (typeof field_value !== "string") {
-      continue;
-    }
-    if (!field_value.startsWith(DATA_URL_PREFIX)) {
-      continue;
-    }
-    return {
-      status: INLINE_DATA_FIELD_FOUND_STATUS,
-      field_name,
-    };
-  }
-
-  return { status: INLINE_DATA_FIELD_NOT_FOUND_STATUS };
-}
-
-function build_oversized_record_error(command: {
-  table_name: string;
-  record: SyncBatchRecord;
-}): string {
-  const inline_data_field_lookup = find_inline_data_field_name(
-    command.record.data,
-  );
-  const record_label = `Record "${command.record.local_id}" in "${command.table_name}"`;
-
-  if (inline_data_field_lookup.status === INLINE_DATA_FIELD_FOUND_STATUS) {
-    return `${record_label} is too large to sync because "${inline_data_field_lookup.field_name}" ${INLINE_DATA_SUFFIX_MESSAGE}. ${SMALLER_IMAGE_RETRY_MESSAGE}`;
-  }
-
-  return `${record_label} ${OVERSIZED_RECORD_SUFFIX_MESSAGE}. ${SMALLER_IMAGE_RETRY_MESSAGE}`;
 }
 
 function can_add_record_to_batch(command: {
@@ -137,51 +70,85 @@ function build_single_record_batch(command: {
   return create_success_result([[command.current_record]]);
 }
 
-export function build_sync_push_batches(
-  command: BuildSyncPushBatchesCommand,
-): Result<SyncBatchRecord[][]> {
-  const max_batch_record_count =
-    command.max_batch_record_count ?? MAX_SYNC_BATCH_RECORD_COUNT;
-  const max_payload_bytes =
-    command.max_payload_bytes ?? MAX_SYNC_MUTATION_PAYLOAD_BYTES;
-  const batches: SyncBatchRecord[][] = [];
-  let current_batch: SyncBatchRecord[] = [];
+interface ResolvedSyncBatchLimits {
+  table_name: TableName;
+  detect_conflicts: boolean;
+  max_batch_record_count: number;
+  max_payload_bytes: number;
+}
+
+interface SyncBatchAccumulator<TRecord extends SyncBatchRecord> {
+  batches: TRecord[][];
+  current_batch: TRecord[];
+}
+
+function place_record_in_batches<TRecord extends SyncBatchRecord>(
+  limits: ResolvedSyncBatchLimits,
+  accumulator: SyncBatchAccumulator<TRecord>,
+  current_record: TRecord,
+): Result<SyncBatchAccumulator<TRecord>> {
+  const { batches, current_batch } = accumulator;
+  const can_append_record = can_add_record_to_batch({
+    ...limits,
+    current_batch,
+    current_record,
+  });
+
+  if (can_append_record) {
+    return create_success_result({
+      batches,
+      current_batch: [...current_batch, current_record],
+    });
+  }
+
+  const closed_batches =
+    current_batch.length > 0 ? [...batches, current_batch] : batches;
+  const single_record_batch = build_single_record_batch({
+    table_name: limits.table_name,
+    current_record,
+    detect_conflicts: limits.detect_conflicts,
+    max_payload_bytes: limits.max_payload_bytes,
+  });
+  if (!single_record_batch.success) {
+    return single_record_batch;
+  }
+
+  return create_success_result({
+    batches: closed_batches,
+    current_batch: [current_record],
+  });
+}
+
+export function build_sync_push_batches<TRecord extends SyncBatchRecord>(
+  command: BuildSyncPushBatchesCommand<TRecord>,
+): Result<TRecord[][]> {
+  const limits: ResolvedSyncBatchLimits = {
+    table_name: command.table_name,
+    detect_conflicts: command.detect_conflicts,
+    max_batch_record_count:
+      command.max_batch_record_count ?? MAX_SYNC_BATCH_RECORD_COUNT,
+    max_payload_bytes:
+      command.max_payload_bytes ?? MAX_SYNC_MUTATION_PAYLOAD_BYTES,
+  };
+  let accumulator: SyncBatchAccumulator<TRecord> = {
+    batches: [],
+    current_batch: [],
+  };
 
   for (const current_record of command.records) {
-    const can_append_record = can_add_record_to_batch({
-      table_name: command.table_name,
-      detect_conflicts: command.detect_conflicts,
-      current_batch,
+    const placement = place_record_in_batches(
+      limits,
+      accumulator,
       current_record,
-      max_batch_record_count,
-      max_payload_bytes,
-    });
-
-    if (can_append_record) {
-      current_batch = [...current_batch, current_record];
-      continue;
+    );
+    if (!placement.success) {
+      return placement;
     }
-
-    if (current_batch.length > 0) {
-      batches.push(current_batch);
-    }
-
-    const single_record_batch = build_single_record_batch({
-      table_name: command.table_name,
-      current_record,
-      detect_conflicts: command.detect_conflicts,
-      max_payload_bytes,
-    });
-    if (!single_record_batch.success) {
-      return single_record_batch;
-    }
-
-    current_batch = single_record_batch.data[0];
+    accumulator = placement.data;
   }
 
-  if (current_batch.length > 0) {
-    batches.push(current_batch);
-  }
-
-  return create_success_result(batches);
+  const { batches, current_batch } = accumulator;
+  return create_success_result(
+    current_batch.length > 0 ? [...batches, current_batch] : batches,
+  );
 }

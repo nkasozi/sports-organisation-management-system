@@ -1,36 +1,15 @@
-export const DEMO_DATA_TABLE_NAMES = [
-  "organizations",
-  "competitions",
-  "teams",
-  "players",
-  "officials",
-  "fixtures",
-  "sports",
-  "team_staff",
-  "team_staff_roles",
-  "game_official_roles",
-  "venues",
-  "jersey_colors",
-  "player_positions",
-  "player_profiles",
-  "team_profiles",
-  "profile_links",
-  "calendar_tokens",
-  "competition_formats",
-  "competition_teams",
-  "player_team_memberships",
-  "fixture_details_setups",
-  "fixture_lineups",
-  "activities",
-  "activity_categories",
-  "identification_types",
-  "identifications",
-  "qualifications",
-  "game_event_types",
-  "genders",
-  "live_game_logs",
-  "game_event_logs",
-  "player_team_transfer_histories",
-  "official_associated_teams",
-  "official_performance_ratings",
-] as const;
+import { order_tables_children_first } from "./lib/sync_clear_table_order";
+import {
+  ALLOWED_SYNC_TABLES,
+  type AllowedSyncTable,
+} from "./lib/sync_table_catalog";
+
+export const NON_DEMO_SYNC_TABLES: ReadonlySet<AllowedSyncTable> =
+  new Set<AllowedSyncTable>(["system_users", "organization_settings"]);
+
+export const DEMO_DATA_TABLE_NAMES: readonly AllowedSyncTable[] =
+  order_tables_children_first(
+    ALLOWED_SYNC_TABLES.filter(
+      (table_name) => !NON_DEMO_SYNC_TABLES.has(table_name),
+    ),
+  );

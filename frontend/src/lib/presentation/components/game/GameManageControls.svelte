@@ -3,6 +3,12 @@
         GamePeriod,
         QuickEventButton,
     } from "$lib/core/entities/Fixture";
+    import { GAME_PERIOD } from "$lib/core/entities/StatusConstants";
+
+    import {
+        GAME_EVENT_TEAM_SIDE,
+        type GameTeamSide,
+    } from "./gameDisplayConstants";
 
     export let current_period: GamePeriod;
     export let is_clock_running: boolean;
@@ -14,28 +20,29 @@
     export let on_change_period: (period: GamePeriod) => Promise<void>;
     export let on_open_event_modal: (
         event_button: QuickEventButton,
-        team_side: "home" | "away",
+        team_side: GameTeamSide,
     ) => void;
 </script>
 
 <div>
     <div class="bg-gray-800 text-white px-4 py-2 border-b border-gray-700">
         <div class="flex justify-center gap-3 max-w-4xl mx-auto flex-wrap">
-            {#if current_period === "first_half" && !is_clock_running}
+            {#if current_period === GAME_PERIOD.FIRST_HALF && !is_clock_running}
                 <button
                     class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-[0.175rem] text-sm font-medium"
                     on:click={() => void on_end_current_period()}
                 >
                     ⏹️ End 1st Half
                 </button>
-            {:else if current_period === "half_time"}
+            {:else if current_period === GAME_PERIOD.HALF_TIME}
                 <button
                     class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-[0.175rem] text-sm font-medium"
-                    on:click={() => void on_change_period("second_half")}
+                    on:click={() =>
+                        void on_change_period(GAME_PERIOD.SECOND_HALF)}
                 >
                     ▶️ Start 2nd Half
                 </button>
-            {:else if current_period === "second_half" && !is_clock_running}
+            {:else if current_period === GAME_PERIOD.SECOND_HALF && !is_clock_running}
                 <button
                     class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-[0.175rem] text-sm font-medium"
                     on:click={() => void on_end_current_period()}
@@ -44,7 +51,8 @@
                 </button>
                 <button
                     class="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-[0.175rem] text-sm font-medium"
-                    on:click={() => void on_change_period("extra_time_first")}
+                    on:click={() =>
+                        void on_change_period(GAME_PERIOD.EXTRA_TIME_FIRST)}
                 >
                     ⚡ Extra Time
                 </button>
@@ -69,7 +77,10 @@
                                 class={`flex flex-col items-center justify-center p-2 rounded-[0.175rem] text-white transition-all active:scale-95 ${event_button.color}`}
                                 disabled={!is_clock_running}
                                 on:click={() =>
-                                    on_open_event_modal(event_button, "home")}
+                                    on_open_event_modal(
+                                        event_button,
+                                        GAME_EVENT_TEAM_SIDE.HOME,
+                                    )}
                             >
                                 <span class="text-lg">{event_button.icon}</span>
                                 <span class="text-xs mt-1"
@@ -92,7 +103,10 @@
                                 class={`flex flex-col items-center justify-center p-2 rounded-[0.175rem] text-white transition-all active:scale-95 ${event_button.color}`}
                                 disabled={!is_clock_running}
                                 on:click={() =>
-                                    on_open_event_modal(event_button, "away")}
+                                    on_open_event_modal(
+                                        event_button,
+                                        GAME_EVENT_TEAM_SIDE.AWAY,
+                                    )}
                             >
                                 <span class="text-lg">{event_button.icon}</span>
                                 <span class="text-xs mt-1"
@@ -119,7 +133,10 @@
                                 class={`px-3 py-1.5 rounded-[0.175rem] text-xs font-medium text-white flex items-center gap-1 ${event_button.color}`}
                                 disabled={!is_clock_running}
                                 on:click={() =>
-                                    on_open_event_modal(event_button, "home")}
+                                    on_open_event_modal(
+                                        event_button,
+                                        GAME_EVENT_TEAM_SIDE.HOME,
+                                    )}
                             >
                                 {event_button.icon}
                                 {event_button.label}

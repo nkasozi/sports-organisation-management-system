@@ -1,4 +1,5 @@
 import type { ScalarInput } from "../types/DomainScalars";
+import type { QuickEventButton } from "./FixtureGameEventConfig";
 import {
   GAME_EVENT_ICONS,
   GAME_EVENT_LABELS,
@@ -9,7 +10,7 @@ import type { GameEvent, GameEventType, GamePeriod } from "./FixtureTypes";
 
 export type { QuickEventButton } from "./FixtureGameEventConfig";
 
-export function get_quick_event_buttons() {
+export function get_quick_event_buttons(): QuickEventButton[] {
   return QUICK_EVENT_BUTTONS;
 }
 

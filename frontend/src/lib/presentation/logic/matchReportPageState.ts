@@ -1,36 +1,15 @@
 import type { GameEvent } from "$lib/core/entities/Fixture";
 import type { LineupPlayer } from "$lib/core/entities/FixtureLineup";
+import { FIXTURE_STATUS } from "$lib/core/entities/StatusConstants";
 
+import {
+  MATCH_REPORT_DEFAULT_TEXT,
+  MATCH_REPORT_EVENT_BACKGROUND_BY_TYPE,
+  MATCH_REPORT_STATUS_COLOR_BY_VALUE,
+  MATCH_REPORT_STATUS_LABEL_BY_VALUE,
+} from "./matchReportPageDisplayConstants";
 import type { MatchReportPageDataState } from "./matchReportPageLoadTypes";
-
-const MATCH_REPORT_STATUS_COLOR_BY_VALUE: Record<string, string> = {
-  in_progress: "text-green-400",
-  completed: "text-gray-400",
-  scheduled: "text-primary-400",
-};
-
-const MATCH_REPORT_STATUS_LABEL_BY_VALUE: Record<string, string> = {
-  completed: "Full Time",
-  in_progress: "LIVE",
-  scheduled: "Upcoming",
-};
-
-const MATCH_REPORT_EVENT_BACKGROUND_BY_TYPE: Record<string, string> = {
-  goal: "border-l-green-500 bg-green-50 dark:bg-green-900/20",
-  penalty_scored: "border-l-green-500 bg-green-50 dark:bg-green-900/20",
-  own_goal: "border-l-blue-500 bg-blue-50 dark:bg-blue-900/20",
-  yellow_card: "border-l-yellow-400 bg-yellow-50 dark:bg-yellow-900/20",
-  red_card: "border-l-red-500 bg-red-50 dark:bg-red-900/20",
-  second_yellow: "border-l-red-500 bg-red-50 dark:bg-red-900/20",
-  substitution: "border-l-blue-500 bg-blue-50 dark:bg-blue-900/20",
-  period_start: "border-l-purple-500 bg-purple-50 dark:bg-purple-900/20",
-  period_end: "border-l-purple-500 bg-purple-50 dark:bg-purple-900/20",
-};
-
-const MATCH_REPORT_DEFAULT_TEXT = {
-  kickoff_time_tbd: "TBD",
-  default_event_background: "border-l-gray-300 bg-gray-50 dark:bg-accent-800",
-} as const;
+import { PRESENCE_STATUS } from "./presenceStatus";
 
 interface MatchReportLineupGroups {
   starters: LineupPlayer[];
@@ -92,7 +71,7 @@ export function build_match_report_lineup_groups(
 export function build_match_report_view_state(command: {
   page_data_state: MatchReportPageDataState;
 }): MatchReportViewState {
-  if (command.page_data_state.status === "missing") {
+  if (command.page_data_state.status === PRESENCE_STATUS.MISSING) {
     return create_empty_match_report_view_state();
   }
 
@@ -114,9 +93,10 @@ export function build_match_report_view_state(command: {
     home_substitutes: home_lineup_groups.substitutes,
     away_starters: away_lineup_groups.starters,
     away_substitutes: away_lineup_groups.substitutes,
-    is_game_scheduled: page_data.fixture.status === "scheduled",
-    is_game_in_progress: page_data.fixture.status === "in_progress",
-    is_game_completed: page_data.fixture.status === "completed",
+    is_game_scheduled: page_data.fixture.status === FIXTURE_STATUS.SCHEDULED,
+    is_game_in_progress:
+      page_data.fixture.status === FIXTURE_STATUS.IN_PROGRESS,
+    is_game_completed: page_data.fixture.status === FIXTURE_STATUS.COMPLETED,
     has_lineups:
       page_data.home_players.length > 0 || page_data.away_players.length > 0,
   };
@@ -143,33 +123,33 @@ export function get_match_report_status_label(status: string): string {
 export function should_poll_match_report_fixture(
   page_data_state: MatchReportPageDataState,
 ): boolean {
-  if (page_data_state.status === "missing") {
+  if (page_data_state.status === PRESENCE_STATUS.MISSING) {
     return false;
   }
 
   return (
-    page_data_state.page_data.fixture.status === "scheduled" ||
-    page_data_state.page_data.fixture.status === "in_progress"
+    page_data_state.page_data.fixture.status === FIXTURE_STATUS.SCHEDULED ||
+    page_data_state.page_data.fixture.status === FIXTURE_STATUS.IN_PROGRESS
   );
 }
 
 export function build_match_report_page_title(
   page_data_state: MatchReportPageDataState,
 ): string {
-  if (page_data_state.status === "missing") {
-    return "Match Viewer";
+  if (page_data_state.status === PRESENCE_STATUS.MISSING) {
+    return MATCH_REPORT_DEFAULT_TEXT.page_title_suffix;
   }
 
   const home_team_name =
-    page_data_state.page_data.home_team_state.status === "present"
+    page_data_state.page_data.home_team_state.status === PRESENCE_STATUS.PRESENT
       ? page_data_state.page_data.home_team_state.team.name
-      : "Home";
+      : MATCH_REPORT_DEFAULT_TEXT.home_team_fallback;
   const away_team_name =
-    page_data_state.page_data.away_team_state.status === "present"
+    page_data_state.page_data.away_team_state.status === PRESENCE_STATUS.PRESENT
       ? page_data_state.page_data.away_team_state.team.name
-      : "Away";
+      : MATCH_REPORT_DEFAULT_TEXT.away_team_fallback;
 
-  return `${home_team_name} vs ${away_team_name} - Match Viewer`;
+  return `${home_team_name} vs ${away_team_name} - ${MATCH_REPORT_DEFAULT_TEXT.page_title_suffix}`;
 }
 
 export function format_match_report_kickoff_display(
@@ -183,12 +163,15 @@ export function format_match_report_kickoff_display(
   const parsed_date = new Date(`${date}T00:00:00`);
   const formatted_date = Number.isNaN(parsed_date.getTime())
     ? date
-    : parsed_date.toLocaleDateString("en-US", {
-        weekday: "short",
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-      });
+    : parsed_date.toLocaleDateString(
+        MATCH_REPORT_DEFAULT_TEXT.kickoff_date_locale,
+        {
+          weekday: "short",
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+        },
+      );
 
   if (!time) {
     return formatted_date;

@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { create_competition_results_workspace_controller_runtime } from "./competitionResultsWorkspaceControllerRuntime";
+import { create_results_workspace_command } from "./competitionResultsWorkspaceControllerRuntime.test_support";
 
 const {
   build_shareable_competition_results_url_mock,
@@ -37,48 +38,6 @@ vi.mock(
 );
 
 describe("competitionResultsWorkspaceControllerRuntime", () => {
-  function create_command() {
-    const state = {
-      selected_team_id: "",
-    };
-
-    const command = {
-      competitions: [{ id: "competition-1" }],
-      fixtures: [
-        { id: "fixture-1", home_team_id: "team-1", away_team_id: "team-2" },
-      ],
-      get_branding_logo_url: () => "/logo.svg",
-      get_completed_fixtures: () => [{ id: "fixture-1" }] as never,
-      get_selected_competition_state: () =>
-        ({
-          status: "present",
-          competition: { id: "competition-1", name: "Summer Cup" },
-        }) as never,
-      get_selected_team_id: () => state.selected_team_id,
-      selected_competition_id: "competition-1",
-      selected_organization_id: "organization-1",
-      set_downloading_all_reports: vi.fn(),
-      set_downloading_fixture_id: vi.fn(),
-      set_extended_competition_map: vi.fn(),
-      set_extended_team_map: vi.fn(),
-      set_selected_team_id: vi.fn((value: string) => {
-        state.selected_team_id = value;
-      }),
-      set_selected_team_name: vi.fn(),
-      set_share_link_copied: vi.fn(),
-      set_show_all_competitions_fixtures: vi.fn(),
-      set_team_fixtures_all_competitions: vi.fn(),
-      set_team_fixtures_in_competition: vi.fn(),
-      set_team_fixtures_loading: vi.fn(),
-      team_map: new Map([
-        ["team-1", { id: "team-1", name: "Lions" }],
-        ["team-2", { id: "team-2", name: "Falcons" }],
-      ]),
-    };
-
-    return { command, state };
-  }
-
   beforeEach(() => {
     vi.useRealTimers();
     build_shareable_competition_results_url_mock.mockReset();
@@ -91,9 +50,9 @@ describe("competitionResultsWorkspaceControllerRuntime", () => {
     vi.unstubAllGlobals();
   });
 
-  it("copies the share link when the page has enough context and a browser clipboard is available", () => {
-    const { command } = create_command();
-    const clipboard_write = vi.fn();
+  it("copies the share link when the page has enough context and a browser clipboard is available", async () => {
+    const { command } = create_results_workspace_command();
+    const clipboard_write = vi.fn(async () => {});
     vi.useFakeTimers();
     vi.stubGlobal("window", { location: { origin: "https://example.com" } });
     vi.stubGlobal("navigator", { clipboard: { writeText: clipboard_write } });
@@ -105,15 +64,40 @@ describe("competitionResultsWorkspaceControllerRuntime", () => {
       command as never,
     );
     expect(runtime.handle_copy_share_link()).toBe(true);
-    vi.advanceTimersByTime(2000);
+    await vi.advanceTimersByTimeAsync(2000);
 
     expect(clipboard_write).toHaveBeenCalledWith("https://example.com/share");
     expect(command.set_share_link_copied).toHaveBeenCalledWith(true);
     expect(command.set_share_link_copied).toHaveBeenCalledWith(false);
   });
 
+  it("logs and does not mark the link copied when the clipboard write fails", async () => {
+    const { command } = create_results_workspace_command();
+    const console_error = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
+    vi.stubGlobal("window", { location: { origin: "https://example.com" } });
+    vi.stubGlobal("navigator", {
+      clipboard: { writeText: vi.fn(async () => Promise.reject("denied")) },
+    });
+
+    const runtime = create_competition_results_workspace_controller_runtime(
+      command as never,
+    );
+    expect(runtime.handle_copy_share_link()).toBe(true);
+    await vi.waitFor(() => expect(console_error).toHaveBeenCalled());
+
+    expect(command.set_share_link_copied).not.toHaveBeenCalled();
+    expect(console_error).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({
+        event: "competition_results_share_link_copy_failed",
+      }),
+    );
+  });
+
   it("returns false for share-link copying when required ids are missing", () => {
-    const { command } = create_command();
+    const { command } = create_results_workspace_command();
     const runtime = create_competition_results_workspace_controller_runtime({
       ...command,
       selected_competition_id: "",
@@ -123,7 +107,7 @@ describe("competitionResultsWorkspaceControllerRuntime", () => {
   });
 
   it("toggles report download state for all reports and individual fixture reports", async () => {
-    const { command } = create_command();
+    const { command } = create_results_workspace_command();
     download_all_fixture_reports_mock.mockResolvedValueOnce(true);
     download_fixture_report_mock.mockResolvedValueOnce(false);
     const runtime = create_competition_results_workspace_controller_runtime(
@@ -149,7 +133,7 @@ describe("competitionResultsWorkspaceControllerRuntime", () => {
   });
 
   it("closes the team fixtures panel when the selected team is clicked again", async () => {
-    const { command, state } = create_command();
+    const { command, state } = create_results_workspace_command();
     state.selected_team_id = "team-1";
     const runtime = create_competition_results_workspace_controller_runtime(
       command as never,
@@ -169,7 +153,7 @@ describe("competitionResultsWorkspaceControllerRuntime", () => {
   });
 
   it("loads team fixtures and extended maps when a new team is selected", async () => {
-    const { command } = create_command();
+    const { command } = create_results_workspace_command();
     load_team_fixtures_bundle_mock.mockResolvedValueOnce({
       team_fixtures_in_competition: [{ id: "fixture-1" }],
       team_fixtures_all_competitions: [{ id: "fixture-2" }],

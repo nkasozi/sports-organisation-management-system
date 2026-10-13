@@ -2,12 +2,17 @@
     import type { CreateCompetitionInput } from "$lib/core/entities/Competition";
     import type { SelectOption } from "$lib/presentation/components/ui/SelectField.svelte";
     import type { CompetitionCreateSelectedSportState } from "$lib/presentation/logic/competitionCreatePageFlow";
+    import { PRESENCE_STATUS } from "$lib/presentation/logic/presenceStatus";
 
     import CompetitionCreateActions from "./CompetitionCreateActions.svelte";
     import CompetitionCreateDetailsTab from "./CompetitionCreateDetailsTab.svelte";
     import CompetitionCreateHeader from "./CompetitionCreateHeader.svelte";
     import CompetitionCreateRulesTab from "./CompetitionCreateRulesTab.svelte";
     import CompetitionCreateTabs from "./CompetitionCreateTabs.svelte";
+    import {
+        COMPETITION_CREATE_TAB,
+        type CompetitionCreateTab,
+    } from "./competitionTabConstants";
 
     export let form_data: CreateCompetitionInput = {} as CreateCompetitionInput;
     export let organization_options: SelectOption[] = [];
@@ -15,7 +20,7 @@
     export let team_options: SelectOption[] = [];
     export let selected_team_ids: Set<string> = new Set();
     export let selected_sport_state: CompetitionCreateSelectedSportState = {
-        status: "missing",
+        status: PRESENCE_STATUS.MISSING,
     };
     export let is_loading_organizations = false;
     export let is_loading_formats = false;
@@ -34,11 +39,12 @@
         event: CustomEvent<{ value: string }>,
     ) => void = () => {};
     export let on_toggle_team: (team_id: string) => boolean = () => false;
-    export let on_toggle_auto_squad_submission: (enabled: boolean) => void =
-        () => {};
+    export let on_toggle_auto_squad_submission: (
+        enabled: boolean,
+    ) => void = () => {};
     export let on_submit: () => Promise<void> = async () => {};
 
-    let active_tab: "details" | "rules" = "details";
+    let active_tab: CompetitionCreateTab = COMPETITION_CREATE_TAB.DETAILS;
 </script>
 
 <div class="space-y-6">
@@ -51,7 +57,7 @@
             class="px-4 py-6 space-y-6 sm:px-6"
             on:submit|preventDefault={() => void on_submit()}
         >
-            {#if active_tab === "details"}
+            {#if active_tab === COMPETITION_CREATE_TAB.DETAILS}
                 <CompetitionCreateDetailsTab
                     bind:form_data
                     {organization_options}

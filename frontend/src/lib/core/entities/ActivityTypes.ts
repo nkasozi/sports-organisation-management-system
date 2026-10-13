@@ -7,23 +7,33 @@ import type {
 } from "../types/DomainScalars";
 import type { ActivityCategoryType } from "./ActivityCategory";
 import type { BaseEntity } from "./BaseEntity";
+import { ACTIVITY_SOURCE_TYPE } from "./StatusConstants";
+
+const ACTIVITY_RECURRENCE_PATTERN = {
+  NONE: "none",
+  DAILY: "daily",
+  WEEKLY: "weekly",
+  BIWEEKLY: "biweekly",
+  MONTHLY: "monthly",
+  YEARLY: "yearly",
+} as const;
 
 type ActivityRecurrencePattern =
-  | "none"
-  | "daily"
-  | "weekly"
-  | "biweekly"
-  | "monthly"
-  | "yearly";
+  (typeof ACTIVITY_RECURRENCE_PATTERN)[keyof typeof ACTIVITY_RECURRENCE_PATTERN];
+
+export const ACTIVITY_STATUS = {
+  SCHEDULED: "scheduled",
+  IN_PROGRESS: "in_progress",
+  COMPLETED: "completed",
+  CANCELLED: "cancelled",
+  POSTPONED: "postponed",
+} as const;
 
 export type ActivityStatus =
-  | "scheduled"
-  | "in_progress"
-  | "completed"
-  | "cancelled"
-  | "postponed";
+  (typeof ACTIVITY_STATUS)[keyof typeof ACTIVITY_STATUS];
 
-export type ActivitySourceType = "manual" | "competition" | "fixture";
+export type ActivitySourceType =
+  (typeof ACTIVITY_SOURCE_TYPE)[keyof typeof ACTIVITY_SOURCE_TYPE];
 
 export interface ActivityReminder {
   id: string;
@@ -39,7 +49,7 @@ export interface ActivityRecurrence {
 }
 
 export const NO_ACTIVITY_RECURRENCE: ActivityRecurrence = {
-  pattern: "none",
+  pattern: ACTIVITY_RECURRENCE_PATTERN.NONE,
   interval: 1,
   end_date: "",
   days_of_week: [],

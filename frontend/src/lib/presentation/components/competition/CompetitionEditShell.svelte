@@ -10,6 +10,7 @@
         CompetitionEditSelectedFormatState,
         CompetitionEditSelectedSportState,
     } from "$lib/presentation/logic/competitionEditPageContracts";
+    import { PRESENCE_STATUS } from "$lib/presentation/logic/presenceStatus";
 
     import CompetitionEditDetailsTab from "./CompetitionEditDetailsTab.svelte";
     import CompetitionEditHeader from "./CompetitionEditHeader.svelte";
@@ -19,16 +20,20 @@
     import CompetitionEditStagesTab from "./CompetitionEditStagesTab.svelte";
     import CompetitionEditTabs from "./CompetitionEditTabs.svelte";
     import CompetitionEditTeamsTab from "./CompetitionEditTeamsTab.svelte";
+    import {
+        COMPETITION_EDIT_TAB,
+        type CompetitionEditTab,
+    } from "./competitionTabConstants";
 
     export let competition: Competition;
     export let form_data: UpdateCompetitionInput;
     export let organization_options: SelectOption[];
     export let competition_format_options: SelectOption[];
     export let selected_format_state: CompetitionEditSelectedFormatState = {
-        status: "missing",
+        status: PRESENCE_STATUS.MISSING,
     };
     export let selected_sport_state: CompetitionEditSelectedSportState = {
-        status: "missing",
+        status: PRESENCE_STATUS.MISSING,
     };
     export let teams_in_competition: Team[];
     export let available_teams: Team[];
@@ -62,13 +67,7 @@
     ) => void;
     export let on_reset_scoring: () => void;
 
-    let active_tab:
-        | "details"
-        | "teams"
-        | "stages"
-        | "rules"
-        | "settings"
-        | "official_jerseys" = "details";
+    let active_tab: CompetitionEditTab = COMPETITION_EDIT_TAB.DETAILS;
 </script>
 
 <div class="max-w-4xl mx-auto space-y-6">
@@ -110,7 +109,7 @@
             max_teams={form_data.max_teams ?? 0}
         />
         <div class="p-6">
-            {#if active_tab === "details"}
+            {#if active_tab === COMPETITION_EDIT_TAB.DETAILS}
                 <CompetitionEditDetailsTab
                     {competition}
                     bind:form_data
@@ -123,7 +122,7 @@
                     {on_organization_change}
                     {on_format_change}
                 />
-            {:else if active_tab === "teams"}
+            {:else if active_tab === COMPETITION_EDIT_TAB.TEAMS}
                 <CompetitionEditTeamsTab
                     {teams_in_competition}
                     {available_teams}
@@ -134,12 +133,12 @@
                     {on_add_team}
                     {on_remove_team}
                 />
-            {:else if active_tab === "stages"}
+            {:else if active_tab === COMPETITION_EDIT_TAB.STAGES}
                 <CompetitionEditStagesTab
                     {competition_stage_filter}
                     {can_edit_competition}
                 />
-            {:else if active_tab === "rules"}
+            {:else if active_tab === COMPETITION_EDIT_TAB.RULES}
                 <CompetitionEditRulesTab
                     bind:form_data
                     {selected_format_state}
@@ -153,7 +152,7 @@
                     {on_toggle_tie_breaker}
                     {on_reset_scoring}
                 />
-            {:else if active_tab === "settings"}
+            {:else if active_tab === COMPETITION_EDIT_TAB.SETTINGS}
                 <CompetitionEditSettingsTab
                     bind:form_data
                     {can_edit_competition}

@@ -12,8 +12,14 @@ import type {
   TeamFilter,
   TeamRepository,
 } from "../../core/interfaces/ports";
-import type { PaginatedAsyncResult } from "../../core/types/Result";
+import type {
+  AsyncResult,
+  PaginatedAsyncResult,
+} from "../../core/types/Result";
 import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
+import { reset_repository_data } from "./InBrowserRepositoryReset";
+import { create_lazy_repository_accessor } from "./InBrowserRepositorySingleton";
+import type { RepositoryWriteOrigin } from "./InBrowserRepositoryWriteOrigin";
 import { create_default_teams } from "./InBrowserTeamRepositoryDefaults";
 
 const ENTITY_PREFIX = "team";
@@ -108,28 +114,18 @@ export class InBrowserTeamRepository
   }
 }
 
-type TeamRepositoryState =
-  | { status: "uninitialized" }
-  | { status: "ready"; repository: InBrowserTeamRepository };
-
-let team_repository_state: TeamRepositoryState = {
-  status: "uninitialized",
-};
+const get_concrete_repository: () => InBrowserTeamRepository =
+  create_lazy_repository_accessor(() => new InBrowserTeamRepository());
 
 export function get_team_repository(): TeamRepository {
-  if (team_repository_state.status === "ready") {
-    return team_repository_state.repository;
-  }
-
-  const repository = new InBrowserTeamRepository();
-
-  team_repository_state = { status: "ready", repository };
-
-  return repository;
+  return get_concrete_repository();
 }
 
-export async function reset_team_repository(): Promise<void> {
-  const repository = get_team_repository() as InBrowserTeamRepository;
-  await repository.clear_all_data();
-  await repository.seed_with_data(create_default_teams());
+export function reset_team_repository(
+  origin: RepositoryWriteOrigin,
+): AsyncResult<number> {
+  return reset_repository_data(
+    get_concrete_repository().with_write_origin(origin),
+    create_default_teams(),
+  );
 }

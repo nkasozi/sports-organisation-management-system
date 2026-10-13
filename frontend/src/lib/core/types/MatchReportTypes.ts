@@ -2,6 +2,18 @@ import type { GameEvent } from "$lib/core/entities/Fixture";
 import type { LineupPlayer } from "$lib/core/entities/FixtureLineup";
 import { get_time_on_display } from "$lib/core/entities/FixtureLineup";
 
+import {
+  MATCH_REPORT_EMPTY_TIME_ON,
+  MATCH_REPORT_PRESENT_AT_START_MARK,
+  MATCH_REPORT_TEAM_SIDE,
+  MATCH_REPORT_UNKNOWN_JERSEY,
+} from "./MatchReportConstants";
+
+export { extract_goals_from_events } from "./MatchReportGoals";
+
+type MatchReportTeamSide =
+  (typeof MATCH_REPORT_TEAM_SIDE)[keyof typeof MATCH_REPORT_TEAM_SIDE];
+
 export interface MatchStaffEntry {
   role: string;
   name: string;
@@ -69,118 +81,57 @@ export interface MatchReportData {
   card_types: CardTypeConfig[];
 }
 
+function resolve_report_time_on(player: LineupPlayer): string {
+  const display = get_time_on_display(player.time_on);
+  if (!display) {
+    return player.is_substitute
+      ? MATCH_REPORT_EMPTY_TIME_ON
+      : MATCH_REPORT_PRESENT_AT_START_MARK;
+  }
+  if (display === MATCH_REPORT_PRESENT_AT_START_MARK) return display;
+  return `${display}'`;
+}
+
+function collect_player_cards(
+  player_full_name: string,
+  game_events: GameEvent[],
+  team_side: MatchReportTeamSide,
+  card_types: CardTypeConfig[],
+): MatchPlayerCard[] {
+  const cards: MatchPlayerCard[] = [];
+  for (const event of game_events) {
+    const card_config = card_types.find(
+      (ct) => ct.event_type === event.event_type,
+    );
+    const is_player_card =
+      event.team_side === team_side &&
+      event.player_name.toUpperCase() === player_full_name;
+    if (card_config && is_player_card) {
+      cards.push({ minute: `${event.minute}'`, card_type: card_config.id });
+    }
+  }
+  return cards;
+}
+
 export function build_match_player_entry(
   player: LineupPlayer,
   game_events: GameEvent[],
-  team_side: "home" | "away",
+  team_side: MatchReportTeamSide,
   card_types: CardTypeConfig[],
 ): MatchPlayerEntry {
   const player_full_name =
     `${player.first_name} ${player.last_name}`.toUpperCase();
-  const cards: MatchPlayerCard[] = [];
-  const card_event_types = card_types.map((ct) => ct.event_type);
-  const relevant_events = game_events.filter(
-    (e) =>
-      e.team_side === team_side &&
-      e.player_name.toUpperCase() === player_full_name &&
-      card_event_types.includes(e.event_type),
-  );
-  for (const event of relevant_events) {
-    const card_config = card_types.find(
-      (ct) => ct.event_type === event.event_type,
-    );
-    if (card_config) {
-      cards.push({ minute: `${event.minute}'`, card_type: card_config.id });
-    }
-  }
-  let time_on = get_time_on_display(player.time_on);
-  if (!time_on && !player.is_substitute) time_on = "X";
-  if (time_on && time_on !== "X" && time_on !== "") time_on = `${time_on}'`;
   return {
-    time_on,
-    jersey_number: player.jersey_number ?? "?",
+    time_on: resolve_report_time_on(player),
+    jersey_number: player.jersey_number ?? MATCH_REPORT_UNKNOWN_JERSEY,
     name: player_full_name,
-    cards,
+    cards: collect_player_cards(
+      player_full_name,
+      game_events,
+      team_side,
+      card_types,
+    ),
   };
-}
-
-export function extract_goals_from_events(
-  game_events: GameEvent[],
-  home_initials: string,
-  away_initials: string,
-  home_players: LineupPlayer[],
-  away_players: LineupPlayer[],
-): MatchGoalEntry[] {
-  const goal_event_types = ["goal", "own_goal", "penalty_scored"];
-  let running_home_score = 0;
-  let running_away_score = 0;
-  const goal_events = game_events
-    .filter((e) => goal_event_types.includes(e.event_type))
-    .sort((a, b) => a.minute - b.minute);
-  const goals: MatchGoalEntry[] = [];
-  for (const event of goal_events) {
-    const is_home_goal =
-      event.team_side === "home" && event.event_type !== "own_goal";
-    const is_away_own_goal =
-      event.team_side === "away" && event.event_type === "own_goal";
-    const is_home_scoring = is_home_goal || is_away_own_goal;
-    if (is_home_scoring) {
-      running_home_score++;
-    } else {
-      running_away_score++;
-    }
-    const action = get_goal_action_label(event.event_type);
-    const team_initials = is_home_scoring ? home_initials : away_initials;
-    const jersey_number = find_player_jersey_number(
-      event.player_name,
-      event.team_side,
-      home_players,
-      away_players,
-    );
-    goals.push({
-      team_initials,
-      minute: event.minute,
-      jersey_number,
-      action,
-      score: `${running_home_score}-${running_away_score}`,
-    });
-  }
-
-  return goals;
-}
-
-function find_player_jersey_number(
-  player_name: string,
-  team_side: "home" | "away" | "match",
-  home_players: LineupPlayer[],
-  away_players: LineupPlayer[],
-): number | string {
-  if (!player_name || player_name.trim() === "") return "?";
-  const players = team_side === "home" ? home_players : away_players;
-  const name_upper = player_name.toUpperCase().trim();
-  for (const player of players) {
-    const full_name = `${player.first_name} ${player.last_name}`
-      .toUpperCase()
-      .trim();
-    if (
-      full_name === name_upper ||
-      full_name.includes(name_upper) ||
-      name_upper.includes(full_name)
-    ) {
-      return player.jersey_number ?? "?";
-    }
-  }
-  return "?";
-}
-
-const GOAL_ACTION_LABELS: Record<string, string> = {
-  goal: "FG",
-  penalty_scored: "PC",
-  own_goal: "OG",
-};
-
-function get_goal_action_label(event_type: string): string {
-  return GOAL_ACTION_LABELS[event_type] ?? "FG";
 }
 
 export function format_report_date(date_string: string): string {

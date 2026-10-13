@@ -7,26 +7,36 @@ import type {
 } from "../types/DomainScalars";
 import type { BaseEntity, EntityStatus } from "./BaseEntity";
 
-export type GameEventLogType =
-  | "goal"
-  | "own_goal"
-  | "penalty_scored"
-  | "penalty_missed"
-  | "yellow_card"
-  | "green_card"
-  | "red_card"
-  | "second_yellow"
-  | "substitution"
-  | "foul"
-  | "offside"
-  | "corner"
-  | "free_kick"
-  | "injury"
-  | "var_review"
-  | "period_start"
-  | "period_end";
+export const GAME_EVENT_LOG_TYPE = {
+  GOAL: "goal",
+  OWN_GOAL: "own_goal",
+  PENALTY_SCORED: "penalty_scored",
+  PENALTY_MISSED: "penalty_missed",
+  YELLOW_CARD: "yellow_card",
+  GREEN_CARD: "green_card",
+  RED_CARD: "red_card",
+  SECOND_YELLOW: "second_yellow",
+  SUBSTITUTION: "substitution",
+  FOUL: "foul",
+  OFFSIDE: "offside",
+  CORNER: "corner",
+  FREE_KICK: "free_kick",
+  INJURY: "injury",
+  VAR_REVIEW: "var_review",
+  PERIOD_START: "period_start",
+  PERIOD_END: "period_end",
+} as const;
 
-export type TeamSide = "home" | "away" | "match";
+export type GameEventLogType =
+  (typeof GAME_EVENT_LOG_TYPE)[keyof typeof GAME_EVENT_LOG_TYPE];
+
+export const TEAM_SIDE = {
+  HOME: "home",
+  AWAY: "away",
+  MATCH: "match",
+} as const;
+
+export type TeamSide = (typeof TEAM_SIDE)[keyof typeof TEAM_SIDE];
 
 export interface GameEventLog extends BaseEntity {
   organization_id: EntityId;

@@ -2,6 +2,8 @@ import { describe, expect, it, vi } from "vitest";
 
 import {
   find_activity_category_by_type,
+  SYNC_UPSERT_OUTCOME,
+  SYNCED_ACTIVITY_LOOKUP_STATUS,
   upsert_synced_activity,
 } from "./ActivitySyncUseCasesHelpers";
 
@@ -44,11 +46,14 @@ describe("ActivitySyncUseCasesHelpers", () => {
           update: vi.fn().mockResolvedValue({ success: true, data: true }),
           create: vi.fn(),
         } as never,
-        { status: "existing", activity: { id: "activity_1" } as never },
+        {
+          status: SYNCED_ACTIVITY_LOOKUP_STATUS.EXISTING,
+          activity: { id: "activity_1" } as never,
+        },
         {} as never,
         { title: "Updated" } as never,
       ),
-    ).resolves.toEqual({ success: true, data: true });
+    ).resolves.toEqual({ success: true, data: SYNC_UPSERT_OUTCOME.UPDATED });
 
     await expect(
       upsert_synced_activity(
@@ -58,10 +63,10 @@ describe("ActivitySyncUseCasesHelpers", () => {
             .fn()
             .mockResolvedValue({ success: true, data: { id: "activity_2" } }),
         } as never,
-        { status: "missing" },
+        { status: SYNCED_ACTIVITY_LOOKUP_STATUS.MISSING },
         { title: "Created" } as never,
         {} as never,
       ),
-    ).resolves.toEqual({ success: true, data: false });
+    ).resolves.toEqual({ success: true, data: SYNC_UPSERT_OUTCOME.CREATED });
   });
 });

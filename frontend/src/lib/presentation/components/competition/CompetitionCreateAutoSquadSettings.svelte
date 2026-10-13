@@ -3,6 +3,7 @@
         CreateCompetitionInput,
         UpdateCompetitionInput,
     } from "$lib/core/entities/Competition";
+    import { SQUAD_GENERATION_STRATEGY } from "$lib/core/entities/CompetitionTypes";
     import InfoTooltip from "$lib/presentation/components/ui/InfoTooltip.svelte";
 
     export let form_data: CreateCompetitionInput | UpdateCompetitionInput;
@@ -55,7 +56,7 @@
                     <option value="previous_match">Previous Match Squad</option>
                 </select>
                 <p class="text-xs text-accent-500 mt-1">
-                    {#if form_data.squad_generation_strategy === "first_available"}
+                    {#if form_data.squad_generation_strategy === SQUAD_GENERATION_STRATEGY.FIRST_AVAILABLE}
                         Selects the first X players from the team roster
                         alphabetically
                     {:else}

@@ -92,3 +92,11 @@ export function create_fixture_lineup_create_dependencies(): FixtureLineupCreate
     organization_use_cases: get_organization_use_cases(),
   };
 }
+
+export const FIXTURE_LINEUP_SUBMIT_FAILURE_DISPLAY = {
+  FIELD_VALIDATION: "field_validation",
+  PAGE_ERROR: "page_error",
+} as const;
+
+export type FixtureLineupSubmitFailureDisplay =
+  (typeof FIXTURE_LINEUP_SUBMIT_FAILURE_DISPLAY)[keyof typeof FIXTURE_LINEUP_SUBMIT_FAILURE_DISPLAY];

@@ -11,6 +11,7 @@ import type {
   PlayerPublicProfileStats,
   PlayerPublicTeamStats,
 } from "./playerPublicProfilePageState";
+import type { PRESENCE_STATUS } from "./presenceStatus";
 
 export const PLAYER_PUBLIC_PROFILE_VISIBILITY_PRIVATE = "private";
 export const PLAYER_PUBLIC_PROFILE_STATUS_COMPLETED = "completed";
@@ -19,6 +20,14 @@ export const PLAYER_PUBLIC_PROFILE_MESSAGE = {
   not_found: "Player profile not found",
   restricted: "This profile is private",
   unavailable: "Player information not available",
+} as const;
+
+export const PLAYER_PUBLIC_PROFILE_EVENT = {
+  PROFILE_NOT_FOUND: "player_public_profile_not_found",
+  PROFILE_RESTRICTED: "player_public_profile_restricted",
+  PLAYER_UNAVAILABLE: "player_public_profile_player_unavailable",
+  POSITION_UNAVAILABLE: "player_public_profile_position_unavailable",
+  LINKS_UNAVAILABLE: "player_public_profile_links_unavailable",
 } as const;
 
 export const PLAYER_PUBLIC_PROFILE_LOAD_ERROR_KIND = {
@@ -78,8 +87,8 @@ export interface PlayerPublicProfileDataDependencies {
 }
 
 export type PlayerPublicPositionState =
-  | { status: "missing" }
-  | { status: "present"; position: PlayerPosition };
+  | { status: typeof PRESENCE_STATUS.MISSING }
+  | { status: typeof PRESENCE_STATUS.PRESENT; position: PlayerPosition };
 
 export interface PlayerPublicProfilePageData {
   profile: PlayerProfile;

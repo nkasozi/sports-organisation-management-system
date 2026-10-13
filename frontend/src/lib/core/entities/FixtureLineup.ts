@@ -5,10 +5,21 @@ import type {
   ScalarInput,
 } from "../types/DomainScalars";
 import type { BaseEntity } from "./BaseEntity";
+import type { LineupStatusValue } from "./StatusConstants";
 
-export type LineupStatus = "draft" | "submitted" | "locked";
+export type LineupStatus = LineupStatusValue;
 
-export type PlayerTimeOnStatus = "present_at_start" | "didnt_play" | string;
+export const PLAYER_TIME_ON = {
+  PRESENT_AT_START: "present_at_start",
+  DIDNT_PLAY: "didnt_play",
+} as const;
+
+const NO_TIME_ON_DISPLAY = "";
+const PRESENT_AT_START_DISPLAY = "X";
+
+export type PlayerTimeOnStatus =
+  | (typeof PLAYER_TIME_ON)[keyof typeof PLAYER_TIME_ON]
+  | (string & {});
 
 export interface LineupPlayer {
   id: EntityId;
@@ -62,107 +73,22 @@ export function create_empty_fixture_lineup_input(
   };
 }
 
-function create_lineup_player(
-  id: LineupPlayer["id"],
-  first_name: LineupPlayer["first_name"],
-  last_name: LineupPlayer["last_name"],
-  jersey_number: number = 0,
-  position: LineupPlayer["position"] = "" as LineupPlayer["position"],
-  is_captain: boolean = false,
-  is_substitute: boolean = false,
-  time_on: PlayerTimeOnStatus = "didnt_play",
-): LineupPlayer {
-  return {
-    id,
-    first_name,
-    last_name,
-    jersey_number,
-    position,
-    is_captain,
-    is_substitute,
-    time_on,
-  };
-}
-
-function get_lineup_player_display_name(player: LineupPlayer): string {
-  const jersey = player.jersey_number > 0 ? player.jersey_number : "?";
-  const name = `${player.first_name} ${player.last_name}`.trim();
-  const position_suffix = player.position ? `• ${player.position}` : "";
-  const captain_badge = player.is_captain ? "(C) " : "";
-  return `#${jersey} ${captain_badge}${name} ${position_suffix}`.trim();
-}
-
-function validate_fixture_lineup_input(
-  input: CreateFixtureLineupInput | UpdateFixtureLineupInput,
-  min_players: number,
-  max_players: number,
-): { is_valid: boolean; errors: Record<string, string> } {
-  const errors: Record<string, string> = {};
-
-  if ("organization_id" in input && !input.organization_id?.trim()) {
-    errors.organization_id = "Organization is required";
-  }
-
-  if ("fixture_id" in input && !input.fixture_id?.trim()) {
-    errors.fixture_id = "Fixture is required";
-  }
-
-  if ("team_id" in input && !input.team_id?.trim()) {
-    errors.team_id = "Team is required";
-  }
-
-  if ("selected_players" in input) {
-    const player_count = input.selected_players?.length || 0;
-
-    if (player_count < min_players) {
-      errors.selected_players = `At least ${min_players} player(s) must be selected`;
-    }
-
-    if (player_count > max_players) {
-      errors.selected_players = `Maximum ${max_players} player(s) can be selected`;
-    }
-
-    const unique_player_ids = new Set(input.selected_players?.map((p) => p.id));
-    if (unique_player_ids.size !== player_count) {
-      errors.selected_players = "Duplicate players are not allowed";
-    }
-  }
-
-  if ("status" in input && input.status) {
-    const valid_statuses: LineupStatus[] = ["draft", "submitted", "locked"];
-    if (!valid_statuses.includes(input.status)) {
-      errors.status = "Invalid lineup status";
-    }
-  }
-
-  return {
-    is_valid: Object.keys(errors).length === 0,
-    errors,
-  };
-}
-
 export function get_time_on_display(
   time_on: PlayerTimeOnStatus | undefined,
 ): string {
-  if (!time_on || time_on === "didnt_play") {
-    return "";
+  if (!time_on || time_on === PLAYER_TIME_ON.DIDNT_PLAY) {
+    return NO_TIME_ON_DISPLAY;
   }
-  if (time_on === "present_at_start") {
-    return "X";
+  if (time_on === PLAYER_TIME_ON.PRESENT_AT_START) {
+    return PRESENT_AT_START_DISPLAY;
   }
   return time_on;
-}
-
-function is_player_time_on_minute(
-  time_on: PlayerTimeOnStatus | undefined,
-): boolean {
-  if (!time_on) return false;
-  if (time_on === "present_at_start" || time_on === "didnt_play") return false;
-  return !isNaN(parseInt(time_on, 10));
 }
 
 export function get_default_time_on_for_player(
   is_substitute: boolean,
 ): PlayerTimeOnStatus {
-  return is_substitute ? "didnt_play" : "present_at_start";
+  return is_substitute
+    ? PLAYER_TIME_ON.DIDNT_PLAY
+    : PLAYER_TIME_ON.PRESENT_AT_START;
 }

@@ -12,6 +12,8 @@
         SocialMediaLink,
     } from "$lib/presentation/stores/branding";
 
+    import { is_organization_admin_role } from "../auth/userRoleConstants";
+
     export let organization_name: string;
     export let organization_logo_url: string;
     export let organization_tagline: string;
@@ -79,9 +81,9 @@
     />
     <SettingsSocialMediaSection bind:social_media_links {show_toast} />
     <SettingsNotificationsSection />
-    <SettingsDataManagementSection />
+    <SettingsDataManagementSection {show_toast} />
 
-    {#if caller_role === "super_admin" || caller_role === "org_admin"}
+    {#if is_organization_admin_role(caller_role)}
         <SettingsSyncSection
             bind:selected_sync_interval_ms
             {selected_organization_id}

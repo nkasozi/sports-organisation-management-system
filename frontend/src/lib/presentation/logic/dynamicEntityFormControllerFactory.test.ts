@@ -1,5 +1,6 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, type Mock, vi } from "vitest";
 
+import { DYNAMIC_ENTITY_FORM_SUBMIT_STATUS } from "./dynamicEntityFormConstants";
 import { create_dynamic_entity_form_controller } from "./dynamicEntityFormControllerFactory";
 
 const {
@@ -31,6 +32,17 @@ vi.mock("./dynamicEntityFormSubmitFlow", () => ({
   submit_dynamic_entity_form: submit_dynamic_entity_form_mock,
 }));
 
+type ControllerHarness = {
+  controller: ReturnType<typeof create_dynamic_entity_form_controller>;
+  get_form_state: () => unknown;
+  get_ui_state: () => unknown;
+  get_warning_state: () => unknown;
+  on_inline_save_success: Mock;
+  on_save_completed: Mock;
+  on_inline_cancel: Mock;
+  on_cancel: Mock;
+};
+
 describe("dynamicEntityFormControllerFactory", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -42,7 +54,7 @@ describe("dynamicEntityFormControllerFactory", () => {
   function create_controller_dependencies(command?: {
     is_inline_mode?: boolean;
     entity_metadata?: Record<string, unknown> | undefined;
-  }) {
+  }): ControllerHarness {
     let form_state = {
       form_data: { name: "Uganda" },
       validation_errors: { stale: "error" },
@@ -125,7 +137,7 @@ describe("dynamicEntityFormControllerFactory", () => {
 
   it("applies validation errors returned from submit", async () => {
     submit_dynamic_entity_form_mock.mockResolvedValue({
-      save_error_message: "",
+      status: DYNAMIC_ENTITY_FORM_SUBMIT_STATUS.INVALID,
       validation_errors: { name: "Required" },
     });
     const { controller, get_form_state, get_ui_state, on_save_completed } =
@@ -145,9 +157,9 @@ describe("dynamicEntityFormControllerFactory", () => {
 
   it("routes saved entities to the correct inline or standard callbacks", async () => {
     submit_dynamic_entity_form_mock.mockResolvedValue({
-      save_error_message: "",
-      validation_errors: {},
+      status: DYNAMIC_ENTITY_FORM_SUBMIT_STATUS.SAVED,
       saved_entity: { id: "team_1" },
+      transfer_declined: false,
     });
     const standard = create_controller_dependencies();
     await standard.controller.handle_submit();

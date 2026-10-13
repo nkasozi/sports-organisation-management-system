@@ -5,118 +5,130 @@ import type {
 } from "$lib/core/entities/OfficialAssociatedTeam";
 import { validate_official_associated_team_input } from "$lib/core/entities/OfficialAssociatedTeam";
 import type {
-  OfficialAssociatedTeamFilter,
   OfficialAssociatedTeamRepository,
+  OfficialAssociatedTeamUseCasesPort,
 } from "$lib/core/interfaces/ports";
-import type { QueryOptions } from "$lib/core/interfaces/ports";
-import type { OfficialAssociatedTeamUseCasesPort } from "$lib/core/interfaces/ports";
-import type { AsyncResult, PaginatedAsyncResult } from "$lib/core/types/Result";
-import { create_failure_result } from "$lib/core/types/Result";
+import type { AsyncResult } from "$lib/core/types/Result";
+import { UseCaseErrorCode } from "$lib/core/types/UseCaseFailure";
+
+import {
+  OFFICIAL_ASSOCIATED_TEAM_DEFAULT_QUERY_OPTIONS,
+  OfficialAssociatedTeamUseCaseEvent,
+  OfficialAssociatedTeamUseCaseMessage,
+} from "./OfficialAssociatedTeamUseCasesConstants";
+import type { OfficialAssociatedTeamId } from "./OfficialAssociatedTeamUseCasesQueries";
+import {
+  build_official_associated_team_filter,
+  build_target,
+  get_official_associated_team_by_id,
+  list_by_official,
+  list_by_team,
+  list_official_associated_teams,
+} from "./OfficialAssociatedTeamUseCasesQueries";
+import {
+  fail_validation,
+  forward_dependency_result,
+} from "./UseCaseResultGuards";
 
 export type OfficialAssociatedTeamUseCases = OfficialAssociatedTeamUseCasesPort;
+
+async function create_official_associated_team(
+  repository: OfficialAssociatedTeamRepository,
+  input: CreateOfficialAssociatedTeamInput,
+): AsyncResult<OfficialAssociatedTeam> {
+  const context = { official_id: input.official_id, team_id: input.team_id };
+  const validation_errors = validate_official_associated_team_input(input);
+  if (validation_errors.length > 0) {
+    return fail_validation(
+      build_target(
+        OfficialAssociatedTeamUseCaseEvent.CREATE_VALIDATION_FAILED,
+        context,
+      ),
+      validation_errors,
+    );
+  }
+  return forward_dependency_result(await repository.create(input), {
+    ...build_target(OfficialAssociatedTeamUseCaseEvent.CREATE_FAILED, context),
+    code: UseCaseErrorCode.DEPENDENCY_FAILED,
+  });
+}
+
+async function update_official_associated_team(
+  repository: OfficialAssociatedTeamRepository,
+  id: OfficialAssociatedTeamId,
+  input: UpdateOfficialAssociatedTeamInput,
+): AsyncResult<OfficialAssociatedTeam> {
+  const context = { official_associated_team_id: id };
+  const existing_result = await repository.find_by_id(id);
+  if (!existing_result.success) {
+    return forward_dependency_result(existing_result, {
+      ...build_target(
+        OfficialAssociatedTeamUseCaseEvent.UPDATE_TARGET_NOT_FOUND,
+        context,
+      ),
+      code: UseCaseErrorCode.NOT_FOUND,
+      user_message: OfficialAssociatedTeamUseCaseMessage.NOT_FOUND,
+    });
+  }
+  const merged_input: CreateOfficialAssociatedTeamInput = {
+    ...existing_result.data,
+    ...input,
+  };
+  const validation_errors =
+    validate_official_associated_team_input(merged_input);
+  if (validation_errors.length > 0) {
+    return fail_validation(
+      build_target(
+        OfficialAssociatedTeamUseCaseEvent.UPDATE_VALIDATION_FAILED,
+        context,
+      ),
+      validation_errors,
+    );
+  }
+  return forward_dependency_result(await repository.update(id, input), {
+    ...build_target(OfficialAssociatedTeamUseCaseEvent.UPDATE_FAILED, context),
+    code: UseCaseErrorCode.DEPENDENCY_FAILED,
+  });
+}
+
+async function delete_official_associated_team(
+  repository: OfficialAssociatedTeamRepository,
+  id: OfficialAssociatedTeamId,
+): AsyncResult<boolean> {
+  return forward_dependency_result(await repository.delete_by_id(id), {
+    ...build_target(OfficialAssociatedTeamUseCaseEvent.DELETE_FAILED, {
+      official_associated_team_id: id,
+    }),
+    code: UseCaseErrorCode.DEPENDENCY_FAILED,
+  });
+}
 
 export function create_official_associated_team_use_cases(
   repository: OfficialAssociatedTeamRepository,
 ): OfficialAssociatedTeamUseCases {
   return {
-    async create(
-      input: CreateOfficialAssociatedTeamInput,
-    ): AsyncResult<OfficialAssociatedTeam> {
-      const validation_errors = validate_official_associated_team_input(input);
-      if (validation_errors.length > 0) {
-        return create_failure_result(validation_errors.join(", "));
-      }
-
-      return repository.create(input);
-    },
-
-    async update(
-      id: OfficialAssociatedTeam["id"],
-      input: UpdateOfficialAssociatedTeamInput,
-    ): AsyncResult<OfficialAssociatedTeam> {
-      const existing_result = await repository.find_by_id(id);
-      if (!existing_result.success || !existing_result.data) {
-        return create_failure_result("Official associated team not found");
-      }
-
-      const merged_input: CreateOfficialAssociatedTeamInput = {
-        ...existing_result.data,
-        ...input,
-      };
-
-      const validation_errors =
-        validate_official_associated_team_input(merged_input);
-      if (validation_errors.length > 0) {
-        return create_failure_result(validation_errors.join(", "));
-      }
-
-      return repository.update(id, input);
-    },
-
-    async delete(id: OfficialAssociatedTeam["id"]): AsyncResult<boolean> {
-      return repository.delete_by_id(id);
-    },
-
-    async get_by_id(
-      id: OfficialAssociatedTeam["id"],
-    ): AsyncResult<OfficialAssociatedTeam> {
-      return repository.find_by_id(id);
-    },
-
-    async list(
-      filter?: OfficialAssociatedTeamFilter | Record<string, string>,
-      options?: QueryOptions,
-    ): PaginatedAsyncResult<OfficialAssociatedTeam> {
-      const query_options = options || { page_number: 1, page_size: 100 };
-
-      if (!filter) {
-        return repository.find_all({}, query_options);
-      }
-
-      const official_associated_team_filter: OfficialAssociatedTeamFilter = {
-        ...(filter.official_id
-          ? {
-              official_id:
-                filter.official_id as OfficialAssociatedTeam["official_id"],
-            }
-          : {}),
-        ...(filter.team_id
-          ? { team_id: filter.team_id as OfficialAssociatedTeam["team_id"] }
-          : {}),
-        ...(filter.association_type
-          ? { association_type: filter.association_type }
-          : {}),
-        ...(filter.status
-          ? { status: filter.status as OfficialAssociatedTeam["status"] }
-          : {}),
-      };
-
-      return repository.find_all(
-        official_associated_team_filter,
-        query_options,
-      );
-    },
-
-    async list_by_official(
-      official_id: OfficialAssociatedTeam["official_id"],
-    ): PaginatedAsyncResult<OfficialAssociatedTeam> {
-      return repository.find_by_official(official_id, {
-        page_number: 1,
-        page_size: 100,
-      });
-    },
-
-    async list_by_team(
-      team_id: OfficialAssociatedTeam["team_id"],
-    ): PaginatedAsyncResult<OfficialAssociatedTeam> {
-      return repository.find_by_team(team_id, {
-        page_number: 1,
-        page_size: 100,
-      });
-    },
-
-    async list_all(): PaginatedAsyncResult<OfficialAssociatedTeam> {
-      return repository.find_all({}, { page_number: 1, page_size: 100 });
-    },
+    create: (input) => create_official_associated_team(repository, input),
+    update: (id, input) =>
+      update_official_associated_team(repository, id, input),
+    delete: (id) => delete_official_associated_team(repository, id),
+    get_by_id: (id) => get_official_associated_team_by_id(repository, id),
+    list: (filter, options) =>
+      list_official_associated_teams(
+        repository,
+        build_official_associated_team_filter(filter),
+        options || { ...OFFICIAL_ASSOCIATED_TEAM_DEFAULT_QUERY_OPTIONS },
+      ),
+    list_by_official: (official_id: OfficialAssociatedTeam["official_id"]) =>
+      list_by_official(repository, official_id),
+    list_by_team: (team_id: OfficialAssociatedTeam["team_id"]) =>
+      list_by_team(repository, team_id),
+    list_all: () =>
+      list_official_associated_teams(
+        repository,
+        {},
+        {
+          ...OFFICIAL_ASSOCIATED_TEAM_DEFAULT_QUERY_OPTIONS,
+        },
+      ),
   };
 }

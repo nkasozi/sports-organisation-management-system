@@ -14,12 +14,13 @@ import {
   record_game_manage_event,
   start_game_session,
 } from "./gameManageActions";
+import { PRESENCE_STATUS } from "./presenceStatus";
 
 export async function start_managed_game(command: {
   fixture: ManagedGameFixtureState;
   fixture_use_cases: Pick<FixtureUseCasesPort, "start_fixture">;
 }): Promise<Result<Fixture>> {
-  if (command.fixture.status !== "present") {
+  if (command.fixture.status !== PRESENCE_STATUS.PRESENT) {
     return create_failure_result("No fixture loaded");
   }
 
@@ -33,7 +34,7 @@ export async function end_managed_game(command: {
   fixture: ManagedGameFixtureState;
   fixture_use_cases: Pick<FixtureUseCasesPort, "end_fixture">;
 }): Promise<Result<Fixture>> {
-  if (command.fixture.status !== "present") {
+  if (command.fixture.status !== PRESENCE_STATUS.PRESENT) {
     return create_failure_result("No fixture loaded");
   }
 
@@ -52,11 +53,11 @@ export async function record_managed_game_event(command: {
   event_description: string;
   fixture_use_cases: Pick<FixtureUseCasesPort, "record_game_event">;
 }): Promise<Result<Fixture>> {
-  if (command.fixture.status !== "present") {
+  if (command.fixture.status !== PRESENCE_STATUS.PRESENT) {
     return create_failure_result("No fixture event selected");
   }
 
-  if (command.selected_event_type.status !== "present") {
+  if (command.selected_event_type.status !== PRESENCE_STATUS.PRESENT) {
     return create_failure_result("No fixture event selected");
   }
 
@@ -82,7 +83,7 @@ export async function change_managed_game_period(command: {
     "record_game_event" | "update_period"
   >;
 }): Promise<Result<Fixture>> {
-  if (command.fixture.status !== "present") {
+  if (command.fixture.status !== PRESENCE_STATUS.PRESENT) {
     return create_failure_result("No fixture loaded");
   }
 
@@ -102,7 +103,7 @@ export async function end_managed_game_period(command: {
     "record_game_event" | "update_period"
   >;
 }): Promise<Result<EndGamePeriodResult>> {
-  if (command.fixture.status !== "present") {
+  if (command.fixture.status !== PRESENCE_STATUS.PRESENT) {
     return create_failure_result("No fixture loaded");
   }
 

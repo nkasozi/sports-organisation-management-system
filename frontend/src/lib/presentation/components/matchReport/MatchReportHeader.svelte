@@ -2,6 +2,7 @@
     import type { Fixture } from "$lib/core/entities/Fixture";
     import { get_period_display_name } from "$lib/core/entities/Fixture";
     import { get_team_logo } from "$lib/core/entities/Team";
+    import MatchReportHeaderInfoBar from "$lib/presentation/components/matchReport/MatchReportHeaderInfoBar.svelte";
     import MatchReportHeaderTeam from "$lib/presentation/components/matchReport/MatchReportHeaderTeam.svelte";
     import type {
         MatchReportCompetitionState,
@@ -9,12 +10,13 @@
         MatchReportVenueState,
     } from "$lib/presentation/logic/matchReportPageLoadTypes";
     import {
-        format_match_report_kickoff_display,
         get_match_report_status_color,
         get_match_report_status_label,
         type MatchReportViewState,
     } from "$lib/presentation/logic/matchReportPageState";
+    import { PRESENCE_STATUS } from "$lib/presentation/logic/presenceStatus";
 
+    const MISSING_STATE = { status: PRESENCE_STATUS.MISSING } as const;
     const default_match_report_view_state: MatchReportViewState = {
         home_score: 0,
         away_score: 0,
@@ -30,14 +32,13 @@
     };
 
     export let fixture: Fixture = {} as Fixture;
-    export let home_team_state: MatchReportTeamState = { status: "missing" };
-    export let away_team_state: MatchReportTeamState = { status: "missing" };
-    export let competition_state: MatchReportCompetitionState = {
-        status: "missing",
-    };
+    export let home_team_state: MatchReportTeamState = MISSING_STATE;
+    export let away_team_state: MatchReportTeamState = MISSING_STATE;
+    export let competition_state: MatchReportCompetitionState = MISSING_STATE;
     export let organization_name = "";
-    export let venue_state: MatchReportVenueState = { status: "missing" };
-    export let view_state: MatchReportViewState = default_match_report_view_state;
+    export let venue_state: MatchReportVenueState = MISSING_STATE;
+    export let view_state: MatchReportViewState =
+        default_match_report_view_state;
     export let live_poll_interval_ms = 0;
     export let downloading_report = false;
     export let on_back: () => void = () => {};
@@ -46,7 +47,7 @@
 
 <div class="bg-gray-900 text-white px-4 py-4 sticky top-0 z-40">
     <div class="max-w-4xl mx-auto">
-        {#if organization_name || competition_state.status === "present"}
+        {#if organization_name || competition_state.status === PRESENCE_STATUS.PRESENT}
             <div class="text-center pb-2">
                 {#if organization_name}
                     <p
@@ -55,7 +56,7 @@
                         {organization_name}
                     </p>
                 {/if}
-                {#if competition_state.status === "present"}
+                {#if competition_state.status === PRESENCE_STATUS.PRESENT}
                     <p class="text-sm font-semibold text-gray-200">
                         {competition_state.competition.name}
                     </p>
@@ -116,10 +117,11 @@
 
         <div class="flex items-center gap-4 sm:gap-8 justify-center">
             <MatchReportHeaderTeam
-                team_logo_url={home_team_state.status === "present"
+                team_logo_url={home_team_state.status ===
+                PRESENCE_STATUS.PRESENT
                     ? get_team_logo(home_team_state.team)
                     : ""}
-                team_name={home_team_state.status === "present"
+                team_name={home_team_state.status === PRESENCE_STATUS.PRESENT
                     ? home_team_state.team.name
                     : "HOME"}
                 score={view_state.home_score}
@@ -135,10 +137,11 @@
             </div>
 
             <MatchReportHeaderTeam
-                team_logo_url={away_team_state.status === "present"
+                team_logo_url={away_team_state.status ===
+                PRESENCE_STATUS.PRESENT
                     ? get_team_logo(away_team_state.team)
                     : ""}
-                team_name={away_team_state.status === "present"
+                team_name={away_team_state.status === PRESENCE_STATUS.PRESENT
                     ? away_team_state.team.name
                     : "AWAY"}
                 score={view_state.away_score}
@@ -182,44 +185,10 @@
     </div>
 </div>
 
-<div
-    class="bg-gray-800 text-gray-300 px-4 py-2 text-center text-sm border-t border-gray-700"
->
-    <div
-        class="max-w-4xl mx-auto flex items-center justify-center gap-3 flex-wrap"
-    >
-            {#if competition_state.status === "present"}
-                <span class="font-medium">{competition_state.competition.name}</span>
-            <span class="text-gray-600">·</span>
-        {/if}
-        <span class="text-gray-400">
-            {format_match_report_kickoff_display(
-                fixture.scheduled_date,
-                fixture.scheduled_time,
-            )}
-        </span>
-            {#if venue_state.status === "present"}
-            <span class="text-gray-600">·</span>
-                <span class="text-gray-400">📍 {venue_state.venue.name}</span>
-        {/if}
-    </div>
-</div>
-
-{#if view_state.is_game_in_progress}
-    <div class="bg-green-900/30 border-b border-green-800/50 px-4 py-2">
-        <div class="max-w-4xl mx-auto flex items-center justify-center gap-2">
-            <span class="relative flex h-2 w-2">
-                <span
-                    class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"
-                ></span>
-                <span
-                    class="relative inline-flex rounded-full h-2 w-2 bg-green-500"
-                ></span>
-            </span>
-            <span class="text-sm text-green-300 font-medium">
-                Match in progress — updates every {live_poll_interval_ms /
-                    1000}s
-            </span>
-        </div>
-    </div>
-{/if}
+<MatchReportHeaderInfoBar
+    {fixture}
+    {competition_state}
+    {venue_state}
+    {view_state}
+    {live_poll_interval_ms}
+/>

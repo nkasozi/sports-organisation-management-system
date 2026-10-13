@@ -4,8 +4,16 @@ import type {
   ScalarInput,
 } from "../types/DomainScalars";
 import type { BaseEntity } from "./BaseEntity";
+import { RATING_DIMENSION_FIELDS } from "./OfficialPerformanceRatingValidation";
 
-export type RaterRole = "officials_manager" | "team_manager" | (string & {});
+const RATER_ROLE = {
+  OFFICIALS_MANAGER: "officials_manager",
+  TEAM_MANAGER: "team_manager",
+} as const;
+
+export type RaterRole =
+  | (typeof RATER_ROLE)[keyof typeof RATER_ROLE]
+  | (string & {});
 
 export interface OfficialPerformanceRating extends BaseEntity {
   organization_id: EntityId;
@@ -50,145 +58,110 @@ export interface WeightedOfficialSummary {
   weighted_fitness: number;
 }
 
+const WEIGHTED_SUMMARY_STATUS = {
+  EMPTY: "empty",
+  PRESENT: "present",
+} as const;
+
 type WeightedOfficialSummaryResult =
-  | { status: "empty" }
-  | { status: "present"; summary: WeightedOfficialSummary };
+  | { status: typeof WEIGHTED_SUMMARY_STATUS.EMPTY }
+  | {
+      status: typeof WEIGHTED_SUMMARY_STATUS.PRESENT;
+      summary: WeightedOfficialSummary;
+    };
+
+export const PERFORMANCE_TIER = {
+  ELITE: "elite",
+  STRONG: "strong",
+  ADEQUATE: "adequate",
+  NEEDS_DEVELOPMENT: "needs_development",
+} as const;
 
 export type PerformanceTier =
-  | "elite"
-  | "strong"
-  | "adequate"
-  | "needs_development";
+  (typeof PERFORMANCE_TIER)[keyof typeof PERFORMANCE_TIER];
+
+const ELITE_MINIMUM_SCORE = 8.5;
+const STRONG_MINIMUM_SCORE = 7.0;
+const ADEQUATE_MINIMUM_SCORE = 5.5;
 
 export function get_performance_tier(composite_score: number): PerformanceTier {
-  if (composite_score >= 8.5) return "elite";
-  if (composite_score >= 7.0) return "strong";
-  if (composite_score >= 5.5) return "adequate";
-  return "needs_development";
+  if (composite_score >= ELITE_MINIMUM_SCORE) return PERFORMANCE_TIER.ELITE;
+  if (composite_score >= STRONG_MINIMUM_SCORE) return PERFORMANCE_TIER.STRONG;
+  if (composite_score >= ADEQUATE_MINIMUM_SCORE)
+    return PERFORMANCE_TIER.ADEQUATE;
+  return PERFORMANCE_TIER.NEEDS_DEVELOPMENT;
 }
 
+const PERFORMANCE_TIER_LABELS: Readonly<Record<PerformanceTier, string>> = {
+  elite: "Elite",
+  strong: "Strong",
+  adequate: "Adequate",
+  needs_development: "Needs Development",
+};
+
 export function get_tier_label(tier: PerformanceTier): string {
-  const labels: Record<PerformanceTier, string> = {
-    elite: "Elite",
-    strong: "Strong",
-    adequate: "Adequate",
-    needs_development: "Needs Development",
-  };
-  return labels[tier];
+  return PERFORMANCE_TIER_LABELS[tier];
+}
+
+function sum_dimensions(rating: RatingDimensions): number {
+  return RATING_DIMENSION_FIELDS.reduce(
+    (total, field) => total + rating[field],
+    0,
+  );
 }
 
 export function compute_composite_score(rating: RatingDimensions): number {
-  const dimension_sum =
-    rating.overall +
-    rating.decision_accuracy +
-    rating.game_control +
-    rating.communication +
-    rating.fitness;
-  return dimension_sum / 5;
+  return sum_dimensions(rating) / RATING_DIMENSION_FIELDS.length;
+}
+
+function weighted_dimension_totals(
+  ratings: Array<OfficialPerformanceRating & { importance_weight: number }>,
+): RatingDimensions {
+  const totals: RatingDimensions = {
+    overall: 0,
+    decision_accuracy: 0,
+    game_control: 0,
+    communication: 0,
+    fitness: 0,
+  };
+  for (const rating of ratings) {
+    for (const field of RATING_DIMENSION_FIELDS) {
+      totals[field] += rating[field] * rating.importance_weight;
+    }
+  }
+  return totals;
 }
 
 export function aggregate_weighted_ratings(
   ratings: Array<OfficialPerformanceRating & { importance_weight: number }>,
 ): WeightedOfficialSummaryResult {
-  if (ratings.length === 0) return { status: "empty" };
+  if (ratings.length === 0) return { status: WEIGHTED_SUMMARY_STATUS.EMPTY };
 
-  const official_id = ratings[0].official_id;
-  let total_weight = 0;
-  let weighted_overall = 0;
-  let weighted_decision_accuracy = 0;
-  let weighted_game_control = 0;
-  let weighted_communication = 0;
-  let weighted_fitness = 0;
-
-  for (const rating of ratings) {
-    const weight = rating.importance_weight;
-    total_weight += weight;
-    weighted_overall += rating.overall * weight;
-    weighted_decision_accuracy += rating.decision_accuracy * weight;
-    weighted_game_control += rating.game_control * weight;
-    weighted_communication += rating.communication * weight;
-    weighted_fitness += rating.fitness * weight;
-  }
-
+  const total_weight = ratings.reduce(
+    (total, rating) => total + rating.importance_weight,
+    0,
+  );
+  const totals = weighted_dimension_totals(ratings);
   const safe_total = total_weight === 0 ? 1 : total_weight;
 
   return {
-    status: "present",
+    status: WEIGHTED_SUMMARY_STATUS.PRESENT,
     summary: {
-      official_id,
+      official_id: ratings[0].official_id,
       total_weighted_score:
-        (weighted_overall +
-          weighted_decision_accuracy +
-          weighted_game_control +
-          weighted_communication +
-          weighted_fitness) /
-        (5 * safe_total),
+        sum_dimensions(totals) / (RATING_DIMENSION_FIELDS.length * safe_total),
       total_weight,
       rating_count: ratings.length,
-      weighted_overall: weighted_overall / safe_total,
-      weighted_decision_accuracy: weighted_decision_accuracy / safe_total,
-      weighted_game_control: weighted_game_control / safe_total,
-      weighted_communication: weighted_communication / safe_total,
-      weighted_fitness: weighted_fitness / safe_total,
+      weighted_overall: totals.overall / safe_total,
+      weighted_decision_accuracy: totals.decision_accuracy / safe_total,
+      weighted_game_control: totals.game_control / safe_total,
+      weighted_communication: totals.communication / safe_total,
+      weighted_fitness: totals.fitness / safe_total,
     },
   };
 }
 
-export function create_empty_rating_input(
-  organization_id: CreateOfficialPerformanceRatingInput["organization_id"] = "",
-  official_id: CreateOfficialPerformanceRatingInput["official_id"] = "",
-  fixture_id: CreateOfficialPerformanceRatingInput["fixture_id"] = "",
-): CreateOfficialPerformanceRatingInput {
-  return {
-    organization_id,
-    official_id,
-    fixture_id,
-    rater_user_id: "",
-    rater_role: "",
-    overall: 5,
-    decision_accuracy: 5,
-    game_control: 5,
-    communication: 5,
-    fitness: 5,
-    notes: "",
-    submitted_at: "",
-  };
-}
-
-export function validate_rating_input(
-  input: CreateOfficialPerformanceRatingInput,
-): string[] {
-  const errors: string[] = [];
-
-  if (!input.official_id?.trim()) {
-    errors.push("Official is required");
-  }
-  if (!input.fixture_id?.trim()) {
-    errors.push("Fixture is required");
-  }
-  if (!input.rater_user_id?.trim()) {
-    errors.push("Rater user is required");
-  }
-
-  const dimension_fields: Array<keyof RatingDimensions> = [
-    "overall",
-    "decision_accuracy",
-    "game_control",
-    "communication",
-    "fitness",
-  ];
-
-  for (const field of dimension_fields) {
-    const value = input[field];
-    if (
-      typeof value !== "number" ||
-      Number.isNaN(value) ||
-      value < 1 ||
-      value > 10
-    ) {
-      errors.push(`${field} must be a number between 1 and 10`);
-    }
-  }
-
-  return errors;
-}
+export {
+  create_empty_rating_input,
+  validate_rating_input,
+} from "./OfficialPerformanceRatingValidation";

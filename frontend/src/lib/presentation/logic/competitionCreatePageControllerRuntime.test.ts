@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { create_competition_create_page_controller_runtime } from "./competitionCreatePageControllerRuntime";
+import { create_command } from "./competitionCreatePageControllerRuntime.test_support";
 
 const {
   initialize_competition_create_page_mock,
@@ -41,103 +42,6 @@ vi.mock("$lib/presentation/stores/accessDenial", () => ({
 }));
 
 describe("competitionCreatePageControllerRuntime", () => {
-  function create_command() {
-    const state = {
-      competition_formats: [
-        { id: "format-1", min_teams_required: 2, max_teams_allowed: 4 },
-      ],
-      form_data: {
-        organization_id: "",
-        competition_format_id: "",
-        rule_overrides: {},
-      },
-      is_loading_formats: true,
-      is_loading_organizations: true,
-      is_loading_teams: true,
-      is_saving: false,
-      organizations: [{ id: "organization-1", name: "Premier League" }],
-      selected_format_state: {
-        status: "present",
-        competition_format: {
-          id: "format-1",
-          min_teams_required: 2,
-          max_teams_allowed: 4,
-        },
-      } as
-        | {
-            status: "present";
-            competition_format: {
-              id: string;
-              min_teams_required: number;
-              max_teams_allowed: number;
-            };
-          }
-        | { status: "missing" },
-      selected_team_ids: new Set<string>(),
-      team_options: [] as unknown[],
-    };
-
-    const command = {
-      get_competition_formats: () => state.competition_formats as never,
-      get_current_auth_profile_state: () => ({
-        status: "present",
-        profile: { organization_id: "organization-1" } as never,
-      }),
-      get_current_raw_token_state: () => ({
-        status: "present",
-        value: "token-1",
-      }),
-      get_form_data: () => state.form_data as never,
-      get_is_team_count_valid: () => true,
-      get_organizations: () => state.organizations as never,
-      get_selected_format_state: () => state.selected_format_state as never,
-      get_selected_team_ids: () => state.selected_team_ids,
-      goto: vi.fn(async () => {}),
-      is_browser: true,
-      set_competition_format_options: vi.fn(),
-      set_competition_formats: vi.fn(
-        (value: typeof state.competition_formats) => {
-          state.competition_formats = value;
-        },
-      ),
-      set_error_message: vi.fn(),
-      set_form_data: vi.fn((value: typeof state.form_data) => {
-        state.form_data = value;
-      }),
-      set_is_loading_formats: vi.fn((value: boolean) => {
-        state.is_loading_formats = value;
-      }),
-      set_is_loading_organizations: vi.fn((value: boolean) => {
-        state.is_loading_organizations = value;
-      }),
-      set_is_loading_teams: vi.fn((value: boolean) => {
-        state.is_loading_teams = value;
-      }),
-      set_is_saving: vi.fn((value: boolean) => {
-        state.is_saving = value;
-      }),
-      set_organization_options: vi.fn(),
-      set_organizations: vi.fn((value: typeof state.organizations) => {
-        state.organizations = value;
-      }),
-      set_selected_format_state: vi.fn(
-        (value: typeof state.selected_format_state) => {
-          state.selected_format_state = value;
-        },
-      ),
-      set_selected_sport_state: vi.fn(),
-      set_selected_team_ids: vi.fn((value: Set<string>) => {
-        state.selected_team_ids = value;
-      }),
-      set_team_options: vi.fn((value: unknown[]) => {
-        state.team_options = value;
-      }),
-      show_toast: vi.fn(),
-    };
-
-    return { command, state };
-  }
-
   beforeEach(() => {
     vi.useRealTimers();
     get_next_selected_team_ids_mock.mockReset();

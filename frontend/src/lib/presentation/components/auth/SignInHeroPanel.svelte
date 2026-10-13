@@ -1,5 +1,6 @@
 <script lang="ts">
     import type { SignInFeatureHighlight } from "../../logic/signInPageState";
+    import { SIGN_IN_FEATURE_ICON } from "./signInHeroPanelConstants";
 
     export let current_year: number;
     export let feature_highlights: SignInFeatureHighlight[] = [];
@@ -51,7 +52,7 @@
                 <div
                     class="w-9 h-9 rounded-lg bg-blue-600/20 flex items-center justify-center flex-shrink-0 mt-0.5"
                 >
-                    {#if feature.icon === "trophy"}
+                    {#if feature.icon === SIGN_IN_FEATURE_ICON.TROPHY}
                         <svg
                             class="w-5 h-5 text-blue-400"
                             fill="none"
@@ -65,7 +66,7 @@
                                 d="M5 3h14l-1.405 8.426A5 5 0 0112.63 16H11.37a5 5 0 01-4.965-4.574L5 3zM9 21h6m-3-5v5"
                             />
                         </svg>
-                    {:else if feature.icon === "users"}
+                    {:else if feature.icon === SIGN_IN_FEATURE_ICON.USERS}
                         <svg
                             class="w-5 h-5 text-blue-400"
                             fill="none"
@@ -79,7 +80,7 @@
                                 d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
                             />
                         </svg>
-                    {:else if feature.icon === "clock"}
+                    {:else if feature.icon === SIGN_IN_FEATURE_ICON.CLOCK}
                         <svg
                             class="w-5 h-5 text-blue-400"
                             fill="none"

@@ -1,6 +1,11 @@
 import type { EntityId, Name, ScalarInput } from "../types/DomainScalars";
 import type { BaseEntity, EntityStatus } from "./BaseEntity";
 import type { OfficialTeamAssociationType } from "./OfficialAssociatedTeam";
+import {
+  CONFIRMATION_STATUS,
+  type ConfirmationStatusValue,
+  ENTITY_STATUS,
+} from "./StatusConstants";
 
 export interface OfficialAssignment {
   official_id: EntityId;
@@ -19,11 +24,7 @@ export interface FixtureDetailsSetup extends BaseEntity {
   status: EntityStatus;
 }
 
-export type FixtureDetailsSetupConfirmationStatus =
-  | "pending"
-  | "confirmed"
-  | "declined"
-  | "replaced";
+export type FixtureDetailsSetupConfirmationStatus = ConfirmationStatusValue;
 
 export type CreateFixtureDetailsSetupInput = Omit<
   ScalarInput<FixtureDetailsSetup>,
@@ -56,63 +57,12 @@ export function create_empty_fixture_details_setup_input(
     official_jersey_id: "",
     assigned_officials: [create_empty_official_assignment()],
     assignment_notes: "",
-    confirmation_status: "pending",
-    status: "active",
+    confirmation_status: CONFIRMATION_STATUS.PENDING,
+    status: ENTITY_STATUS.ACTIVE,
   };
 }
 
-export function validate_fixture_details_setup_input(
-  input: CreateFixtureDetailsSetupInput | UpdateFixtureDetailsSetupInput,
-): { is_valid: boolean; errors: Record<string, string> } {
-  const errors: Record<string, string> = {};
-
-  if ("organization_id" in input && !input.organization_id?.trim()) {
-    errors.organization_id = "Organization is required";
-  }
-
-  if ("fixture_id" in input && !input.fixture_id?.trim()) {
-    errors.fixture_id = "Fixture is required";
-  }
-
-  if ("assigned_officials" in input) {
-    if (!input.assigned_officials || input.assigned_officials.length === 0) {
-      errors.assigned_officials = "At least one official must be assigned";
-    } else {
-      for (let i = 0; i < input.assigned_officials.length; i++) {
-        const assignment = input.assigned_officials[i];
-        if (!assignment.official_id?.trim()) {
-          errors[`assigned_officials_${i}_official`] =
-            `Official ${i + 1} is required`;
-        }
-        if (!assignment.role_id?.trim()) {
-          errors[`assigned_officials_${i}_role`] =
-            `Role for official ${i + 1} is required`;
-        }
-      }
-    }
-  }
-
-  if ("confirmation_status" in input && input.confirmation_status) {
-    const valid_statuses: FixtureDetailsSetupConfirmationStatus[] = [
-      "pending",
-      "confirmed",
-      "declined",
-      "replaced",
-    ];
-    if (
-      !valid_statuses.includes(
-        input.confirmation_status as FixtureDetailsSetupConfirmationStatus,
-      )
-    ) {
-      errors.confirmation_status = "Invalid confirmation status";
-    }
-  }
-
-  return {
-    is_valid: Object.keys(errors).length === 0,
-    errors,
-  };
-}
+export { validate_fixture_details_setup_input } from "./FixtureDetailsSetupValidation";
 
 interface OfficialTeamConflict {
   official_id: EntityId;
@@ -177,15 +127,18 @@ export function detect_official_team_conflicts(
   return conflicts;
 }
 
+const ASSOCIATION_CONFLICT_LABELS: Readonly<
+  Record<OfficialTeamAssociationType, string>
+> = {
+  current_member: "current membership",
+  former_member: "former membership",
+  family_connection: "family connection",
+  financial_interest: "financial interest",
+  other: "connection",
+};
+
 function format_association_type_for_display(
   association_type: OfficialTeamAssociationType,
 ): string {
-  const type_labels: Record<string, string> = {
-    current_member: "current membership",
-    former_member: "former membership",
-    family_connection: "family connection",
-    financial_interest: "financial interest",
-    other: "connection",
-  };
-  return type_labels[association_type] || "association";
+  return ASSOCIATION_CONFLICT_LABELS[association_type];
 }

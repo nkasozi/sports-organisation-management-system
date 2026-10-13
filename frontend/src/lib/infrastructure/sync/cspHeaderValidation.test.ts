@@ -58,6 +58,6 @@ describe("CSP header validation", () => {
   it("does not include unsafe-inline for scripts", () => {
     const script_src_match = CSP_DIRECTIVES.match(/script-src[^;]*/);
     expect(script_src_match).not.toBeNull();
-    expect(script_src_match![0]).not.toContain("unsafe-inline");
+    expect(script_src_match?.[0]).not.toContain("unsafe-inline");
   });
 });

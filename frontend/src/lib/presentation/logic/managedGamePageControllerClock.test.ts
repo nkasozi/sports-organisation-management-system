@@ -6,6 +6,7 @@ import {
 } from "$lib/presentation/logic/managedGamePageTypes";
 
 import { create_managed_game_clock_handlers } from "./managedGamePageControllerClock";
+import type { ManagedGamePageState } from "./managedGamePageControllerState";
 import { create_managed_game_page_state } from "./managedGamePageControllerState";
 
 const { ensure_auth_profile_mock } = vi.hoisted(() => ({
@@ -27,7 +28,11 @@ describe("managedGamePageControllerClock", () => {
     vi.useRealTimers();
   });
 
-  function create_state_store() {
+  function create_state_store(): {
+    get_state: () => ManagedGamePageState;
+    read_state: () => ManagedGamePageState;
+    set_state: (next_state: ManagedGamePageState) => void;
+  } {
     let current_state = create_managed_game_page_state();
     return {
       get_state: () => current_state,

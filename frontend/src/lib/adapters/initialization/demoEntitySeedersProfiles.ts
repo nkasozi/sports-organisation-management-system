@@ -1,9 +1,5 @@
 import type { Result } from "../../core/types/Result";
 import {
-  create_failure_result,
-  create_success_result,
-} from "../../core/types/Result";
-import {
   create_seed_player_profiles,
   create_seed_profile_links,
   create_seed_team_profile_links,
@@ -12,75 +8,43 @@ import {
 import type { InBrowserPlayerProfileRepository } from "../repositories/InBrowserPlayerProfileRepository";
 import type { InBrowserProfileLinkRepository } from "../repositories/InBrowserProfileLinkRepository";
 import type { InBrowserTeamProfileRepository } from "../repositories/InBrowserTeamProfileRepository";
-import { emit_entity_created_events } from "./seedingUserSetup";
+import { seed_demo_entity_batch } from "./demoEntityBatchSeeder";
 
 export async function seed_demo_player_profiles(
   player_profile_repository: InBrowserPlayerProfileRepository,
 ): Promise<Result<number>> {
-  console.log("[Seeding] Seeding demo player profiles");
-  const seed_player_profiles = create_seed_player_profiles();
-  const result =
-    await player_profile_repository.seed_with_data(seed_player_profiles);
-  if (!result.success) {
-    console.error(`[Seeding] Player profile seeding failed: ${result.error}`);
-    return create_failure_result(
-      `Player profile seeding failed: ${result.error}`,
-    );
-  }
-  emit_entity_created_events(
-    "player_profile",
-    seed_player_profiles,
-    (p) => `Profile: ${p.profile_slug}`,
-  );
-  console.log(
-    `[Seeding] Seeded ${seed_player_profiles.length} player profiles`,
-  );
-  return create_success_result(seed_player_profiles.length);
+  return seed_demo_entity_batch({
+    plural_label: "player profiles",
+    entity_type: "player_profile",
+    entities: create_seed_player_profiles(),
+    seed: (profiles) => player_profile_repository.seed_with_data(profiles),
+    describe_entity: (p) => `Profile: ${p.profile_slug}`,
+  });
 }
 
 export async function seed_demo_team_profiles(
   team_profile_repository: InBrowserTeamProfileRepository,
 ): Promise<Result<number>> {
-  console.log("[Seeding] Seeding demo team profiles");
-  const seed_team_profiles = create_seed_team_profiles();
-  const result =
-    await team_profile_repository.seed_with_data(seed_team_profiles);
-  if (!result.success) {
-    console.error(`[Seeding] Team profile seeding failed: ${result.error}`);
-    return create_failure_result(
-      `Team profile seeding failed: ${result.error}`,
-    );
-  }
-  emit_entity_created_events(
-    "team_profile",
-    seed_team_profiles,
-    (p) => `Team Profile: ${p.profile_slug}`,
-  );
-  console.log(`[Seeding] Seeded ${seed_team_profiles.length} team profiles`);
-  return create_success_result(seed_team_profiles.length);
+  return seed_demo_entity_batch({
+    plural_label: "team profiles",
+    entity_type: "team_profile",
+    entities: create_seed_team_profiles(),
+    seed: (profiles) => team_profile_repository.seed_with_data(profiles),
+    describe_entity: (p) => `Team Profile: ${p.profile_slug}`,
+  });
 }
 
 export async function seed_demo_profile_links(
   profile_link_repository: InBrowserProfileLinkRepository,
 ): Promise<Result<number>> {
-  console.log("[Seeding] Seeding demo profile links");
-  const all_profile_links = [
-    ...create_seed_profile_links(),
-    ...create_seed_team_profile_links(),
-  ];
-  const result =
-    await profile_link_repository.seed_with_data(all_profile_links);
-  if (!result.success) {
-    console.error(`[Seeding] Profile link seeding failed: ${result.error}`);
-    return create_failure_result(
-      `Profile link seeding failed: ${result.error}`,
-    );
-  }
-  emit_entity_created_events(
-    "profile_link",
-    all_profile_links,
-    (l) => `Link: ${l.title}`,
-  );
-  console.log(`[Seeding] Seeded ${all_profile_links.length} profile links`);
-  return create_success_result(all_profile_links.length);
+  return seed_demo_entity_batch({
+    plural_label: "profile links",
+    entity_type: "profile_link",
+    entities: [
+      ...create_seed_profile_links(),
+      ...create_seed_team_profile_links(),
+    ],
+    seed: (links) => profile_link_repository.seed_with_data(links),
+    describe_entity: (l) => `Link: ${l.title}`,
+  });
 }

@@ -4,9 +4,10 @@
     import CompetitionScoringPointsEditor from "$lib/presentation/components/competition/CompetitionScoringPointsEditor.svelte";
     import CompetitionScoringTieBreakersEditor from "$lib/presentation/components/competition/CompetitionScoringTieBreakersEditor.svelte";
     import type { CompetitionEditSelectedFormatState } from "$lib/presentation/logic/competitionEditPageContracts";
+    import { PRESENCE_STATUS } from "$lib/presentation/logic/presenceStatus";
 
     export let selected_format_state: CompetitionEditSelectedFormatState = {
-        status: "missing",
+        status: PRESENCE_STATUS.MISSING,
     };
     export let form_data: UpdateCompetitionInput;
     export let is_customizing_scoring: boolean;
@@ -21,12 +22,12 @@
     export let on_reset_scoring: () => void;
 
     $: format_default_points =
-        selected_format_state.status === "present"
-            ? selected_format_state.competition_format.points_config ?? {
+        selected_format_state.status === PRESENCE_STATUS.PRESENT
+            ? (selected_format_state.competition_format.points_config ?? {
                   points_for_win: 3,
                   points_for_draw: 1,
                   points_for_loss: 0,
-              }
+              })
             : {
                   points_for_win: 3,
                   points_for_draw: 1,
@@ -44,8 +45,9 @@
             format_default_points.points_for_loss,
     };
     $: format_default_tie_breakers =
-        selected_format_state.status === "present"
-            ? (selected_format_state.competition_format.tie_breakers as TieBreaker[])
+        selected_format_state.status === PRESENCE_STATUS.PRESENT
+            ? (selected_format_state.competition_format
+                  .tie_breakers as TieBreaker[])
             : (["goal_difference", "goals_scored"] as TieBreaker[]);
     $: effective_tie_breakers =
         form_data.rule_overrides?.tie_breakers_override ??
@@ -56,7 +58,7 @@
     );
 </script>
 
-{#if selected_format_state.status === "present"}
+{#if selected_format_state.status === PRESENCE_STATUS.PRESENT}
     <div
         class="border border-accent-200 dark:border-accent-700 rounded-lg p-5 mb-4"
     >

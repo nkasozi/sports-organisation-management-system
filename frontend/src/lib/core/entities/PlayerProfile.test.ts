@@ -110,7 +110,9 @@ describe("PlayerProfile", () => {
     it("validates visibility values", () => {
       const input = {
         ...create_empty_player_profile_input("player_123"),
-        visibility: "invalid" as any,
+        visibility: "invalid" as ReturnType<
+          typeof create_empty_player_profile_input
+        >["visibility"],
       };
       const result = validate_player_profile_input(input);
 

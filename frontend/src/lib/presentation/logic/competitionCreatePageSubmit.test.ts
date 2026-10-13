@@ -1,9 +1,12 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, type Mock, vi } from "vitest";
 
 import { submit_competition_create_form } from "./competitionCreatePageSubmit";
 
 describe("competitionCreatePageSubmit", () => {
-  function create_dependencies() {
+  function create_dependencies(): {
+    competition_use_cases: { create: Mock };
+    competition_team_use_cases: { create: Mock };
+  } {
     return {
       competition_use_cases: { create: vi.fn() },
       competition_team_use_cases: { create: vi.fn() },

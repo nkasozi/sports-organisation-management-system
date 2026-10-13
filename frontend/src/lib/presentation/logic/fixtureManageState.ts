@@ -1,15 +1,27 @@
 import type { FixtureLineup } from "$lib/core/entities/FixtureLineup";
 import type { Player } from "$lib/core/entities/Player";
 import type { PlayerTeamMembership } from "$lib/core/entities/PlayerTeamMembership";
+import {
+  LINEUP_STATUS,
+  MEMBERSHIP_STATUS,
+} from "$lib/core/entities/StatusConstants";
 
 export type TeamPlayer = Player & {
   jersey_number: number;
   position: string;
 };
 
+const MEMBERSHIP_SELECTION_STATUS = {
+  MISSING: "missing",
+  FOUND: "found",
+} as const;
+
 type MembershipSelectionResult =
-  | { status: "missing" }
-  | { status: "found"; membership: PlayerTeamMembership };
+  | { status: typeof MEMBERSHIP_SELECTION_STATUS.MISSING }
+  | {
+      status: typeof MEMBERSHIP_SELECTION_STATUS.FOUND;
+      membership: PlayerTeamMembership;
+    };
 
 export function build_position_name_by_id_map(
   positions: Array<{ id: string; name: string }>,
@@ -28,15 +40,18 @@ export function pick_best_membership_for_player(
     );
 
   const active_membership = candidates.find(
-    (membership) => membership.status === "active",
+    (membership) => membership.status === MEMBERSHIP_STATUS.ACTIVE,
   );
   const best_membership = active_membership || candidates[0];
 
   if (!best_membership) {
-    return { status: "missing" };
+    return { status: MEMBERSHIP_SELECTION_STATUS.MISSING };
   }
 
-  return { status: "found", membership: best_membership };
+  return {
+    status: MEMBERSHIP_SELECTION_STATUS.FOUND,
+    membership: best_membership,
+  };
 }
 
 export function build_team_players(
@@ -56,7 +71,7 @@ export function build_team_players(
     return {
       ...player,
       jersey_number:
-        membership_result.status === "found"
+        membership_result.status === MEMBERSHIP_SELECTION_STATUS.FOUND
           ? membership_result.membership.jersey_number
           : 0,
       position,
@@ -65,7 +80,7 @@ export function build_team_players(
 }
 
 function is_submitted_lineup_status(status: FixtureLineup["status"]): boolean {
-  return status === "submitted" || status === "locked";
+  return status === LINEUP_STATUS.SUBMITTED || status === LINEUP_STATUS.LOCKED;
 }
 
 export function has_team_submitted_lineup(

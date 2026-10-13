@@ -13,6 +13,7 @@ import type {
 import type { QueryOptions } from "../../core/interfaces/ports";
 import type { PaginatedAsyncResult } from "../../core/types/Result";
 import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
+import { create_lazy_repository_accessor } from "./InBrowserRepositorySingleton";
 
 const ENTITY_PREFIX = "activity_category";
 
@@ -112,24 +113,11 @@ class InBrowserActivityCategoryRepository
   }
 }
 
-type ActivityCategoryRepositoryState =
-  | { status: "uninitialized" }
-  | {
-      status: "ready";
-      repository: InBrowserActivityCategoryRepository;
-    };
-
-let activity_category_repository_state: ActivityCategoryRepositoryState = {
-  status: "uninitialized",
-};
+const get_concrete_repository: () => InBrowserActivityCategoryRepository =
+  create_lazy_repository_accessor(
+    () => new InBrowserActivityCategoryRepository(),
+  );
 
 export function get_activity_category_repository(): ActivityCategoryRepository {
-  if (activity_category_repository_state.status === "ready") {
-    return activity_category_repository_state.repository;
-  }
-
-  const repository = new InBrowserActivityCategoryRepository();
-  activity_category_repository_state = { status: "ready", repository };
-
-  return repository;
+  return get_concrete_repository();
 }

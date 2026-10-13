@@ -22,8 +22,17 @@ import {
 } from "../../core/types/Result";
 import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
 import { create_default_competition_teams } from "./InBrowserCompetitionTeamRepositoryDefaults";
+import {
+  create_warning_failure_details,
+  run_repository_query,
+  with_failure_context,
+} from "./InBrowserRepositoryQueryRunner";
+import { reset_repository_data } from "./InBrowserRepositoryReset";
+import { create_lazy_repository_accessor } from "./InBrowserRepositorySingleton";
+import type { RepositoryWriteOrigin } from "./InBrowserRepositoryWriteOrigin";
 
 const ENTITY_PREFIX = "comp_team";
+const TEAM_NOT_IN_COMPETITION_MESSAGE = "Team not found in competition";
 
 export class InBrowserCompetitionTeamRepository
   extends InBrowserBaseRepository<
@@ -103,90 +112,58 @@ export class InBrowserCompetitionTeamRepository
     return this.find_all({ team_id }, options);
   }
 
-  async find_team_in_competition(
+  find_team_in_competition(
     competition_id: CompetitionTeam["competition_id"],
     team_id: CompetitionTeam["team_id"],
   ): AsyncResult<CompetitionTeam> {
-    try {
-      const all_entities = await this.database.competition_teams.toArray();
-      const found = all_entities.find(
-        (ct) => ct.competition_id === competition_id && ct.team_id === team_id,
-      );
-      if (!found) {
-        return create_failure_result("Team not found in competition");
-      }
-      return create_success_result(found);
-    } catch (error) {
-      console.warn(
-        "[CompetitionTeamRepository] Failed to find team in competition",
-        {
-          event: "repository_find_team_in_competition_failed",
-          error: String(error),
-        },
-      );
-      const error_message =
-        error instanceof Error ? error.message : "Unknown error occurred";
-      return create_failure_result(
-        `Failed to find team in competition: ${error_message}`,
-      );
-    }
+    return run_repository_query(
+      with_failure_context(
+        create_warning_failure_details(
+          "[CompetitionTeamRepository] Failed to find team in competition",
+          "repository_find_team_in_competition_failed",
+          "find team in competition",
+        ),
+        { competition_id, team_id },
+      ),
+      async () => {
+        const found = (await this.database.competition_teams.toArray()).find(
+          (ct) =>
+            ct.competition_id === competition_id && ct.team_id === team_id,
+        );
+        return found
+          ? create_success_result(found)
+          : create_failure_result(TEAM_NOT_IN_COMPETITION_MESSAGE);
+      },
+    );
   }
 
   async remove_team_from_competition(
     competition_id: CompetitionTeam["competition_id"],
     team_id: CompetitionTeam["team_id"],
   ): AsyncResult<boolean> {
-    try {
-      const all_entities = await this.database.competition_teams.toArray();
-      const found = all_entities.find(
-        (ct) => ct.competition_id === competition_id && ct.team_id === team_id,
-      );
-      if (!found) {
-        return create_failure_result("Team not found in competition");
-      }
-      return this.delete_by_id(found.id);
-    } catch (error) {
-      console.warn(
-        "[CompetitionTeamRepository] Failed to remove team from competition",
-        {
-          event: "repository_remove_team_from_competition_failed",
-          error: String(error),
-        },
-      );
-      const error_message =
-        error instanceof Error ? error.message : "Unknown error occurred";
-      return create_failure_result(
-        `Failed to remove team from competition: ${error_message}`,
-      );
-    }
+    const found_result = await this.find_team_in_competition(
+      competition_id,
+      team_id,
+    );
+    if (!found_result.success) return found_result;
+    return this.delete_by_id(found_result.data.id);
   }
 }
 
-type CompetitionTeamRepositoryState =
-  | { status: "uninitialized" }
-  | {
-      status: "ready";
-      repository: InBrowserCompetitionTeamRepository;
-    };
-
-let competition_team_repository_state: CompetitionTeamRepositoryState = {
-  status: "uninitialized",
-};
+const get_concrete_repository: () => InBrowserCompetitionTeamRepository =
+  create_lazy_repository_accessor(
+    () => new InBrowserCompetitionTeamRepository(),
+  );
 
 export function get_competition_team_repository(): CompetitionTeamRepository {
-  if (competition_team_repository_state.status === "ready") {
-    return competition_team_repository_state.repository;
-  }
-
-  const repository = new InBrowserCompetitionTeamRepository();
-  competition_team_repository_state = { status: "ready", repository };
-
-  return repository;
+  return get_concrete_repository();
 }
 
-export async function reset_competition_team_repository(): Promise<void> {
-  const repository =
-    get_competition_team_repository() as InBrowserCompetitionTeamRepository;
-  await repository.clear_all_data();
-  await repository.seed_with_data(create_default_competition_teams());
+export function reset_competition_team_repository(
+  origin: RepositoryWriteOrigin,
+): AsyncResult<number> {
+  return reset_repository_data(
+    get_concrete_repository().with_write_origin(origin),
+    create_default_competition_teams(),
+  );
 }

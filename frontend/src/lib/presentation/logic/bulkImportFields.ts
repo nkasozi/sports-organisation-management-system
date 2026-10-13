@@ -1,5 +1,6 @@
 import type { FieldMetadata } from "$lib/core/entities/BaseEntity";
 import { entityMetadataRegistry } from "$lib/infrastructure/registry/EntityMetadataRegistry";
+import { DYNAMIC_FORM_FIELD_TYPE } from "$lib/presentation/logic/dynamicFormConstants";
 
 const CREATED_AT_FIELD_NAME = "created_at";
 const ID_FIELD_NAME = "id";
@@ -10,7 +11,10 @@ export function get_bulk_import_fields(
 ): FieldMetadata[] {
   return fields.filter((field: FieldMetadata) => {
     if (field.is_read_only) return false;
-    if (field.field_type === "file" || field.field_type === "sub_entity")
+    if (
+      field.field_type === DYNAMIC_FORM_FIELD_TYPE.FILE ||
+      field.field_type === DYNAMIC_FORM_FIELD_TYPE.SUB_ENTITY
+    )
       return false;
     if (field.field_name === ID_FIELD_NAME) return false;
     if (
@@ -26,14 +30,17 @@ export function get_bulk_import_foreign_key_fields(
   fields: FieldMetadata[],
 ): FieldMetadata[] {
   return fields.filter(
-    (field: FieldMetadata) => field.field_type === "foreign_key",
+    (field: FieldMetadata) =>
+      field.field_type === DYNAMIC_FORM_FIELD_TYPE.FOREIGN_KEY,
   );
 }
 
 export function get_bulk_import_enum_fields(
   fields: FieldMetadata[],
 ): FieldMetadata[] {
-  return fields.filter((field: FieldMetadata) => field.field_type === "enum");
+  return fields.filter(
+    (field: FieldMetadata) => field.field_type === DYNAMIC_FORM_FIELD_TYPE.ENUM,
+  );
 }
 
 export function get_bulk_import_related_entity_display_name(

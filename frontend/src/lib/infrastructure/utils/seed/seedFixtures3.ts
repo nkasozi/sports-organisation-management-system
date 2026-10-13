@@ -10,6 +10,33 @@ import {
   SEED_TEAM_IDS,
 } from "./seedIds";
 
+type SeedRow = Omit<
+  import("$lib/core/types/DomainScalars").ScalarInput<Fixture>,
+  "assigned_officials" | "created_at" | "updated_at"
+>;
+
+const COMPLETED_HOCKEY_GAME_ROW: SeedRow = {
+  id: SEED_FIXTURE_IDS.COMPLETED_HOCKEY_GAME,
+  organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
+  competition_id: SEED_COMPETITION_IDS.NATIONAL_HOCKEY_LEAGUE_2026,
+  round_number: 1,
+  round_name: "Opening Round",
+  home_team_id: SEED_TEAM_IDS.ROCKETS_HC,
+  away_team_id: SEED_TEAM_IDS.WANANCHI_HC,
+  venue: "Lugogo Hockey Stadium",
+  scheduled_date: "2025-01-15",
+  scheduled_time: "15:00",
+  home_team_score: 3,
+  away_team_score: 2,
+  game_events: GAME_EVENTS_COMPLETED_HOCKEY_GAME,
+  current_period: "finished",
+  current_minute: 70,
+  match_day: 1,
+  notes: "Thrilling NHL opener - Rockets edge Wananchi 3-2",
+  stage_id: SEED_STAGE_IDS.NHL_LEAGUE_SEASON,
+  status: "completed",
+};
+
 export function create_seed_fixtures_part3(
   referee_role_id: string,
   assistant_referee_role_id: string,
@@ -21,18 +48,7 @@ export function create_seed_fixtures_part3(
 
   return [
     {
-      id: SEED_FIXTURE_IDS.COMPLETED_HOCKEY_GAME,
-      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
-      competition_id: SEED_COMPETITION_IDS.NATIONAL_HOCKEY_LEAGUE_2026,
-      round_number: 1,
-      round_name: "Opening Round",
-      home_team_id: SEED_TEAM_IDS.ROCKETS_HC,
-      away_team_id: SEED_TEAM_IDS.WANANCHI_HC,
-      venue: "Lugogo Hockey Stadium",
-      scheduled_date: "2025-01-15",
-      scheduled_time: "15:00",
-      home_team_score: 3,
-      away_team_score: 2,
+      ...COMPLETED_HOCKEY_GAME_ROW,
       assigned_officials: [
         {
           official_id: SEED_OFFICIAL_IDS.MICHAEL_ANDERSON,
@@ -50,13 +66,6 @@ export function create_seed_fixtures_part3(
           role_name: "Technical Table",
         },
       ],
-      game_events: GAME_EVENTS_COMPLETED_HOCKEY_GAME,
-      current_period: "finished",
-      current_minute: 70,
-      match_day: 1,
-      notes: "Thrilling NHL opener - Rockets edge Wananchi 3-2",
-      stage_id: SEED_STAGE_IDS.NHL_LEAGUE_SEASON,
-      status: "completed",
       created_at: now,
       updated_at: now,
     },

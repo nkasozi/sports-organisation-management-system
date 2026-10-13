@@ -36,6 +36,73 @@ interface CalendarCategoryUseCases {
   ): Promise<{ success: boolean; error?: string }>;
 }
 
+type SaveCalendarActivityCommand = Parameters<
+  typeof save_calendar_activity_action
+>[0];
+
+type CalendarActivityCategoryResolution =
+  | CalendarPageActionFailure
+  | { success: true; selected_category: ActivityCategory };
+
+function create_calendar_validation_warning(
+  error_message: string,
+): CalendarPageActionFailure {
+  return { success: false, error_message, error_type: "warning" };
+}
+
+function resolve_valid_calendar_activity_category(
+  command: SaveCalendarActivityCommand,
+): CalendarActivityCategoryResolution {
+  const form_values = command.activity_form_values;
+  if (!form_values.title.trim())
+    return create_calendar_validation_warning("Please enter an activity title");
+  if (!form_values.category_id)
+    return create_calendar_validation_warning("Please select a category");
+  if (!form_values.start_date || !form_values.end_date)
+    return create_calendar_validation_warning(
+      "Please select start and end dates",
+    );
+  const selected_category = command.categories.find(
+    (category) => category.id === form_values.category_id,
+  );
+  if (!selected_category)
+    return create_calendar_validation_warning("Please select a category");
+  return { success: true, selected_category };
+}
+
+function to_calendar_action_result(
+  result: { success: boolean; error?: string },
+  default_error_message: string,
+): CalendarPageActionFailure | CalendarPageActionSuccess {
+  return result.success
+    ? { success: true }
+    : {
+        success: false,
+        error_message: result.error || default_error_message,
+        error_type: "error",
+      };
+}
+
+async function update_calendar_activity(
+  command: SaveCalendarActivityCommand,
+  editing_activity: Activity,
+  selected_category: ActivityCategory,
+): Promise<CalendarPageActionFailure | CalendarPageActionSuccess> {
+  const form_values = command.activity_form_values;
+  const datetime_range = build_activity_datetime_range(form_values);
+  const result = await command.activity_use_cases.update(editing_activity.id, {
+    title: form_values.title,
+    description: form_values.description,
+    category_id: form_values.category_id,
+    category_type: selected_category.category_type,
+    start_datetime: datetime_range.start_datetime,
+    end_datetime: datetime_range.end_datetime,
+    is_all_day: form_values.is_all_day,
+    location: form_values.location,
+  });
+  return to_calendar_action_result(result, "Failed to update activity");
+}
+
 export async function save_calendar_activity_action(command: {
   activity_form_values: ActivityFormValues;
   categories: ActivityCategory[];
@@ -43,74 +110,22 @@ export async function save_calendar_activity_action(command: {
   selected_organization_id: string;
   activity_use_cases: CalendarActivityUseCases;
 }): Promise<CalendarPageActionFailure | CalendarPageActionSuccess> {
-  if (!command.activity_form_values.title.trim())
-    return {
-      success: false,
-      error_message: "Please enter an activity title",
-      error_type: "warning",
-    };
-  if (!command.activity_form_values.category_id)
-    return {
-      success: false,
-      error_message: "Please select a category",
-      error_type: "warning",
-    };
-  if (
-    !command.activity_form_values.start_date ||
-    !command.activity_form_values.end_date
-  )
-    return {
-      success: false,
-      error_message: "Please select start and end dates",
-      error_type: "warning",
-    };
-  const selected_category = command.categories.find(
-    (category) => category.id === command.activity_form_values.category_id,
-  );
-  if (!selected_category)
-    return {
-      success: false,
-      error_message: "Please select a category",
-      error_type: "warning",
-    };
-  if (command.editing_activity) {
-    const datetime_range = build_activity_datetime_range(
-      command.activity_form_values,
+  const category_resolution = resolve_valid_calendar_activity_category(command);
+  if (!category_resolution.success) return category_resolution;
+  const selected_category = category_resolution.selected_category;
+  if (command.editing_activity)
+    return update_calendar_activity(
+      command,
+      command.editing_activity,
+      selected_category,
     );
-    const result = await command.activity_use_cases.update(
-      command.editing_activity.id,
-      {
-        title: command.activity_form_values.title,
-        description: command.activity_form_values.description,
-        category_id: command.activity_form_values.category_id,
-        category_type: selected_category.category_type,
-        start_datetime: datetime_range.start_datetime,
-        end_datetime: datetime_range.end_datetime,
-        is_all_day: command.activity_form_values.is_all_day,
-        location: command.activity_form_values.location,
-      },
-    );
-    return result.success
-      ? { success: true }
-      : {
-          success: false,
-          error_message: result.error || "Failed to update activity",
-          error_type: "error",
-        };
-  }
   const create_input: CreateActivityInput = build_manual_activity_input(
     command.activity_form_values,
     command.selected_organization_id,
     selected_category,
   );
   const result = await command.activity_use_cases.create(create_input);
-  return result.success
-    ? { success: true }
-    : {
-        success: false,
-        error_message: result.error || "Failed to create activity",
-        error_type: "error",
-      };
+  return to_calendar_action_result(result, "Failed to create activity");
 }
 
 export async function delete_calendar_activity_action(command: {
@@ -126,13 +141,7 @@ export async function delete_calendar_activity_action(command: {
   const result = await command.activity_use_cases.delete(
     command.editing_activity.id,
   );
-  return result.success
-    ? { success: true }
-    : {
-        success: false,
-        error_message: result.error || "Failed to delete activity",
-        error_type: "error",
-      };
+  return to_calendar_action_result(result, "Failed to delete activity");
 }
 
 export async function create_calendar_category_action(command: {
@@ -157,11 +166,5 @@ export async function create_calendar_category_action(command: {
     icon: "star",
     is_system_generated: false,
   });
-  return result.success
-    ? { success: true }
-    : {
-        success: false,
-        error_message: result.error || "Failed to create category",
-        error_type: "error",
-      };
+  return to_calendar_action_result(result, "Failed to create category");
 }

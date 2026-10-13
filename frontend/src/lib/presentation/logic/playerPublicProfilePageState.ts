@@ -42,61 +42,93 @@ export function create_empty_player_public_profile_stats(): PlayerPublicProfileS
   };
 }
 
+type PlayerPublicProfileStatKey = keyof PlayerPublicProfileStats;
+
+interface PlayerPublicProfileEventStatTargets {
+  primary_stat_keys: PlayerPublicProfileStatKey[];
+  secondary_stat_keys: PlayerPublicProfileStatKey[];
+}
+
+const EMPTY_PLAYER_PUBLIC_PROFILE_EVENT_STAT_TARGETS: PlayerPublicProfileEventStatTargets =
+  { primary_stat_keys: [], secondary_stat_keys: [] };
+
+const PLAYER_PUBLIC_PROFILE_EVENT_STAT_TARGETS = new Map<
+  string,
+  PlayerPublicProfileEventStatTargets
+>([
+  ["goal", { primary_stat_keys: ["goals"], secondary_stat_keys: ["assists"] }],
+  ["own_goal", { primary_stat_keys: ["own_goals"], secondary_stat_keys: [] }],
+  ["penalty_scored", { primary_stat_keys: ["goals"], secondary_stat_keys: [] }],
+  [
+    "yellow_card",
+    { primary_stat_keys: ["yellow_cards"], secondary_stat_keys: [] },
+  ],
+  ["red_card", { primary_stat_keys: ["red_cards"], secondary_stat_keys: [] }],
+  [
+    "second_yellow",
+    { primary_stat_keys: ["red_cards"], secondary_stat_keys: [] },
+  ],
+  [
+    "substitution",
+    {
+      primary_stat_keys: ["substitutions_in"],
+      secondary_stat_keys: ["substitutions_out"],
+    },
+  ],
+]);
+
+function increment_player_public_profile_stats(
+  stats: PlayerPublicProfileStats,
+  stat_keys: PlayerPublicProfileStatKey[],
+): PlayerPublicProfileStats {
+  return stat_keys.reduce<PlayerPublicProfileStats>(
+    (current_stats, stat_key) => ({
+      ...current_stats,
+      [stat_key]: current_stats[stat_key] + 1,
+    }),
+    stats,
+  );
+}
+
+function apply_event_to_player_public_profile_stats(
+  stats: PlayerPublicProfileStats,
+  event: GameEvent,
+  normalized_player_name: string,
+): PlayerPublicProfileStats {
+  const stat_targets =
+    PLAYER_PUBLIC_PROFILE_EVENT_STAT_TARGETS.get(event.event_type) ??
+    EMPTY_PLAYER_PUBLIC_PROFILE_EVENT_STAT_TARGETS;
+  const is_primary = event.player_name.toLowerCase() === normalized_player_name;
+  const is_secondary =
+    event.secondary_player_name.toLowerCase() === normalized_player_name;
+  const primary_applied_stats = is_primary
+    ? increment_player_public_profile_stats(
+        stats,
+        stat_targets.primary_stat_keys,
+      )
+    : stats;
+  return is_secondary
+    ? increment_player_public_profile_stats(
+        primary_applied_stats,
+        stat_targets.secondary_stat_keys,
+      )
+    : primary_applied_stats;
+}
+
 export function calculate_player_public_profile_event_stats(
   events: GameEvent[],
   player_name: string,
 ): PlayerPublicProfileStats {
-  const stats = create_empty_player_public_profile_stats();
-
-  for (const event of events) {
-    const normalized_player_name = player_name.toLowerCase();
-    const is_primary =
-      event.player_name.toLowerCase() === normalized_player_name;
-    const is_secondary =
-      event.secondary_player_name.toLowerCase() === normalized_player_name;
-
-    switch (event.event_type) {
-      case "goal":
-        if (is_primary) {
-          stats.goals += 1;
-        }
-        if (is_secondary) {
-          stats.assists += 1;
-        }
-        break;
-      case "own_goal":
-        if (is_primary) {
-          stats.own_goals += 1;
-        }
-        break;
-      case "penalty_scored":
-        if (is_primary) {
-          stats.goals += 1;
-        }
-        break;
-      case "yellow_card":
-        if (is_primary) {
-          stats.yellow_cards += 1;
-        }
-        break;
-      case "red_card":
-      case "second_yellow":
-        if (is_primary) {
-          stats.red_cards += 1;
-        }
-        break;
-      case "substitution":
-        if (is_primary) {
-          stats.substitutions_in += 1;
-        }
-        if (is_secondary) {
-          stats.substitutions_out += 1;
-        }
-        break;
-    }
-  }
-
-  return stats;
+  const normalized_player_name = player_name.toLowerCase();
+  return events.reduce<PlayerPublicProfileStats>(
+    (stats, event) =>
+      apply_event_to_player_public_profile_stats(
+        stats,
+        event,
+        normalized_player_name,
+      ),
+    create_empty_player_public_profile_stats(),
+  );
 }
 
 export function merge_player_public_profile_stats(

@@ -153,4 +153,36 @@ describe("officialDataFetcher", () => {
       },
     );
   });
+
+  it("returns no officials when fixture use cases or the fixture are missing", async () => {
+    get_use_cases_for_entity_type_mock.mockReturnValueOnce({ success: false });
+    await expect(
+      fetch_officials_from_fixture("fixture-1", "organization-1"),
+    ).resolves.toEqual([]);
+
+    get_use_cases_for_entity_type_mock.mockReturnValueOnce({
+      success: true,
+      data: { get_by_id: vi.fn().mockResolvedValue({ success: false }) },
+    });
+    fetch_entities_for_type_mock.mockResolvedValue([]);
+    await expect(
+      fetch_officials_from_fixture("fixture-1", "organization-1"),
+    ).resolves.toEqual([]);
+  });
+
+  it("excludes fixtures the official has already rated", async () => {
+    fetch_entities_for_type_mock
+      .mockResolvedValueOnce([{ id: "fixture-1", status: "completed" }])
+      .mockResolvedValueOnce([
+        {
+          fixture_id: "fixture-1",
+          assigned_officials: [{ official_id: "official-1" }],
+        },
+      ])
+      .mockResolvedValueOnce([{ fixture_id: "fixture-1" }]);
+
+    await expect(
+      fetch_fixtures_from_official("official-1", "organization-1"),
+    ).resolves.toEqual([]);
+  });
 });

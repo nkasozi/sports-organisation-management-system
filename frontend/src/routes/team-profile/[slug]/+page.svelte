@@ -10,6 +10,7 @@
     } from "$lib/infrastructure/registry/useCaseFactories";
     import PublicProfilePageShell from "$lib/presentation/components/profile/PublicProfilePageShell.svelte";
     import TeamPublicProfilePage from "$lib/presentation/components/profile/TeamPublicProfilePage.svelte";
+    import { PRESENCE_STATUS } from "$lib/presentation/logic/presenceStatus";
     import {
         load_team_public_profile_page_data,
         TEAM_PUBLIC_PROFILE_LOAD_ERROR_KIND,
@@ -101,7 +102,7 @@
 
 <svelte:head>
     <title
-        >{page_data_state.status === "present"
+        >{page_data_state.status === PRESENCE_STATUS.PRESENT
             ? page_data_state.page_data.team.name
             : "Team Profile"} - {TEAM_PROFILE_TITLE_SUFFIX}</title
     >
@@ -116,7 +117,7 @@
     not_found_title={TEAM_PROFILE_NOT_FOUND_TITLE}
     not_found_message={TEAM_PROFILE_NOT_FOUND_MESSAGE}
 >
-    {#if page_data_state.status === "present"}
+    {#if page_data_state.status === PRESENCE_STATUS.PRESENT}
         <div class="max-w-4xl mx-auto px-4 py-8 sm:py-12">
             <TeamPublicProfilePage {...page_data_state.page_data} />
         </div>

@@ -7,6 +7,13 @@ import {
   load_public_player_position,
   load_public_player_profile,
 } from "./playerPublicProfileDataLoaderSupport";
+import {
+  build_public_player_membership,
+  EMPTY_PUBLIC_PLAYER_STATS,
+  PUBLIC_PLAYER_COMPLETED_FIXTURE,
+  PUBLIC_PLAYER_LINK_ITEMS,
+  SINGLE_FIXTURE_PUBLIC_PLAYER_STATS,
+} from "./playerPublicProfileDataLoaderSupport.test_support";
 
 describe("playerPublicProfileDataLoaderSupport", () => {
   it("returns not found and restricted errors for missing or private profiles", async () => {
@@ -105,21 +112,7 @@ describe("playerPublicProfileDataLoaderSupport", () => {
             profile_link_use_cases: {
               list_by_profile: async () => ({
                 success: true,
-                data: {
-                  items: [
-                    { id: "1", platform: "website", url: "https://club.test" },
-                    {
-                      id: "2",
-                      platform: "youtube",
-                      url: "https://youtube.test/watch",
-                    },
-                    {
-                      id: "3",
-                      platform: "twitter",
-                      url: "https://x.test/jane",
-                    },
-                  ],
-                },
+                data: { items: PUBLIC_PLAYER_LINK_ITEMS },
               }),
             },
           },
@@ -160,16 +153,7 @@ describe("playerPublicProfileDataLoaderSupport", () => {
         { id: "player-1", first_name: "Jane", last_name: "Doe" } as never,
       ),
     ).toEqual({
-      overall_stats: {
-        total_matches: 0,
-        goals: 0,
-        own_goals: 0,
-        assists: 0,
-        yellow_cards: 0,
-        red_cards: 0,
-        substitutions_in: 0,
-        substitutions_out: 0,
-      },
+      overall_stats: EMPTY_PUBLIC_PLAYER_STATS,
       team_stats: [],
     });
 
@@ -180,15 +164,7 @@ describe("playerPublicProfileDataLoaderSupport", () => {
             membership_use_cases: {
               list: async () => ({
                 success: true,
-                data: {
-                  items: [
-                    {
-                      id: "membership-1",
-                      player_id: "player-1",
-                      team_id: "team-1",
-                    },
-                  ],
-                },
+                data: { items: [build_public_player_membership()] },
               }),
             },
             team_use_cases: {
@@ -200,28 +176,7 @@ describe("playerPublicProfileDataLoaderSupport", () => {
             fixture_use_cases: {
               list: async () => ({
                 success: true,
-                data: {
-                  items: [
-                    {
-                      id: "fixture-1",
-                      status: "completed",
-                      home_team_id: "team-1",
-                      away_team_id: "team-2",
-                      game_events: [
-                        {
-                          event_type: "goal",
-                          player_name: "Jane Doe",
-                          secondary_player_name: "Alex Roe",
-                        },
-                        {
-                          event_type: "yellow_card",
-                          player_name: "Jane Doe",
-                          secondary_player_name: "",
-                        },
-                      ],
-                    },
-                  ],
-                },
+                data: { items: [PUBLIC_PLAYER_COMPLETED_FIXTURE] },
               }),
             },
           },
@@ -229,34 +184,12 @@ describe("playerPublicProfileDataLoaderSupport", () => {
         { id: "player-1", first_name: "Jane", last_name: "Doe" } as never,
       ),
     ).toEqual({
-      overall_stats: {
-        total_matches: 1,
-        goals: 1,
-        own_goals: 0,
-        assists: 0,
-        yellow_cards: 1,
-        red_cards: 0,
-        substitutions_in: 0,
-        substitutions_out: 0,
-      },
+      overall_stats: SINGLE_FIXTURE_PUBLIC_PLAYER_STATS,
       team_stats: [
         {
-          membership: {
-            id: "membership-1",
-            player_id: "player-1",
-            team_id: "team-1",
-          },
+          membership: build_public_player_membership(),
           team: { id: "team-1", name: "City Hawks" },
-          stats: {
-            total_matches: 1,
-            goals: 1,
-            own_goals: 0,
-            assists: 0,
-            yellow_cards: 1,
-            red_cards: 0,
-            substitutions_in: 0,
-            substitutions_out: 0,
-          },
+          stats: SINGLE_FIXTURE_PUBLIC_PLAYER_STATS,
         },
       ],
     });

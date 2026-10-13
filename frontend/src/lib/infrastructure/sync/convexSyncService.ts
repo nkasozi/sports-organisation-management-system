@@ -1,28 +1,19 @@
 import type { Result } from "$lib/core/types/Result";
 
-import {
-  clear_all_demo_data_in_convex as clear_demo_impl,
-  clear_all_synced_tables_in_convex as clear_all_tables_impl,
-  delete_record_in_convex as delete_record_impl,
-} from "./syncMaintenanceOps";
+import { clear_all_demo_data_in_convex as clear_demo_impl } from "./syncMaintenanceOps";
 import {
   ConvexSyncManager,
   get_sync_manager as get_sync_manager_impl,
   initialize_sync_manager as initialize_sync_manager_impl,
 } from "./syncManager";
-import {
-  pull_system_users_from_convex as pull_users_impl,
-  pull_user_scoped_record_from_convex as pull_scoped_impl,
-} from "./syncSystemUserOps";
+import { pull_user_scoped_record_from_convex as pull_scoped_impl } from "./syncSystemUserOps";
 
 export { resolve_conflict } from "./syncConflictResolution";
-export { get_table_from_database } from "./syncDataAccess";
 export {
   get_last_sync_timestamp,
   reset_sync_metadata,
 } from "./syncMaintenanceOps";
 export { ConvexSyncManager } from "./syncManager";
-export { pull_table_from_convex } from "./syncPullService";
 export { write_convex_user_to_local_dexie } from "./syncSystemUserOps";
 export type {
   ConflictResolutionRequest,
@@ -45,23 +36,8 @@ export function initialize_sync_manager(
   return initialize_sync_manager_impl(config);
 }
 
-export async function delete_record_in_convex(
-  table_name: string,
-  local_id: string,
-): Promise<boolean> {
-  return delete_record_impl(table_name, local_id, get_sync_manager_impl);
-}
-
-async function clear_all_synced_tables_in_convex(): Promise<boolean> {
-  return clear_all_tables_impl(get_sync_manager_impl);
-}
-
 export async function clear_all_demo_data_in_convex(): Promise<boolean> {
   return clear_demo_impl(get_sync_manager_impl);
-}
-
-async function pull_system_users_from_convex(): Promise<boolean> {
-  return pull_users_impl(get_sync_manager_impl);
 }
 
 export async function pull_user_scoped_record_from_convex(

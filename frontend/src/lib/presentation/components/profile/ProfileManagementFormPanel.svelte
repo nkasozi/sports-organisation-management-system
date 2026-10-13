@@ -2,11 +2,12 @@
     import { browser } from "$app/environment";
     import type { BaseEntity } from "$lib/core/entities/BaseEntity";
     import type { EntityViewCallbacks } from "$lib/core/types/EntityHandlers";
+    import { type Option, OptionStatus } from "$lib/core/types/Option";
     import DynamicEntityForm from "$lib/presentation/components/DynamicEntityForm.svelte";
 
     export let title: string;
     export let entity_type: string;
-    export let entity_data: Partial<BaseEntity> | undefined;
+    export let entity_option: Option<Partial<BaseEntity>>;
     export let back_button_label: string;
     export let preview_panel_label: string;
     export let preview_panel_action_label: string;
@@ -14,6 +15,11 @@
     export let show_preview_panel: boolean;
     export let on_back_requested: () => void;
     export let view_callbacks: EntityViewCallbacks;
+
+    $: entity_form_props =
+        entity_option.status === OptionStatus.SOME
+            ? { entity_data: entity_option.value }
+            : {};
 
     function open_preview_path(): void {
         if (!browser || !preview_path) {
@@ -60,7 +66,7 @@
 
         <DynamicEntityForm
             {entity_type}
-            {entity_data}
+            {...entity_form_props}
             is_mobile_view={false}
             crud_handlers={void 0}
             sub_entity_filter={void 0}

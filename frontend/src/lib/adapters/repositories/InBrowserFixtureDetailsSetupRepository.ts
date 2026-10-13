@@ -12,8 +12,14 @@ import type {
   FixtureDetailsSetupRepository,
 } from "../../core/interfaces/ports";
 import type { QueryOptions } from "../../core/interfaces/ports";
-import type { PaginatedAsyncResult } from "../../core/types/Result";
+import type {
+  AsyncResult,
+  PaginatedAsyncResult,
+} from "../../core/types/Result";
 import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
+import { reset_repository_data } from "./InBrowserRepositoryReset";
+import { create_lazy_repository_accessor } from "./InBrowserRepositorySingleton";
+import type { RepositoryWriteOrigin } from "./InBrowserRepositoryWriteOrigin";
 
 const ENTITY_PREFIX = "fixture-details-setup";
 
@@ -126,32 +132,20 @@ function create_default_fixture_details_setups(): import("$lib/core/types/Domain
   return [];
 }
 
-type FixtureDetailsSetupRepositoryState =
-  | { status: "uninitialized" }
-  | {
-      status: "ready";
-      repository: InBrowserFixtureDetailsSetupRepository;
-    };
-
-let fixture_details_setup_repository_state: FixtureDetailsSetupRepositoryState =
-  {
-    status: "uninitialized",
-  };
+const get_concrete_repository: () => InBrowserFixtureDetailsSetupRepository =
+  create_lazy_repository_accessor(
+    () => new InBrowserFixtureDetailsSetupRepository(),
+  );
 
 export function get_fixture_details_setup_repository(): FixtureDetailsSetupRepository {
-  if (fixture_details_setup_repository_state.status === "ready") {
-    return fixture_details_setup_repository_state.repository;
-  }
-
-  const repository = new InBrowserFixtureDetailsSetupRepository();
-  fixture_details_setup_repository_state = { status: "ready", repository };
-
-  return repository;
+  return get_concrete_repository();
 }
 
-export async function reset_fixture_details_setup_repository(): Promise<void> {
-  const repository =
-    get_fixture_details_setup_repository() as InBrowserFixtureDetailsSetupRepository;
-  await repository.clear_all_data();
-  await repository.seed_with_data(create_default_fixture_details_setups());
+export function reset_fixture_details_setup_repository(
+  origin: RepositoryWriteOrigin,
+): AsyncResult<number> {
+  return reset_repository_data(
+    get_concrete_repository().with_write_origin(origin),
+    create_default_fixture_details_setups(),
+  );
 }

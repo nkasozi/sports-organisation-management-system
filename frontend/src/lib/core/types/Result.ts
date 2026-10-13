@@ -36,27 +36,3 @@ export function is_success<TData, TError>(
 ): result is { success: true; data: TData } {
   return result.success === true;
 }
-
-function is_failure<TData, TError>(
-  result: Result<TData, TError>,
-): result is { success: false; error: TError } {
-  return result.success === false;
-}
-
-function map_result<TData, TNewData, TError>(
-  result: Result<TData, TError>,
-  transform_function: (data: TData) => TNewData,
-): Result<TNewData, TError> {
-  if (!result.success) {
-    return result;
-  }
-  return create_success_result(transform_function(result.data));
-}
-
-async function map_async_result<TData, TNewData, TError>(
-  result_promise: AsyncResult<TData, TError>,
-  transform_function: (data: TData) => TNewData,
-): AsyncResult<TNewData, TError> {
-  const result = await result_promise;
-  return map_result(result, transform_function);
-}

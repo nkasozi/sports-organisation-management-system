@@ -1,12 +1,13 @@
 <script lang="ts">
     import type { CompetitionRuleOverrides } from "$lib/core/entities/Competition";
     import type { CompetitionCreateSelectedSportState } from "$lib/presentation/logic/competitionCreatePageFlow";
+    import { PRESENCE_STATUS } from "$lib/presentation/logic/presenceStatus";
 
     import SportRulesCustomizer from "./SportRulesCustomizer.svelte";
 
     export let organization_id = "";
     export let selected_sport_state: CompetitionCreateSelectedSportState = {
-        status: "missing",
+        status: PRESENCE_STATUS.MISSING,
     };
     export let rule_overrides: CompetitionRuleOverrides =
         {} as CompetitionRuleOverrides;
@@ -21,7 +22,7 @@
             Customize competition-specific rules inherited from the sport
         </p>
     </div>
-    {#if organization_id && selected_sport_state.status === "present"}
+    {#if organization_id && selected_sport_state.status === PRESENCE_STATUS.PRESENT}
         <SportRulesCustomizer
             sport={selected_sport_state.sport}
             bind:rule_overrides

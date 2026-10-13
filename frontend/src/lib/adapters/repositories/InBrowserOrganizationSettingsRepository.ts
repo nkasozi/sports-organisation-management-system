@@ -18,6 +18,12 @@ import {
   create_success_result,
 } from "../../core/types/Result";
 import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
+import {
+  create_warning_failure_details,
+  run_repository_query,
+  with_failure_context,
+} from "./InBrowserRepositoryQueryRunner";
+import { create_lazy_repository_accessor } from "./InBrowserRepositorySingleton";
 
 const ENTITY_PREFIX = "org_settings";
 
@@ -85,65 +91,38 @@ class InBrowserOrganizationSettingsRepository
     return filtered;
   }
 
-  async find_by_organization_id(
+  find_by_organization_id(
     organization_id: OrganizationSettings["organization_id"],
     _options?: QueryOptions,
   ): AsyncResult<OrganizationSettings> {
-    try {
-      const all_settings = await this.get_table().toArray();
-      const match = all_settings.find(
-        (settings) => settings.organization_id === organization_id,
-      );
-
-      console.log("[OrgSettingsRepo] find_by_organization_id", {
-        event: "org_settings_find_by_org_id",
-        organization_id,
-        found: !!match,
-      });
-
-      if (!match) {
-        return create_failure_result(
-          build_organization_settings_not_found_error(organization_id),
+    return run_repository_query(
+      with_failure_context(
+        create_warning_failure_details(
+          "[OrgSettingsRepository] Failed to find settings for org",
+          "repository_find_settings_for_org_failed",
+          "find organization settings",
+        ),
+        { organization_id },
+      ),
+      async () => {
+        const match = (await this.get_table().toArray()).find(
+          (settings) => settings.organization_id === organization_id,
         );
-      }
-
-      return create_success_result(match);
-    } catch (error) {
-      console.warn("[OrgSettingsRepository] Failed to find settings for org", {
-        event: "repository_find_settings_for_org_failed",
-        error: String(error),
-      });
-      const error_message =
-        error instanceof Error ? error.message : "Unknown error";
-      return create_failure_result(
-        `Failed to find settings for org ${organization_id}: ${error_message}`,
-      );
-    }
+        return match
+          ? create_success_result(match)
+          : create_failure_result(
+              build_organization_settings_not_found_error(organization_id),
+            );
+      },
+    );
   }
 }
 
-type OrganizationSettingsRepositoryState =
-  | { status: "uninitialized" }
-  | {
-      status: "ready";
-      repository: InBrowserOrganizationSettingsRepository;
-    };
-
-let organization_settings_repository_state: OrganizationSettingsRepositoryState =
-  {
-    status: "uninitialized",
-  };
+const get_concrete_repository: () => InBrowserOrganizationSettingsRepository =
+  create_lazy_repository_accessor(
+    () => new InBrowserOrganizationSettingsRepository(),
+  );
 
 export function get_organization_settings_repository(): OrganizationSettingsRepository {
-  if (organization_settings_repository_state.status === "ready") {
-    return organization_settings_repository_state.repository;
-  }
-
-  const repository = new InBrowserOrganizationSettingsRepository();
-  organization_settings_repository_state = {
-    status: "ready",
-    repository,
-  };
-
-  return repository;
+  return get_concrete_repository();
 }

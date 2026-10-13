@@ -11,6 +11,7 @@
         CompetitionEditSelectedFormatState,
         CompetitionEditSelectedSportState,
     } from "$lib/presentation/logic/competitionEditPageContracts";
+    import { PRESENCE_STATUS } from "$lib/presentation/logic/presenceStatus";
 
     import CompetitionEditWorkspaceController from "./CompetitionEditWorkspaceController.svelte";
 
@@ -22,10 +23,10 @@
     export let competition_team_entries: CompetitionTeam[];
     export let form_data: UpdateCompetitionInput;
     export let selected_format_state: CompetitionEditSelectedFormatState = {
-        status: "missing",
+        status: PRESENCE_STATUS.MISSING,
     };
     export let selected_sport_state: CompetitionEditSelectedSportState = {
-        status: "missing",
+        status: PRESENCE_STATUS.MISSING,
     };
     export let is_customizing_scoring: boolean;
     export let can_edit_competition: boolean;

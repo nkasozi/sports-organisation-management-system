@@ -1,11 +1,11 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, type Mock, vi } from "vitest";
 
 import { create_present_managed_game_team_state } from "$lib/presentation/logic/managedGamePageTypes";
 
 import { load_fixture_manage_bundle } from "./fixtureManageData";
 
 describe("fixtureManageData", () => {
-  function create_dependencies() {
+  function create_dependencies(): Record<string, Record<string, Mock>> {
     return {
       fixture_use_cases: { get_by_id: vi.fn() },
       team_use_cases: { get_by_id: vi.fn() },
@@ -185,8 +185,12 @@ describe("fixtureManageData", () => {
       data: { items: [] },
     });
 
-    await load_fixture_manage_bundle("fixture-2", dependencies as never);
+    const bundle_result = await load_fixture_manage_bundle(
+      "fixture-2",
+      dependencies as never,
+    );
 
+    expect(bundle_result.success).toBe(true);
     expect(dependencies.player_position_use_cases.list).toHaveBeenCalledWith(
       {},
       { page_number: 1, page_size: 1000 },

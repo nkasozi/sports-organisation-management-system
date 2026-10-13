@@ -1,68 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import type {
-  CreatePlayerPositionInput,
-  PlayerPosition,
-} from "../entities/PlayerPosition";
 import type { PlayerPositionRepository } from "../interfaces/ports";
 import { build_player_position_not_found_by_code_error } from "../interfaces/ports";
 import { create_failure_result } from "../types/Result";
 import { create_player_position_use_cases } from "./PlayerPositionUseCases";
-
-function create_mock_repository(): PlayerPositionRepository {
-  return {
-    find_all: vi.fn(),
-    find_by_id: vi.fn(),
-    find_by_ids: vi.fn(),
-    create: vi.fn(),
-    update: vi.fn(),
-    delete_by_id: vi.fn(),
-    delete_by_ids: vi.fn(),
-    count: vi.fn(),
-    find_by_code: vi.fn(),
-    find_by_sport_type: vi.fn(),
-    find_by_category: vi.fn(),
-    find_available_positions: vi.fn(),
-    find_by_organization: vi.fn(),
-  } as PlayerPositionRepository;
-}
-
-function create_test_position(
-  overrides: Partial<PlayerPosition> = {},
-): PlayerPosition {
-  return {
-    id: "position-123",
-    name: "Goalkeeper",
-    code: "GK",
-    category: "goalkeeper",
-    description: "Defends the goal",
-    sport_type: "Football",
-    display_order: 1,
-    is_available: true,
-    status: "active",
-    organization_id: "test-org-1",
-    created_at: "2024-01-01T00:00:00Z",
-    updated_at: "2024-01-01T00:00:00Z",
-    ...overrides,
-  } as PlayerPosition;
-}
-
-function create_valid_input(
-  overrides: Partial<CreatePlayerPositionInput> = {},
-): CreatePlayerPositionInput {
-  return {
-    name: "Striker",
-    code: "ST",
-    category: "forward",
-    description: "Scores goals",
-    sport_type: "Football",
-    display_order: 10,
-    is_available: true,
-    status: "active",
-    organization_id: "test-org-1",
-    ...overrides,
-  } as CreatePlayerPositionInput;
-}
+import {
+  create_mock_repository,
+  create_test_position,
+  create_valid_input,
+} from "./PlayerPositionUseCases.test_support";
 
 describe("PlayerPositionUseCases", () => {
   let mock_repository: PlayerPositionRepository;

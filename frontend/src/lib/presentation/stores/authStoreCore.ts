@@ -1,174 +1,67 @@
-import { get, writable } from "svelte/store";
+import { get, type Readable, writable } from "svelte/store";
 
-import { sync_branding_with_profile } from "$lib/adapters/initialization/brandingSyncService";
-import { get_organization_repository } from "$lib/adapters/repositories/InBrowserOrganizationRepository";
-import { get_system_user_repository } from "$lib/adapters/repositories/InBrowserSystemUserRepository";
-import { get_team_repository } from "$lib/adapters/repositories/InBrowserTeamRepository";
 import type { Result } from "$lib/core/types/Result";
+import { PRESENCE_STATUS } from "$lib/presentation/logic/presenceStatus";
 
-import {
-  build_profiles_with_public_viewer,
-  clear_auth_storage,
-  generate_token_for_profile,
-  load_sidebar_menu_for_role,
-  save_profile_id,
-  save_token,
-  sync_user_context_with_event_bus,
-} from "./authHelpers";
 import { execute_auth_initialization } from "./authInitialize";
 import {
-  compute_authorization_level,
-  compute_disabled_functionalities,
-  compute_feature_access,
-  compute_is_authorized_to_execute,
-  compute_is_functionality_disabled,
-} from "./authPermissions";
-import {
-  type AuthProfileState,
-  type AuthState,
-  create_missing_auth_profile_state,
-  create_missing_auth_token_state,
-  create_present_auth_profile_state,
-  create_present_auth_token_state,
-  type UserProfile,
-} from "./authTypes";
-import { load_profiles_from_repository } from "./profileLoader";
+  type AuthStoreContext,
+  build_initial_auth_state,
+  logout_auth_store,
+  refresh_auth_profiles,
+  switch_auth_profile,
+} from "./authStoreActions";
+import { build_auth_store_permission_accessors } from "./authStorePermissionAccessors";
+import type { AuthState } from "./authTypes";
 
-function build_initial_auth_state(): AuthState {
-  return {
-    current_token: create_missing_auth_token_state(),
-    current_profile: create_missing_auth_profile_state(),
-    available_profiles: [],
-    sidebar_menu_items: [],
-    is_initialized: false,
-    is_demo_session: false,
-  };
-}
+type AuthProfileRole = AuthState["available_profiles"][number]["role"];
 
-function build_refreshed_current_profile_state(
-  current_profile_state: AuthProfileState,
-  refreshed_profiles: UserProfile[],
-): AuthProfileState {
-  if (current_profile_state.status !== "present") {
-    return current_profile_state;
-  }
+const NO_CURRENT_ROLE = "";
 
-  const refreshed_profile = refreshed_profiles.find(
-    (profile) => profile.id === current_profile_state.profile.id,
-  );
+type AuthStorePermissionAccessors = ReturnType<
+  typeof build_auth_store_permission_accessors
+>;
 
-  if (!refreshed_profile) {
-    return current_profile_state;
-  }
-
-  return create_present_auth_profile_state(refreshed_profile);
-}
-
-function create_auth_store() {
-  const initial_state = build_initial_auth_state();
-
-  const { subscribe, set, update } = writable<AuthState>(initial_state);
-
-  async function initialize(): Promise<Result<true>> {
-    return execute_auth_initialization(get({ subscribe }), set);
-  }
-
-  async function refresh_profiles(): Promise<boolean> {
-    console.debug("[AuthStore] Starting profile refresh");
-    const repository = get_system_user_repository();
-    const organization_repository = get_organization_repository();
-    const loaded_profiles = await load_profiles_from_repository(
-      repository,
-      organization_repository,
-      get_team_repository(),
-    );
-    const refreshed_profiles =
-      build_profiles_with_public_viewer(loaded_profiles);
-
-    const state = get({ subscribe });
-    const previous_count = state.available_profiles.length;
-    const refreshed_current_profile_state =
-      build_refreshed_current_profile_state(
-        state.current_profile,
-        refreshed_profiles,
-      );
-
-    update((s) => ({
-      ...s,
-      available_profiles: refreshed_profiles,
-      current_profile: refreshed_current_profile_state,
-    }));
-
-    console.debug(
-      `[AuthStore] Refreshed profiles: ${previous_count} -> ${refreshed_profiles.length} available`,
-    );
-    return true;
-  }
-
-  async function switch_profile(
+interface AuthStore extends Readable<AuthState>, AuthStorePermissionAccessors {
+  initialize: () => Promise<Result<true>>;
+  switch_profile: (
     profile_id: AuthState["available_profiles"][number]["id"],
-  ): Promise<boolean> {
-    const state = get({ subscribe });
-    const target_profile = state.available_profiles.find(
-      (p) => p.id === profile_id,
-    );
+  ) => Promise<boolean>;
+  refresh_profiles: () => Promise<boolean>;
+  get_current_role: () => AuthProfileRole | typeof NO_CURRENT_ROLE;
+  logout: () => Promise<void>;
+  reset_initialized_state: () => void;
+  mark_as_demo_session: () => boolean;
+  get_sidebar_menu_items: () => AuthState["sidebar_menu_items"];
+}
 
-    if (!target_profile) {
-      console.error(`[AuthStore] Profile not found: ${profile_id}`);
-      return false;
-    }
+function read_current_role(
+  state: AuthState,
+): AuthProfileRole | typeof NO_CURRENT_ROLE {
+  const current_profile = state.current_profile;
+  return current_profile.status === PRESENCE_STATUS.PRESENT
+    ? current_profile.profile.role
+    : NO_CURRENT_ROLE;
+}
 
-    const token_result = await generate_token_for_profile(target_profile);
-    if (!token_result.success) {
-      console.error(
-        `[AuthStore] Failed to switch profile: ${token_result.error}`,
-      );
-      return false;
-    }
-    const new_token = token_result.data;
-    await save_token(new_token.raw_token);
-    await save_profile_id(target_profile.id);
-    sync_user_context_with_event_bus({
-      status: "present",
-      profile: target_profile,
-    });
-    const sidebar = await load_sidebar_menu_for_role(target_profile.role);
-
-    update((s) => ({
-      ...s,
-      current_token: create_present_auth_token_state(new_token),
-      current_profile: create_present_auth_profile_state(target_profile),
-      sidebar_menu_items: sidebar,
-    }));
-    await sync_branding_with_profile({
-      status: "present",
-      profile: target_profile,
-    });
-    console.log(
-      `[AuthStore] Switched to profile: ${target_profile.display_name}`,
-    );
-    return true;
-  }
-
-  async function logout(): Promise<void> {
-    await clear_auth_storage();
-    sync_user_context_with_event_bus({ status: "cleared" });
-    set(build_initial_auth_state());
-    console.log("[AuthStore] Logged out");
-  }
+function create_auth_store(): AuthStore {
+  const { subscribe, set, update } = writable<AuthState>(
+    build_initial_auth_state(),
+  );
+  const read_state = (): AuthState => get({ subscribe });
+  const context: AuthStoreContext = { read_state, set, update };
 
   return {
     subscribe,
-    initialize,
-    switch_profile,
-    refresh_profiles,
-    get_current_role: () => {
-      const current_profile = get({ subscribe }).current_profile;
-      return current_profile.status === "present"
-        ? current_profile.profile.role
-        : "";
-    },
-    logout,
+    initialize: (): Promise<Result<true>> =>
+      execute_auth_initialization(read_state(), set),
+    switch_profile: (
+      profile_id: AuthState["available_profiles"][number]["id"],
+    ): Promise<boolean> => switch_auth_profile(context, profile_id),
+    refresh_profiles: (): Promise<boolean> => refresh_auth_profiles(context),
+    get_current_role: (): AuthProfileRole | typeof NO_CURRENT_ROLE =>
+      read_current_role(read_state()),
+    logout: (): Promise<void> => logout_auth_store(context),
     reset_initialized_state: (): void => {
       update((s) => ({ ...s, is_initialized: false, is_demo_session: false }));
     },
@@ -176,30 +69,9 @@ function create_auth_store() {
       update((s) => ({ ...s, is_demo_session: true }));
       return true;
     },
-    get_sidebar_menu_items: () => get({ subscribe }).sidebar_menu_items,
-    get_authorization_level: (entity_type: string) =>
-      compute_authorization_level(get({ subscribe }), entity_type),
-    is_authorized_to_execute: (
-      action: string,
-      entity_type: string,
-      _entity_id?: string,
-      _target_org_id?: string,
-      _target_team_id?: string,
-    ) =>
-      compute_is_authorized_to_execute(
-        get({ subscribe }),
-        action as any,
-        entity_type,
-      ),
-    get_feature_access: () => compute_feature_access(get({ subscribe })),
-    is_functionality_disabled: (action: string, entity_type: string) =>
-      compute_is_functionality_disabled(
-        get({ subscribe }),
-        action as any,
-        entity_type,
-      ),
-    get_disabled_functionalities: (entity_type: string) =>
-      compute_disabled_functionalities(get({ subscribe }), entity_type),
+    get_sidebar_menu_items: (): AuthState["sidebar_menu_items"] =>
+      read_state().sidebar_menu_items,
+    ...build_auth_store_permission_accessors(read_state),
   };
 }
 

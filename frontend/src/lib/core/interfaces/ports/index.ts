@@ -136,7 +136,6 @@ export {
   is_player_position_not_found_by_code_error,
 } from "./external/repositories/index";
 export type {
-  LocalChangePublisherPort,
   LocalSyncStatus,
   RemoteChangeSubscriberPort,
   SyncDirection,

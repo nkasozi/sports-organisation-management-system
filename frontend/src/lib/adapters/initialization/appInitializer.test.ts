@@ -4,6 +4,7 @@ import {
   determine_seeding_strategy,
   get_is_public_content_page,
 } from "./appInitializer";
+import { SEEDING_COMPLETION_STATE } from "./initializationConstants";
 
 describe("get_is_public_content_page", () => {
   it("returns true for /competition-results", () => {
@@ -29,27 +30,48 @@ describe("get_is_public_content_page", () => {
 });
 
 describe("determine_seeding_strategy", () => {
+  it("never skips seeding for a visitor when the seeding marker is unreadable", () => {
+    expect(
+      determine_seeding_strategy(
+        false,
+        "/calendar",
+        SEEDING_COMPLETION_STATE.UNREADABLE,
+        false,
+      ),
+    ).toBe("local_only");
+  });
+
   describe("unauthenticated user on a public content page with seeding complete", () => {
     it("returns 'skip_seeding' to avoid unnecessary work", () => {
       expect(
         determine_seeding_strategy(
           false,
           "/competition-results/lgue-1",
-          true,
+          SEEDING_COMPLETION_STATE.COMPLETE,
           false,
         ),
       ).toBe("skip_seeding");
     });
 
     it("returns 'skip_seeding' for /calendar with seeding complete", () => {
-      expect(determine_seeding_strategy(false, "/calendar", true, false)).toBe(
-        "skip_seeding",
-      );
+      expect(
+        determine_seeding_strategy(
+          false,
+          "/calendar",
+          SEEDING_COMPLETION_STATE.COMPLETE,
+          false,
+        ),
+      ).toBe("skip_seeding");
     });
 
     it("returns 'skip_seeding' for /match-report with seeding complete", () => {
       expect(
-        determine_seeding_strategy(false, "/match-report/fix-1", true, false),
+        determine_seeding_strategy(
+          false,
+          "/match-report/fix-1",
+          SEEDING_COMPLETION_STATE.COMPLETE,
+          false,
+        ),
       ).toBe("skip_seeding");
     });
   });
@@ -57,56 +79,96 @@ describe("determine_seeding_strategy", () => {
   describe("unauthenticated user on a public content page WITHOUT seeding complete", () => {
     it("returns 'local_only' because data must be seeded first", () => {
       expect(
-        determine_seeding_strategy(false, "/competition-results", false, false),
+        determine_seeding_strategy(
+          false,
+          "/competition-results",
+          SEEDING_COMPLETION_STATE.NOT_COMPLETE,
+          false,
+        ),
       ).toBe("local_only");
     });
   });
 
   describe("unauthenticated user on a protected page", () => {
     it("returns 'local_only' regardless of seeding state (seeding not done)", () => {
-      expect(determine_seeding_strategy(false, "/players", false, false)).toBe(
-        "local_only",
-      );
+      expect(
+        determine_seeding_strategy(
+          false,
+          "/players",
+          SEEDING_COMPLETION_STATE.NOT_COMPLETE,
+          false,
+        ),
+      ).toBe("local_only");
     });
 
     it("returns 'local_only' even when seeding is already complete", () => {
-      expect(determine_seeding_strategy(false, "/players", true, false)).toBe(
-        "local_only",
-      );
+      expect(
+        determine_seeding_strategy(
+          false,
+          "/players",
+          SEEDING_COMPLETION_STATE.COMPLETE,
+          false,
+        ),
+      ).toBe("local_only");
     });
   });
 
   describe("authenticated user whose session is already synced (returning user after reload)", () => {
     it("returns 'skip_seeding' — local data is fresh, no Convex pull needed", () => {
       expect(
-        determine_seeding_strategy(true, "/official-roles", true, true),
+        determine_seeding_strategy(
+          true,
+          "/official-roles",
+          SEEDING_COMPLETION_STATE.COMPLETE,
+          true,
+        ),
       ).toBe("skip_seeding");
     });
 
     it("returns 'skip_seeding' regardless of which page the user reloads on", () => {
-      expect(determine_seeding_strategy(true, "/players", false, true)).toBe(
-        "skip_seeding",
-      );
+      expect(
+        determine_seeding_strategy(
+          true,
+          "/players",
+          SEEDING_COMPLETION_STATE.NOT_COMPLETE,
+          true,
+        ),
+      ).toBe("skip_seeding");
     });
   });
 
   describe("authenticated user whose session is NOT yet synced (first login)", () => {
     it("returns 'convex_mandatory' to pull all data from the server", () => {
-      expect(determine_seeding_strategy(true, "/", true, false)).toBe(
-        "convex_mandatory",
-      );
+      expect(
+        determine_seeding_strategy(
+          true,
+          "/",
+          SEEDING_COMPLETION_STATE.COMPLETE,
+          false,
+        ),
+      ).toBe("convex_mandatory");
     });
 
     it("returns 'convex_mandatory' even if seeding was previously complete", () => {
-      expect(determine_seeding_strategy(true, "/fixtures", true, false)).toBe(
-        "convex_mandatory",
-      );
+      expect(
+        determine_seeding_strategy(
+          true,
+          "/fixtures",
+          SEEDING_COMPLETION_STATE.COMPLETE,
+          false,
+        ),
+      ).toBe("convex_mandatory");
     });
 
     it("returns 'convex_mandatory' when seeding was never complete either", () => {
-      expect(determine_seeding_strategy(true, "/teams", false, false)).toBe(
-        "convex_mandatory",
-      );
+      expect(
+        determine_seeding_strategy(
+          true,
+          "/teams",
+          SEEDING_COMPLETION_STATE.NOT_COMPLETE,
+          false,
+        ),
+      ).toBe("convex_mandatory");
     });
   });
 });

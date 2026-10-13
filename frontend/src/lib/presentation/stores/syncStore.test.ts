@@ -1,67 +1,38 @@
 import { get } from "svelte/store";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { create_unknown_conflict_field_value } from "$lib/infrastructure/sync/conflictTypes";
 import type { SyncConfig } from "$lib/infrastructure/sync/convexSyncService";
 
-const sync_store_mocks = vi.hoisted(() => {
-  const manager = {
-    convex_client: void 0 as unknown,
-    get_convex_client: vi.fn(),
-    is_configured: vi.fn(),
-    set_convex_client: vi.fn(),
-    sync_now: vi.fn(),
-    start_auto_sync: vi.fn(),
-    stop_auto_sync: vi.fn(),
-    update_config: vi.fn(),
-  };
+import {
+  create_conflict_sync_result,
+  create_pending_team_conflict,
+  prepare_sync_store_test,
+} from "./syncStore.test_support";
 
-  return {
-    manager,
-    initialize_sync_manager: vi.fn(() => manager),
-    get_sync_manager: vi.fn(() => manager),
-    get_last_sync_timestamp: vi.fn(),
-    add_conflicts_from_sync_response: vi.fn(),
-    execute_conflict_resolution: vi.fn(),
-  };
-});
+const sync_store_mocks = await vi.hoisted(async () =>
+  (await import("./syncStore.test_support")).create_sync_store_mocks(),
+);
 
-vi.mock("$lib/infrastructure/sync/convexSyncService", () => ({
-  get_last_sync_timestamp: sync_store_mocks.get_last_sync_timestamp,
-  get_sync_manager: sync_store_mocks.get_sync_manager,
-  initialize_sync_manager: sync_store_mocks.initialize_sync_manager,
+vi.mock("$lib/infrastructure/sync/convexSyncService", async () =>
+  (await import("./syncStore.test_support")).create_sync_service_module_mock(
+    sync_store_mocks,
+  ),
+);
+vi.mock("$lib/presentation/stores/conflictStoreSyncReviewInstance", () => ({
+  sync_review_store: { add_from_sync_result: vi.fn(() => false) },
 }));
-
-vi.mock("$lib/presentation/stores/conflictStore", () => ({
-  conflict_store: {
-    add_conflicts_from_sync_response:
-      sync_store_mocks.add_conflicts_from_sync_response,
-  },
-}));
-
+vi.mock("$lib/presentation/stores/conflictStore", async () =>
+  (await import("./syncStore.test_support")).create_conflict_store_module_mock(
+    sync_store_mocks,
+  ),
+);
 vi.mock("./syncStoreResolveConflict", () => ({
   execute_conflict_resolution: sync_store_mocks.execute_conflict_resolution,
 }));
 
 describe("syncStore", () => {
   beforeEach(() => {
-    vi.resetModules();
-    vi.useFakeTimers();
-    vi.setSystemTime(new Date("2024-05-01T10:00:00.000Z"));
-    vi.spyOn(console, "error").mockImplementation(() => {});
-    sync_store_mocks.manager.convex_client = void 0;
-    sync_store_mocks.manager.is_configured.mockReset();
-    sync_store_mocks.manager.get_convex_client.mockReset();
-    sync_store_mocks.manager.set_convex_client.mockReset();
-    sync_store_mocks.manager.sync_now.mockReset();
-    sync_store_mocks.manager.start_auto_sync.mockReset();
-    sync_store_mocks.manager.stop_auto_sync.mockReset();
-    sync_store_mocks.manager.update_config.mockReset();
-    sync_store_mocks.initialize_sync_manager.mockClear();
-    sync_store_mocks.get_sync_manager.mockClear();
-    sync_store_mocks.get_last_sync_timestamp.mockReset();
-    sync_store_mocks.add_conflicts_from_sync_response.mockReset();
-    sync_store_mocks.execute_conflict_resolution.mockReset();
+    prepare_sync_store_test(sync_store_mocks);
   });
 
   afterEach(() => {
@@ -94,28 +65,10 @@ describe("syncStore", () => {
 
   it("records sync conflicts and exposes the failure state", async () => {
     const conflict_result = {
-      success: false,
+      ...create_conflict_sync_result("team-1", 25),
       tables_synced: 1,
       records_pushed: 2,
       records_pulled: 3,
-      errors: [{ table_name: "teams", error: "conflict detected" }],
-      duration_ms: 25,
-      conflicts: [
-        {
-          table_name: "teams",
-          conflicts: [
-            {
-              local_id: "team-1",
-              local_data: { name: "Local Team" },
-              local_version: 1,
-              remote_data: { name: "Remote Team" },
-              remote_version: 2,
-              remote_updated_at: "2024-04-30T09:00:00.000Z",
-              remote_updated_by: create_unknown_conflict_field_value(),
-            },
-          ],
-        },
-      ],
     };
     sync_store_mocks.manager.sync_now.mockImplementation(
       async (handle_progress: (progress: Record<string, unknown>) => void) => {
@@ -145,100 +98,18 @@ describe("syncStore", () => {
     });
   });
 
-  it("surfaces the first sync error message when a sync fails without conflicts", async () => {
-    const failed_result = {
-      success: false,
-      tables_synced: 0,
-      records_pushed: 0,
-      records_pulled: 0,
-      errors: [
-        {
-          table_name: "teams",
-          error:
-            'Record "team-1" in "teams" is too large to sync. Choose a smaller image and try again.',
-        },
-      ],
-      duration_ms: 30,
-      conflicts: [],
-    };
-    sync_store_mocks.manager.sync_now.mockResolvedValue(failed_result);
-
-    const { sync_store } = await import("./syncStore");
-
-    const result = await sync_store.sync_now("push");
-
-    expect(result).toEqual(failed_result);
-    expect(get(sync_store)).toMatchObject({
-      is_syncing: false,
-      error_message: {
-        status: "present",
-        message: failed_result.errors[0].error,
-      },
-      has_pending_conflicts: false,
-      last_sync_result: { status: "recorded", result: failed_result },
-    });
-  });
-
-  it("converts thrown sync errors into a failed sync result", async () => {
-    sync_store_mocks.manager.sync_now.mockRejectedValue(
-      new Error("network down"),
-    );
-
-    const { sync_store } = await import("./syncStore");
-
-    const result = await sync_store.sync_now();
-
-    expect(result).toEqual({
-      success: false,
-      tables_synced: 0,
-      records_pushed: 0,
-      records_pulled: 0,
-      errors: [{ table_name: "unknown", error: "network down" }],
-      duration_ms: 0,
-      conflicts: [],
-    });
-    expect(get(sync_store)).toMatchObject({
-      is_syncing: false,
-      error_message: { status: "present", message: "network down" },
-      has_pending_conflicts: false,
-    });
-  });
-
   it("clears pending conflicts after a successful conflict resolution", async () => {
-    const sync_failure_with_conflict = {
-      success: false,
-      tables_synced: 0,
-      records_pushed: 0,
-      records_pulled: 0,
-      errors: [{ table_name: "teams", error: "conflict detected" }],
-      duration_ms: 20,
-      conflicts: [
-        {
-          table_name: "teams",
-          conflicts: [
-            {
-              local_id: "team-2",
-              local_data: { name: "Local Team" },
-              local_version: 1,
-              remote_data: { name: "Remote Team" },
-              remote_version: 2,
-              remote_updated_at: "2024-04-30T09:00:00.000Z",
-              remote_updated_by: create_unknown_conflict_field_value(),
-            },
-          ],
-        },
-      ],
-    };
+    const sync_failure_with_conflict = create_conflict_sync_result(
+      "team-2",
+      20,
+    );
 
     sync_store_mocks.manager.sync_now.mockResolvedValue(
       sync_failure_with_conflict,
     );
     sync_store_mocks.manager.get_convex_client.mockReturnValue({
       success: true,
-      data: {
-        mutation: vi.fn(),
-        query: vi.fn(),
-      },
+      data: { mutation: vi.fn(), query: vi.fn() },
     });
     sync_store_mocks.execute_conflict_resolution.mockResolvedValue({
       success: true,
@@ -248,20 +119,7 @@ describe("syncStore", () => {
 
     await sync_store.sync_now();
     const result = await sync_store.resolve_conflict_and_sync(
-      {
-        id: "conflict-1",
-        table_name: "teams",
-        local_id: "team-2",
-        entity_display_name: "Team B",
-        local_data: { name: "Local Team" },
-        remote_data: { name: "Remote Team" },
-        local_updated_at: "2024-04-29T00:00:00.000Z",
-        remote_updated_at: "2024-04-30T00:00:00.000Z",
-        remote_updated_by: create_unknown_conflict_field_value(),
-        remote_updated_by_name: create_unknown_conflict_field_value(),
-        field_differences: [],
-        detected_at: "2024-05-01T09:59:00.000Z",
-      },
+      create_pending_team_conflict("team-2"),
       "keep_remote",
     );
 

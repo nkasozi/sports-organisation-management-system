@@ -1,4 +1,4 @@
-import { get, writable } from "svelte/store";
+import { get, type Readable, writable } from "svelte/store";
 
 interface AccessDenialInfo {
   denied: boolean;
@@ -7,15 +7,23 @@ interface AccessDenialInfo {
   timestamp: number;
 }
 
+const NO_DENIAL_TEXT = "";
+
 const initial_state: AccessDenialInfo = {
   denied: false,
-  route: "",
-  message: "",
+  route: NO_DENIAL_TEXT,
+  message: NO_DENIAL_TEXT,
   timestamp: 0,
 };
 
-function create_access_denial_store() {
-  const { subscribe, set, update } = writable<AccessDenialInfo>(initial_state);
+interface AccessDenialStore extends Readable<AccessDenialInfo> {
+  set_denial: (route: string, message: string) => void;
+  clear: () => void;
+  get_and_clear: () => AccessDenialInfo;
+}
+
+function create_access_denial_store(): AccessDenialStore {
+  const { subscribe, set } = writable<AccessDenialInfo>(initial_state);
 
   return {
     subscribe,

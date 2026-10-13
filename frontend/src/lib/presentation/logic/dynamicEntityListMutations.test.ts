@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { DYNAMIC_ENTITY_LIST_MESSAGE } from "./dynamicEntityListMessages";
 import {
   build_dynamic_entity_list_sub_entity_defaults,
   delete_dynamic_entity_list_entities,
@@ -131,7 +132,7 @@ describe("dynamicEntityListMutations", () => {
     ).resolves.toEqual({
       deleted_entities: [],
       entities,
-      error_message: "No use cases found for entity type: team",
+      error_message: DYNAMIC_ENTITY_LIST_MESSAGE.LIST_UNAVAILABLE,
       success: false,
     });
   });

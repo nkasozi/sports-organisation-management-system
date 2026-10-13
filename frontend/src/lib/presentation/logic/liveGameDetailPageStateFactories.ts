@@ -7,6 +7,7 @@ import type {
   LiveGameDetailPageState,
   LiveGameDetailToastState,
 } from "./liveGameDetailPageState";
+import { TOAST_KIND } from "./toastConfig";
 
 export function create_live_game_detail_page_state(): LiveGameDetailPageState {
   return {
@@ -61,7 +62,7 @@ export function create_live_game_detail_event_state(): LiveGameDetailEventState 
 }
 
 export function create_live_game_detail_toast_state(): LiveGameDetailToastState {
-  return { is_visible: false, message: "", type: "info" };
+  return { is_visible: false, message: "", type: TOAST_KIND.INFO };
 }
 
 export function apply_live_game_detail_bundle(

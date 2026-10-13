@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, type Mock, vi } from "vitest";
 
 import { load_fixture_lineup_create_team_data } from "./fixtureLineupCreateDataTeam";
 import type { FixtureLineupCreateDependencies } from "./fixtureLineupCreateDataTypes";
@@ -14,7 +14,12 @@ describe("fixtureLineupCreateDataTeam", () => {
     Parameters<typeof load_fixture_lineup_create_team_data>[1],
     { status: "present" }
   >["fixture"];
-  function create_dependencies() {
+  function create_dependencies(): {
+    team_use_cases: { get_by_id: Mock };
+    player_use_cases: { list_players_by_team: Mock };
+    membership_use_cases: { list_memberships_by_team: Mock };
+    player_position_use_cases: { list: Mock };
+  } {
     return {
       team_use_cases: { get_by_id: vi.fn() },
       player_use_cases: { list_players_by_team: vi.fn() },

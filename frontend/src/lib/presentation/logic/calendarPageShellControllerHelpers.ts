@@ -7,6 +7,8 @@ import {
 } from "$lib/core/interfaces/ports";
 import type { CalendarEvent } from "$lib/core/interfaces/ports/internal/usecases/ActivityUseCasesPort";
 import type { CalendarProfileState } from "$lib/presentation/logic/calendarPageData";
+import { PRESENCE_STATUS } from "$lib/presentation/logic/presenceStatus";
+import type { AuthProfileState } from "$lib/presentation/stores/authTypes";
 
 import {
   type ActivityFormValues,
@@ -16,6 +18,17 @@ import {
 
 export type LoadingState = "idle" | "loading" | "success" | "error";
 
+export function build_calendar_profile_state(
+  current_profile: AuthProfileState,
+): CalendarProfileState {
+  if (current_profile.status !== PRESENCE_STATUS.PRESENT)
+    return { status: "missing" };
+  return {
+    status: "present",
+    profile: current_profile.profile as unknown as UserScopeProfile,
+  };
+}
+
 export function extract_url_org_id(search_params: URLSearchParams): string {
   return search_params.get("org") ?? "";
 }
@@ -23,7 +36,7 @@ export function extract_url_org_id(search_params: URLSearchParams): string {
 export function can_user_add_activities(
   profile_state: CalendarProfileState,
 ): boolean {
-  if (profile_state.status !== "present") return false;
+  if (profile_state.status !== PRESENCE_STATUS.PRESENT) return false;
   const profile: UserScopeProfile = profile_state.profile;
   if (profile.organization_id === ANY_VALUE) return true;
   return (
@@ -36,7 +49,8 @@ export function can_user_change_organizations(
   profile_state: CalendarProfileState,
   url_org_id: string,
 ): boolean {
-  if (profile_state.status !== "present") return url_org_id.length === 0;
+  if (profile_state.status !== PRESENCE_STATUS.PRESENT)
+    return url_org_id.length === 0;
   const profile: UserScopeProfile = profile_state.profile;
   if (profile.organization_id === ANY_VALUE) return true;
   return !profile.organization_id && url_org_id.length === 0;

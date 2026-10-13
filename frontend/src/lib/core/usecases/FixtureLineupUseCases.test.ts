@@ -1,78 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import type {
-  CreateFixtureLineupInput,
-  FixtureLineup,
-  LineupPlayer,
-} from "../entities/FixtureLineup";
+import type { LineupPlayer } from "../entities/FixtureLineup";
 import type { FixtureLineupRepository } from "../interfaces/ports";
-import type { ScalarInput } from "../types/DomainScalars";
 import { create_fixture_lineup_use_cases } from "./FixtureLineupUseCases";
-
-function create_mock_repository(): FixtureLineupRepository {
-  return {
-    create: vi.fn(),
-    find_by_id: vi.fn(),
-    find_by_ids: vi.fn(),
-    find_all: vi.fn(),
-    update: vi.fn(),
-    delete_by_id: vi.fn(),
-    delete_by_ids: vi.fn(),
-    count: vi.fn(),
-    find_by_fixture: vi.fn(),
-    find_by_fixture_and_team: vi.fn(),
-    get_lineups_for_fixture: vi.fn(),
-    get_lineup_for_team_in_fixture: vi.fn(),
-  } as FixtureLineupRepository;
-}
-
-function create_test_lineup_player(
-  overrides: Partial<ScalarInput<LineupPlayer>> = {},
-): LineupPlayer {
-  return {
-    id: "player-123",
-    first_name: "Test",
-    last_name: "Player",
-    jersey_number: 10,
-    position: "Forward",
-    is_captain: false,
-    is_substitute: false,
-    ...overrides,
-  } as unknown as LineupPlayer;
-}
-
-function create_test_lineup(
-  overrides: Partial<ScalarInput<FixtureLineup>> = {},
-): FixtureLineup {
-  return {
-    id: "lineup-123",
-    organization_id: "org-123",
-    fixture_id: "fixture-123",
-    team_id: "team-123",
-    selected_players: [create_test_lineup_player()],
-    status: "draft",
-    submitted_by: "",
-    submitted_at: "",
-    notes: "",
-    created_at: "2024-01-01T00:00:00Z",
-    updated_at: "2024-01-01T00:00:00Z",
-    ...overrides,
-  } as unknown as FixtureLineup;
-}
-
-function create_valid_input(
-  overrides: Partial<CreateFixtureLineupInput> = {},
-): CreateFixtureLineupInput {
-  return {
-    organization_id: "org-123",
-    fixture_id: "fixture-123",
-    team_id: "team-123",
-    selected_players: [create_test_lineup_player({ id: "player-456" })],
-    submitted_by: "coach-123",
-    notes: "",
-    ...overrides,
-  } as CreateFixtureLineupInput;
-}
+import {
+  create_mock_repository,
+  create_test_lineup,
+  create_valid_input,
+} from "./FixtureLineupUseCases.test_support";
 
 describe("FixtureLineupUseCases", () => {
   let mock_repository: FixtureLineupRepository;
@@ -213,103 +148,6 @@ describe("FixtureLineupUseCases", () => {
       expect(result.success).toBe(false);
       if (result.success) return;
       expect(result.error).toBe("FixtureLineup ID is required");
-    });
-  });
-
-  describe("delete", () => {
-    it("should delete by id", async () => {
-      vi.mocked(mock_repository.find_by_id).mockResolvedValue({
-        success: true,
-        data: create_test_lineup({ status: "draft" }),
-      });
-      vi.mocked(mock_repository.delete_by_id).mockResolvedValue({
-        success: true,
-        data: true,
-      });
-
-      const result = await use_cases.delete("lineup-123");
-
-      expect(result.success).toBe(true);
-    });
-
-    it("should fail for empty id", async () => {
-      const result = await use_cases.delete("");
-
-      expect(result.success).toBe(false);
-    });
-  });
-
-  describe("list_lineups_by_fixture", () => {
-    it("should return lineups for fixture", async () => {
-      vi.mocked(mock_repository.find_by_fixture).mockResolvedValue({
-        success: true,
-        data: {
-          items: [create_test_lineup()],
-          total_count: 1,
-          page_number: 1,
-          page_size: 10,
-          total_pages: 1,
-        },
-      });
-
-      const result = await use_cases.list_lineups_by_fixture("fixture-123");
-
-      expect(result.success).toBe(true);
-      expect(mock_repository.find_by_fixture).toHaveBeenCalledWith(
-        "fixture-123",
-        void 0,
-      );
-    });
-
-    it("should fail for empty fixture_id", async () => {
-      const result = await use_cases.list_lineups_by_fixture("");
-
-      expect(result.success).toBe(false);
-    });
-  });
-
-  describe("list_lineups_by_fixture_and_team", () => {
-    it("should return lineups for fixture and team", async () => {
-      vi.mocked(mock_repository.find_by_fixture_and_team).mockResolvedValue({
-        success: true,
-        data: {
-          items: [create_test_lineup()],
-          total_count: 1,
-          page_number: 1,
-          page_size: 10,
-          total_pages: 1,
-        },
-      });
-
-      const result = await use_cases.list_lineups_by_fixture_and_team(
-        "fixture-123",
-        "team-123",
-      );
-
-      expect(result.success).toBe(true);
-      expect(mock_repository.find_by_fixture_and_team).toHaveBeenCalledWith(
-        "fixture-123",
-        "team-123",
-        void 0,
-      );
-    });
-
-    it("should fail for empty fixture_id", async () => {
-      const result = await use_cases.list_lineups_by_fixture_and_team(
-        "",
-        "team-123",
-      );
-
-      expect(result.success).toBe(false);
-    });
-
-    it("should fail for empty team_id", async () => {
-      const result = await use_cases.list_lineups_by_fixture_and_team(
-        "fixture-123",
-        "",
-      );
-
-      expect(result.success).toBe(false);
     });
   });
 });

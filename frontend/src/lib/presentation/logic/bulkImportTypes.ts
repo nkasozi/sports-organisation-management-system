@@ -1,5 +1,3 @@
-export type BulkImportStep = "download" | "upload" | "processing" | "results";
-
 export interface BulkImportResult {
   error_message: string;
   original_data: Record<string, string>;

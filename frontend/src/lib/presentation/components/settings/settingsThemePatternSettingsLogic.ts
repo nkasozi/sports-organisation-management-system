@@ -1,3 +1,4 @@
+import { HEADER_FOOTER_STYLE } from "$lib/presentation/components/theme/themeConstants";
 import {
   branding_store,
   type HeaderFooterStyle,
@@ -20,7 +21,7 @@ export async function save_header_pattern(
     header_pattern: pattern,
   }));
   show_toast(
-    pattern === "pattern"
+    pattern === HEADER_FOOTER_STYLE.PATTERN
       ? "Header set to pattern"
       : "Header set to solid color",
     "success",
@@ -36,7 +37,7 @@ export async function save_footer_pattern(
     footer_pattern: pattern,
   }));
   show_toast(
-    pattern === "pattern"
+    pattern === HEADER_FOOTER_STYLE.PATTERN
       ? "Footer set to pattern"
       : "Footer set to solid color",
     "success",

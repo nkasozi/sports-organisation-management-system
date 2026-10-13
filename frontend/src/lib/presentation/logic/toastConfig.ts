@@ -1,4 +1,11 @@
-export type ToastType = "success" | "error" | "warning" | "info";
+export const TOAST_KIND = {
+  SUCCESS: "success",
+  ERROR: "error",
+  WARNING: "warning",
+  INFO: "info",
+} as const;
+
+export type ToastType = (typeof TOAST_KIND)[keyof typeof TOAST_KIND];
 
 export const TOAST_TYPE_CONFIG: Record<
   ToastType,

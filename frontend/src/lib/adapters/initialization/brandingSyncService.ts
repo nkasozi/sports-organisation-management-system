@@ -3,42 +3,39 @@ import { get_organization_use_cases } from "$lib/infrastructure/registry/useCase
 import type { UserProfile } from "$lib/presentation/stores/auth";
 import { branding_store } from "$lib/presentation/stores/branding";
 
+import { BRANDING_PROFILE_STATUS } from "./initializationConstants";
+import {
+  INITIALIZATION_ERROR_CODE,
+  INITIALIZATION_EVENT,
+} from "./initializationEvents";
+
 type BrandingSyncProfileState =
-  | { status: "missing" }
-  | { status: "present"; profile: UserProfile };
+  | { status: typeof BRANDING_PROFILE_STATUS.MISSING }
+  | { status: typeof BRANDING_PROFILE_STATUS.PRESENT; profile: UserProfile };
 
-export async function sync_branding_with_profile(
-  profile_state: BrandingSyncProfileState,
+async function apply_platform_branding(): Promise<boolean> {
+  await branding_store.set_organization_context({ status: "platform" });
+  console.log("[BrandingSync] Applied platform branding", {
+    event: INITIALIZATION_EVENT.BRANDING_PLATFORM_APPLIED,
+  });
+  return true;
+}
+
+async function apply_organization_branding(
+  organization_id: string,
 ): Promise<boolean> {
-  if (profile_state.status !== "present") {
-    await branding_store.set_organization_context({ status: "platform" });
-    return true;
-  }
-
-  const profile = profile_state.profile;
-
-  const has_no_org_context =
-    !profile.organization_id || profile.organization_id === ANY_VALUE;
-
-  if (has_no_org_context) {
-    await branding_store.set_organization_context({ status: "platform" });
-    console.log(
-      "[BrandingSync] Set to platform branding (unrestricted or no org context)",
-    );
-    return true;
-  }
-
-  const org_use_cases = get_organization_use_cases();
-  const org_result = await org_use_cases.get_by_id(profile.organization_id);
-
-  if (!org_result.success || !org_result.data) {
-    console.warn(
-      `[BrandingSync] Could not load organization ${profile.organization_id}, using platform branding`,
-    );
-    await branding_store.set_organization_context({ status: "platform" });
+  const org_result =
+    await get_organization_use_cases().get_by_id(organization_id);
+  if (!org_result.success) {
+    console.warn("[BrandingSync] Organization unavailable, using platform", {
+      event: INITIALIZATION_EVENT.BRANDING_ORGANIZATION_LOAD_FAILED,
+      error_code: INITIALIZATION_ERROR_CODE.BRANDING_ORGANIZATION_UNAVAILABLE,
+      organization_id,
+      error: org_result.error,
+    });
+    await apply_platform_branding();
     return false;
   }
-
   const org = org_result.data;
   await branding_store.set_organization_context({
     status: "scoped",
@@ -47,7 +44,25 @@ export async function sync_branding_with_profile(
     organization_email: org.contact_email,
     organization_address: org.address,
   });
-
-  console.log(`[BrandingSync] Set branding for organization: ${org.name}`);
+  console.log("[BrandingSync] Applied organization branding", {
+    event: INITIALIZATION_EVENT.BRANDING_ORGANIZATION_APPLIED,
+    organization_id: org.id,
+  });
   return true;
+}
+
+export async function sync_branding_with_profile(
+  profile_state: BrandingSyncProfileState,
+): Promise<boolean> {
+  switch (profile_state.status) {
+    case BRANDING_PROFILE_STATUS.MISSING:
+      return apply_platform_branding();
+    case BRANDING_PROFILE_STATUS.PRESENT: {
+      const organization_id = profile_state.profile.organization_id;
+      const has_org_context =
+        Boolean(organization_id) && organization_id !== ANY_VALUE;
+      if (!has_org_context) return apply_platform_branding();
+      return apply_organization_branding(organization_id);
+    }
+  }
 }

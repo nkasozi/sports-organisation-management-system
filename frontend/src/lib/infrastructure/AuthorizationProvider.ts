@@ -3,16 +3,18 @@ import { LocalAuthorizationAdapter } from "$lib/adapters/iam/LocalAuthorizationA
 import { get_system_user_repository } from "$lib/adapters/repositories/InBrowserSystemUserRepository";
 import type { AuthorizationPort } from "$lib/core/interfaces/ports";
 
+import { CONTAINER_STATE_STATUS } from "./containerConstants";
+
 type AuthorizationAdapterState =
-  | { status: "uninitialized" }
-  | { status: "ready"; adapter: AuthorizationPort };
+  | { status: typeof CONTAINER_STATE_STATUS.UNINITIALIZED }
+  | { status: typeof CONTAINER_STATE_STATUS.READY; adapter: AuthorizationPort };
 
 let authorization_adapter_state: AuthorizationAdapterState = {
-  status: "uninitialized",
+  status: CONTAINER_STATE_STATUS.UNINITIALIZED,
 };
 
 export function get_authorization_adapter(): AuthorizationPort {
-  if (authorization_adapter_state.status === "ready") {
+  if (authorization_adapter_state.status === CONTAINER_STATE_STATUS.READY) {
     return authorization_adapter_state.adapter;
   }
 
@@ -22,7 +24,10 @@ export function get_authorization_adapter(): AuthorizationPort {
     auth_adapter,
     system_user_repository,
   );
-  authorization_adapter_state = { status: "ready", adapter };
+  authorization_adapter_state = {
+    status: CONTAINER_STATE_STATUS.READY,
+    adapter,
+  };
 
   return adapter;
 }

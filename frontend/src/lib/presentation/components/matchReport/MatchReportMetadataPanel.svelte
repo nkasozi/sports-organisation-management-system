@@ -6,18 +6,25 @@
         MatchReportTeamState,
         MatchReportVenueState,
     } from "$lib/presentation/logic/matchReportPageLoadTypes";
+    import { PRESENCE_STATUS } from "$lib/presentation/logic/presenceStatus";
 
     export let fixture: Fixture = {} as Fixture;
-    export let home_team_state: MatchReportTeamState = { status: "missing" };
-    export let away_team_state: MatchReportTeamState = { status: "missing" };
-    export let venue_state: MatchReportVenueState = { status: "missing" };
+    export let home_team_state: MatchReportTeamState = {
+        status: PRESENCE_STATUS.MISSING,
+    };
+    export let away_team_state: MatchReportTeamState = {
+        status: PRESENCE_STATUS.MISSING,
+    };
+    export let venue_state: MatchReportVenueState = {
+        status: PRESENCE_STATUS.MISSING,
+    };
     export let assigned_officials_data: MatchReportAssignedOfficialData[] = [];
 
     function build_team_abbreviation(
         team_state: MatchReportTeamState,
         fallback_value: string,
     ): string {
-        if (team_state.status === "missing") {
+        if (team_state.status === PRESENCE_STATUS.MISSING) {
             return fallback_value;
         }
         return team_state.team.name.slice(0, 3).toUpperCase();
@@ -35,11 +42,11 @@
                 📍 Venue
             </div>
             <div class="text-sm font-medium text-gray-900 dark:text-white">
-                {venue_state.status === "present"
+                {venue_state.status === PRESENCE_STATUS.PRESENT
                     ? venue_state.venue.name
-                    : fixture.venue ?? "TBD"}
+                    : (fixture.venue ?? "TBD")}
             </div>
-            {#if venue_state.status === "present" && venue_state.venue.city}
+            {#if venue_state.status === PRESENCE_STATUS.PRESENT && venue_state.venue.city}
                 <div class="text-xs text-gray-500 dark:text-gray-400">
                     {venue_state.venue.city}{venue_state.venue.country
                         ? `, ${venue_state.venue.country}`
@@ -57,10 +64,7 @@
             <div class="flex items-center justify-center gap-4">
                 <div class="flex items-center gap-2">
                     <span class="text-xs text-gray-600 dark:text-gray-300">
-                        {build_team_abbreviation(
-                            home_team_state,
-                            "HOM",
-                        )}
+                        {build_team_abbreviation(home_team_state, "HOM")}
                     </span>
                     <div
                         class="w-6 h-6 rounded-full border-2 border-gray-300 dark:border-gray-600 {fixture
@@ -86,10 +90,7 @@
                         title={fixture.away_team_jersey?.nickname || "Away Kit"}
                     ></div>
                     <span class="text-xs text-gray-600 dark:text-gray-300">
-                        {build_team_abbreviation(
-                            away_team_state,
-                            "AWY",
-                        )}
+                        {build_team_abbreviation(away_team_state, "AWY")}
                     </span>
                 </div>
             </div>

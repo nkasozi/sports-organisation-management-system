@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { create_calendar_page_shell_controller_runtime } from "./calendarPageShellControllerRuntime";
+import { create_calendar_shell_command } from "./calendarPageShellControllerRuntime.test_support";
 
 const {
   create_calendar_page_shell_controller_activity_actions_mock,
@@ -57,59 +58,6 @@ vi.mock("$lib/presentation/stores/publicOrganization", () => ({
 }));
 
 describe("calendarPageShellControllerRuntime", () => {
-  function create_command() {
-    const state = {
-      organizations: [{ id: "organization-1", name: "Org One" }],
-      selected_organization_id: "organization-1",
-    };
-
-    const command = {
-      get_activity_form_values: () => ({ title: "Training" }) as never,
-      get_calendar_events: () => [{ id: "event-1" }] as never,
-      get_categories: () => [{ id: "category-1" }] as never,
-      get_current_auth_profile_state: () =>
-        ({
-          status: "present",
-          profile: { organization_id: "organization-1" },
-        }) as never,
-      get_editing_activity: () => {},
-      get_filter_category_id: () => "category-1",
-      get_filter_competition_id: () => "competition-1",
-      get_filter_team_id: () => "team-1",
-      get_organizations: () => state.organizations as never,
-      get_selected_organization_id: () => state.selected_organization_id,
-      get_selected_organization_name: () => "Org One",
-      get_url_org_id: () => "",
-      set_activity_form_values: vi.fn(),
-      set_calendar_events: vi.fn(),
-      set_categories: vi.fn(),
-      set_competitions: vi.fn(),
-      set_editing_activity: vi.fn(),
-      set_error_message: vi.fn(),
-      set_filter_category_id: vi.fn(),
-      set_filter_competition_id: vi.fn(),
-      set_filter_loading: vi.fn(),
-      set_filter_team_id: vi.fn(),
-      set_is_using_cached_data: vi.fn(),
-      set_loading_state: vi.fn(),
-      set_organizations: vi.fn((value: unknown[]) => {
-        state.organizations = value as never;
-      }),
-      set_selected_event_details: vi.fn(),
-      set_selected_organization_id: vi.fn((value: string) => {
-        state.selected_organization_id = value;
-      }),
-      set_show_category_modal: vi.fn(),
-      set_show_create_modal: vi.fn(),
-      set_show_subscribe_modal: vi.fn(),
-      set_teams: vi.fn(),
-      show_toast: vi.fn(),
-      use_cases: {} as never,
-    };
-
-    return { command, state };
-  }
-
   beforeEach(() => {
     create_calendar_page_shell_controller_activity_actions_mock.mockReset();
     get_store_value_mock.mockReset();
@@ -129,7 +77,7 @@ describe("calendarPageShellControllerRuntime", () => {
   });
 
   it("initializes the page with the loaded bundle and reports initialization failures", async () => {
-    const failed_case = create_command();
+    const failed_case = create_calendar_shell_command();
     load_calendar_shell_initial_data_mock.mockResolvedValueOnce({
       success: false,
       error_message: "load failed",
@@ -143,7 +91,7 @@ describe("calendarPageShellControllerRuntime", () => {
     );
     expect(failed_case.command.set_loading_state).toHaveBeenCalledWith("error");
 
-    const success_case = create_command();
+    const success_case = create_calendar_shell_command();
     load_calendar_shell_initial_data_mock.mockResolvedValueOnce({
       success: true,
       is_using_cached_data: true,
@@ -175,7 +123,7 @@ describe("calendarPageShellControllerRuntime", () => {
   });
 
   it("refreshes filtered events and clears filters by reloading the current bundle", async () => {
-    const { command } = create_command();
+    const { command } = create_calendar_shell_command();
     load_calendar_shell_events_mock.mockResolvedValueOnce([{ id: "event-2" }]);
     load_calendar_shell_bundle_mock.mockResolvedValueOnce({
       teams: [{ id: "team-2" }],
@@ -201,7 +149,7 @@ describe("calendarPageShellControllerRuntime", () => {
   });
 
   it("updates the public organization store when the viewer changes organizations on the public page", async () => {
-    const { command } = create_command();
+    const { command } = create_calendar_shell_command();
     get_store_value_mock.mockImplementation((store: unknown) => {
       if (store === is_public_viewer_store) return true;
       if (store === public_organization_store_mock)
@@ -229,7 +177,7 @@ describe("calendarPageShellControllerRuntime", () => {
   });
 
   it("skips filter and organization refresh work when no organization is selected", async () => {
-    const { command } = create_command();
+    const { command } = create_calendar_shell_command();
     command.get_selected_organization_id = () => "";
     const runtime = create_calendar_page_shell_controller_runtime(
       command as never,

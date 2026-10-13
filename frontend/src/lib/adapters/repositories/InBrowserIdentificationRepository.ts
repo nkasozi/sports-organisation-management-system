@@ -14,6 +14,7 @@ import type {
 import type { QueryOptions } from "../../core/interfaces/ports";
 import type { PaginatedAsyncResult } from "../../core/types/Result";
 import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
+import { create_lazy_repository_accessor } from "./InBrowserRepositorySingleton";
 
 const ENTITY_PREFIX = "ident";
 
@@ -112,24 +113,11 @@ class InBrowserIdentificationRepository
   }
 }
 
-type IdentificationRepositoryState =
-  | { status: "uninitialized" }
-  | {
-      status: "ready";
-      repository: InBrowserIdentificationRepository;
-    };
-
-let identification_repository_state: IdentificationRepositoryState = {
-  status: "uninitialized",
-};
+const get_concrete_repository: () => InBrowserIdentificationRepository =
+  create_lazy_repository_accessor(
+    () => new InBrowserIdentificationRepository(),
+  );
 
 export function get_identification_repository(): IdentificationRepository {
-  if (identification_repository_state.status === "ready") {
-    return identification_repository_state.repository;
-  }
-
-  const repository = new InBrowserIdentificationRepository();
-  identification_repository_state = { status: "ready", repository };
-
-  return repository;
+  return get_concrete_repository();
 }

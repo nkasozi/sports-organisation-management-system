@@ -1,178 +1,58 @@
-import type {
-  AssignedOfficial,
-  CreateFixtureInput,
-  Fixture,
-} from "./FixtureTypes";
-import type { OfficialRequirement } from "./Sport";
+import {
+  check_condition,
+  collect_validation_errors,
+  is_blank_text,
+} from "./EntityValidation";
+import type { CreateFixtureInput } from "./FixtureTypes";
 
-function create_empty_fixture_input(
-  organization_id: CreateFixtureInput["organization_id"] = "",
-  competition_id: CreateFixtureInput["competition_id"] = "",
-): CreateFixtureInput {
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1);
+const FIXTURE_VALIDATION_MESSAGES = {
+  COMPETITION_REQUIRED: "Competition is required",
+  HOME_TEAM_REQUIRED: "Home team is required",
+  AWAY_TEAM_REQUIRED: "Away team is required",
+  TEAMS_MUST_DIFFER: "Home and away teams must be different",
+  SCHEDULED_DATE_REQUIRED: "Scheduled date is required",
+  SCHEDULED_TIME_REQUIRED: "Scheduled time is required",
+  ROUND_NUMBER_INVALID: "Round number must be at least 1",
+  STAGE_REQUIRED: "Stage is required",
+} as const;
 
-  return {
-    organization_id,
-    competition_id,
-    round_number: 1,
-    round_name: "Round 1",
-    home_team_id: "",
-    away_team_id: "",
-    venue: "",
-    scheduled_date: tomorrow.toISOString().split("T")[0],
-    scheduled_time: "15:00",
-    assigned_officials: [],
-    match_day: 1,
-    notes: "",
-    stage_id: "",
-    status: "scheduled",
-  };
-}
+const MINIMUM_ROUND_NUMBER = 1;
 
 export function validate_fixture_input(input: CreateFixtureInput): string[] {
-  const validation_errors: string[] = [];
-
-  if (!input.competition_id) {
-    validation_errors.push("Competition is required");
-  }
-  if (!input.home_team_id) {
-    validation_errors.push("Home team is required");
-  }
-  if (!input.away_team_id) {
-    validation_errors.push("Away team is required");
-  }
-  if (
-    input.home_team_id &&
-    input.away_team_id &&
-    input.home_team_id === input.away_team_id
-  ) {
-    validation_errors.push("Home and away teams must be different");
-  }
-  if (!input.scheduled_date) {
-    validation_errors.push("Scheduled date is required");
-  }
-  if (!input.scheduled_time) {
-    validation_errors.push("Scheduled time is required");
-  }
-  if (input.round_number < 1) {
-    validation_errors.push("Round number must be at least 1");
-  }
-  if (!input.stage_id || input.stage_id.trim().length === 0) {
-    validation_errors.push("Stage is required");
-  }
-
-  return validation_errors;
-}
-
-function derive_groups_from_fixtures(
-  fixtures: Pick<Fixture, "home_team_id" | "away_team_id">[],
-): string[][] {
-  const parent: Record<Fixture["home_team_id"], Fixture["home_team_id"]> = {};
-
-  function find_root(
-    team_id: Fixture["home_team_id"],
-  ): Fixture["home_team_id"] {
-    if (parent[team_id] === undefined) {
-      parent[team_id] = team_id;
-    }
-    if (parent[team_id] !== team_id) {
-      parent[team_id] = find_root(parent[team_id]);
-    }
-    return parent[team_id];
-  }
-
-  function union_teams(
-    a: Fixture["home_team_id"],
-    b: Fixture["away_team_id"],
-  ): void {
-    const root_a = find_root(a);
-    const root_b = find_root(b);
-    if (root_a !== root_b) {
-      parent[root_b] = root_a;
-    }
-  }
-
-  for (const fixture of fixtures) {
-    union_teams(fixture.home_team_id, fixture.away_team_id);
-  }
-
-  const groups: Record<Fixture["home_team_id"], Fixture["home_team_id"][]> = {};
-  for (const team_id of Object.keys(parent) as Fixture["home_team_id"][]) {
-    const root = find_root(team_id);
-    if (!groups[root]) {
-      groups[root] = [];
-    }
-    groups[root].push(team_id);
-  }
-
-  return Object.values(groups).map((group) => group.sort());
-}
-
-interface OfficialValidationResult {
-  is_valid: boolean;
-  errors: OfficialValidationError[];
-  warnings: OfficialValidationWarning[];
-}
-
-interface OfficialValidationError {
-  role_id: OfficialRequirement["role_id"];
-  role_name: OfficialRequirement["role_name"];
-  required_count: number;
-  assigned_count: number;
-  message: string;
-  rule_source: "sport" | "competition";
-}
-
-interface OfficialValidationWarning {
-  role_id: OfficialRequirement["role_id"];
-  role_name: OfficialRequirement["role_name"];
-  message: string;
-}
-
-function validate_fixture_officials(
-  assigned_officials: AssignedOfficial[],
-  official_requirements: OfficialRequirement[],
-  rule_source: "sport" | "competition" = "sport",
-): OfficialValidationResult {
-  const errors: OfficialValidationError[] = [];
-  const warnings: OfficialValidationWarning[] = [];
-
-  for (const requirement of official_requirements) {
-    const assigned_for_role = assigned_officials.filter(
-      (o) => o.role_id === requirement.role_id,
-    );
-    const assigned_count = assigned_for_role.length;
-
-    if (
-      requirement.is_mandatory &&
-      assigned_count < requirement.minimum_count
-    ) {
-      errors.push({
-        role_id: requirement.role_id,
-        role_name: requirement.role_name,
-        required_count: requirement.minimum_count,
-        assigned_count,
-        message: `${requirement.role_name}: Need at least ${requirement.minimum_count}, assigned ${assigned_count}`,
-        rule_source,
-      });
-    }
-
-    if (
-      requirement.maximum_count > 0 &&
-      assigned_count > requirement.maximum_count
-    ) {
-      warnings.push({
-        role_id: requirement.role_id,
-        role_name: requirement.role_name,
-        message: `${requirement.role_name}: Maximum is ${requirement.maximum_count}, assigned ${assigned_count}`,
-      });
-    }
-  }
-
-  return {
-    is_valid: errors.length === 0,
-    errors,
-    warnings,
-  };
+  const has_both_teams =
+    Boolean(input.home_team_id) && Boolean(input.away_team_id);
+  return collect_validation_errors([
+    check_condition(
+      Boolean(input.competition_id),
+      FIXTURE_VALIDATION_MESSAGES.COMPETITION_REQUIRED,
+    ),
+    check_condition(
+      Boolean(input.home_team_id),
+      FIXTURE_VALIDATION_MESSAGES.HOME_TEAM_REQUIRED,
+    ),
+    check_condition(
+      Boolean(input.away_team_id),
+      FIXTURE_VALIDATION_MESSAGES.AWAY_TEAM_REQUIRED,
+    ),
+    check_condition(
+      !has_both_teams || input.home_team_id !== input.away_team_id,
+      FIXTURE_VALIDATION_MESSAGES.TEAMS_MUST_DIFFER,
+    ),
+    check_condition(
+      Boolean(input.scheduled_date),
+      FIXTURE_VALIDATION_MESSAGES.SCHEDULED_DATE_REQUIRED,
+    ),
+    check_condition(
+      Boolean(input.scheduled_time),
+      FIXTURE_VALIDATION_MESSAGES.SCHEDULED_TIME_REQUIRED,
+    ),
+    check_condition(
+      input.round_number >= MINIMUM_ROUND_NUMBER,
+      FIXTURE_VALIDATION_MESSAGES.ROUND_NUMBER_INVALID,
+    ),
+    check_condition(
+      !is_blank_text(input.stage_id),
+      FIXTURE_VALIDATION_MESSAGES.STAGE_REQUIRED,
+    ),
+  ]);
 }

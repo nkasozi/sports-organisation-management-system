@@ -8,6 +8,8 @@ import {
   game_event_validator,
   jersey_color_assignment_validator,
   official_requirement_validator,
+  ORGANIZATION_LOCAL_ID_INDEX_FIELDS,
+  ORGANIZATION_LOCAL_ID_INDEX_NAME,
   overtime_rule_validator,
   scoring_rule_validator,
   sport_game_period_validator,
@@ -38,6 +40,10 @@ export const schema_match_tables = {
     ...timestamp_fields,
   })
     .index("by_local_id", ["local_id"])
+    .index("by_sync_sequence", ["sync_sequence"])
+    .index(ORGANIZATION_LOCAL_ID_INDEX_NAME, [
+      ...ORGANIZATION_LOCAL_ID_INDEX_FIELDS,
+    ])
     .index("by_email", ["email"]),
   officials: defineTable({
     ...sync_metadata_fields,
@@ -58,6 +64,10 @@ export const schema_match_tables = {
     ...timestamp_fields,
   })
     .index("by_local_id", ["local_id"])
+    .index("by_sync_sequence", ["sync_sequence"])
+    .index(ORGANIZATION_LOCAL_ID_INDEX_NAME, [
+      ...ORGANIZATION_LOCAL_ID_INDEX_FIELDS,
+    ])
     .index("by_email", ["email"]),
   fixtures: defineTable({
     ...sync_metadata_fields,
@@ -93,7 +103,12 @@ export const schema_match_tables = {
     stage_id: v.optional(v.string()),
     manual_importance_override: v.optional(v.number()),
     ...timestamp_fields,
-  }).index("by_local_id", ["local_id"]),
+  })
+    .index("by_local_id", ["local_id"])
+    .index("by_sync_sequence", ["sync_sequence"])
+    .index(ORGANIZATION_LOCAL_ID_INDEX_NAME, [
+      ...ORGANIZATION_LOCAL_ID_INDEX_FIELDS,
+    ]),
   competition_stages: defineTable({
     ...sync_metadata_fields,
     competition_id: v.string(),
@@ -104,6 +119,7 @@ export const schema_match_tables = {
     ...timestamp_fields,
   })
     .index("by_local_id", ["local_id"])
+    .index("by_sync_sequence", ["sync_sequence"])
     .index("by_competition", ["competition_id"]),
   sports: defineTable({
     ...sync_metadata_fields,
@@ -137,5 +153,7 @@ export const schema_match_tables = {
     ),
     status: v.optional(v.string()),
     ...timestamp_fields,
-  }).index("by_local_id", ["local_id"]),
+  })
+    .index("by_local_id", ["local_id"])
+    .index("by_sync_sequence", ["sync_sequence"]),
 };

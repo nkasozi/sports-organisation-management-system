@@ -1,3 +1,5 @@
+import { is_blank_string_value } from "./runtimeTypeGuards";
+
 const ISO_DATE_SEGMENT_LENGTH = 10;
 
 function build_local_iso_date(current_date: Date): string {
@@ -11,9 +13,7 @@ export function is_fixture_scheduled_for_different_date(
   scheduled_date: string,
   current_date: Date,
 ): boolean {
-  if (typeof scheduled_date !== "string" || scheduled_date.trim() === "") {
-    return false;
-  }
+  if (is_blank_string_value(scheduled_date)) return false;
 
   const normalized_scheduled_date = scheduled_date
     .trim()

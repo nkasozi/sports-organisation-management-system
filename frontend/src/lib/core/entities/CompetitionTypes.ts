@@ -16,9 +16,22 @@ import type {
   SubstitutionRule,
 } from "./Sport";
 
-export type CompetitionDerivedStatus = "upcoming" | "active" | "completed";
+export const COMPETITION_DERIVED_STATUS = {
+  UPCOMING: "upcoming",
+  ACTIVE: "active",
+  COMPLETED: "completed",
+} as const;
 
-export type SquadGenerationStrategy = "first_available" | "previous_match";
+export type CompetitionDerivedStatus =
+  (typeof COMPETITION_DERIVED_STATUS)[keyof typeof COMPETITION_DERIVED_STATUS];
+
+export const SQUAD_GENERATION_STRATEGY = {
+  FIRST_AVAILABLE: "first_available",
+  PREVIOUS_MATCH: "previous_match",
+} as const;
+
+export type SquadGenerationStrategy =
+  (typeof SQUAD_GENERATION_STRATEGY)[keyof typeof SQUAD_GENERATION_STRATEGY];
 
 export interface CompetitionRuleOverrides {
   game_duration_minutes?: number;

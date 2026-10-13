@@ -8,14 +8,17 @@ import type {
 } from "../types/DomainScalars";
 import type { BaseEntity } from "./BaseEntity";
 
-export type AuditAction =
-  | "create"
-  | "update"
-  | "delete"
-  | "access_denied"
-  | "page_view"
-  | "sync_conflict_detected"
-  | "sync_conflict_resolved";
+export const AUDIT_ACTION = {
+  CREATE: "create",
+  UPDATE: "update",
+  DELETE: "delete",
+  ACCESS_DENIED: "access_denied",
+  PAGE_VIEW: "page_view",
+  SYNC_CONFLICT_DETECTED: "sync_conflict_detected",
+  SYNC_CONFLICT_RESOLVED: "sync_conflict_resolved",
+} as const;
+
+export type AuditAction = (typeof AUDIT_ACTION)[keyof typeof AUDIT_ACTION];
 
 export interface FieldChange<TFieldName extends string = string> {
   field_name: TFieldName;
@@ -46,47 +49,6 @@ export interface CreateAuditLogInput extends Omit<
   user_agent?: string;
 }
 
-function build_audit_log_summary(audit_log: AuditLog): string {
-  const action_past_tense = get_action_past_tense(audit_log.action);
-  const changes_summary = build_changes_summary(audit_log.changes);
-
-  if (audit_log.action === "update" && audit_log.changes.length > 0) {
-    return `${audit_log.user_display_name} ${action_past_tense} ${audit_log.entity_type} "${audit_log.entity_display_name}": ${changes_summary}`;
-  }
-
-  return `${audit_log.user_display_name} ${action_past_tense} ${audit_log.entity_type} "${audit_log.entity_display_name}"`;
-}
-
-function get_action_past_tense(action: AuditAction): string {
-  switch (action) {
-    case "create":
-      return "created";
-    case "update":
-      return "updated";
-    case "delete":
-      return "deleted";
-    case "access_denied":
-      return "was denied access to";
-    case "page_view":
-      return "viewed page";
-    case "sync_conflict_detected":
-      return "detected sync conflict for";
-    case "sync_conflict_resolved":
-      return "resolved sync conflict for";
-  }
-}
-
-function build_changes_summary(changes: FieldChange[]): string {
-  if (changes.length === 0) return "";
-
-  return changes
-    .map(
-      (change) =>
-        `${change.field_name}: "${change.old_value}" → "${change.new_value}"`,
-    )
-    .join(", ");
-}
-
 export function compute_field_changes<T extends Record<string, unknown>>(
   old_entity: T,
   new_entity: T,
@@ -110,6 +72,9 @@ export function compute_field_changes<T extends Record<string, unknown>>(
   return changes;
 }
 
+const OBJECT_VALUE_TYPE = "object";
+const EMPTY_AUDIT_VALUE = "";
+
 const AUDIT_EMPTY_VALUE_TAGS = new Set(["[object Null]", "[object Undefined]"]);
 
 function is_empty_audit_value(value: unknown): boolean {
@@ -118,10 +83,10 @@ function is_empty_audit_value(value: unknown): boolean {
 
 function serialize_value_for_audit(value: unknown): string {
   if (is_empty_audit_value(value)) {
-    return "";
+    return EMPTY_AUDIT_VALUE;
   }
 
-  if (typeof value === "object") {
+  if (typeof value === OBJECT_VALUE_TYPE) {
     return JSON.stringify(value);
   }
 

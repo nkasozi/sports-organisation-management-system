@@ -1,117 +1,158 @@
 import type {
   AuthenticationPort,
+  CategoryPermissions,
   DataAction,
   SystemUserRepository,
+  UserRole,
 } from "$lib/core/interfaces/ports";
 import {
   get_entity_data_category,
   get_role_permissions,
   normalize_to_entity_type,
 } from "$lib/core/interfaces/ports";
+import { OptionStatus } from "$lib/core/types/Option";
 import type { AsyncResult } from "$lib/core/types/Result";
-import { create_success_result } from "$lib/core/types/Result";
+import {
+  create_failure_result,
+  create_success_result,
+} from "$lib/core/types/Result";
 import type { AuthCache } from "$lib/infrastructure/cache/AuthCache";
 
-import { get_role_for_email } from "./authProfilePermissions";
+import {
+  build_authorization_cache_key,
+  read_authorization_cache,
+} from "./authorizationCacheAccess";
+import {
+  resolve_token_role,
+  TOKEN_ROLE_STATUS,
+} from "./authTokenRoleResolution";
+import {
+  ALL_DATA_ACTIONS,
+  AUTHORIZATION_CACHE_KEY_PREFIX,
+} from "./iamConstants";
 
-export async function get_allowed_entity_actions_impl(
-  auth_port: AuthenticationPort,
-  system_user_repository: SystemUserRepository,
-  authorization_cache: AuthCache<unknown>,
-  raw_token: string,
-  entity_type: string,
-): AsyncResult<DataAction[]> {
-  const cache_key = `allowed_actions:${raw_token}:${entity_type}`;
-  const cached = authorization_cache.get_or_miss(cache_key);
-  if (cached.is_hit && cached.value) {
-    return create_success_result(cached.value as DataAction[]);
-  }
+const ACTION_SELECTION = {
+  ALLOWED: "allowed",
+  DISABLED: "disabled",
+} as const;
 
-  const verification_result = await auth_port.verify_token(raw_token);
+type ActionSelection = (typeof ACTION_SELECTION)[keyof typeof ACTION_SELECTION];
 
-  if (
-    !verification_result.success ||
-    !verification_result.data.is_valid ||
-    !verification_result.data.payload
-  ) {
-    return create_success_result([]);
-  }
-
-  const role_result = await get_role_for_email(
-    system_user_repository,
-    verification_result.data.payload.email,
-  );
-  if (!role_result.success) {
-    return create_success_result([]);
-  }
-
-  const role = role_result.data;
-  const normalized_allowed = normalize_to_entity_type(entity_type);
-  const category = get_entity_data_category(normalized_allowed);
-  const permissions = get_role_permissions(role)[category];
-
-  const allowed_actions: DataAction[] = [];
-  if (permissions.create) allowed_actions.push("create");
-  if (permissions.read) allowed_actions.push("read");
-  if (permissions.update) allowed_actions.push("update");
-  if (permissions.delete) allowed_actions.push("delete");
-
-  authorization_cache.set(cache_key, allowed_actions);
-  return create_success_result(allowed_actions);
+interface EntityActionsQuery {
+  auth_port: AuthenticationPort;
+  system_user_repository: SystemUserRepository;
+  authorization_cache: AuthCache<unknown>;
+  raw_token: string;
+  entity_type: string;
+  selection: ActionSelection;
 }
 
-export async function get_disabled_entity_actions_impl(
+function select_actions(
+  permissions: CategoryPermissions,
+  selection: ActionSelection,
+): DataAction[] {
+  const wants_permitted = selection === ACTION_SELECTION.ALLOWED;
+  return ALL_DATA_ACTIONS.filter(
+    (action: DataAction) => permissions[action] === wants_permitted,
+  );
+}
+
+function select_actions_for_role(
+  role: UserRole,
+  entity_type: string,
+  selection: ActionSelection,
+): DataAction[] {
+  const category = get_entity_data_category(
+    normalize_to_entity_type(entity_type),
+  );
+  return select_actions(get_role_permissions(role)[category], selection);
+}
+
+function select_actions_for_unauthenticated(
+  selection: ActionSelection,
+): DataAction[] {
+  switch (selection) {
+    case ACTION_SELECTION.ALLOWED:
+      return [];
+    case ACTION_SELECTION.DISABLED:
+      return [...ALL_DATA_ACTIONS];
+  }
+}
+
+function build_cache_prefix(selection: ActionSelection): string {
+  switch (selection) {
+    case ACTION_SELECTION.ALLOWED:
+      return AUTHORIZATION_CACHE_KEY_PREFIX.ALLOWED_ACTIONS;
+    case ACTION_SELECTION.DISABLED:
+      return AUTHORIZATION_CACHE_KEY_PREFIX.DISABLED_ACTIONS;
+  }
+}
+
+async function resolve_entity_actions(
+  query: EntityActionsQuery,
+): AsyncResult<DataAction[]> {
+  const prefix = build_cache_prefix(query.selection);
+  const key_parts = [query.raw_token, query.entity_type];
+  const cache_key = build_authorization_cache_key(prefix, key_parts);
+  const cached = read_authorization_cache<DataAction[]>(
+    query.authorization_cache,
+    cache_key,
+    prefix,
+  );
+  if (cached.status === OptionStatus.SOME)
+    return create_success_result(cached.value);
+  const resolution = await resolve_token_role(query);
+  switch (resolution.status) {
+    case TOKEN_ROLE_STATUS.LOOKUP_FAILED:
+      return create_failure_result(resolution.message);
+    case TOKEN_ROLE_STATUS.TOKEN_INVALID:
+    case TOKEN_ROLE_STATUS.TOKEN_EXPIRED:
+    case TOKEN_ROLE_STATUS.USER_REJECTED:
+      return create_success_result(
+        select_actions_for_unauthenticated(query.selection),
+      );
+    case TOKEN_ROLE_STATUS.RESOLVED: {
+      const actions = select_actions_for_role(
+        resolution.role,
+        query.entity_type,
+        query.selection,
+      );
+      query.authorization_cache.set(cache_key, actions);
+      return create_success_result(actions);
+    }
+  }
+}
+
+export function get_allowed_entity_actions_impl(
   auth_port: AuthenticationPort,
   system_user_repository: SystemUserRepository,
   authorization_cache: AuthCache<unknown>,
   raw_token: string,
   entity_type: string,
 ): AsyncResult<DataAction[]> {
-  const cache_key = `disabled_actions:${raw_token}:${entity_type}`;
-  const cached = authorization_cache.get_or_miss(cache_key);
-  if (cached.is_hit && cached.value) {
-    return create_success_result(cached.value as DataAction[]);
-  }
-
-  const verification_result = await auth_port.verify_token(raw_token);
-
-  if (
-    !verification_result.success ||
-    !verification_result.data.is_valid ||
-    !verification_result.data.payload
-  ) {
-    return create_success_result([
-      "create",
-      "read",
-      "update",
-      "delete",
-    ] as DataAction[]);
-  }
-
-  const role_result_disabled = await get_role_for_email(
+  return resolve_entity_actions({
+    auth_port,
     system_user_repository,
-    verification_result.data.payload.email,
-  );
-  if (!role_result_disabled.success) {
-    return create_success_result([
-      "create",
-      "read",
-      "update",
-      "delete",
-    ] as DataAction[]);
-  }
+    authorization_cache,
+    raw_token,
+    entity_type,
+    selection: ACTION_SELECTION.ALLOWED,
+  });
+}
 
-  const role = role_result_disabled.data;
-  const normalized_disabled = normalize_to_entity_type(entity_type);
-  const category = get_entity_data_category(normalized_disabled);
-  const permissions = get_role_permissions(role)[category];
-
-  const disabled: DataAction[] = [];
-  if (!permissions.create) disabled.push("create");
-  if (!permissions.read) disabled.push("read");
-  if (!permissions.update) disabled.push("update");
-  if (!permissions.delete) disabled.push("delete");
-
-  authorization_cache.set(cache_key, disabled);
-  return create_success_result(disabled);
+export function get_disabled_entity_actions_impl(
+  auth_port: AuthenticationPort,
+  system_user_repository: SystemUserRepository,
+  authorization_cache: AuthCache<unknown>,
+  raw_token: string,
+  entity_type: string,
+): AsyncResult<DataAction[]> {
+  return resolve_entity_actions({
+    auth_port,
+    system_user_repository,
+    authorization_cache,
+    raw_token,
+    entity_type,
+    selection: ACTION_SELECTION.DISABLED,
+  });
 }

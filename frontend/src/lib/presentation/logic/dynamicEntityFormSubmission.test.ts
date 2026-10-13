@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { DYNAMIC_ENTITY_FORM_MESSAGE } from "./dynamicEntityFormMessages";
 import {
   check_if_player_transfer_is_being_approved,
   execute_dynamic_form_transfer_membership_change,
@@ -78,7 +79,7 @@ describe("dynamicEntityFormSubmission", () => {
       ),
     ).resolves.toEqual({
       success: false,
-      error: 'No handler found for "team"',
+      error: DYNAMIC_ENTITY_FORM_MESSAGE.SAVE_HANDLER_MISSING,
     });
     await expect(
       resolve_dynamic_form_create_result(
@@ -90,7 +91,7 @@ describe("dynamicEntityFormSubmission", () => {
       ),
     ).resolves.toEqual({
       success: false,
-      error: 'Create is not supported for "team"',
+      error: DYNAMIC_ENTITY_FORM_MESSAGE.CREATE_NOT_SUPPORTED,
     });
     await expect(
       resolve_dynamic_form_create_result(
@@ -110,7 +111,7 @@ describe("dynamicEntityFormSubmission", () => {
       }),
     ).resolves.toEqual({
       success: false,
-      error: 'Update is not supported for "team"',
+      error: DYNAMIC_ENTITY_FORM_MESSAGE.UPDATE_NOT_SUPPORTED,
     });
   });
 

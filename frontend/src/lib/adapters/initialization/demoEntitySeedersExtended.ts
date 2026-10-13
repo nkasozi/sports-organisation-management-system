@@ -1,9 +1,5 @@
 import type { Result } from "../../core/types/Result";
 import {
-  create_failure_result,
-  create_success_result,
-} from "../../core/types/Result";
-import {
   create_seed_competition_teams,
   create_seed_fixture_lineups,
   create_seed_fixtures,
@@ -15,120 +11,72 @@ import type { InBrowserFixtureLineupRepository } from "../repositories/InBrowser
 import type { InBrowserFixtureRepository } from "../repositories/InBrowserFixtureRepository";
 import type { InBrowserJerseyColorRepository } from "../repositories/InBrowserJerseyColorRepository";
 import type { InBrowserPlayerTeamMembershipRepository } from "../repositories/InBrowserPlayerTeamMembershipRepository";
+import { seed_demo_entity_batch } from "./demoEntityBatchSeeder";
 import type { SeedEntityIdLookups } from "./seedingTypes";
-import { emit_entity_created_events } from "./seedingUserSetup";
 
 export async function seed_demo_competition_teams(
   competition_team_repository: InBrowserCompetitionTeamRepository,
 ): Promise<Result<number>> {
-  console.log("[Seeding] Seeding demo competition teams");
-  const seed_competition_teams = create_seed_competition_teams();
-  const result = await competition_team_repository.seed_with_data(
-    seed_competition_teams,
-  );
-  if (!result.success) {
-    console.error(`[Seeding] Competition team seeding failed: ${result.error}`);
-    return create_failure_result(
-      `Competition team seeding failed: ${result.error}`,
-    );
-  }
-  emit_entity_created_events(
-    "competition_team",
-    seed_competition_teams,
-    (ct) => `Team ${ct.team_id} in Competition ${ct.competition_id}`,
-  );
-  console.log(
-    `[Seeding] Seeded ${seed_competition_teams.length} competition teams`,
-  );
-  return create_success_result(seed_competition_teams.length);
+  return seed_demo_entity_batch({
+    plural_label: "competition teams",
+    entity_type: "competition_team",
+    entities: create_seed_competition_teams(),
+    seed: (teams) => competition_team_repository.seed_with_data(teams),
+    describe_entity: (ct) =>
+      `Team ${ct.team_id} in Competition ${ct.competition_id}`,
+  });
 }
 
 export async function seed_demo_player_memberships(
   player_membership_repository: InBrowserPlayerTeamMembershipRepository,
 ): Promise<Result<number>> {
-  console.log("[Seeding] Seeding demo player memberships");
-  const seed_memberships = create_seed_player_team_memberships();
-  const result =
-    await player_membership_repository.seed_with_data(seed_memberships);
-  if (!result.success) {
-    console.error(
-      `[Seeding] Player membership seeding failed: ${result.error}`,
-    );
-    return create_failure_result(
-      `Player membership seeding failed: ${result.error}`,
-    );
-  }
-  emit_entity_created_events(
-    "player_team_membership",
-    seed_memberships,
-    (m) => `Player ${m.player_id} -> Team ${m.team_id}`,
-  );
-  console.log(`[Seeding] Seeded ${seed_memberships.length} player memberships`);
-  return create_success_result(seed_memberships.length);
+  return seed_demo_entity_batch({
+    plural_label: "player memberships",
+    entity_type: "player_team_membership",
+    entities: create_seed_player_team_memberships(),
+    seed: (memberships) =>
+      player_membership_repository.seed_with_data(memberships),
+    describe_entity: (m) => `Player ${m.player_id} -> Team ${m.team_id}`,
+  });
 }
 
 export async function seed_demo_fixtures(
   fixture_repository: InBrowserFixtureRepository,
   entity_id_lookups: SeedEntityIdLookups,
 ): Promise<Result<number>> {
-  console.log("[Seeding] Seeding demo fixtures");
-  const seed_fixtures = create_seed_fixtures(
-    entity_id_lookups.referee_role_id,
-    entity_id_lookups.assistant_referee_role_id,
-  );
-  const result = await fixture_repository.seed_with_data(seed_fixtures);
-  if (!result.success) {
-    console.error(`[Seeding] Fixture seeding failed: ${result.error}`);
-    return create_failure_result(`Fixture seeding failed: ${result.error}`);
-  }
-  emit_entity_created_events(
-    "fixture",
-    seed_fixtures,
-    (f) => `${f.venue} - Round ${f.round_number}`,
-  );
-  console.log(`[Seeding] Seeded ${seed_fixtures.length} fixtures`);
-  return create_success_result(seed_fixtures.length);
+  return seed_demo_entity_batch({
+    plural_label: "fixtures",
+    entity_type: "fixture",
+    entities: create_seed_fixtures(
+      entity_id_lookups.referee_role_id,
+      entity_id_lookups.assistant_referee_role_id,
+    ),
+    seed: (fixtures) => fixture_repository.seed_with_data(fixtures),
+    describe_entity: (f) => `${f.venue} - Round ${f.round_number}`,
+  });
 }
 
 export async function seed_demo_fixture_lineups(
   fixture_lineup_repository: InBrowserFixtureLineupRepository,
 ): Promise<Result<number>> {
-  console.log("[Seeding] Seeding demo fixture lineups");
-  const seed_lineups = create_seed_fixture_lineups();
-  const result = await fixture_lineup_repository.seed_with_data(seed_lineups);
-  if (!result.success) {
-    console.error(`[Seeding] Fixture lineup seeding failed: ${result.error}`);
-    return create_failure_result(
-      `Fixture lineup seeding failed: ${result.error}`,
-    );
-  }
-  emit_entity_created_events(
-    "fixture_lineup",
-    seed_lineups,
-    (l) => `Lineup for fixture ${l.fixture_id} - Team ${l.team_id}`,
-  );
-  console.log(`[Seeding] Seeded ${seed_lineups.length} fixture lineups`);
-  return create_success_result(seed_lineups.length);
+  return seed_demo_entity_batch({
+    plural_label: "fixture lineups",
+    entity_type: "fixture_lineup",
+    entities: create_seed_fixture_lineups(),
+    seed: (lineups) => fixture_lineup_repository.seed_with_data(lineups),
+    describe_entity: (l) =>
+      `Lineup for fixture ${l.fixture_id} - Team ${l.team_id}`,
+  });
 }
 
 export async function seed_demo_jersey_colors(
   jersey_color_repository: InBrowserJerseyColorRepository,
 ): Promise<Result<number>> {
-  console.log("[Seeding] Seeding demo jersey colors");
-  const seed_jersey_colors = create_seed_jersey_colors();
-  const result =
-    await jersey_color_repository.seed_with_data(seed_jersey_colors);
-  if (!result.success) {
-    console.error(`[Seeding] Jersey color seeding failed: ${result.error}`);
-    return create_failure_result(
-      `Jersey color seeding failed: ${result.error}`,
-    );
-  }
-  emit_entity_created_events(
-    "jersey_color",
-    seed_jersey_colors,
-    (j) => `${j.nickname} (${j.main_color})`,
-  );
-  console.log(`[Seeding] Seeded ${seed_jersey_colors.length} jersey colors`);
-  return create_success_result(seed_jersey_colors.length);
+  return seed_demo_entity_batch({
+    plural_label: "jersey colors",
+    entity_type: "jersey_color",
+    entities: create_seed_jersey_colors(),
+    seed: (colors) => jersey_color_repository.seed_with_data(colors),
+    describe_entity: (j) => `${j.nickname} (${j.main_color})`,
+  });
 }

@@ -11,33 +11,40 @@
         CompetitionResultsCompetitionFormatState,
         CompetitionResultsSelectedCompetitionState,
     } from "$lib/presentation/logic/competitionResultsPageContracts";
-    import { type CardSortMode } from "$lib/presentation/logic/competitionResultsStats";
+    import {
+        CARD_SORT_MODE,
+        type CardSortMode,
+    } from "$lib/presentation/logic/competitionResultsStats";
     import { create_competition_results_workspace_controller_runtime } from "$lib/presentation/logic/competitionResultsWorkspaceControllerRuntime";
     import {
         competition_results_page_size_options,
         format_competition_results_date,
-        get_competition_results_extended_competition_name,
-        get_competition_results_extended_team_name,
-        get_competition_results_stage_name,
-        get_competition_results_stage_type,
-        get_competition_results_team_logo_url,
-        get_competition_results_team_name,
     } from "$lib/presentation/logic/competitionResultsWorkspaceDisplay";
     import { derive_competition_results_workspace_state } from "$lib/presentation/logic/competitionResultsWorkspaceState";
+    import { PRESENCE_STATUS } from "$lib/presentation/logic/presenceStatus";
     import { branding_store } from "$lib/presentation/stores/branding";
 
+    import {
+        COMPETITION_STATS_ALL_TEAMS_FILTER,
+        MATCH_REPORT_PATH_PREFIX,
+    } from "./competitionResultsDisplayConstants";
+    import { build_competition_results_workspace_lookups } from "./competitionResultsWorkspaceLookups";
     import CompetitionResultsWorkspaceView from "./CompetitionResultsWorkspaceView.svelte";
+    import {
+        COMPETITION_RESULTS_TAB,
+        type CompetitionResultsTab,
+    } from "./competitionTabConstants";
+
+    const MISSING_STATE = { status: PRESENCE_STATUS.MISSING } as const;
 
     export let organizations: Organization[],
         selected_organization_id: string,
         competitions: Competition[],
         selected_competition_id: string,
-        selected_competition_state: CompetitionResultsSelectedCompetitionState = {
-            status: "missing",
-        },
-        competition_format_state: CompetitionResultsCompetitionFormatState = {
-            status: "missing",
-        },
+        selected_competition_state: CompetitionResultsSelectedCompetitionState =
+            MISSING_STATE,
+        competition_format_state: CompetitionResultsCompetitionFormatState =
+            MISSING_STATE,
         competition_stages: CompetitionStage[],
         fixtures: Fixture[],
         teams: Team[],
@@ -47,14 +54,13 @@
         on_organization_change: () => Promise<void>,
         on_competition_change: () => void;
 
-    let active_tab: "standings" | "fixtures" | "results" | "stats" =
-            "standings",
+    let active_tab: CompetitionResultsTab = COMPETITION_RESULTS_TAB.STANDINGS,
         upcoming_page = 1,
         upcoming_per_page = 10,
         results_page = 1,
         results_per_page = 10,
-        stats_team_filter = "all",
-        stats_card_sort: CardSortMode = "total",
+        stats_team_filter: string = COMPETITION_STATS_ALL_TEAMS_FILTER,
+        stats_card_sort: CardSortMode = CARD_SORT_MODE.TOTAL,
         share_link_copied = false,
         downloading_fixture_id: string = "",
         downloading_all_reports = false,
@@ -92,36 +98,13 @@
     $: if (active_tab) upcoming_page = results_page = 1;
     $: if (team_fixtures_reset_key) team_fixtures_page = 1;
 
-    const get_fixture_stage_name = (stage_id: string): string =>
-        get_competition_results_stage_name(
-            stage_id || "",
-            competition_stages,
-            workspace_state.competition_stage_map,
-        );
-    const get_fixture_stage_type = (stage_id: string): string =>
-        get_competition_results_stage_type(
-            stage_id || "",
-            workspace_state.competition_stage_map,
-        );
-    const get_team_name = (team_id: string): string =>
-        get_competition_results_team_name(team_id, team_map);
-    const get_team_name_extended = (team_id: string): string =>
-        get_competition_results_extended_team_name(
-            team_id,
-            extended_team_map,
-            team_map,
-        );
-    const get_competition_name_extended = (competition_id: string): string =>
-        get_competition_results_extended_competition_name(
-            competition_id,
-            extended_competition_map,
-        );
-    const get_team_logo_url = (team_id: string): string =>
-        get_competition_results_team_logo_url(
-            team_id,
-            team_map,
-            extended_team_map,
-        );
+    $: lookups = build_competition_results_workspace_lookups({
+        competition_stages,
+        competition_stage_map: workspace_state.competition_stage_map,
+        team_map,
+        extended_team_map,
+        extended_competition_map,
+    });
 
     const runtime = create_competition_results_workspace_controller_runtime({
         competitions,
@@ -140,8 +123,7 @@
             (extended_competition_map = value),
         set_extended_team_map: (value: Map<string, Team>) =>
             (extended_team_map = value),
-        set_selected_team_id: (value: string) =>
-            (selected_team_id = value),
+        set_selected_team_id: (value: string) => (selected_team_id = value),
         set_selected_team_name: (value: string) => (selected_team_name = value),
         set_share_link_copied: (value: boolean) => (share_link_copied = value),
         set_show_all_competitions_fixtures: (value: boolean) =>
@@ -186,15 +168,11 @@
     {on_competition_change}
     on_copy_share_link={runtime.handle_copy_share_link}
     on_team_click={runtime.handle_team_click}
-    on_open_match_report={(fixture_id) => goto(`/match-report/${fixture_id}`)}
+    on_open_match_report={(fixture_id) =>
+        void goto(`${MATCH_REPORT_PATH_PREFIX}${fixture_id}`)}
     on_download_all_reports={runtime.handle_download_all_reports}
     on_download_match_report={runtime.handle_download_match_report}
     on_close_team_fixtures_panel={runtime.close_team_fixtures_panel}
     format_date={format_competition_results_date}
-    {get_fixture_stage_name}
-    {get_fixture_stage_type}
-    {get_team_name}
-    {get_team_name_extended}
-    {get_competition_name_extended}
-    {get_team_logo_url}
+    {...lookups}
 />

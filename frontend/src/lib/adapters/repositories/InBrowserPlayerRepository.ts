@@ -14,20 +14,43 @@ import type {
   QueryOptions,
 } from "../../core/interfaces/ports";
 import type { ScalarValueInput } from "../../core/types/DomainScalars";
-import type { PaginatedAsyncResult } from "../../core/types/Result";
-import {
-  create_failure_result,
-  create_success_result,
+import type {
+  AsyncResult,
+  PaginatedAsyncResult,
 } from "../../core/types/Result";
+import { create_success_result } from "../../core/types/Result";
 import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
 import {
+  ALL_PLAYERS_SELECTION,
   apply_player_entity_filter,
   filter_players_by_player_ids,
   get_membership_player_ids_by_jersey_number,
+  restrict_players,
 } from "./InBrowserPlayerRepositoryFilters";
+import {
+  load_team_member_selection,
+  load_team_memberships,
+} from "./InBrowserPlayerRepositoryMemberships";
 import { get_player_team_membership_repository } from "./InBrowserPlayerTeamMembershipRepository";
+import {
+  create_warning_failure_details,
+  execute_repository_operation,
+  type RepositoryFailureDetails,
+} from "./InBrowserRepositoryQueryRunner";
+import { create_lazy_repository_accessor } from "./InBrowserRepositorySingleton";
+import type { RepositoryWriteOrigin } from "./InBrowserRepositoryWriteOrigin";
 
 const ENTITY_PREFIX = "player";
+function describe_player_failure(
+  operation: string,
+  event_name: string,
+): RepositoryFailureDetails {
+  return create_warning_failure_details(
+    `[PlayerRepository] Failed to ${operation}`,
+    `repository_${event_name}_failed`,
+    operation,
+  );
+}
 
 export class InBrowserPlayerRepository
   extends InBrowserBaseRepository<
@@ -85,43 +108,29 @@ export class InBrowserPlayerRepository
     filter: PlayerFilter,
     options?: QueryOptions,
   ): PaginatedAsyncResult<Player> {
-    try {
-      let filtered_entities = await this.database.players.toArray();
-      if (filter.team_id) {
-        const membership_result = await this.membership_repository.find_by_team(
+    const team_member_ids_result = filter.team_id
+      ? await load_team_member_selection(
+          this.membership_repository,
           filter.team_id,
-          { page_number: 1, page_size: 10000 },
+        )
+      : create_success_result(ALL_PLAYERS_SELECTION);
+    if (!team_member_ids_result.success) return team_member_ids_result;
+    return execute_repository_operation(
+      describe_player_failure("filter players", "filter_players"),
+      async () => {
+        const all_players = await this.database.players.toArray();
+        const filtered_entities = this.apply_entity_filter(
+          restrict_players(all_players, team_member_ids_result.data),
+          filter,
         );
-        if (membership_result.success && membership_result.data) {
-          const player_id_set = new Set(
-            membership_result.data.items.map((m) => m.player_id),
-          );
-          filtered_entities = filter_players_by_player_ids(
-            filtered_entities,
-            player_id_set,
-          );
-        } else {
-          filtered_entities = [];
-        }
-      }
-      filtered_entities = this.apply_entity_filter(filtered_entities, filter);
-      const total_count = filtered_entities.length;
-      const sorted = this.apply_sort(filtered_entities, options);
-      const paginated = this.apply_pagination(sorted, options);
-      return create_success_result(
-        this.create_paginated_result(paginated, total_count, options),
-      );
-    } catch (error) {
-      console.warn("[PlayerRepository] Failed to filter players", {
-        event: "repository_filter_players_failed",
-        error: String(error),
-      });
-      const error_message =
-        error instanceof Error ? error.message : "Unknown error occurred";
-      return create_failure_result(
-        `Failed to filter players: ${error_message}`,
-      );
-    }
+        const sorted = this.apply_sort(filtered_entities, options);
+        return this.create_paginated_result(
+          this.apply_pagination(sorted, options),
+          filtered_entities.length,
+          options,
+        );
+      },
+    );
   }
 
   async find_by_team(
@@ -144,64 +153,43 @@ export class InBrowserPlayerRepository
     team_id: ScalarValueInput<Player["id"]>,
     jersey_number: number,
   ): PaginatedAsyncResult<Player> {
-    try {
-      const membership_result = await this.membership_repository.find_by_team(
-        team_id,
-        { page_number: 1, page_size: 10000 },
-      );
-      if (!membership_result.success || !membership_result.data) {
-        return create_success_result(this.create_paginated_result([], 0));
-      }
-      const matching_player_ids = get_membership_player_ids_by_jersey_number(
-        membership_result.data.items,
-        jersey_number,
-      );
-      const all_players = await this.database.players.toArray();
-      const matching_players = filter_players_by_player_ids(
-        all_players,
-        matching_player_ids,
-      );
-      return create_success_result(
-        this.create_paginated_result(matching_players, matching_players.length),
-      );
-    } catch (error) {
-      console.warn(
-        "[PlayerRepository] Failed to find players by jersey number",
-        {
-          event: "repository_find_players_by_jersey_number_failed",
-          error: String(error),
-        },
-      );
-      const error_message =
-        error instanceof Error ? error.message : "Unknown error occurred";
-      return create_failure_result(
-        `Failed to find players by jersey number: ${error_message}`,
-      );
-    }
+    const memberships_result = await load_team_memberships(
+      this.membership_repository,
+      team_id,
+    );
+    if (!memberships_result.success) return memberships_result;
+    return execute_repository_operation(
+      describe_player_failure(
+        "find players by jersey number",
+        "find_players_by_jersey_number",
+      ),
+      async () => {
+        const matching_players = filter_players_by_player_ids(
+          await this.database.players.toArray(),
+          get_membership_player_ids_by_jersey_number(
+            memberships_result.data,
+            jersey_number,
+          ),
+        );
+        return this.create_paginated_result(
+          matching_players,
+          matching_players.length,
+        );
+      },
+    );
   }
 }
 
-type PlayerRepositoryState =
-  | { status: "uninitialized" }
-  | { status: "ready"; repository: InBrowserPlayerRepository };
+export const get_player_repository: () => PlayerRepository =
+  create_lazy_repository_accessor(
+    () =>
+      new InBrowserPlayerRepository(get_player_team_membership_repository()),
+  );
 
-let player_repository_state: PlayerRepositoryState = {
-  status: "uninitialized",
-};
-
-export function get_player_repository(): PlayerRepository {
-  if (player_repository_state.status === "ready") {
-    return player_repository_state.repository;
-  }
-
-  const membership_repository = get_player_team_membership_repository();
-  const repository = new InBrowserPlayerRepository(membership_repository);
-  player_repository_state = { status: "ready", repository };
-
-  return repository;
-}
-
-export async function reset_player_repository(): Promise<void> {
-  const repository = get_player_repository() as InBrowserPlayerRepository;
-  await repository.clear_all_data();
+export function reset_player_repository(
+  origin: RepositoryWriteOrigin,
+): AsyncResult<boolean> {
+  return (get_player_repository() as InBrowserPlayerRepository)
+    .with_write_origin(origin)
+    .clear_all_data();
 }

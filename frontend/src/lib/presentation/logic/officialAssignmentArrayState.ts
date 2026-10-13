@@ -4,6 +4,7 @@ import {
   type OfficialRecord,
   type OrganizationOfficialFilter,
 } from "./officialAssignmentLogic";
+import { is_object_value } from "./runtimeTypeGuards";
 
 export { compute_available_officials } from "./officialAssignmentLogic";
 
@@ -25,13 +26,11 @@ type RoleUseCases = {
 
 function normalize_items(data: unknown): Array<Record<string, string>> {
   if (Array.isArray(data)) return data as Array<Record<string, string>>;
-  if (data && typeof data === "object" && "items" in data) {
-    const data_items = (data as { items?: unknown }).items;
-    return Array.isArray(data_items)
-      ? (data_items as Array<Record<string, string>>)
-      : [];
-  }
-  return [];
+  if (!is_object_value(data) || !("items" in data)) return [];
+  const data_items = (data as { items?: unknown }).items;
+  return Array.isArray(data_items)
+    ? (data_items as Array<Record<string, string>>)
+    : [];
 }
 
 function normalize_official_records(data: unknown): OfficialRecord[] {

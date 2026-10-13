@@ -1,8 +1,11 @@
 <script lang="ts">
-    import type {
-        CardSortMode,
-        PlayerStats,
+    import {
+        CARD_SORT_MODE,
+        type CardSortMode,
+        type PlayerStats,
     } from "$lib/presentation/logic/competitionResultsStats";
+
+    import { COMPETITION_STATS_ALL_TEAMS_FILTER } from "./competitionResultsDisplayConstants";
 
     export let stats_team_filter: string;
     export let stats_available_teams: string[];
@@ -21,7 +24,8 @@
             bind:value={stats_team_filter}
             class="text-sm rounded-[0.175rem] border border-accent-200 dark:border-accent-700 bg-white dark:bg-accent-800 text-accent-900 dark:text-accent-100 px-3 py-1.5 focus:ring-2 focus:ring-theme-primary-500 focus:border-transparent w-full sm:w-auto sm:max-w-xs"
         >
-            <option value="all">All Teams</option>
+            <option value={COMPETITION_STATS_ALL_TEAMS_FILTER}>All Teams</option
+            >
             {#each stats_available_teams as team_name}
                 <option value={team_name}>{team_name}</option>
             {/each}
@@ -37,7 +41,7 @@
             </h3>
             {#if stats_filtered_scorers.length === 0}
                 <div class="text-center py-4 text-gray-500 dark:text-gray-400">
-                    {stats_team_filter === "all"
+                    {stats_team_filter === COMPETITION_STATS_ALL_TEAMS_FILTER
                         ? "No goals scored yet."
                         : `No goals scored by ${stats_team_filter} yet.`}
                 </div>
@@ -91,21 +95,24 @@
                 >
                     <button
                         type="button"
-                        class={`px-2.5 py-1.5 transition-colors ${stats_card_sort === "total" ? "bg-theme-primary-500 text-white" : "bg-white dark:bg-accent-800 text-accent-600 dark:text-accent-400 hover:bg-accent-50 dark:hover:bg-accent-700"}`}
-                        on:click={() => (stats_card_sort = "total")}>All</button
+                        class={`px-2.5 py-1.5 transition-colors ${stats_card_sort === CARD_SORT_MODE.TOTAL ? "bg-theme-primary-500 text-white" : "bg-white dark:bg-accent-800 text-accent-600 dark:text-accent-400 hover:bg-accent-50 dark:hover:bg-accent-700"}`}
+                        on:click={() =>
+                            (stats_card_sort = CARD_SORT_MODE.TOTAL)}
+                        >All</button
                     >
                     <button
                         type="button"
-                        class={`px-2.5 py-1.5 border-l border-accent-200 dark:border-accent-700 transition-colors flex items-center gap-1 ${stats_card_sort === "yellow" ? "bg-theme-primary-500 text-white" : "bg-white dark:bg-accent-800 text-accent-600 dark:text-accent-400 hover:bg-accent-50 dark:hover:bg-accent-700"}`}
-                        on:click={() => (stats_card_sort = "yellow")}
+                        class={`px-2.5 py-1.5 border-l border-accent-200 dark:border-accent-700 transition-colors flex items-center gap-1 ${stats_card_sort === CARD_SORT_MODE.YELLOW ? "bg-theme-primary-500 text-white" : "bg-white dark:bg-accent-800 text-accent-600 dark:text-accent-400 hover:bg-accent-50 dark:hover:bg-accent-700"}`}
+                        on:click={() =>
+                            (stats_card_sort = CARD_SORT_MODE.YELLOW)}
                         ><span
                             class="w-2 h-3 bg-yellow-400 rounded-sm inline-block"
                         ></span> Yellow</button
                     >
                     <button
                         type="button"
-                        class={`px-2.5 py-1.5 border-l border-accent-200 dark:border-accent-700 transition-colors flex items-center gap-1 ${stats_card_sort === "red" ? "bg-theme-primary-500 text-white" : "bg-white dark:bg-accent-800 text-accent-600 dark:text-accent-400 hover:bg-accent-50 dark:hover:bg-accent-700"}`}
-                        on:click={() => (stats_card_sort = "red")}
+                        class={`px-2.5 py-1.5 border-l border-accent-200 dark:border-accent-700 transition-colors flex items-center gap-1 ${stats_card_sort === CARD_SORT_MODE.RED ? "bg-theme-primary-500 text-white" : "bg-white dark:bg-accent-800 text-accent-600 dark:text-accent-400 hover:bg-accent-50 dark:hover:bg-accent-700"}`}
+                        on:click={() => (stats_card_sort = CARD_SORT_MODE.RED)}
                         ><span
                             class="w-2 h-3 bg-red-500 rounded-sm inline-block"
                         ></span> Red</button
@@ -114,7 +121,7 @@
             </div>
             {#if stats_filtered_card_players.length === 0}
                 <div class="text-center py-4 text-gray-500 dark:text-gray-400">
-                    {stats_team_filter === "all"
+                    {stats_team_filter === COMPETITION_STATS_ALL_TEAMS_FILTER
                         ? "No cards issued yet."
                         : `No cards issued to ${stats_team_filter} players yet.`}
                 </div>

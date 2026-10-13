@@ -2,8 +2,14 @@
     import type { QuickEventButton } from "$lib/core/entities/Fixture";
     import type { Player } from "$lib/core/entities/Player";
 
+    import type { GameTeamSide } from "./gameDisplayConstants";
+    import {
+        get_selected_team_side_class,
+        get_selected_team_side_label,
+    } from "./gameDisplayConstants";
+
     export let selected_event_type: QuickEventButton;
-    export let selected_team_side: "home" | "away";
+    export let selected_team_side: GameTeamSide;
     export let home_team_name: string;
     export let away_team_name: string;
     export let event_minute: number;
@@ -32,11 +38,13 @@
                         {selected_event_type.label}
                     </h3>
                     <span
-                        class={`text-xs ${selected_team_side === "home" ? "text-blue-600" : "text-red-600"}`}
+                        class={`text-xs ${get_selected_team_side_class(selected_team_side)}`}
                     >
-                        {selected_team_side === "home"
-                            ? `🏠 ${home_team_name}`
-                            : `✈️ ${away_team_name}`}
+                        {get_selected_team_side_label(
+                            selected_team_side,
+                            home_team_name,
+                            away_team_name,
+                        )}
                     </span>
                 </div>
             </div>
@@ -81,7 +89,9 @@
                         type="button"
                         class="px-3 py-2 text-sm bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-[0.175rem] text-gray-700 dark:text-gray-300"
                         on:click={() =>
-                            (event_minute = Math.floor(game_clock_seconds / 60))}
+                            (event_minute = Math.floor(
+                                game_clock_seconds / 60,
+                            ))}
                     >
                         Reset to {Math.floor(game_clock_seconds / 60)}'
                     </button>

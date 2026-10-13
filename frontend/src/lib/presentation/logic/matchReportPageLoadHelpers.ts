@@ -2,11 +2,13 @@ import type { Fixture } from "$lib/core/entities/Fixture";
 import type { LineupPlayer } from "$lib/core/entities/FixtureLineup";
 import type {
   MatchReportAssignedOfficialData,
-  MatchReportCompetitionState,
   MatchReportPageDependencies,
-  MatchReportSportState,
   MatchReportVenueState,
 } from "$lib/presentation/logic/matchReportPageLoadTypes";
+
+import { PRESENCE_STATUS } from "./presenceStatus";
+
+export { load_match_report_competition_bundle } from "./matchReportPageLoadCompetition";
 
 export async function load_match_report_lineups(
   fixture: Fixture,
@@ -34,78 +36,10 @@ export async function load_match_report_lineups(
   };
 }
 
-export async function load_match_report_competition_bundle(
-  fixture: Fixture,
-  dependencies: Pick<
-    MatchReportPageDependencies,
-    "competition_use_cases" | "organization_use_cases" | "sport_use_cases"
-  >,
-): Promise<{
-  competition_state: MatchReportCompetitionState;
-  organization_name: string;
-  sport_state: MatchReportSportState;
-}> {
-  if (!fixture.competition_id) {
-    return {
-      competition_state: { status: "missing" },
-      organization_name: "",
-      sport_state: { status: "missing" },
-    };
-  }
-  const competition_result = await dependencies.competition_use_cases.get_by_id(
-    fixture.competition_id,
-  );
-  if (!competition_result.success || !competition_result.data) {
-    return {
-      competition_state: { status: "missing" },
-      organization_name: "",
-      sport_state: { status: "missing" },
-    };
-  }
-  const competition = competition_result.data;
-  if (!competition.organization_id) {
-    return {
-      competition_state: { status: "present", competition },
-      organization_name: "",
-      sport_state: { status: "missing" },
-    };
-  }
-  const organization_result =
-    await dependencies.organization_use_cases.get_by_id(
-      competition.organization_id,
-    );
-  if (!organization_result.success || !organization_result.data) {
-    return {
-      competition_state: { status: "present", competition },
-      organization_name: "",
-      sport_state: { status: "missing" },
-    };
-  }
-  const organization_name = organization_result.data.name;
-  if (!organization_result.data.sport_id) {
-    return {
-      competition_state: { status: "present", competition },
-      organization_name,
-      sport_state: { status: "missing" },
-    };
-  }
-  const sport_result = await dependencies.sport_use_cases.get_by_id(
-    organization_result.data.sport_id,
-  );
-  return {
-    competition_state: { status: "present", competition },
-    organization_name,
-    sport_state:
-      sport_result.success && sport_result.data
-        ? { status: "present", sport: sport_result.data }
-        : { status: "missing" },
-  };
-}
-
 type MatchReportAssignedOfficialLoadState =
-  | { status: "missing" }
+  | { status: typeof PRESENCE_STATUS.MISSING }
   | {
-      status: "present";
+      status: typeof PRESENCE_STATUS.PRESENT;
       assigned_official_data: MatchReportAssignedOfficialData;
     };
 
@@ -115,10 +49,10 @@ function build_match_report_venue_state(
   >,
 ): MatchReportVenueState {
   if (!venue_result.success || !venue_result.data) {
-    return { status: "missing" };
+    return { status: PRESENCE_STATUS.MISSING };
   }
 
-  return { status: "present", venue: venue_result.data };
+  return { status: PRESENCE_STATUS.PRESENT, venue: venue_result.data };
 }
 
 function build_match_report_assigned_official_load_state(
@@ -128,16 +62,29 @@ function build_match_report_assigned_official_load_state(
   role_name: string,
 ): MatchReportAssignedOfficialLoadState {
   if (!official_result.success || !official_result.data) {
-    return { status: "missing" };
+    return { status: PRESENCE_STATUS.MISSING };
   }
 
   return {
-    status: "present",
+    status: PRESENCE_STATUS.PRESENT,
     assigned_official_data: {
       official: official_result.data,
       role_name,
     },
   };
+}
+
+async function load_match_report_assigned_official(
+  current_assignment: Fixture["assigned_officials"][number],
+  dependencies: Pick<MatchReportPageDependencies, "official_use_cases">,
+): Promise<MatchReportAssignedOfficialLoadState> {
+  const official_result = await dependencies.official_use_cases.get_by_id(
+    current_assignment.official_id,
+  );
+  return build_match_report_assigned_official_load_state(
+    official_result,
+    String(current_assignment.role_name),
+  );
 }
 
 export async function load_match_report_assigned_officials(
@@ -154,27 +101,20 @@ export async function load_match_report_assigned_officials(
     ? build_match_report_venue_state(
         await dependencies.venue_use_cases.get_by_id(fixture.venue),
       )
-    : { status: "missing" };
+    : { status: PRESENCE_STATUS.MISSING };
   if (!fixture.assigned_officials || fixture.assigned_officials.length === 0) {
     return { assigned_officials_data: [], venue_state };
   }
   const assigned_official_results = await Promise.all(
     fixture.assigned_officials.map(
-      async (current_assignment: Fixture["assigned_officials"][number]) => {
-        const official_result = await dependencies.official_use_cases.get_by_id(
-          current_assignment.official_id,
-        );
-        return build_match_report_assigned_official_load_state(
-          official_result,
-          String(current_assignment.role_name),
-        );
-      },
+      (current_assignment: Fixture["assigned_officials"][number]) =>
+        load_match_report_assigned_official(current_assignment, dependencies),
     ),
   );
   return {
     assigned_officials_data: assigned_official_results.flatMap(
       (current_result: MatchReportAssignedOfficialLoadState) =>
-        current_result.status === "present"
+        current_result.status === PRESENCE_STATUS.PRESENT
           ? [current_result.assigned_official_data]
           : [],
     ),

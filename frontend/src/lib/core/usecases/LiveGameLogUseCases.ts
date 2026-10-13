@@ -1,127 +1,125 @@
+import type { LiveGameLog } from "../entities/LiveGameLog";
 import type {
-  CreateLiveGameLogInput,
-  LiveGameLog,
-  UpdateLiveGameLogInput,
-} from "../entities/LiveGameLog";
-import { GAME_STATUS } from "../entities/StatusConstants";
-import type {
-  LiveGameLogFilter,
   LiveGameLogRepository,
   LiveGameLogUseCasesPort,
 } from "../interfaces/ports";
 import type { ScalarValueInput } from "../types/DomainScalars";
-import type { AsyncResult, PaginatedAsyncResult } from "../types/Result";
-import { create_failure_result } from "../types/Result";
+import type { AsyncResult, Result } from "../types/Result";
+import { UseCaseErrorCode } from "../types/UseCaseFailure";
+import {
+  create_live_game_log,
+  delete_live_game_log,
+  update_live_game_log,
+} from "./LiveGameLogMutations";
 import { create_live_game_state_management } from "./LiveGameStateManagementUseCases";
+import {
+  LIVE_GAME_USE_CASES_LOG_SCOPE,
+  LiveGameUseCaseEvent,
+  LiveGameUseCaseMessage,
+} from "./LiveGameUseCasesConstants";
+import {
+  fail_missing_identifier,
+  forward_dependency_result,
+  is_blank_identifier,
+} from "./UseCaseResultGuards";
 
 export type LiveGameLogUseCases = LiveGameLogUseCasesPort;
+
+function forward_lookup<TData>(
+  result: Result<TData>,
+  event: string,
+  context: Record<string, unknown>,
+): Result<TData> {
+  return forward_dependency_result(result, {
+    log_scope: LIVE_GAME_USE_CASES_LOG_SCOPE,
+    event,
+    code: UseCaseErrorCode.NOT_FOUND,
+    context,
+  });
+}
+
+function forward_listing<TData>(
+  result: Result<TData>,
+  context: Record<string, unknown>,
+): Result<TData> {
+  return forward_dependency_result(result, {
+    log_scope: LIVE_GAME_USE_CASES_LOG_SCOPE,
+    event: LiveGameUseCaseEvent.LIST_FAILED,
+    code: UseCaseErrorCode.DEPENDENCY_FAILED,
+    context,
+  });
+}
+
+async function get_live_game_log_by_id(
+  repository: LiveGameLogRepository,
+  id: ScalarValueInput<LiveGameLog["id"]>,
+): AsyncResult<LiveGameLog> {
+  if (is_blank_identifier(id)) {
+    return fail_missing_identifier({
+      log_scope: LIVE_GAME_USE_CASES_LOG_SCOPE,
+      event: LiveGameUseCaseEvent.GET_ID_MISSING,
+      context: {},
+      user_message: LiveGameUseCaseMessage.ID_REQUIRED,
+    });
+  }
+  return forward_lookup(
+    await repository.find_by_id(id),
+    LiveGameUseCaseEvent.GET_FAILED,
+    { live_game_id: id },
+  );
+}
+
+async function get_live_game_log_for_fixture(
+  repository: LiveGameLogRepository,
+  fixture_id: ScalarValueInput<LiveGameLog["fixture_id"]>,
+): AsyncResult<LiveGameLog> {
+  if (is_blank_identifier(fixture_id)) {
+    return fail_missing_identifier({
+      log_scope: LIVE_GAME_USE_CASES_LOG_SCOPE,
+      event: LiveGameUseCaseEvent.FIXTURE_LOOKUP_ID_MISSING,
+      context: {},
+      user_message: LiveGameUseCaseMessage.FIXTURE_ID_REQUIRED,
+    });
+  }
+  return forward_lookup(
+    await repository.get_live_game_log_for_fixture(fixture_id),
+    LiveGameUseCaseEvent.FIXTURE_LOOKUP_FAILED,
+    { fixture_id },
+  );
+}
 
 export function create_live_game_log_use_cases(
   repository: LiveGameLogRepository,
 ): LiveGameLogUseCases {
   return {
-    async create(input: CreateLiveGameLogInput): AsyncResult<LiveGameLog> {
-      if (!input.fixture_id?.trim()) {
-        return create_failure_result("Fixture ID is required");
-      }
-
-      if (!input.organization_id?.trim()) {
-        return create_failure_result("Organization ID is required");
-      }
-
-      const existing_result = await repository.get_live_game_log_for_fixture(
-        input.fixture_id,
-      );
-
-      if (existing_result.success) {
-        return create_failure_result(
-          "A live game log already exists for this fixture",
-        );
-      }
-
-      return repository.create(input);
-    },
-
-    async get_by_id(
-      id: ScalarValueInput<LiveGameLog["id"]>,
-    ): AsyncResult<LiveGameLog> {
-      if (!id || id.trim().length === 0) {
-        return create_failure_result("LiveGameLog ID is required");
-      }
-      return repository.find_by_id(id);
-    },
-
-    async update(
-      id: ScalarValueInput<LiveGameLog["id"]>,
-      input: UpdateLiveGameLogInput,
-    ): AsyncResult<LiveGameLog> {
-      if (!id || id.trim().length === 0) {
-        return create_failure_result("LiveGameLog ID is required");
-      }
-
-      const existing_result = await repository.find_by_id(id);
-      if (!existing_result.success || !existing_result.data) {
-        return create_failure_result("Live game log not found");
-      }
-
-      return repository.update(id, input);
-    },
-
-    async delete(
-      id: ScalarValueInput<LiveGameLog["id"]>,
-    ): AsyncResult<boolean> {
-      if (!id || id.trim().length === 0) {
-        return create_failure_result("LiveGameLog ID is required");
-      }
-
-      const existing_result = await repository.find_by_id(id);
-      if (!existing_result.success || !existing_result.data) {
-        return create_failure_result("Live game log not found");
-      }
-
-      if (existing_result.data.game_status === GAME_STATUS.IN_PROGRESS) {
-        return create_failure_result("Cannot delete an in-progress game");
-      }
-
-      return repository.delete_by_id(id);
-    },
-
-    async list(
-      filter?: LiveGameLogFilter,
-      pagination?: { page: number; page_size: number },
-    ): PaginatedAsyncResult<LiveGameLog> {
-      return repository.find_all(filter, pagination);
-    },
-
-    async get_live_game_log_for_fixture(
-      fixture_id: ScalarValueInput<LiveGameLog["fixture_id"]>,
-    ): AsyncResult<LiveGameLog> {
-      if (!fixture_id || fixture_id.trim().length === 0) {
-        return create_failure_result("Fixture ID is required");
-      }
-      return repository.get_live_game_log_for_fixture(fixture_id);
-    },
-
-    async get_active_games(
-      organization_id?: ScalarValueInput<LiveGameLog["organization_id"]>,
-    ): AsyncResult<LiveGameLog[]> {
-      return repository.get_active_games(organization_id);
-    },
-
+    create: (input) => create_live_game_log(repository, input),
+    get_by_id: (id) => get_live_game_log_by_id(repository, id),
+    update: (id, input) => update_live_game_log(repository, id, input),
+    delete: (id) => delete_live_game_log(repository, id),
+    list: async (filter, pagination) =>
+      forward_listing(await repository.find_all(filter, pagination), {}),
+    get_live_game_log_for_fixture: (fixture_id) =>
+      get_live_game_log_for_fixture(repository, fixture_id),
+    get_active_games: async (organization_id) =>
+      forward_dependency_result(
+        await repository.get_active_games(organization_id),
+        {
+          log_scope: LIVE_GAME_USE_CASES_LOG_SCOPE,
+          event: LiveGameUseCaseEvent.ACTIVE_GAMES_LOOKUP_FAILED,
+          code: UseCaseErrorCode.DEPENDENCY_FAILED,
+          context: { organization_id },
+        },
+      ),
     ...create_live_game_state_management(repository),
-
-    async list_by_organization(
-      organization_id: ScalarValueInput<LiveGameLog["organization_id"]>,
-      options?: { page: number; page_size: number },
-    ): PaginatedAsyncResult<LiveGameLog> {
-      return repository.find_by_organization(organization_id, options);
-    },
-
-    async list_completed_games(
-      organization_id?: ScalarValueInput<LiveGameLog["organization_id"]>,
-      options?: { page: number; page_size: number },
-    ): PaginatedAsyncResult<LiveGameLog> {
-      return repository.find_completed_games(organization_id, options);
-    },
+    list_by_organization: async (organization_id, options) =>
+      forward_listing(
+        await repository.find_by_organization(organization_id, options),
+        { organization_id },
+      ),
+    list_completed_games: async (organization_id, options) =>
+      forward_listing(
+        await repository.find_completed_games(organization_id, options),
+        { organization_id },
+      ),
   };
 }

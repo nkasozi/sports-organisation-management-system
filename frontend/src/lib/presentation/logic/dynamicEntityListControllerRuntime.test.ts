@@ -2,150 +2,60 @@ import { get } from "svelte/store";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { create_dynamic_entity_list_controller_runtime } from "./dynamicEntityListControllerRuntime";
-
-const {
-  auth_store_mock,
+import {
   build_dynamic_entity_list_view_state_mock,
-  create_dynamic_entity_list_controller_crud_actions_mock,
-  create_dynamic_entity_list_controller_view_actions_mock,
   ensure_auth_profile_mock,
   load_dynamic_entity_list_columns_mock,
   load_dynamic_entity_list_entities_mock,
   load_dynamic_entity_list_filter_options_mock,
-} = vi.hoisted(() => {
-  const create_store = (initial_value: Record<string, unknown>) => {
-    let current_value = initial_value;
-    const subscribers = new Set<(value: Record<string, unknown>) => void>();
-    return {
-      set: (next_value: Record<string, unknown>): void => {
-        current_value = next_value;
-        subscribers.forEach((subscriber) => subscriber(current_value));
-      },
-      subscribe: (subscriber: (value: Record<string, unknown>) => void) => {
-        subscriber(current_value);
-        subscribers.add(subscriber);
-        return () => subscribers.delete(subscriber);
-      },
-      update: (
-        updater: (value: Record<string, unknown>) => Record<string, unknown>,
-      ): void => {
-        current_value = updater(current_value);
-        subscribers.forEach((subscriber) => subscriber(current_value));
-      },
-    };
-  };
-  return {
-    auth_store_mock: create_store({
-      current_profile: {
-        status: "present",
-        profile: { organization_id: "org-1" },
-      },
-      current_token: {
-        status: "present",
-        token: { raw_token: "token-1" },
-      },
-    }),
-    build_dynamic_entity_list_view_state_mock: vi.fn(),
-    create_dynamic_entity_list_controller_crud_actions_mock: vi.fn(),
-    create_dynamic_entity_list_controller_view_actions_mock: vi.fn(),
-    ensure_auth_profile_mock: vi.fn(),
-    load_dynamic_entity_list_columns_mock: vi.fn(),
-    load_dynamic_entity_list_entities_mock: vi.fn(),
-    load_dynamic_entity_list_filter_options_mock: vi.fn(),
-  };
-});
+  reset_dynamic_entity_list_runtime_mocks,
+} from "./dynamicEntityListControllerRuntime.test_support";
 
-vi.mock("$lib/presentation/logic/authGuard", () => ({
-  ensure_auth_profile: ensure_auth_profile_mock,
-}));
+vi.mock("$lib/presentation/logic/authGuard", async () =>
+  (
+    await import("./dynamicEntityListControllerRuntime.test_support")
+  ).create_auth_guard_module_mock(),
+);
 
 vi.mock(
   "$lib/presentation/logic/dynamicEntityListControllerRuntimeCrud",
-  () => ({
-    create_dynamic_entity_list_controller_crud_actions:
-      create_dynamic_entity_list_controller_crud_actions_mock,
-  }),
+  async () =>
+    (
+      await import("./dynamicEntityListControllerRuntime.test_support")
+    ).create_runtime_crud_module_mock(),
 );
 
 vi.mock(
   "$lib/presentation/logic/dynamicEntityListControllerRuntimeView",
-  () => ({
-    create_dynamic_entity_list_controller_view_actions:
-      create_dynamic_entity_list_controller_view_actions_mock,
-  }),
+  async () =>
+    (
+      await import("./dynamicEntityListControllerRuntime.test_support")
+    ).create_runtime_view_module_mock(),
 );
 
 vi.mock(
   "$lib/presentation/logic/dynamicEntityListControllerStateBuilder",
-  () => ({
-    build_dynamic_entity_list_view_state:
-      build_dynamic_entity_list_view_state_mock,
-  }),
+  async () =>
+    (
+      await import("./dynamicEntityListControllerRuntime.test_support")
+    ).create_state_builder_module_mock(),
 );
 
-vi.mock("$lib/presentation/logic/dynamicEntityListData", () => ({
-  load_dynamic_entity_list_columns: load_dynamic_entity_list_columns_mock,
-  load_dynamic_entity_list_entities: load_dynamic_entity_list_entities_mock,
-  load_dynamic_entity_list_filter_options:
-    load_dynamic_entity_list_filter_options_mock,
-}));
+vi.mock("$lib/presentation/logic/dynamicEntityListData", async () =>
+  (
+    await import("./dynamicEntityListControllerRuntime.test_support")
+  ).create_list_data_module_mock(),
+);
 
-vi.mock("$lib/presentation/stores/auth", () => ({
-  auth_store: auth_store_mock,
-}));
+vi.mock("$lib/presentation/stores/auth", async () =>
+  (
+    await import("./dynamicEntityListControllerRuntime.test_support")
+  ).create_auth_store_module_mock(),
+);
 
 describe("dynamicEntityListControllerRuntime", () => {
   beforeEach(() => {
-    auth_store_mock.set({
-      current_profile: {
-        status: "present",
-        profile: { organization_id: "org-1" },
-      },
-      current_token: {
-        status: "present",
-        token: { raw_token: "token-1" },
-      },
-    });
-    build_dynamic_entity_list_view_state_mock.mockReset();
-    create_dynamic_entity_list_controller_crud_actions_mock.mockReset();
-    create_dynamic_entity_list_controller_view_actions_mock.mockReset();
-    ensure_auth_profile_mock.mockReset();
-    load_dynamic_entity_list_columns_mock.mockReset();
-    load_dynamic_entity_list_entities_mock.mockReset();
-    load_dynamic_entity_list_filter_options_mock.mockReset();
-    build_dynamic_entity_list_view_state_mock.mockImplementation(
-      (
-        options: Record<string, unknown>,
-        current_state: Record<string, unknown>,
-      ) => ({
-        button_color_class: options.button_color_class,
-        columns_restored_from_cache:
-          current_state.columns_restored_from_cache ?? false,
-        current_page: current_state.current_page ?? 1,
-        display_name: current_state.display_name ?? "Teams",
-        entities: current_state.entities ?? [],
-        entity_metadata: current_state.entity_metadata ?? {
-          fields: [{ field_name: "name" }],
-        },
-        entity_type: options.entity_type,
-        error_message: current_state.error_message ?? "",
-        foreign_key_options: current_state.foreign_key_options ?? {},
-        is_loading: current_state.is_loading ?? false,
-        visible_columns: current_state.visible_columns ?? new Set<string>(),
-      }),
-    );
-    create_dynamic_entity_list_controller_crud_actions_mock.mockReturnValue({
-      cancel_deletion: vi.fn(),
-      close_bulk_import: vi.fn(),
-      confirm_deletion_action: vi.fn(),
-      handle_create_new_entity: vi.fn().mockReturnValue(true),
-    });
-    create_dynamic_entity_list_controller_view_actions_mock.mockReturnValue({
-      clear_all_selections: vi.fn(),
-      export_to_csv: vi.fn(),
-      reset_filters: vi.fn(),
-      toggle_sort_by_column: vi.fn(),
-    });
+    reset_dynamic_entity_list_runtime_mocks();
   });
 
   it("initializes columns, entities, and filter options and exposes composed actions", async () => {
@@ -247,5 +157,33 @@ describe("dynamicEntityListControllerRuntime", () => {
       entity_type: "player",
       raw_token: "token-1",
     });
+  });
+
+  it("skips rebuilding state when updated options are shallow-equal", () => {
+    const crud_handlers = { delete: vi.fn() };
+    const runtime = create_dynamic_entity_list_controller_runtime({
+      button_color_class: "primary",
+      crud_handlers,
+      disabled_functionalities: ["create"],
+      entity_type: "team",
+    } as never);
+    const subscriber = vi.fn();
+    const unsubscribe = runtime.state_store.subscribe(subscriber);
+    const build_calls_before_update =
+      build_dynamic_entity_list_view_state_mock.mock.calls.length;
+
+    const options_changed = runtime.update_options({
+      button_color_class: "primary",
+      crud_handlers,
+      disabled_functionalities: ["create"],
+      entity_type: "team",
+    } as never);
+    unsubscribe();
+
+    expect(options_changed).toBe(false);
+    expect(build_dynamic_entity_list_view_state_mock.mock.calls.length).toBe(
+      build_calls_before_update,
+    );
+    expect(subscriber).toHaveBeenCalledTimes(1);
   });
 });

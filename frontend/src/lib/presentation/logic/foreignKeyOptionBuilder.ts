@@ -1,5 +1,10 @@
+import { is_string_value } from "$lib/presentation/logic/runtimeTypeGuards";
+
 import type { BaseEntity, FieldMetadata } from "../../core/entities/BaseEntity";
 import { build_entity_display_label } from "./entityDisplayFormatter";
+
+const JERSEY_COLOR_ENTITY_TYPE = "jerseycolor";
+const FIXTURE_ENTITY_TYPE = "fixture";
 
 type ForeignKeySelectOption = {
   value: string;
@@ -9,11 +14,11 @@ type ForeignKeySelectOption = {
 };
 
 export function is_jersey_color_field(field: FieldMetadata): boolean {
-  return field.foreign_key_entity?.toLowerCase() === "jerseycolor";
+  return field.foreign_key_entity?.toLowerCase() === JERSEY_COLOR_ENTITY_TYPE;
 }
 
 function is_fixture_field(field: FieldMetadata): boolean {
-  return field.foreign_key_entity?.toLowerCase() === "fixture";
+  return field.foreign_key_entity?.toLowerCase() === FIXTURE_ENTITY_TYPE;
 }
 
 function resolve_competition_name_for_fixture(
@@ -21,14 +26,14 @@ function resolve_competition_name_for_fixture(
   competition_entities: BaseEntity[],
 ): string {
   const competition_id = fixture_record["competition_id"];
-  if (typeof competition_id !== "string") return "";
+  if (!is_string_value(competition_id)) return "";
   const matched_competition = competition_entities.find(
     (entity) => entity.id === competition_id,
   );
   if (!matched_competition) return "";
   const record = matched_competition as unknown as Record<string, unknown>;
   const competition_name = record["name"];
-  return typeof competition_name === "string" ? competition_name : "";
+  return is_string_value(competition_name) ? competition_name : "";
 }
 
 function build_single_option(
@@ -40,31 +45,22 @@ function build_single_option(
   const entity_id = String((entity as BaseEntity).id ?? "").trim();
   if (entity_id.length === 0) return [];
 
-  let competition_name = "";
-  if (is_fixture) {
-    const fixture_record = entity as unknown as Record<string, unknown>;
-    competition_name = resolve_competition_name_for_fixture(
-      fixture_record,
-      competition_entities,
-    );
-    if (competition_name) {
-      fixture_record["competition_name"] = competition_name;
-    }
-  }
+  const fixture_record = entity as unknown as Record<string, unknown>;
+  const competition_name = is_fixture
+    ? resolve_competition_name_for_fixture(fixture_record, competition_entities)
+    : "";
+  if (competition_name) fixture_record["competition_name"] = competition_name;
+
+  const jersey_main_color = is_jersey_field
+    ? (entity as unknown as { main_color?: string }).main_color
+    : void 0;
 
   const option: ForeignKeySelectOption = {
     value: entity_id,
     label: String(build_entity_display_label(entity)),
+    ...(jersey_main_color ? { color_swatch: jersey_main_color } : {}),
+    ...(competition_name ? { group: competition_name } : {}),
   };
-
-  if (is_jersey_field) {
-    const jersey = entity as unknown as { main_color?: string };
-    if (jersey.main_color) option.color_swatch = jersey.main_color;
-  }
-
-  if (is_fixture && competition_name) {
-    option.group = competition_name;
-  }
 
   return [option];
 }

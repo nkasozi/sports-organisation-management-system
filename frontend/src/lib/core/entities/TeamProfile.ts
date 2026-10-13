@@ -5,8 +5,20 @@ import type {
   ScalarValueInput,
 } from "../types/DomainScalars";
 import type { BaseEntity, EntityStatus } from "./BaseEntity";
+import { is_blank_text } from "./EntityValidation";
+import {
+  build_profile_slug,
+  INVALID_PROFILE_VISIBILITY_MESSAGE,
+  is_invalid_profile_visibility,
+  PROFILE_VISIBILITY,
+  PROFILE_VISIBILITY_SELECT_OPTIONS,
+  type ProfileVisibility,
+} from "./ProfileVisibility";
+import { ENTITY_STATUS } from "./StatusConstants";
 
-export type ProfileVisibility = "public" | "private";
+const TEAM_REQUIRED_MESSAGE = "Team is required";
+
+export type { ProfileVisibility } from "./ProfileVisibility";
 
 export interface TeamProfile extends BaseEntity {
   team_id: EntityId;
@@ -26,10 +38,8 @@ export type UpdateTeamProfileInput = Partial<
   Omit<ScalarInput<TeamProfile>, "id" | "created_at" | "updated_at" | "team_id">
 >;
 
-export const TEAM_PROFILE_VISIBILITY_OPTIONS = [
-  { value: "public", label: "Public - Anyone with the link can view" },
-  { value: "private", label: "Private - Only you can view" },
-];
+export const TEAM_PROFILE_VISIBILITY_OPTIONS =
+  PROFILE_VISIBILITY_SELECT_OPTIONS;
 
 export function create_empty_team_profile_input(
   team_id: CreateTeamProfileInput["team_id"] = "",
@@ -37,10 +47,10 @@ export function create_empty_team_profile_input(
   return {
     team_id,
     profile_summary: "",
-    visibility: "private",
+    visibility: PROFILE_VISIBILITY.PRIVATE,
     profile_slug: "",
     featured_image_url: "",
-    status: "active",
+    status: ENTITY_STATUS.ACTIVE,
   };
 }
 
@@ -48,30 +58,18 @@ export function generate_team_profile_slug(
   team_name: ScalarValueInput<Name>,
   team_id: ScalarValueInput<TeamProfile["team_id"]>,
 ): string {
-  const name_part = team_name
-    .toLowerCase()
-    .replace(/[^a-z0-9]/g, "-")
-    .replace(/-+/g, "-")
-    .replace(/^-|-$/g, "");
-  const id_suffix = team_id.slice(-6);
-  return `${name_part}-${id_suffix}`;
+  return build_profile_slug(team_name, team_id);
 }
 
 export function validate_team_profile_input(
   input: CreateTeamProfileInput | UpdateTeamProfileInput,
 ): { is_valid: boolean; errors: Record<string, string> } {
   const errors: Record<string, string> = {};
-
-  if ("team_id" in input && (!input.team_id || input.team_id.trim() === "")) {
-    errors.team_id = "Team is required";
+  if ("team_id" in input && is_blank_text(input.team_id)) {
+    errors.team_id = TEAM_REQUIRED_MESSAGE;
   }
-
-  if (input.visibility && !["public", "private"].includes(input.visibility)) {
-    errors.visibility = "Visibility must be public or private";
+  if (is_invalid_profile_visibility(input.visibility)) {
+    errors.visibility = INVALID_PROFILE_VISIBILITY_MESSAGE;
   }
-
-  return {
-    is_valid: Object.keys(errors).length === 0,
-    errors,
-  };
+  return { is_valid: Object.keys(errors).length === 0, errors };
 }

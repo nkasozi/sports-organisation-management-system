@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { load_official_leaderboard_page_state } from "./officialLeaderboardPageLoad";
+import type { MockUseCases } from "./testMockTypes.test_support";
 
 const {
   rebuild_official_leaderboard_view_mock,
@@ -17,7 +18,7 @@ vi.mock("./officialLeaderboardPageState", () => ({
 }));
 
 describe("officialLeaderboardPageLoad", () => {
-  function create_dependencies() {
+  function create_dependencies(): MockUseCases {
     return {
       organization_use_cases: { list: vi.fn() },
       official_performance_rating_use_cases: { list: vi.fn() },

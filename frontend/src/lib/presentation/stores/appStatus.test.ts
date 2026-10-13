@@ -23,17 +23,13 @@ describe("appStatus", () => {
     app_status_store.set_offline("timed out");
     app_status_store.set_online();
 
-    expect(get(app_status_store)).toEqual({
-      connection_status: "online",
-      offline_reason: "",
-    });
+    expect(get(app_status_store)).toEqual({ connection_status: "online" });
     expect(get(is_offline_mode)).toBe(false);
+    expect(get(offline_reason)).toBe("");
 
     app_status_store.reset();
 
-    expect(get(app_status_store)).toEqual({
-      connection_status: "unknown",
-      offline_reason: "",
-    });
+    expect(get(app_status_store)).toEqual({ connection_status: "unknown" });
+    expect(get(offline_reason)).toBe("");
   });
 });

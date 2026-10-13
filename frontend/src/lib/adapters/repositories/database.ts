@@ -1,5 +1,7 @@
 import Dexie, { type Table } from "dexie";
 
+import { TABLE_NAMES } from "$lib/infrastructure/sync/syncTableNames";
+
 import type { Activity } from "../../core/entities/Activity";
 import type { ActivityCategory } from "../../core/entities/ActivityCategory";
 import type { AuditLog } from "../../core/entities/AuditLog";
@@ -38,10 +40,16 @@ import type { TeamProfile } from "../../core/entities/TeamProfile";
 import type { TeamStaff } from "../../core/entities/TeamStaff";
 import type { TeamStaffRole } from "../../core/entities/TeamStaffRole";
 import type { Venue } from "../../core/entities/Venue";
+import { define_sport_sync_schema_versions } from "./databaseSchemaVersions";
+import { register_sync_outbox_middleware } from "./syncOutbox/registerSyncOutboxMiddleware";
+import {
+  type SyncCursor,
+  type SyncOutboxEntry,
+  type SyncOutboxKey,
+  type SyncRecordVersion,
+} from "./syncOutbox/syncOutboxTypes";
 
 const DATABASE_NAME = "SportSyncDB";
-const DATABASE_VERSION = 4;
-
 class SportSyncDatabase extends Dexie {
   organizations!: Table<Organization, string>;
   competitions!: Table<Competition, string>;
@@ -82,108 +90,65 @@ class SportSyncDatabase extends Dexie {
   official_performance_ratings!: Table<OfficialPerformanceRating, string>;
   organization_settings!: Table<OrganizationSettings, string>;
   app_settings!: Table<{ key: string; value: string }, string>;
+  sync_outbox!: Table<SyncOutboxEntry, SyncOutboxKey>;
+  sync_record_versions!: Table<SyncRecordVersion, SyncOutboxKey>;
+  sync_cursors!: Table<SyncCursor, string>;
 
-  constructor() {
-    super(DATABASE_NAME);
+  constructor(database_name: string) {
+    super(database_name);
 
-    this.version(3).stores({
-      organizations: "id, name, sport_id, created_at, updated_at",
-      competitions:
-        "id, name, organization_id, format_id, status, start_date, end_date, created_at",
-      teams: "id, name, organization_id, created_at",
-      players: "id, first_name, last_name, email, date_of_birth, created_at",
-      officials: "id, first_name, last_name, email, created_at",
-      fixtures:
-        "id, competition_id, home_team_id, away_team_id, venue_id, stage_id, scheduled_date, status, created_at",
-      sports: "id, name, created_at",
-      team_staff: "id, team_id, role_id, first_name, last_name, created_at",
-      team_staff_roles: "id, name, organization_id, sport_id, created_at",
-      game_official_roles: "id, name, organization_id, sport_id, created_at",
-      venues: "id, name, city, country, created_at",
-      jersey_colors: "id, name, hex_code, created_at",
-      player_positions:
-        "id, name, organization_id, abbreviation, sport_id, created_at",
-      player_profiles: "id, player_id, slug, created_at",
-      team_profiles: "id, team_id, slug, created_at",
-      profile_links: "id, profile_type, profile_id, platform, created_at",
-      calendar_tokens: "id, token, entity_type, entity_id, created_at",
-      competition_formats: "id, name, sport_id, created_at",
-      competition_teams: "id, competition_id, team_id, created_at",
-      player_team_memberships:
-        "id, player_id, team_id, position_id, jersey_number, created_at",
-      fixture_details_setups:
-        "id, fixture_id, referee_id, home_jersey_color_id, away_jersey_color_id, created_at",
-      fixture_lineups:
-        "id, fixture_id, team_id, player_id, position_id, is_starting, created_at",
-      activities:
-        "id, category_id, entity_type, entity_id, scheduled_date, created_at",
-      activity_categories: "id, name, color, created_at",
-      audit_logs: "id, action, entity_type, entity_id, user_id, created_at",
-      system_users: "id, email, role, organization_id, created_at",
-      identification_types: "id, name, organization_id, created_at",
-      genders: "id, name, organization_id, status, created_at",
-      identifications:
-        "id, entity_type, entity_id, identification_type_id, created_at",
-      qualifications: "id, entity_type, entity_id, name, created_at",
-      game_event_types:
-        "id, name, organization_id, sport_id, category, created_at",
-      official_associated_teams:
-        "id, official_id, team_id, association_type, status, created_at",
-      player_team_transfer_histories:
-        "id, player_id, from_team_id, to_team_id, status, transfer_date, created_at",
-      live_game_logs:
-        "id, organization_id, fixture_id, game_status, started_at, ended_at, created_at",
-      game_event_logs:
-        "id, organization_id, live_game_log_id, fixture_id, event_type, minute, team_side, player_id, created_at",
-      competition_stages: "id, competition_id, stage_order, created_at",
-    });
-
-    this.version(4).stores({
-      app_settings: "key",
-    });
-
-    this.version(5).stores({
-      official_performance_ratings:
-        "id, organization_id, official_id, fixture_id, rater_user_id, rater_role, submitted_at, created_at",
-    });
-
-    this.version(6).stores({
-      official_performance_ratings:
-        "id, organization_id, official_id, fixture_id, rater_user_id, rater_role, created_at",
-    });
-
-    this.version(7).stores({
-      organization_settings: "id, organization_id, created_at",
-    });
+    define_sport_sync_schema_versions(this, TABLE_NAMES);
+    register_sync_outbox_middleware(this);
   }
 }
 
+const DatabaseStatus = {
+  UNINITIALIZED: "uninitialized",
+  READY: "ready",
+} as const;
+
 type DatabaseState =
-  | { status: "uninitialized" }
-  | { status: "ready"; database: SportSyncDatabase };
+  | { status: typeof DatabaseStatus.UNINITIALIZED }
+  | { status: typeof DatabaseStatus.READY; database: SportSyncDatabase };
 
-let database_state: DatabaseState = { status: "uninitialized" };
+let database_state: DatabaseState = { status: DatabaseStatus.UNINITIALIZED };
 
-export function get_database(): SportSyncDatabase {
-  if (database_state.status === "ready") {
-    return database_state.database;
-  }
-
-  const database = new SportSyncDatabase();
-  database_state = { status: "ready", database };
-
+function open_database(): SportSyncDatabase {
+  const database = new SportSyncDatabase(DATABASE_NAME);
+  database_state = { status: DatabaseStatus.READY, database };
   return database;
 }
 
-export async function reset_database(): Promise<void> {
-  if (database_state.status === "ready") {
-    database_state.database.close();
+export function get_database(): SportSyncDatabase {
+  switch (database_state.status) {
+    case DatabaseStatus.READY:
+      return database_state.database;
+    case DatabaseStatus.UNINITIALIZED:
+      return open_database();
   }
+}
 
-  database_state = { status: "uninitialized" };
+function close_open_database(state: DatabaseState): boolean {
+  switch (state.status) {
+    case DatabaseStatus.READY:
+      state.database.close();
+      return true;
+    case DatabaseStatus.UNINITIALIZED:
+      return false;
+  }
+}
+
+export async function reset_database(): Promise<SportSyncDatabase> {
+  close_open_database(database_state);
+  database_state = { status: DatabaseStatus.UNINITIALIZED };
   await Dexie.delete(DATABASE_NAME);
-  const database = new SportSyncDatabase();
-  database_state = { status: "ready", database };
+  return open_database();
+}
+
+export function create_sport_sync_database(
+  database_name: string,
+): SportSyncDatabase {
+  return new SportSyncDatabase(database_name);
 }
 
 export type { SportSyncDatabase };

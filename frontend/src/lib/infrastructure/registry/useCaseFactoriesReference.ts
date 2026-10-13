@@ -28,6 +28,7 @@ import { create_sport_use_cases } from "../../core/usecases/SportUseCases";
 import type { VenueUseCases } from "../../core/usecases/VenueUseCases";
 import { create_venue_use_cases } from "../../core/usecases/VenueUseCases";
 import { get_repository_container } from "../container";
+import { REGISTRY_LOG_EVENT } from "./registryConstants";
 
 export function get_game_event_log_use_cases(): GameEventLogUseCases {
   return create_game_event_log_use_cases(
@@ -93,7 +94,14 @@ export function get_organization_with_defaults_use_cases(): OrganizationUseCases
     async (organization_id: string): Promise<void> => {
       const { seed_default_lookup_entities_for_organization } =
         await import("../../adapters/initialization/organizationDefaultsSeeder");
-      await seed_default_lookup_entities_for_organization(organization_id);
+      const seed_result =
+        await seed_default_lookup_entities_for_organization(organization_id);
+      if (seed_result.success) return;
+      console.error("[UseCaseFactories] Organization defaults seeding failed", {
+        event: REGISTRY_LOG_EVENT.ORGANIZATION_DEFAULTS_SEED_FAILED,
+        organization_id,
+        error: seed_result.error,
+      });
     },
   );
 }

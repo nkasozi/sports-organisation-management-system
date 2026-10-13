@@ -4,14 +4,18 @@ import type {
   FieldChange,
 } from "$lib/core/entities/AuditLog";
 import type { ScalarInput } from "$lib/core/types/DomainScalars";
+import type { Result } from "$lib/core/types/Result";
 import { get_repository_container } from "$lib/infrastructure/container";
 import type {
   ConflictRecord,
   ConflictResolutionAction,
-  FieldDifference,
 } from "$lib/infrastructure/sync/conflictTypes";
 
 import { WILDCARD_SCOPE } from "../../core/entities/StatusConstants";
+import {
+  build_conflict_changes,
+  build_resolution_changes,
+} from "./conflictAuditChanges";
 
 interface ConflictAuditContext {
   user_id?: CreateAuditLogInput["user_id"];
@@ -20,26 +24,55 @@ interface ConflictAuditContext {
   organization_id?: AuditLog["organization_id"];
 }
 
-function build_conflict_changes(
-  field_differences: FieldDifference[],
-): FieldChange[] {
-  return field_differences.map((diff) => ({
-    field_name: diff.field_name,
-    old_value: `Local: ${format_value_for_audit(diff.local_value)}`,
-    new_value: `Remote: ${format_value_for_audit(diff.remote_value)}`,
-  }));
-}
+const CONFLICT_DETECTED_AUDIT_ACTION = "sync_conflict_detected";
+const CONFLICT_RESOLVED_AUDIT_ACTION = "sync_conflict_resolved";
+const SYSTEM_USER_ID = "system";
+const SYSTEM_USER_EMAIL = "system@sport-sync.local";
+const SYSTEM_USER_DISPLAY_NAME = "System";
+const SYSTEM_IP_ADDRESS = "127.0.0.1";
+const SYSTEM_USER_AGENT = "SportSyncApp/SyncService";
 
-function format_value_for_audit(value: unknown): string {
-  if (value == void 0) {
-    return value === void 0 ? "undefined" : "null";
-  }
-  if (typeof value === "object") return JSON.stringify(value);
-  return String(value);
+const CONFLICT_AUDIT_WRITE_FAILED_EVENT = "conflict_audit_write_failed";
+
+function report_audit_write(
+  created: Result<unknown>,
+  conflict: ScalarInput<ConflictRecord>,
+  audit_action: string,
+): boolean {
+  if (created.success) return true;
+  console.error("[ConflictAudit] Audit log entry was not saved", {
+    event: CONFLICT_AUDIT_WRITE_FAILED_EVENT,
+    audit_action,
+    table_name: conflict.table_name,
+    local_id: conflict.local_id,
+    error: created.error,
+  });
+  return false;
 }
 
 function format_table_name_for_display(table_name: string): string {
   return table_name.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+function build_conflict_audit_input(
+  conflict: ScalarInput<ConflictRecord>,
+  action: CreateAuditLogInput["action"],
+  changes: FieldChange[],
+  context: ConflictAuditContext,
+): CreateAuditLogInput {
+  return {
+    entity_type: format_table_name_for_display(conflict.table_name),
+    entity_id: conflict.local_id,
+    entity_display_name: conflict.entity_display_name,
+    action,
+    changes,
+    user_id: context.user_id ?? SYSTEM_USER_ID,
+    user_email: context.user_email ?? SYSTEM_USER_EMAIL,
+    user_display_name: context.user_display_name ?? SYSTEM_USER_DISPLAY_NAME,
+    organization_id: context.organization_id ?? WILDCARD_SCOPE,
+    ip_address: SYSTEM_IP_ADDRESS,
+    user_agent: SYSTEM_USER_AGENT,
+  };
 }
 
 export async function log_conflict_detected(
@@ -47,25 +80,20 @@ export async function log_conflict_detected(
   context: ConflictAuditContext = {},
 ): Promise<boolean> {
   try {
-    const container = get_repository_container();
-    const audit_log_repository = container.audit_log_repository;
-
-    const audit_input: CreateAuditLogInput = {
-      entity_type: format_table_name_for_display(conflict.table_name),
-      entity_id: conflict.local_id,
-      entity_display_name: conflict.entity_display_name,
-      action: "sync_conflict_detected",
-      changes: build_conflict_changes(conflict.field_differences),
-      user_id: context.user_id ?? "system",
-      user_email: context.user_email ?? "system@sport-sync.local",
-      user_display_name: context.user_display_name ?? "System",
-      organization_id: context.organization_id ?? WILDCARD_SCOPE,
-      ip_address: "127.0.0.1",
-      user_agent: "SportSyncApp/SyncService",
-    };
-
-    await audit_log_repository.create(audit_input);
-    return true;
+    const audit_log_repository =
+      get_repository_container().audit_log_repository;
+    const audit_input = build_conflict_audit_input(
+      conflict,
+      CONFLICT_DETECTED_AUDIT_ACTION,
+      build_conflict_changes(conflict.field_differences),
+      context,
+    );
+    const created = await audit_log_repository.create(audit_input);
+    return report_audit_write(
+      created,
+      conflict,
+      CONFLICT_DETECTED_AUDIT_ACTION,
+    );
   } catch (error) {
     console.error("[ConflictAudit] Failed to log conflict detected", {
       event: "failed_to_log_conflict_detected_failed",
@@ -82,59 +110,26 @@ export async function log_conflict_resolution(
   context: ConflictAuditContext = {},
 ): Promise<boolean> {
   try {
-    const container = get_repository_container();
-    const audit_log_repository = container.audit_log_repository;
-
-    const resolution_description =
-      get_resolution_description(resolution_action);
-
-    const changes: FieldChange[] = [
-      {
-        field_name: "resolution_action",
-        old_value: "conflict",
-        new_value: resolution_description,
-      },
-    ];
-
-    if (resolution_action === "keep_local") {
-      changes.push({
-        field_name: "resolution_source",
-        old_value: "remote",
-        new_value: "local",
-      });
-    } else if (resolution_action === "keep_remote") {
-      changes.push({
-        field_name: "resolution_source",
-        old_value: "local",
-        new_value: "remote",
-      });
-    } else if (resolution_action === "merge") {
-      for (const diff of conflict.field_differences) {
-        const resolved_value = resolved_data[diff.field_name];
-        changes.push({
-          field_name: diff.field_name,
-          old_value: `Local: ${format_value_for_audit(diff.local_value)} | Remote: ${format_value_for_audit(diff.remote_value)}`,
-          new_value: format_value_for_audit(resolved_value),
-        });
-      }
-    }
-
-    const audit_input: CreateAuditLogInput = {
-      entity_type: format_table_name_for_display(conflict.table_name),
-      entity_id: conflict.local_id,
-      entity_display_name: conflict.entity_display_name,
-      action: "sync_conflict_resolved",
-      changes,
-      user_id: context.user_id ?? "system",
-      user_email: context.user_email ?? "system@sport-sync.local",
-      user_display_name: context.user_display_name ?? "System",
-      organization_id: context.organization_id ?? WILDCARD_SCOPE,
-      ip_address: "127.0.0.1",
-      user_agent: "SportSyncApp/SyncService",
-    };
-
-    await audit_log_repository.create(audit_input);
-    return true;
+    const audit_log_repository =
+      get_repository_container().audit_log_repository;
+    const changes = build_resolution_changes(
+      conflict,
+      resolution_action,
+      resolved_data,
+    );
+    const created = await audit_log_repository.create(
+      build_conflict_audit_input(
+        conflict,
+        CONFLICT_RESOLVED_AUDIT_ACTION,
+        changes,
+        context,
+      ),
+    );
+    return report_audit_write(
+      created,
+      conflict,
+      CONFLICT_RESOLVED_AUDIT_ACTION,
+    );
   } catch (error) {
     console.error("[ConflictAudit] Failed to log conflict resolution", {
       event: "failed_to_log_conflict_resolution_failed",
@@ -144,34 +139,13 @@ export async function log_conflict_resolution(
   }
 }
 
-function get_resolution_description(action: ConflictResolutionAction): string {
-  switch (action) {
-    case "keep_local":
-      return "Kept local changes (overwrote server)";
-    case "keep_remote":
-      return "Kept server version (discarded local)";
-    case "merge":
-      return "Manual merge of local and remote changes";
-    default:
-      return "Unknown resolution";
-  }
-}
-
 async function log_multiple_conflicts_detected(
   conflicts: ConflictRecord[],
   context: ConflictAuditContext = {},
 ): Promise<{ success_count: number; failure_count: number }> {
-  let success_count = 0;
-  let failure_count = 0;
-
-  for (const conflict of conflicts) {
-    const success = await log_conflict_detected(conflict, context);
-    if (success) {
-      success_count++;
-    } else {
-      failure_count++;
-    }
-  }
-
-  return { success_count, failure_count };
+  const outcomes: boolean[] = [];
+  for (const conflict of conflicts)
+    outcomes.push(await log_conflict_detected(conflict, context));
+  const success_count = outcomes.filter(Boolean).length;
+  return { success_count, failure_count: outcomes.length - success_count };
 }

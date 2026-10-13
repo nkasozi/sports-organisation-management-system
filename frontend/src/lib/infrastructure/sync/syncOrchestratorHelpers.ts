@@ -1,16 +1,9 @@
-import type { SyncDirection, SyncHints } from "$lib/core/interfaces/ports";
-import {
-  type AsyncResult,
-  create_failure_result,
-  create_success_result,
-} from "$lib/core/types/Result";
+import type { SyncDirection } from "$lib/core/interfaces/ports";
 
 import { verify_sync_auth } from "./syncAuthUtils";
-import { get_remote_state_for_table } from "./syncDataAccess";
 import type {
   ConflictFromServer,
   ConvexClient,
-  RemoteTableState,
   SyncProgress,
   SyncResult,
 } from "./syncTypes";
@@ -27,34 +20,54 @@ type TableResultLike = {
   records_pulled: number;
 };
 
+export const PushSyncAuthorizationDecision = {
+  CONTINUE: "continue",
+  STOP: "stop",
+} as const;
+
 type PushSyncAuthorizationState =
-  | { status: "continue" }
-  | { status: "stop"; result: SyncResult };
+  | { status: typeof PushSyncAuthorizationDecision.CONTINUE }
+  | { status: typeof PushSyncAuthorizationDecision.STOP; result: SyncResult };
+
+const PULL_SYNC_DIRECTION: SyncDirection = "pull";
+const AUTHENTICATED_AUTH_STATUS = "authenticated";
+const AUTH_CHECK_ERROR_SCOPE = "auth_check";
+const SYNC_SUMMARY_EVENT = {
+  SUCCEEDED: "sync_run_succeeded",
+  FAILED: "sync_run_failed",
+  TABLE_ERRORS: "sync_run_table_errors",
+} as const;
 
 export async function verify_push_sync_auth_or_fail(
   convex_client: ConvexClient,
   direction: SyncDirection,
   start_time: number,
 ): Promise<PushSyncAuthorizationState> {
-  if (direction === "pull") return { status: "continue" };
+  if (direction === PULL_SYNC_DIRECTION)
+    return { status: PushSyncAuthorizationDecision.CONTINUE };
   const auth_check = await verify_sync_auth(convex_client);
-  if (auth_check.status === "authenticated") {
-    console.log("[Sync] Auth verified — Convex client is authenticated");
-    return { status: "continue" };
+  if (auth_check.status === AUTHENTICATED_AUTH_STATUS) {
+    console.log("[Sync] Auth verified", { event: "sync_auth_verified" });
+    return { status: PushSyncAuthorizationDecision.CONTINUE };
   }
 
   const auth_error = `Auth verification failed: ${auth_check.error}`;
-  console.error(`[Sync] ${auth_error}`);
+  console.error("[Sync] Auth check failed", {
+    event: "sync_auth_check_failed",
+    error: auth_error,
+  });
   return {
-    status: "stop",
+    status: PushSyncAuthorizationDecision.STOP,
     result: {
       success: false,
       tables_synced: 0,
       records_pushed: 0,
       records_pulled: 0,
-      errors: [{ table_name: "auth_check", error: auth_error }],
+      errors: [{ table_name: AUTH_CHECK_ERROR_SCOPE, error: auth_error }],
       duration_ms: Date.now() - start_time,
       conflicts: [],
+      rejected_records: [],
+      deleted_remotely: [],
     },
   };
 }
@@ -74,28 +87,6 @@ export function create_table_sync_progress(
     total_tables,
     percentage: Math.round((tables_completed / total_tables) * 100),
   };
-}
-
-export async function load_remote_table_state(
-  convex_client: ConvexClient,
-  table_name: string,
-  hints?: SyncHints,
-): AsyncResult<RemoteTableState> {
-  try {
-    return create_success_result(
-      await get_remote_state_for_table(convex_client, table_name, hints),
-    );
-  } catch (error) {
-    const error_message =
-      error instanceof Error ? error.message : String(error);
-    console.error("[Sync] Failed to get remote state", {
-      event: "sync_remote_state_failed",
-      table_name,
-      error: String(error_message),
-    });
-
-    return create_failure_result(error_message);
-  }
 }
 
 export function update_table_sync_progress(
@@ -128,7 +119,7 @@ export function log_sync_summary(command: {
   total_tables: number;
   errors: Array<{ table_name: string; error: string }>;
   all_conflicts: TableConflict[];
-}): void {
+}): boolean {
   const {
     sync_succeeded,
     duration_ms,
@@ -139,14 +130,22 @@ export function log_sync_summary(command: {
     errors,
     all_conflicts,
   } = command;
-  console.log(
-    `[Sync] ===== Sync ${sync_succeeded ? "SUCCEEDED" : "FAILED"} in ${duration_ms}ms — ` +
-      `pushed: ${total_pushed}, pulled: ${total_pulled}, tables: ${tables_synced}/${total_tables}, ` +
-      `errors: ${errors.length}, conflicts: ${all_conflicts.length} =====`,
-  );
-  if (errors.length === 0) return;
-  console.warn(
-    "[Sync] Errors:",
-    errors.map((error) => `${error.table_name}: ${error.error}`).join("; "),
-  );
+  console.log("[Sync] Sync run finished", {
+    event: sync_succeeded
+      ? SYNC_SUMMARY_EVENT.SUCCEEDED
+      : SYNC_SUMMARY_EVENT.FAILED,
+    duration_ms,
+    total_pushed,
+    total_pulled,
+    tables_synced,
+    total_tables,
+    error_count: errors.length,
+    conflict_count: all_conflicts.length,
+  });
+  if (errors.length === 0) return true;
+  console.warn("[Sync] Sync run finished with table errors", {
+    event: SYNC_SUMMARY_EVENT.TABLE_ERRORS,
+    errors,
+  });
+  return false;
 }

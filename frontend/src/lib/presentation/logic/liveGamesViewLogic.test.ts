@@ -68,3 +68,30 @@ describe("liveGamesViewLogic", () => {
     expect(result).toBe("Home Name vs Away Name");
   });
 });
+
+describe("liveGamesViewLogic lookup coverage", () => {
+  it("uses neutral badge classes for completed and cancelled fixtures", () => {
+    expect(get_live_game_status_badge_class("completed")).toContain(
+      "bg-accent-100",
+    );
+    expect(get_live_game_status_badge_class("cancelled")).toContain(
+      "bg-accent-100",
+    );
+  });
+
+  it("renders pending and passed checks without the failure container", () => {
+    expect(get_live_game_check_icon("pending")).toBe("○");
+    expect(get_live_game_check_icon("passed")).toBe("✓");
+    expect(get_live_game_check_container_class("passed")).toBe("py-1");
+    expect(get_live_game_check_class("checking")).toContain("animate-pulse");
+  });
+
+  it("falls back to default team labels when no names exist", () => {
+    expect(
+      get_live_game_matchup_label(
+        create_fixture({ home_team_name: "", away_team_name: "" }),
+        {},
+      ),
+    ).toBe("Home Team vs Away Team");
+  });
+});

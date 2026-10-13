@@ -1,9 +1,11 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, type Mock, vi } from "vitest";
 
 import { submit_fixture_lineup_create_form } from "./fixtureLineupCreateDataSubmit";
 
 describe("fixtureLineupCreateDataSubmit", () => {
-  function create_dependencies() {
+  function create_dependencies(): {
+    lineup_use_cases: { create: Mock; get_lineup_for_team_in_fixture: Mock };
+  } {
     return {
       lineup_use_cases: {
         create: vi.fn(),
@@ -12,7 +14,15 @@ describe("fixtureLineupCreateDataSubmit", () => {
     };
   }
 
-  function create_selected_player(id: string) {
+  function create_selected_player(id: string): {
+    id: string;
+    first_name: string;
+    last_name: string;
+    jersey_number: number;
+    position: string;
+    is_captain: boolean;
+    is_substitute: boolean;
+  } {
     return {
       id,
       first_name: id,
@@ -58,6 +68,7 @@ describe("fixtureLineupCreateDataSubmit", () => {
       success: false,
       error_message: expect.stringContaining("Organization is required."),
       step_index: 0,
+      failure_display: "field_validation",
     });
   });
 
@@ -85,6 +96,7 @@ describe("fixtureLineupCreateDataSubmit", () => {
       success: false,
       error_message: expect.stringContaining("Invalid squad size."),
       step_index: 3,
+      failure_display: "field_validation",
     });
   });
 
@@ -114,6 +126,7 @@ describe("fixtureLineupCreateDataSubmit", () => {
         "A lineup already exists for this team in this fixture.",
       ),
       step_index: 4,
+      failure_display: "page_error",
     });
     expect(dependencies.lineup_use_cases.create).not.toHaveBeenCalled();
   });

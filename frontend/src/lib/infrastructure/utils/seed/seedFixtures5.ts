@@ -10,6 +10,33 @@ import {
   SEED_TEAM_IDS,
 } from "./seedIds";
 
+type SeedRow = Omit<
+  import("$lib/core/types/DomainScalars").ScalarInput<Fixture>,
+  "assigned_officials" | "created_at" | "updated_at"
+>;
+
+const EASTER_CUP_GROUP_B_1_ROW: SeedRow = {
+  id: SEED_FIXTURE_IDS.EASTER_CUP_GROUP_B_1,
+  organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
+  competition_id: SEED_COMPETITION_IDS.EASTER_CUP_2026,
+  round_number: 1,
+  round_name: "Group Stage",
+  home_team_id: SEED_TEAM_IDS.ROCKETS_HC,
+  away_team_id: SEED_TEAM_IDS.WANANCHI_HC,
+  venue: "Kyambogo Hockey Pitch",
+  scheduled_date: "2025-03-28",
+  scheduled_time: "14:00",
+  home_team_score: 4,
+  away_team_score: 2,
+  game_events: GAME_EVENTS_EASTER_CUP_GROUP_B_1,
+  current_period: "finished",
+  current_minute: 70,
+  match_day: 1,
+  notes: "Easter Cup - Rockets dominate 10-man Wananchi 4-2",
+  stage_id: SEED_STAGE_IDS.EASTER_CUP_POOL_STAGE,
+  status: "completed",
+};
+
 export function create_seed_fixtures_part5(
   referee_role_id: string,
   assistant_referee_role_id: string,
@@ -21,18 +48,7 @@ export function create_seed_fixtures_part5(
 
   return [
     {
-      id: SEED_FIXTURE_IDS.EASTER_CUP_GROUP_B_1,
-      organization_id: SEED_ORGANIZATION_IDS.UGANDA_HOCKEY_ASSOCIATION,
-      competition_id: SEED_COMPETITION_IDS.EASTER_CUP_2026,
-      round_number: 1,
-      round_name: "Group Stage",
-      home_team_id: SEED_TEAM_IDS.ROCKETS_HC,
-      away_team_id: SEED_TEAM_IDS.WANANCHI_HC,
-      venue: "Kyambogo Hockey Pitch",
-      scheduled_date: "2025-03-28",
-      scheduled_time: "14:00",
-      home_team_score: 4,
-      away_team_score: 2,
+      ...EASTER_CUP_GROUP_B_1_ROW,
       assigned_officials: [
         {
           official_id: SEED_OFFICIAL_IDS.MICHAEL_ANDERSON,
@@ -50,13 +66,6 @@ export function create_seed_fixtures_part5(
           role_name: "Technical Table",
         },
       ],
-      game_events: GAME_EVENTS_EASTER_CUP_GROUP_B_1,
-      current_period: "finished",
-      current_minute: 70,
-      match_day: 1,
-      notes: "Easter Cup - Rockets dominate 10-man Wananchi 4-2",
-      stage_id: SEED_STAGE_IDS.EASTER_CUP_POOL_STAGE,
-      status: "completed",
       created_at: now,
       updated_at: now,
     },

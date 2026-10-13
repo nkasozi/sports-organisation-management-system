@@ -8,8 +8,18 @@ import {
   remediate_oversized_inline_file_records,
   type SyncRemediableRecord,
 } from "./syncInlineFileRemediation";
-import { get_pulling_from_remote, set_pulling_from_remote } from "./syncState";
 import { EPOCH_TIMESTAMP } from "./syncTypes";
+
+const remote_sync_flag = { value: false };
+
+function get_pulling_from_remote(): boolean {
+  return remote_sync_flag.value;
+}
+
+function set_pulling_from_remote(value: boolean): boolean {
+  remote_sync_flag.value = value;
+  return remote_sync_flag.value;
+}
 
 const TEST_PAYLOAD_LIMIT_BYTES = 420;
 const TEST_UPDATED_AT = "2024-05-02T10:00:00.000Z";
@@ -103,7 +113,7 @@ describe("syncInlineFileRemediation", () => {
     ]);
     expect(result).toMatchObject({ success: true });
     if (!result.success) {
-      throw new Error("Expected remediation to succeed");
+      return expect.unreachable("Expected remediation to succeed");
     }
     expect(result.data.records[0].logo_url).toBe(DEFAULT_TEAM_LOGO);
     expect(get_pulling_from_remote()).toBe(false);

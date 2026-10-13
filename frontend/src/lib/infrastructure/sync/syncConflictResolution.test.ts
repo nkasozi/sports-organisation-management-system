@@ -5,12 +5,17 @@ import type { ConflictResolutionRequest, ConvexClient } from "./syncTypes";
 
 const mock_sync_data_access = vi.hoisted(() => ({
   get_database: vi.fn(),
-  get_table_from_database: vi.fn(),
+  apply_resolved_remote_record: vi.fn(async () => true),
 }));
 
 vi.mock("./syncDataAccess", () => ({
   get_database: mock_sync_data_access.get_database,
-  get_table_from_database: mock_sync_data_access.get_table_from_database,
+}));
+
+vi.mock("./syncRemoteApplyRecords", () => ({
+  apply_resolved_remote_record:
+    mock_sync_data_access.apply_resolved_remote_record,
+  ResolvedRecordGuardKind: { CONFLICTED_ENTRY: "conflicted_entry" },
 }));
 
 function create_request(
@@ -26,7 +31,6 @@ function create_request(
 }
 
 describe("syncConflictResolution", () => {
-  const mock_put = vi.fn();
   const mock_convex_client = {
     mutation: vi.fn(),
     query: vi.fn(),
@@ -35,14 +39,11 @@ describe("syncConflictResolution", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mock_sync_data_access.get_database.mockReturnValue({});
-    mock_sync_data_access.get_table_from_database.mockReturnValue({
-      put: mock_put,
-    });
   });
 
   it("returns success and omits resolved_by when no resolver is provided", async () => {
     (mock_convex_client.mutation as ReturnType<typeof vi.fn>).mockResolvedValue(
-      void 0,
+      { success: true, server_version: 6 },
     );
 
     const result = await resolve_conflict(mock_convex_client, create_request());
@@ -65,5 +66,56 @@ describe("syncConflictResolution", () => {
     );
 
     expect(result).toEqual({ success: false, error: "mutation failed" });
+  });
+
+  it("stores the resolved copy with the server-assigned version without re-enqueueing it", async () => {
+    (mock_convex_client.mutation as ReturnType<typeof vi.fn>).mockResolvedValue(
+      { success: true, server_version: 6 },
+    );
+
+    const resolution_result = await resolve_conflict(
+      mock_convex_client,
+      create_request(),
+    );
+
+    expect(resolution_result.success).toBe(true);
+    expect(
+      mock_sync_data_access.apply_resolved_remote_record,
+    ).toHaveBeenCalledWith(
+      expect.anything(),
+      "teams",
+      {
+        local_id: "team-1",
+        server_version: 6,
+        local_data: { name: "Updated Team", id: "team-1" },
+      },
+      { kind: "conflicted_entry" },
+    );
+  });
+
+  it("fails instead of storing version 0 when the server omits the new version", async () => {
+    (mock_convex_client.mutation as ReturnType<typeof vi.fn>).mockResolvedValue(
+      { success: true },
+    );
+
+    const result = await resolve_conflict(mock_convex_client, create_request());
+
+    expect(result.success).toBe(false);
+    expect(
+      mock_sync_data_access.apply_resolved_remote_record,
+    ).not.toHaveBeenCalled();
+  });
+
+  it("fails and leaves local data untouched when the server rejects the resolution", async () => {
+    (mock_convex_client.mutation as ReturnType<typeof vi.fn>).mockResolvedValue(
+      { success: false, error: "Access denied" },
+    );
+
+    const result = await resolve_conflict(mock_convex_client, create_request());
+
+    expect(result).toEqual({ success: false, error: "Access denied" });
+    expect(
+      mock_sync_data_access.apply_resolved_remote_record,
+    ).not.toHaveBeenCalled();
   });
 });

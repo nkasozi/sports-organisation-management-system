@@ -1,3 +1,5 @@
+import { SHARED_ENTITY_CATEGORY_MAP } from "./shared_entity_category_map";
+
 export type SharedUserRole =
   | "super_admin"
   | "org_admin"
@@ -166,51 +168,10 @@ export const SHARED_ROLE_PERMISSIONS: SharedPermissionMap = {
   },
 };
 
-export type SharedEntityCategoryMap = Record<
-  SharedEntityType,
-  SharedDataCategory
->;
-
-export const SHARED_ENTITY_CATEGORY_MAP: SharedEntityCategoryMap = {
-  organization: "root_level",
-  sport: "root_level",
-  gender: "org_administrator_level",
-  competitionformat: "organisation_level",
-  identificationtype: "org_administrator_level",
-  gameofficialrole: "organisation_level",
-  gameeventtype: "org_administrator_level",
-  teamstaffrole: "org_administrator_level",
-  playerposition: "org_administrator_level",
-  help: "root_level",
-  settings: "org_administrator_level",
-  systemsettings: "org_administrator_level",
-  auditlog: "org_administrator_level",
-  systemuser: "org_administrator_level",
-  competition: "organisation_level",
-  team: "team_level",
-  official: "organisation_level",
-  venue: "organisation_level",
-  fixture: "organisation_level",
-  fixturedetailssetup: "organisation_level",
-  livegamelog: "organisation_level",
-  gameeventlog: "organisation_level",
-  playerteammembership: "organisation_level",
-  playerteamtransferhistory: "organisation_level",
-  teamstaff: "team_level",
-  fixturelineup: "player_level",
-  competitionteam: "team_level",
-  competitionstage: "organisation_level",
-  player: "player_level",
-  playerprofile: "public_level",
-  identification: "public_level",
-  qualification: "public_level",
-  jerseycolor: "public_level",
-  profilelink: "public_level",
-  activitycategory: "public_level",
-  teamprofile: "public_level",
-  officialperformancerating: "team_level",
-  organizationsettings: "organisation_level",
-};
+export {
+  SHARED_ENTITY_CATEGORY_MAP,
+  type SharedEntityCategoryMap,
+} from "./shared_entity_category_map";
 
 export const SHARED_ENTITY_CATEGORIES: SharedEntityCategory[] = (
   Object.entries(SHARED_ENTITY_CATEGORY_MAP) as [

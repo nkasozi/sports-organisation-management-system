@@ -4,6 +4,8 @@ import { v } from "convex/values";
 import {
   lineup_player_validator,
   official_assignment_validator,
+  ORGANIZATION_LOCAL_ID_INDEX_FIELDS,
+  ORGANIZATION_LOCAL_ID_INDEX_NAME,
   sync_metadata_fields,
   timestamp_fields,
 } from "./schema_validators";
@@ -30,6 +32,7 @@ export const schema_relation_tables = {
     ...timestamp_fields,
   })
     .index("by_local_id", ["local_id"])
+    .index("by_sync_sequence", ["sync_sequence"])
     .index("by_competition", ["competition_id"])
     .index("by_team", ["team_id"]),
   player_team_memberships: defineTable({
@@ -46,6 +49,10 @@ export const schema_relation_tables = {
     ...timestamp_fields,
   })
     .index("by_local_id", ["local_id"])
+    .index("by_sync_sequence", ["sync_sequence"])
+    .index(ORGANIZATION_LOCAL_ID_INDEX_NAME, [
+      ...ORGANIZATION_LOCAL_ID_INDEX_FIELDS,
+    ])
     .index("by_player", ["player_id"])
     .index("by_team", ["team_id"]),
   fixture_details_setups: defineTable({
@@ -69,6 +76,10 @@ export const schema_relation_tables = {
     ...timestamp_fields,
   })
     .index("by_local_id", ["local_id"])
+    .index("by_sync_sequence", ["sync_sequence"])
+    .index(ORGANIZATION_LOCAL_ID_INDEX_NAME, [
+      ...ORGANIZATION_LOCAL_ID_INDEX_FIELDS,
+    ])
     .index("by_fixture", ["fixture_id"]),
   fixture_lineups: defineTable({
     ...sync_metadata_fields,
@@ -88,6 +99,10 @@ export const schema_relation_tables = {
     ...timestamp_fields,
   })
     .index("by_local_id", ["local_id"])
+    .index("by_sync_sequence", ["sync_sequence"])
+    .index(ORGANIZATION_LOCAL_ID_INDEX_NAME, [
+      ...ORGANIZATION_LOCAL_ID_INDEX_FIELDS,
+    ])
     .index("by_fixture", ["fixture_id"])
     .index("by_fixture_team", ["fixture_id", "team_id"]),
   activities: defineTable({
@@ -134,5 +149,9 @@ export const schema_relation_tables = {
     ...timestamp_fields,
   })
     .index("by_local_id", ["local_id"])
+    .index("by_sync_sequence", ["sync_sequence"])
+    .index(ORGANIZATION_LOCAL_ID_INDEX_NAME, [
+      ...ORGANIZATION_LOCAL_ID_INDEX_FIELDS,
+    ])
     .index("by_scheduled_date", ["scheduled_date"]),
 };

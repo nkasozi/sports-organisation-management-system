@@ -73,7 +73,7 @@ describe("dynamicEntityFormFieldState", () => {
       create_field_metadata({
         field_name: "format_type",
         field_type: "enum",
-        enum_values: ["league", "knockout"],
+        enum_values: ["league", "straight_knockout"],
       }),
       create_field_metadata({
         field_name: "stage_type",
@@ -82,7 +82,7 @@ describe("dynamicEntityFormFieldState", () => {
           depends_on_field: "format_type",
           options_map: {
             league: [{ value: "round_robin", label: "Round Robin" }],
-            knockout: [{ value: "cup", label: "Cup" }],
+            straight_knockout: [{ value: "cup", label: "Cup" }],
           },
         },
       }),
@@ -109,14 +109,14 @@ describe("dynamicEntityFormFieldState", () => {
       },
       "competition_format",
       "format_type",
-      "knockout",
+      "straight_knockout",
     );
 
-    expect(result["format_type"]).toBe("knockout");
+    expect(result["format_type"]).toBe("straight_knockout");
     expect(result["stage_type"]).toBe("");
     expect(result["extra_notes"]).toBe("");
     expect(Array.isArray(result["stage_templates"])).toBe(true);
-    expect(result["stage_templates"].length).toBeGreaterThan(0);
+    expect(result["stage_templates"]).not.toHaveLength(0);
   });
 
   it("builds enum options from dependency maps before static enum values", () => {

@@ -12,6 +12,11 @@ type FormatSyncStatusTextCommand = {
   relative_time_tick: number;
 };
 
+const LAST_SYNC_STATUS = {
+  NEVER: "never",
+  RECORDED: "recorded",
+} as const satisfies Record<string, LastSyncTimeState["status"]>;
+
 const NEVER_SYNCED_TEXT = "Never";
 const JUST_NOW_TEXT = "Just now";
 const PERCENT_SUFFIX = "%";
@@ -23,9 +28,15 @@ export function format_relative_sync_time(
 
   void relative_time_tick;
 
-  if (last_sync.status === "never") return NEVER_SYNCED_TEXT;
+  switch (last_sync.status) {
+    case LAST_SYNC_STATUS.NEVER:
+      return NEVER_SYNCED_TEXT;
+    case LAST_SYNC_STATUS.RECORDED:
+      return format_elapsed_since_sync(new Date(last_sync.value));
+  }
+}
 
-  const last_sync_date = new Date(last_sync.value);
+function format_elapsed_since_sync(last_sync_date: Date): string {
   const current_date = new Date();
   const elapsed_milliseconds =
     current_date.getTime() - last_sync_date.getTime();

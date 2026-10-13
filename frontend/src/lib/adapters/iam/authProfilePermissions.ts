@@ -8,10 +8,7 @@ import type {
   UserRole,
 } from "$lib/core/interfaces/ports";
 import { get_role_permissions } from "$lib/core/interfaces/ports";
-import type {
-  EmailAddress,
-  ScalarValueInput,
-} from "$lib/core/types/DomainScalars";
+import { OptionStatus } from "$lib/core/types/Option";
 import type { Result } from "$lib/core/types/Result";
 import {
   create_failure_result,
@@ -19,31 +16,62 @@ import {
 } from "$lib/core/types/Result";
 import type { AuthCache } from "$lib/infrastructure/cache/AuthCache";
 
-import { ENTITY_STATUS } from "../../core/entities/StatusConstants";
+import {
+  build_authorization_cache_key,
+  read_authorization_cache,
+} from "./authorizationCacheAccess";
+import {
+  resolve_token_role,
+  TOKEN_ROLE_STATUS,
+  type TokenRoleResolution,
+} from "./authTokenRoleResolution";
+import {
+  ALL_DATA_CATEGORIES,
+  AUTHORIZATION_CACHE_KEY_PREFIX,
+  AUTHORIZATION_FAILURE_TYPE,
+  IAM_LOG_EVENT,
+} from "./iamConstants";
 
-export async function get_role_for_email(
-  system_user_repository: SystemUserRepository,
-  email: ScalarValueInput<EmailAddress>,
-): Promise<Result<UserRole>> {
-  const user_result = await system_user_repository.find_by_email(email);
+type ProfilePermissionsResult = Result<
+  ProfilePermissions,
+  AuthorizationFailure
+>;
 
-  if (!user_result.success || user_result.data.items.length === 0) {
-    console.warn(
-      `[LocalAuthorizationAdapter] User not found for email: ${email}`,
-    );
-    return create_failure_result(`User not found for email: ${email}`);
+export function map_unresolved_role_to_authorization_failure(
+  resolution: Exclude<
+    TokenRoleResolution,
+    { status: typeof TOKEN_ROLE_STATUS.RESOLVED }
+  >,
+): AuthorizationFailure {
+  switch (resolution.status) {
+    case TOKEN_ROLE_STATUS.TOKEN_EXPIRED:
+      return {
+        failure_type: AUTHORIZATION_FAILURE_TYPE.TOKEN_EXPIRED,
+        message: resolution.message,
+      };
+    case TOKEN_ROLE_STATUS.TOKEN_INVALID:
+    case TOKEN_ROLE_STATUS.USER_REJECTED:
+    case TOKEN_ROLE_STATUS.LOOKUP_FAILED:
+      return {
+        failure_type: AUTHORIZATION_FAILURE_TYPE.TOKEN_INVALID,
+        message: resolution.message,
+      };
   }
+}
 
-  const system_user = user_result.data.items[0];
-
-  if (system_user.status === ENTITY_STATUS.INACTIVE) {
-    console.warn(
-      `[LocalAuthorizationAdapter] User account is inactive: ${email}`,
-    );
-    return create_failure_result(`User account is inactive: ${email}`);
-  }
-
-  return create_success_result(system_user.role as UserRole);
+function build_profile_permissions(role: UserRole): ProfilePermissions {
+  const role_permissions = get_role_permissions(role);
+  const permissions = Object.fromEntries(
+    ALL_DATA_CATEGORIES.map((category: DataCategory) => [
+      category,
+      role_permissions[category],
+    ]),
+  ) as Record<DataCategory, CategoryPermissions>;
+  console.log("[LocalAuthorizationAdapter] Retrieved profile permissions", {
+    event: IAM_LOG_EVENT.PROFILE_PERMISSIONS_RESOLVED,
+    role,
+  });
+  return { role, permissions };
 }
 
 export async function get_profile_permissions_impl(
@@ -51,71 +79,27 @@ export async function get_profile_permissions_impl(
   system_user_repository: SystemUserRepository,
   authorization_cache: AuthCache<unknown>,
   raw_token: string,
-): Promise<Result<ProfilePermissions, AuthorizationFailure>> {
-  const cache_key = `profile_permissions:${raw_token}`;
-  const cached = authorization_cache.get_or_miss(cache_key);
-  if (cached.is_hit && cached.value) {
-    console.log(
-      "[LocalAuthorizationAdapter] Cache HIT for profile permissions",
-    );
-    return cached.value as Result<ProfilePermissions, AuthorizationFailure>;
-  }
-
-  const verification_result = await auth_port.verify_token(raw_token);
-
-  if (!verification_result.success) {
-    return create_failure_result({
-      failure_type: "token_invalid",
-      message: verification_result.error,
-    });
-  }
-
-  const verification = verification_result.data;
-
-  if (!verification.is_valid || !verification.payload) {
-    const is_expired = verification.error_message?.includes("expired");
-    return create_failure_result({
-      failure_type: is_expired ? "token_expired" : "token_invalid",
-      message: verification.error_message || "Token verification failed",
-    });
-  }
-
-  const role_result = await get_role_for_email(
+): Promise<ProfilePermissionsResult> {
+  const prefix = AUTHORIZATION_CACHE_KEY_PREFIX.PROFILE_PERMISSIONS;
+  const cache_key = build_authorization_cache_key(prefix, [raw_token]);
+  const cached = read_authorization_cache<ProfilePermissionsResult>(
+    authorization_cache,
+    cache_key,
+    prefix,
+  );
+  if (cached.status === OptionStatus.SOME) return cached.value;
+  const resolution = await resolve_token_role({
+    auth_port,
     system_user_repository,
-    verification.payload.email,
+    raw_token,
+  });
+  if (resolution.status !== TOKEN_ROLE_STATUS.RESOLVED)
+    return create_failure_result(
+      map_unresolved_role_to_authorization_failure(resolution),
+    );
+  const result = create_success_result(
+    build_profile_permissions(resolution.role),
   );
-  if (!role_result.success) {
-    return create_failure_result({
-      failure_type: "token_invalid",
-      message: role_result.error,
-    });
-  }
-
-  const role = role_result.data;
-  const role_permissions = get_role_permissions(role);
-
-  const categories: DataCategory[] = [
-    "root_level",
-    "org_administrator_level",
-    "organisation_level",
-    "team_level",
-    "player_level",
-    "public_level",
-  ];
-
-  const permissions: Record<DataCategory, CategoryPermissions> = {} as Record<
-    DataCategory,
-    CategoryPermissions
-  >;
-  for (const category of categories) {
-    permissions[category] = role_permissions[category];
-  }
-
-  console.log(
-    `[LocalAuthorizationAdapter] Retrieved permissions for role: ${role}`,
-  );
-
-  const result = create_success_result({ role, permissions });
   authorization_cache.set(cache_key, result);
   return result;
 }

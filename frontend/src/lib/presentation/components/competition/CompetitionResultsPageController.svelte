@@ -16,6 +16,7 @@
     } from "$lib/presentation/logic/competitionResultsPageContracts";
     import { create_competition_results_page_controller_runtime } from "$lib/presentation/logic/competitionResultsPageControllerRuntime";
     import { type CompetitionResultsSelectedBundle } from "$lib/presentation/logic/competitionResultsPageState";
+    import { PRESENCE_STATUS } from "$lib/presentation/logic/presenceStatus";
     import {
         auth_store,
         is_public_viewer,
@@ -29,11 +30,12 @@
         selected_organization_id = "",
         competitions: Competition[] = [],
         selected_competition_id = "",
-        selected_competition_state: CompetitionResultsSelectedCompetitionState = {
-            status: "missing",
-        },
+        selected_competition_state: CompetitionResultsSelectedCompetitionState =
+            {
+                status: PRESENCE_STATUS.MISSING,
+            },
         competition_format_state: CompetitionResultsCompetitionFormatState = {
-            status: "missing",
+            status: PRESENCE_STATUS.MISSING,
         },
         competition_stages: CompetitionStage[] = [],
         fixtures: Fixture[] = [],
@@ -59,12 +61,12 @@
     function build_competition_results_profile_state() {
         const current_profile = get(auth_store).current_profile;
 
-        if (current_profile.status !== "present") {
-            return { status: "missing" as const };
+        if (current_profile.status !== PRESENCE_STATUS.PRESENT) {
+            return { status: PRESENCE_STATUS.MISSING };
         }
 
         return {
-            status: "present" as const,
+            status: PRESENCE_STATUS.PRESENT,
             profile: {
                 organization_id: current_profile.profile.organization_id,
                 role: current_profile.profile.role,

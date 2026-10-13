@@ -5,26 +5,10 @@ import {
   can_profile_access_route_impl,
   get_sidebar_menu_for_profile_impl,
 } from "./authProfileRouting";
-
-function create_paginated_result<TData>(items: TData[]) {
-  return {
-    items,
-    total_count: items.length,
-    page_number: 1,
-    page_size: items.length || 1,
-    total_pages: 1,
-  };
-}
-
-function create_system_user(overrides: Record<string, unknown> = {}) {
-  return {
-    id: "system_user_1",
-    email: "admin@example.com",
-    role: "org_admin",
-    status: "active",
-    ...overrides,
-  };
-}
+import {
+  create_paginated_result,
+  create_system_user,
+} from "./iamTestFixtures.test_support";
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -50,9 +34,7 @@ describe("authProfileRouting", () => {
       verify_token: vi.fn(),
     };
     const authorization_cache = {
-      get_or_miss: vi
-        .fn()
-        .mockReturnValue({ is_hit: true, value: cached_result }),
+      lookup: vi.fn().mockReturnValue({ status: "hit", value: cached_result }),
       set: vi.fn(),
     };
 
@@ -88,7 +70,7 @@ describe("authProfileRouting", () => {
         ),
     };
     const authorization_cache = {
-      get_or_miss: vi.fn().mockReturnValue({ is_hit: false }),
+      lookup: vi.fn().mockReturnValue({ status: "miss", reason: "absent" }),
       set: vi.fn(),
     };
 
@@ -130,7 +112,7 @@ describe("authProfileRouting", () => {
         ),
     };
     const authorization_cache = {
-      get_or_miss: vi.fn().mockReturnValue({ is_hit: false }),
+      lookup: vi.fn().mockReturnValue({ status: "miss", reason: "absent" }),
       set: vi.fn(),
     };
 

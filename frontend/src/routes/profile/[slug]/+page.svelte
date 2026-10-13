@@ -19,6 +19,7 @@
         type PlayerPublicProfileLoadError,
         type PlayerPublicProfilePageData,
     } from "$lib/presentation/logic/playerPublicProfileDataLoader";
+    import { PRESENCE_STATUS } from "$lib/presentation/logic/presenceStatus";
 
     const PLAYER_PROFILE_TITLE = "Player Profile";
     const PLAYER_PROFILE_NOT_FOUND_TITLE = "Profile Not Found";
@@ -108,7 +109,7 @@
 
 <svelte:head>
     <title>
-        {page_data_state.status === "present"
+        {page_data_state.status === PRESENCE_STATUS.PRESENT
             ? `${get_player_full_name(page_data_state.page_data.player)} - ${PLAYER_PROFILE_TITLE}`
             : PLAYER_PROFILE_TITLE}
     </title>
@@ -123,7 +124,7 @@
     not_found_message={PLAYER_PROFILE_NOT_FOUND_MESSAGE}
     home_href="/"
 >
-    {#if page_data_state.status === "present"}
+    {#if page_data_state.status === PRESENCE_STATUS.PRESENT}
         <div class="max-w-4xl mx-auto px-4 py-8 sm:py-12">
             <PlayerPublicProfilePage {...page_data_state.page_data} />
         </div>

@@ -5,13 +5,10 @@ import {
   clear_auth_storage,
   create_public_viewer_profile,
   fetch_current_user_profile_from_convex,
-  generate_token_for_profile,
   load_saved_profile_id,
   load_saved_token,
-  load_sidebar_menu_for_role,
   save_profile_id,
   save_token,
-  sync_user_context_with_event_bus,
 } from "./authHelpers";
 
 const {
@@ -112,7 +109,7 @@ describe("authHelpers", () => {
     query_mock.mockRejectedValueOnce(new Error("query failed"));
     await expect(fetch_current_user_profile_from_convex()).resolves.toEqual({
       success: false,
-      error: "query failed",
+      error: "Your profile could not be loaded right now. Please try again.",
     });
   });
 
@@ -165,118 +162,5 @@ describe("authHelpers", () => {
     expect(
       build_profiles_with_public_viewer([public_viewer] as never[]),
     ).toEqual([public_viewer]);
-  });
-
-  it("generates tokens for profiles and returns failures when generation fails", async () => {
-    const profile = {
-      id: "profile_1",
-      email: "admin@example.com",
-      display_name: "Admin User",
-      role: "org_admin",
-      organization_id: "org_1",
-      team_id: "team_1",
-    } as never;
-
-    generate_token_mock.mockResolvedValueOnce({
-      success: true,
-      data: { raw_token: "abc.def.sig" },
-    });
-
-    await expect(generate_token_for_profile(profile)).resolves.toEqual({
-      success: true,
-      data: { raw_token: "abc.def.sig" },
-    });
-
-    generate_token_mock.mockResolvedValueOnce({
-      success: false,
-      error: "token failed",
-    });
-
-    await expect(generate_token_for_profile(profile)).resolves.toEqual({
-      success: false,
-      error: "token failed",
-    });
-  });
-
-  it("generates public viewer tokens with anonymous scope values", async () => {
-    const profile = create_public_viewer_profile();
-
-    generate_token_mock.mockResolvedValueOnce({
-      success: true,
-      data: { raw_token: "public.token.sig" },
-    });
-
-    await expect(generate_token_for_profile(profile)).resolves.toEqual({
-      success: true,
-      data: { raw_token: "public.token.sig" },
-    });
-
-    expect(generate_token_mock).toHaveBeenCalledWith(
-      expect.objectContaining({
-        user_id: "public-viewer",
-        role: "public_viewer",
-        organization_id: "*",
-        team_id: "*",
-      }),
-    );
-
-    const generated_payload = generate_token_mock.mock.calls[0]?.[0];
-
-    expect(generated_payload.email).not.toBe("");
-  });
-
-  it("fails before token generation when the profile identifiers are invalid", async () => {
-    const invalid_profile = {
-      id: "",
-      email: "admin@example.com",
-      display_name: "Admin User",
-      role: "org_admin",
-      organization_id: "*",
-      team_id: "team_1",
-    } as never;
-
-    await expect(generate_token_for_profile(invalid_profile)).resolves.toEqual({
-      success: false,
-      error: "User ID is invalid",
-    });
-
-    expect(generate_token_mock).not.toHaveBeenCalled();
-  });
-
-  it("syncs event-bus user context and loads sidebar menus for a role", async () => {
-    get_sidebar_menu_for_role_mock.mockResolvedValueOnce({
-      success: true,
-      data: [{ group_name: "General", items: [] }],
-    });
-    get_sidebar_menu_for_role_mock.mockResolvedValueOnce({
-      success: false,
-      error: "menu failed",
-    });
-
-    sync_user_context_with_event_bus({ status: "cleared" });
-    sync_user_context_with_event_bus({
-      status: "present",
-      profile: {
-        id: "profile_1",
-        email: "admin@example.com",
-        display_name: "Admin User",
-        organization_id: "org_1",
-      } as never,
-    });
-
-    await expect(
-      load_sidebar_menu_for_role("org_admin" as never),
-    ).resolves.toEqual([{ group_name: "General", items: [] }]);
-    await expect(
-      load_sidebar_menu_for_role("org_admin" as never),
-    ).resolves.toEqual([]);
-
-    expect(clear_user_context_mock).toHaveBeenCalled();
-    expect(set_user_context_mock).toHaveBeenCalledWith({
-      user_id: "profile_1",
-      user_email: "admin@example.com",
-      user_display_name: "Admin User",
-      organization_id: "org_1",
-    });
   });
 });

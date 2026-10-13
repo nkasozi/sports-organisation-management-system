@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, type Mock, vi } from "vitest";
 
 import {
   competition_create_status_options,
@@ -17,7 +17,11 @@ vi.mock("$lib/adapters/persistence/sportService", () => ({
 }));
 
 describe("competitionCreatePageData", () => {
-  function create_dependencies() {
+  function create_dependencies(): {
+    competition_format_use_cases: { list: Mock };
+    organization_use_cases: { get_by_id: Mock; list: Mock };
+    team_use_cases: { list: Mock };
+  } {
     return {
       competition_format_use_cases: { list: vi.fn() },
       organization_use_cases: { get_by_id: vi.fn(), list: vi.fn() },

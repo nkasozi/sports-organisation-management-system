@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import { ANY_VALUE } from "$lib/core/interfaces/ports";
 
 import {
+  build_calendar_profile_state,
   can_user_add_activities,
   can_user_change_organizations,
   create_activity_form_values_for_date,
@@ -27,6 +28,16 @@ vi.mock("./calendarPageState", () => ({
 }));
 
 describe("calendarPageShellControllerHelpers", () => {
+  it("maps the auth profile to a calendar profile state", () => {
+    const profile = { organization_id: "org_1", team_id: "" };
+    expect(
+      build_calendar_profile_state({ status: "missing" } as never),
+    ).toEqual({ status: "missing" });
+    expect(
+      build_calendar_profile_state({ status: "present", profile } as never),
+    ).toEqual({ status: "present", profile });
+  });
+
   it("extracts organization ids and enforces organization-level activity access", () => {
     expect(extract_url_org_id(new URLSearchParams("org=org_1"))).toBe("org_1");
     expect(can_user_add_activities({ status: "missing" })).toBe(false);

@@ -11,9 +11,15 @@ import type {
   CompetitionRepository,
   QueryOptions,
 } from "../../core/interfaces/ports";
-import type { PaginatedAsyncResult } from "../../core/types/Result";
+import type {
+  AsyncResult,
+  PaginatedAsyncResult,
+} from "../../core/types/Result";
 import { InBrowserBaseRepository } from "./InBrowserBaseRepository";
 import { create_default_competitions } from "./InBrowserCompetitionRepositoryDefaults";
+import { reset_repository_data } from "./InBrowserRepositoryReset";
+import { create_lazy_repository_accessor } from "./InBrowserRepositorySingleton";
+import type { RepositoryWriteOrigin } from "./InBrowserRepositoryWriteOrigin";
 
 const ENTITY_PREFIX = "comp";
 
@@ -101,15 +107,16 @@ export class InBrowserCompetitionRepository
       );
     }
 
-    if (filter.start_date_after) {
+    const { start_date_after, start_date_before } = filter;
+    if (start_date_after) {
       filtered_entities = filtered_entities.filter(
-        (competition) => competition.start_date >= filter.start_date_after!,
+        (competition) => competition.start_date >= start_date_after,
       );
     }
 
-    if (filter.start_date_before) {
+    if (start_date_before) {
       filtered_entities = filtered_entities.filter(
-        (competition) => competition.start_date <= filter.start_date_before!,
+        (competition) => competition.start_date <= start_date_before,
       );
     }
 
@@ -130,29 +137,18 @@ export class InBrowserCompetitionRepository
   }
 }
 
-type CompetitionRepositoryState =
-  | { status: "uninitialized" }
-  | { status: "ready"; repository: InBrowserCompetitionRepository };
-
-let competition_repository_state: CompetitionRepositoryState = {
-  status: "uninitialized",
-};
+const get_concrete_repository: () => InBrowserCompetitionRepository =
+  create_lazy_repository_accessor(() => new InBrowserCompetitionRepository());
 
 export function get_competition_repository(): CompetitionRepository {
-  if (competition_repository_state.status === "ready") {
-    return competition_repository_state.repository;
-  }
-
-  const repository = new InBrowserCompetitionRepository();
-
-  competition_repository_state = { status: "ready", repository };
-
-  return repository;
+  return get_concrete_repository();
 }
 
-export async function reset_competition_repository(): Promise<void> {
-  const repository =
-    get_competition_repository() as InBrowserCompetitionRepository;
-  await repository.clear_all_data();
-  await repository.seed_with_data(create_default_competitions());
+export function reset_competition_repository(
+  origin: RepositoryWriteOrigin,
+): AsyncResult<number> {
+  return reset_repository_data(
+    get_concrete_repository().with_write_origin(origin),
+    create_default_competitions(),
+  );
 }

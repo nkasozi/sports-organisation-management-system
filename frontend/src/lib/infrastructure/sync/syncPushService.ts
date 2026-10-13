@@ -1,152 +1,99 @@
 import {
+  type SyncOutboxEntry,
+  SyncOutboxOperation,
+} from "$lib/adapters/repositories/syncOutbox/syncOutboxTypes";
+import {
   type AsyncResult,
   create_failure_result,
   create_success_result,
 } from "$lib/core/types/Result";
 
+import { list_pending_entries_for_table } from "./syncOutboxRepository";
+import { push_outbox_deletes } from "./syncPushDeletes";
 import {
-  build_sync_push_batches,
-  type SyncBatchRecord,
-} from "./syncPushBatching";
-import type {
-  ConflictFromServer,
-  ConvexClient,
-  RawConflictFromServer,
-  TableName,
-} from "./syncTypes";
-import { EPOCH_TIMESTAMP, normalize_conflict_from_server } from "./syncTypes";
+  merge_push_summaries,
+  type PushTableOutboxCommand,
+  type PushTableOutboxSummary,
+} from "./syncPushTransport";
+import { push_outbox_upserts } from "./syncPushUpserts";
 
-export async function push_table_to_convex(
-  convex_client: ConvexClient,
-  table_name: TableName,
-  all_records: Array<{ id: string; updated_at?: string; created_at?: string }>,
-  remote_latest_modified_at: string,
-  detect_conflicts: boolean = true,
-): AsyncResult<{
-  records_pushed: number;
-  conflicts: ConflictFromServer[];
-}> {
-  const remote_cutoff = remote_latest_modified_at;
-  const server_is_empty = remote_latest_modified_at === EPOCH_TIMESTAMP;
-
-  const push_log_context = server_is_empty
-    ? `server is EMPTY, pushing all ${all_records.length} local records`
-    : `${all_records.length} local records, server latest_modified_at: ${remote_cutoff}`;
-  console.log(`[Sync:Push] ${table_name} — ${push_log_context}`);
-
-  const records_to_push = server_is_empty
-    ? all_records
-    : all_records.filter((record) => {
-        const record_modified_at =
-          record.updated_at || record.created_at || EPOCH_TIMESTAMP;
-        return record_modified_at > remote_cutoff;
-      });
-
-  if (records_to_push.length === 0) {
-    console.log(
-      `[Sync:Push] ${table_name} — no local records newer than server, nothing to push`,
-    );
-    return create_success_result({ records_pushed: 0, conflicts: [] });
-  }
-
-  console.log(
-    `[Sync:Push] ${table_name} — ${records_to_push.length} records to push`,
-  );
-
-  let total_pushed = 0;
-  const all_conflicts: ConflictFromServer[] = [];
-  const sync_version = Date.now();
-  const batch_records: SyncBatchRecord[] = records_to_push.map((record) => ({
-    local_id: record.id,
-    data: record as Record<string, unknown>,
-    version: sync_version,
-  }));
-  const batch_partition_result = build_sync_push_batches({
-    table_name,
-    records: batch_records,
-    detect_conflicts,
-  });
-
-  if (!batch_partition_result.success) {
-    console.error("[Sync:Push] Batch partition failed", {
-      event: "sync_push_batch_partition_failed",
-      table_name,
-      error: batch_partition_result.error,
-    });
-    return create_failure_result(batch_partition_result.error);
-  }
-
+async function load_pending_entries(
+  command: PushTableOutboxCommand,
+): AsyncResult<SyncOutboxEntry[]> {
   try {
-    for (
-      let batch_index = 0;
-      batch_index < batch_partition_result.data.length;
-      batch_index++
-    ) {
-      const batch = batch_partition_result.data[batch_index];
-      const batch_number = batch_index + 1;
-      const total_batches = batch_partition_result.data.length;
-      console.log(
-        `[Sync:Push] ${table_name} — sending batch ${batch_number}/${total_batches} (${batch.length} records)`,
-      );
-
-      const result = (await convex_client.mutation("sync:batch_upsert", {
-        table_name,
-        records: batch,
-        detect_conflicts,
-      })) as {
-        success: boolean;
-        error?: string;
-        message?: string;
-        results: Array<{ local_id: string; success: boolean; action: string }>;
-        has_conflicts: boolean;
-        conflicts: RawConflictFromServer[];
-      };
-
-      if (!result.success) {
-        const auth_error_message = result.error
-          ? `${result.error}: ${result.message || "unknown"}`
-          : `Server rejected batch (success=false, results: ${result.results?.length ?? 0})`;
-        console.error(
-          `[Sync:Push] ${table_name} — batch ${batch_number} REJECTED by server: ${auth_error_message}`,
-        );
-        return create_failure_result(auth_error_message);
-      }
-
-      console.log(
-        `[Sync:Push] ${table_name} — batch ${batch_number} result: success=${result.success}, actions: ${JSON.stringify(result.results.map((r) => r.action))}`,
-      );
-
-      if (result.has_conflicts && result.conflicts.length > 0) {
-        console.warn(
-          `[Sync:Push] ${table_name} — batch ${batch_number} has ${result.conflicts.length} conflicts`,
-        );
-        all_conflicts.push(
-          ...result.conflicts.map(normalize_conflict_from_server),
-        );
-      }
-
-      const non_conflict_count = result.results.filter(
-        (r) => r.action !== "conflict_detected",
-      ).length;
-      total_pushed += non_conflict_count;
-    }
+    return create_success_result(
+      await list_pending_entries_for_table(
+        command.database,
+        command.table_name,
+      ),
+    );
   } catch (error) {
-    const error_message =
-      error instanceof Error ? error.message : String(error);
-    console.error("[Sync:Push] Operation failed", {
-      event: "sync_push_operation_failed",
-      context: String(table_name),
-      error: String(error_message),
+    console.error("[Sync:Push] Failed to read the outbox", {
+      event: "sync_push_outbox_read_failed",
+      correlation_id: command.correlation_id,
+      table_name: command.table_name,
+      error: String(error),
     });
-
-    return create_failure_result(error_message);
+    return create_failure_result(String(error));
   }
+}
 
-  console.log(
-    `[Sync:Push] ${table_name} — completed, pushed ${total_pushed} records`,
-  );
-  return create_success_result({
-    records_pushed: total_pushed,
-    conflicts: all_conflicts,
+function log_push_summary(
+  command: PushTableOutboxCommand,
+  summary: PushTableOutboxSummary,
+): PushTableOutboxSummary {
+  console.log("[Sync:Push] Table outbox drained", {
+    event: "sync_push_table_completed",
+    correlation_id: command.correlation_id,
+    table_name: command.table_name,
+    records_pushed: summary.records_pushed,
+    conflict_count: summary.conflicts.length,
+    rejected_count: summary.rejected.length,
   });
+  for (const rejected of summary.rejected)
+    console.warn("[Sync:Push] Server rejected a local change", {
+      event: "sync_push_record_rejected",
+      correlation_id: command.correlation_id,
+      table_name: rejected.table_name,
+      local_id: rejected.local_id,
+      rejection_code: rejected.rejection_code,
+    });
+  return summary;
+}
+
+export async function push_table_outbox_to_convex(
+  command: PushTableOutboxCommand,
+): AsyncResult<PushTableOutboxSummary> {
+  const entries_result = await load_pending_entries(command);
+  if (!entries_result.success) return entries_result;
+  try {
+    const upserts = await push_outbox_upserts(
+      command,
+      entries_result.data.filter(
+        (entry) => entry.operation === SyncOutboxOperation.UPSERT,
+      ),
+    );
+    if (!upserts.success) return upserts;
+    const deletes = await push_outbox_deletes(
+      command,
+      entries_result.data.filter(
+        (entry) => entry.operation === SyncOutboxOperation.DELETE,
+      ),
+    );
+    if (!deletes.success) return deletes;
+    return create_success_result(
+      log_push_summary(
+        command,
+        merge_push_summaries(upserts.data, deletes.data),
+      ),
+    );
+  } catch (error) {
+    console.error("[Sync:Push] Outbox push failed", {
+      event: "sync_push_operation_failed",
+      correlation_id: command.correlation_id,
+      table_name: command.table_name,
+      error: String(error),
+    });
+    return create_failure_result(String(error));
+  }
 }

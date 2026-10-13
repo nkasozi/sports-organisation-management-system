@@ -148,13 +148,6 @@ export type RolePermissionMap = Record<DataCategory, CategoryPermissions>;
 
 type FullPermissionMap = Record<UserRole, RolePermissionMap>;
 
-export interface DataAuthorizationResult {
-  is_authorized: boolean;
-  data_category: DataCategory;
-  action: DataAction;
-  reason?: string;
-}
-
 export {
   check_data_permission,
   check_entity_permission,

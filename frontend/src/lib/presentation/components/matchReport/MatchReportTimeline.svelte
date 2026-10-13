@@ -7,6 +7,8 @@
     } from "$lib/core/entities/Fixture";
     import { get_match_report_event_bg_class } from "$lib/presentation/logic/matchReportPageState";
 
+    import { GAME_EVENT_TEAM_SIDE } from "../game/gameDisplayConstants";
+
     export let events: GameEvent[];
     export let is_game_in_progress: boolean;
     export let home_team_name: string;
@@ -58,8 +60,10 @@
         ></div>
         <div class="space-y-4">
             {#each events as event}
-                {@const is_home_event = event.team_side === "home"}
-                {@const is_match_event = event.team_side === "match"}
+                {@const is_home_event =
+                    event.team_side === GAME_EVENT_TEAM_SIDE.HOME}
+                {@const is_match_event =
+                    event.team_side === GAME_EVENT_TEAM_SIDE.MATCH}
                 {#if is_match_event}
                     <div class="relative flex items-center justify-center">
                         <div class="flex flex-col items-center">

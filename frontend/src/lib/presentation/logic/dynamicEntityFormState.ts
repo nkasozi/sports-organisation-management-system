@@ -1,7 +1,8 @@
 import type { BaseEntity } from "../../core/entities/BaseEntity";
+import type { DynamicFormData } from "./dynamicFormConstants";
 
 export type DynamicEntityFormState = {
-  form_data: Record<string, any>;
+  form_data: DynamicFormData;
   validation_errors: Record<string, string>;
   foreign_key_options: Record<string, BaseEntity[]>;
   filtered_fields_loading: Record<string, boolean>;

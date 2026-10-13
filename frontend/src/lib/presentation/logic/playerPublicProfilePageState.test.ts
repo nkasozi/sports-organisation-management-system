@@ -86,6 +86,28 @@ describe("playerPublicProfilePageState", () => {
     expect(result.substitutions_out).toBe(1);
   });
 
+  it("counts own goals, penalties, second yellows and substitutions in case-insensitively", () => {
+    const result = calculate_player_public_profile_event_stats(
+      [
+        create_game_event({ event_type: "own_goal" }),
+        create_game_event({ event_type: "penalty_scored" }),
+        create_game_event({ event_type: "second_yellow" }),
+        create_game_event({ event_type: "substitution" }),
+        create_game_event({ event_type: "own_goal", player_name: "Other" }),
+        create_game_event({ event_type: "kickoff" as GameEvent["event_type"] }),
+      ],
+      "JORDAN miles",
+    );
+
+    expect(result).toEqual({
+      ...create_empty_player_public_profile_stats(),
+      own_goals: 1,
+      goals: 1,
+      red_cards: 1,
+      substitutions_in: 1,
+    });
+  });
+
   it("merges two player stat objects", () => {
     const result = merge_player_public_profile_stats(
       {

@@ -1,10 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  build_missing_lineups_error_message,
   build_player_select_options_for_team,
   build_players_on_field_options,
-  get_event_bg_class,
   get_starters_from_lineup,
   get_substitutes_from_lineup,
   get_time_on_options,
@@ -50,13 +48,7 @@ describe("liveGameDetailLineupState", () => {
     ]);
   });
 
-  it("builds lineup error messages, event colors, and player select options", () => {
-    expect(
-      build_missing_lineups_error_message(true, false, "Lions", "Tigers"),
-    ).toBe("Lions has not submitted their squad for this fixture.");
-    expect(get_event_bg_class({ event_type: "red_card" } as never)).toBe(
-      "border-l-red-500 bg-red-50 dark:bg-red-900/20",
-    );
+  it("builds player select options", () => {
     expect(
       build_player_select_options_for_team("home", lineup_players, [] as never),
     ).toEqual([

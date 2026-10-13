@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { create_some_option } from "$lib/core/types/Option";
+
 import {
   compute_authorization_level,
   compute_disabled_functionalities,
@@ -8,53 +10,26 @@ import {
   compute_is_functionality_disabled,
 } from "./authPermissions";
 import {
-  type AuthState,
+  AUTHORIZABLE_TO_DATA_ACTION,
+  create_auth_state,
+  create_profile,
+} from "./authPermissions.test_support";
+import {
   create_missing_auth_profile_state,
-  create_missing_auth_token_state,
   create_present_auth_profile_state,
-  type UserProfile,
 } from "./authTypes";
-
-function create_profile(overrides: Partial<UserProfile> = {}): UserProfile {
-  return {
-    id: "profile-1",
-    display_name: "Admin User",
-    email: "admin@example.com",
-    role: "org_admin",
-    organization_id: "organization-1",
-    organization_name: "Premier League",
-    team_id: "",
-    ...overrides,
-  } as UserProfile;
-}
-
-function create_auth_state(
-  current_profile: AuthState["current_profile"],
-  overrides: Partial<AuthState> = {},
-): AuthState {
-  return {
-    current_token: create_missing_auth_token_state(),
-    current_profile,
-    available_profiles:
-      current_profile.status === "present" ? [current_profile.profile] : [],
-    sidebar_menu_items: [],
-    is_initialized: false,
-    is_demo_session: false,
-    ...overrides,
-  } as AuthState;
-}
 
 const {
   check_data_permission_mock,
   check_entity_permission_mock,
-  get_entity_data_category_mock,
+  find_entity_data_category_mock,
   get_role_permissions_sync_mock,
   map_authorizable_action_to_data_action_mock,
   normalize_to_entity_type_mock,
 } = vi.hoisted(() => ({
   check_data_permission_mock: vi.fn(),
   check_entity_permission_mock: vi.fn(),
-  get_entity_data_category_mock: vi.fn(),
+  find_entity_data_category_mock: vi.fn(),
   get_role_permissions_sync_mock: vi.fn(),
   map_authorizable_action_to_data_action_mock: vi.fn(),
   normalize_to_entity_type_mock: vi.fn(),
@@ -71,7 +46,7 @@ vi.mock("$lib/core/interfaces/ports/external/iam/AuthorizationPort", () => ({
 
 vi.mock("$lib/presentation/stores/authPermissionCore", () => ({
   check_entity_permission: check_entity_permission_mock,
-  get_entity_data_category: get_entity_data_category_mock,
+  find_entity_data_category: find_entity_data_category_mock,
   get_role_permissions_sync: get_role_permissions_sync_mock,
   map_authorizable_action_to_data_action:
     map_authorizable_action_to_data_action_mock,
@@ -81,7 +56,9 @@ describe("authPermissions", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     normalize_to_entity_type_mock.mockImplementation((value: string) => value);
-    get_entity_data_category_mock.mockReturnValue("organisation_level");
+    find_entity_data_category_mock.mockReturnValue(
+      create_some_option("organisation_level"),
+    );
     get_role_permissions_sync_mock.mockReturnValue({
       success: true,
       data: {
@@ -94,14 +71,7 @@ describe("authPermissions", () => {
       },
     });
     map_authorizable_action_to_data_action_mock.mockImplementation(
-      (action: string) =>
-        ({
-          create: "create",
-          edit: "update",
-          delete: "delete",
-          list: "read",
-          view: "read",
-        })[action],
+      (action: string) => AUTHORIZABLE_TO_DATA_ACTION[action],
     );
   });
 

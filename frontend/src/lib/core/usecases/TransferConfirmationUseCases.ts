@@ -1,183 +1,173 @@
-import { EventBus } from "$lib/infrastructure/events/EventBus";
-
 import type { PlayerTeamTransferHistory } from "../entities/PlayerTeamTransferHistory";
-import { TRANSFER_STATUS } from "../entities/StatusConstants";
 import type {
   PlayerTeamMembershipRepository,
   PlayerTeamTransferHistoryRepository,
   PlayerTeamTransferHistoryUseCasesPort,
 } from "../interfaces/ports";
-import type { AsyncResult } from "../types/Result";
-import { create_failure_result, create_success_result } from "../types/Result";
+import type { ScalarValueInput } from "../types/DomainScalars";
+import type { AsyncResult, Result } from "../types/Result";
+import { create_success_result } from "../types/Result";
+import { UseCaseErrorCode } from "../types/UseCaseFailure";
+import {
+  PLAYER_TEAM_TRANSFER_LOG_SCOPE,
+  PlayerTeamTransferEvent,
+  PlayerTeamTransferMessage,
+} from "./PlayerTeamTransferUseCasesConstants";
+import { move_membership_for_transfer } from "./TransferMembershipMove";
+import {
+  announce_resolution,
+  persist_resolution_status,
+  restore_original_status,
+} from "./TransferResolutionPersistence";
+import {
+  decide_transfer_resolution,
+  TransferResolution,
+  TransferResolutionOutcome,
+  type TransferResolutionValue,
+} from "./TransferResolutionStateMachine";
+import {
+  fail_missing_identifier,
+  fail_with_message,
+  forward_dependency_result,
+  is_blank_identifier,
+} from "./UseCaseResultGuards";
 
 type TransferConfirmationMethods = Pick<
   PlayerTeamTransferHistoryUseCasesPort,
   "confirm_transfer" | "reject_transfer"
 >;
 
-async function handle_membership_transfer(
-  membership_repository: PlayerTeamMembershipRepository,
-  transfer: PlayerTeamTransferHistory,
-): AsyncResult<boolean> {
-  const memberships_result = await membership_repository.find_all({
-    player_id: transfer.player_id,
-    team_id: transfer.from_team_id,
-    status: "active",
-  });
-  if (!memberships_result.success)
-    return create_failure_result(
-      `Failed to find player membership: ${memberships_result.error}`,
-    );
+type TransferId = ScalarValueInput<PlayerTeamTransferHistory["id"]>;
 
-  const active_membership = memberships_result.data?.items?.[0];
+interface TransferResolutionDependencies {
+  repository: PlayerTeamTransferHistoryRepository;
+  membership_repository: PlayerTeamMembershipRepository;
+}
 
-  if (active_membership) {
-    const old_membership_data = { ...active_membership } as unknown as Record<
-      string,
-      unknown
-    >;
-    const update_result = await membership_repository.update(
-      active_membership.id,
-      {
-        team_id: transfer.to_team_id,
-        start_date: transfer.transfer_date,
-      },
-    );
-    if (!update_result.success)
-      return create_failure_result(
-        `Failed to update player membership: ${update_result.error}`,
-      );
-    if (update_result.data) {
-      EventBus.emit_entity_updated(
-        "playerteammembership",
-        active_membership.id,
-        active_membership.id,
-        old_membership_data,
-        update_result.data as unknown as Record<string, unknown>,
-        ["team_id", "start_date"],
-      );
-    }
-    console.log("[Transfer] Updated membership", {
-      event: "membership_updated",
-      membership_id: active_membership.id,
+async function load_resolvable_transfer(
+  repository: PlayerTeamTransferHistoryRepository,
+  transfer_id: TransferId,
+  resolution: TransferResolutionValue,
+): AsyncResult<PlayerTeamTransferHistory> {
+  const context = { transfer_id, resolution };
+  if (is_blank_identifier(transfer_id)) {
+    return fail_missing_identifier({
+      log_scope: PLAYER_TEAM_TRANSFER_LOG_SCOPE,
+      event: PlayerTeamTransferEvent.RESOLUTION_ID_MISSING,
+      context: { resolution },
+      user_message: PlayerTeamTransferMessage.ID_REQUIRED,
     });
-    return create_success_result(true);
   }
+  return forward_dependency_result(await repository.find_by_id(transfer_id), {
+    log_scope: PLAYER_TEAM_TRANSFER_LOG_SCOPE,
+    event: PlayerTeamTransferEvent.RESOLUTION_TARGET_NOT_FOUND,
+    code: UseCaseErrorCode.NOT_FOUND,
+    context,
+    user_message: PlayerTeamTransferMessage.NOT_FOUND,
+  });
+}
 
-  console.warn("[Transfer] No active membership found, creating new", {
-    event: "membership_not_found",
-    player_id: transfer.player_id,
-  });
-  const create_result = await membership_repository.create({
-    organization_id: transfer.organization_id,
-    player_id: transfer.player_id,
-    team_id: transfer.to_team_id,
-    start_date: transfer.transfer_date,
-    jersey_number: 0,
-    status: "active",
-  });
-  if (!create_result.success)
-    return create_failure_result(
-      `Failed to create new membership: ${create_result.error}`,
-    );
-  if (create_result.data) {
-    EventBus.emit_entity_created(
-      "playerteammembership",
-      create_result.data.id,
-      create_result.data.id,
-      create_result.data as unknown as Record<string, unknown>,
-    );
+function reject_resolution(
+  transfer: PlayerTeamTransferHistory,
+  resolution: TransferResolutionValue,
+  reason: string,
+): Result<never> {
+  return fail_with_message(
+    {
+      log_scope: PLAYER_TEAM_TRANSFER_LOG_SCOPE,
+      event: PlayerTeamTransferEvent.RESOLUTION_REJECTED,
+      context: {
+        transfer_id: transfer.id,
+        resolution,
+        status: transfer.status,
+      },
+      user_message: reason,
+    },
+    UseCaseErrorCode.INVALID_STATE_TRANSITION,
+  );
+}
+
+async function apply_membership_side_effects(
+  dependencies: TransferResolutionDependencies,
+  transfer: PlayerTeamTransferHistory,
+  resolution: TransferResolutionValue,
+): AsyncResult<boolean> {
+  switch (resolution) {
+    case TransferResolution.CONFIRM:
+      return move_membership_for_transfer(
+        dependencies.membership_repository,
+        transfer,
+      );
+    case TransferResolution.REJECT:
+      return create_success_result(true);
   }
-  console.log("[Transfer] Created new membership", {
-    event: "membership_created",
-    player_id: transfer.player_id,
-  });
-  return create_success_result(true);
+}
+
+async function apply_resolution(
+  dependencies: TransferResolutionDependencies,
+  transfer: PlayerTeamTransferHistory,
+  next_status: PlayerTeamTransferHistory["status"],
+  resolution: TransferResolutionValue,
+): AsyncResult<PlayerTeamTransferHistory> {
+  const persisted = await persist_resolution_status(
+    dependencies.repository,
+    transfer,
+    next_status,
+    resolution,
+  );
+  if (!persisted.success) return persisted;
+  const side_effect_result = await apply_membership_side_effects(
+    dependencies,
+    transfer,
+    resolution,
+  );
+  if (!side_effect_result.success) {
+    const rollback_result = await restore_original_status(
+      dependencies.repository,
+      transfer,
+      resolution,
+    );
+    return rollback_result.success ? side_effect_result : rollback_result;
+  }
+  announce_resolution(transfer, persisted.data, resolution);
+  return persisted;
+}
+
+async function resolve_transfer(
+  dependencies: TransferResolutionDependencies,
+  transfer_id: TransferId,
+  resolution: TransferResolutionValue,
+): AsyncResult<PlayerTeamTransferHistory> {
+  const transfer_result = await load_resolvable_transfer(
+    dependencies.repository,
+    transfer_id,
+    resolution,
+  );
+  if (!transfer_result.success) {
+    return transfer_result;
+  }
+  const transfer = transfer_result.data;
+  const decision = decide_transfer_resolution(transfer.status, resolution);
+  if (decision.outcome === TransferResolutionOutcome.REJECTED) {
+    return reject_resolution(transfer, resolution, decision.reason);
+  }
+  return apply_resolution(
+    dependencies,
+    transfer,
+    decision.next_status,
+    resolution,
+  );
 }
 
 export function create_transfer_confirmation(
   repository: PlayerTeamTransferHistoryRepository,
   membership_repository: PlayerTeamMembershipRepository,
 ): TransferConfirmationMethods {
+  const dependencies = { repository, membership_repository };
   return {
-    async confirm_transfer(transfer_id) {
-      if (!transfer_id?.trim())
-        return create_failure_result("Transfer ID is required");
-      const transfer_result = await repository.find_by_id(transfer_id);
-      if (!transfer_result.success)
-        return create_failure_result(transfer_result.error);
-      if (!transfer_result.data)
-        return create_failure_result("Transfer not found");
-      if (transfer_result.data.status !== TRANSFER_STATUS.PENDING) {
-        return create_failure_result(
-          `Transfer cannot be confirmed. Current status: ${transfer_result.data.status}`,
-        );
-      }
-      const membership_result = await handle_membership_transfer(
-        membership_repository,
-        transfer_result.data,
-      );
-      if (!membership_result.success)
-        return create_failure_result(membership_result.error);
-      const update_result = await repository.update(transfer_id, {
-        status: TRANSFER_STATUS.APPROVED,
-      });
-      if (!update_result.success)
-        return create_failure_result(
-          `Failed to confirm transfer: ${update_result.error}`,
-        );
-      if (update_result.data) {
-        EventBus.emit_entity_updated(
-          "playerteamtransferhistory",
-          transfer_id,
-          transfer_id,
-          transfer_result.data as unknown as Record<string, unknown>,
-          update_result.data as unknown as Record<string, unknown>,
-          ["status"],
-        );
-      }
-      console.log("[Transfer] Transfer confirmed", {
-        event: "transfer_confirmed",
-        transfer_id,
-      });
-      return create_success_result(update_result.data!);
-    },
-
-    async reject_transfer(transfer_id) {
-      if (!transfer_id?.trim())
-        return create_failure_result("Transfer ID is required");
-      const transfer_result = await repository.find_by_id(transfer_id);
-      if (!transfer_result.success)
-        return create_failure_result(transfer_result.error);
-      if (!transfer_result.data)
-        return create_failure_result("Transfer not found");
-      if (transfer_result.data.status !== TRANSFER_STATUS.PENDING) {
-        return create_failure_result(
-          `Transfer cannot be rejected. Current status: ${transfer_result.data.status}`,
-        );
-      }
-      const update_result = await repository.update(transfer_id, {
-        status: TRANSFER_STATUS.DECLINED,
-      });
-      if (!update_result.success)
-        return create_failure_result(
-          `Failed to reject transfer: ${update_result.error}`,
-        );
-      if (update_result.data) {
-        EventBus.emit_entity_updated(
-          "playerteamtransferhistory",
-          transfer_id,
-          transfer_id,
-          transfer_result.data as unknown as Record<string, unknown>,
-          update_result.data as unknown as Record<string, unknown>,
-          ["status"],
-        );
-      }
-      console.log("[Transfer] Transfer rejected", {
-        event: "transfer_rejected",
-        transfer_id,
-      });
-      return create_success_result(update_result.data!);
-    },
+    confirm_transfer: (transfer_id) =>
+      resolve_transfer(dependencies, transfer_id, TransferResolution.CONFIRM),
+    reject_transfer: (transfer_id) =>
+      resolve_transfer(dependencies, transfer_id, TransferResolution.REJECT),
   };
 }
