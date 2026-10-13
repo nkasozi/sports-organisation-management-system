@@ -8,6 +8,11 @@ import {
 } from "$lib/adapters/repositories/syncOutbox/syncChangeTrackingGate";
 import { run_untracked_write_scope } from "$lib/adapters/repositories/syncOutbox/untrackedWriteScope";
 import type { UntrackedWriteScope } from "$lib/adapters/repositories/syncOutbox/untrackedWriteScopeToken";
+import type { AsyncResult } from "$lib/core/types/Result";
+import {
+  create_failure_result,
+  create_success_result,
+} from "$lib/core/types/Result";
 import { get_app_settings_storage } from "$lib/infrastructure/container";
 import {
   enqueue_all_local_records_for_push,
@@ -28,6 +33,8 @@ import { seed_all_data_if_needed } from "./seedingService";
 type ResetProgressReporter = (message: string, percentage: number) => void;
 
 const PUSH_SYNC_DIRECTION = "push";
+const SIGNED_OUT_DEMO_REBUILD_FAILED_MESSAGE =
+  "Demo data could not be prepared after signing out.";
 const BROWSER_GLOBAL_TYPE_UNDEFINED = "undefined";
 
 const ResetProgress = {
@@ -165,4 +172,23 @@ export async function reset_all_data(
     event: succeeded ? "data_reset_finished" : "data_reset_failed",
   });
   return succeeded;
+}
+
+export async function rebuild_signed_out_demo_data(): AsyncResult<boolean> {
+  if (typeof window === BROWSER_GLOBAL_TYPE_UNDEFINED)
+    return create_failure_result(SIGNED_OUT_DEMO_REBUILD_FAILED_MESSAGE);
+  pause_remote_change_subscriptions();
+  set_pulling_from_remote(true);
+  await get_app_settings_storage().clear_all_settings();
+  const rebuilt = await rebuild_local_data_without_tracking(() => true);
+  set_pulling_from_remote(false);
+  resume_remote_change_subscriptions();
+  console.log("[DataReset] Signed-out demo data rebuilt", {
+    event: rebuilt
+      ? "signed_out_demo_data_rebuilt"
+      : "signed_out_demo_data_rebuild_failed",
+  });
+  return rebuilt
+    ? create_success_result(true)
+    : create_failure_result(SIGNED_OUT_DEMO_REBUILD_FAILED_MESSAGE);
 }

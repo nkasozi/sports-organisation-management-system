@@ -6,8 +6,10 @@ import type {
   LineupPlayer,
   PlayerTimeOnStatus,
 } from "$lib/core/entities/FixtureLineup";
+import type { Option } from "$lib/core/types/Option";
+import { create_success_result, type Result } from "$lib/core/types/Result";
 import {
-  record_live_game_detail_event,
+  record_live_game_detail_timed_event,
   update_live_game_player_time_on,
 } from "$lib/presentation/logic/liveGameDetailActions";
 
@@ -21,6 +23,12 @@ import type {
   FixtureLineupUseCases,
   FixtureUseCases,
 } from "./liveGameDetailPageActionTypes";
+import { save_live_game_substitution_lineup } from "./liveGameDetailSubstitutionLineup";
+import {
+  normalize_event_time_for_period,
+  type PeriodMinuteWindow,
+} from "./liveGameEventTiming";
+import { validate_substitution } from "./liveGameOnFieldPlayers";
 
 export async function update_live_game_detail_player_time_on_action(command: {
   away_lineup_id: string;
@@ -70,6 +78,10 @@ type RecordPageEventCommand = {
   home_players: LineupPlayer[];
   is_substitution_event: boolean;
   secondary_player_name: string;
+  secondary_player_id: string;
+  on_field_players: LineupPlayer[];
+  max_players_on_field: number;
+  period_window: Option<PeriodMinuteWindow>;
   selected_event_type: QuickEventButton;
   selected_player_id: string;
   selected_team_side: "home" | "away";
@@ -84,44 +96,77 @@ type RecordPageEventSuccess = {
   warning_message: string;
 };
 
-async function apply_substitution_time_on(
+async function apply_substitution_lineup(
   command: RecordPageEventCommand,
   fixture: Fixture,
 ): Promise<RecordPageEventSuccess> {
-  const player_update_result =
-    await update_live_game_detail_player_time_on_action({
-      away_lineup_id: command.away_lineup_id,
-      away_players: command.away_players,
-      fixture_lineup_use_cases: command.fixture_lineup_use_cases,
-      home_lineup_id: command.home_lineup_id,
-      home_players: command.home_players,
-      new_time_on: String(command.event_minute) as PlayerTimeOnStatus,
-      player_id: command.selected_player_id,
-      team_side: command.selected_team_side,
-    });
+  const lineup_result = await save_live_game_substitution_lineup({
+    team_side: command.selected_team_side,
+    home_lineup_id: command.home_lineup_id,
+    away_lineup_id: command.away_lineup_id,
+    home_players: command.home_players,
+    away_players: command.away_players,
+    change: {
+      player_on_id: command.selected_player_id,
+      player_off_id: command.secondary_player_id,
+      minute: String(command.event_minute),
+    },
+    fixture_lineup_use_cases: command.fixture_lineup_use_cases,
+  });
   return {
     success: true,
     fixture,
-    updated_home_players: player_update_result.updated_home_players,
-    updated_away_players: player_update_result.updated_away_players,
-    warning_message: player_update_result.error_message,
+    updated_home_players: lineup_result.updated_home_players,
+    updated_away_players: lineup_result.updated_away_players,
+    warning_message: lineup_result.error_message,
     toast_message: `${command.selected_event_type.label} recorded!`,
   };
+}
+
+function check_substitution(command: RecordPageEventCommand): Result<boolean> {
+  if (!command.is_substitution_event) return create_success_result(true);
+  return validate_substitution({
+    on_field_players: command.on_field_players,
+    player_on_id: command.selected_player_id,
+    player_off_id: command.secondary_player_id,
+    max_players_on_field: command.max_players_on_field,
+  });
+}
+
+function record_page_event(
+  command: RecordPageEventCommand,
+): ReturnType<typeof record_live_game_detail_timed_event> {
+  const event_time = normalize_event_time_for_period(
+    command.event_minute,
+    command.period_window,
+  );
+  return record_live_game_detail_timed_event({
+    fixture_id: command.fixture_id,
+    selected_event_type: command.selected_event_type,
+    minute: event_time.minute,
+    stoppage_time_minute: event_time.stoppage_time_minute,
+    selected_team_side: command.selected_team_side,
+    event_player_name: command.event_player_name,
+    event_player_id: command.selected_player_id,
+    event_description: command.event_description,
+    secondary_player_name: command.secondary_player_name,
+    secondary_player_id: command.secondary_player_id,
+    fixture_use_cases: command.fixture_use_cases,
+  });
 }
 
 export async function record_live_game_detail_page_event_action(
   command: RecordPageEventCommand,
 ): Promise<RecordPageEventSuccess | { error_message: string; success: false }> {
-  const event_result = await record_live_game_detail_event(
-    command.fixture_id,
-    command.selected_event_type,
-    command.event_minute,
-    command.selected_team_side,
-    command.event_player_name,
-    command.event_description,
-    command.secondary_player_name,
-    command.fixture_use_cases,
-  );
+  const substitution_result = check_substitution(command);
+  if (!substitution_result.success) {
+    console.warn("[LiveGameDetail] Substitution rejected", {
+      event: GAME_ACTION_EVENT.SUBSTITUTION_REJECTED,
+      fixture_id: command.fixture_id,
+    });
+    return { success: false, error_message: substitution_result.error };
+  }
+  const event_result = await record_page_event(command);
   if (!event_result.success)
     return build_game_action_failure({
       event: GAME_ACTION_EVENT.RECORD_EVENT_FAILED,
@@ -138,5 +183,5 @@ export async function record_live_game_detail_page_event_action(
       warning_message: "",
       toast_message: `${command.selected_event_type.label} recorded!`,
     };
-  return apply_substitution_time_on(command, event_result.data);
+  return apply_substitution_lineup(command, event_result.data);
 }

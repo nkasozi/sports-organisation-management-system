@@ -7,6 +7,7 @@ import {
   evaluate_record_write_ownership,
   WriteOwnershipStatus,
 } from "./record_write_ownership";
+import { find_scoped_write_rejection } from "./scoped_write_guard";
 import {
   schedule_security_audit,
   type SecurityAuditEntry,
@@ -125,12 +126,26 @@ export async function guard_sync_record_write(
       SyncWriteRejection.WRONG_ORGANIZATION,
       ownership.rejection,
     );
+  return guard_owned_record_write(ctx, {
+    ...command,
+    incoming_record,
+    normalized_record: ownership.normalized_record,
+  });
+}
+
+async function guard_owned_record_write(
+  ctx: MutationCtx,
+  command: SyncWriteCommand & { normalized_record: Record<string, unknown> },
+): Promise<SyncWriteDecision> {
+  const scope_rejection = await find_scoped_write_rejection(ctx, command);
+  if (scope_rejection.status === OptionStatus.SOME)
+    return reject_sync_write(scope_rejection.value, scope_rejection.value);
   const normalized_record: Option<Record<string, unknown>> =
-    incoming_record.status === OptionStatus.SOME
-      ? { status: OptionStatus.SOME, value: ownership.normalized_record }
+    command.incoming_record.status === OptionStatus.SOME
+      ? { status: OptionStatus.SOME, value: command.normalized_record }
       : create_none_option();
   if (command.table_name !== SYSTEM_USERS_TABLE_NAME)
-    return allow_sync_write(ownership.normalized_record);
+    return allow_sync_write(command.normalized_record);
   return guard_system_user_fields(ctx, command, normalized_record);
 }
 

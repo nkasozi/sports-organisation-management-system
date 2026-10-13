@@ -1,12 +1,24 @@
-import { build_sync_outbox_key } from "$lib/adapters/repositories/syncOutbox/syncOutboxTypes";
+import {
+  build_sync_outbox_key,
+  SyncBaseVersionKind,
+  type SyncOutboxEntry,
+  SyncOutboxEntryStatus,
+} from "$lib/adapters/repositories/syncOutbox/syncOutboxTypes";
 import {
   type AsyncResult,
   create_failure_result,
   create_success_result,
-  type Result,
 } from "$lib/core/types/Result";
 
 import { outbox_table } from "./syncOutboxRepository";
+import {
+  load_server_copy,
+  ServerCopyStatus,
+} from "./syncOutboxReviewServerCopy";
+import {
+  KnownRecordVersionKind,
+  read_known_record_version,
+} from "./syncRecordVersionRows";
 import {
   convert_server_record_to_remote_change,
   type RemoteApplyDependencies,
@@ -18,81 +30,111 @@ import {
 } from "./syncRemoteApplyRecords";
 import type { ConvexClient } from "./syncTypes";
 
-const RECORD_LOOKUP_QUERY_NAME = "sync:get_record_by_local_id";
-const SERVER_COPY_UNAVAILABLE_ERROR =
-  "We couldn't load the saved copy from the server. Check your connection and try again.";
+const NO_LONGER_WAITING_ERROR =
+  "This change is no longer waiting for a decision";
+const SERVER_COPY_NOT_VISIBLE_ERROR =
+  "The saved copy of this record is not available to your account, so your change was kept. Retry it or ask an administrator for access.";
 
-const ServerCopyStatus = {
-  FOUND: "found",
-  NOT_FOUND: "not_found",
-} as const;
-
-type ServerCopy =
-  | { status: typeof ServerCopyStatus.FOUND; record: Record<string, unknown> }
-  | { status: typeof ServerCopyStatus.NOT_FOUND };
-
-interface DiscardRejectedDependencies extends RemoteApplyDependencies {
+export interface DiscardRejectedDependencies extends RemoteApplyDependencies {
   convex_client: ConvexClient;
 }
 
-function parse_server_copy(response: unknown): Result<ServerCopy> {
-  if (!(response instanceof Object))
-    return create_failure_result(SERVER_COPY_UNAVAILABLE_ERROR);
-  const lookup = response as { status?: unknown; record?: unknown };
-  switch (lookup.status) {
-    case ServerCopyStatus.FOUND:
-      return lookup.record instanceof Object
-        ? create_success_result({
-            status: ServerCopyStatus.FOUND,
-            record: lookup.record as Record<string, unknown>,
-          })
-        : create_failure_result(SERVER_COPY_UNAVAILABLE_ERROR);
-    case ServerCopyStatus.NOT_FOUND:
-      return create_success_result({ status: ServerCopyStatus.NOT_FOUND });
-    default:
-      return create_failure_result(SERVER_COPY_UNAVAILABLE_ERROR);
-  }
-}
+const NeverSyncedDiscardOutcome = {
+  REMOVED: "removed",
+  CHANGED_DURING_REVIEW: "changed_during_review",
+  SYNCED_BEFORE: "synced_before",
+} as const;
 
-async function load_server_copy(
-  dependencies: DiscardRejectedDependencies,
-  table_name: string,
-  local_id: string,
-): AsyncResult<ServerCopy> {
-  try {
-    return parse_server_copy(
-      await dependencies.convex_client.query(RECORD_LOOKUP_QUERY_NAME, {
-        table_name,
-        local_id,
-      }),
-    );
-  } catch (error) {
-    console.error("[Sync:Review] Server copy lookup failed", {
-      event: "sync_review_server_copy_lookup_failed",
-      table_name,
-      local_id,
-      error: String(error),
-    });
-    return create_failure_result(SERVER_COPY_UNAVAILABLE_ERROR);
-  }
+type NeverSyncedDiscardOutcomeValue =
+  (typeof NeverSyncedDiscardOutcome)[keyof typeof NeverSyncedDiscardOutcome];
+
+function was_synced_before(
+  entry: SyncOutboxEntry,
+  version_row: unknown,
+): boolean {
+  return (
+    entry.base_version.kind === SyncBaseVersionKind.KNOWN ||
+    read_known_record_version(version_row).kind !== KnownRecordVersionKind.NONE
+  );
 }
 
 async function remove_never_synced_record(
   dependencies: RemoteApplyDependencies,
-  table_name: string,
-  local_id: string,
-): Promise<boolean> {
+  entry: SyncOutboxEntry,
+): Promise<NeverSyncedDiscardOutcomeValue> {
   return run_remote_apply_transaction(
     dependencies,
-    table_name,
+    entry.table_name,
     async (tables) => {
-      const key = build_sync_outbox_key(table_name, local_id);
-      await tables.data.delete(local_id);
-      await tables.versions.delete(key);
+      const key = build_sync_outbox_key(entry.table_name, entry.local_id);
+      const current = await tables.outbox.get(key);
+      if (!current || current.change_token !== entry.change_token)
+        return NeverSyncedDiscardOutcome.CHANGED_DURING_REVIEW;
+      if (was_synced_before(entry, await tables.versions.get(key)))
+        return NeverSyncedDiscardOutcome.SYNCED_BEFORE;
+      await tables.data.delete(entry.local_id);
       await tables.outbox.delete(key);
-      return true;
+      return NeverSyncedDiscardOutcome.REMOVED;
     },
   );
+}
+
+async function discard_never_synced_change(
+  dependencies: RemoteApplyDependencies,
+  entry: SyncOutboxEntry,
+): AsyncResult<boolean> {
+  const outcome = await remove_never_synced_record(dependencies, entry);
+  switch (outcome) {
+    case NeverSyncedDiscardOutcome.REMOVED:
+      return create_success_result(true);
+    case NeverSyncedDiscardOutcome.CHANGED_DURING_REVIEW:
+      return create_failure_result(NO_LONGER_WAITING_ERROR);
+    case NeverSyncedDiscardOutcome.SYNCED_BEFORE:
+      console.warn("[Sync:Review] Server copy is not available to discard to", {
+        event: "sync_review_server_copy_not_visible",
+        table_name: entry.table_name,
+        local_id: entry.local_id,
+      });
+      return create_failure_result(SERVER_COPY_NOT_VISIBLE_ERROR);
+  }
+}
+
+async function read_waiting_rejected_entry(
+  dependencies: RemoteApplyDependencies,
+  table_name: string,
+  local_id: string,
+): AsyncResult<SyncOutboxEntry> {
+  const entry = await outbox_table(dependencies.database).get(
+    build_sync_outbox_key(table_name, local_id),
+  );
+  return entry && entry.status === SyncOutboxEntryStatus.REJECTED
+    ? create_success_result(entry)
+    : create_failure_result(NO_LONGER_WAITING_ERROR);
+}
+
+async function restore_server_copy(
+  dependencies: RemoteApplyDependencies,
+  entry: SyncOutboxEntry,
+  record: Record<string, unknown>,
+): AsyncResult<boolean> {
+  await apply_resolved_remote_record(
+    dependencies,
+    entry.table_name,
+    convert_server_record_to_remote_change({
+      ...record,
+      local_id: entry.local_id,
+    }),
+    {
+      kind: ResolvedRecordGuardKind.CHANGE_TOKEN,
+      change_token: entry.change_token,
+    },
+  );
+  console.log("[Sync:Review] Rejected change discarded for the server copy", {
+    event: "sync_review_rejected_change_discarded",
+    table_name: entry.table_name,
+    local_id: entry.local_id,
+  });
+  return create_success_result(true);
 }
 
 export async function discard_rejected_change(
@@ -100,37 +142,26 @@ export async function discard_rejected_change(
   table_name: string,
   local_id: string,
 ): AsyncResult<boolean> {
+  const waiting = await read_waiting_rejected_entry(
+    dependencies,
+    table_name,
+    local_id,
+  );
+  if (!waiting.success) return waiting;
   const server_copy = await load_server_copy(
     dependencies,
     table_name,
     local_id,
   );
   if (!server_copy.success) return server_copy;
-  if (server_copy.data.status === ServerCopyStatus.NOT_FOUND)
-    return create_success_result(
-      await remove_never_synced_record(dependencies, table_name, local_id),
-    );
-  const entry = await outbox_table(dependencies.database).get(
-    build_sync_outbox_key(table_name, local_id),
-  );
-  await apply_resolved_remote_record(
-    dependencies,
-    table_name,
-    convert_server_record_to_remote_change({
-      ...server_copy.data.record,
-      local_id,
-    }),
-    entry
-      ? {
-          kind: ResolvedRecordGuardKind.CHANGE_TOKEN,
-          change_token: entry.change_token,
-        }
-      : { kind: ResolvedRecordGuardKind.CONFLICTED_ENTRY },
-  );
-  console.log("[Sync:Review] Rejected change discarded for the server copy", {
-    event: "sync_review_rejected_change_discarded",
-    table_name,
-    local_id,
-  });
-  return create_success_result(true);
+  switch (server_copy.data.status) {
+    case ServerCopyStatus.NOT_FOUND:
+      return discard_never_synced_change(dependencies, waiting.data);
+    case ServerCopyStatus.FOUND:
+      return restore_server_copy(
+        dependencies,
+        waiting.data,
+        server_copy.data.record,
+      );
+  }
 }

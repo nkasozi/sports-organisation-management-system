@@ -10,9 +10,8 @@ import {
   log_convex_failure,
 } from "./convex_errors";
 import {
-  check_permission,
+  check_entity_permission_in_any_scope,
   type DataAction,
-  get_entity_data_category,
 } from "./permission_checks";
 import { load_active_system_user_by_email } from "./system_user_lookup";
 import { build_user_scope_filter } from "./user_scope_filter";
@@ -20,6 +19,8 @@ import { is_object_record, is_string } from "./value_guards";
 
 export { AUTH_DENIED_MESSAGE } from "./convex_errors";
 export {
+  check_entity_permission,
+  check_entity_permission_in_any_scope,
   check_permission,
   DataAction,
   get_entity_data_category,
@@ -41,6 +42,7 @@ export interface SystemUserRecord {
   player_id?: string;
   official_id?: string;
   status?: string;
+  version?: number;
 }
 
 interface ConvexIdentityRecord {
@@ -92,15 +94,14 @@ export async function require_permission(
   const auth_result = await require_auth(ctx);
   if (!auth_result.success) return auth_result;
   const user = auth_result.data;
-  const data_category = get_entity_data_category(entity_type);
-  if (check_permission(user.role, data_category, action)) return auth_result;
+  if (check_entity_permission_in_any_scope(user.role, entity_type, action))
+    return auth_result;
   return log_convex_failure(ConvexErrorCode.ACCESS_DENIED, {
     event: PERMISSION_DENIED_EVENT,
     user_id: user._id,
     role: user.role,
     action,
     entity_type,
-    data_category,
   });
 }
 

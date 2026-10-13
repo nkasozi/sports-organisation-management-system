@@ -12,13 +12,13 @@ export const GAME_ACTION_USER_MESSAGE = {
 } as const;
 
 export const GAME_ACTION_EVENT = {
+  SUBSTITUTION_REJECTED: "game_substitution_rejected",
   START_GAME_FAILED: "game_start_failed",
   END_GAME_FAILED: "game_end_failed",
   END_GAME_EVENT_RECORD_FAILED: "game_end_event_record_failed",
   CHANGE_PERIOD_FAILED: "game_period_change_failed",
   END_PERIOD_FAILED: "game_period_end_failed",
   END_PERIOD_UPDATE_FAILED: "game_period_end_update_failed",
-  FIRST_PERIOD_UPDATE_FAILED: "game_first_period_update_failed",
   RECORD_EVENT_FAILED: "game_event_record_failed",
   EXTRA_TIME_FAILED: "game_extra_time_record_failed",
   RELOAD_AFTER_LINEUPS_FAILED: "game_reload_after_lineups_failed",

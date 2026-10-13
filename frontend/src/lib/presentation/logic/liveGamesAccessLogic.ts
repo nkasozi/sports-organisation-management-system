@@ -13,12 +13,35 @@ export interface LiveGamesAuthorizationAdapter {
   ): AuthorizationResult;
 }
 
+const LIVE_GAMES_PERMISSION_LOG_EVENTS = {
+  READ_CHECK_FAILED: "live_games_read_permission_check_failed",
+  START_CHECK_FAILED: "live_games_start_permission_check_failed",
+} as const;
+
+const START_PERMISSION_UNVERIFIED_MESSAGE =
+  "We could not verify your permission to start games. Please try again.";
+const START_PERMISSION_DENIED_MESSAGE =
+  "Permission denied: You do not have permission to start games. This action requires Officials Manager, Organisation Admin, or Super Admin role.";
+
 interface LiveGamesPermissions {
   authorization_succeeded: boolean;
   is_read_authorized: boolean;
   denial_reason: string;
   can_start_games: boolean;
   permission_info_message: string;
+}
+
+function build_failed_read_permissions(): LiveGamesPermissions {
+  console.error("[LiveGames] Read permission check failed", {
+    event: LIVE_GAMES_PERMISSION_LOG_EVENTS.READ_CHECK_FAILED,
+  });
+  return {
+    authorization_succeeded: false,
+    is_read_authorized: false,
+    denial_reason: "",
+    can_start_games: false,
+    permission_info_message: "",
+  };
 }
 
 export async function load_live_games_permissions(
@@ -32,13 +55,7 @@ export async function load_live_games_permissions(
       "read",
     );
   if (!read_authorization.success || !read_authorization.data) {
-    return {
-      authorization_succeeded: false,
-      is_read_authorized: false,
-      denial_reason: "",
-      can_start_games: false,
-      permission_info_message: "",
-    };
+    return build_failed_read_permissions();
   }
 
   const update_authorization =
@@ -74,9 +91,14 @@ export async function validate_live_games_start_permission(
       "fixture",
       "update",
     );
-  if (!authorization_check.success || authorization_check.data?.is_authorized) {
-    return "";
+  if (!authorization_check.success || !authorization_check.data) {
+    console.error("[LiveGames] Start permission check failed", {
+      event: LIVE_GAMES_PERMISSION_LOG_EVENTS.START_CHECK_FAILED,
+    });
+    return START_PERMISSION_UNVERIFIED_MESSAGE;
   }
 
-  return "Permission denied: You do not have permission to start games. This action requires Officials Manager, Organisation Admin, or Super Admin role.";
+  return authorization_check.data.is_authorized
+    ? ""
+    : START_PERMISSION_DENIED_MESSAGE;
 }

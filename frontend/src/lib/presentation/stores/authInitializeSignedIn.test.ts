@@ -20,15 +20,21 @@ vi.mock("$lib/adapters/initialization/brandingSyncService", () => ({
   sync_branding_with_profile: auth_initialize_mocks.sync_branding_with_profile,
 }));
 
-vi.mock("./authHelpers", () => ({
-  generate_token_for_profile: auth_initialize_mocks.generate_token_for_profile,
-  load_saved_token: auth_initialize_mocks.load_saved_token,
-  load_sidebar_menu_for_role: auth_initialize_mocks.load_sidebar_menu_for_role,
-  save_profile_id: auth_initialize_mocks.save_profile_id,
-  save_token: auth_initialize_mocks.save_token,
-  sync_user_context_with_event_bus:
-    auth_initialize_mocks.sync_user_context_with_event_bus,
+vi.mock("./initialSyncStore", () => ({
+  resolve_current_device_session:
+    auth_initialize_mocks.resolve_current_device_session,
 }));
+
+vi.mock("./authOfflineVerifiedSessionRuntime", () => ({
+  restore_offline_verified_session_from_device:
+    auth_initialize_mocks.restore_offline_verified_session,
+}));
+
+vi.mock("./authHelpers", async () =>
+  (
+    await import("./authInitialize.test_support")
+  ).build_auth_helpers_module_mock(auth_initialize_mocks),
+);
 
 vi.mock("./authInitializationHelpers", () => ({
   create_default_anonymous_state:

@@ -50,6 +50,7 @@
     can_modify_game={page_state.can_modify_game}
     is_game_active={view_state.is_game_active}
     is_game_completed={view_state.is_game_completed}
+    is_awaiting_full_time={view_state.is_awaiting_full_time}
     show_extra_time_button={view_state.show_extra_time_button}
     downloading_report={page_state.downloading_report}
     period_button_config={to_option(view_state.period_button_config)}

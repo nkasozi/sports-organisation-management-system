@@ -7,9 +7,17 @@ import {
   type SyncOutboxEntry,
   SyncOutboxEntryStatus,
   SyncOutboxOperation,
+  type SyncRecordVersionRow,
 } from "$lib/adapters/repositories/syncOutbox/syncOutboxTypes";
 
 import { outbox_table, type OutboxTable } from "./syncOutboxRepository";
+import {
+  build_live_version_row,
+  build_tombstone_version_row,
+  type KnownRecordVersion,
+  read_known_record_version,
+  read_known_version_number,
+} from "./syncRecordVersionRows";
 
 const READ_WRITE_MODE = "rw";
 
@@ -47,15 +55,18 @@ export async function confirm_outbox_entry(
 ): Promise<boolean> {
   const key = build_sync_outbox_key(entry.table_name, entry.local_id);
   const versions = database.table(SYNC_RECORD_VERSIONS_TABLE_NAME);
-  const is_delete = entry.operation === SyncOutboxOperation.DELETE;
   return update_if_token_matches(
     database,
     entry,
     async (table) => {
       await table.delete(key);
-      return is_delete
-        ? versions.delete(key)
-        : versions.put({ ...pick_identity(entry), server_version });
+      return versions.put(
+        build_confirmed_version_row(
+          entry,
+          server_version,
+          read_known_record_version(await versions.get(key)),
+        ),
+      );
     },
     async (table, current) =>
       table.put({
@@ -65,11 +76,25 @@ export async function confirm_outbox_entry(
   );
 }
 
-function pick_identity(entry: SyncOutboxEntry): {
-  table_name: string;
-  local_id: string;
-} {
-  return { table_name: entry.table_name, local_id: entry.local_id };
+function build_confirmed_version_row(
+  entry: SyncOutboxEntry,
+  server_version: number,
+  previously_known: KnownRecordVersion,
+): SyncRecordVersionRow {
+  switch (entry.operation) {
+    case SyncOutboxOperation.UPSERT:
+      return build_live_version_row(
+        entry.table_name,
+        entry.local_id,
+        server_version,
+      );
+    case SyncOutboxOperation.DELETE:
+      return build_tombstone_version_row(
+        entry.table_name,
+        entry.local_id,
+        Math.max(server_version, read_known_version_number(previously_known)),
+      );
+  }
 }
 
 export async function mark_outbox_entry_rejected(

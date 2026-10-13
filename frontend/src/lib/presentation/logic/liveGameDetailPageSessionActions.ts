@@ -71,40 +71,12 @@ async function resolve_active_fixture_for_start(
   return { success: true, fixture: active_fixture };
 }
 
-async function apply_first_playing_period(
-  command: StartLiveGameCommand,
-  started_fixture: Fixture,
-): Promise<StartLiveGameResult> {
-  const first_period_id =
-    command.playing_periods[0]?.id ?? DEFAULT_FIRST_PERIOD_ID;
-  if (first_period_id === DEFAULT_FIRST_PERIOD_ID)
-    return {
-      success: true,
-      fixture: started_fixture,
-      toast_message: GAME_STARTED_TOAST_MESSAGE,
-    };
-  const period_result = await command.fixture_use_cases.update_period(
-    started_fixture.id,
-    first_period_id,
-    0,
-  );
-  if (!period_result.success) {
-    console.error("[LiveGameDetail] First period update failed", {
-      event: GAME_ACTION_EVENT.FIRST_PERIOD_UPDATE_FAILED,
-      fixture_id: started_fixture.id,
-      error: period_result.error,
-    });
-    return {
-      success: true,
-      fixture: started_fixture,
-      toast_message: GAME_STARTED_TOAST_MESSAGE,
-    };
-  }
-  return {
-    success: true,
-    fixture: { ...started_fixture, current_period: first_period_id } as Fixture,
-    toast_message: GAME_STARTED_TOAST_MESSAGE,
-  };
+function resolve_first_playing_period(
+  playing_periods: SportGamePeriod[],
+): Fixture["current_period"] {
+  return playing_periods.length > 0
+    ? playing_periods[0].id
+    : DEFAULT_FIRST_PERIOD_ID;
 }
 
 export async function start_live_game_detail_action(
@@ -115,6 +87,7 @@ export async function start_live_game_detail_action(
   const start_result = await start_game_session(
     active_fixture_result.fixture.id,
     command.fixture_use_cases,
+    resolve_first_playing_period(command.playing_periods),
   );
   if (!start_result.success)
     return build_game_action_failure({
@@ -123,7 +96,11 @@ export async function start_live_game_detail_action(
       technical_error: start_result.error,
       user_message: GAME_ACTION_USER_MESSAGE.START_GAME_FAILED,
     });
-  return apply_first_playing_period(command, start_result.data);
+  return {
+    success: true,
+    fixture: start_result.data,
+    toast_message: GAME_STARTED_TOAST_MESSAGE,
+  };
 }
 
 type EndLiveGameCommand = {

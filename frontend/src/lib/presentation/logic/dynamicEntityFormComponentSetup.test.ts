@@ -25,7 +25,7 @@ vi.mock("$lib/infrastructure/registry/useCaseFactories", () => ({
   get_official_use_cases: () => factories.official,
   get_official_associated_team_use_cases: () =>
     factories.official_associated_team,
-  get_player_team_membership_use_cases: () => factories.membership,
+  get_player_team_transfer_history_use_cases: () => factories.membership,
 }));
 
 vi.mock("../../infrastructure/registry/entityUseCasesRegistry", () => ({
@@ -79,7 +79,7 @@ describe("dynamicEntityFormComponentSetup", () => {
       error: entity_type,
     }));
     expect(build_dynamic_entity_form_external_dependencies()).toEqual({
-      player_team_membership_use_cases: factories.membership,
+      player_team_transfer_use_cases: factories.membership,
       conflict_dependencies: {
         fixture_use_cases: factories.fixture,
         team_use_cases: factories.team,

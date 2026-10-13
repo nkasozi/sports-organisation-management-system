@@ -21,6 +21,7 @@ export function create_fake_clerk(
     user: {
       id: "user_1",
       emailAddresses: [{ emailAddress: "ann@example.com" }],
+      primaryEmailAddress: { emailAddress: "ann@example.com" },
       fullName: "Ann Lee",
       firstName: "Ann",
       lastName: "Lee",

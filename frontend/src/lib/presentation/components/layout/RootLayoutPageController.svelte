@@ -5,7 +5,7 @@
     import { onDestroy, onMount } from "svelte";
     import { derived, get } from "svelte/store";
 
-    import { afterNavigate, goto } from "$app/navigation";
+    import { goto } from "$app/navigation";
     import { navigating, page } from "$app/stores";
     import {
         is_clerk_loaded,
@@ -16,20 +16,17 @@
         initialize_app_data,
         reset_initialization,
     } from "$lib/adapters/initialization/appInitializer";
-    import { EventBus } from "$lib/infrastructure/events/EventBus";
     import RootLayoutShell from "$lib/presentation/components/layout/RootLayoutShell.svelte";
-    import { ensure_route_access } from "$lib/presentation/logic/authGuard";
-    import {
-        is_in_app_navigation,
-        is_route_guard_exempt,
-    } from "$lib/presentation/logic/layoutLogic";
     import {
         create_hidden_login_local_change_prompt_state,
         LOGIN_LOCAL_CHANGE_PROMPT_CHOICE,
         type LoginLocalChangePromptState,
     } from "$lib/presentation/logic/layoutLoginLocalChangePrompt";
     import { create_login_local_change_prompt_gate } from "$lib/presentation/logic/layoutLoginLocalChangePromptGate";
-    import { sync_verified_user_login_session } from "$lib/presentation/logic/layoutLoginSync";
+    import {
+        guard_root_layout_initial_route,
+        register_root_layout_navigation_guards,
+    } from "$lib/presentation/logic/layoutNavigationGuardRuntime";
     import {
         create_root_layout_restore_progress_callbacks,
         create_root_layout_subscription_callbacks,
@@ -51,6 +48,11 @@
         type RootLayoutViewState,
     } from "$lib/presentation/logic/layoutRootLayoutViewState";
     import { subscribe_root_layout_state } from "$lib/presentation/logic/layoutRouteSubscriptions";
+    import {
+        complete_root_layout_pending_clerk_sign_out,
+        handle_root_layout_user_signed_in,
+        handle_root_layout_user_signed_out,
+    } from "$lib/presentation/logic/layoutSessionTransitionRuntime";
     import { run_startup_storage_recovery } from "$lib/presentation/logic/layoutStartupStorageRecoveryFlow";
     import { create_startup_storage_recovery_choice_gate } from "$lib/presentation/logic/layoutStartupStorageRecoveryGate";
     import {
@@ -66,6 +68,7 @@
     import {
         has_session_been_synced,
         initial_sync_store,
+        resolve_current_device_session,
     } from "$lib/presentation/stores/initialSyncStore";
 
     const VERCEL_ANALYTICS_FRAMEWORK = "sveltekit";
@@ -119,7 +122,8 @@
                 update_view_state,
                 is_app_ready: () => view_state.app_ready,
                 on_user_signed_in: () =>
-                    sync_verified_user_login_session(login_sync_dependencies),
+                    handle_root_layout_user_signed_in(login_sync_dependencies),
+                on_user_signed_out: handle_root_layout_user_signed_out,
             }),
         });
         return true;
@@ -136,14 +140,7 @@
         );
     }
 
-    afterNavigate(async ({ to, type }) => {
-        if (!view_state.app_ready || !to?.url?.pathname) return;
-        const pathname = to.url.pathname;
-        if (is_route_guard_exempt(pathname)) return;
-        if (!is_in_app_navigation(type)) await ensure_route_access(pathname);
-        if (!get(is_signed_in)) return;
-        EventBus.emit_page_viewed(pathname, document.title || pathname);
-    });
+    register_root_layout_navigation_guards(() => view_state.app_ready);
 
     onMount(async () => {
         view_state = { ...view_state, current_path: get(page).url.pathname };
@@ -153,6 +150,9 @@
             initialize_stores: initialize_root_layout_stores,
             subscribe_layout_state,
             has_session_been_synced,
+            resolve_current_device_session,
+            complete_pending_clerk_sign_out:
+                complete_root_layout_pending_clerk_sign_out,
             initialize_app_data,
             is_signed_in: () => get(is_signed_in),
             session_handlers: create_root_layout_session_handlers(
@@ -169,9 +169,7 @@
             return;
         }
         view_state = mark_root_layout_ready(view_state);
-        const initial_path = get(page).url.pathname;
-        if (!is_route_guard_exempt(initial_path))
-            await ensure_route_access(initial_path);
+        await guard_root_layout_initial_route(get(page).url.pathname);
     });
     onDestroy(() => {
         cleanup_layout_subscriptions();

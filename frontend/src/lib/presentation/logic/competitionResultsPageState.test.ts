@@ -46,6 +46,7 @@ describe("competitionResultsPageState", () => {
       teams: [],
       team_map: new Map(),
       sport_rules: build_match_report_sport_rules(void 0, void 0),
+      load_state: { status: "loaded" },
     });
     expect(
       find_competition_results_organization(

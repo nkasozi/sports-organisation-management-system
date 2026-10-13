@@ -1,4 +1,9 @@
 import {
+  type BootstrapAllowlist,
+  BootstrapAllowlistKind,
+  is_email_allowlisted,
+} from "./bootstrap_allowlist";
+import {
   GLOBAL_ORGANIZATION_ID,
   SUPER_ADMIN_ROLE,
   SystemUserStatus,
@@ -31,7 +36,11 @@ export const SeedCallerKind = {
 
 export type SeedCaller =
   | { kind: typeof SeedCallerKind.ANONYMOUS }
-  | { kind: typeof SeedCallerKind.UNREGISTERED; email: string }
+  | {
+      kind: typeof SeedCallerKind.UNREGISTERED;
+      email: string;
+      email_verified: boolean;
+    }
   | {
       kind: typeof SeedCallerKind.REGISTERED;
       email: string;
@@ -49,11 +58,15 @@ export const SeedRejection = {
   ANONYMOUS_CALLER: "anonymous_caller",
   BOOTSTRAP_CALLER_REGISTERED: "bootstrap_caller_registered",
   BOOTSTRAP_TARGET_NOT_CALLER: "bootstrap_target_not_caller",
+  BOOTSTRAP_ALLOWLIST_NOT_CONFIGURED: "bootstrap_allowlist_not_configured",
+  BOOTSTRAP_EMAIL_NOT_ALLOWED: "bootstrap_email_not_allowed",
+  BOOTSTRAP_EMAIL_UNVERIFIED: "bootstrap_email_unverified",
   CALLER_NOT_SUPER_ADMIN: "caller_not_super_admin",
   NO_ACTIVE_SUPER_ADMIN: "no_active_super_admin",
 } as const;
 
-type SeedRejectionValue = (typeof SeedRejection)[keyof typeof SeedRejection];
+export type SeedRejectionValue =
+  (typeof SeedRejection)[keyof typeof SeedRejection];
 
 type SeedDecision =
   | { status: typeof SeedDecisionStatus.ALLOWED }
@@ -66,6 +79,7 @@ interface SuperAdminSeedCommand {
   bootstrap: BootstrapState;
   caller: SeedCaller;
   target_email: string;
+  bootstrap_allowlist: BootstrapAllowlist;
 }
 
 const ALLOWED_SEED: SeedDecision = { status: SeedDecisionStatus.ALLOWED };
@@ -87,19 +101,35 @@ export function resolve_bootstrap_state(
     : { phase: BootstrapPhase.AWAITING_FIRST_SUPER_ADMIN };
 }
 
-function decide_bootstrap_claim(
-  caller: SeedCaller,
+function decide_unregistered_bootstrap_claim(
+  caller: Extract<SeedCaller, { kind: typeof SeedCallerKind.UNREGISTERED }>,
   target_email: string,
+  bootstrap_allowlist: BootstrapAllowlist,
 ): SeedDecision {
+  if (caller.email !== target_email)
+    return reject_seed(SeedRejection.BOOTSTRAP_TARGET_NOT_CALLER);
+  if (!caller.email_verified)
+    return reject_seed(SeedRejection.BOOTSTRAP_EMAIL_UNVERIFIED);
+  if (bootstrap_allowlist.kind === BootstrapAllowlistKind.NOT_CONFIGURED)
+    return reject_seed(SeedRejection.BOOTSTRAP_ALLOWLIST_NOT_CONFIGURED);
+  return is_email_allowlisted(bootstrap_allowlist, caller.email)
+    ? ALLOWED_SEED
+    : reject_seed(SeedRejection.BOOTSTRAP_EMAIL_NOT_ALLOWED);
+}
+
+function decide_bootstrap_claim(command: SuperAdminSeedCommand): SeedDecision {
+  const caller = command.caller;
   switch (caller.kind) {
     case SeedCallerKind.ANONYMOUS:
       return reject_seed(SeedRejection.ANONYMOUS_CALLER);
     case SeedCallerKind.REGISTERED:
       return reject_seed(SeedRejection.BOOTSTRAP_CALLER_REGISTERED);
     case SeedCallerKind.UNREGISTERED:
-      return caller.email === target_email
-        ? ALLOWED_SEED
-        : reject_seed(SeedRejection.BOOTSTRAP_TARGET_NOT_CALLER);
+      return decide_unregistered_bootstrap_claim(
+        caller,
+        command.target_email,
+        command.bootstrap_allowlist,
+      );
   }
 }
 
@@ -123,7 +153,7 @@ export function decide_super_admin_seed(
 ): SeedDecision {
   switch (command.bootstrap.phase) {
     case BootstrapPhase.AWAITING_FIRST_SUPER_ADMIN:
-      return decide_bootstrap_claim(command.caller, command.target_email);
+      return decide_bootstrap_claim(command);
     case BootstrapPhase.ORPHANED_WITHOUT_SUPER_ADMIN:
       return reject_seed(SeedRejection.NO_ACTIVE_SUPER_ADMIN);
     case BootstrapPhase.ESTABLISHED:

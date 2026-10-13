@@ -65,6 +65,21 @@ export interface SyncRecordVersion {
   server_version: number;
 }
 
+export const SyncRecordState = {
+  LIVE: "live",
+  DELETED: "deleted",
+} as const;
+
+export type SyncRecordStateValue =
+  (typeof SyncRecordState)[keyof typeof SyncRecordState];
+
+export type SyncRecordVersionRow = {
+  table_name: string;
+  local_id: string;
+  server_version: number;
+  record_state: SyncRecordStateValue;
+};
+
 export interface SyncCursor {
   table_name: string;
   after_sequence: number;

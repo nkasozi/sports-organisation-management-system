@@ -169,7 +169,7 @@ describe("liveGameDetailPageState", () => {
         away_score: 1,
         is_substitution_event: true,
         show_extra_time_button: true,
-        player_select_options: [{ value: "away-1", label: "#4 Bo Reed" }],
+        player_select_options: [],
         players_on_field_options: [{ value: "away-1", label: "#4 Bo Reed" }],
         assigned_officials: [{ name: "Sam Hill", role_name: "Referee" }],
         venue_location: "Kampala, Uganda",

@@ -32,6 +32,7 @@ describe("create_root_layout_subscription_callbacks", () => {
       update_view_state,
       is_app_ready: () => holder.view_state.app_ready,
       on_user_signed_in: vi.fn(async () => true),
+      on_user_signed_out: vi.fn(async () => true),
     });
 
     callbacks.on_path_change("/teams");
@@ -56,6 +57,7 @@ describe("create_root_layout_subscription_callbacks", () => {
       update_view_state,
       is_app_ready: () => holder.view_state.app_ready,
       on_user_signed_in,
+      on_user_signed_out: vi.fn(async () => true),
     });
 
     await callbacks.on_signed_in_change(false);
@@ -65,6 +67,33 @@ describe("create_root_layout_subscription_callbacks", () => {
 
     expect(on_user_signed_in).toHaveBeenCalledTimes(1);
     log_spy.mockRestore();
+  });
+});
+
+describe("create_root_layout_subscription_callbacks sign-out detection", () => {
+  it("checks for stale signed-in data only when a signed-in user becomes signed out", async () => {
+    const { holder, update_view_state } = create_view_state_holder();
+    const on_user_signed_out = vi.fn(async () => true);
+    const warn_spy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    vi.spyOn(console, "log").mockImplementation(() => {});
+    const callbacks = create_root_layout_subscription_callbacks({
+      update_view_state,
+      is_app_ready: () => holder.view_state.app_ready,
+      on_user_signed_in: vi.fn(async () => true),
+      on_user_signed_out,
+    });
+
+    await callbacks.on_signed_in_change(false);
+    expect(on_user_signed_out).not.toHaveBeenCalled();
+    await callbacks.on_signed_in_change(true);
+    await callbacks.on_signed_in_change(false);
+    await callbacks.on_signed_in_change(false);
+
+    expect(on_user_signed_out).toHaveBeenCalledTimes(1);
+    expect(warn_spy).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({ event: "user_sign_out_detected" }),
+    );
   });
 });
 

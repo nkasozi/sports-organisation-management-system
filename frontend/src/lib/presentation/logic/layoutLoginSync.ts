@@ -127,7 +127,7 @@ export async function sync_verified_user_login_session(
     LAYOUT_SESSION_PROGRESS.STOPPING_BACKGROUND.message,
     LAYOUT_SESSION_PROGRESS.STOPPING_BACKGROUND.percentage,
   );
-  dependencies.stop_background_sync();
+  await dependencies.stop_background_sync();
   const profile_result = await look_up_login_sync_profile(dependencies);
   if (!profile_result.success) return profile_result;
   await prepare_login_sync_workspace(dependencies, profile_result.data);

@@ -2,13 +2,10 @@ import type {
   Competition,
   SquadGenerationStrategy,
 } from "../entities/Competition";
-import { SQUAD_GENERATION_STRATEGY } from "../entities/CompetitionTypes";
 import {
-  create_none_option,
-  create_some_option,
-  type Option,
-  OptionStatus,
-} from "../types/Option";
+  type CompetitionRuleOverrides,
+  SQUAD_GENERATION_STRATEGY,
+} from "../entities/CompetitionTypes";
 import type { Result } from "../types/Result";
 import { create_success_result } from "../types/Result";
 import { fail_use_case, UseCaseErrorCode } from "../types/UseCaseFailure";
@@ -16,39 +13,23 @@ import type { CompetitionUseCases } from "../usecases/CompetitionUseCases";
 import type { OrganizationUseCases } from "../usecases/OrganizationUseCases";
 import type { SportUseCases } from "../usecases/SportUseCases";
 import {
-  DEFAULT_MAX_PLAYERS,
-  DEFAULT_MIN_PLAYERS,
-  DEFAULT_STARTERS_COUNT,
   FIXTURE_LINEUP_GENERATION_EVENT,
   FIXTURE_LINEUP_GENERATION_LOG_SCOPE,
   FIXTURE_LINEUP_GENERATION_MESSAGES,
-  NUMBER_TYPE_NAME,
 } from "./FixtureLineupGenerationConstants";
+import {
+  apply_competition_fixture_player_limit_overrides,
+  build_sport_fixture_player_limits,
+  DEFAULT_FIXTURE_PLAYER_LIMITS,
+  type FixturePlayerLimits,
+  has_complete_player_limit_overrides,
+} from "./fixturePlayerLimits";
 
-interface PlayerLimits {
-  min_players: number;
-  max_players: number;
-  starters_count: number;
-}
+type PlayerLimits = FixturePlayerLimits;
 
 export type PlayerRulesResult =
   | ({ success: true } & PlayerRules)
   | { success: false; error_message: string };
-
-interface PlayerLimitOverrides {
-  min_players: Option<number>;
-  max_players: Option<number>;
-}
-
-function read_override_limit(value: unknown): Option<number> {
-  return typeof value === NUMBER_TYPE_NAME
-    ? create_some_option(Number(value))
-    : create_none_option();
-}
-
-function option_value_or(option: Option<number>, fallback: number): number {
-  return option.status === OptionStatus.SOME ? option.value : fallback;
-}
 
 function fail_rules_lookup(
   user_message: string,
@@ -94,44 +75,36 @@ async function load_sport_player_limits(
       sport_result.error,
     );
   }
-  return create_success_result({
-    min_players:
-      sport_result.data.min_players_per_fixture || DEFAULT_MIN_PLAYERS,
-    max_players:
-      sport_result.data.max_players_per_fixture || DEFAULT_MAX_PLAYERS,
-    starters_count:
-      sport_result.data.max_players_on_field || DEFAULT_STARTERS_COUNT,
-  });
+  return create_success_result(
+    build_sport_fixture_player_limits(sport_result.data),
+  );
 }
 
 async function resolve_player_limits(
   competition: Competition,
-  overrides: PlayerLimitOverrides,
+  rule_overrides: CompetitionRuleOverrides,
   organization_use_cases: OrganizationUseCases,
   sport_use_cases: SportUseCases,
 ): Promise<Result<PlayerLimits>> {
-  const { min_players, max_players } = overrides;
-  if (
-    min_players.status === OptionStatus.SOME &&
-    max_players.status === OptionStatus.SOME
-  ) {
-    return create_success_result({
-      min_players: min_players.value,
-      max_players: max_players.value,
-      starters_count: Math.min(max_players.value, DEFAULT_STARTERS_COUNT),
-    });
-  }
+  if (has_complete_player_limit_overrides(rule_overrides))
+    return create_success_result(
+      apply_competition_fixture_player_limit_overrides(
+        DEFAULT_FIXTURE_PLAYER_LIMITS,
+        rule_overrides,
+      ),
+    );
   const sport_limits = await load_sport_player_limits(
     competition,
     organization_use_cases,
     sport_use_cases,
   );
   if (!sport_limits.success) return sport_limits;
-  return create_success_result({
-    min_players: option_value_or(min_players, sport_limits.data.min_players),
-    max_players: option_value_or(max_players, sport_limits.data.max_players),
-    starters_count: sport_limits.data.starters_count,
-  });
+  return create_success_result(
+    apply_competition_fixture_player_limit_overrides(
+      sport_limits.data,
+      rule_overrides,
+    ),
+  );
 }
 
 interface PlayerRules extends PlayerLimits {
@@ -157,10 +130,7 @@ async function load_player_rules(
   const rule_overrides = competition.rule_overrides ?? {};
   const limits_result = await resolve_player_limits(
     competition,
-    {
-      min_players: read_override_limit(rule_overrides.min_players_on_field),
-      max_players: read_override_limit(rule_overrides.max_players_on_field),
-    },
+    rule_overrides,
     organization_use_cases,
     sport_use_cases,
   );

@@ -46,4 +46,25 @@ describe("calculate_player_stats for points-based sports", () => {
       points: 3,
     });
   });
+
+  it("keeps the points stored on each event when the rules change later", () => {
+    const fixtures = [
+      {
+        home_team_id: "team_1",
+        away_team_id: "team_2",
+        game_events: [
+          { ...create_score("goal", "e1"), points_awarded: 1 },
+          { ...create_score("goal", "e2"), points_awarded: 0 },
+        ],
+      },
+    ];
+
+    const [player] = calculate_player_stats(
+      fixtures as never,
+      new Map([["team_1", { name: "Falcons" }]]) as never,
+      create_score_award_resolver([{ event_type: "goal", points_awarded: 3 }]),
+    );
+
+    expect(player.points).toBe(1);
+  });
 });

@@ -34,7 +34,7 @@ export interface LayoutLoginSyncDependencies extends LoginLocalChangeGuardDepend
   initial_sync_store: InitialSyncStorePort;
   auth_store: AuthStorePort;
   sync_store: SyncStorePort;
-  stop_background_sync(): void;
+  stop_background_sync(): Promise<unknown>;
   start_background_sync(): void;
   reset_database(): Promise<unknown>;
   reset_sync_metadata(): Promise<unknown>;

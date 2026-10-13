@@ -38,15 +38,13 @@ describe("run_header_logout", () => {
     };
   }
 
-  it("signs out through the single device teardown and lands on sign-in", async () => {
+  it("signs out through the single device teardown and lands in the signed-out demo", async () => {
     const command = create_command(true);
 
     const result = await run_header_logout(command);
 
     expect(result.success).toBe(true);
-    expect(command.sign_out_and_tear_down_device).toHaveBeenCalledWith(
-      "/sign-in",
-    );
+    expect(command.sign_out_and_tear_down_device).toHaveBeenCalledWith("/");
     expect(command.show_session_notice).not.toHaveBeenCalled();
   });
 

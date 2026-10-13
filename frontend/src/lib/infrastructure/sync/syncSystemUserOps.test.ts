@@ -125,7 +125,12 @@ describe("syncSystemUserOps", () => {
       { id: "team-1", name: "Team A", created_at: "2024-01-01T00:00:00.000Z" },
     ]);
     expect(fake.rows("sync_record_versions")).toEqual([
-      { table_name: "teams", local_id: "team-1", server_version: 4 },
+      {
+        table_name: "teams",
+        local_id: "team-1",
+        server_version: 4,
+        record_state: "live",
+      },
     ]);
     expect(
       sync_change_tracking_gate.describe_untracked_reason(

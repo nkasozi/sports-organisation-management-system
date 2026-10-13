@@ -11,7 +11,6 @@ import {
 } from "./sync_batch_record_types";
 import { persist_versioned_upsert } from "./sync_batch_record_writer";
 import { SyncResultAction } from "./sync_mutation_support";
-import { read_record_version } from "./sync_record_store";
 import type { AllowedSyncTable } from "./sync_table_catalog";
 import {
   load_sync_tombstone,
@@ -19,24 +18,13 @@ import {
   type SyncTombstone,
 } from "./sync_tombstones";
 import {
+  type BaseVersion,
   decide_versioned_upsert,
   type VersionedUpsertDecision,
   VersionedUpsertKind,
 } from "./sync_versioning";
 
-const VERSION_INCREMENT = 1;
 const NO_PREVIOUS_VERSION = 0;
-
-function read_previous_version(
-  existing_record: Option<Record<string, unknown>>,
-  tombstone: Option<SyncTombstone>,
-): number {
-  if (existing_record.status === OptionStatus.SOME)
-    return read_record_version(existing_record.value);
-  return tombstone.status === OptionStatus.SOME
-    ? tombstone.value.version
-    : NO_PREVIOUS_VERSION;
-}
 
 interface LegacyUpsertCommand {
   table_name: AllowedSyncTable;
@@ -62,7 +50,7 @@ function decide_legacy_upsert(
 export async function apply_legacy_upsert(
   ctx: MutationCtx,
   command: LegacyUpsertCommand,
-): Promise<Option<BatchRecordOutcome>> {
+): Promise<BatchRecordOutcome> {
   const tombstone = await load_sync_tombstone(
     ctx,
     command.table_name,
@@ -70,63 +58,117 @@ export async function apply_legacy_upsert(
   );
   const versioned = decide_legacy_upsert(command, tombstone);
   switch (versioned.kind) {
-    case VersionedUpsertKind.LEGACY_STALE:
-      return create_none_option();
+    case VersionedUpsertKind.CONFLICT:
+      return build_outcome(command.local_id, {
+        success: false,
+        name: SyncResultAction.CONFLICT_DETECTED,
+        server_version: versioned.current_version,
+      });
     case VersionedUpsertKind.DELETED_REMOTELY:
-      return create_some_option(
-        build_outcome(command.local_id, {
-          success: true,
-          name: SyncResultAction.DELETED_REMOTELY,
-          server_version: versioned.remote_deletion.version,
-        }),
-      );
+      return build_outcome(command.local_id, {
+        success: true,
+        name: SyncResultAction.DELETED_REMOTELY,
+        server_version: versioned.remote_deletion.version,
+      });
     case VersionedUpsertKind.INSERT:
     case VersionedUpsertKind.UPDATE:
     case VersionedUpsertKind.UNCHANGED:
+      return persist_versioned_upsert(ctx, {
+        ...command,
+        tombstone,
+        versioned,
+      });
+  }
+}
+
+export const ResolvedWriteStatus = {
+  WRITTEN: "written",
+  CONFLICT: "conflict",
+  DELETED_REMOTELY: "deleted_remotely",
+} as const;
+
+export type ResolvedWriteOutcome =
+  | {
+      status: typeof ResolvedWriteStatus.WRITTEN;
+      action: string;
+      server_version: number;
+    }
+  | {
+      status:
+        | typeof ResolvedWriteStatus.CONFLICT
+        | typeof ResolvedWriteStatus.DELETED_REMOTELY;
+      server_version: number;
+    };
+
+interface ResolvedWriteCommand {
+  table_name: AllowedSyncTable;
+  local_id: string;
+  record_data: Record<string, unknown>;
+  existing_record: Option<Record<string, unknown>>;
+  base_version: BaseVersion;
+}
+
+function build_resolved_write(
+  command: { existing_record: Option<Record<string, unknown>> },
+  server_version: number,
+): ResolvedWriteOutcome {
+  return {
+    status: ResolvedWriteStatus.WRITTEN,
+    action:
+      command.existing_record.status === OptionStatus.SOME
+        ? SyncResultAction.CONFLICT_RESOLVED
+        : SyncResultAction.CREATED_AFTER_CONFLICT,
+    server_version,
+  };
+}
+
+async function settle_resolved_decision(
+  ctx: MutationCtx,
+  command: ResolvedWriteCommand & {
+    tombstone: Option<SyncTombstone>;
+    versioned: VersionedUpsertDecision;
+  },
+): Promise<ResolvedWriteOutcome> {
+  const versioned = command.versioned;
+  switch (versioned.kind) {
     case VersionedUpsertKind.CONFLICT:
-      return create_some_option(
-        await persist_versioned_upsert(ctx, {
-          ...command,
-          tombstone,
-          versioned,
-        }),
-      );
+      return {
+        status: ResolvedWriteStatus.CONFLICT,
+        server_version: versioned.current_version,
+      };
+    case VersionedUpsertKind.DELETED_REMOTELY:
+      return {
+        status: ResolvedWriteStatus.DELETED_REMOTELY,
+        server_version: versioned.remote_deletion.version,
+      };
+    case VersionedUpsertKind.INSERT:
+    case VersionedUpsertKind.UPDATE:
+    case VersionedUpsertKind.UNCHANGED: {
+      const outcome = await persist_versioned_upsert(ctx, command);
+      return build_resolved_write(command, outcome.result.server_version);
+    }
   }
 }
 
 export async function write_resolved_record(
   ctx: MutationCtx,
-  command: {
-    table_name: AllowedSyncTable;
-    local_id: string;
-    record_data: Record<string, unknown>;
-    existing_record: Option<Record<string, unknown>>;
-  },
-): Promise<{ action: string; server_version: number }> {
+  command: ResolvedWriteCommand,
+): Promise<ResolvedWriteOutcome> {
   const tombstone = await load_sync_tombstone(
     ctx,
     command.table_name,
     command.local_id,
   );
-  const next_version =
-    read_previous_version(command.existing_record, tombstone) +
-    VERSION_INCREMENT;
-  const outcome = await persist_versioned_upsert(ctx, {
+  const versioned = decide_versioned_upsert({
+    existing_record: command.existing_record,
+    remote_deletion: read_remote_deletion(tombstone),
+    base_version: create_some_option(command.base_version),
+    incoming_data: command.record_data,
+    legacy_incoming_version: NO_PREVIOUS_VERSION,
+  });
+  return settle_resolved_decision(ctx, {
     ...command,
     tombstone,
-    versioned: {
-      kind:
-        command.existing_record.status === OptionStatus.SOME
-          ? VersionedUpsertKind.UPDATE
-          : VersionedUpsertKind.INSERT,
-      next_version,
-    },
+    versioned,
   });
-  return {
-    action:
-      command.existing_record.status === OptionStatus.SOME
-        ? SyncResultAction.CONFLICT_RESOLVED
-        : SyncResultAction.CREATED_AFTER_CONFLICT,
-    server_version: outcome.result.server_version,
-  };
 }

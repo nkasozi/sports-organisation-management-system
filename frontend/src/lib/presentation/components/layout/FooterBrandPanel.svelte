@@ -1,5 +1,10 @@
 <script lang="ts">
+    import { OptionStatus } from "$lib/core/types/Option";
     import { split_organization_name } from "$lib/presentation/logic/dashboardPageDisplayLogic";
+    import {
+        filter_links_with_safe_urls,
+        to_safe_image_source,
+    } from "$lib/presentation/logic/safeUrl";
     import type { SocialMediaLink } from "$lib/presentation/stores/branding";
 
     import {
@@ -14,6 +19,10 @@
     export let organization_tagline: string = "";
     export let social_media_links: SocialMediaLink[] = [];
     export let show_panel_borders: boolean = false;
+
+    $: safe_logo_source = to_safe_image_source(organization_logo_url);
+    $: safe_social_media_links =
+        filter_links_with_safe_urls(social_media_links);
 </script>
 
 <div
@@ -27,9 +36,9 @@
                 ? ''
                 : 'bg-theme-secondary-600'}"
         >
-            {#if has_custom_logo}
+            {#if has_custom_logo && safe_logo_source.status === OptionStatus.SOME}
                 <img
-                    src={organization_logo_url}
+                    src={safe_logo_source.value}
                     alt="Organization Logo"
                     class="h-full w-full object-cover"
                 />
@@ -70,8 +79,8 @@
     </p>
 
     <div class="flex space-x-4">
-        {#if social_media_links.length > 0}
-            {#each social_media_links as link (link.platform)}
+        {#if safe_social_media_links.length > 0}
+            {#each safe_social_media_links as link (link.platform)}
                 {#if link.url}
                     <a
                         href={link.url}

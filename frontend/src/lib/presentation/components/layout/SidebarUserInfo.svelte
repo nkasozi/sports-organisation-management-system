@@ -1,10 +1,16 @@
 <script lang="ts">
+    import { OptionStatus } from "$lib/core/types/Option";
+    import { to_safe_image_source } from "$lib/presentation/logic/safeUrl";
     export let sidebar_open: boolean = false;
     export let has_profile_picture: boolean = false;
     export let profile_picture_base64: string | undefined = undefined;
     export let profile_initials: string = "";
     export let profile_display_name: string = "";
     export let user_role_display: string = "";
+
+    $: safe_profile_picture_source = to_safe_image_source(
+        profile_picture_base64 ?? "",
+    );
 </script>
 
 <div
@@ -20,9 +26,9 @@
                     ? 'transparent'
                     : 'var(--color-secondary-600)'};"
             >
-                {#if has_profile_picture}
+                {#if has_profile_picture && safe_profile_picture_source.status === OptionStatus.SOME}
                     <img
-                        src={profile_picture_base64}
+                        src={safe_profile_picture_source.value}
                         alt="Profile"
                         class="h-full w-full object-cover"
                     />
@@ -52,9 +58,9 @@
                 ? 'transparent'
                 : 'var(--color-secondary-600)'};"
         >
-            {#if has_profile_picture}
+            {#if has_profile_picture && safe_profile_picture_source.status === OptionStatus.SOME}
                 <img
-                    src={profile_picture_base64}
+                    src={safe_profile_picture_source.value}
                     alt="Profile"
                     class="h-full w-full object-cover"
                 />

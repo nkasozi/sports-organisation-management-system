@@ -123,6 +123,14 @@ export const can_switch_profiles = derived(
   ($auth) => $auth.is_demo_session,
 );
 
+export const has_verified_account_session = derived(
+  auth_store,
+  ($auth) =>
+    $auth.is_initialized &&
+    !$auth.is_demo_session &&
+    $auth.current_token.status === PRESENCE_STATUS.PRESENT,
+);
+
 export function get_entity_authorization_level(
   entity_type: string,
 ): EntityAuthorizationMap {

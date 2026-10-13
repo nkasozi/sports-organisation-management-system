@@ -1,19 +1,25 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
-  get_logout_warning_modal_state,
+  build_logout_discard_message,
+  evaluate_logout_request,
+  LOGOUT_DISCARD_REASON,
   LOGOUT_WARNING_MODAL_STATE,
   type LogoutWarningSyncPort,
-  sync_logout_warning_modal_changes,
 } from "./logoutWarningModalLogic";
 
 function create_sync_port(
+  counts: number[],
   overrides: Partial<LogoutWarningSyncPort> = {},
 ): LogoutWarningSyncPort {
+  const remaining_counts = [...counts];
   return {
     get_unsynced_local_change_count: vi.fn(async () => ({
       success: true as const,
-      data: 0,
+      data:
+        remaining_counts.length > 1
+          ? (remaining_counts.shift() ?? 0)
+          : (remaining_counts[0] ?? 0),
     })),
     is_online: vi.fn(() => true),
     flush_pending_changes: vi.fn(async () => ({
@@ -24,94 +30,104 @@ function create_sync_port(
   };
 }
 
-describe("get_logout_warning_modal_state", () => {
-  it("reads a fresh outbox count instead of a cached summary", async () => {
-    const sync_port = create_sync_port({
-      get_unsynced_local_change_count: vi.fn(async () => ({
-        success: true as const,
-        data: 2,
-      })),
-    });
-
-    await expect(get_logout_warning_modal_state(sync_port)).resolves.toEqual({
-      modal_state: LOGOUT_WARNING_MODAL_STATE.WARNING,
-      should_confirm_logout: false,
-    });
-    expect(sync_port.get_unsynced_local_change_count).toHaveBeenCalledTimes(1);
+describe("evaluate_logout_request", () => {
+  beforeEach(() => {
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    vi.spyOn(console, "log").mockImplementation(() => {});
   });
 
-  it("warns about offline data loss when changes are pending offline", async () => {
-    const sync_port = create_sync_port({
-      get_unsynced_local_change_count: vi.fn(async () => ({
-        success: true as const,
-        data: 1,
-      })),
-      is_online: vi.fn(() => false),
-    });
+  it("signs out straight away when nothing is waiting to sync", async () => {
+    const sync_port = create_sync_port([0]);
+    const on_syncing = vi.fn(() => true);
 
-    await expect(get_logout_warning_modal_state(sync_port)).resolves.toEqual({
-      modal_state: LOGOUT_WARNING_MODAL_STATE.OFFLINE,
-      should_confirm_logout: false,
-    });
-  });
-
-  it("confirms logout straight away when nothing is pending", async () => {
     await expect(
-      get_logout_warning_modal_state(create_sync_port()),
+      evaluate_logout_request(sync_port, on_syncing),
+    ).resolves.toEqual({ state: LOGOUT_WARNING_MODAL_STATE.READY_TO_SIGN_OUT });
+    expect(sync_port.flush_pending_changes).not.toHaveBeenCalled();
+    expect(on_syncing).not.toHaveBeenCalled();
+  });
+
+  it("warns with the unsynced count without trying to sync while offline", async () => {
+    const sync_port = create_sync_port([3], { is_online: vi.fn(() => false) });
+
+    await expect(
+      evaluate_logout_request(sync_port, () => true),
     ).resolves.toEqual({
-      modal_state: LOGOUT_WARNING_MODAL_STATE.CHECKING,
-      should_confirm_logout: true,
+      state: LOGOUT_WARNING_MODAL_STATE.DISCARD_WARNING,
+      unsynced_change_count: 3,
+      reason: LOGOUT_DISCARD_REASON.OFFLINE,
+    });
+    expect(sync_port.flush_pending_changes).not.toHaveBeenCalled();
+  });
+
+  it("syncs first when online and signs out once everything was pushed", async () => {
+    const sync_port = create_sync_port([2, 0]);
+    const on_syncing = vi.fn(() => true);
+
+    await expect(
+      evaluate_logout_request(sync_port, on_syncing),
+    ).resolves.toEqual({ state: LOGOUT_WARNING_MODAL_STATE.READY_TO_SIGN_OUT });
+    expect(on_syncing).toHaveBeenCalledTimes(1);
+    expect(sync_port.flush_pending_changes).toHaveBeenCalledTimes(1);
+  });
+
+  it("warns with the remaining count when the sync fails", async () => {
+    const sync_port = create_sync_port([4, 1], {
+      flush_pending_changes: vi.fn(async () => ({
+        success: false as const,
+        error: "1 changes still unsynced",
+      })),
+    });
+
+    await expect(
+      evaluate_logout_request(sync_port, () => true),
+    ).resolves.toEqual({
+      state: LOGOUT_WARNING_MODAL_STATE.DISCARD_WARNING,
+      unsynced_change_count: 1,
+      reason: LOGOUT_DISCARD_REASON.SYNC_FAILED,
     });
   });
 
-  it("never confirms logout when the outbox cannot be read", async () => {
-    const sync_port = create_sync_port({
+  it("treats a sync skipped for being offline as an offline warning", async () => {
+    const sync_port = create_sync_port([2, 2], {
+      flush_pending_changes: vi.fn(async () => ({
+        success: true as const,
+        data: { skipped_offline: true },
+      })),
+    });
+
+    await expect(
+      evaluate_logout_request(sync_port, () => true),
+    ).resolves.toEqual({
+      state: LOGOUT_WARNING_MODAL_STATE.DISCARD_WARNING,
+      unsynced_change_count: 2,
+      reason: LOGOUT_DISCARD_REASON.OFFLINE,
+    });
+  });
+
+  it("asks for confirmation when the unsynced count cannot be read", async () => {
+    const sync_port = create_sync_port([0], {
       get_unsynced_local_change_count: vi.fn(async () => ({
         success: false as const,
-        error: "IndexedDB unavailable",
+        error: "outbox unreadable",
       })),
     });
 
-    await expect(get_logout_warning_modal_state(sync_port)).resolves.toEqual({
-      modal_state: LOGOUT_WARNING_MODAL_STATE.COUNT_UNAVAILABLE,
-      should_confirm_logout: false,
+    await expect(
+      evaluate_logout_request(sync_port, () => true),
+    ).resolves.toEqual({
+      state: LOGOUT_WARNING_MODAL_STATE.COUNT_UNAVAILABLE,
     });
   });
 });
 
-describe("sync_logout_warning_modal_changes", () => {
-  it("maps sync results to modal outcomes", async () => {
-    const flush_pending_changes = vi
-      .fn()
-      .mockResolvedValueOnce({ success: true, data: { skipped_offline: true } })
-      .mockResolvedValueOnce({ success: false, error: "network failed" })
-      .mockResolvedValueOnce({
-        success: true,
-        data: { skipped_offline: false },
-      });
-    const sync_port = create_sync_port({ flush_pending_changes });
-
-    await expect(sync_logout_warning_modal_changes(sync_port)).resolves.toEqual(
-      {
-        modal_state: LOGOUT_WARNING_MODAL_STATE.OFFLINE,
-        should_confirm_logout: false,
-        sync_error_message: "",
-      },
+describe("build_logout_discard_message", () => {
+  it("states how many changes will be permanently deleted", () => {
+    expect(build_logout_discard_message(3)).toBe(
+      "You have 3 changes that have not been synced. Signing out will permanently delete them from this device.",
     );
-    await expect(sync_logout_warning_modal_changes(sync_port)).resolves.toEqual(
-      {
-        modal_state: LOGOUT_WARNING_MODAL_STATE.SYNC_FAILED,
-        should_confirm_logout: false,
-        sync_error_message:
-          "Failed to sync changes to the server. Your local data may be lost if you logout.",
-      },
-    );
-    await expect(sync_logout_warning_modal_changes(sync_port)).resolves.toEqual(
-      {
-        modal_state: LOGOUT_WARNING_MODAL_STATE.SYNCING,
-        should_confirm_logout: true,
-        sync_error_message: "",
-      },
+    expect(build_logout_discard_message(1)).toBe(
+      "You have 1 change that has not been synced. Signing out will permanently delete it from this device.",
     );
   });
 });

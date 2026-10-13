@@ -1,4 +1,5 @@
 import { SHARED_ENTITY_CATEGORY_MAP } from "./shared_entity_category_map";
+import type { SharedEntityType } from "./shared_entity_types";
 
 export type SharedUserRole =
   | "super_admin"
@@ -24,45 +25,7 @@ export interface SharedCrudPermissions {
   can_delete: boolean;
 }
 
-export type SharedEntityType =
-  | "organization"
-  | "sport"
-  | "gender"
-  | "competitionformat"
-  | "identificationtype"
-  | "gameofficialrole"
-  | "gameeventtype"
-  | "teamstaffrole"
-  | "playerposition"
-  | "help"
-  | "settings"
-  | "systemsettings"
-  | "auditlog"
-  | "systemuser"
-  | "competition"
-  | "team"
-  | "official"
-  | "venue"
-  | "fixture"
-  | "fixturedetailssetup"
-  | "livegamelog"
-  | "gameeventlog"
-  | "playerteammembership"
-  | "playerteamtransferhistory"
-  | "teamstaff"
-  | "fixturelineup"
-  | "competitionteam"
-  | "competitionstage"
-  | "player"
-  | "playerprofile"
-  | "identification"
-  | "qualification"
-  | "jerseycolor"
-  | "profilelink"
-  | "activitycategory"
-  | "teamprofile"
-  | "officialperformancerating"
-  | "organizationsettings";
+export type { SharedEntityType } from "./shared_entity_types";
 
 export interface SharedEntityCategory {
   entity_type: SharedEntityType;

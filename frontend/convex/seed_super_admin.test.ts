@@ -1,6 +1,7 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { seed_super_admin } from "./authorization_mutations";
+import { BOOTSTRAP_ALLOWLIST_ENVIRONMENT_VARIABLE } from "./lib/bootstrap_allowlist";
 import {
   ANONYMOUS_IDENTITY,
   authenticated_identity,
@@ -41,6 +42,14 @@ function find_user(
 }
 
 describe("seed_super_admin bootstrap gating", () => {
+  beforeEach(() => {
+    vi.stubEnv(BOOTSTRAP_ALLOWLIST_ENVIRONMENT_VARIABLE, STRANGER_EMAIL);
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
   const users_without_super_admin = ALL_FIXTURE_USERS.filter(
     (user) => user.role !== "super_admin",
   );

@@ -1,5 +1,9 @@
 import type { QuickEventButton } from "$lib/core/entities/Fixture";
-import type { PlayerTimeOnStatus } from "$lib/core/entities/FixtureLineup";
+import type {
+  LineupPlayer,
+  PlayerTimeOnStatus,
+} from "$lib/core/entities/FixtureLineup";
+import { create_none_option, type Option } from "$lib/core/types/Option";
 import {
   record_live_game_detail_page_event_action,
   update_live_game_detail_player_time_on_action,
@@ -10,12 +14,18 @@ import {
   type LiveGameDetailPageState,
 } from "$lib/presentation/logic/liveGameDetailPageState";
 
+import { TEAM_SIDE } from "./gameEventConstants";
 import type { LiveGameDetailEventHandlersCommand } from "./liveGameDetailControllerEventSelection";
 import {
   set_live_game_detail_updating,
   update_live_game_detail_page_state,
 } from "./liveGameDetailControllerStateAccess";
 import { show_live_game_detail_toast } from "./liveGameDetailControllerUtils";
+import {
+  build_playing_period_window,
+  type PeriodMinuteWindow,
+} from "./liveGameEventTiming";
+import { derive_on_field_players } from "./liveGameOnFieldPlayers";
 import { TOAST_KIND } from "./toastConfig";
 
 type LiveGameDetailFixtureId = NonNullable<
@@ -58,6 +68,32 @@ export async function update_live_game_detail_player_time_on(
   return result.success;
 }
 
+function find_on_field_players(
+  command: LiveGameDetailEventHandlersCommand,
+  event_state: LiveGameDetailEventState,
+): LineupPlayer[] {
+  const page_state = command.get_page_state();
+  return derive_on_field_players(
+    event_state.selected_team_side === TEAM_SIDE.HOME
+      ? page_state.home_players
+      : page_state.away_players,
+    page_state.fixture?.game_events ?? [],
+    event_state.selected_team_side,
+  );
+}
+
+function build_current_period_window(
+  command: LiveGameDetailEventHandlersCommand,
+): Option<PeriodMinuteWindow> {
+  const view_state = command.get_view_state();
+  if (!view_state.current_period_id || !view_state.is_current_period_playing)
+    return create_none_option();
+  return build_playing_period_window(
+    view_state.current_period_id,
+    view_state.playing_periods,
+  );
+}
+
 function submit_live_game_detail_event(
   command: LiveGameDetailEventHandlersCommand,
   page_state: LiveGameDetailPageState,
@@ -73,6 +109,10 @@ function submit_live_game_detail_event(
     event_player_name: event_state.event_player_name,
     event_description: event_state.event_description,
     secondary_player_name: event_state.secondary_player_name,
+    secondary_player_id: event_state.secondary_player_id,
+    on_field_players: find_on_field_players(command, event_state),
+    max_players_on_field: command.get_view_state().max_players_on_field,
+    period_window: build_current_period_window(command),
     is_substitution_event: command.get_view_state().is_substitution_event,
     selected_player_id: event_state.selected_player_id,
     home_lineup_id: page_state.home_lineup_id,

@@ -1,4 +1,6 @@
 <script lang="ts">
+    import { OptionStatus } from "$lib/core/types/Option";
+    import { to_safe_image_source } from "$lib/presentation/logic/safeUrl";
     export let image_url: string;
     export let image_alt: string;
     export let fallback_text: string;
@@ -7,6 +9,8 @@
     export let subtitle: string | undefined = undefined;
     export let summary: string | undefined = undefined;
     export let metadata_items: Array<{ label: string; value: string }> = [];
+
+    $: safe_image_source = to_safe_image_source(image_url);
 </script>
 
 <section
@@ -19,9 +23,9 @@
             class="flex flex-col sm:flex-row sm:items-end -mt-16 sm:-mt-20 mb-6"
         >
             <div class="relative">
-                {#if image_url}
+                {#if safe_image_source.status === OptionStatus.SOME}
                     <img
-                        src={image_url}
+                        src={safe_image_source.value}
                         alt={image_alt}
                         class="w-32 h-32 sm:w-40 sm:h-40 rounded-full border-4 border-white dark:border-gray-800 object-cover shadow-lg bg-gray-100"
                     />

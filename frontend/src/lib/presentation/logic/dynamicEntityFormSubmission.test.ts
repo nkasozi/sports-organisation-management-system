@@ -2,24 +2,12 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { DYNAMIC_ENTITY_FORM_MESSAGE } from "./dynamicEntityFormMessages";
 import {
-  check_if_player_transfer_is_being_approved,
-  execute_dynamic_form_transfer_membership_change,
-  is_transfer_entity_and_status_just_changed_to_declined,
   resolve_dynamic_form_create_result,
   resolve_dynamic_form_update_result,
 } from "./dynamicEntityFormSubmission";
 
-const {
-  apply_player_transfer_membership_change_mock,
-  get_use_cases_for_entity_type_mock,
-} = vi.hoisted(() => ({
-  apply_player_transfer_membership_change_mock: vi.fn(),
+const { get_use_cases_for_entity_type_mock } = vi.hoisted(() => ({
   get_use_cases_for_entity_type_mock: vi.fn(),
-}));
-
-vi.mock("$lib/presentation/logic/playerTransferApprovalLogic", () => ({
-  apply_player_transfer_membership_change:
-    apply_player_transfer_membership_change_mock,
 }));
 
 vi.mock("../../infrastructure/registry/entityUseCasesRegistry", () => ({
@@ -28,7 +16,6 @@ vi.mock("../../infrastructure/registry/entityUseCasesRegistry", () => ({
 
 describe("dynamicEntityFormSubmission", () => {
   beforeEach(() => {
-    apply_player_transfer_membership_change_mock.mockReset();
     get_use_cases_for_entity_type_mock.mockReset();
   });
 
@@ -113,43 +100,5 @@ describe("dynamicEntityFormSubmission", () => {
       success: false,
       error: DYNAMIC_ENTITY_FORM_MESSAGE.UPDATE_NOT_SUPPORTED,
     });
-  });
-
-  it("detects transfer approvals and declined transitions from form status changes", () => {
-    expect(
-      check_if_player_transfer_is_being_approved(
-        "PlayerTeamTransferHistory",
-        true,
-        { status: "pending" } as never,
-        { status: "approved" },
-      ),
-    ).toBe(true);
-    expect(
-      is_transfer_entity_and_status_just_changed_to_declined(
-        "PlayerTeamTransferHistory",
-        true,
-        { status: "pending" } as never,
-        { status: "declined" },
-      ),
-    ).toBe(true);
-  });
-
-  it("applies the transfer membership change and returns the transfer error when it fails", async () => {
-    apply_player_transfer_membership_change_mock
-      .mockResolvedValueOnce({ success: true })
-      .mockResolvedValueOnce({ success: false, error: "membership failed" });
-
-    await expect(
-      execute_dynamic_form_transfer_membership_change(
-        { id: "transfer-1" } as never,
-        {} as never,
-      ),
-    ).resolves.toEqual({ success: true, data: true });
-    await expect(
-      execute_dynamic_form_transfer_membership_change(
-        { id: "transfer-2" } as never,
-        {} as never,
-      ),
-    ).resolves.toEqual({ success: false, error: "membership failed" });
   });
 });

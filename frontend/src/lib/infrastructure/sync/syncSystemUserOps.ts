@@ -6,14 +6,16 @@ import {
 } from "$lib/core/types/Result";
 
 import { ENTITY_STATUS } from "../../core/entities/StatusConstants";
+import { is_number_value } from "../utils/runtimeTypeGuards";
 import { get_database } from "./syncDataAccess";
+import { build_live_version_row } from "./syncRecordVersionRows";
 import {
   type RemoteApplyDependencies,
   run_remote_apply_transaction,
 } from "./syncRemoteApply";
 import {
   apply_remote_snapshot_records,
-  SnapshotCursorPolicy,
+  SnapshotRecordScope,
 } from "./syncRemoteApplyRecords";
 import type { ConvexClient } from "./syncTypes";
 import { EPOCH_TIMESTAMP } from "./syncTypes";
@@ -45,6 +47,7 @@ interface ConvexUserSnapshot {
   player_id?: string;
   official_id?: string;
   status?: string;
+  version?: number;
 }
 
 type ScopedTableName = "organizations" | "teams";
@@ -86,8 +89,18 @@ export async function write_convex_user_to_local_dexie(
   await run_remote_apply_transaction(
     create_remote_apply_dependencies(),
     SYSTEM_USERS_TABLE_NAME,
-    async (tables) =>
-      tables.data.put(build_local_user_record(convex_user, user_id)),
+    async (tables) => {
+      await tables.data.put(build_local_user_record(convex_user, user_id));
+      return is_number_value(convex_user.version)
+        ? tables.versions.put(
+            build_live_version_row(
+              SYSTEM_USERS_TABLE_NAME,
+              user_id,
+              convex_user.version,
+            ),
+          )
+        : false;
+    },
   );
   return user_id;
 }
@@ -100,7 +113,7 @@ async function apply_found_scoped_record(
     create_remote_apply_dependencies(),
     table_name,
     [record],
-    SnapshotCursorPolicy.KEEP_CURSOR,
+    SnapshotRecordScope.FULL_RECORDS,
   );
   return create_success_result(true);
 }

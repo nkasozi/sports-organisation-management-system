@@ -1,10 +1,9 @@
+import { build_round_dates } from "./FixtureGenerationSchedule";
 import type { CreateFixtureInput } from "./FixtureTypes";
 import { FIXTURE_STATUS } from "./StatusConstants";
 
 const BYE_TEAM_IDENTIFIER = "BYE";
 const ROUND_NAME_PREFIX = "Round ";
-const ISO_DATE_TIME_SEPARATOR = "T";
-const DAYS_BETWEEN_ROUNDS = 7;
 const NO_VENUE = "";
 const NO_STAGE_ID = "";
 
@@ -48,12 +47,30 @@ type RoundSchedule = {
   venue: CreateFixtureInput["venue"];
 };
 
+export function count_generated_rounds(
+  config: Pick<FixtureGenerationConfig, "team_ids" | "rounds">,
+): number {
+  return (with_bye_for_odd_count(config.team_ids).length - 1) * config.rounds;
+}
+
+function is_reverse_leg_round(
+  round_index: number,
+  rounds_per_leg: number,
+): boolean {
+  return Math.floor(round_index / rounds_per_leg) % 2 === 1;
+}
+
 export function generate_round_robin_fixtures(
   config: FixtureGenerationConfig,
 ): CreateFixtureInput[] {
   const initial_teams = with_bye_for_odd_count(config.team_ids);
   const rounds_per_leg = initial_teams.length - 1;
-  const total_rounds = rounds_per_leg * config.rounds;
+  const total_rounds = count_generated_rounds(config);
+  const round_dates = build_round_dates(
+    config.start_date,
+    config.match_days_per_week ?? [],
+    total_rounds,
+  );
   const venue = resolve_venue(config);
   const fixtures: CreateFixtureInput[] = [];
   let teams = initial_teams;
@@ -61,10 +78,10 @@ export function generate_round_robin_fixtures(
   for (let round_index = 0; round_index < total_rounds; round_index++) {
     const schedule: RoundSchedule = {
       round_number: round_index + 1,
-      scheduled_date: add_days_iso(config.start_date, round_index),
+      scheduled_date: round_dates[round_index],
       venue,
     };
-    const is_reverse_leg = round_index >= rounds_per_leg;
+    const is_reverse_leg = is_reverse_leg_round(round_index, rounds_per_leg);
     for (const pairing of build_round_pairings(teams, is_reverse_leg)) {
       fixtures.push(build_fixture_input(config, schedule, pairing));
     }
@@ -92,15 +109,6 @@ function resolve_venue(
     case VENUE_ROTATION.NEUTRAL:
       return NO_VENUE;
   }
-}
-
-function add_days_iso(
-  start_date: CreateFixtureInput["scheduled_date"],
-  round_index: number,
-): CreateFixtureInput["scheduled_date"] {
-  const date = new Date(start_date);
-  date.setDate(date.getDate() + round_index * DAYS_BETWEEN_ROUNDS);
-  return date.toISOString().split(ISO_DATE_TIME_SEPARATOR)[0];
 }
 
 function build_round_pairings(

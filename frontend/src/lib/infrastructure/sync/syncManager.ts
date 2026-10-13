@@ -5,6 +5,7 @@ import {
   type Result,
 } from "$lib/core/types/Result";
 
+import { sync_in_flight_work } from "./syncInFlightWork";
 import { sync_all_tables } from "./syncOrchestrator";
 import { SYNC_ALREADY_IN_PROGRESS_ERROR } from "./syncRunSignals";
 import type {
@@ -112,11 +113,14 @@ export class ConvexSyncManager {
     }
     this.is_syncing = true;
     try {
-      return await sync_all_tables(
-        this.convex_client_state.client,
-        direction_override ?? this.config.direction,
-        this.config.enabled_tables,
-        on_progress,
+      const client = this.convex_client_state.client;
+      return await sync_in_flight_work.run_tracked(() =>
+        sync_all_tables(
+          client,
+          direction_override ?? this.config.direction,
+          this.config.enabled_tables,
+          on_progress,
+        ),
       );
     } catch (error) {
       console.error("[Sync:Manager] Sync run threw unexpectedly", {

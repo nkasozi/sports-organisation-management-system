@@ -57,6 +57,16 @@ describe("PlayerTeamMembershipUseCases", () => {
 
   describe("create", () => {
     it("should create with valid input", async () => {
+      vi.mocked(mock_repository.find_all).mockResolvedValue({
+        success: true,
+        data: {
+          items: [],
+          total_count: 0,
+          page_number: 1,
+          page_size: 10,
+          total_pages: 0,
+        },
+      });
       vi.mocked(mock_repository.create).mockResolvedValue({
         success: true,
         data: create_test_membership(),

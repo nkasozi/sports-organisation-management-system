@@ -1,5 +1,7 @@
 <script lang="ts">
     import type { FieldMetadata } from "$lib/core/entities/BaseEntity";
+    import { OptionStatus } from "$lib/core/types/Option";
+    import { to_safe_image_source } from "$lib/presentation/logic/safeUrl";
 
     import {
         DYNAMIC_FORM_FALLBACK_IMAGE_PATH,
@@ -17,10 +19,11 @@
     $: is_image_upload = !!field.field_name
         .toLowerCase()
         .match(/(logo|profile|avatar|image|pic|photo)/);
+    $: safe_value_source = to_safe_image_source(value);
     $: preview_source =
-        value && value.startsWith("data:image")
-            ? value
-            : value || DYNAMIC_FORM_FALLBACK_IMAGE_PATH;
+        safe_value_source.status === OptionStatus.SOME
+            ? safe_value_source.value
+            : DYNAMIC_FORM_FALLBACK_IMAGE_PATH;
 
     function set_fallback_image(event: Event): boolean {
         const target = event.target as HTMLImageElement | undefined;
@@ -98,9 +101,9 @@
             on:change={(event) => handle_file_change(event, field.field_name)}
             disabled={is_read_only}
         />
-        {#if value}
+        {#if safe_value_source.status === OptionStatus.SOME}
             <img
-                src={value}
+                src={safe_value_source.value}
                 alt={field.display_name}
                 class="w-12 h-12 rounded object-cover border border-gray-300 dark:border-gray-600 shadow-sm bg-accent-50 dark:bg-accent-900"
                 on:error={hide_broken_image}

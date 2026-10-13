@@ -45,7 +45,12 @@ describe("push_table_outbox_to_convex upserts", () => {
     expect(result.success && result.data.records_pushed).toBe(1);
     expect(fake.rows("sync_outbox")).toEqual([]);
     expect(fake.rows("sync_record_versions")).toEqual([
-      { table_name: "teams", local_id: "team_a", server_version: 5 },
+      {
+        table_name: "teams",
+        local_id: "team_a",
+        server_version: 5,
+        record_state: "live",
+      },
     ]);
   });
 

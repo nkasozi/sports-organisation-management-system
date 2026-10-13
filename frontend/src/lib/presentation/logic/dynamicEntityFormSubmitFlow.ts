@@ -1,56 +1,39 @@
-import type { PlayerTeamMembershipUseCasesPort } from "$lib/core/interfaces/ports/internal/usecases/PlayerTeamMembershipUseCasesPort";
-import type { EntityCrudHandlers } from "$lib/core/types/EntityHandlers";
 import {
   create_failure_result,
   create_success_result,
   type Result,
 } from "$lib/core/types/Result";
 
-import type {
-  BaseEntity,
-  EntityMetadata,
-} from "../../core/entities/BaseEntity";
+import type { BaseEntity } from "../../core/entities/BaseEntity";
 import { DYNAMIC_ENTITY_FORM_SUBMIT_STATUS } from "./dynamicEntityFormConstants";
 import {
   DYNAMIC_ENTITY_FORM_EVENT,
   DYNAMIC_ENTITY_FORM_MESSAGE,
 } from "./dynamicEntityFormMessages";
 import {
-  check_if_player_transfer_is_being_approved,
-  execute_dynamic_form_transfer_membership_change,
-  is_transfer_entity_and_status_just_changed_to_declined,
   resolve_dynamic_form_create_result,
   resolve_dynamic_form_update_result,
 } from "./dynamicEntityFormSubmission";
-import type { DynamicFormData } from "./dynamicFormConstants";
+import type {
+  DynamicEntityFormSubmitCommand,
+  DynamicEntityFormSubmitResult,
+} from "./dynamicEntityFormSubmitTypes";
+import {
+  build_transfer_form_data_for_save,
+  plan_transfer_form_submission,
+  TRANSFER_FORM_PLAN,
+  type TransferFormPlan,
+} from "./dynamicEntityFormTransferPlan";
+import {
+  is_transfer_decline_plan,
+  resolve_transfer_after_save,
+} from "./dynamicEntityFormTransferResolution";
 import { validate_form_data_against_metadata } from "./dynamicFormLogic";
 
-export type DynamicEntityFormSubmitResult =
-  | { status: typeof DYNAMIC_ENTITY_FORM_SUBMIT_STATUS.SKIPPED }
-  | {
-      status: typeof DYNAMIC_ENTITY_FORM_SUBMIT_STATUS.INVALID;
-      validation_errors: Record<string, string>;
-    }
-  | {
-      status: typeof DYNAMIC_ENTITY_FORM_SUBMIT_STATUS.FAILED;
-      save_error_message: string;
-    }
-  | {
-      status: typeof DYNAMIC_ENTITY_FORM_SUBMIT_STATUS.SAVED;
-      saved_entity: BaseEntity;
-      transfer_declined: boolean;
-    };
-
-export type DynamicEntityFormSubmitCommand = {
-  entity_type: string;
-  entity_metadata?: EntityMetadata;
-  form_data: DynamicFormData;
-  is_edit_mode: boolean;
-  entity_data?: Partial<BaseEntity>;
-  crud_handlers?: EntityCrudHandlers;
-  permission_denied: boolean;
-  player_team_membership_use_cases: PlayerTeamMembershipUseCasesPort;
-};
+export type {
+  DynamicEntityFormSubmitCommand,
+  DynamicEntityFormSubmitResult,
+} from "./dynamicEntityFormSubmitTypes";
 
 const SAVE_CRASHED_LOG_MESSAGE =
   "[DynamicEntityForm] Save crashed unexpectedly";
@@ -88,70 +71,89 @@ async function request_dynamic_entity_form_save(
       );
 }
 
-async function apply_approved_transfer_update(
+type PersistedDynamicEntityForm = {
+  saved_entity: BaseEntity;
+  transfer_plan: TransferFormPlan;
+};
+
+function block_transfer_submission(
   command: DynamicEntityFormSubmitCommand,
-  saved_entity: BaseEntity,
-  should_apply_transfer_update: boolean,
-): Promise<Result<boolean, string>> {
-  if (!should_apply_transfer_update) return create_success_result(true);
-  return execute_dynamic_form_transfer_membership_change(
-    saved_entity,
-    command.player_team_membership_use_cases,
+  reason: string,
+): Result<never, string> {
+  console.warn("[DynamicEntityForm] Transfer status change blocked", {
+    event: DYNAMIC_ENTITY_FORM_EVENT.TRANSFER_STATUS_CHANGE_BLOCKED,
+    entity_type: command.entity_type,
+    is_edit_mode: command.is_edit_mode,
+  });
+  return create_failure_result(reason);
+}
+
+async function save_planned_dynamic_entity_form(
+  command: DynamicEntityFormSubmitCommand,
+  transfer_plan: TransferFormPlan,
+): Promise<Result<BaseEntity, string>> {
+  const save_result = await save_dynamic_entity_form_record({
+    ...command,
+    form_data: build_transfer_form_data_for_save(
+      command.form_data,
+      transfer_plan,
+    ),
+  });
+  if (save_result.success) return save_result;
+  console.error("[DynamicEntityForm] Save failed", {
+    event: DYNAMIC_ENTITY_FORM_EVENT.SAVE_FAILED,
+    entity_type: command.entity_type,
+    is_edit_mode: command.is_edit_mode,
+    error: save_result.error,
+  });
+  return create_failure_result(
+    save_result.error || DYNAMIC_ENTITY_FORM_MESSAGE.SAVE_FAILED,
   );
 }
 
 async function persist_dynamic_entity_form(
   command: DynamicEntityFormSubmitCommand,
-): Promise<Result<BaseEntity, string>> {
-  const should_apply_transfer_update =
-    check_if_player_transfer_is_being_approved(
-      command.entity_type,
-      command.is_edit_mode,
-      command.entity_data,
-      command.form_data,
-    );
-  const save_result = await save_dynamic_entity_form_record(command);
-  if (!save_result.success) {
-    console.error("[DynamicEntityForm] Save failed", {
-      event: DYNAMIC_ENTITY_FORM_EVENT.SAVE_FAILED,
-      entity_type: command.entity_type,
-      is_edit_mode: command.is_edit_mode,
-      error: save_result.error,
-    });
-    return create_failure_result(
-      save_result.error || DYNAMIC_ENTITY_FORM_MESSAGE.SAVE_FAILED,
-    );
-  }
-  const transfer_result = await apply_approved_transfer_update(
+): Promise<Result<PersistedDynamicEntityForm, string>> {
+  const transfer_plan = plan_transfer_form_submission({
+    entity_type: command.entity_type,
+    is_edit_mode: command.is_edit_mode,
+    entity_data: command.entity_data ?? {},
+    form_data: command.form_data,
+  });
+  if (transfer_plan.kind === TRANSFER_FORM_PLAN.BLOCKED)
+    return block_transfer_submission(command, transfer_plan.reason);
+  const save_result = await save_planned_dynamic_entity_form(
     command,
-    save_result.data,
-    should_apply_transfer_update,
+    transfer_plan,
   );
-  if (!transfer_result.success) {
-    console.error("[DynamicEntityForm] Transfer membership update failed", {
+  if (!save_result.success) return save_result;
+  const resolution_result = await resolve_transfer_after_save(
+    transfer_plan,
+    save_result.data,
+    command.player_team_transfer_use_cases,
+  );
+  if (!resolution_result.success) {
+    console.error("[DynamicEntityForm] Transfer resolution failed", {
       event: DYNAMIC_ENTITY_FORM_EVENT.TRANSFER_MEMBERSHIP_UPDATE_FAILED,
       entity_type: command.entity_type,
       entity_id: save_result.data.id,
-      error: transfer_result.error,
+      error: resolution_result.error,
     });
-    return create_failure_result(transfer_result.error);
+    return resolution_result;
   }
-  return save_result;
+  return create_success_result({
+    saved_entity: resolution_result.data,
+    transfer_plan,
+  });
 }
 
 function build_saved_submit_result(
-  command: DynamicEntityFormSubmitCommand,
-  saved_entity: BaseEntity,
+  persisted: PersistedDynamicEntityForm,
 ): DynamicEntityFormSubmitResult {
   return {
     status: DYNAMIC_ENTITY_FORM_SUBMIT_STATUS.SAVED,
-    saved_entity,
-    transfer_declined: is_transfer_entity_and_status_just_changed_to_declined(
-      command.entity_type,
-      command.is_edit_mode,
-      command.entity_data,
-      command.form_data,
-    ),
+    saved_entity: persisted.saved_entity,
+    transfer_declined: is_transfer_decline_plan(persisted.transfer_plan),
   };
 }
 
@@ -182,5 +184,5 @@ export async function submit_dynamic_entity_form(
       save_error_message: persist_result.error,
     };
   }
-  return build_saved_submit_result(command, persist_result.data);
+  return build_saved_submit_result(persist_result.data);
 }

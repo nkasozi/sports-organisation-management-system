@@ -11,6 +11,7 @@
         get_clerk,
         get_session_token,
     } from "$lib/adapters/iam/clerkAuthService";
+    import { read_primary_email_address } from "$lib/adapters/iam/clerkSessionStateBuilders";
     import {
         AuthCheckerAccessStatus,
         CURRENT_USER_PROFILE_QUERY,
@@ -46,7 +47,7 @@
         const clerk_result = get_clerk();
         if (!clerk_result.success) return UNAVAILABLE_CLERK_IDENTITY;
         const { session, user } = clerk_result.data;
-        const user_email = user?.emailAddresses?.[0]?.emailAddress ?? "";
+        const user_email = user ? read_primary_email_address(user) : "";
         return {
             clerk_ready: true,
             is_signed_in: !!session,

@@ -148,4 +148,24 @@ describe("liveGameDetailPageDerivedState", () => {
       }).current_period_label,
     ).toBe("Full Time");
   });
+
+  it("waits for full time after the final period without allowing live actions", () => {
+    const derived_state = derive_live_game_detail_view_state({
+      event_state: create_live_game_detail_event_state(),
+      page_state: {
+        ...create_live_game_detail_page_state(),
+        fixture: {
+          current_period: "finished",
+          status: "in_progress",
+          game_events: [],
+        } as never,
+      },
+    });
+
+    expect(derived_state.is_game_active).toBe(false);
+    expect(derived_state.is_awaiting_full_time).toBe(true);
+    expect(derived_state.is_game_completed).toBe(false);
+    expect(derived_state.show_extra_time_button).toBe(false);
+    expect(derived_state.period_button_config).toBeUndefined();
+  });
 });

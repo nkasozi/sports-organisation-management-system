@@ -24,6 +24,13 @@ vi.mock("./syncOrchestratorPendingTables", () => ({
   }),
 }));
 
+vi.mock("./syncOutboxPermissionRejection", () => ({
+  reject_unpermitted_pending_entries: async () => ({
+    success: true,
+    data: [],
+  }),
+}));
+
 vi.mock("./syncTableSync", () => ({
   sync_table_changes: async (command: { table_name: string }) => {
     table_calls.table_names.push(command.table_name);

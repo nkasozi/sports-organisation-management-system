@@ -154,5 +154,32 @@ describe("ICalService", () => {
       expect(result).toContain("DESCRIPTION:Line 1\\nLine 2");
       expect(result).toContain("LOCATION:Stadium\\, City");
     });
+
+    it("should escape carriage returns so text cannot inject iCal properties", () => {
+      const events = [
+        {
+          uid: "event-1@test",
+          title: "Match\r\nATTENDEE:mailto:x@example.com",
+          description: "Line 1\r\nLine 2\rLine 3",
+          location: "",
+          start_datetime: "2026-01-15T14:00:00.000Z",
+          end_datetime: "2026-01-15T16:00:00.000Z",
+          is_all_day: false,
+          reminder_minutes_before: 0,
+        },
+      ] as ICalEvent[];
+      const config = {
+        feed_name: "Test Calendar",
+        organization_name: "Test Organization",
+        timezone: "UTC",
+        reminder_minutes_before: 60,
+      } as ICalFeedConfig;
+
+      const result = generate_ical_feed(events, config);
+
+      expect(result).toContain("SUMMARY:Match\\nATTENDEE:mailto:x@example.com");
+      expect(result).toContain("DESCRIPTION:Line 1\\nLine 2\\nLine 3");
+      expect(result).not.toContain("\r\nATTENDEE");
+    });
   });
 });

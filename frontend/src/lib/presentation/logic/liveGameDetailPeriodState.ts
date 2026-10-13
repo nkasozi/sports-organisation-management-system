@@ -87,7 +87,7 @@ export function build_period_button_config(
       label: `End ${current_period_definition.name}`,
       icon: "⏹️",
       is_end_action: true,
-      next_period: next_period?.id ?? "finished",
+      next_period: next_period?.id ?? GAME_PERIOD.FINISHED,
       message: `Are you sure you want to end ${current_period_definition.name}?`,
       confirm_text: `End ${current_period_definition.name}`,
     };

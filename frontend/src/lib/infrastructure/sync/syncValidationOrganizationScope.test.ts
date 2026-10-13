@@ -45,7 +45,7 @@ describe("filter_records_by_organization_scope", () => {
     expect(filtered).toHaveLength(3);
   });
 
-  it("org_admin sees only own org records plus globals", () => {
+  it("org_admin sees only own org records, never wildcard records in tenant tables", () => {
     const caller = build_mock_system_user({ organization_id: "org_a" });
     const filtered = filter_records_by_organization_scope(
       all_records,
@@ -53,9 +53,9 @@ describe("filter_records_by_organization_scope", () => {
       "teams",
       { organization_id: "org_a" },
     );
-    expect(filtered).toHaveLength(2);
+    expect(filtered).toHaveLength(1);
     expect(filtered).toContain(organization_a_record);
-    expect(filtered).toContain(global_record);
+    expect(filtered).not.toContain(global_record);
     expect(filtered).not.toContain(organization_b_record);
   });
 

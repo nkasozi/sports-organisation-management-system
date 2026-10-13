@@ -114,5 +114,6 @@ export function calculate_team_standings(
     finalize_team_standings([...standings_map.values()], completed_fixtures),
     completed_fixtures,
     tie_breakers,
+    points_config,
   );
 }

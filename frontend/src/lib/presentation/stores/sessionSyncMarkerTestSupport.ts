@@ -17,6 +17,14 @@ const signed_out_clerk_state: ClerkSessionState = {
 const mock_clerk_state: { current: ClerkSessionState } = {
   current: signed_out_clerk_state,
 };
+const mock_clerk_reachability: { current: { status: string } } = {
+  current: { status: "confirmed" },
+};
+
+export function set_clerk_reachability(status: string): boolean {
+  mock_clerk_reachability.current = { status };
+  return true;
+}
 export const mock_app_settings_store: Record<string, string> = {};
 export const mock_initialize_clerk = vi.fn(async () => true);
 
@@ -74,6 +82,7 @@ export function reset_session_sync_test_state(): boolean {
     (key) => delete mock_app_settings_store[key],
   );
   mock_initialize_clerk.mockClear();
+  set_clerk_reachability("confirmed");
   return set_signed_out_clerk_session_state();
 }
 
@@ -82,6 +91,7 @@ export function create_clerk_auth_service_mock(): {
     subscribe: (callback: (value: unknown) => void) => () => void;
   };
   initialize_clerk: typeof mock_initialize_clerk;
+  get_clerk_reachability: () => { status: string };
 } {
   return {
     clerk_session: {
@@ -91,6 +101,7 @@ export function create_clerk_auth_service_mock(): {
       },
     },
     initialize_clerk: mock_initialize_clerk,
+    get_clerk_reachability: () => mock_clerk_reachability.current,
   };
 }
 

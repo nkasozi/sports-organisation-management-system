@@ -40,6 +40,7 @@ export async function execute_conflict_resolution(
     local_id: conflict.local_id,
     resolved_data,
     resolution_action: action,
+    base_version: conflict.remote_version,
   };
 
   const result = await resolve_conflict(convex_client_result.data, request);

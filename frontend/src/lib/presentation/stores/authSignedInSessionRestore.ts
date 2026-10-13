@@ -25,11 +25,10 @@ function is_token_profile_matching_clerk_user(
   token_profile_state: TokenProfileState,
   clerk_email_state: ClerkEmailState,
 ): boolean {
+  if (clerk_email_state.status !== PRESENCE_STATUS.PRESENT) return false;
   return (
-    clerk_email_state.status !== PRESENCE_STATUS.PRESENT ||
-    (token_profile_state.status === PROFILE_MATCH_STATUS.FOUND &&
-      token_profile_state.profile.email.toLowerCase() ===
-        clerk_email_state.email)
+    token_profile_state.status === PROFILE_MATCH_STATUS.FOUND &&
+    token_profile_state.profile.email.toLowerCase() === clerk_email_state.email
   );
 }
 

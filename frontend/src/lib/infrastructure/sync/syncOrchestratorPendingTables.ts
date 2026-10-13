@@ -7,6 +7,8 @@ import {
 
 import { list_tables_with_pending_entries } from "./syncOutboxRepository";
 
+const PULL_DIRECTION = "pull";
+
 export async function load_tables_with_pending_changes(
   database: SportSyncDatabase,
   is_pull_only: boolean,

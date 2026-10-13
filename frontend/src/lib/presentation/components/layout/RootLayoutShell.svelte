@@ -6,6 +6,7 @@
     import Layout from "$lib/presentation/components/layout/Layout.svelte";
     import LoginLocalChangesPrompt from "$lib/presentation/components/layout/LoginLocalChangesPrompt.svelte";
     import PublicLayout from "$lib/presentation/components/layout/PublicLayout.svelte";
+    import SessionEndedNoticeBanner from "$lib/presentation/components/layout/SessionEndedNoticeBanner.svelte";
     import SessionSyncNoticeBanner from "$lib/presentation/components/layout/SessionSyncNoticeBanner.svelte";
     import StorageRecoveryPrompt from "$lib/presentation/components/layout/StorageRecoveryPrompt.svelte";
     import FullScreenOverlay from "$lib/presentation/components/ui/FullScreenOverlay.svelte";
@@ -57,6 +58,7 @@
     }}
 >
     <SessionSyncNoticeBanner />
+    <SessionEndedNoticeBanner />
     {#if login_local_change_prompt_state.status === LOGIN_LOCAL_CHANGE_PROMPT_STATUS.AWAITING_CHOICE}
         <LoginLocalChangesPrompt
             prompt_state={login_local_change_prompt_state}

@@ -1,130 +1,41 @@
 <script lang="ts">
-    import {
-        LOGOUT_WARNING_MODAL_STATE,
-        type LogoutWarningModalState,
-    } from "$lib/presentation/logic/logoutWarningModalLogic";
+    import { LOGOUT_WARNING_MODAL_STATE } from "$lib/presentation/logic/logoutWarningModalLogic";
 
-    export let modal_state: LogoutWarningModalState;
-    export let sync_error_message: string;
-    export let on_cancel: () => void;
-    export let on_logout_anyway: () => void;
-    export let on_sync_and_logout: () => Promise<void>;
+    export let modal_state:
+        | typeof LOGOUT_WARNING_MODAL_STATE.CHECKING
+        | typeof LOGOUT_WARNING_MODAL_STATE.SYNCING;
 </script>
 
-{#if modal_state === LOGOUT_WARNING_MODAL_STATE.CHECKING}
-    <div class="flex flex-col items-center py-4">
+<div
+    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="logout-progress-title"
+    tabindex="-1"
+>
+    <div
+        class="bg-white dark:bg-accent-800 rounded-lg shadow-xl max-w-md w-full p-6 flex flex-col items-center"
+    >
         <span
             class="animate-spin rounded-full h-8 w-8 border-2 border-theme-primary-200 border-t-theme-primary-600 mb-4"
         ></span>
-        <p class="text-accent-600 dark:text-accent-400">
-            Checking for unsynced data...
-        </p>
-    </div>
-{:else if modal_state === LOGOUT_WARNING_MODAL_STATE.WARNING}
-    <div class="space-y-6">
-        <div>
+        {#if modal_state === LOGOUT_WARNING_MODAL_STATE.SYNCING}
             <h3
-                id="modal-title"
-                class="text-lg font-semibold text-accent-900 dark:text-accent-100"
+                id="logout-progress-title"
+                class="text-lg font-semibold text-accent-900 dark:text-accent-100 mb-2"
             >
-                Unsynced Changes Detected
+                Syncing your changes
             </h3>
-            <p class="mt-2 text-accent-600 dark:text-accent-400">
-                You have local changes that haven't been synced to the server
-                yet. Would you like to sync your data before logging out?
+            <p class="text-accent-600 dark:text-accent-400 text-center">
+                Uploading your changes before signing out...
             </p>
-        </div>
-        <div class="flex flex-col gap-2">
-            <button
-                type="button"
-                class="btn btn-primary w-full"
-                on:click={on_sync_and_logout}>Sync and Logout</button
+        {:else}
+            <p
+                id="logout-progress-title"
+                class="text-accent-600 dark:text-accent-400"
             >
-            <button
-                type="button"
-                class="btn bg-red-600 hover:bg-red-700 text-white w-full"
-                on:click={on_logout_anyway}
-                >Logout Without Syncing (Data Will Be Lost)</button
-            >
-            <button
-                type="button"
-                class="btn btn-outline w-full"
-                on:click={on_cancel}>Cancel</button
-            >
-        </div>
-    </div>
-{:else if modal_state === LOGOUT_WARNING_MODAL_STATE.SYNCING}
-    <div class="flex flex-col items-center py-4">
-        <span
-            class="animate-spin rounded-full h-8 w-8 border-2 border-theme-primary-200 border-t-theme-primary-600 mb-4"
-        ></span>
-        <h3
-            class="text-lg font-semibold text-accent-900 dark:text-accent-100 mb-2"
-        >
-            Syncing Your Data
-        </h3>
-        <p class="text-accent-600 dark:text-accent-400 text-center">
-            Please wait while we upload your changes to the server...
-        </p>
-    </div>
-{:else if modal_state === LOGOUT_WARNING_MODAL_STATE.SYNC_FAILED}
-    <div class="space-y-6">
-        <div>
-            <h3
-                id="modal-title"
-                class="text-lg font-semibold text-accent-900 dark:text-accent-100"
-            >
-                Sync Failed
-            </h3>
-            <p class="mt-2 text-accent-600 dark:text-accent-400">
-                {sync_error_message}
+                Checking for unsynced changes...
             </p>
-        </div>
-        <div class="flex flex-col gap-2">
-            <button
-                type="button"
-                class="btn btn-primary w-full"
-                on:click={on_sync_and_logout}>Try Again</button
-            >
-            <button
-                type="button"
-                class="btn bg-red-600 hover:bg-red-700 text-white w-full"
-                on:click={on_logout_anyway}
-                >Logout Anyway (Data Will Be Lost)</button
-            >
-            <button
-                type="button"
-                class="btn btn-outline w-full"
-                on:click={on_cancel}>Cancel</button
-            >
-        </div>
+        {/if}
     </div>
-{:else if modal_state === LOGOUT_WARNING_MODAL_STATE.OFFLINE}
-    <div class="space-y-6">
-        <div>
-            <h3
-                id="modal-title"
-                class="text-lg font-semibold text-accent-900 dark:text-accent-100"
-            >
-                You're Offline
-            </h3>
-            <p class="mt-2 text-accent-600 dark:text-accent-400">
-                You have unsynced changes but are currently offline. These
-                changes cannot be saved to the server until you're back online.
-            </p>
-        </div>
-        <div class="flex flex-col gap-2">
-            <button
-                type="button"
-                class="btn bg-red-600 hover:bg-red-700 text-white w-full"
-                on:click={on_logout_anyway}
-                >Logout Anyway (Data Will Be Lost)</button
-            >
-            <button
-                type="button"
-                class="btn btn-outline w-full"
-                on:click={on_cancel}>Stay Logged In</button
-            >
-        </div>
-    </div>
-{/if}
+</div>

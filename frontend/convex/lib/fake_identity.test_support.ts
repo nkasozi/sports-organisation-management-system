@@ -9,6 +9,7 @@ export type FakeIdentity =
       status: typeof FakeIdentityStatus.AUTHENTICATED;
       email: string;
       subject: string;
+      email_verified: boolean;
     };
 
 export function authenticated_identity(email: string): FakeIdentity {
@@ -16,6 +17,16 @@ export function authenticated_identity(email: string): FakeIdentity {
     status: FakeIdentityStatus.AUTHENTICATED,
     email,
     subject: `subject_${email}`,
+    email_verified: true,
+  };
+}
+
+export function unverified_identity(email: string): FakeIdentity {
+  return {
+    status: FakeIdentityStatus.AUTHENTICATED,
+    email,
+    subject: `subject_${email}`,
+    email_verified: false,
   };
 }
 

@@ -76,7 +76,7 @@ describe("dynamicEntityFormControllerFactory", () => {
       entity_type: "team",
       crud_handlers: {} as never,
       is_inline_mode: command?.is_inline_mode ?? false,
-      player_team_membership_use_cases: {} as never,
+      player_team_transfer_use_cases: {} as never,
       get_entity_metadata: () =>
         (command?.entity_metadata ?? { fields: [] }) as never,
       get_locked_field_names: () => new Set<string>(),

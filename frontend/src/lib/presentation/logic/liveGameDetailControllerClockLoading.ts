@@ -7,23 +7,20 @@ import {
   apply_live_game_detail_bundle,
   type LiveGameDetailPageState,
 } from "$lib/presentation/logic/liveGameDetailPageState";
-import { access_denial_store } from "$lib/presentation/stores/accessDenial";
 
+import { should_resume_live_game_detail_clock } from "./liveGameDetailControllerClockSaving";
 import {
   type LiveGameDetailClockContext,
   start_live_game_detail_clock,
   update_live_game_detail_clock_page_state,
 } from "./liveGameDetailControllerClockTicking";
+import { apply_live_game_detail_fixture_permissions } from "./liveGameDetailFixturePermissions";
 import {
   begin_live_game_detail_load,
   fail_live_game_detail_load,
   finish_live_game_detail_load,
 } from "./liveGameDetailPageStateMachine";
 
-const VIEW_ONLY_PERMISSION_MESSAGE =
-  "You have view-only access to this live game. Game management actions are not available.";
-const READ_DENIED_MESSAGE =
-  "You do not have permission to view this live game.";
 const MISSING_FIXTURE_ID_MESSAGE = "No fixture ID provided";
 
 export async function reload_live_game_detail_fixture_bundle(
@@ -32,6 +29,7 @@ export async function reload_live_game_detail_fixture_bundle(
   const result = await load_live_game_detail_bundle(
     context.command.fixture_id(),
     context.command.data_dependencies,
+    context.now(),
   );
   if (!result.success) {
     update_live_game_detail_clock_page_state(context, (page_state) =>
@@ -63,7 +61,7 @@ async function load_live_game_detail_fixture(
     context,
     finish_live_game_detail_load,
   );
-  if (fixture?.status === FIXTURE_STATUS.IN_PROGRESS)
+  if (fixture && should_resume_live_game_detail_clock(context, fixture))
     start_live_game_detail_clock(context);
 }
 
@@ -79,41 +77,6 @@ export async function load_live_game_detail_fixture_or_error(
   );
 }
 
-async function apply_live_game_detail_fixture_permissions(
-  context: LiveGameDetailClockContext,
-  raw_token: string,
-): Promise<boolean> {
-  const read_result = await get_authorization_adapter().check_entity_authorized(
-    raw_token,
-    "fixture",
-    "read",
-  );
-  if (read_result.success && !read_result.data.is_authorized) {
-    access_denial_store.set_denial(
-      `/live-games/${context.command.fixture_id()}`,
-      READ_DENIED_MESSAGE,
-    );
-    void context.command.goto("/");
-    return false;
-  }
-  const update_result =
-    await get_authorization_adapter().check_entity_authorized(
-      raw_token,
-      "fixture",
-      "update",
-    );
-  const can_modify_game =
-    update_result.success && update_result.data.is_authorized;
-  update_live_game_detail_clock_page_state(context, (page_state) => ({
-    ...page_state,
-    can_modify_game,
-    permission_info_message: can_modify_game
-      ? ""
-      : VIEW_ONLY_PERMISSION_MESSAGE,
-  }));
-  return true;
-}
-
 export async function initialize_live_game_detail_clock(
   context: LiveGameDetailClockContext,
 ): Promise<void> {
@@ -125,10 +88,10 @@ export async function initialize_live_game_detail_clock(
     );
     return;
   }
-  const raw_token = context.command.raw_token();
-  const should_continue = raw_token
-    ? await apply_live_game_detail_fixture_permissions(context, raw_token)
-    : true;
+  const should_continue = await apply_live_game_detail_fixture_permissions(
+    context,
+    get_authorization_adapter(),
+  );
   if (!should_continue) return;
   await load_live_game_detail_fixture_or_error(context);
 }

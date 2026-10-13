@@ -30,6 +30,7 @@ describe("syncStoreResolveConflict", () => {
           entity_display_name: "Team A",
           local_data: { name: "Local Team" },
           remote_data: { name: "Remote Team" },
+          remote_version: 2,
           local_updated_at: "2024-01-01T00:00:00.000Z",
           remote_updated_at: "2024-01-02T00:00:00.000Z",
           remote_updated_by: create_unknown_conflict_field_value<EntityId>(),
@@ -66,6 +67,7 @@ describe("syncStoreResolveConflict", () => {
         entity_display_name: "Team A",
         local_data: { name: "Local Team" },
         remote_data: { name: "Remote Team" },
+        remote_version: 2,
         local_updated_at: "2024-01-01T00:00:00.000Z",
         remote_updated_at: "2024-01-02T00:00:00.000Z",
         remote_updated_by: create_unknown_conflict_field_value<EntityId>(),
@@ -87,6 +89,7 @@ describe("syncStoreResolveConflict", () => {
         updated_at: "2024-05-01T10:00:00.000Z",
       },
       resolution_action: "keep_local",
+      base_version: 2,
     });
   });
 
@@ -106,6 +109,7 @@ describe("syncStoreResolveConflict", () => {
       entity_display_name: "Team B",
       local_data: { name: "Local Team" },
       remote_data: { name: "Remote Team" },
+      remote_version: 2,
       local_updated_at: "2024-01-01T00:00:00.000Z",
       remote_updated_at: "2024-01-02T00:00:00.000Z",
       remote_updated_by: create_unknown_conflict_field_value<EntityId>(),
@@ -127,6 +131,7 @@ describe("syncStoreResolveConflict", () => {
       local_id: "team-2",
       resolved_data: { name: "Remote Team" },
       resolution_action: "keep_remote",
+      base_version: 2,
     });
 
     const merge_resolution = await execute_conflict_resolution(
@@ -149,6 +154,7 @@ describe("syncStoreResolveConflict", () => {
         captain: "A. Example",
       },
       resolution_action: "merge",
+      base_version: 2,
     });
   });
 });

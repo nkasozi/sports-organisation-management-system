@@ -1,11 +1,19 @@
 <script lang="ts">
+    import { OptionStatus } from "$lib/core/types/Option";
     import { HEADER_FOOTER_STYLE } from "$lib/presentation/components/theme/themeConstants";
     import ThemeToggle from "$lib/presentation/components/theme/ThemeToggle.svelte";
+    import {
+        to_safe_css_url,
+        to_safe_image_source,
+    } from "$lib/presentation/logic/safeUrl";
     import { branding_store } from "$lib/presentation/stores/branding";
 
     $: has_custom_logo =
         $branding_store.organization_logo_url &&
         $branding_store.organization_logo_url.length > 0;
+    $: safe_logo_source = to_safe_image_source(
+        $branding_store.organization_logo_url,
+    );
 
     function split_organization_name(name: string): {
         prefix: string;
@@ -21,15 +29,19 @@
         const remainder = parts.slice(2).join(" ");
         return { prefix, suffix, remainder };
     }
+
+    $: safe_background_pattern = to_safe_css_url(
+        $branding_store.background_pattern_url,
+    );
 </script>
 
 <header
     class="shadow-sm border-b border-theme-primary-600 dark:border-theme-primary-700 sticky top-0 z-40 relative"
 >
-    {#if $branding_store.header_pattern === HEADER_FOOTER_STYLE.PATTERN && $branding_store.background_pattern_url}
+    {#if $branding_store.header_pattern === HEADER_FOOTER_STYLE.PATTERN && safe_background_pattern.status === OptionStatus.SOME}
         <div
             class="absolute inset-0"
-            style="background-image: url('{$branding_store.background_pattern_url}'); background-size: 200px; background-repeat: repeat;"
+            style="background-image: {safe_background_pattern.value}; background-size: 200px; background-repeat: repeat;"
         ></div>
         <div class="absolute inset-0 bg-gray-900/30 dark:bg-gray-900/45"></div>
     {:else}
@@ -52,9 +64,9 @@
                                 ? ''
                                 : 'bg-theme-secondary-600'}"
                         >
-                            {#if has_custom_logo}
+                            {#if has_custom_logo && safe_logo_source.status === OptionStatus.SOME}
                                 <img
-                                    src={$branding_store.organization_logo_url}
+                                    src={safe_logo_source.value}
                                     alt="Organization Logo"
                                     class="h-full w-full object-cover"
                                 />

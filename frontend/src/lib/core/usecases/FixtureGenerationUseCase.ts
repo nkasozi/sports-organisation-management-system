@@ -2,6 +2,7 @@ import { EventBus } from "$lib/infrastructure/events/EventBus";
 
 import type { Fixture, FixtureGenerationConfig } from "../entities/Fixture";
 import { generate_round_robin_fixtures } from "../entities/Fixture";
+import { count_generated_rounds } from "../entities/FixtureGeneration";
 import type { FixtureRepository } from "../interfaces/ports";
 import {
   create_none_option,
@@ -30,9 +31,10 @@ import {
 const log_target = create_log_target_builder(FIXTURE_LOG_SCOPE);
 
 function find_unmapped_rounds(config: FixtureGenerationConfig): number[] {
-  return Array.from({ length: config.rounds }, (_, index) => index + 1).filter(
-    (round) => !config.stage_id_per_round[round]?.trim(),
-  );
+  return Array.from(
+    { length: count_generated_rounds(config) },
+    (_, index) => index + 1,
+  ).filter((round) => !config.stage_id_per_round[round]?.trim());
 }
 
 function find_generation_problem(

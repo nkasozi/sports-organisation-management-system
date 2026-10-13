@@ -164,3 +164,14 @@ export {
   is_field_restricted_by_authorization,
   is_scope_restricted,
 } from "./authorizationScopeUtils";
+export type {
+  EntityPermissionScope,
+  RecordOwners,
+} from "./ownRecordPermissionChecks";
+export {
+  build_record_owners_for_player,
+  check_entity_permission_in_any_scope,
+  ENTITY_PERMISSION_SCOPE,
+  is_entity_action_permitted_for_record,
+  resolve_entity_permission_scope,
+} from "./ownRecordPermissionChecks";

@@ -16,6 +16,7 @@ import {
   CLERK_ERROR_CODE,
   CLERK_LOG_EVENT,
   CLERK_MESSAGE,
+  type ClerkErrorCode,
 } from "./clerkAuthConstants";
 
 const MAX_WAIT_MS = 10000;
@@ -108,4 +109,12 @@ export async function wait_for_loaded_clerk(): Promise<
     status: CLERK_LOAD_STATUS.STILL_LOADING,
     clerk,
   });
+}
+
+export function log_initialization_skipped(error_code: ClerkErrorCode): false {
+  console.log("[Clerk] Initialization skipped", {
+    event: CLERK_LOG_EVENT.INITIALIZATION_SKIPPED,
+    error_code,
+  });
+  return false;
 }

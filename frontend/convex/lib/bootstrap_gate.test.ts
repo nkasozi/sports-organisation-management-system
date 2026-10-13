@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  type BootstrapAllowlist,
+  BootstrapAllowlistKind,
+  parse_bootstrap_allowlist,
+} from "./bootstrap_allowlist";
+import {
   BootstrapPhase,
   decide_super_admin_seed,
   resolve_bootstrap_state,
@@ -14,6 +19,11 @@ import {
 const STRANGER: SeedCaller = {
   kind: SeedCallerKind.UNREGISTERED,
   email: "stranger@example.com",
+  email_verified: true,
+};
+const STRANGER_ALLOWLIST: BootstrapAllowlist = {
+  kind: BootstrapAllowlistKind.CONFIGURED,
+  emails: ["stranger@example.com"],
 };
 const SUPER_ADMIN: SeedCaller = {
   kind: SeedCallerKind.REGISTERED,
@@ -47,11 +57,13 @@ function decide(
   census: { has_registered_users: boolean; active_super_admin_count: number },
   caller: SeedCaller,
   target_email: string,
+  bootstrap_allowlist: BootstrapAllowlist = STRANGER_ALLOWLIST,
 ): string {
   const decision = decide_super_admin_seed({
     bootstrap: resolve_bootstrap_state(census),
     caller,
     target_email,
+    bootstrap_allowlist,
   });
   return decision.status === SeedDecisionStatus.REJECTED
     ? decision.rejection
@@ -131,5 +143,52 @@ describe("decide_super_admin_seed", () => {
     expect(decide(EMPTY_SYSTEM, SUPER_ADMIN, SUPER_ADMIN.email)).toBe(
       SeedRejection.BOOTSTRAP_CALLER_REGISTERED,
     );
+  });
+});
+
+describe("bootstrap allowlist", () => {
+  it("parses a comma separated, case-insensitive allowlist", () => {
+    expect(
+      parse_bootstrap_allowlist(" Root@Example.com, ,ops@example.com "),
+    ).toEqual({
+      kind: BootstrapAllowlistKind.CONFIGURED,
+      emails: ["root@example.com", "ops@example.com"],
+    });
+  });
+
+  it("treats a missing or blank allowlist as not configured", () => {
+    expect(parse_bootstrap_allowlist(undefined)).toEqual({
+      kind: BootstrapAllowlistKind.NOT_CONFIGURED,
+    });
+    expect(parse_bootstrap_allowlist(" , ")).toEqual({
+      kind: BootstrapAllowlistKind.NOT_CONFIGURED,
+    });
+  });
+
+  it("refuses bootstrap when the allowlist is not configured", () => {
+    expect(
+      decide(EMPTY_SYSTEM, STRANGER, STRANGER.email, {
+        kind: BootstrapAllowlistKind.NOT_CONFIGURED,
+      }),
+    ).toBe(SeedRejection.BOOTSTRAP_ALLOWLIST_NOT_CONFIGURED);
+  });
+
+  it("refuses bootstrap for emails outside the allowlist", () => {
+    expect(
+      decide(EMPTY_SYSTEM, STRANGER, STRANGER.email, {
+        kind: BootstrapAllowlistKind.CONFIGURED,
+        emails: ["root@example.com"],
+      }),
+    ).toBe(SeedRejection.BOOTSTRAP_EMAIL_NOT_ALLOWED);
+  });
+
+  it("refuses bootstrap when the caller email is not verified", () => {
+    expect(
+      decide(
+        EMPTY_SYSTEM,
+        { ...STRANGER, email_verified: false },
+        STRANGER.email,
+      ),
+    ).toBe(SeedRejection.BOOTSTRAP_EMAIL_UNVERIFIED);
   });
 });

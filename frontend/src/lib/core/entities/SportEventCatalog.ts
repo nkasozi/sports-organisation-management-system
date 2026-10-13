@@ -42,7 +42,10 @@ export interface SportEventCatalogSource {
   card_types: readonly CardTypeSource[];
 }
 
-function create_credit_award(event_type: string, points: number): ScoreAward {
+export function create_credit_award(
+  event_type: string,
+  points: number,
+): ScoreAward {
   return {
     kind: SCORE_AWARD_KIND.CREDIT,
     credited_side: OPPOSING_SIDE_SCORE_EVENTS.has(event_type)

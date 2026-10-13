@@ -23,7 +23,7 @@ vi.mock("./syncRemoteApplyRecords", () => ({
     applied_tables.push({ table_name, count: records.length });
     return true;
   },
-  SnapshotCursorPolicy: { KEEP_CURSOR: "keep_cursor" },
+  SnapshotRecordScope: { PUBLIC_PROJECTION: "public_projection" },
 }));
 
 vi.mock("./convexSyncService", () => ({

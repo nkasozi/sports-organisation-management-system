@@ -105,7 +105,14 @@ describe("sync outbox review", () => {
     expect(result.success).toBe(true);
     expect(fake.rows("teams")).toEqual([]);
     expect(fake.rows("sync_outbox")).toEqual([]);
-    expect(fake.rows("sync_record_versions")).toEqual([]);
+    expect(fake.rows("sync_record_versions")).toEqual([
+      {
+        table_name: "teams",
+        local_id: "team_a",
+        server_version: 6,
+        record_state: "deleted",
+      },
+    ]);
   });
 
   it("requeues a rejected change for another attempt", async () => {
@@ -146,7 +153,9 @@ describe("sync outbox review", () => {
   });
 
   it("discards a rejected new record by removing it when the server never had it", async () => {
-    const { fake, dependencies } = create_review([REJECTED]);
+    const { fake, dependencies } = create_review([
+      { ...REJECTED, base_version: { kind: "unknown" } },
+    ]);
     const convex_client = {
       query: vi.fn().mockResolvedValue({ status: "not_found" }),
       mutation: vi.fn(),

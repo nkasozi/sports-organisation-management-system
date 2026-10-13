@@ -20,16 +20,3 @@ export const ROUTE_GUARD_EXEMPT_EXACT_PATHS: ReadonlySet<string> = new Set([
   APP_ROUTE_PATH.TERMS,
   APP_ROUTE_PATH.CONTACT,
 ]);
-
-const NAVIGATION_TYPE = {
-  LINK: "link",
-  GOTO: "goto",
-  POPSTATE: "popstate",
-  ENTER: "enter",
-} as const;
-
-export const IN_APP_NAVIGATION_TYPES: ReadonlySet<string> = new Set([
-  NAVIGATION_TYPE.LINK,
-  NAVIGATION_TYPE.GOTO,
-  NAVIGATION_TYPE.POPSTATE,
-]);

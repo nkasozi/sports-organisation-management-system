@@ -75,12 +75,16 @@ describe("competitionResultsPageControllerRuntime", () => {
     const { command } = create_command();
     load_competition_results_bundle_mock.mockResolvedValueOnce({
       fixture_count: 2,
+      load_state: { status: "loaded" },
     });
 
     await create_competition_results_page_controller_runtime(
       command as never,
     ).load_competition_data();
-    expect(command.apply_bundle).toHaveBeenCalledWith({ fixture_count: 2 });
+    expect(command.apply_bundle).toHaveBeenCalledWith({
+      fixture_count: 2,
+      load_state: { status: "loaded" },
+    });
   });
 
   it("reloads the selected organization and syncs public branding when the organization changes", async () => {
@@ -99,7 +103,7 @@ describe("competitionResultsPageControllerRuntime", () => {
     load_competitions_for_results_organization_mock.mockResolvedValueOnce({
       competitions: [{ id: "competition-2" }],
       selected_competition_id: "competition-2",
-      bundle: { fixture_count: 3 },
+      bundle: { fixture_count: 3, load_state: { status: "loaded" } },
     });
 
     await create_competition_results_page_controller_runtime(
@@ -119,6 +123,9 @@ describe("competitionResultsPageControllerRuntime", () => {
     expect(command.set_selected_competition_id).toHaveBeenCalledWith(
       "competition-2",
     );
-    expect(command.apply_bundle).toHaveBeenCalledWith({ fixture_count: 3 });
+    expect(command.apply_bundle).toHaveBeenCalledWith({
+      fixture_count: 3,
+      load_state: { status: "loaded" },
+    });
   });
 });

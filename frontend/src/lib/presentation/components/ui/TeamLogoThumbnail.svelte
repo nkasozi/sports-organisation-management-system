@@ -1,5 +1,7 @@
 <script lang="ts">
     import { DEFAULT_TEAM_LOGO } from "$lib/core/entities/Team";
+    import { OptionStatus } from "$lib/core/types/Option";
+    import { to_safe_image_source } from "$lib/presentation/logic/safeUrl";
 
     export let logo_url: string = "";
     export let team_name: string = "";
@@ -11,8 +13,11 @@
         lg: "w-10 h-10",
     };
 
+    $: safe_logo_source = to_safe_image_source(logo_url);
     $: resolved_logo_url =
-        logo_url && logo_url.trim() !== "" ? logo_url : DEFAULT_TEAM_LOGO;
+        safe_logo_source.status === OptionStatus.SOME
+            ? safe_logo_source.value
+            : DEFAULT_TEAM_LOGO;
     $: size_class = SIZE_CLASSES[size] ?? SIZE_CLASSES.sm;
 
     let image_load_failed = false;

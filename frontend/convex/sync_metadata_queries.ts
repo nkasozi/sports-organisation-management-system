@@ -2,6 +2,7 @@ import { v } from "convex/values";
 
 import { query } from "./_generated/server";
 import { require_auth } from "./lib/auth_middleware";
+import { project_sync_metadata_for_caller } from "./lib/sync_metadata_projection";
 import {
   load_records_for_caller,
   read_first_string_field,
@@ -74,7 +75,10 @@ export const get_sync_metadata = query({
     if (!table_name)
       return {
         status: SyncMetadataStatus.RECORDS,
-        records: await ctx.db.query(SYNC_METADATA_TABLE_NAME).collect(),
+        records: project_sync_metadata_for_caller(
+          auth_result.data,
+          await ctx.db.query(SYNC_METADATA_TABLE_NAME).collect(),
+        ),
       };
     if (!validate_table_name(table_name).success)
       return { status: SyncMetadataStatus.NOT_FOUND };
@@ -84,8 +88,12 @@ export const get_sync_metadata = query({
         index_query.eq("table_name", table_name),
       )
       .first();
-    return record
-      ? { status: SyncMetadataStatus.RECORD, record }
+    const visible = project_sync_metadata_for_caller(
+      auth_result.data,
+      record ? [record] : [],
+    );
+    return visible.length > 0
+      ? { status: SyncMetadataStatus.RECORD, record: visible[0] }
       : { status: SyncMetadataStatus.NOT_FOUND };
   },
 });

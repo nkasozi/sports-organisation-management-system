@@ -66,6 +66,18 @@ export interface CompetitionResultsDependencies {
   };
 }
 
+export const COMPETITION_RESULTS_BUNDLE_LOAD_STATUS = {
+  LOADED: "loaded",
+  FAILED: "failed",
+} as const;
+
+export type CompetitionResultsBundleLoadState =
+  | { status: typeof COMPETITION_RESULTS_BUNDLE_LOAD_STATUS.LOADED }
+  | {
+      status: typeof COMPETITION_RESULTS_BUNDLE_LOAD_STATUS.FAILED;
+      error_message: string;
+    };
+
 export interface CompetitionResultsCompetitionBundle {
   selected_competition_state: CompetitionResultsSelectedCompetitionState;
   competition_format_state: CompetitionResultsCompetitionFormatState;
@@ -74,4 +86,5 @@ export interface CompetitionResultsCompetitionBundle {
   team_map: Map<string, Team>;
   fixtures: Fixture[];
   sport_rules: MatchReportSportRules;
+  load_state: CompetitionResultsBundleLoadState;
 }

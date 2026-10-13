@@ -101,6 +101,7 @@ export interface ConflictResolutionRequest {
   local_id: ScalarInput<ConflictRecord>["local_id"];
   resolved_data: Record<string, unknown>;
   resolution_action: "keep_local" | "keep_remote" | "merge";
+  base_version: number;
   resolved_by?: EntityId;
 }
 

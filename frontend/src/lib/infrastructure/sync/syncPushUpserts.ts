@@ -15,7 +15,7 @@ import {
 } from "./syncPushBatching";
 import { reject_oversized_records } from "./syncPushOversized";
 import {
-  load_remediated_records,
+  load_outbox_records,
   type LoadedOutboxRecord,
 } from "./syncPushRecordLoading";
 import {
@@ -89,7 +89,7 @@ export async function push_outbox_upserts(
 ): AsyncResult<PushTableOutboxSummary> {
   if (entries.length === 0)
     return create_success_result(create_empty_push_summary());
-  const loaded = await load_remediated_records(command, entries);
+  const loaded = await load_outbox_records(command, entries);
   if (!loaded.success) return loaded;
   const sendable = await reject_oversized_records(command, loaded.data);
   const batches = build_sync_push_batches({

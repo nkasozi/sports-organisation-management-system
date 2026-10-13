@@ -84,12 +84,14 @@ export interface LiveGameDetailDerivedState {
   away_score: number;
   sorted_events: Fixture["game_events"];
   is_game_active: boolean;
+  is_awaiting_full_time: boolean;
   is_game_completed: boolean;
   period_button_config?: PeriodButtonConfig;
   show_extra_time_button: boolean;
   all_event_buttons: QuickEventButton[];
   player_select_options: Array<{ value: string; label: string }>;
   players_on_field_options: Array<{ value: string; label: string }>;
+  max_players_on_field: number;
   is_substitution_event: boolean;
   assigned_officials: Array<{ name: string; role_name: string }>;
   team_names: Record<string, string>;

@@ -3,10 +3,12 @@
 
     import { goto, invalidateAll } from "$app/navigation";
     import { is_signed_in } from "$lib/adapters/iam/clerkAuthService";
+    import { OptionStatus } from "$lib/core/types/Option";
     import { HEADER_FOOTER_STYLE } from "$lib/presentation/components/theme/themeConstants";
     import LogoutWarningModal from "$lib/presentation/components/ui/LogoutWarningModal.svelte";
     import { invalidate_route_access_cache } from "$lib/presentation/logic/authGuard";
     import { PRESENCE_STATUS } from "$lib/presentation/logic/presenceStatus";
+    import { to_safe_css_url } from "$lib/presentation/logic/safeUrl";
     import {
         auth_store,
         current_profile_display_name,
@@ -15,6 +17,7 @@
         current_profile_organization_name,
         current_profile_team_id,
         current_user_role_display,
+        has_verified_account_session,
         other_available_profiles,
         type UserProfile,
     } from "$lib/presentation/stores/auth";
@@ -42,6 +45,7 @@
     let user_menu_open = false;
     let profile_submenu_open = false;
     let show_logout_warning = false;
+    $: has_account_session = $is_signed_in || $has_verified_account_session;
     $: has_custom_logo =
         !!$branding_store.organization_logo_url &&
         $branding_store.organization_logo_url.length > 0;
@@ -74,7 +78,7 @@
     function handle_logout_click(): void {
         close_user_menu();
         if (
-            resolve_header_logout_start($is_signed_in) ===
+            resolve_header_logout_start(has_account_session) ===
             HEADER_LOGOUT_START.SHOW_WARNING
         ) {
             show_logout_warning = true;
@@ -107,16 +111,20 @@
             profile,
         );
     }
+
+    $: safe_background_pattern = to_safe_css_url(
+        $branding_store.background_pattern_url,
+    );
 </script>
 
 <svelte:window on:click={close_user_menu} />
 <header
     class="shadow-sm border-b border-theme-primary-600 dark:border-theme-primary-700 sticky top-0 z-50 relative"
 >
-    {#if $branding_store.header_pattern === HEADER_FOOTER_STYLE.PATTERN && $branding_store.background_pattern_url}
+    {#if $branding_store.header_pattern === HEADER_FOOTER_STYLE.PATTERN && safe_background_pattern.status === OptionStatus.SOME}
         <div
             class="absolute inset-0"
-            style="background-image: url('{$branding_store.background_pattern_url}'); background-size: 200px; background-repeat: repeat;"
+            style="background-image: {safe_background_pattern.value}; background-size: 200px; background-repeat: repeat;"
         ></div>
         <div class="absolute inset-0 bg-gray-900/30 dark:bg-gray-900/45"></div>
     {:else}
@@ -149,7 +157,7 @@
                     $auth_store.current_profile,
                 )}
                 current_user_role_display={$current_user_role_display}
-                is_signed_in={$is_signed_in}
+                is_signed_in={has_account_session}
                 other_available_profiles={$other_available_profiles}
                 theme_mode={$theme_store.mode}
                 {user_menu_open}

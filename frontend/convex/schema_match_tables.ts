@@ -4,6 +4,7 @@ import { v } from "convex/values";
 import {
   assigned_official_validator,
   card_type_validator,
+  fixture_clock_status_validator,
   foul_category_validator,
   game_event_validator,
   jersey_color_assignment_validator,
@@ -91,6 +92,9 @@ export const schema_match_tables = {
     game_events: v.optional(v.array(game_event_validator)),
     current_period: v.optional(v.string()),
     current_minute: v.optional(v.number()),
+    clock_status: v.optional(fixture_clock_status_validator),
+    clock_elapsed_seconds: v.optional(v.number()),
+    clock_started_at: v.optional(v.string()),
     match_day: v.optional(v.number()),
     notes: v.optional(v.string()),
     status: v.optional(v.string()),

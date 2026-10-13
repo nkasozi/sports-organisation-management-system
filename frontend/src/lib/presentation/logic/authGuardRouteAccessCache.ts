@@ -12,6 +12,16 @@ import {
   ROUTE_ACCESS_CACHE_STATUS,
 } from "./authGuardConstants";
 import { is_route_in_accessible_set } from "./authGuardRoutes";
+import { is_role_permitted_for_route_subpath } from "./authGuardSubpathPermissions";
+
+export const CACHED_ROUTE_ACCESS_STATUS = {
+  ALLOWED: "allowed",
+  DENIED: "denied",
+  UNKNOWN: "unknown",
+} as const;
+
+export type CachedRouteAccessStatus =
+  (typeof CACHED_ROUTE_ACCESS_STATUS)[keyof typeof CACHED_ROUTE_ACCESS_STATUS];
 
 interface RouteAccessCache {
   role: UserRole;
@@ -113,12 +123,38 @@ function get_cached_accessible_routes(
   }
 }
 
+function is_pathname_allowed_for_cache_state(
+  pathname: string,
+  state: RouteAccessCacheState,
+): boolean {
+  const is_base_route_allowed = is_route_in_accessible_set(
+    pathname,
+    get_cached_accessible_routes(state),
+  );
+  if (!is_base_route_allowed) return false;
+  return state.status === ROUTE_ACCESS_CACHE_STATUS.READY
+    ? is_role_permitted_for_route_subpath(state.cache.role, pathname)
+    : true;
+}
+
 export function is_pathname_in_route_access_cache(pathname: string): boolean {
   if (route_access_cache_state.status === ROUTE_ACCESS_CACHE_STATUS.EMPTY) {
     return false;
   }
-  return is_route_in_accessible_set(
+  return is_pathname_allowed_for_cache_state(
     pathname,
-    get_cached_accessible_routes(route_access_cache_state),
+    route_access_cache_state,
   );
+}
+
+export function evaluate_cached_route_access(
+  pathname: string,
+  role: UserRole,
+): CachedRouteAccessStatus {
+  if (!is_cache_valid_for_role(route_access_cache_state, role, Date.now())) {
+    return CACHED_ROUTE_ACCESS_STATUS.UNKNOWN;
+  }
+  return is_pathname_allowed_for_cache_state(pathname, route_access_cache_state)
+    ? CACHED_ROUTE_ACCESS_STATUS.ALLOWED
+    : CACHED_ROUTE_ACCESS_STATUS.DENIED;
 }

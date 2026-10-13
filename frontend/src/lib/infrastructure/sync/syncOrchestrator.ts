@@ -1,20 +1,16 @@
-import { get } from "svelte/store";
-
 import { sync_change_tracking_gate } from "$lib/adapters/repositories/syncOutbox/syncChangeTrackingGate";
 import type { SyncDirection } from "$lib/core/interfaces/ports";
 
-import { current_user_role } from "../../presentation/stores/auth";
 import { get_database } from "./syncDataAccess";
 import {
   create_table_sync_progress,
   PushSyncAuthorizationDecision,
   update_table_sync_progress,
-  verify_push_sync_auth_or_fail,
 } from "./syncOrchestratorHelpers";
-import { load_tables_with_pending_changes } from "./syncOrchestratorPendingTables";
+import { resolve_push_excluded_tables } from "./syncOrchestratorPermissions";
+import { finish_run, prepare_run } from "./syncOrchestratorRunPreparation";
 import {
   accumulate_table_result,
-  build_sync_result,
   create_empty_totals,
   type SyncRunTotals,
 } from "./syncOrchestratorTotals";
@@ -25,38 +21,9 @@ import {
 } from "./syncRunSignals";
 import { sync_table_changes } from "./syncTableSync";
 import type { ConvexClient, SyncProgress, SyncResult } from "./syncTypes";
-import {
-  get_push_excluded_tables,
-  get_push_excluded_tables_for_unsigned_user,
-  TABLE_NAMES,
-  type TableName,
-} from "./syncTypes";
+import { TABLE_NAMES, type TableName } from "./syncTypes";
 
-const PULL_DIRECTION = "pull";
-const OUTBOX_ERROR_SCOPE = "sync_outbox";
 const CANCELLED_ERROR_SCOPE = "all";
-
-function build_outbox_failure_result(
-  error: string,
-  start_time: number,
-  total_tables: number,
-): SyncResult {
-  return build_sync_result(
-    {
-      ...create_empty_totals(),
-      errors: [{ table_name: OUTBOX_ERROR_SCOPE, error }],
-    },
-    start_time,
-    total_tables,
-  );
-}
-
-function resolve_push_excluded_tables(): Set<string> {
-  const role = get(current_user_role);
-  return role
-    ? get_push_excluded_tables(role)
-    : get_push_excluded_tables_for_unsigned_user();
-}
 
 interface TableRunContext {
   convex_client: ConvexClient;
@@ -150,33 +117,29 @@ export async function sync_all_tables(
   const start_time = Date.now();
   const correlation_id = crypto.randomUUID();
   const valid_tables = select_valid_tables(enabled_tables);
-  const auth_failure = await verify_push_sync_auth_or_fail(
-    convex_client,
-    direction,
+  const prepared = await prepare_run(convex_client, direction, {
     start_time,
-  );
-  if (auth_failure.status === PushSyncAuthorizationDecision.STOP)
-    return auth_failure.result;
-  const pending_tables = await load_tables_with_pending_changes(
-    get_database(),
-    direction === PULL_DIRECTION,
     correlation_id,
+    total_tables: valid_tables.length,
+  });
+  if (prepared.status === PushSyncAuthorizationDecision.STOP)
+    return prepared.result;
+  const totals = await run_table_syncs(
+    {
+      convex_client,
+      database: get_database(),
+      direction,
+      detect_conflicts,
+      correlation_id,
+      pending_tables: prepared.outbox.pending_tables,
+      ...create_run_scope(on_progress),
+    },
+    valid_tables,
   );
-  if (!pending_tables.success)
-    return build_outbox_failure_result(
-      pending_tables.error,
-      start_time,
-      valid_tables.length,
-    );
-  const context: TableRunContext = {
-    convex_client,
-    database: get_database(),
-    direction,
-    detect_conflicts,
-    correlation_id,
-    pending_tables: pending_tables.data,
-    ...create_run_scope(on_progress),
-  };
-  const totals = await run_table_syncs(context, valid_tables);
-  return build_sync_result(totals, start_time, valid_tables.length);
+  return finish_run(
+    totals,
+    prepared.outbox.unpermitted,
+    start_time,
+    valid_tables.length,
+  );
 }

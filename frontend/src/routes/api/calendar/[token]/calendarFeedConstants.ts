@@ -1,8 +1,3 @@
-export const CALENDAR_FEED_ACCESS_STATUS = {
-  GRANTED: "granted",
-  REJECTED: "rejected",
-} as const;
-
 export const CALENDAR_FEED_RESPONSE_MESSAGES = {
   INVALID_TOKEN: "Invalid token format",
   NOT_FOUND: "Calendar feed not found or inactive",
@@ -20,6 +15,6 @@ export const CALENDAR_FEED_HTTP_STATUS = {
 
 export const CALENDAR_FEED_EVENTS = {
   TOKEN_EXPIRED: "calendar_token_expired",
-  ACCESS_RECORD_FAILED: "calendar_feed_access_record_failed",
   ACTIVITIES_LOAD_FAILED: "calendar_feed_activities_load_failed",
+  BACKEND_NOT_CONFIGURED: "calendar_feed_backend_not_configured",
 } as const;

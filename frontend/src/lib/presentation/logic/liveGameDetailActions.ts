@@ -1,5 +1,6 @@
 export {
   record_live_game_detail_event,
+  record_live_game_detail_timed_event,
   record_live_game_extra_time_event,
 } from "./liveGameDetailEventActions";
 export {

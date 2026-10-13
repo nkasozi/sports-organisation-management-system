@@ -1,5 +1,5 @@
 import type { MutationCtx } from "../_generated/server";
-import { DataAction } from "./auth_middleware";
+import { DataAction, type SystemUserRecord } from "./auth_middleware";
 import type { ConvexFailure } from "./convex_errors";
 import { type Option, OptionStatus } from "./option";
 import {
@@ -12,7 +12,6 @@ import { type AllowedSyncTable, validate_table_name } from "./sync_validation";
 
 export const SyncPermissionMode = {
   FROM_EXISTING_RECORD: "from_existing_record",
-  UPDATE: "update",
   DELETE: "delete",
 } as const;
 
@@ -30,6 +29,7 @@ type PreparedSyncWrite =
   | {
       success: true;
       table_name: AllowedSyncTable;
+      caller: SystemUserRecord;
       existing_record: Option<Record<string, unknown>>;
       record_data: Record<string, unknown>;
     }
@@ -42,8 +42,6 @@ function resolve_permission_action(
   switch (permission_mode) {
     case SyncPermissionMode.FROM_EXISTING_RECORD:
       return action_for_existing(existing_record);
-    case SyncPermissionMode.UPDATE:
-      return DataAction.UPDATE;
     case SyncPermissionMode.DELETE:
       return DataAction.DELETE;
   }
@@ -68,23 +66,22 @@ export async function prepare_guarded_sync_write(
     resolve_permission_action(command.permission_mode, existing_record),
   );
   if (!authorization.success) return authorization;
+  const prepared = {
+    success: true as const,
+    table_name,
+    caller: authorization.data,
+    existing_record,
+  };
   if (
     command.permission_mode === SyncPermissionMode.DELETE &&
     existing_record.status === OptionStatus.NONE
   )
-    return { success: true, table_name, existing_record, record_data: {} };
+    return { ...prepared, record_data: {} };
   const guarded_write = await run_guarded_write(ctx, {
-    table_name,
-    caller: authorization.data,
+    ...prepared,
     local_id: command.local_id,
     incoming_record: command.incoming_record,
-    existing_record,
   });
   if (!guarded_write.success) return guarded_write;
-  return {
-    success: true,
-    table_name,
-    existing_record,
-    record_data: guarded_write.record_data,
-  };
+  return { ...prepared, record_data: guarded_write.record_data };
 }

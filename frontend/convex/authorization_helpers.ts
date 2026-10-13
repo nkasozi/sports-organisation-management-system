@@ -4,6 +4,7 @@ import {
   require_auth,
   type SystemUserRecord,
 } from "./lib/auth_middleware";
+import { is_number } from "./lib/value_guards";
 import type {
   SharedDataCategory,
   SharedUserRole,
@@ -44,7 +45,10 @@ export interface SystemUser {
   player_id?: string;
   official_id?: string;
   status?: string;
+  version: number;
 }
+
+const NO_SERVER_VERSION = 0;
 
 function to_system_user(system_user: SystemUserRecord): SystemUser {
   return {
@@ -59,6 +63,9 @@ function to_system_user(system_user: SystemUserRecord): SystemUser {
     player_id: system_user.player_id,
     official_id: system_user.official_id,
     status: system_user.status,
+    version: is_number(system_user.version)
+      ? system_user.version
+      : NO_SERVER_VERSION,
   };
 }
 

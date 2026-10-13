@@ -45,6 +45,38 @@ describe("listCsvExportLogic", () => {
     ).toBe('Team Name,Home City\n"Uganda ""Cranes""","Kampala"');
   });
 
+  it.each([
+    ['=HYPERLINK("http://evil")', '"\'=HYPERLINK(""http://evil"")"'],
+    ["+1+2", '"\'+1+2"'],
+    ["-2+3", '"\'-2+3"'],
+    ["@SUM(A1)", '"\'@SUM(A1)"'],
+    ["\tcmd", '"\'\tcmd"'],
+    ["\rcmd", '"\'\rcmd"'],
+  ])(
+    "neutralises spreadsheet formula prefix in %j",
+    (raw_value: string, expected_cell: string) => {
+      expect(
+        build_csv_content(
+          [{ id: "team_1", name: raw_value } as never],
+          ["name"],
+          create_missing_csv_metadata_state(),
+          {},
+        ),
+      ).toBe(`name\n${expected_cell}`);
+    },
+  );
+
+  it("leaves values without formula prefixes untouched", () => {
+    expect(
+      build_csv_content(
+        [{ id: "team_1", name: "Kampala = City" } as never],
+        ["name"],
+        create_missing_csv_metadata_state(),
+        {},
+      ),
+    ).toBe('name\n"Kampala = City"');
+  });
+
   it("builds filenames from the entity type and export date", () => {
     expect(
       build_csv_filename("team", new Date("2026-04-08T12:00:00.000Z")),

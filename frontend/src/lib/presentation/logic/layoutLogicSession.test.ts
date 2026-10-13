@@ -4,7 +4,6 @@ import {
   build_sync_progress_message,
   determine_session_action,
   format_table_name,
-  is_in_app_navigation,
   scale_sync_percentage,
   should_pull_org_from_server,
 } from "./layoutLogic";
@@ -24,29 +23,6 @@ describe("determine_session_action", () => {
 
   it("returns 'returning_anonymous' when not signed in but session previously existed", () => {
     expect(determine_session_action(false, true)).toBe("returning_anonymous");
-  });
-});
-
-describe("is_in_app_navigation", () => {
-  it("returns true for 'link'", () => {
-    expect(is_in_app_navigation("link")).toBe(true);
-  });
-
-  it("returns true for 'goto'", () => {
-    expect(is_in_app_navigation("goto")).toBe(true);
-  });
-
-  it("returns true for 'popstate'", () => {
-    expect(is_in_app_navigation("popstate")).toBe(true);
-  });
-
-  it("returns false for 'enter' (full page load)", () => {
-    expect(is_in_app_navigation("enter")).toBe(false);
-  });
-
-  it("returns false for unknown types", () => {
-    expect(is_in_app_navigation("unknown")).toBe(false);
-    expect(is_in_app_navigation("")).toBe(false);
   });
 });
 

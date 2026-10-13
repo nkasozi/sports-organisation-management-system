@@ -37,7 +37,12 @@ describe("sync outbox repository", () => {
     );
     expect(fake.rows("sync_outbox")).toEqual([]);
     expect(fake.rows("sync_record_versions")).toEqual([
-      { table_name: "teams", local_id: "team_a", server_version: 3 },
+      {
+        table_name: "teams",
+        local_id: "team_a",
+        server_version: 3,
+        record_state: "live",
+      },
     ]);
   });
 
@@ -54,7 +59,7 @@ describe("sync outbox repository", () => {
     });
   });
 
-  it("forgets the known version once a delete is confirmed", async () => {
+  it("replaces the known version with a tombstone once a delete is confirmed", async () => {
     const fake = create_fake_sync_database();
     const delete_entry = build_entry({ operation: "delete" });
     fake.seed("sync_outbox", [delete_entry]);
@@ -62,7 +67,14 @@ describe("sync outbox repository", () => {
       { table_name: "teams", local_id: "team_a", server_version: 2 },
     ]);
     await confirm_outbox_entry(fake.database, delete_entry, 3);
-    expect(fake.rows("sync_record_versions")).toEqual([]);
+    expect(fake.rows("sync_record_versions")).toEqual([
+      {
+        table_name: "teams",
+        local_id: "team_a",
+        server_version: 3,
+        record_state: "deleted",
+      },
+    ]);
   });
 
   it("keeps rejected and conflicted entries visible in the summary", async () => {

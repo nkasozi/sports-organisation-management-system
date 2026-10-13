@@ -103,4 +103,48 @@ describe("get_player_rules_from_competition", () => {
       error_message: FIXTURE_LINEUP_GENERATION_MESSAGES.SPORT_LOAD_FAILED,
     });
   });
+
+  it("uses squad size for the lineup maximum and players on field for starters", async () => {
+    const result = await load_rules({
+      competition: {
+        ...COMPETITION,
+        data: {
+          ...COMPETITION.data,
+          rule_overrides: { max_players_on_field: 15, max_squad_size: 23 },
+        },
+      },
+      organization: ORGANIZATION,
+      sport: SPORT,
+    });
+    expect(result).toMatchObject({
+      success: true,
+      min_players: 7,
+      max_players: 23,
+      starters_count: 15,
+    });
+  });
+
+  it("does not need the sport when the competition overrides every limit", async () => {
+    const result = await load_rules({
+      competition: {
+        ...COMPETITION,
+        data: {
+          ...COMPETITION.data,
+          rule_overrides: {
+            min_players_on_field: 5,
+            max_players_on_field: 7,
+            max_squad_size: 12,
+          },
+        },
+      },
+      organization: { success: false, error: "offline" },
+      sport: { success: false, error: "offline" },
+    });
+    expect(result).toMatchObject({
+      success: true,
+      min_players: 5,
+      max_players: 12,
+      starters_count: 7,
+    });
+  });
 });

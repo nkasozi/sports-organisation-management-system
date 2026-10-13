@@ -6,7 +6,8 @@ import type {
   UserRole,
 } from "$lib/core/interfaces/ports";
 import {
-  check_data_permission,
+  check_entity_permission,
+  check_entity_permission_in_any_scope,
   get_entity_data_category,
   normalize_to_entity_type,
 } from "$lib/core/interfaces/ports";
@@ -40,14 +41,18 @@ interface EntityPermissionCheck {
   action: DataAction;
 }
 
-function evaluate_entity_permission(
+export function evaluate_entity_permission(
   check: EntityPermissionCheck,
 ): EntityAuthorizationResult {
   const category = get_entity_data_category(
     normalize_to_entity_type(check.entity_type),
   );
   const { role, action, entity_type } = check;
-  if (check_data_permission(role, category, action))
+  const normalized_entity_type = normalize_to_entity_type(entity_type);
+  if (
+    check_entity_permission(role, normalized_entity_type, action) ||
+    check_entity_permission_in_any_scope(role, normalized_entity_type, action)
+  )
     return { is_authorized: true, data_category: category, role };
   const denial_reason = `Role "${role}" does not have "${action}" permission for ${entity_type} (${category} data)`;
   EventBus.emit_access_denied(

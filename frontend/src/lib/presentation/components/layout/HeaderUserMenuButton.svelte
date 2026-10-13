@@ -1,4 +1,6 @@
 <script lang="ts">
+    import { OptionStatus } from "$lib/core/types/Option";
+    import { to_safe_image_source } from "$lib/presentation/logic/safeUrl";
     export let has_profile_picture: boolean = false;
     export let profile_picture_base64: string = "";
     export let current_profile_initials: string = "";
@@ -6,6 +8,10 @@
     export let current_profile_organization_name: string = "";
     export let user_menu_open: boolean = false;
     export let on_toggle_user_menu: () => void = () => {};
+
+    $: safe_profile_picture_source = to_safe_image_source(
+        profile_picture_base64,
+    );
 </script>
 
 <button
@@ -16,9 +22,9 @@
     on:click|stopPropagation={on_toggle_user_menu}
 >
     <div class="flex items-center space-x-2">
-        {#if has_profile_picture}
+        {#if has_profile_picture && safe_profile_picture_source.status === OptionStatus.SOME}
             <img
-                src={profile_picture_base64}
+                src={safe_profile_picture_source.value}
                 alt="Profile"
                 class="h-8 w-8 rounded-full object-cover flex-shrink-0"
             />

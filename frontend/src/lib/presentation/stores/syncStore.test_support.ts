@@ -128,6 +128,7 @@ export function create_pending_team_conflict(
     entity_display_name: "Team B",
     local_data: { name: "Local Team" },
     remote_data: { name: "Remote Team" },
+    remote_version: 2,
     local_updated_at: "2024-04-29T00:00:00.000Z",
     remote_updated_at: "2024-04-30T00:00:00.000Z",
     remote_updated_by: create_unknown_conflict_field_value(),

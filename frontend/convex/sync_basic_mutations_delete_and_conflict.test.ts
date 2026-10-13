@@ -83,6 +83,7 @@ describe("force_resolve_conflict", () => {
         local_id: "team_a",
         resolved_data: build_team_record("team_a", ORGANIZATION_A_ID, 3),
         new_version: 3,
+        base_version: { kind: "known", version: 1 },
         resolution_action: "keep_local",
       },
     );

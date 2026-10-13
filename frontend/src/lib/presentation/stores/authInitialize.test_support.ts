@@ -18,6 +18,10 @@ interface AuthInitializeMocks {
   try_restore_anonymous_session: Mock;
   try_restore_signed_in_session: Mock;
   wait_for_clerk: Mock;
+  resolve_current_device_session: Mock;
+  restore_offline_verified_session: Mock;
+  clear_auth_storage: Mock;
+  build_profiles_with_public_viewer: Mock;
 }
 
 export function create_auth_initialize_mocks(): AuthInitializeMocks {
@@ -51,6 +55,10 @@ export function create_auth_initialize_mocks(): AuthInitializeMocks {
     try_restore_anonymous_session: vi.fn(),
     try_restore_signed_in_session: vi.fn(),
     wait_for_clerk: vi.fn(),
+    resolve_current_device_session: vi.fn(),
+    restore_offline_verified_session: vi.fn(),
+    clear_auth_storage: vi.fn(),
+    build_profiles_with_public_viewer: vi.fn(),
   };
 }
 
@@ -106,5 +114,28 @@ export function reset_auth_initialize_mocks(
     status: "missing",
   });
   mocks.load_sidebar_menu_for_role.mockResolvedValue([]);
+  mocks.resolve_current_device_session.mockReset();
+  mocks.resolve_current_device_session.mockResolvedValue({
+    status: "anonymous",
+  });
+  mocks.restore_offline_verified_session.mockReset();
+  mocks.clear_auth_storage.mockReset();
+  mocks.clear_auth_storage.mockResolvedValue(true);
+  mocks.build_profiles_with_public_viewer.mockReset();
   return true;
+}
+
+export function build_auth_helpers_module_mock(
+  mocks: AuthInitializeMocks,
+): Record<string, Mock> {
+  return {
+    build_profiles_with_public_viewer: mocks.build_profiles_with_public_viewer,
+    clear_auth_storage: mocks.clear_auth_storage,
+    generate_token_for_profile: mocks.generate_token_for_profile,
+    load_saved_token: mocks.load_saved_token,
+    load_sidebar_menu_for_role: mocks.load_sidebar_menu_for_role,
+    save_profile_id: mocks.save_profile_id,
+    save_token: mocks.save_token,
+    sync_user_context_with_event_bus: mocks.sync_user_context_with_event_bus,
+  };
 }

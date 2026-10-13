@@ -2,10 +2,20 @@ import { get, type Readable, writable } from "svelte/store";
 
 import {
   clerk_session,
+  get_clerk_reachability,
   initialize_clerk,
 } from "$lib/adapters/iam/clerkAuthService";
+import {
+  CLERK_REACHABILITY_STATUS,
+  type ClerkReachability,
+} from "$lib/adapters/iam/clerkReachability";
 
 import { build_active_clerk_identity_state } from "./activeClerkIdentity";
+import {
+  classify_device_session,
+  type DeviceSessionState,
+} from "./deviceSessionState";
+import { resolve_session_identity } from "./sessionIdentityResolution";
 import {
   build_session_sync_marker_for_identity,
   has_identity_completed_session_sync,
@@ -59,6 +69,23 @@ export async function has_session_been_synced(): Promise<boolean> {
   return has_identity_completed_session_sync(
     await read_session_sync_state_from_storage(),
     build_active_clerk_identity_state(get(clerk_session)),
+  );
+}
+
+async function settle_clerk_reachability(): Promise<ClerkReachability> {
+  const current_reachability = get_clerk_reachability();
+  if (current_reachability.status !== CLERK_REACHABILITY_STATUS.PENDING)
+    return current_reachability;
+  await initialize_clerk();
+  return get_clerk_reachability();
+}
+
+export async function resolve_current_device_session(): Promise<DeviceSessionState> {
+  const clerk_reachability = await settle_clerk_reachability();
+
+  return classify_device_session(
+    resolve_session_identity(clerk_reachability, get(clerk_session)),
+    await read_session_sync_state_from_storage(),
   );
 }
 

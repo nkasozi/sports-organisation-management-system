@@ -24,6 +24,7 @@ import { SHARED_ROLE_PERMISSIONS } from "./shared_permission_definitions";
 
 const ACCESS_CHECK_DENIED_EVENT = "access_check_denied";
 const ACCESS_CHECK_GRANTED_EVENT = "access_check_granted";
+const UNKNOWN_ENTITY_TYPE_EVENT = "authorization_unknown_entity_type";
 const REQUEST_ID_PREFIX = "acc_";
 const REQUEST_ID_RADIX = 36;
 const REQUEST_ID_START = 2;
@@ -60,11 +61,14 @@ function build_authorization_result(
 
 function list_role_actions(role: string, entity_type: string): DataAction[] {
   const parsed_role = parse_user_role(role);
-  if (parsed_role.status === OptionStatus.NONE) return [];
+  const data_category = get_entity_data_category(entity_type);
+  if (
+    parsed_role.status === OptionStatus.NONE ||
+    data_category.status === OptionStatus.NONE
+  )
+    return [];
   return get_actions_from_permissions(
-    SHARED_ROLE_PERMISSIONS[parsed_role.value][
-      get_entity_data_category(entity_type)
-    ],
+    SHARED_ROLE_PERMISSIONS[parsed_role.value][data_category.value],
   );
 }
 
@@ -106,13 +110,22 @@ export const check_entity_authorized = query({
     if (!user_result.success) return user_result;
     const role = user_result.data.role;
     const data_category = get_entity_data_category(args.entity_type);
+    if (data_category.status === OptionStatus.NONE)
+      return log_convex_failure(ConvexErrorCode.INVALID_REQUEST, {
+        event: UNKNOWN_ENTITY_TYPE_EVENT,
+        entity_type: args.entity_type,
+      });
     const parsed_action = parse_data_action(args.action);
     const is_authorized =
       parsed_action.status === OptionStatus.SOME &&
-      check_role_permission(role, data_category, parsed_action.value);
+      check_role_permission(role, data_category.value, parsed_action.value);
     return {
       success: true,
-      data: build_authorization_result(role, data_category, is_authorized),
+      data: build_authorization_result(
+        role,
+        data_category.value,
+        is_authorized,
+      ),
     };
   },
 });

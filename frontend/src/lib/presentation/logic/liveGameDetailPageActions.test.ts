@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
+import { create_none_option } from "$lib/core/types/Option";
+
 import {
   confirm_live_game_period_action,
   record_live_game_detail_page_event_action,
@@ -48,6 +50,10 @@ describe("liveGameDetailPageActions", () => {
         home_players: [{ id: "home-1" }] as never,
         is_substitution_event: false,
         secondary_player_name: "",
+        secondary_player_id: "",
+        on_field_players: [],
+        max_players_on_field: 11,
+        period_window: create_none_option(),
         selected_event_type: { id: "goal", label: "Goal" } as never,
         selected_player_id: "",
         selected_team_side: "home",

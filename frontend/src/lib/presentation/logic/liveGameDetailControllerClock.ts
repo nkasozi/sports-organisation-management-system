@@ -5,16 +5,27 @@ import {
   load_live_game_detail_fixture_or_error,
   reload_live_game_detail_fixture_bundle,
 } from "./liveGameDetailControllerClockLoading";
+import { save_live_game_detail_clock_state } from "./liveGameDetailControllerClockSaving";
 import {
   create_live_game_detail_clock_context,
   type LiveGameDetailClockCommand,
+  type LiveGameDetailClockContext,
   start_live_game_detail_clock,
   stop_live_game_detail_clock,
   toggle_live_game_detail_clock,
 } from "./liveGameDetailControllerClockTicking";
 
+function run_and_save_clock(
+  context: LiveGameDetailClockContext,
+  clock_action: (context: LiveGameDetailClockContext) => void,
+): void {
+  clock_action(context);
+  void save_live_game_detail_clock_state(context);
+}
+
 export function create_live_game_detail_clock_handlers(
   command: LiveGameDetailClockCommand,
+  now: () => Date = () => new Date(),
 ): {
   cleanup: () => void;
   initialize: () => Promise<void>;
@@ -24,7 +35,7 @@ export function create_live_game_detail_clock_handlers(
   stop_clock: () => void;
   toggle_clock: () => void;
 } {
-  const context = create_live_game_detail_clock_context(command);
+  const context = create_live_game_detail_clock_context(command, now);
   return {
     initialize: () => initialize_live_game_detail_clock(context),
     cleanup: (): void => stop_live_game_detail_clock(context),
@@ -32,8 +43,11 @@ export function create_live_game_detail_clock_handlers(
       load_live_game_detail_fixture_or_error(context),
     reload_fixture_bundle: () =>
       reload_live_game_detail_fixture_bundle(context),
-    start_clock: (): void => start_live_game_detail_clock(context),
-    stop_clock: (): void => stop_live_game_detail_clock(context),
-    toggle_clock: (): void => toggle_live_game_detail_clock(context),
+    start_clock: (): void =>
+      run_and_save_clock(context, start_live_game_detail_clock),
+    stop_clock: (): void =>
+      run_and_save_clock(context, stop_live_game_detail_clock),
+    toggle_clock: (): void =>
+      run_and_save_clock(context, toggle_live_game_detail_clock),
   };
 }

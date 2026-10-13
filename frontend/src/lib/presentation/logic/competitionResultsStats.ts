@@ -1,4 +1,5 @@
 import type { Fixture } from "$lib/core/entities/Fixture";
+import { resolve_event_score_award } from "$lib/core/entities/GameEventStoredFacts";
 import {
   SCORE_AWARD_KIND,
   SCORE_CREDITED_SIDE,
@@ -81,7 +82,7 @@ function apply_game_event_to_player_stats(
   game_event: FixtureGameEvent,
   resolve_score: ScoreAwardResolver,
 ): PlayerStats {
-  const award = resolve_score(game_event.event_type);
+  const award = resolve_event_score_award(game_event, resolve_score);
   switch (award.kind) {
     case SCORE_AWARD_KIND.NONE:
       return apply_card_to_player_stats(player_stats, game_event);

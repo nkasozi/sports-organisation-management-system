@@ -25,6 +25,8 @@ export const FIXTURE_EVENT = {
   GENERATE_FAILED: "fixture_generate_failed",
   PREVIOUS_STATE_UNAVAILABLE: "fixture_previous_state_unavailable",
   TEAM_NAMES_UNAVAILABLE: "fixture_team_names_unavailable",
+  TRANSITION_REJECTED: "fixture_transition_rejected",
+  EVENT_ALREADY_RECORDED: "fixture_game_event_already_recorded",
 } as const;
 
 export const FIXTURE_MESSAGE = {

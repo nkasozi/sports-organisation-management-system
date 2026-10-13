@@ -44,6 +44,9 @@ type LoginSyncTestDependencies = {
   write_convex_user_to_local_dexie: Mock;
   get_unsynced_local_change_count: Mock;
   confirm_discard_unsynced_local_changes: Mock;
+  read_session_sync_state: Mock;
+  get_active_clerk_identity: Mock;
+  flush_pending_changes: Mock;
 };
 
 export function create_login_sync_test_dependencies(): {
@@ -88,6 +91,20 @@ export function create_login_sync_test_dependencies(): {
       data: 0,
     })),
     confirm_discard_unsynced_local_changes: vi.fn(async () => false),
+    read_session_sync_state: vi.fn(async () => ({
+      status: "verified_user",
+      session_id: "session-previous",
+      user_id: "user-previous",
+    })),
+    get_active_clerk_identity: vi.fn(() => ({
+      status: "signed_in",
+      session_id: "session-current",
+      user_id: "user-current",
+    })),
+    flush_pending_changes: vi.fn(async () => ({
+      success: true as const,
+      data: { skipped_offline: false },
+    })),
   };
 
   return { dependencies, sync_now, unsubscribe };
